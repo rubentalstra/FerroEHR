@@ -15,8 +15,8 @@ members = ["crates/*"]
 edition = "2024"
 rust-version = "1.96"
 license = "Apache-2.0"
-repository = "https://github.com/rubentalstra/openehr-rs"   # adjust to your fork
-authors = ["Ruben Talstra"]
+repository = "https://github.com/rubentalstra/ehrbase-rs"
+authors = ["Ruben Talstra <14235001+rubentalstra@users.noreply.github.com>"]
 
 [workspace.lints.clippy]
 # Start pragmatic; tighten at P17. `unwrap_used` is warn (deny in tests via cfg).
