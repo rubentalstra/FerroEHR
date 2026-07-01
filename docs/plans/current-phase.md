@@ -1,3 +1,3 @@
-- Phase file: docs/plans/phase-00-scaffolding.md
-- Session goal: complete P0 scaffolding (harness, workspace, docs, reorganization, archaeology)
-- Next action: finish remaining phase-00 tasks, then advance to phase-01
+- Phase file: docs/plans/phase-01-foundation-identification.md
+- Session goal: transcribe BASE 1.2.0 Foundation + Identification into openehr-foundation / openehr-base, settling the MI/covariance/generics patterns every later RM phase reuses
+- Next action: pick the first unchecked phase-01 task; delegate class transcription to the rm-transcriber agent (rules in .claude/rules/rm-transcription.md); no compile required (Phase A)

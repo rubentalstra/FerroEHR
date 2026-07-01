@@ -1,7 +1,7 @@
 # Phase 00 — Scaffolding
 
-- Status: in-progress
-- Started: 2026-07-02   Owner: Ruben
+- Status: done (research dossier texts pending delivery — sole open task)
+- Started: 2026-07-02   Completed: 2026-07-02   Owner: Ruben
 - Consumes (spec/layer): none (bootstrap phase)
 - Compile required: yes — must build (empty + moved crates)
 
@@ -28,39 +28,64 @@ Phase 01. No enterprise feature (RBAC etc.) is built here, only catalogued.
 
 ## Tasks
 
-- [ ] Place delivered root configs, git hooks, CI workflows, and the porter agent at their target paths; install .githooks via core.hooksPath
-- [ ] Point Cargo.toml [workspace.package] repository/authors at the fork
-- [ ] Register the agent-harness hooks in .claude/settings.json (attribution guard, java/Maven protection, dangerous-command block, fmt/clippy, phase context, phase gate)
-- [ ] Pin reference/v1 read-only ref at v0.32.0 (last pre-v2 tag)
-- [ ] Create the 13 workspace crates (10 spec + 3 server) with workspace lints and Section 9 dependency arrows; empty workspace builds
-- [ ] Generate the .claude/ harness (rules, skills, agents)
-- [ ] Generate the docs/ tree (VERSIONS, PORTING, ROSETTA, LIFETIMES.tsv, PROGRESS, architecture, ADR template, research README, plans/)
-- [ ] Run the v1-vs-v2 archaeology diff into docs/enterprise/v1-vs-v2-delta.md (record only; build nothing)
-- [ ] git mv the EHRbase Java into the three server crates per Section 9.1; Flyway migrations verbatim to crates/openehr-server/migrations/
-- [ ] Remove the Maven-era GitHub workflows and fork-sync pull.yml (replaced by the Rust CI pipeline)
-- [ ] Commit the two research dossiers to docs/research/
-- [ ] Verify: cargo build --workspace, cargo fmt --all --check, cargo deny check, attribution-guard test commit
+- [x] Place delivered root configs, git hooks, CI workflows, and the porter agent at their target paths; install .githooks via core.hooksPath — done; AGENTS.md symlinked to CLAUDE.md
+- [x] Point Cargo.toml [workspace.package] repository/authors at the fork — rubentalstra/ehrbase-rs
+- [x] Register the agent-harness hooks in .claude/settings.json (attribution guard, java/Maven protection, dangerous-command block, fmt/clippy, phase context, phase gate) — commit-msg stripper proven live: deletes attribution lines, aborts fully-attributed messages (note: the literal tool name is itself a stripped token — keep it out of commit subjects)
+- [x] Pin reference/v1 read-only ref at v0.32.0 (last pre-v2 tag) — v0.32.0 → v2.0.0 was the cut
+- [x] Create the 13 workspace crates (10 spec + 3 server) with workspace lints and Section 9 dependency arrows; empty workspace builds — builds in ~1.7s; clippy zero warnings
+- [x] Generate the .claude/ harness (rules, skills, agents) — 6 rules, 9 skills, 7 agents (incl. delivered porter)
+- [x] Generate the docs/ tree (VERSIONS, PORTING, ROSETTA, LIFETIMES.tsv, PROGRESS, architecture, ADR template, research README, plans/) — 31 files
+- [x] Run the v1-vs-v2 archaeology diff into docs/enterprise/v1-vs-v2-delta.md (record only; build nothing) — 287 lines; real losses: ABAC + multi-tenancy (PG RLS); authn/plugin survived
+- [x] git mv the EHRbase Java into the three server crates per Section 9.1; Flyway migrations verbatim to crates/openehr-server/migrations/ — 428 java files, 42 migration files, zero left in Maven layout
+- [x] Remove the Maven-era GitHub workflows and fork-sync pull.yml (replaced by the Rust CI pipeline) — 12 workflows + pull.yml (hardreset sync would have wiped the fork); all recoverable from git history
+- [ ] Commit the two research dossiers to docs/research/ — pending delivery of the dossier texts (README placeholder in place)
+- [x] Verify: cargo build --workspace, cargo fmt --all --check, cargo deny check, attribution-guard test commit — all green; nextest runs (0 tests yet)
 
 ## Exit criteria
 
-- [ ] Workspace builds with empty spec crates and relocated Java in place
-- [ ] `.claude/` harness and hooks are registered and functioning
-- [ ] `docs/` tree is complete per Section 13
-- [ ] Archaeology recorded in `docs/enterprise/v1-vs-v2-delta.md`
-- [ ] `reference/v1` pinned as a read-only ref
-- [ ] CI workflows are Rust-based (no Maven-era workflow remains)
+- [x] Workspace builds with empty spec crates and relocated Java in place
+- [x] `.claude/` harness and hooks are registered and functioning
+- [x] `docs/` tree is complete per Section 13 (research dossier texts themselves still to be delivered)
+- [x] Archaeology recorded in `docs/enterprise/v1-vs-v2-delta.md`
+- [x] `reference/v1` pinned as a read-only ref
+- [x] CI workflows are Rust-based (no Maven-era workflow remains)
 
 ## Decisions made this phase
 
-- (none recorded yet)
+- Java landing scheme: each Maven module gets its own directory under its
+  crate, module root package stripped (rest-openehr `org/ehrbase/rest` →
+  `openehr-rest/src/`; service/aql/rm_db_format/config/plugin/cli/api/db/
+  application under `openehr-server/src/<module>/`). Keeps `service`'s own
+  `plugin` subpackage separate from the `plugin` module; aql-engine's
+  module-level `org.ehrbase.openehr.util` landed at `src/aql/util`.
+- `api` module moved wholesale to `openehr-server/src/api/`; its openEHR-DTO
+  half is superseded by the spec crates (written from the specs), the split
+  into service traits happens at porting time (Section 9.1 note).
+- Test trees to `crates/*/tests/java/<module>/`, test/main resources to
+  `tests/resources/<module>/` and `resources/<module>/`.
+- Maven module skeletons (pom.xml et al.) stay in place, read-only, until P99.
+- `base` module no longer exists at v2.33 (dissolved upstream) — mapping row moot.
+- No generated jOOQ code was committed upstream (build-time generation), so
+  "discard jOOQ" was a no-op; the one hand-written helper
+  (AdditionalSQLFunctions) went to `openehr-server/src/db/`.
+- 12 Maven-era GitHub workflows + fork-sync `pull.yml` (hardreset from
+  upstream) deleted in favor of the Rust ci.yml/release.yml; recover any of
+  them from git history when a phase needs the idea (Docker publish at P99,
+  CodeQL-for-Rust any time, integration reporting at P18).
+- Config fixes: rustfmt nightly-only import options commented out (stable
+  1.96 warn-spam); deny.toml `allow-wildcard-paths = true` for internal
+  path deps (all crates publish = false); .gitignore inline-comment bug on
+  the Cargo.lock line fixed (pattern never matched).
 
 ## Handoff for next session
 
-Root-level configs (CLAUDE.md, PORT_MASTER_PLAN.md, Cargo.toml,
-rust-toolchain.toml, deny.toml, rustfmt.toml, CI workflow, hook scripts) have
-landed at the repo root but the workspace crates, `.claude/` harness content,
-and most of `docs/` (this `docs/plans/` tree aside) do not exist yet, and the
-Java tree is still in its original Maven layout awaiting the Section 9.1
-`git mv`. Next session: work the phase-00 task list top to bottom, starting
-with placing the delivered configs and creating the 13 workspace crates so
-`cargo build --workspace` succeeds against an empty-plus-moved tree.
+P0 is complete except committing the two research dossier texts (external
+deliverable; docs/research/README.md marks the slot). The workspace builds
+green (build, fmt, clippy zero warnings, deny all four gates), 428 Java files
+sit beside their future .rs homes, reference/v1 = v0.32.0, and the
+archaeology is recorded. Next: P1 (docs/plans/phase-01-foundation-identification.md)
+— transcribe BASE 1.2.0 Foundation + Identification into openehr-foundation /
+openehr-base via the rm-transcriber agent, settling the multiple-inheritance,
+covariance, and generics patterns that every later RM phase reuses. Needs the
+published BASE 1.2.0 spec at hand; .claude/rules/rm-transcription.md carries
+the settled hazards.

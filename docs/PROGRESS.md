@@ -7,7 +7,7 @@ under `docs/plans/` for detail). Status values: `not-started`, `in-progress`,
 
 | Phase | Title | Status | Note |
 |---|---|---|---|
-| P0 | Scaffolding | in-progress | Workspace + crate skeleton, harness, and docs tree being generated. |
+| P0 | Scaffolding | done | 13-crate workspace green (build/fmt/clippy/deny); 428 Java files relocated per §9.1; harness + hooks live; reference/v1 = v0.32.0; archaeology recorded. Research dossier texts still to be committed. |
 | P1 | Foundation + Identification (BASE 1.2.0) | not-started | Resolves all MI/covariance/generic decisions. |
 | P2 | Terminology bundle (TERM 3.x) + service API | not-started | |
 | P3 | RM transcription | not-started | data_types → data_structures → common → ehr → demographic → integration. |
