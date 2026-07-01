@@ -28,6 +28,9 @@ exceptions = []
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# Internal path-only deps carry an implicit "*" version; all crates are
+# publish = false, so path-only is fine and stays denied for external deps.
+allow-wildcard-paths = true
 # Deny known-unmaintained or footgun crates here as they surface.
 deny = []
 skip = []
