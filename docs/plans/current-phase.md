@@ -1,0 +1,3 @@
+- Phase file: docs/plans/phase-00-scaffolding.md
+- Session goal: complete P0 scaffolding (harness, workspace, docs, reorganization, archaeology)
+- Next action: finish remaining phase-00 tasks, then advance to phase-01
