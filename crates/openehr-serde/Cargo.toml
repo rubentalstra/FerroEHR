@@ -1,0 +1,16 @@
+[package]
+name = "openehr-serde"
+version = "0.1.0"
+description = "openEHR canonical JSON (ITS-JSON) and canonical XML (ITS-XML) serialization"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+openehr-rm = { path = "../openehr-rm" }
+
+[lints]
+workspace = true

@@ -1,6 +1,7 @@
 edition = "2024"
 max_width = 100
 use_small_heuristics = "Default"
-imports_granularity = "Crate"
-group_imports = "StdExternalCrate"
+# Nightly-only as of Rust 1.96 (warn-spam on stable); re-enable when stabilized.
+# imports_granularity = "Crate"
+# group_imports = "StdExternalCrate"
 newline_style = "Unix"
