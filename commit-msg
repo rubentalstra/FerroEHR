@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# .git/hooks/commit-msg  (install target)
+#
+# Purpose: mechanically strip any AI / Claude attribution from commit messages
+# before the commit is recorded. This is a hard guarantee that complements the
+# CLAUDE.md rule: even if an attribution line ever slips into a message, it is
+# removed here. Runs on every commit, including --amend, squash, and merge.
+#
+# Exit codes: always 0 (we rewrite the message in place; we never block a commit
+# just for containing attribution, we simply remove it).
+
+set -euo pipefail
+
+MSG_FILE="$1"
+[ -f "$MSG_FILE" ] || exit 0
+
+# Patterns to remove, matched case-insensitively on a whole line.
+# Kept deliberately broad to catch trailers, footers, emoji lines, and variants.
+strip_patterns=(
+  '^[[:space:]]*Co-authored-by:.*[Cc]laude'
+  '^[[:space:]]*Co-authored-by:.*[Aa]nthropic'
+  '^[[:space:]]*Co-authored-by:.*noreply@anthropic\.com'
+  '^[[:space:]]*Co-authored-by:.*\[bot\]'
+  '[Gg]enerated[[:space:]]+with[[:space:]]+.*[Cc]laude'
+  '[Gg]enerated[[:space:]]+by[[:space:]]+.*[Cc]laude'
+  '[Cc]laude[[:space:]]+[Cc]ode'
+  '🤖'
+  '^[[:space:]]*Assisted-by:.*[Cc]laude'
+  '^[[:space:]]*Signed-off-by:.*[Cc]laude'
+  'Anthropic[[:space:]]+Claude'
+)
+
+tmp="$(mktemp)"
+cp "$MSG_FILE" "$tmp"
+
+for pat in "${strip_patterns[@]}"; do
+  # Delete any line matching the pattern (case-insensitive).
+  grep -viE "$pat" "$tmp" > "$tmp.next" || true
+  mv "$tmp.next" "$tmp"
+done
+
+# Collapse 3+ consecutive blank lines into one, and trim trailing blank lines,
+# so removing a footer block does not leave an ugly gap.
+awk 'BEGIN{blank=0}
+     /^[[:space:]]*$/{blank++; if(blank<=1) print ""; next}
+     {blank=0; print}' "$tmp" > "$tmp.clean"
+
+# Remove trailing blank lines entirely.
+sed -e :a -e '/^\n*$/{$d;N;ba}' "$tmp.clean" > "$MSG_FILE" 2>/dev/null || cp "$tmp.clean" "$MSG_FILE"
+
+rm -f "$tmp" "$tmp.clean" "$tmp.next" 2>/dev/null || true
+exit 0
