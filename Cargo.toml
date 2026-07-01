@@ -1,0 +1,196 @@
+# Root workspace manifest for the pure-Rust EHRbase port.
+# This file is the authoritative pinned dependency set (the "version check").
+# Versions are current as of 2026-07 and expressed as caret ranges (Cargo pulls
+# the latest matching patch). Where a major/minor was not individually confirmed
+# it is marked "verify". Crates opt into these via `dep.workspace = true`.
+#
+# NOTE: per the port plan, crates in Phases P1-P16 are NOT required to compile.
+# Do not treat a failing `cargo build --workspace` as a problem before P17.
+
+[workspace]
+resolver = "3"                      # resolver v3 (edition 2024)
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.96"
+license = "Apache-2.0"
+repository = "https://github.com/rubentalstra/openehr-rs"   # adjust to your fork
+authors = ["Ruben Talstra"]
+
+[workspace.lints.clippy]
+# Start pragmatic; tighten at P17. `unwrap_used` is warn (deny in tests via cfg).
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+todo = "allow"                      # todo!() is expected during P1-P16
+incompatible_msrv = "warn"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"              # server + spec crates should be safe; relax per-crate if ever needed
+missing_debug_implementations = "warn"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WORKSPACE DEPENDENCIES  (pinned; features set at the crate that enables them)
+# ─────────────────────────────────────────────────────────────────────────────
+[workspace.dependencies]
+
+# ── Web framework & HTTP core ────────────────────────────────────────────────
+axum = "0.8"                        # 0.8.8 current (MSRV 1.78)
+axum-extra = { version = "0.10", features = ["typed-header", "query"] }
+axum-server = { version = "0.7", features = ["tls-rustls"] }   # graceful shutdown + TLS
+tower = { version = "0.5", features = ["util", "timeout", "limit", "load-shed"] }
+tower-http = { version = "0.6", features = [
+  "trace", "cors", "compression-full", "decompression-full", "timeout",
+  "limit", "request-id", "sensitive-headers", "catch-panic", "normalize-path", "set-header",
+] }
+hyper = { version = "1", features = ["http1", "http2", "server"] }
+hyper-util = { version = "0.1", features = ["tokio", "server-auto"] }
+http = "1"                          # StatusCode, HeaderMap, Method
+http-body = "1"
+http-body-util = "0.1"
+mime = "0.3"
+mime_guess = "2"
+headers = "0.4"
+bytes = "1"
+
+# ── Async runtime ─────────────────────────────────────────────────────────────
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "net", "time", "sync", "fs", "io-util"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+tokio-stream = "0.1"
+futures = "0.3"
+async-trait = "0.1"                 # still handy for dyn traits; native async-fn-in-trait since 1.75
+pin-project-lite = "0.2"
+
+# ── Authentication & authorization (do NOT hand-roll) ────────────────────────
+jsonwebtoken = "9"                  # 9.3.x  (JWT encode/decode/validate)
+oauth2 = "5"                        # OAuth2 client            (verify latest 5.x)
+openidconnect = "4"                 # OIDC / Keycloak          (verify latest 4.x)
+argon2 = "0.5"                      # password hashing (Argon2id)
+password-hash = "0.5"              # PHC string traits
+tower-sessions = "0.14"            # session middleware        (verify latest)
+axum-login = "0.17"               # authn/authz for axum      (verify latest)
+secrecy = "0.10"                   # wrap secrets, avoid logging
+zeroize = "1"
+# RBAC/ABAC policy engine for the Stage 2 access-control restoration (pick one at S2):
+casbin = "2"                        # RBAC/ABAC policy engine   (verify latest)
+cedar-policy = "4"                  # alternative policy engine (verify latest)
+
+# ── TLS / crypto foundations ─────────────────────────────────────────────────
+rustls = "0.23"
+tokio-rustls = "0.26"
+rustls-pemfile = "2"
+webpki-roots = "0.26"
+rand = "0.9"
+getrandom = "0.3"
+sha2 = "0.10"
+hmac = "0.12"
+blake3 = "1"
+
+# ── OpenAPI / Swagger (code-first) ───────────────────────────────────────────
+utoipa = { version = "5", features = ["axum_extras", "chrono", "uuid", "decimal"] }
+utoipa-axum = "5"                  # route-matched OpenAPI
+utoipa-swagger-ui = { version = "9", features = ["axum"] }   # 9.0.2; serves Swagger UI
+utoipa-redoc = { version = "5", features = ["axum"] }
+utoipa-scalar = { version = "5", features = ["axum"] }
+utoipa-rapidoc = { version = "5", features = ["axum"] }
+
+# ── Database & persistence ───────────────────────────────────────────────────
+sqlx = { version = "0.9", default-features = false, features = [
+  "runtime-tokio", "tls-rustls-aws-lc-rs", "postgres", "macros",
+  "migrate", "uuid", "json", "rust_decimal", "chrono",
+] }                                  # 0.9.x (MSRV 1.94). NOTE: sqlx has no jiff feature yet; map jiff<->db manually or via chrono bridge.
+sea-query = { version = "0.32", features = ["backend-postgres", "with-uuid", "with-json", "with-rust_decimal", "postgres-array"] }
+sea-query-binder = { version = "0.7", features = ["sqlx-postgres", "with-uuid", "with-json", "with-rust_decimal"] }
+deadpool-postgres = "0.14"         # optional pipelined hot-read path (verify latest)
+tokio-postgres = "0.7"            # paired with deadpool for pipelining
+
+# ── Serialization & data formats ─────────────────────────────────────────────
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+serde_with = "3"
+serde_path_to_error = "0.1"
+quick-xml = { version = "0.37", features = ["serialize"] }   # verify latest 0.3x
+base64 = "0.22"
+rust_decimal = { version = "1", features = ["serde-with-str"] }   # BigDecimal replacement (DV_QUANTITY)
+rust_decimal_macros = "1"
+ordered-float = "4"
+# canonical JSON (RFC 8785 JCS) for hashing/audit — small, pick one or hand-roll:
+serde_jcs = "0.1"                  # verify; otherwise implement ~150 LoC
+
+# ── Parsing (native ADL / cADL / ODIN / AQL) ─────────────────────────────────
+logos = "0.15"                      # DFA lexer
+chumsky = "0.10"                    # 0.10 usable stable (1.0 still alpha; repo now on Codeberg)
+winnow = "0.7"                      # alternative parser combinator
+regex = "1"
+fancy-regex = "0.14"               # backreferences for cADL where needed (verify)
+# parser diagnostics (great for ADL/AQL error reporting):
+ariadne = "0.5"                    # verify
+miette = { version = "7", features = ["fancy"] }
+
+# ── Identifiers, time, validation ────────────────────────────────────────────
+uuid = { version = "1", features = ["v4", "v7", "serde", "fast-rng"] }
+jiff = { version = "0.2", features = ["serde"] }   # 1.0 not yet out as of 2026-07; 0.2 is current
+garde = { version = "0.22", features = ["derive"] }   # verify latest
+url = "2"
+
+# ── Observability (opentelemetry set is lockstep: keep versions equal) ────────
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "registry"] }
+tracing-opentelemetry = "0.33"     # pairs with opentelemetry 0.31 line (verify matching set)
+opentelemetry = "0.31"
+opentelemetry_sdk = { version = "0.31", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.31", features = ["grpc-tonic"] }
+opentelemetry-semantic-conventions = "0.31"
+metrics = "0.24"
+metrics-exporter-prometheus = "0.16"   # verify latest
+axum-prometheus = "0.8"                # verify latest
+
+# ── Caching, rate limiting, resilience ───────────────────────────────────────
+moka = { version = "0.12", features = ["future"] }   # Caffeine equivalent (template/WebTemplate cache)
+quick_cache = "0.6"
+tower_governor = "0.4"             # rate limiting for axum (verify latest)
+governor = "0.6"                  # underlying limiter (verify latest)
+backon = "1"                      # retry/backoff (backoff crate is deprecated)
+
+# ── Errors & utilities ───────────────────────────────────────────────────────
+thiserror = "2"                    # v2 current
+anyhow = "1"                       # binaries only
+config = "0.14"                   # or figment
+figment = { version = "0.10", features = ["toml", "env"] }
+dotenvy = "0.15"
+clap = { version = "4", features = ["derive", "env"] }
+parking_lot = "0.12"
+dashmap = "6"
+arc-swap = "1"
+indexmap = { version = "2", features = ["serde"] }
+smallvec = { version = "1", features = ["serde"] }
+itertools = "0.14"
+bitflags = "2"
+# once_cell no longer needed for statics on edition 2024: use std::sync::LazyLock.
+
+# ── HTTP client & external integration ───────────────────────────────────────
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "gzip", "brotli"] }
+jsonschema = "0.26"               # validate against openEHR ITS-JSON schemas (verify latest)
+
+# ── Dev / test (dev-dependencies at the crate level) ─────────────────────────
+insta = { version = "1", features = ["json", "redactions", "filters"] }
+proptest = "1"
+rstest = "0.23"                   # verify latest
+wiremock = "0.6"
+mockall = "0.13"                  # verify latest
+fake = "3"                        # verify latest
+assert_cmd = "2"
+assert_fs = "1"
+testcontainers = "0.24"           # real PostgreSQL 18 in tests (verify latest)
+testcontainers-modules = { version = "0.12", features = ["postgres"] }   # verify latest
+criterion = { version = "0.5", features = ["html_reports"] }
+divan = "0.1"
+
+# Cargo plugins used in CI (installed, not dependencies):
+#   cargo-nextest, cargo-audit, cargo-deny, cargo-machete, cargo-hakari,
+#   cargo-llvm-cov, sccache ; linker: mold (Linux).
+#
+# Toolchain: Rust stable 1.96 (1.96.1 current), edition 2024.
+# Database: PostgreSQL 18 (target 18.3+; 18.x is the current stable line; PG 19 in beta — do not target).
