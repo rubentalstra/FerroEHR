@@ -1,4 +1,4 @@
-//! EHRbase server binary — port target of the `application` Maven module
+//! `EHRbase` server binary — port target of the `application` Maven module
 //! (Spring Boot entry point) plus service layer, AQL engine, rm-db-format,
 //! configuration, plugin SPI, and CLI.
 
