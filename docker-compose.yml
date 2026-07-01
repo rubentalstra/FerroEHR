@@ -1,0 +1,72 @@
+#
+# Minimal setup for a running EHRbase. Contains the server component as well as the required postgres instance.
+#
+services:
+
+  #
+  # EHRBase container. see `.env.ehrbase` for configuration details.
+  #
+  ehrbase:
+    image: ${EHRBASE_IMAGE:-ehrbase/ehrbase:next}
+    env_file:
+      - .env.ehrbase
+    environment:
+      DB_URL: jdbc:postgresql://ehrdb:5432/ehrbase
+      DB_USER_ADMIN: ehrbase
+      DB_PASS_ADMIN: ehrbase
+      DB_USER: ehrbase_restricted
+      DB_PASS: ehrbase_restricted
+    links:
+      - ehrdb
+      - keycloak
+    depends_on:
+      ehrdb:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    networks:
+      - ehrbase-net
+
+  #
+  # Pre-configured ehrbase postgres.
+  #
+  ehrdb:
+    image: ${EHRBASE_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      EHRBASE_USER_ADMIN: ehrbase
+      EHRBASE_PASSWORD_ADMIN: ehrbase
+      EHRBASE_USER: ehrbase_restricted
+      EHRBASE_PASSWORD: ehrbase_restricted
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "5432:5432"
+    networks:
+      - ehrbase-net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    #image: registry.vitasystems.dev/docker-registry/keycloak-x:0.9.9
+    container_name: keycloak
+    command: "start-dev --import-realm"
+    ports:
+      - "8081:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_HTTP_PORT: 8080
+    volumes:
+      - ./tests/keycloak/import:/opt/keycloak/data/import
+    networks:
+      - ehrbase-net
+
+networks:
+  ehrbase-net: { }

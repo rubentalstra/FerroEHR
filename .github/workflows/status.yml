@@ -1,0 +1,26 @@
+# Adds the results of a workflow as a commit status
+name: "Set Github Status"
+
+# we have multiple workflows - this helps to distinguish for them
+run-name: "${{ github.event.pull_request.title && github.event.pull_request.title || github.ref_name }} - Set Github Status"
+
+on:
+  workflow_run:
+    workflows: ["Build & Test"]
+    types:
+      - completed
+
+jobs:
+  set_status:
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Create status
+        run: |
+         gh api repos/${{ github.repository }}/statuses/${{ github.event.workflow_run.head_commit.id }} \
+          -f "state"="${{ github.event.workflow_run.conclusion }}" \
+          -f "context"="${{ github.event.workflow_run.event }}.${{ github.event.workflow_run.id}}"\
+          -f "target_url"="${{ github.event.workflow_run.html_url }}"
+        env:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
