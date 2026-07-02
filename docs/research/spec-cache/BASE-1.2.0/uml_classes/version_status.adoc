@@ -1,0 +1,34 @@
+=== VERSION_STATUS Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*VERSION_STATUS*
+
+h|*Description*
+2+a|Status of a versioned artefact, as one of a number of possible values: uncontrolled, prerelease, release, build.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|alpha
+a|Value representing a version which is 'unstable', i.e. contains an unknown size of change with respect to its base version. Rendered with the build number as a string in the form `N.M.P-alpha.B` e.g. `2.0.1-alpha.154`.
+
+h|
+|beta
+a|Value representing a version which is 'beta', i.e. contains an unknown but reducing size of change with respect to its base version. Rendered with the build number as a string in the form `N.M.P-beta.B` e.g. `2.0.1-beta.154`.
+
+h|
+|release_candidate
+a|Value representing a version which is 'release candidate', i.e. contains only patch-level changes on the base version. Rendered as a string as `N.M.P-rc.B` e.g. `2.0.1-rc.27`.
+
+h|
+|released
+a|Value representing a version which is 'released', i.e. is the definitive base version. `N.M.P` e.g. `2.0.1`.
+
+h|
+|build
+a|Value representing a version which is a build of the current base release. Rendered with the build number as a string in the form `N.M.P+B` e.g. `2.0.1+33`.
+|===

@@ -1,0 +1,29 @@
+=== Hash Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Hash<K,V>*
+
+h|*Description*
+2+a|Type representing a keyed table of values. V is the value type, and K the type of the keys.
+
+h|*Inherit*
+2+|`<<_container_class,Container>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_key* ( +
+a_key: `K[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Test for presence of `_a_key_`.
+
+h|*1..1*
+|*item* __alias__ "[]" ( +
+a_key: `K[1]` +
+): `V`
+a|Return item for key `_a_key_`.
+|===

@@ -1,0 +1,11 @@
+=== TUPLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*TUPLE*
+
+h|*Description*
+2+a|Parent type of all TUPLE types.
+
+|===

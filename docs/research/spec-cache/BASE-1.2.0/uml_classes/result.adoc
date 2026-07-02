@@ -1,0 +1,11 @@
+=== RESULT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*RESULT*
+
+h|*Description*
+2+a|
+
+|===
