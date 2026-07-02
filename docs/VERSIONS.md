@@ -24,7 +24,7 @@ for standalone publication may relax to 1.94/1.95 at that time.
 
 | Item | Pin |
 |---|---|
-| PostgreSQL | 18, target 18.3 or newer |
+| PostgreSQL | 18, target 18.4 or newer (CI runs `postgres:18.4`) |
 | Required extensions | `uuid-ossp`, `pgcrypto`, `pg_trgm` |
 
 PostgreSQL is the only component in the stack with a meaningful version delta

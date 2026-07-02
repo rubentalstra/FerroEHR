@@ -90,14 +90,14 @@ jobs:
           components: clippy
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-  # ── Advisory until P17: build + tests against PostgreSQL 18 ──────────────────
+  # ── Advisory until P17: build + tests against PostgreSQL 18.4 ────────────────
   test:
     name: build & test (pg18)
     runs-on: ubuntu-latest
     continue-on-error: ${{ vars.PORT_STRICT != 'true' }}
     services:
       postgres:
-        image: postgres:18
+        image: postgres:18.4
         env:
           POSTGRES_USER: openehr
           POSTGRES_PASSWORD: openehr
@@ -131,7 +131,7 @@ jobs:
     continue-on-error: ${{ vars.PORT_STRICT != 'true' }}
     services:
       postgres:
-        image: postgres:18
+        image: postgres:18.4
         env:
           POSTGRES_USER: openehr
           POSTGRES_PASSWORD: openehr

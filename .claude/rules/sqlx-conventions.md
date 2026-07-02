@@ -7,7 +7,7 @@ paths: ["crates/openehr-server/**"]
 `openehr-server` is the only crate that talks to PostgreSQL. It replaces
 EHRbase's jOOQ + Flyway persistence layer with `sqlx` 0.9 (driver, pool,
 migrations) and `sea-query` 0.32 + `sea-query-binder` 0.7 (the jOOQ-DSL
-analogue for the AQL→SQL engine). Target PostgreSQL 18.3+.
+analogue for the AQL→SQL engine). Target PostgreSQL 18.4+.
 
 ## Migrations
 

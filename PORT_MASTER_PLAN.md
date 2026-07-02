@@ -59,7 +59,7 @@ Pin these exactly. Record them in `rust-toolchain.toml`, `Cargo.toml`, CI, and `
 - **Edition 2024** (stabilized in Rust 1.85, the correct default for a new project).
 
 ### Database
-- **PostgreSQL 18.3 or newer.** This resolves the "old v16 vs v18" question: PostgreSQL is the only component in the stack with a meaningful 16→18 delta. EHRbase v2 recommends PG 16; we target PG 18 for asynchronous I/O, native `uuidv7()`, B-tree skip scan, temporal PRIMARY KEY/UNIQUE/FOREIGN KEY, RETURNING OLD/NEW, self-join elimination, OR-to-array planning, and (from PG 17) `JSON_TABLE()`. Required extensions: `uuid-ossp`, `pgcrypto`, `pg_trgm`.
+- **PostgreSQL 18.4 or newer.** This resolves the "old v16 vs v18" question: PostgreSQL is the only component in the stack with a meaningful 16→18 delta. EHRbase v2 recommends PG 16; we target PG 18 for asynchronous I/O, native `uuidv7()`, B-tree skip scan, temporal PRIMARY KEY/UNIQUE/FOREIGN KEY, RETURNING OLD/NEW, self-join elimination, OR-to-array planning, and (from PG 17) `JSON_TABLE()`. Required extensions: `uuid-ossp`, `pgcrypto`, `pg_trgm`.
 - Note: managed providers may lag on `io_uring`; still target PG 18 and let the AIO benefit follow.
 
 ### openEHR specification matrix (transcription targets)
