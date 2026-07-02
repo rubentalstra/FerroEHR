@@ -9,15 +9,35 @@
 //!
 //! Lexical form (Syntaxes, BASE 1.2.0 identification package):
 //! `internet_id = subdomain ; subdomain = label | subdomain, '.', label ;`
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+
 use super::uid::{Uid, UidApi, UidData};
 
 /// `INTERNET_ID` declares no attributes or functions of its own beyond
 /// those inherited from `UID`, so it embeds `UidData` verbatim (ADR-001
 /// §3).
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `uid` field folds `UidData`'s single
+/// `value` attribute directly into this struct's JSON object, matching the
+/// same convention used on `IsoOid`/`Uuid` in this package, so an
+/// `InternetId` serializes as the canonical `{"_type": "INTERNET_ID",
+/// "value": "..."}` UID shape (ADR-002 self-tag).
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct InternetId {
+    /// Canonical `_type` discriminator (`"INTERNET_ID"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `UID` state (the single `value` attribute).
+    #[serde(flatten)]
     pub uid: UidData,
+}
+
+impl TypeName for InternetId {
+    const NAME: &'static str = "INTERNET_ID";
 }
 
 impl InternetId {
@@ -47,5 +67,5 @@ impl From<InternetId> for Uid {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / internet_id.adoc §INTERNET_ID Class
 //   confidence: high
 //   todos: 0
-//   note: pure UID subtype with no added attributes/functions; RFC 1034/1035/1123 domain-label validation not yet enforced.
+//   note: pure UID subtype with no added attributes/functions; RFC 1034/1035/1123 domain-label validation not yet enforced. P4/ADR-002: self-tags via TypeTag<Self> first field (no prior TYPE_NAME const existed in this file; NAME taken from the ITS-JSON schema string "INTERNET_ID").
 // ─────────────────────────────────────────────

@@ -36,6 +36,7 @@
 //! the "one enum variant per concrete class" rule (ADR-001 §4) rather than
 //! one variant per every ancestor in the chain.
 use crate::common::archetyped::locatable::LocatableData; // TODO(port): forward-reference; not yet transcribed. Path matches the sibling ehr_status.rs/ehr_access.rs convention.
+use serde::{Deserialize, Serialize};
 
 /// Embedded attribute state of the abstract `CONTENT_ITEM` class.
 ///
@@ -43,9 +44,14 @@ use crate::common::archetyped::locatable::LocatableData; // TODO(port): forward-
 /// composition. `CONTENT_ITEM` itself declares no attribute beyond the
 /// inherited `LOCATABLE` state, so this struct is a thin, single-field
 /// wrapper rather than adding fields of its own.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// TODO(port): P4 — `#[serde(flatten)]` below requires `LocatableData` to
+/// itself derive `Serialize`/`Deserialize`; that is a sibling P4 wave over
+/// `common/`, not yet landed.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ContentItemData {
     /// Embedded `LOCATABLE` state.
+    #[serde(flatten)]
     pub locatable: LocatableData,
 }
 
@@ -54,7 +60,15 @@ pub struct ContentItemData {
 ///
 /// See the module-level doc comment for the enum-boundary rationale
 /// (ADR-001 §4) and why `ENTRY`/`CARE_ENTRY` do not get their own variants.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// PORT NOTE: `#[serde(untagged)]` per ADR-002 — dispatch is driven by each
+/// variant payload's own `TypeTag<Self>` field (whose `Deserialize` fails
+/// on a mismatched `_type` string), so serde's variant probing selects
+/// exactly the variant whose class name matches. The former
+/// `#[serde(tag = "_type")]` + per-variant renames would duplicate the
+/// payloads' own `_type` keys on serialization and are removed.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ContentItem {
     /// `SECTION`.
     Section(super::section::Section),
@@ -106,6 +120,6 @@ impl ContentItem {
 //   source: RM 1.1.0 ehr.composition — docs/research/spec-cache/RM-1.1.0/uml_classes/content_item.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-content_package.adoc §Class Descriptions / content_item.adoc §CONTENT_ITEM Class
 //   confidence: medium
-//   todos: 3
-//   note: closed enum per ADR-001 §4 covering Section + the four concrete CARE_ENTRY leaves + AdminEntry + the forward-referenced GenericEntry (rm.integration sibling cluster, not yet on disk); ENTRY/CARE_ENTRY deliberately excluded as variants since both are abstract; content_item_data() accessor chain stubbed pending LOCATABLE.
+//   todos: 4
+//   note: closed enum per ADR-001 §4 covering Section + the four concrete CARE_ENTRY leaves + AdminEntry + the forward-referenced GenericEntry (rm.integration sibling cluster, not yet on disk); ENTRY/CARE_ENTRY deliberately excluded as variants since both are abstract; content_item_data() accessor chain stubbed pending LOCATABLE. P4/ADR-002: enum is #[serde(untagged)] (dispatch via each payload's own TypeTag; former tag = "_type" + per-variant renames removed); ContentItemData stays untagged (abstract layer); every concrete variant struct self-tags in its own file (this same batch).
 // ─────────────────────────────────────────────

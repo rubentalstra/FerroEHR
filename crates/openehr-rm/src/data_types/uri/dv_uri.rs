@@ -11,9 +11,11 @@
 //! in e.g. REST APIs or other contexts relying on machine-level
 //! conformance.
 use crate::data_types::data_value::DataValueApi;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into its [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "DV_URI";
 
 /// Shared attribute state of `DV_URI` and its descendant `DV_EHR_URI`.
@@ -31,7 +33,7 @@ pub const TYPE_NAME: &str = "DV_URI";
 /// no RM attribute in this cluster declared bare `DV_URI` that must accept
 /// either form interchangeably, unlike `DV_TEXT`'s `DV_PARAGRAPH.items`
 /// case).
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DvUriData {
     /// `value`: `String` (`1..1`).
     ///
@@ -117,10 +119,26 @@ impl DvUriData {
 
 /// `DV_URI` — a leaf, non-abstract class holding exactly the shared
 /// [`DvUriData`] state, with no attributes of its own beyond it.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DvUri {
+    /// Canonical `_type` discriminator (`"DV_URI"`), always serialized
+    /// first (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `DV_URI` state (the single `value` attribute).
+    ///
+    /// `#[serde(flatten)]` per ADR-001 §3 — `DvUriData`'s single `value`
+    /// field appears directly on the `DV_URI` JSON object, not nested under
+    /// a `"uri"` key. `DvUriData` carries no tag of its own (ADR-002 §3:
+    /// embedded `*Data` structs are untagged), so this flatten cannot
+    /// collide with the `type_tag` above.
+    #[serde(flatten)]
     pub uri: DvUriData,
+}
+
+impl TypeName for DvUri {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvUri {
@@ -157,5 +175,5 @@ impl DataValueApi for DvUri {
 //   source_loc: master10-uri_package.adoc §Class Descriptions / dv_uri.adoc §DV_URI Class
 //   confidence: medium
 //   todos: 6
-//   note: DvUriData embedded struct pattern mirrors DvTextData (single attribute, one concrete descendant); scheme/path/fragment_id/query all left as todo!() pending an RFC-3986 parser dependency decision (no such dependency exists in openehr-rm yet, and none was authorized for this transcription pass); Value_valid invariant mentioned on both the field doc and the invariant method doc.
+//   note: DvUriData embedded struct pattern mirrors DvTextData (single attribute, one concrete descendant); scheme/path/fragment_id/query all left as todo!() pending an RFC-3986 parser dependency decision (no such dependency exists in openehr-rm yet, and none was authorized for this transcription pass); Value_valid invariant mentioned on both the field doc and the invariant method doc. P4/ADR-002: DvUri self-tags via TypeTag<Self> first field + TypeName ("DV_URI"), inert struct-level #[serde(rename)] deleted; DvUriData stays untagged (embedded *Data struct, flattened here and in DvEhrUri).
 // ─────────────────────────────────────────────

@@ -14,23 +14,32 @@
 //! terms.
 use crate::data_types::encapsulated::dv_parsable::DvParsable; // TODO(port): forward-reference; not yet transcribed.
 use crate::data_types::text::dv_text::DvText; // TODO(port): forward-reference; not yet transcribed.
+use serde::{Deserialize, Serialize};
 
 // TODO(port): forward-reference — `DV_DATE_TIME` lives in
 // rm.data_types.date_time (PORT_MASTER_PLAN.md §7.1), not yet transcribed.
 use crate::data_types::date_time::dv_date_time::DvDateTime;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form.
+/// form. Single-sourced into the `TypeName` impl below (ADR-002).
 pub const TYPE_NAME: &str = "INSTRUCTION";
 
 /// `INSTRUCTION` — Entry type used to specify actions in the future.
 ///
 /// `INSTRUCTION` inherits `CARE_ENTRY`, so it embeds
-/// [`super::care_entry::CareEntryData`].
-#[derive(Debug, Clone, PartialEq)]
+/// [`super::care_entry::CareEntryData`]. `#[serde(flatten)]` folds
+/// `CareEntryData` into `INSTRUCTION`'s own JSON object.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Instruction {
+    /// Canonical `_type` discriminator (`"INSTRUCTION"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `CARE_ENTRY` (in turn `ENTRY`/`CONTENT_ITEM`/`LOCATABLE`)
     /// state.
+    #[serde(flatten)]
     pub care_entry: super::care_entry::CareEntryData,
 
     /// `narrative`: mandatory human-readable version of what the
@@ -41,10 +50,12 @@ pub struct Instruction {
     /// when an Instruction can be assumed to have expired. This helps
     /// prevent false listing of Instructions as Active when they clearly
     /// must have been terminated in some way or other.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub expiry_time: Option<DvDateTime>,
 
     /// `wf_definition`: optional workflow engine executable expression of
     /// the Instruction.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub wf_definition: Option<DvParsable>,
 
     /// `activities`: list of all activities in Instruction.
@@ -54,7 +65,12 @@ pub struct Instruction {
     ///
     /// TODO(port): invariant not yet enforced by a constructor/`Validate`
     /// impl.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub activities: Option<Vec<super::activity::Activity>>,
+}
+
+impl TypeName for Instruction {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl super::entry::EntryApi for Instruction {
@@ -75,5 +91,5 @@ impl super::care_entry::CareEntryApi for Instruction {
 //   source_loc: master08-entry_package.adoc §Class Descriptions / instruction.adoc §INSTRUCTION Class
 //   confidence: high
 //   todos: 4
-//   note: concrete leaf embedding CareEntryData; activities is Vec<Activity> not boxed (ACTIVITY is not itself recursive through INSTRUCTION); Activities_valid invariant left unimplemented; 3 of the 4 markers are forward-reference import comments (DvParsable, DvText, DvDateTime).
+//   note: concrete leaf embedding CareEntryData; activities is Vec<Activity> not boxed (ACTIVITY is not itself recursive through INSTRUCTION); Activities_valid invariant left unimplemented; 3 of the 4 markers are forward-reference import comments (DvParsable, DvText, DvDateTime). P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl (no-op struct-level rename removed); flatten kept on care_entry, Option fields skip-if-none.
 // ─────────────────────────────────────────────

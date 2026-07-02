@@ -1,0 +1,26 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "X_VERSIONED_EHR_STATUS",
+  "uid": {
+    "_type": "HIER_OBJECT_ID",
+    "value": "e83f586b-6889-42b2-85ac-e9d89607dff9"
+  },
+  "owner_id": {
+    "_type": "OBJECT_REF",
+    "namespace": "local",
+    "type": "EHR",
+    "id": {
+      "_type": "HIER_OBJECT_ID",
+      "value": "c7a4f272-bf28-4145-9da5-a2e7e6c7d9fe"
+    }
+  },
+  "time_created": {
+    "_type": "DV_DATE_TIME",
+    "value": "2026-07-02T10:00:00Z"
+  },
+  "total_version_count": 1,
+  "extract_version_count": 1
+}

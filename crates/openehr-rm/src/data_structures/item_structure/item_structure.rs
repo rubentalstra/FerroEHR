@@ -12,6 +12,7 @@ use super::item_single::ItemSingle;
 use super::item_table::ItemTable;
 use super::item_tree::ItemTree;
 use crate::data_structures::representation::item::Item;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `ITEM_STRUCTURE` and its descendants.
 ///
@@ -23,9 +24,10 @@ use crate::data_structures::representation::item::Item;
 /// hold one common field rather than re-embedding `DataStructureData`
 /// (and transitively `LocatableData`) directly, and so a future
 /// `ITEM_STRUCTURE`-level attribute has one place to land.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ItemStructureData {
     /// Inherited `DATA_STRUCTURE` (and transitively `LOCATABLE`) state.
+    #[serde(flatten)]
     pub data_structure: DataStructureData,
 }
 
@@ -38,7 +40,20 @@ pub struct ItemStructureData {
 /// into this closed `enum` so a field, return type, or generic bound target
 /// can be declared `ItemStructure` exactly where the spec declares it
 /// `ITEM_STRUCTURE`.
-#[derive(Debug, Clone, PartialEq)]
+// PORT NOTE: `#[serde(untagged)]` per ADR-002 — dispatch is driven by each
+// variant payload's own `TypeTag` (`ItemSingle`/`ItemList`/`ItemTable`/
+// `ItemTree` self-tag with `_type`), whose `Deserialize` fails on a
+// mismatched `_type` string, so untagged probing is tag-driven rather than
+// structure-driven. A struct-level `#[serde(tag = "_type")]` here would
+// duplicate the payloads' own `_type` keys on the wire. `Single` (the only
+// variant with a required own attribute, `item`) stays first; `List`/
+// `Table`/`Tree` carry only optional own attributes, so tag-less input is
+// structurally ambiguous among them — harmless, since ITS-JSON requires
+// `_type` in abstract-declared slots such as this enum's use sites
+// (`HISTORY.summary`, `EVENT.state`), and all tagged input dispatches by
+// tag regardless of order.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ItemStructure {
     /// `ITEM_SINGLE`.
     Single(ItemSingle),
@@ -92,5 +107,5 @@ pub const TYPE_NAME: &str = "ITEM_STRUCTURE";
 //   source_loc: master04-item_structure_package.adoc §Class Descriptions / item_structure.adoc §ITEM_STRUCTURE Class
 //   confidence: medium
 //   todos: 0
-//   note: `impl DataStructureBehaviour for ItemStructure::as_hierarchy` dispatches to each concrete type's narrowed inherent as_hierarchy() and widens the result into Item via a `From` conversion each concrete type is expected to provide (Element -> Item, Cluster -> Item) — those From impls are declared where Item is transcribed (representation/item.rs) as ordinary enum-variant constructors, not written here.
+//   note: `impl DataStructureBehaviour for ItemStructure::as_hierarchy` dispatches to each concrete type's narrowed inherent as_hierarchy() and widens the result into Item via a `From` conversion each concrete type is expected to provide (Element -> Item, Cluster -> Item) — those From impls are declared where Item is transcribed (representation/item.rs) as ordinary enum-variant constructors, not written here. P4/ADR-002: ItemStructure enum is #[serde(untagged)] — dispatch via the payload TypeTags on the four concretes; ItemStructureData stays untagged (abstract).
 // ─────────────────────────────────────────────

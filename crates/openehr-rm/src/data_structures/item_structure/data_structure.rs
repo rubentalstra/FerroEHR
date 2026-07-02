@@ -15,6 +15,7 @@ use crate::data_structures::representation::item::Item;
 // sibling RM package transcribed concurrently). See `representation/item.rs`
 // for the identical forward-reference rationale.
 use crate::common::archetyped::locatable::LocatableData;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `DATA_STRUCTURE` and its descendants.
 ///
@@ -25,11 +26,12 @@ use crate::common::archetyped::locatable::LocatableData;
 /// (`item_structure/`) and the `HISTORY<T>` class (`history/history.rs`)
 /// — the two direct descendants of `DATA_STRUCTURE` — have a common,
 /// stable embedding point.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataStructureData {
     /// Inherited `LOCATABLE` state.
     ///
     /// TODO(port): forward reference; see `representation/item.rs`.
+    #[serde(flatten)]
     pub locatable: LocatableData,
 }
 

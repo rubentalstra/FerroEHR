@@ -1,0 +1,37 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "EXTRACT_ACTION_REQUEST",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "extract action"
+  },
+  "archetype_node_id": "openEHR-EHR-EXTRACT_ACTION_REQUEST.sample.v1",
+  "uid": {
+    "_type": "HIER_OBJECT_ID",
+    "value": "28f3f09b-c810-4aec-b778-3b9d83918d01"
+  },
+  "request_id": {
+    "_type": "OBJECT_REF",
+    "namespace": "local",
+    "type": "EXTRACT_REQUEST",
+    "id": {
+      "_type": "HIER_OBJECT_ID",
+      "value": "request-1"
+    }
+  },
+  "action": {
+    "_type": "DV_CODED_TEXT",
+    "value": "cancel",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "cancel"
+    }
+  }
+}

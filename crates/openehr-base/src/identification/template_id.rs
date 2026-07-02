@@ -5,11 +5,14 @@
 //!
 //! Identifier for templates. Lexical form to be determined (the spec
 //! explicitly leaves this open at BASE 1.2.0).
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+
 use super::object_id::{ObjectId, ObjectIdApi, ObjectIdData};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. P4/ADR-002 update: single-sources the string carried by the
+/// struct's own self-tagging `type_tag` field below (via the [`TypeName`]
+/// impl) — see `archetype_id::TYPE_NAME`.
 pub const TYPE_NAME: &str = "TEMPLATE_ID";
 
 /// `TEMPLATE_ID` declares no attribute or function of its own beyond those
@@ -22,11 +25,27 @@ pub const TYPE_NAME: &str = "TEMPLATE_ID";
 /// and no parsing functions of its own. Transcribed as a bare wrapper over
 /// `value: String` with no derived accessors beyond the raw value, since
 /// the spec genuinely does not define more.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `object_id` field folds
+/// `ObjectIdData`'s single `value` attribute directly into this struct's
+/// JSON object.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct TemplateId {
+    /// Canonical `_type` discriminator (`"TEMPLATE_ID"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `OBJECT_ID` state (the single `value` attribute); lexical
     /// form left open by the specification.
+    #[serde(flatten)]
     pub object_id: ObjectIdData,
+}
+
+impl TypeName for TemplateId {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl TemplateId {
@@ -55,5 +74,5 @@ impl From<TemplateId> for ObjectId {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / template_id.adoc §TEMPLATE_ID Class
 //   confidence: high
 //   todos: 0
-//   note: spec itself states lexical form is undetermined at this release; no parsing functions to transcribe beyond the bare value attribute.
+//   note: spec itself states lexical form is undetermined at this release; no parsing functions to transcribe beyond the bare value attribute. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted; the earlier "no wire path emits _type" TODO is resolved by the self-tag.
 // ─────────────────────────────────────────────

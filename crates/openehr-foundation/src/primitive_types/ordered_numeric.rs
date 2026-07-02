@@ -12,7 +12,7 @@ use super::numeric::Numeric;
 use super::ordered::Ordered;
 
 /// `Ordered_Numeric` is the multiple-inheritance case named explicitly in
-/// PORT_MASTER_PLAN.md Section 7.2 and `.claude/rules/rm-transcription.md`:
+/// `PORT_MASTER_PLAN.md` Section 7.2 and `.claude/rules/rm-transcription.md`:
 /// modelled as a Rust supertrait composition (`Ordered + Numeric`) rather
 /// than a struct, since the spec class itself declares no attributes and no
 /// functions — it exists purely to name the combined capability.

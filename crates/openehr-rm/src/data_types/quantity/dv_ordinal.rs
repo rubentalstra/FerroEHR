@@ -40,17 +40,24 @@ use crate::data_types::text::dv_coded_text::DvCodedText;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::integer::Integer;
 use openehr_foundation::primitive_types::ordered::Ordered;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (serde derives wait until P4 per ADR-001 "Refinements").
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "DV_ORDINAL";
 
 /// `DV_ORDINAL` inherits `DV_ORDERED` and adds two attributes of its own
 /// (`symbol`, `value`). Per ADR-001 §3, the parent's shared state is
 /// embedded as `ordered: DvOrderedData<Self>` (the F-bounded self-typed
 /// instantiation described in `dv_ordered.rs`) rather than duplicated flat.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvOrdinal {
+    /// Canonical `_type` discriminator (`"DV_ORDINAL"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `DV_ORDERED` parent state, self-typed per the F-bounded
     /// pattern documented on `DvOrderedData` in `dv_ordered.rs`.
     ///
@@ -58,6 +65,7 @@ pub struct DvOrdinal {
     /// `normal_range`/`other_reference_ranges`, but the F-bounded
     /// instantiation resolves identically whether or not a `(redefined)`
     /// row is present, since `Self` already names the concrete type.
+    #[serde(flatten)]
     pub ordered: DvOrderedData<DvOrdinal>,
 
     /// `symbol`: `DV_CODED_TEXT` (1..1).
@@ -72,7 +80,17 @@ pub struct DvOrdinal {
     ///
     /// Value in ordered enumeration of values. Any integer value can be
     /// used.
+    ///
+    /// PORT NOTE: the previously-flagged cross-crate gap is closed —
+    /// `Integer` now derives `Serialize`/`Deserialize` in
+    /// `openehr-foundation`, serializing as its bare inner `i32`.
     pub value: Integer,
+}
+
+/// ADR-002: `_type` string for `DV_ORDINAL`, single-sourced from
+/// [`TYPE_NAME`].
+impl TypeName for DvOrdinal {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvOrdinal {
@@ -146,5 +164,5 @@ impl DvOrderedApi for DvOrdinal {
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_ordinal.adoc §DV_ORDINAL Class
 //   confidence: medium
 //   todos: 3
-//   note: is_strictly_comparable_to has no explicit spec body at this level (unlike DV_QUANTITY/DV_COUNT), stubbed todo!() rather than guessed; less_than compares value: Integer directly as the natural reading, though not itself drawn from an explicit Post_result; forward-references CODE_PHRASE/DV_CODED_TEXT pending sibling data_types::text package.
+//   note: is_strictly_comparable_to has no explicit spec body at this level (unlike DV_QUANTITY/DV_COUNT), stubbed todo!() rather than guessed; less_than compares value: Integer directly as the natural reading, though not itself drawn from an explicit Post_result; forward-references CODE_PHRASE/DV_CODED_TEXT pending sibling data_types::text package. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `ordered` flattened (schema-verified — normal_status/normal_range/other_reference_ranges sit flat alongside value/symbol); Integer-lacks-serde gap now closed in openehr-foundation.
 // ─────────────────────────────────────────────

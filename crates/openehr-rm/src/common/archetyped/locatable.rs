@@ -47,16 +47,19 @@ use super::pathable::PathableApi;
 // sibling agent in this same phase but not yet landed in this worktree.
 // Forward-reference to its eventual module path.
 use crate::data_types::text::dv_text::DvText;
+use serde::{Deserialize, Serialize};
 
 // TODO(port): `UID_BASED_ID` is BASE 1.2.0 `base_types.identification`,
 // already transcribed (see `openehr_base::identification::uid_based_id`).
 // Imported directly since `openehr-rm` depends on `openehr-base`.
 use openehr_base::identification::uid_based_id::UidBasedId;
 
-/// Canonical `_type` discriminator is not applicable to `LOCATABLE`
-/// itself — it is abstract and never serialized as a standalone value; see
-/// ADR-001 refinements ("serde derives wait until P4"; abstract classes
-/// carry no `TYPE_NAME` of their own, only their concrete descendants do).
+// Canonical `_type` discriminator is not applicable to `LOCATABLE`
+// itself — it is abstract and never serialized as a standalone value; per
+// ADR-002, abstract classes and embedded `*Data` structs carry no
+// `TypeTag`/`TypeName` of their own (the pinned ITS-JSON schema defines no
+// entry for abstract classes). Every concrete descendant self-tags and
+// `#[serde(flatten)]`s this struct, so `LocatableData` must stay untagged.
 
 /// Shared attribute state of `LOCATABLE` and every RM class that inherits
 /// it (directly, or — far more commonly — via one of the intermediate
@@ -66,7 +69,7 @@ use openehr_base::identification::uid_based_id::UidBasedId;
 /// struct as a field rather than duplicating its six attributes, and
 /// implements [`LocatableApi`] by delegating to the embedded field's
 /// accessors.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocatableData {
     /// `name`: `DV_TEXT`, cardinality `1..1`.
     ///
@@ -101,6 +104,7 @@ pub struct LocatableData {
     ///
     /// Optional globally unique object identifier for root points of
     /// archetyped structures.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uid: Option<UidBasedId>,
 
     /// `links`: `List<LINK>`, cardinality `0..1`.
@@ -119,6 +123,7 @@ pub struct LocatableData {
     ///
     /// TODO(port): invariant not yet enforced by a constructor/`Validate`
     /// impl.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<Vec<Link>>,
 
     /// `archetype_details`: `ARCHETYPED`, cardinality `0..1`.
@@ -131,6 +136,7 @@ pub struct LocatableData {
     ///
     /// TODO(port): invariant not yet enforced by a constructor/`Validate`
     /// impl.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub archetype_details: Option<Archetyped>,
 
     /// `feeder_audit`: `FEEDER_AUDIT`, cardinality `0..1`.
@@ -138,6 +144,7 @@ pub struct LocatableData {
     /// Audit trail from non-openEHR system of original commit of
     /// information forming the content of this node, or from a conversion
     /// gateway which has synthesised this node.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub feeder_audit: Option<FeederAudit>,
 
     /// Non-owning back-reference to this node's parent in the
@@ -157,7 +164,24 @@ pub struct LocatableData {
     /// object here lets a `LOCATABLE`-aware caller call `LocatableApi`
     /// methods on the parent without a downcast — while `PathableApi`
     /// methods remain available too since `LocatableApi: PathableApi`.
+    #[serde(skip)]
     pub parent: Option<Weak<dyn LocatableApi>>,
+}
+
+/// Equality over the six spec attributes only. `parent` is excluded: it is
+/// a non-spec back-reference (see its PORT NOTE), `Weak<dyn ..>` has no
+/// meaningful structural equality, and canonical-JSON round-trips (which
+/// never carry parent pointers) must compare equal to their source.
+/// PORT NOTE: manual impl because `Weak` cannot derive `PartialEq`.
+impl PartialEq for LocatableData {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.archetype_node_id == other.archetype_node_id
+            && self.uid == other.uid
+            && self.links == other.links
+            && self.archetype_details == other.archetype_details
+            && self.feeder_audit == other.feeder_audit
+    }
 }
 
 /// Behaviour trait for `LOCATABLE` and every RM class that inherits it.

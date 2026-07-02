@@ -1,0 +1,23 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "EVENT_CONTEXT",
+  "start_time": {
+    "_type": "DV_DATE_TIME",
+    "value": "2026-07-02T09:30:00Z"
+  },
+  "setting": {
+    "_type": "DV_CODED_TEXT",
+    "value": "primary medical care",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "228"
+    }
+  }
+}

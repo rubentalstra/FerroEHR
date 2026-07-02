@@ -24,6 +24,7 @@
 /// to `TimeDefinitions::*` from the `Iso8601Type` family rather than as a
 /// second Rust supertrait bound. See the multiple-inheritance PORT NOTE on
 /// `Iso8601Type` in `iso8601_type.rs` for the full reasoning.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TimeDefinitions;
 
 impl TimeDefinitions {
@@ -124,6 +125,7 @@ impl TimeDefinitions {
     /// `valid_year(y: Integer) -> Boolean`.
     ///
     /// Post: `Result = y >= 0`.
+    #[must_use]
     pub fn valid_year(y: i32) -> bool {
         y >= 0
     }
@@ -131,6 +133,7 @@ impl TimeDefinitions {
     /// `valid_month(m: Integer) -> Boolean`.
     ///
     /// Post: `Result = m >= 1 and m <= Months_in_year`.
+    #[must_use]
     pub fn valid_month(m: i32) -> bool {
         (1..=Self::MONTHS_IN_YEAR).contains(&m)
     }
@@ -152,6 +155,7 @@ impl TimeDefinitions {
     /// body deferring to `todo!()`. The real implementation should bridge to
     /// `jiff`'s calendar arithmetic once the internal engine is wired at
     /// P17.
+    #[must_use]
     pub fn valid_day(y: i32, m: i32, d: i32) -> bool {
         // TODO(port): depends on the spec-assumed-but-undeclared
         // `days_in_month(m, y)` helper; see doc comment above.
@@ -165,13 +169,15 @@ impl TimeDefinitions {
     ///
     /// Post: `Result = (h >= 0 and h < Hours_in_day) or (h = Hours_in_day and
     /// m = 0 and s = 0)`.
+    #[must_use]
     pub fn valid_hour(h: i32, m: i32, s: i32) -> bool {
-        (h >= 0 && h < Self::HOURS_IN_DAY) || (h == Self::HOURS_IN_DAY && m == 0 && s == 0)
+        (0..Self::HOURS_IN_DAY).contains(&h) || (h == Self::HOURS_IN_DAY && m == 0 && s == 0)
     }
 
     /// `valid_minute(m: Integer) -> Boolean`.
     ///
     /// Post: `Result = m >= 0 and m < Minutes_in_hour`.
+    #[must_use]
     pub fn valid_minute(m: i32) -> bool {
         (0..Self::MINUTES_IN_HOUR).contains(&m)
     }
@@ -179,6 +185,7 @@ impl TimeDefinitions {
     /// `valid_second(s: Integer) -> Boolean`.
     ///
     /// Post: `Result = s >= 0 and s < Seconds_in_minute`.
+    #[must_use]
     pub fn valid_second(s: i32) -> bool {
         (0..Self::SECONDS_IN_MINUTE).contains(&s)
     }
@@ -198,6 +205,7 @@ impl TimeDefinitions {
     /// `primitive_types::real`/`primitive_types::double` PORT NOTEs), so no
     /// call site is actually affected, but the mismatch is flagged here for
     /// visibility rather than silently resolved.
+    #[must_use]
     pub fn valid_fractional_second(fs: f64) -> bool {
         (0.0..1.0).contains(&fs)
     }
@@ -213,6 +221,7 @@ impl TimeDefinitions {
     /// TODO(port): string-syntax validation deferred to the internal
     /// parsing engine (see the `Iso8601Type`-family module doc for the
     /// jiff-bridging plan at P17); not implemented here.
+    #[must_use]
     pub fn valid_iso8601_date(s: &str) -> bool {
         let _ = s;
         todo!(
@@ -230,6 +239,7 @@ impl TimeDefinitions {
     ///
     /// TODO(port): string-syntax validation deferred to the internal
     /// parsing engine; not implemented here.
+    #[must_use]
     pub fn valid_iso8601_time(s: &str) -> bool {
         let _ = s;
         todo!(
@@ -247,6 +257,7 @@ impl TimeDefinitions {
     ///
     /// TODO(port): string-syntax validation deferred to the internal
     /// parsing engine; not implemented here.
+    #[must_use]
     pub fn valid_iso8601_date_time(s: &str) -> bool {
         let _ = s;
         todo!(
@@ -265,6 +276,7 @@ impl TimeDefinitions {
     ///
     /// TODO(port): string-syntax validation deferred to the internal
     /// parsing engine; not implemented here.
+    #[must_use]
     pub fn valid_iso8601_duration(s: &str) -> bool {
         let _ = s;
         todo!(

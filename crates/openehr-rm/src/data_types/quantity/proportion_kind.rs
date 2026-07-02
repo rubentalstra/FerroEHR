@@ -6,6 +6,7 @@
 //!
 //! Class of enumeration constants defining types of proportion for the
 //! `DV_PROPORTION` class.
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// `PROPORTION_KIND` is a **constants-only** class: its per-class table has
 /// no `Attributes` section at all, only a `Constants` section (five named
@@ -27,6 +28,15 @@
 /// discusses class hierarchies (`DATA_VALUE`, `ITEM`, etc.), not
 /// Eiffel-style named-integer-constant classes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// PORT NOTE: schema-verified — `openehr_rm_1.1.0_all.json` (ITS-JSON @
+// 5acae05), `#/definitions/DV_PROPORTION/properties/type`, types this field
+// `{"type": "integer"}`, a JSON number, matching the spec's own literal
+// `Integer` typing of `DV_PROPORTION.type`. A plain serde derive would emit
+// the variant NAME as a string (`"Percent"`) — wrong on the wire — so
+// `Serialize`/`Deserialize` are written by hand below: serialize as the raw
+// `i32` discriminant, deserialize from an `i32` through the existing
+// `TryFrom<i32>` validity machinery. Per ADR-002, enumerations carry no
+// `_type` discriminator of their own (they are values, not RM objects).
 #[repr(i32)]
 pub enum ProportionKind {
     /// `pk_ratio` = 0.
@@ -97,11 +107,70 @@ impl ProportionKind {
     }
 }
 
+/// Manual canonical-JSON serialization: emits the raw `i32` discriminant
+/// (schema-verified `DV_PROPORTION.type: {"type": "integer"}`), never the
+/// variant name string a derive would produce. See the enum-level PORT NOTE.
+impl Serialize for ProportionKind {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_i32(*self as i32)
+    }
+}
+
+/// Manual canonical-JSON deserialization: reads a bare integer and validates
+/// it through the existing [`TryFrom<i32>`] machinery (itself delegating to
+/// [`ProportionKind::from_i32`]), so an out-of-range value fails with
+/// [`InvalidProportionKind`] rather than silently mapping.
+impl<'de> Deserialize<'de> for ProportionKind {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = i32::deserialize(deserializer)?;
+        ProportionKind::try_from(raw).map_err(serde::de::Error::custom)
+    }
+}
+
+/// Integer-conversion companion to the manual `Serialize` impl above —
+/// canonical-JSON serialization target, per the enum-level PORT NOTE
+/// (schema-verified `DV_PROPORTION.type: {"type": "integer"}`).
+impl From<ProportionKind> for i32 {
+    fn from(kind: ProportionKind) -> Self {
+        kind as i32
+    }
+}
+
+/// Integer-conversion source for the manual `Deserialize` impl above.
+/// Delegates to [`ProportionKind::from_i32`]; the rejected `i32` is
+/// returned as-is in `Self::Error` (serde requires a `Display`-able error
+/// type for its error-context wrapping — see [`InvalidProportionKind`]).
+impl TryFrom<i32> for ProportionKind {
+    type Error = InvalidProportionKind;
+
+    fn try_from(nq: i32) -> Result<Self, Self::Error> {
+        ProportionKind::from_i32(nq).ok_or(InvalidProportionKind(nq))
+    }
+}
+
+/// Error returned by `TryFrom<i32> for ProportionKind` when the input is
+/// not one of the five legal `PROPORTION_KIND` values.
+///
+/// PORT NOTE: not itself a spec-declared type — the minimal
+/// `std::error::Error` wrapper the manual `Deserialize` impl needs around
+/// the rejected value, since `serde::de::Error::custom` requires a
+/// `std::fmt::Display` value for its deserialization error message.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct InvalidProportionKind(pub i32);
+
+impl std::fmt::Display for InvalidProportionKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid PROPORTION_KIND value: {}", self.0)
+    }
+}
+
+impl std::error::Error for InvalidProportionKind {}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/proportion_kind.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / proportion_kind.adoc §PROPORTION_KIND Class
 //   confidence: high
 //   todos: 0
-//   note: discriminants verified against the published Constants table (pk_ratio=0, pk_unitary=1, pk_percent=2, pk_fraction=3, pk_integer_fraction=4); valid_proportion_kind kept as a raw-i32 free function (not a ProportionKind method, which would be trivially always-true) plus an added from_i32 conversion helper not itself drawn from the spec table.
+//   note: discriminants verified against the published Constants table (pk_ratio=0, pk_unitary=1, pk_percent=2, pk_fraction=3, pk_integer_fraction=4); valid_proportion_kind kept as a raw-i32 free function (not a ProportionKind method, which would be trivially always-true) plus an added from_i32 conversion helper not itself drawn from the spec table. P4/ADR-002: hand-written Serialize (raw i32 discriminant) and Deserialize (i32 via TryFrom validity machinery) — a plain derive would emit the variant name string, wrong against the schema (DV_PROPORTION.type: integer); enumerations carry no _type tag per ADR-002; InvalidProportionKind is the Display-able error the manual Deserialize needs.
 // ─────────────────────────────────────────────

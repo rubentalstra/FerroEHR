@@ -35,6 +35,7 @@ use super::basic_definitions::BasicDefinitions;
 /// be via `OPENEHR_DEFINITIONS::CR` in the source language; callers that
 /// need both reach for `BasicDefinitions::CR` directly (see
 /// `basic_definitions.rs`) alongside `OpenehrDefinitions::LOCAL_TERMINOLOGY_ID`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OpenehrDefinitions;
 
 impl OpenehrDefinitions {

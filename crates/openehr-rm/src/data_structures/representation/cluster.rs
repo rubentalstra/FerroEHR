@@ -6,14 +6,22 @@
 //! `ITEM`, in an ordered list.
 
 use super::item::{Item, ItemApi, ItemData};
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `CLUSTER` class.
 ///
 /// Embeds the shared `ITEM` state (per ADR-001 §3) plus its own `items`
 /// attribute.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cluster {
+    /// Canonical `_type` discriminator (`"CLUSTER"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Inherited `ITEM` (and transitively `LOCATABLE`) state.
+    #[serde(flatten)]
     pub item: ItemData,
 
     /// `items`: ordered list of items — `CLUSTER` or `ELEMENT` objects —
@@ -31,6 +39,10 @@ pub struct Cluster {
     pub items: Vec<Item>,
 }
 
+impl TypeName for Cluster {
+    const NAME: &'static str = TYPE_NAME;
+}
+
 impl ItemApi for Cluster {
     fn item_data(&self) -> &ItemData {
         &self.item
@@ -45,5 +57,5 @@ pub const TYPE_NAME: &str = "CLUSTER";
 //   source_loc: master05-representation_package.adoc §Class Descriptions / cluster.adoc §CLUSTER Class
 //   confidence: high
 //   todos: 0
-//   note: no invariants declared for CLUSTER in the spec table; item_structure package narrative (master04) documents the ISO 13606 encoding rules that produce CLUSTERs but imposes no additional CLUSTER-level constraint.
+//   note: no invariants declared for CLUSTER in the spec table; item_structure package narrative (master04) documents the ISO 13606 encoding rules that produce CLUSTERs but imposes no additional CLUSTER-level constraint. P4: added #[serde(flatten)] on `item` (was missing) so ITEM's fields sit flat on CLUSTER per the ITS-JSON schema; ADR-002 self-tag (TypeName + first-field TypeTag) added.
 // ─────────────────────────────────────────────

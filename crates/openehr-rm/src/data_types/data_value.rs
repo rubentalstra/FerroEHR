@@ -80,6 +80,8 @@ use crate::data_types::quantity::dv_quantity::DvQuantity;
 use crate::data_types::quantity::dv_scale::DvScale;
 use crate::data_types::time_specification::dv_general_time_specification::DvGeneralTimeSpecification;
 use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
+use openehr_foundation::serde_support::TypeName;
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for the abstract `DATA_VALUE`
 /// class itself. Never used as a concrete instance's own discriminator
@@ -148,10 +150,54 @@ pub trait DataValueApi {
 /// deliberate exclusion (`DV_PARAGRAPH` and `DV_URI`/`DV_EHR_URI`, also not
 /// explicitly named as omitted, are likewise included; only genuinely
 /// abstract classes are left out).
-#[derive(Debug, Clone, PartialEq)]
+///
+/// PORT NOTE (P4, ADR-002): `DataValue` is `#[serde(untagged)]`, never
+/// `#[serde(tag = "_type")]` — the former internally-tagged form (and its
+/// per-variant renames) duplicated each payload's own `_type` key. Dispatch
+/// is driven by each variant payload's own `TypeTag` field: `TypeTag`'s
+/// `Deserialize` fails on a mismatched `_type` string, so serde's untagged
+/// variant probing selects exactly the variant whose class name matches —
+/// even between structure-identical classes (`DV_DATE`/`DV_TIME`/
+/// `DV_DATE_TIME` are all `{value: String}` on the wire; only the tag
+/// tells them apart). Variants are ordered structurally-richer-first
+/// (`CodedText` before bare `Text`, object payloads before the sparse
+/// `{value}` family, `Boolean` last) so tag-less input in
+/// concrete-declared slots resolves to the most specific structural match;
+/// within the mutually tag-distinguished `{value: String}` family the
+/// relative order only matters for tag-less input.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum DataValue {
-    /// `DV_BOOLEAN` (package `basic`).
-    Boolean(DvBoolean),
+    /// `DV_CODED_TEXT` (package `text`).
+    ///
+    /// PORT NOTE: the task's variant list names `CodedText(DvCodedText)`
+    /// explicitly, alongside `Text(DvText)` — both are included verbatim
+    /// as instructed, even though `DvText` (below) already has a `Coded`
+    /// arm that can hold a `DvCodedText`. This creates two structurally
+    /// different ways to place a coded-text value into a `DataValue`
+    /// (`DataValue::Text(DvText::Coded(x))` vs `DataValue::CodedText(x)`);
+    /// left as specified rather than silently collapsing one path, and
+    /// flagged here as a design question for the P4/P17 wiring pass to
+    /// resolve (most likely by dropping the inner `DvText::Coded` arm's
+    /// reachability from `DataValue` in favour of this direct variant, or
+    /// vice versa). Listed before `Text` per ADR-002 richer-first ordering,
+    /// so a `DV_CODED_TEXT` payload lands on this direct variant rather
+    /// than the nested `Text(DvText::Coded(_))` path.
+    CodedText(DvCodedText),
+    /// `DV_TEXT` (package `text`), the "bare" (uncoded) form.
+    ///
+    /// PORT NOTE: [`DvText`] is itself the ADR-001-Refinements-style enum
+    /// spanning `DV_TEXT`/`DV_CODED_TEXT` (see `text::dv_text` for the full
+    /// rationale) — nested here as the outer `DataValue::Text` variant so a
+    /// `DATA_VALUE`-typed field can hold either form without this outer
+    /// enum needing its own separate `Coded` variant duplicating that
+    /// distinction. `DataValue::Text(DvText::Coded(_))` and
+    /// `DataValue::CodedText(_)` above are therefore two different paths to
+    /// a coded value; see the `CodedText` variant's own note for why both
+    /// exist.
+    Text(DvText),
+    /// `DV_PARAGRAPH` (package `text`, deprecated but legal).
+    Paragraph(DvParagraph),
     /// `DV_STATE` (package `basic`).
     ///
     /// PORT NOTE: not named in the task's explicit variant enumeration;
@@ -164,34 +210,6 @@ pub enum DataValue {
     /// included per the class table (`DV_IDENTIFIER inherits DATA_VALUE`,
     /// concrete, non-abstract) — see the enum-level doc comment.
     Identifier(DvIdentifier),
-    /// `DV_TEXT` (package `text`), the "bare" (uncoded) form.
-    ///
-    /// PORT NOTE: [`DvText`] is itself the ADR-001-Refinements-style enum
-    /// spanning `DV_TEXT`/`DV_CODED_TEXT` (see `text::dv_text` for the full
-    /// rationale) — nested here as the outer `DataValue::Text` variant so a
-    /// `DATA_VALUE`-typed field can hold either form without this outer
-    /// enum needing its own separate `Coded` variant duplicating that
-    /// distinction. `DataValue::Text(DvText::Coded(_))` and
-    /// `DataValue::CodedText(_)` below are therefore two different paths to
-    /// a coded value; see the `CodedText` variant's own note for why both
-    /// exist.
-    Text(DvText),
-    /// `DV_CODED_TEXT` (package `text`).
-    ///
-    /// PORT NOTE: the task's variant list names `CodedText(DvCodedText)`
-    /// explicitly, alongside `Text(DvText)` — both are included verbatim
-    /// as instructed, even though `DvText` (above) already has a `Coded`
-    /// arm that can hold a `DvCodedText`. This creates two structurally
-    /// different ways to place a coded-text value into a `DataValue`
-    /// (`DataValue::Text(DvText::Coded(x))` vs `DataValue::CodedText(x)`);
-    /// left as specified rather than silently collapsing one path, and
-    /// flagged here as a design question for the P4/P17 wiring pass to
-    /// resolve (most likely by dropping the inner `DvText::Coded` arm's
-    /// reachability from `DataValue` in favour of this direct variant, or
-    /// vice versa).
-    CodedText(DvCodedText),
-    /// `DV_PARAGRAPH` (package `text`, deprecated but legal).
-    Paragraph(DvParagraph),
     /// `DV_ORDINAL` (package `quantity`; forward-reference, sibling
     /// worktree).
     Ordinal(DvOrdinal),
@@ -212,8 +230,24 @@ pub enum DataValue {
     /// the generic constrained by the closed [`DvOrdered`] enum the
     /// `quantity` cluster owns, as directed by the invoking task.
     Interval(DvInterval<DvOrdered>),
-    /// `DV_DATE` (package `date_time`; forward-reference, sibling
+    /// `DV_MULTIMEDIA` (package `encapsulated`; forward-reference, sibling
     /// worktree).
+    Multimedia(DvMultimedia),
+    /// `DV_PARSABLE` (package `encapsulated`; forward-reference, sibling
+    /// worktree).
+    Parsable(DvParsable),
+    /// `DV_PERIODIC_TIME_SPECIFICATION` (package `time_specification`;
+    /// forward-reference, sibling worktree).
+    PeriodicTimeSpecification(DvPeriodicTimeSpecification),
+    /// `DV_GENERAL_TIME_SPECIFICATION` (package `time_specification`;
+    /// forward-reference, sibling worktree).
+    GeneralTimeSpecification(DvGeneralTimeSpecification),
+    /// `DV_DURATION` (package `date_time`; forward-reference, sibling
+    /// worktree).
+    Duration(DvDuration),
+    /// `DV_DATE` (package `date_time`; forward-reference, sibling
+    /// worktree). Structure-identical to `DV_TIME`/`DV_DATE_TIME` on the
+    /// wire — only the payload's own `TypeTag` distinguishes them.
     Date(DvDate),
     /// `DV_TIME` (package `date_time`; forward-reference, sibling
     /// worktree).
@@ -221,43 +255,31 @@ pub enum DataValue {
     /// `DV_DATE_TIME` (package `date_time`; forward-reference, sibling
     /// worktree).
     DateTime(DvDateTime),
-    /// `DV_DURATION` (package `date_time`; forward-reference, sibling
-    /// worktree).
-    Duration(DvDuration),
-    /// `DV_PERIODIC_TIME_SPECIFICATION` (package `time_specification`;
-    /// forward-reference, sibling worktree).
-    PeriodicTimeSpecification(DvPeriodicTimeSpecification),
-    /// `DV_GENERAL_TIME_SPECIFICATION` (package `time_specification`;
-    /// forward-reference, sibling worktree).
-    GeneralTimeSpecification(DvGeneralTimeSpecification),
-    /// `DV_MULTIMEDIA` (package `encapsulated`; forward-reference, sibling
-    /// worktree).
-    Multimedia(DvMultimedia),
-    /// `DV_PARSABLE` (package `encapsulated`; forward-reference, sibling
-    /// worktree).
-    Parsable(DvParsable),
     /// `DV_URI` (package `uri`).
     Uri(DvUri),
     /// `DV_EHR_URI` (package `uri`).
     EhrUri(DvEhrUri),
+    /// `DV_BOOLEAN` (package `basic`). Sparsest payload (`{value: bool}`)
+    /// — listed last per ADR-002 richer-first ordering.
+    Boolean(DvBoolean),
 }
 
 impl DataValueApi for DataValue {
     fn type_name(&self) -> &'static str {
         match self {
-            DataValue::Boolean(v) => v.type_name(),
+            DataValue::CodedText(v) => v.type_name(),
+            DataValue::Text(v) => v.type_name(),
+            DataValue::Paragraph(v) => v.type_name(),
             DataValue::State(v) => v.type_name(),
             DataValue::Identifier(v) => v.type_name(),
-            DataValue::Text(v) => v.type_name(),
-            DataValue::CodedText(v) => v.type_name(),
-            DataValue::Paragraph(v) => v.type_name(),
-            // TODO(port): sibling `quantity`/`date_time`/`time_specification`/
-            // `encapsulated` types do not yet exist in this worktree
-            // (concurrent transcription in separate worktrees); their
-            // `DataValueApi` impls cannot be called until those land and
-            // this file is wired at P17. Left as `todo!()` per-arm rather
-            // than omitting the arms, so the match stays exhaustive against
-            // the enum defined above.
+            // TODO(port): sibling `quantity` types do not yet implement
+            // `DataValueApi` (concurrent conversion in separate worktrees);
+            // their arms cannot delegate until those land and this file is
+            // wired at P17. Left as `todo!()` per-arm rather than omitting
+            // the arms, so the match stays exhaustive against the enum
+            // defined above. The `date_time`/`time_specification`/
+            // `encapsulated` arms now return the canonical name via each
+            // payload's ADR-002 `TypeName` impl.
             DataValue::Ordinal(_) => todo!("DvOrdinal::type_name pending sibling transcription"),
             DataValue::Scale(_) => todo!("DvScale::type_name pending sibling transcription"),
             DataValue::Quantity(_) => todo!("DvQuantity::type_name pending sibling transcription"),
@@ -266,22 +288,84 @@ impl DataValueApi for DataValue {
                 todo!("DvProportion::type_name pending sibling transcription")
             }
             DataValue::Interval(_) => todo!("DvInterval::type_name pending sibling transcription"),
-            DataValue::Date(_) => todo!("DvDate::type_name pending sibling transcription"),
-            DataValue::Time(_) => todo!("DvTime::type_name pending sibling transcription"),
-            DataValue::DateTime(_) => todo!("DvDateTime::type_name pending sibling transcription"),
-            DataValue::Duration(_) => todo!("DvDuration::type_name pending sibling transcription"),
+            DataValue::Multimedia(_) => <DvMultimedia as TypeName>::NAME,
+            DataValue::Parsable(_) => <DvParsable as TypeName>::NAME,
             DataValue::PeriodicTimeSpecification(_) => {
-                todo!("DvPeriodicTimeSpecification::type_name pending sibling transcription")
+                <DvPeriodicTimeSpecification as TypeName>::NAME
             }
             DataValue::GeneralTimeSpecification(_) => {
-                todo!("DvGeneralTimeSpecification::type_name pending sibling transcription")
+                <DvGeneralTimeSpecification as TypeName>::NAME
             }
-            DataValue::Multimedia(_) => {
-                todo!("DvMultimedia::type_name pending sibling transcription")
-            }
-            DataValue::Parsable(_) => todo!("DvParsable::type_name pending sibling transcription"),
+            DataValue::Duration(_) => <DvDuration as TypeName>::NAME,
+            DataValue::Date(_) => <DvDate as TypeName>::NAME,
+            DataValue::Time(_) => <DvTime as TypeName>::NAME,
+            DataValue::DateTime(_) => <DvDateTime as TypeName>::NAME,
             DataValue::Uri(v) => v.type_name(),
             DataValue::EhrUri(v) => v.type_name(),
+            DataValue::Boolean(v) => v.type_name(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// ADR-002: untagged dispatch is tag-driven, not declaration-order
+    /// driven — a `DV_TIME` payload must reach the `Time` variant even
+    /// though structure-identical `{value: String}` variants (`Duration`,
+    /// `Date`) are declared earlier in the enum; each earlier variant's own
+    /// `TypeTag` rejects the mismatched `_type` during probing.
+    #[test]
+    fn untagged_dispatch_selects_dv_time_by_tag_not_declaration_order() {
+        let v: DataValue =
+            serde_json::from_str(r#"{"_type":"DV_TIME","value":"10:00:00"}"#).unwrap();
+        assert!(matches!(v, DataValue::Time(_)));
+    }
+
+    /// A date/time-family `DataValue` round-trips: the payload's own
+    /// `TypeTag` emits `_type` first on output and steers re-input back to
+    /// the same variant.
+    ///
+    /// PORT NOTE: written against the date/time family rather than the
+    /// task-suggested `DvQuantity` — the `quantity` cluster's ADR-002
+    /// conversion is mid-flight in a sibling pass (no `TypeTag` fields there
+    /// yet at the time of this file's conversion); extend with a
+    /// `DataValue::Quantity` round-trip once that cluster lands.
+    #[test]
+    fn date_time_family_data_value_round_trips() {
+        for (json, want_date, want_time, want_date_time) in [
+            (
+                r#"{"_type":"DV_DATE","value":"2026-07-02"}"#,
+                true,
+                false,
+                false,
+            ),
+            (
+                r#"{"_type":"DV_TIME","value":"10:00:00"}"#,
+                false,
+                true,
+                false,
+            ),
+            (
+                r#"{"_type":"DV_DATE_TIME","value":"2026-07-02T10:00:00"}"#,
+                false,
+                false,
+                true,
+            ),
+        ] {
+            let v: DataValue = serde_json::from_str(json).unwrap();
+            assert_eq!(matches!(v, DataValue::Date(_)), want_date, "{json}");
+            assert_eq!(matches!(v, DataValue::Time(_)), want_time, "{json}");
+            assert_eq!(
+                matches!(v, DataValue::DateTime(_)),
+                want_date_time,
+                "{json}"
+            );
+            let out = serde_json::to_string(&v).unwrap();
+            assert_eq!(out, json, "canonical output must match canonical input");
+            let back: DataValue = serde_json::from_str(&out).unwrap();
+            assert_eq!(back, v);
         }
     }
 }
@@ -292,5 +376,5 @@ impl DataValueApi for DataValue {
 //   source_loc: master03-introduction.adoc §Overview / data_value.adoc §DATA_VALUE Class
 //   confidence: medium
 //   todos: 1
-//   note: DATA_VALUE has no attributes of its own (only an OPENEHR_DEFINITIONS constants-inherit), so it gets a lean DataValueApi marker trait per ADR-001 §1, not a Data+enum+Api triple; the DataValue enum's 14 non-basic/text/uri variants forward-reference sibling-worktree modules (quantity, date_time, time_specification, encapsulated) that do not exist in this worktree yet — each is a distinct todo!() arm (14 todo!() calls, a separate count from the one literal TODO(port) marker above them) in the DataValueApi impl, kept to preserve match exhaustiveness. DV_STATE/DV_IDENTIFIER/DV_PARAGRAPH/DV_URI/DV_EHR_URI included as variants despite not being named in the task's explicit list (flagged as likely oversight, not exclusion); Text(DvText) vs CodedText(DvCodedText) overlap (both can represent coded text) flagged as a design question for P4/P17. serde `_type` dispatch is out of scope until P4 per the class-level doc comment.
+//   note: DATA_VALUE has no attributes of its own (only an OPENEHR_DEFINITIONS constants-inherit), so it gets a lean DataValueApi marker trait per ADR-001 §1, not a Data+enum+Api triple; the six quantity-cluster arms of the DataValueApi impl remain todo!() pending that cluster's own DataValueApi/TypeName landing (6 todo!() calls under 1 TODO(port) marker), while the date_time/time_specification/encapsulated arms now return each payload's ADR-002 TypeName::NAME. DV_STATE/DV_IDENTIFIER/DV_PARAGRAPH/DV_URI/DV_EHR_URI included as variants despite not being named in the task's explicit list (flagged as likely oversight, not exclusion); Text(DvText) vs CodedText(DvCodedText) overlap (both can represent coded text) flagged as a design question for P4/P17. P4 (ADR-002): the former tagged-enum form + per-variant renames are replaced by #[serde(untagged)] — dispatch runs on each payload's own TypeTag (wrong `_type` fails that variant, so probing is tag-driven even for the structure-identical DV_DATE/DV_TIME/DV_DATE_TIME family); variants reordered richer-first (CodedText before Text, object payloads before the {value} family, Boolean last); in-file tests pin tag-driven dispatch (DV_TIME must not land on the earlier-declared Date/Duration) and date/time-family round-trips; DvQuantity round-trip deferred until the quantity cluster's sibling conversion lands (PORT-NOTEd in the test).
 // ─────────────────────────────────────────────

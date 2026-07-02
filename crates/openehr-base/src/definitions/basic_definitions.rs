@@ -18,6 +18,7 @@
 /// transcription mirrors that by having `OpenehrDefinitions` re-export these
 /// same associated consts (see the PORT NOTE there), since Rust has no
 /// struct-level inheritance to fall back on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BasicDefinitions;
 
 impl BasicDefinitions {

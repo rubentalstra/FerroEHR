@@ -1,0 +1,34 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "PERSON",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "J. Jansen"
+  },
+  "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+  "uid": {
+    "_type": "HIER_OBJECT_ID",
+    "value": "0e04d3af-0f8a-4be3-90a0-4a34fc94b21e"
+  },
+  "identities": [
+    {
+      "_type": "PARTY_IDENTITY",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "legal name"
+      },
+      "archetype_node_id": "at0002",
+      "details": {
+        "_type": "ITEM_TREE",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "details"
+        },
+        "archetype_node_id": "at0003"
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "ACTION",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "Medication action"
+  },
+  "archetype_node_id": "openEHR-EHR-ACTION.medication.v1",
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_639-1"
+    },
+    "code_string": "en"
+  },
+  "encoding": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "IANA_character-sets"
+    },
+    "code_string": "UTF-8"
+  },
+  "subject": {
+    "_type": "PARTY_SELF"
+  },
+  "time": {
+    "_type": "DV_DATE_TIME",
+    "value": "2026-07-02T10:15:00Z"
+  },
+  "ism_transition": {
+    "_type": "ISM_TRANSITION",
+    "current_state": {
+      "_type": "DV_CODED_TEXT",
+      "value": "completed",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "openehr"
+        },
+        "code_string": "532"
+      }
+    }
+  },
+  "description": {
+    "_type": "ITEM_TREE",
+    "name": {
+      "_type": "DV_TEXT",
+      "value": "description"
+    },
+    "archetype_node_id": "at0001"
+  }
+}

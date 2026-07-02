@@ -20,11 +20,13 @@
 //! ehr:/ehr_id/top_level_structure_locator
 //! ehr:/ehr_id/top_level_structure_locator/path_inside_top_level_structure
 //! ```
-use super::dv_uri::DvUri;
+use super::dv_uri::DvUriData;
 use crate::data_types::data_value::DataValueApi;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into its [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "DV_EHR_URI";
 
 /// `_Ehr_scheme_`: `String` = `"ehr"`.
@@ -36,19 +38,42 @@ pub const EHR_SCHEME: &str = "ehr";
 /// `DV_EHR_URI` inherits `DV_URI` (a concrete class) and declares no
 /// attributes of its own — only the `Scheme_valid` invariant narrows its
 /// legal values. Per the embedding shape established for `DV_TEXT`/
-/// `DV_CODED_TEXT` and `DV_URI` itself, this struct embeds [`DvUri`]
-/// directly (composition), rather than duplicating its `uri` state.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// `DV_CODED_TEXT`, this struct embeds the shared [`DvUriData`] state
+/// (composition), rather than duplicating its `value` attribute.
+///
+/// PORT NOTE (ADR-002): this previously embedded the concrete [`super::
+/// dv_uri::DvUri`] wrapper itself. Once `DvUri` self-tags (its own
+/// `TypeTag<DvUri>` serializing `"DV_URI"`), flattening it here would emit
+/// a duplicate, contradictory `_type` key beside this class's own
+/// `"DV_EHR_URI"` tag. Reshaped to flatten the *untagged* `DvUriData`
+/// instead — the exact `DvCodedText`-flattens-`DvTextData` pattern (only
+/// embedded `*Data` structs are flattened; concrete self-tagged classes
+/// never are). The wire shape is unchanged and schema-verified against
+/// `openehr_rm_1.1.0_all.json`'s `DV_EHR_URI` definition: `value` sits
+/// directly alongside `_type` with no nested `"uri"` object.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DvEhrUri {
-    /// Embedded `DV_URI` state and behaviour.
-    pub uri: DvUri,
+    /// Canonical `_type` discriminator (`"DV_EHR_URI"`), always serialized
+    /// first (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
+    /// Embedded `DV_URI` state (the single `value` attribute) and
+    /// behaviour, via the untagged shared-state struct — see the
+    /// struct-level PORT NOTE.
+    #[serde(flatten)]
+    pub uri: DvUriData,
+}
+
+impl TypeName for DvEhrUri {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvEhrUri {
     /// `Scheme_valid`: `scheme.is_equal(Ehr_scheme)`.
     ///
-    /// TODO(port): depends on [`DvUri::scheme`], itself `todo!()` pending
-    /// an RFC-3986 parser; cannot be evaluated until that lands.
+    /// TODO(port): depends on [`DvUriData::scheme`], itself `todo!()`
+    /// pending an RFC-3986 parser; cannot be evaluated until that lands.
     pub fn invariant_scheme_valid(&self) -> bool {
         self.uri.scheme() == EHR_SCHEME
     }
@@ -66,5 +91,5 @@ impl DataValueApi for DvEhrUri {
 //   source_loc: master10-uri_package.adoc §Class Descriptions / dv_ehr_uri.adoc §DV_EHR_URI Class; §Syntaxes for the ehr:// path grammar
 //   confidence: high
 //   todos: 1
-//   note: embeds DvUri by composition (single `uri` field); Scheme_valid invariant transitively depends on DvUri::scheme(), which is itself a todo!() pending RFC-3986 parsing.
+//   note: embeds DvUriData by composition (single `uri` field); Scheme_valid invariant transitively depends on DvUriData::scheme(), which is itself a todo!() pending RFC-3986 parsing. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("DV_EHR_URI"); embedded field reshaped from the concrete DvUri to the untagged DvUriData so the flatten cannot emit a duplicate _type key beside this class's own tag (see the struct-level PORT NOTE) — wire shape unchanged, schema-verified.
 // ─────────────────────────────────────────────

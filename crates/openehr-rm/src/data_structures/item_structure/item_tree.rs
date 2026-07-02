@@ -11,15 +11,23 @@ use super::item_structure::{ItemStructureApi, ItemStructureData};
 use crate::data_structures::representation::cluster::Cluster;
 use crate::data_structures::representation::element::Element;
 use crate::data_structures::representation::item::Item;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `ITEM_TREE` class.
 ///
 /// Embeds the shared `ITEM_STRUCTURE` state (per ADR-001 §3) plus its own
 /// `items` attribute.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ItemTree {
+    /// Canonical `_type` discriminator (`"ITEM_TREE"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Inherited `ITEM_STRUCTURE` (and transitively `DATA_STRUCTURE`,
     /// `LOCATABLE`) state.
+    #[serde(flatten)]
     pub item_structure: ItemStructureData,
 
     /// `items`: the items comprising the `ITEM_TREE`. Can include 0 or
@@ -34,7 +42,12 @@ pub struct ItemTree {
     /// nest further `Cluster`s) — see the doc comment on `Item`
     /// (`representation/item.rs`) for why no additional `Box` indirection
     /// is required here beyond what `Vec` already provides.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<Item>>,
+}
+
+impl TypeName for ItemTree {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl ItemStructureApi for ItemTree {
@@ -107,11 +120,85 @@ impl DataStructureBehaviour for ItemTree {
 
 pub const TYPE_NAME: &str = "ITEM_TREE";
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::archetyped::locatable::LocatableData;
+    use crate::data_structures::item_structure::data_structure::DataStructureData;
+    use crate::data_structures::representation::cluster::Cluster;
+    use crate::data_structures::representation::element::Element;
+    use crate::data_structures::representation::item::ItemData;
+
+    /// Build a minimal `LocatableData` from the wire shape rather than a
+    /// struct literal, so this test stays decoupled from the exact Rust
+    /// constructor shape of `DvText` (converted by a sibling agent in the
+    /// same P4 wave).
+    fn locatable(name: &str, node_id: &str) -> LocatableData {
+        serde_json::from_value(serde_json::json!({
+            "name": { "_type": "DV_TEXT", "value": name },
+            "archetype_node_id": node_id,
+        }))
+        .unwrap()
+    }
+
+    /// ADR-002 acceptance for this package: an `ITEM_TREE` self-tags first
+    /// in key order, nested `Item`-typed slots carry each payload's own
+    /// `_type`, the whole tree round-trips, and untagged `Item` dispatch is
+    /// driven by `_type` (not declaration order / structure).
+    #[test]
+    fn item_tree_self_tags_and_item_slot_roundtrips_via_type() {
+        let tree = ItemTree {
+            type_tag: TypeTag::new(),
+            item_structure: ItemStructureData {
+                data_structure: DataStructureData {
+                    locatable: locatable("tree", "at0001"),
+                },
+            },
+            items: Some(vec![Item::Cluster(Cluster {
+                type_tag: TypeTag::new(),
+                item: ItemData {
+                    locatable: locatable("cluster", "at0002"),
+                },
+                items: vec![Item::Element(Element {
+                    type_tag: TypeTag::new(),
+                    item: ItemData {
+                        locatable: locatable("element", "at0003"),
+                    },
+                    null_flavour: None,
+                    value: None,
+                    null_reason: None,
+                })],
+            })]),
+        };
+
+        let json = serde_json::to_string(&tree).unwrap();
+        assert!(
+            json.starts_with(r#"{"_type":"ITEM_TREE","#),
+            "ITEM_TREE tag must lead the object: {json}"
+        );
+        assert!(json.contains(r#""_type":"CLUSTER""#));
+        assert!(json.contains(r#""_type":"ELEMENT""#));
+
+        // Round-trip: the Item-typed slot re-dispatches through the
+        // untagged enum via each payload's TypeTag.
+        let back: ItemTree = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, tree);
+        assert!(matches!(back.items.as_ref().unwrap()[0], Item::Cluster(_)));
+
+        // Tag-driven (not structure-driven) dispatch: this payload
+        // structurally satisfies Cluster (it has `items`), but the tag says
+        // ELEMENT — the Cluster arm's TypeTag must reject it.
+        let element_json = r#"{"_type":"ELEMENT","name":{"_type":"DV_TEXT","value":"n"},"archetype_node_id":"at0004","items":[]}"#;
+        let item: Item = serde_json::from_str(element_json).unwrap();
+        assert!(matches!(item, Item::Element(_)));
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_structures.item_structure §ITEM_TREE — docs/research/spec-cache/RM-1.1.0/uml_classes/item_tree.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master04-item_structure_package.adoc §Class Descriptions / item_tree.adoc §ITEM_TREE Class
 //   confidence: medium
 //   todos: 3
-//   note: has_element_path()/element_at_path() block on PATHABLE/LOCATABLE path-building from the common package; as_hierarchy()'s "synthesized wrapper CLUSTER" reading (analogous to ITEM_LIST) is a judgment call since the spec text does not literally spell out the wrapper mechanism for a tree whose items are already List<ITEM>.
+//   note: has_element_path()/element_at_path() block on PATHABLE/LOCATABLE path-building from the common package; as_hierarchy()'s "synthesized wrapper CLUSTER" reading (analogous to ITEM_LIST) is a judgment call since the spec text does not literally spell out the wrapper mechanism for a tree whose items are already List<ITEM>. P4/ADR-002: self-tag (TypeName + first-field TypeTag) added, plus the package's ADR-002 acceptance unit test (tag-first serialization, Item round-trip, tag-driven untagged dispatch).
 // ─────────────────────────────────────────────

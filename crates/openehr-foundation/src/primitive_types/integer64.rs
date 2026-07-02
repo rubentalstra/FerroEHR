@@ -33,6 +33,7 @@ impl Integer64 {
     /// requires a same-type `&Self -> Self` shape); see `numeric.rs` for the
     /// same-type trait method that `Numeric::add` provides in addition to
     /// this spec-accurate widening overload.
+    #[must_use]
     pub fn add(&self, other: &Integer) -> Integer64 {
         Integer64(self.0 + i64::from(other.0))
     }
@@ -40,6 +41,7 @@ impl Integer64 {
     /// `subtract` __alias__ `"-"` `(other: Integer) -> Integer64` (effected).
     ///
     /// Large integer subtraction.
+    #[must_use]
     pub fn subtract(&self, other: &Integer) -> Integer64 {
         Integer64(self.0 - i64::from(other.0))
     }
@@ -47,6 +49,7 @@ impl Integer64 {
     /// `multiply` __alias__ `"*"` `(other: Integer) -> Integer64` (effected).
     ///
     /// Large integer multiplication.
+    #[must_use]
     pub fn multiply(&self, other: &Integer) -> Integer64 {
         Integer64(self.0 * i64::from(other.0))
     }
@@ -54,6 +57,7 @@ impl Integer64 {
     /// `divide` __alias__ `"/"` `(other: Integer) -> Double` (effected).
     ///
     /// Large integer division.
+    #[must_use]
     pub fn divide(&self, other: &Integer) -> Double {
         Double(self.0 as f64 / f64::from(other.0))
     }
@@ -61,6 +65,7 @@ impl Integer64 {
     /// `exponent` __alias__ `"^"` `(other: Double) -> Double` (effected).
     ///
     /// Large integer exponentiation.
+    #[must_use]
     pub fn exponent(&self, other: &Double) -> Double {
         Double((self.0 as f64).powf(other.0))
     }
@@ -73,6 +78,7 @@ impl Integer64 {
     /// sign convention for negative operands; Rust's `%` (truncated
     /// remainder) is used as the direct primitive-operator translation
     /// pending clarification.
+    #[must_use]
     pub fn modulo(&self, other: &Integer) -> Integer64 {
         Integer64(self.0 % i64::from(other.0))
     }
@@ -85,6 +91,7 @@ impl Integer64 {
     /// implementation below (a same-type unary operation, so no
     /// trait/inherent split is needed for this particular member, unlike
     /// `add`/`subtract`/`multiply`/`divide`/`exponent` above).
+    #[must_use]
     pub fn negative_value(&self) -> Integer64 {
         Integer64(-self.0)
     }
@@ -135,7 +142,7 @@ impl Numeric for Integer64 {
         Integer64(self.0 * other.0)
     }
 
-    fn divide(&self, other: &Self) -> Self {
+    fn divide(&self, _other: &Self) -> Self {
         // TODO(port): Numeric::divide cannot express Integer64's true
         // (Integer) -> Double result; see Integer64::divide for the
         // spec-accurate overload.
@@ -144,7 +151,7 @@ impl Numeric for Integer64 {
         )
     }
 
-    fn exponent(&self, other: &Self) -> Self {
+    fn exponent(&self, _other: &Self) -> Self {
         // TODO(port): Numeric::exponent cannot express Integer64's true
         // (Double) -> Double signature; see Integer64::exponent.
         todo!(

@@ -9,6 +9,8 @@
 //! the Contribution is committed successfully.
 use openehr_base::identification::hier_object_id::HierObjectId;
 use openehr_base::identification::object_ref::ObjectRef;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 use crate::common::generic::audit_details::AuditDetails;
 
@@ -21,8 +23,13 @@ pub const TYPE_NAME: &str = "CONTRIBUTION";
 /// `CONTRIBUTION` has no `Inherit` row in its own spec table (implicitly
 /// `Any`, per crate-wide convention for un-derived root classes — see
 /// `docs/ROSETTA.md`'s `Cardinality` row for the same inference pattern).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Contribution {
+    /// Canonical `_type` discriminator (`"CONTRIBUTION"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `uid`: unique identifier for this Contribution.
     pub uid: HierObjectId,
 
@@ -39,6 +46,10 @@ pub struct Contribution {
 
 // This class declares no Functions or Invariants tables of its own beyond
 // its three attributes.
+
+impl TypeName for Contribution {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS

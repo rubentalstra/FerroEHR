@@ -1,0 +1,9 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "GENERIC_ID",
+  "value": "ab1234",
+  "scheme": "local"
+}

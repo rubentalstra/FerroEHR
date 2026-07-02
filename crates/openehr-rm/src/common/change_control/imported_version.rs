@@ -18,6 +18,8 @@
 use crate::common::change_control::original_version::OriginalVersion;
 use crate::common::change_control::version::{VersionApi, VersionData};
 use openehr_base::identification::object_version_id::ObjectVersionId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 use crate::data_types::text::dv_coded_text::DvCodedText;
 
@@ -32,12 +34,18 @@ pub const TYPE_NAME: &str = "IMPORTED_VERSION";
 /// directly (not the generic `Version<T>` enum), matching the spec's
 /// declared type exactly — `IMPORTED_VERSION` cannot wrap another
 /// `IMPORTED_VERSION`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ImportedVersion<T> {
+    /// Canonical `_type` discriminator (`"IMPORTED_VERSION"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<ImportedVersion<T>>,
+
     /// Embedded `VERSION<T>` state (`contribution`, `signature`,
     /// `commit_audit`) per ADR-001 §3. Per the class description, these
     /// are the *local* act-of-committal contribution and audit, distinct
     /// from the ones embedded inside the wrapped `item`.
+    #[serde(flatten)]
     pub version: VersionData,
 
     /// `item`: the `ORIGINAL_VERSION` object that was imported.
@@ -85,6 +93,10 @@ impl<T> VersionApi<T> for ImportedVersion<T> {
 // annotations of "(effected)" carry each function's Post-condition inline
 // via the "= item.<x>" wording, transcribed as this file's method bodies
 // above rather than as a separate Invariants block).
+
+impl<T> TypeName for ImportedVersion<T> {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS

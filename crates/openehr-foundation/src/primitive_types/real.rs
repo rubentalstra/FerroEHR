@@ -13,6 +13,7 @@ use super::double::Double;
 use super::integer::Integer;
 use super::numeric::Numeric;
 use super::ordered::Ordered;
+use serde::{Deserialize, Serialize};
 // PORT NOTE: `OrderedNumeric` is blanket-implemented in `ordered_numeric.rs`
 // for any type satisfying both `Ordered` and `Numeric`; no explicit impl
 // needed or possible here (see the equivalent note in `integer.rs`).
@@ -34,7 +35,7 @@ use super::ordered::Ordered;
 /// reference EHRbase/Java `float`-backed value, or for
 /// `rust_decimal`-adjacent `DV_QUANTITY`/`DV_COUNT` precision work in
 /// `openehr-rm`).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[repr(transparent)]
 pub struct Real(pub f64);
 
@@ -43,6 +44,7 @@ impl Real {
     ///
     /// Return the greatest integer no greater than the value of this
     /// object.
+    #[must_use]
     pub fn floor(&self) -> Integer {
         Integer(self.0.floor() as i32)
     }
@@ -55,6 +57,7 @@ impl Real {
     /// effector's result type to `Double`, not `Real`. Transcribed as an
     /// inherent method rather than through `Numeric::divide` (same-type
     /// shape only); see the trait-level PORT NOTE in `numeric.rs`.
+    #[must_use]
     pub fn divide(&self, other: &Real) -> Double {
         Double(self.0 / other.0)
     }
@@ -66,6 +69,7 @@ impl Real {
     /// PORT NOTE: covariant redefinition on both sides, transcribed
     /// literally as read from the per-class table (parameter and result
     /// both `Double`, not `Real`).
+    #[must_use]
     pub fn exponent(&self, other: &Double) -> Double {
         Double(self.0.powf(other.0))
     }
@@ -107,14 +111,14 @@ impl Numeric for Real {
         Real(self.0 * other.0)
     }
 
-    fn divide(&self, other: &Self) -> Self {
+    fn divide(&self, _other: &Self) -> Self {
         // TODO(port): Numeric::divide cannot express Real's true
         // Real -> Double result; see Real::divide for the spec-accurate
         // overload.
         todo!("Real as Numeric::divide: spec-accurate divide returns Double, see Real::divide")
     }
 
-    fn exponent(&self, other: &Self) -> Self {
+    fn exponent(&self, _other: &Self) -> Self {
         // TODO(port): Numeric::exponent cannot express Real's true
         // (Double) -> Double signature; see Real::exponent.
         todo!(

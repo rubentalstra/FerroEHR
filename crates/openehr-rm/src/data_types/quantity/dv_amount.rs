@@ -8,7 +8,7 @@
 //! For relative quantities, the `+` and `-` operators are defined (unlike
 //! descendants of `DV_ABSOLUTE_QUANTITY`, such as the date/time types).
 use super::dv_count::DvCount;
-use super::dv_ordered::{DvOrderedApi, DvOrderedData};
+use super::dv_ordered::DvOrderedApi;
 use super::dv_proportion::DvProportion;
 use super::dv_quantified::{DvQuantifiedApi, DvQuantifiedData};
 use super::dv_quantity::DvQuantity;
@@ -24,6 +24,7 @@ use crate::data_types::date_time::dv_duration::DvDuration;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered_numeric::OrderedNumeric;
 use openehr_foundation::primitive_types::real::Real;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `DV_AMOUNT` and its descendants.
 ///
@@ -35,9 +36,10 @@ use openehr_foundation::primitive_types::real::Real;
 /// `DvQuantifiedData<T>`/`DvOrderedData<T>` (see `dv_ordered.rs`,
 /// `dv_quantified.rs`), since `DV_AMOUNT`'s `Inherit` row is `DV_QUANTIFIED`
 /// and the self-referential range attributes flow through unchanged.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvAmountData<T: DvOrderedApi> {
     /// Embedded `DV_QUANTIFIED` parent state.
+    #[serde(flatten)]
     pub quantified: DvQuantifiedData<T>,
 
     /// `accuracy_is_percent`: `Boolean` (0..1).
@@ -45,6 +47,7 @@ pub struct DvAmountData<T: DvOrderedApi> {
     /// If `True`, indicates that when this object was created, `accuracy`
     /// was recorded as a percent value; if `False`, as an absolute
     /// quantity value.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub accuracy_is_percent: Option<bool>,
 
     /// `accuracy`: `Real` (0..1, redefined).
@@ -63,6 +66,12 @@ pub struct DvAmountData<T: DvOrderedApi> {
     /// that field's own PORT NOTE for why the unredefined form is expected
     /// to stay unused; `DvAmountData::accuracy` is the field every concrete
     /// `DV_AMOUNT` descendant actually reads/writes.
+    ///
+    /// PORT NOTE: the previously-flagged cross-crate gap (`Real` lacking
+    /// `Serialize`/`Deserialize` in `openehr-foundation`) is closed —
+    /// `openehr-foundation` now carries `serde` and `Real` derives both,
+    /// serializing as its bare inner `f64` (newtype transparency).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub accuracy: Option<Real>,
 }
 
@@ -93,7 +102,17 @@ pub const UNKNOWN_ACCURACY_VALUE: f64 = -1.0;
 /// purely as a forward `use` path, per the RM class inventory's own
 /// statement that `DV_DURATION` is a `DV_AMOUNT` subtype
 /// (PORT_MASTER_PLAN.md §7.1).
-#[derive(Debug, Clone, PartialEq)]
+///
+/// PORT NOTE: `#[serde(untagged)]` per ADR-002, matching `DvOrdered`'s
+/// conversion in `dv_ordered.rs` — abstract-set enums carry no tag of their
+/// own; the `_type` discriminator is emitted (and dispatched on input) by
+/// each concrete variant payload's own self-tagging `TypeTag<Self>` first
+/// field, which rejects a mismatched `_type` string so untagged probing is
+/// tag-driven. The former `#[serde(tag = "_type")]` + per-variant renames
+/// would duplicate the payload's own tag. `Duration` self-tags in the
+/// sibling `date_time` package's own ADR-002 pass.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum DvAmount {
     /// `DV_QUANTITY`.
     Quantity(DvQuantity),
@@ -258,5 +277,5 @@ impl<T: DvOrderedApi> Any for DvAmountData<T> {
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_amount.adoc §DV_AMOUNT Class
 //   confidence: medium
 //   todos: 4
-//   note: UNKNOWN_ACCURACY_VALUE drawn from class description prose (not a table row) since the published table has no Constants section for this class; valid_percentage stubbed pending a generic 0/100 comparison bound over T: OrderedNumeric; the two accuracy invariants recorded but not enforced; DvAmountApi has no impl for the DvAmount enum itself since its generic T varies per variant.
+//   note: UNKNOWN_ACCURACY_VALUE drawn from class description prose (not a table row) since the published table has no Constants section for this class; valid_percentage stubbed pending a generic 0/100 comparison bound over T: OrderedNumeric; the two accuracy invariants recorded but not enforced; DvAmountApi has no impl for the DvAmount enum itself since its generic T varies per variant. P4: DvAmountData<T> derives Serialize/Deserialize with `quantified` flattened; Real-lacks-serde gap now closed in openehr-foundation. ADR-002: DvAmountData is abstract, NO _type tag; DvAmount converted from #[serde(tag = "_type")] to #[serde(untagged)] — dispatch via each payload's own TypeTag (per-variant renames removed).
 // ─────────────────────────────────────────────

@@ -1,0 +1,26 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "REFERENCE_RANGE",
+  "meaning": {
+    "_type": "DV_TEXT",
+    "value": "normal"
+  },
+  "range": {
+    "_type": "DV_INTERVAL",
+    "lower": {
+      "_type": "DV_COUNT",
+      "magnitude": 2
+    },
+    "upper": {
+      "_type": "DV_COUNT",
+      "magnitude": 8
+    },
+    "lower_unbounded": false,
+    "upper_unbounded": false,
+    "lower_included": true,
+    "upper_included": true
+  }
+}

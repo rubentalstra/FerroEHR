@@ -1,0 +1,25 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "EXTRACT_SPEC",
+  "extract_type": {
+    "_type": "DV_CODED_TEXT",
+    "value": "full",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "full"
+    }
+  },
+  "include_multimedia": false,
+  "priority": 0,
+  "link_depth": 1,
+  "manifest": {
+    "_type": "EXTRACT_MANIFEST"
+  }
+}

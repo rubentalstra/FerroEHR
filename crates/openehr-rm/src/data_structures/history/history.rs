@@ -15,8 +15,8 @@
 //! be a multiple of `period` for each Event. Missing events in a periodic
 //! History are however allowed.
 
-use super::data_structure::DataStructureBehaviour;
 use super::event::Event;
+use crate::data_structures::item_structure::data_structure::DataStructureBehaviour;
 use crate::data_structures::item_structure::data_structure::DataStructureData;
 use crate::data_structures::item_structure::item_structure::{ItemStructure, ItemStructureApi};
 use crate::data_structures::representation::item::Item;
@@ -25,6 +25,8 @@ use crate::data_structures::representation::item::Item;
 // for the identical forward-reference rationale and assumed module path.
 use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::date_time::dv_duration::DvDuration;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `HISTORY<T>` class.
 ///
@@ -41,8 +43,16 @@ use crate::data_types::date_time::dv_duration::DvDuration;
 /// own `data: T` field, so `History<T>.events: Vec<Event<T>>` keeps every
 /// event's data locked to the same concrete `ITEM_STRUCTURE` subtype,
 /// exactly as the package narrative's "Basic Semantics" section describes.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct History<T: ItemStructureApi> {
+    /// Canonical `_type` discriminator (`"HISTORY"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    /// Spelled `TypeTag<History<T>>` (not `TypeTag<Self>`) and paired with
+    /// the mandatory function-path `default = "TypeTag::new"` so serde's
+    /// derive adds no spurious `T: Default` bound.
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<History<T>>,
+
     /// Inherited `DATA_STRUCTURE` (and transitively `LOCATABLE`) state.
     ///
     /// PORT NOTE: `HISTORY<T>` inherits `DATA_STRUCTURE` directly (not
@@ -54,6 +64,7 @@ pub struct History<T: ItemStructureApi> {
     /// `DATA_STRUCTURE`, shared across both the `item_structure` and
     /// `history` sub-packages of `rm.data_structures`), not
     /// `ItemStructureData`.
+    #[serde(flatten)]
     pub data_structure: DataStructureData,
 
     /// `origin`: time origin of this event history. The first event is not
@@ -65,6 +76,7 @@ pub struct History<T: ItemStructureApi> {
     /// `period`: period between samples in this segment if periodic.
     ///
     /// Cardinality `0..1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub period: Option<DvDuration>,
 
     /// `duration`: duration of the entire History; either corresponds to
@@ -72,6 +84,7 @@ pub struct History<T: ItemStructureApi> {
     /// the summary, if it exists.
     ///
     /// Cardinality `0..1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<DvDuration>,
 
     /// `summary`: optional summary data that aggregates, organizes,
@@ -85,6 +98,7 @@ pub struct History<T: ItemStructureApi> {
     /// structure, archetypable separately from the structure of the main
     /// data"), so it is typed with the closed `ItemStructure` enum rather
     /// than the generic `T`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub summary: Option<ItemStructure>,
 
     /// `events`: the events in the series. This attribute is of a generic
@@ -93,7 +107,16 @@ pub struct History<T: ItemStructureApi> {
     /// Cardinality `0..1` per the spec table; modelled as
     /// `Option<Vec<Event<T>>>` for the same "attribute absent vs. empty
     /// list" reasoning as `ItemList.items` (see `item_structure/item_list.rs`).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub events: Option<Vec<Event<T>>>,
+}
+
+// PORT NOTE: the `T: ItemStructureApi` bound is repeated here only because
+// the struct definition itself declares it (Rust requires an impl for a
+// bounded struct to satisfy the struct's own bounds); `TypeName` needs
+// nothing from `T` — the class name is `"HISTORY"` for every instantiation.
+impl<T: ItemStructureApi> TypeName for History<T> {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl<T: ItemStructureApi> History<T> {
@@ -149,5 +172,5 @@ pub const TYPE_NAME: &str = "HISTORY";
 //   source_loc: master06-history_package.adoc §Class Descriptions / history.adoc §HISTORY Class
 //   confidence: medium
 //   todos: 3
-//   note: is_periodic() is implemented (definitional); Events_valid and Period_consistency invariants deferred to the Validate framework, the latter transitively blocked on Event::offset() and DvDuration::to_seconds(); as_hierarchy() is genuinely underspecified for HISTORY (no ISO 13606 encoding rule documented for it anywhere in the item_structure or history package chapters).
+//   note: is_periodic() is implemented (definitional); Events_valid and Period_consistency invariants deferred to the Validate framework, the latter transitively blocked on Event::offset() and DvDuration::to_seconds(); as_hierarchy() is genuinely underspecified for HISTORY (no ISO 13606 encoding rule documented for it anywhere in the item_structure or history package chapters). P4/ADR-002: self-tag added (generic form TypeTag<History<T>>; TypeName impl mirrors the struct's own T: ItemStructureApi bound).
 // ─────────────────────────────────────────────

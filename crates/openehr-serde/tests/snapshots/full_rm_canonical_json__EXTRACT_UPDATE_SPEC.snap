@@ -1,0 +1,16 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "EXTRACT_UPDATE_SPEC",
+  "persist_in_server": false,
+  "update_method": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "openehr"
+    },
+    "code_string": "sync"
+  }
+}

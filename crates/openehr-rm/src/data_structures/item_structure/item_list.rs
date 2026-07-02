@@ -21,15 +21,23 @@ use crate::data_structures::representation::item::Item;
 // concurrently by a sibling agent; see `representation/element.rs` for the
 // identical forward-reference rationale and assumed module path.
 use crate::data_types::text::dv_text::DvText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `ITEM_LIST` class.
 ///
 /// Embeds the shared `ITEM_STRUCTURE` state (per ADR-001 §3) plus its own
 /// `items` attribute.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ItemList {
+    /// Canonical `_type` discriminator (`"ITEM_LIST"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Inherited `ITEM_STRUCTURE` (and transitively `DATA_STRUCTURE`,
     /// `LOCATABLE`) state.
+    #[serde(flatten)]
     pub item_structure: ItemStructureData,
 
     /// `items`: physical representation of the list.
@@ -41,7 +49,12 @@ pub struct ItemList {
     /// attribute to an empty `Vec`, to keep "attribute not set" and "list
     /// set but empty" distinguishable, matching the `0..1` cardinality
     /// literally.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<Element>>,
+}
+
+impl TypeName for ItemList {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl ItemStructureApi for ItemList {
@@ -134,5 +147,5 @@ pub const TYPE_NAME: &str = "ITEM_LIST";
 //   source_loc: master04-item_structure_package.adoc §Class Descriptions / item_list.adoc §ITEM_LIST Class
 //   confidence: medium
 //   todos: 5
-//   note: names()/named_item()/ith_item()/as_hierarchy() all block on the not-yet-landed common::archetyped::locatable module for LOCATABLE.name; Valid_structure invariant is structurally guaranteed by the Rust type system and needs only a Validate-framework no-op once that lands.
+//   note: names()/named_item()/ith_item()/as_hierarchy() all block on the not-yet-landed common::archetyped::locatable module for LOCATABLE.name; Valid_structure invariant is structurally guaranteed by the Rust type system and needs only a Validate-framework no-op once that lands. P4/ADR-002: self-tag (TypeName + first-field TypeTag) added.
 // ─────────────────────────────────────────────

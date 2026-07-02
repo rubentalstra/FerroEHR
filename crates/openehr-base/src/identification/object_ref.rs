@@ -9,10 +9,14 @@
 //! other distributed protocol. However, in small systems they may be part
 //! of the same executable as the data containing the Id.
 use super::object_id::ObjectId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. `ObjectRef` is embedded by value (not enum-wrapped) into
+/// `PartyRef`, so — as with the `OBJECT_ID` leaves in this package — the
+/// struct-level `#[serde(rename = "OBJECT_REF")]` below is inert for a
+/// standalone struct under `#[derive(Serialize)]`; see the caveat on
+/// `hier_object_id::TYPE_NAME`.
 pub const TYPE_NAME: &str = "OBJECT_REF";
 
 /// `OBJECT_REF` — a namespace, a type name, and the `OBJECT_ID` of the
@@ -23,8 +27,16 @@ pub const TYPE_NAME: &str = "OBJECT_REF";
 /// inheritance simulation. `LOCATABLE_REF` additionally redefines the `id`
 /// field's type (`OBJECT_ID` narrowed to `UID_BASED_ID`) — see
 /// `locatable_ref.rs` and ADR-001 §6.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct ObjectRef {
+    /// Canonical `_type` discriminator (`"OBJECT_REF"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `namespace`: namespace to which this identifier belongs in the
     /// local system context (and possibly in any other openEHR compliant
     /// environment) e.g. `terminology`, `demographic`. These names are not
@@ -56,11 +68,15 @@ pub struct ObjectRef {
     pub id: ObjectId,
 }
 
+impl TypeName for ObjectRef {
+    const NAME: &'static str = TYPE_NAME;
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 base_types.identification §OBJECT_REF — docs/research/spec-cache/BASE-1.2.0/uml_classes/object_ref.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / object_ref.adoc §OBJECT_REF Class
 //   confidence: high
 //   todos: 1
-//   note: namespace legal-value regex constraint recorded in doc comment, not yet enforced; type field named r#type since `type` is a Rust keyword.
+//   note: namespace legal-value regex constraint recorded in doc comment, not yet enforced; type field named r#type since `type` is a Rust keyword — verified empirically that serde strips the `r#` prefix automatically (field serializes as "type" with no explicit rename needed). No Option fields on this class; all three attributes are 1..1.
 // ─────────────────────────────────────────────

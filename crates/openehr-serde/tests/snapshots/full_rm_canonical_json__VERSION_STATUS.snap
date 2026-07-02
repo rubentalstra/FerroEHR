@@ -1,0 +1,8 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "VERSION_STATUS",
+  "value": "released"
+}

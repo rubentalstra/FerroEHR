@@ -14,12 +14,12 @@ use std::sync::Weak;
 
 use super::authored_resource::AuthoredResource;
 use super::resource_description_item::ResourceDescriptionItem;
-
-// TODO(port): `Terminology_code` is BASE 1.2.0 `foundation_types.primitive_types`
-// and has not yet been transcribed into `openehr-foundation` in this
-// worktree. Placeholder alias until that class exists; see the identical
-// note in `translation_details.rs`.
-type TerminologyCode = String;
+use openehr_foundation::primitive_types::string::OpenEhrString;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_foundation::terminology_types::terminology_code::TerminologyCode;
+use serde::de::Error as _;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// `RESOURCE_DESCRIPTION` — defines the descriptive meta-data of a resource.
 ///
@@ -39,9 +39,13 @@ type TerminologyCode = String;
 /// `RESOURCE_DESCRIPTION` is not itself a `PATHABLE`/`LOCATABLE` — the same
 /// owning-cycle hazard applies to any parent-pointer attribute, not only the
 /// RM's own `PATHABLE.parent()`.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename = "RESOURCE_DESCRIPTION")]
+#[derive(Debug, Clone)]
 pub struct ResourceDescription {
+    /// Canonical `_type` discriminator (`"RESOURCE_DESCRIPTION"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    pub type_tag: TypeTag<Self>,
+
     /// `original_author`: `Hash<String, String>`, cardinality 1..1.
     ///
     /// Original author of this resource, with all relevant details,
@@ -86,7 +90,6 @@ pub struct ResourceDescription {
     /// leaves the default's right-hand side empty/unspecified in the cached
     /// text. Not otherwise actionable until construction/assembly code
     /// exists to interpret it.
-    #[serde(skip)]
     pub parent_resource: Weak<AuthoredResource>,
 
     /// `custodian_namespace`: `String`, cardinality 0..1.
@@ -159,6 +162,141 @@ pub struct ResourceDescription {
 // class and would be surprising to a caller comparing two
 // `ResourceDescription`s for content equality. Add a manual `PartialEq` that
 // excludes `parent_resource` if value comparison is needed later.
+// P4: that manual impl is now needed (the canonical-JSON round-trip harness
+// compares fixture instances for content equality), so it is provided below,
+// excluding `parent_resource` exactly as anticipated.
+
+impl PartialEq for ResourceDescription {
+    fn eq(&self, other: &Self) -> bool {
+        self.original_author == other.original_author
+            && self.original_namespace == other.original_namespace
+            && self.original_publisher == other.original_publisher
+            && self.other_contributors == other.other_contributors
+            && self.lifecycle_state == other.lifecycle_state
+            && self.custodian_namespace == other.custodian_namespace
+            && self.custodian_organisation == other.custodian_organisation
+            && self.copyright == other.copyright
+            && self.licence == other.licence
+            && self.ip_acknowledgements == other.ip_acknowledgements
+            && self.references == other.references
+            && self.resource_package_uri == other.resource_package_uri
+            && self.conversion_details == other.conversion_details
+            && self.other_details == other.other_details
+            && self.details == other.details
+    }
+}
+
+impl TypeName for ResourceDescription {
+    const NAME: &'static str = "RESOURCE_DESCRIPTION";
+}
+
+impl Serialize for ResourceDescription {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut field_count = 5;
+        field_count += usize::from(self.other_contributors.is_some());
+        field_count += usize::from(self.resource_package_uri.is_some());
+        field_count += usize::from(self.other_details.is_some());
+
+        let mut state = serializer.serialize_struct("RESOURCE_DESCRIPTION", field_count)?;
+        state.serialize_field("_type", "RESOURCE_DESCRIPTION")?;
+        state.serialize_field("original_author", &self.original_author)?;
+        if let Some(other_contributors) = &self.other_contributors {
+            state.serialize_field("other_contributors", other_contributors)?;
+        }
+        state.serialize_field("lifecycle_state", &self.lifecycle_state.code_string)?;
+        if let Some(resource_package_uri) = &self.resource_package_uri {
+            state.serialize_field("resource_package_uri", resource_package_uri)?;
+        }
+        if let Some(other_details) = &self.other_details {
+            state.serialize_field("other_details", other_details)?;
+        }
+        state.serialize_field("parent_resource", &HashMap::<String, String>::new())?;
+
+        let mut details: Vec<(&String, &ResourceDescriptionItem)> = self
+            .details
+            .as_ref()
+            .map(|items| items.iter().collect())
+            .unwrap_or_default();
+        details.sort_by(|(left, _), (right, _)| left.cmp(right));
+        let detail_values: Vec<&ResourceDescriptionItem> =
+            details.into_iter().map(|(_, item)| item).collect();
+        state.serialize_field("details", &detail_values)?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for ResourceDescription {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Wire {
+            #[serde(rename = "_type")]
+            type_name: Option<String>,
+            original_author: HashMap<String, String>,
+            #[serde(default)]
+            other_contributors: Option<Vec<String>>,
+            lifecycle_state: String,
+            #[serde(default)]
+            resource_package_uri: Option<String>,
+            #[serde(default)]
+            other_details: Option<HashMap<String, String>>,
+            #[serde(default)]
+            parent_resource: HashMap<String, String>,
+            #[serde(default)]
+            details: Vec<ResourceDescriptionItem>,
+        }
+
+        let wire = Wire::deserialize(deserializer)?;
+        if wire
+            .type_name
+            .as_deref()
+            .is_some_and(|name| name != "RESOURCE_DESCRIPTION")
+        {
+            return Err(D::Error::custom("expected _type \"RESOURCE_DESCRIPTION\""));
+        }
+
+        let details = if wire.details.is_empty() {
+            None
+        } else {
+            let mut items = HashMap::new();
+            for item in wire.details {
+                items.insert(item.language.code_string.0.clone(), item);
+            }
+            Some(items)
+        };
+
+        let _parent_resource = wire.parent_resource;
+        Ok(ResourceDescription {
+            type_tag: TypeTag::new(),
+            original_author: wire.original_author,
+            original_namespace: None,
+            original_publisher: None,
+            other_contributors: wire.other_contributors,
+            lifecycle_state: TerminologyCode {
+                terminology_id: OpenEhrString("openehr".to_string()),
+                terminology_version: None,
+                code_string: OpenEhrString(wire.lifecycle_state),
+                uri: None,
+            },
+            parent_resource: Weak::new(),
+            custodian_namespace: None,
+            custodian_organisation: None,
+            copyright: None,
+            licence: None,
+            ip_acknowledgements: None,
+            references: None,
+            resource_package_uri: wire.resource_package_uri,
+            conversion_details: None,
+            other_details: wire.other_details,
+            details,
+        })
+    }
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS
@@ -166,5 +304,5 @@ pub struct ResourceDescription {
 //   source_loc: master02-resource_package.adoc §Class Descriptions / resource_description.adoc §RESOURCE_DESCRIPTION Class
 //   confidence: medium
 //   todos: 2
-//   note: parent_resource modelled as Weak<AuthoredResource> per the reverse-pointer rule; the spec's bare `{default = }` annotation on that attribute is not otherwise actionable yet. No invariants published for this class.
+//   note: parent_resource modelled as Weak<AuthoredResource> per the reverse-pointer rule; the spec's bare `{default = }` annotation on that attribute is not otherwise actionable yet. No invariants published for this class. P4: custom serde maps the in-memory BASE 1.2.0 shape to the pinned ITS-JSON object shape (`lifecycle_state` string, `details` array, placeholder `parent_resource` object).
 // ─────────────────────────────────────────────

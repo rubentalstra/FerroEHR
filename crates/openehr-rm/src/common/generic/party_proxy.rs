@@ -38,6 +38,7 @@
 //! and its own subtype `PARTY_RELATED` for parties whose relationship to
 //! the subject of the record is known).
 use openehr_base::identification::party_ref::PartyRef;
+use serde::{Deserialize, Serialize};
 
 use super::party_identified::PartyIdentified;
 use super::party_related::PartyRelated;
@@ -49,12 +50,13 @@ use super::party_self::PartySelf;
 /// marker trait). `PARTY_PROXY` declares one attribute,
 /// `external_ref: PARTY_REF` (cardinality `0..1`); every concrete subtype
 /// embeds this struct.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct PartyProxyData {
     /// `external_ref`: `PARTY_REF`, cardinality `0..1`.
     ///
     /// Optional reference to more detailed demographic or identification
     /// information for this party, in an external system.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub external_ref: Option<PartyRef>,
 }
 
@@ -86,14 +88,28 @@ pub struct PartyProxyData {
 /// `PartyRelated` directly into `PartyProxy` (rather than nesting a
 /// `PartyIdentified(PartyIdentifiedOrRelated)`-shaped indirection) is the
 /// simpler, equally faithful choice here.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// PORT NOTE (ADR-002): `#[serde(untagged)]`, not `#[serde(tag = "_type")]`
+/// — each variant payload carries its own self-tagging `TypeTag`, whose
+/// `Deserialize` fails on a mismatched `_type` string, so serde's untagged
+/// variant probing is tag-driven; an internal `tag` here would duplicate
+/// the payload's own `_type` key on output. Variant order is load-bearing
+/// only for tag-less input (structural fallback): `PartyRelated` is listed
+/// first because it is structurally richer than `PartyIdentified` (adds
+/// the mandatory `relationship`), which is in turn richer than the
+/// attribute-less `PartySelf`.
+// PartialOrd/Ord dropped from the derive set: the `PartyIdentified` /
+// `PartyRelated` variants derive no ordering (the spec defines none on
+// their DV_IDENTIFIER / DV_CODED_TEXT members).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum PartyProxy {
-    /// `PARTY_SELF`.
-    PartySelf(PartySelf),
-    /// `PARTY_IDENTIFIED`.
-    PartyIdentified(PartyIdentified),
     /// `PARTY_RELATED`.
     PartyRelated(PartyRelated),
+    /// `PARTY_IDENTIFIED`.
+    PartyIdentified(PartyIdentified),
+    /// `PARTY_SELF`.
+    PartySelf(PartySelf),
 }
 
 /// Marker/accessor trait shared by every `PARTY_PROXY` descendant,
@@ -108,10 +124,60 @@ pub trait PartyProxyApi {
 impl PartyProxyApi for PartyProxy {
     fn external_ref(&self) -> Option<&PartyRef> {
         match self {
-            PartyProxy::PartySelf(v) => v.external_ref(),
-            PartyProxy::PartyIdentified(v) => v.external_ref(),
             PartyProxy::PartyRelated(v) => v.external_ref(),
+            PartyProxy::PartyIdentified(v) => v.external_ref(),
+            PartyProxy::PartySelf(v) => v.external_ref(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use openehr_foundation::serde_support::TypeTag;
+
+    use super::super::party_identified::PartyIdentifiedData;
+    use super::*;
+
+    /// ADR-002: a bare `PARTY_SELF` (no `external_ref`) serializes as
+    /// exactly its `_type` discriminator and nothing else — the flattened
+    /// `PartyProxyData` contributes no key when `external_ref` is `None`.
+    #[test]
+    fn party_self_serializes_as_type_tag_only() {
+        let party_self = PartySelf {
+            type_tag: TypeTag::new(),
+            party_proxy: PartyProxyData { external_ref: None },
+        };
+        let json = serde_json::to_string(&party_self).unwrap();
+        assert_eq!(json, r#"{"_type":"PARTY_SELF"}"#);
+    }
+
+    /// ADR-002: a `PARTY_PROXY`-typed (abstract) slot round-trips a
+    /// `PARTY_IDENTIFIED` payload via its `_type` discriminator — the
+    /// untagged enum's probing must reject the structurally-richer
+    /// `PartyRelated` arm (wrong `_type`, missing `relationship`) and the
+    /// weaker `PartySelf` arm (wrong `_type`), landing on
+    /// `PartyIdentified` exactly.
+    #[test]
+    fn party_proxy_slot_roundtrips_party_identified_via_type() {
+        let identified = PartyIdentified {
+            type_tag: TypeTag::new(),
+            data: PartyIdentifiedData {
+                party_proxy: PartyProxyData { external_ref: None },
+                name: Some("Julius Marlowe, MD".to_string()),
+                identifiers: None,
+            },
+        };
+        let proxy = PartyProxy::PartyIdentified(identified);
+
+        let json = serde_json::to_string(&proxy).unwrap();
+        assert_eq!(
+            json,
+            r#"{"_type":"PARTY_IDENTIFIED","name":"Julius Marlowe, MD"}"#
+        );
+
+        let back: PartyProxy = serde_json::from_str(&json).unwrap();
+        assert!(matches!(back, PartyProxy::PartyIdentified(_)));
+        assert_eq!(back, proxy);
     }
 }
 
@@ -121,5 +187,5 @@ impl PartyProxyApi for PartyProxy {
 //   source_loc: common/master04-generic_package.adoc §Referring to Demographic Entities / uml_classes/party_proxy.adoc §PARTY_PROXY Class
 //   confidence: high
 //   todos: 0
-//   note: PartyProxy is the ADR-001 §4 named closed-enum example for this transcription pass; PartyRelated flattened as a direct sibling variant rather than nested inside PartyIdentified, since no spec attribute anywhere is typed narrowly as PARTY_IDENTIFIED requiring the narrower nesting (contrast ObjectId/UidBasedId) — documented as a considered, not arbitrary, choice.
+//   note: PartyProxy is the ADR-001 §4 named closed-enum example for this transcription pass; PartyRelated flattened as a direct sibling variant rather than nested inside PartyIdentified, since no spec attribute anywhere is typed narrowly as PARTY_IDENTIFIED requiring the narrower nesting (contrast ObjectId/UidBasedId) — documented as a considered, not arbitrary, choice. P4/ADR-002: enum switched from #[serde(tag)] to #[serde(untagged)] (dispatch via payload TypeTags), richest-first variant order (PartyRelated, PartyIdentified, PartySelf); PartyProxyData stays untagged (abstract); unit tests pin the bare PARTY_SELF wire form and the abstract-slot PARTY_IDENTIFIED round-trip.
 // ─────────────────────────────────────────────

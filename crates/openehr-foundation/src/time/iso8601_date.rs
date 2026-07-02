@@ -24,14 +24,16 @@ use crate::time::iso8601_timezone::Iso8601Timezone;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
 use crate::time::time_definitions::TimeDefinitions;
+use serde::{Deserialize, Serialize};
 
 /// `Iso8601_date` embeds the `Iso8601_type` parent state (`value: String`)
 /// via `Iso8601TypeCore`, per ADR-001 §3 (abstract-with-attributes → embedded
 /// struct + marker trait). This struct declares no attributes of its own
 /// beyond the inherited `value`.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Iso8601Date {
     /// Embedded `Iso8601_type.value: String`.
+    #[serde(flatten)]
     pub core: Iso8601TypeCore,
 }
 
@@ -42,6 +44,7 @@ impl Iso8601Date {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine (see module doc on `iso8601_type.rs`).
+    #[must_use]
     pub fn year(&self) -> i32 {
         todo!("Iso8601Date::year: string parsing deferred to the internal engine")
     }
@@ -55,6 +58,7 @@ impl Iso8601Date {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn month(&self) -> i32 {
         todo!("Iso8601Date::month: string parsing deferred to the internal engine")
     }
@@ -68,6 +72,7 @@ impl Iso8601Date {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn day(&self) -> i32 {
         todo!("Iso8601Date::day: string parsing deferred to the internal engine")
     }
@@ -83,6 +88,7 @@ impl Iso8601Date {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn timezone(&self) -> Option<Iso8601Timezone> {
         todo!("Iso8601Date::timezone: string parsing deferred to the internal engine")
     }
@@ -94,6 +100,7 @@ impl Iso8601Date {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn month_unknown(&self) -> bool {
         todo!("Iso8601Date::month_unknown: string parsing deferred to the internal engine")
     }
@@ -105,6 +112,7 @@ impl Iso8601Date {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn day_unknown(&self) -> bool {
         todo!("Iso8601Date::day_unknown: string parsing deferred to the internal engine")
     }
@@ -114,8 +122,9 @@ impl Iso8601Date {
     /// Arithmetic addition of a duration to a date.
     ///
     /// TODO(port): definite-arithmetic addition; deferred to the internal
-    /// engine (see the time_types chapter's "definite vs nominal" split —
+    /// engine (see the `time_types` chapter's "definite vs nominal" split —
     /// this is the `_add_()` definite form, contrast `add_nominal` below).
+    #[must_use]
     pub fn add(&self, a_diff: &Iso8601Duration) -> Iso8601Date {
         let _ = a_diff;
         todo!("Iso8601Date::add: definite-duration addition deferred to the internal engine")
@@ -127,6 +136,7 @@ impl Iso8601Date {
     ///
     /// TODO(port): definite-arithmetic subtraction; deferred to the
     /// internal engine.
+    #[must_use]
     pub fn subtract(&self, a_diff: &Iso8601Duration) -> Iso8601Date {
         let _ = a_diff;
         todo!(
@@ -139,6 +149,7 @@ impl Iso8601Date {
     /// Difference of two dates.
     ///
     /// TODO(port): deferred to the internal engine.
+    #[must_use]
     pub fn diff(&self, a_date: &Iso8601Date) -> Iso8601Duration {
         let _ = a_date;
         todo!("Iso8601Date::diff: deferred to the internal engine")
@@ -162,6 +173,7 @@ impl Iso8601Date {
     /// engine (candidate for a direct `jiff` calendar-arithmetic bridge at
     /// P17, since this is exactly the "everyday" leap/short-month handling
     /// `jiff` already implements).
+    #[must_use]
     pub fn add_nominal(&self, a_diff: &Iso8601Duration) -> Iso8601Date {
         let _ = a_diff;
         todo!("Iso8601Date::add_nominal: nominal-duration addition deferred to the internal engine")
@@ -174,6 +186,7 @@ impl Iso8601Date {
     ///
     /// TODO(port): nominal calendrical arithmetic; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn subtract_nominal(&self, a_diff: &Iso8601Duration) -> Iso8601Date {
         let _ = a_diff;
         todo!(
@@ -253,22 +266,26 @@ impl Iso8601Type for Iso8601Date {
 // `primitive_types::boolean` documents (rather than encodes as `Validate`)
 // its own class invariants.
 impl Iso8601Date {
-    /// __Year_valid__: `valid_year (year)`.
+    /// __`Year_valid`__: `valid_year (year)`.
+    #[must_use]
     pub fn invariant_year_valid(&self) -> bool {
         TimeDefinitions::valid_year(self.year())
     }
 
-    /// __Month_valid__: `not month_unknown implies valid_month (month)`.
+    /// __`Month_valid`__: `not month_unknown implies valid_month (month)`.
+    #[must_use]
     pub fn invariant_month_valid(&self) -> bool {
         self.month_unknown() || TimeDefinitions::valid_month(self.month())
     }
 
-    /// __Day_valid__: `not day_unknown implies valid_day (year, month, day)`.
+    /// __`Day_valid`__: `not day_unknown implies valid_day (year, month, day)`.
+    #[must_use]
     pub fn invariant_day_valid(&self) -> bool {
         self.day_unknown() || TimeDefinitions::valid_day(self.year(), self.month(), self.day())
     }
 
-    /// __Partial_validity__: `month_unknown implies day_unknown`.
+    /// __`Partial_validity`__: `month_unknown implies day_unknown`.
+    #[must_use]
     pub fn invariant_partial_validity(&self) -> bool {
         !self.month_unknown() || self.day_unknown()
     }

@@ -4,6 +4,28 @@ paths: ["crates/openehr-serde/**", "crates/openehr-flat/**"]
 
 # Serialization rules — canonical JSON, canonical XML, FLAT/STRUCTURED
 
+## The `_type` mechanism (ADR-002 — normative, do not improvise)
+
+Every concrete RM/BASE class self-tags. The mechanism is
+`openehr_foundation::serde_support::{TypeName, TypeTag}`:
+
+- `impl TypeName for Foo { const NAME: &'static str = TYPE_NAME; }`
+  (single-source the string from the file's existing `TYPE_NAME` const).
+- First struct field:
+  `#[serde(rename = "_type", default = "TypeTag::new")] pub type_tag:
+  TypeTag<Self>` (generics: `TypeTag<Foo<T>>` + `impl<T> TypeName for
+  Foo<T>`). The function-path `default = "TypeTag::new"` is mandatory —
+  bare `default` adds a spurious `T: Default` bound on generic containers.
+- Closed subtype-set enums are `#[serde(untagged)]`; never
+  `#[serde(tag = "_type")]` (it duplicates the payload's own tag). List
+  structurally richer variants first (`DvCodedText` before bare `DvText`).
+- Abstract classes and embedded `*Data` structs get **no** tag; a `*Data`
+  struct doubling as a bare concrete parent (`DvTextData` ≙ plain
+  `DV_TEXT`) implements `TypeName` so the enum's bare variant can carry
+  `TypeTag<FooData>` beside the `#[serde(flatten)]`ed data.
+- Struct-level `#[serde(rename = "CLASS")]` is a verified no-op on the wire
+  — delete it wherever found; it must never stand in for a `_type` tag.
+
 `openehr-serde` (canonical JSON + canonical XML) and `openehr-flat`
 (FLAT/STRUCTURED/Web Template) have no Java to port — both are written from
 specifications and vendor conventions (PORT_MASTER_PLAN.md Sections 7.3,

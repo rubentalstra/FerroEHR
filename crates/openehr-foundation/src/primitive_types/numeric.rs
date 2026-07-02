@@ -88,11 +88,53 @@ pub trait Numeric: Any {
     fn negative(&self) -> Self;
 }
 
+// PORT NOTE: raw `i64` stands in for `Integer64` where covariant
+// redefinition (`DV_COUNT.magnitude`, ADR-001 §6) uses the bare primitive;
+// resolves the P17-flagged bound conflict. See the matching `Any` impl in
+// `any.rs` and `Ordered` impl in `ordered.rs`. Bodies delegate to `i64`'s
+// native operators; `divide`/`exponent` mirror `Integer64`'s own Numeric
+// impl (the spec narrows both to `Double`-involving signatures the
+// same-type trait method cannot express).
+impl Numeric for i64 {
+    fn add(&self, other: &Self) -> Self {
+        self + other
+    }
+
+    fn subtract(&self, other: &Self) -> Self {
+        self - other
+    }
+
+    fn multiply(&self, other: &Self) -> Self {
+        self * other
+    }
+
+    fn divide(&self, _other: &Self) -> Self {
+        // TODO(port): Numeric::divide cannot express Integer64's true
+        // (Integer) -> Double result; see Integer64::divide for the
+        // spec-accurate overload.
+        todo!(
+            "i64 (Integer64 stand-in) as Numeric::divide: spec-accurate divide returns Double, see Integer64::divide"
+        )
+    }
+
+    fn exponent(&self, _other: &Self) -> Self {
+        // TODO(port): Numeric::exponent cannot express Integer64's true
+        // (Double) -> Double signature; see Integer64::exponent.
+        todo!(
+            "i64 (Integer64 stand-in) as Numeric::exponent: spec-accurate exponent takes/returns Double, see Integer64::exponent"
+        )
+    }
+
+    fn negative(&self) -> Self {
+        -self
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.primitive_types — docs/research/spec-cache/BASE-1.2.0/uml_classes/numeric.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master03-primitive_types.adoc §Class Definitions / numeric.adoc §Numeric Class
 //   confidence: medium
-//   todos: 2
+//   todos: 4
 //   note: divide/exponent kept in the trait for shape symmetry even though no concrete effector uses this same-type signature — the real, spec-accurate divide/exponent per type live as inherent methods on Integer/Integer64/Real/Double returning Double; revisit once all four concrete types exist to decide whether divide/exponent belong on this trait at all.
 // ─────────────────────────────────────────────

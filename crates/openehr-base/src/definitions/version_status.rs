@@ -7,16 +7,18 @@
 //! uncontrolled, prerelease, release, build. Each value corresponds to a
 //! specific rendering of a semantic-versioning-style `N.M.P` string, as
 //! documented per variant below.
+use serde::de::Error as _;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-/// Closed five-value enumeration, transcribed directly as a Rust `enum`
-/// with the spec's exact lower-case/snake_case symbol names preserved via
-/// [`VersionStatus::symbol`].
+/// Closed five-value enumeration, transcribed directly as a Rust `enum`.
+/// The spec's exact lower-case/snake_case symbol names are preserved by
+/// [`VersionStatus::symbol`] and by the canonical JSON `value` field.
 ///
-/// PORT NOTE: as with `ValidityKind` in this same package, no `serde`
-/// derive is added — `openehr-base` has no `serde` dependency yet, matching
-/// the sibling `openehr-foundation::primitive_types` cluster. `symbol()`
-/// carries the spec's own identifier for a later serde impl at the RM layer
-/// to key its rename off of.
+/// P4 update: as with `ValidityKind` in this same package, the pinned
+/// ITS-JSON schema exposes an object definition for this enumeration, so
+/// serde emits `{_type: "VERSION_STATUS", value: <symbol>}` and accepts
+/// the older bare symbol string for compatibility.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VersionStatus {
     /// `alpha` — a version which is 'unstable', i.e. contains an unknown
@@ -57,6 +59,60 @@ impl VersionStatus {
             VersionStatus::Build => "build",
         }
     }
+
+    fn from_symbol(value: &str) -> Option<Self> {
+        match value {
+            "alpha" => Some(VersionStatus::Alpha),
+            "beta" => Some(VersionStatus::Beta),
+            "release_candidate" => Some(VersionStatus::ReleaseCandidate),
+            "released" => Some(VersionStatus::Released),
+            "build" => Some(VersionStatus::Build),
+            _ => None,
+        }
+    }
+}
+
+impl Serialize for VersionStatus {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("VERSION_STATUS", 2)?;
+        state.serialize_field("_type", "VERSION_STATUS")?;
+        state.serialize_field("value", self.symbol())?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for VersionStatus {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Wire {
+            Object {
+                #[serde(rename = "_type")]
+                type_name: Option<String>,
+                value: String,
+            },
+            Bare(String),
+        }
+
+        let (type_name, value) = match Wire::deserialize(deserializer)? {
+            Wire::Object { type_name, value } => (type_name, value),
+            Wire::Bare(value) => (None, value),
+        };
+        if type_name
+            .as_deref()
+            .is_some_and(|name| name != "VERSION_STATUS")
+        {
+            return Err(D::Error::custom("expected _type \"VERSION_STATUS\""));
+        }
+        VersionStatus::from_symbol(&value)
+            .ok_or_else(|| D::Error::custom(format!("unknown VERSION_STATUS value {value:?}")))
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -65,5 +121,5 @@ impl VersionStatus {
 //   source_loc: master03-definitions_package.adoc §Class Definitions / version_status.adoc §VERSION_STATUS Enumeration
 //   confidence: high
 //   todos: 0
-//   note: closed 5-value enum with a symbol() method carrying the spec's own snake_case name; render-format strings (N.M.P-alpha.B etc.) are documentation only, not implemented as a formatting method since the spec table does not define one as a class function.
+//   note: closed 5-value enum with a symbol() method carrying the spec's own snake_case name; render-format strings (N.M.P-alpha.B etc.) are documentation only, not implemented as a formatting method since the spec table does not define one as a class function. P4 — canonical JSON emits object form `{_type:"VERSION_STATUS",value}` to satisfy the pinned ITS-JSON schema while preserving the enum symbol.
 // ─────────────────────────────────────────────

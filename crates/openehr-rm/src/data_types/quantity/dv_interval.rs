@@ -22,11 +22,13 @@
 use super::dv_ordered::DvOrderedApi;
 // TODO(port): forward-references DATA_VALUE (rm.data_types.basic), not yet
 // transcribed by the sibling package agent covering `data_types::basic`.
-use crate::data_types::basic::data_value::DataValue;
+use crate::data_types::data_value::DataValue;
 use openehr_foundation::interval::interval::Interval;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (serde derives wait until P4 per ADR-001 "Refinements").
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "DV_INTERVAL";
 
 /// `DV_INTERVAL<T>` inherits both `DATA_VALUE` and `Interval<T>` (BASE
@@ -51,13 +53,44 @@ pub const TYPE_NAME: &str = "DV_INTERVAL";
 /// generic → generic with trait bound). `DvOrderedApi: Ordered` (see
 /// `dv_ordered.rs`), so `T: DvOrderedApi` also satisfies `Interval<T>`'s own
 /// `T: Ordered` bound.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvInterval<T: DvOrderedApi> {
+    /// Canonical `_type` discriminator (`"DV_INTERVAL"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    ///
+    /// The function-path `default = "TypeTag::new"` form is mandatory on a
+    /// generic container — bare `default` makes serde's derive add a
+    /// spurious `T: Default` bound.
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<DvInterval<T>>,
+
     /// Embedded parent state from `Interval<T>` (BASE foundation_types); see
     /// the struct-level PORT NOTE for why this is composition rather than a
     /// flattened field list. Carries `lower`, `upper`, `lower_unbounded`,
     /// `upper_unbounded`, `lower_included`, `upper_included`.
+    ///
+    /// `#[serde(flatten)]` per this crate's established embedded-parent
+    /// convention (`DvCodedText.text`, `DvUri.uri`), so the wire shape is
+    /// `{"_type":"DV_INTERVAL","lower":…,"upper":…,"lower_included":…,…}`
+    /// with the six `Interval<T>` fields at top level, not nested under an
+    /// `"interval"`/`"range"` key.
+    ///
+    /// PORT NOTE: the previously-flagged cross-crate blocker is closed —
+    /// `openehr_foundation::interval::interval::Interval<T>` now derives
+    /// `Serialize`/`Deserialize` with `skip_serializing_if` on the optional
+    /// `lower`/`upper` limits, so nothing blocks this flatten.
+    #[serde(flatten)]
     pub range: Interval<T>,
+}
+
+/// ADR-002: `_type` string for `DV_INTERVAL`, single-sourced from
+/// [`TYPE_NAME`]. The impl repeats the struct's own declared
+/// `T: DvOrderedApi` bound (required for the type `DvInterval<T>` to be
+/// well-formed) but deliberately adds **no** further bounds — in particular
+/// no `T: Serialize`/`T: Default` — so the tag never constrains the generic
+/// parameter beyond the struct itself.
+impl<T: DvOrderedApi> TypeName for DvInterval<T> {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl<T: DvOrderedApi> DvInterval<T> {
@@ -100,5 +133,5 @@ use DataValue as _DataValueForwardRef;
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_interval.adoc §DV_INTERVAL Class
 //   confidence: high
 //   todos: 2
-//   note: Limits_consistent invariant recorded but not enforced (needs a Validate framework); DATA_VALUE parent not yet embedded pending sibling data_types::basic package landing. Interval<T>'s own has/intersects/contains remain todo!() at the foundation layer, inherited transitively.
+//   note: Limits_consistent invariant recorded but not enforced (needs a Validate framework); DATA_VALUE parent not yet embedded pending sibling data_types::basic package landing. Interval<T>'s own has/intersects/contains remain todo!() at the foundation layer, inherited transitively. P4/ADR-002: self-tags via TypeTag<DvInterval<T>> first field (function-path default, no extra bounds on T in the TypeName impl beyond the struct's own DvOrderedApi); `range` carries #[serde(flatten)], schema-verified (six Interval fields sit flat beside _type); foundation Interval<T> now derives serde, flatten unblocked.
 // ─────────────────────────────────────────────
