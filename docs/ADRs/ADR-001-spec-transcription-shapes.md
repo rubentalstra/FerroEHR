@@ -67,6 +67,19 @@ re-deciding per class. These decisions were sketched in Section 14.4 and
   correctness before P17 — the per-file `rustfmt` parse check and
   port-reviewer passes are the Phase A quality gates.
 
+## Refinements (P1, applied)
+
+- **Abstract class with attributes that is also used polymorphically as a
+  declared field type** (`UID`, `OBJECT_ID`, `UID_BASED_ID`) combines §3 and
+  §4: an `XxxData` struct (embeddable state) + a closed `Xxx` enum (one
+  variant per concrete descendant) + an `XxxApi` trait (shared accessors,
+  implemented on both). Narrower enums nest inside wider ones
+  (`ObjectId::UidBased(UidBasedId)`) so §6 covariant narrowing stays a plain
+  field type. Worked example: `crates/openehr-base/src/identification/`.
+- **serde derives wait until P4** (serde is not yet a dependency of the spec
+  crates); until then each concrete class carries
+  `pub const TYPE_NAME: &str = "<_type>"`.
+
 ## Alternatives considered
 
 - **Trait objects everywhere** (archie-like): rejected — open polymorphism
