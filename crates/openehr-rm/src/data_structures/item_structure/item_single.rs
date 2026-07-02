@@ -9,21 +9,33 @@ use super::data_structure::DataStructureBehaviour;
 use super::item_structure::{ItemStructureApi, ItemStructureData};
 use crate::data_structures::representation::element::Element;
 use crate::data_structures::representation::item::Item;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `ITEM_SINGLE` class.
 ///
 /// Embeds the shared `ITEM_STRUCTURE` state (per ADR-001 §3) plus its own
 /// `item` attribute.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ItemSingle {
+    /// Canonical `_type` discriminator (`"ITEM_SINGLE"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Inherited `ITEM_STRUCTURE` (and transitively `DATA_STRUCTURE`,
     /// `LOCATABLE`) state.
+    #[serde(flatten)]
     pub item_structure: ItemStructureData,
 
     /// `item`: the single element carried by this structure.
     ///
     /// Cardinality `1..1`.
     pub item: Element,
+}
+
+impl TypeName for ItemSingle {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl ItemStructureApi for ItemSingle {
@@ -63,5 +75,5 @@ pub const TYPE_NAME: &str = "ITEM_SINGLE";
 //   source_loc: master04-item_structure_package.adoc §Class Descriptions / item_single.adoc §ITEM_SINGLE Class
 //   confidence: high
 //   todos: 0
-//   note: as_hierarchy() is a straight clone of the single element per the spec description ("consisting of a single ELEMENT"); revisit clone cost at P17/PERF pass if Element grows expensive to copy.
+//   note: as_hierarchy() is a straight clone of the single element per the spec description ("consisting of a single ELEMENT"); revisit clone cost at P17/PERF pass if Element grows expensive to copy. P4: added #[serde(flatten)] on `item_structure` (was missing) so ITEM_STRUCTURE's fields sit flat on ITEM_SINGLE per the ITS-JSON schema; ADR-002 self-tag (TypeName + first-field TypeTag) added.
 // ─────────────────────────────────────────────

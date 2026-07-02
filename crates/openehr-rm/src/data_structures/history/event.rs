@@ -27,6 +27,7 @@ use crate::data_types::date_time::dv_duration::DvDuration;
 // transcribed concurrently; see `representation/item.rs` for the identical
 // forward-reference rationale.
 use crate::common::archetyped::locatable::LocatableData;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `EVENT<T>` and its descendants.
 ///
@@ -40,11 +41,12 @@ use crate::common::archetyped::locatable::LocatableData;
 /// `ItemStructure` enum's own constituent types where a concrete `EVENT<T>`
 /// is instantiated (e.g. `EVENT<ItemTree>`), matching how `HISTORY<T:
 /// ITEM_STRUCTURE>` is transcribed in `history.rs`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EventData<T> {
     /// Inherited `LOCATABLE` state.
     ///
     /// TODO(port): forward reference; see `representation/item.rs`.
+    #[serde(flatten)]
     pub locatable: LocatableData,
 
     /// `time`: time of this event. If the width is non-zero, it is the
@@ -56,6 +58,7 @@ pub struct EventData<T> {
     /// `state`: optional state data for this event.
     ///
     /// Cardinality `0..1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<ItemStructure>,
 
     /// `data`: the data of this event.
@@ -71,12 +74,24 @@ pub struct EventData<T> {
 /// subtypes `POINT_EVENT<T>` and `INTERVAL_EVENT<T>` are collected into
 /// this closed, still-generic `enum` so a field or return type can be
 /// declared `Event<T>` exactly where the spec declares it `EVENT<T>`.
-#[derive(Debug, Clone, PartialEq)]
+// PORT NOTE: `#[serde(untagged)]` per ADR-002 — dispatch is driven by each
+// variant payload's own `TypeTag` (`PointEvent`/`IntervalEvent` self-tag
+// with `_type`), whose `Deserialize` fails on a mismatched `_type` string,
+// so untagged probing is tag-driven rather than structure-driven. A
+// struct-level `#[serde(tag = "_type")]` here would duplicate the payloads'
+// own `_type` keys on the wire. Variant order lists the structurally richer
+// payload first per ADR-002 (`IntervalEvent` requires `width` and
+// `math_function`, which a bare `POINT_EVENT` payload lacks; the reverse
+// probe would swallow an interval event into `Point` on tag-less input) —
+// this inverts the spec's own POINT_EVENT-then-INTERVAL_EVENT listing
+// order, deliberately.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Event<T> {
-    /// `POINT_EVENT<T>`.
-    Point(PointEvent<T>),
     /// `INTERVAL_EVENT<T>`.
     Interval(IntervalEvent<T>),
+    /// `POINT_EVENT<T>`.
+    Point(PointEvent<T>),
 }
 
 /// Marker/accessor trait shared by every `EVENT<T>` descendant, exposing
@@ -137,5 +152,5 @@ pub const TYPE_NAME: &str = "EVENT";
 //   source_loc: master06-history_package.adoc §Class Descriptions / event.adoc §EVENT Class
 //   confidence: medium
 //   todos: 3
-//   note: EVENT inherits LOCATABLE per its own spec table (confirmed distinct from the PATHABLE-not-LOCATABLE watch-out class list); offset() and its restating invariant both block on the PATHABLE.parent() back-reference plus DvDateTime::diff(), neither of which has landed yet.
+//   note: EVENT inherits LOCATABLE per its own spec table (confirmed distinct from the PATHABLE-not-LOCATABLE watch-out class list); offset() and its restating invariant both block on the PATHABLE.parent() back-reference plus DvDateTime::diff(), neither of which has landed yet. P4/ADR-002: Event<T> enum is #[serde(untagged)] with richer Interval variant listed first (payload TypeTags drive dispatch); EventData<T> stays untagged (abstract).
 // ─────────────────────────────────────────────

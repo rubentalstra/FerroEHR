@@ -43,6 +43,7 @@ impl MultiplicityInterval {
     /// `is_open` `(): Boolean`.
     ///
     /// True if this interval imposes no constraints, i.e. is set to `0..*`.
+    #[must_use]
     pub fn is_open(&self) -> bool {
         let lower_is_zero = self
             .proper_interval
@@ -56,6 +57,7 @@ impl MultiplicityInterval {
     /// `is_optional` `(): Boolean`.
     ///
     /// True if this interval expresses optionality, i.e. `0..1`.
+    #[must_use]
     pub fn is_optional(&self) -> bool {
         let lower_is_zero = self
             .proper_interval
@@ -75,6 +77,7 @@ impl MultiplicityInterval {
     /// `is_mandatory` `(): Boolean`.
     ///
     /// True if this interval expresses mandation, i.e. `1..1`.
+    #[must_use]
     pub fn is_mandatory(&self) -> bool {
         let lower_is_one = self
             .proper_interval
@@ -94,6 +97,7 @@ impl MultiplicityInterval {
     /// `is_prohibited` `(): Boolean`.
     ///
     /// True if this interval is set to `0..0`.
+    #[must_use]
     pub fn is_prohibited(&self) -> bool {
         let lower_is_zero = self
             .proper_interval

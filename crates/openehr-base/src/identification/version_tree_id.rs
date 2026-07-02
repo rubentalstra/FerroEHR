@@ -12,16 +12,29 @@
 //! being an `OBJECT_ID` itself. It is transcribed here as its own struct
 //! with no embedding relationship to the `UID`/`OBJECT_ID` clusters.
 
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. P4/ADR-002 update: this const single-sources the string carried by
+/// the struct's own self-tagging `type_tag` field below (via the
+/// [`TypeName`] impl), so a serialized `VersionTreeId` emits
+/// `{"_type": "VERSION_TREE_ID", ...}` itself even though it is never
+/// wrapped by any subtype-set enum in this package.
 pub const TYPE_NAME: &str = "VERSION_TREE_ID";
 
 /// `VERSION_TREE_ID` — string form of the identifier plus functions that
 /// parse its `trunk_version [ '.' branch_number '.' branch_version ]`
 /// lexical structure.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct VersionTreeId {
+    /// Canonical `_type` discriminator (`"VERSION_TREE_ID"`), always
+    /// serialized first; tolerated-absent and validated-if-present on input
+    /// (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `value`: string form of this identifier.
     ///
     /// Invariant `Value_valid`: `not value.is_empty`.
@@ -30,6 +43,10 @@ pub struct VersionTreeId {
     /// impl; see the full invariant list in the doc comment on
     /// [`VersionTreeId::is_branch`] and below.
     pub value: String,
+}
+
+impl TypeName for VersionTreeId {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl VersionTreeId {
@@ -43,8 +60,7 @@ impl VersionTreeId {
     pub fn trunk_version(&self) -> String {
         self.value
             .split_once('.')
-            .map(|(trunk, _rest)| trunk.to_string())
-            .unwrap_or_else(|| self.value.clone())
+            .map_or_else(|| self.value.clone(), |(trunk, _rest)| trunk.to_string())
     }
 
     /// `is_branch(): Boolean`.
@@ -124,5 +140,5 @@ impl VersionTreeId {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / version_tree_id.adoc §VERSION_TREE_ID Class
 //   confidence: medium
 //   todos: 2
-//   note: branch_number/branch_version return empty String for the non-branch case rather than Option<String>, resolving a table-vs-invariant cardinality tension in the spec text; is_first derived from the Is_first_validity invariant since it has no Functions-table entry of its own.
+//   note: branch_number/branch_version return empty String for the non-branch case rather than Option<String>, resolving a table-vs-invariant cardinality tension in the spec text; is_first derived from the Is_first_validity invariant since it has no Functions-table entry of its own. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted.
 // ─────────────────────────────────────────────

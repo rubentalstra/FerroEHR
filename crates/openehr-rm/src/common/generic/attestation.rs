@@ -55,8 +55,10 @@
 use crate::data_types::encapsulated::dv_multimedia::DvMultimedia;
 use crate::data_types::text::dv_text::DvText;
 use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-use super::audit_details::AuditDetails;
+use super::audit_details::AuditDetailsData;
 
 /// Canonical `_type` discriminator string for this class in serialized
 /// form. Per ADR-001 refinements ("serde derives wait until P4"), a
@@ -69,21 +71,33 @@ pub const TYPE_NAME: &str = "ATTESTATION";
 /// `time_committed`, `change_type`, `description`, `committer`) is carried
 /// via an embedded [`AuditDetails`] field, with the five new attributes
 /// declared directly on this struct.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Attestation {
+    /// Canonical `_type` discriminator (`"ATTESTATION"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `AUDIT_DETAILS` state (`system_id`, `time_committed`,
     /// `change_type`, `description`, `committer`).
-    pub audit_details: AuditDetails,
+    ///
+    /// PORT NOTE: flattens the untagged [`AuditDetailsData`] (not the
+    /// self-tagged `AuditDetails` wrapper) so the parent's `_type` never
+    /// leaks into `ATTESTATION` output (ADR-002).
+    #[serde(flatten)]
+    pub audit_details: AuditDetailsData,
 
     /// `attested_view`: `DV_MULTIMEDIA`, cardinality `0..1`.
     ///
     /// Optional visual representation of content attested, e.g. screen
     /// image.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub attested_view: Option<DvMultimedia>,
 
     /// `proof`: `String`, cardinality `0..1`.
     ///
     /// Proof of attestation.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
 
     /// `items`: `List<DV_EHR_URI>`, cardinality `0..1`.
@@ -100,6 +114,7 @@ pub struct Attestation {
     /// TODO(port): invariant not yet enforced by a constructor/`Validate`
     /// impl; recorded here as a doc note pending the RM invariant
     /// framework (`.claude/rules/rm-transcription.md` "Invariants").
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<DvEhrUri>>,
 
     /// `reason`: `DV_TEXT`, cardinality `1..1`.
@@ -123,6 +138,10 @@ pub struct Attestation {
     /// True if this attestation is outstanding; False means it has been
     /// completed.
     pub is_pending: bool,
+}
+
+impl TypeName for Attestation {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl Attestation {

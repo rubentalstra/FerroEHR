@@ -1,0 +1,18 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "TRANSLATION_DETAILS",
+  "language": {
+    "terminology_id": "ISO_639-1",
+    "code_string": "nl",
+    "uri": {
+      "_type": "URI",
+      "value": "http://example.org/terminology/nl"
+    }
+  },
+  "author": {
+    "name": "T. Author"
+  }
+}

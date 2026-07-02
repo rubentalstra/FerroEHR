@@ -1,0 +1,20 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "GENERIC_ENTRY",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "Imported"
+  },
+  "archetype_node_id": "openEHR-EHR-GENERIC_ENTRY.generic.v1",
+  "data": {
+    "_type": "ITEM_TREE",
+    "name": {
+      "_type": "DV_TEXT",
+      "value": "data"
+    },
+    "archetype_node_id": "at0001"
+  }
+}

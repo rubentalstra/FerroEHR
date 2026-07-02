@@ -22,6 +22,7 @@ use super::party_identity::PartyIdentity;
 use super::party_relationship::PartyRelationship;
 use super::role::Role;
 use crate::common::archetyped::locatable::LocatableData;
+use serde::{Deserialize, Serialize};
 // TODO(port): `crate::common::generic` back-reference types (`CONTACT`,
 // `LOCATABLE_REF`) — forward-referenced below; sibling agent owns
 // `common/generic`.
@@ -45,10 +46,15 @@ use crate::common::archetyped::locatable::LocatableData;
 /// spec does not make (it is `LOCATABLE.uid: UID_BASED_ID [0..1]` in every
 /// other subtype), and this class only makes it invariant-mandatory, not
 /// syntactically required.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// Per ADR-002, `PartyData` is an abstract-class embedded `*Data` struct
+/// and carries **no** `_type` tag of its own; only the concrete leaves
+/// (`PERSON`, `ORGANISATION`, `GROUP`, `AGENT`, `ROLE`) self-tag.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartyData {
     /// Inherited `LOCATABLE` state (`name`, `archetype_node_id`, `uid`,
     /// `links`, `archetype_details`, `feeder_audit`).
+    #[serde(flatten)]
     pub locatable: LocatableData,
 
     /// `identities`: `List<PARTY_IDENTITY>` — identities used by the party
@@ -64,6 +70,7 @@ pub struct PartyData {
     ///
     /// TODO(port): `CONTACT` lives in this same `demographic` module
     /// (`contact.rs`); imported directly once wired.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub contacts: Option<Vec<super::contact::Contact>>,
 
     /// `details`: `ITEM_STRUCTURE` `[0..1]` — all other details for this
@@ -71,6 +78,7 @@ pub struct PartyData {
     ///
     /// TODO(port): forward-reference to `crate::data_structures::item_structure`'s
     /// closed `ItemStructure` enum (owned by a sibling agent's package).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub details: Option<crate::data_structures::item_structure::ItemStructure>,
 
     /// `reverse_relationships`: `List<LOCATABLE_REF>` `[0..1]` — references
@@ -80,11 +88,13 @@ pub struct PartyData {
     /// (sibling agent owns `common/generic`); using `openehr_base`'s
     /// `LocatableRef` name pending confirmation of where the RM re-exports
     /// or wraps it.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub reverse_relationships:
         Option<Vec<openehr_base::identification::locatable_ref::LocatableRef>>,
 
     /// `relationships`: `List<PARTY_RELATIONSHIP>` `[0..1]` — relationships
     /// in which this Party takes part as source.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub relationships: Option<Vec<PartyRelationship>>,
 }
 
@@ -100,7 +110,21 @@ pub struct PartyData {
 /// AGENT}`; `PARTY` → `ROLE`) directly rather than flattening it, matching
 /// ADR-001 §4's "closed subtype set → enum" rule applied at each level of
 /// the hierarchy the spec itself declares.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// PORT NOTE: `#[serde(untagged)]` per ADR-002 — both levels of the nested
+/// enum (`Party` here, `Actor` in `actor.rs`) carry no tag of their own;
+/// dispatch is driven by each concrete leaf payload's own `TypeTag` field
+/// (`PERSON`/`ORGANISATION`/`GROUP`/`AGENT` via the `Actor` branch, `ROLE`
+/// directly), whose `Deserialize` fails on a mismatched `_type` string, so
+/// untagged probing selects exactly the variant whose class name matches.
+/// This resolves the previous P4 wave's flagged asymmetry (a manual
+/// wire-enum here, and before that an internally tagged `Actor` under which
+/// `Role` reached the wire with no `_type` at all): every concrete `PARTY`
+/// leaf, `Role` included, now self-tags identically, and the abstract
+/// `PARTY`/`ACTOR` layers emit nothing — matching the pinned schema's
+/// absence of abstract-class definitions.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Party {
     /// The `ACTOR` branch (`PERSON`, `ORGANISATION`, `GROUP`, or `AGENT`).
     Actor(Actor),
@@ -186,11 +210,98 @@ impl PartyApi for Party {
 //   - Is_archetype_root: is_archetype_root
 //   - Uid_mandatory: uid /= Void — see the PORT NOTE on `PartyData` above.
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::archetyped::locatable::LocatableData;
+    use crate::data_types::text::dv_text::{DvText, DvTextData};
+    use crate::demographic::actor::ActorData;
+    use crate::demographic::person::Person;
+    use openehr_base::identification::hier_object_id::HierObjectId;
+    use openehr_base::identification::object_id::ObjectId;
+    use openehr_base::identification::party_ref::PartyRef;
+    use openehr_base::identification::uid_based_id::{UidBasedId, UidBasedIdData};
+    use openehr_foundation::serde_support::TypeTag;
+
+    fn party_data(name: &str) -> PartyData {
+        PartyData {
+            locatable: LocatableData {
+                name: DvText::Text {
+                    type_tag: TypeTag::new(),
+                    data: DvTextData {
+                        value: name.to_string(),
+                        hyperlink: None,
+                        formatting: None,
+                        mappings: None,
+                        language: None,
+                        encoding: None,
+                    },
+                },
+                archetype_node_id: "at0000".to_string(),
+                uid: None,
+                links: None,
+                archetype_details: None,
+                feeder_audit: None,
+                parent: None,
+            },
+            identities: vec![],
+            contacts: None,
+            details: None,
+            reverse_relationships: None,
+            relationships: None,
+        }
+    }
+
+    /// ADR-002: a `PARTY`-typed (abstract) slot round-trips both an `ACTOR`
+    /// leaf (`PERSON`, two untagged levels deep) and a `ROLE` (one level)
+    /// purely via each payload's own `TypeTag` — including that `Role` now
+    /// carries its own `_type: "ROLE"`, the previous wave's unresolved flag.
+    #[test]
+    fn party_slot_round_trips_person_and_role_via_untagged_chain() {
+        let person = Party::Actor(Actor::Person(Person {
+            type_tag: TypeTag::new(),
+            actor: ActorData {
+                party: party_data("person party"),
+                languages: None,
+                roles: None,
+            },
+        }));
+        let person_json = serde_json::to_value(&person).expect("serialize Party::Actor(Person)");
+        assert_eq!(person_json["_type"], "PERSON");
+        let person_back: Party =
+            serde_json::from_value(person_json).expect("deserialize PERSON into Party slot");
+        assert_eq!(person_back, person);
+
+        let role = Party::Role(Role {
+            type_tag: TypeTag::new(),
+            party: party_data("role party"),
+            time_validity: None,
+            performer: PartyRef {
+                type_tag: TypeTag::new(),
+                namespace: "demographic".to_string(),
+                r#type: "PERSON".to_string(),
+                id: ObjectId::UidBased(UidBasedId::HierObjectId(HierObjectId {
+                    type_tag: TypeTag::new(),
+                    uid_based_id: UidBasedIdData {
+                        value: "8849182c-82ad-4088-a07f-48ead4180515".to_string(),
+                    },
+                })),
+            },
+            capabilities: None,
+        });
+        let role_json = serde_json::to_value(&role).expect("serialize Party::Role");
+        assert_eq!(role_json["_type"], "ROLE");
+        let role_back: Party =
+            serde_json::from_value(role_json).expect("deserialize ROLE into Party slot");
+        assert_eq!(role_back, role);
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 demographic §Class Definitions PARTY — docs/research/spec-cache/RM-1.1.0/uml_classes/party.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/party.adoc §PARTY Class
 //   confidence: medium
 //   todos: 8
-//   note: Party/Actor nested-enum shape per task refinement; Uid_mandatory invariant narrows optionality not type, left as Validate TODO; Reverse_relationships_validity references an undefined repository() construct.
+//   note: Party/Actor nested-enum shape per task refinement; Uid_mandatory invariant narrows optionality not type, left as Validate TODO; Reverse_relationships_validity references an undefined repository() construct. P4/ADR-002: Party and Actor both #[serde(untagged)], dispatch via each concrete leaf's own TypeTag (manual wire enum deleted; Role now self-tags — previous wave's flag resolved); PartyData stays tag-less (abstract), flatten+skip-if-none per field; round-trip pinned by in-file test.
 // ─────────────────────────────────────────────

@@ -11,11 +11,14 @@
 //! of this class (in other words, if the demographic model is changed by
 //! the addition of a new `PARTY` or `ACTOR` subtypes, valid `PARTY_REF`s
 //! can still be constructed to them).
-use super::object_ref::ObjectRef;
+use super::object_id::ObjectId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. `PartyRef` is not currently reached through any tagged enum in
+/// this crate, so the struct-level `#[serde(rename = "PARTY_REF")]` below
+/// is inert for this standalone struct under `#[derive(Serialize)]`; see
+/// the caveat on `hier_object_id::TYPE_NAME`.
 pub const TYPE_NAME: &str = "PARTY_REF";
 
 /// The closed set of legal values for `ObjectRef.type` on a `PARTY_REF`,
@@ -46,10 +49,42 @@ pub const VALID_TYPES: &[&str] = &[
 /// `PARTY_REF` declares no new attribute of its own beyond those inherited
 /// from `OBJECT_REF`, so it embeds `ObjectRef` verbatim (ADR-001 §3) and
 /// constrains the inherited `type` field via the `Type_validity` invariant.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `object_ref` field folds
+/// `ObjectRef`'s three attributes (`namespace`, `type`, `id`) directly into
+/// this struct's JSON object rather than nesting them under an `object_ref`
+/// key.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct PartyRef {
-    /// Embedded `OBJECT_REF` state (`namespace`, `type`, `id`).
-    pub object_ref: ObjectRef,
+    /// Canonical `_type` discriminator (`"PARTY_REF"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
+    /// `namespace`, inherited unchanged from `OBJECT_REF`.
+    ///
+    /// PORT NOTE (ADR-002): `PARTY_REF` previously embedded the full
+    /// [`ObjectRef`] via `#[serde(flatten)]`, but `OBJECT_REF` is itself a
+    /// concrete, self-tagged class — flattening it leaks an inner
+    /// `_type: "OBJECT_REF"` that collides with this struct's own tag. The
+    /// three inherited fields are therefore re-declared directly, matching
+    /// the `locatable_ref.rs` precedent.
+    pub namespace: String,
+
+    /// `type`, inherited unchanged from `OBJECT_REF`. Constrained by the
+    /// `Type_validity` invariant (see [`VALID_TYPES`]).
+    #[serde(rename = "type")]
+    pub r#type: String,
+
+    /// `id`, inherited unchanged from `OBJECT_REF`.
+    pub id: ObjectId,
+}
+
+impl TypeName for PartyRef {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl PartyRef {
@@ -63,7 +98,7 @@ impl PartyRef {
     /// method lets a future `Validate` impl call the check directly once
     /// that framework lands.
     pub fn is_type_valid(&self) -> bool {
-        VALID_TYPES.contains(&self.object_ref.r#type.as_str())
+        VALID_TYPES.contains(&self.r#type.as_str())
     }
 }
 

@@ -21,14 +21,24 @@ use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
-use crate::time::time_definitions::TimeDefinitions;
+use serde::{Deserialize, Serialize};
 
 /// `Iso8601_duration` embeds the `Iso8601_type` parent state (`value:
 /// String`) via `Iso8601TypeCore`, per ADR-001 §3. This struct declares no
 /// attributes of its own beyond the inherited `value`.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Iso8601Duration {
     /// Embedded `Iso8601_type.value: String`.
+    ///
+    /// `#[serde(flatten)]` per P4: `DV_DURATION` (the sole embedder of this
+    /// struct, via `#[serde(flatten)] pub iso8601: Iso8601Duration` on
+    /// `openehr_rm::data_types::date_time::dv_duration::DvDuration`)
+    /// declares `value` as a canonical top-level `String` property in its
+    /// ITS-JSON schema, not a nested `{"core": {"value": ...}}` object;
+    /// without flattening here, the double-embedding (`DvDuration.iso8601`
+    /// flattened, but `core` not) would still emit the field nested one
+    /// level too deep.
+    #[serde(flatten)]
     pub core: Iso8601TypeCore,
 }
 
@@ -40,6 +50,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn years(&self) -> i32 {
         todo!("Iso8601Duration::years: string parsing deferred to the internal engine")
     }
@@ -51,6 +62,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn months(&self) -> i32 {
         todo!("Iso8601Duration::months: string parsing deferred to the internal engine")
     }
@@ -62,6 +74,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn days(&self) -> i32 {
         todo!("Iso8601Duration::days: string parsing deferred to the internal engine")
     }
@@ -73,6 +86,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn hours(&self) -> i32 {
         todo!("Iso8601Duration::hours: string parsing deferred to the internal engine")
     }
@@ -84,6 +98,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn minutes(&self) -> i32 {
         todo!("Iso8601Duration::minutes: string parsing deferred to the internal engine")
     }
@@ -95,6 +110,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn seconds(&self) -> i32 {
         todo!("Iso8601Duration::seconds: string parsing deferred to the internal engine")
     }
@@ -106,6 +122,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn fractional_seconds(&self) -> f64 {
         todo!("Iso8601Duration::fractional_seconds: string parsing deferred to the internal engine")
     }
@@ -117,6 +134,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn weeks(&self) -> i32 {
         todo!("Iso8601Duration::weeks: string parsing deferred to the internal engine")
     }
@@ -128,6 +146,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn is_decimal_sign_comma(&self) -> bool {
         todo!(
             "Iso8601Duration::is_decimal_sign_comma: string parsing deferred to the internal engine"
@@ -151,6 +170,7 @@ impl Iso8601Duration {
     /// + seconds + fractional_seconds`, using
     /// `TimeDefinitions::AVERAGE_DAYS_IN_YEAR`/`AVERAGE_DAYS_IN_MONTH` per
     /// the spec description.
+    #[must_use]
     pub fn to_seconds(&self) -> f64 {
         todo!(
             "Iso8601Duration::to_seconds: depends on component accessors, deferred to the internal engine"
@@ -173,6 +193,7 @@ impl Iso8601Duration {
     /// already exactly correct for this type without an override. No
     /// override written; documented here so a reviewer does not need to
     /// re-derive why one is absent.
+    #[must_use]
     pub fn as_string(&self) -> String {
         Iso8601Type::as_string(self)
     }
@@ -186,6 +207,7 @@ impl Iso8601Duration {
     /// TODO(port): depends on `to_seconds` (and the reverse
     /// seconds-to-duration-string construction); deferred to the internal
     /// engine.
+    #[must_use]
     pub fn add(&self, a_val: &Iso8601Duration) -> Iso8601Duration {
         let _ = a_val;
         todo!("Iso8601Duration::add: deferred to the internal engine")
@@ -198,6 +220,7 @@ impl Iso8601Duration {
     /// `Time_Definitions::AVERAGE_DAYS_IN_MONTH`.
     ///
     /// TODO(port): deferred to the internal engine.
+    #[must_use]
     pub fn subtract(&self, a_val: &Iso8601Duration) -> Iso8601Duration {
         let _ = a_val;
         todo!("Iso8601Duration::subtract: deferred to the internal engine")
@@ -208,6 +231,7 @@ impl Iso8601Duration {
     /// Arithmetic multiplication a duration by a number.
     ///
     /// TODO(port): deferred to the internal engine.
+    #[must_use]
     pub fn multiply(&self, a_val: f64) -> Iso8601Duration {
         let _ = a_val;
         todo!("Iso8601Duration::multiply: deferred to the internal engine")
@@ -218,6 +242,7 @@ impl Iso8601Duration {
     /// Arithmetic division of a duration by a number.
     ///
     /// TODO(port): deferred to the internal engine.
+    #[must_use]
     pub fn divide(&self, a_val: f64) -> Iso8601Duration {
         let _ = a_val;
         todo!("Iso8601Duration::divide: deferred to the internal engine")
@@ -241,6 +266,7 @@ impl Iso8601Duration {
     ///
     /// TODO(port): requires reconstructing the duration string with an
     /// inverted sign; deferred to the internal engine.
+    #[must_use]
     pub fn negative(&self) -> Iso8601Duration {
         todo!("Iso8601Duration::negative: deferred to the internal engine")
     }
@@ -300,42 +326,49 @@ impl Iso8601Type for Iso8601Duration {
 // that references `Time_Definitions` constants, not these invariants.
 // Encoded as plain boolean-returning methods rather than a `Validate` impl.
 impl Iso8601Duration {
-    /// __Years_valid__: `years >= 0`.
+    /// __`Years_valid`__: `years >= 0`.
+    #[must_use]
     pub fn invariant_years_valid(&self) -> bool {
         self.years() >= 0
     }
 
-    /// __Months_valid__: `months >= 0`.
+    /// __`Months_valid`__: `months >= 0`.
+    #[must_use]
     pub fn invariant_months_valid(&self) -> bool {
         self.months() >= 0
     }
 
-    /// __Weeks_valid__: `weeks >= 0`.
+    /// __`Weeks_valid`__: `weeks >= 0`.
+    #[must_use]
     pub fn invariant_weeks_valid(&self) -> bool {
         self.weeks() >= 0
     }
 
-    /// __Days_valid__: `days >= 0`.
+    /// __`Days_valid`__: `days >= 0`.
+    #[must_use]
     pub fn invariant_days_valid(&self) -> bool {
         self.days() >= 0
     }
 
-    /// __Hours_valid__: `hours >= 0`.
+    /// __`Hours_valid`__: `hours >= 0`.
+    #[must_use]
     pub fn invariant_hours_valid(&self) -> bool {
         self.hours() >= 0
     }
 
-    /// __Minutes_valid__: `minutes >= 0`.
+    /// __`Minutes_valid`__: `minutes >= 0`.
+    #[must_use]
     pub fn invariant_minutes_valid(&self) -> bool {
         self.minutes() >= 0
     }
 
-    /// __Seconds_valid__: `seconds >= 0`.
+    /// __`Seconds_valid`__: `seconds >= 0`.
+    #[must_use]
     pub fn invariant_seconds_valid(&self) -> bool {
         self.seconds() >= 0
     }
 
-    /// __Fractional_second_valid__: `fractional_second >= 0.0 and
+    /// __`Fractional_second_valid`__: `fractional_second >= 0.0 and
     /// fractional_second < 1.0`.
     ///
     /// PORT NOTE: the invariant's own condition text names
@@ -346,6 +379,7 @@ impl Iso8601Duration {
     /// mismatch is presumably editorial, consistent with this class's
     /// several other minor wording inconsistencies noted elsewhere in this
     /// file.
+    #[must_use]
     pub fn invariant_fractional_second_valid(&self) -> bool {
         let fs = self.fractional_seconds();
         (0.0..1.0).contains(&fs)
@@ -358,5 +392,5 @@ impl Iso8601Duration {
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_duration.adoc §Iso8601_duration Class
 //   confidence: medium
 //   todos: 15
-//   note: is_extended/is_partial are the two effected constants (true/false per the spec table verbatim) and are the only fully-implemented members in this file; every accessor/arithmetic body needing string parsing or to_seconds is stubbed todo!() pending the jiff-backed internal engine at P17; as_string relies on the Iso8601Type default with no override (documented why); invariant_fractional_second_valid's singular/plural naming mismatch against fractional_seconds() flagged, not silently reconciled.
+//   note: is_extended/is_partial are the two effected constants (true/false per the spec table verbatim) and are the only fully-implemented members in this file; every accessor/arithmetic body needing string parsing or to_seconds is stubbed todo!() pending the jiff-backed internal engine at P17; as_string relies on the Iso8601Type default with no override (documented why); invariant_fractional_second_valid's singular/plural naming mismatch against fractional_seconds() flagged, not silently reconciled. P4: added #[serde(flatten)] on `core` so DV_DURATION.value sits at the top level per the ITS-JSON schema, matching DvDuration's own #[serde(flatten)] on its `iso8601` field.
 // ─────────────────────────────────────────────

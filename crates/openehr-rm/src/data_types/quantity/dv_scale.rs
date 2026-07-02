@@ -35,18 +35,26 @@ use crate::data_types::text::dv_coded_text::DvCodedText;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::primitive_types::real::Real;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (serde derives wait until P4 per ADR-001 "Refinements").
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "DV_SCALE";
 
 /// `DV_SCALE` inherits `DV_ORDERED` and adds two attributes of its own
 /// (`symbol`, `value`), structurally the same shape as `DV_ORDINAL` (see
 /// `dv_ordinal.rs`) except `value` is `Real` here, not `Integer`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvScale {
+    /// Canonical `_type` discriminator (`"DV_SCALE"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `DV_ORDERED` parent state, self-typed per the F-bounded
     /// pattern documented on `DvOrderedData` in `dv_ordered.rs`.
+    #[serde(flatten)]
     pub ordered: DvOrderedData<DvScale>,
 
     /// `symbol`: `DV_CODED_TEXT` (1..1).
@@ -64,7 +72,17 @@ pub struct DvScale {
     /// `value`: `Real` (1..1).
     ///
     /// Real number value of Scale item.
+    ///
+    /// PORT NOTE: the previously-flagged cross-crate gap is closed — `Real`
+    /// now derives `Serialize`/`Deserialize` in `openehr-foundation`,
+    /// serializing as its bare inner `f64`.
     pub value: Real,
+}
+
+/// ADR-002: `_type` string for `DV_SCALE`, single-sourced from
+/// [`TYPE_NAME`].
+impl TypeName for DvScale {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvScale {
@@ -129,5 +147,5 @@ impl DvOrderedApi for DvScale {
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_scale.adoc §DV_SCALE Class
 //   confidence: medium
 //   todos: 3
-//   note: is_strictly_comparable_to has no explicit spec body despite being marked (effected), stubbed todo!(); less_than transcribed via Real's Ordered::less_than through the foundation type rather than raw f64 comparison, keeping the RM layer consistent with the foundation Ordered contract; forward-references CODE_PHRASE/DV_CODED_TEXT pending sibling data_types::text package.
+//   note: is_strictly_comparable_to has no explicit spec body despite being marked (effected), stubbed todo!(); less_than transcribed via Real's Ordered::less_than through the foundation type rather than raw f64 comparison, keeping the RM layer consistent with the foundation Ordered contract; forward-references CODE_PHRASE/DV_CODED_TEXT pending sibling data_types::text package. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `ordered` flattened; Real-lacks-serde gap now closed in openehr-foundation.
 // ─────────────────────────────────────────────

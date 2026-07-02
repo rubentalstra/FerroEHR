@@ -89,6 +89,7 @@ pub struct AuthoredResource {
     ///
     /// Unique identifier of the family of archetypes having the same
     /// interface identifier (same major version).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub uid: Option<Uuid>,
 
     /// `original_language`: `Terminology_code`, cardinality 1..1.
@@ -103,12 +104,14 @@ pub struct AuthoredResource {
     /// `description`: `RESOURCE_DESCRIPTION`, cardinality 0..1.
     ///
     /// Description and lifecycle information of the resource.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<ResourceDescription>,
 
     /// `is_controlled`: `Boolean`, cardinality 0..1.
     ///
     /// `true` if this resource is under any kind of change control (even
     /// file copying), in which case revision history is created.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub is_controlled: Option<bool>,
 
     /// `annotations`: `RESOURCE_ANNOTATIONS`, cardinality 0..1.
@@ -116,6 +119,7 @@ pub struct AuthoredResource {
     /// Annotations on individual items within the resource, keyed by path.
     /// The inner table takes the form of a Hash table of String values
     /// keyed by String tags.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub annotations: Option<ResourceAnnotations>,
 
     /// `translations`: `Hash<String, TRANSLATION_DETAILS>`, cardinality
@@ -125,6 +129,7 @@ pub struct AuthoredResource {
     /// keyed by language code. For each translation listed here, there must
     /// be corresponding sections in all language-dependent parts of the
     /// resource. `original_language` does not appear in this list.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub translations: Option<HashMap<String, TranslationDetails>>,
 
     /// `revision_history`: `REVISION_HISTORY`, cardinality implied 0..1 by
@@ -134,6 +139,7 @@ pub struct AuthoredResource {
     /// for the discrepancy between this attribute's presence in spec prose
     /// and function/invariant text versus its absence from the published
     /// Attributes table row list.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub revision_history: Option<RevisionHistory>,
 }
 

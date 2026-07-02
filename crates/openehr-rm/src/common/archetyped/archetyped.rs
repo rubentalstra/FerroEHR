@@ -13,11 +13,11 @@
 //! matched up with data instances.
 use openehr_base::identification::archetype_id::ArchetypeId;
 use openehr_base::identification::template_id::TemplateId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. Per ADR-001 refinements ("serde derives wait until P4"), a
-/// `const` stands in for `#[serde(rename = ...)]` until serde lands as a
-/// dependency of this crate.
+/// form. Single-sources the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "ARCHETYPED";
 
 /// `ARCHETYPED` declares no `Inherit` row in the spec table (its
@@ -25,8 +25,13 @@ pub const TYPE_NAME: &str = "ARCHETYPED";
 /// see the same inference flagged for `Cardinality` in
 /// `openehr-foundation::interval::cardinality`), so this is a plain
 /// struct with no embedded parent state.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Archetyped {
+    /// Canonical `_type` discriminator (`"ARCHETYPED"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `archetype_id`: `ARCHETYPE_ID`, cardinality `1..1`.
     ///
     /// Globally unique archetype identifier.
@@ -38,6 +43,7 @@ pub struct Archetyped {
     /// this point in the structure. Normally, a template would only be
     /// used at the top of a top-level structure, but the possibility
     /// exists for templates at lower levels.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub template_id: Option<TemplateId>,
 
     /// `rm_version`: `String`, cardinality `1..1`.
@@ -52,6 +58,10 @@ pub struct Archetyped {
     /// impl; recorded here as a doc note pending the RM invariant
     /// framework (`.claude/rules/rm-transcription.md` "Invariants").
     pub rm_version: String,
+}
+
+impl TypeName for Archetyped {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl Archetyped {
@@ -71,5 +81,5 @@ impl Archetyped {
 //   source_loc: common/master03-archetyped_package.adoc §Class Definitions / uml_classes/archetyped.adoc §ARCHETYPED Class
 //   confidence: high
 //   todos: 1
-//   note: Rm_version_valid invariant recorded as is_rm_version_valid() but not yet Validate-enforced. No ancestor inference needed beyond the implicit Any convention already used elsewhere in the port.
+//   note: Rm_version_valid invariant recorded as is_rm_version_valid() but not yet Validate-enforced. No ancestor inference needed beyond the implicit Any convention already used elsewhere in the port. P4/ADR-002: self-tags via TypeName + first-field TypeTag<Self> (_type = "ARCHETYPED").
 // ─────────────────────────────────────────────

@@ -23,8 +23,20 @@ use crate::common::change_control::versioned_object::VersionedObject;
 // directory; this file forward-references `Composition` rather than
 // defining it.
 use super::composition::Composition;
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized form.
+/// Canonical `_type` discriminator string for this class per the spec's
+/// class naming.
+///
+/// PORT NOTE (ADR-002, resolved): `VERSIONED_X` binding classes never emit
+/// their own `_type`. The pinned ITS-JSON schema (commit
+/// `5acae056248e917a4b4c56f7e712f4fcfeb616a6`,
+/// `openehr_rm_1.1.0_all.json`) defines only `VERSIONED_OBJECT` — which
+/// self-tags via its own `TypeTag` (sibling `common.change_control` wave) —
+/// and has no `VERSIONED_COMPOSITION`/`VERSIONED_EHR_*` entries at all. So
+/// this newtype keeps `#[serde(transparent)]`, gets no `TypeName`/`TypeTag`
+/// of its own, and this const exists only as the spec class name for
+/// non-serde callers (e.g. `OBJECT_REF.type` comparisons).
 pub const TYPE_NAME: &str = "VERSIONED_COMPOSITION";
 
 /// `VERSIONED_COMPOSITION` — `VERSIONED_OBJECT<COMPOSITION>` plus its own
@@ -37,7 +49,16 @@ pub const TYPE_NAME: &str = "VERSIONED_COMPOSITION";
 /// newtype-with-inherent-impl shape (not a type alias, which could not
 /// carry inherent methods distinct from `VersionedObject<Composition>`'s
 /// own) is the right one here.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// PORT NOTE: `#[serde(transparent)]` makes this newtype serialize/
+/// deserialize identically to its single field,
+/// `VersionedObject<Composition>` — whose own `TypeTag` emits
+/// `_type: "VERSIONED_OBJECT"`. Per ADR-002 this binding never emits a
+/// `_type: "VERSIONED_COMPOSITION"` of its own: the pinned ITS-JSON schema
+/// defines no `VERSIONED_X` entries, only `VERSIONED_OBJECT` (see the
+/// `TYPE_NAME` doc comment). Resolved — not a deferred P17 question.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct VersionedComposition(pub VersionedObject<Composition>);
 
 impl VersionedComposition {
@@ -94,5 +115,5 @@ impl VersionedComposition {
 //   source_loc: master04-ehr_package.adoc §Class Descriptions / uml_classes/versioned_composition.adoc §VERSIONED_COMPOSITION Class
 //   confidence: high
 //   todos: 3
-//   note: forward-references Composition (sibling agent's file, not created here); is_persistent() and both invariants stubbed pending VersionedObject<T> version-accessor methods.
+//   note: forward-references Composition (sibling agent's file, not created here); is_persistent() and both invariants stubbed pending VersionedObject<T> version-accessor methods. P4/ADR-002 resolved: binding keeps #[serde(transparent)] and never emits its own _type — the pinned ITS-JSON schema defines only VERSIONED_OBJECT (self-tagged in the sibling change_control wave), no VERSIONED_X entries; TYPE_NAME retained for non-serde callers only.
 // ─────────────────────────────────────────────

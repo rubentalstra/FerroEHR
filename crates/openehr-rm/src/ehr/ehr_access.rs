@@ -19,11 +19,17 @@
 // TODO(port): forward-reference — `common` package (rm.common), not yet
 // transcribed. `LocatableData` is the ADR-001 §3 embedded-struct half of the
 // abstract `LOCATABLE` class.
+//
+// TODO(port): P4 — `#[serde(flatten)]` on `EhrAccess::locatable` below
+// requires `LocatableData` to itself derive `Serialize`/`Deserialize`; that
+// derive is a sibling P4 wave over `common/`, not yet landed.
 use crate::common::archetyped::locatable::LocatableData;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized form.
-/// See the note on `ehr_status::TYPE_NAME` for why this is a `const` rather
-/// than a `#[serde(rename = ...)]` in this pass.
+///
+/// Single-sourced into the `TypeName` impl below (ADR-002).
 pub const TYPE_NAME: &str = "EHR_ACCESS";
 
 /// `ACCESS_CONTROL_SETTINGS` — abstract parent of the concrete access
@@ -54,7 +60,7 @@ pub const TYPE_NAME: &str = "EHR_ACCESS";
 /// yields a closed subtype set, this should become the `XxxData` struct
 /// half of an `XxxData`/`Xxx`-enum/`XxxApi`-trait cluster (ADR-001
 /// Refinements) rather than staying a bare marker.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct AccessControlSettings {
     // Deliberately empty: the published class table declares no attribute,
     // function, or invariant of its own. See the struct doc comment above.
@@ -64,10 +70,18 @@ pub struct AccessControlSettings {
 ///
 /// Per ADR-001 §3, `LOCATABLE`'s state is embedded as
 /// `pub locatable: LocatableData` rather than simulated via a Rust
-/// supertrait.
-#[derive(Debug, Clone, PartialEq)]
+/// supertrait. `#[serde(flatten)]` folds those six attributes into
+/// `EHR_ACCESS`'s own JSON object per the ITS-JSON abstract-class-flattening
+/// rule.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EhrAccess {
+    /// Canonical `_type` discriminator (`"EHR_ACCESS"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `LOCATABLE` state.
+    #[serde(flatten)]
     pub locatable: LocatableData,
 
     /// `settings`: access control settings for the EHR. Instance is a
@@ -83,7 +97,12 @@ pub struct EhrAccess {
     /// `AccessControlSettings` doc comment), this field is typed against
     /// the bare marker struct rather than a proper enum of concrete
     /// schemes. Revisit once/if that model is transcribed.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub settings: Option<AccessControlSettings>,
+}
+
+impl TypeName for EhrAccess {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl EhrAccess {
@@ -130,5 +149,5 @@ impl EhrAccess {
 //   source_loc: master04-ehr_package.adoc §Class Descriptions / uml_classes/ehr_access.adoc §EHR_ACCESS Class; access_control_settings.adoc §ACCESS_CONTROL_SETTINGS Class
 //   confidence: medium
 //   todos: 3
-//   note: ACCESS_CONTROL_SETTINGS is a genuinely near-empty spec class whose concrete subtypes live in an out-of-scope Security Information Model — flagged, not invented; scheme() stubbed until that model exists.
+//   note: ACCESS_CONTROL_SETTINGS is a genuinely near-empty spec class whose concrete subtypes live in an out-of-scope Security Information Model — flagged, not invented; scheme() stubbed until that model exists. P4/ADR-002: EhrAccess self-tags (TypeTag<Self> first field + TypeName impl; no-op struct-level rename removed); AccessControlSettings stays untagged (abstract class — the schema defines no entry for it).
 // ─────────────────────────────────────────────

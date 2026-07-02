@@ -8,11 +8,16 @@
 //!
 //! Lexical form: `rm_originator '-' rm_name '-' rm_entity '.' concept_name
 //! { '-' specialisation }* '.v' number`.
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+
 use super::object_id::{ObjectId, ObjectIdApi, ObjectIdData};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. P4/ADR-002 update: this const single-sources the string carried by
+/// the struct's own self-tagging `type_tag` field below (via the
+/// [`TypeName`] impl), so every serialized `ArchetypeId` — bare or reached
+/// through the untagged `ObjectId::ArchetypeId` variant — emits
+/// `{"_type": "ARCHETYPE_ID", ...}` itself.
 pub const TYPE_NAME: &str = "ARCHETYPE_ID";
 
 /// `ARCHETYPE_ID` declares no attribute of its own beyond the inherited
@@ -20,12 +25,29 @@ pub const TYPE_NAME: &str = "ARCHETYPE_ID";
 /// (`qualified_rm_entity`, `domain_concept`, `rm_originator`, `rm_name`,
 /// `rm_entity`, `specialisation`, `version_id`) all parse substrings of
 /// that one attribute, so it embeds `ObjectIdData` verbatim (ADR-001 §3).
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `object_id` field folds
+/// `ObjectIdData`'s single `value` attribute directly into this struct's
+/// JSON object.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct ArchetypeId {
+    /// Canonical `_type` discriminator (`"ARCHETYPE_ID"`), always
+    /// serialized first; tolerated-absent and validated-if-present on input
+    /// (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `OBJECT_ID` state (the single `value` attribute), in the
     /// lexical form `rm_originator '-' rm_name '-' rm_entity '.'
     /// concept_name { '-' specialisation }* '.v' number`.
+    #[serde(flatten)]
     pub object_id: ObjectIdData,
+}
+
+impl TypeName for ArchetypeId {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl ArchetypeId {
@@ -52,7 +74,7 @@ impl ArchetypeId {
     /// `-`-delimited part of [`ArchetypeId::qualified_rm_entity`].
     pub fn rm_originator(&self) -> String {
         self.qualified_rm_entity()
-            .splitn(3, '-')
+            .split('-')
             .next()
             .unwrap_or_default()
             .to_string()
@@ -64,7 +86,8 @@ impl ArchetypeId {
     /// second `-`-delimited part of
     /// [`ArchetypeId::qualified_rm_entity`].
     pub fn rm_name(&self) -> String {
-        let mut parts = self.qualified_rm_entity().splitn(3, '-').skip(1);
+        let qualified = self.qualified_rm_entity();
+        let mut parts = qualified.splitn(3, '-').skip(1);
         parts.next().unwrap_or_default().to_string()
     }
 
@@ -75,7 +98,8 @@ impl ArchetypeId {
     /// `composition`, `section`, `entry`. The third `-`-delimited part of
     /// [`ArchetypeId::qualified_rm_entity`].
     pub fn rm_entity(&self) -> String {
-        let mut parts = self.qualified_rm_entity().splitn(3, '-').skip(2);
+        let qualified = self.qualified_rm_entity();
+        let mut parts = qualified.splitn(3, '-').skip(2);
         parts.next().unwrap_or_default().to_string()
     }
 
@@ -134,5 +158,5 @@ impl From<ArchetypeId> for ObjectId {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / archetype_id.adoc §ARCHETYPE_ID Class
 //   confidence: medium
 //   todos: 0
-//   note: multi-part axis functions implemented as string-splitting against the EBNF grammar in the Syntaxes section rather than a dedicated parser/AST; no invariant table given in the spec for this class beyond the lexical grammar itself.
+//   note: multi-part axis functions implemented as string-splitting against the EBNF grammar in the Syntaxes section rather than a dedicated parser/AST; no invariant table given in the spec for this class beyond the lexical grammar itself. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted; the earlier "no wire path emits _type" TODO is resolved by the self-tag.
 // ─────────────────────────────────────────────

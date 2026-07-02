@@ -24,7 +24,7 @@ use super::reference_range::ReferenceRange;
 // TODO(port): forward-references DATA_VALUE (rm.data_types.basic), not yet
 // transcribed by the sibling package agent covering `data_types::basic` in a
 // concurrent worktree; wire this `use` up once that module lands.
-use crate::data_types::basic::data_value::DataValue;
+use crate::data_types::data_value::DataValue;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
 use crate::data_types::text::code_phrase::CodePhrase;
@@ -35,7 +35,9 @@ use crate::data_types::date_time::dv_date::DvDate;
 use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::date_time::dv_duration::DvDuration;
 use crate::data_types::date_time::dv_time::DvTime;
+use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `DV_ORDERED` and its descendants.
 ///
@@ -72,7 +74,15 @@ use openehr_foundation::primitive_types::ordered::Ordered;
 /// here for reviewer scrutiny as a genuine hazard beyond ADR-001's existing
 /// worked examples (which only cover `Self`-typed generics for `Interval<T>`
 /// itself, not for an *embedded field inside* an abstract parent struct).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+// PORT NOTE: no explicit `#[serde(bound = ...)]` — verified by direct
+// experiment that serde's derive auto-generates the correct `T: Serialize`
+// / `T: Deserialize<'de>` bound per field type (here, through `DvInterval<T>`
+// and `ReferenceRange<T>`) without needing an override, as long as the
+// struct's own `T: DvOrderedApi` bound is preserved (it is, unchanged
+// below). Use the minimal bound only if a future compile actually demands
+// one — do not add `#[serde(bound = "T: DvOrderedApi + Serialize")]`
+// speculatively.
 pub struct DvOrderedData<T: DvOrderedApi> {
     /// `normal_status`: `CODE_PHRASE` (0..1).
     ///
@@ -89,6 +99,7 @@ pub struct DvOrderedData<T: DvOrderedApi> {
     /// impl — needs `openehr-terminology`'s bundled code set access wired
     /// through, pending the `openehr-rm` → `openehr-terminology` dependency
     /// actually being exercised here.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub normal_status: Option<CodePhrase>,
 
     /// `normal_range`: `DV_INTERVAL<T>` (0..1).
@@ -96,6 +107,16 @@ pub struct DvOrderedData<T: DvOrderedApi> {
     /// Optional normal range. Boxed per the recursive-containment rule
     /// (`DV_INTERVAL<T>` embeds `Interval<T>` and, via `REFERENCE_RANGE`,
     /// can transitively reference further `DV_ORDERED` structure).
+    ///
+    /// PORT NOTE: `skip_serializing_if` only, deliberately **without** a
+    /// `default` sub-attribute — verified by direct experiment that adding
+    /// `default` here spuriously requires `T: Default` to derive
+    /// `Deserialize`, once this struct is reached through a
+    /// `#[serde(flatten)]` chain (as it is, via `DvQuantifiedData::ordered`
+    /// in `dv_quantified.rs`) — an absent `Option` field already
+    /// deserializes to `None` without the redundant attribute. See the
+    /// round-trip test in `dv_quantity.rs` for the full write-up.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub normal_range: Option<Box<DvInterval<T>>>,
 
     /// `other_reference_ranges`: `List<REFERENCE_RANGE<T>>` (0..1).
@@ -117,6 +138,7 @@ pub struct DvOrderedData<T: DvOrderedApi> {
     /// themselves. Followed here for consistency; flagged since this is the
     /// first RM attribute in this package literally typed `List<...>` in
     /// its own table.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub other_reference_ranges: Option<Vec<ReferenceRange<T>>>,
 }
 
@@ -132,7 +154,20 @@ pub struct DvOrderedData<T: DvOrderedApi> {
 /// and `Duration` are owned by the sibling `date_time` package (transcribed
 /// concurrently in a separate worktree) and referenced here purely as
 /// forward `use` paths per the task's explicit variant list.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// PORT NOTE: `#[serde(untagged)]` per ADR-002 — abstract-set enums carry no
+/// tag of their own; the `_type` discriminator is emitted (and, on input,
+/// dispatched) by each concrete variant payload's own self-tagging
+/// `TypeTag<Self>` first field, whose `Deserialize` fails on a mismatched
+/// `_type` string, making serde's untagged variant probing tag-driven rather
+/// than structure-driven. The former `#[serde(tag = "_type")]` + per-variant
+/// renames would duplicate the payload's own tag (`serde` would emit `_type`
+/// twice once the payloads self-tag). The five variants owned by this
+/// package (`Ordinal` … `Proportion`) self-tag as of this pass; the four
+/// `date_time` variants are converted by the sibling package's own ADR-002
+/// pass (mid-wave, they may briefly still dispatch structurally).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum DvOrdered {
     /// `DV_ORDINAL`.
     Ordinal(DvOrdinal),
@@ -248,25 +283,74 @@ pub trait DvOrderedApi: Ordered {
     }
 }
 
+impl Any for DvOrdered {
+    /// Value equality dispatched per variant; two different concrete
+    /// `DV_ORDERED` subtypes are never equal in value.
+    fn is_equal(&self, other: &Self) -> bool {
+        match (self, other) {
+            (DvOrdered::Ordinal(a), DvOrdered::Ordinal(b)) => a.is_equal(b),
+            (DvOrdered::Scale(a), DvOrdered::Scale(b)) => a.is_equal(b),
+            (DvOrdered::Quantity(a), DvOrdered::Quantity(b)) => a.is_equal(b),
+            (DvOrdered::Count(a), DvOrdered::Count(b)) => a.is_equal(b),
+            (DvOrdered::Proportion(a), DvOrdered::Proportion(b)) => a.is_equal(b),
+            (DvOrdered::Date(a), DvOrdered::Date(b)) => a.is_equal(b),
+            (DvOrdered::Time(a), DvOrdered::Time(b)) => a.is_equal(b),
+            (DvOrdered::DateTime(a), DvOrdered::DateTime(b)) => a.is_equal(b),
+            (DvOrdered::Duration(a), DvOrdered::Duration(b)) => a.is_equal(b),
+            _ => false,
+        }
+    }
+
+    fn type_of(&self) -> String {
+        match self {
+            DvOrdered::Ordinal(v) => v.type_of(),
+            DvOrdered::Scale(v) => v.type_of(),
+            DvOrdered::Quantity(v) => v.type_of(),
+            DvOrdered::Count(v) => v.type_of(),
+            DvOrdered::Proportion(v) => v.type_of(),
+            DvOrdered::Date(v) => v.type_of(),
+            DvOrdered::Time(v) => v.type_of(),
+            DvOrdered::DateTime(v) => v.type_of(),
+            DvOrdered::Duration(v) => v.type_of(),
+        }
+    }
+}
+
+impl Ordered for DvOrdered {
+    /// `less_than` dispatched per matching variant.
+    fn less_than(&self, other: &Self) -> bool {
+        match (self, other) {
+            (DvOrdered::Ordinal(a), DvOrdered::Ordinal(b)) => a.less_than(b),
+            (DvOrdered::Scale(a), DvOrdered::Scale(b)) => a.less_than(b),
+            (DvOrdered::Quantity(a), DvOrdered::Quantity(b)) => a.less_than(b),
+            (DvOrdered::Count(a), DvOrdered::Count(b)) => a.less_than(b),
+            (DvOrdered::Proportion(a), DvOrdered::Proportion(b)) => a.less_than(b),
+            (DvOrdered::Date(a), DvOrdered::Date(b)) => a.less_than(b),
+            (DvOrdered::Time(a), DvOrdered::Time(b)) => a.less_than(b),
+            (DvOrdered::DateTime(a), DvOrdered::DateTime(b)) => a.less_than(b),
+            (DvOrdered::Duration(a), DvOrdered::Duration(b)) => a.less_than(b),
+            // TODO(port): ordering across mixed concrete DV_ORDERED
+            // subtypes is undefined — the spec's `Pre_comparable`
+            // precondition (`is_strictly_comparable_to (other)`) can never
+            // hold across variants; same unresolved cross-variant rule as
+            // `is_strictly_comparable_to` below.
+            _ => todo!("DvOrdered::less_than: cross-variant comparability rule not specified"),
+        }
+    }
+}
+
 impl DvOrderedApi for DvOrdered {
     fn normal_status(&self) -> Option<&CodePhrase> {
         match self {
             DvOrdered::Ordinal(v) => v.normal_status(),
             DvOrdered::Scale(v) => v.normal_status(),
-            DvOrdered::Quantity(v) => v.normal_status(),
-            DvOrdered::Count(v) => v.normal_status(),
-            DvOrdered::Proportion(v) => v.normal_status(),
-            // TODO(port): DvDate/DvTime/DvDateTime/DvDuration are owned by
-            // the sibling date_time package and not available in this
-            // worktree; stubbed pending that package's landing.
-            DvOrdered::Date(_)
-            | DvOrdered::Time(_)
-            | DvOrdered::DateTime(_)
-            | DvOrdered::Duration(_) => {
-                todo!(
-                    "DvOrdered::normal_status: date_time package variants not yet transcribed in this worktree"
-                )
-            }
+            DvOrdered::Quantity(v) => DvOrderedApi::normal_status(v),
+            DvOrdered::Count(v) => DvOrderedApi::normal_status(v),
+            DvOrdered::Proportion(v) => DvOrderedApi::normal_status(v),
+            DvOrdered::Date(v) => v.normal_status(),
+            DvOrdered::Time(v) => v.normal_status(),
+            DvOrdered::DateTime(v) => v.normal_status(),
+            DvOrdered::Duration(v) => v.normal_status(),
         }
     }
 
@@ -313,5 +397,5 @@ use DataValue as _DataValueForwardRef;
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_ordered.adoc §DV_ORDERED Class
 //   confidence: medium
 //   todos: 9
-//   note: F-bounded DvOrderedData<T: DvOrderedApi> is a judgment call (not a literal spec idiom) chosen so every concrete leaf's normal_range/other_reference_ranges narrow to Self uniformly, whether or not the leaf's own table shows an explicit (redefined) row; is_simple/is_normal/is_strictly_comparable_to are stubbed pending generic range accessors and DATA_VALUE/CODE_PHRASE landing from sibling packages.
+//   note: F-bounded DvOrderedData<T: DvOrderedApi> is a judgment call (not a literal spec idiom) chosen so every concrete leaf's normal_range/other_reference_ranges narrow to Self uniformly, whether or not the leaf's own table shows an explicit (redefined) row; is_simple/is_normal/is_strictly_comparable_to are stubbed pending generic range accessors and DATA_VALUE/CODE_PHRASE landing from sibling packages. P4: DvOrderedData<T> derives Serialize/Deserialize with no explicit #[serde(bound)] (verified sufficient by direct experiment); all three fields carry skip_serializing_if (deliberately no `default` sub-attribute — verified by direct experiment that combining generic T + #[serde(flatten)] reachability + `default` spuriously requires T: Default; see dv_quantity.rs's round-trip test doc comment for the full write-up). ADR-002: DvOrderedData is abstract and carries NO _type tag; DvOrdered converted from #[serde(tag = "_type")] to #[serde(untagged)] — dispatch is driven by each variant payload's own TypeTag first field (per-variant renames removed); the four date_time variants self-tag in the sibling package's own pass.
 // ─────────────────────────────────────────────

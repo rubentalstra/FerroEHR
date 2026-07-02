@@ -1,0 +1,39 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "EHR",
+  "system_id": {
+    "_type": "HIER_OBJECT_ID",
+    "value": "ehrbase.example.org"
+  },
+  "ehr_id": {
+    "_type": "HIER_OBJECT_ID",
+    "value": "7d44b88c-4199-4bad-97dc-d78268e01398"
+  },
+  "contributions": [],
+  "ehr_status": {
+    "_type": "OBJECT_REF",
+    "namespace": "local",
+    "type": "VERSIONED_EHR_STATUS",
+    "id": {
+      "_type": "HIER_OBJECT_ID",
+      "value": "d61338e1-0ea1-45a5-9bcf-04b71b41e3a9"
+    }
+  },
+  "ehr_access": {
+    "_type": "OBJECT_REF",
+    "namespace": "local",
+    "type": "VERSIONED_EHR_ACCESS",
+    "id": {
+      "_type": "HIER_OBJECT_ID",
+      "value": "59a8a3ae-e9ca-4c11-a270-fbcfd0d10012"
+    }
+  },
+  "compositions": [],
+  "time_created": {
+    "_type": "DV_DATE_TIME",
+    "value": "2026-07-02T09:00:00Z"
+  }
+}

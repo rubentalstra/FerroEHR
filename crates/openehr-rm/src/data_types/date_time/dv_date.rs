@@ -24,6 +24,12 @@
 //! inheritance, per the standard RM transcription rule.
 use crate::data_types::date_time::dv_duration::DvDuration;
 use crate::data_types::date_time::dv_temporal::{DvTemporal, DvTemporalData};
+use crate::data_types::quantity::dv_ordered::DvOrderedApi;
+use crate::data_types::text::code_phrase::CodePhrase;
+use openehr_foundation::primitive_types::any::Any;
+use openehr_foundation::primitive_types::ordered::Ordered;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 // PORT NOTE: `Iso8601Date`/`Iso8601Type` are named in the module doc above
 // for the inheritance narrative but not imported here — `value: String` is
 // declared directly on this struct (redefined per the class table) rather
@@ -37,10 +43,21 @@ use crate::data_types::date_time::dv_temporal::{DvTemporal, DvTemporalData};
 /// `DV_DATE`.
 ///
 /// openEHR class: `DV_DATE`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvDate {
-    /// Embedded `DV_TEMPORAL` state.
-    pub temporal: DvTemporalData,
+    /// Canonical `_type` discriminator (`"DV_DATE"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    ///
+    /// This tag is what distinguishes `DV_DATE` from the structure-identical
+    /// `DV_TIME`/`DV_DATE_TIME` (`{value: String}` on the wire) in untagged
+    /// enum dispatch — do not add extra fields to disambiguate.
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
+    /// Embedded `DV_TEMPORAL` state, self-typed per the F-bounded threading
+    /// documented on `DvTemporalData` (see `dv_temporal.rs`).
+    #[serde(flatten)]
+    pub temporal: DvTemporalData<DvDate>,
 
     /// `value`: `String` (`1..1`, redefined).
     ///
@@ -58,6 +75,10 @@ pub struct DvDate {
 }
 
 pub const TYPE_NAME: &str = "DV_DATE";
+
+impl TypeName for DvDate {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 impl DvDate {
     /// `magnitude` `(): Integer` (effected).
@@ -139,8 +160,48 @@ impl DvDate {
     }
 }
 
+impl Any for DvDate {
+    /// Delegates to the inherent [`DvDate::is_equal`] (the spec's effected
+    /// `is_equal`, itself pending `magnitude()`).
+    fn is_equal(&self, other: &Self) -> bool {
+        DvDate::is_equal(self, other)
+    }
+
+    fn type_of(&self) -> String {
+        "DvDate".to_string()
+    }
+}
+
+impl Ordered for DvDate {
+    /// Delegates to the inherent [`DvDate::less_than`] (the spec's effected
+    /// `less_than`, magnitude-based).
+    fn less_than(&self, other: &Self) -> bool {
+        DvDate::less_than(self, other)
+    }
+}
+
+impl DvOrderedApi for DvDate {
+    /// `normal_status`: accessor into the embedded
+    /// `DV_ORDERED` state reached through the
+    /// `DV_TEMPORAL` → `DV_ABSOLUTE_QUANTITY` → `DV_QUANTIFIED` chain.
+    fn normal_status(&self) -> Option<&CodePhrase> {
+        self.temporal
+            .quantified
+            .quantified
+            .ordered
+            .normal_status
+            .as_ref()
+    }
+
+    /// Delegates to the inherent [`DvDate::is_strictly_comparable_to`]
+    /// ("True, for any two Dates").
+    fn is_strictly_comparable_to(&self, other: &Self) -> bool {
+        DvDate::is_strictly_comparable_to(self, other)
+    }
+}
+
 impl DvTemporal for DvDate {
-    fn temporal_data(&self) -> &DvTemporalData {
+    fn temporal_data(&self) -> &DvTemporalData<Self> {
         &self.temporal
     }
 
@@ -194,6 +255,6 @@ impl DvTemporal for DvDate {
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_date.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_date.adoc §DV_DATE Class
 //   confidence: medium
-//   todos: 6
-//   note: dual inheritance (DV_TEMPORAL RM ancestor + Iso8601_date foundation mixin) composed as field+trait; magnitude/add/subtract/diff/is_equal/invariant_value_valid all deferred to the jiff-backed engine at P17; less_than transcribed with name-implied semantics against a likely copy-paste defect in the published Post_result postcondition (flagged, matches DV_DURATION's internally-consistent wording, not DV_TIME/DV_DATE_TIME's inverted one).
+//   todos: 7
+//   note: dual inheritance (DV_TEMPORAL RM ancestor + Iso8601_date foundation mixin) composed as field+trait; magnitude/add/subtract/diff/is_equal/invariant_value_valid all deferred to the jiff-backed engine at P17; less_than transcribed with name-implied semantics against a likely copy-paste defect in the published Post_result postcondition (flagged, matches DV_DURATION's internally-consistent wording, not DV_TIME/DV_DATE_TIME's inverted one); Any/Ordered/DvOrderedApi impls delegate to the inherent effected functions so DvDate satisfies the DvOrdered enum's trait chain. P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvDate>) flattened, schema-verified (normal_status/normal_range/other_reference_ranges/magnitude_status/accuracy all sit flat alongside DV_DATE's own `value`); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_TIME/DV_DATE_TIME.
 // ─────────────────────────────────────────────

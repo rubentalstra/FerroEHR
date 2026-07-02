@@ -1,0 +1,18 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "DV_MULTIMEDIA",
+  "alternate_text": "ECG image",
+  "data": "AQIDBA==",
+  "media_type": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "IANA_media-types"
+    },
+    "code_string": "image/png"
+  },
+  "size": 4
+}

@@ -55,6 +55,17 @@ pub trait Ordered: Any {
     }
 }
 
+// PORT NOTE: raw `i64` stands in for `Integer64` where covariant
+// redefinition (`DV_COUNT.magnitude`, ADR-001 §6) uses the bare primitive;
+// resolves the P17-flagged bound conflict. See the matching `Any` impl in
+// `any.rs` and `Numeric` impl in `numeric.rs`; the body delegates to
+// `i64`'s native `<`.
+impl Ordered for i64 {
+    fn less_than(&self, other: &Self) -> bool {
+        self < other
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.primitive_types — docs/research/spec-cache/BASE-1.2.0/uml_classes/ordered.adoc (Release-1.2.0 @ 9064413)

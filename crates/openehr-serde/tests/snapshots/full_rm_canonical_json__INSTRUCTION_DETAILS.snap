@@ -1,0 +1,18 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "INSTRUCTION_DETAILS",
+  "instruction_id": {
+    "_type": "LOCATABLE_REF",
+    "namespace": "local",
+    "type": "INSTRUCTION",
+    "id": {
+      "_type": "OBJECT_VERSION_ID",
+      "value": "939cec48-d629-4a3f-89f1-28c573387680::ehrbase.example.org::1"
+    },
+    "path": "/content[openEHR-EHR-INSTRUCTION.medication_order.v3]"
+  },
+  "activity_id": "activities[at0001]"
+}

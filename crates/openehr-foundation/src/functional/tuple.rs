@@ -34,6 +34,19 @@ pub trait Tuple: Any {}
 /// build on. The spec does not itself declare a `Tuple0` class, but every
 /// `ROUTINE<ARGS>`/`PROCEDURE<ARGS>` needs an `ARGS` type for the
 /// zero-argument case, and `()` is that faithful instantiation.
+///
+/// `Any` is implemented for the native tuple so the `Tuple: Any` supertrait
+/// holds; a zero-slot tuple is trivially equal to itself.
+impl Any for () {
+    fn is_equal(&self, _other: &Self) -> bool {
+        true
+    }
+
+    fn type_of(&self) -> String {
+        "Tuple".to_string()
+    }
+}
+
 impl Tuple for () {}
 
 // ─────────────────────────────────────────────

@@ -28,6 +28,7 @@
 use crate::common::generic::participation::Participation; // TODO(port): forward-reference; not yet transcribed.
 use crate::data_types::text::code_phrase::CodePhrase; // TODO(port): forward-reference; not yet transcribed.
 use openehr_base::identification::object_ref::ObjectRef;
+use serde::{Deserialize, Serialize};
 
 // TODO(port): forward-reference — `PARTY_PROXY` lives in rm.common.generic
 // (PORT_MASTER_PLAN.md §7.1), not yet transcribed. Closed subtype set per
@@ -39,13 +40,19 @@ use crate::common::generic::party_proxy::PartyProxy;
 /// Per ADR-001 §3, concrete `ENTRY` descendants (via [`super::care_entry`]
 /// and [`super::admin_entry::AdminEntry`]) embed this struct by
 /// composition rather than inheriting from it.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// TODO(port): P4 — `#[serde(flatten)]` on `content_item` requires
+/// `ContentItemData` (this same batch) to itself derive
+/// `Serialize`/`Deserialize`, which in turn requires `LocatableData`
+/// (sibling P4 wave over `common/`) to do the same.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EntryData {
     // NOTE: `ENTRY` inherits `CONTENT_ITEM` (in turn `LOCATABLE`), not
     // `PATHABLE` directly — this is the ordinary `LOCATABLE`-chain case,
     // unlike the settled `EVENT_CONTEXT`/`INSTRUCTION_DETAILS`/
     // `ISM_TRANSITION` hazard. `content_item` is the composed parent state.
     /// Embedded `CONTENT_ITEM` (in turn `LOCATABLE`) state.
+    #[serde(flatten)]
     pub content_item: super::content_item::ContentItemData,
 
     /// `language`: mandatory indicator of the localised language in which
@@ -73,10 +80,12 @@ pub struct EntryData {
     /// Void implies not other_participations.is_empty`.
     ///
     /// TODO(port): invariant not yet enforced.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub other_participations: Option<Vec<Participation>>,
 
     /// `workflow_id`: identifier of externally held workflow engine data
     /// for this workflow execution, for this subject of care.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub workflow_id: Option<ObjectRef>,
 
     /// `subject`: id of human subject of this `ENTRY`, e.g. organ donor,
@@ -93,6 +102,7 @@ pub struct EntryData {
     /// parent, guardian), the clinician, or a device or software.
     /// Generally only used when the recorder needs to make it explicit.
     /// Otherwise, Composition composer and other participants are assumed.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub provider: Option<PartyProxy>,
 }
 
@@ -139,6 +149,6 @@ pub trait EntryApi {
 //   source: RM 1.1.0 ehr.entry — docs/research/spec-cache/RM-1.1.0/uml_classes/entry.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master08-entry_package.adoc §Class Descriptions / entry.adoc §ENTRY Class
 //   confidence: high
-//   todos: 9
-//   note: abstract-with-attributes per ADR-001 §3 (EntryData + EntryApi); content_item field composes the CONTENT_ITEM/LOCATABLE chain; subject_is_self()/invariant delegates deferred pending PartyProxy enum and LOCATABLE transcription; several of the 9 markers are forward-reference import comments (Participation, CodePhrase, PartyProxy).
+//   todos: 10
+//   note: abstract-with-attributes per ADR-001 §3 (EntryData + EntryApi); content_item field composes the CONTENT_ITEM/LOCATABLE chain; subject_is_self()/invariant delegates deferred pending PartyProxy enum and LOCATABLE transcription; several of the markers are forward-reference import comments (Participation, CodePhrase, PartyProxy). P4: serde derives added (flatten on content_item, Option fields skip-if-none); no _type of its own (embedded-only struct, not directly serialized).
 // ─────────────────────────────────────────────

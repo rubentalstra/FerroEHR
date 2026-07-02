@@ -19,9 +19,11 @@
 //! right, only as the element type of `DV_TEXT.mappings`).
 use super::code_phrase::CodePhrase;
 use super::dv_coded_text::DvCodedText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into its [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "TERM_MAPPING";
 
 /// The relative match of a `TERM_MAPPING`'s target term with respect to the
@@ -39,7 +41,21 @@ pub const TYPE_NAME: &str = "TERM_MAPPING";
 /// recovers the spec's literal `char` representation for serialization
 /// (P4) and for the `is_valid_match_code` free function kept alongside for
 /// fidelity to the spec's own signature.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+// PORT NOTE: schema verification per the invoking task's instruction:
+// `openehr_rm_1.1.0_all.json` (ITS-JSON @ 5acae05), `#/definitions/
+// TERM_MAPPING/properties/match`, types this field `{"type": "string"}` — a
+// JSON string (the schema states no length constraint, but the spec's own
+// value domain is the four single characters `>`/`=`/`</?`), not a JSON
+// number — so the `#[serde(into = "i32", try_from = "i32")]` pattern used
+// for `ProportionKind` below does not apply here. Serialized instead as its
+// single-character `String` form via `#[serde(into = "String", try_from =
+// "String")]`, delegating to the existing `as_char()`/`TryFrom<char>` pair.
+// `TryFrom<String>` below returns `String` (the whole rejected input) as
+// `Self::Error` rather than `char`, since a non-single-character string
+// cannot be narrowed to a `char` first without an extra fallible step of
+// its own.
+#[serde(into = "String", try_from = "String")]
 pub enum MatchKind {
     /// `'>'`: the mapping is to a broader term, e.g. original text =
     /// "arbovirus infection", target = "viral infection".
@@ -91,15 +107,50 @@ impl TryFrom<char> for MatchKind {
     }
 }
 
+/// `#[serde(into = "String")]` conversion — canonical-JSON serialization
+/// target. Delegates to [`MatchKind::as_char`].
+impl From<MatchKind> for String {
+    fn from(kind: MatchKind) -> Self {
+        kind.as_char().to_string()
+    }
+}
+
+/// `#[serde(try_from = "String")]` conversion — canonical-JSON
+/// deserialization source. Rejects any string that is not exactly one of
+/// the four legal single-character match codes; the rejected `String` is
+/// returned as-is in `Self::Error` (see the enum-level PORT NOTE for why
+/// this is a `String`, not a `char`).
+impl TryFrom<String> for MatchKind {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        let mut chars = s.chars();
+        match (chars.next(), chars.next()) {
+            (Some(c), None) => MatchKind::try_from(c).map_err(|_| s),
+            _ => Err(s),
+        }
+    }
+}
+
 /// `TERM_MAPPING` has three attributes and no ancestor state to embed.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+///
+/// PORT NOTE (ADR-002): self-tags via the `type_tag` first field;
+/// [`MatchKind`] itself carries **no** `_type` — it is a closed *value*
+/// domain (a spec `char`), not an RM class, and serializes as its bare
+/// one-character JSON string.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TermMapping {
+    /// Canonical `_type` discriminator (`"TERM_MAPPING"`), always
+    /// serialized first (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `match`: `char` (`1..1`), modelled as [`MatchKind`] — see the
     /// enum's own doc comment.
     ///
     /// PORT NOTE: field named `match_` (spec attribute name `match` is a
-    /// Rust reserved keyword). A future serde derive (P4) should add
-    /// `#[serde(rename = "match")]` here.
+    /// Rust reserved keyword), now carrying `#[serde(rename = "match")]`.
+    #[serde(rename = "match")]
     pub match_: MatchKind,
 
     /// `purpose`: `DV_CODED_TEXT` (`0..1`).
@@ -114,12 +165,17 @@ pub struct TermMapping {
     /// TODO(port): invariant requires a live terminology-service lookup
     /// (`openehr_terminology::TerminologyService`/`TerminologyAccess`); not
     /// yet enforced by a constructor/`Validate` impl.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub purpose: Option<DvCodedText>,
 
     /// `target`: `CODE_PHRASE` (`1..1`).
     ///
     /// The target term of the mapping.
     pub target: CodePhrase,
+}
+
+impl TypeName for TermMapping {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl TermMapping {
@@ -189,5 +245,5 @@ impl TermMapping {
 //   source_loc: master05-text_package.adoc §Class Descriptions / term_mapping.adoc §TERM_MAPPING Class
 //   confidence: medium
 //   todos: 3
-//   note: `match` char narrowed to a closed MatchKind enum (four legal values, is_valid_match_code recast as TryFrom/matches!); match_ field renamed for the Rust keyword collision; Purpose_valid invariant left as todo!() pending a terminology-service handle (mentioned on both the field doc and the invariant method, plus one inline comment, hence 3).
+//   note: `match` char narrowed to a closed MatchKind enum (four legal values, is_valid_match_code recast as TryFrom/matches!); match_ field renamed for the Rust keyword collision; Purpose_valid invariant left as todo!() pending a terminology-service handle (mentioned on both the field doc and the invariant method, plus one inline comment, hence 3). P4/ADR-002: TermMapping self-tags via TypeTag<Self> first field + TypeName ("TERM_MAPPING"), inert struct-level #[serde(rename)] deleted; MatchKind carries no _type and keeps its one-character-JSON-string wire form via #[serde(into/try_from = "String")] bridging as_char()/TryFrom<char> (schema-verified, already ITS-JSON-conformant — no manual impl needed); match_ carries #[serde(rename = "match")]; purpose skips when None.
 // ─────────────────────────────────────────────

@@ -16,12 +16,12 @@ use super::party::Party;
 /// transcription of "static type formed by binding generic parameter... to
 /// PARTY").
 ///
-/// TODO(port): forward-reference to `crate::common::versioned_object::VersionedObject<T>`
+/// TODO(port): forward-reference to `crate::common::change_control::versioned_object::VersionedObject<T>`
 /// (sibling agent owns `common`); this alias cannot resolve until that
 /// generic type lands, and both the type name (`VersionedObject`) and its
 /// generic parameter's trait bound are conventions this file does not
 /// control.
-pub type VersionedParty = crate::common::versioned_object::VersionedObject<Party>;
+pub type VersionedParty = crate::common::change_control::versioned_object::VersionedObject<Party>;
 
 // ─────────────────────────────────────────────
 // PORT STATUS
@@ -29,5 +29,5 @@ pub type VersionedParty = crate::common::versioned_object::VersionedObject<Party
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/versioned_party.adoc §VERSIONED_PARTY Class
 //   confidence: low
 //   todos: 1
-//   note: type alias forward-references crate::common::versioned_object::VersionedObject<T>, not yet landed by the sibling agent owning common/ — exact path/bound unverifiable until then.
+//   note: type alias over crate::common::change_control::versioned_object::VersionedObject<T>. P4/ADR-002: no serde work applies to a bare type alias (nothing to attach a derive or TypeTag to), and no `_type` is wanted anyway — the pinned ITS-JSON schema defines no VERSIONED_X entries; Party itself (party.rs) carries the actual serde shape for whatever this alias resolves to.
 // ─────────────────────────────────────────────

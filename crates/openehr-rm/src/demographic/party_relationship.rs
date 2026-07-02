@@ -6,16 +6,27 @@
 //! Generic description of a relationship between parties.
 use crate::common::archetyped::locatable::LocatableData;
 use crate::data_types::quantity::dv_interval::DvInterval;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `pub const TYPE_NAME`: the canonical `_type` discriminator string for
-/// this concrete class (serde derives deferred to P4/P5 per ADR-001
-/// §Refinements).
+/// this concrete class, single-sourcing the [`TypeName`] impl below
+/// (ADR-002).
 pub const TYPE_NAME: &str = "PARTY_RELATIONSHIP";
 
 /// `PARTY_RELATIONSHIP` inherits `LOCATABLE` directly (not `PARTY`).
-#[derive(Debug, Clone, PartialEq)]
+/// `#[serde(flatten)]` folds `LocatableData` into `PARTY_RELATIONSHIP`'s own
+/// JSON object; per ADR-002 the class self-tags via its first field.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartyRelationship {
+    /// Canonical `_type` discriminator (`"PARTY_RELATIONSHIP"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Inherited `LOCATABLE` state.
+    #[serde(flatten)]
     pub locatable: LocatableData,
 
     /// `details`: `ITEM_STRUCTURE` `[0..1]` — the detailed description of
@@ -24,6 +35,7 @@ pub struct PartyRelationship {
     /// TODO(port): forward-reference to
     /// `crate::data_structures::item_structure::ItemStructure` (sibling
     /// agent's package).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub details: Option<crate::data_structures::item_structure::ItemStructure>,
 
     /// `target`: `PARTY_REF` `[1..1]` — target of relationship.
@@ -31,10 +43,15 @@ pub struct PartyRelationship {
 
     /// `time_validity`: `DV_INTERVAL<DV_DATE>` `[0..1]` — valid time
     /// interval for this relationship.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub time_validity: Option<DvInterval<crate::data_types::date_time::dv_date::DvDate>>,
 
     /// `source`: `PARTY_REF` `[1..1]` — source of relationship.
     pub source: openehr_base::identification::party_ref::PartyRef,
+}
+
+impl TypeName for PartyRelationship {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl PartyRelationship {
@@ -67,5 +84,5 @@ impl PartyRelationship {
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/party_relationship.adoc §PARTY_RELATIONSHIP Class
 //   confidence: high
 //   todos: 4
-//   note: Source_valid/Target_valid invariants require resolving through a Party object graph not modelled in this crate; left as TODO.
+//   note: Source_valid/Target_valid invariants require resolving through a Party object graph not modelled in this crate; left as TODO. P4/ADR-002: self-tags via TypeTag<Self> first field (TypeName from TYPE_NAME); no-op struct-level rename deleted.
 // ─────────────────────────────────────────────

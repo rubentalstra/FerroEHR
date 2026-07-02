@@ -35,6 +35,8 @@
 //! for the full EBNF grammar of both syntaxes.
 use crate::data_types::encapsulated::dv_parsable::DvParsable;
 use crate::data_types::time_specification::dv_time_specification::DvTimeSpecification;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `DV_PERIODIC_TIME_SPECIFICATION`.
 ///
@@ -45,8 +47,14 @@ use crate::data_types::time_specification::dv_time_specification::DvTimeSpecific
 /// ADR-001 §3 (there is no further parent state to compose, since
 /// `DV_TIME_SPECIFICATION` was transcribed as a pure trait with no
 /// embeddable struct).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvPeriodicTimeSpecification {
+    /// Canonical `_type` discriminator (`"DV_PERIODIC_TIME_SPECIFICATION"`),
+    /// always serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `value`: `DV_PARSABLE` (`1..1`), inherited from
     /// `DV_TIME_SPECIFICATION`.
     ///
@@ -55,6 +63,10 @@ pub struct DvPeriodicTimeSpecification {
 }
 
 pub const TYPE_NAME: &str = "DV_PERIODIC_TIME_SPECIFICATION";
+
+impl TypeName for DvPeriodicTimeSpecification {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 impl DvPeriodicTimeSpecification {
     /// `period` `(): DV_DURATION`.
@@ -140,6 +152,6 @@ impl DvTimeSpecification for DvPeriodicTimeSpecification {
 //   source: RM 1.1.0 data_types.time_specification — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_periodic_time_specification.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master08-time_specification_package.adoc §Class Descriptions / dv_periodic_time_specification.adoc §DV_PERIODIC_TIME_SPECIFICATION Class
 //   confidence: medium
-//   todos: 4
-//   note: period/calendar_alignment/event_alignment/institution_specified all require an HL7v3 PIVL/EIVL syntax parser that does not exist yet (a distinct grammar from the ISO-8601 jiff-bridging plan); institution_specified's derivation rule is flagged as genuinely underspecified in the published table beyond "extracted from value"; invariant_value_valid is fully implemented (plain string comparison, not blocked on the parser).
+//   todos: 5
+//   note: period/calendar_alignment/event_alignment/institution_specified all require an HL7v3 PIVL/EIVL syntax parser that does not exist yet (a distinct grammar from the ISO-8601 jiff-bridging plan); institution_specified's derivation rule is flagged as genuinely underspecified in the published table beyond "extracted from value"; invariant_value_valid is fully implemented (plain string comparison, not blocked on the parser). P4: Serialize/Deserialize added; `value` is mandatory, no skip needed; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_GENERAL_TIME_SPECIFICATION.
 // ─────────────────────────────────────────────

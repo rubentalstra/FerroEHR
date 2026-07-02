@@ -8,6 +8,8 @@
 //! revision identifier of the revision to which the `AUDIT_DETAILS`
 //! instance belongs.
 use openehr_base::identification::object_version_id::ObjectVersionId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 use super::audit_details::AuditDetails;
 
@@ -18,8 +20,13 @@ use super::audit_details::AuditDetails;
 pub const TYPE_NAME: &str = "REVISION_HISTORY_ITEM";
 
 /// `REVISION_HISTORY_ITEM` declares no `Inherit` row in the spec table.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RevisionHistoryItem {
+    /// Canonical `_type` discriminator (`"REVISION_HISTORY_ITEM"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `version_id`: `OBJECT_VERSION_ID`, cardinality `1..1`.
     ///
     /// Version identifier for this revision.
@@ -46,6 +53,10 @@ pub struct RevisionHistoryItem {
     /// `Attestation` losslessly inside this list is not yet representable
     /// and is flagged here rather than silently narrowed.
     pub audits: Vec<AuditDetails>,
+}
+
+impl TypeName for RevisionHistoryItem {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 // ─────────────────────────────────────────────

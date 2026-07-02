@@ -6,15 +6,9 @@
 //! any other meta-data about that translation, so that a translated resource
 //! carries a documentary record of its provenance alongside the translated
 //! content itself.
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_foundation::terminology_types::terminology_code::TerminologyCode;
 use std::collections::HashMap;
-
-// TODO(port): `Terminology_code` is BASE 1.2.0 `foundation_types.primitive_types`
-// (docs/research/spec-cache/BASE-1.2.0/uml_classes/terminology_code.adoc) and has
-// not yet been transcribed into `openehr-foundation` in this worktree.
-// Placeholder alias over `std::string::String` until that class exists;
-// replace with the real `openehr_foundation::primitive_types::...` type once
-// foundation_types.primitive_types transcribes `Terminology_code`.
-type TerminologyCode = String;
 
 /// `TRANSLATION_DETAILS` — class providing details of a natural language
 /// translation.
@@ -26,8 +20,13 @@ type TerminologyCode = String;
 /// `HashMap<String, String>` per `docs/PORTING.md` §6/§14.2; `List<String>`
 /// maps to `Vec<String>`.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(rename = "TRANSLATION_DETAILS")]
 pub struct TranslationDetails {
+    /// Canonical `_type` discriminator (`"TRANSLATION_DETAILS"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `language`: `Terminology_code`, cardinality 1..1.
     ///
     /// Language of the translation, coded using ISO 639-1 (2 character)
@@ -43,17 +42,20 @@ pub struct TranslationDetails {
     ///
     /// Accreditation of primary translator or group, usually a national
     /// translator's registration or association membership id.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub accreditation: Option<String>,
 
     /// `other_details`: `Hash<String, String>`, cardinality 0..1.
     ///
     /// Any other meta-data.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub other_details: Option<HashMap<String, String>>,
 
     /// `version_last_translated`: `String`, cardinality 0..1.
     ///
     /// Version of this resource last time it was translated into the
     /// language represented by this `TRANSLATION_DETAILS` object.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub version_last_translated: Option<String>,
 
     /// `other_contributors`: `List<String>`, cardinality 0..1.
@@ -62,7 +64,12 @@ pub struct TranslationDetails {
     /// preferred format of the relevant organisation for the artefacts in
     /// question. A typical default is `"name <email>"` if nothing else is
     /// specified.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub other_contributors: Option<Vec<String>>,
+}
+
+impl TypeName for TranslationDetails {
+    const NAME: &'static str = "TRANSLATION_DETAILS";
 }
 
 // ─────────────────────────────────────────────

@@ -23,23 +23,30 @@
 // Forward-references to their eventual module paths.
 use crate::data_types::basic::dv_identifier::DvIdentifier;
 use crate::data_types::encapsulated::dv_encapsulated::DvEncapsulated;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 use super::feeder_audit_details::FeederAuditDetails;
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. Per ADR-001 refinements ("serde derives wait until P4"), a
-/// `const` stands in for `#[serde(rename = ...)]` until serde lands as a
-/// dependency of this crate.
+/// form. Single-sources the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "FEEDER_AUDIT";
 
 /// `FEEDER_AUDIT` declares no `Inherit` row in the spec table.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FeederAudit {
+    /// Canonical `_type` discriminator (`"FEEDER_AUDIT"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `originating_system_item_ids`: `List<DV_IDENTIFIER>`, cardinality
     /// `0..1`.
     ///
     /// Identifiers used for the item in the originating system, e.g.
     /// filler and placer ids.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub originating_system_item_ids: Option<Vec<DvIdentifier>>,
 
     /// `feeder_system_item_ids`: `List<DV_IDENTIFIER>`, cardinality
@@ -47,6 +54,7 @@ pub struct FeederAudit {
     ///
     /// Identifiers used for the item in the feeder system, where the
     /// feeder system is distinct from the originating system.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub feeder_system_item_ids: Option<Vec<DvIdentifier>>,
 
     /// `original_content`: `DV_ENCAPSULATED`, cardinality `0..1`.
@@ -55,6 +63,7 @@ pub struct FeederAudit {
     /// corresponding to the openEHR content at this node. Typically a URI
     /// reference to a document or message in a persistent store associated
     /// with the EHR.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub original_content: Option<DvEncapsulated>,
 
     /// `originating_system_audit`: `FEEDER_AUDIT_DETAILS`, cardinality
@@ -68,7 +77,12 @@ pub struct FeederAudit {
     ///
     /// Any audit information for the information item from the feeder
     /// system, if different from the originating system.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub feeder_system_audit: Option<FeederAuditDetails>,
+}
+
+impl TypeName for FeederAudit {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 // ─────────────────────────────────────────────
@@ -77,5 +91,5 @@ pub struct FeederAudit {
 //   source_loc: common/master03-archetyped_package.adoc §Feeder System Audit / uml_classes/feeder_audit.adoc §FEEDER_AUDIT Class
 //   confidence: high
 //   todos: 0
-//   note: Forward-refs DvIdentifier and DvEncapsulated (data_types, sibling-agent territory, not yet landed). No invariants published for this class.
+//   note: Forward-refs DvIdentifier and DvEncapsulated (data_types, sibling-agent territory, not yet landed). No invariants published for this class. P4/ADR-002: self-tags via TypeName + first-field TypeTag<Self> (_type = "FEEDER_AUDIT").
 // ─────────────────────────────────────────────

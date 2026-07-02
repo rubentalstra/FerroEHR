@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "openehr-assistant-mcp": {
+      "type": "streamable-http",
+      "url": "https://openehr-assistant-mcp.apps.cadasto.com/"
+    }
+  }
+}

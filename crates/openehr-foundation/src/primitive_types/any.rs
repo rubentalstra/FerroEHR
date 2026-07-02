@@ -89,11 +89,29 @@ pub trait Any {
     /// TODO(port): decide and implement the type registry, if this function
     /// is ever actually exercised by ported code (the spec marks it
     /// abstract, but no RM class transcribed so far calls it directly).
+    #[must_use]
     fn instance_of(_a_type: &str) -> Option<Self>
     where
         Self: Sized,
     {
         None
+    }
+}
+
+// PORT NOTE: raw `i64` stands in for `Integer64` where covariant
+// redefinition (`DV_COUNT.magnitude`, ADR-001 §6) uses the bare primitive;
+// together with the matching `Ordered`/`Numeric` impls (`ordered.rs`,
+// `numeric.rs`) this resolves the P17-flagged bound conflict between
+// `DV_COUNT.magnitude: i64` and the `T: OrderedNumeric` bound on
+// `DvAmountApi`/`DvQuantifiedApi` in `openehr-rm`. Coherence requires the
+// impl to live here in `openehr-foundation` (the trait owner).
+impl Any for i64 {
+    fn is_equal(&self, other: &Self) -> bool {
+        self == other
+    }
+
+    fn type_of(&self) -> String {
+        "Integer64".to_string()
     }
 }
 

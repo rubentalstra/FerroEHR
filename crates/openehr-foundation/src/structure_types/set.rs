@@ -8,6 +8,9 @@
 //! `Container<T>`.
 use super::super::primitive_types::any::Any;
 use super::container::Container;
+use serde::de::Error as _;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -21,7 +24,7 @@ use std::hash::Hash;
 /// `T: Eq + Hash` is required by `HashSet` itself; this is a structural
 /// requirement of the chosen backing container, not a spec-declared
 /// constraint (the spec's own `Set<T>` has no bound on `T` at all).
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Set<T: Eq + Hash>(pub HashSet<T>);
 
@@ -51,11 +54,46 @@ impl<T: Eq + Hash> Any for Set<T> {
     }
 }
 
+impl<T: Eq + Hash + Serialize> Serialize for Set<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let field_count = if self.0.is_empty() { 1 } else { 2 };
+        let mut state = serializer.serialize_struct("SET", field_count)?;
+        state.serialize_field("_type", "SET")?;
+        if !self.0.is_empty() {
+            state.serialize_field("items", &self.0)?;
+        }
+        state.end()
+    }
+}
+
+impl<'de, T: Eq + Hash + Deserialize<'de>> Deserialize<'de> for Set<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Wire<T: Eq + Hash> {
+            #[serde(rename = "_type")]
+            type_name: Option<String>,
+            items: Option<HashSet<T>>,
+        }
+
+        let wire = Wire::deserialize(deserializer)?;
+        if wire.type_name.as_deref().is_some_and(|name| name != "SET") {
+            return Err(D::Error::custom("expected _type \"SET\""));
+        }
+        Ok(Set(wire.items.unwrap_or_default()))
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.structures §Class Definitions — docs/research/spec-cache/BASE-1.2.0/uml_classes/set.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master04-structure_types.adoc §Class Definitions / set.adoc §Set Class
 //   confidence: high
 //   todos: 1
-//   note: T: Eq + Hash bound is a structural requirement of HashSet, not a spec-declared constraint (Set<T> itself is unconstrained); count()'s i32 cast shares List's unspecified-overflow gap.
+//   note: T: Eq + Hash bound is a structural requirement of HashSet, not a spec-declared constraint (Set<T> itself is unconstrained); count()'s i32 cast shares List's unspecified-overflow gap. P4: canonical JSON uses object form `{_type:"SET",items?}` so the class definition is schema-coverable without changing the storage type.
 // ─────────────────────────────────────────────

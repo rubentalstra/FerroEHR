@@ -13,9 +13,11 @@ use super::dv_ordered::DvOrderedApi;
 // TODO(port): forward-references DV_TEXT (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
 use crate::data_types::text::dv_text::DvText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (serde derives wait until P4 per ADR-001 "Refinements").
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "REFERENCE_RANGE";
 
 /// `REFERENCE_RANGE<T>` has no `Inherit` row in its per-class table (unlike
@@ -26,18 +28,39 @@ pub const TYPE_NAME: &str = "REFERENCE_RANGE";
 /// `DV_ORDERED` datum" and the generic parameter written on `DV_INTERVAL<T>`
 /// in `range`'s declared type — per ADR-001 §5 (constrained generic →
 /// generic with trait bound), mirrored identically from `dv_interval.rs`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceRange<T: DvOrderedApi> {
+    /// Canonical `_type` discriminator (`"REFERENCE_RANGE"`), always
+    /// serialized first; tolerated-absent and validated-if-present on input
+    /// (ADR-002).
+    ///
+    /// The function-path `default = "TypeTag::new"` form is mandatory on a
+    /// generic container — bare `default` makes serde's derive add a
+    /// spurious `T: Default` bound.
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<ReferenceRange<T>>,
+
     /// `meaning`: `DV_TEXT` (1..1).
     ///
     /// Term whose value indicates the meaning of this range, e.g. normal,
     /// critical, therapeutic etc.
+    ///
+    /// Genuinely nested on the wire (no flatten) — `meaning` and `range` are
+    /// this class's own declared attributes, so they already sit at the top
+    /// level of the `REFERENCE_RANGE` object beside `_type`, schema-verified.
     pub meaning: DvText,
 
     /// `range`: `DV_INTERVAL<T>` (1..1).
     ///
     /// The data range for this meaning, e.g. critical etc.
     pub range: DvInterval<T>,
+}
+
+/// ADR-002: `_type` string for `REFERENCE_RANGE`, single-sourced from
+/// [`TYPE_NAME`]. Repeats the struct's own declared `T: DvOrderedApi` bound
+/// (required for well-formedness) but adds **no** further bounds on `T`.
+impl<T: DvOrderedApi> TypeName for ReferenceRange<T> {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl<T: DvOrderedApi> ReferenceRange<T> {
@@ -84,5 +107,5 @@ impl<T: DvOrderedApi> ReferenceRange<T> {
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / reference_range.adoc §REFERENCE_RANGE Class
 //   confidence: high
 //   todos: 3
-//   note: is_in_range narrows the spec's abstract DV_ORDERED parameter to the concrete T (documented PORT NOTE); is_in_range's DV_INTERVAL::has delegation and the Range_is_simple invariant both remain unenforced pending Interval::has and a Validate framework respectively.
+//   note: is_in_range narrows the spec's abstract DV_ORDERED parameter to the concrete T (documented PORT NOTE); is_in_range's DV_INTERVAL::has delegation and the Range_is_simple invariant both remain unenforced pending Interval::has and a Validate framework respectively. P4/ADR-002: self-tags via TypeTag<ReferenceRange<T>> first field (function-path default; TypeName impl adds no bounds on T beyond the struct's own DvOrderedApi); no flatten needed (schema-verified — meaning/range are this class's own attributes, already top-level beside _type).
 // ─────────────────────────────────────────────

@@ -10,7 +10,15 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-openehr-rm = { path = "../openehr-rm" }
+openehr-rm = { path = "../openehr-rm", features = ["ehr-extract"] }
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+openehr-base = { path = "../openehr-base" }
+openehr-foundation = { path = "../openehr-foundation" }
+insta.workspace = true
+jsonschema.workspace = true
 
 [lints]
 workspace = true

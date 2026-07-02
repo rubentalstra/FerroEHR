@@ -8,12 +8,14 @@
 //! Reference to a `LOCATABLE` instance inside the top-level content
 //! structure inside a `VERSION<T>`; the path attribute is applied to the
 //! object that `VERSION.data` points to.
-use super::object_id::ObjectId;
 use super::uid_based_id::UidBasedId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. `LocatableRef` is not currently reached through any tagged enum in
+/// this crate, so the struct-level `#[serde(rename = "LOCATABLE_REF")]`
+/// below is inert for this standalone struct under `#[derive(Serialize)]`;
+/// see the caveat on `hier_object_id::TYPE_NAME`.
 pub const TYPE_NAME: &str = "LOCATABLE_REF";
 
 /// `LOCATABLE_REF` inherits `OBJECT_REF` but the spec's attribute table
@@ -24,9 +26,17 @@ pub const TYPE_NAME: &str = "LOCATABLE_REF";
 /// doing so would keep `id: ObjectId`, silently losing the narrowing — and
 /// instead re-declares `namespace`, `type`, and `id` directly, with `id`
 /// typed as [`UidBasedId`] (the enum encoding of `UID_BASED_ID`, ADR-001
-/// §4) rather than the wider [`ObjectId`].
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// §4) rather than the wider [`ObjectId`](super::object_id::ObjectId).
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct LocatableRef {
+    /// Canonical `_type` discriminator (`"LOCATABLE_REF"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `namespace`, inherited unchanged from `OBJECT_REF`. See
     /// `object_ref::ObjectRef::namespace` for the legal-value constraint.
     pub namespace: String,
@@ -44,7 +54,7 @@ pub struct LocatableRef {
     /// marks this `*1..1 (redefined)*`, narrowing the declared type from
     /// `OBJECT_ID` (as declared on the parent `OBJECT_REF`) to
     /// `UID_BASED_ID`. Encoded directly as [`UidBasedId`], not the wider
-    /// [`ObjectId`] enum.
+    /// [`ObjectId`](super::object_id::ObjectId) enum.
     pub id: UidBasedId,
 
     /// `path`: the path to an instance in question, as an absolute path
@@ -58,7 +68,12 @@ pub struct LocatableRef {
     /// is the spec's own "refers to `id` directly" case — both states are
     /// representable and distinguishable this way, matching the `0..1`
     /// cardinality more literally than collapsing them.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub path: Option<String>,
+}
+
+impl TypeName for LocatableRef {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl LocatableRef {

@@ -22,16 +22,22 @@ use crate::data_structures::item_structure::ItemStructure;
 
 use crate::common::generic::party_identified::PartyIdentified;
 use crate::common::generic::party_proxy::PartyProxy;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. Per ADR-001 refinements ("serde derives wait until P4"), a
-/// `const` stands in for `#[serde(rename = ...)]` until serde lands as a
-/// dependency of this crate.
+/// form. Single-sources the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "FEEDER_AUDIT_DETAILS";
 
 /// `FEEDER_AUDIT_DETAILS` declares no `Inherit` row in the spec table.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FeederAuditDetails {
+    /// Canonical `_type` discriminator (`"FEEDER_AUDIT_DETAILS"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `system_id`: `String`, cardinality `1..1`.
     ///
     /// Identifier of the system which handled the information item. This
@@ -52,17 +58,20 @@ pub struct FeederAuditDetails {
     /// which handled the item. For computability, this identifier needs to
     /// be e.g. a PKI identifier which can be included in the identifier
     /// list of the `PARTY_IDENTIFIED` object.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<PartyIdentified>,
 
     /// `subject`: `PARTY_PROXY`, cardinality `0..1`.
     ///
     /// Identifiers for subject of the received information item.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub subject: Option<PartyProxy>,
 
     /// `provider`: `PARTY_IDENTIFIED`, cardinality `0..1`.
     ///
     /// Optional provider(s) who created, committed, forwarded or otherwise
     /// handled the item.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<PartyIdentified>,
 
     /// `time`: `DV_DATE_TIME`, cardinality `0..1`.
@@ -70,19 +79,29 @@ pub struct FeederAuditDetails {
     /// Time of handling the item. For an originating system, this will be
     /// time of creation, for an intermediate feeder system, this will be a
     /// time of accession or other time of handling, where available.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub time: Option<DvDateTime>,
 
     /// `version_id`: `String`, cardinality `0..1`.
     ///
     /// Any identifier used in the system such as "interim", "final", or
     /// numeric versions if available.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version_id: Option<String>,
 
     /// `other_details`: `ITEM_STRUCTURE`, cardinality `0..1`.
     ///
     /// Optional attribute to carry any custom meta-data. May be
     /// archetyped.
-    pub other_details: Option<ItemStructure>,
+    // PORT NOTE: boxed to break the by-value cycle FEEDER_AUDIT ->
+    // FEEDER_AUDIT_DETAILS -> ITEM_STRUCTURE -> (LOCATABLE) -> FEEDER_AUDIT
+    // (ADR-001 §8 recursion rule; a bare enum field carries no indirection).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub other_details: Option<Box<ItemStructure>>,
+}
+
+impl TypeName for FeederAuditDetails {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl FeederAuditDetails {
@@ -102,5 +121,5 @@ impl FeederAuditDetails {
 //   source_loc: common/master03-archetyped_package.adoc §Meta-data / uml_classes/feeder_audit_details.adoc §FEEDER_AUDIT_DETAILS Class
 //   confidence: high
 //   todos: 1
-//   note: System_id_valid invariant recorded as is_system_id_valid() but not yet Validate-enforced. Forward-refs DvDateTime and ItemStructure (data_types/data_structures, sibling-agent territory, not yet landed); PartyIdentified/PartyProxy reference this same task's sibling module (common::generic), written later in this same pass.
+//   note: System_id_valid invariant recorded as is_system_id_valid() but not yet Validate-enforced. Forward-refs DvDateTime and ItemStructure (data_types/data_structures, sibling-agent territory, not yet landed); PartyIdentified/PartyProxy reference this same task's sibling module (common::generic), written later in this same pass. P4/ADR-002: self-tags via TypeName + first-field TypeTag<Self> (_type = "FEEDER_AUDIT_DETAILS").
 // ─────────────────────────────────────────────

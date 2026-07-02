@@ -16,6 +16,8 @@ use super::archetype_id::ArchetypeId;
 use super::generic_id::GenericId;
 use super::template_id::TemplateId;
 use super::terminology_id::TerminologyId;
+use serde::{Deserialize, Serialize};
+
 use super::uid_based_id::{UidBasedId, UidBasedIdApi};
 
 /// Shared attribute state of `OBJECT_ID` and its descendants.
@@ -31,7 +33,9 @@ use super::uid_based_id::{UidBasedId, UidBasedIdApi};
 /// layers additional behaviour (the `root`/`extension`/`has_extension`
 /// parsing functions) on top of the same single attribute rather than
 /// adding new fields. See `uid_based_id.rs`.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct ObjectIdData {
     /// `value`: the value of the id, in the form defined by the concrete
     /// subtype's lexical grammar.
@@ -52,17 +56,29 @@ pub struct ObjectIdData {
 /// `LOCATABLE_REF.id`, covariantly redefined — see `locatable_ref.rs`) can
 /// be declared with the narrower `UidBasedId` type directly, matching
 /// ADR-001 §6.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// PORT NOTE: `#[serde(untagged)]` per ADR-002 — `OBJECT_ID` is abstract, so
+/// it carries no tag of its own; dispatch is driven by each concrete
+/// payload's self-tagging `TypeTag` field, whose `Deserialize` fails on a
+/// mismatched `_type`, making untagged variant probing tag-driven. The
+/// nested `UidBased` branch composes the same way (`UidBasedId` is itself
+/// untagged over self-tagged concretes).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ObjectId {
     /// The `UID_BASED_ID` branch (`HIER_OBJECT_ID` or `OBJECT_VERSION_ID`).
     UidBased(UidBasedId),
     /// `ARCHETYPE_ID`.
+    ///
     ArchetypeId(ArchetypeId),
     /// `TEMPLATE_ID`.
+    ///
     TemplateId(TemplateId),
     /// `TERMINOLOGY_ID`.
+    ///
     TerminologyId(TerminologyId),
     /// `GENERIC_ID`.
+    ///
     GenericId(GenericId),
 }
 
@@ -92,6 +108,6 @@ impl ObjectIdApi for ObjectId {
 //   source: BASE 1.2.0 base_types.identification §OBJECT_ID — docs/research/spec-cache/BASE-1.2.0/uml_classes/object_id.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / object_id.adoc §OBJECT_ID Class
 //   confidence: medium
-//   todos: 0
-//   note: ObjectId enum nests UidBasedId rather than flattening its two variants, so a UID_BASED_ID-typed field elsewhere can use the narrower enum directly per ADR-001 §6; ambiguity noted in the transcription report.
+//   todos: 2
+//   note: ObjectId enum nests UidBasedId rather than flattening its two variants, so a UID_BASED_ID-typed field elsewhere can use the narrower enum directly per ADR-001 §6. P4 addendum: manual serde enforces canonical `_type` dispatch for all OBJECT_ID leaves (`{_type, value}` plus `scheme` for GENERIC_ID) while preserving the nested Rust shape.
 // ─────────────────────────────────────────────

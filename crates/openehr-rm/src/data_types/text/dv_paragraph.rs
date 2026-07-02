@@ -20,9 +20,11 @@
 //! least a basic way.
 use crate::data_types::data_value::DataValueApi;
 use crate::data_types::text::dv_text::DvText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into its [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "DV_PARAGRAPH";
 
 /// `DV_PARAGRAPH` is a leaf, non-abstract class with one attribute.
@@ -34,8 +36,13 @@ pub const TYPE_NAME: &str = "DV_PARAGRAPH";
 /// cluster for the `DV_TEXT`/`DV_CODED_TEXT` substitutability the
 /// [`crate::data_types::text::dv_text::DvText`] enum exists to encode.
 /// Transcribed as `Vec<DvText>`, not `Vec<DvTextData>`.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DvParagraph {
+    /// Canonical `_type` discriminator (`"DV_PARAGRAPH"`), always
+    /// serialized first (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `items`: `List<DV_TEXT>` (`1..1`).
     ///
     /// Items making up the paragraph, each of which is a text item (which
@@ -47,6 +54,10 @@ pub struct DvParagraph {
     /// impl; recorded here as a doc note pending the RM invariant
     /// framework.
     pub items: Vec<DvText>,
+}
+
+impl TypeName for DvParagraph {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvParagraph {
@@ -71,5 +82,5 @@ impl DataValueApi for DvParagraph {
 //   source_loc: master05-text_package.adoc §Class Descriptions / dv_paragraph.adoc §DV_PARAGRAPH Class
 //   confidence: high
 //   todos: 2
-//   note: deprecated-but-still-legal class; `items` typed Vec<DvText> (the enum) to preserve DV_TEXT/DV_CODED_TEXT mixed-list substitutability, not Vec<DvTextData>; Items_valid invariant mentioned on both the field doc and the invariant method doc.
+//   note: deprecated-but-still-legal class; `items` typed Vec<DvText> (the enum) to preserve DV_TEXT/DV_CODED_TEXT mixed-list substitutability, not Vec<DvTextData>; Items_valid invariant mentioned on both the field doc and the invariant method doc. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("DV_PARAGRAPH"); inert struct-level #[serde(rename)] deleted; each items element carries its own _type via the DvText variants' tags.
 // ─────────────────────────────────────────────

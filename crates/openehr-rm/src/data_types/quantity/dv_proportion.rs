@@ -19,8 +19,9 @@
 //! clinical notes is not a ratio but an ordinal (which includes non-numeric
 //! symbols like CF = count fingers etc). Should not be used for
 //! formulations.
-use super::dv_amount::{DvAmountApi, DvAmountData};
-use super::dv_ordered::{DvOrderedApi, DvOrderedData};
+use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE};
+use super::dv_ordered::DvOrderedApi;
+use super::dv_quantified::DvQuantifiedApi;
 use super::proportion_kind::ProportionKind;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
@@ -29,9 +30,11 @@ use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::integer::Integer;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::primitive_types::real::Real;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (serde derives wait until P4 per ADR-001 "Refinements").
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "DV_PROPORTION";
 
 /// `DV_PROPORTION`'s `Inherit` row lists **two** parents: `PROPORTION_KIND`
@@ -51,16 +54,27 @@ pub const TYPE_NAME: &str = "DV_PROPORTION";
 ///   that class), `PROPORTION_KIND`'s constants/function are reached via
 ///   direct calls to `ProportionKind::*` rather than a supertrait or an
 ///   embedded zero-sized field.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvProportion {
+    /// Canonical `_type` discriminator (`"DV_PROPORTION"`), always
+    /// serialized first; tolerated-absent and validated-if-present on input
+    /// (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `DV_AMOUNT` parent state, self-typed per the F-bounded
     /// pattern documented on `DvOrderedData` in `dv_ordered.rs` (threaded
     /// through `DvQuantifiedData<T>`/`DvAmountData<T>`).
+    #[serde(flatten)]
     pub amount: DvAmountData<DvProportion>,
 
     /// `numerator`: `Real` (1..1).
     ///
     /// Numerator of ratio.
+    ///
+    /// PORT NOTE: the previously-flagged cross-crate gap is closed — `Real`
+    /// now derives `Serialize`/`Deserialize` in `openehr-foundation`,
+    /// serializing as its bare inner `f64`.
     pub numerator: Real,
 
     /// `denominator`: `Real` (1..1).
@@ -95,6 +109,13 @@ pub struct DvProportion {
     /// a closed Rust enum keeps `Type_validity` true by construction rather
     /// than needing a runtime range check against a bare integer. Flagged
     /// as a judgment call beyond the literal table declaration.
+    ///
+    /// Now carries `#[serde(rename = "type")]` for the Rust keyword
+    /// collision (this one is functional — it is a field-level rename, not
+    /// the struct-level container rename shown inert on `DvBoolean`); the
+    /// value itself round-trips through `ProportionKind`'s own
+    /// `#[serde(into = "i32", try_from = "i32")]` (see `proportion_kind.rs`).
+    #[serde(rename = "type")]
     pub type_: ProportionKind,
 
     /// `precision`: `Integer` (0..1).
@@ -105,7 +126,15 @@ pub struct DvProportion {
     /// limit, i.e. any number of decimal places.
     ///
     /// Invariant `Precision_validity`: `precision = 0 implies is_integral`.
+    ///
+    /// TODO(port): same `openehr-foundation`-lacks-serde gap as
+    /// `numerator`/`denominator` above, for `Integer`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub precision: Option<Integer>,
+}
+
+impl TypeName for DvProportion {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvProportion {
@@ -144,8 +173,15 @@ impl DvProportion {
     /// denominator Real values, and a magnitude function which is computed
     /// as the result of the numerator/denominator division" — transcribed
     /// directly from that prose.
+    ///
+    /// PORT NOTE: this class's table declares `magnitude(): Real`, but the
+    /// spec-accurate `Real::divide` effector it delegates to returns
+    /// `Double` (`Real.divide`'s own row narrows the result type) — the
+    /// published tables disagree across the two classes; the `Double`
+    /// result is converted back to the declared `Real` return type
+    /// explicitly here (both are `f64`-backed per ADR-001 §7).
     pub fn magnitude(&self) -> Real {
-        self.numerator.divide(&self.denominator)
+        Real(self.numerator.divide(&self.denominator).0)
     }
 
     /// `is_integral(): Boolean`.
@@ -206,6 +242,35 @@ impl DvOrderedApi for DvProportion {
     /// narrowed to `&Self` per the recurring pattern.
     fn is_strictly_comparable_to(&self, other: &Self) -> bool {
         self.type_ == other.type_
+    }
+}
+
+impl DvQuantifiedApi<Real> for DvProportion {
+    fn magnitude_status(&self) -> Option<&str> {
+        self.amount.quantified.magnitude_status.as_deref()
+    }
+
+    /// Delegates to the inherent [`DvProportion::magnitude`] (the effected
+    /// `numerator/denominator` division).
+    fn magnitude(&self) -> Real {
+        DvProportion::magnitude(self)
+    }
+
+    /// `accuracy_unknown(): Boolean` (effected via `DV_AMOUNT`'s
+    /// special-value convention: an `accuracy` of `unknown_accuracy_value`
+    /// (-1) means accuracy was not recorded).
+    ///
+    /// PORT NOTE: an absent (`None`) accuracy is also treated as unknown —
+    /// see `DvQuantity::accuracy_unknown` for the same flagged reading.
+    fn accuracy_unknown(&self) -> bool {
+        match self.amount.accuracy {
+            None => true,
+            Some(a) => a.is_equal(&Real(UNKNOWN_ACCURACY_VALUE)),
+        }
+    }
+
+    fn is_equal_quantified(&self, other: &Self) -> bool {
+        self.is_equal(other)
     }
 }
 
@@ -322,6 +387,6 @@ impl DvAmountApi<Real> for DvProportion {
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_proportion.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_proportion.adoc §DV_PROPORTION Class
 //   confidence: low
-//   todos: 6
-//   note: multiple inheritance (PROPORTION_KIND + DV_AMOUNT) handled per ADR-001 §2 — PROPORTION_KIND is a constants-only class reached via direct ProportionKind::* calls, not a supertrait; type_: ProportionKind is a closed-enum judgment call over the spec's literal Integer typing; add/subtract/multiply/negative all stubbed todo!() since ratio-combination rules for arithmetic are unstated at any level; is_equal's own Meaning cell literally says "DV_AMOUNT" not "DV_PROPORTION" (flagged, transcribed verbatim); the seven invariants recorded but not enforced; forward-references CODE_PHRASE pending sibling data_types::text package.
+//   todos: 8
+//   note: multiple inheritance (PROPORTION_KIND + DV_AMOUNT) handled per ADR-001 §2 — PROPORTION_KIND is a constants-only class reached via direct ProportionKind::* calls, not a supertrait; type_: ProportionKind is a closed-enum judgment call over the spec's literal Integer typing; add/subtract/multiply/negative all stubbed todo!() since ratio-combination rules for arithmetic are unstated at any level; is_equal's own Meaning cell literally says "DV_AMOUNT" not "DV_PROPORTION" (flagged, transcribed verbatim); the seven invariants recorded but not enforced; forward-references CODE_PHRASE pending sibling data_types::text package. P4: Serialize/Deserialize added; `amount` flattened; `type_` carries a functional #[serde(rename = "type")] and serializes via ProportionKind's own i32 encoding; numerator/denominator/precision carry new TODO(port)s (Real/Integer lack serde in openehr-foundation).
 // ─────────────────────────────────────────────

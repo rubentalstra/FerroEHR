@@ -27,16 +27,21 @@
 // to their eventual module paths.
 use crate::data_types::text::dv_text::DvText;
 use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. Per ADR-001 refinements ("serde derives wait until P4"), a
-/// `const` stands in for `#[serde(rename = ...)]` until serde lands as a
-/// dependency of this crate.
+/// form. Single-sources the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "LINK";
 
 /// `LINK` declares no `Inherit` row in the spec table.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Link {
+    /// Canonical `_type` discriminator (`"LINK"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `meaning`: `DV_TEXT`, cardinality `1..1`.
     ///
     /// Used to describe the relationship, usually in clinical terms, such
@@ -64,6 +69,7 @@ pub struct Link {
     /// `#[serde(rename = "type")]` to restore the spec's exact snake_case
     /// attribute name on the wire, per `PORT_MASTER_PLAN.md` §14.4
     /// ("serde: snake_case attribute names").
+    #[serde(rename = "type")]
     pub r#type: DvText,
 
     /// `target`: `DV_EHR_URI`, cardinality `1..1`.
@@ -73,11 +79,15 @@ pub struct Link {
     pub target: DvEhrUri,
 }
 
+impl TypeName for Link {
+    const NAME: &'static str = TYPE_NAME;
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 common.archetyped — docs/research/spec-cache/RM-1.1.0/uml_classes/link.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: common/master03-archetyped_package.adoc §Class Definitions / uml_classes/link.adoc §LINK Class
 //   confidence: high
 //   todos: 0
-//   note: type field named r#type per the reserved-keyword convention; serde(rename = "type") deferred to P4. Forward-refs DvText and DvEhrUri (data_types, sibling-agent territory, not yet landed). No invariants published for this class.
+//   note: type field named r#type per the reserved-keyword convention, with serde(rename = "type") restoring the spec attribute name on the wire. Forward-refs DvText and DvEhrUri (data_types, sibling-agent territory, not yet landed). No invariants published for this class. P4/ADR-002: self-tags via TypeName + first-field TypeTag<Self> (_type = "LINK").
 // ─────────────────────────────────────────────

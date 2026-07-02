@@ -16,6 +16,7 @@ use super::element::Element;
 // module lands, so every `ITEM` accessor that would delegate to it is
 // `todo!()` for now.
 use crate::common::archetyped::locatable::LocatableData;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `ITEM` and its descendants.
 ///
@@ -29,7 +30,7 @@ use crate::common::archetyped::locatable::LocatableData;
 /// `#[serde(flatten)]` at P4/P5 has a natural, ITEM-shaped target, and so
 /// any future `ITEM`-level attribute the spec adds has somewhere to land
 /// without re-touching every concrete descendant.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ItemData {
     /// Inherited `LOCATABLE` state (`name`, `archetype_node_id`, `uid`,
     /// `links`, `archetype_details`, `feeder_audit`).
@@ -39,6 +40,7 @@ pub struct ItemData {
     /// shape assumed here per the LOCATABLE spec table
     /// (`docs/research/spec-cache/RM-1.1.0/uml_classes/locatable.adoc`);
     /// reconcile once `common::archetyped::locatable` lands.
+    #[serde(flatten)]
     pub locatable: LocatableData,
 }
 
@@ -63,7 +65,17 @@ pub struct ItemData {
 /// analogous to how `Vec<Item>` itself, not `Item`, is what breaks the
 /// otherwise-infinite recursion — see the `CLUSTER` transcription
 /// (`cluster.rs`) for the corresponding note on the `items` field.
-#[derive(Debug, Clone, PartialEq)]
+// PORT NOTE: `#[serde(untagged)]` per ADR-002 — dispatch is driven by each
+// variant payload's own `TypeTag` (`Cluster`/`Element` self-tag with
+// `_type`), whose `Deserialize` fails on a mismatched `_type` string, so
+// untagged probing is tag-driven rather than structure-driven. A struct-
+// level `#[serde(tag = "_type")]` here would duplicate the payloads' own
+// `_type` keys on the wire. Variant order still lists the structurally
+// richer payload first (`Cluster` requires `items`; `Element` requires
+// nothing an unknown-field-tolerant probe couldn't satisfy) so tag-less
+// input resolves correctly.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Item {
     /// `CLUSTER`.
     Cluster(Cluster),
@@ -124,5 +136,5 @@ pub const TYPE_NAME: &str = "ITEM";
 //   source_loc: master05-representation_package.adoc §Class Descriptions / item.adoc §ITEM Class
 //   confidence: high
 //   todos: 2
-//   note: LocatableData is a forward reference to the concurrently-transcribed common package; ItemApi's LOCATABLE-derived accessors (concept(), is_archetype_root()) are not yet exposed pending that module.
+//   note: LocatableData is a forward reference to the concurrently-transcribed common package; ItemApi's LOCATABLE-derived accessors (concept(), is_archetype_root()) are not yet exposed pending that module. P4/ADR-002: Item enum is #[serde(untagged)] — dispatch via the payload TypeTags on Cluster/Element; ItemData stays untagged (abstract).
 // ─────────────────────────────────────────────

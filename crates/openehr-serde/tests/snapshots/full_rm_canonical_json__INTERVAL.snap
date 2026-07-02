@@ -1,0 +1,10 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "lower_unbounded": true,
+  "upper_unbounded": true,
+  "lower_included": false,
+  "upper_included": false
+}

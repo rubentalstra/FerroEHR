@@ -12,9 +12,11 @@
 //! capturing stateful complex processes in simple data.
 use crate::data_types::data_value::DataValueApi;
 use crate::data_types::text::dv_coded_text::DvCodedText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into its [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "DV_STATE";
 
 /// `DV_STATE` is a leaf, non-abstract class with two attributes.
@@ -26,8 +28,13 @@ pub const TYPE_NAME: &str = "DV_STATE";
 /// terms, while the Attributes table is the binding signature. Transcribed
 /// literally from the table: `value: DvCodedText`, embedding the sibling
 /// `text` package class directly rather than widening to a bare `String`.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DvState {
+    /// Canonical `_type` discriminator (`"DV_STATE"`), always serialized
+    /// first (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `value`: `DV_CODED_TEXT` (`1..1`).
     ///
     /// The state name. State names are determined by a state/event table
@@ -42,6 +49,10 @@ pub struct DvState {
     pub is_terminal: bool,
 }
 
+impl TypeName for DvState {
+    const NAME: &'static str = TYPE_NAME;
+}
+
 impl DataValueApi for DvState {
     fn type_name(&self) -> &'static str {
         TYPE_NAME
@@ -54,5 +65,5 @@ impl DataValueApi for DvState {
 //   source_loc: master04-basic_package.adoc §Class Descriptions / dv_state.adoc §DV_STATE Class
 //   confidence: high
 //   todos: 0
-//   note: `value` transcribed literally as DV_CODED_TEXT per the Attributes table, not widened to String despite the class overview's looser "expressed as a String" prose (flagged as a documentation-vs-table wording gap, not a defect); no invariants published.
+//   note: `value` transcribed literally as DV_CODED_TEXT per the Attributes table, not widened to String despite the class overview's looser "expressed as a String" prose (flagged as a documentation-vs-table wording gap, not a defect); no invariants published. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("DV_STATE"); inert struct-level #[serde(rename)] deleted.
 // ─────────────────────────────────────────────

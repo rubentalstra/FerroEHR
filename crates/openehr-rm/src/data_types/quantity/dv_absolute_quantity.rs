@@ -12,6 +12,7 @@ use super::dv_amount::DvAmount;
 use super::dv_ordered::DvOrderedApi;
 use super::dv_quantified::{DvQuantifiedApi, DvQuantifiedData};
 use openehr_foundation::primitive_types::ordered_numeric::OrderedNumeric;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `DV_ABSOLUTE_QUANTITY` and its descendants.
 ///
@@ -25,9 +26,10 @@ use openehr_foundation::primitive_types::ordered_numeric::OrderedNumeric;
 /// `T: DvOrderedApi` threads the same F-bounded self-type as
 /// `DvQuantifiedData<T>` (see `dv_ordered.rs`, `dv_quantified.rs`), since
 /// `DV_ABSOLUTE_QUANTITY`'s `Inherit` row is `DV_QUANTIFIED`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvAbsoluteQuantityData<T: DvOrderedApi> {
     /// Embedded `DV_QUANTIFIED` parent state.
+    #[serde(flatten)]
     pub quantified: DvQuantifiedData<T>,
 
     /// `accuracy`: `DV_AMOUNT` (0..1, redefined).
@@ -47,6 +49,7 @@ pub struct DvAbsoluteQuantityData<T: DvOrderedApi> {
     /// descendant that is not already a `DV_ORDERED`-cycle participant
     /// (`DV_QUANTITY`, `DV_COUNT`, `DV_PROPORTION` are all `DV_AMOUNT`
     /// descendants, so `DvAmount` can validly hold any of them here).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub accuracy: Option<DvAmount>,
 }
 
@@ -118,5 +121,5 @@ pub trait DvAbsoluteQuantityApi<T: OrderedNumeric>: DvQuantifiedApi<T> {
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_absolute_quantity.adoc §DV_ABSOLUTE_QUANTITY Class
 //   confidence: medium
 //   todos: 0
-//   note: no concrete leaf transcribed in this pass (the date_time DV_DATE/DV_TIME/DV_DATE_TIME descendants belong to the sibling package); DvAbsoluteQuantityData/DvAbsoluteQuantityApi are the abstract shape those types are expected to embed/implement once that package lands.
+//   note: no concrete leaf transcribed in this pass (the date_time DV_DATE/DV_TIME/DV_DATE_TIME descendants belong to the sibling package); DvAbsoluteQuantityData/DvAbsoluteQuantityApi are the abstract shape those types are expected to embed/implement once that package lands. P4: DvAbsoluteQuantityData<T> derives Serialize/Deserialize; `quantified` flattened; `accuracy: Option<DvAmount>` skips when None. ADR-002: abstract layer, NO _type tag of its own; the DvAmount payload carried in `accuracy` self-tags via the untagged enum's variant TypeTags.
 // ─────────────────────────────────────────────

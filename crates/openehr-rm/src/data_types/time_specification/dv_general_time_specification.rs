@@ -28,6 +28,8 @@
 //! grammars documented on `dv_periodic_time_specification.rs`.
 use crate::data_types::encapsulated::dv_parsable::DvParsable;
 use crate::data_types::time_specification::dv_time_specification::DvTimeSpecification;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `DV_GENERAL_TIME_SPECIFICATION`.
 ///
@@ -36,8 +38,14 @@ use crate::data_types::time_specification::dv_time_specification::DvTimeSpecific
 /// Declares no attributes of its own beyond the inherited `value:
 /// DV_PARSABLE` from `DV_TIME_SPECIFICATION`, held directly here per the
 /// same reasoning documented on `DvPeriodicTimeSpecification`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvGeneralTimeSpecification {
+    /// Canonical `_type` discriminator (`"DV_GENERAL_TIME_SPECIFICATION"`),
+    /// always serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `value`: `DV_PARSABLE` (`1..1`), inherited from
     /// `DV_TIME_SPECIFICATION`.
     ///
@@ -46,6 +54,10 @@ pub struct DvGeneralTimeSpecification {
 }
 
 pub const TYPE_NAME: &str = "DV_GENERAL_TIME_SPECIFICATION";
+
+impl TypeName for DvGeneralTimeSpecification {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 impl DvTimeSpecification for DvGeneralTimeSpecification {
     fn value(&self) -> &DvParsable {
@@ -101,5 +113,5 @@ impl DvTimeSpecification for DvGeneralTimeSpecification {
 //   source_loc: master08-time_specification_package.adoc §Class Descriptions / dv_general_time_specification.adoc §DV_GENERAL_TIME_SPECIFICATION Class
 //   confidence: medium
 //   todos: 3
-//   note: structurally identical to DV_TIME_SPECIFICATION per the package overview's own wording (no added attributes, no own invariant); all three effected functions require the (harder, recursive) general GTS syntax parser, not yet designed; same "extracted from value" underspecification flagged on institution_specified as its periodic sibling.
+//   note: structurally identical to DV_TIME_SPECIFICATION per the package overview's own wording (no added attributes, no own invariant); all three effected functions require the (harder, recursive) general GTS syntax parser, not yet designed; same "extracted from value" underspecification flagged on institution_specified as its periodic sibling. P4: Serialize/Deserialize added; `value` is mandatory, no skip needed; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_PERIODIC_TIME_SPECIFICATION.
 // ─────────────────────────────────────────────

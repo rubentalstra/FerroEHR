@@ -14,6 +14,7 @@ use crate::common::change_control::imported_version::ImportedVersion;
 use crate::common::change_control::original_version::OriginalVersion;
 use crate::common::generic::audit_details::AuditDetails;
 use crate::data_types::text::dv_coded_text::DvCodedText;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `VERSION<T>` and its descendants.
 ///
@@ -25,13 +26,14 @@ use crate::data_types::text::dv_coded_text::DvCodedText;
 /// instead exposed via [`VersionApi`], since `ORIGINAL_VERSION` stores its
 /// answers directly while `IMPORTED_VERSION` computes them by delegating
 /// to its wrapped `item`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VersionData {
     /// `contribution`: Contribution in which this version was added.
     pub contribution: ObjectRef,
 
     /// `signature`: OpenPGP digital signature or digest of content
     /// committed in this Version.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
 
     /// `commit_audit`: audit trail corresponding to the committal of this
@@ -46,7 +48,10 @@ pub struct VersionData {
 /// invoking transcription task — the two concrete subtypes
 /// `ORIGINAL_VERSION<T>` and `IMPORTED_VERSION<T>` are collected into this
 /// closed `enum`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+// PORT NOTE: untagged per ADR-002 — dispatch is driven by each concrete
+// payload's own TypeTag, which rejects a mismatched `_type`.
+#[serde(untagged)]
 pub enum Version<T> {
     /// `ORIGINAL_VERSION<T>`.
     Original(OriginalVersion<T>),

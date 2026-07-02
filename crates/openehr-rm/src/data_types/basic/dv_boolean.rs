@@ -12,9 +12,11 @@
 //! modelled enumerated types such as male/female etc. Such values should be
 //! coded, and in any case the enumeration often has more than two values.
 use crate::data_types::data_value::DataValueApi;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into its [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "DV_BOOLEAN";
 
 /// `DV_BOOLEAN` is a leaf, non-abstract class with a single attribute, so
@@ -28,13 +30,30 @@ pub const TYPE_NAME: &str = "DV_BOOLEAN";
 /// `std::primitive::bool`, not the foundation-types `Boolean` newtype
 /// (which is reserved for the foundation-types class itself, e.g. when one
 /// foundation-types class embeds another).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+///
+/// PORT NOTE (ADR-002): this class self-tags. The former struct-level
+/// `#[serde(rename = "DV_BOOLEAN")]` was verified by direct experiment to
+/// be a **no-op on the wire** and is deleted per ADR-002; the canonical
+/// `_type: "DV_BOOLEAN"` property is instead emitted by the [`TypeTag`]
+/// first field below (tolerated-absent and validated-if-present on input),
+/// which also drives `#[serde(untagged)]` dispatch in the enclosing
+/// `DataValue` enum.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DvBoolean {
+    /// Canonical `_type` discriminator (`"DV_BOOLEAN"`), always serialized
+    /// first (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `value`: `Boolean` (`1..1`).
     ///
     /// Boolean value of this item. Actual values may be language or
     /// implementation dependent.
     pub value: bool,
+}
+
+impl TypeName for DvBoolean {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DataValueApi for DvBoolean {
@@ -49,5 +68,5 @@ impl DataValueApi for DvBoolean {
 //   source_loc: master04-basic_package.adoc §Class Descriptions / dv_boolean.adoc §DV_BOOLEAN Class
 //   confidence: high
 //   todos: 0
-//   note: leaf struct, single attribute, no invariants published; `value` transcribed as `bool`, not the foundation-types `Boolean` newtype (see doc note).
+//   note: leaf struct, single attribute, no invariants published; `value` transcribed as `bool`, not the foundation-types `Boolean` newtype (see doc note). P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("DV_BOOLEAN"); inert struct-level #[serde(rename)] deleted.
 // ─────────────────────────────────────────────

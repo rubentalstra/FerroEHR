@@ -1,0 +1,59 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "ORIGINAL_VERSION",
+  "contribution": {
+    "_type": "OBJECT_REF",
+    "namespace": "local",
+    "type": "CONTRIBUTION",
+    "id": {
+      "_type": "HIER_OBJECT_ID",
+      "value": "b6704e19-1b6e-4b73-9baf-4c4a7bf6e9b2"
+    }
+  },
+  "commit_audit": {
+    "_type": "AUDIT_DETAILS",
+    "system_id": "ehrbase.example.org",
+    "time_committed": {
+      "_type": "DV_DATE_TIME",
+      "value": "2026-07-02T10:00:00Z"
+    },
+    "change_type": {
+      "_type": "DV_CODED_TEXT",
+      "value": "creation",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "openehr"
+        },
+        "code_string": "249"
+      }
+    },
+    "committer": {
+      "_type": "PARTY_SELF"
+    }
+  },
+  "uid": {
+    "_type": "OBJECT_VERSION_ID",
+    "value": "939cec48-d629-4a3f-89f1-28c573387680::ehrbase.example.org::1"
+  },
+  "lifecycle_state": {
+    "_type": "DV_CODED_TEXT",
+    "value": "complete",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "532"
+    }
+  },
+  "data": {
+    "_type": "DV_TEXT",
+    "value": "payload"
+  }
+}

@@ -17,25 +17,35 @@ use super::item::{ItemApi, ItemData};
 use crate::data_types::data_value::DataValue;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `ELEMENT` class.
 ///
 /// Embeds the shared `ITEM` state (per ADR-001 §3) plus its own attributes.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Element {
+    /// Canonical `_type` discriminator (`"ELEMENT"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Inherited `ITEM` (and transitively `LOCATABLE`) state.
+    #[serde(flatten)]
     pub item: ItemData,
 
     /// `null_flavour`: flavour of null value, e.g. `253|unknown|`,
     /// `271|no information|`, `272|masked|`, and `273|not applicable|`.
     ///
     /// Cardinality `0..1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub null_flavour: Option<DvCodedText>,
 
     /// `value`: property representing the leaf value object of `ELEMENT`.
     /// In real data, any concrete subtype of `DATA_VALUE` can be used.
     ///
     /// Cardinality `0..1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<DataValue>,
 
     /// `null_reason`: optional specific reason for null value; if set,
@@ -43,7 +53,12 @@ pub struct Element {
     /// minority of clinical data, commonly needed in reporting contexts.
     ///
     /// Cardinality `0..1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub null_reason: Option<DvText>,
+}
+
+impl TypeName for Element {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl ItemApi for Element {
@@ -91,5 +106,5 @@ pub const TYPE_NAME: &str = "ELEMENT";
 //   source_loc: master05-representation_package.adoc §Class Descriptions / element.adoc §ELEMENT Class
 //   confidence: high
 //   todos: 1
-//   note: is_null() is implemented (definitional); the three remaining Inv_* invariants are recorded as doc text pending the Validate-trait framework, one of which needs a terminology-service lookup.
+//   note: is_null() is implemented (definitional); the three remaining Inv_* invariants are recorded as doc text pending the Validate-trait framework, one of which needs a terminology-service lookup. P4/ADR-002: self-tag (TypeName + first-field TypeTag) added; value/null_flavour field types (DataValue enum, DvCodedText) are a sibling agent's conversion.
 // ─────────────────────────────────────────────

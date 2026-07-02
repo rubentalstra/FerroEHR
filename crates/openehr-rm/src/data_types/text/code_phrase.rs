@@ -14,9 +14,11 @@
 //! `TERM_MAPPING.target`) as an attribute *type*, never as an `ELEMENT`
 //! value in its own right.
 use openehr_base::identification::terminology_id::TerminologyId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into its [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "CODE_PHRASE";
 
 /// `CODE_PHRASE` has three attributes and no ancestor state to embed, so it
@@ -56,12 +58,24 @@ pub const TYPE_NAME: &str = "CODE_PHRASE";
 /// service *traits* to a layer both can see, or by having
 /// `openehr-terminology` stay code/string-only and letting `openehr-rm`
 /// wrap its results into `CodePhrase` at the call site) is settled.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CodePhrase {
+    /// Canonical `_type` discriminator (`"CODE_PHRASE"`), always
+    /// serialized first (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `terminology_id`: `TERMINOLOGY_ID` (`1..1`).
     ///
     /// Identifier of the distinct terminology from which the code_string
     /// (or its elements) was extracted.
+    ///
+    /// PORT NOTE: an earlier P4 TODO here claimed `TerminologyId` did not
+    /// yet derive `Serialize`/`Deserialize`; that gap is closed
+    /// (`openehr-base::identification` now derives serde). `TerminologyId`
+    /// serializing its own `_type: "TERMINOLOGY_ID"` per ADR-002 (the UID
+    /// `{_type, value}` wire shape) is `openehr-base`'s own conversion
+    /// concern, not tracked here.
     pub terminology_id: TerminologyId,
 
     /// `code_string`: `String` (`1..1`).
@@ -84,7 +98,12 @@ pub struct CodePhrase {
     /// situations which create mappings, and representing data for which
     /// both a (non-preferred) actual term and a preferred term are both
     /// required.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preferred_term: Option<String>,
+}
+
+impl TypeName for CodePhrase {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl CodePhrase {
@@ -103,5 +122,5 @@ impl CodePhrase {
 //   source_loc: master05-text_package.adoc §Class Descriptions / code_phrase.adoc §CODE_PHRASE Class
 //   confidence: high
 //   todos: 3
-//   note: no Inherit row published for this class (transcribed as a standalone leaf, not a DATA_VALUE subtype); terminology_id forward-references openehr_base::identification::terminology_id::TerminologyId (already transcribed, same-direction dependency); see the doc comment for the full CODE_PHRASE / openehr_terminology::TerminologyCode / openehr_foundation Terminology_code reconciliation deferred to P17 (the reconciliation note plus the Code_string_valid field/method doc pair account for the 3).
+//   note: no Inherit row published for this class (transcribed as a standalone leaf, not a DATA_VALUE subtype); terminology_id forward-references openehr_base::identification::terminology_id::TerminologyId (already transcribed, same-direction dependency); see the doc comment for the full CODE_PHRASE / openehr_terminology::TerminologyCode / openehr_foundation Terminology_code reconciliation deferred to P17 (the reconciliation note plus the Code_string_valid field/method doc pair account for the 3). P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("CODE_PHRASE"); inert struct-level #[serde(rename)] deleted; the stale TerminologyId-lacks-serde TODO resolved (openehr-base identification now derives serde).
 // ─────────────────────────────────────────────

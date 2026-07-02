@@ -12,11 +12,12 @@
 use super::super::primitive_types::any::Any;
 use super::super::primitive_types::string::OpenEhrString;
 use super::terminology_code::TerminologyCode;
+use serde::{Deserialize, Serialize};
 
 /// Leaf, non-abstract class with two attributes — transcribed as a plain
 /// struct, matching the treatment given to `TerminologyCode` in this same
 /// module.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TerminologyTerm {
     /// `concept: Terminology_code` (`1..1`).
     ///

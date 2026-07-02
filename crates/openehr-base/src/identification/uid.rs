@@ -17,7 +17,9 @@ use super::uuid::Uuid;
 /// class inheritance. None of the three concrete subtypes adds any
 /// attribute or function of its own beyond what `UID` declares, so each
 /// concrete file wraps `UidData` directly.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct UidData {
     /// `value`: the value of the id.
     ///
@@ -42,7 +44,22 @@ pub struct UidData {
 /// patterns" and so can always be distinguished by inspecting the string
 /// form alone — justifying the closed, exhaustively-matchable enum shape
 /// used here rather than a trait object.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// PORT NOTE: `#[serde(untagged)]` per ADR-002 — the `_type` discriminator
+/// is not emitted by this enum but by each variant payload's own
+/// self-tagging `TypeTag` field (`IsoOid`/`Uuid`/`InternetId` each carry
+/// `#[serde(rename = "_type")] type_tag`), so serialization still yields
+/// the canonical `{"_type": "<NAME>", "value": "..."}` UID shape, and
+/// deserialization dispatch is tag-driven: a payload's `TypeTag` fails on
+/// a mismatched `_type` string, so untagged variant probing selects exactly
+/// the variant whose class name matches. The three payloads are otherwise
+/// structure-identical (`{value}`), so input *missing* `_type` (invalid in
+/// an abstract `UID` slot per ITS-JSON) falls back to the first declared
+/// variant.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(untagged)]
 pub enum Uid {
     /// `ISO_OID`.
     IsoOid(IsoOid),
@@ -81,5 +98,5 @@ impl UidApi for Uid {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / uid.adoc §UID Class
 //   confidence: high
 //   todos: 1
-//   note: Value_valid invariant (not value.empty) recorded but not yet enforced; awaits the RM Validate-trait framework.
+//   note: Value_valid invariant (not value.empty) recorded but not yet enforced; awaits the RM Validate-trait framework. P4/ADR-002: Uid enum is #[serde(untagged)], _type dispatch comes from each concrete payload's TypeTag; UidData stays untagged (embedded abstract-parent state).
 // ─────────────────────────────────────────────
