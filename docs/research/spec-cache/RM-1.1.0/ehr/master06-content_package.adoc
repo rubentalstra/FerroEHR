@@ -1,0 +1,9 @@
+= Content Package
+
+== Overview
+
+The `content` package contains the `CONTENT_ITEM` class, ancestor class of all content types, and the navigation and entry packages, which contain `SECTION`, `ENTRY` and related types.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/content_item.adoc[]

@@ -1,0 +1,14 @@
+=== X_VERSIONED_PARTY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*X_VERSIONED_PARTY*
+
+h|*Description*
+2+a|Form of `X_VERSIONED_OBJECT` for `PARTY` demographic object.
+
+h|*Inherit*
+2+|`<<_x_versioned_object_class,X_VERSIONED_OBJECT>>`
+
+|===

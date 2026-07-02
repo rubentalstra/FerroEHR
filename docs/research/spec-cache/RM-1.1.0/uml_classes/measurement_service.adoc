@@ -1,0 +1,27 @@
+=== MEASUREMENT_SERVICE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*MEASUREMENT_SERVICE*
+
+h|*Description*
+2+a|Defines an object providing proxy access to a measurement information service.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_valid_units_string* ( +
+units: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the units string  units' is a valid string according to the HL7 UCUM specification.
+
+h|*1..1*
+|*units_equivalent* ( +
+units1: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+units2: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if two units strings correspond to the same measured property.
+|===
