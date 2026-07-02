@@ -14,9 +14,16 @@ use super::uid::{Uid, UidApi, UidData};
 /// `INTERNET_ID` declares no attributes or functions of its own beyond
 /// those inherited from `UID`, so it embeds `UidData` verbatim (ADR-001
 /// §3).
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `uid` field folds `UidData`'s single
+/// `value` attribute directly into this struct's JSON object, matching the
+/// same convention used on `IsoOid`/`Uuid` in this package.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct InternetId {
     /// Embedded `UID` state (the single `value` attribute).
+    #[serde(flatten)]
     pub uid: UidData,
 }
 

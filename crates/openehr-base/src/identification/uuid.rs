@@ -25,10 +25,17 @@ use super::uid::{Uid as UidEnum, UidApi, UidData};
 /// `uuid::Uuid` once that crate dependency is wired into `openehr-base`;
 /// until then this struct stands alone and no external `uuid` dependency is
 /// introduced here.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `uid` field folds `UidData`'s single
+/// `value` attribute directly into this struct's JSON object, matching the
+/// same convention used on `IsoOid`/`InternetId` in this package.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct Uuid {
     /// Embedded `UID` state (the single `value` attribute), holding the
     /// `8-4-4-4-12` hex-hyphenated string form.
+    #[serde(flatten)]
     pub uid: UidData,
 }
 

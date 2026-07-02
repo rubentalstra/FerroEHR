@@ -14,8 +14,10 @@
 use super::object_ref::ObjectRef;
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. `PartyRef` is not currently reached through any tagged enum in
+/// this crate, so the struct-level `#[serde(rename = "PARTY_REF")]` below
+/// is inert for this standalone struct under `#[derive(Serialize)]`; see
+/// the caveat on `hier_object_id::TYPE_NAME`.
 pub const TYPE_NAME: &str = "PARTY_REF";
 
 /// The closed set of legal values for `ObjectRef.type` on a `PARTY_REF`,
@@ -46,9 +48,18 @@ pub const VALID_TYPES: &[&str] = &[
 /// `PARTY_REF` declares no new attribute of its own beyond those inherited
 /// from `OBJECT_REF`, so it embeds `ObjectRef` verbatim (ADR-001 §3) and
 /// constrains the inherited `type` field via the `Type_validity` invariant.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `object_ref` field folds
+/// `ObjectRef`'s three attributes (`namespace`, `type`, `id`) directly into
+/// this struct's JSON object rather than nesting them under an `object_ref`
+/// key.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename = "PARTY_REF")]
 pub struct PartyRef {
     /// Embedded `OBJECT_REF` state (`namespace`, `type`, `id`).
+    #[serde(flatten)]
     pub object_ref: ObjectRef,
 }
 

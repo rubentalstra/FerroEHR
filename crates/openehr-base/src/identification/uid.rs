@@ -17,7 +17,9 @@ use super::uuid::Uuid;
 /// class inheritance. None of the three concrete subtypes adds any
 /// attribute or function of its own beyond what `UID` declares, so each
 /// concrete file wraps `UidData` directly.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct UidData {
     /// `value`: the value of the id.
     ///
@@ -42,9 +44,20 @@ pub struct UidData {
 /// patterns" and so can always be distinguished by inspecting the string
 /// form alone — justifying the closed, exhaustively-matchable enum shape
 /// used here rather than a trait object.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(tag = "_type")]` renders each variant as `{"_type": "<NAME>",
+/// "value": "..."}`, matching the ITS-JSON convention that UIDs serialize as
+/// `{"_type": "...", "value": "..."}` (`.claude/rules/serialization.md`) —
+/// each variant's embedded struct (`IsoOid`/`Uuid`/`InternetId`) has a
+/// single `value` field via `UidData`, so the tag plus that one field is
+/// exactly the canonical shape.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(tag = "_type")]
 pub enum Uid {
     /// `ISO_OID`.
+    #[serde(rename = "ISO_OID")]
     IsoOid(IsoOid),
     /// `UUID`.
     ///
@@ -52,8 +65,10 @@ pub enum Uid {
     /// distinct type from the `uuid` crate's `Uuid` — see the doc comment on
     /// `uuid::Uuid` in `uuid.rs` for the disambiguation. No external `uuid`
     /// crate dependency is introduced by this transcription.
+    #[serde(rename = "UUID")]
     Uuid(Uuid),
     /// `INTERNET_ID`.
+    #[serde(rename = "INTERNET_ID")]
     InternetId(InternetId),
 }
 

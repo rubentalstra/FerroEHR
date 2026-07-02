@@ -13,8 +13,10 @@ use super::uid_based_id::{UidBasedId, UidBasedIdApi, UidBasedIdData};
 use super::version_tree_id::VersionTreeId;
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. See the P4 note on `hier_object_id::TYPE_NAME` — `_type` is now
+/// emitted functionally via `#[serde(rename = "OBJECT_VERSION_ID")]` on the
+/// `UidBasedId::ObjectVersionId` enum variant; this `const` and the matching
+/// (inert-standalone) struct-level rename below stay for documentation.
 pub const TYPE_NAME: &str = "OBJECT_VERSION_ID";
 
 /// `OBJECT_VERSION_ID` declares no attribute of its own beyond the
@@ -23,11 +25,19 @@ pub const TYPE_NAME: &str = "OBJECT_VERSION_ID";
 /// `version_tree_id`) plus `is_branch` on top of that single attribute, so
 /// it embeds `UidBasedIdData` verbatim (ADR-001 §3) rather than adding new
 /// fields.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `uid_based_id` field folds
+/// `UidBasedIdData`'s single `value` attribute directly into this struct's
+/// JSON object, matching the convention on `HierObjectId`.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename = "OBJECT_VERSION_ID")]
 pub struct ObjectVersionId {
     /// Embedded `UID_BASED_ID` state (the single `value` attribute), in
     /// the lexical form `object_id '::' creating_system_id '::'
     /// version_tree_id`.
+    #[serde(flatten)]
     pub uid_based_id: UidBasedIdData,
 }
 

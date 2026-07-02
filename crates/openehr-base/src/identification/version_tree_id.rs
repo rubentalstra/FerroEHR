@@ -13,14 +13,24 @@
 //! with no embedding relationship to the `UID`/`OBJECT_ID` clusters.
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. `VERSION_TREE_ID` is not itself wrapped by any tagged enum in this
+/// package (it is a plain component of `OBJECT_VERSION_ID`'s lexical form,
+/// not an `OBJECT_ID`/`UID`-hierarchy member — see the type-level PORT NOTE
+/// above), so unlike `HierObjectId`/`ObjectVersionId` the struct-level
+/// `#[serde(rename = "VERSION_TREE_ID")]` below is the only `_type`
+/// mechanism available to it, and (per the same struct-level-rename caveat
+/// noted on `hier_object_id::TYPE_NAME`) it is inert for a standalone
+/// struct under `#[derive(Serialize)]` — no `_type` key is actually emitted
+/// on the wire yet. Kept for documentation/precedent-consistency.
 pub const TYPE_NAME: &str = "VERSION_TREE_ID";
 
 /// `VERSION_TREE_ID` — string form of the identifier plus functions that
 /// parse its `trunk_version [ '.' branch_number '.' branch_version ]`
 /// lexical structure.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename = "VERSION_TREE_ID")]
 pub struct VersionTreeId {
     /// `value`: string form of this identifier.
     ///

@@ -15,9 +15,17 @@ use super::uid::{Uid, UidApi, UidData};
 
 /// `ISO_OID` declares no attributes or functions of its own beyond those
 /// inherited from `UID`, so it embeds `UidData` verbatim (ADR-001 §3).
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(flatten)]` on the embedded `uid` field folds `UidData`'s single
+/// `value` attribute directly into this struct's JSON object, so a bare
+/// `IsoOid` (outside the `Uid` enum's `_type`-tagged context) still
+/// serializes as `{"value": "..."}` rather than `{"uid": {"value": "..."}}`.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct IsoOid {
     /// Embedded `UID` state (the single `value` attribute).
+    #[serde(flatten)]
     pub uid: UidData,
 }
 

@@ -23,7 +23,9 @@ use super::uid::Uid;
 /// attribute; both `HIER_OBJECT_ID` and `OBJECT_VERSION_ID` embed this
 /// struct so both automatically gain the parsing functions via
 /// [`UidBasedIdApi`]'s default methods.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct UidBasedIdData {
     /// `value`: the value of the id, in the form `root [ '::' extension ]`.
     ///
@@ -40,11 +42,21 @@ pub struct UidBasedIdData {
 /// redefinition narrowing `OBJECT_ID` — see `locatable_ref.rs`). Per
 /// ADR-001 §4, its two concrete descendants `HIER_OBJECT_ID` and
 /// `OBJECT_VERSION_ID` are collected into this closed `enum`.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// `#[serde(tag = "_type")]` renders each variant as `{"_type": "<NAME>",
+/// "value": "..."}`, keying each rename off the leaf struct's own
+/// `TYPE_NAME` const (`hier_object_id::TYPE_NAME`,
+/// `object_version_id::TYPE_NAME`) so the two stay in lockstep.
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(tag = "_type")]
 pub enum UidBasedId {
     /// `HIER_OBJECT_ID`.
+    #[serde(rename = "HIER_OBJECT_ID")]
     HierObjectId(HierObjectId),
     /// `OBJECT_VERSION_ID`.
+    #[serde(rename = "OBJECT_VERSION_ID")]
     ObjectVersionId(ObjectVersionId),
 }
 

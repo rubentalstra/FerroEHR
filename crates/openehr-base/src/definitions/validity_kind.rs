@@ -9,26 +9,32 @@
 //! model — for example, to indicate the validity of Date/Time fields.
 
 /// Closed three-value enumeration, transcribed directly as a Rust `enum`
-/// with the spec's exact lower-case symbol names preserved via
-/// [`ValidityKind::symbol`].
+/// with the spec's exact lower-case symbol names preserved via both
+/// [`ValidityKind::symbol`] and the `#[serde(rename = "...")]` on each
+/// variant below.
 ///
-/// PORT NOTE: `openehr-base` has no `serde` dependency yet (mirroring the
-/// sibling `openehr-foundation::primitive_types` cluster, which is likewise
-/// serde-free at this layer — the `_type`-discriminated canonical-JSON
-/// mapping is an `openehr-serde`/RM-layer concern, not a BASE foundation/
-/// definitions concern). `symbol()` renders the spec's own lower-case
-/// identifier (`mandatory`, `optional`, `prohibited` — not the uppercase
-/// `_type`-style discriminator used for RM/AM class names) so a later serde
-/// impl at the RM layer has a single, spec-verified string to rename onto.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// P4 update: `openehr-base` now depends on `serde`
+/// (`PORT_MASTER_PLAN.md` §10). Unlike an RM/AM class name (which serializes
+/// as an uppercase `_type` discriminator, e.g. `DV_TEXT`), `VALIDITY_KIND`
+/// is an *enumeration value* embedded directly as the value of whatever
+/// attribute is typed `VALIDITY_KIND` elsewhere in the RM — so each variant
+/// here is tagged with the spec's own lower-case wire form (`mandatory`,
+/// `optional`, `prohibited`), not an uppercase class-style tag.
+/// [`ValidityKind::symbol`] remains available as a plain accessor so
+/// non-serde call sites (e.g. `Display` impls, log messages) do not need to
+/// round-trip through a serializer just to read the spec string.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum ValidityKind {
     /// `mandatory` — constant to indicate mandatory presence of something.
+    #[serde(rename = "mandatory")]
     Mandatory,
 
     /// `optional` — constant to indicate optional presence of something.
+    #[serde(rename = "optional")]
     Optional,
 
     /// `prohibited` — constant to indicate disallowed presence of something.
+    #[serde(rename = "prohibited")]
     Prohibited,
 }
 
@@ -49,5 +55,5 @@ impl ValidityKind {
 //   source_loc: master03-definitions_package.adoc §Class Definitions / validity_kind.adoc §VALIDITY_KIND Enumeration
 //   confidence: high
 //   todos: 0
-//   note: closed 3-value enum with a symbol() method carrying the spec's own lower-case name; no serde derive since this crate has no serde dependency yet (mirrors openehr-foundation::primitive_types, which is likewise serde-free at this layer).
+//   note: closed 3-value enum with a symbol() method carrying the spec's own lower-case name; P4 — serde derives added, per-variant #[serde(rename)] uses the same lower-case wire form as symbol() (enumeration values, unlike RM class names, do not use the uppercase _type convention).
 // ─────────────────────────────────────────────

@@ -11,8 +11,10 @@
 use super::uid_based_id::UidBasedId;
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the `TODO(port)` on `hier_object_id::TYPE_NAME` for why this
-/// is a `const` rather than a `#[serde(rename = ...)]` in this pass.
+/// form. `LocatableRef` is not currently reached through any tagged enum in
+/// this crate, so the struct-level `#[serde(rename = "LOCATABLE_REF")]`
+/// below is inert for this standalone struct under `#[derive(Serialize)]`;
+/// see the caveat on `hier_object_id::TYPE_NAME`.
 pub const TYPE_NAME: &str = "LOCATABLE_REF";
 
 /// `LOCATABLE_REF` inherits `OBJECT_REF` but the spec's attribute table
@@ -24,7 +26,10 @@ pub const TYPE_NAME: &str = "LOCATABLE_REF";
 /// instead re-declares `namespace`, `type`, and `id` directly, with `id`
 /// typed as [`UidBasedId`] (the enum encoding of `UID_BASED_ID`, ADR-001
 /// §4) rather than the wider [`ObjectId`](super::object_id::ObjectId).
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename = "LOCATABLE_REF")]
 pub struct LocatableRef {
     /// `namespace`, inherited unchanged from `OBJECT_REF`. See
     /// `object_ref::ObjectRef::namespace` for the legal-value constraint.
@@ -57,6 +62,7 @@ pub struct LocatableRef {
     /// is the spec's own "refers to `id` directly" case — both states are
     /// representable and distinguishable this way, matching the `0..1`
     /// cardinality more literally than collapsing them.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub path: Option<String>,
 }
 
