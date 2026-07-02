@@ -1,0 +1,14 @@
+=== VERSIONED_FOLDER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*VERSIONED_FOLDER*
+
+h|*Description*
+2+a|A version-controlled hierarchy of `FOLDERs` giving the effect of a directory.
+
+h|*Inherit*
+2+|`<<_versioned_object_class,VERSIONED_OBJECT>>`
+
+|===

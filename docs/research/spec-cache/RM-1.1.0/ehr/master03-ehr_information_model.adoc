@@ -1,0 +1,23 @@
+= The EHR Information Model
+
+== Overview
+
+The figure below illustrates the package structure of the openEHR EHR information model.
+
+[.text-center]
+.EHR Packages
+image::{uml_diagrams_uri}/RM-ehr-packages.svg[id=ehr_packages, align="center"]
+
+The packages are as follows:
+
+* `ehr`: this package contains the top level structure, the EHR, which consists of an `EHR_ACCESS` object, an `EHR_STATUS` object, versioned data containers in the form of `VERSIONED_COMPOSITIONs`, optionally indexed by one or more hierarchical `FOLDER` structures. A collection of `CONTRIBUTIONs` which document the changes to the EHR over time is also included.
+* `composition`: the Composition is the EHR’s top level "data container", and is described by the `COMPOSITION` class.
+* `content`: this package contains the Navigation and Entry packages, whose classes describe the structure and semantics of the contents of Compositions in the health record.
+** `navigation`: the `SECTION` class provides a navigational structure to the record, similar to "headings" in the paper record. `ENTRYs` and other `SECTIONs` can appear under `SECTIONs`. 
+** `entry`: This package contains the generic structures for recording clinical statements. Entry types include `ADMIN_ENTRY`, `OBSERVATION` (for all observed phenomena, including mechanically or manually measured, and responses in interview), `EVALUATION` (for assessments, diagnoses, plans), `INSTRUCTION` (actionable statements such as medication orders, recalls, monitoring, reviews), and `ACTION` (information recorded as a result of performing Instructions).
+
+The figure below illustrates an overview of the class structure of the EHR Information Model, along with the main concepts on which they rely, namely Data Types, Data Structures, Archetyped, and Identification.
+
+[.text-center]
+.EHR Information Model Overview
+image::{uml_diagrams_uri}/RM-overview.svg[id=ehr_im_overview, align="center", width=80%]

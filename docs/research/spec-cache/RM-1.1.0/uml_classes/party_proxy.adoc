@@ -1,0 +1,18 @@
+=== PARTY_PROXY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__PARTY_PROXY (abstract)__*
+
+h|*Description*
+2+a|Abstract concept of a proxy description of a party, including an optional link to data for this party in a demographic or other identity management system. Sub- typed into `PARTY_IDENTIFIED` and `PARTY_SELF`.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*external_ref*: `link:/releases/BASE/{base_release}/base_types.html#_party_ref_class[PARTY_REF^]`
+a|Optional reference to more detailed demographic or identification information for this party, in an external system.
+|===

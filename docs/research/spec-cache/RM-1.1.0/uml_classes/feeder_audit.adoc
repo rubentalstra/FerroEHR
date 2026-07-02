@@ -1,0 +1,34 @@
+=== FEEDER_AUDIT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*FEEDER_AUDIT*
+
+h|*Description*
+2+a|The `FEEDER_AUDIT` class defines the semantics of an audit trail which is constructed to describe the origin of data that have been transformed into openEHR form and committed to the system.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*originating_system_item_ids*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/data_types.html#_dv_identifier_class[DV_IDENTIFIER^]>`
+a|Identifiers used for the item in the originating system, e.g. filler and placer ids.
+
+h|*0..1*
+|*feeder_system_item_ids*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/data_types.html#_dv_identifier_class[DV_IDENTIFIER^]>`
+a|Identifiers used for the item in the feeder system, where the feeder system is distinct from the originating system.
+
+h|*0..1*
+|*original_content*: `link:/releases/RM/{rm_release}/data_types.html#_dv_encapsulated_class[DV_ENCAPSULATED^]`
+a|Optional inline inclusion of or reference to original content corresponding to the openEHR content at this node. Typically a URI reference to a document or message in a persistent store associated with the EHR.
+
+h|*1..1*
+|*originating_system_audit*: `<<_feeder_audit_details_class,FEEDER_AUDIT_DETAILS>>`
+a|Any audit information for the information item from the originating system.
+
+h|*0..1*
+|*feeder_system_audit*: `<<_feeder_audit_details_class,FEEDER_AUDIT_DETAILS>>`
+a|Any audit information for the information item from the feeder system, if different from the originating system.
+|===

@@ -10,7 +10,7 @@ under `docs/plans/` for detail). Status values: `not-started`, `in-progress`,
 | P0 | Scaffolding | done | 13-crate workspace green (build/fmt/clippy/deny); 428 Java files relocated per §9.1; harness + hooks live; reference/v1 = v0.32.0; archaeology recorded. Research dossier texts still to be committed. |
 | P1 | Foundation + Identification (BASE 1.2.0) | done | 69 classes transcribed (foundation 39, base 30), trailers verified, ADR-001 shapes fixed; spec cached at Release-1.2.0 @ 9064413. |
 | P2 | Terminology bundle (TERM 3.x) + service API | done | First compiled+tested crate: TERM 3.0.0 assets vendored @ d45ef3e, rm.support service surface, 12 tests incl. the id=532 regression. |
-| P3 | RM transcription | not-started | data_types → data_structures → common → ehr → demographic → integration. |
+| P3 | RM transcription | in-progress | Spec cache extended to full RM 1.1.0 (157 UML tables + all chapters); transcriber waves running. |
 | P4 | Canonical JSON serialization (ITS-JSON) | not-started | insta golden vectors. |
 | P5 | Canonical XML serialization (ITS-XML) | not-started | 1.0.2 + 2.0.0. |
 | P6 | REST skeleton (axum) | not-started | Every ITS-REST 1.0.3 endpoint + admin + item tags. |
