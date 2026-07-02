@@ -27,6 +27,7 @@
 pub mod functional;
 pub mod interval;
 pub mod primitive_types;
+pub mod serde_support;
 pub mod structure_types;
 pub mod terminology_types;
 pub mod time;
