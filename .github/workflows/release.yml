@@ -1,148 +1,78 @@
-# Create a Release
-name: "Release"
+# .github/workflows/release.yml
+name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release, defaults to project.version"
-        required: false
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  build:
+  # Automated versioning + CHANGELOG from conventional commits.
+  # Opens/updates a "release PR"; merging it tags a release.
+  release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Setup - Java
-        uses: actions/setup-java@v5
+      - uses: googleapis/release-please-action@v4
         with:
-          distribution: 'temurin'
-          java-version: '25'
+          release-type: rust
+          # For per-crate publishing later, switch to a manifest config:
+          #   config-file: release-please-config.json
+          #   manifest-file: .release-please-manifest.json
 
-      - name: Checkout
-        uses: actions/checkout@v6
+  # Build the server binary and attach it when a GitHub Release is published.
+  build-binaries:
+    if: github.event_name == 'release'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          fetch-depth: 0
-          # This will be used by git in all further steps
-          # We need a PERSONAL ACCESS TOKEN so pushes trigger other github actions
-          token: ${{ secrets.BOT_ACCESS_TOKEN }}
-
-      - name: Configure Git user
+          target: ${{ matrix.target }}
+      - name: Install cross linker (aarch64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
-          # Config git robot user
-          git config --global user.email "bot@ehrbase.org"
-          git config --global user.name "bot"
-
-      #
-      # Uses the input version or read the version from the project pom
-      #
-      - name: Calculate Release Version
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+      - name: Build server
+        run: cargo build --release --target ${{ matrix.target }} -p openehr-server
+      - name: Package
+        shell: bash
         run: |
-          if [ -z "${{ github.event.inputs.version }}" ]
-          then
-            version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT//') 
-          else
-            version=${{ github.event.inputs.version }}
-          fi
-          echo "Release version: ${version}"
-          # Set as Environment for all further steps 
-          echo "VERSION=${version}" >> $GITHUB_ENV
+          bin="openehr-server"
+          out="${bin}-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz"
+          tar -C "target/${{ matrix.target }}/release" -czf "$out" "$bin"
+          echo "ASSET=$out" >> "$GITHUB_ENV"
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET }}
 
-      #
-      # Uses the enforcer plugin to ensure no -SNAPSHOT version are used
-      #
-      - name: Enforce no SNAPSHOT used
-        run: |
-          mvn -P no-snapshots enforcer:enforce
-
-      #
-      # Create a new release branch and adjust the release version and changelog.
-      #
-      - name: Create Release Branch
-        run: |
-          # create branch
-          git checkout -b release/v${VERSION}
-          # Update version
-          mvn versions:set -DnewVersion=${VERSION} -DprocessAllModules=true
-          # Update Changelog
-          sed -i "s/\[unreleased\]/\[${VERSION}\]/" CHANGELOG.md
-          sed -i "s/...HEAD/\...v${VERSION}/" CHANGELOG.md
-
-      #
-      # Publish release branch
-      #
-      - name: Publish Release Branch
-        run: |
-          # commit & push
-          git add -A
-          git commit -m "release ${VERSION}: updated version to ${VERSION}"
-          git push -u origin release/v${VERSION}
-
-      #
-      # Wait for status of commit to change from pending
-      #
-      - name: Wait for CI pipeline
-        run: |
-          STATUS="pending"
-          # Get commit last commit of release branch
-          COMMIT=$(git rev-parse HEAD)
-          echo "Listen for commit $COMMIT"
-          WAITED="0"
-          # Time between calls
-          SLEEP_TIME="15"
-          while [ "$STATUS" == "pending" ] && [ "$WAITED" -le 1800 ]
-          do
-            sleep ${SLEEP_TIME}
-            WAITED=$((WAITED+SLEEP_TIME))
-            STATUS=$(gh api /repos/${{ github.repository  }}/commits/"${COMMIT}"/status -q .state)
-            echo "status : $STATUS"
-            echo "waited  $WAITED s"
-          done
-          echo "status : $STATUS"
-          if [ "$STATUS" != "success" ]
-            then exit 1
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_ACCESS_TOKEN }}
-
-      #
-      # In case the CI build was successful - we can merge everything back into the master branch
-      #
-      - name: Merge into Master
-        run: |
-          git checkout master
-          git pull
-          git merge --no-ff release/v${VERSION}
-          git tag -a -m "v${VERSION}" "v${VERSION}"
-          git push --follow-tags
-
-      #
-      # Create the actual github release for the version using the actual changelog
-      #
-      - name: Create Github Release
-        run: |
-          gh release create "v${VERSION}" -t "v${VERSION}" -F CHANGELOG.md -R ${{ github.repository  }} --target master
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_ACCESS_TOKEN }}
-
-      - name: Prepare next dev version
-        run: |
-          # increment minor version and add SNAPSHOT
-          ARRAY_VERSION=( ${VERSION//./ } )
-          git checkout  release/v${VERSION}
-          NEXT_VERSION=${ARRAY_VERSION[0]}.$((ARRAY_VERSION[1]+1)).0-SNAPSHOT
-          echo "next version: $NEXT_VERSION"
-          # update version
-          mvn versions:set -DnewVersion=${NEXT_VERSION} -DprocessAllModules=true
-          #edit changelog
-          sed -i '8i ## [unreleased]\n ### Added\n ### Changed \n ### Fixed \n' CHANGELOG.md
-          replace="$ a \[unreleased\]: https:\/\/github.com\/ehrbase\/ehrbase\/compare\/v$VERSION...HEAD"
-          sed -i "${replace}" CHANGELOG.md
-
-      - name: Merge into dev
-        run: |
-          git add -A
-          git commit -m " Updated version to ${NEXT_VERSION}"
-          git checkout develop
-          git pull
-          git merge --no-ff release/v${VERSION}
-          git push
+  # OPTIONAL: container image to GHCR (needs a Dockerfile at repo root).
+  # Uncomment when a Dockerfile exists.
+  # container:
+  #   if: github.event_name == 'release'
+  #   runs-on: ubuntu-latest
+  #   permissions: { contents: read, packages: write }
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: docker/login-action@v3
+  #       with: { registry: ghcr.io, username: ${{ github.actor }}, password: ${{ secrets.GITHUB_TOKEN }} }
+  #     - uses: docker/build-push-action@v6
+  #       with:
+  #         push: true
+  #         tags: ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }},ghcr.io/${{ github.repository }}:latest

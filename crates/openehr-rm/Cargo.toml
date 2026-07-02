@@ -1,0 +1,20 @@
+[package]
+name = "openehr-rm"
+version = "0.1.0"
+description = "openEHR RM 1.1.0 Reference Model: data_types, data_structures, common, ehr, demographic, integration, support"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+openehr-base = { path = "../openehr-base" }
+openehr-terminology = { path = "../openehr-terminology" }
+
+[features]
+ehr-extract = []
+
+[lints]
+workspace = true

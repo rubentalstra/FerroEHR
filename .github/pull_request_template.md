@@ -1,22 +1,30 @@
+<!-- .github/pull_request_template.md -->
+## What this changes
 
-# Changes
+<!-- Describe the change itself. Do not include any AI/tool attribution. -->
 
-> Describe your changes in a short and concise list.
+## Phase
 
-# Related issue
+- Phase: <!-- e.g. P03 (RM transcription) -->
+- Phase file updated: [ ] `docs/plans/phase-NN-*.md` checkboxes ticked
 
-> Reference related issues, and use one of the [closing keywords, e.g. closes or fixes](https://help.github.com/en/github/managing-your-work-on-github/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to link the corresponding issue, if any.
+## Port fidelity (Stage 1)
 
-# Additional information 
+- [ ] Ported `.rs` mirror the source Java structure (names, order, control flow)
+- [ ] Every ported/transcribed file has a `// PORT STATUS` trailer
+- [ ] Annotations used where relevant: `TODO(port)` / `PERF(port)` / `PORT NOTE:` / `SAFETY:`
+- [ ] No `.java` file was edited unless its Rust counterpart is complete; no Maven build files touched
+- [ ] No test was weakened, skipped, or edited to route around a bug
 
-> Provide additional information for this change, if needed.
+## Checks
 
-# Pre-Merge checklist
+- [ ] `cargo fmt --all --check`
+- [ ] `cargo clippy` (or noted why it cannot pass yet — allowed in P1–P16)
+- [ ] `cargo nextest run` (or noted why it cannot pass yet — allowed in P1–P16)
+- [ ] `cargo deny check`
 
-- [ ] New code is tested
-- [ ] Present and new tests pass
-- [ ] Documentation is updated
-- [ ] The build is working without errors
-- [ ] No new Sonar issues introduced
-- [ ] Changelog is updated
-- [ ] Code has been reviewed 
+<!--
+HARD RULE: this PR description, its title, and all commits must contain NO
+AI/Claude attribution (no "Co-authored-by: Claude", no "Generated with Claude
+Code", no 🤖). Describe only the change.
+-->
