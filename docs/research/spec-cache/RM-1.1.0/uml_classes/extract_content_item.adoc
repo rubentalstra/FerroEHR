@@ -1,0 +1,36 @@
+=== EXTRACT_CONTENT_ITEM Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EXTRACT_CONTENT_ITEM (abstract)__*
+
+h|*Description*
+2+a|Abstract model of a wrapper for one content item in an Extract, containing various meta-data. Indicates whether it was part of the primary set and what its original path was. Intended to be subtyped for wrappers of specific types of content.
+
+h|*Inherit*
+2+|`<<_extract_item_class,EXTRACT_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_primary*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the content item carried in this container was part of the primary set for the Extract, i.e. not added due to link-following.
+
+h|*0..1*
+|*is_changed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the content item carried in this container is any kind of change since last send, in repeat sending situations.
+
+h|*0..1*
+|*is_masked*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the content of this item has not been included due to insufficient access rights of requestor.
+
+h|*0..1*
+|*item*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Content object.
+
+h|*Invariants*
+2+a|__Item_validity__: `is_masked xor item /= Void`
+|===

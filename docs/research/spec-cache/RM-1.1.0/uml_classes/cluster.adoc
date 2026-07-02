@@ -1,0 +1,21 @@
+=== CLUSTER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*CLUSTER*
+
+h|*Description*
+2+a|The grouping variant of `ITEM`, which may contain further instances of `ITEM`, in an ordered list.
+
+h|*Inherit*
+2+|`<<_item_class,ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_item_class,ITEM>>>`
+a|Ordered list of items - `CLUSTER` or `ELEMENT` objects - under this `CLUSTER`.
+|===

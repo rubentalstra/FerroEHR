@@ -1,0 +1,49 @@
+=== PARTY_RELATIONSHIP Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*PARTY_RELATIONSHIP*
+
+h|*Description*
+2+a|Generic description of a relationship between parties.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_locatable_class[LOCATABLE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*details*: `link:/releases/RM/{rm_release}/data_structures.html#_item_structure_class[ITEM_STRUCTURE^]`
+a|The detailed description of the relationship.
+
+h|*1..1*
+|*target*: `link:/releases/BASE/{base_release}/base_types.html#_party_ref_class[PARTY_REF^]`
+a|Target of relationship.
+
+h|*0..1*
+|*time_validity*: `link:/releases/RM/{rm_release}/data_types.html#_dv_interval_class[DV_INTERVAL^]<link:/releases/RM/{rm_release}/data_types.html#_dv_date_class[DV_DATE^]>`
+a|Valid time interval for this relationship.
+
+h|*1..1*
+|*source*: `link:/releases/BASE/{base_release}/base_types.html#_party_ref_class[PARTY_REF^]`
+a|Source of relationship.
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*type* (): `link:/releases/RM/{rm_release}/data_types.html#_dv_text_class[DV_TEXT^]`
+a|Type of relationship, such as  employment,  authority,  health provision
+
+h|*Invariants*
+2+a|__Source_valid__: `source /= Void and then source.relationships.has (self)`
+
+h|
+2+a|__Target_valid__: `target /= Void and then not target.reverse_relationships.has (self)`
+
+h|
+2+a|__Type_validity__: `type = name`
+|===

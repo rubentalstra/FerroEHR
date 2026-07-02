@@ -1,3 +1,3 @@
-- Phase file: docs/plans/phase-03-rm.md
-- Session goal: literal RM 1.1.0 transcription into openehr-rm — data_types → data_structures → common → ehr → demographic → integration (Phase A, no compile required)
-- Next action: extend docs/research/spec-cache/RM-1.1.0/ with the remaining RM chapter adocs + UML class tables (support/ is already cached), then run rm-transcriber waves per package using the ADR-001 shapes; reconcile CODE_PHRASE with openehr-terminology's TerminologyCode stand-in when transcribing data_types.text
+- Phase file: docs/plans/phase-04-serialization-json.md
+- Session goal: canonical JSON (ITS-JSON) serialization in openehr-serde — serde derives land across base/rm (TYPE_NAME consts become #[serde(rename)] + `_type` dispatch), insta golden vectors are the acceptance instrument
+- Next action: pin an ITS-JSON commit (record in docs/VERSIONS.md), cache the schema entry point openehr_rm_1.1.0_all.json, then work the phase-04 task list; serde conventions live in .claude/rules/serialization.md

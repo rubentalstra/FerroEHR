@@ -1,0 +1,196 @@
+//! `PARTY` — ancestor of all Party types.
+//!
+//! openEHR class: `PARTY` (abstract), package `rm.demographic`.
+//!
+//! Ancestor of all Party types, including real world entities and their
+//! roles. A Party is any entity which can participate in an activity. The
+//! `name` attribute inherited from `LOCATABLE` is used to indicate the
+//! actual type of party (note that the actual names, i.e. identities of
+//! parties, are indicated in the `identities` attribute, not the `name`
+//! attribute).
+//!
+//! NOTE (spec): it is strongly recommended that the inherited attribute
+//! `uid` be populated in `PARTY` objects, using the UID copied from the
+//! `object_id()` of the `uid` field of the enclosing `VERSION` object. For
+//! example, the `ORIGINAL_VERSION.uid`
+//! `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2` would be copied to
+//! the `uid` field of the `PARTY` object. This recommendation is elevated to
+//! a hard invariant (`Uid_mandatory`) in this class's own table — see
+//! below.
+use super::actor::Actor;
+use super::party_identity::PartyIdentity;
+use super::party_relationship::PartyRelationship;
+use super::role::Role;
+use crate::common::archetyped::locatable::LocatableData;
+// TODO(port): `crate::common::generic` back-reference types (`CONTACT`,
+// `LOCATABLE_REF`) — forward-referenced below; sibling agent owns
+// `common/generic`.
+
+/// Shared attribute state of `PARTY` and its descendants.
+///
+/// Per ADR-001 §3 (abstract class with attributes → embedded struct +
+/// marker trait). Every concrete `PARTY` descendant (via the `Actor`/`Role`
+/// branches) embeds this struct, which itself embeds `LOCATABLE`'s state
+/// per ADR-001 §Refinements.
+///
+/// PORT NOTE: `uid` on `LocatableData` is spec-declared `0..1` on
+/// `LOCATABLE` (optional), but `PARTY`'s own `Uid_mandatory` invariant
+/// (`uid /= Void`) narrows it to effectively required for every `PARTY`
+/// instance. This is not encoded as a covariant field-type narrowing (the
+/// declared type `UID_BASED_ID` is unchanged, only its optionality is
+/// invariant-constrained), so the field stays `Option<UidBasedId>` on
+/// `LocatableData` and the requirement is documented here and left as a
+/// `Validate`-impl `TODO(port)` rather than changed to a non-`Option` field
+/// — changing the field type would be inventing a structural deviation the
+/// spec does not make (it is `LOCATABLE.uid: UID_BASED_ID [0..1]` in every
+/// other subtype), and this class only makes it invariant-mandatory, not
+/// syntactically required.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PartyData {
+    /// Inherited `LOCATABLE` state (`name`, `archetype_node_id`, `uid`,
+    /// `links`, `archetype_details`, `feeder_audit`).
+    pub locatable: LocatableData,
+
+    /// `identities`: `List<PARTY_IDENTITY>` — identities used by the party
+    /// to identify itself, such as legal name, stage names, aliases,
+    /// nicknames and so on.
+    ///
+    /// Cardinality `1..1` in the spec table (always present, though the
+    /// `List` itself may be empty — the spec does not state a
+    /// non-empty invariant on `identities` the way it does for `contacts`).
+    pub identities: Vec<PartyIdentity>,
+
+    /// `contacts`: `List<CONTACT>` `[0..1]` — contacts for this party.
+    ///
+    /// TODO(port): `CONTACT` lives in this same `demographic` module
+    /// (`contact.rs`); imported directly once wired.
+    pub contacts: Option<Vec<super::contact::Contact>>,
+
+    /// `details`: `ITEM_STRUCTURE` `[0..1]` — all other details for this
+    /// Party.
+    ///
+    /// TODO(port): forward-reference to `crate::data_structures::item_structure`'s
+    /// closed `ItemStructure` enum (owned by a sibling agent's package).
+    pub details: Option<crate::data_structures::item_structure::ItemStructure>,
+
+    /// `reverse_relationships`: `List<LOCATABLE_REF>` `[0..1]` — references
+    /// to relationships in which this Party takes part as target.
+    ///
+    /// TODO(port): forward-reference to `crate::common::generic::LocatableRef`
+    /// (sibling agent owns `common/generic`); using `openehr_base`'s
+    /// `LocatableRef` name pending confirmation of where the RM re-exports
+    /// or wraps it.
+    pub reverse_relationships:
+        Option<Vec<openehr_base::identification::locatable_ref::LocatableRef>>,
+
+    /// `relationships`: `List<PARTY_RELATIONSHIP>` `[0..1]` — relationships
+    /// in which this Party takes part as source.
+    pub relationships: Option<Vec<PartyRelationship>>,
+}
+
+/// `PARTY` is abstract in the spec. Its only concrete descendants are the
+/// two immediate subtypes `ACTOR` (itself abstract, further split into
+/// `PERSON`/`ORGANISATION`/`GROUP`/`AGENT`) and `ROLE` (concrete).
+///
+/// Per the task's Phase-P1 refinement, this is modelled as **nested**
+/// closed enums rather than one flat five-way enum: `Party` has exactly two
+/// variants (`Actor`, `Role`), and `Actor` (a separate enum, see
+/// `actor.rs`) has the four concrete leaves. This mirrors the two-level
+/// spec hierarchy (`PARTY` → `ACTOR` → `{PERSON, ORGANISATION, GROUP,
+/// AGENT}`; `PARTY` → `ROLE`) directly rather than flattening it, matching
+/// ADR-001 §4's "closed subtype set → enum" rule applied at each level of
+/// the hierarchy the spec itself declares.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Party {
+    /// The `ACTOR` branch (`PERSON`, `ORGANISATION`, `GROUP`, or `AGENT`).
+    Actor(Actor),
+    /// `ROLE`.
+    Role(Role),
+}
+
+/// Marker/accessor trait shared by every `PARTY` descendant, exposing the
+/// abstract class's attributes uniformly whether the caller holds a
+/// concrete type or a `Party` enum value.
+pub trait PartyApi {
+    /// Access to the embedded `PartyData`.
+    fn party_data(&self) -> &PartyData;
+
+    /// `identities`: `List<PARTY_IDENTITY>`.
+    fn identities(&self) -> &[PartyIdentity] {
+        &self.party_data().identities
+    }
+
+    /// `contacts`: `List<CONTACT>` `[0..1]`.
+    fn contacts(&self) -> Option<&[super::contact::Contact]> {
+        self.party_data().contacts.as_deref()
+    }
+
+    /// `details`: `ITEM_STRUCTURE` `[0..1]`.
+    fn details(&self) -> Option<&crate::data_structures::item_structure::ItemStructure> {
+        self.party_data().details.as_ref()
+    }
+
+    /// `reverse_relationships`: `List<LOCATABLE_REF>` `[0..1]`.
+    fn reverse_relationships(
+        &self,
+    ) -> Option<&[openehr_base::identification::locatable_ref::LocatableRef]> {
+        self.party_data().reverse_relationships.as_deref()
+    }
+
+    /// `relationships`: `List<PARTY_RELATIONSHIP>` `[0..1]`.
+    fn relationships(&self) -> Option<&[PartyRelationship]> {
+        self.party_data().relationships.as_deref()
+    }
+
+    /// Spec function `type(): DV_TEXT` — type of party, such as `PERSON`,
+    /// `ORGANISATION`, etc. Role name, e.g. "general practitioner", "nurse",
+    /// "private citizen". Taken from the inherited `name` attribute.
+    ///
+    /// Invariant `Type_valid`: `type = name`.
+    ///
+    /// TODO(port): implement once `LocatableData.name: DvText` is concrete
+    /// (sibling agent owns `common/archetyped`); this should simply clone
+    /// `self.party_data().locatable.name`.
+    fn party_type(&self) -> crate::data_types::text::dv_text::DvText {
+        todo!("PARTY.type(): DV_TEXT — clone LocatableData.name once concrete")
+    }
+}
+
+impl PartyApi for Party {
+    fn party_data(&self) -> &PartyData {
+        match self {
+            Party::Actor(a) => a.party_data(),
+            Party::Role(r) => &r.party,
+        }
+    }
+}
+
+// TODO(port): invariants as a `Validate` impl (context + path + error
+// accumulator, per `.claude/rules/rm-transcription.md` "Invariants"):
+//   - Type_valid: type = name
+//   - Contacts_valid: contacts /= Void implies not contacts.is_empty
+//   - Relationships_validity: relationships /= Void implies
+//     (not relationships.is_empty and then
+//      relationships.for_all(r | r.source = self))
+//   - Reverse_relationships_validity: reverse_relationships /= Void implies
+//     (not reverse_relationships.empty and then
+//      reverse_relationships.for_all(item |
+//        repository("demographics").all_party_relationships.has_object(item)
+//        and then
+//        repository("demographics").all_party_relationships.object(item).target = self))
+//     — this invariant references a `repository(...)` construct with no
+//     concrete Rust analogue in a spec-transcription crate (it presumes an
+//     external object repository/service); left as `TODO(port)` rather than
+//     inventing a repository abstraction the spec class itself does not
+//     define.
+//   - Is_archetype_root: is_archetype_root
+//   - Uid_mandatory: uid /= Void — see the PORT NOTE on `PartyData` above.
+
+// ─────────────────────────────────────────────
+// PORT STATUS
+//   source: RM 1.1.0 demographic §Class Definitions PARTY — docs/research/spec-cache/RM-1.1.0/uml_classes/party.adoc (Release-1.1.0 @ 3cbd85b)
+//   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/party.adoc §PARTY Class
+//   confidence: medium
+//   todos: 8
+//   note: Party/Actor nested-enum shape per task refinement; Uid_mandatory invariant narrows optionality not type, left as Validate TODO; Reverse_relationships_validity references an undefined repository() construct.
+// ─────────────────────────────────────────────
