@@ -1,3 +1,3 @@
-- Phase file: docs/plans/phase-02-terminology.md
-- Session goal: bundle the TERM 3.x terminology XML assets and the terminology service API in openehr-terminology (leaf crate — this phase SHOULD compile and debuts Cargo dependency wiring)
-- Next action: cache the TERM release under docs/research/spec-cache/ (same provenance pattern as BASE-1.2.0), then work the phase-02 task list; preserve the id=532 dual-rubric quirk (complete vs completed)
+- Phase file: docs/plans/phase-03-rm.md
+- Session goal: literal RM 1.1.0 transcription into openehr-rm — data_types → data_structures → common → ehr → demographic → integration (Phase A, no compile required)
+- Next action: extend docs/research/spec-cache/RM-1.1.0/ with the remaining RM chapter adocs + UML class tables (support/ is already cached), then run rm-transcriber waves per package using the ADR-001 shapes; reconcile CODE_PHRASE with openehr-terminology's TerminologyCode stand-in when transcribing data_types.text

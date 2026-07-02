@@ -11,6 +11,8 @@ publish = false
 
 [dependencies]
 openehr-base = { path = "../openehr-base" }
+quick-xml.workspace = true
+thiserror.workspace = true
 
 [features]
 lang-de = []

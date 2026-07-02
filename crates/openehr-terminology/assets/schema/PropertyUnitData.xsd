@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://tempuri.org/PropertyUnits.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="PropertyUnits" type="prop:PropertyUnitsType" xmlns:prop="http://tempuri.org/PropertyUnits.xsd">
+    <xs:annotation>
+      <xs:documentation>
+        ~ ADL Designer
+        ~ Copyright (c) 2013-2014 Marand d.o.o. (www.marand.com)
+        ~
+        ~ This file is part of ADL2-tools.
+        ~
+        ~ ADL2-tools is free software: you can redistribute it and/or modify
+        ~ it under the terms of the GNU Affero General Public License as
+        ~ published by the Free Software Foundation, either version 3 of the
+        ~ License, or (at your option) any later version.
+        ~
+        ~ This program is distributed in the hope that it will be useful,
+        ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+        ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        ~ GNU Affero General Public License for more details.
+        ~
+        ~ You should have received a copy of the GNU Affero General Public License
+        ~ along with this program.  If not, see &lt;http://www.gnu.org/licenses/>.
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="PropertyType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:int" name="id" use="required"/>
+        <xs:attribute type="xs:string" name="Text" use="required"/>
+        <xs:attribute type="xs:int" name="openEHR" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="UnitType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:int" name="property_id" use="required"/>
+        <xs:attribute type="xs:string" name="Text" use="required"/>
+        <xs:attribute type="xs:string" name="name"/>
+        <xs:attribute type="xs:float" name="conversion"/>
+        <xs:attribute type="xs:int" name="coefficient"/>
+        <xs:attribute type="xs:boolean" name="primary"/>
+        <xs:attribute type="xs:string" name="UCUM"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="PropertyUnitsType">
+    <xs:sequence>
+      <xs:element type="prop:PropertyType" name="Property" maxOccurs="unbounded" minOccurs="0" xmlns:prop="http://tempuri.org/PropertyUnits.xsd"/>
+      <xs:element type="prop:UnitType" name="Unit" maxOccurs="unbounded" minOccurs="0" xmlns:prop="http://tempuri.org/PropertyUnits.xsd"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
