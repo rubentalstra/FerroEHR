@@ -1,0 +1,58 @@
+=== Container Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__Container<T> (abstract)__*
+
+h|*Description*
+2+a|Abstract ancestor of container types whose items are addressable in some way.
+
+h|*Inherit*
+2+|`<<_any_class,Any>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*has* ( +
+v: `T[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Test for membership of a value.
+
+h|*1..1 +
+(abstract)*
+|*count* (): `<<_integer_class,Integer>>`
+a|Number of items in container.
+
+h|*1..1 +
+(abstract)*
+|*is_empty* (): `<<_boolean_class,Boolean>>`
+a|True if container is empty.
+
+h|*1..1*
+|*there_exists* __alias__ "there exists", "∃" ( +
+test: `Operation[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Existential quantifier applied to container, taking one agent argument `_test_` whose signature is `(v:T): Boolean`.
+
+h|*1..1*
+|*for_all* __alias__ "for all", "∀" ( +
+test: `Operation[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Universal quantifier applied to container, taking one agent argument `_test_` whose signature is `(v:T): Boolean`.
+
+h|*0..1*
+|*matching* ( +
+test: `Operation[1]` +
+): `<<_list_class,List>><T>`
+a|Return a List all items matching the predicate function `_test_` which has signature `(v:T): Boolean`. If no matches, an empty List is returned.
+
+h|*0..1*
+|*select* ( +
+test: `Operation[1]` +
+): `T`
+a|Return first item matching the predicate function `_test_` which has signature `(v:T): Boolean`, or Void if no match.
+|===

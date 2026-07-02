@@ -1,0 +1,29 @@
+=== VALIDITY_KIND Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*VALIDITY_KIND*
+
+h|*Description*
+2+a|An enumeration of three values that may commonly occur in constraint models.
+
+Use as the type of any attribute within this model, which expresses constraint on some attribute in a class in a reference model. For example to indicate validity
+of Date/Time fields.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|mandatory
+a|Constant to indicate mandatory presence of something.
+
+h|
+|optional
+a|Constant to indicate optional presence of something.
+
+h|
+|prohibited
+a|Constant to indicate disallowed presence of something.
+|===

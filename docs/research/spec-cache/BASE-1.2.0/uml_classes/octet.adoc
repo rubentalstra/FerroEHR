@@ -1,0 +1,14 @@
+=== Octet Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Octet*
+
+h|*Description*
+2+a|Type representing minimal interface of built-in Octet type.
+
+h|*Inherit*
+2+|`<<_ordered_class,Ordered>>`
+
+|===

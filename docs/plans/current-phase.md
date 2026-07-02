@@ -1,3 +1,3 @@
-- Phase file: docs/plans/phase-01-foundation-identification.md
-- Session goal: transcribe BASE 1.2.0 Foundation + Identification into openehr-foundation / openehr-base, settling the MI/covariance/generics patterns every later RM phase reuses
-- Next action: pick the first unchecked phase-01 task; delegate class transcription to the rm-transcriber agent (rules in .claude/rules/rm-transcription.md); no compile required (Phase A)
+- Phase file: docs/plans/phase-02-terminology.md
+- Session goal: bundle the TERM 3.x terminology XML assets and the terminology service API in openehr-terminology (leaf crate — this phase SHOULD compile and debuts Cargo dependency wiring)
+- Next action: cache the TERM release under docs/research/spec-cache/ (same provenance pattern as BASE-1.2.0), then work the phase-02 task list; preserve the id=532 dual-rubric quirk (complete vs completed)

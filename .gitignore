@@ -32,3 +32,5 @@ lcov.info
 
 # sccache
 .sccache/
+
+.claude/worktrees
