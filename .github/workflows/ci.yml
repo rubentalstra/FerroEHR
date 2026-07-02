@@ -76,6 +76,8 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-audit
+      # Cargo.lock is not committed (see .gitignore); audit needs one to scan.
+      - run: cargo generate-lockfile
       - run: cargo audit
 
   # ── Advisory until P17: clippy ──────────────────────────────────────────────
@@ -121,7 +123,8 @@ jobs:
         with:
           tool: cargo-nextest
       - run: cargo build --workspace --all-features
-      - run: cargo nextest run --workspace --all-features
+      # --no-tests=pass: empty crates are expected until P17 (nextest exits 4 otherwise)
+      - run: cargo nextest run --workspace --all-features --no-tests=pass
       - run: cargo test --workspace --doc
 
   # ── Advisory until P17: coverage ────────────────────────────────────────────
@@ -150,7 +153,7 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov,cargo-nextest
-      - run: cargo llvm-cov nextest --workspace --lcov --output-path lcov.info
+      - run: cargo llvm-cov nextest --workspace --no-tests=pass --lcov --output-path lcov.info
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-lcov
