@@ -42,10 +42,10 @@ impl TerminologyId {
     /// distinct terminologies. The part of `value` before the first `(`, if
     /// any, or else the whole string.
     pub fn name(&self) -> String {
-        self.value()
-            .split_once('(')
-            .map(|(name, _rest)| name.to_string())
-            .unwrap_or_else(|| self.value().to_string())
+        self.value().split_once('(').map_or_else(
+            || self.value().to_string(),
+            |(name, _rest)| name.to_string(),
+        )
     }
 
     /// `version_id(): String`.

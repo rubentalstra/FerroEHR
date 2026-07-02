@@ -37,6 +37,7 @@ impl Cardinality {
     ///
     /// True if the semantics of this cardinality represent a bag, i.e.
     /// unordered, non-unique membership.
+    #[must_use]
     pub fn is_bag(&self) -> bool {
         !self.is_ordered && !self.is_unique
     }
@@ -45,6 +46,7 @@ impl Cardinality {
     ///
     /// True if the semantics of this cardinality represent a list, i.e.
     /// ordered, non-unique membership.
+    #[must_use]
     pub fn is_list(&self) -> bool {
         self.is_ordered && !self.is_unique
     }
@@ -53,6 +55,7 @@ impl Cardinality {
     ///
     /// True if the semantics of this cardinality represent a set, i.e.
     /// unordered, unique membership.
+    #[must_use]
     pub fn is_set(&self) -> bool {
         !self.is_ordered && self.is_unique
     }

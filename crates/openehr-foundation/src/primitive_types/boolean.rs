@@ -22,6 +22,7 @@ impl Boolean {
     /// Spec postconditions:
     /// - `Post_de_Morgan`: `Result = not (not self or not other)`
     /// - `Post_commutative`: `Result = (other and self)`
+    #[must_use]
     pub fn conjunction(&self, other: &Boolean) -> Boolean {
         Boolean(self.0 && other.0)
     }
@@ -48,6 +49,7 @@ impl Boolean {
     /// - `Post_de_Morgan`: `Result = not (not self and not other)`
     /// - `Post_commutative`: `Result = (other or Current)`
     /// - `Post_consistent_with_semi_strict`: `Result implies (self or else other)`
+    #[must_use]
     pub fn disjunction(&self, other: &Boolean) -> Boolean {
         Boolean(self.0 || other.0)
     }
@@ -68,6 +70,7 @@ impl Boolean {
     ///
     /// Spec postcondition (`Post_definition`):
     /// `Result = ((self or other) and not (self and other))`.
+    #[must_use]
     pub fn exclusive_disjunction(&self, other: &Boolean) -> Boolean {
         Boolean(self.0 ^ other.0)
     }
@@ -85,6 +88,7 @@ impl Boolean {
     /// `negation` __alias__ `"not"`, `"¬"`, `"!"` `(): Boolean`.
     ///
     /// Boolean negation of the current value.
+    #[must_use]
     pub fn negation(&self) -> Boolean {
         Boolean(!self.0)
     }

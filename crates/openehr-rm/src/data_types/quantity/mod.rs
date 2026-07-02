@@ -1,0 +1,14 @@
+//! RM 1.1.0 `data_types.quantity` package.
+
+pub mod dv_absolute_quantity;
+pub mod dv_amount;
+pub mod dv_count;
+pub mod dv_interval;
+pub mod dv_ordered;
+pub mod dv_ordinal;
+pub mod dv_proportion;
+pub mod dv_quantified;
+pub mod dv_quantity;
+pub mod dv_scale;
+pub mod proportion_kind;
+pub mod reference_range;

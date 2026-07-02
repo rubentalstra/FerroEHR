@@ -9,7 +9,7 @@
 // `openehr-foundation` yet. The `use` path below names where it is expected
 // to land per the crate layout (PORT_MASTER_PLAN.md Section 9); update once
 // that file exists.
-use openehr_foundation::primitive_types::terminology_code::TerminologyCode;
+use openehr_foundation::terminology_types::terminology_code::TerminologyCode;
 
 /// `Quantity_converter` is a pure function interface (no attributes, no
 /// state), so it is transcribed as a Rust trait per ADR-001 §1, mirroring

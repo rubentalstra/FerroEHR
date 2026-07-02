@@ -93,7 +93,12 @@ impl<T: Ordered> Interval<T> {
     }
 }
 
-impl<T: Ordered> Any for Interval<T> {
+// PORT NOTE: `+ PartialEq` narrows this impl beyond the spec's bare
+// `T: Ordered` — limit-field equality in `is_equal` needs structural
+// comparison, and the transcribed `Ordered` trait deliberately does not
+// declare an `is_equal` over `Option<T>` limits. Every concrete Ordered
+// type is PartialEq, so nothing is excluded in practice.
+impl<T: Ordered + PartialEq> Any for Interval<T> {
     /// `is_equal` (effected) `(other: Any[1]) -> Boolean`.
     ///
     /// True if current object's interval is semantically same as `other`.

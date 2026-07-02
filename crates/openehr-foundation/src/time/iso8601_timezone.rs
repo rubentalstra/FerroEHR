@@ -41,6 +41,7 @@ impl Iso8601Timezone {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn hour(&self) -> i32 {
         todo!("Iso8601Timezone::hour: string parsing deferred to the internal engine")
     }
@@ -61,6 +62,7 @@ impl Iso8601Timezone {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn minute(&self) -> i32 {
         todo!("Iso8601Timezone::minute: string parsing deferred to the internal engine")
     }
@@ -71,6 +73,7 @@ impl Iso8601Timezone {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn sign(&self) -> i32 {
         todo!("Iso8601Timezone::sign: string parsing deferred to the internal engine")
     }
@@ -81,6 +84,7 @@ impl Iso8601Timezone {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn minute_unknown(&self) -> bool {
         todo!("Iso8601Timezone::minute_unknown: string parsing deferred to the internal engine")
     }
@@ -91,6 +95,7 @@ impl Iso8601Timezone {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn is_gmt(&self) -> bool {
         todo!("Iso8601Timezone::is_gmt: string parsing deferred to the internal engine")
     }
@@ -157,24 +162,28 @@ impl Iso8601Type for Iso8601Timezone {
 // directly, and are encoded as plain boolean-returning methods rather than a
 // `Validate` impl.
 impl Iso8601Timezone {
-    /// __Min_hour_valid__: `sign = -1 implies hour > 0 and hour <=
+    /// __`Min_hour_valid`__: `sign = -1 implies hour > 0 and hour <=
     /// Min_timezone_hour`.
+    #[must_use]
     pub fn invariant_min_hour_valid(&self) -> bool {
         self.sign() != -1 || (self.hour() > 0 && self.hour() <= TimeDefinitions::MIN_TIMEZONE_HOUR)
     }
 
-    /// __Max_hour_valid__: `sign = 1 implies hour > 0 and hour <=
+    /// __`Max_hour_valid`__: `sign = 1 implies hour > 0 and hour <=
     /// Max_timezone_hour`.
+    #[must_use]
     pub fn invariant_max_hour_valid(&self) -> bool {
         self.sign() != 1 || (self.hour() > 0 && self.hour() <= TimeDefinitions::MAX_TIMEZONE_HOUR)
     }
 
-    /// __Minute_valid__: `not minute_unknown implies valid_minute (minute)`.
+    /// __`Minute_valid`__: `not minute_unknown implies valid_minute (minute)`.
+    #[must_use]
     pub fn invariant_minute_valid(&self) -> bool {
         self.minute_unknown() || TimeDefinitions::valid_minute(self.minute())
     }
 
-    /// __Sign_valid__: `sign = 1 or sign = -1`.
+    /// __`Sign_valid`__: `sign = 1 or sign = -1`.
+    #[must_use]
     pub fn invariant_sign_valid(&self) -> bool {
         self.sign() == 1 || self.sign() == -1
     }

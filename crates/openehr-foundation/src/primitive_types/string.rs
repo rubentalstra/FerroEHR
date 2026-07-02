@@ -39,6 +39,7 @@ impl OpenEhrString {
     /// `is_empty(): Boolean`.
     ///
     /// True if the string is empty, i.e. equal to `""`.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -46,6 +47,7 @@ impl OpenEhrString {
     /// `is_integer(): Boolean`.
     ///
     /// True if the string can be parsed as an integer.
+    #[must_use]
     pub fn is_integer(&self) -> bool {
         self.0.parse::<i32>().is_ok()
     }
@@ -62,6 +64,7 @@ impl OpenEhrString {
     /// on whether this becomes a `Result`-returning method once call sites
     /// exist, rather than guessing a panic-vs-`Result` contract the spec
     /// does not itself state.
+    #[must_use]
     pub fn as_integer(&self) -> Integer {
         match self.0.parse::<i32>() {
             Ok(value) => Integer(value),
@@ -75,6 +78,7 @@ impl OpenEhrString {
     ///
     /// Concatenation operator — causes `other` to be appended to this
     /// string.
+    #[must_use]
     pub fn append(&self, other: &OpenEhrString) -> OpenEhrString {
         let mut result = self.0.clone();
         result.push_str(&other.0);
@@ -84,6 +88,7 @@ impl OpenEhrString {
     /// `contains(other: String) -> Boolean`.
     ///
     /// Return `true` if this String contains `other` (case-sensitive).
+    #[must_use]
     pub fn contains(&self, other: &OpenEhrString) -> bool {
         self.0.contains(other.0.as_str())
     }

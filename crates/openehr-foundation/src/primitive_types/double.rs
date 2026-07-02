@@ -30,6 +30,7 @@ impl Double {
     ///
     /// Return the greatest integer no greater than the value of this
     /// object.
+    #[must_use]
     pub fn floor(&self) -> Integer {
         Integer(self.0.floor() as i32)
     }

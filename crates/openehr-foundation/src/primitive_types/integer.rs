@@ -33,6 +33,7 @@ impl Integer {
     /// method rather than an override of `Numeric::divide` (see the
     /// trait-level PORT NOTE in `numeric.rs` for why the `Numeric` trait
     /// itself cannot carry this heterogeneous-result shape).
+    #[must_use]
     pub fn divide(&self, other: &Integer) -> Double {
         Double(f64::from(self.0) / f64::from(other.0))
     }
@@ -46,6 +47,7 @@ impl Integer {
     /// as `Double`, not `Integer`. Transcribed literally as read from the
     /// per-class table rather than "corrected" to an all-`Integer`
     /// signature.
+    #[must_use]
     pub fn exponent(&self, other: &Double) -> Double {
         Double(f64::from(self.0).powf(other.0))
     }
@@ -60,6 +62,7 @@ impl Integer {
     /// translation of the underlying primitive operator pending a spec
     /// clarification; flagged rather than silently assumed correct for
     /// every RM call site that will eventually use this.
+    #[must_use]
     pub fn modulo(&self, other: &Integer) -> Integer {
         Integer(self.0 % other.0)
     }
@@ -119,7 +122,7 @@ impl Numeric for Integer {
     /// `divide`/`exponent` from the `Numeric` trait once every concrete
     /// `Numeric` type in this cluster exists and the trait can be
     /// re-shaped without an interim inconsistency.
-    fn divide(&self, other: &Self) -> Self {
+    fn divide(&self, _other: &Self) -> Self {
         // TODO(port): Numeric::divide cannot express Integer's true
         // Integer -> Double result; see PORT NOTE above and Integer::divide.
         todo!(
@@ -129,7 +132,7 @@ impl Numeric for Integer {
 
     /// See `divide` PORT NOTE above; same trait/inherent-method split
     /// applies to `exponent`.
-    fn exponent(&self, other: &Self) -> Self {
+    fn exponent(&self, _other: &Self) -> Self {
         // TODO(port): Numeric::exponent cannot express Integer's true
         // (Double) -> Double signature; see PORT NOTE above and
         // Integer::exponent.

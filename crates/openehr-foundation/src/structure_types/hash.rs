@@ -4,7 +4,7 @@
 //! Inherits: `Container<V>`.
 //!
 //! Type representing a keyed table of values. `V` is the value type, and `K`
-//! the type of the keys. Per the structure_types chapter overview: `K` is
+//! the type of the keys. Per the `structure_types` chapter overview: `K` is
 //! typically `String` or `Integer` but may be more complex `Ordered`
 //! descendants, e.g. a coded term type.
 use super::super::primitive_types::any::Any;

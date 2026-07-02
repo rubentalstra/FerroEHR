@@ -29,6 +29,7 @@ impl<T> List<T> {
     /// silently. Transcribed as `Option<&T>` rather than a bare `&T`/panic,
     /// so the empty case is representable without violating the "never
     /// unwrap/expect outside tests" rule.
+    #[must_use]
     pub fn first(&self) -> Option<&T> {
         self.0.first()
     }
@@ -39,6 +40,7 @@ impl<T> List<T> {
     ///
     /// PORT NOTE: same `Option`-widening rationale as `first` above, for the
     /// `Last_validity` invariant.
+    #[must_use]
     pub fn last(&self) -> Option<&T> {
         self.0.last()
     }

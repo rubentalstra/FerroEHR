@@ -11,6 +11,7 @@ publish = false
 
 [dependencies]
 openehr-foundation = { path = "../openehr-foundation" }
+serde.workspace = true
 
 [lints]
 workspace = true

@@ -46,16 +46,19 @@ impl Uri {
     }
 
     /// Inherited `String::is_empty(): Boolean`.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
     /// Inherited `String::is_integer(): Boolean`.
+    #[must_use]
     pub fn is_integer(&self) -> bool {
         self.0.is_integer()
     }
 
     /// Inherited `String::as_integer(): Integer`.
+    #[must_use]
     pub fn as_integer(&self) -> Integer {
         self.0.as_integer()
     }
@@ -68,11 +71,13 @@ impl Uri {
     /// 3986 syntax, so this is transcribed as returning the parent
     /// `OpenEhrString` type, not `Uri`, avoiding a claim of validity the
     /// spec does not make.
+    #[must_use]
     pub fn append(&self, other: &OpenEhrString) -> OpenEhrString {
         self.0.append(other)
     }
 
     /// Inherited `String::contains(other: String) -> Boolean`.
+    #[must_use]
     pub fn contains(&self, other: &OpenEhrString) -> bool {
         self.0.contains(other)
     }

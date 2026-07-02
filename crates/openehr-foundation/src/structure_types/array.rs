@@ -8,7 +8,7 @@
 use super::super::primitive_types::any::Any;
 use super::container::Container;
 
-/// Per `docs/PORTING.md` §14.2 and the structure_types chapter's own
+/// Per `docs/PORTING.md` §14.2 and the `structure_types` chapter's own
 /// cross-reference table (`Array<T>` → contiguous array), transcribed as a
 /// transparent newtype over `std::vec::Vec<T>`. Rust's native fixed-size
 /// `[T; N]` array cannot carry a runtime-determined length, and `Vec<T>`'s
@@ -45,6 +45,7 @@ impl<T> Array<T> {
     /// `Last_validity` invariants). A negative `a_key` or one `>= count()`
     /// is left as `todo!()` rather than guessing between a panic, `Option`,
     /// or `Result` contract the spec does not itself state.
+    #[must_use]
     pub fn item(&self, a_key: i32) -> &T {
         match usize::try_from(a_key) {
             Ok(index) if index < self.0.len() => &self.0[index],

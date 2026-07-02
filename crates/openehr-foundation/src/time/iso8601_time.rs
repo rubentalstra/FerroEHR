@@ -45,6 +45,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn hour(&self) -> i32 {
         todo!("Iso8601Time::hour: string parsing deferred to the internal engine")
     }
@@ -56,6 +57,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn minute(&self) -> i32 {
         todo!("Iso8601Time::minute: string parsing deferred to the internal engine")
     }
@@ -67,6 +69,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn second(&self) -> i32 {
         todo!("Iso8601Time::second: string parsing deferred to the internal engine")
     }
@@ -80,6 +83,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn fractional_second(&self) -> f64 {
         todo!("Iso8601Time::fractional_second: string parsing deferred to the internal engine")
     }
@@ -90,6 +94,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn timezone(&self) -> Option<Iso8601Timezone> {
         todo!("Iso8601Time::timezone: string parsing deferred to the internal engine")
     }
@@ -101,6 +106,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn minute_unknown(&self) -> bool {
         todo!("Iso8601Time::minute_unknown: string parsing deferred to the internal engine")
     }
@@ -118,6 +124,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn second_unknown(&self) -> bool {
         todo!("Iso8601Time::second_unknown: string parsing deferred to the internal engine")
     }
@@ -129,6 +136,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn is_decimal_sign_comma(&self) -> bool {
         todo!("Iso8601Time::is_decimal_sign_comma: string parsing deferred to the internal engine")
     }
@@ -140,6 +148,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): requires parsing `core.value`; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn has_fractional_second(&self) -> bool {
         todo!("Iso8601Time::has_fractional_second: string parsing deferred to the internal engine")
     }
@@ -150,6 +159,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): definite-arithmetic addition; deferred to the internal
     /// engine.
+    #[must_use]
     pub fn add(&self, a_diff: &Iso8601Duration) -> Iso8601Time {
         let _ = a_diff;
         todo!("Iso8601Time::add: definite-duration addition deferred to the internal engine")
@@ -161,6 +171,7 @@ impl Iso8601Time {
     ///
     /// TODO(port): definite-arithmetic subtraction; deferred to the
     /// internal engine.
+    #[must_use]
     pub fn subtract(&self, a_diff: &Iso8601Duration) -> Iso8601Time {
         let _ = a_diff;
         todo!(
@@ -173,6 +184,7 @@ impl Iso8601Time {
     /// Difference of two times.
     ///
     /// TODO(port): deferred to the internal engine.
+    #[must_use]
     pub fn diff(&self, a_time: &Iso8601Time) -> Iso8601Duration {
         let _ = a_time;
         todo!("Iso8601Time::diff: deferred to the internal engine")
@@ -240,30 +252,35 @@ impl Iso8601Type for Iso8601Time {
 // directly, and are encoded as plain boolean-returning methods rather than a
 // `Validate` impl (see the equivalent note in `iso8601_date.rs`).
 impl Iso8601Time {
-    /// __Hour_valid__: `valid_hour(hour, minute, second)`.
+    /// __`Hour_valid`__: `valid_hour(hour, minute, second)`.
+    #[must_use]
     pub fn invariant_hour_valid(&self) -> bool {
         TimeDefinitions::valid_hour(self.hour(), self.minute(), self.second())
     }
 
-    /// __Minute_valid__: `not minute_unknown implies valid_minute (minute)`.
+    /// __`Minute_valid`__: `not minute_unknown implies valid_minute (minute)`.
+    #[must_use]
     pub fn invariant_minute_valid(&self) -> bool {
         self.minute_unknown() || TimeDefinitions::valid_minute(self.minute())
     }
 
-    /// __Second_valid__: `not second_unknown implies valid_second (second)`.
+    /// __`Second_valid`__: `not second_unknown implies valid_second (second)`.
+    #[must_use]
     pub fn invariant_second_valid(&self) -> bool {
         self.second_unknown() || TimeDefinitions::valid_second(self.second())
     }
 
-    /// __Fractional_second_valid__: `has_fractional_second implies (not
+    /// __`Fractional_second_valid`__: `has_fractional_second implies (not
     /// second_unknown and valid_fractional_second (fractional_second))`.
+    #[must_use]
     pub fn invariant_fractional_second_valid(&self) -> bool {
         !self.has_fractional_second()
             || (!self.second_unknown()
                 && TimeDefinitions::valid_fractional_second(self.fractional_second()))
     }
 
-    /// __Partial_validity__: `minute_unknown implies second_unknown`.
+    /// __`Partial_validity`__: `minute_unknown implies second_unknown`.
+    #[must_use]
     pub fn invariant_partial_validity(&self) -> bool {
         !self.minute_unknown() || self.second_unknown()
     }

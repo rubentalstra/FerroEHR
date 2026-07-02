@@ -43,8 +43,7 @@ impl VersionTreeId {
     pub fn trunk_version(&self) -> String {
         self.value
             .split_once('.')
-            .map(|(trunk, _rest)| trunk.to_string())
-            .unwrap_or_else(|| self.value.clone())
+            .map_or_else(|| self.value.clone(), |(trunk, _rest)| trunk.to_string())
     }
 
     /// `is_branch(): Boolean`.

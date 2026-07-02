@@ -13,7 +13,7 @@
 // names where it is expected to land per the crate layout
 // (PORT_MASTER_PLAN.md Section 9); update once that file exists.
 use openehr_foundation::primitive_types::numeric::Numeric;
-use openehr_foundation::structures::container::Container;
+use openehr_foundation::structure_types::container::Container;
 
 /// `Statistical_evaluator` is a pure function interface (no attributes, no
 /// state), so it is transcribed as a Rust trait per ADR-001 §1, generic
@@ -43,41 +43,41 @@ pub trait StatisticalEvaluator<T: Numeric> {
     /// transcribed in this crate's dependency graph at time of writing;
     /// left as `f64` pending that type's existence, per the primitive-type
     /// std mapping (ADR-001 §7).
-    fn sum(&self, vals: &Container<T>) -> f64;
+    fn sum<C: Container<T>>(&self, vals: &C) -> f64;
 
     /// `avg` (vals: `Container<Numeric>[1]`): `Double`.
     ///
     /// Synonym for `mean()`.
-    fn avg(&self, vals: &Container<T>) -> f64 {
+    fn avg<C: Container<T>>(&self, vals: &C) -> f64 {
         self.mean(vals)
     }
 
     /// `mean` (vals: `Container<Numeric>[1]`): `Double`.
     ///
     /// Mean (arithmetic average) of a container of values.
-    fn mean(&self, vals: &Container<T>) -> f64;
+    fn mean<C: Container<T>>(&self, vals: &C) -> f64;
 
     /// `median` (vals: `Container<Numeric>[1]`): `Numeric` (narrowed to
     /// `T`, see trait-level PORT NOTE).
     ///
     /// Return numerically centre value in ordered form of container
     /// contents.
-    fn median(&self, vals: &Container<T>) -> T;
+    fn median<C: Container<T>>(&self, vals: &C) -> T;
 
     /// `mode` (vals: `Container<Numeric>[1]`): `Numeric` (narrowed to `T`).
     ///
     /// Mode (most frequent) of a container of values.
-    fn mode(&self, vals: &Container<T>) -> T;
+    fn mode<C: Container<T>>(&self, vals: &C) -> T;
 
     /// `max` (vals: `Container<Numeric>[1]`): `Numeric` (narrowed to `T`).
     ///
     /// Maximum of a container of values.
-    fn max(&self, vals: &Container<T>) -> T;
+    fn max<C: Container<T>>(&self, vals: &C) -> T;
 
     /// `min` (vals: `Container<Numeric>[1]`): `Numeric` (narrowed to `T`).
     ///
     /// Minimum of a container of values.
-    fn min(&self, vals: &Container<T>) -> T;
+    fn min<C: Container<T>>(&self, vals: &C) -> T;
 
     /// `count` (vals: `Container<Numeric>[1]`): `Numeric` (narrowed to `T`,
     /// see trait-level PORT NOTE).
@@ -91,12 +91,12 @@ pub trait StatisticalEvaluator<T: Numeric> {
     /// for this function beyond the general open-result-type note above.
     /// Kept as `T` here for trait-signature uniformity with `median`/
     /// `mode`/`max`/`min`; a call site may need an explicit conversion.
-    fn count(&self, vals: &Container<T>) -> T;
+    fn count<C: Container<T>>(&self, vals: &C) -> T;
 
     /// `std_dev` (vals: `Container<Numeric>[1]`): `Double`.
     ///
     /// Compute standard deviation of a container of values.
-    fn std_dev(&self, vals: &Container<T>) -> f64;
+    fn std_dev<C: Container<T>>(&self, vals: &C) -> f64;
 }
 
 // ─────────────────────────────────────────────

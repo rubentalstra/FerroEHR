@@ -6,6 +6,7 @@
 //! A Tuple type used, among other things, for representing a single typed
 //! argument within a Routine signature. Declares no attributes or functions
 //! of its own beyond its `TUPLE` ancestry.
+use super::super::primitive_types::any::Any;
 use super::tuple::Tuple;
 
 /// `TUPLE1<A>` is a pure meta-type with no declared functions or attributes,
@@ -22,7 +23,19 @@ use super::tuple::Tuple;
 /// Tuple for Tuple1<A>` and `impl Tuple for (A,)` are the same impl).
 pub type Tuple1<A> = (A,);
 
-impl<A> Tuple for (A,) {}
+/// `Any` for the underlying native tuple (required by the `Tuple: Any`
+/// supertrait): slot-wise `is_equal`, `type_of` composed from the slot type.
+impl<A: Any> Any for (A,) {
+    fn is_equal(&self, other: &Self) -> bool {
+        self.0.is_equal(&other.0)
+    }
+
+    fn type_of(&self) -> String {
+        format!("Tuple1<{}>", self.0.type_of())
+    }
+}
+
+impl<A: Any> Tuple for (A,) {}
 
 // ─────────────────────────────────────────────
 // PORT STATUS

@@ -52,7 +52,7 @@ impl ArchetypeId {
     /// `-`-delimited part of [`ArchetypeId::qualified_rm_entity`].
     pub fn rm_originator(&self) -> String {
         self.qualified_rm_entity()
-            .splitn(3, '-')
+            .split('-')
             .next()
             .unwrap_or_default()
             .to_string()
@@ -64,7 +64,8 @@ impl ArchetypeId {
     /// second `-`-delimited part of
     /// [`ArchetypeId::qualified_rm_entity`].
     pub fn rm_name(&self) -> String {
-        let mut parts = self.qualified_rm_entity().splitn(3, '-').skip(1);
+        let qualified = self.qualified_rm_entity();
+        let mut parts = qualified.splitn(3, '-').skip(1);
         parts.next().unwrap_or_default().to_string()
     }
 
@@ -75,7 +76,8 @@ impl ArchetypeId {
     /// `composition`, `section`, `entry`. The third `-`-delimited part of
     /// [`ArchetypeId::qualified_rm_entity`].
     pub fn rm_entity(&self) -> String {
-        let mut parts = self.qualified_rm_entity().splitn(3, '-').skip(2);
+        let qualified = self.qualified_rm_entity();
+        let mut parts = qualified.splitn(3, '-').skip(2);
         parts.next().unwrap_or_default().to_string()
     }
 

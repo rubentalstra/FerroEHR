@@ -8,7 +8,6 @@
 //! Reference to a `LOCATABLE` instance inside the top-level content
 //! structure inside a `VERSION<T>`; the path attribute is applied to the
 //! object that `VERSION.data` points to.
-use super::object_id::ObjectId;
 use super::uid_based_id::UidBasedId;
 
 /// Canonical `_type` discriminator string for this class in serialized
@@ -24,7 +23,7 @@ pub const TYPE_NAME: &str = "LOCATABLE_REF";
 /// doing so would keep `id: ObjectId`, silently losing the narrowing — and
 /// instead re-declares `namespace`, `type`, and `id` directly, with `id`
 /// typed as [`UidBasedId`] (the enum encoding of `UID_BASED_ID`, ADR-001
-/// §4) rather than the wider [`ObjectId`].
+/// §4) rather than the wider [`ObjectId`](super::object_id::ObjectId).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LocatableRef {
     /// `namespace`, inherited unchanged from `OBJECT_REF`. See
@@ -44,7 +43,7 @@ pub struct LocatableRef {
     /// marks this `*1..1 (redefined)*`, narrowing the declared type from
     /// `OBJECT_ID` (as declared on the parent `OBJECT_REF`) to
     /// `UID_BASED_ID`. Encoded directly as [`UidBasedId`], not the wider
-    /// [`ObjectId`] enum.
+    /// [`ObjectId`](super::object_id::ObjectId) enum.
     pub id: UidBasedId,
 
     /// `path`: the path to an instance in question, as an absolute path
