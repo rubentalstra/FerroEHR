@@ -14,9 +14,10 @@ for canonical XML (C14N) where exact byte-for-byte canonicalization matters.
 
 ## Preconditions
 
-- [ ] Phase 03 done: RM classes exist in `openehr-rm`
-- [ ] Phase 04 substantially done: JSON serialization decisions (null handling,
-      `_type` dispatch equivalents) inform the XML mapping
+- [x] Phase 03 done: RM classes exist in `openehr-rm` — completed 2026-07-02
+- [x] Phase 04 substantially done: JSON serialization decisions (null handling,
+      `_type` dispatch equivalents) inform the XML mapping — completed
+      2026-07-02; ADR-002 self-tagging is the XML discriminator precedent
 
 ## Scope
 
@@ -49,11 +50,18 @@ the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
 
 ## Decisions made this phase
 
-- (none recorded yet)
+- Spec inputs should be cached or vendored before use. `docs/research/spec-cache/README.md`
+  is now the inventory/policy for transcription caches, while computable
+  validation inputs stay beside the crate that uses them (e.g.
+  `openehr-serde/schemas/` for ITS schemas).
+- `jiff` is pinned at workspace version `0.2.31` and wired into
+  `openehr-foundation` for the upcoming ISO 8601 temporal implementation;
+  existing TODO bodies stay in place until the parser/arithmetic pass fixes
+  openEHR partial-precision semantics.
 
 ## Handoff for next session
 
-Not started. `quick-xml` 0.37's `serialize` feature is pinned in the root
+Started with dependency/spec-cache prep. `quick-xml` is pinned in the root
 `Cargo.toml`; confirm its derive ergonomics against a representative
 `DV_QUANTITY` or `COMPOSITION` example before committing to a pattern for the
-whole crate.
+whole crate. Next concrete task is still vendoring the ITS-XML XSD bundles.

@@ -287,10 +287,11 @@ impl TimeDefinitions {
 
 // PERF(port): every `valid_iso8601_*` function above will eventually parse
 // its input against ISO 8601 grammar; the internal engine is expected to
-// bridge to `jiff`'s parsing/formatting once wired in at P17 rather than a
-// hand-rolled grammar, per the module-level plan documented on
-// `Iso8601Type` in `iso8601_type.rs`. Do NOT add a `jiff` dependency to this
-// crate now — Phase A transcription only captures the interface shape.
+// bridge to `jiff`'s parsing/formatting rather than a hand-rolled grammar,
+// per the module-level plan documented on `Iso8601Type` in
+// `iso8601_type.rs`. `jiff` is now wired into this crate at the
+// workspace-pinned `0.2.31`; the TODO bodies remain until the implementation
+// pass fixes the exact openEHR partial-precision policy.
 
 // ─────────────────────────────────────────────
 // PORT STATUS
@@ -298,5 +299,5 @@ impl TimeDefinitions {
 //   source_loc: master06-time_types.adoc §Class Definitions / time_definitions.adoc §Time_Definitions Class
 //   confidence: medium
 //   todos: 6
-//   note: six string-syntax valid_iso8601_* / valid_day functions stubbed todo!() pending the jiff-backed internal engine at P17; valid_day additionally depends on a days_in_month(m, y) helper the spec's own Time_Definitions table never declares (a spec gap, flagged rather than invented); Max_days_in_year has no literal value in the table and is transcribed as an alias of Days_in_leap_year.
+//   note: six string-syntax valid_iso8601_* / valid_day functions stubbed todo!() pending the jiff-backed internal engine; valid_day additionally depends on a days_in_month(m, y) helper the spec's own Time_Definitions table never declares (a spec gap, flagged rather than invented); Max_days_in_year has no literal value in the table and is transcribed as an alias of Days_in_leap_year.
 // ─────────────────────────────────────────────

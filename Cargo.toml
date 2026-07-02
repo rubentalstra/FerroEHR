@@ -131,7 +131,7 @@ miette = { version = "7", features = ["fancy"] }
 
 # ── Identifiers, time, validation ────────────────────────────────────────────
 uuid = { version = "1", features = ["v4", "v7", "serde", "fast-rng"] }
-jiff = { version = "0.2", features = ["serde"] }   # 1.0 not yet out as of 2026-07; 0.2 is current
+jiff = { version = "0.2.31", features = ["serde"] }   # 1.0 not yet out as of 2026-07; 0.2.31 pinned for ISO 8601 temporal work
 garde = { version = "0.23.0", features = ["derive"] }   # verify latest
 url = "2"
 

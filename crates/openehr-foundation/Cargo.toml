@@ -10,6 +10,7 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+jiff.workspace = true
 serde.workspace = true
 
 [dev-dependencies]

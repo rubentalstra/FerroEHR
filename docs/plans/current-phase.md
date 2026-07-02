@@ -1,3 +1,3 @@
-- Phase file: docs/plans/phase-04-serialization-json.md
-- Session goal: canonical JSON (ITS-JSON) serialization in openehr-serde — serde derives land across base/rm (TYPE_NAME consts become #[serde(rename)] + `_type` dispatch), insta golden vectors are the acceptance instrument
-- Next action: pin an ITS-JSON commit (record in docs/VERSIONS.md), cache the schema entry point openehr_rm_1.1.0_all.json, then work the phase-04 task list; serde conventions live in .claude/rules/serialization.md
+- Phase file: docs/plans/phase-05-serialization-xml.md
+- Session goal: canonical XML (ITS-XML) serialization in openehr-serde — vendor RM 1.1.0 and legacy 1.0.2 XSDs, then prove representative quick-xml round-trips against the existing Phase 04 fixtures
+- Next action: vendor RM 1.1.0 XSDs (`Common.xsd`, `DataTypes.xsd`, `DataStructures.xsd`, `Ehr.xsd`, `Demographic.xsd`) and the legacy 1.0.2 bundle into `crates/openehr-serde/schemas/`; keep spec provenance recorded in the cache inventory

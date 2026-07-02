@@ -54,10 +54,9 @@
 //!
 //! PERF(port) / PORT NOTE: the internal engine backing these string-parsing
 //! and arithmetic bodies is expected to bridge to `jiff`'s calendar/duration
-//! types once wired in at implementation time (P17: make-it-compile / the
-//! parity phases). Do NOT add a `jiff` dependency to `openehr-foundation`
-//! now — Phase A transcription captures the interface shape only, per the
-//! invoking task's explicit instruction.
+//! types. The dependency is now wired into `openehr-foundation` at the
+//! workspace-pinned `0.2.31`; the method bodies below remain TODO until the
+//! parser/arithmetic pass chooses the exact openEHR partial-precision policy.
 use crate::time::temporal::Temporal;
 use serde::{Deserialize, Serialize};
 // PORT NOTE: `Any` and `Ordered` are not imported here even though the
@@ -157,5 +156,5 @@ pub trait Iso8601Type: Temporal {
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_type.adoc §Iso8601_type Class
 //   confidence: medium
 //   todos: 1
-//   note: multiple-inheritance worked example (ADR-001 §2) — Temporal composes as an ordinary supertrait, but Time_Definitions is a constants/free-fn struct with no trait shape, so that half of the Inherit relation is transcribed as direct TimeDefinitions::* calls from concrete descendants rather than a second supertrait bound; as_string's default returns the raw stored value verbatim pending the jiff-backed compact->extended reformatting engine at P17.
+//   note: multiple-inheritance worked example (ADR-001 §2) — Temporal composes as an ordinary supertrait, but Time_Definitions is a constants/free-fn struct with no trait shape, so that half of the Inherit relation is transcribed as direct TimeDefinitions::* calls from concrete descendants rather than a second supertrait bound; as_string's default returns the raw stored value verbatim pending the jiff-backed compact->extended reformatting engine.
 // ─────────────────────────────────────────────
