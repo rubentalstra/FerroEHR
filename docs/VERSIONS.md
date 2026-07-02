@@ -49,7 +49,7 @@ independently. Pin each one exactly:
 | TERM (Terminology) | 3.0.0 | STABLE | XML file internally v3.1.0 |
 | ITS-XML (XSDs) | 2.0.0 | TRIAL (1.0.2 stable) | support both for round-trip |
 | ITS-REST (REST API) | 1.0.3 | STABLE | ADMIN API is dev-branch only |
-| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | no numbered release; pin a git commit hash once selected |
+| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6` (master, 2021-10-31); `components/openehr_rm_1.1.0_all.json` vendored at `crates/openehr-serde/schemas/` |
 | ITS-BMM (BMM instances) | per-RM | STABLE per-schema | |
 
 See `PORT_MASTER_PLAN.md` Section 7 for the class-by-class transcription scope

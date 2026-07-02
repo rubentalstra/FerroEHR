@@ -1,7 +1,7 @@
 # Phase 04 — Canonical JSON serialization (ITS-JSON)
 
-- Status: not-started
-- Started: -   Owner: Ruben
+- Status: in-progress
+- Started: 2026-07-02   Owner: Ruben
 - Consumes (spec/layer): ITS-JSON (development, pinned commit) / Layer 5a
 - Compile required: no (Phase A)
 
@@ -15,7 +15,7 @@ vectors with `insta`.
 
 ## Preconditions
 
-- [ ] Phase 03 done: RM classes exist in `openehr-rm`
+- [x] Phase 03 done: RM classes exist in `openehr-rm`
 
 ## Scope
 
