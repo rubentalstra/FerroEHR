@@ -53,7 +53,7 @@ pub struct DvEncapsulatedData {
 /// added once both concrete types are wired, but is not written in this
 /// file for the same reason documented on `DvTimeSpecification` — no call
 /// site in this transcription pass requires the closed-enum shape yet.
-pub trait DvEncapsulated {
+pub trait DvEncapsulatedApi {
     /// Access to the embedded `DV_ENCAPSULATED` state.
     fn encapsulated_data(&self) -> &DvEncapsulatedData;
 
@@ -86,11 +86,34 @@ pub trait DvEncapsulated {
     }
 }
 
+/// Closed subtype set of `DV_ENCAPSULATED` per ADR-001 §4: exactly two
+/// concrete descendants exist in RM 1.1.0. Added when
+/// `FEEDER_AUDIT.original_content: DV_ENCAPSULATED [0..1]` became the first
+/// attribute typed as the abstract class (the trait alone cannot be a field
+/// type).
+#[derive(Debug, Clone, PartialEq)]
+// TODO(port): serde tag = "_type" + variant renames land with the P4 serde wave.
+pub enum DvEncapsulated {
+    /// `DV_MULTIMEDIA`.
+    Multimedia(super::dv_multimedia::DvMultimedia),
+    /// `DV_PARSABLE`.
+    Parsable(super::dv_parsable::DvParsable),
+}
+
+impl DvEncapsulatedApi for DvEncapsulated {
+    fn encapsulated_data(&self) -> &DvEncapsulatedData {
+        match self {
+            DvEncapsulated::Multimedia(m) => m.encapsulated_data(),
+            DvEncapsulated::Parsable(p) => p.encapsulated_data(),
+        }
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.encapsulated — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_encapsulated.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master09-encapsulated_package.adoc §Class Descriptions / dv_encapsulated.adoc §DV_ENCAPSULATED Class
 //   confidence: medium
 //   todos: 2
-//   note: abstract class with attributes -> embedded Data struct + marker trait (ADR-001 §3); charset/language forward-reference the not-yet-landed CODE_PHRASE (data_types.text cluster, concurrent); both invariants require a live TerminologyService code_set lookup not yet threaded through any Validate-context signature — left as trait default todo!() rather than omitted.
+//   note: abstract class with attributes -> embedded Data struct + Api trait (ADR-001 §3) + closed DvEncapsulated enum (§4, added for FEEDER_AUDIT.original_content); both invariants require a live TerminologyService code_set lookup not yet threaded through any Validate-context signature — left as trait default todo!() rather than omitted.
 // ─────────────────────────────────────────────

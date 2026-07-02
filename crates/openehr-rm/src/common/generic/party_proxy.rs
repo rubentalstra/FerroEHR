@@ -86,7 +86,10 @@ pub struct PartyProxyData {
 /// `PartyRelated` directly into `PartyProxy` (rather than nesting a
 /// `PartyIdentified(PartyIdentifiedOrRelated)`-shaped indirection) is the
 /// simpler, equally faithful choice here.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// PartialOrd/Ord dropped from the derive set: the `PartyIdentified` /
+// `PartyRelated` variants derive no ordering (the spec defines none on
+// their DV_IDENTIFIER / DV_CODED_TEXT members).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PartyProxy {
     /// `PARTY_SELF`.
     PartySelf(PartySelf),

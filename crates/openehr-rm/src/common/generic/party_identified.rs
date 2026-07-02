@@ -39,7 +39,9 @@ pub const TYPE_NAME: &str = "PARTY_IDENTIFIED";
 /// This struct is itself embedded (rather than referenced) by
 /// [`super::party_related::PartyRelated`] per that class's `Inherit` row —
 /// see `party_related.rs`.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// PartialOrd/Ord dropped from the derive set: `identifiers` carries
+// `DV_IDENTIFIER`, which derives no ordering (the spec defines none).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PartyIdentified {
     /// Embedded `PARTY_PROXY` state (`external_ref`).
     pub party_proxy: PartyProxyData,

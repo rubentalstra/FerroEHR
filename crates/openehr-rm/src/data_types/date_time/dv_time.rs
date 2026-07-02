@@ -20,14 +20,19 @@
 //! rather than Rust inheritance.
 use crate::data_types::date_time::dv_duration::DvDuration;
 use crate::data_types::date_time::dv_temporal::{DvTemporal, DvTemporalData};
+use crate::data_types::quantity::dv_ordered::DvOrderedApi;
+use crate::data_types::text::code_phrase::CodePhrase;
+use openehr_foundation::primitive_types::any::Any;
+use openehr_foundation::primitive_types::ordered::Ordered;
 
 /// `DV_TIME`.
 ///
 /// openEHR class: `DV_TIME`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DvTime {
-    /// Embedded `DV_TEMPORAL` state.
-    pub temporal: DvTemporalData,
+    /// Embedded `DV_TEMPORAL` state, self-typed per the F-bounded threading
+    /// documented on `DvTemporalData` (see `dv_temporal.rs`).
+    pub temporal: DvTemporalData<DvTime>,
 
     /// `value`: `String` (`1..1`, redefined).
     ///
@@ -60,10 +65,10 @@ impl DvTime {
         )
     }
 
-    /// `add` __alias__ `"+"` `(a_diff: DV_DURATION[1]): DV_TIME` (redefined
-    /// via the `DvTemporal` impl below).
-    ///
-    /// `subtract`, `diff` likewise — see the `DvTemporal for DvTime` impl.
+    // `add` __alias__ `"+"` `(a_diff: DV_DURATION[1]): DV_TIME` (redefined
+    // via the `DvTemporal` impl below).
+    //
+    // `subtract`, `diff` likewise — see the `DvTemporal for DvTime` impl.
 
     /// `less_than` __alias__ `"<"` `(other: DV_TIME[1]): Boolean` (effected).
     ///
@@ -96,8 +101,52 @@ impl DvTime {
     }
 }
 
+impl Any for DvTime {
+    /// `is_equal(other)` inherited through the `DV_QUANTIFIED` chain
+    /// (magnitude-based comparison).
+    ///
+    /// TODO(port): forwards to `magnitude()` comparison once that is
+    /// implemented, mirroring `DvDate::is_equal`.
+    fn is_equal(&self, other: &Self) -> bool {
+        let _ = other;
+        todo!("DV_TIME.is_equal: pending DV_QUANTIFIED equality once magnitude() lands")
+    }
+
+    fn type_of(&self) -> String {
+        "DvTime".to_string()
+    }
+}
+
+impl Ordered for DvTime {
+    /// Delegates to the inherent [`DvTime::less_than`] (the spec's effected
+    /// `less_than`, magnitude-based).
+    fn less_than(&self, other: &Self) -> bool {
+        DvTime::less_than(self, other)
+    }
+}
+
+impl DvOrderedApi for DvTime {
+    /// `normal_status`: accessor into the embedded
+    /// `DV_ORDERED` state reached through the
+    /// `DV_TEMPORAL` → `DV_ABSOLUTE_QUANTITY` → `DV_QUANTIFIED` chain.
+    fn normal_status(&self) -> Option<&CodePhrase> {
+        self.temporal
+            .quantified
+            .quantified
+            .ordered
+            .normal_status
+            .as_ref()
+    }
+
+    /// Delegates to the inherent [`DvTime::is_strictly_comparable_to`]
+    /// ("True, for any two Times").
+    fn is_strictly_comparable_to(&self, other: &Self) -> bool {
+        DvTime::is_strictly_comparable_to(self, other)
+    }
+}
+
 impl DvTemporal for DvTime {
-    fn temporal_data(&self) -> &DvTemporalData {
+    fn temporal_data(&self) -> &DvTemporalData<Self> {
         &self.temporal
     }
 
@@ -141,6 +190,6 @@ impl DvTemporal for DvTime {
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_time.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_time.adoc §DV_TIME Class
 //   confidence: medium
-//   todos: 5
-//   note: same dual-inheritance shape as DV_DATE; magnitude/add/subtract/diff/invariant_value_valid deferred to the jiff-backed engine at P17; less_than transcribed with name-implied semantics against the same likely copy-paste Post_result defect flagged on DV_DATE.
+//   todos: 6
+//   note: same dual-inheritance shape as DV_DATE; magnitude/add/subtract/diff/invariant_value_valid deferred to the jiff-backed engine at P17; less_than transcribed with name-implied semantics against the same likely copy-paste Post_result defect flagged on DV_DATE; Any/Ordered/DvOrderedApi impls added so DvTime satisfies the DvOrdered enum's trait chain (is_equal stubbed pending magnitude()).
 // ─────────────────────────────────────────────

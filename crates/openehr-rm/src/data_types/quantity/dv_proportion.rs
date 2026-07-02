@@ -19,8 +19,9 @@
 //! clinical notes is not a ratio but an ordinal (which includes non-numeric
 //! symbols like CF = count fingers etc). Should not be used for
 //! formulations.
-use super::dv_amount::{DvAmountApi, DvAmountData};
-use super::dv_ordered::{DvOrderedApi, DvOrderedData};
+use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE};
+use super::dv_ordered::DvOrderedApi;
+use super::dv_quantified::DvQuantifiedApi;
 use super::proportion_kind::ProportionKind;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
@@ -144,8 +145,15 @@ impl DvProportion {
     /// denominator Real values, and a magnitude function which is computed
     /// as the result of the numerator/denominator division" — transcribed
     /// directly from that prose.
+    ///
+    /// PORT NOTE: this class's table declares `magnitude(): Real`, but the
+    /// spec-accurate `Real::divide` effector it delegates to returns
+    /// `Double` (`Real.divide`'s own row narrows the result type) — the
+    /// published tables disagree across the two classes; the `Double`
+    /// result is converted back to the declared `Real` return type
+    /// explicitly here (both are `f64`-backed per ADR-001 §7).
     pub fn magnitude(&self) -> Real {
-        self.numerator.divide(&self.denominator)
+        Real(self.numerator.divide(&self.denominator).0)
     }
 
     /// `is_integral(): Boolean`.
@@ -206,6 +214,35 @@ impl DvOrderedApi for DvProportion {
     /// narrowed to `&Self` per the recurring pattern.
     fn is_strictly_comparable_to(&self, other: &Self) -> bool {
         self.type_ == other.type_
+    }
+}
+
+impl DvQuantifiedApi<Real> for DvProportion {
+    fn magnitude_status(&self) -> Option<&str> {
+        self.amount.quantified.magnitude_status.as_deref()
+    }
+
+    /// Delegates to the inherent [`DvProportion::magnitude`] (the effected
+    /// `numerator/denominator` division).
+    fn magnitude(&self) -> Real {
+        DvProportion::magnitude(self)
+    }
+
+    /// `accuracy_unknown(): Boolean` (effected via `DV_AMOUNT`'s
+    /// special-value convention: an `accuracy` of `unknown_accuracy_value`
+    /// (-1) means accuracy was not recorded).
+    ///
+    /// PORT NOTE: an absent (`None`) accuracy is also treated as unknown —
+    /// see `DvQuantity::accuracy_unknown` for the same flagged reading.
+    fn accuracy_unknown(&self) -> bool {
+        match self.amount.accuracy {
+            None => true,
+            Some(a) => a.is_equal(&Real(UNKNOWN_ACCURACY_VALUE)),
+        }
+    }
+
+    fn is_equal_quantified(&self, other: &Self) -> bool {
+        self.is_equal(other)
     }
 }
 

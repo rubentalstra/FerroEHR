@@ -12,7 +12,7 @@
 //! This is the class `DV_TIME_SPECIFICATION.value` (see
 //! `../time_specification/dv_time_specification.rs`) is itself typed as,
 //! carrying the HL7v3 `PIVL`/`EIVL`/GTS syntax text.
-use crate::data_types::encapsulated::dv_encapsulated::{DvEncapsulated, DvEncapsulatedData};
+use crate::data_types::encapsulated::dv_encapsulated::{DvEncapsulatedApi, DvEncapsulatedData};
 
 /// `DV_PARSABLE`.
 ///
@@ -78,7 +78,7 @@ impl DvParsable {
     }
 }
 
-impl DvEncapsulated for DvParsable {
+impl DvEncapsulatedApi for DvParsable {
     fn encapsulated_data(&self) -> &DvEncapsulatedData {
         &self.encapsulated
     }

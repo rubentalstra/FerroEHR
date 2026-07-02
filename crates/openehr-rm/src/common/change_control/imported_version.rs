@@ -32,7 +32,7 @@ pub const TYPE_NAME: &str = "IMPORTED_VERSION";
 /// directly (not the generic `Version<T>` enum), matching the spec's
 /// declared type exactly — `IMPORTED_VERSION` cannot wrap another
 /// `IMPORTED_VERSION`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ImportedVersion<T> {
     /// Embedded `VERSION<T>` state (`contribution`, `signature`,
     /// `commit_audit`) per ADR-001 §3. Per the class description, these

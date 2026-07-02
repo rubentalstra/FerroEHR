@@ -22,8 +22,6 @@
 //! other boxed-recursion cases (`FOLDER`, `CLUSTER`, `ITEM_TREE`,
 //! `DV_MULTIMEDIA.thumbnail`), which recurse through a bare `Option<Self>`
 //! or `Option<Box<Self>>` field with no interposed collection type.
-use crate::common::archetyped::locatable::LocatableData; // TODO(port): forward-reference; not yet transcribed. Path matches the sibling ehr_status.rs/ehr_access.rs convention.
-
 /// Canonical `_type` discriminator string for this class in serialized
 /// form.
 pub const TYPE_NAME: &str = "SECTION";
@@ -63,6 +61,6 @@ impl super::content_item::ContentItemApi for Section {
 //   source: RM 1.1.0 ehr.navigation — docs/research/spec-cache/RM-1.1.0/uml_classes/section.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-navigation_package.adoc §Class Descriptions / section.adoc §SECTION Class
 //   confidence: high
-//   todos: 2
-//   note: recursion flows through the ContentItem enum + Vec indirection alone (documented at module level, see LocatableData note also); Items_valid invariant left unimplemented, plus the LocatableData forward-reference import.
+//   todos: 1
+//   note: recursion flows through the ContentItem enum + Vec indirection alone (documented at module level); Items_valid invariant left unimplemented; the LocatableData forward-reference import was removed once ContentItemData landed (Section reaches LOCATABLE state through it, not directly).
 // ─────────────────────────────────────────────

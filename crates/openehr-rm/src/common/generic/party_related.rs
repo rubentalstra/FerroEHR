@@ -40,7 +40,10 @@ pub const TYPE_NAME: &str = "PARTY_RELATED";
 /// whole ancestor chain, so a change to `PARTY_PROXY`'s or
 /// `PARTY_IDENTIFIED`'s own attribute set only requires touching that
 /// one file.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// PartialOrd/Ord dropped from the derive set: `relationship` is a
+// `DV_CODED_TEXT`, which derives no ordering (the spec defines none), and
+// the embedded `PartyIdentified` dropped its ordering for the same reason.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PartyRelated {
     /// Embedded `PARTY_IDENTIFIED` state (`external_ref`, `name`,
     /// `identifiers`).

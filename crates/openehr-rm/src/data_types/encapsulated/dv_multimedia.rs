@@ -25,7 +25,7 @@
 //! transcription passes not yet landed at the time of this file, and are
 //! imported directly by their eventual module paths per the invoking
 //! task's instruction.
-use crate::data_types::encapsulated::dv_encapsulated::{DvEncapsulated, DvEncapsulatedData};
+use crate::data_types::encapsulated::dv_encapsulated::{DvEncapsulatedApi, DvEncapsulatedData};
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::uri::dv_uri::DvUri;
 
@@ -164,7 +164,7 @@ impl DvMultimedia {
     /// TODO(port): requires a live `TERMINOLOGY_SERVICE`/`code_set` lookup
     /// bound to `OPENEHR_CODE_SET_IDENTIFIERS::MEDIA_TYPES` — same
     /// terminology-service threading gap noted on
-    /// `DvEncapsulated::invariant_language_valid`/`invariant_charset_valid`.
+    /// `DvEncapsulatedApi::invariant_language_valid`/`invariant_charset_valid`.
     pub fn invariant_media_type_valid(&self) -> bool {
         todo!(
             "DV_MULTIMEDIA.invariant_media_type_valid: requires a TerminologyService code_set(media_types) lookup, not yet threaded through a Validate context"
@@ -222,7 +222,7 @@ impl DvMultimedia {
     }
 }
 
-impl DvEncapsulated for DvMultimedia {
+impl DvEncapsulatedApi for DvMultimedia {
     fn encapsulated_data(&self) -> &DvEncapsulatedData {
         &self.encapsulated
     }

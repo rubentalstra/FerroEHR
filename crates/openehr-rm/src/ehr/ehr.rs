@@ -39,7 +39,10 @@ pub const TYPE_NAME: &str = "EHR";
 /// narrative-prose ordering in `master04-ehr_package.adoc`'s "High-level EHR
 /// structure" description, which lists `ehr_access`/`ehr_status` before
 /// `folders`/`compositions` in a different sequence purely for exposition.
-#[derive(Debug, Clone, PartialEq, Eq)]
+// Eq dropped from the derive set: `time_created` is a `DV_DATE_TIME`, whose
+// embedded quantity chain transitively carries `f64` accuracy fields
+// (`PartialEq` only).
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ehr {
     /// `system_id`: the identifier of the logical EHR management system in
     /// which this EHR was created.

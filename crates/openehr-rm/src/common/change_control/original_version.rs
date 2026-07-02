@@ -31,7 +31,7 @@ pub const TYPE_NAME: &str = "ORIGINAL_VERSION";
 /// `lifecycle_state`/`data` as ordinary attributes directly. Compare
 /// `ImportedVersion`, which computes the same four by delegating to its
 /// wrapped `item` instead of storing them.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OriginalVersion<T> {
     /// Embedded `VERSION<T>` state (`contribution`, `signature`,
     /// `commit_audit`) per ADR-001 §3.

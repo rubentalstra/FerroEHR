@@ -22,7 +22,7 @@
 use super::dv_ordered::DvOrderedApi;
 // TODO(port): forward-references DATA_VALUE (rm.data_types.basic), not yet
 // transcribed by the sibling package agent covering `data_types::basic`.
-use crate::data_types::basic::data_value::DataValue;
+use crate::data_types::data_value::DataValue;
 use openehr_foundation::interval::interval::Interval;
 
 /// Canonical `_type` discriminator string for this class in serialized

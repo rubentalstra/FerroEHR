@@ -8,7 +8,7 @@
 //! For relative quantities, the `+` and `-` operators are defined (unlike
 //! descendants of `DV_ABSOLUTE_QUANTITY`, such as the date/time types).
 use super::dv_count::DvCount;
-use super::dv_ordered::{DvOrderedApi, DvOrderedData};
+use super::dv_ordered::DvOrderedApi;
 use super::dv_proportion::DvProportion;
 use super::dv_quantified::{DvQuantifiedApi, DvQuantifiedData};
 use super::dv_quantity::DvQuantity;

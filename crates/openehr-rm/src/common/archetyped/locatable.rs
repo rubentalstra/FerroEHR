@@ -53,10 +53,10 @@ use crate::data_types::text::dv_text::DvText;
 // Imported directly since `openehr-rm` depends on `openehr-base`.
 use openehr_base::identification::uid_based_id::UidBasedId;
 
-/// Canonical `_type` discriminator is not applicable to `LOCATABLE`
-/// itself — it is abstract and never serialized as a standalone value; see
-/// ADR-001 refinements ("serde derives wait until P4"; abstract classes
-/// carry no `TYPE_NAME` of their own, only their concrete descendants do).
+// Canonical `_type` discriminator is not applicable to `LOCATABLE`
+// itself — it is abstract and never serialized as a standalone value; see
+// ADR-001 refinements ("serde derives wait until P4"; abstract classes
+// carry no `TYPE_NAME` of their own, only their concrete descendants do).
 
 /// Shared attribute state of `LOCATABLE` and every RM class that inherits
 /// it (directly, or — far more commonly — via one of the intermediate
@@ -158,6 +158,22 @@ pub struct LocatableData {
     /// methods on the parent without a downcast — while `PathableApi`
     /// methods remain available too since `LocatableApi: PathableApi`.
     pub parent: Option<Weak<dyn LocatableApi>>,
+}
+
+/// Equality over the six spec attributes only. `parent` is excluded: it is
+/// a non-spec back-reference (see its PORT NOTE), `Weak<dyn ..>` has no
+/// meaningful structural equality, and canonical-JSON round-trips (which
+/// never carry parent pointers) must compare equal to their source.
+/// PORT NOTE: manual impl because `Weak` cannot derive `PartialEq`.
+impl PartialEq for LocatableData {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.archetype_node_id == other.archetype_node_id
+            && self.uid == other.uid
+            && self.links == other.links
+            && self.archetype_details == other.archetype_details
+            && self.feeder_audit == other.feeder_audit
+    }
 }
 
 /// Behaviour trait for `LOCATABLE` and every RM class that inherits it.

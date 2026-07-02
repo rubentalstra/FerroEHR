@@ -68,6 +68,10 @@
 //! struct should hold `pub amount: DvAmountData` instead of the two inlined
 //! fields below, mirroring the `DvTemporalData` embedding used by
 //! `DvDate`/`DvTime`/`DvDateTime` in this same package.
+use crate::data_types::quantity::dv_ordered::DvOrderedApi;
+use crate::data_types::text::code_phrase::CodePhrase;
+use openehr_foundation::primitive_types::any::Any;
+use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::time::iso8601_duration::Iso8601Duration;
 
 /// `DV_DURATION`.
@@ -232,9 +236,10 @@ impl DvDuration {
     /// `Accuracy_is_percent_validity` invariant (inherited from
     /// `DV_AMOUNT`): `accuracy = 0 implies not accuracy_is_percent`.
     pub fn invariant_accuracy_is_percent_validity(&self) -> bool {
-        match self.accuracy {
-            Some(a) if a == 0.0 => !self.accuracy_is_percent.unwrap_or(false),
-            _ => true,
+        if self.accuracy == Some(0.0) {
+            !self.accuracy_is_percent.unwrap_or(false)
+        } else {
+            true
         }
     }
 
@@ -257,11 +262,62 @@ impl DvDuration {
     }
 }
 
+impl Any for DvDuration {
+    /// `is_equal(other)` inherited through the `DV_AMOUNT`/`DV_QUANTIFIED`
+    /// chain.
+    ///
+    /// PORT NOTE: this class's own table gives no explicit `is_equal` row;
+    /// compares every declared attribute directly as the most literal
+    /// reading, mirroring `DvQuantity::is_equal`'s identical situation (a
+    /// magnitude-based comparison would delegate to the still-`todo!()`
+    /// `Iso8601Duration::to_seconds`).
+    fn is_equal(&self, other: &Self) -> bool {
+        self.accuracy_is_percent == other.accuracy_is_percent
+            && self.accuracy == other.accuracy
+            && self.iso8601 == other.iso8601
+    }
+
+    fn type_of(&self) -> String {
+        "DvDuration".to_string()
+    }
+}
+
+impl Ordered for DvDuration {
+    /// Delegates to the inherent [`DvDuration::less_than`] (the spec's
+    /// effected `less_than`, magnitude-based).
+    fn less_than(&self, other: &Self) -> bool {
+        DvDuration::less_than(self, other)
+    }
+}
+
+impl DvOrderedApi for DvDuration {
+    /// `normal_status`: inherited from `DV_ORDERED` through the `DV_AMOUNT`
+    /// chain.
+    ///
+    /// TODO(port): `DvDuration` inlines `DV_AMOUNT`'s two attributes
+    /// directly instead of embedding `DvAmountData<Self>` (see the
+    /// forward-reference note in the module doc), so the `DV_ORDERED`-level
+    /// state (`normal_status`/`normal_range`/`other_reference_ranges`) has
+    /// no backing field yet; stubbed pending that documented
+    /// reconciliation.
+    fn normal_status(&self) -> Option<&CodePhrase> {
+        todo!(
+            "DV_DURATION.normal_status: no backing DV_ORDERED state until the documented DvAmountData<Self> embedding reconciliation"
+        )
+    }
+
+    /// Delegates to the inherent [`DvDuration::is_strictly_comparable_to`]
+    /// ("True, for any two Durations").
+    fn is_strictly_comparable_to(&self, other: &Self) -> bool {
+        DvDuration::is_strictly_comparable_to(self, other)
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_duration.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_duration.adoc §DV_DURATION Class
 //   confidence: medium
-//   todos: 9
+//   todos: 10
 //   note: the Section 7.2-named multiple-inheritance hazard (DV_AMOUNT + Iso8601_duration, genuinely disjoint parent state, contrast the value-mixin-only MI on DV_DATE/DV_TIME/DV_DATE_TIME); DV_AMOUNT's two attributes inlined pending the concurrent quantity cluster landing DvAmountData (flagged, reconciliation TODO); every arithmetic effector delegates to the still-todo!() Iso8601Duration methods; magnitude() is the one function whose spec text names the exact cross-parent delegation (Iso8601_duration.to_seconds()) this hazard is about; less_than's Post_result wording is the one internally-consistent case in this package (contrast the three DvDate/DvTime/DvDateTime PORT NOTEs).
 // ─────────────────────────────────────────────

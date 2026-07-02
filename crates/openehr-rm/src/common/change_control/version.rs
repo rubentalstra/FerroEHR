@@ -25,7 +25,7 @@ use crate::data_types::text::dv_coded_text::DvCodedText;
 /// instead exposed via [`VersionApi`], since `ORIGINAL_VERSION` stores its
 /// answers directly while `IMPORTED_VERSION` computes them by delegating
 /// to its wrapped `item`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VersionData {
     /// `contribution`: Contribution in which this version was added.
     pub contribution: ObjectRef,
@@ -46,7 +46,7 @@ pub struct VersionData {
 /// invoking transcription task — the two concrete subtypes
 /// `ORIGINAL_VERSION<T>` and `IMPORTED_VERSION<T>` are collected into this
 /// closed `enum`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Version<T> {
     /// `ORIGINAL_VERSION<T>`.
     Original(OriginalVersion<T>),

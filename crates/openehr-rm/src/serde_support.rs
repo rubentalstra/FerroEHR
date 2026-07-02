@@ -12,7 +12,7 @@ use serde::{Deserialize, Deserializer, Serializer};
 
 /// `#[serde(with = "crate::serde_support::base64_vec")]` for `Vec<u8>`.
 pub mod base64_vec {
-    use super::*;
+    use super::{Deserialize, Deserializer, Engine, STANDARD, Serializer};
 
     /// Serializes the byte buffer as a base64 string.
     ///
@@ -41,7 +41,7 @@ pub mod base64_vec {
 /// `#[serde(skip_serializing_if = "Option::is_none", default)]` so an absent
 /// value is omitted entirely (nulls are never emitted in canonical JSON).
 pub mod base64_option {
-    use super::*;
+    use super::{Deserialize, Deserializer, Engine, STANDARD, Serializer};
 
     /// Serializes `Some(bytes)` as a base64 string; `None` only occurs when
     /// the field skipped `skip_serializing_if`, and serializes as null.

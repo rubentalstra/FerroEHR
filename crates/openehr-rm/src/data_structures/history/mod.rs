@@ -4,3 +4,5 @@ pub mod event;
 pub mod history;
 pub mod interval_event;
 pub mod point_event;
+
+pub use history::History;

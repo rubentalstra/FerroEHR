@@ -9,8 +9,9 @@
 //!
 //! Misuse: Not to be used for amounts of physical entities (which all have
 //! units).
-use super::dv_amount::{DvAmountApi, DvAmountData};
-use super::dv_ordered::{DvOrderedApi, DvOrderedData};
+use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE};
+use super::dv_ordered::DvOrderedApi;
+use super::dv_quantified::DvQuantifiedApi;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
 use crate::data_types::text::code_phrase::CodePhrase;
@@ -155,6 +156,36 @@ impl DvOrderedApi for DvCount {
 // design pulls (bare-primitive narrowing vs. generic-trait-bound
 // compatibility) that cannot both be satisfied without foundation-layer
 // changes.
+impl DvQuantifiedApi<i64> for DvCount {
+    fn magnitude_status(&self) -> Option<&str> {
+        self.amount.quantified.magnitude_status.as_deref()
+    }
+
+    /// `magnitude(): Integer64` (effected, covariantly narrowed — see the
+    /// struct-level doc comment) — the declared `magnitude` attribute
+    /// doubles as the effected `DV_QUANTIFIED.magnitude()` accessor.
+    fn magnitude(&self) -> i64 {
+        self.magnitude
+    }
+
+    /// `accuracy_unknown(): Boolean` (effected via `DV_AMOUNT`'s
+    /// special-value convention: an `accuracy` of `unknown_accuracy_value`
+    /// (-1) means accuracy was not recorded).
+    ///
+    /// PORT NOTE: an absent (`None`) accuracy is also treated as unknown —
+    /// see `DvQuantity::accuracy_unknown` for the same flagged reading.
+    fn accuracy_unknown(&self) -> bool {
+        match self.amount.accuracy {
+            None => true,
+            Some(a) => a.is_equal(&Real(UNKNOWN_ACCURACY_VALUE)),
+        }
+    }
+
+    fn is_equal_quantified(&self, other: &Self) -> bool {
+        self.is_equal(other)
+    }
+}
+
 impl DvAmountApi<i64> for DvCount {
     fn accuracy_is_percent(&self) -> Option<bool> {
         self.amount.accuracy_is_percent

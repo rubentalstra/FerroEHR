@@ -24,7 +24,7 @@ use super::reference_range::ReferenceRange;
 // TODO(port): forward-references DATA_VALUE (rm.data_types.basic), not yet
 // transcribed by the sibling package agent covering `data_types::basic` in a
 // concurrent worktree; wire this `use` up once that module lands.
-use crate::data_types::basic::data_value::DataValue;
+use crate::data_types::data_value::DataValue;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
 use crate::data_types::text::code_phrase::CodePhrase;
@@ -35,6 +35,7 @@ use crate::data_types::date_time::dv_date::DvDate;
 use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::date_time::dv_duration::DvDuration;
 use crate::data_types::date_time::dv_time::DvTime;
+use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
 
 /// Shared attribute state of `DV_ORDERED` and its descendants.
@@ -248,25 +249,74 @@ pub trait DvOrderedApi: Ordered {
     }
 }
 
+impl Any for DvOrdered {
+    /// Value equality dispatched per variant; two different concrete
+    /// `DV_ORDERED` subtypes are never equal in value.
+    fn is_equal(&self, other: &Self) -> bool {
+        match (self, other) {
+            (DvOrdered::Ordinal(a), DvOrdered::Ordinal(b)) => a.is_equal(b),
+            (DvOrdered::Scale(a), DvOrdered::Scale(b)) => a.is_equal(b),
+            (DvOrdered::Quantity(a), DvOrdered::Quantity(b)) => a.is_equal(b),
+            (DvOrdered::Count(a), DvOrdered::Count(b)) => a.is_equal(b),
+            (DvOrdered::Proportion(a), DvOrdered::Proportion(b)) => a.is_equal(b),
+            (DvOrdered::Date(a), DvOrdered::Date(b)) => a.is_equal(b),
+            (DvOrdered::Time(a), DvOrdered::Time(b)) => a.is_equal(b),
+            (DvOrdered::DateTime(a), DvOrdered::DateTime(b)) => a.is_equal(b),
+            (DvOrdered::Duration(a), DvOrdered::Duration(b)) => a.is_equal(b),
+            _ => false,
+        }
+    }
+
+    fn type_of(&self) -> String {
+        match self {
+            DvOrdered::Ordinal(v) => v.type_of(),
+            DvOrdered::Scale(v) => v.type_of(),
+            DvOrdered::Quantity(v) => v.type_of(),
+            DvOrdered::Count(v) => v.type_of(),
+            DvOrdered::Proportion(v) => v.type_of(),
+            DvOrdered::Date(v) => v.type_of(),
+            DvOrdered::Time(v) => v.type_of(),
+            DvOrdered::DateTime(v) => v.type_of(),
+            DvOrdered::Duration(v) => v.type_of(),
+        }
+    }
+}
+
+impl Ordered for DvOrdered {
+    /// `less_than` dispatched per matching variant.
+    fn less_than(&self, other: &Self) -> bool {
+        match (self, other) {
+            (DvOrdered::Ordinal(a), DvOrdered::Ordinal(b)) => a.less_than(b),
+            (DvOrdered::Scale(a), DvOrdered::Scale(b)) => a.less_than(b),
+            (DvOrdered::Quantity(a), DvOrdered::Quantity(b)) => a.less_than(b),
+            (DvOrdered::Count(a), DvOrdered::Count(b)) => a.less_than(b),
+            (DvOrdered::Proportion(a), DvOrdered::Proportion(b)) => a.less_than(b),
+            (DvOrdered::Date(a), DvOrdered::Date(b)) => a.less_than(b),
+            (DvOrdered::Time(a), DvOrdered::Time(b)) => a.less_than(b),
+            (DvOrdered::DateTime(a), DvOrdered::DateTime(b)) => a.less_than(b),
+            (DvOrdered::Duration(a), DvOrdered::Duration(b)) => a.less_than(b),
+            // TODO(port): ordering across mixed concrete DV_ORDERED
+            // subtypes is undefined — the spec's `Pre_comparable`
+            // precondition (`is_strictly_comparable_to (other)`) can never
+            // hold across variants; same unresolved cross-variant rule as
+            // `is_strictly_comparable_to` below.
+            _ => todo!("DvOrdered::less_than: cross-variant comparability rule not specified"),
+        }
+    }
+}
+
 impl DvOrderedApi for DvOrdered {
     fn normal_status(&self) -> Option<&CodePhrase> {
         match self {
             DvOrdered::Ordinal(v) => v.normal_status(),
             DvOrdered::Scale(v) => v.normal_status(),
-            DvOrdered::Quantity(v) => v.normal_status(),
-            DvOrdered::Count(v) => v.normal_status(),
-            DvOrdered::Proportion(v) => v.normal_status(),
-            // TODO(port): DvDate/DvTime/DvDateTime/DvDuration are owned by
-            // the sibling date_time package and not available in this
-            // worktree; stubbed pending that package's landing.
-            DvOrdered::Date(_)
-            | DvOrdered::Time(_)
-            | DvOrdered::DateTime(_)
-            | DvOrdered::Duration(_) => {
-                todo!(
-                    "DvOrdered::normal_status: date_time package variants not yet transcribed in this worktree"
-                )
-            }
+            DvOrdered::Quantity(v) => DvOrderedApi::normal_status(v),
+            DvOrdered::Count(v) => DvOrderedApi::normal_status(v),
+            DvOrdered::Proportion(v) => DvOrderedApi::normal_status(v),
+            DvOrdered::Date(v) => v.normal_status(),
+            DvOrdered::Time(v) => v.normal_status(),
+            DvOrdered::DateTime(v) => v.normal_status(),
+            DvOrdered::Duration(v) => v.normal_status(),
         }
     }
 

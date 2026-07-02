@@ -46,7 +46,7 @@ pub const TYPE_NAME: &str = "VERSIONED_OBJECT";
 /// every declared function implemented against that field. A future phase
 /// may replace this with a lazily-loaded/compressed backing store without
 /// changing the public function battery.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VersionedObject<T> {
     /// `uid`: unique identifier of this version container in the form of a
     /// UID with no extension. This id will be the same in all instances of

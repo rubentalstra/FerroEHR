@@ -15,8 +15,8 @@
 //! be a multiple of `period` for each Event. Missing events in a periodic
 //! History are however allowed.
 
-use super::data_structure::DataStructureBehaviour;
 use super::event::Event;
+use crate::data_structures::item_structure::data_structure::DataStructureBehaviour;
 use crate::data_structures::item_structure::data_structure::DataStructureData;
 use crate::data_structures::item_structure::item_structure::{ItemStructure, ItemStructureApi};
 use crate::data_structures::representation::item::Item;

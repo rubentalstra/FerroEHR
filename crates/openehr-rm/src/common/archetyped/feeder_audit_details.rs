@@ -82,7 +82,10 @@ pub struct FeederAuditDetails {
     ///
     /// Optional attribute to carry any custom meta-data. May be
     /// archetyped.
-    pub other_details: Option<ItemStructure>,
+    // PORT NOTE: boxed to break the by-value cycle FEEDER_AUDIT ->
+    // FEEDER_AUDIT_DETAILS -> ITEM_STRUCTURE -> (LOCATABLE) -> FEEDER_AUDIT
+    // (ADR-001 §8 recursion rule; a bare enum field carries no indirection).
+    pub other_details: Option<Box<ItemStructure>>,
 }
 
 impl FeederAuditDetails {

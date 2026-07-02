@@ -6,3 +6,5 @@ pub mod item_single;
 pub mod item_structure;
 pub mod item_table;
 pub mod item_tree;
+
+pub use item_structure::{ItemStructure, ItemStructureApi};

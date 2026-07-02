@@ -12,13 +12,15 @@
 //! Can also be used for time durations, where it is more convenient to
 //! treat these as simply a number of seconds rather than days, months,
 //! years (in the latter case, `DV_DURATION` may be used).
-use super::dv_amount::{DvAmountApi, DvAmountData};
-use super::dv_ordered::{DvOrderedApi, DvOrderedData};
+use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE};
+use super::dv_ordered::DvOrderedApi;
+use super::dv_quantified::DvQuantifiedApi;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
 use crate::data_types::text::code_phrase::CodePhrase;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::integer::Integer;
+use openehr_foundation::primitive_types::numeric::Numeric;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::primitive_types::real::Real;
 
@@ -198,6 +200,37 @@ impl DvOrderedApi for DvQuantity {
     /// per the recurring pattern.
     fn is_strictly_comparable_to(&self, other: &Self) -> bool {
         self.units == other.units && self.units_system == other.units_system
+    }
+}
+
+impl DvQuantifiedApi<Real> for DvQuantity {
+    fn magnitude_status(&self) -> Option<&str> {
+        self.amount.quantified.magnitude_status.as_deref()
+    }
+
+    /// `magnitude(): Real` (effected) — the declared `magnitude` attribute
+    /// doubles as the effected `DV_QUANTIFIED.magnitude()` accessor.
+    fn magnitude(&self) -> Real {
+        self.magnitude
+    }
+
+    /// `accuracy_unknown(): Boolean` (effected via `DV_AMOUNT`'s
+    /// special-value convention: an `accuracy` of `unknown_accuracy_value`
+    /// (-1) means accuracy was not recorded).
+    ///
+    /// PORT NOTE: an absent (`None`) accuracy is also treated as unknown —
+    /// the spec models "not recorded" through the -1 sentinel on a 0..1
+    /// attribute, so absence has no distinct stated semantics; flagged
+    /// rather than silently chosen.
+    fn accuracy_unknown(&self) -> bool {
+        match self.amount.accuracy {
+            None => true,
+            Some(a) => a.is_equal(&Real(UNKNOWN_ACCURACY_VALUE)),
+        }
+    }
+
+    fn is_equal_quantified(&self, other: &Self) -> bool {
+        self.is_equal(other)
     }
 }
 
