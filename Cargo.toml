@@ -38,10 +38,10 @@ missing_debug_implementations = "warn"
 
 # ── Web framework & HTTP core ────────────────────────────────────────────────
 axum = "0.8"                        # 0.8.8 current (MSRV 1.78)
-axum-extra = { version = "0.10", features = ["typed-header", "query"] }
-axum-server = { version = "0.7", features = ["tls-rustls"] }   # graceful shutdown + TLS
+axum-extra = { version = "0.12.6", features = ["typed-header", "query"] }
+axum-server = { version = "0.8.0", features = ["tls-rustls"] }   # graceful shutdown + TLS
 tower = { version = "0.5", features = ["util", "timeout", "limit", "load-shed"] }
-tower-http = { version = "0.6", features = [
+tower-http = { version = "0.7.0", features = [
   "trace", "cors", "compression-full", "decompression-full", "timeout",
   "limit", "request-id", "sensitive-headers", "catch-panic", "normalize-path", "set-header",
 ] }
@@ -64,13 +64,13 @@ async-trait = "0.1"                 # still handy for dyn traits; native async-f
 pin-project-lite = "0.2"
 
 # ── Authentication & authorization (do NOT hand-roll) ────────────────────────
-jsonwebtoken = "9"                  # 9.3.x  (JWT encode/decode/validate)
+jsonwebtoken = "10.4.0"                  # 9.3.x  (JWT encode/decode/validate)
 oauth2 = "5"                        # OAuth2 client            (verify latest 5.x)
 openidconnect = "4"                 # OIDC / Keycloak          (verify latest 4.x)
 argon2 = "0.5"                      # password hashing (Argon2id)
-password-hash = "0.5"              # PHC string traits
-tower-sessions = "0.14"            # session middleware        (verify latest)
-axum-login = "0.17"               # authn/authz for axum      (verify latest)
+password-hash = "0.6.1"              # PHC string traits
+tower-sessions = "0.15.0"            # session middleware        (verify latest)
+axum-login = "0.18.0"               # authn/authz for axum      (verify latest)
 secrecy = "0.10"                   # wrap secrets, avoid logging
 zeroize = "1"
 # RBAC/ABAC policy engine for the Stage 2 access-control restoration (pick one at S2):
@@ -81,11 +81,11 @@ cedar-policy = "4"                  # alternative policy engine (verify latest)
 rustls = "0.23"
 tokio-rustls = "0.26"
 rustls-pemfile = "2"
-webpki-roots = "0.26"
-rand = "0.9"
-getrandom = "0.3"
-sha2 = "0.10"
-hmac = "0.12"
+webpki-roots = "1.0.8"
+rand = "0.10.1"
+getrandom = "0.4.3"
+sha2 = "0.11.0"
+hmac = "0.13.0"
 blake3 = "1"
 
 # ── OpenAPI / Swagger (code-first) ───────────────────────────────────────────
