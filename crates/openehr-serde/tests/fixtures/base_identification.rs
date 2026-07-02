@@ -1,10 +1,14 @@
 //! Fixtures for BASE identification classes.
 
+use openehr_base::definitions::version_status::VersionStatus;
+use openehr_base::identification::access_group_ref::AccessGroupRef;
+use openehr_base::identification::archetype_hrid::ArchetypeHrid;
 use openehr_base::identification::archetype_id::ArchetypeId;
 use openehr_base::identification::generic_id::GenericId;
 use openehr_base::identification::internet_id::InternetId;
 use openehr_base::identification::iso_oid::IsoOid;
 use openehr_base::identification::locatable_ref::LocatableRef;
+use openehr_base::identification::object_id::ObjectId;
 use openehr_base::identification::object_id::ObjectIdData;
 use openehr_base::identification::template_id::TemplateId;
 use openehr_base::identification::terminology_id::TerminologyId;
@@ -41,6 +45,20 @@ pub fn fixtures() -> Vec<Vector> {
                 object_id: ObjectIdData {
                     value: "openEHR-EHR-COMPOSITION.encounter.v1".to_string(),
                 },
+            },
+        ),
+        vector(
+            "ARCHETYPE_HRID",
+            &ArchetypeHrid {
+                type_tag: TypeTag::new(),
+                namespace: "openEHR".to_string(),
+                rm_publisher: "EHR".to_string(),
+                rm_package: "EHR".to_string(),
+                rm_class: "COMPOSITION".to_string(),
+                concept_id: "encounter".to_string(),
+                release_version: "1".to_string(),
+                version_status: VersionStatus::Released,
+                build_count: "0".to_string(),
             },
         ),
         vector(
@@ -101,6 +119,17 @@ pub fn fixtures() -> Vec<Vector> {
         vector(
             "OBJECT_REF",
             &object_ref("local", "EHR", "7d44b88c-4199-4bad-97dc-d78268e01398"),
+        ),
+        vector(
+            "ACCESS_GROUP_REF",
+            &AccessGroupRef {
+                type_tag: TypeTag::new(),
+                id: ObjectId::UidBased(UidBasedId::HierObjectId(hier(
+                    "2adac9d8-8bfe-49d0-bd76-6f3c51c6f916",
+                ))),
+                namespace: "local".to_string(),
+                r#type: "ACCESS_GROUP".to_string(),
+            },
         ),
         vector(
             "PARTY_REF",

@@ -7,7 +7,10 @@ expression: v.value
   "language": {
     "terminology_id": "ISO_639-1",
     "code_string": "nl",
-    "uri": "http://example.org/terminology/nl"
+    "uri": {
+      "_type": "URI",
+      "value": "http://example.org/terminology/nl"
+    }
   },
   "author": {
     "name": "T. Author"

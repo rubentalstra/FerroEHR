@@ -1,5 +1,7 @@
 //! BASE 1.2.0 `base_types.identification` package.
 
+pub mod access_group_ref;
+pub mod archetype_hrid;
 pub mod archetype_id;
 pub mod generic_id;
 pub mod hier_object_id;

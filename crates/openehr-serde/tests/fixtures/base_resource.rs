@@ -25,9 +25,37 @@ fn lang(code: &str) -> TerminologyCode {
     }
 }
 
+fn lifecycle_state(code: &str) -> TerminologyCode {
+    TerminologyCode {
+        terminology_id: OpenEhrString("openehr".to_string()),
+        terminology_version: None,
+        code_string: OpenEhrString(code.to_string()),
+        uri: None,
+    }
+}
+
 fn author() -> HashMap<String, String> {
     let mut m = HashMap::new();
     m.insert("name".to_string(), "T. Author".to_string());
+    m
+}
+
+fn details_item() -> ResourceDescriptionItem {
+    ResourceDescriptionItem {
+        type_tag: TypeTag::new(),
+        language: lang("en"),
+        purpose: "Recording an encounter".to_string(),
+        keywords: None,
+        use_: None,
+        misuse: None,
+        original_resource_uri: None,
+        other_details: Some(HashMap::new()),
+    }
+}
+
+fn details() -> HashMap<String, ResourceDescriptionItem> {
+    let mut m = HashMap::new();
+    m.insert("en".to_string(), details_item());
     m
 }
 
@@ -41,7 +69,7 @@ pub fn fixtures() -> Vec<Vector> {
                 original_namespace: None,
                 original_publisher: None,
                 other_contributors: None,
-                lifecycle_state: lang("published"),
+                lifecycle_state: lifecycle_state("published"),
                 parent_resource: std::sync::Weak::new(),
                 custodian_namespace: None,
                 custodian_organisation: None,
@@ -52,7 +80,7 @@ pub fn fixtures() -> Vec<Vector> {
                 resource_package_uri: None,
                 conversion_details: None,
                 other_details: None,
-                details: None,
+                details: Some(details()),
             },
         ),
         vector(
@@ -65,7 +93,7 @@ pub fn fixtures() -> Vec<Vector> {
                 use_: None,
                 misuse: None,
                 original_resource_uri: None,
-                other_details: None,
+                other_details: Some(HashMap::new()),
             },
         ),
         vector(

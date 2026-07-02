@@ -22,6 +22,7 @@ pub mod data_structures;
 pub mod data_types;
 pub mod demographic;
 pub mod ehr;
+pub mod ehr_extract;
 pub mod foundation;
 pub mod helpers;
 
@@ -102,5 +103,6 @@ pub fn all() -> Vec<Vector> {
     vectors.extend(common::fixtures());
     vectors.extend(ehr::fixtures());
     vectors.extend(demographic::fixtures());
+    vectors.extend(ehr_extract::fixtures());
     vectors
 }

@@ -1,0 +1,18 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "ARCHETYPE_HRID",
+  "namespace": "openEHR",
+  "rm_publisher": "EHR",
+  "rm_package": "EHR",
+  "rm_class": "COMPOSITION",
+  "concept_id": "encounter",
+  "release_version": "1",
+  "version_status": {
+    "_type": "VERSION_STATUS",
+    "value": "released"
+  },
+  "build_count": "0"
+}

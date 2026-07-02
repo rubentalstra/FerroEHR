@@ -3,10 +3,17 @@
 //! embedded inside RM classes and no schema definition requires the
 //! discriminator), so they go through [`super::vector_tagless`].
 
+use std::collections::HashSet;
+
+use openehr_base::definitions::validity_kind::ValidityKind;
+use openehr_base::definitions::version_status::VersionStatus;
 use openehr_foundation::interval::interval::Interval;
 use openehr_foundation::primitive_types::integer::Integer;
 use openehr_foundation::primitive_types::string::OpenEhrString;
 use openehr_foundation::primitive_types::uri::Uri;
+use openehr_foundation::structure_types::array::Array;
+use openehr_foundation::structure_types::list::List;
+use openehr_foundation::structure_types::set::Set;
 use openehr_foundation::terminology_types::terminology_code::TerminologyCode;
 use openehr_foundation::terminology_types::terminology_term::TerminologyTerm;
 use openehr_foundation::time::iso8601_date::Iso8601Date;
@@ -15,7 +22,7 @@ use openehr_foundation::time::iso8601_duration::Iso8601Duration;
 use openehr_foundation::time::iso8601_time::Iso8601Time;
 use openehr_foundation::time::iso8601_type::Iso8601TypeCore;
 
-use super::{Vector, vector_tagless};
+use super::{Vector, vector, vector_tagless};
 
 fn code() -> TerminologyCode {
     TerminologyCode {
@@ -74,6 +81,18 @@ pub fn fixtures() -> Vec<Vector> {
                 },
             },
         ),
+        vector_tagless(
+            "ISO8601_TYPE",
+            &Iso8601TypeCore {
+                value: "2026-07-02T10:00:00Z".to_string(),
+            },
+        ),
+        vector("URI", &Uri::new_unchecked("http://example.org/resource")),
+        vector("ARRAY", &Array::<OpenEhrString>(Vec::new())),
+        vector("LIST", &List::<OpenEhrString>(Vec::new())),
+        vector("SET", &Set::<OpenEhrString>(HashSet::new())),
+        vector("VALIDITY_KIND", &ValidityKind::Mandatory),
+        vector("VERSION_STATUS", &VersionStatus::Released),
         vector_tagless("TERMINOLOGY_CODE", &code()),
         vector_tagless(
             "TERMINOLOGY_TERM",

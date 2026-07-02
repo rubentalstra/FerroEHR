@@ -5,5 +5,8 @@ expression: v.value
 {
   "terminology_id": "openehr",
   "code_string": "433",
-  "uri": "http://example.org/terminology/433"
+  "uri": {
+    "_type": "URI",
+    "value": "http://example.org/terminology/433"
+  }
 }

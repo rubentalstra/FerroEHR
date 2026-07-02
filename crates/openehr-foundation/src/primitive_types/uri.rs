@@ -12,7 +12,9 @@ use super::any::Any;
 use super::integer::Integer;
 use super::ordered::Ordered;
 use super::string::OpenEhrString;
-use serde::{Deserialize, Serialize};
+use serde::de::Error as _;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// `Uri` is modelled as a newtype wrapping `OpenEhrString` — the transcribed
 /// foundation-types `String` class — rather than `std::string::String`
@@ -28,8 +30,7 @@ use serde::{Deserialize, Serialize};
 /// `Deref` impl, keeping the RFC 3986 invariant enforceable at every
 /// construction site rather than allowing silent unchecked mutation through
 /// a deref coercion.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Uri(pub OpenEhrString);
 
@@ -102,11 +103,52 @@ impl Ordered for Uri {
     }
 }
 
+impl Serialize for Uri {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("URI", 2)?;
+        state.serialize_field("_type", "URI")?;
+        state.serialize_field("value", &self.0)?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Uri {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Wire {
+            Object {
+                #[serde(rename = "_type")]
+                type_name: Option<String>,
+                #[serde(default)]
+                value: OpenEhrString,
+            },
+            Bare(OpenEhrString),
+        }
+
+        match Wire::deserialize(deserializer)? {
+            Wire::Object { type_name, value } => {
+                if type_name.as_deref().is_some_and(|name| name != "URI") {
+                    return Err(D::Error::custom("expected _type \"URI\""));
+                }
+                Ok(Uri(value))
+            }
+            Wire::Bare(value) => Ok(Uri(value)),
+        }
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.primitive_types — docs/research/spec-cache/BASE-1.2.0/uml_classes/uri.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master03-primitive_types.adoc §Class Definitions / uri.adoc §Uri Class
 //   confidence: medium
 //   todos: 1
-//   note: wraps OpenEhrString (not std::string::String) to reflect the spec's actual String-class inheritance; RFC 3986 syntax invariant not yet enforced (new_unchecked only) pending an error type and validator dependency decision.
+//   note: wraps OpenEhrString (not std::string::String) to reflect the spec's actual String-class inheritance; RFC 3986 syntax invariant not yet enforced (new_unchecked only) pending an error type and validator dependency decision. P4: canonical JSON emits object form `{_type:"URI",value}` to satisfy the pinned ITS-JSON schema while preserving the string payload.
 // ─────────────────────────────────────────────

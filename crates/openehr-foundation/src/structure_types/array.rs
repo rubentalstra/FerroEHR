@@ -7,6 +7,9 @@
 //! keyed-access function, `item`.
 use super::super::primitive_types::any::Any;
 use super::container::Container;
+use serde::de::Error as _;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Per `docs/PORTING.md` §14.2 and the `structure_types` chapter's own
 /// cross-reference table (`Array<T>` → contiguous array), transcribed as a
@@ -82,11 +85,50 @@ impl<T: PartialEq> Any for Array<T> {
     }
 }
 
+impl<T: Serialize> Serialize for Array<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let field_count = if self.0.is_empty() { 1 } else { 2 };
+        let mut state = serializer.serialize_struct("ARRAY", field_count)?;
+        state.serialize_field("_type", "ARRAY")?;
+        if !self.0.is_empty() {
+            state.serialize_field("items", &self.0)?;
+        }
+        state.end()
+    }
+}
+
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for Array<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Wire<T> {
+            #[serde(rename = "_type")]
+            type_name: Option<String>,
+            items: Option<Vec<T>>,
+        }
+
+        let wire = Wire::deserialize(deserializer)?;
+        if wire
+            .type_name
+            .as_deref()
+            .is_some_and(|name| name != "ARRAY")
+        {
+            return Err(D::Error::custom("expected _type \"ARRAY\""));
+        }
+        Ok(Array(wire.items.unwrap_or_default()))
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.structures §Class Definitions — docs/research/spec-cache/BASE-1.2.0/uml_classes/array.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master04-structure_types.adoc §Class Definitions / array.adoc §Array Class
 //   confidence: medium
 //   todos: 3
-//   note: item()'s out-of-range/negative-key behaviour is unspecified by the spec, left as todo!() with an accompanying TODO(port) comment (two markers for that one gap); count()'s i32 cast shares List's unspecified-overflow gap (third marker). Backed by Vec<T> like List<T> (spec's contiguous-storage assumption), kept as a separate newtype since Array and List are separate classes with distinct function sets.
+//   note: item()'s out-of-range/negative-key behaviour is unspecified by the spec, left as todo!() with an accompanying TODO(port) comment (two markers for that one gap); count()'s i32 cast shares List's unspecified-overflow gap (third marker). Backed by Vec<T> like List<T> (spec's contiguous-storage assumption), kept as a separate newtype since Array and List are separate classes with distinct function sets. P4: canonical JSON uses object form `{_type:"ARRAY",items?}` so the class definition is schema-coverable without changing the storage type.
 // ─────────────────────────────────────────────

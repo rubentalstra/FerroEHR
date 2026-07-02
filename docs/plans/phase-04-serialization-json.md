@@ -66,9 +66,10 @@ Phase complete (2026-07-02). Canonical JSON is done end-to-end: every
 concrete RM/BASE class self-tags via `openehr_foundation::serde_support::
 {TypeName, TypeTag}` (ADR-002), closed enums are `#[serde(untagged)]` with
 tag-driven dispatch, and `openehr-serde` owns the acceptance instrument —
-`tests/full_rm_canonical_json.rs` requires every pinned-schema class to
-have a fixture (round-trip + `_type`-first + jsonschema validation + insta
-golden). P5 (canonical XML) should start from the same fixture set in
+`tests/full_rm_canonical_json.rs` covers all 134 pinned-schema classes with
+no exclusions (round-trip + `_type`-first + jsonschema validation + insta
+golden), and `cargo test` is green. P5 (canonical XML) should start from
+the same fixture set in
 `crates/openehr-serde/tests/fixtures/` — the constructors there are the
 deterministic instances to serialize against the RM 1.1.0 XSDs — and reuse
 the ADR-002 decision record for how `xsi:type` maps onto the same

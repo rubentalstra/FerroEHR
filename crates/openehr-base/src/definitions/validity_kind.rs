@@ -7,34 +7,27 @@
 //! models. Used as the type of any attribute within a reference model that
 //! expresses a constraint on some attribute in a class in that reference
 //! model — for example, to indicate the validity of Date/Time fields.
+use serde::de::Error as _;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-/// Closed three-value enumeration, transcribed directly as a Rust `enum`
-/// with the spec's exact lower-case symbol names preserved via both
-/// [`ValidityKind::symbol`] and the `#[serde(rename = "...")]` on each
-/// variant below.
+/// Closed three-value enumeration, transcribed directly as a Rust `enum`.
+/// The spec's exact lower-case symbol names are preserved by
+/// [`ValidityKind::symbol`] and by the canonical JSON `value` field.
 ///
-/// P4 update: `openehr-base` now depends on `serde`
-/// (`PORT_MASTER_PLAN.md` §10). Unlike an RM/AM class name (which serializes
-/// as an uppercase `_type` discriminator, e.g. `DV_TEXT`), `VALIDITY_KIND`
-/// is an *enumeration value* embedded directly as the value of whatever
-/// attribute is typed `VALIDITY_KIND` elsewhere in the RM — so each variant
-/// here is tagged with the spec's own lower-case wire form (`mandatory`,
-/// `optional`, `prohibited`), not an uppercase class-style tag.
-/// [`ValidityKind::symbol`] remains available as a plain accessor so
-/// non-serde call sites (e.g. `Display` impls, log messages) do not need to
-/// round-trip through a serializer just to read the spec string.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+/// P4 update: the pinned ITS-JSON schema exposes an object definition for
+/// this enumeration, so serde emits
+/// `{_type: "VALIDITY_KIND", value: <symbol>}` and accepts the older bare
+/// symbol string for compatibility.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ValidityKind {
     /// `mandatory` — constant to indicate mandatory presence of something.
-    #[serde(rename = "mandatory")]
     Mandatory,
 
     /// `optional` — constant to indicate optional presence of something.
-    #[serde(rename = "optional")]
     Optional,
 
     /// `prohibited` — constant to indicate disallowed presence of something.
-    #[serde(rename = "prohibited")]
     Prohibited,
 }
 
@@ -47,6 +40,58 @@ impl ValidityKind {
             ValidityKind::Prohibited => "prohibited",
         }
     }
+
+    fn from_symbol(value: &str) -> Option<Self> {
+        match value {
+            "mandatory" => Some(ValidityKind::Mandatory),
+            "optional" => Some(ValidityKind::Optional),
+            "prohibited" => Some(ValidityKind::Prohibited),
+            _ => None,
+        }
+    }
+}
+
+impl Serialize for ValidityKind {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("VALIDITY_KIND", 2)?;
+        state.serialize_field("_type", "VALIDITY_KIND")?;
+        state.serialize_field("value", self.symbol())?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for ValidityKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Wire {
+            Object {
+                #[serde(rename = "_type")]
+                type_name: Option<String>,
+                value: String,
+            },
+            Bare(String),
+        }
+
+        let (type_name, value) = match Wire::deserialize(deserializer)? {
+            Wire::Object { type_name, value } => (type_name, value),
+            Wire::Bare(value) => (None, value),
+        };
+        if type_name
+            .as_deref()
+            .is_some_and(|name| name != "VALIDITY_KIND")
+        {
+            return Err(D::Error::custom("expected _type \"VALIDITY_KIND\""));
+        }
+        ValidityKind::from_symbol(&value)
+            .ok_or_else(|| D::Error::custom(format!("unknown VALIDITY_KIND value {value:?}")))
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -55,5 +100,5 @@ impl ValidityKind {
 //   source_loc: master03-definitions_package.adoc §Class Definitions / validity_kind.adoc §VALIDITY_KIND Enumeration
 //   confidence: high
 //   todos: 0
-//   note: closed 3-value enum with a symbol() method carrying the spec's own lower-case name; P4 — serde derives added, per-variant #[serde(rename)] uses the same lower-case wire form as symbol() (enumeration values, unlike RM class names, do not use the uppercase _type convention).
+//   note: closed 3-value enum with a symbol() method carrying the spec's own lower-case name; P4 — canonical JSON emits object form `{_type:"VALIDITY_KIND",value}` to satisfy the pinned ITS-JSON schema while preserving the enum symbol.
 // ─────────────────────────────────────────────

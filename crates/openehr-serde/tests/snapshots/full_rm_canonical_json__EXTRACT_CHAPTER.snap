@@ -1,0 +1,12 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "EXTRACT_CHAPTER",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "chapter"
+  },
+  "archetype_node_id": "openEHR-EHR-EXTRACT_CHAPTER.sample.v1"
+}
