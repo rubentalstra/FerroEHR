@@ -1,0 +1,16 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "ELEMENT",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "systolic"
+  },
+  "archetype_node_id": "at0004",
+  "value": {
+    "_type": "DV_TEXT",
+    "value": "120"
+  }
+}

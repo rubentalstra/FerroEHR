@@ -40,7 +40,7 @@ pub const TYPE_NAME: &str = "FOLDER";
 /// heap-indirecting container (e.g. `DV_MULTIMEDIA.thumbnail: DV_MULTIMEDIA`
 /// -- a bare, non-collection self-reference -- genuinely needs `Box`, while
 /// `FOLDER.folders: List<FOLDER>` does not).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Folder {
     /// Canonical `_type` discriminator (`"FOLDER"`), always serialized
     /// first; tolerated-absent and validated-if-present on input (ADR-002).

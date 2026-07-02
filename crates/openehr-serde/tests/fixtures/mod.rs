@@ -22,6 +22,8 @@ pub mod data_structures;
 pub mod data_types;
 pub mod demographic;
 pub mod ehr;
+pub mod foundation;
+pub mod helpers;
 
 /// One golden vector: a schema class name plus its canonical JSON,
 /// already round-trip-verified by [`vector`].
@@ -73,11 +75,39 @@ where
     }
 }
 
+/// Like [`vector`], but for foundation classes that serialize **without**
+/// a `_type` discriminator (they only ever appear embedded inside RM
+/// classes; no schema definition marks `_type` required). Round-trip and
+/// schema validation still apply in full.
+pub fn vector_tagless<T>(class: &'static str, instance: &T) -> Vector
+where
+    T: Serialize + DeserializeOwned + PartialEq + Debug,
+{
+    let value =
+        serde_json::to_value(instance).unwrap_or_else(|e| panic!("{class}: serialize failed: {e}"));
+    assert!(
+        value.is_object(),
+        "{class}: canonical JSON must be an object, got: {value}"
+    );
+    let back: T = serde_json::from_value(value.clone())
+        .unwrap_or_else(|e| panic!("{class}: deserialize failed: {e}\n  json: {value}"));
+    assert!(
+        &back == instance,
+        "{class}: round-trip mismatch\n  json: {value}\n  back: {back:?}"
+    );
+    Vector {
+        class,
+        value,
+        schema_check: true,
+    }
+}
+
 /// The full registry the harness iterates.
 pub fn all() -> Vec<Vector> {
     let mut vectors = Vec::new();
     vectors.extend(base_identification::fixtures());
     vectors.extend(base_resource::fixtures());
+    vectors.extend(foundation::fixtures());
     vectors.extend(data_types::fixtures());
     vectors.extend(data_structures::fixtures());
     vectors.extend(common::fixtures());

@@ -11,14 +11,8 @@
 //! another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to
 //! be copied and translated into the new language.
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_foundation::terminology_types::terminology_code::TerminologyCode;
 use std::collections::HashMap;
-
-// TODO(port): `Terminology_code` is BASE 1.2.0 `foundation_types.primitive_types`
-// (docs/research/spec-cache/BASE-1.2.0/uml_classes/terminology_code.adoc) and has
-// not yet been transcribed into `openehr-foundation` in this worktree.
-// Placeholder alias until that class exists; see the identical note in
-// `translation_details.rs`.
-type TerminologyCode = String;
 
 /// `RESOURCE_DESCRIPTION_ITEM` — language-specific detail of resource
 /// description.
@@ -51,6 +45,7 @@ pub struct ResourceDescriptionItem {
     ///
     /// Keywords which characterise this resource, used e.g. for indexing
     /// and searching.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub keywords: Option<Vec<String>>,
 
     /// `use`: `String`, cardinality 0..1.
@@ -62,12 +57,14 @@ pub struct ResourceDescriptionItem {
     /// (`use` import statement); the field is renamed `use_` with an
     /// explicit serde rename back to the spec's `use` on the wire.
     #[serde(rename = "use")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub use_: Option<String>,
 
     /// `misuse`: `String`, cardinality 0..1.
     ///
     /// Description of any misuses of the resource, i.e. contexts in which
     /// it should not be used.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub misuse: Option<String>,
 
     /// `original_resource_uri`: `Hash<String, String>`, cardinality 0..1.
@@ -75,12 +72,14 @@ pub struct ResourceDescriptionItem {
     /// URIs of original clinical document(s) or description of which
     /// resource is a formalisation, in the language of this description
     /// item; keyed by meaning.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub original_resource_uri: Option<HashMap<String, String>>,
 
     /// `other_details`: `Hash<String, String>`, cardinality 0..1.
     ///
     /// Additional language-sensitive resource metadata, as a list of
     /// name/value pairs.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub other_details: Option<HashMap<String, String>>,
 }
 

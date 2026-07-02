@@ -1,0 +1,15 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "RESOURCE_DESCRIPTION",
+  "original_author": {
+    "name": "T. Author"
+  },
+  "lifecycle_state": {
+    "terminology_id": "ISO_639-1",
+    "code_string": "published",
+    "uri": "http://example.org/terminology/published"
+  }
+}

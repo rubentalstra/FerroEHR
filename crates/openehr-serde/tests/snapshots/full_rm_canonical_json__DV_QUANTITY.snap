@@ -1,0 +1,10 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "DV_QUANTITY",
+  "magnitude": 37.2,
+  "precision": 1,
+  "units": "Cel"
+}

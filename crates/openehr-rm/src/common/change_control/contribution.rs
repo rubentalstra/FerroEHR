@@ -23,7 +23,7 @@ pub const TYPE_NAME: &str = "CONTRIBUTION";
 /// `CONTRIBUTION` has no `Inherit` row in its own spec table (implicitly
 /// `Any`, per crate-wide convention for un-derived root classes — see
 /// `docs/ROSETTA.md`'s `Cardinality` row for the same inference pattern).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Contribution {
     /// Canonical `_type` discriminator (`"CONTRIBUTION"`), always serialized
     /// first; tolerated-absent and validated-if-present on input (ADR-002).

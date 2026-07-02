@@ -1,0 +1,12 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "CODE_PHRASE",
+  "terminology_id": {
+    "_type": "TERMINOLOGY_ID",
+    "value": "openehr"
+  },
+  "code_string": "433"
+}

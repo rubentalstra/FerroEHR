@@ -24,14 +24,16 @@ use crate::time::iso8601_timezone::Iso8601Timezone;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
 use crate::time::time_definitions::TimeDefinitions;
+use serde::{Deserialize, Serialize};
 
 /// `Iso8601_date` embeds the `Iso8601_type` parent state (`value: String`)
 /// via `Iso8601TypeCore`, per ADR-001 §3 (abstract-with-attributes → embedded
 /// struct + marker trait). This struct declares no attributes of its own
 /// beyond the inherited `value`.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Iso8601Date {
     /// Embedded `Iso8601_type.value: String`.
+    #[serde(flatten)]
     pub core: Iso8601TypeCore,
 }
 

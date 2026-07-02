@@ -12,6 +12,7 @@ use super::any::Any;
 use super::integer::Integer;
 use super::ordered::Ordered;
 use super::string::OpenEhrString;
+use serde::{Deserialize, Serialize};
 
 /// `Uri` is modelled as a newtype wrapping `OpenEhrString` — the transcribed
 /// foundation-types `String` class — rather than `std::string::String`
@@ -27,7 +28,8 @@ use super::string::OpenEhrString;
 /// `Deref` impl, keeping the RFC 3986 invariant enforceable at every
 /// construction site rather than allowing silent unchecked mutation through
 /// a deref coercion.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 #[repr(transparent)]
 pub struct Uri(pub OpenEhrString);
 

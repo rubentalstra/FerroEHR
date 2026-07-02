@@ -78,6 +78,12 @@ pub struct VersionedObject<T> {
     /// as full copies in a list" example representation (see the struct
     /// doc comment above for the full quotation and rationale). Every
     /// declared spec function is implemented against this field.
+    /// PORT NOTE (ADR-002/P4): `versions` is this transcription's chosen
+    /// internal representation (the spec leaves storage undefined) and is NOT
+    /// part of the ITS-JSON `VERSIONED_OBJECT` wire shape (uid, owner_id,
+    /// time_created only, additionalProperties: false) — skipped when empty
+    /// so canonical output validates; a populated store still round-trips.
+    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::new")]
     pub versions: Vec<Version<T>>,
 }
 

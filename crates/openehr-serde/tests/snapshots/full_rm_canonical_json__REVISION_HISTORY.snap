@@ -1,0 +1,41 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "REVISION_HISTORY",
+  "items": [
+    {
+      "_type": "REVISION_HISTORY_ITEM",
+      "version_id": {
+        "_type": "OBJECT_VERSION_ID",
+        "value": "939cec48-d629-4a3f-89f1-28c573387680::ehrbase.example.org::1"
+      },
+      "audits": [
+        {
+          "_type": "AUDIT_DETAILS",
+          "system_id": "ehrbase.example.org",
+          "time_committed": {
+            "_type": "DV_DATE_TIME",
+            "value": "2026-07-02T10:00:00Z"
+          },
+          "change_type": {
+            "_type": "DV_CODED_TEXT",
+            "value": "creation",
+            "defining_code": {
+              "_type": "CODE_PHRASE",
+              "terminology_id": {
+                "_type": "TERMINOLOGY_ID",
+                "value": "openehr"
+              },
+              "code_string": "249"
+            }
+          },
+          "committer": {
+            "_type": "PARTY_SELF"
+          }
+        }
+      ]
+    }
+  ]
+}

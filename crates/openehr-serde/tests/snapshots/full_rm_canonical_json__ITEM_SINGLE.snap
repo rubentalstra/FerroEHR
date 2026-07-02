@@ -1,0 +1,24 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "ITEM_SINGLE",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "single"
+  },
+  "archetype_node_id": "at0001",
+  "item": {
+    "_type": "ELEMENT",
+    "name": {
+      "_type": "DV_TEXT",
+      "value": "only"
+    },
+    "archetype_node_id": "at0002",
+    "value": {
+      "_type": "DV_TEXT",
+      "value": "one"
+    }
+  }
+}

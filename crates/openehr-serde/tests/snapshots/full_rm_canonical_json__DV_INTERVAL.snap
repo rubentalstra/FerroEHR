@@ -1,0 +1,19 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "DV_INTERVAL",
+  "lower": {
+    "_type": "DV_COUNT",
+    "magnitude": 1
+  },
+  "upper": {
+    "_type": "DV_COUNT",
+    "magnitude": 10
+  },
+  "lower_unbounded": false,
+  "upper_unbounded": false,
+  "lower_included": true,
+  "upper_included": true
+}

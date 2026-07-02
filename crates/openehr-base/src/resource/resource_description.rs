@@ -15,12 +15,7 @@ use std::sync::Weak;
 use super::authored_resource::AuthoredResource;
 use super::resource_description_item::ResourceDescriptionItem;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
-
-// TODO(port): `Terminology_code` is BASE 1.2.0 `foundation_types.primitive_types`
-// and has not yet been transcribed into `openehr-foundation` in this
-// worktree. Placeholder alias until that class exists; see the identical
-// note in `translation_details.rs`.
-type TerminologyCode = String;
+use openehr_foundation::terminology_types::terminology_code::TerminologyCode;
 
 /// `RESOURCE_DESCRIPTION` — defines the descriptive meta-data of a resource.
 ///
@@ -58,18 +53,21 @@ pub struct ResourceDescription {
     ///
     /// Namespace of original author's organisation, in reverse internet
     /// form, if applicable.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub original_namespace: Option<String>,
 
     /// `original_publisher`: `String`, cardinality 0..1.
     ///
     /// Plain text name of organisation that originally published this
     /// artefact, if any.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub original_publisher: Option<String>,
 
     /// `other_contributors`: `List<String>`, cardinality 0..1.
     ///
     /// Other contributors to the resource, each listed in `"name <email>"`
     /// form.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub other_contributors: Option<Vec<String>>,
 
     /// `lifecycle_state`: `Terminology_code`, cardinality 1..1.
@@ -99,17 +97,20 @@ pub struct ResourceDescription {
     ///
     /// Namespace in reverse internet id form, of current custodian
     /// organisation.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub custodian_namespace: Option<String>,
 
     /// `custodian_organisation`: `String`, cardinality 0..1.
     ///
     /// Plain text name of current custodian organisation.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub custodian_organisation: Option<String>,
 
     /// `copyright`: `String`, cardinality 0..1.
     ///
     /// Optional copyright statement for the resource as a knowledge
     /// resource.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub copyright: Option<String>,
 
     /// `licence`: `String`, cardinality 0..1.
@@ -117,6 +118,7 @@ pub struct ResourceDescription {
     /// Licence of current artefact, in format
     /// `"short licence name <URL of licence>"`, e.g.
     /// `"Apache 2.0 License <http://www.apache.org/licenses/LICENSE-2.0.html>"`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub licence: Option<String>,
 
     /// `ip_acknowledgements`: `Hash<String, String>`, cardinality 0..1.
@@ -124,6 +126,7 @@ pub struct ResourceDescription {
     /// List of acknowledgements of other IP directly referenced in this
     /// archetype, typically terminology codes, ontology ids etc. Recommended
     /// keys are the widely known name or namespace for the IP source.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub ip_acknowledgements: Option<HashMap<String, String>>,
 
     /// `references`: `Hash<String, String>`, cardinality 0..1.
@@ -131,23 +134,27 @@ pub struct ResourceDescription {
     /// List of references of material on which this artefact is based, as a
     /// keyed list of strings. The keys should be in a standard citation
     /// format.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub references: Option<HashMap<String, String>>,
 
     /// `resource_package_uri`: `String`, cardinality 0..1.
     ///
     /// URI of package to which this resource belongs.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub resource_package_uri: Option<String>,
 
     /// `conversion_details`: `Hash<String, String>`, cardinality 0..1.
     ///
     /// Details related to conversion process that generated this model
     /// from an original, if relevant, as a list of name/value pairs.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub conversion_details: Option<HashMap<String, String>>,
 
     /// `other_details`: `Hash<String, String>`, cardinality 0..1.
     ///
     /// Additional non-language-sensitive resource meta-data, as a list of
     /// name/value pairs.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub other_details: Option<HashMap<String, String>>,
 
     /// `details`: `Hash<String, RESOURCE_DESCRIPTION_ITEM>`, cardinality
@@ -155,6 +162,7 @@ pub struct ResourceDescription {
     ///
     /// Details of all parts of resource description that are natural
     /// language-dependent, keyed by language code.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub details: Option<HashMap<String, ResourceDescriptionItem>>,
 }
 
@@ -165,6 +173,29 @@ pub struct ResourceDescription {
 // class and would be surprising to a caller comparing two
 // `ResourceDescription`s for content equality. Add a manual `PartialEq` that
 // excludes `parent_resource` if value comparison is needed later.
+// P4: that manual impl is now needed (the canonical-JSON round-trip harness
+// compares fixture instances for content equality), so it is provided below,
+// excluding `parent_resource` exactly as anticipated.
+
+impl PartialEq for ResourceDescription {
+    fn eq(&self, other: &Self) -> bool {
+        self.original_author == other.original_author
+            && self.original_namespace == other.original_namespace
+            && self.original_publisher == other.original_publisher
+            && self.other_contributors == other.other_contributors
+            && self.lifecycle_state == other.lifecycle_state
+            && self.custodian_namespace == other.custodian_namespace
+            && self.custodian_organisation == other.custodian_organisation
+            && self.copyright == other.copyright
+            && self.licence == other.licence
+            && self.ip_acknowledgements == other.ip_acknowledgements
+            && self.references == other.references
+            && self.resource_package_uri == other.resource_package_uri
+            && self.conversion_details == other.conversion_details
+            && self.other_details == other.other_details
+            && self.details == other.details
+    }
+}
 
 impl TypeName for ResourceDescription {
     const NAME: &'static str = "RESOURCE_DESCRIPTION";

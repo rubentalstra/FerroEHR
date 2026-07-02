@@ -11,6 +11,7 @@
 use super::any::Any;
 use super::integer::Integer;
 use super::ordered::Ordered;
+use serde::{Deserialize, Serialize};
 
 /// Rust type name: `OpenEhrString`, **not** `String`.
 ///
@@ -31,7 +32,8 @@ use super::ordered::Ordered;
 /// wrapped value is the same owned, UTF-8, growable string Rust already
 /// provides — matching the spec's own Unicode/UTF-8 assumption exactly,
 /// with no reinterpretation needed.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 #[repr(transparent)]
 pub struct OpenEhrString(pub String);
 

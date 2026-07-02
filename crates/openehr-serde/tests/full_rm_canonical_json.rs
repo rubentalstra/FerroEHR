@@ -15,6 +15,11 @@
 //!
 //! Anything else fails `full_rm_coverage` **by class name** — a missing RM
 //! class is a red test, never a silent gap.
+//!
+//! `ITEM_TAG` (RM 1.1.0 common.tags) has NO definition in the pinned
+//! ITS-JSON commit (2021-10-31, which predates the class) and so cannot
+//! appear in this partition; its ADR-002 round-trip is pinned by a unit
+//! test in `openehr-rm`'s `item_tag.rs` instead.
 
 mod fixtures;
 
@@ -144,52 +149,37 @@ const EXCLUSIONS: &[(&str, &str)] = &[
         "ARCHETYPE_HRID",
         "AM 2.x class — Phase 09 (ADL/AOM), not RM transcription",
     ),
-    // Foundation types: at P4 these serialize only embedded/flattened
-    // inside RM classes (e.g. Interval<T> flattened into DV_INTERVAL);
-    // standalone tagged serialization is revisited at P5/P17.
-    ("ARRAY", "foundation container — embedded-only at P4"),
-    ("LIST", "foundation container — embedded-only at P4"),
-    ("SET", "foundation container — embedded-only at P4"),
+    // Structurally impossible to cover as standalone canonical-JSON
+    // objects — each schema definition here is a degenerate placeholder
+    // (`{_type const}` with no member properties), and the Rust type's
+    // faithful wire shape is not a JSON object at all.
     (
-        "INTERVAL",
-        "foundation Interval<T> — serializes flattened inside DV_INTERVAL at P4",
+        "ARRAY",
+        "foundation container — serializes as a JSON array, not an object; degenerate placeholder definition in the pinned schema",
     ),
     (
-        "ISO8601_TYPE",
-        "foundation abstract temporal — embedded-only at P4",
-    ),
-    ("DATE", "foundation Iso8601Date — embedded-only at P4"),
-    ("TIME", "foundation Iso8601Time — embedded-only at P4"),
-    (
-        "DATE_TIME",
-        "foundation Iso8601DateTime — embedded-only at P4",
+        "LIST",
+        "foundation container — serializes as a JSON array, not an object; degenerate placeholder definition in the pinned schema",
     ),
     (
-        "DURATION",
-        "foundation Iso8601Duration — embedded-only at P4",
+        "SET",
+        "foundation container — serializes as a JSON array, not an object; degenerate placeholder definition in the pinned schema",
     ),
     (
         "URI",
-        "foundation Uri — embedded-only at P4 (DV_URI is the RM-level fixture)",
+        "foundation Uri — transparent newtype serializing as a bare string (DV_URI is the RM-level object fixture); degenerate placeholder definition",
     ),
     (
-        "TERMINOLOGY_CODE",
-        "foundation Terminology_code — embedded-only at P4",
+        "ISO8601_TYPE",
+        "abstract foundation temporal — never instantiated; concrete DATE/TIME/DATE_TIME/DURATION are covered",
     ),
-    (
-        "TERMINOLOGY_TERM",
-        "foundation Terminology_term — embedded-only at P4",
-    ),
-    // Enumerations whose schema definitions are degenerate placeholder
-    // objects (`{_type const}` with no members); the classes themselves
-    // are string enumerations on the wire per the spec.
     (
         "VALIDITY_KIND",
-        "enumeration — degenerate object placeholder in the pinned schema; serializes as a string",
+        "enumeration — serializes as a string per the spec; degenerate object placeholder definition in the pinned schema",
     ),
     (
         "VERSION_STATUS",
-        "enumeration — degenerate object placeholder in the pinned schema; serializes as a string",
+        "enumeration — serializes as a string per the spec; degenerate object placeholder definition in the pinned schema",
     ),
 ];
 
@@ -268,8 +258,8 @@ fn full_rm_coverage() {
     );
     // Sanity floor so the partition can't be gamed by growing EXCLUSIONS.
     assert!(
-        covered.len() >= 90,
-        "only {} classes covered — the fixture set shrank below the P4 floor of 90",
+        covered.len() >= 97,
+        "only {} classes covered — the fixture set shrank below the P4 floor of 97",
         covered.len()
     );
 }

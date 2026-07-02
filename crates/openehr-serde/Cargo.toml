@@ -11,12 +11,12 @@ publish = false
 
 [dependencies]
 openehr-rm = { path = "../openehr-rm" }
+serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 openehr-base = { path = "../openehr-base" }
 openehr-foundation = { path = "../openehr-foundation" }
-serde.workspace = true
-serde_json.workspace = true
 insta.workspace = true
 jsonschema.workspace = true
 

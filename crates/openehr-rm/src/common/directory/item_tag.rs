@@ -40,7 +40,7 @@ use serde::{Deserialize, Serialize};
 pub const TYPE_NAME: &str = "ITEM_TAG";
 
 /// `ITEM_TAG` — a lightweight, searchable annotation on a target entity.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ItemTag {
     /// Canonical `_type` discriminator (`"ITEM_TAG"`), always serialized
     /// first; tolerated-absent and validated-if-present on input (ADR-002).

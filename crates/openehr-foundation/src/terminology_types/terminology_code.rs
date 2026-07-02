@@ -14,6 +14,7 @@
 use super::super::primitive_types::any::Any;
 use super::super::primitive_types::string::OpenEhrString;
 use super::super::primitive_types::uri::Uri;
+use serde::{Deserialize, Serialize};
 
 /// `Terminology_code` has four attributes and is a leaf, non-abstract class,
 /// so it is transcribed as a plain struct — unlike the behaviour-only
@@ -27,7 +28,7 @@ use super::super::primitive_types::uri::Uri;
 /// note — not `std::string::String` directly, since this struct embeds the
 /// foundation-types class as declared, matching the treatment already given
 /// to `Uri`'s own `String` parent).
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TerminologyCode {
     /// `terminology_id: String` (`1..1`).
     ///
@@ -40,6 +41,7 @@ pub struct TerminologyCode {
     ///
     /// Optional string value representing terminology version, typically a
     /// date or dotted numeric.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub terminology_version: Option<OpenEhrString>,
 
     /// `code_string: String` (`1..1`).
@@ -55,6 +57,7 @@ pub struct TerminologyCode {
     /// The URI reference that may be used as a concrete key into a notional
     /// terminology service for queries that can obtain the term text,
     /// definition, and other associated elements.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub uri: Option<Uri>,
 }
 

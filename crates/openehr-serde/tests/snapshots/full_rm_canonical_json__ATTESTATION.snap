@@ -1,0 +1,32 @@
+---
+source: crates/openehr-serde/tests/full_rm_canonical_json.rs
+expression: v.value
+---
+{
+  "_type": "ATTESTATION",
+  "system_id": "ehrbase.example.org",
+  "time_committed": {
+    "_type": "DV_DATE_TIME",
+    "value": "2026-07-02T10:00:00Z"
+  },
+  "change_type": {
+    "_type": "DV_CODED_TEXT",
+    "value": "creation",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "249"
+    }
+  },
+  "committer": {
+    "_type": "PARTY_SELF"
+  },
+  "reason": {
+    "_type": "DV_TEXT",
+    "value": "signed"
+  },
+  "is_pending": false
+}
