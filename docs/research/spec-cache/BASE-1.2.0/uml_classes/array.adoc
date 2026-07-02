@@ -1,0 +1,23 @@
+=== Array Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Array<T>*
+
+h|*Description*
+2+a|Container whose storage is assumed to be contiguous.
+
+h|*Inherit*
+2+|`<<_container_class,Container>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*item* __alias__ "[]" ( +
+a_key: `<<_integer_class,Integer>>[1]` +
+): `T`
+a|Return item for key  `_a_key_`.
+|===

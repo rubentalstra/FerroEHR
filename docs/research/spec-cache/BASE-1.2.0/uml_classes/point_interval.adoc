@@ -1,0 +1,44 @@
+=== Point_interval Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Point_interval<T>*
+
+h|*Description*
+2+a|Type representing an Interval that happens to be a point value. Provides an efficient representation that is substitutable for `Interval<T>` where needed.
+
+h|*Inherit*
+2+|`<<_interval_class,Interval>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*lower_unbounded*: `<<_boolean_class,Boolean>> +
+{default{nbsp}={nbsp}false}`
+a|Lower boundary open (i.e. = -infinity).
+
+h|*1..1 +
+(redefined)*
+|*upper_unbounded*: `<<_boolean_class,Boolean>> +
+{default{nbsp}={nbsp}false}`
+a|Upper boundary open (i.e. = +infinity).
+
+h|*1..1 +
+(redefined)*
+|*lower_included*: `<<_boolean_class,Boolean>> +
+{default{nbsp}={nbsp}true}`
+a|Lower boundary value included in range if not `_lower_unbounded_`.
+
+h|*1..1 +
+(redefined)*
+|*upper_included*: `<<_boolean_class,Boolean>> +
+{default{nbsp}={nbsp}true}`
+a|Upper boundary value included in range if not `_upper_unbounded_`.
+
+h|*Invariants*
+2+a|__Inv_point__: `lower = upper`
+|===

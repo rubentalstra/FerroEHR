@@ -1,7 +1,7 @@
 # Phase 01 — Foundation + Identification (BASE 1.2.0)
 
-- Status: not-started
-- Started: -   Owner: Ruben
+- Status: in-progress
+- Started: 2026-07-02   Owner: Ruben
 - Consumes (spec/layer): BASE 1.2.0 specs / Layer 1 + Layer 2
 - Compile required: no (Phase A)
 
@@ -15,7 +15,7 @@ in Rust.
 
 ## Preconditions
 
-- [ ] Phase 00 exit criteria met: workspace builds, `openehr-foundation` and
+- [x] Phase 00 exit criteria met: workspace builds, `openehr-foundation` and
       `openehr-base` crate skeletons exist
 
 ## Scope

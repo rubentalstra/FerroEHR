@@ -1,0 +1,33 @@
+=== OBJECT_VERSION_ID Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*OBJECT_VERSION_ID*
+
+h|*Description*
+2+a|Globally unique identifier for one version of a versioned object; lexical form: `object_id  '::' creating_system_id  '::' version_tree_id`.
+
+h|*Inherit*
+2+|`<<_uid_based_id_class,UID_BASED_ID>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*object_id* (): `<<_uid_class,UID>>`
+a|Unique identifier for logical object of which this identifier identifies one version; normally the `_object_id_` will be the unique identifier of the version container containing the version referred to by this `OBJECT_VERSION_ID` instance.
+
+h|*1..1*
+|*creating_system_id* (): `<<_uid_class,UID>>`
+a|Identifier of the system that created the Version corresponding to this Object version id.
+
+h|*1..1*
+|*version_tree_id* (): `<<_version_tree_id_class,VERSION_TREE_ID>>`
+a|Tree identifier of this version with respect to other versions in the same version tree, as either 1 or 3 part dot-separated numbers, e.g.  1 ,  2.1.4 .
+
+h|*1..1*
+|*is_branch* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this version identifier represents a branch.
+|===

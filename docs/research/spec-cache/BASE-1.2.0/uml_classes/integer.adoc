@@ -1,0 +1,92 @@
+=== Integer Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Integer*
+
+h|*Description*
+2+a|Type representing minimal interface of built-in Integer type.
+
+h|*Inherit*
+2+|`<<_ordered_numeric_class,Ordered_Numeric>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*add* __alias__ "+" ( +
+other: `<<_integer_class,Integer>>[1]` +
+): `<<_integer_class,Integer>>`
+a|Integer addition.
+
+h|*1..1 +
+(effected)*
+|*subtract* __alias__ "-" ( +
+other: `<<_integer_class,Integer>>[1]` +
+): `<<_integer_class,Integer>>`
+a|Integer subtraction.
+
+h|*1..1 +
+(effected)*
+|*multiply* __alias__ "&#42;" ( +
+other: `<<_integer_class,Integer>>[1]` +
+): `<<_integer_class,Integer>>`
+a|Integer multiplication.
+
+h|*1..1 +
+(effected)*
+|*divide* __alias__ "/" ( +
+other: `<<_integer_class,Integer>>[1]` +
+): `<<_double_class,Double>>`
+a|Integer division.
+
+h|*1..1 +
+(effected)*
+|*exponent* __alias__ "^" ( +
+other: `<<_double_class,Double>>[1]` +
+): `<<_double_class,Double>>`
+a|Integer exponentiation.
+
+h|*1..1*
+|*modulo* __alias__ "mod", "\\" ( +
+mod: `<<_integer_class,Integer>>[1]` +
+): `<<_integer_class,Integer>>`
+a|Return self modulo other.
+
+h|*1..1 +
+(effected)*
+|*less_than* __alias__ "<" ( +
+other: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Returns True if current Integer is less than `_other_`.
+
+h|*1..1 +
+(effected)*
+|*negative* __alias__ "-" (): `<<_integer_class,Integer>>`
+a|Generate negative of current Integer value.
+
+h|*1..1 +
+(effected)*
+|*is_equal* ( +
+other: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Value equality: return True if `this` and `_other_` are attached to objects considered to be equal in value.
+
+.Parameters +
+[horizontal]
+`_other_`:: Other object for comparison.
+
+h|*1..1 +
+(redefined)*
+|*equal* __alias__ "=", "==" ( +
+other: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Reference equality for reference types, value equality for value types.
+
+.Parameters +
+[horizontal]
+`_other_`:: Other object for comparison.
+|===

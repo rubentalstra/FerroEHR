@@ -1,0 +1,14 @@
+=== FUNCTION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*FUNCTION<ARGS,RESULT>*
+
+h|*Description*
+2+a|Type representing a function with a return type and 0 or more arguments represented as a TUPLE.
+
+h|*Inherit*
+2+|`<<_routine_class,ROUTINE>>`
+
+|===

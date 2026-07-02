@@ -1,0 +1,53 @@
+=== Any Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__Any (abstract)__*
+
+h|*Description*
+2+a|Abstract ancestor class for all other classes. Usually maps to a type like `Any` or `Object` in an object-oriented technology. Defined here to provide value and reference equality semantics.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*is_equal* ( +
+other: `<<_any_class,Any>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Value equality: return True if `this` and `_other_` are attached to objects considered to be equal in value.
+
+.Parameters +
+[horizontal]
+`_other_`:: Other object for comparison.
+
+h|*1..1*
+|*equal* __alias__ "=", "==" ( +
+other: `<<_any_class,Any>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|Reference equality for reference types, value equality for value types.
+
+.Parameters +
+[horizontal]
+`_other_`:: Other object for comparison.
+
+h|*1..1*
+|*instance_of* ( +
+a_type: `<<_string_class,String>>[1]` +
+): `<<_any_class,Any>>`
+a|Create new instance of a type.
+
+h|*1..1*
+|*type_of* ( +
+an_object: `<<_any_class,Any>>[1]` +
+): `<<_string_class,String>>`
+a|Type name of an object as a string. May include generic parameters, as in `"Interval<Time>"`.
+
+h|*1..1*
+|*not_equal* __alias__ "!=", "≠" ( +
+other: `<<_ordered_class,Ordered>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|True if current object not equal to `_other_`. Returns not `_equal_()`.
+|===

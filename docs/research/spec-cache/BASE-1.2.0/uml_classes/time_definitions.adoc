@@ -1,0 +1,212 @@
+=== Time_Definitions Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Time_Definitions*
+
+h|*Description*
+2+a|Definitions for date/time classes. Note that the timezone limits are set by where the international dateline is. Thus, time in New Zealand is quoted using `+12:00`, not `-12:00`.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*Seconds_in_minute*: `<<_integer_class,Integer>>{nbsp}={nbsp}60`
+a|Number of seconds in a minute.
+
+h|*1..1*
+|*Minutes_in_hour*: `<<_integer_class,Integer>>{nbsp}={nbsp}60`
+a|Number of minutes in an hour.
+
+h|*1..1*
+|*Hours_in_day*: `<<_integer_class,Integer>>{nbsp}={nbsp}24`
+a|Number of clock hours in a day, i.e. 24.
+
+h|*1..1*
+|*Average_days_in_month*: `<<_real_class,Real>>{nbsp}={nbsp}30.42`
+a|Used for conversions of durations containing months to days and / or seconds.
+
+h|*1..1*
+|*Max_days_in_month*: `<<_integer_class,Integer>>{nbsp}={nbsp}31`
+a|Maximum number of days in any month.
+
+h|*1..1*
+|*Days_in_year*: `<<_integer_class,Integer>>{nbsp}={nbsp}365`
+a|Calendar days in a normal year, i.e. 365.
+
+h|*1..1*
+|*Average_days_in_year*: `<<_real_class,Real>>{nbsp}={nbsp}365.24`
+a|Used for conversions of durations containing years to days and / or seconds.
+
+h|*1..1*
+|*Days_in_leap_year*: `<<_integer_class,Integer>>{nbsp}={nbsp}366`
+a|Calendar days in a standard leap year, i.e. 366.
+
+h|*1..1*
+|*Max_days_in_year*: `<<_integer_class,Integer>>`
+a|Maximum number of days in a year, i.e. accounting for leap years.
+
+h|*1..1*
+|*Days_in_week*: `<<_integer_class,Integer>>{nbsp}={nbsp}7`
+a|Number of days in a week.
+
+h|*1..1*
+|*Months_in_year*: `<<_integer_class,Integer>>{nbsp}={nbsp}12`
+a|Number of months in a year.
+
+h|*1..1*
+|*Min_timezone_hour*: `<<_integer_class,Integer>>{nbsp}={nbsp}12`
+a|Minimum hour value of a timezone  according to ISO 8601 (note that the -ve sign is supplied in the `ISO8601_TIMEZONE` class).
+
+h|*1..1*
+|*Max_timezone_hour*: `<<_integer_class,Integer>>{nbsp}={nbsp}14`
+a|Maximum hour value of a timezone according to ISO 8601.
+
+h|*1..1*
+|*Nominal_days_in_month*: `<<_real_class,Real>>{nbsp}={nbsp}30.42`
+a|Used for conversions of durations containing months to days and / or seconds.
+
+h|*1..1*
+|*Nominal_days_in_year*: `<<_real_class,Real>>{nbsp}={nbsp}365.24`
+a|Used for conversions of durations containing years to days and / or seconds.
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*valid_year* ( +
+y: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>` +
+ +
+__Post__: `Result = y >= 0`
+a|True if `y >= 0`.
+
+h|*1..1*
+|*valid_month* ( +
+m: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>` +
+ +
+__Post__: `Result = m >= 1 and m \<= Months_in_year`
+a|True if `m >= 1 and m \<= months_in_year`.
+
+h|*1..1*
+|*valid_day* ( +
+y: `<<_integer_class,Integer>>[1]`, +
+m: `<<_integer_class,Integer>>[1]`, +
+d: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>` +
+ +
+__Post__: `Result = d >= 1 and d \<= days_in_month (m, y)`
+a|True if `d >= 1 and d \<= days_in_month (m, y)`.
+
+h|*1..1*
+|*valid_hour* ( +
+h: `<<_integer_class,Integer>>[1]`, +
+m: `<<_integer_class,Integer>>[1]`, +
+s: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>` +
+ +
+__Post__: `Result = (h >= 0 and h < Hours_in_day) or (h = Hours_in_day and m = 0 and s = 0)`
+a|True if `(h >= 0 and h < Hours_in_day) or (h = Hours_in_day and m = 0 and s = 0)` .
+
+h|*1..1*
+|*valid_minute* ( +
+m: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>` +
+ +
+__Post__: `Result = m >= 0 and m < Minutes_in_hour`
+a|True if `m >= 0 and m < Minutes_in_hour`.
+
+h|*1..1*
+|*valid_second* ( +
+s: `<<_integer_class,Integer>>[1]` +
+): `<<_boolean_class,Boolean>>` +
+ +
+__Post__: `Result = s >= 0 and s < Seconds_in_minute`
+a|True if `s >= 0 and s < Seconds_in_minute` .
+
+h|*1..1*
+|*valid_fractional_second* ( +
+fs: `<<_double_class,Double>>[1]` +
+): `<<_boolean_class,Boolean>>` +
+ +
+__Post__: `Result = fs >= 0.0 and fs < 1.0`
+a|True if `fs >= 0.0` and `fs < 1.0` .
+
+h|*1..1*
+|*valid_iso8601_date* ( +
+s: `<<_string_class,String>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|String is a valid ISO 8601 date, i.e. takes the complete form:
+
+* `YYYY-MM-DD` (extended, preferred) or one of the partial forms `YYYY-MM` or `YYYY`
+* `YYYYMMDD` (compact) or a partial variant `YYYYMM`.
+
+Where:
+
+* `YYYY` is the string form of any positive number in the range `0000` - `9999` (zero-filled to four digits)
+* `MM` is `01` - `12` (zero-filled to two digits)
+* `DD` is `01` - `31` (zero-filled to two digits)
+
+The combinations of `YYYY`, `MM`, `DD` numbers must be correct with respect to the Gregorian calendar.
+
+h|*1..1*
+|*valid_iso8601_time* ( +
+s: `<<_string_class,String>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|String is a valid ISO 8601 date, i.e. takes the form:
+
+* `hh:mm:ss[(,&#124;.)s+][Z&#124;±hh[:mm]]` (extended)
+* `hhmmss[(,&#124;.)s+][Z&#124;±hh[mm]]` (compact)
+* or one of the partial forms:
+** `hh:mm` (extended)
+** `hhmm` or `hh` (compact)
+
+with an additional optional timezone indicator of:
+
+* `Z` or `±hh[:mm]` (extended)  `±hh[mm]` (compact)
+
+Where:
+
+* `hh` is "00" - "23" (0-filled to two digits)
+* `mm` is "00" - "59" (0-filled to two digits)
+* `ss` is "00" - "60" (0-filled to two digits)
+* `[(,&#124;.)s+]` is an optional string consisting of a comma or decimal point followed by numeric string of 1 or more digits, representing a fractional second
+* `Z` is a literal meaning UTC (modern replacement for GMT), i.e. timezone `+0000`
+
+h|*1..1*
+|*valid_iso8601_date_time* ( +
+s: `<<_string_class,String>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|String is a valid ISO 8601 date-time, i.e. takes the form:
+
+* `YYYY-MM-DDThh:mm:ss[(,&#124;.)s+][Z&#124;±hh[:mm]]` (extended)
+* `YYYYMMDDThhmmss[(,&#124;.)s+][Z&#124;±hh[mm]]` (compact)
+* or one of the partial forms:
+** `YYYY-MM-DDThh:mm` or `YYYY-MM-DDThh` (extended)
+** `YYYYMMDDThhmm` or `YYYYMMDDThh` (compact)
+
+h|*1..1*
+|*valid_iso8601_duration* ( +
+s: `<<_string_class,String>>[1]` +
+): `<<_boolean_class,Boolean>>`
+a|String is a valid ISO 8601 duration, i.e. takes the form:
+
+* `P[nnY][nnM][nnW][nnD][T[nnH][nnM][nnS]]`
+
+Where each nn represents a number of years, months, etc. `nnW` represents a number of 7-day weeks.
+
+Note: allowing the `W` designator in the same expression as other designators is an exception to the published standard, but necessary in clinical information (typically for representing pregnancy duration).
+
+.Parameters +
+[horizontal]
+`_s_`:: String is a valid ISO 8601 duration, i.e. takes the form:
+
+* `P[nnY][nnM][nnW][nnD][T[nnH][nnM][nnS]]`
+
+Where each `nn` represents a number of years, months, etc. `nnW` represents a number of 7- day weeks.
+
+NOTE: allowing the `W` designator in the same expression as other designators is an exception to the published standard, but necessary in clinical information (typically for representing pregnancy duration).
+|===
