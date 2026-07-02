@@ -75,6 +75,8 @@ scripts/parity.sh              # add USE_REFERENCE_EHRBASE=1 for the negative-te
 
 Note: Phases P1 through P16 are not required to compile. `cargo build` is expected to fail until P17 (make-it-compile). This is by design; do not chase build errors during translation.
 
+Exception (since P4): `openehr-foundation`, `openehr-base`, `openehr-terminology`, `openehr-rm`, and `openehr-serde` DO compile and have green tests (`cargo test -p <crate>`). Changes to these five crates must keep them compiling, tested, and clippy-clean; ADR-003 fixes the policies for spec-underdetermined behaviour in them. The Phase-A no-compile allowance now applies only to the crates that have not yet reached this bar.
+
 ## Conventions
 
 - Crate boundaries mirror openEHR components (see `PORT_MASTER_PLAN.md` Section 9). Keep dependencies pointing downward: server → spec crates, never the reverse.

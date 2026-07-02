@@ -43,6 +43,14 @@ the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
       classify strings via the official BASE UID grammar, while `DV_URI`
       extracts scheme/path/query/fragment without normalising the stored
       string so plain-text openEHR URI values remain intact
+- [ ] Spec-completion pass over P1–P3 crates (prerequisite pulled into this
+      branch): implement every `todo!()`/deferred `TODO(port)` in
+      `openehr-foundation`, `openehr-base`, `openehr-rm` per the published
+      specs (policies fixed in ADR-003), leaving only markers that cite a
+      published-spec defect or a named later phase
+- [ ] Real-world canonical JSON acceptance: round-trip + ITS-JSON schema
+      validation of the in-repo EHRbase fixtures (max-conformance
+      composition, Corona composition, config composition/EHR_STATUS)
 - [ ] Vendor RM 1.1.0 XSDs (`Common.xsd`, `DataTypes.xsd`, `DataStructures.xsd`, `Ehr.xsd`, `Demographic.xsd`) from `specifications-ITS-XML/components/RM/Release-1.1.0/` into `openehr-serde/schemas/`
 - [ ] Vendor the legacy 1.0.2 XSD bundle alongside it for round-trip support
 - [ ] Implement `quick-xml` serialization for rm.data_types matching `DataTypes.xsd`, namespace `http://schemas.openehr.org/v1`
@@ -62,6 +70,12 @@ the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
 
 ## Decisions made this phase
 
+- ADR-003 fixes the policies for every spec-underdetermined behaviour hit by
+  the P1–P3 spec-completion pass: definite vs nominal ISO 8601 arithmetic
+  (jiff-backed), partial-precision anchoring, `Integer.modulo` truncated
+  division, RFC 3986 URI validation via the `url` crate, the `Container<T>`
+  iteration primitive, `Any.instance_of` as a documented deviation, and
+  invariants-as-working-methods ahead of the P11 validation framework.
 - Spec inputs should be cached or vendored before use. `docs/research/spec-cache/README.md`
   is now the inventory/policy for transcription caches, while computable
   validation inputs stay beside the crate that uses them (e.g.
