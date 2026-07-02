@@ -1,0 +1,16 @@
+[package]
+name = "openehr-base"
+version = "0.1.0"
+description = "openEHR BASE 1.2.0 Base Types: definitions, builtins, identification, resource"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+openehr-foundation = { path = "../openehr-foundation" }
+
+[lints]
+workspace = true

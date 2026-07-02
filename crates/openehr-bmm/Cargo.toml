@@ -1,0 +1,16 @@
+[package]
+name = "openehr-bmm"
+version = "0.1.0"
+description = "BMM object model and P_BMM parser (BMM schema v2.3)"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+openehr-odin = { path = "../openehr-odin" }
+
+[lints]
+workspace = true
