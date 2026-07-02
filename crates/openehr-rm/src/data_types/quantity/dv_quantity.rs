@@ -1,0 +1,292 @@
+//! `DV_QUANTITY` — quantitified type representing scientific quantities.
+//!
+//! openEHR class: `DV_QUANTITY`, package `rm.data_types.quantity`.
+//! Inherits: `DV_AMOUNT`.
+//!
+//! Quantitified type representing scientific quantities, i.e. quantities
+//! expressed as a magnitude and units. Units are expressed in the UCUM
+//! syntax (Unified Code for Units of Measure, by Gunther Schadow and
+//! Clement J. McDonald of The Regenstrief Institute) (case-sensitive form)
+//! by default, or another system if `units_system` is set.
+//!
+//! Can also be used for time durations, where it is more convenient to
+//! treat these as simply a number of seconds rather than days, months,
+//! years (in the latter case, `DV_DURATION` may be used).
+use super::dv_amount::{DvAmountApi, DvAmountData};
+use super::dv_ordered::{DvOrderedApi, DvOrderedData};
+// TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
+// transcribed by the sibling package agent covering `data_types::text`.
+use crate::data_types::text::code_phrase::CodePhrase;
+use openehr_foundation::primitive_types::any::Any;
+use openehr_foundation::primitive_types::integer::Integer;
+use openehr_foundation::primitive_types::ordered::Ordered;
+use openehr_foundation::primitive_types::real::Real;
+
+/// Canonical `_type` discriminator string for this class in serialized
+/// form (serde derives wait until P4 per ADR-001 "Refinements").
+pub const TYPE_NAME: &str = "DV_QUANTITY";
+
+/// `DV_QUANTITY` inherits `DV_AMOUNT` and adds five attributes of its own
+/// (`magnitude`, `precision`, `units`, `units_system`,
+/// `units_display_name`). Its own table also re-lists `normal_range` and
+/// `other_reference_ranges` with a `(redefined)` marker, narrowing their
+/// generic parameter from the unparameterized `DV_ORDERED`-level form to
+/// `DV_QUANTITY` specifically — this narrowing is **already fully captured**
+/// by the F-bounded instantiation `DvOrderedData<DvQuantity>` embedded
+/// (transitively, via `amount.quantified.ordered`) below: once the generic
+/// parameter `T` resolves to `DvQuantity`, `normal_range`'s declared type
+/// there is already `Option<Box<DvInterval<DvQuantity>>>`, the exact
+/// narrowed type the `(redefined)` row calls for. No separate flat
+/// duplicate field is declared on this struct — doing so would create two
+/// copies of the same conceptual attribute with no single source of truth,
+/// which the `LOCATABLE_REF.id` worked example (ADR-001 §6,
+/// `openehr_base::identification::locatable_ref`) avoids by *not* also
+/// embedding the wider parent type; here the equivalent avoidance is
+/// achieved by the generic already being self-typed rather than by
+/// flattening. `self.amount.quantified.ordered.normal_range` /
+/// `.other_reference_ranges` are the sole accessors.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DvQuantity {
+    /// Embedded `DV_AMOUNT` parent state, self-typed per the F-bounded
+    /// pattern documented on `DvOrderedData` in `dv_ordered.rs` (threaded
+    /// through `DvQuantifiedData<T>`/`DvAmountData<T>`).
+    pub amount: DvAmountData<DvQuantity>,
+
+    /// `magnitude`: `Real` (1..1).
+    ///
+    /// Numeric magnitude of the quantity.
+    pub magnitude: Real,
+
+    /// `precision`: `Integer` (0..1).
+    ///
+    /// Precision to which the value of the quantity is expressed, in terms
+    /// of number of decimal places. The value 0 implies an integral
+    /// quantity. The value -1 implies no limit, i.e. any number of decimal
+    /// places.
+    pub precision: Option<Integer>,
+
+    /// `units`: `String` (1..1).
+    ///
+    /// Quantity units, expressed as a code or syntax string from either
+    /// UCUM (the default) or the units system specified in
+    /// `units_system`, when set.
+    ///
+    /// In either case, the value is the code or syntax — normally formed
+    /// of standard ASCII — which is in principal not the same as the
+    /// display string, although in simple cases such as 'm' (for meters)
+    /// it will be.
+    ///
+    /// If the `units_display_name` field is set, this may be used for
+    /// display. If not, the implementations must effect the resolution of
+    /// the `units` value to a display form locally, e.g. by lookup of
+    /// reference tables, request to a terminology service etc.
+    ///
+    /// Example values from UCUM: "kg/m^2", "mm[Hg]", "ms-1", "km/h".
+    pub units: String,
+
+    /// `units_system`: `String` (0..1).
+    ///
+    /// Optional field used to specify a units system from which codes in
+    /// `units` are defined. Value is a URI identifying a terminology
+    /// containing units concepts from the HL7 FHIR terminologies list.
+    ///
+    /// If not set, the UCUM standard (case-sensitive codes) is assumed as
+    /// the units system.
+    pub units_system: Option<String>,
+
+    /// `units_display_name`: `String` (0..1).
+    ///
+    /// Optional field containing the displayable form of the `units`
+    /// field, e.g. `'°C'`.
+    ///
+    /// If not set, the application environment needs to determine the
+    /// displayable form.
+    ///
+    /// Note: the display name may be language-dependent for various older
+    /// and non-systematic units. For this reason, it is not recommended to
+    /// add unit display names to archetypes, only to templates (for
+    /// localisation purposes).
+    pub units_display_name: Option<String>,
+}
+
+impl DvQuantity {
+    /// `normal_status`: accessor to the embedded parent state's attribute.
+    pub fn normal_status(&self) -> Option<&CodePhrase> {
+        self.amount.quantified.ordered.normal_status.as_ref()
+    }
+
+    /// `normal_range`: `DV_INTERVAL<DV_QUANTITY>` (0..1, redefined).
+    ///
+    /// Accessor into the embedded, self-typed `DvOrderedData<DvQuantity>`
+    /// — see the struct-level doc comment for why no separate flat field
+    /// is declared for this covariantly-redefined attribute.
+    pub fn normal_range(&self) -> Option<&super::dv_interval::DvInterval<DvQuantity>> {
+        self.amount.quantified.ordered.normal_range.as_deref()
+    }
+
+    /// `other_reference_ranges`: `List<REFERENCE_RANGE<DV_QUANTITY>>` (0..1,
+    /// redefined).
+    ///
+    /// Accessor into the embedded, self-typed `DvOrderedData<DvQuantity>`.
+    pub fn other_reference_ranges(
+        &self,
+    ) -> Option<&[super::reference_range::ReferenceRange<DvQuantity>]> {
+        self.amount
+            .quantified
+            .ordered
+            .other_reference_ranges
+            .as_deref()
+    }
+
+    /// `is_integral(): Boolean`.
+    ///
+    /// True if `precision` = 0, meaning that the `magnitude` is a whole
+    /// number.
+    pub fn is_integral(&self) -> bool {
+        matches!(self.precision, Some(Integer(0)))
+    }
+}
+
+impl Any for DvQuantity {
+    /// `is_equal(other: DV_QUANTITY) -> Boolean`.
+    ///
+    /// PORT NOTE: `DV_QUANTITY`'s own table gives no explicit `is_equal`
+    /// row (it inherits `DV_AMOUNT.is_equal` unchanged); this default body
+    /// compares every declared attribute directly as the most literal
+    /// reading, mirroring `DvOrdinal`/`DvScale`'s identical situation.
+    fn is_equal(&self, other: &Self) -> bool {
+        self.magnitude.is_equal(&other.magnitude)
+            && self.precision == other.precision
+            && self.units == other.units
+            && self.units_system == other.units_system
+            && self.units_display_name == other.units_display_name
+    }
+
+    fn type_of(&self) -> String {
+        "DvQuantity".to_string()
+    }
+}
+
+impl Ordered for DvQuantity {
+    /// `less_than` __alias__ `"<"` `(other: DV_QUANTITY) -> Boolean`
+    /// (effected).
+    ///
+    /// True if this Quantified object is less than `other`. Based on
+    /// comparison of `magnitude`. Only valid if
+    /// `is_strictly_comparable_to()` is `True`.
+    ///
+    /// Spec `Post_result`: `Result = magnitude < other.magnitude`.
+    fn less_than(&self, other: &Self) -> bool {
+        self.magnitude.less_than(&other.magnitude)
+    }
+}
+
+impl DvOrderedApi for DvQuantity {
+    fn normal_status(&self) -> Option<&CodePhrase> {
+        self.amount.quantified.ordered.normal_status.as_ref()
+    }
+
+    /// `is_strictly_comparable_to(other: DV_QUANTITY) -> Boolean`
+    /// (effected).
+    ///
+    /// True if this quantity and `other` have the same `units` and also
+    /// `units_system` if it exists.
+    ///
+    /// PORT NOTE: the spec types `other` as the abstract `DV_ORDERED`, but
+    /// the comparison body itself (`units`/`units_system` equality) is only
+    /// meaningful between two `DV_QUANTITY` instances; narrowed to `&Self`
+    /// per the recurring pattern.
+    fn is_strictly_comparable_to(&self, other: &Self) -> bool {
+        self.units == other.units && self.units_system == other.units_system
+    }
+}
+
+impl DvAmountApi<Real> for DvQuantity {
+    fn accuracy_is_percent(&self) -> Option<bool> {
+        self.amount.accuracy_is_percent
+    }
+
+    fn accuracy(&self) -> Option<Real> {
+        self.amount.accuracy
+    }
+
+    /// `add` __alias__ `"+"` `(other: DV_QUANTITY) -> DV_QUANTITY`
+    /// (redefined).
+    ///
+    /// Sum of this `DV_QUANTITY` and `other`.
+    ///
+    /// TODO(port): the spec gives no explicit `Post_result` body for this
+    /// redefined effector at the `DV_QUANTITY` level (unlike, say,
+    /// `less_than`'s explicit `Result = magnitude < other.magnitude`); the
+    /// accuracy-combination rule inherited from `DV_AMOUNT.add`'s own
+    /// description ("if accuracies are present in both quantities, they
+    /// are added ... if either or both quantities has an unknown accuracy,
+    /// the accuracy of the result is also unknown ... if only one has
+    /// accuracy_is_percent = True, accuracy is expressed in the result in
+    /// the form used in the larger of the two quantities") is nontrivial
+    /// branching logic not yet encoded; stubbed pending that.
+    fn add(&self, _other: &Self) -> Self {
+        todo!(
+            "DvQuantity::add: accuracy-combination rule from DV_AMOUNT's description not yet encoded"
+        )
+    }
+
+    /// `subtract` __alias__ `"-"` `(other: DV_QUANTITY) -> DV_QUANTITY`
+    /// (redefined).
+    ///
+    /// Difference of this `DV_QUANTITY` and `other`.
+    ///
+    /// TODO(port): same accuracy-combination gap as `add` above.
+    fn subtract(&self, _other: &Self) -> Self {
+        todo!(
+            "DvQuantity::subtract: accuracy-combination rule from DV_AMOUNT's description not yet encoded"
+        )
+    }
+
+    fn is_equal_amount(&self, other: &Self) -> bool {
+        self.is_equal(other)
+    }
+
+    /// `multiply` __alias__ `"*"` `(factor: Real) -> DV_QUANTITY`
+    /// (redefined).
+    ///
+    /// Product of this `DV_QUANTITY` and `factor`.
+    ///
+    /// TODO(port): no explicit `Post_result` body given; the natural
+    /// reading is `magnitude * factor` with `units`/`units_system`/
+    /// `units_display_name` carried over unchanged, but this is not itself
+    /// drawn from a stated postcondition, so left `todo!()` rather than
+    /// guessing the accuracy-scaling behaviour that should accompany a
+    /// multiply.
+    fn multiply(&self, _factor: &Real) -> Self {
+        todo!(
+            "DvQuantity::multiply: no explicit Post_result body, accuracy-scaling behaviour unspecified"
+        )
+    }
+
+    /// `negative` __alias__ `"-"` `(): DV_QUANTITY`.
+    ///
+    /// PORT NOTE: `DV_QUANTITY`'s own table does not re-list `negative`
+    /// with a `(redefined)` marker (unlike `add`/`subtract`/`multiply`,
+    /// which are explicitly marked `(redefined)`); it is inherited from
+    /// `DV_AMOUNT.negative` unchanged. Transcribed here anyway (rather than
+    /// omitted) because the `DvAmountApi` trait requires it and no default
+    /// body is provided at the trait level (see `dv_amount.rs`); the
+    /// natural same-type negation is magnitude negation with units
+    /// preserved.
+    fn negative(&self) -> Self {
+        DvQuantity {
+            magnitude: self.magnitude.negative(),
+            ..self.clone()
+        }
+    }
+}
+
+// ─────────────────────────────────────────────
+// PORT STATUS
+//   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_quantity.adoc (Release-1.1.0 @ 3cbd85b)
+//   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_quantity.adoc §DV_QUANTITY Class
+//   confidence: medium
+//   todos: 4
+//   note: normal_range/other_reference_ranges are duplicated (flat top-level fields plus the copies inside DvOrderedData<DvQuantity>) pending a resolution of which is canonical, flagged with a TODO; add/subtract/multiply are stubbed todo!() since DV_AMOUNT's accuracy-combination rule is prose, not a stated postcondition, and DV_QUANTITY's own table gives no Post_result for any of the three.
+// ─────────────────────────────────────────────
