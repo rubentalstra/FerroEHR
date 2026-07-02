@@ -1,0 +1,45 @@
+=== FEEDER_AUDIT_DETAILS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*FEEDER_AUDIT_DETAILS*
+
+h|*Description*
+2+a|Audit details for any system in a feeder system chain. Audit details here means the general notion of who/where/when the information item to which the audit is attached was created. None of the attributes is defined as mandatory, however, in different scenarios, various combinations of attributes will usually be mandatory. This can be controlled by specifying feeder audit details in legacy archetypes.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*system_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of the system which handled the information item. This is the IT system owned by the organisation legally responsible for handling the data, and at which the data were previously created or passed by an earlier system.
+
+h|*0..1*
+|*location*: `<<_party_identified_class,PARTY_IDENTIFIED>>`
+a|Identifier of the particular site/facility within an organisation which handled the item. For computability, this identifier needs to be e.g. a PKI identifier which can be included in the identifier list of the `PARTY_IDENTIFIED` object.
+
+h|*0..1*
+|*subject*: `<<_party_proxy_class,PARTY_PROXY>>`
+a|Identifiers for subject of the received information item.
+
+h|*0..1*
+|*provider*: `<<_party_identified_class,PARTY_IDENTIFIED>>`
+a|Optional provider(s) who created, committed, forwarded or otherwise handled the item.
+
+h|*0..1*
+|*time*: `link:/releases/RM/{rm_release}/data_types.html#_dv_date_time_class[DV_DATE_TIME^]`
+a|Time of handling the item. For an originating system, this will be time of creation, for an intermediate feeder system, this will be a time of accession or other time of handling, where available.
+
+h|*0..1*
+|*version_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Any identifier used in the system such as  "interim" ,  "final" , or numeric versions if available.
+
+h|*0..1*
+|*other_details*: `link:/releases/RM/{rm_release}/data_structures.html#_item_structure_class[ITEM_STRUCTURE^]`
+a|Optional attribute to carry any custom meta-data. May be archetyped.
+
+h|*Invariants*
+2+a|__System_id_valid__: `not system_id.is_empty`
+|===

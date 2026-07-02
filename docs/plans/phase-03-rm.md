@@ -1,7 +1,7 @@
 # Phase 03 — RM transcription
 
-- Status: not-started
-- Started: -   Owner: Ruben
+- Status: in-progress
+- Started: 2026-07-02   Owner: Ruben
 - Consumes (spec/layer): RM 1.1.0 / Layer 4
 - Compile required: no (Phase A)
 
@@ -14,8 +14,8 @@ phase and sits on the critical path (Section 6).
 
 ## Preconditions
 
-- [ ] Phase 01 done: BASE identification types available
-- [ ] Phase 02 done: terminology service available for `CODE_PHRASE`-bearing types
+- [x] Phase 01 done: BASE identification types available
+- [x] Phase 02 done: terminology service available for `CODE_PHRASE`-bearing types
 
 ## Scope
 
