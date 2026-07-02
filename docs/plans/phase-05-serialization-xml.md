@@ -37,6 +37,12 @@ the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
       `Iso8601_*` accessors/validity/comparison, and delegated
       `DV_DATE`/`DV_TIME`/`DV_DATE_TIME`/`DV_DURATION` magnitude/equality/
       validity to it
+- [x] Implement BASE UID and RM URI scalar accessors needed by scalar
+      JSON/XML round-trips — completed 2026-07-02; `UID_BASED_ID.root()`,
+      `OBJECT_VERSION_ID.object_id()` and `creating_system_id()` now
+      classify strings via the official BASE UID grammar, while `DV_URI`
+      extracts scheme/path/query/fragment without normalising the stored
+      string so plain-text openEHR URI values remain intact
 - [ ] Vendor RM 1.1.0 XSDs (`Common.xsd`, `DataTypes.xsd`, `DataStructures.xsd`, `Ehr.xsd`, `Demographic.xsd`) from `specifications-ITS-XML/components/RM/Release-1.1.0/` into `openehr-serde/schemas/`
 - [ ] Vendor the legacy 1.0.2 XSD bundle alongside it for round-trip support
 - [ ] Implement `quick-xml` serialization for rm.data_types matching `DataTypes.xsd`, namespace `http://schemas.openehr.org/v1`
@@ -67,12 +73,23 @@ the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
   temporal magnitude/equality/validity delegates. Calendar add/subtract over
   partial dates/date-times remains deliberately TODO(port) until a policy is
   chosen for incomplete precision.
+- BASE UID strings are classified from the Release 1.2.0 grammar in
+  `master05-identification_package.adoc`: ISO OID, canonical 8-4-4-4-12
+  UUID, then reduced INTERNET_ID labels. Spec-named accessors stay total for
+  valid model values; fallible Rust accessors are available for unchecked raw
+  strings until the Validate framework enforces invariants at construction or
+  deserialization boundaries.
+- RM `DV_URI` accessors intentionally do not use a normalising URL parser for
+  output; the Release 1.1.0 URI package allows plain-text strings and stores
+  the URI as a `String`, so scheme/path/query/fragment extraction preserves
+  spaces, dot segments, and the absence of an authority path.
 
 ## Handoff for next session
 
 Started with dependency/spec-cache prep. `quick-xml` is pinned in the root
 `Cargo.toml`; temporal scalar semantics now compile and have focused tests in
-`openehr-foundation` and `openehr-rm`. Confirm `quick-xml` derive ergonomics
-against a representative `DV_QUANTITY` or `COMPOSITION` example before
-committing to a pattern for the whole crate. Next concrete task is still
-vendoring the ITS-XML XSD bundles.
+`openehr-foundation` and `openehr-rm`, and UID/URI scalar accessors now have
+focused tests in `openehr-base` and `openehr-rm`. Confirm `quick-xml` derive
+ergonomics against a representative `DV_QUANTITY` or `COMPOSITION` example
+before committing to a pattern for the whole crate. Next concrete task is
+still vendoring the ITS-XML XSD bundles.

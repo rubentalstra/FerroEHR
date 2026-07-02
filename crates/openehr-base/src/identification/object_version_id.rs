@@ -10,7 +10,7 @@
 use openehr_foundation::serde_support::{TypeName, TypeTag};
 
 use super::object_id::{ObjectId, ObjectIdApi};
-use super::uid::Uid;
+use super::uid::{Uid, uid_from_value_or_unvalidated_internet_id};
 use super::uid_based_id::{UidBasedId, UidBasedIdApi, UidBasedIdData};
 use super::version_tree_id::VersionTreeId;
 
@@ -68,11 +68,14 @@ impl ObjectVersionId {
     /// to by this `OBJECT_VERSION_ID` instance. The first of the three
     /// `::`-separated parts.
     ///
-    /// TODO(port): returning a parsed [`Uid`] requires the same
-    /// format-sniffing UID sub-parser noted as `todo!()` on
-    /// `UidBasedIdApi::root` in `uid_based_id.rs`.
     pub fn object_id(&self) -> Uid {
-        todo!("ObjectVersionId::object_id: format-sniffing UID parser not yet implemented")
+        uid_from_value_or_unvalidated_internet_id(object_version_id_parts(self.value()).0)
+    }
+
+    /// Fallible Rust entrypoint for unchecked raw data backing
+    /// [`ObjectVersionId::object_id`].
+    pub fn try_object_id(&self) -> Option<Uid> {
+        object_version_id_parts(self.value()).0.parse().ok()
     }
 
     /// `creating_system_id(): UID`.
@@ -81,10 +84,14 @@ impl ObjectVersionId {
     /// this Object version id. The second of the three `::`-separated
     /// parts.
     ///
-    /// TODO(port): see [`ObjectVersionId::object_id`] — same deferred UID
-    /// sub-parser.
     pub fn creating_system_id(&self) -> Uid {
-        todo!("ObjectVersionId::creating_system_id: format-sniffing UID parser not yet implemented")
+        uid_from_value_or_unvalidated_internet_id(object_version_id_parts(self.value()).1)
+    }
+
+    /// Fallible Rust entrypoint for unchecked raw data backing
+    /// [`ObjectVersionId::creating_system_id`].
+    pub fn try_creating_system_id(&self) -> Option<Uid> {
+        object_version_id_parts(self.value()).1.parse().ok()
     }
 
     /// `version_tree_id(): VERSION_TREE_ID`.
@@ -93,12 +100,7 @@ impl ObjectVersionId {
     /// the same version tree, as either 1 or 3 part dot-separated numbers,
     /// e.g. `1`, `2.1.4`. The third of the three `::`-separated parts.
     pub fn version_tree_id(&self) -> VersionTreeId {
-        let raw = self
-            .uid_based_id
-            .value
-            .rsplit_once("::")
-            .map(|(_head, tail)| tail.to_string())
-            .unwrap_or_default();
+        let raw = object_version_id_parts(self.value()).2.to_string();
         VersionTreeId {
             type_tag: TypeTag::new(),
             value: raw,
@@ -140,11 +142,53 @@ impl From<ObjectVersionId> for ObjectId {
     }
 }
 
+fn object_version_id_parts(value: &str) -> (&str, &str, &str) {
+    let mut parts = value.splitn(3, "::");
+    (
+        parts.next().unwrap_or_default(),
+        parts.next().unwrap_or_default(),
+        parts.next().unwrap_or_default(),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn object_version_id_parts_follow_base_grammar() {
+        let id = ObjectVersionId {
+            type_tag: TypeTag::new(),
+            uid_based_id: UidBasedIdData {
+                value: "87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2.1.4".to_string(),
+            },
+        };
+
+        assert!(matches!(id.object_id(), Uid::Uuid(_)));
+        assert!(matches!(id.creating_system_id(), Uid::InternetId(_)));
+        assert_eq!(id.version_tree_id().value, "2.1.4");
+        assert!(id.is_branch());
+    }
+
+    #[test]
+    fn object_version_id_exposes_fallible_uid_accessors_for_unchecked_data() {
+        let id = ObjectVersionId {
+            type_tag: TypeTag::new(),
+            uid_based_id: UidBasedIdData {
+                value: "not a uid::also not a uid::1".to_string(),
+            },
+        };
+
+        assert!(id.try_object_id().is_none());
+        assert!(id.try_creating_system_id().is_none());
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 base_types.identification §OBJECT_VERSION_ID — docs/research/spec-cache/BASE-1.2.0/uml_classes/object_version_id.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / object_version_id.adoc §OBJECT_VERSION_ID Class
 //   confidence: medium
-//   todos: 2
-//   note: object_id()/creating_system_id() need the same deferred format-sniffing UID parser as UID_BASED_ID.root(); version_tree_id() parsing implemented directly since VERSION_TREE_ID's own value is just the raw substring, no UID sub-parse required. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted.
+//   todos: 0
+//   note: object_id()/creating_system_id() now classify their substrings via the official BASE UID grammar; version_tree_id() parsing is direct since VERSION_TREE_ID's value is the raw third substring. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted.
 // ─────────────────────────────────────────────

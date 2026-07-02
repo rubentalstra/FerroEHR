@@ -12,6 +12,7 @@ publish = false
 [dependencies]
 openehr-foundation = { path = "../openehr-foundation" }
 serde.workspace = true
+uuid.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

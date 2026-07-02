@@ -11,7 +11,7 @@
 //! `uid_based_id = root, [ '::', extension ] ; root = uid ; extension = ? any string ? ;`
 use super::hier_object_id::HierObjectId;
 use super::object_version_id::ObjectVersionId;
-use super::uid::Uid;
+use super::uid::{Uid, uid_from_value_or_unvalidated_internet_id};
 
 /// Shared attribute state of `UID_BASED_ID` and its descendants.
 ///
@@ -79,13 +79,17 @@ pub trait UidBasedIdApi {
     /// exists, within the identification scheme. Returns the part to the
     /// left of the first `::` separator, if any, or else the whole string.
     ///
-    /// TODO(port): returning a parsed [`Uid`] requires distinguishing which
-    /// of `IsoOid`/`Uuid`/`InternetId` the substring represents, per the
-    /// identification package's "mutually exclusive string patterns" note.
-    /// That format-sniffing parser is not yet implemented; left as
-    /// `todo!()`.
+    /// PORT NOTE: this mirrors the spec function for valid `UID_BASED_ID`
+    /// values. For unchecked raw input, call [`UidBasedIdApi::try_root`]
+    /// first to detect a root that does not match the BASE `UID` grammar.
     fn root(&self) -> Uid {
-        todo!("UidBasedIdApi::root: format-sniffing UID parser not yet implemented")
+        uid_from_value_or_unvalidated_internet_id(uid_based_root_value(self.value()))
+    }
+
+    /// Fallible Rust entrypoint for the same `root` string when the
+    /// instance may have been constructed from unchecked raw data.
+    fn try_root(&self) -> Option<Uid> {
+        uid_based_root_value(self.value()).parse().ok()
     }
 
     /// `extension(): String`.
@@ -117,11 +121,50 @@ impl UidBasedIdApi for UidBasedId {
     }
 }
 
+fn uid_based_root_value(value: &str) -> &str {
+    value
+        .split_once("::")
+        .map_or(value, |(root, _extension)| root)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use openehr_foundation::serde_support::TypeTag;
+
+    #[test]
+    fn uid_based_id_root_and_extension_follow_base_grammar() {
+        let id = HierObjectId {
+            type_tag: TypeTag::new(),
+            uid_based_id: UidBasedIdData {
+                value: "uk.nhs.ehr1::local value".to_string(),
+            },
+        };
+
+        assert!(matches!(id.root(), Uid::InternetId(_)));
+        assert!(matches!(id.try_root(), Some(Uid::InternetId(_))));
+        assert_eq!(id.extension(), "local value");
+        assert!(id.has_extension());
+    }
+
+    #[test]
+    fn uid_based_id_try_root_rejects_unchecked_invalid_root() {
+        let id = HierObjectId {
+            type_tag: TypeTag::new(),
+            uid_based_id: UidBasedIdData {
+                value: "not a uid::local value".to_string(),
+            },
+        };
+
+        assert!(id.try_root().is_none());
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 base_types.identification §UID_BASED_ID — docs/research/spec-cache/BASE-1.2.0/uml_classes/uid_based_id.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / uid_based_id.adoc §UID_BASED_ID Class
 //   confidence: medium
-//   todos: 2
-//   note: root() needs a format-sniffing UID sub-parser (ISO_OID vs UUID vs INTERNET_ID) not yet implemented; Has_extension_valid invariant recorded but not enforced. P4/ADR-002: UidBasedId enum is #[serde(untagged)], _type dispatch comes from each concrete payload's TypeTag; UidBasedIdData stays untagged (embedded abstract-parent state).
+//   todos: 1
+//   note: root() now classifies the root string via the official BASE UID grammar (ISO_OID vs UUID vs INTERNET_ID); Has_extension_valid invariant recorded but not enforced. P4/ADR-002: UidBasedId enum is #[serde(untagged)], _type dispatch comes from each concrete payload's TypeTag; UidBasedIdData stays untagged (embedded abstract-parent state).
 // ─────────────────────────────────────────────

@@ -71,9 +71,6 @@ impl TypeName for DvEhrUri {
 
 impl DvEhrUri {
     /// `Scheme_valid`: `scheme.is_equal(Ehr_scheme)`.
-    ///
-    /// TODO(port): depends on [`DvUriData::scheme`], itself `todo!()`
-    /// pending an RFC-3986 parser; cannot be evaluated until that lands.
     pub fn invariant_scheme_valid(&self) -> bool {
         self.uri.scheme() == EHR_SCHEME
     }
@@ -85,11 +82,35 @@ impl DataValueApi for DvEhrUri {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ehr_uri_scheme_invariant_uses_dv_uri_component_parser() {
+        let ehr_uri = DvEhrUri {
+            type_tag: TypeTag::new(),
+            uri: DvUriData {
+                value: "ehr:/ehr_id/composition/path".to_string(),
+            },
+        };
+        let http_uri = DvEhrUri {
+            type_tag: TypeTag::new(),
+            uri: DvUriData {
+                value: "https://example.org/ehr_id".to_string(),
+            },
+        };
+
+        assert!(ehr_uri.invariant_scheme_valid());
+        assert!(!http_uri.invariant_scheme_valid());
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.uri — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_ehr_uri.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master10-uri_package.adoc §Class Descriptions / dv_ehr_uri.adoc §DV_EHR_URI Class; §Syntaxes for the ehr:// path grammar
 //   confidence: high
-//   todos: 1
-//   note: embeds DvUriData by composition (single `uri` field); Scheme_valid invariant transitively depends on DvUriData::scheme(), which is itself a todo!() pending RFC-3986 parsing. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("DV_EHR_URI"); embedded field reshaped from the concrete DvUri to the untagged DvUriData so the flatten cannot emit a duplicate _type key beside this class's own tag (see the struct-level PORT NOTE) — wire shape unchanged, schema-verified.
+//   todos: 0
+//   note: embeds DvUriData by composition (single `uri` field); Scheme_valid now delegates to DvUriData::scheme(), which parses RFC3986 components while preserving the spec's plain-text URI allowance. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("DV_EHR_URI"); embedded field reshaped from the concrete DvUri to the untagged DvUriData so the flatten cannot emit a duplicate _type key beside this class's own tag (see the struct-level PORT NOTE) — wire shape unchanged, schema-verified.
 // ─────────────────────────────────────────────

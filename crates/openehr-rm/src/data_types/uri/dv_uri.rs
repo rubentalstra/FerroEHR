@@ -59,10 +59,8 @@ impl DvUriData {
     /// used to access them. Values may include: `"ftp"`, `"telnet"`,
     /// `"mailto"`, etc. Refer to RFC-3986 for a full list.
     ///
-    /// TODO(port): parse `value` per RFC-3986 grammar (`scheme ":" ...`);
-    /// no RFC-3986 parser dependency exists in this crate yet.
     pub fn scheme(&self) -> String {
-        todo!("DvUriData::scheme: RFC-3986 parsing not yet implemented")
+        parse_uri_components(&self.value).scheme
     }
 
     /// `path(): String`.
@@ -76,10 +74,8 @@ impl DvUriData {
     /// identifiers of the form: `sub_domain...domain`, e.g.
     /// `"info.cern.ch"`.
     ///
-    /// TODO(port): parse `value` per RFC-3986 grammar; no RFC-3986 parser
-    /// dependency exists in this crate yet.
     pub fn path(&self) -> String {
-        todo!("DvUriData::path: RFC-3986 parsing not yet implemented")
+        parse_uri_components(&self.value).path
     }
 
     /// `fragment_id(): String`.
@@ -89,10 +85,8 @@ impl DvUriData {
     /// character position in a text object. The syntax and semantics are
     /// defined by the application responsible for the object.
     ///
-    /// TODO(port): parse `value` per RFC-3986 grammar; no RFC-3986 parser
-    /// dependency exists in this crate yet.
     pub fn fragment_id(&self) -> String {
-        todo!("DvUriData::fragment_id: RFC-3986 parsing not yet implemented")
+        parse_uri_components(&self.value).fragment
     }
 
     /// `query(): String`.
@@ -102,10 +96,8 @@ impl DvUriData {
     /// in the URI. Supports any query meaningful to the server, including
     /// SQL.
     ///
-    /// TODO(port): parse `value` per RFC-3986 grammar; no RFC-3986 parser
-    /// dependency exists in this crate yet.
     pub fn query(&self) -> String {
-        todo!("DvUriData::query: RFC-3986 parsing not yet implemented")
+        parse_uri_components(&self.value).query
     }
 
     /// `Value_valid`: `not value.is_empty`.
@@ -169,11 +161,113 @@ impl DataValueApi for DvUri {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct UriComponents {
+    scheme: String,
+    path: String,
+    query: String,
+    fragment: String,
+}
+
+fn parse_uri_components(value: &str) -> UriComponents {
+    let (without_fragment, fragment) = split_once_optional(value, '#');
+    let (without_query, query) = split_once_optional(without_fragment, '?');
+    let (scheme, rest) = split_scheme(without_query);
+    let path = uri_path(rest);
+
+    UriComponents {
+        scheme: scheme.to_string(),
+        path: path.to_string(),
+        query: query.to_string(),
+        fragment: fragment.to_string(),
+    }
+}
+
+fn uri_path(rest: &str) -> &str {
+    if let Some(after_authority) = rest.strip_prefix("//") {
+        after_authority
+            .find('/')
+            .map_or("", |idx| &after_authority[idx..])
+    } else {
+        rest
+    }
+}
+
+fn split_once_optional(value: &str, delimiter: char) -> (&str, &str) {
+    value
+        .split_once(delimiter)
+        .map_or((value, ""), |(left, right)| (left, right))
+}
+
+fn split_scheme(value: &str) -> (&str, &str) {
+    let Some((scheme, rest)) = value.split_once(':') else {
+        return ("", value);
+    };
+    if is_valid_scheme(scheme) {
+        (scheme, rest)
+    } else {
+        ("", value)
+    }
+}
+
+fn is_valid_scheme(value: &str) -> bool {
+    let mut chars = value.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    first.is_ascii_alphabetic()
+        && chars.all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '+' | '-' | '.'))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uri_parts_follow_rfc3986_components() {
+        let uri = DvUriData {
+            value: "https://example.org/path/to/doc?format=json#line-7".to_string(),
+        };
+
+        assert_eq!(uri.scheme(), "https");
+        assert_eq!(uri.path(), "/path/to/doc");
+        assert_eq!(uri.query(), "format=json");
+        assert_eq!(uri.fragment_id(), "line-7");
+    }
+
+    #[test]
+    fn plain_text_uri_parts_are_still_extractable() {
+        let uri = DvUriData {
+            value: "ehr:/ehr_id/composition with spaces?x=1#section 1".to_string(),
+        };
+
+        assert_eq!(uri.scheme(), "ehr");
+        assert_eq!(uri.path(), "/ehr_id/composition with spaces");
+        assert_eq!(uri.query(), "x=1");
+        assert_eq!(uri.fragment_id(), "section 1");
+    }
+
+    #[test]
+    fn uri_path_extraction_does_not_normalize_the_stored_string() {
+        let no_path = DvUriData {
+            value: "https://example.org?format=json#top".to_string(),
+        };
+        let dot_segments = DvUriData {
+            value: "https://example.org/a/../b".to_string(),
+        };
+
+        assert_eq!(no_path.path(), "");
+        assert_eq!(no_path.query(), "format=json");
+        assert_eq!(no_path.fragment_id(), "top");
+        assert_eq!(dot_segments.path(), "/a/../b");
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.uri — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_uri.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master10-uri_package.adoc §Class Descriptions / dv_uri.adoc §DV_URI Class
 //   confidence: medium
-//   todos: 6
-//   note: DvUriData embedded struct pattern mirrors DvTextData (single attribute, one concrete descendant); scheme/path/fragment_id/query all left as todo!() pending an RFC-3986 parser dependency decision (no such dependency exists in openehr-rm yet, and none was authorized for this transcription pass); Value_valid invariant mentioned on both the field doc and the invariant method doc. P4/ADR-002: DvUri self-tags via TypeTag<Self> first field + TypeName ("DV_URI"), inert struct-level #[serde(rename)] deleted; DvUriData stays untagged (embedded *Data struct, flattened here and in DvEhrUri).
+//   todos: 2
+//   note: DvUriData embedded struct pattern mirrors DvTextData (single attribute, one concrete descendant); scheme/path/fragment_id/query extract RFC3986 components without normalising the stored string, preserving the spec's explicit allowance for unencoded human-readable strings. Value_valid invariant mentioned on both the field doc and the invariant method doc. P4/ADR-002: DvUri self-tags via TypeTag<Self> first field + TypeName ("DV_URI"), inert struct-level #[serde(rename)] deleted; DvUriData stays untagged (embedded *Data struct, flattened here and in DvEhrUri).
 // ─────────────────────────────────────────────
