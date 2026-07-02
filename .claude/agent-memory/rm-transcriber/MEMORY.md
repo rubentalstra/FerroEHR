@@ -1,4 +1,3 @@
 # rm-transcriber memory index
 
-- [primitive_types transcription precedent](project_primitive_types_precedent.md) — Any/Ordered/Numeric traits, OrderedNumeric blanket-impl pattern, OpenEhrString naming, Real→f64 directed deviation.
-- [openehr-foundation crate state](project_openehr_foundation_crate_state.md) — file inventory as of 2026-07-02; spec-cache location and pinned commit for BASE 1.2.0.
+- [time_types transcription precedent](project_time_types_precedent.md) — the Iso8601_type multiple-inheritance worked example (ADR-001 §2): Temporal as ordinary supertrait vs Time_Definitions as a non-trait constants struct, Iso8601TypeCore embedding, string-value-not-instant modeling, jiff-bridge deferral.
