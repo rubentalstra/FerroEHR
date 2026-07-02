@@ -76,6 +76,10 @@ Phase 01. No enterprise feature (RBAC etc.) is built here, only catalogued.
   1.96 warn-spam); deny.toml `allow-wildcard-paths = true` for internal
   path deps (all crates publish = false); .gitignore inline-comment bug on
   the Cargo.lock line fixed (pattern never matched).
+- PostgreSQL pin bumped 18.3+ → 18.4+ (latest 18.x point release; tag
+  `postgres:18.4` verified on Docker Hub). CI services, VERSIONS.md,
+  CLAUDE.md, master plan, and the sqlx rule all updated together per the
+  VERSIONS.md no-drift rule.
 
 ## Handoff for next session
 
