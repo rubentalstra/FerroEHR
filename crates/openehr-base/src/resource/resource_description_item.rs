@@ -10,6 +10,7 @@
 //! different natural language; when a resource is translated for use in
 //! another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to
 //! be copied and translated into the new language.
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 use std::collections::HashMap;
 
 // TODO(port): `Terminology_code` is BASE 1.2.0 `foundation_types.primitive_types`
@@ -28,8 +29,13 @@ type TerminologyCode = String;
 /// `Hash<String, String>` and `List<String>` attributes map per
 /// `docs/PORTING.md` §6/§14.2.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(rename = "RESOURCE_DESCRIPTION_ITEM")]
 pub struct ResourceDescriptionItem {
+    /// Canonical `_type` discriminator (`"RESOURCE_DESCRIPTION_ITEM"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `language`: `Terminology_code`, cardinality 1..1.
     ///
     /// The localised language in which the items in this description item
@@ -76,6 +82,10 @@ pub struct ResourceDescriptionItem {
     /// Additional language-sensitive resource metadata, as a list of
     /// name/value pairs.
     pub other_details: Option<HashMap<String, String>>,
+}
+
+impl TypeName for ResourceDescriptionItem {
+    const NAME: &'static str = "RESOURCE_DESCRIPTION_ITEM";
 }
 
 // ─────────────────────────────────────────────

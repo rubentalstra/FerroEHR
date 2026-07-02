@@ -16,6 +16,8 @@ use super::archetype_id::ArchetypeId;
 use super::generic_id::GenericId;
 use super::template_id::TemplateId;
 use super::terminology_id::TerminologyId;
+use serde::{Deserialize, Serialize};
+
 use super::uid_based_id::{UidBasedId, UidBasedIdApi};
 
 /// Shared attribute state of `OBJECT_ID` and its descendants.
@@ -55,67 +57,28 @@ pub struct ObjectIdData {
 /// be declared with the narrower `UidBasedId` type directly, matching
 /// ADR-001 §6.
 ///
-/// PORT NOTE: serialized `#[serde(untagged)]` rather than `#[serde(tag =
-/// "_type")]`. Every variant's payload is itself a distinct Rust struct/enum
-/// shape (`UidBasedId` is its own `_type`-tagged enum; `ArchetypeId`/
-/// `TemplateId`/`TerminologyId`/`GenericId` are each a bare `{ value: ... }`
-/// / `{ value, scheme }` struct with no discriminator field of its own yet),
-/// so `serde(untagged)` dispatches purely by shape-matching the payload
-/// against each variant in declaration order, rather than by reading an
-/// explicit tag key. `openehr-serde`'s eventual manual `_type` dispatch (P17,
-/// per ADR-001's "serde derives wait until P4" refinement + `docs/PORTING.md`
-/// §6) replaces this mechanism entirely with hand-rolled deserialization that
-/// reads the `_type` string first and only then picks the concrete Rust
-/// type — this untagged derive is a P4 stopgap, not the final serialization
-/// strategy for this enum.
-///
-/// TODO(port): untagged deserialization is fragile and order-sensitive by
-/// construction — serde tries each variant in the order listed below and
-/// commits to the first one whose shape matches, so a payload that happens
-/// to satisfy an earlier variant's shape (e.g. any `{ value: String }`
-/// object matches `UidBased`'s `HierObjectId`/`ObjectVersionId` branches
-/// before ever reaching `ArchetypeId`) will silently deserialize into the
-/// wrong concrete type. Variant order below is `UidBased` first (since its
-/// own `_type` tag lets `UidBasedId`'s tagged-enum deserializer reject a
-/// non-matching payload cleanly) followed by the four flat `OBJECT_ID`
-/// leaves; this ordering is a "least-ambiguous-first" heuristic, not a
-/// guarantee — a real fix requires the manual `_type`-dispatch replacement
-/// named above, not a different untagged variant order.
-#[derive(
-    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
-)]
+/// PORT NOTE: `#[serde(untagged)]` per ADR-002 — `OBJECT_ID` is abstract, so
+/// it carries no tag of its own; dispatch is driven by each concrete
+/// payload's self-tagging `TypeTag` field, whose `Deserialize` fails on a
+/// mismatched `_type`, making untagged variant probing tag-driven. The
+/// nested `UidBased` branch composes the same way (`UidBasedId` is itself
+/// untagged over self-tagged concretes).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ObjectId {
     /// The `UID_BASED_ID` branch (`HIER_OBJECT_ID` or `OBJECT_VERSION_ID`).
     UidBased(UidBasedId),
     /// `ARCHETYPE_ID`.
     ///
-    /// TODO(port): this leaf struct has no `_type` discriminator of its own
-    /// on the wire yet (it still records `TYPE_NAME` as a `const` per
-    /// ADR-001's P4-deferral note, not a `#[serde(rename)]`) — under this
-    /// enum's `untagged` representation the serialized JSON for this variant
-    /// is indistinguishable from a bare `ArchetypeId` value, i.e. the
-    /// `_type: "ARCHETYPE_ID"` string is absent even though ITS-JSON
-    /// generally requires it whenever the statically declared field type is
-    /// abstract (`.claude/rules/serialization.md`) — `OBJECT_ID` is exactly
-    /// such an abstract type. Left as-is rather than speculatively adding a
-    /// rename to `archetype_id.rs`, which is out of scope for this file's
-    /// edit pass; flagged for the `openehr-serde` P17 replacement.
     ArchetypeId(ArchetypeId),
     /// `TEMPLATE_ID`.
     ///
-    /// See the `TODO(port)` on the `ArchetypeId` variant above — the same
-    /// missing-`_type`-under-untagged gap applies here.
     TemplateId(TemplateId),
     /// `TERMINOLOGY_ID`.
     ///
-    /// See the `TODO(port)` on the `ArchetypeId` variant above — the same
-    /// missing-`_type`-under-untagged gap applies here.
     TerminologyId(TerminologyId),
     /// `GENERIC_ID`.
     ///
-    /// See the `TODO(port)` on the `ArchetypeId` variant above — the same
-    /// missing-`_type`-under-untagged gap applies here.
     GenericId(GenericId),
 }
 
@@ -146,5 +109,5 @@ impl ObjectIdApi for ObjectId {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / object_id.adoc §OBJECT_ID Class
 //   confidence: medium
 //   todos: 2
-//   note: ObjectId enum nests UidBasedId rather than flattening its two variants, so a UID_BASED_ID-typed field elsewhere can use the narrower enum directly per ADR-001 §6; ambiguity noted in the transcription report. P4 addendum: ObjectId is serde(untagged) since its four leaf variants have no _type discriminator of their own yet — order-sensitive and drops _type on the leaves; replace with openehr-serde's manual _type dispatch at P17 (the other three leaf variants cross-reference the same gap via doc comments rather than repeating a standalone TODO(port) marker each).
+//   note: ObjectId enum nests UidBasedId rather than flattening its two variants, so a UID_BASED_ID-typed field elsewhere can use the narrower enum directly per ADR-001 §6. P4 addendum: manual serde enforces canonical `_type` dispatch for all OBJECT_ID leaves (`{_type, value}` plus `scheme` for GENERIC_ID) while preserving the nested Rust shape.
 // ─────────────────────────────────────────────

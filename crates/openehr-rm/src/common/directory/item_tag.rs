@@ -32,20 +32,28 @@
 //! should propagate to how this type is wired up in later phases (P6+).
 use openehr_base::identification::object_ref::ObjectRef;
 use openehr_base::identification::uid_based_id::UidBasedId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
 /// form. Per ADR-001 (Refinements), `serde` derives wait until P4.
 pub const TYPE_NAME: &str = "ITEM_TAG";
 
 /// `ITEM_TAG` — a lightweight, searchable annotation on a target entity.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemTag {
+    /// Canonical `_type` discriminator (`"ITEM_TAG"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `target`: identifier of target, which may be a `VERSIONED_OBJECT<T>`
     /// or a `VERSION<T>`.
     pub target: UidBasedId,
 
     /// `target_path`: optional archetype (i.e. AQL) or RM path within
     /// `target`, in order to tag a fine-grained element.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub target_path: Option<String>,
 
     /// `key`: the tag key.
@@ -60,6 +68,7 @@ pub struct ItemTag {
     ///
     /// Invariant `Inv_value_valid`: `value /= Void implies not
     /// value.is_empty` — if set, may not be empty.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
     /// `owner_id`: identifier of owner object, such as EHR.
@@ -73,6 +82,10 @@ pub struct ItemTag {
 //     TODO(port): "is_justified" (no leading/trailing whitespace) needs a
 //     runtime check; not yet wired into a constructor.
 //   Inv_value_valid: value /= Void implies not value.is_empty
+
+impl TypeName for ItemTag {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS

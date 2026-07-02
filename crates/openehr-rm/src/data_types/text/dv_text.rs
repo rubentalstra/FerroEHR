@@ -21,9 +21,11 @@ use super::dv_coded_text::DvCodedText;
 use super::term_mapping::TermMapping;
 use crate::data_types::data_value::DataValueApi;
 use crate::data_types::uri::dv_uri::DvUri;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into [`DvTextData`]'s [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "DV_TEXT";
 
 /// Shared attribute state of `DV_TEXT` and its sole descendant,
@@ -49,7 +51,7 @@ pub const TYPE_NAME: &str = "DV_TEXT";
 /// `DV_CODED_TEXT` embeds this same `DvTextData` (see `dv_coded_text.rs`)
 /// rather than re-declaring the six fields, so field order and types stay
 /// identical between the two concrete forms.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DvTextData {
     /// `value`: `String` (`1..1`).
     ///
@@ -66,6 +68,7 @@ pub struct DvTextData {
     ///
     /// Original usage, prior to RM Release 1.0.4: optional link sitting
     /// behind a section of plain text or coded term item.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hyperlink: Option<DvUri>,
 
     /// `formatting`: `String` (`0..1`).
@@ -86,6 +89,7 @@ pub struct DvTextData {
     ///
     /// Invariant `Formatting_valid`: `formatting /= void implies not
     /// formatting.is_empty`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub formatting: Option<String>,
 
     /// `mappings`: `List<TERM_MAPPING>` (`0..1`).
@@ -103,6 +107,7 @@ pub struct DvTextData {
     /// is modelled with `Option<Vec<..>>` rather than a bare possibly-empty
     /// `Vec`, matching the `translations`/`annotations` precedent in
     /// `crates/openehr-base/src/resource/authored_resource.rs`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mappings: Option<Vec<TermMapping>>,
 
     /// `language`: `CODE_PHRASE` (`0..1`).
@@ -119,6 +124,7 @@ pub struct DvTextData {
     ///
     /// TODO(port): invariant requires a live terminology-service code-set
     /// lookup (`openehr_terminology`); not yet enforced.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub language: Option<CodePhrase>,
 
     /// `encoding`: `CODE_PHRASE` (`0..1`).
@@ -133,7 +139,19 @@ pub struct DvTextData {
     ///
     /// TODO(port): invariant requires a live terminology-service code-set
     /// lookup (`openehr_terminology`); not yet enforced.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub encoding: Option<CodePhrase>,
+}
+
+/// PORT NOTE (ADR-002 §3, exception clause): `DvTextData` is an embedded
+/// shared-state struct (`#[serde(flatten)]`ed into `DvCodedText`), so it
+/// carries **no** `type_tag` field of its own — a flattened tag would
+/// collide with the embedding class's. But it *doubles as the bare concrete
+/// `DV_TEXT` instance*, so it implements [`TypeName`], letting the
+/// [`DvText::Text`] struct variant carry a `TypeTag<DvTextData>` beside the
+/// flattened data.
+impl TypeName for DvTextData {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvTextData {
@@ -185,14 +203,48 @@ impl DvTextData {
 /// type `DV_TEXT` and a `DV_CODED_TEXT` value must be substitutable there
 /// (see the [`DvTextData`] doc comment). Per ADR-001 Refinements, the two
 /// concrete forms are collected into this closed `enum`.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+///
+/// PORT NOTE (ADR-002): `#[serde(untagged)]` rather than `#[serde(tag =
+/// "_type")]` — each variant already carries its own `TypeTag`
+/// (`DvCodedText`'s own self-tag field; `Text`'s explicit
+/// `TypeTag<DvTextData>` beside the flattened data), whose `Deserialize`
+/// fails on a mismatched `_type` string, making untagged probing tag-driven
+/// instead of structure-driven. A container-level `tag` here would
+/// duplicate the payloads' own tags. Variant order still lists the
+/// structurally richer shape first: `Coded` before `Text`, so tag-less
+/// input carrying `defining_code` is not swallowed by the weaker `Text`
+/// arm.
+///
+/// The former `TODO(port)` about `DvText::Text` serializing with **no
+/// `_type` discriminator at all** is resolved by this shape: the `Text`
+/// struct variant now emits `"_type": "DV_TEXT"` first, alongside the
+/// flattened `DvTextData` fields (ADR-002 §3's bare-concrete-parent
+/// exception).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum DvText {
+    /// A `DV_CODED_TEXT` instance, substitutable wherever `DV_TEXT` is
+    /// declared. Listed first — see the enum-level PORT NOTE on untagged
+    /// variant ordering.
+    Coded(DvCodedText),
     /// A "bare" `DV_TEXT` instance: plain or markdown-formatted text with
     /// no attached defining code.
-    Text(DvTextData),
-    /// A `DV_CODED_TEXT` instance, substitutable wherever `DV_TEXT` is
-    /// declared.
-    Coded(DvCodedText),
+    ///
+    /// PORT NOTE (ADR-002): a struct variant, not a newtype variant, so the
+    /// `_type: "DV_TEXT"` discriminator can sit beside the flattened
+    /// shared-state struct (`DvTextData` itself carries no tag — it is also
+    /// `#[serde(flatten)]`ed into `DvCodedText`, where a second tag would
+    /// collide).
+    Text {
+        /// Canonical `_type` discriminator (`"DV_TEXT"`), always serialized
+        /// first (ADR-002).
+        #[serde(rename = "_type", default = "TypeTag::new")]
+        type_tag: TypeTag<DvTextData>,
+        /// The six shared `DV_TEXT` attributes, flattened onto the same
+        /// JSON object as the discriminator.
+        #[serde(flatten)]
+        data: DvTextData,
+    },
 }
 
 /// Marker/accessor trait shared by `DV_TEXT` and `DV_CODED_TEXT`, exposing
@@ -238,37 +290,37 @@ impl DvTextApi for DvTextData {
 impl DvTextApi for DvText {
     fn value(&self) -> &str {
         match self {
-            DvText::Text(v) => v.value(),
+            DvText::Text { data, .. } => data.value(),
             DvText::Coded(v) => v.value(),
         }
     }
     fn hyperlink(&self) -> Option<&DvUri> {
         match self {
-            DvText::Text(v) => v.hyperlink(),
+            DvText::Text { data, .. } => data.hyperlink(),
             DvText::Coded(v) => v.hyperlink(),
         }
     }
     fn formatting(&self) -> Option<&str> {
         match self {
-            DvText::Text(v) => v.formatting(),
+            DvText::Text { data, .. } => data.formatting(),
             DvText::Coded(v) => v.formatting(),
         }
     }
     fn mappings(&self) -> Option<&[TermMapping]> {
         match self {
-            DvText::Text(v) => v.mappings(),
+            DvText::Text { data, .. } => data.mappings(),
             DvText::Coded(v) => v.mappings(),
         }
     }
     fn language(&self) -> Option<&CodePhrase> {
         match self {
-            DvText::Text(v) => v.language(),
+            DvText::Text { data, .. } => data.language(),
             DvText::Coded(v) => v.language(),
         }
     }
     fn encoding(&self) -> Option<&CodePhrase> {
         match self {
-            DvText::Text(v) => v.encoding(),
+            DvText::Text { data, .. } => data.encoding(),
             DvText::Coded(v) => v.encoding(),
         }
     }
@@ -283,9 +335,56 @@ impl DataValueApi for DvTextData {
 impl DataValueApi for DvText {
     fn type_name(&self) -> &'static str {
         match self {
-            DvText::Text(_) => TYPE_NAME,
+            DvText::Text { .. } => TYPE_NAME,
             DvText::Coded(v) => v.type_name(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bare_text(value: &str) -> DvTextData {
+        DvTextData {
+            value: value.to_string(),
+            hyperlink: None,
+            formatting: None,
+            mappings: None,
+            language: None,
+            encoding: None,
+        }
+    }
+
+    /// ADR-002 round-trip: a bare `DvText::Text` self-tags `"DV_TEXT"` as
+    /// the first key, and a `"_type": "DV_CODED_TEXT"` payload dispatches
+    /// to the `Coded` variant; both round-trip to equality.
+    #[test]
+    fn dv_text_round_trips_with_type_discriminators() {
+        // Bare DV_TEXT: serializes with the discriminator first.
+        let text = DvText::Text {
+            type_tag: TypeTag::new(),
+            data: bare_text("plain prose"),
+        };
+        let json = serde_json::to_string(&text).unwrap();
+        assert!(
+            json.starts_with(r#"{"_type":"DV_TEXT","#),
+            "bare DV_TEXT must self-tag first, got: {json}"
+        );
+        let text_back: DvText = serde_json::from_str(&json).unwrap();
+        assert_eq!(text_back, text);
+
+        // DV_CODED_TEXT input: the _type tag must drive dispatch to Coded.
+        let coded_json = r#"{"_type":"DV_CODED_TEXT","value":"event","defining_code":{"_type":"CODE_PHRASE","terminology_id":{"_type":"TERMINOLOGY_ID","value":"openehr"},"code_string":"433"}}"#;
+        let coded: DvText = serde_json::from_str(coded_json).unwrap();
+        assert!(matches!(coded, DvText::Coded(_)));
+        let coded_round = serde_json::to_string(&coded).unwrap();
+        assert!(
+            coded_round.starts_with(r#"{"_type":"DV_CODED_TEXT","#),
+            "DV_CODED_TEXT must self-tag first, got: {coded_round}"
+        );
+        let coded_back: DvText = serde_json::from_str(&coded_round).unwrap();
+        assert_eq!(coded_back, coded);
     }
 }
 
@@ -295,5 +394,5 @@ impl DataValueApi for DvText {
 //   source_loc: master05-text_package.adoc §Class Descriptions / dv_text.adoc §DV_TEXT Class
 //   confidence: medium
 //   todos: 6
-//   note: DvTextData+DvText(enum)+DvTextApi triple applied to a *concrete* (not spec-abstract) parent class, extending the ADR-001 Refinements pattern to DV_TEXT/DV_CODED_TEXT substitutability (the one load-bearing use site in this cluster is DV_PARAGRAPH.items: List<DV_TEXT>); Language_valid/Encoding_valid invariants left as todo!() pending a terminology-service handle (each mentioned on both its field doc and its invariant method, hence 4 of the 6).
+//   note: DvTextData+DvText(enum)+DvTextApi triple applied to a *concrete* (not spec-abstract) parent class, extending the ADR-001 Refinements pattern to DV_TEXT/DV_CODED_TEXT substitutability (the one load-bearing use site in this cluster is DV_PARAGRAPH.items: List<DV_TEXT>); Language_valid/Encoding_valid invariants left as todo!() pending a terminology-service handle (each mentioned on both its field doc and its invariant method, hence 4 of the 6). P4/ADR-002: DvTextData implements TypeName ("DV_TEXT") but carries no tag field (it is flattened into DvCodedText); DvText::Text reshaped to a struct variant {type_tag: TypeTag<DvTextData>, #[serde(flatten)] data} so a bare DV_TEXT self-tags — this resolves the former missing-discriminator TODO; enum stays #[serde(untagged)], Coded first; round-trip pinned by the in-file unit test.
 // ─────────────────────────────────────────────

@@ -26,6 +26,8 @@ use crate::common::change_control::version::Version;
 use crate::common::generic::audit_details::AuditDetails;
 use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_coded_text::DvCodedText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
 /// form (ITS-JSON/ITS-XML). Per ADR-001 (Refinements), `serde` derives and
@@ -46,8 +48,13 @@ pub const TYPE_NAME: &str = "VERSIONED_OBJECT";
 /// every declared function implemented against that field. A future phase
 /// may replace this with a lazily-loaded/compressed backing store without
 /// changing the public function battery.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VersionedObject<T> {
+    /// Canonical `_type` discriminator (`"VERSIONED_OBJECT"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<VersionedObject<T>>,
+
     /// `uid`: unique identifier of this version container in the form of a
     /// UID with no extension. This id will be the same in all instances of
     /// the same container in a distributed environment, meaning that it
@@ -72,6 +79,10 @@ pub struct VersionedObject<T> {
     /// doc comment above for the full quotation and rationale). Every
     /// declared spec function is implemented against this field.
     pub versions: Vec<Version<T>>,
+}
+
+impl<T> TypeName for VersionedObject<T> {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl<T> VersionedObject<T> {

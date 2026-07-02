@@ -14,6 +14,7 @@ use std::sync::Weak;
 
 use super::authored_resource::AuthoredResource;
 use super::resource_description_item::ResourceDescriptionItem;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 
 // TODO(port): `Terminology_code` is BASE 1.2.0 `foundation_types.primitive_types`
 // and has not yet been transcribed into `openehr-foundation` in this
@@ -40,8 +41,13 @@ type TerminologyCode = String;
 /// owning-cycle hazard applies to any parent-pointer attribute, not only the
 /// RM's own `PATHABLE.parent()`.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename = "RESOURCE_DESCRIPTION")]
 pub struct ResourceDescription {
+    /// Canonical `_type` discriminator (`"RESOURCE_DESCRIPTION"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `original_author`: `Hash<String, String>`, cardinality 1..1.
     ///
     /// Original author of this resource, with all relevant details,
@@ -159,6 +165,10 @@ pub struct ResourceDescription {
 // class and would be surprising to a caller comparing two
 // `ResourceDescription`s for content equality. Add a manual `PartialEq` that
 // excludes `parent_resource` if value comparison is needed later.
+
+impl TypeName for ResourceDescription {
+    const NAME: &'static str = "RESOURCE_DESCRIPTION";
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS

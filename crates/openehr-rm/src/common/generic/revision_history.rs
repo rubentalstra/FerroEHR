@@ -12,6 +12,8 @@
 //! interoperable definition of revision history for the `VERSIONED_OBJECT`
 //! and `AUTHORED_RESOURCE` classes.
 use super::revision_history_item::RevisionHistoryItem;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
 /// form. Per ADR-001 refinements ("serde derives wait until P4"), a
@@ -36,14 +38,23 @@ pub const TYPE_NAME: &str = "REVISION_HISTORY";
 /// attribute row and the two functions' own postconditions (most-recent-
 /// last), not the class-level Purpose prose, and flagged here rather than
 /// silently picking one without a trace.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RevisionHistory {
+    /// Canonical `_type` discriminator (`"REVISION_HISTORY"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `items`: `List<REVISION_HISTORY_ITEM>`, cardinality `1..1`.
     ///
     /// The items in this history in most-recent-last order — see the
     /// struct-level PORT NOTE for the order-direction ambiguity this
     /// reading resolves.
     pub items: Vec<RevisionHistoryItem>,
+}
+
+impl TypeName for RevisionHistory {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl RevisionHistory {

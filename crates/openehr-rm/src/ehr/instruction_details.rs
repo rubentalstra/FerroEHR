@@ -18,17 +18,37 @@
 //! (`.claude/rules/rm-transcription.md`).
 use crate::data_structures::item_structure::ItemStructure; // TODO(port): forward-reference; not yet transcribed. Path matches the sibling ehr_status.rs/ehr_access.rs convention (data_structures has no UML subpackage grouping, unlike data_types).
 use openehr_base::identification::locatable_ref::LocatableRef;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form.
+/// form. Single-sourced into the `TypeName` impl below (ADR-002).
+///
+/// Being `PATHABLE`-not-`LOCATABLE` changes this class's *fields* (no
+/// `LocatableData` embed), not its `_type`: the pinned ITS-JSON schema
+/// defines `INSTRUCTION_DETAILS` as a concrete class with its own `_type`
+/// const, so it self-tags like every other concrete class.
 pub const TYPE_NAME: &str = "INSTRUCTION_DETAILS";
 
 /// `INSTRUCTION_DETAILS` — a reference back to the causing
 /// [`super::instruction::Instruction`]/[`super::activity::Activity`], plus
 /// optional workflow-engine state, recorded on an
-/// [`super::action::Action`].
-#[derive(Debug, Clone, PartialEq)]
+/// [`super::action::Action`]. No `LocatableData` embed (settled
+/// `PATHABLE`-not-`LOCATABLE` hazard), so this is a plain struct with no
+/// `#[serde(flatten)]` fields.
+///
+/// TODO(port): P4 — `instruction_id: LocatableRef` needs
+/// `openehr_base::identification::locatable_ref::LocatableRef` to derive
+/// `Serialize`/`Deserialize` (sibling P4 wave over `openehr-base`, in
+/// progress but not yet reaching this specific file as of this pass).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct InstructionDetails {
+    /// Canonical `_type` discriminator (`"INSTRUCTION_DETAILS"`), always
+    /// serialized first; tolerated-absent and validated-if-present on input
+    /// (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `instruction_id`: reference to causing Instruction.
     pub instruction_id: LocatableRef,
 
@@ -52,7 +72,12 @@ pub struct InstructionDetails {
     ///
     /// This specification does not currently define the actual structure
     /// or semantics of this field.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub wf_details: Option<ItemStructure>,
+}
+
+impl TypeName for InstructionDetails {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl InstructionDetails {
@@ -68,6 +93,6 @@ impl InstructionDetails {
 //   source: RM 1.1.0 ehr.entry — docs/research/spec-cache/RM-1.1.0/uml_classes/instruction_details.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master08-entry_package.adoc §Class Descriptions / instruction_details.adoc §INSTRUCTION_DETAILS Class
 //   confidence: high
-//   todos: 3
-//   note: PATHABLE-not-LOCATABLE settled hazard applied; instruction_id uses the real openehr_base::identification::locatable_ref::LocatableRef (already transcribed in P1), not a forward-ref stub; the 3 markers are the ItemStructure import, the activity_id invariant, and the Pathable-function forwarding.
+//   todos: 4
+//   note: PATHABLE-not-LOCATABLE settled hazard applied; instruction_id uses the real openehr_base::identification::locatable_ref::LocatableRef (already transcribed in P1), not a forward-ref stub; markers are the ItemStructure import, the activity_id invariant, the Pathable-function forwarding, and the LocatableRef-serde TODO. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl (no-op struct-level rename removed) — PATHABLE-only changes fields, not _type; wf_details skip-if-none.
 // ─────────────────────────────────────────────

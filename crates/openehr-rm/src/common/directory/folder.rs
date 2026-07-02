@@ -16,6 +16,8 @@
 //! `VERSION` object.
 use crate::common::archetyped::locatable::LocatableData;
 use openehr_base::identification::object_ref::ObjectRef;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
 /// form. Per ADR-001 (Refinements), `serde` derives wait until P4.
@@ -38,14 +40,21 @@ pub const TYPE_NAME: &str = "FOLDER";
 /// heap-indirecting container (e.g. `DV_MULTIMEDIA.thumbnail: DV_MULTIMEDIA`
 /// -- a bare, non-collection self-reference -- genuinely needs `Box`, while
 /// `FOLDER.folders: List<FOLDER>` does not).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Folder {
+    /// Canonical `_type` discriminator (`"FOLDER"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `LOCATABLE` state (`name`, `archetype_node_id`, `uid`,
     /// `links`, `archetype_details`, `feeder_audit`) per ADR-001 §3.
+    #[serde(flatten)]
     pub locatable: LocatableData,
 
     /// `items`: the list of references to other (usually) versioned
     /// objects logically in this folder.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<ObjectRef>>,
 
     /// `folders`: sub-folders of this `FOLDER`.
@@ -55,6 +64,7 @@ pub struct Folder {
     /// rather than an always-present possibly-empty `Vec<..>`, consistent
     /// with every other `0..1 List<T>` attribute elsewhere in this
     /// transcription pass).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub folders: Option<Vec<Folder>>,
 
     /// `details`: archetypable meta-data for `FOLDER`.
@@ -62,6 +72,7 @@ pub struct Folder {
     /// TODO(port): `ITEM_STRUCTURE` is transcribed in the
     /// `data_structures` package, out of scope for this
     /// change_control/directory transcription pass; forward-referenced.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<crate::data_structures::item_structure::item_structure::ItemStructure>,
 }
 
@@ -72,6 +83,10 @@ pub struct Folder {
 //     (encoded structurally as Option<Vec<..>> per the doc comment above;
 //     a Some(vec![]) value would violate this invariant but is not yet
 //     rejected by a constructor.)
+
+impl TypeName for Folder {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS

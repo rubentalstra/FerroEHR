@@ -21,10 +21,19 @@
 // TODO(port): forward-reference — `VERSIONED_OBJECT<T>` lives in
 // rm.common.change_control (PORT_MASTER_PLAN.md §7.1), not yet transcribed.
 use crate::common::change_control::versioned_object::VersionedObject;
+use serde::{Deserialize, Serialize};
 
 use super::ehr_access::EhrAccess;
 
-/// Canonical `_type` discriminator string for this class in serialized form.
+/// Canonical `_type` discriminator string for this class per the spec's
+/// class naming.
+///
+/// PORT NOTE (ADR-002, resolved): `VERSIONED_X` binding classes never emit
+/// their own `_type` — the pinned ITS-JSON schema defines only
+/// `VERSIONED_OBJECT` (self-tagged in the sibling `common.change_control`
+/// wave), no `VERSIONED_X` entries. See the fuller note on
+/// `versioned_composition::TYPE_NAME`. This const exists only as the spec
+/// class name for non-serde callers (e.g. `OBJECT_REF.type` comparisons).
 pub const TYPE_NAME: &str = "VERSIONED_EHR_ACCESS";
 
 /// `VERSIONED_EHR_ACCESS` — `VERSIONED_OBJECT<EHR_ACCESS>`.
@@ -38,17 +47,21 @@ pub const TYPE_NAME: &str = "VERSIONED_EHR_ACCESS";
 /// `EHR_ACCESS`, not a fresh subclass with its own state).
 ///
 /// Transcribed as a newtype-style wrapper rather than a bare
-/// `type VersionedEhrAccess = VersionedObject<EhrAccess>;` alias so that (a)
-/// the `_type` discriminator (`VERSIONED_EHR_ACCESS`, distinct from the
-/// generic `VERSIONED_OBJECT`'s own discriminator) has a concrete type to
-/// attach to via a future `#[serde(rename = ...)]`, and (b) the class
-/// remains a nameable, addressable type for downstream RM code exactly as
-/// the spec intends ("a binding of the type X to the generic type parameter
-/// T ... facilitate[s] implementation in languages lacking genericity" —
-/// Rust has genericity, but the spec's own reason for minting the class is
-/// preserved here for name-stability and discriminator purposes rather than
-/// erased into a type alias).
-#[derive(Debug, Clone, PartialEq)]
+/// `type VersionedEhrAccess = VersionedObject<EhrAccess>;` alias so the
+/// class remains a nameable, addressable type for downstream RM code
+/// exactly as the spec intends ("a binding of the type X to the generic
+/// type parameter T ... facilitate[s] implementation in languages lacking
+/// genericity" — Rust has genericity, but the spec's own reason for minting
+/// the class is preserved here for name-stability rather than erased into a
+/// type alias).
+///
+/// PORT NOTE: `#[serde(transparent)]`, no `TypeName`/`TypeTag` of its own —
+/// per ADR-002 the binding never emits `_type: "VERSIONED_EHR_ACCESS"`; the
+/// wire tag is the inner `VersionedObject`'s `_type: "VERSIONED_OBJECT"`.
+/// See the identical note on
+/// `versioned_composition::VersionedComposition`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct VersionedEhrAccess(pub VersionedObject<EhrAccess>);
 
 // ─────────────────────────────────────────────
@@ -57,5 +70,5 @@ pub struct VersionedEhrAccess(pub VersionedObject<EhrAccess>);
 //   source_loc: master04-ehr_package.adoc §Class Descriptions / uml_classes/versioned_ehr_access.adoc §VERSIONED_EHR_ACCESS Class
 //   confidence: high
 //   todos: 1
-//   note: pure VERSIONED_OBJECT<T> binding with no added members; modelled as a newtype wrapper (not a bare type alias) so the distinct _type discriminator has a concrete attachment point.
+//   note: pure VERSIONED_OBJECT<T> binding with no added members; newtype wrapper (not a bare type alias) for name stability. P4/ADR-002 resolved: keeps #[serde(transparent)] and never emits its own _type — the pinned ITS-JSON schema defines only VERSIONED_OBJECT, no VERSIONED_X entries (matching versioned_composition.rs).
 // ─────────────────────────────────────────────

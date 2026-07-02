@@ -10,6 +10,9 @@
 //!
 //! Lexical form (Syntaxes, BASE 1.2.0 identification package):
 //! `uuid = hex-number, '-', hex-number, '-', hex-number, '-', hex-number, '-', hex-number ;`
+
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+
 use super::uid::{Uid as UidEnum, UidApi, UidData};
 
 /// Rust type name: `Uuid` (PascalCase of the spec's `UUID`).
@@ -28,15 +31,26 @@ use super::uid::{Uid as UidEnum, UidApi, UidData};
 ///
 /// `#[serde(flatten)]` on the embedded `uid` field folds `UidData`'s single
 /// `value` attribute directly into this struct's JSON object, matching the
-/// same convention used on `IsoOid`/`InternetId` in this package.
+/// same convention used on `IsoOid`/`InternetId` in this package, so a
+/// `Uuid` serializes as the canonical `{"_type": "UUID", "value": "..."}`
+/// UID shape (ADR-002 self-tag).
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
 pub struct Uuid {
+    /// Canonical `_type` discriminator (`"UUID"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `UID` state (the single `value` attribute), holding the
     /// `8-4-4-4-12` hex-hyphenated string form.
     #[serde(flatten)]
     pub uid: UidData,
+}
+
+impl TypeName for Uuid {
+    const NAME: &'static str = "UUID";
 }
 
 impl Uuid {
@@ -65,5 +79,5 @@ impl From<Uuid> for UidEnum {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / uuid.adoc §UUID Class
 //   confidence: high
 //   todos: 0
-//   note: named Uuid to mirror the spec class name; deliberately not backed by the uuid crate in this pass, see PORT NOTE; grammar-form (8-4-4-4-12) validation not yet enforced.
+//   note: named Uuid to mirror the spec class name; deliberately not backed by the uuid crate in this pass, see PORT NOTE; grammar-form (8-4-4-4-12) validation not yet enforced. P4/ADR-002: self-tags via TypeTag<Self> first field (no prior TYPE_NAME const existed in this file; NAME taken from the ITS-JSON schema string "UUID").
 // ─────────────────────────────────────────────

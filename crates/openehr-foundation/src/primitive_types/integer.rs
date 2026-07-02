@@ -9,6 +9,7 @@ use super::any::Any;
 use super::double::Double;
 use super::numeric::Numeric;
 use super::ordered::Ordered;
+use serde::{Deserialize, Serialize};
 // PORT NOTE: `OrderedNumeric` is not implemented explicitly here — it is
 // blanket-implemented in `ordered_numeric.rs` for any type already
 // satisfying both `Ordered` and `Numeric` (which `Integer` does, below), so
@@ -18,7 +19,7 @@ use super::ordered::Ordered;
 /// Transcribed as a transparent newtype over `i32` per `docs/PORTING.md`
 /// Section 14.2 (`int` → `i32`), matching the spec's explicit "32-bit
 /// integers" description.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[repr(transparent)]
 pub struct Integer(pub i32);
 

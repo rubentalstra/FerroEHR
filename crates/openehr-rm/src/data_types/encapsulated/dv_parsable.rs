@@ -13,13 +13,21 @@
 //! `../time_specification/dv_time_specification.rs`) is itself typed as,
 //! carrying the HL7v3 `PIVL`/`EIVL`/GTS syntax text.
 use crate::data_types::encapsulated::dv_encapsulated::{DvEncapsulatedApi, DvEncapsulatedData};
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `DV_PARSABLE`.
 ///
 /// openEHR class: `DV_PARSABLE`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvParsable {
+    /// Canonical `_type` discriminator (`"DV_PARSABLE"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `DV_ENCAPSULATED` state (`charset`, `language`).
+    #[serde(flatten)]
     pub encapsulated: DvEncapsulatedData,
 
     /// `value`: `String` (`1..1`).
@@ -36,6 +44,10 @@ pub struct DvParsable {
 }
 
 pub const TYPE_NAME: &str = "DV_PARSABLE";
+
+impl TypeName for DvParsable {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 impl DvParsable {
     /// `size` `(): Integer`.
@@ -90,5 +102,5 @@ impl DvEncapsulatedApi for DvParsable {
 //   source_loc: master09-encapsulated_package.adoc §Class Descriptions / dv_parsable.adoc §DV_PARSABLE Class
 //   confidence: high
 //   todos: 1
-//   note: fully implemented (no terminology-service dependency, unlike its DvMultimedia sibling) — value/formalism/size and both invariants (Formalism_valid, Size_valid) are complete; size()'s i32-cast-of-UTF-8-byte-length carries the same unspecified-overflow gap noted on List::count and other RM byte/length functions.
+//   note: fully implemented (no terminology-service dependency, unlike its DvMultimedia sibling) — value/formalism/size and both invariants (Formalism_valid, Size_valid) are complete; size()'s i32-cast-of-UTF-8-byte-length carries the same unspecified-overflow gap noted on List::count and other RM byte/length functions. P4: Serialize/Deserialize added; `encapsulated` flattened; value/formalism are mandatory, no skip needed; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME).
 // ─────────────────────────────────────────────

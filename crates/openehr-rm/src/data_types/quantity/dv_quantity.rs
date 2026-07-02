@@ -23,9 +23,11 @@ use openehr_foundation::primitive_types::integer::Integer;
 use openehr_foundation::primitive_types::numeric::Numeric;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::primitive_types::real::Real;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (serde derives wait until P4 per ADR-001 "Refinements").
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "DV_QUANTITY";
 
 /// `DV_QUANTITY` inherits `DV_AMOUNT` and adds five attributes of its own
@@ -47,16 +49,27 @@ pub const TYPE_NAME: &str = "DV_QUANTITY";
 /// achieved by the generic already being self-typed rather than by
 /// flattening. `self.amount.quantified.ordered.normal_range` /
 /// `.other_reference_ranges` are the sole accessors.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvQuantity {
+    /// Canonical `_type` discriminator (`"DV_QUANTITY"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `DV_AMOUNT` parent state, self-typed per the F-bounded
     /// pattern documented on `DvOrderedData` in `dv_ordered.rs` (threaded
     /// through `DvQuantifiedData<T>`/`DvAmountData<T>`).
+    #[serde(flatten)]
     pub amount: DvAmountData<DvQuantity>,
 
     /// `magnitude`: `Real` (1..1).
     ///
     /// Numeric magnitude of the quantity.
+    ///
+    /// PORT NOTE: the previously-flagged cross-crate gap is closed — `Real`
+    /// now derives `Serialize`/`Deserialize` in `openehr-foundation`,
+    /// serializing as its bare inner `f64`; the round-trip test at the
+    /// bottom of this file asserts the full canonical wire shape.
     pub magnitude: Real,
 
     /// `precision`: `Integer` (0..1).
@@ -65,6 +78,10 @@ pub struct DvQuantity {
     /// of number of decimal places. The value 0 implies an integral
     /// quantity. The value -1 implies no limit, i.e. any number of decimal
     /// places.
+    ///
+    /// PORT NOTE: `Integer`'s previously-flagged serde gap is closed the
+    /// same way as `magnitude`'s `Real` above.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub precision: Option<Integer>,
 
     /// `units`: `String` (1..1).
@@ -94,6 +111,7 @@ pub struct DvQuantity {
     ///
     /// If not set, the UCUM standard (case-sensitive codes) is assumed as
     /// the units system.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub units_system: Option<String>,
 
     /// `units_display_name`: `String` (0..1).
@@ -108,7 +126,14 @@ pub struct DvQuantity {
     /// and non-systematic units. For this reason, it is not recommended to
     /// add unit display names to archetypes, only to templates (for
     /// localisation purposes).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub units_display_name: Option<String>,
+}
+
+/// ADR-002: `_type` string for `DV_QUANTITY`, single-sourced from
+/// [`TYPE_NAME`].
+impl TypeName for DvQuantity {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvQuantity {
@@ -315,11 +340,72 @@ impl DvAmountApi<Real> for DvQuantity {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::quantity::dv_ordered::DvOrderedData;
+    use crate::data_types::quantity::dv_quantified::DvQuantifiedData;
+
+    /// Canonical-JSON round-trip test for `DvQuantity`: magnitude 7.5,
+    /// units "kg", every other field `None`/default.
+    ///
+    /// PORT NOTE: this exercises the full flattened
+    /// `DvOrderedData<T> -> DvQuantifiedData<T> -> DvAmountData<T> ->
+    /// DvQuantity` chain and asserts the canonical wire shape (ADR-002
+    /// `_type` self-tag first in key order, snake_case, null omission).
+    #[test]
+    fn quantity_round_trips_through_canonical_json() {
+        let quantity = DvQuantity {
+            type_tag: TypeTag::new(),
+            amount: DvAmountData {
+                quantified: DvQuantifiedData {
+                    ordered: DvOrderedData {
+                        normal_status: None,
+                        normal_range: None,
+                        other_reference_ranges: None,
+                    },
+                    magnitude_status: None,
+                    accuracy: None,
+                },
+                accuracy_is_percent: None,
+                accuracy: None,
+            },
+            magnitude: Real(7.5),
+            precision: None,
+            units: "kg".to_string(),
+            units_system: None,
+            units_display_name: None,
+        };
+
+        let json = serde_json::to_string(&quantity).expect("serialize");
+        assert!(
+            json.starts_with(r#"{"_type":"DV_QUANTITY","#),
+            "canonical JSON must lead with the _type discriminator: {json}"
+        );
+        assert_eq!(
+            json,
+            r#"{"_type":"DV_QUANTITY","magnitude":7.5,"units":"kg"}"#
+        );
+
+        let back: DvQuantity = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(back, quantity);
+
+        // A missing `_type` is tolerated in a concrete-declared slot
+        // (ADR-002 / ITS-JSON), while a wrong one must be rejected.
+        let untagged: DvQuantity = serde_json::from_str(r#"{"magnitude":7.5,"units":"kg"}"#)
+            .expect("missing _type tolerated");
+        assert_eq!(untagged, quantity);
+        let wrong: Result<DvQuantity, _> =
+            serde_json::from_str(r#"{"_type":"DV_COUNT","magnitude":7.5,"units":"kg"}"#);
+        assert!(wrong.is_err(), "mismatched _type must be rejected");
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_quantity.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_quantity.adoc §DV_QUANTITY Class
 //   confidence: medium
 //   todos: 4
-//   note: normal_range/other_reference_ranges are duplicated (flat top-level fields plus the copies inside DvOrderedData<DvQuantity>) pending a resolution of which is canonical, flagged with a TODO; add/subtract/multiply are stubbed todo!() since DV_AMOUNT's accuracy-combination rule is prose, not a stated postcondition, and DV_QUANTITY's own table gives no Post_result for any of the three.
+//   note: normal_range/other_reference_ranges are duplicated (flat top-level fields plus the copies inside DvOrderedData<DvQuantity>) pending a resolution of which is canonical, flagged with a TODO; add/subtract/multiply are stubbed todo!() since DV_AMOUNT's accuracy-combination rule is prose, not a stated postcondition, and DV_QUANTITY's own table gives no Post_result for any of the three. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `amount` flattened (schema-verified, full DvOrderedData/DvQuantifiedData/DvAmountData chain flattens); Real/Integer serde gaps closed in openehr-foundation; round-trip test pins _type-first wire shape, missing-tag tolerance, wrong-tag rejection.
 // ─────────────────────────────────────────────

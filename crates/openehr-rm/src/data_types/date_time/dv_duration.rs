@@ -72,19 +72,27 @@ use crate::data_types::quantity::dv_ordered::DvOrderedApi;
 use crate::data_types::text::code_phrase::CodePhrase;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 use openehr_foundation::time::iso8601_duration::Iso8601Duration;
+use serde::{Deserialize, Serialize};
 
 /// `DV_DURATION`.
 ///
 /// openEHR class: `DV_DURATION`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvDuration {
+    /// Canonical `_type` discriminator (`"DV_DURATION"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     // ---- DV_AMOUNT state (inlined; see the forward-reference note above) ----
     /// `accuracy_is_percent`: `Boolean` (`0..1`), inherited from `DV_AMOUNT`.
     ///
     /// If `true`, indicates that when this object was created, `accuracy`
     /// was recorded as a percent value; if `false`, as an absolute quantity
     /// value.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub accuracy_is_percent: Option<bool>,
 
     /// `accuracy`: `Real` (`0..1`, redefined from `DV_AMOUNT`), inherited
@@ -102,6 +110,7 @@ pub struct DvDuration {
     /// `DV_AMOUNT`'s description only); modelled as `None` here rather than
     /// a magic `Real` sentinel, pending confirmation this is the intended
     /// reading once `DV_AMOUNT` is fully transcribed.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub accuracy: Option<f64>,
 
     // ---- Iso8601_duration state ----
@@ -114,10 +123,25 @@ pub struct DvDuration {
     /// re-asserting/narrowing the type already fixed by `Iso8601_duration`
     /// rather than introducing new state — accessed here via
     /// `self.iso8601.core.value`, not duplicated as a second field.
+    ///
+    /// `#[serde(flatten)]` per this crate's established embedded-parent
+    /// convention.
+    ///
+    /// PORT NOTE (P4): the foundation P4 pass supplied `Iso8601Duration`'s
+    /// own serde derive *and* flattened its embedded `Iso8601TypeCore`, so
+    /// this double flatten (`iso8601` here, `core` there) surfaces `value`
+    /// as a plain top-level `String` — the canonical DV_DURATION wire shape
+    /// is `{"_type":"DV_DURATION","value":"P1DT2H"}`, never a nested
+    /// `{"iso8601":{...}}` or `{"core":{...}}` object.
+    #[serde(flatten)]
     pub iso8601: Iso8601Duration,
 }
 
 pub const TYPE_NAME: &str = "DV_DURATION";
+
+impl TypeName for DvDuration {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 impl DvDuration {
     /// `add` __alias__ `"+"` `(other: DV_DURATION[1]): DV_DURATION`
@@ -313,11 +337,40 @@ impl DvOrderedApi for DvDuration {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use openehr_foundation::time::iso8601_type::Iso8601TypeCore;
+
+    /// Pins the canonical DV_DURATION wire shape: the double flatten
+    /// (`DvDuration.iso8601` → `Iso8601Duration.core`) must surface `value`
+    /// as a plain top-level string next to `_type`, never nested under
+    /// `iso8601`/`core`.
+    #[test]
+    fn duration_value_serializes_flat_with_type_tag_first() {
+        let d = DvDuration {
+            type_tag: TypeTag::new(),
+            accuracy_is_percent: None,
+            accuracy: None,
+            iso8601: Iso8601Duration {
+                core: Iso8601TypeCore {
+                    value: "P1DT2H".to_string(),
+                },
+            },
+        };
+        let json = serde_json::to_string(&d).unwrap();
+        assert_eq!(json, r#"{"_type":"DV_DURATION","value":"P1DT2H"}"#);
+
+        let back: DvDuration = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, d);
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_duration.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_duration.adoc §DV_DURATION Class
 //   confidence: medium
-//   todos: 10
-//   note: the Section 7.2-named multiple-inheritance hazard (DV_AMOUNT + Iso8601_duration, genuinely disjoint parent state, contrast the value-mixin-only MI on DV_DATE/DV_TIME/DV_DATE_TIME); DV_AMOUNT's two attributes inlined pending the concurrent quantity cluster landing DvAmountData (flagged, reconciliation TODO); every arithmetic effector delegates to the still-todo!() Iso8601Duration methods; magnitude() is the one function whose spec text names the exact cross-parent delegation (Iso8601_duration.to_seconds()) this hazard is about; less_than's Post_result wording is the one internally-consistent case in this package (contrast the three DvDate/DvTime/DvDateTime PORT NOTEs).
+//   todos: 9
+//   note: the Section 7.2-named multiple-inheritance hazard (DV_AMOUNT + Iso8601_duration, genuinely disjoint parent state, contrast the value-mixin-only MI on DV_DATE/DV_TIME/DV_DATE_TIME); DV_AMOUNT's two attributes inlined pending the concurrent quantity cluster landing DvAmountData (flagged, reconciliation TODO); every arithmetic effector delegates to the still-todo!() Iso8601Duration methods; magnitude() is the one function whose spec text names the exact cross-parent delegation (Iso8601_duration.to_seconds()) this hazard is about; less_than's Post_result wording is the one internally-consistent case in this package (contrast the three DvDate/DvTime/DvDateTime PORT NOTEs). P4: Serialize/Deserialize added; both Option fields skip when None; `iso8601` flattened over Iso8601Duration's own flattened core (supplied by the foundation P4 pass), so `value` sits flat — wire shape {"_type":"DV_DURATION","value":"P1DT2H"}; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME); the stale "foundation has no serde" TODO removed (superseded by the foundation derive, in-file round-trip test pins the flat shape).
 // ─────────────────────────────────────────────

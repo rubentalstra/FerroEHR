@@ -59,6 +59,7 @@
 //! now — Phase A transcription captures the interface shape only, per the
 //! invoking task's explicit instruction.
 use crate::time::temporal::Temporal;
+use serde::{Deserialize, Serialize};
 // PORT NOTE: `Any` and `Ordered` are not imported here even though the
 // module doc discusses them — `Iso8601Type: Temporal` already pulls in
 // `Temporal: Ordered` and (transitively) `Ordered: Any` as supertrait
@@ -72,7 +73,7 @@ use crate::time::temporal::Temporal;
 /// (conceptually "flattened" — see the ADR-001 §3 note above; `#[serde
 /// (flatten)]` itself is deferred to the JSON-serialization phase, P4/P5,
 /// since serde derives are out of scope for Phase A transcription).
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Iso8601TypeCore {
     /// `value`: `String` (`1..1`).
     ///

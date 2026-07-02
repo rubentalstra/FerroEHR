@@ -7,15 +7,14 @@
 //! Generic identifier type for identifiers whose format is otherwise
 //! unknown to openEHR. Includes an attribute for naming the identification
 //! scheme (which may well be local).
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+
 use super::object_id::{ObjectId, ObjectIdApi, ObjectIdData};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form.
-///
-/// TODO(port): see the `TODO(port)` on `archetype_id::TYPE_NAME` — the same
-/// "no wire path currently emits `_type`" gap applies here (`GenericId` is
-/// likewise reached only through the untagged `ObjectId::GenericId`
-/// variant).
+/// form. P4/ADR-002 update: single-sources the string carried by the
+/// struct's own self-tagging `type_tag` field below (via the [`TypeName`]
+/// impl) — see `archetype_id::TYPE_NAME`.
 pub const TYPE_NAME: &str = "GENERIC_ID";
 
 /// `GENERIC_ID` embeds `ObjectIdData` (its inherited `value: String`
@@ -27,8 +26,12 @@ pub const TYPE_NAME: &str = "GENERIC_ID";
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
-#[serde(rename = "GENERIC_ID")]
 pub struct GenericId {
+    /// Canonical `_type` discriminator (`"GENERIC_ID"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `OBJECT_ID` state (the single `value` attribute).
     #[serde(flatten)]
     pub object_id: ObjectIdData,
@@ -38,6 +41,10 @@ pub struct GenericId {
     /// may be a local ad hoc scheme whose name is not controlled or
     /// standardised in any way.
     pub scheme: String,
+}
+
+impl TypeName for GenericId {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl GenericId {
@@ -64,6 +71,6 @@ impl From<GenericId> for ObjectId {
 //   source: BASE 1.2.0 base_types.identification §GENERIC_ID — docs/research/spec-cache/BASE-1.2.0/uml_classes/generic_id.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / generic_id.adoc §GENERIC_ID Class
 //   confidence: high
-//   todos: 1
-//   note: only OBJECT_ID descendant in this package to add a new attribute (scheme) rather than layering functions over the inherited value alone; no invariant table given in the spec for this class. P4 addendum: no wire path currently emits this class's _type (see archetype_id.rs); flagged for openehr-serde's P17 manual dispatch.
+//   todos: 0
+//   note: only OBJECT_ID descendant in this package to add a new attribute (scheme) rather than layering functions over the inherited value alone; no invariant table given in the spec for this class. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted; the earlier "no wire path emits _type" TODO is resolved by the self-tag.
 // ─────────────────────────────────────────────

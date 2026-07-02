@@ -21,14 +21,19 @@
 // transcribed (Phase 01), so this import is real, not a stand-in.
 use openehr_base::identification::hier_object_id::HierObjectId;
 use openehr_base::identification::object_ref::ObjectRef;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 // TODO(port): forward-reference — `DV_DATE_TIME` lives in
 // rm.data_types.date_time (PORT_MASTER_PLAN.md §7.1), not yet transcribed.
 use crate::data_types::date_time::dv_date_time::DvDateTime;
 
 /// Canonical `_type` discriminator string for this class in serialized form.
-/// See the note on `ehr_status::TYPE_NAME` for why this is a `const` rather
-/// than a `#[serde(rename = ...)]` in this pass.
+///
+/// Single-sourced into the `TypeName` impl below (ADR-002); the
+/// `TypeTag<Self>` first field on [`Ehr`] is what actually emits
+/// `_type: "EHR"` on the wire (the former struct-level
+/// `#[serde(rename = "EHR")]` was a verified no-op and has been deleted).
 pub const TYPE_NAME: &str = "EHR";
 
 /// `EHR` — the root object and access point of an EHR for a subject of care.
@@ -42,8 +47,13 @@ pub const TYPE_NAME: &str = "EHR";
 // Eq dropped from the derive set: `time_created` is a `DV_DATE_TIME`, whose
 // embedded quantity chain transitively carries `f64` accuracy fields
 // (`PartialEq` only).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Ehr {
+    /// Canonical `_type` discriminator (`"EHR"`), always serialized first;
+    /// tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `system_id`: the identifier of the logical EHR management system in
     /// which this EHR was created.
     ///
@@ -71,6 +81,7 @@ pub struct Ehr {
     ///
     /// Invariant `Contributions_valid`:
     /// `for_all c in contributions | c.type.is_equal("CONTRIBUTION")`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub contributions: Option<Vec<ObjectRef>>,
 
     /// `ehr_status`: reference to `EHR_STATUS` object for this EHR.
@@ -96,6 +107,7 @@ pub struct Ehr {
     ///
     /// Invariant `Compositions_valid`:
     /// `for_all c in compositions | c.type.is_equal("VERSIONED_COMPOSITION")`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub compositions: Option<Vec<ObjectRef>>,
 
     /// `directory`: optional directory structure for this EHR. If present,
@@ -108,6 +120,7 @@ pub struct Ehr {
     ///
     /// Invariant `Directory_in_folders`:
     /// `folders /= Void implies folders.item(1) = directory`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub directory: Option<ObjectRef>,
 
     /// `time_created`: time of creation of the EHR.
@@ -130,7 +143,12 @@ pub struct Ehr {
     ///
     /// Invariant `Folders_valid`:
     /// `folders /= Void implies for_all f in folders | f.type.is_equal("VERSIONED_FOLDER")`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub folders: Option<Vec<ObjectRef>>,
+}
+
+impl TypeName for Ehr {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl Ehr {
@@ -201,5 +219,5 @@ impl Ehr {
 //   source_loc: master04-ehr_package.adoc §Class Descriptions / uml_classes/ehr.adoc §EHR Class
 //   confidence: high
 //   todos: 8
-//   note: EHR has no Inherit row at all (not LOCATABLE, not PATHABLE) — verified against the published table, documented prominently; all 7 class invariants stubbed pending the RM Validate framework.
+//   note: EHR has no Inherit row at all (not LOCATABLE, not PATHABLE) — verified against the published table, documented prominently; all 7 class invariants stubbed pending the RM Validate framework. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl (no-op struct-level rename deleted); HierObjectId/ObjectRef (openehr-base) and DvDateTime (data_types) need their own serde derives before this actually round-trips.
 // ─────────────────────────────────────────────

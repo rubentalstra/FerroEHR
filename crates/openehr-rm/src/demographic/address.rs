@@ -4,16 +4,26 @@
 //!
 //! Address of contact, which may be electronic or geographic.
 use crate::common::archetyped::locatable::LocatableData;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `pub const TYPE_NAME`: the canonical `_type` discriminator string for
-/// this concrete class (serde derives deferred to P4/P5 per ADR-001
-/// §Refinements).
+/// this concrete class, single-sourcing the [`TypeName`] impl below
+/// (ADR-002).
 pub const TYPE_NAME: &str = "ADDRESS";
 
-/// `ADDRESS` inherits `LOCATABLE` directly.
-#[derive(Debug, Clone, PartialEq)]
+/// `ADDRESS` inherits `LOCATABLE` directly. `#[serde(flatten)]` folds
+/// `LocatableData` into `ADDRESS`'s own JSON object; per ADR-002 the class
+/// self-tags via its first field.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Address {
+    /// Canonical `_type` discriminator (`"ADDRESS"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Inherited `LOCATABLE` state.
+    #[serde(flatten)]
     pub locatable: LocatableData,
 
     /// `details`: `ITEM_STRUCTURE` `[1..1]` — archetypable structured
@@ -23,6 +33,10 @@ pub struct Address {
     /// `crate::data_structures::item_structure::ItemStructure` (sibling
     /// agent's package).
     pub details: crate::data_structures::item_structure::ItemStructure,
+}
+
+impl TypeName for Address {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl Address {
@@ -48,5 +62,5 @@ impl Address {
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/address.adoc §ADDRESS Class
 //   confidence: high
 //   todos: 3
-//   note: type() named address_type() to avoid the Rust reserved keyword `type`.
+//   note: type() named address_type() to avoid the Rust reserved keyword `type`. P4/ADR-002: self-tags via TypeTag<Self> first field (TypeName from TYPE_NAME); no-op struct-level rename deleted.
 // ─────────────────────────────────────────────

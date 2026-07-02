@@ -12,14 +12,26 @@ use super::event::{EventApi, EventData};
 use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::date_time::dv_duration::DvDuration;
 use crate::data_types::text::dv_coded_text::DvCodedText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `INTERVAL_EVENT<T>` class.
 ///
 /// Embeds the shared `EVENT<T>` state (per ADR-001 §3/§5) plus its own
 /// attributes.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct IntervalEvent<T> {
+    /// Canonical `_type` discriminator (`"INTERVAL_EVENT"`), always
+    /// serialized first; tolerated-absent and validated-if-present on input
+    /// (ADR-002). Spelled `TypeTag<IntervalEvent<T>>` (not `TypeTag<Self>`)
+    /// and paired with the mandatory function-path
+    /// `default = "TypeTag::new"` so serde's derive adds no spurious
+    /// `T: Default` bound.
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<IntervalEvent<T>>,
+
     /// Inherited `EVENT<T>` (and transitively `LOCATABLE`) state.
+    #[serde(flatten)]
     pub event: EventData<T>,
 
     /// `width`: duration of the time interval during which the values
@@ -41,6 +53,7 @@ pub struct IntervalEvent<T> {
     /// event corresponds.
     ///
     /// Cardinality `0..1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sample_count: Option<i32>,
 
     /// `math_function`: mathematical function of the data of this event,
@@ -56,6 +69,10 @@ pub struct IntervalEvent<T> {
     /// `640|actual|` needs the terminology binding machinery (see
     /// `openehr-terminology`); revisit once `DvCodedText`/`CodePhrase` land.
     pub math_function: DvCodedText,
+}
+
+impl<T> TypeName for IntervalEvent<T> {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl<T> EventApi<T> for IntervalEvent<T> {
@@ -98,5 +115,5 @@ pub const TYPE_NAME: &str = "INTERVAL_EVENT";
 //   source_loc: master06-history_package.adoc §Class Descriptions / interval_event.adoc §INTERVAL_EVENT Class
 //   confidence: medium
 //   todos: 3
-//   note: width is transcribed as 1..1 per the table's cardinality column despite the description's "Void if instantaneous" wording (flagged); interval_start_time() and the Math_function_validity invariant both block on data_types/terminology dependencies not yet landed.
+//   note: width is transcribed as 1..1 per the table's cardinality column despite the description's "Void if instantaneous" wording (flagged); interval_start_time() and the Math_function_validity invariant both block on data_types/terminology dependencies not yet landed. P4/ADR-002: self-tag added (generic form TypeTag<IntervalEvent<T>>, bound-free TypeName impl).
 // ─────────────────────────────────────────────

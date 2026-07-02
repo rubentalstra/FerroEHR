@@ -43,20 +43,25 @@ pub struct UidBasedIdData {
 /// ADR-001 §4, its two concrete descendants `HIER_OBJECT_ID` and
 /// `OBJECT_VERSION_ID` are collected into this closed `enum`.
 ///
-/// `#[serde(tag = "_type")]` renders each variant as `{"_type": "<NAME>",
-/// "value": "..."}`, keying each rename off the leaf struct's own
-/// `TYPE_NAME` const (`hier_object_id::TYPE_NAME`,
-/// `object_version_id::TYPE_NAME`) so the two stay in lockstep.
+/// PORT NOTE: `#[serde(untagged)]` per ADR-002 — the `_type` discriminator
+/// is not emitted by this enum but by each variant payload's own
+/// self-tagging `TypeTag` field (`HierObjectId`/`ObjectVersionId` each
+/// carry `#[serde(rename = "_type")] type_tag`), so serialization still
+/// yields `{"_type": "<NAME>", "value": "..."}`, and deserialization
+/// dispatch is tag-driven: a payload's `TypeTag` fails on a mismatched
+/// `_type` string, so untagged variant probing selects exactly the variant
+/// whose class name matches. The two payloads are otherwise
+/// structure-identical (`{value}`), so input *missing* `_type` (invalid in
+/// an abstract `UID_BASED_ID` slot per ITS-JSON) falls back to the first
+/// declared variant.
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
-#[serde(tag = "_type")]
+#[serde(untagged)]
 pub enum UidBasedId {
     /// `HIER_OBJECT_ID`.
-    #[serde(rename = "HIER_OBJECT_ID")]
     HierObjectId(HierObjectId),
     /// `OBJECT_VERSION_ID`.
-    #[serde(rename = "OBJECT_VERSION_ID")]
     ObjectVersionId(ObjectVersionId),
 }
 
@@ -118,5 +123,5 @@ impl UidBasedIdApi for UidBasedId {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / uid_based_id.adoc §UID_BASED_ID Class
 //   confidence: medium
 //   todos: 2
-//   note: root() needs a format-sniffing UID sub-parser (ISO_OID vs UUID vs INTERNET_ID) not yet implemented; Has_extension_valid invariant recorded but not enforced.
+//   note: root() needs a format-sniffing UID sub-parser (ISO_OID vs UUID vs INTERNET_ID) not yet implemented; Has_extension_valid invariant recorded but not enforced. P4/ADR-002: UidBasedId enum is #[serde(untagged)], _type dispatch comes from each concrete payload's TypeTag; UidBasedIdData stays untagged (embedded abstract-parent state).
 // ─────────────────────────────────────────────

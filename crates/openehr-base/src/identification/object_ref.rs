@@ -9,6 +9,7 @@
 //! other distributed protocol. However, in small systems they may be part
 //! of the same executable as the data containing the Id.
 use super::object_id::ObjectId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 
 /// Canonical `_type` discriminator string for this class in serialized
 /// form. `ObjectRef` is embedded by value (not enum-wrapped) into
@@ -29,8 +30,13 @@ pub const TYPE_NAME: &str = "OBJECT_REF";
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
-#[serde(rename = "OBJECT_REF")]
 pub struct ObjectRef {
+    /// Canonical `_type` discriminator (`"OBJECT_REF"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `namespace`: namespace to which this identifier belongs in the
     /// local system context (and possibly in any other openEHR compliant
     /// environment) e.g. `terminology`, `demographic`. These names are not
@@ -60,6 +66,10 @@ pub struct ObjectRef {
     /// `id`: globally unique id of an object, regardless of where it is
     /// stored.
     pub id: ObjectId,
+}
+
+impl TypeName for ObjectRef {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 // ─────────────────────────────────────────────

@@ -23,6 +23,7 @@
 use crate::data_types::date_time::dv_duration::DvDuration;
 use crate::data_types::quantity::dv_absolute_quantity::DvAbsoluteQuantityData;
 use crate::data_types::quantity::dv_ordered::DvOrderedApi;
+use serde::{Deserialize, Serialize};
 
 /// Embedded parent state for `DV_TEMPORAL`'s attributes.
 ///
@@ -47,7 +48,11 @@ use crate::data_types::quantity::dv_ordered::DvOrderedApi;
 /// transcription (the quantity cluster had not landed); supplying the
 /// self-type — rather than a fixed carrier such as the accuracy type — is
 /// the only choice that keeps the range attributes spec-typed per leaf.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// PORT NOTE (P4): no explicit `#[serde(bound = ...)]` — same
+/// derive-auto-generated `T: Serialize` / `T: Deserialize<'de>` bounds as
+/// `DvOrderedData<T>` (see the write-up in `dv_ordered.rs`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvTemporalData<T: DvOrderedApi> {
     /// Embedded `DV_ABSOLUTE_QUANTITY` state (in turn embedding
     /// `DV_QUANTIFIED` → `DV_ORDERED` → `DV_ORDERED` → `DATA_VALUE`, per that
@@ -59,6 +64,7 @@ pub struct DvTemporalData<T: DvOrderedApi> {
     /// redefinition rule — see `accuracy` below rather than inside the
     /// embedded `DvAbsoluteQuantityData`, since Rust field embedding cannot
     /// itself narrow a field's declared type without shadowing.
+    #[serde(flatten)]
     pub quantified: DvAbsoluteQuantityData<T>,
 
     /// `accuracy`: `DV_DURATION` (`0..1`, redefined from
@@ -71,6 +77,12 @@ pub struct DvTemporalData<T: DvOrderedApi> {
     /// to `accuracy: DV_DURATION` for every `DV_TEMPORAL` descendant,
     /// encoded directly on this struct per ADR-001 §6 rather than via
     /// generic parameterization.
+    ///
+    /// PORT NOTE: `skip_serializing_if` only, deliberately without
+    /// `default` — see the `dv_quantity.rs` round-trip test's doc comment
+    /// for the full write-up of why `default` is redundant (and, in the
+    /// generic-plus-flatten case, actively harmful) for an `Option` field.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub accuracy: Option<DvDuration>,
 }
 
@@ -158,5 +170,5 @@ pub trait DvTemporal: DvOrderedApi {
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_temporal.adoc §DV_TEMPORAL Class
 //   confidence: medium
 //   todos: 3
-//   note: abstract class, embedded-Data + trait per ADR-001 §3; accuracy narrowed DV_AMOUNT->DV_DURATION is a covariant redefinition one level above the concrete DvDate/DvTime/DvDateTime classes (ADR-001 §6); add/subtract/diff are stubbed todo!() pending the jiff-backed ISO 8601 arithmetic engine (P17); DvTemporalData<T> now threads the quantity cluster's F-bounded self-type and DvTemporal requires DvOrderedApi per the spec inheritance chain.
+//   note: abstract class, embedded-Data + trait per ADR-001 §3; accuracy narrowed DV_AMOUNT->DV_DURATION is a covariant redefinition one level above the concrete DvDate/DvTime/DvDateTime classes (ADR-001 §6); add/subtract/diff are stubbed todo!() pending the jiff-backed ISO 8601 arithmetic engine (P17); DvTemporalData<T> now threads the quantity cluster's F-bounded self-type and DvTemporal requires DvOrderedApi per the spec inheritance chain. P4: DvTemporalData<T> derives Serialize/Deserialize with no explicit serde bound (same auto-bound finding as DvOrderedData<T>); `quantified` flattened; `accuracy` skips when None (no `default`, per the dv_quantity.rs write-up).
 // ─────────────────────────────────────────────

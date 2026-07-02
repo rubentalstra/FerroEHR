@@ -55,7 +55,6 @@ use std::collections::HashMap;
 /// on programming languages or UI toolkits) but does not define any beyond
 /// `documentation` in this table.
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
-#[serde(rename = "RESOURCE_ANNOTATIONS")]
 pub struct ResourceAnnotations {
     /// `documentation`: `Hash<String, Hash<String, Hash<String, String>>>`,
     /// cardinality 1..1.

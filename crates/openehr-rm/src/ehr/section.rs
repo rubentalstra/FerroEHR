@@ -22,18 +22,28 @@
 //! other boxed-recursion cases (`FOLDER`, `CLUSTER`, `ITEM_TREE`,
 //! `DV_MULTIMEDIA.thumbnail`), which recurse through a bare `Option<Self>`
 //! or `Option<Box<Self>>` field with no interposed collection type.
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
+
 /// Canonical `_type` discriminator string for this class in serialized
-/// form.
+/// form. Single-sourced into the `TypeName` impl below (ADR-002).
 pub const TYPE_NAME: &str = "SECTION";
 
 /// `SECTION` — a heading in a heading structure ("section tree").
 ///
 /// `SECTION` inherits `CONTENT_ITEM` directly (not through `ENTRY`), so it
 /// embeds [`super::content_item::ContentItemData`] rather than
-/// [`super::entry::EntryData`].
-#[derive(Debug, Clone, PartialEq)]
+/// [`super::entry::EntryData`]. `#[serde(flatten)]` folds `ContentItemData`
+/// into `SECTION`'s own JSON object.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Section {
+    /// Canonical `_type` discriminator (`"SECTION"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `CONTENT_ITEM` (in turn `LOCATABLE`) state.
+    #[serde(flatten)]
     pub content_item: super::content_item::ContentItemData,
 
     /// `items`: ordered list of content items under this section, which
@@ -47,7 +57,12 @@ pub struct Section {
     ///
     /// See the module-level doc comment for why no `Box` is needed here
     /// despite the recursion through `ContentItem::Section`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub items: Option<Vec<super::content_item::ContentItem>>,
+}
+
+impl TypeName for Section {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl super::content_item::ContentItemApi for Section {
@@ -62,5 +77,5 @@ impl super::content_item::ContentItemApi for Section {
 //   source_loc: master07-navigation_package.adoc §Class Descriptions / section.adoc §SECTION Class
 //   confidence: high
 //   todos: 1
-//   note: recursion flows through the ContentItem enum + Vec indirection alone (documented at module level); Items_valid invariant left unimplemented; the LocatableData forward-reference import was removed once ContentItemData landed (Section reaches LOCATABLE state through it, not directly).
+//   note: recursion flows through the ContentItem enum + Vec indirection alone (documented at module level); Items_valid invariant left unimplemented. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl (no-op struct-level rename removed); flatten kept on content_item, items skip-if-none; the untagged ContentItem enum dispatches on this payload's own _type.
 // ─────────────────────────────────────────────

@@ -18,9 +18,11 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::primitive_types::real::Real;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (serde derives wait until P4 per ADR-001 "Refinements").
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "DV_COUNT";
 
 /// `DV_COUNT` inherits `DV_AMOUNT` and adds a single attribute of its own,
@@ -44,11 +46,17 @@ pub const TYPE_NAME: &str = "DV_COUNT";
 /// possible representation (`i64`) rather than another layer of newtype
 /// wrapping. No other field in this package deviates from the
 /// newtype-wrapped convention.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvCount {
+    /// Canonical `_type` discriminator (`"DV_COUNT"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `DV_AMOUNT` parent state, self-typed per the F-bounded
     /// pattern documented on `DvOrderedData` in `dv_ordered.rs` (threaded
     /// through `DvQuantifiedData<T>`/`DvAmountData<T>`).
+    #[serde(flatten)]
     pub amount: DvAmountData<DvCount>,
 
     /// `magnitude`: `Integer64` (1..1).
@@ -59,6 +67,12 @@ pub struct DvCount {
     /// directly on this struct rather than the `Integer64` newtype — see
     /// the struct-level doc comment for the full rationale.
     pub magnitude: i64,
+}
+
+/// ADR-002: `_type` string for `DV_COUNT`, single-sourced from
+/// [`TYPE_NAME`].
+impl TypeName for DvCount {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvCount {
@@ -264,5 +278,5 @@ impl DvAmountApi<i64> for DvCount {
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_count.adoc §DV_COUNT Class
 //   confidence: medium
 //   todos: 5
-//   note: magnitude: i64 is the ADR-001 §6 covariant-redefinition worked example named by this task, transcribed as a bare i64 (not the Integer64 newtype) directly on the struct with a doc note; this creates a trait-bound mismatch (i64 has no OrderedNumeric impl) flagged explicitly for P17 triage; add/subtract/multiply stubbed todo!() for the same accuracy-combination/rounding-rule gaps as DvQuantity; forward-references CODE_PHRASE pending sibling data_types::text package.
+//   note: magnitude: i64 is the ADR-001 §6 covariant-redefinition worked example named by this task, transcribed as a bare i64 (not the Integer64 newtype) directly on the struct with a doc note; this creates a trait-bound mismatch (i64 has no OrderedNumeric impl) flagged explicitly for P17 triage; add/subtract/multiply stubbed todo!() for the same accuracy-combination/rounding-rule gaps as DvQuantity; forward-references CODE_PHRASE pending sibling data_types::text package. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `amount` flattened; magnitude is a bare primitive so no cross-crate serde dependency on this field.
 // ─────────────────────────────────────────────

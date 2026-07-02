@@ -28,6 +28,8 @@ use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 use super::party_proxy::PartyProxy;
 
@@ -38,8 +40,13 @@ use super::party_proxy::PartyProxy;
 pub const TYPE_NAME: &str = "PARTICIPATION";
 
 /// `PARTICIPATION` declares no `Inherit` row in the spec table.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Participation {
+    /// Canonical `_type` discriminator (`"PARTICIPATION"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `function`: `DV_TEXT`, cardinality `1..1`.
     ///
     /// The function of the Party in this participation (note that a given
@@ -68,6 +75,7 @@ pub struct Participation {
     ///
     /// TODO(port): invariant requires a live `TerminologyService`; not yet
     /// enforced. See [`Participation::is_mode_valid`].
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<DvCodedText>,
 
     /// `performer`: `PARTY_PROXY`, cardinality `1..1`.
@@ -82,7 +90,12 @@ pub struct Participation {
     /// is used in an observational context (i.e. recording facts about
     /// the past); or the intended time interval of the participation when
     /// used in future contexts, such as EHR Instructions.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub time: Option<DvInterval<DvDateTime>>,
+}
+
+impl TypeName for Participation {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl Participation {

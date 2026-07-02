@@ -21,13 +21,24 @@ use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
+use serde::{Deserialize, Serialize};
 
 /// `Iso8601_duration` embeds the `Iso8601_type` parent state (`value:
 /// String`) via `Iso8601TypeCore`, per ADR-001 §3. This struct declares no
 /// attributes of its own beyond the inherited `value`.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Iso8601Duration {
     /// Embedded `Iso8601_type.value: String`.
+    ///
+    /// `#[serde(flatten)]` per P4: `DV_DURATION` (the sole embedder of this
+    /// struct, via `#[serde(flatten)] pub iso8601: Iso8601Duration` on
+    /// `openehr_rm::data_types::date_time::dv_duration::DvDuration`)
+    /// declares `value` as a canonical top-level `String` property in its
+    /// ITS-JSON schema, not a nested `{"core": {"value": ...}}` object;
+    /// without flattening here, the double-embedding (`DvDuration.iso8601`
+    /// flattened, but `core` not) would still emit the field nested one
+    /// level too deep.
+    #[serde(flatten)]
     pub core: Iso8601TypeCore,
 }
 
@@ -381,5 +392,5 @@ impl Iso8601Duration {
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_duration.adoc §Iso8601_duration Class
 //   confidence: medium
 //   todos: 15
-//   note: is_extended/is_partial are the two effected constants (true/false per the spec table verbatim) and are the only fully-implemented members in this file; every accessor/arithmetic body needing string parsing or to_seconds is stubbed todo!() pending the jiff-backed internal engine at P17; as_string relies on the Iso8601Type default with no override (documented why); invariant_fractional_second_valid's singular/plural naming mismatch against fractional_seconds() flagged, not silently reconciled.
+//   note: is_extended/is_partial are the two effected constants (true/false per the spec table verbatim) and are the only fully-implemented members in this file; every accessor/arithmetic body needing string parsing or to_seconds is stubbed todo!() pending the jiff-backed internal engine at P17; as_string relies on the Iso8601Type default with no override (documented why); invariant_fractional_second_valid's singular/plural naming mismatch against fractional_seconds() flagged, not silently reconciled. P4: added #[serde(flatten)] on `core` so DV_DURATION.value sits at the top level per the ITS-JSON schema, matching DvDuration's own #[serde(flatten)] on its `iso8601` field.
 // ─────────────────────────────────────────────

@@ -9,6 +9,7 @@
 //! structure inside a `VERSION<T>`; the path attribute is applied to the
 //! object that `VERSION.data` points to.
 use super::uid_based_id::UidBasedId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
 
 /// Canonical `_type` discriminator string for this class in serialized
 /// form. `LocatableRef` is not currently reached through any tagged enum in
@@ -29,8 +30,13 @@ pub const TYPE_NAME: &str = "LOCATABLE_REF";
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
-#[serde(rename = "LOCATABLE_REF")]
 pub struct LocatableRef {
+    /// Canonical `_type` discriminator (`"LOCATABLE_REF"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `namespace`, inherited unchanged from `OBJECT_REF`. See
     /// `object_ref::ObjectRef::namespace` for the legal-value constraint.
     pub namespace: String,
@@ -64,6 +70,10 @@ pub struct LocatableRef {
     /// cardinality more literally than collapsing them.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub path: Option<String>,
+}
+
+impl TypeName for LocatableRef {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl LocatableRef {

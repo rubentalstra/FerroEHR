@@ -34,22 +34,31 @@
 use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 use super::party_proxy::PartyProxy;
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. Per ADR-001 refinements ("serde derives wait until P4"), a
-/// `const` stands in for `#[serde(rename = ...)]` until serde lands as a
-/// dependency of this crate.
+/// form. Single-sources the [`TypeName`] impl below (ADR-002).
 pub const TYPE_NAME: &str = "AUDIT_DETAILS";
 
-/// `AUDIT_DETAILS` declares no `Inherit` row in the spec table.
+/// Shared attribute state of `AUDIT_DETAILS` and its descendant
+/// `ATTESTATION`.
 ///
-/// [`super::attestation::Attestation`] embeds this struct rather than
-/// referencing it, per that class's `Inherit: AUDIT_DETAILS` row and
-/// ADR-001 §3.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AuditDetails {
+/// PORT NOTE (ADR-002 restructure): `AUDIT_DETAILS` is a *concrete* class
+/// that is also inherited by `ATTESTATION`. Under ADR-002 the concrete
+/// [`AuditDetails`] struct self-tags with a `TypeTag`; if `Attestation`
+/// still `#[serde(flatten)]`ed the full self-tagged `AuditDetails` struct
+/// (as it did pre-P4), serializing an `ATTESTATION` would emit a second,
+/// wrong `_type: "AUDIT_DETAILS"` key from the embedded parent. The five
+/// shared attributes are therefore split into this untagged `*Data` struct
+/// (per ADR-002 §3, embedded `*Data` structs carry no tag):
+/// [`AuditDetails`] wraps it with its own tag, and
+/// [`super::attestation::Attestation`] flattens it directly, so exactly
+/// one `_type` appears on the wire for either class.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AuditDetailsData {
     /// `system_id`: `String`, cardinality `1..1`.
     ///
     /// Identifier of the logical EHR system where the change was
@@ -88,6 +97,7 @@ pub struct AuditDetails {
     /// `change_type` field. For example, if the change affects only the
     /// EHR directory, this field might be used to indicate 'Folder
     /// "episode 2018-02-16" added' or similar.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<DvText>,
 
     /// `committer`: `PARTY_PROXY`, cardinality `1..1`.
@@ -97,7 +107,33 @@ pub struct AuditDetails {
     pub committer: PartyProxy,
 }
 
-impl AuditDetails {
+/// `AUDIT_DETAILS` declares no `Inherit` row in the spec table.
+///
+/// Per ADR-002 this concrete struct carries the `_type` tag while the
+/// shared field set lives in the flattened, untagged [`AuditDetailsData`]
+/// (see that struct's PORT NOTE for why the split exists —
+/// [`super::attestation::Attestation`] flattens the same `*Data` struct
+/// per its `Inherit: AUDIT_DETAILS` row and ADR-001 §3).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AuditDetails {
+    /// Canonical `_type` discriminator (`"AUDIT_DETAILS"`), always
+    /// serialized first; tolerated-absent and validated-if-present on
+    /// input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
+    /// The class's full attribute set (`system_id`, `time_committed`,
+    /// `change_type`, `description`, `committer`), shared with
+    /// `ATTESTATION` — see [`AuditDetailsData`].
+    #[serde(flatten)]
+    pub data: AuditDetailsData,
+}
+
+impl TypeName for AuditDetails {
+    const NAME: &'static str = TYPE_NAME;
+}
+
+impl AuditDetailsData {
     /// Invariant `System_id_valid`: `not system_id.is_empty`.
     ///
     /// TODO(port): not yet wired into a constructor or the RM `Validate`
@@ -126,11 +162,28 @@ impl AuditDetails {
     }
 }
 
+impl AuditDetails {
+    /// Invariant `System_id_valid` — delegates to
+    /// [`AuditDetailsData::is_system_id_valid`].
+    pub fn is_system_id_valid(&self) -> bool {
+        self.data.is_system_id_valid()
+    }
+
+    /// Invariant `Change_type_valid` — delegates to
+    /// [`AuditDetailsData::is_change_type_valid`].
+    pub fn is_change_type_valid(
+        &self,
+        terminology: &openehr_terminology::TerminologyService,
+    ) -> bool {
+        self.data.is_change_type_valid(terminology)
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 common.generic — docs/research/spec-cache/RM-1.1.0/uml_classes/audit_details.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: common/master04-generic_package.adoc §Audit Information / uml_classes/audit_details.adoc §AUDIT_DETAILS Class
 //   confidence: high
 //   todos: 2
-//   note: System_id_valid recorded as a self-contained boolean check; Change_type_valid left todo!()-bodied (needs live TerminologyService). Forward-refs DvDateTime, DvCodedText, DvText (data_types, sibling-agent territory, not yet landed). This struct is the embedded parent for Attestation per its Inherit row.
+//   note: System_id_valid recorded as a self-contained boolean check; Change_type_valid left todo!()-bodied (needs live TerminologyService). Forward-refs DvDateTime, DvCodedText, DvText (data_types, sibling-agent territory, not yet landed). P4/ADR-002: split into untagged AuditDetailsData (the embedded parent state Attestation flattens) + self-tagged AuditDetails wrapper (TypeName + first-field TypeTag<Self>) so the parent's _type never leaks into ATTESTATION output.
 // ─────────────────────────────────────────────

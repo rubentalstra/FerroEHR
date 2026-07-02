@@ -24,14 +24,26 @@ use crate::data_types::quantity::dv_ordered::DvOrderedApi;
 use crate::data_types::text::code_phrase::CodePhrase;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `DV_TIME`.
 ///
 /// openEHR class: `DV_TIME`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvTime {
+    /// Canonical `_type` discriminator (`"DV_TIME"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    ///
+    /// This tag is what distinguishes `DV_TIME` from the structure-identical
+    /// `DV_DATE`/`DV_DATE_TIME` (`{value: String}` on the wire) in untagged
+    /// enum dispatch — do not add extra fields to disambiguate.
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `DV_TEMPORAL` state, self-typed per the F-bounded threading
     /// documented on `DvTemporalData` (see `dv_temporal.rs`).
+    #[serde(flatten)]
     pub temporal: DvTemporalData<DvTime>,
 
     /// `value`: `String` (`1..1`, redefined).
@@ -44,6 +56,10 @@ pub struct DvTime {
 }
 
 pub const TYPE_NAME: &str = "DV_TIME";
+
+impl TypeName for DvTime {
+    const NAME: &'static str = TYPE_NAME;
+}
 
 impl DvTime {
     /// `magnitude` `(): Real` (effected).
@@ -190,6 +206,6 @@ impl DvTemporal for DvTime {
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_time.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_time.adoc §DV_TIME Class
 //   confidence: medium
-//   todos: 6
-//   note: same dual-inheritance shape as DV_DATE; magnitude/add/subtract/diff/invariant_value_valid deferred to the jiff-backed engine at P17; less_than transcribed with name-implied semantics against the same likely copy-paste Post_result defect flagged on DV_DATE; Any/Ordered/DvOrderedApi impls added so DvTime satisfies the DvOrdered enum's trait chain (is_equal stubbed pending magnitude()).
+//   todos: 7
+//   note: same dual-inheritance shape as DV_DATE; magnitude/add/subtract/diff/invariant_value_valid deferred to the jiff-backed engine at P17; less_than transcribed with name-implied semantics against the same likely copy-paste Post_result defect flagged on DV_DATE; Any/Ordered/DvOrderedApi impls added so DvTime satisfies the DvOrdered enum's trait chain (is_equal stubbed pending magnitude()). P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvTime>) flattened (same schema-verified shape as DV_DATE); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_DATE/DV_DATE_TIME.
 // ─────────────────────────────────────────────

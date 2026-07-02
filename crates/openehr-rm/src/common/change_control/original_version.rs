@@ -12,6 +12,8 @@
 //! `ORIGINAL_VERSION<T>`; it is also the unit of copying in a distributed
 //! environment.
 use openehr_base::identification::object_version_id::ObjectVersionId;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 use crate::common::change_control::version::{VersionApi, VersionData};
 use crate::common::generic::attestation::Attestation;
@@ -31,10 +33,16 @@ pub const TYPE_NAME: &str = "ORIGINAL_VERSION";
 /// `lifecycle_state`/`data` as ordinary attributes directly. Compare
 /// `ImportedVersion`, which computes the same four by delegating to its
 /// wrapped `item` instead of storing them.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OriginalVersion<T> {
+    /// Canonical `_type` discriminator (`"ORIGINAL_VERSION"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<OriginalVersion<T>>,
+
     /// Embedded `VERSION<T>` state (`contribution`, `signature`,
     /// `commit_audit`) per ADR-001 §3.
+    #[serde(flatten)]
     pub version: VersionData,
 
     /// `uid`: stored version of inheritance precursor
@@ -44,6 +52,7 @@ pub struct OriginalVersion<T> {
     /// `preceding_version_uid`: stored version of inheritance precursor
     /// (`VERSION.preceding_version_uid(): OBJECT_VERSION_ID`, abstract
     /// there). `Void` if this is the first version.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preceding_version_uid: Option<ObjectVersionId>,
 
     /// `other_input_version_uids`: identifiers of other versions whose
@@ -55,6 +64,7 @@ pub struct OriginalVersion<T> {
     /// Invariant `Other_input_version_uids_valid`:
     /// `other_input_version_uids /= Void implies not
     /// other_input_version_uids.is_empty`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub other_input_version_uids: Option<Vec<ObjectVersionId>>,
 
     /// `lifecycle_state`: lifecycle state of the content item in this
@@ -65,10 +75,16 @@ pub struct OriginalVersion<T> {
     ///
     /// Invariant `Attestations_valid`: `attestations /= Void implies not
     /// attestations.is_empty`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub attestations: Option<Vec<Attestation>>,
 
     /// `data`: data content of this Version.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>,
+}
+
+impl<T> TypeName for OriginalVersion<T> {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl<T> OriginalVersion<T> {

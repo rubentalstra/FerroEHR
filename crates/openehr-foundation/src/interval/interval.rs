@@ -14,6 +14,7 @@
 //! `proper_interval.rs` in this module.
 use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
+use serde::{Deserialize, Serialize};
 
 /// `Interval` is declared `abstract` in the spec table, with two concrete
 /// descendants (`Point_interval<T>`, `Proper_interval<T>`) that are
@@ -36,11 +37,24 @@ use crate::primitive_types::ordered::Ordered;
 /// contract at this level and leaves the effecting to descendants). `is_equal`
 /// is marked `(effected)` at this level, so it is given a real body,
 /// following `Any`'s value-equality contract.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Interval<T: Ordered> {
     /// `lower`: `T` (0..1). Lower bound.
+    ///
+    /// `#[serde(skip_serializing_if = "Option::is_none")]` per P4: the
+    /// canonical ITS-JSON schema types this property as a plain (non-
+    /// nullable) `T` object when present, so an explicit JSON `null` (what
+    /// serde emits by default for a `None` field with no such attribute)
+    /// fails schema validation; omitting the key entirely when unbounded
+    /// is both schema-valid and matches `lower_unbounded` already
+    /// conveying the "no lower limit" semantics.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lower: Option<T>,
     /// `upper`: `T` (0..1). Upper bound.
+    ///
+    /// See the `#[serde(skip_serializing_if = ...)]` note on `lower` above;
+    /// the same reasoning applies symmetrically.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub upper: Option<T>,
     /// `lower_unbounded`: `Boolean` (1..1). `lower` boundary open (i.e. =
     /// -infinity).
@@ -146,5 +160,5 @@ impl<T: Ordered + PartialEq> Any for Interval<T> {
 //   source_loc: master05-interval.adoc §Class Definitions / interval.adoc §Interval Class
 //   confidence: medium
 //   todos: 2
-//   note: has/intersects/contains are abstract in the spec and stubbed todo!() pending resolution of the has postcondition's ambiguous parenthesization; the four class invariants need Ordered::strictly_comparable_to, which is not yet part of the Ordered trait transcribed in primitive_types.
+//   note: has/intersects/contains are abstract in the spec and stubbed todo!() pending resolution of the has postcondition's ambiguous parenthesization; the four class invariants need Ordered::strictly_comparable_to, which is not yet part of the Ordered trait transcribed in primitive_types. P4: added #[serde(skip_serializing_if = "Option::is_none")] on `lower`/`upper` — DV_INTERVAL's ITS-JSON schema types these as plain (non-nullable) objects when present, so the prior unconditional `null` emission for an unbounded limit failed schema validation.
 // ─────────────────────────────────────────────

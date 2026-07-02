@@ -29,5 +29,5 @@ pub type VersionedParty = crate::common::change_control::versioned_object::Versi
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/versioned_party.adoc §VERSIONED_PARTY Class
 //   confidence: low
 //   todos: 1
-//   note: type alias forward-references crate::common::change_control::versioned_object::VersionedObject<T>, not yet landed by the sibling agent owning common/ — exact path/bound unverifiable until then.
+//   note: type alias over crate::common::change_control::versioned_object::VersionedObject<T>. P4/ADR-002: no serde work applies to a bare type alias (nothing to attach a derive or TypeTag to), and no `_type` is wanted anyway — the pinned ITS-JSON schema defines no VERSIONED_X entries; Party itself (party.rs) carries the actual serde shape for whatever this alias resolves to.
 // ─────────────────────────────────────────────

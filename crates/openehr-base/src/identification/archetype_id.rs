@@ -8,21 +8,16 @@
 //!
 //! Lexical form: `rm_originator '-' rm_name '-' rm_entity '.' concept_name
 //! { '-' specialisation }* '.v' number`.
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+
 use super::object_id::{ObjectId, ObjectIdApi, ObjectIdData};
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form.
-///
-/// TODO(port): unlike `HIER_OBJECT_ID`/`OBJECT_VERSION_ID`, `ArchetypeId` is
-/// reached only through `ObjectId::ArchetypeId`, and `ObjectId` is
-/// `#[serde(untagged)]` (see the `TODO(port)` on that enum in
-/// `object_id.rs`) rather than `tag = "_type"` — so there is currently no
-/// path, tagged or otherwise, by which this struct emits an actual `_type`
-/// key on the wire. The struct-level `#[serde(rename = "ARCHETYPE_ID")]`
-/// below is inert for a standalone struct (see the same caveat on
-/// `hier_object_id::TYPE_NAME`) and does not fix this. This `const` remains
-/// the only place the discriminator string is recorded until
-/// `openehr-serde`'s manual `_type` dispatch (P17) supersedes both.
+/// form. P4/ADR-002 update: this const single-sources the string carried by
+/// the struct's own self-tagging `type_tag` field below (via the
+/// [`TypeName`] impl), so every serialized `ArchetypeId` — bare or reached
+/// through the untagged `ObjectId::ArchetypeId` variant — emits
+/// `{"_type": "ARCHETYPE_ID", ...}` itself.
 pub const TYPE_NAME: &str = "ARCHETYPE_ID";
 
 /// `ARCHETYPE_ID` declares no attribute of its own beyond the inherited
@@ -37,13 +32,22 @@ pub const TYPE_NAME: &str = "ARCHETYPE_ID";
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
-#[serde(rename = "ARCHETYPE_ID")]
 pub struct ArchetypeId {
+    /// Canonical `_type` discriminator (`"ARCHETYPE_ID"`), always
+    /// serialized first; tolerated-absent and validated-if-present on input
+    /// (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `OBJECT_ID` state (the single `value` attribute), in the
     /// lexical form `rm_originator '-' rm_name '-' rm_entity '.'
     /// concept_name { '-' specialisation }* '.v' number`.
     #[serde(flatten)]
     pub object_id: ObjectIdData,
+}
+
+impl TypeName for ArchetypeId {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl ArchetypeId {
@@ -153,6 +157,6 @@ impl From<ArchetypeId> for ObjectId {
 //   source: BASE 1.2.0 base_types.identification §ARCHETYPE_ID — docs/research/spec-cache/BASE-1.2.0/uml_classes/archetype_id.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / archetype_id.adoc §ARCHETYPE_ID Class
 //   confidence: medium
-//   todos: 1
-//   note: multi-part axis functions implemented as string-splitting against the EBNF grammar in the Syntaxes section rather than a dedicated parser/AST; no invariant table given in the spec for this class beyond the lexical grammar itself. P4 addendum: no wire path currently emits this class's _type, since it is reached only through ObjectId::ArchetypeId and ObjectId is untagged; flagged for openehr-serde's P17 manual dispatch.
+//   todos: 0
+//   note: multi-part axis functions implemented as string-splitting against the EBNF grammar in the Syntaxes section rather than a dedicated parser/AST; no invariant table given in the spec for this class beyond the lexical grammar itself. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted; the earlier "no wire path emits _type" TODO is resolved by the self-tag.
 // ─────────────────────────────────────────────

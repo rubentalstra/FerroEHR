@@ -9,6 +9,7 @@
 //! values which are not only ordered, but which have a precise magnitude.
 use super::dv_ordered::{DvOrderedApi, DvOrderedData};
 use openehr_foundation::primitive_types::ordered_numeric::OrderedNumeric;
+use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `DV_QUANTIFIED` and its descendants.
 ///
@@ -22,9 +23,10 @@ use openehr_foundation::primitive_types::ordered_numeric::OrderedNumeric;
 /// `Inherit` row is `DV_ORDERED` and therefore also carries the
 /// self-referential `normal_range`/`other_reference_ranges` attributes one
 /// level further down the chain.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DvQuantifiedData<T: DvOrderedApi> {
     /// Embedded `DV_ORDERED` parent state.
+    #[serde(flatten)]
     pub ordered: DvOrderedData<T>,
 
     /// `magnitude_status`: `String` (0..1).
@@ -42,6 +44,7 @@ pub struct DvQuantifiedData<T: DvOrderedApi> {
     ///
     /// Invariant `Magnitude_status_valid`: `magnitude_status /= Void
     /// implies valid_magnitude_status (magnitude_status)`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub magnitude_status: Option<String>,
 
     /// `accuracy`: `Any` (0..1).
@@ -70,6 +73,9 @@ pub struct DvQuantifiedData<T: DvOrderedApi> {
     /// pending confirmation that this field is dead in every descendant, at
     /// which point it should be dropped from `DvQuantifiedData` entirely.
     /// Flagged as a structural ambiguity rather than silently resolved.
+    /// `skip_serializing_if` added regardless (P4) so this dead field never
+    /// emits a stray `null` in canonical JSON if a caller does populate it.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub accuracy: Option<String>,
 }
 
@@ -169,5 +175,5 @@ pub trait DvQuantifiedApi<T: OrderedNumeric>: DvOrderedApi {
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_quantified.adoc §DV_QUANTIFIED Class
 //   confidence: low
 //   todos: 2
-//   note: accuracy: Any is a genuinely open abstract field the spec itself says is "only included in the subtypes" — represented as an inert Option<String> stand-in expected to stay unused (flagged); valid_magnitude_status's signature/postcondition mismatch (empty parens vs a free variable s) resolved by reading it as a parameterized query; Magnitude_status_valid invariant recorded but not enforced.
+//   note: accuracy: Any is a genuinely open abstract field the spec itself says is "only included in the subtypes" — represented as an inert Option<String> stand-in expected to stay unused (flagged); valid_magnitude_status's signature/postcondition mismatch (empty parens vs a free variable s) resolved by reading it as a parameterized query; Magnitude_status_valid invariant recorded but not enforced. P4: DvQuantifiedData<T> derives Serialize/Deserialize; `ordered` carries #[serde(flatten)] (confirmed against DV_QUANTITY's own flat schema shape); both Option fields skip when None.
 // ─────────────────────────────────────────────

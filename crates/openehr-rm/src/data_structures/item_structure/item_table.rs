@@ -28,15 +28,23 @@ use crate::data_structures::representation::item::Item;
 // concurrently by a sibling agent; see `representation/element.rs` for the
 // identical forward-reference rationale and assumed module path.
 use crate::data_types::text::dv_text::DvText;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
 /// `ITEM_TABLE` class.
 ///
 /// Embeds the shared `ITEM_STRUCTURE` state (per ADR-001 §3) plus its own
 /// `rows` attribute.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ItemTable {
+    /// Canonical `_type` discriminator (`"ITEM_TABLE"`), always serialized
+    /// first; tolerated-absent and validated-if-present on input (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Inherited `ITEM_STRUCTURE` (and transitively `DATA_STRUCTURE`,
     /// `LOCATABLE`) state.
+    #[serde(flatten)]
     pub item_structure: ItemStructureData,
 
     /// `rows`: physical representation of the table as a list of
@@ -45,7 +53,12 @@ pub struct ItemTable {
     /// Cardinality `0..1` per the spec table; modelled as
     /// `Option<Vec<Cluster>>` for the same "attribute absent vs. empty
     /// list" reasoning as `ItemList.items` (see `item_list.rs`).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rows: Option<Vec<Cluster>>,
+}
+
+impl TypeName for ItemTable {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl ItemStructureApi for ItemTable {
@@ -244,5 +257,5 @@ pub const TYPE_NAME: &str = "ITEM_TABLE";
 //   source_loc: master04-item_structure_package.adoc §Class Descriptions / item_table.adoc §ITEM_TABLE Class
 //   confidence: low
 //   todos: 11
-//   note: the row/column function battery is stubbed per signature per the invoking task's instruction; three genuine published-spec ambiguities flagged inline (has_row_with_name's description copy-pasted from has_column_with_name; row_with_key singular/plural mismatch; as_hierarchy column-major description contradicting the package's own row-major encoding rules) plus a real (not statically enforced) Valid_structure invariant gap distinct from ITEM_LIST's.
+//   note: the row/column function battery is stubbed per signature per the invoking task's instruction; three genuine published-spec ambiguities flagged inline (has_row_with_name's description copy-pasted from has_column_with_name; row_with_key singular/plural mismatch; as_hierarchy column-major description contradicting the package's own row-major encoding rules) plus a real (not statically enforced) Valid_structure invariant gap distinct from ITEM_LIST's. P4/ADR-002: self-tag (TypeName + first-field TypeTag) added.
 // ─────────────────────────────────────────────

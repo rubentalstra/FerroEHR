@@ -13,6 +13,7 @@ use super::double::Double;
 use super::integer::Integer;
 use super::numeric::Numeric;
 use super::ordered::Ordered;
+use serde::{Deserialize, Serialize};
 // PORT NOTE: `OrderedNumeric` is blanket-implemented in `ordered_numeric.rs`
 // for any type satisfying both `Ordered` and `Numeric`; no explicit impl
 // needed or possible here (see the equivalent note in `integer.rs`).
@@ -34,7 +35,7 @@ use super::ordered::Ordered;
 /// reference EHRbase/Java `float`-backed value, or for
 /// `rust_decimal`-adjacent `DV_QUANTITY`/`DV_COUNT` precision work in
 /// `openehr-rm`).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[repr(transparent)]
 pub struct Real(pub f64);
 

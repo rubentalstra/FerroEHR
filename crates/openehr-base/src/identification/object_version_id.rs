@@ -7,16 +7,17 @@
 //!
 //! Globally unique identifier for one version of a versioned object;
 //! lexical form: `object_id '::' creating_system_id '::' version_tree_id`.
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+
 use super::object_id::{ObjectId, ObjectIdApi};
 use super::uid::Uid;
 use super::uid_based_id::{UidBasedId, UidBasedIdApi, UidBasedIdData};
 use super::version_tree_id::VersionTreeId;
 
 /// Canonical `_type` discriminator string for this class in serialized
-/// form. See the P4 note on `hier_object_id::TYPE_NAME` — `_type` is now
-/// emitted functionally via `#[serde(rename = "OBJECT_VERSION_ID")]` on the
-/// `UidBasedId::ObjectVersionId` enum variant; this `const` and the matching
-/// (inert-standalone) struct-level rename below stay for documentation.
+/// form. See the P4/ADR-002 note on `hier_object_id::TYPE_NAME` — this
+/// const single-sources the string carried by the struct's own self-tagging
+/// `type_tag` field (via the [`TypeName`] impl).
 pub const TYPE_NAME: &str = "OBJECT_VERSION_ID";
 
 /// `OBJECT_VERSION_ID` declares no attribute of its own beyond the
@@ -28,17 +29,28 @@ pub const TYPE_NAME: &str = "OBJECT_VERSION_ID";
 ///
 /// `#[serde(flatten)]` on the embedded `uid_based_id` field folds
 /// `UidBasedIdData`'s single `value` attribute directly into this struct's
-/// JSON object, matching the convention on `HierObjectId`.
+/// JSON object, matching the convention on `HierObjectId`, so an
+/// `ObjectVersionId` serializes as `{"_type": "OBJECT_VERSION_ID",
+/// "value": "..."}` (ADR-002 self-tag).
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
-#[serde(rename = "OBJECT_VERSION_ID")]
 pub struct ObjectVersionId {
+    /// Canonical `_type` discriminator (`"OBJECT_VERSION_ID"`), always
+    /// serialized first; tolerated-absent and validated-if-present on input
+    /// (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// Embedded `UID_BASED_ID` state (the single `value` attribute), in
     /// the lexical form `object_id '::' creating_system_id '::'
     /// version_tree_id`.
     #[serde(flatten)]
     pub uid_based_id: UidBasedIdData,
+}
+
+impl TypeName for ObjectVersionId {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl ObjectVersionId {
@@ -87,7 +99,10 @@ impl ObjectVersionId {
             .rsplit_once("::")
             .map(|(_head, tail)| tail.to_string())
             .unwrap_or_default();
-        VersionTreeId { value: raw }
+        VersionTreeId {
+            type_tag: TypeTag::new(),
+            value: raw,
+        }
     }
 
     /// `is_branch(): Boolean`.
@@ -131,5 +146,5 @@ impl From<ObjectVersionId> for ObjectId {
 //   source_loc: master05-identification_package.adoc §Class Descriptions / object_version_id.adoc §OBJECT_VERSION_ID Class
 //   confidence: medium
 //   todos: 2
-//   note: object_id()/creating_system_id() need the same deferred format-sniffing UID parser as UID_BASED_ID.root(); version_tree_id() parsing implemented directly since VERSION_TREE_ID's own value is just the raw substring, no UID sub-parse required.
+//   note: object_id()/creating_system_id() need the same deferred format-sniffing UID parser as UID_BASED_ID.root(); version_tree_id() parsing implemented directly since VERSION_TREE_ID's own value is just the raw substring, no UID sub-parse required. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted.
 // ─────────────────────────────────────────────

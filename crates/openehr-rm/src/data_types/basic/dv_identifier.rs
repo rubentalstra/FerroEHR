@@ -14,25 +14,34 @@
 //! the infrastructure to refer to information items; the types `OBJECT_ID`
 //! and `OBJECT_REF` and subtypes are defined for this purpose.
 use crate::data_types::data_value::DataValueApi;
+use openehr_foundation::serde_support::{TypeName, TypeTag};
+use serde::{Deserialize, Serialize};
 
-/// Canonical `_type` discriminator string for this class in serialized
-/// form (ADR-001 Refinements: serde derives wait until P4).
+/// Canonical `_type` discriminator string for this class, single-sourced
+/// into its [`TypeName`] impl (ADR-002).
 pub const TYPE_NAME: &str = "DV_IDENTIFIER";
 
 /// `DV_IDENTIFIER` is a leaf, non-abstract class with four `String`
 /// attributes, only one of which (`id`) is mandatory.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DvIdentifier {
+    /// Canonical `_type` discriminator (`"DV_IDENTIFIER"`), always
+    /// serialized first (ADR-002).
+    #[serde(rename = "_type", default = "TypeTag::new")]
+    pub type_tag: TypeTag<Self>,
+
     /// `issuer`: `String` (`0..1`).
     ///
     /// Optional authority which issues the kind of id used in the id field
     /// of this object.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub issuer: Option<String>,
 
     /// `assigner`: `String` (`0..1`).
     ///
     /// Optional organisation that assigned the id to the item being
     /// identified.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub assigner: Option<String>,
 
     /// `id`: `String` (`1..1`).
@@ -55,9 +64,14 @@ pub struct DvIdentifier {
     ///
     /// PORT NOTE: field named `r#type` (raw identifier) since `type` is a
     /// Rust reserved keyword, mirroring the `OBJECT_REF.type` precedent in
-    /// `crates/openehr-base/src/identification/object_ref.rs`. A future
-    /// serde derive (P4) should add `#[serde(rename = "type")]` here.
+    /// `crates/openehr-base/src/identification/object_ref.rs`. Now carries
+    /// `#[serde(rename = "type")]` per that same precedent.
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
+}
+
+impl TypeName for DvIdentifier {
+    const NAME: &'static str = TYPE_NAME;
 }
 
 impl DvIdentifier {
@@ -85,5 +99,5 @@ impl DataValueApi for DvIdentifier {
 //   source_loc: master04-basic_package.adoc §Class Descriptions / dv_identifier.adoc §DV_IDENTIFIER Class
 //   confidence: high
 //   todos: 2
-//   note: Id_valid invariant transcribed as a plain boolean method, not yet wired into a Validate impl (mentioned on both the field doc and the invariant method doc, hence 2); `type` field named `r#type` for the Rust keyword collision, pending a P4 serde rename.
+//   note: Id_valid invariant transcribed as a plain boolean method, not yet wired into a Validate impl (mentioned on both the field doc and the invariant method doc, hence 2); `type` field named `r#type` for the Rust keyword collision. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("DV_IDENTIFIER"); inert struct-level #[serde(rename)] deleted; r#type keeps its functional field-level #[serde(rename = "type")]; Options skip when None.
 // ─────────────────────────────────────────────
