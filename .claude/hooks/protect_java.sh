@@ -27,8 +27,8 @@ base="$(basename "$file_path")"
 
 # 1. Maven build files are read-only reference for the whole port.
 case "$base" in
-  pom.xml | mvnw | mvnw.cmd)
-    echo "BLOCKED: '$file_path' is a Maven build file. pom.xml/mvnw/.mvn are read-only reference during the port and are deleted only at P99 (CLAUDE.md hard rule)." >&2
+  pom.xml | *.pom.xml | mvnw | mvnw.cmd)
+    echo "BLOCKED: '$file_path' is a Maven build file. pom.xml (incl. the co-located bom/test-coverage *.pom.xml) is read-only reference during the port and is deleted only at P99 (CLAUDE.md hard rule)." >&2
     exit 2
     ;;
 esac

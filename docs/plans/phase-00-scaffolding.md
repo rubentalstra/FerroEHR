@@ -63,7 +63,13 @@ Phase 01. No enterprise feature (RBAC etc.) is built here, only catalogued.
   into service traits happens at porting time (Section 9.1 note).
 - Test trees to `crates/*/tests/java/<module>/`, test/main resources to
   `tests/resources/<module>/` and `resources/<module>/`.
-- Maven module skeletons (pom.xml et al.) stay in place, read-only, until P99.
+- Maven poms are co-located with the sources they built (crate root for
+  rest-openehr / rest-ehr-scape; `src/<module>/pom.xml` inside
+  openehr-server), read-only until P99. Workspace-level poms sit at the
+  workspace root beside their Cargo successor: reactor `pom.xml`,
+  `bom.pom.xml` (the Java dependency-pin reference), and
+  `test-coverage.pom.xml`. `.mvn/jvm.config` (JVM memory flags, no port
+  value) was removed early rather than carried to P99.
 - `base` module no longer exists at v2.33 (dissolved upstream) — mapping row moot.
 - No generated jOOQ code was committed upstream (build-time generation), so
   "discard jOOQ" was a no-op; the one hand-written helper
