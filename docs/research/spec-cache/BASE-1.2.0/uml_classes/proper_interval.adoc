@@ -1,0 +1,17 @@
+=== Proper_interval Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Proper_interval<T>*
+
+h|*Description*
+2+a|Type representing a 'proper' Interval, i.e. any two-sided or one-sided interval.
+
+h|*Inherit*
+2+|`<<_interval_class,Interval>>`
+
+
+h|*Invariants*
+2+a|__Inv_not_point__: `lower /= upper`
+|===

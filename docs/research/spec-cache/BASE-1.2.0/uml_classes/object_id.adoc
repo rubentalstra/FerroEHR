@@ -1,0 +1,20 @@
+=== OBJECT_ID Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__OBJECT_ID (abstract)__*
+
+h|*Description*
+2+a|Ancestor class of identifiers of informational objects. Ids may be completely meaningless, in which case their only job is to refer to something, or may carry some information to do with the identified object.
+
+Object ids are used inside an object to identify that object. To identify another object in another service, use an `OBJECT_REF`, or else use a UID for local objects identified by UID. If none of the subtypes is suitable, direct instances of this class may be used.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The value of the id in the form defined below.
+|===

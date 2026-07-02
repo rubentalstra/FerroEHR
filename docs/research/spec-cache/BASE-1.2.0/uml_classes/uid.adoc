@@ -1,0 +1,21 @@
+=== UID Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__UID (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of classes representing unique identifiers which identify information entities in a durable way. UIDs only ever identify one IE in time or space and are never re-used.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The value of the id.
+
+h|*Invariants*
+2+a|__Value_valid__: `not value.empty`
+|===

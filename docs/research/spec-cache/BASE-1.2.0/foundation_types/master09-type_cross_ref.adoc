@@ -1,0 +1,54 @@
+= Type Cross-Reference
+
+The following table provides a cross-reference from openEHR foundation types to their equivalents in common implementation formalisms. Where there is no equivalent listed, a specific library may still exist, or an implementation may be required of the openEHR specification.
+
+[cols="2,3,1,2,1", options="header"]
+|===
+|Type name +
+ in openEHR             |Description                            |XML            |Java               |C#
+
+|`Octet`                |8-bit value.                           | -             |`Byte`             |`Byte`
+|`Character`            |a member of an 8-bit character-set.    |`string`       |`Character`        |`Char`
+|`Boolean`              |logical True/False values.             |`boolean`      |`Boolean`          |`Boolean`
+|`Integer`              |32-bit integers.                       |`decimal`      |`Integer`          |`Int32`
+|`Integer64`            |64-bit integers.                       |`decimal`      |`Long`             |`Int64`
+|`Real`                 |32-bit real numbers                    |`float`, +
+                                                                 `decimal`      |`Float`            |`Single`
+|`Double`               |64-bit real numbers                    |`double`       |`Double`           |`Double`
+|`String`               |Unicode-enabled strings.               |`string`       |`String`           |`String`
+
+|`Array<T>`             |Contiguous Array.                      |`sequence`     |`Array<T>`         |`Array<T>`
+|`List<T>`              |Ordered List.                          |`sequence`     |`List<T>`          |`List<T>`
+|`Set<T>`               |Unordered, unique membership container.|`all`          |`Set<T>`           |`HashSet<T>`
+|`Hash<K:Ordered, V>`   |Unique-keyed map.                      |(various)      |`Map<T>`           |`HashTable<T>`
+
+|`Interval<T:Ordered>`  |Interval of ordered types.             | -             | -                 |
+
+|`Date`                 |Native date type.                      |`date`         |`java.util.Date`   |`DateTime`
+|`Time`                 |Native time type.                      |`time`         |`java.util.Date`   |`DateTime`
+|`Date_time`            |Native date/time type.                 |`dateTime`     |`java.util.Date`   |`DateTime`
+|`Duration`             |Native duration type.                  |`duration`     |`java.time.Duration`|`TimeSpan`
+
+|`Iso8601_Date`         |ISO 8601-encoded date type.            |`date`         |use `java.text.SimpleDateFormat` +
+                                                                                 or `org.joda.time.format.ISODateTimeFormat`  
+                                                                                                    |(use formatted string)
+                                                                                 
+|`Iso8601_Time`         |ISO 8601-encoded time type.            |`time`         |use j`ava.text.SimpleDateFormat` +
+                                                                                 or `org.joda.time.format.ISODateTimeFormat`
+                                                                                                    |(use formatted string)
+                                                                                 
+|`Iso8601_Date_time`    |ISO 8601-encoded date/time type.       |`dateTime`     |use `java.text.SimpleDateFormat` +
+                                                                                 or `org.joda.time.format.ISODateTimeFormat`  
+                                                                                                    |(use formatted string)
+                                                                                 
+|`Iso8601_Duration`     |ISO 8601-encoded duration type.        |`duration`     |use `java.text.SimpleDateFormat` +
+                                                                                 or `org.joda.time.format.ISODateTimeFormat`  
+                                                                                                    |(use formatted string)
+
+|`Interval<Integer>`    |Interval of Integer.                   | -             |(various)          | -
+|`Interval<Date>`       |Interval of Date.                      | -             |(various)          | -
+|`Interval<Time>`       |Interval of Time.                      | -             |(various)          | -
+|`Interval<DateTime>`   |Interval of DateTime.                  | -             |(various)          | -
+
+|===
+

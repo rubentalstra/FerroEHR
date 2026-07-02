@@ -1,0 +1,57 @@
+=== Numeric Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__Numeric (abstract)__*
+
+h|*Description*
+2+a|Abstract parent class of numeric types, which are types which have various arithmetic and comparison operators defined.
+
+h|*Inherit*
+2+|`<<_any_class,Any>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*add* __alias__ "+" ( +
+other: `<<_numeric_class,Numeric>>[1]` +
+): `<<_numeric_class,Numeric>>`
+a|Sum with `_other_` (commutative). Actual type of result depends on arithmetic balancing rules.
+
+h|*1..1 +
+(abstract)*
+|*subtract* __alias__ "-" ( +
+other: `<<_numeric_class,Numeric>>[1]` +
+): `<<_numeric_class,Numeric>>`
+a|Result of subtracting `_other_`. Actual type of result depends on arithmetic balancing rules.
+
+h|*1..1 +
+(abstract)*
+|*multiply* __alias__ "&#42;" ( +
+other: `<<_numeric_class,Numeric>>[1]` +
+): `<<_numeric_class,Numeric>>`
+a|Product by `_other_`. Actual type of result depends on arithmetic balancing rules.
+
+h|*1..1 +
+(abstract)*
+|*divide* __alias__ "/" ( +
+other: `<<_numeric_class,Numeric>>[1]` +
+): `<<_numeric_class,Numeric>>`
+a|Divide by`_other_`. Actual type of result depends on arithmetic balancing rules.
+
+h|*1..1 +
+(abstract)*
+|*exponent* __alias__ "^" ( +
+other: `<<_numeric_class,Numeric>>[1]` +
+): `<<_numeric_class,Numeric>>`
+a|Expontiation of this by `_other_`.
+
+h|*1..1 +
+(abstract)*
+|*negative* __alias__ "-" (): `<<_numeric_class,Numeric>>`
+a|Generate negative of current value.
+|===

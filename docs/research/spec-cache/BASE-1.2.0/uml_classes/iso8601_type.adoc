@@ -1,0 +1,34 @@
+=== Iso8601_type Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__Iso8601_type (abstract)__*
+
+h|*Description*
+2+a|Abstract ancestor type of ISO 8601 types, defining interface for 'extended' and 'partial' concepts from ISO 8601.
+
+h|*Inherit*
+2+|`<<_temporal_class,Temporal>>`, `<<_time_definitions_class,Time_Definitions>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value*: `<<_string_class,String>>`
+a|Representation of all descendants is a single String.
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*is_partial* (): `<<_boolean_class,Boolean>>`
+a|True if this date time is partial, i.e. if trailing end (right hand) value(s) is/are missing.
+
+h|*1..1 +
+(abstract)*
+|*is_extended* (): `<<_boolean_class,Boolean>>`
+a|True if this ISO8601 string is in the 'extended' form, i.e. uses `'-'` and / or `':'` separators. This is the preferred format.
+|===

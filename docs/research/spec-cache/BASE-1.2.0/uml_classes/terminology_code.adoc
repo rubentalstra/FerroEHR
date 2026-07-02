@@ -1,0 +1,33 @@
+=== Terminology_code Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Terminology_code*
+
+h|*Description*
+2+a|Primitive type representing a standalone reference to a terminology concept, in the form of a terminology identifier, optional version, and a code or code string from the terminology.
+
+h|*Inherit*
+2+|`<<_any_class,Any>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*terminology_id*: `<<_string_class,String>>`
+a|The archetype environment namespace identifier used to identify a terminology. Typically a value like `"snomed_ct"` that is mapped elsewhere to the full URI identifying the terminology.
+
+h|*0..1*
+|*terminology_version*: `<<_string_class,String>>`
+a|Optional string value representing terminology version, typically a date or dotted numeric.
+
+h|*1..1*
+|*code_string*: `<<_string_class,String>>`
+a|A terminology code or post-coordinated code expression, if supported by the terminology. The code may refer to a single term, a value set consisting of multiple terms, or some other entity representable within the terminology.
+
+h|*0..1*
+|*uri*: `<<_uri_class,Uri>>`
+a|The URI reference that may be used as a concrete key into a notional terminology service for queries that can obtain the term text, definition, and other associated elements.
+|===
