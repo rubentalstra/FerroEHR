@@ -70,11 +70,9 @@ vectors, schema validation, round-trip tests).
    dependency root, reachable by `openehr-base` and `openehr-rm`; flagged
    `PORT NOTE` as infrastructure, not a spec class.
 5. **`openehr-serde` owns the acceptance instrument**: the full-RM coverage
-   test enumerating all 134 schema definitions (fixture + insta golden
-   vector + jsonschema validation + round-trip per class, or a named,
-   reasoned exclusion — `EXTRACT_*`/`X_*`/`MESSAGE`-family classes are
-   deferred with the `ehr-extract` feature, `ACCESS_GROUP_REF` was not
-   migrated to BASE 1.2.0, `ARCHETYPE_HRID` is AM-phase).
+   test enumerating all 134 schema definitions. Each definition must have a
+   fixture with an insta golden vector, jsonschema validation, and
+   serialize/deserialize round-trip coverage.
 
 ## Consequences
 

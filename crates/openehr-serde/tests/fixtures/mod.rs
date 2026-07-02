@@ -33,9 +33,6 @@ pub struct Vector {
     pub class: &'static str,
     /// The serialized canonical JSON.
     pub value: Value,
-    /// Whether to validate against the schema definition (false only for
-    /// documented degenerate definitions, e.g. an empty `{}` def).
-    pub schema_check: bool,
 }
 
 /// Build a vector from a live RM instance, enforcing the ADR-002
@@ -68,11 +65,7 @@ where
         "{class}: round-trip mismatch\n  json: {value}\n  back: {back:?}"
     );
 
-    Vector {
-        class,
-        value,
-        schema_check: true,
-    }
+    Vector { class, value }
 }
 
 /// Like [`vector`], but for foundation classes that serialize **without**
@@ -95,11 +88,7 @@ where
         &back == instance,
         "{class}: round-trip mismatch\n  json: {value}\n  back: {back:?}"
     );
-    Vector {
-        class,
-        value,
-        schema_check: true,
-    }
+    Vector { class, value }
 }
 
 /// The full registry the harness iterates.

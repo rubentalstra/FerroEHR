@@ -11,7 +11,7 @@ under `docs/plans/` for detail). Status values: `not-started`, `in-progress`,
 | P1 | Foundation + Identification (BASE 1.2.0) | done | 69 classes transcribed (foundation 39, base 30), trailers verified, ADR-001 shapes fixed; spec cached at Release-1.2.0 @ 9064413. |
 | P2 | Terminology bundle (TERM 3.x) + service API | done | First compiled+tested crate: TERM 3.0.0 assets vendored @ d45ef3e, rm.support service surface, 12 tests incl. the id=532 regression. |
 | P3 | RM transcription | done | 107 RM classes via nine parallel transcriber runs; five closed enums + all §7.2 hazards grep-verified; ~30 ROSETTA rows; four deferred conflicts flagged for P17. |
-| P4 | Canonical JSON serialization (ITS-JSON) | not-started | insta golden vectors. |
+| P4 | Canonical JSON serialization (ITS-JSON) | done | ADR-002 self-tagging TypeTag + untagged closed enums across foundation/base/rm; full-RM harness in openehr-serde now requires a fixture for every pinned schema class and schema-validates every fixture; schema pinned @ 5acae056; found+fixed E0716 in archetype_id, null-emission in base resource, tagged-parent embed leaks (PARTY_REF/ATTESTATION). Completed 2026-07-02. |
 | P5 | Canonical XML serialization (ITS-XML) | not-started | 1.0.2 + 2.0.0. |
 | P6 | REST skeleton (axum) | not-started | Every ITS-REST 1.0.3 endpoint + admin + item tags. |
 | P7 | Persistence schema | not-started | Flyway migrations copied verbatim; sea-query tables; testcontainers PG18. |

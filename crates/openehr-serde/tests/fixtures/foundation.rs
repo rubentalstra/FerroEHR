@@ -74,23 +74,13 @@ pub fn fixtures() -> Vec<Vector> {
                 },
             },
         ),
-        {
-            // schema_check off: the pinned schema models the required `uri` as a degenerate empty URI object, incompatible with the faithful string-newtype Uri; round-trip + golden vector still pin the shape.
-            let mut v = vector_tagless("TERMINOLOGY_CODE", &code());
-            v.schema_check = false;
-            v
-        },
-        {
-            // schema_check off: the pinned schema models the required `uri` as a degenerate empty URI object, incompatible with the faithful string-newtype Uri; round-trip + golden vector still pin the shape.
-            let mut v = vector_tagless(
-                "TERMINOLOGY_TERM",
-                &TerminologyTerm {
-                    concept: code(),
-                    text: OpenEhrString("event".to_string()),
-                },
-            );
-            v.schema_check = false;
-            v
-        },
+        vector_tagless("TERMINOLOGY_CODE", &code()),
+        vector_tagless(
+            "TERMINOLOGY_TERM",
+            &TerminologyTerm {
+                concept: code(),
+                text: OpenEhrString("event".to_string()),
+            },
+        ),
     ]
 }
