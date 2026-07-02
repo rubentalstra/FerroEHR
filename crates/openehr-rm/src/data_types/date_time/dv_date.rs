@@ -29,6 +29,8 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_foundation::time::iso8601_parser::{days_since_origin, parse_date};
+use openehr_foundation::time::time_definitions::TimeDefinitions;
 use serde::{Deserialize, Serialize};
 // PORT NOTE: `Iso8601Date`/`Iso8601Type` are named in the module doc above
 // for the inheritance narrative but not imported here — `value: String` is
@@ -65,12 +67,9 @@ pub struct DvDate {
     ///
     /// Invariant `Value_valid`: `valid_iso8601_date(value)`.
     ///
-    /// TODO(port): the invariant is not yet enforced by a constructor or
-    /// `Validate` impl; the validating predicate itself
-    /// (`valid_iso8601_date`) is expected to bridge to
-    /// `openehr_foundation::time::iso8601_date::Iso8601Date`'s own
-    /// (currently `todo!()`) partial-precision validity logic once the
-    /// jiff-backed engine lands at P17.
+    /// PORT NOTE: the invariant is exposed as
+    /// [`DvDate::invariant_value_valid`], but is not yet enforced by a
+    /// constructor or `Validate` impl.
     pub value: String,
 }
 
@@ -86,14 +85,15 @@ impl DvDate {
     /// Numeric value of the date as days since the calendar origin date
     /// `0001-01-01`.
     ///
-    /// TODO(port): requires parsing `value` as a (possibly partial) ISO 8601
-    /// date and computing a Gregorian day-count from the `0001-01-01` origin
-    /// — deferred to the jiff-backed engine (P17), consistent with every
-    /// other `Iso8601_*` string-parsing TODO in `openehr-foundation`.
+    /// PORT NOTE: partial dates are valid `DV_DATE` values but do not define
+    /// a unique calendar day. This returns the day count for complete dates
+    /// and `0` for incomplete or invalid strings; callers that need to
+    /// distinguish those cases should check `invariant_value_valid()` and
+    /// the foundation `Iso8601_date` partial accessors.
     pub fn magnitude(&self) -> i32 {
-        todo!(
-            "DV_DATE.magnitude: Gregorian day-count from 0001-01-01, deferred to the jiff-backed engine at P17"
-        )
+        parse_date(&self.value)
+            .and_then(|parsed| parsed.as_complete_jiff_date())
+            .map_or(0, days_since_origin)
     }
 
     /// `is_equal` `(other: DV_QUANTIFIED[1]): Boolean` (effected).
@@ -108,13 +108,14 @@ impl DvDate {
     /// concurrent, not yet landed). Revisit once `DV_QUANTIFIED`/`DataValue`
     /// exist as a closed enum (ADR-001 §4).
     ///
-    /// TODO(port): forwards to `magnitude()` comparison once that is
-    /// implemented.
     pub fn is_equal(&self, other: &Self) -> bool {
-        let _ = other;
-        todo!(
-            "DV_DATE.is_equal: pending DV_QUANTIFIED equality once DataValue enum + magnitude() land"
-        )
+        match (
+            parse_date(&self.value).and_then(|parsed| parsed.as_complete_jiff_date()),
+            parse_date(&other.value).and_then(|parsed| parsed.as_complete_jiff_date()),
+        ) {
+            (Some(left), Some(right)) => days_since_origin(left) == days_since_origin(right),
+            _ => self.value == other.value,
+        }
     }
 
     /// `less_than` __alias__ `"<"` `(other: DV_DATE[1]): Boolean` (effected).
@@ -150,19 +151,15 @@ impl DvDate {
 
     /// `Value_valid` invariant: `valid_iso8601_date(value)`.
     ///
-    /// TODO(port): bridges to the foundation-types validity predicate once
-    /// the jiff-backed ISO 8601 parsing engine lands (P17); see the doc
-    /// comment on `value` above.
     pub fn invariant_value_valid(&self) -> bool {
-        todo!(
-            "DV_DATE.invariant_value_valid: valid_iso8601_date bridges to the jiff-backed engine at P17"
-        )
+        TimeDefinitions::valid_iso8601_date(&self.value)
     }
 }
 
 impl Any for DvDate {
     /// Delegates to the inherent [`DvDate::is_equal`] (the spec's effected
-    /// `is_equal`, itself pending `magnitude()`).
+    /// `is_equal`, itself backed by `magnitude()` for complete dates and raw
+    /// value equality for partial dates.
     fn is_equal(&self, other: &Self) -> bool {
         DvDate::is_equal(self, other)
     }
@@ -250,11 +247,34 @@ impl DvTemporal for DvDate {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn date_magnitude_uses_calendar_origin() {
+        let date: DvDate =
+            serde_json::from_str(r#"{"_type":"DV_DATE","value":"0001-01-02"}"#).unwrap();
+
+        assert!(date.invariant_value_valid());
+        assert_eq!(date.magnitude(), 1);
+    }
+
+    #[test]
+    fn partial_date_is_valid_but_has_no_day_magnitude() {
+        let date: DvDate =
+            serde_json::from_str(r#"{"_type":"DV_DATE","value":"2026-07"}"#).unwrap();
+
+        assert!(date.invariant_value_valid());
+        assert_eq!(date.magnitude(), 0);
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_date.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_date.adoc §DV_DATE Class
 //   confidence: medium
-//   todos: 7
-//   note: dual inheritance (DV_TEMPORAL RM ancestor + Iso8601_date foundation mixin) composed as field+trait; magnitude/add/subtract/diff/is_equal/invariant_value_valid all deferred to the jiff-backed engine at P17; less_than transcribed with name-implied semantics against a likely copy-paste defect in the published Post_result postcondition (flagged, matches DV_DURATION's internally-consistent wording, not DV_TIME/DV_DATE_TIME's inverted one); Any/Ordered/DvOrderedApi impls delegate to the inherent effected functions so DvDate satisfies the DvOrdered enum's trait chain. P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvDate>) flattened, schema-verified (normal_status/normal_range/other_reference_ranges/magnitude_status/accuracy all sit flat alongside DV_DATE's own `value`); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_TIME/DV_DATE_TIME.
+//   todos: 3
+//   note: dual inheritance (DV_TEMPORAL RM ancestor + Iso8601_date foundation mixin) composed as field+trait; magnitude/is_equal/invariant_value_valid now delegate to the foundation BASE ISO 8601 parser. add/subtract/diff remain TODO(port) pending an explicit partial-date calendar arithmetic policy. less_than transcribed with name-implied semantics against a likely copy-paste defect in the published Post_result postcondition (flagged, matches DV_DURATION's internally-consistent wording, not DV_TIME/DV_DATE_TIME's inverted one); Any/Ordered/DvOrderedApi impls delegate to the inherent effected functions so DvDate satisfies the DvOrdered enum's trait chain. P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvDate>) flattened, schema-verified (normal_status/normal_range/other_reference_ranges/magnitude_status/accuracy all sit flat alongside DV_DATE's own `value`); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_TIME/DV_DATE_TIME.
 // ─────────────────────────────────────────────

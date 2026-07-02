@@ -24,6 +24,7 @@
 use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
 use crate::time::iso8601_duration::Iso8601Duration;
+use crate::time::iso8601_parser::parse_time;
 use crate::time::iso8601_timezone::Iso8601Timezone;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
@@ -45,11 +46,9 @@ impl Iso8601Time {
     ///
     /// Extract the hour part of the date/time as an Integer.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn hour(&self) -> i32 {
-        todo!("Iso8601Time::hour: string parsing deferred to the internal engine")
+        parse_time(&self.core.value).map_or(0, |parsed| parsed.hour)
     }
 
     /// `minute(): Integer`.
@@ -57,11 +56,9 @@ impl Iso8601Time {
     /// Extract the minute part of the time as an Integer, or return 0 if
     /// not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn minute(&self) -> i32 {
-        todo!("Iso8601Time::minute: string parsing deferred to the internal engine")
+        parse_time(&self.core.value).map_or(0, |parsed| parsed.minute_value())
     }
 
     /// `second(): Integer`.
@@ -69,11 +66,9 @@ impl Iso8601Time {
     /// Extract the integral seconds part of the time (i.e. prior to any
     /// decimal sign) as an Integer, or return 0 if not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn second(&self) -> i32 {
-        todo!("Iso8601Time::second: string parsing deferred to the internal engine")
+        parse_time(&self.core.value).map_or(0, |parsed| parsed.second_value())
     }
 
     /// `fractional_second(): Real`.
@@ -83,22 +78,24 @@ impl Iso8601Time {
     /// Extract the fractional seconds part of the time (i.e. following to
     /// any decimal sign) as a Real, or return 0.0 if not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn fractional_second(&self) -> f64 {
-        todo!("Iso8601Time::fractional_second: string parsing deferred to the internal engine")
+        parse_time(&self.core.value).map_or(0.0, |parsed| parsed.fractional_second())
     }
 
     /// `timezone(): Iso8601_timezone`.
     ///
     /// Timezone; may be Void.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn timezone(&self) -> Option<Iso8601Timezone> {
-        todo!("Iso8601Time::timezone: string parsing deferred to the internal engine")
+        parse_time(&self.core.value)
+            .and_then(|parsed| parsed.timezone)
+            .map(|timezone| Iso8601Timezone {
+                core: Iso8601TypeCore {
+                    value: timezone.as_iso8601_string(),
+                },
+            })
     }
 
     /// `minute_unknown(): Boolean`.
@@ -106,11 +103,9 @@ impl Iso8601Time {
     /// Indicates whether minute is unknown. If so, the time is of the form
     /// `"hh"`.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn minute_unknown(&self) -> bool {
-        todo!("Iso8601Time::minute_unknown: string parsing deferred to the internal engine")
+        parse_time(&self.core.value).is_none_or(|parsed| parsed.minute_unknown())
     }
 
     /// `second_unknown(): Boolean`.
@@ -124,11 +119,9 @@ impl Iso8601Time {
     /// `Iso8601_time` has no month component at all) — transcribed
     /// verbatim rather than silently corrected.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn second_unknown(&self) -> bool {
-        todo!("Iso8601Time::second_unknown: string parsing deferred to the internal engine")
+        parse_time(&self.core.value).is_none_or(|parsed| parsed.second_unknown())
     }
 
     /// `is_decimal_sign_comma(): Boolean`.
@@ -136,11 +129,9 @@ impl Iso8601Time {
     /// True if this time has a decimal part indicated by `','` (comma)
     /// rather than `'.'` (period).
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn is_decimal_sign_comma(&self) -> bool {
-        todo!("Iso8601Time::is_decimal_sign_comma: string parsing deferred to the internal engine")
+        parse_time(&self.core.value).is_some_and(|parsed| parsed.decimal_sign_comma)
     }
 
     /// `has_fractional_second(): Boolean`.
@@ -148,11 +139,9 @@ impl Iso8601Time {
     /// True if the `fractional_second` part is significant (i.e. even if =
     /// 0.0).
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn has_fractional_second(&self) -> bool {
-        todo!("Iso8601Time::has_fractional_second: string parsing deferred to the internal engine")
+        parse_time(&self.core.value).is_some_and(|parsed| parsed.has_fractional_second)
     }
 
     /// `add` __alias__ `"+"` `(a_diff: Iso8601_duration) -> Iso8601_time`.
@@ -208,14 +197,15 @@ impl Ordered for Iso8601Time {
     ///
     /// PORT NOTE: not itself declared on `Iso8601_time`'s per-class table —
     /// inherited abstractly from `Ordered` via `Temporal`. A faithful
-    /// effector requires comparing parsed, partial-aware hour/minute/second
-    /// components, deferred to the internal engine (see `Iso8601Date
-    /// ::less_than` for the analogous note).
+    /// effector compares parsed, partial-aware hour/minute/second
+    /// components (see `Iso8601Date::less_than` for the analogous note).
     fn less_than(&self, other: &Self) -> bool {
-        let _ = other;
-        todo!(
-            "Iso8601Time::less_than: partial-aware time comparison deferred to the internal engine"
-        )
+        match (parse_time(&self.core.value), parse_time(&other.core.value)) {
+            (Some(left), Some(right)) => {
+                left.seconds_since_midnight() < right.seconds_since_midnight()
+            }
+            _ => self.core.value < other.core.value,
+        }
     }
 }
 
@@ -230,22 +220,16 @@ impl Iso8601Type for Iso8601Time {
     ///
     /// True if this time is partial, i.e. if seconds or more is missing.
     ///
-    /// TODO(port): equivalent to `minute_unknown() or second_unknown()`;
-    /// deferred to the internal engine.
     fn is_partial(&self) -> bool {
-        todo!(
-            "Iso8601Time::is_partial: depends on minute_unknown/second_unknown, deferred to the internal engine"
-        )
+        self.minute_unknown() || self.second_unknown()
     }
 
     /// `is_extended(): Boolean` (effected).
     ///
     /// True if this time uses `'-'`, `':'` separators.
     ///
-    /// TODO(port): requires inspecting `core.value`; deferred to the
-    /// internal engine.
     fn is_extended(&self) -> bool {
-        todo!("Iso8601Time::is_extended: deferred to the internal engine")
+        parse_time(&self.core.value).is_some_and(|parsed| parsed.extended)
     }
 }
 
@@ -293,6 +277,6 @@ impl Iso8601Time {
 //   source: BASE 1.2.0 foundation_types.time — docs/research/spec-cache/BASE-1.2.0/uml_classes/iso8601_time.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_time.adoc §Iso8601_time Class
 //   confidence: medium
-//   todos: 14
-//   note: every accessor/arithmetic body needing string parsing is stubbed todo!() pending the jiff-backed internal engine at P17; second_unknown's description text ("...and month is known") looks like a copy-paste artifact from Iso8601_date_time, transcribed verbatim and flagged rather than silently corrected; invariants are plain boolean methods, not a Validate impl (out of scope for foundation-types values).
+//   todos: 3
+//   note: string accessors, partiality, extended-form detection, and ordering delegate to the shared BASE ISO 8601 parser; add/subtract/diff remain TODO(port) pending an explicit clock-wrapping policy. second_unknown's description text ("...and month is known") looks like a copy-paste artifact from Iso8601_date_time, transcribed verbatim and flagged rather than silently corrected; invariants are plain boolean methods, not a Validate impl (out of scope for foundation-types values).
 // ─────────────────────────────────────────────

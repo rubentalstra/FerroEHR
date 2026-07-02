@@ -20,6 +20,7 @@
 use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
 use crate::time::iso8601_duration::Iso8601Duration;
+use crate::time::iso8601_parser::parse_date;
 use crate::time::iso8601_timezone::Iso8601Timezone;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
@@ -42,11 +43,9 @@ impl Iso8601Date {
     ///
     /// Extract the year part of the date as an Integer.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine (see module doc on `iso8601_type.rs`).
     #[must_use]
     pub fn year(&self) -> i32 {
-        todo!("Iso8601Date::year: string parsing deferred to the internal engine")
+        parse_date(&self.core.value).map_or(0, |parsed| parsed.year)
     }
 
     /// `month(): Integer`.
@@ -56,11 +55,9 @@ impl Iso8601Date {
     /// Extract the month part of the date as an Integer, or return 0 if not
     /// present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn month(&self) -> i32 {
-        todo!("Iso8601Date::month: string parsing deferred to the internal engine")
+        parse_date(&self.core.value).map_or(0, |parsed| parsed.month.unwrap_or(0))
     }
 
     /// `day(): Integer`.
@@ -70,11 +67,9 @@ impl Iso8601Date {
     /// Extract the day part of the date as an Integer, or return 0 if not
     /// present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn day(&self) -> i32 {
-        todo!("Iso8601Date::day: string parsing deferred to the internal engine")
+        parse_date(&self.core.value).map_or(0, |parsed| parsed.day.unwrap_or(0))
     }
 
     /// `timezone(): Iso8601_timezone`.
@@ -86,11 +81,9 @@ impl Iso8601Date {
     /// component (dates rarely do; this accessor exists on the class table
     /// nonetheless, so transcribed faithfully with `Option`).
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn timezone(&self) -> Option<Iso8601Timezone> {
-        todo!("Iso8601Date::timezone: string parsing deferred to the internal engine")
+        None
     }
 
     /// `month_unknown(): Boolean`.
@@ -98,11 +91,9 @@ impl Iso8601Date {
     /// Indicates whether month in year is unknown. If so, the date is of the
     /// form `"YYYY"`.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn month_unknown(&self) -> bool {
-        todo!("Iso8601Date::month_unknown: string parsing deferred to the internal engine")
+        parse_date(&self.core.value).is_none_or(|parsed| parsed.month_unknown())
     }
 
     /// `day_unknown(): Boolean`.
@@ -110,11 +101,9 @@ impl Iso8601Date {
     /// Indicates whether day in month is unknown. If so, and month is known,
     /// the date is of the form `"YYYY-MM"` or `"YYYYMM"`.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn day_unknown(&self) -> bool {
-        todo!("Iso8601Date::day_unknown: string parsing deferred to the internal engine")
+        parse_date(&self.core.value).is_none_or(|parsed| parsed.day_unknown())
     }
 
     /// `add` __alias__ `"+"` `(a_diff: Iso8601_duration) -> Iso8601_date`.
@@ -210,17 +199,19 @@ impl Ordered for Iso8601Date {
     ///
     /// PORT NOTE: not itself declared on `Iso8601_date`'s per-class table —
     /// inherited abstractly from `Ordered` via `Temporal`. A faithful
-    /// effector requires comparing the parsed year/month/day components
-    /// (partial-aware, per the class's own `month_unknown`/`day_unknown`
-    /// semantics), which is string-parsing work deferred to the internal
-    /// engine; not a lexical `core.value` string comparison, since e.g.
+    /// effector compares parsed year/month/day components (partial-aware,
+    /// per the class's own `month_unknown`/`day_unknown` semantics), not a
+    /// lexical `core.value` string comparison, since e.g.
     /// `"2007-04"` (partial) must still order correctly against
     /// `"2007-04-15"`.
     fn less_than(&self, other: &Self) -> bool {
-        let _ = other;
-        todo!(
-            "Iso8601Date::less_than: partial-aware date comparison deferred to the internal engine"
-        )
+        match (parse_date(&self.core.value), parse_date(&other.core.value)) {
+            (Some(left), Some(right)) => {
+                (left.year, left.month.unwrap_or(0), left.day.unwrap_or(0))
+                    < (right.year, right.month.unwrap_or(0), right.day.unwrap_or(0))
+            }
+            _ => self.core.value < other.core.value,
+        }
     }
 }
 
@@ -235,22 +226,16 @@ impl Iso8601Type for Iso8601Date {
     ///
     /// True if this date is partial, i.e. if days or more is missing.
     ///
-    /// TODO(port): equivalent to `month_unknown() or day_unknown()` — both
-    /// of which require string parsing; deferred to the internal engine.
     fn is_partial(&self) -> bool {
-        todo!(
-            "Iso8601Date::is_partial: depends on month_unknown/day_unknown, deferred to the internal engine"
-        )
+        self.month_unknown() || self.day_unknown()
     }
 
     /// `is_extended(): Boolean` (effected).
     ///
     /// True if this date uses `'-'` separators.
     ///
-    /// TODO(port): requires inspecting `core.value` for the presence of
-    /// `-` separators; deferred to the internal engine.
     fn is_extended(&self) -> bool {
-        todo!("Iso8601Date::is_extended: deferred to the internal engine")
+        parse_date(&self.core.value).is_some_and(|parsed| parsed.extended)
     }
 }
 
@@ -296,6 +281,6 @@ impl Iso8601Date {
 //   source: BASE 1.2.0 foundation_types.time — docs/research/spec-cache/BASE-1.2.0/uml_classes/iso8601_date.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_date.adoc §Iso8601_date Class
 //   confidence: medium
-//   todos: 13
-//   note: every accessor/arithmetic body that needs to parse or reformat the stored ISO 8601 string is stubbed todo!() pending the jiff-backed internal engine at P17; the four spec invariants are transcribed as plain boolean methods (not a Validate impl, out of scope for foundation-types values) calling TimeDefinitions::* directly per the iso8601_type.rs multiple-inheritance note.
+//   todos: 5
+//   note: string accessors, partiality, extended-form detection, and ordering delegate to the shared BASE ISO 8601 parser; arithmetic bodies remain TODO(port) because partial-date calendar arithmetic needs an explicit policy beyond the accessor grammar. The four spec invariants are transcribed as plain boolean methods (not a Validate impl, out of scope for foundation-types values) calling TimeDefinitions::* directly per the iso8601_type.rs multiple-inheritance note.
 // ─────────────────────────────────────────────

@@ -74,6 +74,7 @@ use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
 use openehr_foundation::time::iso8601_duration::Iso8601Duration;
+use openehr_foundation::time::time_definitions::TimeDefinitions;
 use serde::{Deserialize, Serialize};
 
 /// `DV_DURATION`.
@@ -149,13 +150,8 @@ impl DvDuration {
     ///
     /// Sum of this Duration and `other`.
     ///
-    /// TODO(port): delegates to `Iso8601Duration::add`, itself deferred to
-    /// the jiff-backed engine at P17.
     pub fn add(&self, other: &Self) -> Self {
-        let _ = other;
-        todo!(
-            "DV_DURATION.add: delegates to Iso8601Duration::add, deferred to the jiff-backed engine at P17"
-        )
+        self.with_iso8601(self.iso8601.add(&other.iso8601))
     }
 
     /// `subtract` __alias__ `"-"` `(other: DV_DURATION[1]): DV_DURATION`
@@ -163,13 +159,8 @@ impl DvDuration {
     ///
     /// Difference of this Duration and `other`.
     ///
-    /// TODO(port): delegates to `Iso8601Duration::subtract`, deferred to the
-    /// jiff-backed engine at P17.
     pub fn subtract(&self, other: &Self) -> Self {
-        let _ = other;
-        todo!(
-            "DV_DURATION.subtract: delegates to Iso8601Duration::subtract, deferred to the jiff-backed engine at P17"
-        )
+        self.with_iso8601(self.iso8601.subtract(&other.iso8601))
     }
 
     /// `multiply` __alias__ `"*"` `(factor: Real[1]): DV_DURATION`
@@ -177,13 +168,8 @@ impl DvDuration {
     ///
     /// Product of this Duration and `factor`.
     ///
-    /// TODO(port): delegates to `Iso8601Duration::multiply`, deferred to the
-    /// jiff-backed engine at P17.
     pub fn multiply(&self, factor: f64) -> Self {
-        let _ = factor;
-        todo!(
-            "DV_DURATION.multiply: delegates to Iso8601Duration::multiply, deferred to the jiff-backed engine at P17"
-        )
+        self.with_iso8601(self.iso8601.multiply(factor))
     }
 
     /// `less_than` __alias__ `"<"` `(other: DV_DURATION[1]): Boolean`
@@ -219,12 +205,8 @@ impl DvDuration {
     /// represents a time prior to some origin point, or a negative age
     /// (e.g. so-called 'adjusted age' of premature infant).
     ///
-    /// TODO(port): delegates to `Iso8601Duration::negative`, deferred to the
-    /// jiff-backed engine at P17.
     pub fn negative(&self) -> Self {
-        todo!(
-            "DV_DURATION.negative: delegates to Iso8601Duration::negative, deferred to the jiff-backed engine at P17"
-        )
+        self.with_iso8601(self.iso8601.negative())
     }
 
     /// `magnitude` `(): Double` (effected).
@@ -238,21 +220,23 @@ impl DvDuration {
     /// comparison contract inherited via `DV_AMOUNT`) is implemented purely
     /// in terms of the `Iso8601_duration`-parent's own `to_seconds()`.
     ///
-    /// TODO(port): `Iso8601Duration::to_seconds` is itself `todo!()`,
-    /// deferred to the jiff-backed engine at P17 — this delegates to it
-    /// directly rather than re-deriving the seconds computation here.
     pub fn magnitude(&self) -> f64 {
         self.iso8601.to_seconds()
     }
 
     /// `Value_valid` invariant: `valid_iso8601_duration(value)`.
     ///
-    /// TODO(port): bridges to the foundation-types validity predicate once
-    /// the jiff-backed ISO 8601 parsing engine lands (P17).
     pub fn invariant_value_valid(&self) -> bool {
-        todo!(
-            "DV_DURATION.invariant_value_valid: valid_iso8601_duration bridges to the jiff-backed engine at P17"
-        )
+        TimeDefinitions::valid_iso8601_duration(&self.iso8601.core.value)
+    }
+
+    fn with_iso8601(&self, iso8601: Iso8601Duration) -> Self {
+        Self {
+            type_tag: self.type_tag,
+            accuracy_is_percent: self.accuracy_is_percent,
+            accuracy: self.accuracy,
+            iso8601,
+        }
     }
 
     // ---- DV_AMOUNT invariants (inlined; see the forward-reference note above) ----
@@ -292,9 +276,10 @@ impl Any for DvDuration {
     ///
     /// PORT NOTE: this class's own table gives no explicit `is_equal` row;
     /// compares every declared attribute directly as the most literal
-    /// reading, mirroring `DvQuantity::is_equal`'s identical situation (a
-    /// magnitude-based comparison would delegate to the still-`todo!()`
-    /// `Iso8601Duration::to_seconds`).
+    /// reading, mirroring `DvQuantity::is_equal`'s identical situation. A
+    /// future DV_AMOUNT reconciliation can decide whether equality should be
+    /// normalized to magnitude rather than preserving the literal value
+    /// string and accuracy fields.
     fn is_equal(&self, other: &Self) -> bool {
         self.accuracy_is_percent == other.accuracy_is_percent
             && self.accuracy == other.accuracy
@@ -364,6 +349,36 @@ mod tests {
         let back: DvDuration = serde_json::from_str(&json).unwrap();
         assert_eq!(back, d);
     }
+
+    #[test]
+    fn duration_magnitude_and_arithmetic_delegate_to_iso8601_parent() {
+        let day = DvDuration {
+            type_tag: TypeTag::new(),
+            accuracy_is_percent: None,
+            accuracy: None,
+            iso8601: Iso8601Duration {
+                core: Iso8601TypeCore {
+                    value: "P1D".to_string(),
+                },
+            },
+        };
+        let half_day = DvDuration {
+            type_tag: TypeTag::new(),
+            accuracy_is_percent: None,
+            accuracy: None,
+            iso8601: Iso8601Duration {
+                core: Iso8601TypeCore {
+                    value: "PT12H".to_string(),
+                },
+            },
+        };
+
+        assert!(day.invariant_value_valid());
+        assert_eq!(day.magnitude(), 86_400.0);
+        assert_eq!(day.add(&half_day).iso8601.core.value, "PT129600S");
+        assert_eq!(day.subtract(&half_day).iso8601.core.value, "PT43200S");
+        assert_eq!(half_day.negative().iso8601.core.value, "-PT43200S");
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -371,6 +386,6 @@ mod tests {
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_duration.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_duration.adoc §DV_DURATION Class
 //   confidence: medium
-//   todos: 9
-//   note: the Section 7.2-named multiple-inheritance hazard (DV_AMOUNT + Iso8601_duration, genuinely disjoint parent state, contrast the value-mixin-only MI on DV_DATE/DV_TIME/DV_DATE_TIME); DV_AMOUNT's two attributes inlined pending the concurrent quantity cluster landing DvAmountData (flagged, reconciliation TODO); every arithmetic effector delegates to the still-todo!() Iso8601Duration methods; magnitude() is the one function whose spec text names the exact cross-parent delegation (Iso8601_duration.to_seconds()) this hazard is about; less_than's Post_result wording is the one internally-consistent case in this package (contrast the three DvDate/DvTime/DvDateTime PORT NOTEs). P4: Serialize/Deserialize added; both Option fields skip when None; `iso8601` flattened over Iso8601Duration's own flattened core (supplied by the foundation P4 pass), so `value` sits flat — wire shape {"_type":"DV_DURATION","value":"P1DT2H"}; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME); the stale "foundation has no serde" TODO removed (superseded by the foundation derive, in-file round-trip test pins the flat shape).
+//   todos: 2
+//   note: the Section 7.2-named multiple-inheritance hazard (DV_AMOUNT + Iso8601_duration, genuinely disjoint parent state, contrast the value-mixin-only MI on DV_DATE/DV_TIME/DV_DATE_TIME); DV_AMOUNT's two attributes inlined pending the concurrent quantity cluster landing DvAmountData (flagged, reconciliation TODO); arithmetic, magnitude, and value validity now delegate to the implemented Iso8601Duration methods while preserving receiver accuracy fields. normal_status remains TODO(port) until the documented DvAmountData<Self> embedding reconciliation. less_than's Post_result wording is the one internally-consistent case in this package (contrast the three DvDate/DvTime/DvDateTime PORT NOTEs). P4: Serialize/Deserialize added; both Option fields skip when None; `iso8601` flattened over Iso8601Duration's own flattened core (supplied by the foundation P4 pass), so `value` sits flat — wire shape {"_type":"DV_DURATION","value":"P1DT2H"}; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME); the stale "foundation has no serde" TODO removed (superseded by the foundation derive, in-file round-trip test pins the flat shape).
 // ─────────────────────────────────────────────

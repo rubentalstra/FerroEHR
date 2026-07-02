@@ -26,6 +26,7 @@
 use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
 use crate::time::iso8601_duration::Iso8601Duration;
+use crate::time::iso8601_parser::parse_date_time;
 use crate::time::iso8601_timezone::Iso8601Timezone;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
@@ -47,11 +48,9 @@ impl Iso8601DateTime {
     ///
     /// Extract the year part of the date as an Integer.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn year(&self) -> i32 {
-        todo!("Iso8601DateTime::year: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).map_or(0, |parsed| parsed.date.year)
     }
 
     /// `month(): Integer`.
@@ -61,11 +60,9 @@ impl Iso8601DateTime {
     /// Extract the month part of the date/time as an Integer, or return 0 if
     /// not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn month(&self) -> i32 {
-        todo!("Iso8601DateTime::month: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).map_or(0, |parsed| parsed.date.month.unwrap_or(0))
     }
 
     /// `day(): Integer`.
@@ -75,11 +72,9 @@ impl Iso8601DateTime {
     /// Extract the day part of the date/time as an Integer, or return 0 if
     /// not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn day(&self) -> i32 {
-        todo!("Iso8601DateTime::day: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).map_or(0, |parsed| parsed.date.day.unwrap_or(0))
     }
 
     /// `hour(): Integer`.
@@ -89,11 +84,9 @@ impl Iso8601DateTime {
     /// Extract the hour part of the date/time as an Integer, or return 0 if
     /// not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn hour(&self) -> i32 {
-        todo!("Iso8601DateTime::hour: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).map_or(0, |parsed| parsed.time.hour)
     }
 
     /// `minute(): Integer`.
@@ -103,11 +96,9 @@ impl Iso8601DateTime {
     /// Extract the minute part of the date/time as an Integer, or return 0
     /// if not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn minute(&self) -> i32 {
-        todo!("Iso8601DateTime::minute: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).map_or(0, |parsed| parsed.time.minute_value())
     }
 
     /// `second(): Integer`.
@@ -117,11 +108,9 @@ impl Iso8601DateTime {
     /// Extract the integral seconds part of the date/time (i.e. prior to any
     /// decimal sign) as an Integer, or return 0 if not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn second(&self) -> i32 {
-        todo!("Iso8601DateTime::second: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).map_or(0, |parsed| parsed.time.second_value())
     }
 
     /// `fractional_second(): Real`.
@@ -129,44 +118,42 @@ impl Iso8601DateTime {
     /// Extract the fractional seconds part of the date/time (i.e. following
     /// to any decimal sign) as a Real, or return 0.0 if not present.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn fractional_second(&self) -> f64 {
-        todo!("Iso8601DateTime::fractional_second: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).map_or(0.0, |parsed| parsed.time.fractional_second())
     }
 
     /// `timezone(): Iso8601_timezone`.
     ///
     /// Timezone; may be Void.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn timezone(&self) -> Option<Iso8601Timezone> {
-        todo!("Iso8601DateTime::timezone: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value)
+            .and_then(|parsed| parsed.time.timezone)
+            .map(|timezone| Iso8601Timezone {
+                core: Iso8601TypeCore {
+                    value: timezone.as_iso8601_string(),
+                },
+            })
     }
 
     /// `month_unknown(): Boolean`.
     ///
     /// Indicates whether month in year is unknown.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn month_unknown(&self) -> bool {
-        todo!("Iso8601DateTime::month_unknown: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).is_none_or(|parsed| parsed.date.month_unknown())
     }
 
     /// `day_unknown(): Boolean`.
     ///
     /// Indicates whether day in month is unknown.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn day_unknown(&self) -> bool {
-        todo!("Iso8601DateTime::day_unknown: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).is_none_or(|parsed| parsed.date.day_unknown())
     }
 
     /// `minute_unknown(): Boolean`.
@@ -185,11 +172,9 @@ impl Iso8601DateTime {
     /// flagged here since the table's own wording is internally
     /// inconsistent rather than silently "corrected" without comment.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn minute_unknown(&self) -> bool {
-        todo!("Iso8601DateTime::minute_unknown: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).is_none_or(|parsed| parsed.time.minute_unknown())
     }
 
     /// `second_unknown(): Boolean`.
@@ -206,11 +191,9 @@ impl Iso8601DateTime {
     /// correctly-worded description; flagged here rather than silently
     /// "corrected" without comment.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn second_unknown(&self) -> bool {
-        todo!("Iso8601DateTime::second_unknown: string parsing deferred to the internal engine")
+        parse_date_time(&self.core.value).is_none_or(|parsed| parsed.time.second_unknown())
     }
 
     /// `is_decimal_sign_comma(): Boolean`.
@@ -218,13 +201,9 @@ impl Iso8601DateTime {
     /// True if this time has a decimal part indicated by `','` (comma)
     /// rather than `'.'` (period).
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn is_decimal_sign_comma(&self) -> bool {
-        todo!(
-            "Iso8601DateTime::is_decimal_sign_comma: string parsing deferred to the internal engine"
-        )
+        parse_date_time(&self.core.value).is_some_and(|parsed| parsed.time.decimal_sign_comma)
     }
 
     /// `has_fractional_second(): Boolean`.
@@ -232,13 +211,9 @@ impl Iso8601DateTime {
     /// True if the `fractional_second` part is significant (i.e. even if =
     /// 0.0).
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn has_fractional_second(&self) -> bool {
-        todo!(
-            "Iso8601DateTime::has_fractional_second: string parsing deferred to the internal engine"
-        )
+        parse_date_time(&self.core.value).is_some_and(|parsed| parsed.time.has_fractional_second)
     }
 
     /// `add` __alias__ `"+"` `(a_diff: Iso8601_duration) -> Iso8601_date_time`.
@@ -346,14 +321,34 @@ impl Ordered for Iso8601DateTime {
     ///
     /// PORT NOTE: not itself declared on `Iso8601_date_time`'s per-class
     /// table — inherited abstractly from `Ordered` via `Temporal`. A
-    /// faithful effector requires comparing parsed, partial-aware
-    /// year/month/day/hour/minute/second components, deferred to the
-    /// internal engine.
+    /// faithful effector compares parsed, partial-aware
+    /// year/month/day/hour/minute/second components.
     fn less_than(&self, other: &Self) -> bool {
-        let _ = other;
-        todo!(
-            "Iso8601DateTime::less_than: partial-aware date-time comparison deferred to the internal engine"
-        )
+        match (
+            parse_date_time(&self.core.value),
+            parse_date_time(&other.core.value),
+        ) {
+            (Some(left), Some(right)) => {
+                (
+                    left.date.year,
+                    left.date.month.unwrap_or(0),
+                    left.date.day.unwrap_or(0),
+                    left.time.hour,
+                    left.time.minute_value(),
+                    left.time.second_value(),
+                    left.time.nanosecond,
+                ) < (
+                    right.date.year,
+                    right.date.month.unwrap_or(0),
+                    right.date.day.unwrap_or(0),
+                    right.time.hour,
+                    right.time.minute_value(),
+                    right.time.second_value(),
+                    right.time.nanosecond,
+                )
+            }
+            _ => self.core.value < other.core.value,
+        }
     }
 }
 
@@ -369,19 +364,16 @@ impl Iso8601Type for Iso8601DateTime {
     /// True if this date time is partial, i.e. if seconds or more is
     /// missing.
     ///
-    /// TODO(port): deferred to the internal engine.
     fn is_partial(&self) -> bool {
-        todo!("Iso8601DateTime::is_partial: deferred to the internal engine")
+        self.month_unknown() || self.day_unknown() || self.minute_unknown() || self.second_unknown()
     }
 
     /// `is_extended(): Boolean` (effected).
     ///
     /// True if this date/time uses `'-'`, `':'` separators.
     ///
-    /// TODO(port): requires inspecting `core.value`; deferred to the
-    /// internal engine.
     fn is_extended(&self) -> bool {
-        todo!("Iso8601DateTime::is_extended: deferred to the internal engine")
+        parse_date_time(&self.core.value).is_some_and(|parsed| parsed.extended)
     }
 }
 
@@ -488,17 +480,12 @@ impl Iso8601DateTime {
     /// confirms the concept exists and is used elsewhere in this same
     /// table, so this is a genuine spec gap (an implied accessor that is
     /// never formally declared as a `Functions` row), not an oversight in
-    /// this transcription. Left unimplemented — `todo!()` — pending either
-    /// a spec erratum or a decision to add the missing accessor by
-    /// analogy with its siblings once the internal engine exists.
+    /// this transcription. Since `valid_iso8601_date_time`'s explicit
+    /// grammar always includes the hour field, the invariant is implemented
+    /// as "the date-time parses under that grammar".
     #[must_use]
     pub fn invariant_partial_validity_hour(&self) -> bool {
-        // TODO(port): depends on an `hour_unknown()` accessor the spec's own
-        // Functions table never declares (used only in the `year`/`month`/
-        // `day` `Pre` clauses and this invariant) — see doc comment above.
-        todo!(
-            "Iso8601DateTime::invariant_partial_validity_hour: needs hour_unknown(), not declared as a Functions row in the spec's own Iso8601_date_time table"
-        )
+        parse_date_time(&self.core.value).is_some()
     }
 
     /// __`Partial_validity_minute`__: `minute_unknown implies second_unknown`.
@@ -513,6 +500,6 @@ impl Iso8601DateTime {
 //   source: BASE 1.2.0 foundation_types.time — docs/research/spec-cache/BASE-1.2.0/uml_classes/iso8601_date_time.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_date_time.adoc §Iso8601_date_time Class
 //   confidence: low
-//   todos: 22
-//   note: several published-table inconsistencies flagged rather than silently corrected — add_nominal/subtract_nominal's stated Iso8601_date return type (transcribed as Iso8601DateTime instead, with reasoning), minute_unknown/second_unknown descriptions both worded as "is known" or copy-pasted from each other, Month_valid/Day_valid stated unconditionally unlike Iso8601_date's conditional form, Partial_validity_year/month sharing an identical condition, and Partial_validity_hour depending on an hour_unknown() accessor never declared in this class's own Functions table (genuine spec gap, stubbed todo!()). Every string-parsing body deferred to the jiff-backed internal engine at P17.
+//   todos: 5
+//   note: string accessors, partiality, extended-form detection, ordering, and the hour-validity spec gap now delegate to the shared BASE ISO 8601 parser; arithmetic bodies remain TODO(port) because partial date-time calendar arithmetic needs an explicit policy beyond the accessor grammar. Several published-table inconsistencies remain flagged rather than silently corrected — add_nominal/subtract_nominal's stated Iso8601_date return type (transcribed as Iso8601DateTime instead, with reasoning), minute_unknown/second_unknown descriptions both worded as "is known" or copy-pasted from each other, Month_valid/Day_valid stated unconditionally unlike Iso8601_date's conditional form, Partial_validity_year/month sharing an identical condition, and Partial_validity_hour depending on an hour_unknown() accessor never declared in this class's own Functions table.
 // ─────────────────────────────────────────────

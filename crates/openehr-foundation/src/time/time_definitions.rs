@@ -8,6 +8,8 @@
 //! by where the international dateline is. Thus, time in New Zealand is
 //! quoted using `+12:00`, not `-12:00`."
 
+use crate::time::iso8601_parser::{parse_date, parse_date_time, parse_duration, parse_time};
+
 /// `Time_Definitions` declares only constants and stateless validity
 /// functions — no instance attributes anywhere in the per-class table — so
 /// it is transcribed as a zero-sized unit struct carrying associated `const`
@@ -142,27 +144,37 @@ impl TimeDefinitions {
     ///
     /// Post: `Result = d >= 1 and d <= days_in_month(m, y)`.
     ///
-    /// TODO(port): the spec's postcondition calls a `days_in_month(m, y)`
-    /// function that is referenced here and by `Iso8601_date`'s invariants,
-    /// but is not itself declared in the `Time_Definitions` per-class table
-    /// (no `Functions` row named `days_in_month`). The per-class table for
-    /// `Time_Definitions` stops at the six `valid_*` functions transcribed in
-    /// this file; `days_in_month` is presumably an implementation-internal
-    /// helper the spec assumes exists (standard Gregorian-calendar days-in-
-    /// month, accounting for leap years via `Days_in_leap_year`/
-    /// `Days_in_year`) rather than a member the spec formally exposes. Left
-    /// unimplemented here — a genuine spec gap, not an oversight — with the
-    /// body deferring to `todo!()`. The real implementation should bridge to
-    /// `jiff`'s calendar arithmetic once the internal engine is wired at
-    /// P17.
+    /// PORT NOTE: the spec's postcondition calls a `days_in_month(m, y)`
+    /// helper not declared as a `Time_Definitions` function. It is
+    /// implemented here with standard proleptic Gregorian month lengths, the
+    /// only reading consistent with the same table's leap-year constants and
+    /// date-validity text.
     #[must_use]
     pub fn valid_day(y: i32, m: i32, d: i32) -> bool {
-        // TODO(port): depends on the spec-assumed-but-undeclared
-        // `days_in_month(m, y)` helper; see doc comment above.
-        let _ = (y, m, d);
-        todo!(
-            "TimeDefinitions::valid_day: needs days_in_month(m, y), not declared in the spec's Time_Definitions per-class table"
-        )
+        d >= 1 && Self::days_in_month(m, y).is_some_and(|max| d <= max)
+    }
+
+    /// Implementation helper for the `valid_day` postcondition's
+    /// spec-referenced `days_in_month(m, y)`.
+    #[must_use]
+    pub fn days_in_month(m: i32, y: i32) -> Option<i32> {
+        if !Self::valid_year(y) || !Self::valid_month(m) {
+            return None;
+        }
+        let days = match m {
+            1 | 3 | 5 | 7 | 8 | 10 | 12 => Self::MAX_DAYS_IN_MONTH,
+            4 | 6 | 9 | 11 => 30,
+            2 if Self::is_leap_year(y) => 29,
+            2 => 28,
+            _ => return None,
+        };
+        Some(days)
+    }
+
+    /// Proleptic Gregorian leap-year helper used by `days_in_month`.
+    #[must_use]
+    pub fn is_leap_year(y: i32) -> bool {
+        y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)
     }
 
     /// `valid_hour(h: Integer, m: Integer, s: Integer) -> Boolean`.
@@ -218,15 +230,9 @@ impl TimeDefinitions {
     /// `YYYYMM`. The combinations of `YYYY`, `MM`, `DD` numbers must be
     /// correct with respect to the Gregorian calendar.
     ///
-    /// TODO(port): string-syntax validation deferred to the internal
-    /// parsing engine (see the `Iso8601Type`-family module doc for the
-    /// jiff-bridging plan at P17); not implemented here.
     #[must_use]
     pub fn valid_iso8601_date(s: &str) -> bool {
-        let _ = s;
-        todo!(
-            "TimeDefinitions::valid_iso8601_date: string-syntax validation deferred to the internal parsing engine"
-        )
+        parse_date(s).is_some()
     }
 
     /// `valid_iso8601_time(s: String) -> Boolean`.
@@ -237,14 +243,9 @@ impl TimeDefinitions {
     /// (extended), `hhmm` or `hh` (compact), with an optional timezone
     /// indicator.
     ///
-    /// TODO(port): string-syntax validation deferred to the internal
-    /// parsing engine; not implemented here.
     #[must_use]
     pub fn valid_iso8601_time(s: &str) -> bool {
-        let _ = s;
-        todo!(
-            "TimeDefinitions::valid_iso8601_time: string-syntax validation deferred to the internal parsing engine"
-        )
+        parse_time(s).is_some()
     }
 
     /// `valid_iso8601_date_time(s: String) -> Boolean`.
@@ -255,14 +256,9 @@ impl TimeDefinitions {
     /// `YYYY-MM-DDThh:mm`/`YYYY-MM-DDThh` (extended) or
     /// `YYYYMMDDThhmm`/`YYYYMMDDThh` (compact).
     ///
-    /// TODO(port): string-syntax validation deferred to the internal
-    /// parsing engine; not implemented here.
     #[must_use]
     pub fn valid_iso8601_date_time(s: &str) -> bool {
-        let _ = s;
-        todo!(
-            "TimeDefinitions::valid_iso8601_date_time: string-syntax validation deferred to the internal parsing engine"
-        )
+        parse_date_time(s).is_some()
     }
 
     /// `valid_iso8601_duration(s: String) -> Boolean`.
@@ -274,30 +270,22 @@ impl TimeDefinitions {
     /// the `W` designator may appear alongside the other designators (used
     /// for expressing pregnancy duration).
     ///
-    /// TODO(port): string-syntax validation deferred to the internal
-    /// parsing engine; not implemented here.
     #[must_use]
     pub fn valid_iso8601_duration(s: &str) -> bool {
-        let _ = s;
-        todo!(
-            "TimeDefinitions::valid_iso8601_duration: string-syntax validation deferred to the internal parsing engine"
-        )
+        parse_duration(s).is_some()
     }
 }
 
-// PERF(port): every `valid_iso8601_*` function above will eventually parse
-// its input against ISO 8601 grammar; the internal engine is expected to
-// bridge to `jiff`'s parsing/formatting rather than a hand-rolled grammar,
-// per the module-level plan documented on `Iso8601Type` in
-// `iso8601_type.rs`. `jiff` is now wired into this crate at the
-// workspace-pinned `0.2.31`; the TODO bodies remain until the implementation
-// pass fixes the exact openEHR partial-precision policy.
+// PERF(port): the parser is intentionally shared by `valid_iso8601_*` and
+// the concrete `Iso8601_*` accessors so the crate has one parse-policy
+// surface for the BASE time package. If this becomes hot, cache parsed forms
+// at the caller layer rather than duplicating grammar code.
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.time — docs/research/spec-cache/BASE-1.2.0/uml_classes/time_definitions.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master06-time_types.adoc §Class Definitions / time_definitions.adoc §Time_Definitions Class
 //   confidence: medium
-//   todos: 6
-//   note: six string-syntax valid_iso8601_* / valid_day functions stubbed todo!() pending the jiff-backed internal engine; valid_day additionally depends on a days_in_month(m, y) helper the spec's own Time_Definitions table never declares (a spec gap, flagged rather than invented); Max_days_in_year has no literal value in the table and is transcribed as an alias of Days_in_leap_year.
+//   todos: 0
+//   note: ISO 8601 validity functions delegate to the shared BASE time parser; valid_day implements the spec-referenced-but-undeclared days_in_month(m, y) helper with proleptic Gregorian month lengths; Max_days_in_year has no literal value in the table and is transcribed as an alias of Days_in_leap_year.
 // ─────────────────────────────────────────────

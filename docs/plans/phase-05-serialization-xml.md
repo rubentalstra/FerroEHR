@@ -31,6 +31,12 @@ the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
 
 ## Tasks
 
+- [x] Implement foundation/RM ISO 8601 temporal value semantics needed by
+      scalar JSON/XML round-trips — completed 2026-07-02; added the
+      `openehr-foundation` BASE time parser, wired `Time_Definitions` and
+      `Iso8601_*` accessors/validity/comparison, and delegated
+      `DV_DATE`/`DV_TIME`/`DV_DATE_TIME`/`DV_DURATION` magnitude/equality/
+      validity to it
 - [ ] Vendor RM 1.1.0 XSDs (`Common.xsd`, `DataTypes.xsd`, `DataStructures.xsd`, `Ehr.xsd`, `Demographic.xsd`) from `specifications-ITS-XML/components/RM/Release-1.1.0/` into `openehr-serde/schemas/`
 - [ ] Vendor the legacy 1.0.2 XSD bundle alongside it for round-trip support
 - [ ] Implement `quick-xml` serialization for rm.data_types matching `DataTypes.xsd`, namespace `http://schemas.openehr.org/v1`
@@ -55,13 +61,18 @@ the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
   validation inputs stay beside the crate that uses them (e.g.
   `openehr-serde/schemas/` for ITS schemas).
 - `jiff` is pinned at workspace version `0.2.31` and wired into
-  `openehr-foundation` for the upcoming ISO 8601 temporal implementation;
-  existing TODO bodies stay in place until the parser/arithmetic pass fixes
-  openEHR partial-precision semantics.
+  `openehr-foundation`. The first parser-backed ISO 8601 implementation now
+  covers BASE date/time/timezone/duration validity, component accessors,
+  partial/extended detection, comparisons, duration arithmetic, and the RM
+  temporal magnitude/equality/validity delegates. Calendar add/subtract over
+  partial dates/date-times remains deliberately TODO(port) until a policy is
+  chosen for incomplete precision.
 
 ## Handoff for next session
 
 Started with dependency/spec-cache prep. `quick-xml` is pinned in the root
-`Cargo.toml`; confirm its derive ergonomics against a representative
-`DV_QUANTITY` or `COMPOSITION` example before committing to a pattern for the
-whole crate. Next concrete task is still vendoring the ITS-XML XSD bundles.
+`Cargo.toml`; temporal scalar semantics now compile and have focused tests in
+`openehr-foundation` and `openehr-rm`. Confirm `quick-xml` derive ergonomics
+against a representative `DV_QUANTITY` or `COMPOSITION` example before
+committing to a pattern for the whole crate. Next concrete task is still
+vendoring the ITS-XML XSD bundles.

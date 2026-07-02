@@ -25,6 +25,8 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_foundation::time::iso8601_parser::parse_time;
+use openehr_foundation::time::time_definitions::TimeDefinitions;
 use serde::{Deserialize, Serialize};
 
 /// `DV_TIME`.
@@ -50,8 +52,9 @@ pub struct DvTime {
     ///
     /// ISO8601 time string.
     ///
-    /// TODO(port): `Value_valid` invariant (`valid_iso8601_time(value)`) not
-    /// yet enforced; see `invariant_value_valid` below.
+    /// PORT NOTE: the `Value_valid` invariant is exposed as
+    /// [`DvTime::invariant_value_valid`], but is not yet enforced by a
+    /// constructor or `Validate` impl.
     pub value: String,
 }
 
@@ -72,13 +75,11 @@ impl DvTime {
     /// consistent with every other `Real`-returning function in this
     /// package.
     ///
-    /// TODO(port): requires parsing `value` as a (possibly partial) ISO 8601
-    /// time and computing seconds-since-midnight — deferred to the
-    /// jiff-backed engine at P17.
+    /// PORT NOTE: partial times use zero for unknown trailing components,
+    /// matching the BASE `Iso8601_time` component accessors (`minute()` /
+    /// `second()` return 0 when not present).
     pub fn magnitude(&self) -> f64 {
-        todo!(
-            "DV_TIME.magnitude: seconds-since-midnight, deferred to the jiff-backed engine at P17"
-        )
+        parse_time(&self.value).map_or(0.0, |parsed| parsed.seconds_since_midnight())
     }
 
     // `add` __alias__ `"+"` `(a_diff: DV_DURATION[1]): DV_TIME` (redefined
@@ -108,24 +109,21 @@ impl DvTime {
 
     /// `Value_valid` invariant: `valid_iso8601_time(value)`.
     ///
-    /// TODO(port): bridges to the foundation-types validity predicate once
-    /// the jiff-backed ISO 8601 parsing engine lands (P17).
     pub fn invariant_value_valid(&self) -> bool {
-        todo!(
-            "DV_TIME.invariant_value_valid: valid_iso8601_time bridges to the jiff-backed engine at P17"
-        )
+        TimeDefinitions::valid_iso8601_time(&self.value)
     }
 }
 
 impl Any for DvTime {
     /// `is_equal(other)` inherited through the `DV_QUANTIFIED` chain
     /// (magnitude-based comparison).
-    ///
-    /// TODO(port): forwards to `magnitude()` comparison once that is
-    /// implemented, mirroring `DvDate::is_equal`.
     fn is_equal(&self, other: &Self) -> bool {
-        let _ = other;
-        todo!("DV_TIME.is_equal: pending DV_QUANTIFIED equality once magnitude() lands")
+        match (parse_time(&self.value), parse_time(&other.value)) {
+            (Some(left), Some(right)) => {
+                left.seconds_since_midnight() == right.seconds_since_midnight()
+            }
+            _ => self.value == other.value,
+        }
     }
 
     fn type_of(&self) -> String {
@@ -201,11 +199,25 @@ impl DvTemporal for DvTime {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn time_magnitude_is_seconds_since_midnight() {
+        let time: DvTime =
+            serde_json::from_str(r#"{"_type":"DV_TIME","value":"01:02:03.5"}"#).unwrap();
+
+        assert!(time.invariant_value_valid());
+        assert_eq!(time.magnitude(), 3_723.5);
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_time.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_time.adoc §DV_TIME Class
 //   confidence: medium
-//   todos: 7
-//   note: same dual-inheritance shape as DV_DATE; magnitude/add/subtract/diff/invariant_value_valid deferred to the jiff-backed engine at P17; less_than transcribed with name-implied semantics against the same likely copy-paste Post_result defect flagged on DV_DATE; Any/Ordered/DvOrderedApi impls added so DvTime satisfies the DvOrdered enum's trait chain (is_equal stubbed pending magnitude()). P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvTime>) flattened (same schema-verified shape as DV_DATE); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_DATE/DV_DATE_TIME.
+//   todos: 3
+//   note: same dual-inheritance shape as DV_DATE; magnitude/is_equal/invariant_value_valid now delegate to the foundation BASE ISO 8601 parser. add/subtract/diff remain TODO(port) pending an explicit clock-wrapping policy. less_than transcribed with name-implied semantics against the same likely copy-paste Post_result defect flagged on DV_DATE; Any/Ordered/DvOrderedApi impls added so DvTime satisfies the DvOrdered enum's trait chain. P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvTime>) flattened (same schema-verified shape as DV_DATE); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_DATE/DV_DATE_TIME.
 // ─────────────────────────────────────────────

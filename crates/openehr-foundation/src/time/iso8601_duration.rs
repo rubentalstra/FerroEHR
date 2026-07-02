@@ -19,6 +19,7 @@
 //! the full rationale and the jiff-bridging plan for P17.
 use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
+use crate::time::iso8601_parser::{duration_from_seconds_string, parse_duration};
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
 use serde::{Deserialize, Serialize};
@@ -48,11 +49,9 @@ impl Iso8601Duration {
     /// Number of years in the `value`, i.e. the number preceding the `'Y'`
     /// in the `'YMD'` part, if one exists.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn years(&self) -> i32 {
-        todo!("Iso8601Duration::years: string parsing deferred to the internal engine")
+        parse_duration(&self.core.value).map_or(0, |parsed| parsed.years)
     }
 
     /// `months(): Integer`.
@@ -60,11 +59,9 @@ impl Iso8601Duration {
     /// Number of months in the `value`, i.e. the value preceding the `'M'`
     /// in the `'YMD'` part, if one exists.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn months(&self) -> i32 {
-        todo!("Iso8601Duration::months: string parsing deferred to the internal engine")
+        parse_duration(&self.core.value).map_or(0, |parsed| parsed.months)
     }
 
     /// `days(): Integer`.
@@ -72,11 +69,9 @@ impl Iso8601Duration {
     /// Number of days in the `value`, i.e. the number preceding the `'D'`
     /// in the `'YMD'` part, if one exists.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn days(&self) -> i32 {
-        todo!("Iso8601Duration::days: string parsing deferred to the internal engine")
+        parse_duration(&self.core.value).map_or(0, |parsed| parsed.days)
     }
 
     /// `hours(): Integer`.
@@ -84,11 +79,9 @@ impl Iso8601Duration {
     /// Number of hours in the `value`, i.e. the number preceding the `'H'`
     /// in the `'HMS'` part, if one exists.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn hours(&self) -> i32 {
-        todo!("Iso8601Duration::hours: string parsing deferred to the internal engine")
+        parse_duration(&self.core.value).map_or(0, |parsed| parsed.hours)
     }
 
     /// `minutes(): Integer`.
@@ -96,11 +89,9 @@ impl Iso8601Duration {
     /// Number of minutes in the `value`, i.e. the number preceding the
     /// `'M'` in the `'HMS'` part, if one exists.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn minutes(&self) -> i32 {
-        todo!("Iso8601Duration::minutes: string parsing deferred to the internal engine")
+        parse_duration(&self.core.value).map_or(0, |parsed| parsed.minutes)
     }
 
     /// `seconds(): Integer`.
@@ -108,11 +99,9 @@ impl Iso8601Duration {
     /// Number of seconds in the `value`, i.e. the integer number preceding
     /// the `'S'` in the `'HMS'` part, if one exists.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn seconds(&self) -> i32 {
-        todo!("Iso8601Duration::seconds: string parsing deferred to the internal engine")
+        parse_duration(&self.core.value).map_or(0, |parsed| parsed.seconds)
     }
 
     /// `fractional_seconds(): Real`.
@@ -120,11 +109,9 @@ impl Iso8601Duration {
     /// Fractional seconds in the `value`, i.e. the decimal part of the
     /// number preceding the `'S'` in the `'HMS'` part, if one exists.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn fractional_seconds(&self) -> f64 {
-        todo!("Iso8601Duration::fractional_seconds: string parsing deferred to the internal engine")
+        parse_duration(&self.core.value).map_or(0.0, |parsed| parsed.fractional_seconds)
     }
 
     /// `weeks(): Integer`.
@@ -132,11 +119,9 @@ impl Iso8601Duration {
     /// Number of weeks in the `value`, i.e. the value preceding the `W`, if
     /// one exists.
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn weeks(&self) -> i32 {
-        todo!("Iso8601Duration::weeks: string parsing deferred to the internal engine")
+        parse_duration(&self.core.value).map_or(0, |parsed| parsed.weeks)
     }
 
     /// `is_decimal_sign_comma(): Boolean`.
@@ -144,13 +129,9 @@ impl Iso8601Duration {
     /// True if this time has a decimal part indicated by `,` (comma) rather
     /// than `.` (period).
     ///
-    /// TODO(port): requires parsing `core.value`; deferred to the internal
-    /// engine.
     #[must_use]
     pub fn is_decimal_sign_comma(&self) -> bool {
-        todo!(
-            "Iso8601Duration::is_decimal_sign_comma: string parsing deferred to the internal engine"
-        )
+        parse_duration(&self.core.value).is_some_and(|parsed| parsed.decimal_sign_comma)
     }
 
     /// `to_seconds(): Real`.
@@ -160,21 +141,9 @@ impl Iso8601Duration {
     /// `'Y'` and `'M'`) are included, the corresponding 'average' durations
     /// from `Time_Definitions` are used to compute the result.
     ///
-    /// TODO(port): requires the individual component accessors above
-    /// (`years`, `months`, etc.), all of which are themselves
-    /// string-parsing work deferred to the internal engine. Once those
-    /// exist, the arithmetic itself is straightforward:
-    /// `years * Average_days_in_year * seconds_in_day + months *
-    /// Average_days_in_month * seconds_in_day + weeks * Days_in_week *
-    /// seconds_in_day + days * seconds_in_day + hours * ... + minutes * ...
-    /// + seconds + fractional_seconds`, using
-    /// `TimeDefinitions::AVERAGE_DAYS_IN_YEAR`/`AVERAGE_DAYS_IN_MONTH` per
-    /// the spec description.
     #[must_use]
     pub fn to_seconds(&self) -> f64 {
-        todo!(
-            "Iso8601Duration::to_seconds: depends on component accessors, deferred to the internal engine"
-        )
+        parse_duration(&self.core.value).map_or(0.0, |parsed| parsed.to_seconds())
     }
 
     /// `as_string(): String`.
@@ -204,13 +173,9 @@ impl Iso8601Duration {
     /// seconds, using `Time_Definitions::AVERAGE_DAYS_IN_YEAR` and
     /// `Time_Definitions::AVERAGE_DAYS_IN_MONTH`.
     ///
-    /// TODO(port): depends on `to_seconds` (and the reverse
-    /// seconds-to-duration-string construction); deferred to the internal
-    /// engine.
     #[must_use]
     pub fn add(&self, a_val: &Iso8601Duration) -> Iso8601Duration {
-        let _ = a_val;
-        todo!("Iso8601Duration::add: deferred to the internal engine")
+        Self::from_seconds(self.to_seconds() + a_val.to_seconds())
     }
 
     /// `subtract` __alias__ `"-"` `(a_val: Iso8601_duration) -> Iso8601_duration`.
@@ -219,33 +184,33 @@ impl Iso8601Duration {
     /// to seconds, using `Time_Definitions::AVERAGE_DAYS_IN_YEAR` and
     /// `Time_Definitions::AVERAGE_DAYS_IN_MONTH`.
     ///
-    /// TODO(port): deferred to the internal engine.
     #[must_use]
     pub fn subtract(&self, a_val: &Iso8601Duration) -> Iso8601Duration {
-        let _ = a_val;
-        todo!("Iso8601Duration::subtract: deferred to the internal engine")
+        Self::from_seconds(self.to_seconds() - a_val.to_seconds())
     }
 
     /// `multiply` __alias__ `"*"` `(a_val: Real) -> Iso8601_duration`.
     ///
     /// Arithmetic multiplication a duration by a number.
     ///
-    /// TODO(port): deferred to the internal engine.
     #[must_use]
     pub fn multiply(&self, a_val: f64) -> Iso8601Duration {
-        let _ = a_val;
-        todo!("Iso8601Duration::multiply: deferred to the internal engine")
+        Self::from_seconds(self.to_seconds() * a_val)
     }
 
     /// `divide` __alias__ `"/"` `(a_val: Real) -> Iso8601_duration`.
     ///
     /// Arithmetic division of a duration by a number.
     ///
-    /// TODO(port): deferred to the internal engine.
+    /// PORT NOTE: the spec gives no error channel or precondition for a zero
+    /// or non-finite divisor. This implementation preserves the receiver for
+    /// undefined divisors rather than fabricating an invalid ISO 8601 string.
     #[must_use]
     pub fn divide(&self, a_val: f64) -> Iso8601Duration {
-        let _ = a_val;
-        todo!("Iso8601Duration::divide: deferred to the internal engine")
+        if a_val == 0.0 || !a_val.is_finite() {
+            return self.clone();
+        }
+        Self::from_seconds(self.to_seconds() / a_val)
     }
 
     /// `negative` __alias__ `"-"` `(): Iso8601_duration`.
@@ -264,11 +229,20 @@ impl Iso8601Duration {
     /// `negative` because the spec itself reuses the operator alias `"-"`
     /// across unrelated classes.
     ///
-    /// TODO(port): requires reconstructing the duration string with an
-    /// inverted sign; deferred to the internal engine.
     #[must_use]
     pub fn negative(&self) -> Iso8601Duration {
-        todo!("Iso8601Duration::negative: deferred to the internal engine")
+        Self::from_seconds(-self.to_seconds())
+    }
+
+    fn from_seconds(seconds: f64) -> Iso8601Duration {
+        let value = if seconds.is_finite() {
+            duration_from_seconds_string(seconds)
+        } else {
+            "PT0S".to_string()
+        };
+        Iso8601Duration {
+            core: Iso8601TypeCore { value },
+        }
     }
 }
 
@@ -289,13 +263,9 @@ impl Ordered for Iso8601Duration {
     /// table — inherited abstractly from `Ordered` via `Temporal`. A
     /// faithful effector compares `to_seconds()` results (the spec's own
     /// natural total-order comparator for durations, given
-    /// `to_seconds`'s existence and description), deferred to the internal
-    /// engine since `to_seconds` itself is deferred.
+    /// `to_seconds`'s existence and description).
     fn less_than(&self, other: &Self) -> bool {
-        let _ = other;
-        todo!(
-            "Iso8601Duration::less_than: total-seconds comparison deferred to the internal engine (needs to_seconds)"
-        )
+        self.to_seconds() < other.to_seconds()
     }
 }
 
@@ -391,6 +361,6 @@ impl Iso8601Duration {
 //   source: BASE 1.2.0 foundation_types.time — docs/research/spec-cache/BASE-1.2.0/uml_classes/iso8601_duration.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_duration.adoc §Iso8601_duration Class
 //   confidence: medium
-//   todos: 15
-//   note: is_extended/is_partial are the two effected constants (true/false per the spec table verbatim) and are the only fully-implemented members in this file; every accessor/arithmetic body needing string parsing or to_seconds is stubbed todo!() pending the jiff-backed internal engine at P17; as_string relies on the Iso8601Type default with no override (documented why); invariant_fractional_second_valid's singular/plural naming mismatch against fractional_seconds() flagged, not silently reconciled. P4: added #[serde(flatten)] on `core` so DV_DURATION.value sits at the top level per the ITS-JSON schema, matching DvDuration's own #[serde(flatten)] on its `iso8601` field.
+//   todos: 0
+//   note: component accessors, to_seconds, ordering, and duration arithmetic delegate to the shared BASE ISO 8601 parser; arithmetic emits a seconds-only ISO duration after applying the spec's average year/month conversion. as_string relies on the Iso8601Type default with no override (documented why); invariant_fractional_second_valid's singular/plural naming mismatch against fractional_seconds() flagged, not silently reconciled. P4: added #[serde(flatten)] on `core` so DV_DURATION.value sits at the top level per the ITS-JSON schema, matching DvDuration's own #[serde(flatten)] on its `iso8601` field.
 // ─────────────────────────────────────────────
