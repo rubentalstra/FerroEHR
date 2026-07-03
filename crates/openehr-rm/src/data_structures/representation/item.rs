@@ -9,13 +9,18 @@
 
 use super::cluster::Cluster;
 use super::element::Element;
-// PORT NOTE: `LOCATABLE` is owned by the `common` package cluster (a sibling
-// RM package being transcribed concurrently). Forward-reference its
-// eventual module path per the invoking task; the `Api` half of `LOCATABLE`
-// (methods such as `concept()`/`is_archetype_root()`) is deferred until that
-// module lands, so every `ITEM` accessor that would delegate to it is
-// `todo!()` for now.
+// PORT NOTE: `LOCATABLE` lives in the `common` package cluster
+// (`common::archetyped::locatable`), now landed. `ItemData` embeds its
+// `LocatableData` and `ItemApi` exposes the two `LOCATABLE` accessors the
+// `item_structure` package's own functions need (`name`,
+// `archetype_node_id`) by delegating to that embedded state. The wider
+// `LOCATABLE`/`PATHABLE` behaviour battery (`concept()`,
+// `is_archetype_root()`, path resolution) is exposed by
+// `common::archetyped::locatable::LocatableApi` and reached by wiring
+// `Cluster`/`Element` into `PathableApi`, which is a P11 (validation +
+// path) deliverable, not required by the data-structure functions here.
 use crate::common::archetyped::locatable::LocatableData;
+use crate::data_types::text::dv_text::DvText;
 use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `ITEM` and its descendants.
@@ -35,11 +40,8 @@ pub struct ItemData {
     /// Inherited `LOCATABLE` state (`name`, `archetype_node_id`, `uid`,
     /// `links`, `archetype_details`, `feeder_audit`).
     ///
-    /// TODO(port): `LocatableData` is a forward reference to the `common`
-    /// package cluster, transcribed concurrently by a sibling agent. Field
-    /// shape assumed here per the LOCATABLE spec table
-    /// (`docs/research/spec-cache/RM-1.1.0/uml_classes/locatable.adoc`);
-    /// reconcile once `common::archetyped::locatable` lands.
+    /// PORT NOTE: reconciled with `common::archetyped::locatable::LocatableData`
+    /// (now landed) — no longer a forward reference.
     #[serde(flatten)]
     pub locatable: LocatableData,
 }
@@ -87,19 +89,31 @@ pub enum Item {
 /// abstract class's inherited `LOCATABLE` state uniformly whether the
 /// caller holds a concrete type or an `Item` enum value.
 ///
-/// TODO(port): `LOCATABLE`'s own function battery (`concept()`,
-/// `is_archetype_root()`) is not yet exposed here — it depends on
-/// `LocatableData`'s eventual `Api` trait from the concurrently-
-/// transcribed `common` package (see the forward-reference note on the
-/// `use crate::common::archetyped::locatable::LocatableData` import
-/// above). `ItemApi` presently only exposes the raw `ItemData` struct;
-/// once `common`'s `LocatableApi` (or equivalent) lands, this trait should
-/// gain default methods delegating to it, matching how `ItemStructureApi`
-/// (`item_structure/item_structure.rs`) is a supertrait of
-/// `DataStructureBehaviour`.
+/// The two `LOCATABLE` accessors the `item_structure` package's own
+/// functions rely on (`ITEM_LIST.names`/`named_item`,
+/// `ITEM_TABLE.row_names`/`column_names`/`has_row_with_name` etc.) are
+/// exposed here as default methods delegating to the embedded
+/// `LocatableData`. `LOCATABLE`'s wider function battery (`concept()`,
+/// `is_archetype_root()`, path resolution) lives on
+/// `common::archetyped::locatable::LocatableApi`; exposing it via `ItemApi`
+/// would require `Cluster`/`Element` to implement `PathableApi`, which is a
+/// P11 (validation + path) deliverable and is not needed by the data-
+/// structure functions in this package.
 pub trait ItemApi {
     /// Access the shared `ITEM` (i.e. inherited `LOCATABLE`) state.
     fn item_data(&self) -> &ItemData;
+
+    /// `name`: inherited `LOCATABLE.name` (`DV_TEXT`, `1..1`). Delegates to
+    /// the embedded [`LocatableData`].
+    fn name(&self) -> &DvText {
+        &self.item_data().locatable.name
+    }
+
+    /// `archetype_node_id`: inherited `LOCATABLE.archetype_node_id`
+    /// (`String`, `1..1`). Delegates to the embedded [`LocatableData`].
+    fn archetype_node_id(&self) -> &str {
+        &self.item_data().locatable.archetype_node_id
+    }
 }
 
 impl ItemApi for Item {
@@ -135,6 +149,6 @@ pub const TYPE_NAME: &str = "ITEM";
 //   source: RM 1.1.0 data_structures.representation §ITEM — docs/research/spec-cache/RM-1.1.0/uml_classes/item.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master05-representation_package.adoc §Class Descriptions / item.adoc §ITEM Class
 //   confidence: high
-//   todos: 2
-//   note: LocatableData is a forward reference to the concurrently-transcribed common package; ItemApi's LOCATABLE-derived accessors (concept(), is_archetype_root()) are not yet exposed pending that module. P4/ADR-002: Item enum is #[serde(untagged)] — dispatch via the payload TypeTags on Cluster/Element; ItemData stays untagged (abstract).
+//   todos: 0
+//   note: common package landed — LocatableData reconciled and ItemApi now exposes name()/archetype_node_id() by delegating to it (used by the item_structure name/index functions). LOCATABLE's wider concept()/path battery is reached via LocatableApi/PathableApi, deferred to P11. P4/ADR-002: Item enum is #[serde(untagged)] — dispatch via the payload TypeTags on Cluster/Element; ItemData stays untagged (abstract).
 // ─────────────────────────────────────────────

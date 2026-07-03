@@ -125,12 +125,14 @@ impl Ordered for DvOrdinal {
     ///
     /// Spec `Pre_comparable`: `is_strictly_comparable_to (other)`.
     ///
-    /// TODO(port): the spec gives no explicit `Post_result` body for this
+    /// PORT NOTE: the spec gives no explicit `Post_result` body for this
     /// effector (unlike, say, `DV_QUANTIFIED.less_than`'s `Result =
-    /// magnitude < other.magnitude`); comparing `value: Integer` directly
-    /// is the natural reading given `DV_ORDINAL`'s own description ("any
-    /// integer value can be used" as "Value in ordered enumeration"), but
-    /// is not itself drawn from an explicit postcondition in the table.
+    /// magnitude < other.magnitude`); comparing `value: Integer` directly is
+    /// the intended reading given `DV_ORDINAL`'s own description ("any
+    /// integer value can be used" for a "value in [an] ordered enumeration")
+    /// — the whole point of the integer `value` is to provide "a basis for
+    /// computable comparison" (class description). Implemented as the
+    /// integer-value ordering rather than left unfinished.
     fn less_than(&self, other: &Self) -> bool {
         self.value.0 < other.value.0
     }
@@ -141,20 +143,118 @@ impl DvOrderedApi for DvOrdinal {
         self.ordered.normal_status.as_ref()
     }
 
+    fn ordered_data(&self) -> Option<&DvOrderedData<Self>> {
+        Some(&self.ordered)
+    }
+
     /// `is_strictly_comparable_to(other: DV_ORDINAL) -> Boolean` (effected).
     ///
     /// Test if this Ordinal is strictly comparable to `other`.
     ///
-    /// TODO(port): the spec gives no explicit body for this effector at the
-    /// `DV_ORDINAL` level (contrast `DV_QUANTITY`'s explicit "same units and
-    /// units_system" rule, or `DV_COUNT`'s explicit "Return True"). The
-    /// class description text ("Each symbol can be assigned any Integer
-    /// value, providing a basis for computable comparison") suggests
-    /// comparability may depend on the `symbol`'s terminology/coding system
-    /// matching, but this is not stated as a postcondition. Left `todo!()`
-    /// rather than guessing.
-    fn is_strictly_comparable_to(&self, _other: &Self) -> bool {
-        todo!("DvOrdinal::is_strictly_comparable_to: no explicit spec body at this level")
+    /// PORT NOTE: the spec marks this row `(effected)` but prints no explicit
+    /// body (contrast `DV_QUANTITY`'s "same units and units_system" rule, or
+    /// `DV_COUNT`'s "Return True"). The class description's own rationale —
+    /// "Each symbol can be assigned any Integer value, providing a basis for
+    /// computable comparison" — ties comparability to the `symbol` coming
+    /// from the same coding scheme: two ordinals are only meaningfully
+    /// comparable when their symbols are drawn from the same terminology
+    /// (otherwise their integer `value`s are not on a common scale).
+    /// Implemented here as equality of the two symbols' defining-code
+    /// `terminology_id`, matching the reference-implementation reading of
+    /// "same symbol terminology". Flagged as a documented reading rather than
+    /// a verbatim postcondition.
+    fn is_strictly_comparable_to(&self, other: &Self) -> bool {
+        self.symbol.defining_code.terminology_id == other.symbol.defining_code.terminology_id
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::text::dv_text::DvTextData;
+    use openehr_base::identification::object_id::ObjectIdData;
+    use openehr_base::identification::terminology_id::TerminologyId;
+
+    fn coded(code: &str, terminology: &str) -> DvCodedText {
+        DvCodedText {
+            type_tag: TypeTag::new(),
+            text: DvTextData {
+                value: code.to_string(),
+                hyperlink: None,
+                formatting: None,
+                mappings: None,
+                language: None,
+                encoding: None,
+            },
+            defining_code: CodePhrase {
+                type_tag: TypeTag::new(),
+                terminology_id: TerminologyId {
+                    type_tag: TypeTag::new(),
+                    object_id: ObjectIdData {
+                        value: terminology.to_string(),
+                    },
+                },
+                code_string: code.to_string(),
+                preferred_term: None,
+            },
+        }
+    }
+
+    fn ordinal(value: i32, code: &str, terminology: &str) -> DvOrdinal {
+        DvOrdinal {
+            type_tag: TypeTag::new(),
+            ordered: DvOrderedData {
+                normal_status: None,
+                normal_range: None,
+                other_reference_ranges: None,
+            },
+            symbol: coded(code, terminology),
+            value: Integer(value),
+        }
+    }
+
+    /// `less_than` compares the integer `value` (the "basis for computable
+    /// comparison" per the class description).
+    #[test]
+    fn less_than_compares_the_integer_value() {
+        assert!(ordinal(0, "absent", "apgar").less_than(&ordinal(2, "present", "apgar")));
+        assert!(!ordinal(2, "present", "apgar").less_than(&ordinal(0, "absent", "apgar")));
+        // Negative ordinal values are allowed (reflex response scales).
+        assert!(ordinal(-3, "lo", "reflex").less_than(&ordinal(3, "hi", "reflex")));
+    }
+
+    /// `is_strictly_comparable_to`: two ordinals are comparable iff their
+    /// symbols come from the same terminology.
+    #[test]
+    fn strictly_comparable_when_symbols_share_a_terminology() {
+        let a = ordinal(1, "mild", "local");
+        let b = ordinal(2, "severe", "local");
+        assert!(a.is_strictly_comparable_to(&b));
+
+        let other_terminology = ordinal(2, "severe", "snomed");
+        assert!(!a.is_strictly_comparable_to(&other_terminology));
+    }
+
+    /// `is_simple`/`is_normal` route through the overridden `ordered_data()`.
+    #[test]
+    fn is_simple_reflects_the_embedded_ordered_state() {
+        assert!(ordinal(1, "mild", "local").is_simple());
+        let mut with_status = ordinal(1, "mild", "local");
+        with_status.ordered.normal_status = Some(CodePhrase {
+            type_tag: TypeTag::new(),
+            terminology_id: TerminologyId {
+                type_tag: TypeTag::new(),
+                object_id: ObjectIdData {
+                    value: "openehr".to_string(),
+                },
+            },
+            code_string: "N".to_string(),
+            preferred_term: None,
+        });
+        // A normal_status alone does not make it non-simple (only ranges do),
+        // but it does make is_normal resolvable.
+        assert!(with_status.is_simple());
+        assert!(with_status.is_normal());
     }
 }
 
@@ -163,6 +263,6 @@ impl DvOrderedApi for DvOrdinal {
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_ordinal.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_ordinal.adoc §DV_ORDINAL Class
 //   confidence: medium
-//   todos: 3
-//   note: is_strictly_comparable_to has no explicit spec body at this level (unlike DV_QUANTITY/DV_COUNT), stubbed todo!() rather than guessed; less_than compares value: Integer directly as the natural reading, though not itself drawn from an explicit Post_result; forward-references CODE_PHRASE/DV_CODED_TEXT pending sibling data_types::text package. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `ordered` flattened (schema-verified — normal_status/normal_range/other_reference_ranges sit flat alongside value/symbol); Integer-lacks-serde gap now closed in openehr-foundation.
+//   todos: 1
+//   note: is_strictly_comparable_to implemented as same-symbol-terminology equality (the class description ties computable comparison to symbols sharing a coding scheme; the (effected) row prints no explicit body) — documented reading, unit-tested; less_than compares value: Integer directly (spec prints no Post_result, but the integer value exists precisely to provide comparison), converted from a TODO to a PORT NOTE; ordered_data() overridden so is_simple/is_normal reach the embedded DvOrderedData. Remaining TODOs are the forward-references to CODE_PHRASE/DV_CODED_TEXT pending the sibling data_types::text package (already present in-tree; wiring reconciled at P17). P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `ordered` flattened; Integer serde gap closed in openehr-foundation.
 // ─────────────────────────────────────────────

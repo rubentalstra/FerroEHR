@@ -40,12 +40,12 @@ use serde::{Deserialize, Serialize};
 /// instance. This is not encoded as a covariant field-type narrowing (the
 /// declared type `UID_BASED_ID` is unchanged, only its optionality is
 /// invariant-constrained), so the field stays `Option<UidBasedId>` on
-/// `LocatableData` and the requirement is documented here and left as a
-/// `Validate`-impl `TODO(port)` rather than changed to a non-`Option` field
-/// — changing the field type would be inventing a structural deviation the
-/// spec does not make (it is `LOCATABLE.uid: UID_BASED_ID [0..1]` in every
-/// other subtype), and this class only makes it invariant-mandatory, not
-/// syntactically required.
+/// `LocatableData` and the requirement is enforced by the working
+/// [`PartyApi::invariant_uid_mandatory`] check (ADR-003 §8) rather than by
+/// changing the field to a non-`Option` type — changing the field type would
+/// be inventing a structural deviation the spec does not make (it is
+/// `LOCATABLE.uid: UID_BASED_ID [0..1]` in every other subtype), and this
+/// class only makes it invariant-mandatory, not syntactically required.
 ///
 /// Per ADR-002, `PartyData` is an abstract-class embedded `*Data` struct
 /// and carries **no** `_type` tag of its own; only the concrete leaves
@@ -170,13 +170,39 @@ pub trait PartyApi {
     /// `ORGANISATION`, etc. Role name, e.g. "general practitioner", "nurse",
     /// "private citizen". Taken from the inherited `name` attribute.
     ///
-    /// Invariant `Type_valid`: `type = name`.
-    ///
-    /// TODO(port): implement once `LocatableData.name: DvText` is concrete
-    /// (sibling agent owns `common/archetyped`); this should simply clone
-    /// `self.party_data().locatable.name`.
+    /// Invariant `Type_valid`: `type = name` — see
+    /// [`PartyApi::invariant_type_valid`].
     fn party_type(&self) -> crate::data_types::text::dv_text::DvText {
-        todo!("PARTY.type(): DV_TEXT — clone LocatableData.name once concrete")
+        self.party_data().locatable.name.clone()
+    }
+
+    /// Invariant `Type_valid`: `type = name` (ADR-003 §8). Structurally
+    /// guaranteed by [`PartyApi::party_type`]'s definition (it clones
+    /// `name`), evaluated literally here.
+    fn invariant_type_valid(&self) -> bool {
+        self.party_type() == self.party_data().locatable.name
+    }
+
+    /// Invariant `Contacts_valid`: `contacts /= Void implies not
+    /// contacts.is_empty` (ADR-003 §8).
+    fn invariant_contacts_valid(&self) -> bool {
+        self.party_data()
+            .contacts
+            .as_ref()
+            .is_none_or(|contacts| !contacts.is_empty())
+    }
+
+    /// Invariant `Is_archetype_root`: `is_archetype_root` (ADR-003 §8);
+    /// derived from `archetype_details /= Void`.
+    fn invariant_is_archetype_root(&self) -> bool {
+        self.party_data().locatable.archetype_details.is_some()
+    }
+
+    /// Invariant `Uid_mandatory`: `uid /= Void` (ADR-003 §8). `PARTY`
+    /// narrows the inherited optional `LOCATABLE.uid` to effectively
+    /// required — see the [`PartyData`] PORT NOTE.
+    fn invariant_uid_mandatory(&self) -> bool {
+        self.party_data().locatable.uid.is_some()
     }
 }
 
@@ -189,26 +215,28 @@ impl PartyApi for Party {
     }
 }
 
-// TODO(port): invariants as a `Validate` impl (context + path + error
-// accumulator, per `.claude/rules/rm-transcription.md` "Invariants"):
-//   - Type_valid: type = name
-//   - Contacts_valid: contacts /= Void implies not contacts.is_empty
-//   - Relationships_validity: relationships /= Void implies
-//     (not relationships.is_empty and then
-//      relationships.for_all(r | r.source = self))
-//   - Reverse_relationships_validity: reverse_relationships /= Void implies
-//     (not reverse_relationships.empty and then
-//      reverse_relationships.for_all(item |
-//        repository("demographics").all_party_relationships.has_object(item)
-//        and then
-//        repository("demographics").all_party_relationships.object(item).target = self))
-//     — this invariant references a `repository(...)` construct with no
-//     concrete Rust analogue in a spec-transcription crate (it presumes an
-//     external object repository/service); left as `TODO(port)` rather than
-//     inventing a repository abstraction the spec class itself does not
-//     define.
-//   - Is_archetype_root: is_archetype_root
-//   - Uid_mandatory: uid /= Void — see the PORT NOTE on `PartyData` above.
+// Invariants implemented as working `PartyApi` default methods (ADR-003 §8):
+//   - Type_valid: type = name        → `invariant_type_valid`
+//   - Contacts_valid                 → `invariant_contacts_valid`
+//   - Is_archetype_root              → `invariant_is_archetype_root`
+//   - Uid_mandatory: uid /= Void     → `invariant_uid_mandatory`
+//
+// The remaining two invariants reference the referenced Party's own
+// relationship lists / an external object repository, which a
+// spec-transcription crate cannot resolve — kept as cited TODOs rather than
+// inventing a repository/identity abstraction the spec class does not define:
+//   TODO(port): Relationships_validity: relationships /= Void implies
+//     (not relationships.is_empty and then relationships.for_all(r |
+//      r.source = self)) — the `r.source = self` conjunct needs object
+//     identity of `self` behind a `PARTY_REF`, resolved via the demographic
+//     object graph; deferred to P11/P15 (service layer / Validate framework).
+//   TODO(port): Reverse_relationships_validity: reverse_relationships /= Void
+//     implies (not reverse_relationships.empty and then
+//     reverse_relationships.for_all(item |
+//       repository("demographics").all_party_relationships.has_object(item)
+//       and then repository(...).object(item).target = self)) — references a
+//     `repository(...)` service with no analogue in this crate; deferred to
+//     P11/P15.
 
 #[cfg(test)]
 mod tests {
@@ -295,6 +323,43 @@ mod tests {
             serde_json::from_value(role_json).expect("deserialize ROLE into Party slot");
         assert_eq!(role_back, role);
     }
+
+    fn person(data: PartyData) -> Party {
+        Party::Actor(Actor::Person(Person {
+            type_tag: TypeTag::new(),
+            actor: ActorData {
+                party: data,
+                languages: None,
+                roles: None,
+            },
+        }))
+    }
+
+    /// `PARTY` invariants (ADR-003 §8), exercised through the abstract
+    /// `Party` slot's `PartyApi` default methods.
+    #[test]
+    fn party_invariants_hold_and_fail_as_specified() {
+        // Fresh party: no uid, no contacts, empty identities.
+        let party = person(party_data("PERSON"));
+        assert!(party.identities().is_empty());
+        assert!(party.invariant_contacts_valid()); // contacts None: valid
+        assert!(!party.invariant_uid_mandatory()); // uid None: fails Uid_mandatory
+        assert!(party.invariant_type_valid()); // type() == name by construction
+        assert_eq!(party.party_type(), party.party_data().locatable.name);
+
+        // With a uid and a present-but-empty contacts list.
+        let mut data = party_data("PERSON");
+        data.locatable.uid = Some(UidBasedId::HierObjectId(HierObjectId {
+            type_tag: TypeTag::new(),
+            uid_based_id: UidBasedIdData {
+                value: "8849182c-82ad-4088-a07f-48ead4180515".to_string(),
+            },
+        }));
+        data.contacts = Some(Vec::new());
+        let party = person(data);
+        assert!(party.invariant_uid_mandatory()); // uid present: holds
+        assert!(!party.invariant_contacts_valid()); // present-but-empty: fails
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -302,6 +367,6 @@ mod tests {
 //   source: RM 1.1.0 demographic §Class Definitions PARTY — docs/research/spec-cache/RM-1.1.0/uml_classes/party.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/party.adoc §PARTY Class
 //   confidence: medium
-//   todos: 8
-//   note: Party/Actor nested-enum shape per task refinement; Uid_mandatory invariant narrows optionality not type, left as Validate TODO; Reverse_relationships_validity references an undefined repository() construct. P4/ADR-002: Party and Actor both #[serde(untagged)], dispatch via each concrete leaf's own TypeTag (manual wire enum deleted; Role now self-tags — previous wave's flag resolved); PartyData stays tag-less (abstract), flatten+skip-if-none per field; round-trip pinned by in-file test.
+//   todos: 6
+//   note: Party/Actor nested-enum shape per task refinement. P5/ADR-003 §8: PartyApi.party_type() (clones name) plus Type_valid, Contacts_valid, Is_archetype_root, Uid_mandatory implemented as working default methods, pinned by a PARTY-invariants unit test. The 6 remaining TODO(port) are forward-ref import/field comments plus the 2 genuinely-underdetermined invariants (Relationships_validity's `r.source = self` and Reverse_relationships_validity's `repository("demographics")`), kept as cited P11/P15 deferrals — both need the demographic object graph/identity, absent in a spec-transcription crate. P4/ADR-002: Party/Actor #[serde(untagged)]; PartyData tag-less.
 // ─────────────────────────────────────────────

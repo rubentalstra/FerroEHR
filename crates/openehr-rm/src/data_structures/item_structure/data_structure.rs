@@ -11,9 +11,8 @@
 //! `CLUSTER` containing the set of `ELEMENT` nodes from the list.
 
 use crate::data_structures::representation::item::Item;
-// PORT NOTE: `LOCATABLE` is owned by the `common` package cluster (a
-// sibling RM package transcribed concurrently). See `representation/item.rs`
-// for the identical forward-reference rationale.
+// PORT NOTE: `LOCATABLE` lives in the `common` package cluster
+// (`common::archetyped::locatable`), now landed.
 use crate::common::archetyped::locatable::LocatableData;
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +29,8 @@ use serde::{Deserialize, Serialize};
 pub struct DataStructureData {
     /// Inherited `LOCATABLE` state.
     ///
-    /// TODO(port): forward reference; see `representation/item.rs`.
+    /// PORT NOTE: reconciled with `common::archetyped::locatable::LocatableData`
+    /// (now landed) — no longer a forward reference.
     #[serde(flatten)]
     pub locatable: LocatableData,
 }
@@ -86,7 +86,7 @@ pub const TYPE_NAME: &str = "DATA_STRUCTURE";
 // PORT STATUS
 //   source: RM 1.1.0 data_structures §DATA_STRUCTURE — docs/research/spec-cache/RM-1.1.0/uml_classes/data_structure.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master03-overview.adoc §Class Descriptions / data_structure.adoc §DATA_STRUCTURE Class
-//   confidence: medium
-//   todos: 1
-//   note: the as_hierarchy() covariant-redefinition shape (widened trait method + narrowed inherent override per concrete type) is a judgment call documented on DataStructureBehaviour; LocatableData is a forward reference to the concurrently-transcribed common package.
+//   confidence: high
+//   todos: 0
+//   note: the as_hierarchy() covariant-redefinition shape (widened trait method + narrowed inherent override per concrete type) is a judgment call documented on DataStructureBehaviour; LocatableData reconciled with the now-landed common package.
 // ─────────────────────────────────────────────

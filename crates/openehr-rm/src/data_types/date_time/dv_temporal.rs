@@ -113,62 +113,47 @@ pub trait DvTemporal: DvOrderedApi {
     ///
     /// Addition of a Duration to this temporal entity.
     ///
-    /// TODO(port): the class table marks this `(effected)` at the
-    /// `DV_TEMPORAL` level (i.e. it has a concrete body here, not just an
-    /// abstract declaration), but the description gives no arithmetic
-    /// detail beyond the concrete `DvDate`/`DvTime`/`DvDateTime` overrides.
-    /// Left as a default trait method delegating to `todo!()` since a
-    /// faithful shared implementation would require the ISO 8601
-    /// calendar/clock arithmetic engine deferred to the jiff-bridging pass
-    /// (see `openehr_foundation::time::iso8601_type` module doc, P17).
+    /// PORT NOTE: the class table marks this `(effected)` at the
+    /// `DV_TEMPORAL` level, but its return type is covariantly redefined by
+    /// every concrete descendant (`DvDate::add -> DvDate`, etc.). Rust cannot
+    /// express a single shared body over the covariant `Self` return here —
+    /// the concrete arithmetic differs per leaf (date vs clock vs date-time
+    /// parsing) — so this is a required trait method, effected by each
+    /// concrete via delegation to the foundation `Iso8601_*` arithmetic
+    /// engine (ADR-003 policies 1-3). See `dv_date.rs`/`dv_time.rs`/
+    /// `dv_date_time.rs`.
     fn add(&self, a_diff: &DvDuration) -> Self
     where
-        Self: Sized,
-    {
-        let _ = a_diff;
-        todo!(
-            "DV_TEMPORAL.add: ISO 8601 temporal arithmetic deferred to the jiff-backed engine at P17"
-        )
-    }
+        Self: Sized;
 
     /// `subtract` __alias__ `"-"` `(a_diff: DV_DURATION[1]): DV_TEMPORAL`
     /// (effected).
     ///
     /// Subtract a Duration from this temporal entity.
     ///
-    /// TODO(port): see `add` above — deferred to the jiff-backed engine.
+    /// PORT NOTE: required trait method, effected per concrete — see `add`
+    /// above.
     fn subtract(&self, a_diff: &DvDuration) -> Self
     where
-        Self: Sized,
-    {
-        let _ = a_diff;
-        todo!(
-            "DV_TEMPORAL.subtract: ISO 8601 temporal arithmetic deferred to the jiff-backed engine at P17"
-        )
-    }
+        Self: Sized;
 
     /// `diff` __alias__ `"-"` `(other: DV_TEMPORAL[1]): DV_DURATION`
     /// (effected).
     ///
     /// Difference between this temporal entity and `other`.
     ///
-    /// TODO(port): see `add` above — deferred to the jiff-backed engine.
+    /// PORT NOTE: required trait method, effected per concrete — see `add`
+    /// above.
     fn diff(&self, other: &Self) -> DvDuration
     where
-        Self: Sized,
-    {
-        let _ = other;
-        todo!(
-            "DV_TEMPORAL.diff: ISO 8601 temporal arithmetic deferred to the jiff-backed engine at P17"
-        )
-    }
+        Self: Sized;
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_temporal.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_temporal.adoc §DV_TEMPORAL Class
-//   confidence: medium
-//   todos: 3
-//   note: abstract class, embedded-Data + trait per ADR-001 §3; accuracy narrowed DV_AMOUNT->DV_DURATION is a covariant redefinition one level above the concrete DvDate/DvTime/DvDateTime classes (ADR-001 §6); add/subtract/diff are stubbed todo!() pending the jiff-backed ISO 8601 arithmetic engine (P17); DvTemporalData<T> now threads the quantity cluster's F-bounded self-type and DvTemporal requires DvOrderedApi per the spec inheritance chain. P4: DvTemporalData<T> derives Serialize/Deserialize with no explicit serde bound (same auto-bound finding as DvOrderedData<T>); `quantified` flattened; `accuracy` skips when None (no `default`, per the dv_quantity.rs write-up).
+//   confidence: high
+//   todos: 0
+//   note: abstract class, embedded-Data + trait per ADR-001 §3; accuracy narrowed DV_AMOUNT->DV_DURATION is a covariant redefinition one level above the concrete DvDate/DvTime/DvDateTime classes (ADR-001 §6). add/subtract/diff are required trait methods (no shared body is expressible over the covariant Self return; each concrete effects them by delegating to the foundation Iso8601_* arithmetic engine — see dv_date/dv_time/dv_date_time). DvTemporalData<T> threads the quantity cluster's F-bounded self-type and DvTemporal requires DvOrderedApi per the spec inheritance chain. P4: DvTemporalData<T> derives Serialize/Deserialize with no explicit serde bound; `quantified` flattened; `accuracy` skips when None (no `default`, per the dv_quantity.rs write-up).
 // ─────────────────────────────────────────────

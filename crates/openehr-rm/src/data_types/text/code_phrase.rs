@@ -87,8 +87,10 @@ pub struct CodePhrase {
     ///
     /// Invariant `Code_string_valid`: `not code_string.is_empty`.
     ///
-    /// TODO(port): invariant not yet enforced by a constructor/`Validate`
-    /// impl; recorded here as a doc note pending the RM invariant framework.
+    /// Implemented as the boolean method
+    /// [`CodePhrase::invariant_code_string_valid`] (ADR-003 decision 8).
+    /// TODO(port): the walker/accumulator enforcement is the P11 RM
+    /// validation-framework deliverable.
     pub code_string: String,
 
     /// `preferred_term`: `String` (`0..1`).
@@ -109,8 +111,8 @@ impl TypeName for CodePhrase {
 impl CodePhrase {
     /// `Code_string_valid`: `not code_string.is_empty`.
     ///
-    /// TODO(port): wire into a `Validate` impl once the RM invariant
-    /// framework lands.
+    /// TODO(port): wire into a `Validate` impl at P11 (the RM
+    /// validation-framework deliverable per ADR-003 decision 8).
     pub fn invariant_code_string_valid(&self) -> bool {
         !self.code_string.is_empty()
     }

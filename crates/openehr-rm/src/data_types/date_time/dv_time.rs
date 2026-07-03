@@ -26,6 +26,8 @@ use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
 use openehr_foundation::time::iso8601_parser::parse_time;
+use openehr_foundation::time::iso8601_time::Iso8601Time;
+use openehr_foundation::time::iso8601_type::Iso8601TypeCore;
 use openehr_foundation::time::time_definitions::TimeDefinitions;
 use serde::{Deserialize, Serialize};
 
@@ -79,7 +81,10 @@ impl DvTime {
     /// matching the BASE `Iso8601_time` component accessors (`minute()` /
     /// `second()` return 0 when not present).
     pub fn magnitude(&self) -> f64 {
-        parse_time(&self.value).map_or(0.0, |parsed| parsed.seconds_since_midnight())
+        parse_time(&self.value).map_or(
+            0.0,
+            openehr_foundation::time::iso8601_parser::ParsedIso8601Time::seconds_since_midnight,
+        )
     }
 
     // `add` __alias__ `"+"` `(a_diff: DV_DURATION[1]): DV_TIME` (redefined
@@ -111,6 +116,27 @@ impl DvTime {
     ///
     pub fn invariant_value_valid(&self) -> bool {
         TimeDefinitions::valid_iso8601_time(&self.value)
+    }
+
+    /// The foundation `Iso8601_time` mirror of this value, used transiently
+    /// to delegate `DV_TEMPORAL` arithmetic (ADR-003 policies 1, 3; clock
+    /// wrapping modulo 24h per the foundation's `Iso8601_time::add`).
+    fn as_iso8601_time(&self) -> Iso8601Time {
+        Iso8601Time {
+            core: Iso8601TypeCore {
+                value: self.value.clone(),
+            },
+        }
+    }
+
+    /// Rebuild this `DV_TIME` with a new ISO 8601 `value`, preserving the
+    /// embedded `DV_TEMPORAL` state and the type tag.
+    fn with_value(&self, value: String) -> Self {
+        Self {
+            type_tag: self.type_tag,
+            temporal: self.temporal.clone(),
+            value,
+        }
     }
 }
 
@@ -166,36 +192,29 @@ impl DvTemporal for DvTime {
 
     /// `add` __alias__ `"+"` `(a_diff: DV_DURATION[1]): DV_TIME` (redefined).
     ///
-    /// Addition of a Duration to this Time.
-    ///
-    /// TODO(port): ISO 8601 clock arithmetic, deferred to the jiff-backed
-    /// engine at P17.
+    /// Addition of a Duration to this Time. Delegates to `Iso8601_time::add`
+    /// (definite arithmetic with wrap-modulo-24h clock semantics, ADR-003
+    /// policies 1, 3), preserving this `DV_TIME`'s temporal state.
     fn add(&self, a_diff: &DvDuration) -> Self {
-        let _ = a_diff;
-        todo!("DV_TIME.add: ISO 8601 clock arithmetic deferred to the jiff-backed engine at P17")
+        self.with_value(self.as_iso8601_time().add(&a_diff.iso8601).core.value)
     }
 
     /// `subtract` __alias__ `"-"` `(a_diff: DV_DURATION[1]): DV_TIME`
     /// (redefined).
     ///
-    /// Subtract a Duration from this Time.
-    ///
-    /// TODO(port): see `add` above.
+    /// Subtract a Duration from this Time. Delegates to
+    /// `Iso8601_time::subtract`; see `add` above.
     fn subtract(&self, a_diff: &DvDuration) -> Self {
-        let _ = a_diff;
-        todo!(
-            "DV_TIME.subtract: ISO 8601 clock arithmetic deferred to the jiff-backed engine at P17"
-        )
+        self.with_value(self.as_iso8601_time().subtract(&a_diff.iso8601).core.value)
     }
 
     /// `diff` __alias__ `"-"` `(other: DV_TIME[1]): DV_DURATION` (redefined).
     ///
-    /// Difference between this Time and `other`.
-    ///
-    /// TODO(port): see `add` above.
+    /// Difference between this Time and `other`, as a `DV_DURATION` in
+    /// definite units. Delegates to `Iso8601_time::diff` (receiver minus
+    /// argument, ADR-003 policy 1).
     fn diff(&self, other: &Self) -> DvDuration {
-        let _ = other;
-        todo!("DV_TIME.diff: ISO 8601 clock arithmetic deferred to the jiff-backed engine at P17")
+        DvDuration::from_iso8601(self.as_iso8601_time().diff(&other.as_iso8601_time()))
     }
 }
 
@@ -211,13 +230,39 @@ mod tests {
         assert!(time.invariant_value_valid());
         assert_eq!(time.magnitude(), 3_723.5);
     }
+
+    fn time(value: &str) -> DvTime {
+        serde_json::from_str(&format!(r#"{{"_type":"DV_TIME","value":"{value}"}}"#)).unwrap()
+    }
+
+    fn duration(value: &str) -> DvDuration {
+        serde_json::from_str(&format!(r#"{{"_type":"DV_DURATION","value":"{value}"}}"#)).unwrap()
+    }
+
+    /// `add`/`subtract`/`diff` delegate to the foundation `Iso8601_time`
+    /// engine: definite clock arithmetic (with modulo-24h wrap) and a
+    /// definite-unit `DV_DURATION` difference.
+    #[test]
+    fn add_subtract_diff_delegate_to_iso8601_time() {
+        assert_eq!(time("10:30:00").add(&duration("PT1H30M")).value, "12:00:00");
+        // Wraps modulo 24h per the foundation clock policy.
+        assert_eq!(time("23:30").add(&duration("PT1H")).value, "00:30");
+        assert_eq!(
+            time("10:30:00").subtract(&duration("PT45M")).value,
+            "09:45:00"
+        );
+        assert_eq!(
+            time("12:00:00").diff(&time("10:30:00")).iso8601.core.value,
+            "PT1H30M"
+        );
+    }
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_time.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_time.adoc §DV_TIME Class
-//   confidence: medium
-//   todos: 3
-//   note: same dual-inheritance shape as DV_DATE; magnitude/is_equal/invariant_value_valid now delegate to the foundation BASE ISO 8601 parser. add/subtract/diff remain TODO(port) pending an explicit clock-wrapping policy. less_than transcribed with name-implied semantics against the same likely copy-paste Post_result defect flagged on DV_DATE; Any/Ordered/DvOrderedApi impls added so DvTime satisfies the DvOrdered enum's trait chain. P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvTime>) flattened (same schema-verified shape as DV_DATE); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_DATE/DV_DATE_TIME.
+//   confidence: high
+//   todos: 0
+//   note: same dual-inheritance shape as DV_DATE; magnitude/is_equal/invariant_value_valid delegate to the foundation BASE ISO 8601 parser. add/subtract/diff now implemented by delegating to Iso8601_time::add/subtract/diff (definite arithmetic with wrap-modulo-24h clock semantics, ADR-003 policies 1+3) via a throwaway Iso8601Time mirror, preserving the DV_TEMPORAL state; in-file test pins clock arithmetic (incl. the 24h wrap) and a definite-unit diff. less_than transcribed with name-implied semantics against the same likely copy-paste Post_result defect flagged on DV_DATE; Any/Ordered/DvOrderedApi impls added so DvTime satisfies the DvOrdered enum's trait chain. P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvTime>) flattened (same schema-verified shape as DV_DATE); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_DATE/DV_DATE_TIME.
 // ─────────────────────────────────────────────

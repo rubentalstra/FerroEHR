@@ -101,6 +101,38 @@ impl<T> OriginalVersion<T> {
     pub fn is_merged(&self) -> bool {
         self.other_input_version_uids.is_some()
     }
+
+    /// Invariant `Attestations_valid`: `attestations /= Void implies not
+    /// attestations.is_empty`.
+    ///
+    /// Working method per ADR-003 decision 8. An absent `attestations` list
+    /// is vacuously valid; a present one must be non-empty.
+    pub fn are_attestations_valid(&self) -> bool {
+        self.attestations.as_ref().is_none_or(|a| !a.is_empty())
+    }
+
+    /// Invariant `Other_input_version_uids_valid`:
+    /// `other_input_version_uids /= Void implies not
+    /// other_input_version_uids.is_empty`.
+    ///
+    /// Working method per ADR-003 decision 8. An absent list is vacuously
+    /// valid; a present one must name at least one other input version.
+    pub fn are_other_input_version_uids_valid(&self) -> bool {
+        self.other_input_version_uids
+            .as_ref()
+            .is_none_or(|u| !u.is_empty())
+    }
+
+    /// Invariant `Is_merged_validity`: `other_input_version_ids = Void xor
+    /// is_merged`.
+    ///
+    /// Working method per ADR-003 decision 8. Structurally guaranteed by
+    /// [`OriginalVersion::is_merged`]'s own definition (`is_merged ==
+    /// other_input_version_uids.is_some()`), so this always holds; kept as
+    /// an explicit check for the P11 Validate framework to call.
+    pub fn is_merged_validity_satisfied(&self) -> bool {
+        self.other_input_version_uids.is_none() ^ self.is_merged()
+    }
 }
 
 impl<T> VersionApi<T> for OriginalVersion<T> {
@@ -121,17 +153,54 @@ impl<T> VersionApi<T> for OriginalVersion<T> {
     }
 }
 
-// Invariants (spec `Invariants` table, not yet enforced by a
-// constructor/`Validate` impl — see `.claude/rules/rm-transcription.md`
-// "Invariants"):
+// Invariants (spec `Invariants` table): implemented as working
+// `is_valid()`-family methods per ADR-003 decision 8 —
+// `are_attestations_valid()`, `are_other_input_version_uids_valid()`, and
+// `is_merged_validity_satisfied()`. The P11 walker/accumulator Validate
+// framework will call these; they are not yet constructor-enforced.
 //   Attestations_valid: attestations /= Void implies not attestations.is_empty
 //   Is_merged_validity: other_input_version_ids = Void xor is_merged
-//     (structurally guaranteed by is_merged()'s own definition above, but
-//     documented as the spec invariant it satisfies rather than enforced
-//     by a separate Validate check.)
 //   Other_input_version_uids_valid:
 //     other_input_version_uids /= Void implies not
 //     other_input_version_uids.is_empty
+
+#[cfg(test)]
+mod tests {
+    use crate::common::change_control::version::VersionApi;
+    use crate::common::change_control::versioned_object::test_support::{original_version, ovid};
+
+    #[test]
+    fn merge_invariants_track_other_input_version_uids() {
+        // Non-merged version: no other inputs.
+        let plain = original_version("c::sys::1", None, "2020-01-01T00:00:00", "532");
+        assert!(!plain.is_merged());
+        assert!(plain.are_other_input_version_uids_valid());
+        assert!(plain.is_merged_validity_satisfied());
+        assert!(plain.are_attestations_valid());
+
+        // Merged version: at least one other input → valid, is_merged true.
+        let mut merged =
+            original_version("c::sys::2", Some("c::sys::1"), "2020-01-01T00:00:00", "532");
+        merged.other_input_version_uids = Some(vec![ovid("c::sys::1")]);
+        assert!(merged.is_merged());
+        assert!(merged.are_other_input_version_uids_valid());
+        assert!(merged.is_merged_validity_satisfied());
+
+        // Present-but-empty other-inputs list violates the non-empty invariant.
+        let mut empty_merge =
+            original_version("c::sys::3", Some("c::sys::2"), "2020-01-01T00:00:00", "532");
+        empty_merge.other_input_version_uids = Some(Vec::new());
+        assert!(!empty_merge.are_other_input_version_uids_valid());
+
+        // Present-but-empty attestations list violates Attestations_valid.
+        let mut empty_att = original_version("c::sys::4", None, "2020-01-01T00:00:00", "532");
+        empty_att.attestations = Some(Vec::new());
+        assert!(!empty_att.are_attestations_valid());
+
+        // sanity: lifecycle_state accessor still resolves via VersionApi.
+        assert_eq!(plain.lifecycle_state().defining_code.code_string, "532");
+    }
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS
@@ -139,5 +208,5 @@ impl<T> VersionApi<T> for OriginalVersion<T> {
 //   source_loc: master06-change_control_package.adoc §Class Descriptions / original_version.adoc §ORIGINAL_VERSION Class
 //   confidence: high
 //   todos: 0
-//   note: is_merged() derived structurally from other_input_version_uids per the Is_merged_validity invariant, since the spec gives no separate body for it.
+//   note: is_merged() derived structurally from other_input_version_uids per the Is_merged_validity invariant, since the spec gives no separate body for it. All three spec invariants (Attestations_valid, Is_merged_validity, Other_input_version_uids_valid) now implemented as working is_valid()-family methods per ADR-003 d.8 with a spec-derived unit test; P11 Validate-framework wiring still pending.
 // ─────────────────────────────────────────────

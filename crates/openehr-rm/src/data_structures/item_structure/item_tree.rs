@@ -10,7 +10,7 @@ use super::data_structure::DataStructureBehaviour;
 use super::item_structure::{ItemStructureApi, ItemStructureData};
 use crate::data_structures::representation::cluster::Cluster;
 use crate::data_structures::representation::element::Element;
-use crate::data_structures::representation::item::Item;
+use crate::data_structures::representation::item::{Item, ItemData};
 use openehr_foundation::serde_support::{TypeName, TypeTag};
 use serde::{Deserialize, Serialize};
 
@@ -59,27 +59,29 @@ impl ItemStructureApi for ItemTree {
 impl ItemTree {
     /// `has_element_path`: `True` if path `a_path` is a valid leaf path.
     pub fn has_element_path(&self, a_path: &str) -> bool {
-        // TODO(port): path resolution against archetype/runtime paths
-        // depends on `PATHABLE`/`LOCATABLE` path-building machinery (the
-        // `name`/`archetype_node_id`-derived path segments), owned by the
-        // concurrently-transcribed `common` package — see
-        // `representation/item.rs` for the same forward-reference
-        // dependency.
+        // TODO(port): the `common::archetyped::paths` evaluator (`RmPath::parse`,
+        // `resolve`) has landed, but resolving a path against this tree
+        // requires `ItemTree`/`Cluster`/`Element` to implement `PathableApi`'s
+        // traversal hooks (`path_child_nodes`/`path_node_id`/`path_node_name`,
+        // exposing the representation tree to the evaluator). Wiring the whole
+        // representation subtree into the path evaluator is the P11 validation
+        // + path deliverable, not part of the data-structure function set;
+        // deferred to P11.
         let _ = a_path;
         todo!(
-            "has_element_path(a_path): needs PATHABLE/LOCATABLE path-building machinery from the common package"
+            "has_element_path(a_path): needs Cluster/Element/ItemTree wired into the common path evaluator (PathableApi traversal hooks) — P11"
         )
     }
 
     /// `element_at_path`: return the leaf element at the path `a_path`.
     pub fn element_at_path(&self, a_path: &str) -> Element {
-        // TODO(port): same path-resolution dependency as
+        // TODO(port): same P11 path-evaluator wiring dependency as
         // `has_element_path`. Spec signature declares this returning
         // `ELEMENT` (not `Option<ELEMENT>`); no-such-path behaviour is not
-        // specified in the table.
+        // specified in the table, to be widened to Option when wired at P11.
         let _ = a_path;
         todo!(
-            "element_at_path(a_path): needs PATHABLE/LOCATABLE path-building machinery from the common package; not-found behaviour also unspecified"
+            "element_at_path(a_path): needs Cluster/Element/ItemTree wired into the common path evaluator (PathableApi traversal hooks) — P11; not-found behaviour also unspecified"
         )
     }
 
@@ -99,16 +101,17 @@ impl ItemTree {
     /// representation". Read together, this means a synthesized wrapper
     /// `CLUSTER` whose own `items` are this tree's `items` — analogous to
     /// how `ItemList.as_hierarchy()` synthesizes a wrapper `CLUSTER` around
-    /// its `List<ELEMENT>`. See that TODO's rationale in `item_list.rs` for
-    /// why constructing this wrapper is blocked on the same `common`
-    /// package `LOCATABLE` fields.
+    /// its `List<ELEMENT>`. The wrapper carries this tree's own `LOCATABLE`
+    /// identity (name, archetype_node_id, ...); its `items` are this tree's
+    /// `items` verbatim (already a mixed `List<ITEM>`).
     pub fn as_hierarchy(&self) -> Cluster {
-        // TODO(port): constructing the wrapper `Cluster` requires
-        // `common::archetyped::locatable` fields (LOCATABLE state for the
-        // synthesized node) — same dependency as `ItemList::as_hierarchy`.
-        todo!(
-            "as_hierarchy(): needs a LOCATABLE-state policy for the synthesized wrapper CLUSTER, same as ItemList"
-        )
+        Cluster {
+            type_tag: TypeTag::new(),
+            item: ItemData {
+                locatable: self.item_structure.data_structure.locatable.clone(),
+            },
+            items: self.items.clone().unwrap_or_default(),
+        }
     }
 }
 
@@ -192,13 +195,55 @@ mod tests {
         let item: Item = serde_json::from_str(element_json).unwrap();
         assert!(matches!(item, Item::Element(_)));
     }
+
+    /// Spec `as_hierarchy` (redefined): "the same as the tree's physical
+    /// representation." The wrapper CLUSTER carries the tree's own identity
+    /// and holds the tree's items verbatim (mixed CLUSTER/ELEMENT).
+    #[test]
+    fn as_hierarchy_wraps_items_verbatim() {
+        use crate::data_structures::representation::item::ItemApi;
+        use crate::data_types::text::dv_text::DvTextApi;
+
+        let tree = ItemTree {
+            type_tag: TypeTag::new(),
+            item_structure: ItemStructureData {
+                data_structure: DataStructureData {
+                    locatable: locatable("biochemistry", "at0001"),
+                },
+            },
+            items: Some(vec![
+                Item::Cluster(Cluster {
+                    type_tag: TypeTag::new(),
+                    item: ItemData {
+                        locatable: locatable("panel", "at0002"),
+                    },
+                    items: vec![],
+                }),
+                Item::Element(Element {
+                    type_tag: TypeTag::new(),
+                    item: ItemData {
+                        locatable: locatable("comment", "at0003"),
+                    },
+                    null_flavour: None,
+                    value: None,
+                    null_reason: None,
+                }),
+            ]),
+        };
+
+        let cluster = tree.as_hierarchy();
+        assert_eq!(cluster.name().value(), "biochemistry");
+        assert_eq!(cluster.items.len(), 2);
+        assert!(matches!(cluster.items[0], Item::Cluster(_)));
+        assert!(matches!(cluster.items[1], Item::Element(_)));
+    }
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_structures.item_structure §ITEM_TREE — docs/research/spec-cache/RM-1.1.0/uml_classes/item_tree.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master04-item_structure_package.adoc §Class Descriptions / item_tree.adoc §ITEM_TREE Class
-//   confidence: medium
-//   todos: 3
-//   note: has_element_path()/element_at_path() block on PATHABLE/LOCATABLE path-building from the common package; as_hierarchy()'s "synthesized wrapper CLUSTER" reading (analogous to ITEM_LIST) is a judgment call since the spec text does not literally spell out the wrapper mechanism for a tree whose items are already List<ITEM>. P4/ADR-002: self-tag (TypeName + first-field TypeTag) added, plus the package's ADR-002 acceptance unit test (tag-first serialization, Item round-trip, tag-driven untagged dispatch).
+//   confidence: high
+//   todos: 2
+//   note: as_hierarchy() implemented (common landed) — wrapper CLUSTER carries the tree's own LOCATABLE identity and holds its items verbatim, with a spec-derived test. has_element_path()/element_at_path() remain todo!() — the common path evaluator (RmPath/resolve) exists, but wiring Cluster/Element/ItemTree into PathableApi's traversal hooks is the P11 validation+path deliverable. P4/ADR-002: self-tag (TypeName + first-field TypeTag) added, plus the package's ADR-002 acceptance unit test (tag-first serialization, Item round-trip, tag-driven untagged dispatch).
 // ─────────────────────────────────────────────

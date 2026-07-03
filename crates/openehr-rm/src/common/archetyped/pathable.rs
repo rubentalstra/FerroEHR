@@ -105,11 +105,36 @@
 //! way — the trait signature does not mandate which storage a concrete
 //! type actually uses, only that whichever shape is chosen is non-owning.
 //!
-//! All five functions are declared with `todo!()` bodies here — `PATHABLE`
-//! has no state to operate on by itself; the actual path-resolution logic
-//! only becomes implementable once concrete `LOCATABLE` descendants with
-//! real child collections exist (RM data_structures phase).
+//! # How the five path functions get real bodies on an abstract class
+//!
+//! `PATHABLE` carries no state, and Rust has no runtime reflection to
+//! enumerate an arbitrary implementor's attributes. The Rust rendering
+//! therefore splits the trait in two layers:
+//!
+//! * **Traversal hooks** ([`PathableApi::as_pathable`],
+//!   [`PathableApi::path_attribute_names`],
+//!   [`PathableApi::path_child_nodes`], [`PathableApi::path_node_id`],
+//!   [`PathableApi::path_node_name`]) — the reflection substitute. They
+//!   are *not* spec features (each carries a PORT NOTE); a concrete class
+//!   opts into path resolution by overriding them to expose its own
+//!   `PATHABLE`-typed children per attribute, plus its
+//!   `archetype_node_id`/`name` for predicate matching. The hooks default
+//!   to "no children / no identifiers", so a class that has not opted in
+//!   simply resolves no paths below itself rather than failing to compile.
+//! * **The five spec functions** — now *working default methods* over the
+//!   hooks, delegating to the parser/evaluator in [`super::paths`]
+//!   (`RmPath::parse`, `resolve`, `path_of_descendant`). Implementors
+//!   inherit them as-is; only the hooks (and `parent()`) need per-class
+//!   code.
+//!
+//! TODO(port): the traversal-hook overrides for the concrete RM classes
+//! (`COMPOSITION.content`, `SECTION.items`, `CLUSTER.items`,
+//! `HISTORY.events`, ...) are wired across the RM at P17 (make-it-compile),
+//! when the crate-wide `impl PathableApi for ..` pass happens; this file
+//! deliberately touches no other class.
 use std::sync::Weak;
+
+use super::paths;
 
 /// Behaviour trait for `PATHABLE` and every RM class that inherits it,
 /// directly or (far more commonly) via `LOCATABLE`
@@ -118,8 +143,75 @@ use std::sync::Weak;
 /// See the module-level documentation above for the full reasoning behind
 /// the `parent()` signature — this is the settled hazard from
 /// `PORT_MASTER_PLAN.md` §7.2 ("`PATHABLE.parent()` reverse pointer: do
-/// not use owning back-references; use `Weak` or path-index lookup").
+/// not use owning back-references; use `Weak` or path-index lookup") — and
+/// for the traversal-hook design behind the five path functions.
 pub trait PathableApi {
+    // ── Traversal hooks (not spec features) ─────────────────────────────
+
+    /// Upcast to the abstract `PATHABLE` trait object.
+    ///
+    /// PORT NOTE: not a spec function — the Rust seam that lets the
+    /// default methods below hand `self` to the shared evaluator in
+    /// [`super::paths`] (an unsized coercion `&Self → &dyn PathableApi`
+    /// requires `Self: Sized`, which a default method body cannot assume).
+    /// Every implementor writes the same one-liner: `fn as_pathable(&self)
+    /// -> &dyn PathableApi { self }`.
+    fn as_pathable(&self) -> &dyn PathableApi;
+
+    /// The attribute names this node can be descended through, in
+    /// declaration order (e.g. `["content"]` on a `COMPOSITION`,
+    /// `["items"]` on a `CLUSTER`, `["data", "state", "protocol"]` on an
+    /// `OBSERVATION` event).
+    ///
+    /// PORT NOTE: not a spec function — the reflection substitute that
+    /// lets [`path_of_item`](PathableApi::path_of_item) search the whole
+    /// containment tree without knowing each class's shape. Must name
+    /// exactly the attributes [`path_child_nodes`](PathableApi::path_child_nodes)
+    /// answers for. Defaults to none (leaf node).
+    fn path_attribute_names(&self) -> Vec<&'static str> {
+        Vec::new()
+    }
+
+    /// The `PATHABLE` children reachable from this node via `attribute`,
+    /// in document order: a multiply-valued attribute (`items`, `events`,
+    /// `content`) yields each element; a single-valued `PATHABLE`
+    /// attribute yields one node; anything else yields none.
+    ///
+    /// PORT NOTE: not a spec function — the reflection substitute the
+    /// path evaluator walks. Defaults to no children (leaf node), so a
+    /// class that has not yet opted in resolves no paths below itself.
+    /// Children that are not `PATHABLE` (leaf `DATA_VALUE` attributes such
+    /// as `ELEMENT.value`) are out of range for this evaluator — see the
+    /// note on [`item_at_path`](PathableApi::item_at_path).
+    fn path_child_nodes(&self, attribute: &str) -> Vec<&dyn PathableApi> {
+        let _ = attribute;
+        Vec::new()
+    }
+
+    /// The archetype node id this node matches in a path predicate
+    /// (`LOCATABLE.archetype_node_id`: an at-code, or the stringified
+    /// archetype id at an archetype root point).
+    ///
+    /// PORT NOTE: not a spec function — predicate-matching hook. Defaults
+    /// to `None`, which is exactly right for the bare-`PATHABLE` trio
+    /// (`EVENT_CONTEXT`, `INSTRUCTION_DETAILS`, `ISM_TRANSITION`) that has
+    /// no `archetype_node_id` attribute at all; `LOCATABLE` descendants
+    /// override it (see `LocatableData::path_node_id`).
+    fn path_node_id(&self) -> Option<&str> {
+        None
+    }
+
+    /// The runtime name this node matches in a `'name'` path predicate
+    /// (`LOCATABLE.name.value`).
+    ///
+    /// PORT NOTE: not a spec function — predicate-matching hook, same
+    /// story as [`path_node_id`](PathableApi::path_node_id).
+    fn path_node_name(&self) -> Option<&str> {
+        None
+    }
+
+    // ── Spec functions ──────────────────────────────────────────────────
+
     /// `parent(): PATHABLE`, cardinality `1..1` in the spec.
     ///
     /// Parent of this node in a compositional hierarchy.
@@ -132,15 +224,13 @@ pub trait PathableApi {
     /// root-of-tree case, which has no parent to report at all. See the
     /// module doc for the full justification of each layer.
     ///
-    /// TODO(port): body is `todo!()` — `PATHABLE` itself carries no state;
-    /// each concrete implementor stores its own parent link (as `Weak<..>`
-    /// or via a path-index) and must override this method once RM
-    /// data_structures/common concrete types with real containment exist.
-    fn parent(&self) -> Option<Weak<dyn PathableApi>> {
-        todo!(
-            "PathableApi::parent: no default implementation — every concrete PATHABLE stores its own parent link"
-        )
-    }
+    /// Required (no default body): the spec itself declares `parent` as
+    /// the one abstract feature ("may be implemented in any way
+    /// convenient") — `PATHABLE` has no state, so every concrete
+    /// implementor supplies its own link. `LOCATABLE` descendants delegate
+    /// to `LocatableData::parent_pathable()` (see `locatable.rs`);
+    /// path-index implementors resolve through their index.
+    fn parent(&self) -> Option<Weak<dyn PathableApi>>;
 
     /// `item_at_path(a_path: String): Any`, cardinality `1..1`.
     ///
@@ -149,28 +239,31 @@ pub trait PathableApi {
     /// The item at a path (relative to this item); only valid for unique
     /// paths, i.e. paths that resolve to a single item.
     ///
-    /// Widened to `Option<..>` for the same reason as
-    /// [`items_at_path`](PathableApi::items_at_path): a caller that
-    /// violates the `Pre` clause (calls this on a non-unique or
-    /// non-existent path) gets `None` rather than a panic, since RM
-    /// invariant/precondition violations are modelled as `Validate`
-    /// failures per `.claude/rules/rm-transcription.md` "Invariants"
-    /// rather than as Rust panics.
+    /// Widened to `Option<..>`: a caller that violates the `Pre` clause
+    /// (calls this on a non-unique, non-existent, or unparseable path)
+    /// gets `None` rather than a panic, since RM invariant/precondition
+    /// violations are modelled as fallible results per
+    /// `.claude/rules/rm-transcription.md` "Invariants" rather than as
+    /// Rust panics.
     ///
-    /// The spec types the return `Any` (BASE foundation_types) — the root
-    /// marker trait, since a resolved path item could be any RM type at
-    /// all (a `DATA_VALUE`, an `ITEM`, a nested `LOCATABLE`, ...).
-    /// Rendered here as `Box<dyn std::any::Any>` for the same open-set
-    /// reasoning as `parent()`'s `dyn PathableApi`: the set of things a
-    /// path can resolve to spans the entire RM, so no closed enum can
-    /// enumerate it without inverting every crate dependency arrow.
-    ///
-    /// TODO(port): path resolution against a concrete containment tree is
-    /// not implementable until RM data_structures/common concrete types
-    /// exist; `todo!()` for now.
-    fn item_at_path(&self, a_path: &str) -> Option<Box<dyn std::any::Any>> {
-        let _ = a_path;
-        todo!("PathableApi::item_at_path: path resolution needs concrete RM data_structures")
+    /// PORT NOTE: the spec types the return `Any` (BASE foundation_types)
+    /// — the root marker trait, since a resolved path item could be any RM
+    /// type at all. This evaluator ranges over the compositional hierarchy
+    /// of `PATHABLE` nodes (the only thing
+    /// [`path_child_nodes`](PathableApi::path_child_nodes) can expose
+    /// polymorphically), so the return is narrowed to
+    /// `&dyn PathableApi`. Paths terminating in a non-`PATHABLE` leaf
+    /// value (`ELEMENT.value` and other `DATA_VALUE` attributes) are the
+    /// AQL path engine's territory. TODO(port): leaf `DATA_VALUE` path
+    /// resolution lands with the AQL semantic path analysis at P12.
+    fn item_at_path(&self, a_path: &str) -> Option<&dyn PathableApi> {
+        let path = paths::RmPath::parse(a_path).ok()?;
+        let mut matches = paths::resolve(self.as_pathable(), &path);
+        if matches.len() == 1 {
+            matches.pop()
+        } else {
+            None
+        }
     }
 
     /// `items_at_path(a_path: String): List<Any>`, cardinality `0..1`.
@@ -184,12 +277,17 @@ pub trait PathableApi {
     /// observable state for a list-typed result, unlike the `Option`
     /// fields on `LOCATABLE`'s attributes where `None` vs `Some(empty)`
     /// are kept distinct per the `Links_valid`-style invariants — see
-    /// `locatable.rs`).
+    /// `locatable.rs`). An unparseable path likewise yields the empty
+    /// list (precondition violation, not a panic).
     ///
-    /// TODO(port): see [`item_at_path`](PathableApi::item_at_path).
-    fn items_at_path(&self, a_path: &str) -> Vec<Box<dyn std::any::Any>> {
-        let _ = a_path;
-        todo!("PathableApi::items_at_path: path resolution needs concrete RM data_structures")
+    /// Return element type narrowed from the spec's `Any` to
+    /// `&dyn PathableApi` — see
+    /// [`item_at_path`](PathableApi::item_at_path)'s PORT NOTE.
+    fn items_at_path(&self, a_path: &str) -> Vec<&dyn PathableApi> {
+        match paths::RmPath::parse(a_path) {
+            Ok(path) => paths::resolve(self.as_pathable(), &path),
+            Err(_) => Vec::new(),
+        }
     }
 
     /// `path_exists(a_path: String): Boolean`, cardinality `1..1`.
@@ -197,42 +295,278 @@ pub trait PathableApi {
     /// Pre: `not a_path.is_empty`.
     ///
     /// True if the path exists in the data with respect to the current
-    /// item.
-    ///
-    /// TODO(port): needs a concrete containment tree to walk; `todo!()`
-    /// for now.
+    /// item. A path that violates the precondition (empty) or does not
+    /// parse yields `false`.
     fn path_exists(&self, a_path: &str) -> bool {
-        let _ = a_path;
-        todo!("PathableApi::path_exists: path resolution needs concrete RM data_structures")
+        !self.items_at_path(a_path).is_empty()
     }
 
     /// `path_unique(a_path: String): Boolean`, cardinality `1..1`.
     ///
     /// Pre: `path_exists(a_path)`.
     ///
-    /// True if the path corresponds to a single item in the data.
-    ///
-    /// TODO(port): needs a concrete containment tree to walk; `todo!()`
-    /// for now.
+    /// True if the path corresponds to a single item in the data. A path
+    /// that violates the precondition (does not exist) yields `false`.
     fn path_unique(&self, a_path: &str) -> bool {
-        let _ = a_path;
-        todo!("PathableApi::path_unique: path resolution needs concrete RM data_structures")
+        self.items_at_path(a_path).len() == 1
     }
 
     /// `path_of_item(a_loc: PATHABLE): String`, cardinality `1..1`.
     ///
     /// The path to an item relative to the root of this archetyped
-    /// structure.
+    /// structure — computed here as the path of `a_loc` relative to
+    /// `self`, treating `self` as that root (the receiver *is* the
+    /// structure the spec says the path is relative to).
     ///
     /// The spec parameter type `PATHABLE` is rendered as `&dyn
     /// PathableApi`, matching the same open-polymorphism reasoning as
-    /// `parent()`'s return type.
+    /// `parent()`'s return type. Item identity is by address, never by
+    /// structural equality (two value-equal sibling `ELEMENT`s have
+    /// distinct paths).
     ///
-    /// TODO(port): needs a concrete containment tree to walk (to compute
-    /// the path from this node down to `a_loc`); `todo!()` for now.
-    fn path_of_item(&self, a_loc: &dyn PathableApi) -> String {
-        let _ = a_loc;
-        todo!("PathableApi::path_of_item: path resolution needs concrete RM data_structures")
+    /// Widened to `Option<String>`: the spec's `1..1` return assumes
+    /// `a_loc` is inside this structure; an `a_loc` that is neither `self`
+    /// nor reachable below it yields `None` (precondition violation, not
+    /// a panic).
+    fn path_of_item(&self, a_loc: &dyn PathableApi) -> Option<String> {
+        paths::path_of_descendant(self.as_pathable(), a_loc)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Minimal local tree type opting into the traversal hooks — stands in
+    /// for the concrete RM classes whose hook overrides are wired at P17.
+    /// Shaped after a blood-pressure `OBSERVATION`:
+    ///
+    /// ```text
+    /// root [openEHR-EHR-OBSERVATION.bp.v1] 'Blood pressure'
+    /// └── data [at0001] 'History'
+    ///     ├── events [at0006] 'First'
+    ///     │   └── data [at0003]
+    ///     │       ├── items [at0004] 'Systolic'
+    ///     │       └── items [at0005] 'Diastolic'
+    ///     └── events [at0006] 'Second'
+    ///         └── data [at0003]
+    ///             └── items [at0004] 'Systolic'
+    /// ```
+    struct TestNode {
+        node_id: Option<&'static str>,
+        name: Option<&'static str>,
+        attrs: Vec<(&'static str, Vec<TestNode>)>,
+    }
+
+    impl TestNode {
+        fn new(
+            node_id: Option<&'static str>,
+            name: Option<&'static str>,
+            attrs: Vec<(&'static str, Vec<TestNode>)>,
+        ) -> Self {
+            TestNode {
+                node_id,
+                name,
+                attrs,
+            }
+        }
+    }
+
+    impl PathableApi for TestNode {
+        fn as_pathable(&self) -> &dyn PathableApi {
+            self
+        }
+
+        fn parent(&self) -> Option<Weak<dyn PathableApi>> {
+            None // standalone test tree; parent links are exercised in locatable.rs
+        }
+
+        fn path_attribute_names(&self) -> Vec<&'static str> {
+            self.attrs.iter().map(|(attr, _)| *attr).collect()
+        }
+
+        fn path_child_nodes(&self, attribute: &str) -> Vec<&dyn PathableApi> {
+            self.attrs
+                .iter()
+                .filter(|(attr, _)| *attr == attribute)
+                .flat_map(|(_, children)| children.iter().map(|c| c as &dyn PathableApi))
+                .collect()
+        }
+
+        fn path_node_id(&self) -> Option<&str> {
+            self.node_id
+        }
+
+        fn path_node_name(&self) -> Option<&str> {
+            self.name
+        }
+    }
+
+    fn element(id: &'static str, name: &'static str) -> TestNode {
+        TestNode::new(Some(id), Some(name), Vec::new())
+    }
+
+    fn bp_tree() -> TestNode {
+        let first_event = TestNode::new(
+            Some("at0006"),
+            Some("First"),
+            vec![(
+                "data",
+                vec![TestNode::new(
+                    Some("at0003"),
+                    None,
+                    vec![(
+                        "items",
+                        vec![
+                            element("at0004", "Systolic"),
+                            element("at0005", "Diastolic"),
+                        ],
+                    )],
+                )],
+            )],
+        );
+        let second_event = TestNode::new(
+            Some("at0006"),
+            Some("Second"),
+            vec![(
+                "data",
+                vec![TestNode::new(
+                    Some("at0003"),
+                    None,
+                    vec![("items", vec![element("at0004", "Systolic")])],
+                )],
+            )],
+        );
+        TestNode::new(
+            Some("openEHR-EHR-OBSERVATION.bp.v1"),
+            Some("Blood pressure"),
+            vec![(
+                "data",
+                vec![TestNode::new(
+                    Some("at0001"),
+                    Some("History"),
+                    vec![("events", vec![first_event, second_event])],
+                )],
+            )],
+        )
+    }
+
+    #[test]
+    fn root_path_resolves_to_self() {
+        let root = bp_tree();
+        let item = root.item_at_path("/").expect("root path resolves");
+        assert!(std::ptr::addr_eq(
+            item as *const dyn PathableApi,
+            &root as &dyn PathableApi as *const dyn PathableApi
+        ));
+        assert!(root.path_exists("/"));
+        assert!(root.path_unique("/"));
+    }
+
+    #[test]
+    fn path_exists_matches_attribute_and_at_code() {
+        let root = bp_tree();
+        assert!(root.path_exists("/data[at0001]"));
+        assert!(root.path_exists("/data[at0001]/events[at0006]"));
+        assert!(root.path_exists("/data")); // no predicate: any child via `data`
+        assert!(!root.path_exists("/data[at9999]"));
+        assert!(!root.path_exists("/state")); // unknown attribute
+        assert!(!root.path_exists("")); // precondition violation → false
+    }
+
+    #[test]
+    fn items_at_path_returns_all_matches() {
+        let root = bp_tree();
+        let events = root.items_at_path("/data[at0001]/events[at0006]");
+        assert_eq!(events.len(), 2);
+        // Both Systolic elements, one per event, through the shared at-code.
+        let systolics =
+            root.items_at_path("/data[at0001]/events[at0006]/data[at0003]/items[at0004]");
+        assert_eq!(systolics.len(), 2);
+        assert!(
+            systolics
+                .iter()
+                .all(|n| n.path_node_name() == Some("Systolic"))
+        );
+    }
+
+    #[test]
+    fn path_unique_distinguishes_shared_at_codes() {
+        let root = bp_tree();
+        assert!(!root.path_unique("/data[at0001]/events[at0006]"));
+        assert!(root.path_unique("/data[at0001]/events[at0006, 'First']"));
+        assert!(root.path_unique("/data[at0001]"));
+        assert!(!root.path_unique("/data[at9999]")); // precondition violation → false
+    }
+
+    #[test]
+    fn item_at_path_resolves_unique_paths_only() {
+        let root = bp_tree();
+        // Unique deep path via combined predicate.
+        let diastolic = root
+            .item_at_path("/data[at0001]/events[at0006, 'First']/data[at0003]/items[at0005]")
+            .expect("unique path resolves");
+        assert_eq!(diastolic.path_node_name(), Some("Diastolic"));
+        // Non-unique path → None (precondition `path_unique` violated).
+        assert!(root.item_at_path("/data[at0001]/events[at0006]").is_none());
+        // Non-existent path → None.
+        assert!(root.item_at_path("/data[at9999]").is_none());
+        // Unparseable path → None.
+        assert!(root.item_at_path("/data[").is_none());
+    }
+
+    #[test]
+    fn name_only_predicate_matches() {
+        let root = bp_tree();
+        let second = root
+            .item_at_path("/data[at0001]/events['Second']")
+            .expect("name-only predicate resolves");
+        assert_eq!(second.path_node_id(), Some("at0006"));
+        assert_eq!(second.path_node_name(), Some("Second"));
+    }
+
+    #[test]
+    fn combined_predicate_requires_both_components() {
+        let root = bp_tree();
+        assert!(root.path_exists("/data[at0001]/events[at0006, 'First']"));
+        // Right id, wrong name.
+        assert!(!root.path_exists("/data[at0001]/events[at0006, 'Third']"));
+        // Wrong id, right name.
+        assert!(!root.path_exists("/data[at0001]/events[at0007, 'First']"));
+    }
+
+    #[test]
+    fn path_of_item_round_trips_through_item_at_path() {
+        let root = bp_tree();
+        let diastolic = root
+            .item_at_path("/data[at0001]/events[at0006, 'First']/data[at0003]/items[at0005]")
+            .expect("unique path resolves");
+        let path = root.path_of_item(diastolic).expect("descendant has a path");
+        // Sibling events share at0006, so the rendered path disambiguates
+        // by runtime name; items/at-codes are unique, so no name is added.
+        assert_eq!(
+            path,
+            "/data[at0001]/events[at0006, 'First']/data[at0003]/items[at0005]"
+        );
+        // Round-trip: the rendered path resolves back to the same node.
+        let resolved = root.item_at_path(&path).expect("rendered path resolves");
+        assert!(std::ptr::addr_eq(
+            resolved as *const dyn PathableApi,
+            diastolic as *const dyn PathableApi
+        ));
+    }
+
+    #[test]
+    fn path_of_item_of_self_is_root() {
+        let root = bp_tree();
+        assert_eq!(root.path_of_item(root.as_pathable()).as_deref(), Some("/"));
+    }
+
+    #[test]
+    fn path_of_item_of_stranger_is_none() {
+        let root = bp_tree();
+        let stranger = element("at0004", "Systolic"); // value-equal shape, different allocation
+        assert!(root.path_of_item(&stranger).is_none());
     }
 }
 
@@ -241,6 +575,6 @@ pub trait PathableApi {
 //   source: RM 1.1.0 common.archetyped — docs/research/spec-cache/RM-1.1.0/uml_classes/pathable.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: common/master03-archetyped_package.adoc §The PATHABLE Class / uml_classes/pathable.adoc §PATHABLE Class
 //   confidence: high
-//   todos: 5
-//   note: Reference implementation of the PATHABLE.parent() reverse-pointer hazard (rm-transcription rule + ADR-001 §8) — parent() returns Option<Weak<dyn PathableApi>>; all five function bodies are todo!() pending concrete RM data_structures to walk. Every LOCATABLE-embedding class in later phases must reuse this trait, not re-derive the parent-pointer shape.
+//   todos: 2
+//   note: Reference implementation of the PATHABLE.parent() reverse-pointer hazard (rm-transcription rule + ADR-001 §8) — parent() is the trait's one required spec method (Option<Weak<dyn PathableApi>>). The other four spec functions plus item/items_at_path are working default methods over five PORT-NOTEd traversal hooks (as_pathable/path_attribute_names/path_child_nodes/path_node_id/path_node_name), backed by the tiny parser/evaluator in paths.rs; concrete RM classes opt in by overriding the hooks (wired at P17). Leaf DATA_VALUE resolution deferred to the AQL path engine (P12).
 // ─────────────────────────────────────────────

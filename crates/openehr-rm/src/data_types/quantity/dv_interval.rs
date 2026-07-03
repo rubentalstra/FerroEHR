@@ -95,29 +95,64 @@ impl<T: DvOrderedApi> TypeName for DvInterval<T> {
 
 impl<T: DvOrderedApi> DvInterval<T> {
     // PORT NOTE: `DV_INTERVAL` declares no functions of its own in the
-    // per-class table beyond what `Interval<T>` already provides
-    // (`has`/`intersects`/`contains`, all still `todo!()` at the foundation
-    // layer pending the `Interval::has` postcondition ambiguity — see
-    // `openehr_foundation::interval::interval::Interval::has`). No new
-    // methods are added here; callers reach `self.range.has(...)` etc.
-    // directly until that foundation gap is resolved.
-}
+    // per-class table — `has`/`intersects`/`contains` are inherited from
+    // `Interval<T>` (BASE foundation_types), whose bodies are now fully
+    // implemented at the foundation layer (the `Interval::has` postcondition
+    // ambiguity was resolved from the spec's Meaning column). The three
+    // methods below are thin inherent forwarders onto the embedded `range`,
+    // so callers (and the `DvOrderedApi` default bodies in `dv_ordered.rs`)
+    // can write `dv_interval.has(v)` directly rather than reaching through
+    // `dv_interval.range.has(v)`.
 
-// TODO(port): `Limits_consistent` class invariant is not yet encoded as a
-// `Validate` impl, per `.claude/rules/rm-transcription.md`'s "Invariants"
-// section — recorded here as a documented TODO rather than silently
-// omitted:
-//
-// `Limits_consistent`: `(not upper_unbounded and not lower_unbounded)
-// implies (lower.is_strictly_comparable_to(upper) and lower <= upper)`
-//
-// This tightens (rather than duplicates) `Interval<T>`'s own
-// `Limits_comparable`/`Limits_consistent` invariants (see
-// `openehr_foundation::interval::interval::Interval`, which already has a
-// TODO for those pending `Ordered::strictly_comparable_to` not existing on
-// the `Ordered` trait) — at the `DV_INTERVAL<T: DV_ORDERED>` level the
-// comparability check is `DvOrderedApi::is_strictly_comparable_to`
-// specifically, not a BASE-wide `Ordered::strictly_comparable_to`.
+    /// `has(e: T) -> Boolean` — inherited from `Interval<T>`.
+    ///
+    /// True if the value `e` is properly contained in this interval; the
+    /// open/closed/unbounded membership semantics live in the foundation
+    /// `Interval::has`.
+    pub fn has(&self, e: &T) -> bool {
+        self.range.has(e)
+    }
+
+    /// `intersects(other: Interval) -> Boolean` — inherited from `Interval<T>`.
+    pub fn intersects(&self, other: &DvInterval<T>) -> bool {
+        self.range.intersects(&other.range)
+    }
+
+    /// `contains(other: Interval) -> Boolean` — inherited from `Interval<T>`.
+    pub fn contains(&self, other: &DvInterval<T>) -> bool {
+        self.range.contains(&other.range)
+    }
+
+    /// `Limits_consistent` class invariant, as a working method per ADR-003
+    /// decision 8 (invariants become `is_valid()`-family methods):
+    ///
+    /// `(not upper_unbounded and not lower_unbounded) implies
+    /// (lower.is_strictly_comparable_to(upper) and lower <= upper)`.
+    ///
+    /// This tightens (rather than duplicates) `Interval<T>`'s own
+    /// `Limits_consistent` (`lower <= upper` only): at the
+    /// `DV_INTERVAL<T: DV_ORDERED>` level the comparability check is
+    /// `DvOrderedApi::is_strictly_comparable_to` specifically, which the
+    /// foundation `Interval` cannot express (its `T: Ordered` bound carries
+    /// no strict-comparability notion).
+    ///
+    /// PORT NOTE: when a bounded side's limit value is absent (the
+    /// inconsistent state the foundation `Interval` documents on
+    /// `effective_lower`), the implication holds vacuously — there is no pair
+    /// of limits to compare — matching the foundation's own
+    /// `limits_consistent` treatment.
+    pub fn invariant_limits_consistent(&self) -> bool {
+        if self.range.upper_unbounded || self.range.lower_unbounded {
+            return true;
+        }
+        match (&self.range.lower, &self.range.upper) {
+            (Some(lower), Some(upper)) => {
+                lower.is_strictly_comparable_to(upper) && lower.less_than_or_equal(upper)
+            }
+            _ => true,
+        }
+    }
+}
 
 // PORT NOTE: `DATA_VALUE` (the other half of `DV_INTERVAL`'s `Inherit` row)
 // is not yet embedded here — it is owned by the sibling `data_types::basic`
@@ -127,11 +162,154 @@ impl<T: DvOrderedApi> DvInterval<T> {
 #[allow(unused_imports)]
 use DataValue as _DataValueForwardRef;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::quantity::dv_amount::DvAmountData;
+    use crate::data_types::quantity::dv_count::DvCount;
+    use crate::data_types::quantity::dv_ordered::DvOrderedData;
+    use crate::data_types::quantity::dv_quantified::DvQuantifiedData;
+    use crate::data_types::quantity::dv_quantity::DvQuantity;
+    use openehr_foundation::primitive_types::real::Real;
+
+    fn count(m: i64) -> DvCount {
+        DvCount {
+            type_tag: TypeTag::new(),
+            amount: DvAmountData {
+                quantified: DvQuantifiedData {
+                    ordered: DvOrderedData {
+                        normal_status: None,
+                        normal_range: None,
+                        other_reference_ranges: None,
+                    },
+                    magnitude_status: None,
+                    accuracy: None,
+                },
+                accuracy_is_percent: None,
+                accuracy: None,
+            },
+            magnitude: m,
+        }
+    }
+
+    fn count_interval(lower: i64, upper: i64) -> DvInterval<DvCount> {
+        DvInterval {
+            type_tag: TypeTag::new(),
+            range: Interval {
+                lower: Some(count(lower)),
+                upper: Some(count(upper)),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: true,
+                upper_included: true,
+            },
+        }
+    }
+
+    fn quantity(m: f64, units: &str) -> DvQuantity {
+        DvQuantity {
+            type_tag: TypeTag::new(),
+            amount: DvAmountData {
+                quantified: DvQuantifiedData {
+                    ordered: DvOrderedData {
+                        normal_status: None,
+                        normal_range: None,
+                        other_reference_ranges: None,
+                    },
+                    magnitude_status: None,
+                    accuracy: None,
+                },
+                accuracy_is_percent: None,
+                accuracy: None,
+            },
+            magnitude: Real(m),
+            precision: None,
+            units: units.to_string(),
+            units_system: None,
+            units_display_name: None,
+        }
+    }
+
+    /// `has` forwards to the foundation `Interval::has` membership semantics
+    /// (closed limits here, so both endpoints are included).
+    #[test]
+    fn has_delegates_to_the_embedded_interval() {
+        let iv = count_interval(0, 10);
+        assert!(iv.has(&count(0)));
+        assert!(iv.has(&count(5)));
+        assert!(iv.has(&count(10)));
+        assert!(!iv.has(&count(11)));
+        assert!(!iv.has(&count(-1)));
+    }
+
+    /// `intersects`/`contains` forward to the foundation `Interval`.
+    #[test]
+    fn intersects_and_contains_delegate_to_the_embedded_interval() {
+        assert!(count_interval(0, 10).intersects(&count_interval(5, 15)));
+        assert!(!count_interval(0, 10).intersects(&count_interval(11, 15)));
+        assert!(count_interval(0, 10).contains(&count_interval(2, 8)));
+        assert!(!count_interval(0, 10).contains(&count_interval(2, 12)));
+    }
+
+    /// `Limits_consistent`: bounded limits must be ordered `lower <= upper`.
+    /// (`DvCount` is always strictly comparable, so only ordering matters.)
+    #[test]
+    fn limits_consistent_requires_ordered_limits() {
+        assert!(count_interval(0, 10).invariant_limits_consistent());
+        assert!(count_interval(5, 5).invariant_limits_consistent());
+        let bad = DvInterval {
+            type_tag: TypeTag::new(),
+            range: Interval {
+                lower: Some(count(10)),
+                upper: Some(count(0)),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: true,
+                upper_included: true,
+            },
+        };
+        assert!(!bad.invariant_limits_consistent());
+    }
+
+    /// `Limits_consistent` additionally requires the limits to be *strictly
+    /// comparable* at the `DV_ORDERED` level — two `DV_QUANTITY` limits with
+    /// mismatched units are not comparable, so the invariant fails even
+    /// though their magnitudes are ordered (this is what `DV_INTERVAL` adds
+    /// over the foundation `Interval`).
+    #[test]
+    fn limits_consistent_requires_strict_comparability_of_limits() {
+        let mismatched_units = DvInterval {
+            type_tag: TypeTag::new(),
+            range: Interval {
+                lower: Some(quantity(0.0, "kg")),
+                upper: Some(quantity(10.0, "mmHg")),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: true,
+                upper_included: true,
+            },
+        };
+        assert!(!mismatched_units.invariant_limits_consistent());
+        let same_units = DvInterval {
+            type_tag: TypeTag::new(),
+            range: Interval {
+                lower: Some(quantity(0.0, "kg")),
+                upper: Some(quantity(10.0, "kg")),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: true,
+                upper_included: true,
+            },
+        };
+        assert!(same_units.invariant_limits_consistent());
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_interval.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_interval.adoc §DV_INTERVAL Class
 //   confidence: high
-//   todos: 2
-//   note: Limits_consistent invariant recorded but not enforced (needs a Validate framework); DATA_VALUE parent not yet embedded pending sibling data_types::basic package landing. Interval<T>'s own has/intersects/contains remain todo!() at the foundation layer, inherited transitively. P4/ADR-002: self-tags via TypeTag<DvInterval<T>> first field (function-path default, no extra bounds on T in the TypeName impl beyond the struct's own DvOrderedApi); `range` carries #[serde(flatten)], schema-verified (six Interval fields sit flat beside _type); foundation Interval<T> now derives serde, flatten unblocked.
+//   todos: 1
+//   note: has/intersects/contains are now inherent forwarders onto the embedded Interval<T> (foundation bodies fully implemented — the prior "todo!() at the foundation layer" note was stale); Limits_consistent implemented as invariant_limits_consistent() per ADR-003 §8, tightening the foundation invariant with DvOrderedApi::is_strictly_comparable_to (unit-tested with both DvCount ordering and DvQuantity unit-mismatch). Remaining TODO: DATA_VALUE parent not yet embedded pending sibling data_types::basic package landing (P17). P4/ADR-002: self-tags via TypeTag<DvInterval<T>> first field (function-path default, no extra bounds on T in the TypeName impl beyond the struct's own DvOrderedApi); `range` carries #[serde(flatten)], schema-verified (six Interval fields sit flat beside _type).
 // ─────────────────────────────────────────────

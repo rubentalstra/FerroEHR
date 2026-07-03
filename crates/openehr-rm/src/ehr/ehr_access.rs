@@ -131,15 +131,13 @@ impl EhrAccess {
 
     /// Invariant `Is_archetype_root`: `is_archetype_root`.
     ///
-    /// Inherited unchanged from `LOCATABLE`, restated here so its presence
-    /// on this class is not lost during transcription.
-    ///
-    /// TODO(port): delegates to `LOCATABLE.is_archetype_root()`, not yet
-    /// implemented; awaits the `common::archetyped::locatable` transcription.
+    /// Inherited unchanged from `LOCATABLE`. Implemented per ADR-003 §8 as
+    /// the derived value `LOCATABLE.is_archetype_root` computes —
+    /// `archetype_details /= Void` (see [`LocatableData`] /
+    /// `LocatableApi::is_archetype_root`).
+    #[must_use]
     pub fn invariant_is_archetype_root(&self) -> bool {
-        todo!(
-            "port: delegate to LocatableData::is_archetype_root() once common::archetyped::locatable lands"
-        )
+        self.locatable.archetype_details.is_some()
     }
 }
 
@@ -148,6 +146,6 @@ impl EhrAccess {
 //   source: RM 1.1.0 ehr — docs/research/spec-cache/RM-1.1.0/ehr/uml_classes/ehr_access.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master04-ehr_package.adoc §Class Descriptions / uml_classes/ehr_access.adoc §EHR_ACCESS Class; access_control_settings.adoc §ACCESS_CONTROL_SETTINGS Class
 //   confidence: medium
-//   todos: 3
+//   todos: 5
 //   note: ACCESS_CONTROL_SETTINGS is a genuinely near-empty spec class whose concrete subtypes live in an out-of-scope Security Information Model — flagged, not invented; scheme() stubbed until that model exists. P4/ADR-002: EhrAccess self-tags (TypeTag<Self> first field + TypeName impl; no-op struct-level rename removed); AccessControlSettings stays untagged (abstract class — the schema defines no entry for it).
 // ─────────────────────────────────────────────

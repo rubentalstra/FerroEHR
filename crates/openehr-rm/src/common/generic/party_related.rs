@@ -20,6 +20,9 @@ use serde::{Deserialize, Serialize};
 // worktree. Forward-reference to its eventual module path.
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_terminology::{
+    OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
+};
 
 use super::party_identified::PartyIdentifiedData;
 use super::party_proxy::PartyProxyApi;
@@ -71,12 +74,9 @@ pub struct PartyRelated {
     /// `terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_subject_relationship, relationship.defining_code)`.
     ///
-    /// TODO(port): invariant references the `TERMINOLOGY_SERVICE`
-    /// (`openehr_terminology::TerminologyService`) and the openEHR
-    /// Terminology group "subject relationship"
-    /// (`OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS`, already transcribed in
-    /// `openehr-terminology`); not yet wired into a constructor or the RM
-    /// `Validate` framework.
+    /// Checked by [`PartyRelated::is_relationship_valid`] (ADR-003 d.8)
+    /// against the openEHR "subject relationship" group; P11 Validate-
+    /// framework wiring is pending.
     pub relationship: DvCodedText,
 }
 
@@ -89,21 +89,25 @@ impl PartyRelated {
     /// `terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_subject_relationship, relationship.defining_code)`.
     ///
-    /// TODO(port): requires a live `TerminologyService` instance to check
-    /// `relationship.defining_code` against the "subject relationship"
-    /// openEHR Terminology group; the `Validate` framework this will
-    /// eventually be wired through (context + path + error accumulator)
-    /// is not yet implemented. Left as `todo!()` rather than a bare
-    /// boolean stub, since — unlike the invariants in sibling files that
-    /// close over only their own struct's fields — this one cannot be
-    /// evaluated without external service state.
-    pub fn is_relationship_valid(
-        &self,
-        _terminology: &openehr_terminology::TerminologyService,
-    ) -> bool {
-        todo!(
-            "PartyRelated::is_relationship_valid: needs TerminologyService.has_code_for_group_id against Group_id_subject_relationship"
-        )
+    /// Working method per ADR-003 decision 8 (terminology-bound invariants
+    /// take `&TerminologyService`). `relationship` is a mandatory
+    /// `DV_CODED_TEXT`, so its `defining_code` is checked directly against
+    /// the openEHR "subject relationship" group (no `DV_CODED_TEXT` runtime
+    /// discrimination and no `/= Void` antecedent, unlike the conditional
+    /// invariants on `ATTESTATION`/`PARTICIPATION`).
+    pub fn is_relationship_valid(&self, terminology: &TerminologyService) -> bool {
+        let defining_code = &self.relationship.defining_code;
+        terminology
+            .terminology(OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR)
+            .is_some_and(|access| {
+                access.has_code_for_group_id(
+                    OpenehrTerminologyGroupIdentifiers::GROUP_ID_SUBJECT_RELATIONSHIP,
+                    &TerminologyCode::new(
+                        defining_code.terminology_id.value(),
+                        defining_code.code_string.clone(),
+                    ),
+                )
+            })
     }
 }
 
@@ -113,11 +117,42 @@ impl PartyProxyApi for PartyRelated {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::change_control::versioned_object::test_support::coded;
+    use crate::common::generic::party_proxy::PartyProxyData;
+
+    fn party_related(relationship: DvCodedText) -> PartyRelated {
+        PartyRelated {
+            type_tag: TypeTag::new(),
+            party_identified: PartyIdentifiedData {
+                party_proxy: PartyProxyData { external_ref: None },
+                name: Some("A. Carer".to_string()),
+                identifiers: None,
+            },
+            relationship,
+        }
+    }
+
+    #[test]
+    fn relationship_valid_checks_the_subject_relationship_group() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+        // 10 = "mother" in the openEHR "subject relationship" group.
+        let ok = party_related(coded("10", "mother"));
+        assert!(ok.is_relationship_valid(service));
+
+        // A bogus code is not in the group.
+        let bad = party_related(coded("999999", "nonsense"));
+        assert!(!bad.is_relationship_valid(service));
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 common.generic — docs/research/spec-cache/RM-1.1.0/uml_classes/party_related.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: common/master04-generic_package.adoc §Referring to Demographic Entities / uml_classes/party_related.adoc §PARTY_RELATED Class
 //   confidence: high
-//   todos: 1
-//   note: Relationship_valid invariant left as a todo!()-bodied method (needs live TerminologyService + Validate framework, not a self-contained boolean check). Embeds the PARTY_IDENTIFIED field set per its Inherit row; two-level composition chain (PartyRelated -> PartyIdentifiedData -> PartyProxyData) kept unflattened so each ancestor's own file stays the single place its attribute set is declared. P4/ADR-002: self-tags via TypeName + first-field TypeTag<Self> (_type = "PARTY_RELATED"); embedded parent switched from the self-tagged PartyIdentified to the untagged PartyIdentifiedData so no inner _type leaks.
+//   todos: 0
+//   note: Relationship_valid now a working method (ADR-003 d.8) with a spec-derived test: mandatory DV_CODED_TEXT relationship checked against the openEHR "subject relationship" group via &TerminologyService (no runtime discrimination / no /= Void antecedent). Only remaining deferral is P11 Validate-framework wiring. Embeds the PARTY_IDENTIFIED field set per its Inherit row; two-level composition chain (PartyRelated -> PartyIdentifiedData -> PartyProxyData) kept unflattened. P4/ADR-002: self-tags via TypeName + first-field TypeTag<Self> (_type = "PARTY_RELATED"); embedded parent is the untagged PartyIdentifiedData so no inner _type leaks.
 // ─────────────────────────────────────────────

@@ -7,8 +7,15 @@
 //! data, commit audit trail, and the identifier of its Contribution. Has
 //! exactly two concrete subtypes, `ORIGINAL_VERSION<T>` and
 //! `IMPORTED_VERSION<T>`.
+use openehr_base::identification::hier_object_id::HierObjectId;
 use openehr_base::identification::object_ref::ObjectRef;
 use openehr_base::identification::object_version_id::ObjectVersionId;
+use openehr_base::identification::uid::UidApi;
+use openehr_base::identification::uid_based_id::UidBasedIdData;
+use openehr_foundation::serde_support::TypeTag;
+use openehr_terminology::{
+    OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
+};
 
 use crate::common::change_control::imported_version::ImportedVersion;
 use crate::common::change_control::original_version::OriginalVersion;
@@ -121,11 +128,16 @@ pub trait VersionApi<T> {
     ///
     /// Post: `Result.value.is_equal(uid.object_id.value)`.
     ///
-    /// TODO(port): depends on `ObjectVersionId::object_id()`, itself
-    /// deferred pending the format-sniffing UID sub-parser noted in
-    /// `openehr-base::identification::uid_based_id`.
-    fn owner_id(&self) -> openehr_base::identification::hier_object_id::HierObjectId {
-        todo!("VersionApi::owner_id: depends on ObjectVersionId::object_id()")
+    /// Implemented via `ObjectVersionId::object_id()` (the first of the
+    /// three `::`-separated parts of `uid.value`), re-wrapped as a
+    /// `HIER_OBJECT_ID` per the declared return type.
+    fn owner_id(&self) -> HierObjectId {
+        HierObjectId {
+            type_tag: TypeTag::new(),
+            uid_based_id: UidBasedIdData {
+                value: self.uid().object_id().value().to_string(),
+            },
+        }
     }
 
     /// `is_branch(): Boolean`.
@@ -137,6 +149,39 @@ pub trait VersionApi<T> {
     /// `VERSION_TREE_ID.is_branch()`.
     fn is_branch(&self) -> bool {
         self.uid().is_branch()
+    }
+
+    /// Invariant `Preceding_version_uid_validity`:
+    /// `uid.version_tree_id.is_first xor preceding_version_uid /= Void`.
+    ///
+    /// Working method per ADR-003 decision 8 (invariants become
+    /// `is_valid()`-family methods now; the walker/accumulator framework
+    /// stays at P11). Delegates to `VERSION_TREE_ID.is_first()`.
+    fn is_preceding_version_uid_valid(&self) -> bool {
+        self.uid().version_tree_id().is_first() ^ self.preceding_version_uid().is_some()
+    }
+
+    /// Invariant `Lifecycle_state_valid`: `lifecycle_state /= Void and then
+    /// terminology(Term_id_openehr).has_code_for_group_id(
+    /// Group_id_version_lifecycle_state, lifecycle_state.defining_code)`.
+    ///
+    /// Working method per ADR-003 decision 8; terminology-bound invariants
+    /// take `&TerminologyService`. The `lifecycle_state /= Void` conjunct is
+    /// structurally guaranteed (`lifecycle_state(): &DvCodedText` cannot be
+    /// Void), leaving only the group-membership check.
+    fn is_lifecycle_state_valid(&self, terminology: &TerminologyService) -> bool {
+        let defining_code = &self.lifecycle_state().defining_code;
+        terminology
+            .terminology(OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR)
+            .is_some_and(|access| {
+                access.has_code_for_group_id(
+                    OpenehrTerminologyGroupIdentifiers::GROUP_ID_VERSION_LIFE_CYCLE_STATE,
+                    &TerminologyCode::new(
+                        defining_code.terminology_id.value(),
+                        defining_code.code_string.clone(),
+                    ),
+                )
+            })
     }
 }
 
@@ -170,27 +215,87 @@ impl<T> VersionApi<T> for Version<T> {
     }
 }
 
-// Invariants (spec `Invariants` table, not yet enforced by a
-// constructor/`Validate` impl — see `.claude/rules/rm-transcription.md`
-// "Invariants"):
-//   Preceding_version_uid_validity:
-//     uid.version_tree_id.is_first xor preceding_version_uid /= Void
-//     TODO(port): needs VERSION_TREE_ID.is_first(), not yet transcribed on
-//     `openehr_base::identification::version_tree_id::VersionTreeId`
-//     (out of scope for this change_control/directory pass — flagged for
-//     the identification-package owner).
-//   Lifecycle_state_valid:
-//     lifecycle_state /= Void and then terminology(Term_id_openehr)
-//       .has_code_for_group_id(Group_id_version_lifecycle_state,
-//       lifecycle_state.defining_code)
-//     TODO(port): requires the terminology service binding
-//     (`openehr-terminology`) wired through the RM invariant framework.
+// Invariants (spec `Invariants` table): implemented as working default
+// methods on `VersionApi<T>` per ADR-003 decision 8 —
+// `is_preceding_version_uid_valid()` (via VERSION_TREE_ID.is_first) and
+// `is_lifecycle_state_valid(&TerminologyService)` (openEHR "version
+// lifecycle state" group). The P11 walker/accumulator framework will call
+// these; they are not yet constructor-enforced.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::change_control::versioned_object::test_support::{coded, original_version};
+
+    #[test]
+    fn owner_id_copies_the_object_id_part_of_uid() {
+        let version = original_version(
+            "87284370-2d4b-4e3d-a3f3-f303d2f4f34b::uk.nhs.ehr1::2",
+            None,
+            "2020-01-01T00:00:00",
+            "532",
+        );
+        let owner = VersionApi::<String>::owner_id(&version);
+        // Post: Result.value.is_equal(uid.object_id.value).
+        assert_eq!(owner.value(), "87284370-2d4b-4e3d-a3f3-f303d2f4f34b");
+    }
+
+    #[test]
+    fn is_branch_derives_from_the_version_tree_id() {
+        let trunk = original_version("c::sys::2", None, "2020-01-01T00:00:00", "532");
+        let branch = original_version("c::sys::2.1.4", None, "2020-01-01T00:00:00", "532");
+        assert!(!VersionApi::<String>::is_branch(&trunk));
+        assert!(VersionApi::<String>::is_branch(&branch));
+    }
+
+    #[test]
+    fn preceding_version_uid_validity_is_an_xor_over_is_first() {
+        // First version (tree id "1"), no preceding uid: valid.
+        let first = original_version("c::sys::1", None, "2020-01-01T00:00:00", "532");
+        assert!(VersionApi::<String>::is_preceding_version_uid_valid(&first));
+
+        // First version WITH a preceding uid: invalid.
+        let first_with_preceding =
+            original_version("c::sys::1", Some("c::sys::0"), "2020-01-01T00:00:00", "532");
+        assert!(!VersionApi::<String>::is_preceding_version_uid_valid(
+            &first_with_preceding
+        ));
+
+        // Later version with a preceding uid: valid; without: invalid.
+        let second = original_version("c::sys::2", Some("c::sys::1"), "2020-01-01T00:00:00", "532");
+        assert!(VersionApi::<String>::is_preceding_version_uid_valid(
+            &second
+        ));
+        let second_orphan = original_version("c::sys::2", None, "2020-01-01T00:00:00", "532");
+        assert!(!VersionApi::<String>::is_preceding_version_uid_valid(
+            &second_orphan
+        ));
+    }
+
+    #[test]
+    fn lifecycle_state_valid_checks_the_version_lifecycle_state_group() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+
+        // 532 = "complete" in the openEHR "version lifecycle state" group.
+        let valid = original_version("c::sys::1", None, "2020-01-01T00:00:00", "532");
+        assert!(VersionApi::<String>::is_lifecycle_state_valid(
+            &valid, service
+        ));
+
+        // A bogus code is not in the group.
+        let mut invalid = original_version("c::sys::1", None, "2020-01-01T00:00:00", "532");
+        invalid.lifecycle_state = coded("999999", "not a state");
+        assert!(!VersionApi::<String>::is_lifecycle_state_valid(
+            &invalid, service
+        ));
+    }
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 common.change_control §VERSION — docs/research/spec-cache/RM-1.1.0/uml_classes/version.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-change_control_package.adoc §Class Descriptions / version.adoc §VERSION Class
 //   confidence: high
-//   todos: 4
-//   note: ADR-001 §4-named worked example (VersionData + closed Version<T> enum + VersionApi<T> trait); data() borrows (&T) rather than by-value since T carries no Clone bound in the spec.
+//   todos: 1
+//   note: ADR-001 §4-named worked example (VersionData + closed Version<T> enum + VersionApi<T> trait); data() borrows (&T). owner_id/is_branch and both invariants are working default methods (ADR-003 d.8); the single remaining TODO(port) is canonical_form(), whose serial form the spec itself marks "[.tbd] To Be Determined" — do not invent.
 // ─────────────────────────────────────────────

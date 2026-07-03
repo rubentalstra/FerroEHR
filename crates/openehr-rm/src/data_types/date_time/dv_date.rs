@@ -29,18 +29,21 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_foundation::time::iso8601_date::Iso8601Date;
 use openehr_foundation::time::iso8601_parser::{days_since_origin, parse_date};
+use openehr_foundation::time::iso8601_type::Iso8601TypeCore;
 use openehr_foundation::time::time_definitions::TimeDefinitions;
 use serde::{Deserialize, Serialize};
-// PORT NOTE: `Iso8601Date`/`Iso8601Type` are named in the module doc above
-// for the inheritance narrative but not imported here — `value: String` is
-// declared directly on this struct (redefined per the class table) rather
-// than embedding `Iso8601TypeCore`, since the RM class table types `value`
-// itself as `String` (not as an `Iso8601Date` instance) and adds its own
-// `Value_valid` invariant calling `valid_iso8601_date`. A later phase may
-// still choose to embed `openehr_foundation::time::iso8601_date::Iso8601Date`
-// directly once the crate boundary (`openehr-rm` depends on
-// `openehr-foundation`) and serde-flatten shape are both settled at P4/P17.
+// PORT NOTE: `value: String` is declared directly on this struct (redefined
+// per the class table) rather than embedding `Iso8601TypeCore`, since the RM
+// class table types `value` itself as `String` (not as an `Iso8601Date`
+// instance) and adds its own `Value_valid` invariant calling
+// `valid_iso8601_date`. The foundation `Iso8601Date` is nonetheless used
+// transiently by the `DV_TEMPORAL` arithmetic (`add`/`subtract`/`diff`
+// below), which delegate to its jiff-backed engine (ADR-003 policies 1-3): a
+// throwaway `Iso8601Date` is built from `value`, the computation runs there,
+// and the resulting string is stored back. A later phase may still choose to
+// embed `Iso8601Date` directly once the serde-flatten shape is settled.
 
 /// `DV_DATE`.
 ///
@@ -92,7 +95,9 @@ impl DvDate {
     /// the foundation `Iso8601_date` partial accessors.
     pub fn magnitude(&self) -> i32 {
         parse_date(&self.value)
-            .and_then(|parsed| parsed.as_complete_jiff_date())
+            .and_then(
+                openehr_foundation::time::iso8601_parser::ParsedIso8601Date::as_complete_jiff_date,
+            )
             .map_or(0, days_since_origin)
     }
 
@@ -110,8 +115,12 @@ impl DvDate {
     ///
     pub fn is_equal(&self, other: &Self) -> bool {
         match (
-            parse_date(&self.value).and_then(|parsed| parsed.as_complete_jiff_date()),
-            parse_date(&other.value).and_then(|parsed| parsed.as_complete_jiff_date()),
+            parse_date(&self.value).and_then(
+                openehr_foundation::time::iso8601_parser::ParsedIso8601Date::as_complete_jiff_date,
+            ),
+            parse_date(&other.value).and_then(
+                openehr_foundation::time::iso8601_parser::ParsedIso8601Date::as_complete_jiff_date,
+            ),
         ) {
             (Some(left), Some(right)) => days_since_origin(left) == days_since_origin(right),
             _ => self.value == other.value,
@@ -153,6 +162,26 @@ impl DvDate {
     ///
     pub fn invariant_value_valid(&self) -> bool {
         TimeDefinitions::valid_iso8601_date(&self.value)
+    }
+
+    /// The foundation `Iso8601_date` mirror of this value, used transiently
+    /// to delegate `DV_TEMPORAL` arithmetic (ADR-003 policies 1-3).
+    fn as_iso8601_date(&self) -> Iso8601Date {
+        Iso8601Date {
+            core: Iso8601TypeCore {
+                value: self.value.clone(),
+            },
+        }
+    }
+
+    /// Rebuild this `DV_DATE` with a new ISO 8601 `value`, preserving the
+    /// embedded `DV_TEMPORAL` state and the type tag.
+    fn with_value(&self, value: String) -> Self {
+        Self {
+            type_tag: self.type_tag,
+            temporal: self.temporal.clone(),
+            value,
+        }
     }
 }
 
@@ -210,40 +239,30 @@ impl DvTemporal for DvDate {
     /// This is the covariant redefinition named by the class table's
     /// `(redefined)` marker: the parent `DvTemporal::add` returns `Self`
     /// already (a generic trait-method shape), so this override just
-    /// supplies the concrete `DvDate`-specific arithmetic body rather than
-    /// needing a distinct signature — encoded per ADR-001 §6.
-    ///
-    /// TODO(port): ISO 8601 calendar arithmetic (`0001-01-01`-origin day
-    /// count plus/minus a duration), deferred to the jiff-backed engine at
-    /// P17.
+    /// supplies the concrete `DvDate`-specific arithmetic body — encoded per
+    /// ADR-001 §6. Delegates to `Iso8601_date::add` (definite arithmetic,
+    /// ADR-003 policy 1: an exact day/second shift with partial-precision
+    /// anchoring and truncation), preserving this `DV_DATE`'s temporal state.
     fn add(&self, a_diff: &DvDuration) -> Self {
-        let _ = a_diff;
-        todo!("DV_DATE.add: ISO 8601 calendar arithmetic deferred to the jiff-backed engine at P17")
+        self.with_value(self.as_iso8601_date().add(&a_diff.iso8601).core.value)
     }
 
     /// `subtract` __alias__ `"-"` `(a_diff: DV_DURATION[1]): DV_DATE`
     /// (redefined).
     ///
-    /// Subtract a Duration from this Date.
-    ///
-    /// TODO(port): see `add` above.
+    /// Subtract a Duration from this Date. Delegates to
+    /// `Iso8601_date::subtract`; see `add` above.
     fn subtract(&self, a_diff: &DvDuration) -> Self {
-        let _ = a_diff;
-        todo!(
-            "DV_DATE.subtract: ISO 8601 calendar arithmetic deferred to the jiff-backed engine at P17"
-        )
+        self.with_value(self.as_iso8601_date().subtract(&a_diff.iso8601).core.value)
     }
 
     /// `diff` __alias__ `"-"` `(other: DV_DATE[1]): DV_DURATION` (redefined).
     ///
-    /// Difference between this Date and `other`.
-    ///
-    /// TODO(port): see `add` above.
+    /// Difference between this Date and `other`, as a `DV_DURATION` in
+    /// definite units. Delegates to `Iso8601_date::diff` (receiver minus
+    /// argument, ADR-003 policy 1).
     fn diff(&self, other: &Self) -> DvDuration {
-        let _ = other;
-        todo!(
-            "DV_DATE.diff: ISO 8601 calendar arithmetic deferred to the jiff-backed engine at P17"
-        )
+        DvDuration::from_iso8601(self.as_iso8601_date().diff(&other.as_iso8601_date()))
     }
 }
 
@@ -268,13 +287,44 @@ mod tests {
         assert!(date.invariant_value_valid());
         assert_eq!(date.magnitude(), 0);
     }
+
+    fn date(value: &str) -> DvDate {
+        serde_json::from_str(&format!(r#"{{"_type":"DV_DATE","value":"{value}"}}"#)).unwrap()
+    }
+
+    fn duration(value: &str) -> DvDuration {
+        serde_json::from_str(&format!(r#"{{"_type":"DV_DURATION","value":"{value}"}}"#)).unwrap()
+    }
+
+    /// `add`/`subtract`/`diff` delegate to the foundation `Iso8601_date`
+    /// engine: exact day arithmetic across a leap-year boundary, and `diff`
+    /// yielding a definite-unit `DV_DURATION`.
+    #[test]
+    fn add_subtract_diff_delegate_to_iso8601_date() {
+        assert_eq!(date("2004-02-28").add(&duration("P1D")).value, "2004-02-29");
+        assert_eq!(
+            date("2004-03-01").subtract(&duration("P1D")).value,
+            "2004-02-29"
+        );
+        // diff returns a DV_DURATION in definite units (receiver - argument).
+        let d = date("2004-03-16").diff(&date("2004-02-15"));
+        assert_eq!(d.iso8601.core.value, "P30D");
+        assert_eq!(
+            date("2004-02-15")
+                .diff(&date("2004-03-16"))
+                .iso8601
+                .core
+                .value,
+            "-P30D"
+        );
+    }
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_date.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_date.adoc §DV_DATE Class
-//   confidence: medium
-//   todos: 3
-//   note: dual inheritance (DV_TEMPORAL RM ancestor + Iso8601_date foundation mixin) composed as field+trait; magnitude/is_equal/invariant_value_valid now delegate to the foundation BASE ISO 8601 parser. add/subtract/diff remain TODO(port) pending an explicit partial-date calendar arithmetic policy. less_than transcribed with name-implied semantics against a likely copy-paste defect in the published Post_result postcondition (flagged, matches DV_DURATION's internally-consistent wording, not DV_TIME/DV_DATE_TIME's inverted one); Any/Ordered/DvOrderedApi impls delegate to the inherent effected functions so DvDate satisfies the DvOrdered enum's trait chain. P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvDate>) flattened, schema-verified (normal_status/normal_range/other_reference_ranges/magnitude_status/accuracy all sit flat alongside DV_DATE's own `value`); ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_TIME/DV_DATE_TIME.
+//   confidence: high
+//   todos: 0
+//   note: dual inheritance (DV_TEMPORAL RM ancestor + Iso8601_date foundation mixin) composed as field+trait; magnitude/is_equal/invariant_value_valid delegate to the foundation BASE ISO 8601 parser. add/subtract/diff now implemented by delegating to Iso8601_date::add/subtract/diff (definite arithmetic, ADR-003 policy 1) via a throwaway Iso8601Date mirror, preserving the DV_TEMPORAL state; in-file test pins leap-boundary day arithmetic and antisymmetric diff. less_than transcribed with name-implied semantics against a likely copy-paste defect in the published Post_result postcondition (flagged, matches DV_DURATION's internally-consistent wording, not DV_TIME/DV_DATE_TIME's inverted one); Any/Ordered/DvOrderedApi impls delegate to the inherent effected functions so DvDate satisfies the DvOrdered enum's trait chain. P4: Serialize/Deserialize added; `temporal` (DvTemporalData<DvDate>) flattened, schema-verified; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME) — the tag is the sole wire-level discriminator vs the structure-identical DV_TIME/DV_DATE_TIME.
 // ─────────────────────────────────────────────

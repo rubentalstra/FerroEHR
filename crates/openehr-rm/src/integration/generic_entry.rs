@@ -18,8 +18,8 @@
 //! (`SECTION`, `ENTRY`-and-descendants, `GENERIC_ENTRY`) — that enum is not
 //! defined in this file; this file only supplies the `GenericEntry` struct
 //! the `ehr` package's `ContentItem` enum is expected to wrap in a variant.
-use crate::common::archetyped::locatable::LocatableData;
 use crate::data_structures::item_structure::item_tree::ItemTree;
+use crate::ehr::content_item::{ContentItemApi, ContentItemData};
 use openehr_foundation::serde_support::{TypeName, TypeTag};
 use serde::{Deserialize, Serialize};
 
@@ -31,26 +31,17 @@ use serde::{Deserialize, Serialize};
 /// payload's own tag.
 pub const TYPE_NAME: &str = "GENERIC_ENTRY";
 
-/// Shared attribute state of `CONTENT_ITEM` — an abstract class with no
-/// attributes of its own beyond `LOCATABLE`'s (see
-/// `content_item.adoc`: `Inherit: LOCATABLE`, no `Attributes` section).
+/// `GENERIC_ENTRY` inherits the attribute-less abstract `CONTENT_ITEM`
+/// (`content_item.adoc`: `Inherit: LOCATABLE`, no `Attributes` section).
 ///
-/// Per ADR-001 §3, this would ordinarily be `ContentItemData` embedding
-/// `LocatableData`, but since `CONTENT_ITEM` adds nothing over `LOCATABLE`,
-/// `GENERIC_ENTRY` embeds `LocatableData` directly rather than introducing
-/// a pass-through wrapper struct with no fields of its own. `#[serde(flatten)]`
-/// folds `LocatableData` into the enclosing `ContentItem::GenericEntry`
-/// payload's JSON object.
-///
-/// TODO(port): if a later transcription of `CONTENT_ITEM` (owned by the
-/// `ehr` package cluster) introduces a `ContentItemData`/`ContentItemApi`
-/// pair for other reasons (e.g. to give the `ContentItem` enum a uniform
-/// accessor trait matching `SECTION`/`ENTRY`), `GenericEntry` should switch
-/// to embedding that struct instead of `LocatableData` directly, to stay
-/// consistent with its siblings in the `ContentItem` enum.
-///
-/// TODO(port): P4 — the flatten below requires `LocatableData` to itself
-/// derive `Serialize`/`Deserialize` (sibling P4 wave over `common/`).
+/// Per ADR-001 §3, it embeds [`ContentItemData`] (the `ehr` package's
+/// embedded-`*Data` half of `CONTENT_ITEM`, in turn embedding
+/// `LocatableData`) so it stays consistent with its siblings in the
+/// `ContentItem` closed enum — every variant exposes the same
+/// `content_item_data()` accessor. `#[serde(flatten)]` folds it (and,
+/// transitively, `LocatableData`) into the enclosing
+/// `ContentItem::GenericEntry` payload's JSON object; the flat wire shape is
+/// unchanged from embedding `LocatableData` directly.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GenericEntry {
     /// Canonical `_type` discriminator (`"GENERIC_ENTRY"`), always
@@ -59,9 +50,9 @@ pub struct GenericEntry {
     #[serde(rename = "_type", default = "TypeTag::new")]
     pub type_tag: TypeTag<Self>,
 
-    /// Inherited `LOCATABLE` state (via the attribute-less `CONTENT_ITEM`).
+    /// Embedded `CONTENT_ITEM` (in turn `LOCATABLE`) state.
     #[serde(flatten)]
-    pub locatable: LocatableData,
+    pub content_item: ContentItemData,
 
     /// `data`: `ITEM_TREE` `[1..1]` — the data from the source message or
     /// record.
@@ -72,6 +63,12 @@ impl TypeName for GenericEntry {
     const NAME: &'static str = TYPE_NAME;
 }
 
+impl ContentItemApi for GenericEntry {
+    fn content_item_data(&self) -> &ContentItemData {
+        &self.content_item
+    }
+}
+
 // No `Functions` or `Invariants` sections in this class's own spec table.
 
 // ─────────────────────────────────────────────
@@ -79,6 +76,6 @@ impl TypeName for GenericEntry {
 //   source: RM 1.1.0 integration §Class Descriptions GENERIC_ENTRY — docs/research/spec-cache/RM-1.1.0/uml_classes/generic_entry.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master02-integration_package.adoc §Class Descriptions / uml_classes/generic_entry.adoc §GENERIC_ENTRY Class
 //   confidence: medium
-//   todos: 2
+//   todos: 0
 //   note: embeds LocatableData directly since CONTENT_ITEM adds no attributes of its own; will need to switch to a ContentItemData wrapper if the ehr package introduces one for its ContentItem enum's uniform accessor trait. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl — the ContentItem enum is now untagged and dispatches on this payload's own _type; ItemTree needs its own serde support (data_structures, sibling wave).
 // ─────────────────────────────────────────────

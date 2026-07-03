@@ -100,18 +100,22 @@ pub trait ContentItemApi {
 impl ContentItem {
     /// Access to the embedded [`ContentItemData`] shared by every variant.
     ///
-    /// TODO(port): each concrete variant's own `ContentItemApi` impl (via
-    /// its `LocatableData`-embedding chain) is not yet wired, since several
-    /// variants (`Observation`, `Evaluation`, `Instruction`, `Action`) only
-    /// carry `LOCATABLE` state indirectly through `CARE_ENTRY`/`ENTRY`,
-    /// whose `EntryData`/`CareEntryData` structs do not yet expose a
-    /// direct `&ContentItemData` accessor. Left as `todo!()` rather than
-    /// guessing the accessor chain ahead of `common::archetyped::locatable`
-    /// landing.
+    /// Dispatches over the closed enum, reaching each concrete variant's
+    /// embedded `CONTENT_ITEM` state through its inheritance chain:
+    /// `SECTION`/`GENERIC_ENTRY` embed it directly, `ADMIN_ENTRY` via
+    /// `ENTRY`, and the four `CARE_ENTRY` leaves via
+    /// `CARE_ENTRY`→`ENTRY`→`CONTENT_ITEM`.
+    #[must_use]
     pub fn content_item_data(&self) -> &ContentItemData {
-        todo!(
-            "port: ContentItem::content_item_data needs the LocatableData accessor chain through EntryData/CareEntryData, pending common::archetyped::locatable"
-        )
+        match self {
+            ContentItem::Section(s) => &s.content_item,
+            ContentItem::AdminEntry(a) => &a.entry.content_item,
+            ContentItem::Observation(o) => &o.care_entry.entry.content_item,
+            ContentItem::Evaluation(e) => &e.care_entry.entry.content_item,
+            ContentItem::Instruction(i) => &i.care_entry.entry.content_item,
+            ContentItem::Action(a) => &a.care_entry.entry.content_item,
+            ContentItem::GenericEntry(g) => &g.content_item,
+        }
     }
 }
 
@@ -120,6 +124,6 @@ impl ContentItem {
 //   source: RM 1.1.0 ehr.composition — docs/research/spec-cache/RM-1.1.0/uml_classes/content_item.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-content_package.adoc §Class Descriptions / content_item.adoc §CONTENT_ITEM Class
 //   confidence: medium
-//   todos: 4
-//   note: closed enum per ADR-001 §4 covering Section + the four concrete CARE_ENTRY leaves + AdminEntry + the forward-referenced GenericEntry (rm.integration sibling cluster, not yet on disk); ENTRY/CARE_ENTRY deliberately excluded as variants since both are abstract; content_item_data() accessor chain stubbed pending LOCATABLE. P4/ADR-002: enum is #[serde(untagged)] (dispatch via each payload's own TypeTag; former tag = "_type" + per-variant renames removed); ContentItemData stays untagged (abstract layer); every concrete variant struct self-tags in its own file (this same batch).
+//   todos: 3
+//   note: closed enum per ADR-001 §4 covering Section + the four concrete CARE_ENTRY leaves + AdminEntry + GenericEntry (rm.integration); ENTRY/CARE_ENTRY deliberately excluded as variants since both are abstract. P5/ADR-003 §8: content_item_data() implemented as a match dispatch reaching each variant's embedded CONTENT_ITEM state through its inheritance chain (GenericEntry switched to embed ContentItemData for uniformity). Remaining 3 TODO(port) are forward-ref import/flatten scaffolding comments. P4/ADR-002: enum is #[serde(untagged)] (dispatch via each payload's own TypeTag); ContentItemData stays untagged (abstract layer).
 // ─────────────────────────────────────────────

@@ -14,7 +14,9 @@ openehr-base = { path = "../openehr-base" }
 openehr-foundation = { path = "../openehr-foundation" }
 openehr-terminology = { path = "../openehr-terminology" }
 base64.workspace = true
+regex.workspace = true
 serde.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

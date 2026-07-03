@@ -79,6 +79,28 @@ pub struct DvQuantifiedData<T: DvOrderedApi> {
     pub accuracy: Option<String>,
 }
 
+impl<T: DvOrderedApi> DvQuantifiedData<T> {
+    /// `Magnitude_status_valid` class invariant, as a working method per
+    /// ADR-003 decision 8 (invariants become `is_valid()`-family methods):
+    ///
+    /// `magnitude_status /= Void implies valid_magnitude_status
+    /// (magnitude_status)`.
+    pub fn invariant_magnitude_status_valid(&self) -> bool {
+        self.magnitude_status
+            .as_deref()
+            .is_none_or(valid_magnitude_status)
+    }
+}
+
+/// `valid_magnitude_status(): Boolean` — module-level body shared by the
+/// [`DvQuantifiedApi::valid_magnitude_status`] trait default and the
+/// [`DvQuantifiedData::invariant_magnitude_status_valid`] invariant method.
+///
+/// Spec `Post`: `Result = s in {"=", "<", ">", "<=", ">=", "~"}`.
+pub fn valid_magnitude_status(s: &str) -> bool {
+    matches!(s, "=" | "<" | ">" | "<=" | ">=" | "~")
+}
+
 /// Behaviour trait shared by every `DV_QUANTIFIED` descendant.
 ///
 /// Extends [`DvOrderedApi`] (`DV_QUANTIFIED` inherits `DV_ORDERED`) with the
@@ -103,12 +125,15 @@ pub trait DvQuantifiedApi<T: OrderedNumeric>: DvOrderedApi {
     /// the row. Transcribed here as a free function taking an explicit
     /// `&str` parameter (matching the postcondition's `s`), which also
     /// matches how `Magnitude_status_valid`'s own invariant calls it:
-    /// `valid_magnitude_status (magnitude_status)`.
+    /// `valid_magnitude_status (magnitude_status)`. Delegates to the
+    /// module-level [`valid_magnitude_status`] so the
+    /// `Magnitude_status_valid` invariant on [`DvQuantifiedData`] (which is
+    /// not itself a `DvQuantifiedApi` implementor) shares the same body.
     fn valid_magnitude_status(s: &str) -> bool
     where
         Self: Sized,
     {
-        matches!(s, "=" | "<" | ">" | "<=" | ">=" | "~")
+        valid_magnitude_status(s)
     }
 
     /// `magnitude(): Ordered_Numeric` (abstract).
@@ -163,17 +188,53 @@ pub trait DvQuantifiedApi<T: OrderedNumeric>: DvOrderedApi {
     }
 }
 
-// TODO(port): `Magnitude_status_valid` class invariant is not yet encoded
-// as a `Validate` impl:
-//
-// `Magnitude_status_valid`: `magnitude_status /= Void implies
-// valid_magnitude_status (magnitude_status)`
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::quantity::dv_count::DvCount;
+    use crate::data_types::quantity::dv_ordered::DvOrderedData;
+
+    fn quantified_data(magnitude_status: Option<&str>) -> DvQuantifiedData<DvCount> {
+        DvQuantifiedData {
+            ordered: DvOrderedData {
+                normal_status: None,
+                normal_range: None,
+                other_reference_ranges: None,
+            },
+            magnitude_status: magnitude_status.map(str::to_string),
+            accuracy: None,
+        }
+    }
+
+    /// Spec `Post`: `Result = s in {"=", "<", ">", "<=", ">=", "~"}`.
+    #[test]
+    fn valid_magnitude_status_accepts_exactly_the_six_spec_values() {
+        for status in ["=", "<", ">", "<=", ">=", "~"] {
+            assert!(valid_magnitude_status(status), "{status:?} must be valid");
+        }
+        for status in ["", "==", "=<", "≈", "approx", " ~"] {
+            assert!(
+                !valid_magnitude_status(status),
+                "{status:?} must be invalid"
+            );
+        }
+    }
+
+    /// `Magnitude_status_valid`: `magnitude_status /= Void implies
+    /// valid_magnitude_status (magnitude_status)`.
+    #[test]
+    fn magnitude_status_invariant_holds_for_absent_and_valid_values() {
+        assert!(quantified_data(None).invariant_magnitude_status_valid());
+        assert!(quantified_data(Some("~")).invariant_magnitude_status_valid());
+        assert!(!quantified_data(Some("about")).invariant_magnitude_status_valid());
+    }
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_quantified.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_quantified.adoc §DV_QUANTIFIED Class
-//   confidence: low
-//   todos: 2
-//   note: accuracy: Any is a genuinely open abstract field the spec itself says is "only included in the subtypes" — represented as an inert Option<String> stand-in expected to stay unused (flagged); valid_magnitude_status's signature/postcondition mismatch (empty parens vs a free variable s) resolved by reading it as a parameterized query; Magnitude_status_valid invariant recorded but not enforced. P4: DvQuantifiedData<T> derives Serialize/Deserialize; `ordered` carries #[serde(flatten)] (confirmed against DV_QUANTITY's own flat schema shape); both Option fields skip when None.
+//   confidence: medium
+//   todos: 1
+//   note: accuracy: Any is a genuinely open abstract field the spec itself says is "only included in the subtypes" — represented as an inert Option<String> stand-in expected to stay unused (flagged, the one remaining TODO); valid_magnitude_status's signature/postcondition mismatch (empty parens vs a free variable s) resolved by reading it as a parameterized query, now shared as a module-level fn; Magnitude_status_valid invariant implemented as invariant_magnitude_status_valid() per ADR-003 §8, unit-tested. P4: DvQuantifiedData<T> derives Serialize/Deserialize; `ordered` carries #[serde(flatten)] (confirmed against DV_QUANTITY's own flat schema shape); both Option fields skip when None.
 // ─────────────────────────────────────────────

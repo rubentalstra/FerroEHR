@@ -427,7 +427,10 @@ pub fn path_of_descendant(root: &dyn PathableApi, target: &dyn PathableApi) -> O
 
 /// Address-identity over trait objects, ignoring vtable metadata.
 fn node_addr_eq(a: &dyn PathableApi, b: &dyn PathableApi) -> bool {
-    std::ptr::addr_eq(a as *const dyn PathableApi, b as *const dyn PathableApi)
+    std::ptr::addr_eq(
+        std::ptr::from_ref::<dyn PathableApi>(a),
+        std::ptr::from_ref::<dyn PathableApi>(b),
+    )
 }
 
 /// Depth-first search for `target` below `node`, accumulating rendered

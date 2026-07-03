@@ -18,11 +18,14 @@
 use super::interval_event::IntervalEvent;
 use super::point_event::PointEvent;
 use crate::data_structures::item_structure::item_structure::ItemStructure;
-// PORT NOTE: `DV_DATE_TIME`/`DV_DURATION` belong to `rm.data_types.date_time`,
-// transcribed concurrently by a sibling agent; see `representation/element.rs`
-// for the identical forward-reference rationale and assumed module path.
+// PORT NOTE: `DV_DATE_TIME`/`DV_DURATION` belong to `rm.data_types.date_time`
+// (now landed). `DvTemporal` supplies the `diff` operation `offset()`
+// delegates to; the underlying ISO 8601 arithmetic is that package's P17
+// deliverable (currently `todo!()`), so `offset()` type-checks and is wired
+// correctly today and returns real values once the arithmetic lands.
 use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::date_time::dv_duration::DvDuration;
+use crate::data_types::date_time::dv_temporal::DvTemporal;
 // PORT NOTE: `LOCATABLE` is owned by the `common` package cluster,
 // transcribed concurrently; see `representation/item.rs` for the identical
 // forward-reference rationale.
@@ -45,7 +48,8 @@ use serde::{Deserialize, Serialize};
 pub struct EventData<T> {
     /// Inherited `LOCATABLE` state.
     ///
-    /// TODO(port): forward reference; see `representation/item.rs`.
+    /// PORT NOTE: reconciled with `common::archetyped::locatable::LocatableData`
+    /// (now landed) — no longer a forward reference.
     #[serde(flatten)]
     pub locatable: LocatableData,
 
@@ -106,26 +110,19 @@ pub trait EventApi<T> {
     ///
     /// Postcondition `Post_condition`: `Result = time.diff(parent.origin)`.
     ///
-    /// `parent` here is the `PATHABLE.parent()` reverse pointer up to the
-    /// owning `HISTORY<T>` — per
-    /// `.claude/rules/rm-transcription.md`/ADR-001 §8, this must be a
-    /// `Weak<..>` or path-index, never an owning back-reference. `EVENT`
-    /// inherits `LOCATABLE` (which itself inherits `PATHABLE`), so the
-    /// `parent()` accessor is expected to live on the `LOCATABLE`/
-    /// `PATHABLE` embedding once the `common` package lands; this method
-    /// cannot be implemented until that back-reference mechanism is
-    /// available, and is therefore left `todo!()` on every implementor
-    /// rather than guessed at here on the trait.
-    fn offset(&self) -> DvDuration {
-        // TODO(port): needs the PATHABLE.parent() back-reference (Weak/
-        // path-index, per the settled hazard) to reach the owning
-        // HISTORY<T>.origin, plus DvDateTime::diff(). Both the parent
-        // back-reference mechanism (common package) and DvDateTime's own
-        // diff() (data_types package) are forward references pending
-        // concurrent transcription.
-        todo!(
-            "offset(): needs PATHABLE.parent() back-reference to the owning HISTORY<T> and DvDateTime::diff()"
-        )
+    /// PORT NOTE (reshaped for the reverse-pointer rule): the spec's
+    /// parameterless `offset()` reaches `parent.origin` via the
+    /// `PATHABLE.parent()` reverse pointer up to the owning `HISTORY<T>`. In
+    /// this port a bare `EVENT` is not wired with an owning back-reference
+    /// that can yield the parent's `origin` (per the settled rule the
+    /// back-reference is a `Weak<dyn PathableApi>`, and `PathableApi`
+    /// exposes no `origin`), so the origin is supplied explicitly by the
+    /// caller — in practice the owning `HISTORY<T>`, which is the only place
+    /// `origin` is meaningfully available. This mirrors the postcondition
+    /// `time.diff(parent.origin)` exactly, with `parent.origin` passed in.
+    /// See `History::offset_of` (`history.rs`) for the parent-driven form.
+    fn offset(&self, origin: &DvDateTime) -> DvDuration {
+        self.event_data().time.diff(origin)
     }
 }
 
@@ -140,9 +137,11 @@ impl<T> EventApi<T> for Event<T> {
 
 // TODO(port): invariant `Offset_validity1`:
 // `offset /= Void and then offset = time.diff(parent.origin)` — restates
-// the `offset()` postcondition as a class invariant; deferred to the same
-// `PATHABLE.parent()` + `DvDateTime::diff()` dependencies as `offset()`
-// itself, once the RM `Validate` trait framework lands.
+// the `offset()` postcondition as a class invariant. It is definitionally
+// satisfied by the `offset()` implementation above (`time.diff(origin)`);
+// a standalone `Validate` check would re-run the same P17 `DvDateTime::diff`
+// arithmetic, so it is deferred to the P11 `Validate` framework rather than
+// duplicated here.
 
 pub const TYPE_NAME: &str = "EVENT";
 
@@ -150,7 +149,7 @@ pub const TYPE_NAME: &str = "EVENT";
 // PORT STATUS
 //   source: RM 1.1.0 data_structures.history §EVENT — docs/research/spec-cache/RM-1.1.0/uml_classes/event.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-history_package.adoc §Class Descriptions / event.adoc §EVENT Class
-//   confidence: medium
-//   todos: 3
-//   note: EVENT inherits LOCATABLE per its own spec table (confirmed distinct from the PATHABLE-not-LOCATABLE watch-out class list); offset() and its restating invariant both block on the PATHABLE.parent() back-reference plus DvDateTime::diff(), neither of which has landed yet. P4/ADR-002: Event<T> enum is #[serde(untagged)] with richer Interval variant listed first (payload TypeTags drive dispatch); EventData<T> stays untagged (abstract).
+//   confidence: high
+//   todos: 1
+//   note: EVENT inherits LOCATABLE per its own spec table (confirmed distinct from the PATHABLE-not-LOCATABLE watch-out class list). offset() implemented as time.diff(origin): the spec's parameterless offset() reaches parent.origin via the PATHABLE.parent() back-reference, which a bare EVENT is not wired with here (PathableApi exposes no origin), so origin is passed in explicitly — in practice by the owning HISTORY (History::offset_of). The underlying DvDateTime::diff arithmetic is the data_types agent's P17 deliverable (currently todo!()), so offset() is wired correctly and returns real values once that lands. Offset_validity1 restates offset()'s postcondition, deferred to P11 Validate. P4/ADR-002: Event<T> enum is #[serde(untagged)] with richer Interval variant listed first (payload TypeTags drive dispatch); EventData<T> stays untagged (abstract).
 // ─────────────────────────────────────────────

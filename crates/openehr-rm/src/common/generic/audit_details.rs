@@ -35,6 +35,9 @@ use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_terminology::{
+    OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
+};
 use serde::{Deserialize, Serialize};
 
 use super::party_proxy::PartyProxy;
@@ -87,8 +90,8 @@ pub struct AuditDetailsData {
     /// `terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_audit_change_type, change_type.defining_code)`.
     ///
-    /// TODO(port): invariant requires a live `TerminologyService`; not yet
-    /// enforced. See [`AuditDetails::is_change_type_valid`].
+    /// Checked by [`AuditDetailsData::is_change_type_valid`] (ADR-003 d.8);
+    /// wiring into the P11 walker/accumulator Validate framework is pending.
     pub change_type: DvCodedText,
 
     /// `description`: `DV_TEXT`, cardinality `0..1`.
@@ -147,18 +150,25 @@ impl AuditDetailsData {
     /// `terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_audit_change_type, change_type.defining_code)`.
     ///
-    /// TODO(port): requires a live `TerminologyService` to check
-    /// `change_type.defining_code` against the "audit change type"
-    /// openEHR Terminology group; left as `todo!()` rather than a bare
-    /// boolean stub, since this invariant cannot be evaluated without
-    /// external service state.
-    pub fn is_change_type_valid(
-        &self,
-        _terminology: &openehr_terminology::TerminologyService,
-    ) -> bool {
-        todo!(
-            "AuditDetails::is_change_type_valid: needs TerminologyService.has_code_for_group_id against Group_id_audit_change_type"
-        )
+    /// Working method per ADR-003 decision 8 (terminology-bound invariants
+    /// take `&TerminologyService`). Checks `change_type.defining_code`
+    /// against the openEHR "audit change type" group. `change_type` is a
+    /// mandatory `DV_CODED_TEXT`, so — unlike the conditional invariants on
+    /// `ATTESTATION`/`PARTICIPATION` — there is no `DV_CODED_TEXT` runtime
+    /// discrimination to do first.
+    pub fn is_change_type_valid(&self, terminology: &TerminologyService) -> bool {
+        let defining_code = &self.change_type.defining_code;
+        terminology
+            .terminology(OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR)
+            .is_some_and(|access| {
+                access.has_code_for_group_id(
+                    OpenehrTerminologyGroupIdentifiers::GROUP_ID_AUDIT_CHANGE_TYPE,
+                    &TerminologyCode::new(
+                        defining_code.terminology_id.value(),
+                        defining_code.code_string.clone(),
+                    ),
+                )
+            })
     }
 }
 
@@ -171,11 +181,38 @@ impl AuditDetails {
 
     /// Invariant `Change_type_valid` — delegates to
     /// [`AuditDetailsData::is_change_type_valid`].
-    pub fn is_change_type_valid(
-        &self,
-        terminology: &openehr_terminology::TerminologyService,
-    ) -> bool {
+    pub fn is_change_type_valid(&self, terminology: &TerminologyService) -> bool {
         self.data.is_change_type_valid(terminology)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::change_control::versioned_object::test_support::audit;
+
+    #[test]
+    fn change_type_valid_checks_the_audit_change_type_group() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+
+        // 249 = "creation" in the openEHR "audit change type" group; the
+        // shared `audit()` fixture builds change_type = coded("249", ...).
+        let valid = audit("2020-01-01T00:00:00");
+        assert!(valid.is_change_type_valid(service));
+        assert!(valid.data.is_change_type_valid(service));
+
+        // A bogus code is not in the group.
+        let mut invalid = audit("2020-01-01T00:00:00");
+        invalid.data.change_type.defining_code.code_string = "999999".to_string();
+        assert!(!invalid.is_change_type_valid(service));
+    }
+
+    #[test]
+    fn system_id_valid_rejects_empty() {
+        let mut a = audit("2020-01-01T00:00:00");
+        assert!(a.is_system_id_valid());
+        a.data.system_id = String::new();
+        assert!(!a.is_system_id_valid());
     }
 }
 
@@ -184,6 +221,6 @@ impl AuditDetails {
 //   source: RM 1.1.0 common.generic — docs/research/spec-cache/RM-1.1.0/uml_classes/audit_details.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: common/master04-generic_package.adoc §Audit Information / uml_classes/audit_details.adoc §AUDIT_DETAILS Class
 //   confidence: high
-//   todos: 2
-//   note: System_id_valid recorded as a self-contained boolean check; Change_type_valid left todo!()-bodied (needs live TerminologyService). Forward-refs DvDateTime, DvCodedText, DvText (data_types, sibling-agent territory, not yet landed). P4/ADR-002: split into untagged AuditDetailsData (the embedded parent state Attestation flattens) + self-tagged AuditDetails wrapper (TypeName + first-field TypeTag<Self>) so the parent's _type never leaks into ATTESTATION output.
+//   todos: 0
+//   note: Both invariants now working methods (ADR-003 d.8) with spec-derived tests: System_id_valid a self-contained boolean; Change_type_valid checks change_type.defining_code against the openEHR "audit change type" group via &TerminologyService (mandatory DV_CODED_TEXT, no runtime discrimination needed). Only remaining deferral is P11 Validate-framework wiring (shared crate-wide). P4/ADR-002: split into untagged AuditDetailsData (the embedded parent state Attestation flattens) + self-tagged AuditDetails wrapper so the parent's _type never leaks into ATTESTATION output.
 // ─────────────────────────────────────────────

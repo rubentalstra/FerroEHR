@@ -27,12 +27,15 @@
 //! `LocatableData` embed and **no** `uid`/`name`/`archetype_node_id`
 //! fields — do not add them; `.claude/rules/rm-transcription.md` names
 //! this exact mistake as a settled hazard not to relitigate.
-use crate::common::generic::participation::Participation; // TODO(port): forward-reference; not yet transcribed.
-use crate::common::generic::party_identified::PartyIdentified; // TODO(port): forward-reference; not yet transcribed.
-use crate::data_structures::item_structure::ItemStructure; // TODO(port): forward-reference; not yet transcribed. Path matches the sibling ehr_status.rs/ehr_access.rs convention (data_structures has no UML subpackage grouping, unlike data_types).
-use crate::data_types::date_time::dv_date_time::DvDateTime; // TODO(port): forward-reference; not yet transcribed.
-use crate::data_types::text::dv_coded_text::DvCodedText; // TODO(port): forward-reference; not yet transcribed.
+use crate::common::generic::participation::Participation;
+use crate::common::generic::party_identified::PartyIdentified;
+use crate::data_structures::item_structure::ItemStructure;
+use crate::data_types::date_time::dv_date_time::DvDateTime;
+use crate::data_types::text::dv_coded_text::DvCodedText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_terminology::{
+    OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
+};
 use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class in serialized
@@ -72,10 +75,7 @@ pub struct EventContext {
     /// "microbiology lab 2", "home", "ward A3" and so on.
     ///
     /// Invariant `location_valid`: `location /= Void implies not
-    /// location.is_empty`.
-    ///
-    /// TODO(port): invariant not yet enforced by a constructor/`Validate`
-    /// impl.
+    /// location.is_empty` — see [`EventContext::invariant_location_valid`].
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub location: Option<String>,
 
@@ -83,9 +83,8 @@ pub struct EventContext {
     /// Coded using the openEHR Terminology `setting` group.
     ///
     /// Invariant `Setting_valid`: `Terminology (Terminology_id_openehr)
-    /// .has_code_for_group_id (Group_id_setting, setting.defining_code)`.
-    ///
-    /// TODO(port): invariant not yet enforced.
+    /// .has_code_for_group_id (Group_id_setting, setting.defining_code)` —
+    /// see [`EventContext::invariant_setting_valid`].
     pub setting: DvCodedText,
 
     /// `other_context`: other optional context which will be archetyped.
@@ -106,9 +105,8 @@ pub struct EventContext {
     /// example).
     ///
     /// Invariant `Participations_validity`: `participations /= Void
-    /// implies not participations.is_empty`.
-    ///
-    /// TODO(port): invariant not yet enforced.
+    /// implies not participations.is_empty` — see
+    /// [`EventContext::invariant_participations_validity`].
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub participations: Option<Vec<Participation>>,
 }
@@ -118,6 +116,40 @@ impl TypeName for EventContext {
 }
 
 impl EventContext {
+    /// Invariant `Setting_valid`: `Terminology (Terminology_id_openehr)
+    /// .has_code_for_group_id (Group_id_setting, setting.defining_code)`.
+    ///
+    /// Terminology-bound invariant (ADR-003 §8): checks `setting.defining_code`
+    /// against the openEHR `setting` group.
+    #[must_use]
+    pub fn invariant_setting_valid(&self, terminology: &TerminologyService) -> bool {
+        terminology
+            .terminology(OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR)
+            .is_some_and(|access| {
+                access.has_code_for_group_id(
+                    OpenehrTerminologyGroupIdentifiers::GROUP_ID_SETTING,
+                    &TerminologyCode::new(
+                        self.setting.defining_code.terminology_id.value(),
+                        self.setting.defining_code.code_string.clone(),
+                    ),
+                )
+            })
+    }
+
+    /// Invariant `Participations_validity`: `participations /= Void implies
+    /// not participations.is_empty`.
+    #[must_use]
+    pub fn invariant_participations_validity(&self) -> bool {
+        self.participations.as_ref().is_none_or(|p| !p.is_empty())
+    }
+
+    /// Invariant `location_valid`: `location /= Void implies not
+    /// location.is_empty`.
+    #[must_use]
+    pub fn invariant_location_valid(&self) -> bool {
+        self.location.as_ref().is_none_or(|l| !l.is_empty())
+    }
+
     // TODO(port): `PATHABLE` functions (`parent()`, `item_at_path()`,
     // `items_at_path()`, `path_exists()`, `path_unique()`,
     // `path_of_item()`) are inherited via the not-yet-transcribed
@@ -128,11 +160,86 @@ impl EventContext {
     // `.claude/rules/rm-transcription.md`.
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::text::code_phrase::CodePhrase;
+    use crate::data_types::text::dv_text::DvTextData;
+    use openehr_base::identification::object_id::ObjectIdData;
+    use openehr_base::identification::terminology_id::TerminologyId;
+
+    fn date_time(value: &str) -> DvDateTime {
+        serde_json::from_value(serde_json::json!({ "value": value }))
+            .expect("test DV_DATE_TIME literal deserializes")
+    }
+
+    fn setting(code: &str) -> DvCodedText {
+        DvCodedText {
+            type_tag: TypeTag::new(),
+            text: DvTextData {
+                value: "setting".to_string(),
+                hyperlink: None,
+                formatting: None,
+                mappings: None,
+                language: None,
+                encoding: None,
+            },
+            defining_code: CodePhrase {
+                type_tag: TypeTag::new(),
+                terminology_id: TerminologyId {
+                    type_tag: TypeTag::new(),
+                    object_id: ObjectIdData {
+                        value: "openehr".to_string(),
+                    },
+                },
+                code_string: code.to_string(),
+                preferred_term: None,
+            },
+        }
+    }
+
+    fn event_context(setting_code: &str) -> EventContext {
+        EventContext {
+            type_tag: TypeTag::new(),
+            start_time: date_time("2020-01-01T09:00:00"),
+            end_time: None,
+            location: None,
+            setting: setting(setting_code),
+            other_context: None,
+            health_care_facility: None,
+            participations: None,
+        }
+    }
+
+    #[test]
+    fn setting_valid_checks_the_setting_group() {
+        let terminology = TerminologyService::bundled().expect("bundled terminology parses");
+        // 225 = "home" in the openEHR "setting" group.
+        assert!(event_context("225").invariant_setting_valid(terminology));
+        assert!(!event_context("999999").invariant_setting_valid(terminology));
+    }
+
+    #[test]
+    fn location_and_participations_invariants() {
+        let mut ctx = event_context("225");
+        assert!(ctx.invariant_location_valid()); // None: valid
+        assert!(ctx.invariant_participations_validity()); // None: valid
+
+        ctx.location = Some(String::new()); // present-but-empty: invalid
+        assert!(!ctx.invariant_location_valid());
+        ctx.location = Some("ward A3".to_string());
+        assert!(ctx.invariant_location_valid());
+
+        ctx.participations = Some(Vec::new()); // present-but-empty: invalid
+        assert!(!ctx.invariant_participations_validity());
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 ehr.composition — docs/research/spec-cache/RM-1.1.0/uml_classes/event_context.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master05-composition_package.adoc §Class Descriptions / event_context.adoc §EVENT_CONTEXT Class
 //   confidence: high
-//   todos: 9
-//   note: PATHABLE-not-LOCATABLE settled hazard applied (no LocatableData, no uid/name); Pathable trait impl deferred until common::pathable lands; three invariants and the Pathable-function forwarding left unimplemented; most of the 9 markers are forward-reference import comments. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl (no-op struct-level rename removed) — PATHABLE-only changes fields, not _type; Option fields skip-if-none.
+//   todos: 1
+//   note: PATHABLE-not-LOCATABLE settled hazard applied (no LocatableData, no uid/name). P5/ADR-003 §8: Setting_valid (terminology-bound, &TerminologyService), Participations_validity and location_valid (structural) all implemented, pinned by unit tests. The one remaining TODO(port) is the PATHABLE `Pathable`-trait function forwarding (parent()/item_at_path/…), which awaits the common::pathable trait — a legitimate cited deferral. P4/ADR-002: self-tagging TypeTag<Self> + TypeName; Option fields skip-if-none.
 // ─────────────────────────────────────────────

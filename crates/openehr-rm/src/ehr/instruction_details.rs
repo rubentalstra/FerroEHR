@@ -55,10 +55,8 @@ pub struct InstructionDetails {
     /// `activity_id`: identifier of Activity within Instruction, in the
     /// form of its archetype path.
     ///
-    /// Invariant `Activity_path_valid`: `not activity_id.is_empty`.
-    ///
-    /// TODO(port): invariant not yet enforced by a constructor/`Validate`
-    /// impl.
+    /// Invariant `Activity_path_valid`: `not activity_id.is_empty` — see
+    /// [`InstructionDetails::invariant_activity_path_valid`].
     pub activity_id: String,
 
     /// `wf_details`: various workflow engine state details, potentially
@@ -81,6 +79,13 @@ impl TypeName for InstructionDetails {
 }
 
 impl InstructionDetails {
+    /// Invariant `Activity_path_valid`: `not activity_id.is_empty`
+    /// (ADR-003 §8).
+    #[must_use]
+    pub fn invariant_activity_path_valid(&self) -> bool {
+        !self.activity_id.is_empty()
+    }
+
     // TODO(port): `PATHABLE` functions forwarded via the not-yet-
     // transcribed `Pathable` trait (forward-referenced as
     // `crate::common::pathable::Pathable`); `impl Pathable for
@@ -88,11 +93,45 @@ impl InstructionDetails {
     // to `Weak<..>`/index, never an owning back-reference.
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use openehr_base::identification::uid_based_id::{UidBasedId, UidBasedIdData};
+
+    fn instruction_details(activity_id: &str) -> InstructionDetails {
+        InstructionDetails {
+            type_tag: TypeTag::new(),
+            instruction_id: LocatableRef {
+                type_tag: TypeTag::new(),
+                namespace: "local".to_string(),
+                r#type: "INSTRUCTION".to_string(),
+                id: UidBasedId::HierObjectId(
+                    openehr_base::identification::hier_object_id::HierObjectId {
+                        type_tag: TypeTag::new(),
+                        uid_based_id: UidBasedIdData {
+                            value: "8849182c-82ad-4088-a07f-48ead4180515::demo::1".to_string(),
+                        },
+                    },
+                ),
+                path: Some("/activities[at0001]".to_string()),
+            },
+            activity_id: activity_id.to_string(),
+            wf_details: None,
+        }
+    }
+
+    #[test]
+    fn activity_path_valid_rejects_empty_activity_id() {
+        assert!(instruction_details("/activities[at0001]").invariant_activity_path_valid());
+        assert!(!instruction_details("").invariant_activity_path_valid());
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 ehr.entry — docs/research/spec-cache/RM-1.1.0/uml_classes/instruction_details.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master08-entry_package.adoc §Class Descriptions / instruction_details.adoc §INSTRUCTION_DETAILS Class
 //   confidence: high
-//   todos: 4
-//   note: PATHABLE-not-LOCATABLE settled hazard applied; instruction_id uses the real openehr_base::identification::locatable_ref::LocatableRef (already transcribed in P1), not a forward-ref stub; markers are the ItemStructure import, the activity_id invariant, the Pathable-function forwarding, and the LocatableRef-serde TODO. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl (no-op struct-level rename removed) — PATHABLE-only changes fields, not _type; wf_details skip-if-none.
+//   todos: 3
+//   note: PATHABLE-not-LOCATABLE settled hazard applied; instruction_id uses the real openehr_base LocatableRef. P5/ADR-003 §8: Activity_path_valid invariant implemented (not is_empty), pinned by a unit test. The 3 remaining TODO(port) are the ItemStructure import comment, the P4 LocatableRef-serde note, and the PATHABLE `Pathable`-trait function forwarding (legitimate cited deferral, awaits common::pathable). P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl; wf_details skip-if-none.
 // ─────────────────────────────────────────────

@@ -76,16 +76,28 @@ pub struct Folder {
     pub details: Option<crate::data_structures::item_structure::item_structure::ItemStructure>,
 }
 
-// Invariants (spec `Invariants` table, not yet enforced by a
-// constructor/`Validate` impl — see `.claude/rules/rm-transcription.md`
-// "Invariants"):
+// Invariants (spec `Invariants` table): implemented as a working
+// `is_valid()`-family method per ADR-003 decision 8; the P11
+// walker/accumulator Validate framework will call it, it is not yet
+// constructor-enforced.
 //   Folders_valid: not folders.is_empty
 //     (encoded structurally as Option<Vec<..>> per the doc comment above;
-//     a Some(vec![]) value would violate this invariant but is not yet
-//     rejected by a constructor.)
+//     a Some(vec![]) value would violate this invariant, which
+//     are_folders_valid() detects.)
 
 impl TypeName for Folder {
     const NAME: &'static str = TYPE_NAME;
+}
+
+impl Folder {
+    /// Invariant `Folders_valid`: `not folders.is_empty`.
+    ///
+    /// Working method per ADR-003 decision 8. `folders` is modelled as
+    /// `Option<Vec<..>>` (0..1 list): an absent list is vacuously valid; a
+    /// present one must be non-empty.
+    pub fn are_folders_valid(&self) -> bool {
+        self.folders.as_ref().is_none_or(|f| !f.is_empty())
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -94,5 +106,5 @@ impl TypeName for Folder {
 //   source_loc: master05-directory_package.adoc §Class Descriptions / folder.adoc §FOLDER Class
 //   confidence: medium
 //   todos: 1
-//   note: folders: Option<Vec<Folder>> deliberately NOT boxed (Vec already indirects); details forward-references data_structures::item_structure (P3, not yet transcribed in this pass).
+//   note: folders: Option<Vec<Folder>> deliberately NOT boxed (Vec already indirects); Folders_valid implemented as the working method are_folders_valid() per ADR-003 d.8 (not-empty-if-present), P11-Validate-wiring pending; details forward-references data_structures::item_structure (the 1 remaining todo — transcribed elsewhere, not in this pass).
 // ─────────────────────────────────────────────

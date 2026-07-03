@@ -48,23 +48,27 @@ impl Contact {
     /// is used, e.g. "mail", "daytime phone", etc. Taken from value of the
     /// inherited `name` attribute.
     ///
-    /// Invariant `Purpose_valid`: `purpose = name`.
-    ///
-    /// TODO(port): implement once `LocatableData.name: DvText` is concrete;
-    /// this should simply clone `self.locatable.name`.
+    /// Invariant `Purpose_valid`: `purpose = name` — see
+    /// [`Contact::invariant_purpose_valid`].
+    #[must_use]
     pub fn purpose(&self) -> crate::data_types::text::dv_text::DvText {
-        todo!("CONTACT.purpose(): DV_TEXT — clone LocatableData.name once concrete")
+        self.locatable.name.clone()
+    }
+
+    /// Invariant `Purpose_valid`: `purpose = name` (ADR-003 §8).
+    /// Structurally guaranteed by [`Contact::purpose`] (it clones `name`),
+    /// evaluated literally here.
+    #[must_use]
+    pub fn invariant_purpose_valid(&self) -> bool {
+        self.purpose() == self.locatable.name
     }
 }
-
-// TODO(port): invariant as a `Validate` impl:
-//   - Purpose_valid: purpose = name
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 demographic §Class Definitions CONTACT — docs/research/spec-cache/RM-1.1.0/uml_classes/contact.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/contact.adoc §CONTACT Class
 //   confidence: high
-//   todos: 2
+//   todos: 0
 //   note: addresses is REQUIRED (1..1, a List that per spec text is "a set of alternatives" — still typed List<ADDRESS> not Set<ADDRESS> in the table, transcribed literally as Vec). P4/ADR-002: self-tags via TypeTag<Self> first field (TypeName from TYPE_NAME); no-op struct-level rename deleted.
 // ─────────────────────────────────────────────

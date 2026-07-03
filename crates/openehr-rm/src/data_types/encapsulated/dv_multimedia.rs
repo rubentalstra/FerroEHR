@@ -29,6 +29,7 @@ use crate::data_types::encapsulated::dv_encapsulated::{DvEncapsulatedApi, DvEnca
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::uri::dv_uri::DvUri;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_terminology::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
 use serde::{Deserialize, Serialize};
 
 /// Canonical-JSON base64 bridge for `DV_MULTIMEDIA.data`/`integrity_check`.
@@ -259,29 +260,33 @@ impl DvMultimedia {
     /// construction rather than a runtime condition to check. Transcribed
     /// as the remaining, load-bearing `has_code` check only.
     ///
-    /// TODO(port): requires a live `TERMINOLOGY_SERVICE`/`code_set` lookup
-    /// bound to `OPENEHR_CODE_SET_IDENTIFIERS::MEDIA_TYPES` — same
-    /// terminology-service threading gap noted on
-    /// `DvEncapsulatedApi::invariant_language_valid`/`invariant_charset_valid`.
-    pub fn invariant_media_type_valid(&self) -> bool {
-        todo!(
-            "DV_MULTIMEDIA.invariant_media_type_valid: requires a TerminologyService code_set(media_types) lookup, not yet threaded through a Validate context"
-        )
+    /// Per ADR-003 decision 8, invariants that need terminology take a
+    /// `&TerminologyService`. Since `media_type` is `1..1` here, the null
+    /// clause is dead by construction (see the PORT NOTE above); the
+    /// `code_string` must be a member of the openEHR "media types" code set.
+    pub fn invariant_media_type_valid(&self, terminology: &TerminologyService) -> bool {
+        terminology
+            .code_set_for_id(OpenehrCodeSetIdentifiers::CODE_SET_ID_MEDIA_TYPES)
+            .is_some_and(|code_set| code_set.has_code(&self.media_type.code_string))
     }
 
     /// `Compression_algorithm_validity` invariant:
     /// `compression_algorithm /= Void implies code_set(Code_set_id_compression_algorithms).has_code(compression_algorithm)`.
     ///
-    /// TODO(port): same terminology-service threading gap as
-    /// `invariant_media_type_valid` above, bound to
-    /// `OPENEHR_CODE_SET_IDENTIFIERS::COMPRESSION_ALGORITHMS`.
-    pub fn invariant_compression_algorithm_validity(&self) -> bool {
-        if self.compression_algorithm.is_none() {
-            return true;
+    /// Per ADR-003 decision 8, invariants that need terminology take a
+    /// `&TerminologyService`. Trivially `true` when `compression_algorithm`
+    /// is `Void` (`None`); otherwise the `code_string` must be a member of
+    /// the openEHR "compression algorithms" code set.
+    pub fn invariant_compression_algorithm_validity(
+        &self,
+        terminology: &TerminologyService,
+    ) -> bool {
+        match &self.compression_algorithm {
+            None => true,
+            Some(algorithm) => terminology
+                .code_set_for_id(OpenehrCodeSetIdentifiers::CODE_SET_ID_COMPRESSION_ALGORITHMS)
+                .is_some_and(|code_set| code_set.has_code(&algorithm.code_string)),
         }
-        todo!(
-            "DV_MULTIMEDIA.invariant_compression_algorithm_validity: requires a TerminologyService code_set(compression_algorithms) lookup, not yet threaded through a Validate context"
-        )
     }
 
     /// `Integrity_check_validity` invariant:
@@ -300,16 +305,21 @@ impl DvMultimedia {
     /// `Integrity_check_algorithm_validity` invariant:
     /// `integrity_check_algorithm /= Void implies code_set(Code_set_id_integrity_check_algorithms).has_code(integrity_check_algorithm)`.
     ///
-    /// TODO(port): same terminology-service threading gap as
-    /// `invariant_media_type_valid` above, bound to
-    /// `OPENEHR_CODE_SET_IDENTIFIERS::INTEGRITY_CHECK_ALGORITHMS`.
-    pub fn invariant_integrity_check_algorithm_validity(&self) -> bool {
-        if self.integrity_check_algorithm.is_none() {
-            return true;
+    /// Per ADR-003 decision 8, invariants that need terminology take a
+    /// `&TerminologyService`. Trivially `true` when
+    /// `integrity_check_algorithm` is `Void` (`None`); otherwise the
+    /// `code_string` must be a member of the openEHR "integrity check
+    /// algorithms" code set.
+    pub fn invariant_integrity_check_algorithm_validity(
+        &self,
+        terminology: &TerminologyService,
+    ) -> bool {
+        match &self.integrity_check_algorithm {
+            None => true,
+            Some(algorithm) => terminology
+                .code_set_for_id(OpenehrCodeSetIdentifiers::CODE_SET_INTEGRITY_CHECK_ALGORITHMS)
+                .is_some_and(|code_set| code_set.has_code(&algorithm.code_string)),
         }
-        todo!(
-            "DV_MULTIMEDIA.invariant_integrity_check_algorithm_validity: requires a TerminologyService code_set(integrity_check_algorithms) lookup, not yet threaded through a Validate context"
-        )
     }
 
     /// `Size_valid` invariant: `size >= 0`.
@@ -343,6 +353,37 @@ mod tests {
         .unwrap()
     }
 
+    fn code_phrase(code: &str) -> CodePhrase {
+        serde_json::from_value(serde_json::json!({
+            "terminology_id": { "value": "openehr" },
+            "code_string": code
+        }))
+        .unwrap()
+    }
+
+    fn multimedia(
+        media_type: CodePhrase,
+        compression_algorithm: Option<CodePhrase>,
+        integrity_check_algorithm: Option<CodePhrase>,
+    ) -> DvMultimedia {
+        DvMultimedia {
+            type_tag: TypeTag::new(),
+            encapsulated: DvEncapsulatedData {
+                charset: None,
+                language: None,
+            },
+            alternate_text: None,
+            uri: None,
+            data: Some(vec![0x00]),
+            media_type,
+            compression_algorithm,
+            integrity_check: None,
+            integrity_check_algorithm,
+            thumbnail: None,
+            size: 1,
+        }
+    }
+
     /// Pins the canonical-JSON rules for this class: `_type` first,
     /// `data` inline base64 (never a byte array), absent Options omitted.
     #[test]
@@ -374,6 +415,68 @@ mod tests {
         let back: DvMultimedia = serde_json::from_str(&json.to_string()).unwrap();
         assert_eq!(back, m);
     }
+
+    /// The three code-set invariants resolve against the bundled openEHR code
+    /// sets: a real media type / compression / integrity-check code passes,
+    /// an unknown code fails, and a `Void` algorithm is trivially valid.
+    #[test]
+    fn code_set_invariants_check_bundled_code_sets() {
+        let terminology = TerminologyService::bundled().expect("bundled terminology");
+
+        // Valid media type, no algorithms set.
+        let m = multimedia(media_type(), None, None);
+        assert!(m.invariant_media_type_valid(terminology));
+        assert!(m.invariant_compression_algorithm_validity(terminology));
+        assert!(m.invariant_integrity_check_algorithm_validity(terminology));
+
+        // Valid algorithms from the openEHR code sets.
+        let m = multimedia(
+            media_type(),
+            Some(code_phrase("gzip")),
+            Some(code_phrase("SHA-256")),
+        );
+        assert!(m.invariant_compression_algorithm_validity(terminology));
+        assert!(m.invariant_integrity_check_algorithm_validity(terminology));
+
+        // Unknown media type / algorithms fail their invariants.
+        let bad = multimedia(
+            code_phrase("not/a-media-type"),
+            Some(code_phrase("no-such-compression")),
+            Some(code_phrase("no-such-checksum")),
+        );
+        assert!(!bad.invariant_media_type_valid(terminology));
+        assert!(!bad.invariant_compression_algorithm_validity(terminology));
+        assert!(!bad.invariant_integrity_check_algorithm_validity(terminology));
+    }
+
+    /// The inherited `DV_ENCAPSULATED` `Language_valid`/`Charset_valid`
+    /// invariants (default trait methods on `DvEncapsulatedApi`) resolve
+    /// against the bundled "languages"/"character sets" code sets.
+    #[test]
+    fn encapsulated_language_and_charset_invariants_check_bundled_code_sets() {
+        let terminology = TerminologyService::bundled().expect("bundled terminology");
+
+        // Void charset/language are trivially valid.
+        let m = multimedia(media_type(), None, None);
+        assert!(m.invariant_language_valid(terminology));
+        assert!(m.invariant_charset_valid(terminology));
+
+        let mut ok = multimedia(media_type(), None, None);
+        ok.encapsulated = DvEncapsulatedData {
+            charset: Some(code_phrase("UTF-8")),
+            language: Some(code_phrase("en")),
+        };
+        assert!(ok.invariant_language_valid(terminology));
+        assert!(ok.invariant_charset_valid(terminology));
+
+        let mut bad = multimedia(media_type(), None, None);
+        bad.encapsulated = DvEncapsulatedData {
+            charset: Some(code_phrase("not-a-charset")),
+            language: Some(code_phrase("zz")),
+        };
+        assert!(!bad.invariant_language_valid(terminology));
+        assert!(!bad.invariant_charset_valid(terminology));
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -381,6 +484,6 @@ mod tests {
 //   source: RM 1.1.0 data_types.encapsulated — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_multimedia.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master09-encapsulated_package.adoc §Class Descriptions / dv_multimedia.adoc §DV_MULTIMEDIA Class
 //   confidence: high
-//   todos: 3
-//   note: the named §7.2 recursion hazard — thumbnail: Option<Box<DvMultimedia>> per ADR-001 §8; data/integrity_check transcribed Vec<u8> per the List<Byte>->byte-buffer convention, not List<Octet>; four computed is_*/has_* functions and two structural invariants (Integrity_check_validity, Size_valid) are fully implemented; the three code-set-membership invariants (Media_type_valid, Compression_algorithm_validity, Integrity_check_algorithm_validity) are stubbed todo!() pending a TerminologyService lookup not yet threaded through any Validate-context signature; forward-references DvUri and CodePhrase from concurrent, not-yet-landed transcription passes. P4: Serialize/Deserialize added; `encapsulated` flattened; data/integrity_check use a locally-scoped `base64_bridge` module (crate::serde_support does not exist in this worktree, confirmed absent — do not assume the task brief's premise without verifying) with `default` (verified necessary and safe for #[serde(with)] on a non-generic field, unlike the plain-Option case elsewhere in this pass); every other Option field skips-only, no default; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME); in-file test pins _type-first + inline-base64 `data` + omitted-absent-Options wire shape.
+//   todos: 0
+//   note: the named §7.2 recursion hazard — thumbnail: Option<Box<DvMultimedia>> per ADR-001 §8; data/integrity_check transcribed Vec<u8> per the List<Byte>->byte-buffer convention, not List<Octet>; four computed is_*/has_* functions and two structural invariants (Integrity_check_validity, Size_valid) are fully implemented. The three code-set-membership invariants (Media_type_valid, Compression_algorithm_validity, Integrity_check_algorithm_validity) now take a &TerminologyService per ADR-003 decision 8 and check the bundled "media types"/"compression algorithms"/"integrity check algorithms" code sets (in-file test pins valid/invalid/Void). P4: Serialize/Deserialize added; `encapsulated` flattened; data/integrity_check use a locally-scoped `base64_bridge` module with `default`; every other Option field skips-only, no default; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME); in-file test pins _type-first + inline-base64 `data` + omitted-absent-Options wire shape.
 // ─────────────────────────────────────────────

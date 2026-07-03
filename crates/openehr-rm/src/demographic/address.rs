@@ -44,23 +44,27 @@ impl Address {
     /// "electronic", "locality". Taken from value of the inherited `name`
     /// attribute.
     ///
-    /// Invariant `Type_valid`: `type = name`.
-    ///
-    /// TODO(port): implement once `LocatableData.name: DvText` is concrete;
-    /// this should simply clone `self.locatable.name`.
+    /// Invariant `Type_valid`: `type = name` — see
+    /// [`Address::invariant_type_valid`].
+    #[must_use]
     pub fn address_type(&self) -> crate::data_types::text::dv_text::DvText {
-        todo!("ADDRESS.type(): DV_TEXT — clone LocatableData.name once concrete")
+        self.locatable.name.clone()
+    }
+
+    /// Invariant `Type_valid`: `type = name` (ADR-003 §8). Structurally
+    /// guaranteed by [`Address::address_type`] (it clones `name`),
+    /// evaluated literally here.
+    #[must_use]
+    pub fn invariant_type_valid(&self) -> bool {
+        self.address_type() == self.locatable.name
     }
 }
-
-// TODO(port): invariant as a `Validate` impl:
-//   - Type_valid: type = name
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 demographic §Class Definitions ADDRESS — docs/research/spec-cache/RM-1.1.0/uml_classes/address.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/address.adoc §ADDRESS Class
 //   confidence: high
-//   todos: 3
+//   todos: 1
 //   note: type() named address_type() to avoid the Rust reserved keyword `type`. P4/ADR-002: self-tags via TypeTag<Self> first field (TypeName from TYPE_NAME); no-op struct-level rename deleted.
 // ─────────────────────────────────────────────

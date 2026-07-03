@@ -29,6 +29,9 @@ use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_terminology::{
+    OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
+};
 use serde::{Deserialize, Serialize};
 
 use super::party_proxy::PartyProxy;
@@ -60,8 +63,9 @@ pub struct Participation {
     /// terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_participation_function, function.defining_code)`.
     ///
-    /// TODO(port): invariant requires a live `TerminologyService`; not yet
-    /// enforced. See [`Participation::is_function_valid`].
+    /// Checked by [`Participation::is_function_valid`] (ADR-003 d.8), which
+    /// discriminates the [`DvText::Coded`] runtime case; P11 Validate-
+    /// framework wiring is pending.
     pub function: DvText,
 
     /// `mode`: `DV_CODED_TEXT`, cardinality `0..1`.
@@ -73,8 +77,8 @@ pub struct Participation {
     /// terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_participation_mode, mode.defining_code)`.
     ///
-    /// TODO(port): invariant requires a live `TerminologyService`; not yet
-    /// enforced. See [`Participation::is_mode_valid`].
+    /// Checked by [`Participation::is_mode_valid`] (ADR-003 d.8); P11
+    /// Validate-framework wiring is pending.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<DvCodedText>,
 
@@ -104,36 +108,125 @@ impl Participation {
     /// terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_participation_function, function.defining_code)`.
     ///
-    /// TODO(port): `function` is typed `DV_TEXT` (the wider supertype),
-    /// but the invariant only constrains it when the runtime value happens
-    /// to be a `DV_CODED_TEXT` (`generating_type.is_equal("DV_CODED_TEXT")`)
-    /// — i.e. this is a conditional invariant over a value that may or may
-    /// not actually carry a terminology-bound code at all. Requires both
-    /// runtime-type inspection of `DV_TEXT` (a `DvText`/`DvCodedText`
-    /// closed-enum discriminant, per ADR-001 §4, once `data_types.text` is
-    /// transcribed) and a live `TerminologyService`; left as `todo!()`
-    /// rather than a bare boolean stub since neither prerequisite exists
-    /// yet.
-    pub fn is_function_valid(
-        &self,
-        _terminology: &openehr_terminology::TerminologyService,
-    ) -> bool {
-        todo!(
-            "Participation::is_function_valid: needs DV_TEXT runtime-type discrimination plus TerminologyService.has_code_for_group_id against Group_id_participation_function"
-        )
+    /// Working method per ADR-003 decision 8. `function` is typed `DV_TEXT`
+    /// (the wider supertype), but the invariant is an *implication* whose
+    /// antecedent is `function.generating_type.is_equal("DV_CODED_TEXT")` —
+    /// so a plain (non-coded) `DV_TEXT` function satisfies it vacuously. The
+    /// runtime-type test is the [`DvText::Coded`] discriminant of the closed
+    /// enum (ADR-001 §4); a coded function's `defining_code` is then checked
+    /// against the openEHR "participation function" group.
+    pub fn is_function_valid(&self, terminology: &TerminologyService) -> bool {
+        match &self.function {
+            DvText::Coded(coded) => {
+                let defining_code = &coded.defining_code;
+                terminology
+                    .terminology(OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR)
+                    .is_some_and(|access| {
+                        access.has_code_for_group_id(
+                            OpenehrTerminologyGroupIdentifiers::GROUP_ID_PARTICIPATION_FUNCTION,
+                            &TerminologyCode::new(
+                                defining_code.terminology_id.value(),
+                                defining_code.code_string.clone(),
+                            ),
+                        )
+                    })
+            }
+            DvText::Text { .. } => true,
+        }
     }
 
     /// Invariant `Mode_valid`: `mode /= Void implies
     /// terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_participation_mode, mode.defining_code)`.
     ///
-    /// TODO(port): requires a live `TerminologyService` to check
-    /// `mode.defining_code` against the "participation mode" openEHR
-    /// Terminology group; left as `todo!()`.
-    pub fn is_mode_valid(&self, _terminology: &openehr_terminology::TerminologyService) -> bool {
-        todo!(
-            "Participation::is_mode_valid: needs TerminologyService.has_code_for_group_id against Group_id_participation_mode"
-        )
+    /// Working method per ADR-003 decision 8. `mode` is a `DV_CODED_TEXT`
+    /// already, so no runtime-type test is needed; the antecedent is `mode
+    /// /= Void`, so an absent `mode` is vacuously valid. A present `mode`'s
+    /// `defining_code` is checked against the openEHR "participation mode"
+    /// group.
+    pub fn is_mode_valid(&self, terminology: &TerminologyService) -> bool {
+        match &self.mode {
+            Some(mode) => {
+                let defining_code = &mode.defining_code;
+                terminology
+                    .terminology(OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR)
+                    .is_some_and(|access| {
+                        access.has_code_for_group_id(
+                            OpenehrTerminologyGroupIdentifiers::GROUP_ID_PARTICIPATION_MODE,
+                            &TerminologyCode::new(
+                                defining_code.terminology_id.value(),
+                                defining_code.code_string.clone(),
+                            ),
+                        )
+                    })
+            }
+            None => true,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::change_control::versioned_object::test_support::{coded, party_self};
+    use crate::data_types::text::dv_text::DvTextData;
+
+    fn participation(function: DvText, mode: Option<DvCodedText>) -> Participation {
+        Participation {
+            type_tag: TypeTag::new(),
+            function,
+            mode,
+            performer: party_self(),
+            time: None,
+        }
+    }
+
+    fn plain_text(value: &str) -> DvText {
+        DvText::Text {
+            type_tag: TypeTag::new(),
+            data: DvTextData {
+                value: value.to_string(),
+                hyperlink: None,
+                formatting: None,
+                mappings: None,
+                language: None,
+                encoding: None,
+            },
+        }
+    }
+
+    #[test]
+    fn function_valid_checks_the_participation_function_group_when_coded() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+        // 253 = "unknown" in the openEHR "participation function" group.
+        let ok = participation(DvText::Coded(coded("253", "unknown")), None);
+        assert!(ok.is_function_valid(service));
+
+        let bad = participation(DvText::Coded(coded("999999", "nope")), None);
+        assert!(!bad.is_function_valid(service));
+    }
+
+    #[test]
+    fn function_valid_is_vacuous_for_plain_text() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+        let p = participation(plain_text("assisting nurse"), None);
+        assert!(p.is_function_valid(service));
+    }
+
+    #[test]
+    fn mode_valid_checks_the_participation_mode_group_and_is_vacuous_when_absent() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+
+        // Absent mode: vacuously valid.
+        let none = participation(plain_text("f"), None);
+        assert!(none.is_mode_valid(service));
+
+        // 193 = "not specified" in the openEHR "participation mode" group.
+        let ok = participation(plain_text("f"), Some(coded("193", "not specified")));
+        assert!(ok.is_mode_valid(service));
+
+        let bad = participation(plain_text("f"), Some(coded("999999", "nope")));
+        assert!(!bad.is_mode_valid(service));
     }
 }
 
@@ -142,6 +235,6 @@ impl Participation {
 //   source: RM 1.1.0 common.generic — docs/research/spec-cache/RM-1.1.0/uml_classes/participation.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: common/master04-generic_package.adoc §Participation / uml_classes/participation.adoc §PARTICIPATION Class
 //   confidence: high
-//   todos: 2
-//   note: Function_valid and Mode_valid invariants left as todo!()-bodied methods (need live TerminologyService, and Function_valid additionally needs DV_TEXT runtime-type discrimination not yet available). Forward-refs DvText, DvCodedText, DvInterval<T>, DvDateTime (data_types, sibling-agent territory, not yet landed).
+//   todos: 0
+//   note: Function_valid and Mode_valid now working methods (ADR-003 d.8) with spec-derived tests. Function_valid is the conditional DV_CODED_TEXT case (DvText::Coded checked against the openEHR "participation function" group; plain DvText::Text vacuously valid); Mode_valid checks a present DV_CODED_TEXT mode against the "participation mode" group, absent mode vacuously valid — both via &TerminologyService. Only remaining deferral is P11 Validate-framework wiring.
 // ─────────────────────────────────────────────

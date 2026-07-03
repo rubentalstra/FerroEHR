@@ -12,8 +12,8 @@
 //! Can also be used for time durations, where it is more convenient to
 //! treat these as simply a number of seconds rather than days, months,
 //! years (in the latter case, `DV_DURATION` may be used).
-use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE};
-use super::dv_ordered::DvOrderedApi;
+use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE, combined_accuracy};
+use super::dv_ordered::{DvOrderedApi, DvOrderedData};
 use super::dv_quantified::DvQuantifiedApi;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
@@ -213,6 +213,10 @@ impl DvOrderedApi for DvQuantity {
         self.amount.quantified.ordered.normal_status.as_ref()
     }
 
+    fn ordered_data(&self) -> Option<&DvOrderedData<Self>> {
+        Some(&self.amount.quantified.ordered)
+    }
+
     /// `is_strictly_comparable_to(other: DV_QUANTITY) -> Boolean`
     /// (effected).
     ///
@@ -273,32 +277,60 @@ impl DvAmountApi<Real> for DvQuantity {
     ///
     /// Sum of this `DV_QUANTITY` and `other`.
     ///
-    /// TODO(port): the spec gives no explicit `Post_result` body for this
-    /// redefined effector at the `DV_QUANTITY` level (unlike, say,
-    /// `less_than`'s explicit `Result = magnitude < other.magnitude`); the
-    /// accuracy-combination rule inherited from `DV_AMOUNT.add`'s own
-    /// description ("if accuracies are present in both quantities, they
-    /// are added ... if either or both quantities has an unknown accuracy,
-    /// the accuracy of the result is also unknown ... if only one has
-    /// accuracy_is_percent = True, accuracy is expressed in the result in
-    /// the form used in the larger of the two quantities") is nontrivial
-    /// branching logic not yet encoded; stubbed pending that.
-    fn add(&self, _other: &Self) -> Self {
-        todo!(
-            "DvQuantity::add: accuracy-combination rule from DV_AMOUNT's description not yet encoded"
-        )
+    /// Spec `Pre_comparable` (inherited from `DV_AMOUNT.add`):
+    /// `is_strictly_comparable_to (other)` — i.e. the two quantities share
+    /// `units`/`units_system`; the caller is responsible for honouring it
+    /// (the result carries the receiver's units either way).
+    ///
+    /// The magnitude is the sum of the two magnitudes; the accuracy follows
+    /// `DV_AMOUNT`'s combination prose, encoded once in
+    /// [`combined_accuracy`]: the sum of the operand accuracies when both are
+    /// present and known, unknown if either is unknown, and — for mixed
+    /// percent/absolute forms — expressed in the form of the larger operand.
+    ///
+    /// PORT NOTE: `DV_QUANTITY`'s own table gives no `Post_result` for `add`,
+    /// so only the two spec-stated aspects (magnitude, accuracy) are computed
+    /// here; the receiver's other fields (`units`, `units_system`,
+    /// `units_display_name`, `precision`, and any reference ranges /
+    /// `normal_status`) are carried over via `clone`, consistent with the
+    /// already-shipped `negative()` on this class. `precision` in particular
+    /// has no spec-defined combination rule, so it is left as the receiver's.
+    fn add(&self, other: &Self) -> Self {
+        let (accuracy, accuracy_is_percent) = combined_accuracy(
+            self.magnitude.0,
+            self.amount.accuracy,
+            self.amount.accuracy_is_percent,
+            other.magnitude.0,
+            other.amount.accuracy,
+            other.amount.accuracy_is_percent,
+        );
+        let mut result = self.clone();
+        result.magnitude = Real(self.magnitude.0 + other.magnitude.0);
+        result.amount.accuracy = accuracy;
+        result.amount.accuracy_is_percent = accuracy_is_percent;
+        result
     }
 
     /// `subtract` __alias__ `"-"` `(other: DV_QUANTITY) -> DV_QUANTITY`
     /// (redefined).
     ///
-    /// Difference of this `DV_QUANTITY` and `other`.
-    ///
-    /// TODO(port): same accuracy-combination gap as `add` above.
-    fn subtract(&self, _other: &Self) -> Self {
-        todo!(
-            "DvQuantity::subtract: accuracy-combination rule from DV_AMOUNT's description not yet encoded"
-        )
+    /// Difference of this `DV_QUANTITY` and `other`. Same accuracy-combination
+    /// and field-carry-over rules as [`Self::add`]; the magnitude is the
+    /// difference of the two magnitudes.
+    fn subtract(&self, other: &Self) -> Self {
+        let (accuracy, accuracy_is_percent) = combined_accuracy(
+            self.magnitude.0,
+            self.amount.accuracy,
+            self.amount.accuracy_is_percent,
+            other.magnitude.0,
+            other.amount.accuracy,
+            other.amount.accuracy_is_percent,
+        );
+        let mut result = self.clone();
+        result.magnitude = Real(self.magnitude.0 - other.magnitude.0);
+        result.amount.accuracy = accuracy;
+        result.amount.accuracy_is_percent = accuracy_is_percent;
+        result
     }
 
     fn is_equal_amount(&self, other: &Self) -> bool {
@@ -308,18 +340,33 @@ impl DvAmountApi<Real> for DvQuantity {
     /// `multiply` __alias__ `"*"` `(factor: Real) -> DV_QUANTITY`
     /// (redefined).
     ///
-    /// Product of this `DV_QUANTITY` and `factor`.
+    /// Product of this `DV_QUANTITY` and `factor`: `magnitude * factor`, with
+    /// `units`/`units_system`/`units_display_name`/`precision` carried over
+    /// (a scalar factor does not change the physical property being
+    /// measured).
     ///
-    /// TODO(port): no explicit `Post_result` body given; the natural
-    /// reading is `magnitude * factor` with `units`/`units_system`/
-    /// `units_display_name` carried over unchanged, but this is not itself
-    /// drawn from a stated postcondition, so left `todo!()` rather than
-    /// guessing the accuracy-scaling behaviour that should accompany a
-    /// multiply.
-    fn multiply(&self, _factor: &Real) -> Self {
-        todo!(
-            "DvQuantity::multiply: no explicit Post_result body, accuracy-scaling behaviour unspecified"
-        )
+    /// PORT NOTE: the spec prints no `Post_result` for `multiply`, so the
+    /// accuracy behaviour is derived from measurement semantics rather than a
+    /// stated postcondition: a *percent* accuracy is invariant under scaling
+    /// (a value known to ±5 % is still ±5 % after scaling), while an
+    /// *absolute* half-range accuracy scales by `|factor|` (scaling `x ± δ`
+    /// by `k` gives `kx ± |k|δ`). An unknown accuracy (the
+    /// `unknown_accuracy_value` sentinel) and an absent accuracy are both
+    /// preserved unchanged. This is a documented derivation, flagged as going
+    /// one step beyond the literal (silent) table.
+    fn multiply(&self, factor: &Real) -> Self {
+        let mut result = self.clone();
+        result.magnitude = Real(self.magnitude.0 * factor.0);
+        result.amount.accuracy = match self.amount.accuracy {
+            // Unknown/sentinel accuracy is preserved verbatim.
+            Some(a) if a.0 == UNKNOWN_ACCURACY_VALUE => Some(a),
+            // Percent accuracy is scale-invariant.
+            Some(a) if self.amount.accuracy_is_percent == Some(true) => Some(a),
+            // Absolute half-range accuracy scales with the magnitude.
+            Some(a) => Some(Real(a.0 * factor.0.abs())),
+            None => None,
+        };
+        result
     }
 
     /// `negative` __alias__ `"-"` `(): DV_QUANTITY`.
@@ -399,13 +446,110 @@ mod tests {
             serde_json::from_str(r#"{"_type":"DV_COUNT","magnitude":7.5,"units":"kg"}"#);
         assert!(wrong.is_err(), "mismatched _type must be rejected");
     }
+
+    fn quantity(magnitude: f64, units: &str) -> DvQuantity {
+        DvQuantity {
+            type_tag: TypeTag::new(),
+            amount: DvAmountData {
+                quantified: DvQuantifiedData {
+                    ordered: DvOrderedData {
+                        normal_status: None,
+                        normal_range: None,
+                        other_reference_ranges: None,
+                    },
+                    magnitude_status: None,
+                    accuracy: None,
+                },
+                accuracy_is_percent: None,
+                accuracy: None,
+            },
+            magnitude: Real(magnitude),
+            precision: None,
+            units: units.to_string(),
+            units_system: None,
+            units_display_name: None,
+        }
+    }
+
+    fn quantity_with_accuracy(
+        magnitude: f64,
+        units: &str,
+        accuracy: f64,
+        is_percent: bool,
+    ) -> DvQuantity {
+        let mut q = quantity(magnitude, units);
+        q.amount.accuracy = Some(Real(accuracy));
+        q.amount.accuracy_is_percent = Some(is_percent);
+        q
+    }
+
+    /// `is_strictly_comparable_to`: same units (and units_system) required.
+    #[test]
+    fn strictly_comparable_requires_matching_units() {
+        assert!(quantity(1.0, "kg").is_strictly_comparable_to(&quantity(2.0, "kg")));
+        assert!(!quantity(1.0, "kg").is_strictly_comparable_to(&quantity(2.0, "mmHg")));
+    }
+
+    /// `add`: magnitudes sum; `less_than`'s `Result = magnitude < other.magnitude`
+    /// implies magnitude is the operative scalar.
+    #[test]
+    fn add_sums_magnitudes_and_accuracies() {
+        let result = quantity_with_accuracy(2.0, "kg", 0.5, false)
+            .add(&quantity_with_accuracy(3.0, "kg", 0.25, false));
+        assert_eq!(result.magnitude, Real(5.0));
+        assert_eq!(result.units, "kg");
+        // Absolute accuracies both present → summed (DV_AMOUNT prose).
+        assert_eq!(result.amount.accuracy, Some(Real(0.75)));
+    }
+
+    /// `subtract`: magnitudes subtract; accuracies still sum (DV_AMOUNT prose:
+    /// "the sum of the accuracies of the operands, if both present").
+    #[test]
+    fn subtract_differences_magnitudes_and_sums_accuracies() {
+        let result = quantity_with_accuracy(5.0, "kg", 0.5, false)
+            .subtract(&quantity_with_accuracy(3.0, "kg", 0.25, false));
+        assert_eq!(result.magnitude, Real(2.0));
+        assert_eq!(result.amount.accuracy, Some(Real(0.75)));
+    }
+
+    /// `add`: an unknown accuracy on either operand makes the result accuracy
+    /// unknown (encoded as absence).
+    #[test]
+    fn add_propagates_unknown_accuracy() {
+        let result = quantity(2.0, "kg").add(&quantity_with_accuracy(3.0, "kg", 0.25, false));
+        assert_eq!(result.magnitude, Real(5.0));
+        assert_eq!(result.amount.accuracy, None);
+    }
+
+    /// `multiply`: magnitude scales by the factor; a percent accuracy is
+    /// scale-invariant, while an absolute accuracy scales by `|factor|`.
+    #[test]
+    fn multiply_scales_magnitude_and_accuracy_by_form() {
+        let absolute = quantity_with_accuracy(4.0, "kg", 0.5, false).multiply(&Real(3.0));
+        assert_eq!(absolute.magnitude, Real(12.0));
+        assert_eq!(absolute.amount.accuracy, Some(Real(1.5))); // 0.5 * 3
+        assert_eq!(absolute.units, "kg");
+
+        let percent = quantity_with_accuracy(4.0, "kg", 5.0, true).multiply(&Real(3.0));
+        assert_eq!(percent.magnitude, Real(12.0));
+        assert_eq!(percent.amount.accuracy, Some(Real(5.0))); // percent invariant
+    }
+
+    /// `negative`: magnitude flips sign, units preserved (already shipped, but
+    /// asserted here alongside the other arithmetic).
+    #[test]
+    fn negative_flips_magnitude_and_keeps_units() {
+        let n = quantity(2.5, "kg").negative();
+        assert_eq!(n.magnitude, Real(-2.5));
+        assert_eq!(n.units, "kg");
+    }
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_quantity.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_quantity.adoc §DV_QUANTITY Class
-//   confidence: medium
-//   todos: 4
-//   note: normal_range/other_reference_ranges are duplicated (flat top-level fields plus the copies inside DvOrderedData<DvQuantity>) pending a resolution of which is canonical, flagged with a TODO; add/subtract/multiply are stubbed todo!() since DV_AMOUNT's accuracy-combination rule is prose, not a stated postcondition, and DV_QUANTITY's own table gives no Post_result for any of the three. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `amount` flattened (schema-verified, full DvOrderedData/DvQuantifiedData/DvAmountData chain flattens); Real/Integer serde gaps closed in openehr-foundation; round-trip test pins _type-first wire shape, missing-tag tolerance, wrong-tag rejection.
+//   confidence: high
+//   todos: 1
+//   note: add/subtract implemented (magnitude sum/difference + DV_AMOUNT's accuracy-combination prose via the shared combined_accuracy helper); multiply implemented (magnitude*factor + measurement-derived accuracy scaling: percent invariant, absolute scales by |factor|, unknown/absent preserved — documented derivation since the table prints no Post_result); negative already shipped; ordered_data() now overridden so is_simple/is_normal reach the embedded DvOrderedData; is_strictly_comparable_to compares units/units_system — all unit-tested. Remaining TODO: forward-reference to CODE_PHRASE pending the sibling data_types::text package (present in-tree; reconciled at P17). P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `amount` flattened (schema-verified, full DvOrderedData/DvQuantifiedData/DvAmountData chain flattens); Real/Integer serde gaps closed in openehr-foundation; round-trip test pins _type-first wire shape, missing-tag tolerance, wrong-tag rejection.
 // ─────────────────────────────────────────────

@@ -20,6 +20,9 @@
 use super::code_phrase::CodePhrase;
 use super::dv_coded_text::DvCodedText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_terminology::{
+    OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
+};
 use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class, single-sourced
@@ -162,9 +165,8 @@ pub struct TermMapping {
     /// terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_term_mapping_purpose, purpose.defining_code)`.
     ///
-    /// TODO(port): invariant requires a live terminology-service lookup
-    /// (`openehr_terminology::TerminologyService`/`TerminologyAccess`); not
-    /// yet enforced by a constructor/`Validate` impl.
+    /// Enforced by [`TermMapping::invariant_purpose_valid`], which takes a
+    /// `&TerminologyService` (ADR-003 decision 8).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub purpose: Option<DvCodedText>,
 
@@ -228,14 +230,106 @@ impl TermMapping {
     /// Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_term_mapping_purpose, purpose.defining_code)`.
     ///
-    /// TODO(port): requires a live `TerminologyService`/`TerminologyAccess`
-    /// lookup (`openehr_terminology`), not available at this layer without
-    /// threading a service reference through; left unimplemented.
-    pub fn invariant_purpose_valid(&self) -> bool {
-        // TODO(port): call into openehr_terminology::TerminologyAccess::
-        // has_code_for_group_id(Group_id_term_mapping_purpose,
-        // purpose.defining_code) once a service handle is available here.
-        todo!("Purpose_valid requires a live terminology service lookup")
+    /// Per ADR-003 decision 8, invariants that need terminology take a
+    /// `&TerminologyService`. Trivially `true` when `purpose` is `Void`
+    /// (`None`); otherwise the purpose's `defining_code` must be a code under
+    /// the openEHR "term mapping purpose" grouper.
+    ///
+    /// PORT NOTE: `has_code_for_group_id` matches on the `code_string` alone
+    /// (see `openehr_terminology::BundledTerminologyAccess`), so the
+    /// [`TerminologyCode`] carrier is built with the openEHR terminology id
+    /// and the purpose's own code string.
+    pub fn invariant_purpose_valid(&self, terminology: &TerminologyService) -> bool {
+        match &self.purpose {
+            None => true,
+            Some(purpose) => {
+                let code = TerminologyCode::new(
+                    OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR,
+                    purpose.defining_code.code_string.clone(),
+                );
+                terminology
+                    .terminology(OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR)
+                    .is_some_and(|openehr| {
+                        openehr.has_code_for_group_id(
+                            OpenehrTerminologyGroupIdentifiers::GROUP_ID_TERM_MAPPING_PURPOSE,
+                            &code,
+                        )
+                    })
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A `CODE_PHRASE` built from JSON so the test does not hard-code the
+    /// `TerminologyId` field shape; a missing `_type` is tolerated on
+    /// concrete slots per ADR-002.
+    fn code_phrase(code: &str) -> CodePhrase {
+        serde_json::from_value(serde_json::json!({
+            "terminology_id": { "value": "openehr" },
+            "code_string": code,
+        }))
+        .unwrap()
+    }
+
+    fn coded_text(code: &str) -> DvCodedText {
+        serde_json::from_value(serde_json::json!({
+            "value": "purpose",
+            "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": code },
+        }))
+        .unwrap()
+    }
+
+    fn mapping(match_: MatchKind, purpose: Option<DvCodedText>) -> TermMapping {
+        TermMapping {
+            type_tag: TypeTag::new(),
+            match_,
+            purpose,
+            target: code_phrase("target"),
+        }
+    }
+
+    /// The four match predicates each read the closed `MatchKind`.
+    #[test]
+    fn match_predicates_follow_the_match_kind() {
+        assert!(mapping(MatchKind::Narrower, None).narrower());
+        assert!(mapping(MatchKind::Broader, None).broader());
+        assert!(mapping(MatchKind::Equivalent, None).equivalent());
+        assert!(mapping(MatchKind::Unknown, None).unknown());
+        assert!(!mapping(MatchKind::Equivalent, None).narrower());
+        // Match_valid is structurally guaranteed by the closed enum.
+        assert!(mapping(MatchKind::Equivalent, None).invariant_match_valid());
+    }
+
+    /// `is_valid_match_code` accepts exactly the four legal characters.
+    #[test]
+    fn is_valid_match_code_accepts_only_the_four_legal_chars() {
+        for c in ['>', '=', '<', '?'] {
+            assert!(MatchKind::is_valid_match_code(c));
+        }
+        for c in ['!', 'x', ' ', '≈'] {
+            assert!(!MatchKind::is_valid_match_code(c));
+        }
+    }
+
+    /// `Purpose_valid` checks membership in the openEHR "term mapping
+    /// purpose" grouper: `Void` is trivially valid, 669 ("public health") is
+    /// in the group, a valid-but-off-group code (249 = "creation") fails.
+    #[test]
+    fn purpose_valid_checks_the_term_mapping_purpose_group() {
+        let terminology = TerminologyService::bundled().expect("bundled terminology");
+        assert!(mapping(MatchKind::Equivalent, None).invariant_purpose_valid(terminology));
+        assert!(
+            mapping(MatchKind::Equivalent, Some(coded_text("669")))
+                .invariant_purpose_valid(terminology)
+        );
+        assert!(
+            !mapping(MatchKind::Equivalent, Some(coded_text("249")))
+                .invariant_purpose_valid(terminology)
+        );
     }
 }
 
@@ -243,7 +337,7 @@ impl TermMapping {
 // PORT STATUS
 //   source: RM 1.1.0 data_types.text — docs/research/spec-cache/RM-1.1.0/uml_classes/term_mapping.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master05-text_package.adoc §Class Descriptions / term_mapping.adoc §TERM_MAPPING Class
-//   confidence: medium
-//   todos: 3
-//   note: `match` char narrowed to a closed MatchKind enum (four legal values, is_valid_match_code recast as TryFrom/matches!); match_ field renamed for the Rust keyword collision; Purpose_valid invariant left as todo!() pending a terminology-service handle (mentioned on both the field doc and the invariant method, plus one inline comment, hence 3). P4/ADR-002: TermMapping self-tags via TypeTag<Self> first field + TypeName ("TERM_MAPPING"), inert struct-level #[serde(rename)] deleted; MatchKind carries no _type and keeps its one-character-JSON-string wire form via #[serde(into/try_from = "String")] bridging as_char()/TryFrom<char> (schema-verified, already ITS-JSON-conformant — no manual impl needed); match_ carries #[serde(rename = "match")]; purpose skips when None.
+//   confidence: high
+//   todos: 0
+//   note: `match` char narrowed to a closed MatchKind enum (four legal values, is_valid_match_code recast as TryFrom/matches!); match_ field renamed for the Rust keyword collision. Purpose_valid now implemented per ADR-003 decision 8: takes a &TerminologyService and checks the purpose's defining_code against the openEHR "term mapping purpose" grouper (in-file test pins Void/in-group/off-group). P4/ADR-002: TermMapping self-tags via TypeTag<Self> first field + TypeName ("TERM_MAPPING"); MatchKind carries no _type and keeps its one-character-JSON-string wire form via #[serde(into/try_from = "String")] bridging as_char()/TryFrom<char>; match_ carries #[serde(rename = "match")]; purpose skips when None.
 // ─────────────────────────────────────────────

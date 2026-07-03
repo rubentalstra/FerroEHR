@@ -67,14 +67,82 @@ impl PartyApi for Role {
     }
 }
 
-// TODO(port): invariant as a `Validate` impl:
-//   - Capabilities_valid: capabilities /= Void implies not capabilities.empty
+impl Role {
+    /// Invariant `Capabilities_valid`: `capabilities /= Void implies not
+    /// capabilities.empty` (ADR-003 §8).
+    #[must_use]
+    pub fn invariant_capabilities_valid(&self) -> bool {
+        self.capabilities.as_ref().is_none_or(|c| !c.is_empty())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::archetyped::locatable::LocatableData;
+    use crate::data_types::text::dv_text::{DvText, DvTextData};
+    use openehr_base::identification::hier_object_id::HierObjectId;
+    use openehr_base::identification::object_id::ObjectId;
+    use openehr_base::identification::party_ref::PartyRef;
+    use openehr_base::identification::uid_based_id::{UidBasedId, UidBasedIdData};
+
+    fn role(capabilities: Option<Vec<Capability>>) -> Role {
+        Role {
+            type_tag: TypeTag::new(),
+            party: PartyData {
+                locatable: LocatableData {
+                    name: DvText::Text {
+                        type_tag: TypeTag::new(),
+                        data: DvTextData {
+                            value: "general practitioner".to_string(),
+                            hyperlink: None,
+                            formatting: None,
+                            mappings: None,
+                            language: None,
+                            encoding: None,
+                        },
+                    },
+                    archetype_node_id: "at0000".to_string(),
+                    uid: None,
+                    links: None,
+                    archetype_details: None,
+                    feeder_audit: None,
+                    parent: None,
+                },
+                identities: Vec::new(),
+                contacts: None,
+                details: None,
+                reverse_relationships: None,
+                relationships: None,
+            },
+            time_validity: None,
+            performer: PartyRef {
+                type_tag: TypeTag::new(),
+                namespace: "demographic".to_string(),
+                r#type: "PERSON".to_string(),
+                id: ObjectId::UidBased(UidBasedId::HierObjectId(HierObjectId {
+                    type_tag: TypeTag::new(),
+                    uid_based_id: UidBasedIdData {
+                        value: "8849182c-82ad-4088-a07f-48ead4180515".to_string(),
+                    },
+                })),
+            },
+            capabilities,
+        }
+    }
+
+    #[test]
+    fn capabilities_valid_rejects_present_but_empty() {
+        assert!(role(None).invariant_capabilities_valid()); // None: valid
+        assert!(!role(Some(Vec::new())).invariant_capabilities_valid()); // empty: invalid
+    }
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 demographic §Class Definitions ROLE — docs/research/spec-cache/RM-1.1.0/uml_classes/role.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/role.adoc §ROLE Class
 //   confidence: high
-//   todos: 2
+//   todos: 1
 //   note: Role is a direct PARTY descendant (sibling of ACTOR, not a subtype of it) — matches Party enum's two top-level variants. P4/ADR-002: self-tags via TypeTag<Self> first field (TypeName from TYPE_NAME), no-op struct-level rename deleted; Party dispatches untagged on this payload tag, so ROLE now carries its own _type (previous wave's flag resolved).
 // ─────────────────────────────────────────────

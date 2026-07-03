@@ -48,23 +48,27 @@ impl PartyIdentity {
     /// "legal", "stagename", "nickname", "tribal name", "trading name".
     /// Taken from value of the inherited `name` attribute.
     ///
-    /// Invariant `Purpose_valid`: `purpose = name`.
-    ///
-    /// TODO(port): implement once `LocatableData.name: DvText` is concrete;
-    /// this should simply clone `self.locatable.name`.
+    /// Invariant `Purpose_valid`: `purpose = name` — see
+    /// [`PartyIdentity::invariant_purpose_valid`].
+    #[must_use]
     pub fn purpose(&self) -> crate::data_types::text::dv_text::DvText {
-        todo!("PARTY_IDENTITY.purpose(): DV_TEXT — clone LocatableData.name once concrete")
+        self.locatable.name.clone()
+    }
+
+    /// Invariant `Purpose_valid`: `purpose = name` (ADR-003 §8).
+    /// Structurally guaranteed by [`PartyIdentity::purpose`] (it clones
+    /// `name`), evaluated literally here.
+    #[must_use]
+    pub fn invariant_purpose_valid(&self) -> bool {
+        self.purpose() == self.locatable.name
     }
 }
-
-// TODO(port): invariant as a `Validate` impl:
-//   - Purpose_valid: purpose = name
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 demographic §Class Definitions PARTY_IDENTITY — docs/research/spec-cache/RM-1.1.0/uml_classes/party_identity.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master02-demographic_package.adoc §Class Definitions / uml_classes/party_identity.adoc §PARTY_IDENTITY Class
 //   confidence: high
-//   todos: 3
+//   todos: 1
 //   note: details is REQUIRED (1..1) per the spec table, unlike ADDRESS/CAPABILITY's own required-details siblings. P4/ADR-002: self-tags via TypeTag<Self> first field (TypeName from TYPE_NAME); no-op struct-level rename deleted.
 // ─────────────────────────────────────────────

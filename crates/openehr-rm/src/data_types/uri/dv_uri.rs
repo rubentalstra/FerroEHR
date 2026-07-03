@@ -42,9 +42,9 @@ pub struct DvUriData {
     ///
     /// Invariant `Value_valid`: `not value.is_empty`.
     ///
-    /// TODO(port): invariant not yet enforced by a constructor/`Validate`
-    /// impl; recorded here as a doc note pending the RM invariant
-    /// framework.
+    /// Implemented as the boolean method [`DvUriData::invariant_value_valid`]
+    /// (ADR-003 decision 8). TODO(port): the deep walker/accumulator
+    /// enforcement is the P11 RM validation-framework deliverable.
     pub value: String,
 }
 
@@ -102,8 +102,8 @@ impl DvUriData {
 
     /// `Value_valid`: `not value.is_empty`.
     ///
-    /// TODO(port): wire into a `Validate` impl once the RM invariant
-    /// framework lands.
+    /// TODO(port): wire into a `Validate` impl at P11 (the RM
+    /// validation-framework deliverable per ADR-003 decision 8).
     pub fn invariant_value_valid(&self) -> bool {
         !self.value.is_empty()
     }
@@ -267,7 +267,7 @@ mod tests {
 // PORT STATUS
 //   source: RM 1.1.0 data_types.uri — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_uri.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master10-uri_package.adoc §Class Descriptions / dv_uri.adoc §DV_URI Class
-//   confidence: medium
+//   confidence: high
 //   todos: 2
-//   note: DvUriData embedded struct pattern mirrors DvTextData (single attribute, one concrete descendant); scheme/path/fragment_id/query extract RFC3986 components without normalising the stored string, preserving the spec's explicit allowance for unencoded human-readable strings. Value_valid invariant mentioned on both the field doc and the invariant method doc. P4/ADR-002: DvUri self-tags via TypeTag<Self> first field + TypeName ("DV_URI"), inert struct-level #[serde(rename)] deleted; DvUriData stays untagged (embedded *Data struct, flattened here and in DvEhrUri).
+//   note: DvUriData embedded struct pattern mirrors DvTextData (single attribute, one concrete descendant); scheme/path/fragment_id/query extract RFC3986 components without normalising the stored string, preserving the spec's explicit allowance for unencoded human-readable strings (ADR-003 decision 5: RM DV_URI keeps stored text un-normalized). Value_valid is implemented as a boolean method (ADR-003 decision 8); the 2 remaining TODO(port) are the P11 Validate-framework enforcement wiring (field doc + method doc). P4/ADR-002: DvUri self-tags via TypeTag<Self> first field + TypeName ("DV_URI"); DvUriData stays untagged (embedded *Data struct, flattened here and in DvEhrUri).
 // ─────────────────────────────────────────────

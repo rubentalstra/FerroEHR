@@ -117,14 +117,12 @@ impl EhrStatus {
     /// unchanged from `LOCATABLE` (`is_archetype_root`), restated here so
     /// its presence on this class is not lost during transcription.
     ///
-    /// TODO(port): delegates to `LOCATABLE.is_archetype_root()`, not yet
-    /// implemented; awaits the `common::archetyped::locatable` transcription
-    /// and the RM invariant framework (`.claude/rules/rm-transcription.md`
-    /// "Invariants").
+    /// Implemented per ADR-003 §8 as the derived value
+    /// `LOCATABLE.is_archetype_root` computes — `archetype_details /= Void`
+    /// (see [`LocatableData`] / `LocatableApi::is_archetype_root`).
+    #[must_use]
     pub fn invariant_is_archetype_root(&self) -> bool {
-        todo!(
-            "port: delegate to LocatableData::is_archetype_root() once common::archetyped::locatable lands"
-        )
+        self.locatable.archetype_details.is_some()
     }
 }
 
@@ -212,6 +210,60 @@ mod tests {
         let parsed: EhrStatus = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(parsed, status);
     }
+
+    /// `Is_archetype_root` is derived from `archetype_details`.
+    #[test]
+    fn is_archetype_root_derives_from_archetype_details() {
+        let mut status = EhrStatus {
+            type_tag: TypeTag::new(),
+            locatable: LocatableData {
+                name: DvText::Text {
+                    type_tag: TypeTag::new(),
+                    data: DvTextData {
+                        value: "EHR Status".to_string(),
+                        hyperlink: None,
+                        formatting: None,
+                        mappings: None,
+                        language: None,
+                        encoding: None,
+                    },
+                },
+                archetype_node_id: "openEHR-EHR-EHR_STATUS.generic.v1".to_string(),
+                uid: None,
+                links: None,
+                archetype_details: None,
+                feeder_audit: None,
+                parent: None,
+            },
+            subject: PartySelf {
+                type_tag: TypeTag::new(),
+                party_proxy: PartyProxyData { external_ref: None },
+            },
+            is_queryable: true,
+            is_modifiable: true,
+            other_details: None,
+        };
+        assert!(!status.invariant_is_archetype_root());
+
+        status.locatable.archetype_details = Some(archetyped());
+        assert!(status.invariant_is_archetype_root());
+    }
+
+    fn archetyped() -> crate::common::archetyped::archetyped::Archetyped {
+        use openehr_base::identification::archetype_id::ArchetypeId;
+        use openehr_base::identification::object_id::ObjectIdData;
+        crate::common::archetyped::archetyped::Archetyped {
+            type_tag: TypeTag::new(),
+            archetype_id: ArchetypeId {
+                type_tag: TypeTag::new(),
+                object_id: ObjectIdData {
+                    value: "openEHR-EHR-EHR_STATUS.generic.v1".to_string(),
+                },
+            },
+            template_id: None,
+            rm_version: "1.1.0".to_string(),
+        }
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -220,5 +272,5 @@ mod tests {
 //   source_loc: master04-ehr_package.adoc §Class Descriptions / uml_classes/ehr_status.adoc §EHR_STATUS Class
 //   confidence: high
 //   todos: 6
-//   note: forward-references LocatableData/PartySelf/ItemStructure (all not-yet-transcribed siblings); Is_archetype_root invariant stubbed pending LOCATABLE. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl (no-op struct-level rename removed); round-trip test still #[ignore]d pending the sibling waves' DvText/LocatableData ADR-002 shapes (its expected JSON already asserts _type-first). The test's exact expected JSON string is the reviewable artifact even while ignored.
+//   note: embeds LocatableData/PartySelf per ADR-001 §3. P5/ADR-003 §8: Is_archetype_root invariant implemented (derived from archetype_details), pinned by a unit test; the canonical-JSON round-trip test now runs (not ignored). The 6 TODO(port) are forward-ref import scaffolding comments. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl.
 // ─────────────────────────────────────────────

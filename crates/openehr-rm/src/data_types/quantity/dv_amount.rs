@@ -22,6 +22,10 @@ use super::dv_quantity::DvQuantity;
 // just this package's three.
 use crate::data_types::date_time::dv_duration::DvDuration;
 use openehr_foundation::primitive_types::any::Any;
+// PORT NOTE: `Ordered` is *not* imported here — the `less_than_amount`
+// default body calls `magnitude().less_than(..)`, which resolves through the
+// `T: OrderedNumeric` bound (`OrderedNumeric: Ordered`, already in scope)
+// without needing `Ordered` itself imported.
 use openehr_foundation::primitive_types::ordered_numeric::OrderedNumeric;
 use openehr_foundation::primitive_types::real::Real;
 use serde::{Deserialize, Serialize};
@@ -145,24 +149,20 @@ pub trait DvAmountApi<T: OrderedNumeric>: DvQuantifiedApi<T> {
     /// 100.
     ///
     /// PORT NOTE: the spec types `number` as the abstract `Ordered_Numeric`
-    /// itself; transcribed here over the same `T: OrderedNumeric` this
-    /// trait is already generic over (matching `DvQuantifiedApi::magnitude`'s
-    /// own `T` parameter), rather than introducing a second, independent
-    /// generic parameter — the spec gives no indication `number`'s type
-    /// need differ from the class's own magnitude type.
-    fn valid_percentage(_number: &T) -> bool
+    /// itself, but the only place the spec ever applies this query is the
+    /// `Accuracy_validity` invariant (`accuracy_is_percent implies
+    /// valid_percentage (accuracy)`), whose operand is `accuracy: Real` —
+    /// the parameter is therefore narrowed to `&Real` here, the one
+    /// concrete `Ordered_Numeric` the spec actually feeds it. The earlier
+    /// fully-generic `&T` shape was uncallable (no generic `0`/`100`
+    /// comparison exists on `OrderedNumeric`); resolved per ADR-003 §8's
+    /// "invariants become working methods" mandate rather than left
+    /// `todo!()`.
+    fn valid_percentage(number: &Real) -> bool
     where
         Self: Sized,
     {
-        // TODO(port): `OrderedNumeric` (the blanket-implemented composition
-        // of `Ordered + Numeric`) does not itself expose a way to compare
-        // against the literal Rust values `0`/`100` generically — doing so
-        // needs either a `From<Integer>`-style conversion or a
-        // numeric-literal trait bound not yet part of `OrderedNumeric`'s
-        // shape. Left unresolved pending that foundation-layer decision.
-        todo!(
-            "DvAmountApi::valid_percentage: needs a generic 0/100 comparison over T: OrderedNumeric"
-        )
+        (0.0..=100.0).contains(&number.0)
     }
 
     /// `add` __alias__ `"+"` `(other: DV_AMOUNT) -> DV_AMOUNT`.
@@ -252,14 +252,126 @@ impl<T: DvOrderedApi> Any for DvAmountData<T> {
     }
 }
 
-// TODO(port): the two class invariants below are not yet encoded as a
-// `Validate` impl, per `.claude/rules/rm-transcription.md`'s "Invariants"
-// section:
-//
-// - `Accuracy_is_percent_validity`: `accuracy = 0 implies not
-//   accuracy_is_percent`
-// - `Accuracy_validity`: `accuracy_is_percent implies valid_percentage
-//   (accuracy)`
+impl<T: DvOrderedApi> DvAmountData<T> {
+    /// True if the recorded accuracy means "unknown": either the attribute
+    /// is absent (`0..1`, not recorded) or it holds the spec's
+    /// `unknown_accuracy_value` sentinel (`-1`).
+    ///
+    /// PORT NOTE: the spec models "not recorded" through the `-1` sentinel
+    /// on a `0..1` attribute; absence has no distinct stated semantics, so
+    /// both encodings are treated as unknown — the same flagged reading as
+    /// every concrete leaf's `accuracy_unknown()`.
+    pub fn accuracy_unknown(&self) -> bool {
+        match self.accuracy {
+            None => true,
+            Some(a) => a.0 == UNKNOWN_ACCURACY_VALUE,
+        }
+    }
+
+    /// `Accuracy_is_percent_validity` class invariant, as a working method
+    /// per ADR-003 decision 8:
+    ///
+    /// `accuracy = 0 implies not accuracy_is_percent`.
+    pub fn invariant_accuracy_is_percent_validity(&self) -> bool {
+        self.accuracy != Some(Real(0.0)) || !self.accuracy_is_percent.unwrap_or(false)
+    }
+
+    /// `Accuracy_validity` class invariant, as a working method per
+    /// ADR-003 decision 8:
+    ///
+    /// `accuracy_is_percent implies valid_percentage (accuracy)`.
+    ///
+    /// PORT NOTE: `valid_percentage`'s body is duplicated inline here
+    /// (`0 <= accuracy <= 100`) rather than routed through
+    /// `DvAmountApi::valid_percentage`, since `DvAmountData` is the
+    /// embedded state struct, not itself a `DvAmountApi` implementor. An
+    /// absent `accuracy` under `accuracy_is_percent = True` fails the
+    /// invariant (there is no percentage value to be valid).
+    pub fn invariant_accuracy_validity(&self) -> bool {
+        !self.accuracy_is_percent.unwrap_or(false)
+            || self.accuracy.is_some_and(|a| (0.0..=100.0).contains(&a.0))
+    }
+}
+
+/// Accuracy-combination rule for `DV_AMOUNT.add`/`subtract`, shared by every
+/// concrete leaf's `add`/`subtract` (`DvQuantity`, `DvCount`,
+/// `DvProportion`), transcribed from `DV_AMOUNT`'s own prose (the spec
+/// gives no formal `Post_result`):
+///
+/// * the result accuracy is the sum of the operand accuracies, if both
+///   present (and neither unknown), or;
+/// * unknown, if either or both operand accuracies are unknown;
+/// * if the accuracy value is a percentage in one operand and not in the
+///   other, the form in the result is that of the larger operand.
+///
+/// PORT NOTE: two interpretation points the prose leaves open, resolved
+/// here and flagged:
+///
+/// 1. "unknown" in the result is encoded as **absence** (`None` accuracy,
+///    `None` flag) rather than the `-1` sentinel — `accuracy_unknown()`
+///    treats both identically, and absence cannot be mistaken for a real
+///    measurement.
+/// 2. "larger operand" is read as larger absolute `magnitude`; when the two
+///    operands' forms differ, the other operand's accuracy is converted
+///    into the winning form relative to its own magnitude (`a% of |m|` ↔
+///    absolute half-range) before summing — summing a percent with an
+///    absolute number directly would be dimensionally meaningless. A
+///    zero-magnitude operand converts to `0` accuracy in the percent
+///    direction (no finite percentage exists), flagged rather than silently
+///    NaN.
+pub fn combined_accuracy(
+    lhs_magnitude: f64,
+    lhs_accuracy: Option<Real>,
+    lhs_accuracy_is_percent: Option<bool>,
+    rhs_magnitude: f64,
+    rhs_accuracy: Option<Real>,
+    rhs_accuracy_is_percent: Option<bool>,
+) -> (Option<Real>, Option<bool>) {
+    let (Some(lhs_acc), Some(rhs_acc)) = (lhs_accuracy, rhs_accuracy) else {
+        return (None, None);
+    };
+    if lhs_acc.0 == UNKNOWN_ACCURACY_VALUE || rhs_acc.0 == UNKNOWN_ACCURACY_VALUE {
+        return (None, None);
+    }
+
+    let lhs_percent = lhs_accuracy_is_percent.unwrap_or(false);
+    let rhs_percent = rhs_accuracy_is_percent.unwrap_or(false);
+    // When the two forms differ, the result takes the *larger* operand's form
+    // ("the form in the result is that of the larger operand"); when they
+    // match, either yields the same value. (The equal-forms and larger-lhs
+    // arms are the same value — `lhs_percent` — so they are merged.)
+    let result_percent = if lhs_percent == rhs_percent || lhs_magnitude.abs() >= rhs_magnitude.abs()
+    {
+        lhs_percent
+    } else {
+        rhs_percent
+    };
+
+    let into_result_form = |accuracy: f64, is_percent: bool, magnitude: f64| -> f64 {
+        if is_percent == result_percent {
+            accuracy
+        } else if result_percent {
+            // absolute half-range → percent of the operand's own magnitude
+            if magnitude == 0.0 {
+                0.0
+            } else {
+                accuracy / magnitude.abs() * 100.0
+            }
+        } else {
+            // percent of the operand's own magnitude → absolute half-range
+            accuracy * magnitude.abs() / 100.0
+        }
+    };
+
+    let sum = into_result_form(lhs_acc.0, lhs_percent, lhs_magnitude)
+        + into_result_form(rhs_acc.0, rhs_percent, rhs_magnitude);
+    let flag = if lhs_accuracy_is_percent.is_some() || rhs_accuracy_is_percent.is_some() {
+        Some(result_percent)
+    } else {
+        None
+    };
+    (Some(Real(sum)), flag)
+}
 
 // TODO(port): `DvAmountApi` is not implemented for the `DvAmount` enum
 // itself (contrast `dv_ordered.rs`'s `impl DvOrderedApi for DvOrdered`) —
@@ -268,14 +380,166 @@ impl<T: DvOrderedApi> Any for DvAmountData<T> {
 // (`DvQuantity`'s `f64`/`Real`, `DvCount`'s `Integer64`, etc.), so a single
 // `impl DvAmountApi<T> for DvAmount` cannot be written without an
 // associated-type or existential-`T` bridge not yet designed. Left as a
-// documented gap; callers holding a concrete leaf type use that type's own
-// `DvAmountApi` impl directly instead of going through the enum.
+// documented gap for P17 (make-it-compile) triage; callers holding a
+// concrete leaf type use that type's own `DvAmountApi` impl directly
+// instead of going through the enum.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::quantity::dv_count::DvCount;
+    use crate::data_types::quantity::dv_ordered::DvOrderedData;
+    use crate::data_types::quantity::dv_quantified::DvQuantifiedData;
+
+    fn amount_data(
+        accuracy: Option<f64>,
+        accuracy_is_percent: Option<bool>,
+    ) -> DvAmountData<DvCount> {
+        DvAmountData {
+            quantified: DvQuantifiedData {
+                ordered: DvOrderedData {
+                    normal_status: None,
+                    normal_range: None,
+                    other_reference_ranges: None,
+                },
+                magnitude_status: None,
+                accuracy: None,
+            },
+            accuracy_is_percent,
+            accuracy: accuracy.map(Real),
+        }
+    }
+
+    /// Spec: "Test whether a number is a valid percentage, i.e. between 0
+    /// and 100."
+    #[test]
+    fn valid_percentage_accepts_zero_to_one_hundred_inclusive() {
+        assert!(<DvCount as DvAmountApi<i64>>::valid_percentage(&Real(0.0)));
+        assert!(<DvCount as DvAmountApi<i64>>::valid_percentage(&Real(50.5)));
+        assert!(<DvCount as DvAmountApi<i64>>::valid_percentage(&Real(
+            100.0
+        )));
+        assert!(!<DvCount as DvAmountApi<i64>>::valid_percentage(&Real(
+            -0.1
+        )));
+        assert!(!<DvCount as DvAmountApi<i64>>::valid_percentage(&Real(
+            100.1
+        )));
+    }
+
+    /// `Accuracy_is_percent_validity`: `accuracy = 0 implies not
+    /// accuracy_is_percent`.
+    #[test]
+    fn accuracy_is_percent_validity_invariant() {
+        assert!(amount_data(Some(0.0), None).invariant_accuracy_is_percent_validity());
+        assert!(amount_data(Some(0.0), Some(false)).invariant_accuracy_is_percent_validity());
+        assert!(!amount_data(Some(0.0), Some(true)).invariant_accuracy_is_percent_validity());
+        assert!(amount_data(Some(5.0), Some(true)).invariant_accuracy_is_percent_validity());
+        assert!(amount_data(None, Some(true)).invariant_accuracy_is_percent_validity());
+    }
+
+    /// `Accuracy_validity`: `accuracy_is_percent implies valid_percentage
+    /// (accuracy)`.
+    #[test]
+    fn accuracy_validity_invariant() {
+        assert!(amount_data(Some(5.0), Some(true)).invariant_accuracy_validity());
+        assert!(!amount_data(Some(101.0), Some(true)).invariant_accuracy_validity());
+        assert!(!amount_data(None, Some(true)).invariant_accuracy_validity());
+        // Not a percentage: any accuracy value is fine for this invariant.
+        assert!(amount_data(Some(250.0), Some(false)).invariant_accuracy_validity());
+        assert!(amount_data(Some(250.0), None).invariant_accuracy_validity());
+    }
+
+    #[test]
+    fn accuracy_unknown_covers_absence_and_sentinel() {
+        assert!(amount_data(None, None).accuracy_unknown());
+        assert!(amount_data(Some(UNKNOWN_ACCURACY_VALUE), None).accuracy_unknown());
+        assert!(!amount_data(Some(0.5), None).accuracy_unknown());
+    }
+
+    /// Spec prose: "the sum of the accuracies of the operands, if both
+    /// present".
+    #[test]
+    fn combined_accuracy_sums_matching_forms() {
+        // Both absolute.
+        assert_eq!(
+            combined_accuracy(10.0, Some(Real(0.5)), None, 20.0, Some(Real(0.25)), None),
+            (Some(Real(0.75)), None)
+        );
+        // Both percent.
+        assert_eq!(
+            combined_accuracy(
+                10.0,
+                Some(Real(2.0)),
+                Some(true),
+                20.0,
+                Some(Real(3.0)),
+                Some(true)
+            ),
+            (Some(Real(5.0)), Some(true))
+        );
+    }
+
+    /// Spec prose: "unknown, if either or both operand accuracies are
+    /// unknown".
+    #[test]
+    fn combined_accuracy_is_unknown_when_either_operand_unknown() {
+        assert_eq!(
+            combined_accuracy(10.0, None, None, 20.0, Some(Real(0.25)), None),
+            (None, None)
+        );
+        assert_eq!(
+            combined_accuracy(
+                10.0,
+                Some(Real(UNKNOWN_ACCURACY_VALUE)),
+                None,
+                20.0,
+                Some(Real(0.25)),
+                None
+            ),
+            (None, None)
+        );
+    }
+
+    /// Spec prose: "If the accuracy value is a percentage in one operand
+    /// and not in the other, the form in the result is that of the larger
+    /// operand."
+    #[test]
+    fn combined_accuracy_mixed_forms_take_the_larger_operands_form() {
+        // Larger operand (magnitude 100) is percent: 2% stays 2%; the
+        // absolute 0.5 on magnitude 10 converts to 5%; sum = 7%.
+        assert_eq!(
+            combined_accuracy(
+                100.0,
+                Some(Real(2.0)),
+                Some(true),
+                10.0,
+                Some(Real(0.5)),
+                Some(false)
+            ),
+            (Some(Real(7.0)), Some(true))
+        );
+        // Larger operand (magnitude 100) is absolute: 1.0 stays; the 10%
+        // on magnitude 10 converts to 1.0 absolute; sum = 2.0 absolute.
+        assert_eq!(
+            combined_accuracy(
+                100.0,
+                Some(Real(1.0)),
+                Some(false),
+                10.0,
+                Some(Real(10.0)),
+                Some(true)
+            ),
+            (Some(Real(2.0)), Some(false))
+        );
+    }
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_amount.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_amount.adoc §DV_AMOUNT Class
 //   confidence: medium
-//   todos: 4
-//   note: UNKNOWN_ACCURACY_VALUE drawn from class description prose (not a table row) since the published table has no Constants section for this class; valid_percentage stubbed pending a generic 0/100 comparison bound over T: OrderedNumeric; the two accuracy invariants recorded but not enforced; DvAmountApi has no impl for the DvAmount enum itself since its generic T varies per variant. P4: DvAmountData<T> derives Serialize/Deserialize with `quantified` flattened; Real-lacks-serde gap now closed in openehr-foundation. ADR-002: DvAmountData is abstract, NO _type tag; DvAmount converted from #[serde(tag = "_type")] to #[serde(untagged)] — dispatch via each payload's own TypeTag (per-variant renames removed).
+//   todos: 2
+//   note: UNKNOWN_ACCURACY_VALUE drawn from class description prose (not a table row) since the published table has no Constants section for this class; valid_percentage's parameter narrowed from the uncallable generic Ordered_Numeric to &Real (the invariant's only operand), now a working default; the two accuracy invariants implemented as invariant_* methods on DvAmountData per ADR-003 §8 and unit-tested; combined_accuracy transcribes DV_AMOUNT's prose accuracy rule (unknown-propagation + larger-operand form with documented conversion interpretation) for reuse by DvQuantity/DvCount/DvProportion add/subtract; DvAmountApi still has no impl for the DvAmount enum itself since its generic T varies per variant (remaining TODO). P4: DvAmountData<T> derives Serialize/Deserialize with `quantified` flattened; Real-lacks-serde gap now closed in openehr-foundation. ADR-002: DvAmountData is abstract, NO _type tag; DvAmount converted from #[serde(tag = "_type")] to #[serde(untagged)] — dispatch via each payload's own TypeTag (per-variant renames removed).
 // ─────────────────────────────────────────────

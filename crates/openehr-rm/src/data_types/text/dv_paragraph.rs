@@ -50,9 +50,9 @@ pub struct DvParagraph {
     ///
     /// Invariant `Items_valid`: `not items.is_empty`.
     ///
-    /// TODO(port): invariant not yet enforced by a constructor/`Validate`
-    /// impl; recorded here as a doc note pending the RM invariant
-    /// framework.
+    /// Implemented as the boolean method [`DvParagraph::invariant_items_valid`]
+    /// (ADR-003 decision 8). TODO(port): the walker/accumulator enforcement is
+    /// the P11 RM validation-framework deliverable.
     pub items: Vec<DvText>,
 }
 
@@ -63,8 +63,8 @@ impl TypeName for DvParagraph {
 impl DvParagraph {
     /// `Items_valid`: `not items.is_empty`.
     ///
-    /// TODO(port): wire into a `Validate` impl once the RM invariant
-    /// framework lands.
+    /// TODO(port): wire into a `Validate` impl at P11 (the RM
+    /// validation-framework deliverable per ADR-003 decision 8).
     pub fn invariant_items_valid(&self) -> bool {
         !self.items.is_empty()
     }

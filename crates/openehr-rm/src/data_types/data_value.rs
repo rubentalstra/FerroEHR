@@ -272,22 +272,18 @@ impl DataValueApi for DataValue {
             DataValue::Paragraph(v) => v.type_name(),
             DataValue::State(v) => v.type_name(),
             DataValue::Identifier(v) => v.type_name(),
-            // TODO(port): sibling `quantity` types do not yet implement
-            // `DataValueApi` (concurrent conversion in separate worktrees);
-            // their arms cannot delegate until those land and this file is
-            // wired at P17. Left as `todo!()` per-arm rather than omitting
-            // the arms, so the match stays exhaustive against the enum
-            // defined above. The `date_time`/`time_specification`/
-            // `encapsulated` arms now return the canonical name via each
-            // payload's ADR-002 `TypeName` impl.
-            DataValue::Ordinal(_) => todo!("DvOrdinal::type_name pending sibling transcription"),
-            DataValue::Scale(_) => todo!("DvScale::type_name pending sibling transcription"),
-            DataValue::Quantity(_) => todo!("DvQuantity::type_name pending sibling transcription"),
-            DataValue::Count(_) => todo!("DvCount::type_name pending sibling transcription"),
-            DataValue::Proportion(_) => {
-                todo!("DvProportion::type_name pending sibling transcription")
-            }
-            DataValue::Interval(_) => todo!("DvInterval::type_name pending sibling transcription"),
+            // Every concrete `DV_*` class carries its canonical `_type` via
+            // its ADR-002 `TypeName` impl; each arm returns that name. (The
+            // quantity types do not implement `DataValueApi` themselves, so
+            // they are read through `<X as TypeName>::NAME` rather than a
+            // `.type_name()` delegation — same shape as the date_time /
+            // time_specification / encapsulated arms below.)
+            DataValue::Ordinal(_) => <DvOrdinal as TypeName>::NAME,
+            DataValue::Scale(_) => <DvScale as TypeName>::NAME,
+            DataValue::Quantity(_) => <DvQuantity as TypeName>::NAME,
+            DataValue::Count(_) => <DvCount as TypeName>::NAME,
+            DataValue::Proportion(_) => <DvProportion as TypeName>::NAME,
+            DataValue::Interval(_) => <DvInterval<DvOrdered> as TypeName>::NAME,
             DataValue::Multimedia(_) => <DvMultimedia as TypeName>::NAME,
             DataValue::Parsable(_) => <DvParsable as TypeName>::NAME,
             DataValue::PeriodicTimeSpecification(_) => {
@@ -368,13 +364,34 @@ mod tests {
             assert_eq!(back, v);
         }
     }
+
+    /// `DataValueApi::type_name` reports each variant's canonical `_type`.
+    /// Exercised on the text/date_time/uri arms (owned here); the quantity
+    /// arms return `<X as TypeName>::NAME` by the same shape.
+    #[test]
+    fn type_name_dispatches_to_each_payload() {
+        let cases = [
+            (r#"{"_type":"DV_DATE","value":"2026-07-03"}"#, "DV_DATE"),
+            (r#"{"_type":"DV_TIME","value":"10:00:00"}"#, "DV_TIME"),
+            (r#"{"_type":"DV_DURATION","value":"P1D"}"#, "DV_DURATION"),
+            (
+                r#"{"_type":"DV_URI","value":"http://example.org"}"#,
+                "DV_URI",
+            ),
+            (r#"{"_type":"DV_TEXT","value":"hi"}"#, "DV_TEXT"),
+        ];
+        for (json, want) in cases {
+            let v: DataValue = serde_json::from_str(json).unwrap();
+            assert_eq!(v.type_name(), want, "{json}");
+        }
+    }
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types (root) — docs/research/spec-cache/RM-1.1.0/uml_classes/data_value.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master03-introduction.adoc §Overview / data_value.adoc §DATA_VALUE Class
-//   confidence: medium
-//   todos: 1
-//   note: DATA_VALUE has no attributes of its own (only an OPENEHR_DEFINITIONS constants-inherit), so it gets a lean DataValueApi marker trait per ADR-001 §1, not a Data+enum+Api triple; the six quantity-cluster arms of the DataValueApi impl remain todo!() pending that cluster's own DataValueApi/TypeName landing (6 todo!() calls under 1 TODO(port) marker), while the date_time/time_specification/encapsulated arms now return each payload's ADR-002 TypeName::NAME. DV_STATE/DV_IDENTIFIER/DV_PARAGRAPH/DV_URI/DV_EHR_URI included as variants despite not being named in the task's explicit list (flagged as likely oversight, not exclusion); Text(DvText) vs CodedText(DvCodedText) overlap (both can represent coded text) flagged as a design question for P4/P17. P4 (ADR-002): the former tagged-enum form + per-variant renames are replaced by #[serde(untagged)] — dispatch runs on each payload's own TypeTag (wrong `_type` fails that variant, so probing is tag-driven even for the structure-identical DV_DATE/DV_TIME/DV_DATE_TIME family); variants reordered richer-first (CodedText before Text, object payloads before the {value} family, Boolean last); in-file tests pin tag-driven dispatch (DV_TIME must not land on the earlier-declared Date/Duration) and date/time-family round-trips; DvQuantity round-trip deferred until the quantity cluster's sibling conversion lands (PORT-NOTEd in the test).
+//   confidence: high
+//   todos: 0
+//   note: DATA_VALUE has no attributes of its own (only an OPENEHR_DEFINITIONS constants-inherit), so it gets a lean DataValueApi marker trait per ADR-001 §1, not a Data+enum+Api triple. The DataValueApi::type_name dispatcher is now complete: every variant returns its concrete class name — the quantity arms via <X as TypeName>::NAME (the quantity types implement TypeName but not DataValueApi), matching the date_time/time_specification/encapsulated arms; the text/basic/uri arms delegate to each payload's own type_name(). DV_STATE/DV_IDENTIFIER/DV_PARAGRAPH/DV_URI/DV_EHR_URI included as variants; Text(DvText) vs CodedText(DvCodedText) overlap (both can represent coded text) flagged as a design question for P4/P17. P4 (ADR-002): #[serde(untagged)] — dispatch runs on each payload's own TypeTag (wrong `_type` fails that variant, so probing is tag-driven even for the structure-identical DV_DATE/DV_TIME/DV_DATE_TIME family); variants reordered richer-first (CodedText before Text, object payloads before the {value} family, Boolean last); in-file tests pin tag-driven dispatch, date/time-family round-trips, and type_name dispatch.
 // ─────────────────────────────────────────────

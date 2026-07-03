@@ -62,11 +62,11 @@
 //!
 //! `DV_AMOUNT`'s own attributes (`accuracy_is_percent`, `accuracy`) are
 //! inlined directly onto this struct rather than through a shared
-//! `DvAmountData` embed, since that shared struct has not yet landed from
-//! the concurrent `quantity` package transcription. `// TODO(port):` marks
-//! the reconciliation point: once `DvAmountData`/`DvAmount` exist, this
-//! struct should hold `pub amount: DvAmountData` instead of the two inlined
-//! fields below, mirroring the `DvTemporalData` embedding used by
+//! `DvAmountData` embed, since that shared struct is owned by the concurrent
+//! `quantity` package transcription. `// TODO(port):` (P17 wiring) marks the
+//! reconciliation point: once `DvAmountData`/`DvAmount` land, this struct
+//! should hold `pub amount: DvAmountData` instead of the two inlined fields
+//! below, mirroring the `DvTemporalData` embedding used by
 //! `DvDate`/`DvTime`/`DvDateTime` in this same package.
 use crate::data_types::quantity::dv_ordered::DvOrderedApi;
 use crate::data_types::text::code_phrase::CodePhrase;
@@ -106,11 +106,11 @@ pub struct DvDuration {
     /// A value of `unknown_accuracy_value` means that accuracy was not
     /// recorded.
     ///
-    /// TODO(port): the spec's `unknown_accuracy_value` sentinel is not
-    /// itself defined in this class's own table (it is referenced by
+    /// TODO(port) (P17 wiring): the spec's `unknown_accuracy_value` sentinel
+    /// is not itself defined in this class's own table (it is referenced by
     /// `DV_AMOUNT`'s description only); modelled as `None` here rather than
     /// a magic `Real` sentinel, pending confirmation this is the intended
-    /// reading once `DV_AMOUNT` is fully transcribed.
+    /// reading once the concurrent `quantity` cluster lands `DV_AMOUNT`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub accuracy: Option<f64>,
 
@@ -145,6 +145,24 @@ impl TypeName for DvDuration {
 }
 
 impl DvDuration {
+    /// Construct a `DV_DURATION` wrapping a foundation `Iso8601_duration`,
+    /// with no `DV_AMOUNT` accuracy metadata.
+    ///
+    /// PORT NOTE: not a spec function — a construction convenience used by the
+    /// `DV_TEMPORAL` `diff` implementations (`DvDate`/`DvTime`/`DvDateTime`),
+    /// whose spec return type is a bare `DV_DURATION` computed from the
+    /// foundation `Iso8601_*::diff`. Accuracy fields are `None` because a
+    /// difference carries no measurement accuracy of its own.
+    #[must_use]
+    pub fn from_iso8601(iso8601: Iso8601Duration) -> Self {
+        Self {
+            type_tag: TypeTag::new(),
+            accuracy_is_percent: None,
+            accuracy: None,
+            iso8601,
+        }
+    }
+
     /// `add` __alias__ `"+"` `(other: DV_DURATION[1]): DV_DURATION`
     /// (redefined from `DV_AMOUNT.add`).
     ///
@@ -254,10 +272,10 @@ impl DvDuration {
     /// `Accuracy_validity` invariant (inherited from `DV_AMOUNT`):
     /// `accuracy_is_percent implies valid_percentage(accuracy)`.
     ///
-    /// TODO(port): `valid_percentage` (`DV_AMOUNT.valid_percentage`) is not
-    /// yet transcribed here — forward-referenced pending the `quantity`
-    /// cluster's own `DV_AMOUNT` landing; a literal `0..100` percentage
-    /// range check is the described contract in the interim.
+    /// TODO(port) (P17 wiring): `valid_percentage` (`DV_AMOUNT.valid_percentage`)
+    /// is owned by the concurrent `quantity` cluster's `DV_AMOUNT`; a literal
+    /// `0..=100` percentage range check is the described contract in the
+    /// interim.
     pub fn invariant_accuracy_validity(&self) -> bool {
         if self.accuracy_is_percent.unwrap_or(false) {
             match self.accuracy {
@@ -303,15 +321,16 @@ impl DvOrderedApi for DvDuration {
     /// `normal_status`: inherited from `DV_ORDERED` through the `DV_AMOUNT`
     /// chain.
     ///
-    /// TODO(port): `DvDuration` inlines `DV_AMOUNT`'s two attributes
-    /// directly instead of embedding `DvAmountData<Self>` (see the
+    /// TODO(port) (P17 wiring): `DvDuration` inlines `DV_AMOUNT`'s two
+    /// attributes directly instead of embedding `DvAmountData<Self>` (see the
     /// forward-reference note in the module doc), so the `DV_ORDERED`-level
-    /// state (`normal_status`/`normal_range`/`other_reference_ranges`) has
-    /// no backing field yet; stubbed pending that documented
-    /// reconciliation.
+    /// state (`normal_status`/`normal_range`/`other_reference_ranges`) has no
+    /// backing field yet — this cannot be implemented here without the
+    /// concurrent `quantity` cluster's `DvAmountData` (crate-boundary owned).
+    /// Stubbed pending that documented reconciliation.
     fn normal_status(&self) -> Option<&CodePhrase> {
         todo!(
-            "DV_DURATION.normal_status: no backing DV_ORDERED state until the documented DvAmountData<Self> embedding reconciliation"
+            "DV_DURATION.normal_status: no backing DV_ORDERED state until the P17 DvAmountData<Self> embedding reconciliation (quantity cluster)"
         )
     }
 
@@ -386,6 +405,6 @@ mod tests {
 //   source: RM 1.1.0 data_types.date_time — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_duration.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master07-date_time_package.adoc §Class Descriptions / dv_duration.adoc §DV_DURATION Class
 //   confidence: medium
-//   todos: 2
-//   note: the Section 7.2-named multiple-inheritance hazard (DV_AMOUNT + Iso8601_duration, genuinely disjoint parent state, contrast the value-mixin-only MI on DV_DATE/DV_TIME/DV_DATE_TIME); DV_AMOUNT's two attributes inlined pending the concurrent quantity cluster landing DvAmountData (flagged, reconciliation TODO); arithmetic, magnitude, and value validity now delegate to the implemented Iso8601Duration methods while preserving receiver accuracy fields. normal_status remains TODO(port) until the documented DvAmountData<Self> embedding reconciliation. less_than's Post_result wording is the one internally-consistent case in this package (contrast the three DvDate/DvTime/DvDateTime PORT NOTEs). P4: Serialize/Deserialize added; both Option fields skip when None; `iso8601` flattened over Iso8601Duration's own flattened core (supplied by the foundation P4 pass), so `value` sits flat — wire shape {"_type":"DV_DURATION","value":"P1DT2H"}; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME); the stale "foundation has no serde" TODO removed (superseded by the foundation derive, in-file round-trip test pins the flat shape).
+//   todos: 4
+//   note: the Section 7.2-named multiple-inheritance hazard (DV_AMOUNT + Iso8601_duration, genuinely disjoint parent state, contrast the value-mixin-only MI on DV_DATE/DV_TIME/DV_DATE_TIME). add/subtract/multiply/negative/magnitude/less_than and value validity delegate to the implemented Iso8601Duration methods while preserving receiver accuracy fields; from_iso8601 constructor added for the DV_TEMPORAL diff impls. The 4 remaining TODO(port) are all DV_AMOUNT/DV_ORDERED state owned by the concurrent quantity cluster (P17 wiring): the DvAmountData embedding reconciliation, unknown_accuracy_value sentinel, valid_percentage, and normal_status (still a todo!() with no backing DV_ORDERED field). less_than's Post_result wording is the one internally-consistent case in this package (contrast the three DvDate/DvTime/DvDateTime PORT NOTEs). P4: Serialize/Deserialize added; both Option fields skip when None; `iso8601` flattened over Iso8601Duration's own flattened core, so `value` sits flat — wire shape {"_type":"DV_DURATION","value":"P1DT2H"}; ADR-002 self-tagging applied (TypeTag<Self> first field + TypeName from TYPE_NAME); in-file round-trip test pins the flat shape.
 // ─────────────────────────────────────────────

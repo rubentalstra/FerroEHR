@@ -6,3 +6,4 @@ pub mod feeder_audit_details;
 pub mod link;
 pub mod locatable;
 pub mod pathable;
+pub mod paths;

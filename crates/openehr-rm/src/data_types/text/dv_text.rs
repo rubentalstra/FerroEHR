@@ -22,6 +22,7 @@ use super::term_mapping::TermMapping;
 use crate::data_types::data_value::DataValueApi;
 use crate::data_types::uri::dv_uri::DvUri;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_terminology::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
 use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class, single-sourced
@@ -122,8 +123,9 @@ pub struct DvTextData {
     /// Invariant `Language_valid`: `language /= Void implies
     /// code_set(Code_set_id_languages).has_code(language)`.
     ///
-    /// TODO(port): invariant requires a live terminology-service code-set
-    /// lookup (`openehr_terminology`); not yet enforced.
+    /// Enforced by [`DvTextData::invariant_language_valid`], which takes a
+    /// `&TerminologyService` (ADR-003 decision 8: invariants that need
+    /// terminology take the service).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub language: Option<CodePhrase>,
 
@@ -137,8 +139,9 @@ pub struct DvTextData {
     /// Invariant `Encoding_valid`: `encoding /= Void implies
     /// code_set(Code_set_id_character_sets).has_code(encoding)`.
     ///
-    /// TODO(port): invariant requires a live terminology-service code-set
-    /// lookup (`openehr_terminology`); not yet enforced.
+    /// Enforced by [`DvTextData::invariant_encoding_valid`], which takes a
+    /// `&TerminologyService` (ADR-003 decision 8: invariants that need
+    /// terminology take the service).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encoding: Option<CodePhrase>,
 }
@@ -175,27 +178,34 @@ impl DvTextData {
     /// `Language_valid`: `language /= Void implies
     /// code_set(Code_set_id_languages).has_code(language)`.
     ///
-    /// TODO(port): requires a live `TerminologyService`/`CodeSetAccess`
-    /// lookup (`openehr_terminology`), not available at this layer without
-    /// threading a service reference through; left unimplemented.
-    pub fn invariant_language_valid(&self) -> bool {
-        // TODO(port): call into openehr_terminology::CodeSetAccess::has_code
-        // for the openEHR "languages" code set once a service handle is
-        // available here.
-        todo!("Language_valid requires a live terminology code-set lookup")
+    /// Per ADR-003 decision 8, invariants that need terminology take a
+    /// `&TerminologyService`. Trivially `true` when `language` is `Void`
+    /// (`None`); otherwise the language's `code_string` must be a member of
+    /// the openEHR "languages" code set (`Code_set_id_languages`, ISO 639-1).
+    pub fn invariant_language_valid(&self, terminology: &TerminologyService) -> bool {
+        match &self.language {
+            None => true,
+            Some(language) => terminology
+                .code_set_for_id(OpenehrCodeSetIdentifiers::CODE_SET_ID_LANGUAGES)
+                .is_some_and(|code_set| code_set.has_code(&language.code_string)),
+        }
     }
 
     /// `Encoding_valid`: `encoding /= Void implies
     /// code_set(Code_set_id_character_sets).has_code(encoding)`.
     ///
-    /// TODO(port): requires a live `TerminologyService`/`CodeSetAccess`
-    /// lookup (`openehr_terminology`), not available at this layer without
-    /// threading a service reference through; left unimplemented.
-    pub fn invariant_encoding_valid(&self) -> bool {
-        // TODO(port): call into openehr_terminology::CodeSetAccess::has_code
-        // for the openEHR "character sets" code set once a service handle
-        // is available here.
-        todo!("Encoding_valid requires a live terminology code-set lookup")
+    /// Per ADR-003 decision 8, invariants that need terminology take a
+    /// `&TerminologyService`. Trivially `true` when `encoding` is `Void`
+    /// (`None`); otherwise the encoding's `code_string` must be a member of
+    /// the openEHR "character sets" code set (`Code_set_id_character_sets`,
+    /// IANA character sets).
+    pub fn invariant_encoding_valid(&self, terminology: &TerminologyService) -> bool {
+        match &self.encoding {
+            None => true,
+            Some(encoding) => terminology
+                .code_set_for_id(OpenehrCodeSetIdentifiers::CODE_SET_ID_CHARACTER_SETS)
+                .is_some_and(|code_set| code_set.has_code(&encoding.code_string)),
+        }
     }
 }
 
@@ -386,13 +396,47 @@ mod tests {
         let coded_back: DvText = serde_json::from_str(&coded_round).unwrap();
         assert_eq!(coded_back, coded);
     }
+
+    /// A `CODE_PHRASE` built from JSON so the test does not hard-code the
+    /// `TerminologyId` field shape (owned by `openehr-base`); a missing
+    /// `_type` is tolerated on concrete slots per ADR-002.
+    fn code_phrase(code: &str) -> CodePhrase {
+        serde_json::from_value(serde_json::json!({
+            "terminology_id": { "value": "openehr" },
+            "code_string": code,
+        }))
+        .unwrap()
+    }
+
+    /// `Language_valid`/`Encoding_valid` check membership in the bundled
+    /// openEHR "languages"/"character sets" code sets: `Void` is trivially
+    /// valid, a real ISO 639-1 / IANA charset code passes, an unknown code
+    /// fails.
+    #[test]
+    fn language_and_encoding_invariants_check_bundled_code_sets() {
+        let terminology = TerminologyService::bundled().expect("bundled terminology");
+
+        let mut data = bare_text("hi");
+        assert!(data.invariant_language_valid(terminology));
+        assert!(data.invariant_encoding_valid(terminology));
+
+        data.language = Some(code_phrase("en"));
+        data.encoding = Some(code_phrase("UTF-8"));
+        assert!(data.invariant_language_valid(terminology));
+        assert!(data.invariant_encoding_valid(terminology));
+
+        data.language = Some(code_phrase("zz"));
+        data.encoding = Some(code_phrase("not-a-charset"));
+        assert!(!data.invariant_language_valid(terminology));
+        assert!(!data.invariant_encoding_valid(terminology));
+    }
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.text — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_text.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master05-text_package.adoc §Class Descriptions / dv_text.adoc §DV_TEXT Class
-//   confidence: medium
-//   todos: 6
-//   note: DvTextData+DvText(enum)+DvTextApi triple applied to a *concrete* (not spec-abstract) parent class, extending the ADR-001 Refinements pattern to DV_TEXT/DV_CODED_TEXT substitutability (the one load-bearing use site in this cluster is DV_PARAGRAPH.items: List<DV_TEXT>); Language_valid/Encoding_valid invariants left as todo!() pending a terminology-service handle (each mentioned on both its field doc and its invariant method, hence 4 of the 6). P4/ADR-002: DvTextData implements TypeName ("DV_TEXT") but carries no tag field (it is flattened into DvCodedText); DvText::Text reshaped to a struct variant {type_tag: TypeTag<DvTextData>, #[serde(flatten)] data} so a bare DV_TEXT self-tags — this resolves the former missing-discriminator TODO; enum stays #[serde(untagged)], Coded first; round-trip pinned by the in-file unit test.
+//   confidence: high
+//   todos: 0
+//   note: DvTextData+DvText(enum)+DvTextApi triple applied to a *concrete* (not spec-abstract) parent class, extending the ADR-001 Refinements pattern to DV_TEXT/DV_CODED_TEXT substitutability (the one load-bearing use site in this cluster is DV_PARAGRAPH.items: List<DV_TEXT>). Language_valid/Encoding_valid now implemented per ADR-003 decision 8: both take a &TerminologyService and check membership in the bundled "languages"/"character sets" code sets (in-file test pins Void/valid/invalid). P4/ADR-002: DvTextData implements TypeName ("DV_TEXT") but carries no tag field (it is flattened into DvCodedText); DvText::Text is a struct variant {type_tag: TypeTag<DvTextData>, #[serde(flatten)] data} so a bare DV_TEXT self-tags; enum stays #[serde(untagged)], Coded first; round-trip pinned by the in-file unit test.
 // ─────────────────────────────────────────────

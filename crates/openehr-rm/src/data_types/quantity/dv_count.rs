@@ -9,8 +9,8 @@
 //!
 //! Misuse: Not to be used for amounts of physical entities (which all have
 //! units).
-use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE};
-use super::dv_ordered::DvOrderedApi;
+use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE, combined_accuracy};
+use super::dv_ordered::{DvOrderedApi, DvOrderedData};
 use super::dv_quantified::DvQuantifiedApi;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
 // transcribed by the sibling package agent covering `data_types::text`.
@@ -137,6 +137,10 @@ impl DvOrderedApi for DvCount {
         self.amount.quantified.ordered.normal_status.as_ref()
     }
 
+    fn ordered_data(&self) -> Option<&DvOrderedData<Self>> {
+        Some(&self.amount.quantified.ordered)
+    }
+
     /// `is_strictly_comparable_to(other: DV_ORDERED) -> Boolean`
     /// (effected).
     ///
@@ -211,30 +215,52 @@ impl DvAmountApi<i64> for DvCount {
 
     /// `add` __alias__ `"+"` `(other: DV_COUNT) -> DV_COUNT` (redefined).
     ///
-    /// Sum of this `DV_COUNT` and `other`.
+    /// Sum of this `DV_COUNT` and `other`: the (integer) magnitudes are
+    /// summed, and the inherited `accuracy`/`accuracy_is_percent` follow
+    /// `DV_AMOUNT`'s combination prose, encoded once in [`combined_accuracy`]
+    /// (the sum when both known, unknown if either is unknown, larger-operand
+    /// form when the two forms differ).
     ///
-    /// TODO(port): no explicit `Post_result` body given at this level; the
-    /// natural reading is `magnitude + other.magnitude` with the
-    /// `DV_AMOUNT`-level accuracy-combination prose applying to the
-    /// inherited `accuracy`/`accuracy_is_percent` fields, but that
-    /// accuracy-combination logic itself is not yet encoded (same gap as
-    /// `DvQuantity::add`).
-    fn add(&self, _other: &Self) -> Self {
-        todo!(
-            "DvCount::add: accuracy-combination rule from DV_AMOUNT's description not yet encoded"
-        )
+    /// PORT NOTE: `DV_COUNT`'s table gives no `Post_result`, so — as with
+    /// `DvQuantity::add` — the receiver's other fields (any reference ranges /
+    /// `normal_status`) are carried over via `clone`, consistent with the
+    /// already-shipped `negative()`.
+    fn add(&self, other: &Self) -> Self {
+        let (accuracy, accuracy_is_percent) = combined_accuracy(
+            self.magnitude as f64,
+            self.amount.accuracy,
+            self.amount.accuracy_is_percent,
+            other.magnitude as f64,
+            other.amount.accuracy,
+            other.amount.accuracy_is_percent,
+        );
+        let mut result = self.clone();
+        result.magnitude = self.magnitude + other.magnitude;
+        result.amount.accuracy = accuracy;
+        result.amount.accuracy_is_percent = accuracy_is_percent;
+        result
     }
 
     /// `subtract` __alias__ `"-"` `(other: DV_COUNT) -> DV_COUNT`
     /// (redefined).
     ///
-    /// Difference of this `DV_COUNT` and `other`.
-    ///
-    /// TODO(port): same accuracy-combination gap as `add` above.
-    fn subtract(&self, _other: &Self) -> Self {
-        todo!(
-            "DvCount::subtract: accuracy-combination rule from DV_AMOUNT's description not yet encoded"
-        )
+    /// Difference of this `DV_COUNT` and `other`. Same accuracy-combination
+    /// and field-carry-over rules as [`Self::add`]; the magnitude is the
+    /// difference of the two magnitudes.
+    fn subtract(&self, other: &Self) -> Self {
+        let (accuracy, accuracy_is_percent) = combined_accuracy(
+            self.magnitude as f64,
+            self.amount.accuracy,
+            self.amount.accuracy_is_percent,
+            other.magnitude as f64,
+            other.amount.accuracy,
+            other.amount.accuracy_is_percent,
+        );
+        let mut result = self.clone();
+        result.magnitude = self.magnitude - other.magnitude;
+        result.amount.accuracy = accuracy;
+        result.amount.accuracy_is_percent = accuracy_is_percent;
+        result
     }
 
     fn is_equal_amount(&self, other: &Self) -> bool {
@@ -245,15 +271,19 @@ impl DvAmountApi<i64> for DvCount {
     ///
     /// Product of this `DV_COUNT` and `factor`.
     ///
-    /// TODO(port): no explicit `Post_result` body given; multiplying an
-    /// integral `magnitude` by a `Real` `factor` raises the question of
-    /// whether/how the result rounds back to an integer (`DV_COUNT` has no
-    /// `precision` attribute, unlike `DV_QUANTITY`), which the spec does
-    /// not address at this level. Left `todo!()` rather than guessing a
-    /// rounding rule.
+    /// TODO(port): genuine published-spec defect — multiplying an integral
+    /// `magnitude` by a `Real` `factor` must yield a `DV_COUNT` (integer
+    /// magnitude again), but `DV_COUNT` has no `precision` attribute (unlike
+    /// `DV_QUANTITY`) and the spec states no rounding/truncation rule for
+    /// coercing the `Real` product back to an integer. No spec-faithful body
+    /// exists without inventing that rule, so this stays `todo!()` (unlike
+    /// `add`/`subtract`, whose integer results are exact). Contrast
+    /// `DvQuantity::multiply`, whose `Real` magnitude has no coercion
+    /// problem. Revisit if a reference-behaviour rounding rule surfaces
+    /// (P17/P18).
     fn multiply(&self, _factor: &Real) -> Self {
         todo!(
-            "DvCount::multiply: no explicit Post_result body, and no stated rounding rule for a Real factor against an integral magnitude"
+            "DvCount::multiply: published-spec defect — no stated rounding rule for coercing a Real (magnitude * factor) product back to DV_COUNT's integer magnitude"
         )
     }
 
@@ -272,11 +302,91 @@ impl DvAmountApi<i64> for DvCount {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::quantity::dv_ordered::DvOrderedData;
+    use crate::data_types::quantity::dv_quantified::DvQuantifiedData;
+
+    fn count(magnitude: i64) -> DvCount {
+        DvCount {
+            type_tag: TypeTag::new(),
+            amount: DvAmountData {
+                quantified: DvQuantifiedData {
+                    ordered: DvOrderedData {
+                        normal_status: None,
+                        normal_range: None,
+                        other_reference_ranges: None,
+                    },
+                    magnitude_status: None,
+                    accuracy: None,
+                },
+                accuracy_is_percent: None,
+                accuracy: None,
+            },
+            magnitude,
+        }
+    }
+
+    fn count_with_accuracy(magnitude: i64, accuracy: f64) -> DvCount {
+        let mut c = count(magnitude);
+        c.amount.accuracy = Some(Real(accuracy));
+        c
+    }
+
+    /// `is_strictly_comparable_to`: the spec Meaning cell says "Return True".
+    #[test]
+    fn always_strictly_comparable() {
+        assert!(count(1).is_strictly_comparable_to(&count(999)));
+    }
+
+    /// `less_than`: `Result = magnitude < other.magnitude`.
+    #[test]
+    fn less_than_compares_magnitude() {
+        assert!(count(1).less_than(&count(2)));
+        assert!(!count(2).less_than(&count(1)));
+        assert!(!count(2).less_than(&count(2)));
+    }
+
+    /// `add`: integer magnitudes sum.
+    #[test]
+    fn add_sums_integer_magnitudes() {
+        assert_eq!(count(2).add(&count(3)).magnitude, 5);
+        assert_eq!(count(2).add(&count(-5)).magnitude, -3);
+    }
+
+    /// `add`: accuracies sum when both present and known.
+    #[test]
+    fn add_sums_accuracies_when_both_present() {
+        let result = count_with_accuracy(2, 0.5).add(&count_with_accuracy(3, 0.25));
+        assert_eq!(result.magnitude, 5);
+        assert_eq!(result.amount.accuracy, Some(Real(0.75)));
+    }
+
+    /// `subtract`: integer magnitudes subtract.
+    #[test]
+    fn subtract_differences_integer_magnitudes() {
+        assert_eq!(count(5).subtract(&count(3)).magnitude, 2);
+    }
+
+    /// `negative`: magnitude flips sign (already shipped).
+    #[test]
+    fn negative_flips_magnitude() {
+        assert_eq!(count(4).negative().magnitude, -4);
+    }
+
+    /// `is_simple` routes through the overridden `ordered_data()`.
+    #[test]
+    fn is_simple_reflects_the_embedded_ordered_state() {
+        assert!(count(5).is_simple());
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_count.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_count.adoc §DV_COUNT Class
 //   confidence: medium
-//   todos: 5
-//   note: magnitude: i64 is the ADR-001 §6 covariant-redefinition worked example named by this task, transcribed as a bare i64 (not the Integer64 newtype) directly on the struct with a doc note; this creates a trait-bound mismatch (i64 has no OrderedNumeric impl) flagged explicitly for P17 triage; add/subtract/multiply stubbed todo!() for the same accuracy-combination/rounding-rule gaps as DvQuantity; forward-references CODE_PHRASE pending sibling data_types::text package. P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `amount` flattened; magnitude is a bare primitive so no cross-crate serde dependency on this field.
+//   todos: 3
+//   note: magnitude: i64 is the ADR-001 §6 covariant-redefinition worked example named by this task, transcribed as a bare i64 (not the Integer64 newtype) directly on the struct with a doc note; this creates a DvAmountApi/DvQuantifiedApi trait-bound mismatch (i64 has no OrderedNumeric impl) flagged explicitly for P17 triage. add/subtract implemented (integer magnitude sum/difference + DV_AMOUNT accuracy-combination prose via combined_accuracy); multiply kept as a genuine spec-defect todo!() (no stated rounding rule to coerce a Real product back to an integer magnitude — DV_COUNT has no precision attribute); negative already shipped; ordered_data() overridden so is_simple/is_normal reach the embedded state — all unit-tested. Remaining TODO: forward-reference CODE_PHRASE pending the sibling data_types::text package (present in-tree; reconciled at P17). P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName reusing TYPE_NAME; `amount` flattened; magnitude is a bare primitive so no cross-crate serde dependency on this field.
 // ─────────────────────────────────────────────

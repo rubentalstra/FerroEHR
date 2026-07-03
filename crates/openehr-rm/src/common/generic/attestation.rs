@@ -56,6 +56,9 @@ use crate::data_types::encapsulated::dv_multimedia::DvMultimedia;
 use crate::data_types::text::dv_text::DvText;
 use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
+use openehr_terminology::{
+    OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
+};
 use serde::{Deserialize, Serialize};
 
 use super::audit_details::AuditDetailsData;
@@ -128,9 +131,9 @@ pub struct Attestation {
     /// terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_attestation_reason, reason.defining_code)`.
     ///
-    /// TODO(port): invariant requires runtime-type discrimination of
-    /// `DV_TEXT` plus a live `TerminologyService`; not yet enforced. See
-    /// [`Attestation::is_reason_valid`].
+    /// Checked by [`Attestation::is_reason_valid`] (ADR-003 d.8), which
+    /// discriminates the [`DvText::Coded`] runtime case; wiring into the P11
+    /// Validate framework is pending.
     pub reason: DvText,
 
     /// `is_pending`: `Boolean`, cardinality `1..1`.
@@ -163,17 +166,96 @@ impl Attestation {
     /// terminology(Terminology_id_openehr).has_code_for_group_id(
     /// Group_id_attestation_reason, reason.defining_code))`.
     ///
-    /// TODO(port): `reason` is typed `DV_TEXT` (the wider supertype), but
-    /// the invariant only constrains it when the runtime value happens to
-    /// be a `DV_CODED_TEXT`. Requires runtime-type inspection of `DV_TEXT`
-    /// (a closed enum per ADR-001 §4, once `data_types.text` is
-    /// transcribed) plus a live `TerminologyService`; left as `todo!()`
-    /// rather than a bare boolean stub since neither prerequisite exists
-    /// yet.
-    pub fn is_reason_valid(&self, _terminology: &openehr_terminology::TerminologyService) -> bool {
-        todo!(
-            "Attestation::is_reason_valid: needs DV_TEXT runtime-type discrimination plus TerminologyService.has_code_for_group_id against Group_id_attestation_reason"
-        )
+    /// Working method per ADR-003 decision 8. `reason` is typed `DV_TEXT`
+    /// (the wider supertype), but the invariant is an *implication* whose
+    /// antecedent is `reason.generating_type.is_equal("DV_CODED_TEXT")` —
+    /// so a plain (non-coded) `DV_TEXT` value satisfies it vacuously. The
+    /// runtime-type test is the [`DvText::Coded`] discriminant of the closed
+    /// enum (ADR-001 §4); a coded reason's `defining_code` is then checked
+    /// against the openEHR "attestation reason" group.
+    pub fn is_reason_valid(&self, terminology: &TerminologyService) -> bool {
+        match &self.reason {
+            // Antecedent true: the reason is a DV_CODED_TEXT, so its code
+            // must be in the "attestation reason" group.
+            DvText::Coded(coded) => {
+                let defining_code = &coded.defining_code;
+                terminology
+                    .terminology(OpenehrTerminologyGroupIdentifiers::TERMINOLOGY_ID_OPENEHR)
+                    .is_some_and(|access| {
+                        access.has_code_for_group_id(
+                            OpenehrTerminologyGroupIdentifiers::GROUP_ID_ATTESTATION_REASON,
+                            &TerminologyCode::new(
+                                defining_code.terminology_id.value(),
+                                defining_code.code_string.clone(),
+                            ),
+                        )
+                    })
+            }
+            // Antecedent false: a plain DV_TEXT reason is vacuously valid.
+            DvText::Text { .. } => true,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::change_control::versioned_object::test_support::{audit, coded};
+    use crate::data_types::text::dv_text::DvTextData;
+
+    /// An attestation with the given `reason`, otherwise minimal.
+    fn attestation(reason: DvText) -> Attestation {
+        Attestation {
+            type_tag: TypeTag::new(),
+            audit_details: audit("2020-01-01T00:00:00").data,
+            attested_view: None,
+            proof: None,
+            items: None,
+            reason,
+            is_pending: false,
+        }
+    }
+
+    #[test]
+    fn reason_valid_accepts_a_coded_attestation_reason() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+        // 240 = "signed" in the openEHR "attestation reason" group.
+        let a = attestation(DvText::Coded(coded("240", "signed")));
+        assert!(a.is_reason_valid(service));
+    }
+
+    #[test]
+    fn reason_valid_rejects_a_bogus_coded_reason() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+        let a = attestation(DvText::Coded(coded("999999", "nonsense")));
+        assert!(!a.is_reason_valid(service));
+    }
+
+    #[test]
+    fn reason_valid_is_vacuously_true_for_plain_text() {
+        let service = TerminologyService::bundled().expect("bundled terminology parses");
+        // Antecedent (generating_type = DV_CODED_TEXT) is false for a bare
+        // DV_TEXT, so the implication holds regardless of terminology.
+        let a = attestation(DvText::Text {
+            type_tag: TypeTag::new(),
+            data: DvTextData {
+                value: "free-text reason".to_string(),
+                hyperlink: None,
+                formatting: None,
+                mappings: None,
+                language: None,
+                encoding: None,
+            },
+        });
+        assert!(a.is_reason_valid(service));
+    }
+
+    #[test]
+    fn items_valid_rejects_an_empty_but_present_list() {
+        let mut a = attestation(DvText::Coded(coded("240", "signed")));
+        assert!(a.are_items_valid()); // None → valid
+        a.items = Some(Vec::new());
+        assert!(!a.are_items_valid()); // Some(empty) → invalid
     }
 }
 
@@ -182,6 +264,6 @@ impl Attestation {
 //   source: RM 1.1.0 common.generic — docs/research/spec-cache/RM-1.1.0/uml_classes/attestation.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: common/master04-generic_package.adoc §Attestation / uml_classes/attestation.adoc §ATTESTATION Class
 //   confidence: high
-//   todos: 2
-//   note: Items_valid recorded as a self-contained boolean check; Reason_valid left todo!()-bodied (needs DV_TEXT runtime-type discrimination + live TerminologyService). Embeds AuditDetails per its Inherit row. Forward-refs DvMultimedia, DvEhrUri, DvText (data_types, sibling-agent territory, not yet landed). Digital-signature generation process (openPGP/RFC 4880) is described in prose only, no function signature to transcribe — proof stays a plain String.
+//   todos: 0
+//   note: Both invariants now working methods (ADR-003 d.8) with spec-derived tests: Items_valid a self-contained boolean; Reason_valid is the conditional DV_CODED_TEXT case — a DvText::Coded reason is checked against the openEHR "attestation reason" group via &TerminologyService, a plain DvText::Text reason is vacuously valid (antecedent false). Only remaining deferral is P11 Validate-framework wiring. Digital-signature generation (openPGP/RFC 4880) is prose-only with no function signature to transcribe — proof stays a plain String.
 // ─────────────────────────────────────────────

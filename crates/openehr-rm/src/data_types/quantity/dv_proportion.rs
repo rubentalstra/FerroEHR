@@ -20,7 +20,7 @@
 //! symbols like CF = count fingers etc). Should not be used for
 //! formulations.
 use super::dv_amount::{DvAmountApi, DvAmountData, UNKNOWN_ACCURACY_VALUE};
-use super::dv_ordered::DvOrderedApi;
+use super::dv_ordered::{DvOrderedApi, DvOrderedData};
 use super::dv_quantified::DvQuantifiedApi;
 use super::proportion_kind::ProportionKind;
 // TODO(port): forward-references CODE_PHRASE (rm.data_types.text), not yet
@@ -125,10 +125,12 @@ pub struct DvProportion {
     /// value 0 implies an integral quantity. The value -1 implies no
     /// limit, i.e. any number of decimal places.
     ///
-    /// Invariant `Precision_validity`: `precision = 0 implies is_integral`.
+    /// Invariant `Precision_validity`: `precision = 0 implies is_integral`
+    /// (enforced by [`DvProportion::invariant_precision_validity`]).
     ///
-    /// TODO(port): same `openehr-foundation`-lacks-serde gap as
-    /// `numerator`/`denominator` above, for `Integer`.
+    /// PORT NOTE: the previously-flagged `openehr-foundation`-lacks-serde gap
+    /// for `Integer` is closed the same way as `numerator`/`denominator`'s
+    /// `Real` above.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub precision: Option<Integer>,
 }
@@ -232,6 +234,10 @@ impl DvOrderedApi for DvProportion {
         self.amount.quantified.ordered.normal_status.as_ref()
     }
 
+    fn ordered_data(&self) -> Option<&DvOrderedData<Self>> {
+        Some(&self.amount.quantified.ordered)
+    }
+
     /// `is_strictly_comparable_to(other: DV_ORDERED) -> Boolean`
     /// (effected).
     ///
@@ -288,15 +294,17 @@ impl DvAmountApi<Real> for DvProportion {
     ///
     /// Sum of two strictly comparable proportions.
     ///
-    /// TODO(port): the spec gives no explicit `Post_result` body — summing
-    /// two ratios is not simply summing numerators and denominators
-    /// independently (that would not preserve the ratio semantics), and the
-    /// correct combination rule (common-denominator addition? treating
-    /// `magnitude()` as the operand?) is not stated. Left `todo!()` rather
-    /// than guessing.
+    /// TODO(port): published-spec defect — the table prints no `Post_result`,
+    /// and there is no canonical result *representation* for a ratio sum. A
+    /// magnitude-preserving rule exists (common-denominator addition:
+    /// `a/b + c/d = (ad+cb)/(bd)`, or numerator addition when denominators
+    /// match), but for `pk_fraction`/`pk_integer_fraction` the choice of
+    /// result denominator is underdetermined, and the reference behaviour is
+    /// not stated. Left `todo!()` rather than committing to one
+    /// representation; revisit against reference behaviour at P17/P18.
     fn add(&self, _other: &Self) -> Self {
         todo!(
-            "DvProportion::add: no explicit Post_result body, and no stated ratio-combination rule"
+            "DvProportion::add: published-spec defect — no Post_result and no canonical result representation for a ratio sum (P17/P18)"
         )
     }
 
@@ -305,10 +313,11 @@ impl DvAmountApi<Real> for DvProportion {
     ///
     /// Difference between two strictly comparable proportions.
     ///
-    /// TODO(port): same ratio-combination gap as `add` above.
+    /// TODO(port): same published-spec-defect ratio-representation gap as
+    /// `add` above (P17/P18).
     fn subtract(&self, _other: &Self) -> Self {
         todo!(
-            "DvProportion::subtract: no explicit Post_result body, and no stated ratio-combination rule"
+            "DvProportion::subtract: published-spec defect — no Post_result and no canonical result representation for a ratio difference (P17/P18)"
         )
     }
 
@@ -321,72 +330,274 @@ impl DvAmountApi<Real> for DvProportion {
     ///
     /// Product of this Proportion and `factor`.
     ///
-    /// TODO(port): no explicit `Post_result` body; multiplying a ratio by a
-    /// scalar factor could scale the numerator, the denominator, or both in
-    /// a way that changes `type_` validity (e.g. a `pk_unitary` proportion
-    /// requires `denominator = 1`, which scaling the denominator would
-    /// violate) — left `todo!()` rather than guessing which operand to
-    /// scale.
+    /// TODO(port): published-spec defect — the table prints no `Post_result`,
+    /// and scaling the numerator by a `Real` `factor`
+    /// (`(numerator*factor)/denominator`, the only choice that preserves the
+    /// denominator-dependent `Unitary`/`Percent` validity, cf. `negative`)
+    /// breaks `Is_integral_validity`/`Fraction_validity` for the
+    /// `pk_fraction`/`pk_integer_fraction` kinds (a `Real` factor generally
+    /// makes the numerator non-integral). No result is both spec-faithful and
+    /// invariant-preserving across all five kinds, so this stays `todo!()`;
+    /// revisit against reference behaviour at P17/P18.
     fn multiply(&self, _factor: &Real) -> Self {
         todo!(
-            "DvProportion::multiply: no explicit Post_result body, and scaling numerator vs denominator affects type_ validity differently"
+            "DvProportion::multiply: published-spec defect — a Real factor breaks integral-numerator validity for fraction kinds, no invariant-preserving body across all five kinds (P17/P18)"
         )
     }
 
     /// `negative` __alias__ `"-"` `(): DV_PROPORTION`.
     ///
-    /// PORT NOTE: `DV_PROPORTION`'s own table does not list `negative` at
-    /// all (contrast `add`/`subtract`/`multiply`, all explicitly marked
-    /// `(redefined)`, and `is_equal`/`less_than`/`is_strictly_comparable_to`,
-    /// all explicitly marked `(effected)`) — `negative` is entirely absent
-    /// from this class's own Functions table. It is nonetheless inherited
-    /// from `DV_AMOUNT.negative` (never overridden means the parent
-    /// implementation still applies conceptually), and `DvAmountApi`
-    /// requires it with no default body (see `dv_amount.rs`).
+    /// Negated version of this proportion: the `numerator` is negated and the
+    /// `denominator` (and hence `type_`, `precision`) are carried over
+    /// unchanged, giving `magnitude() == -original.magnitude()`.
     ///
-    /// TODO(port): unlike `DvQuantity`/`DvCount` (where negating a single
-    /// `magnitude` field is unambiguous), negating a ratio's *numerator*
-    /// (`-numerator/denominator`) versus its *denominator*
-    /// (`numerator/-denominator`) are both mathematically valid but
-    /// distinct representations that both satisfy
-    /// `magnitude() == -original.magnitude()`; the spec gives no guidance
-    /// at any level for the ratio case specifically. Left `todo!()` rather
-    /// than picking one arbitrarily.
+    /// PORT NOTE: `DV_PROPORTION`'s own table does not list `negative` (it is
+    /// inherited from `DV_AMOUNT.negative`, and `DvAmountApi` requires a body
+    /// with no default). Negating a ratio's *numerator* versus its
+    /// *denominator* both satisfy `magnitude() == -original.magnitude()`, but
+    /// only numerator-negation preserves the denominator-dependent
+    /// type-validity invariants — `Unitary_validity` (denominator = 1),
+    /// `Percent_validity` (denominator = 100), and `Is_integral_validity`
+    /// (both integral: `-n` stays integral) all remain satisfied, whereas
+    /// negating the denominator would break the first two. This breaks the
+    /// tie the earlier `todo!()` flagged: numerator-negation is the unique
+    /// type-safe representation, so it is implemented rather than left
+    /// unfinished.
     fn negative(&self) -> Self {
-        todo!(
-            "DvProportion::negative: negating numerator vs denominator both satisfy magnitude() == -original.magnitude(), spec gives no guidance for the ratio case"
-        )
+        DvProportion {
+            numerator: Real(-self.numerator.0),
+            ..self.clone()
+        }
     }
 }
 
-// TODO(port): the seven class invariants below are not yet encoded as a
-// `Validate` impl, per `.claude/rules/rm-transcription.md`'s "Invariants"
-// section:
-//
-// - `Type_validity`: `valid_proportion_kind (type)`
-// - `Precision_validity`: `precision = 0 implies is_integral`
-// - `Is_integral_validity`: `is_integral implies (numerator.floor =
-//   numerator and denominator.floor = denominator)`
-// - `Fraction_validity`: `(type = pk_fraction or type = pk_integer_fraction)
-//   implies is_integral`
-// - `Unitary_validity`: `type = pk_unitary implies denominator = 1`
-// - `Percent_validity`: `type = pk_percent implies denominator = 100`
-// - `Valid_denominator`: `denominator /= 0.0`
-//
-// Several of these (`Type_validity`, `Unitary_validity`, `Percent_validity`,
-// `Fraction_validity`) are partially structural once `type_: ProportionKind`
-// is a closed enum rather than a bare `Integer` (see `type_`'s own doc
-// comment) — `Type_validity` in particular is true by construction given
-// the enum, but the *other* invariants (denominator = 1 for pk_unitary,
-// etc.) still constrain the relationship between `type_` and
-// `numerator`/`denominator`'s runtime values, which no enum alone can
-// enforce.
+/// The seven `DV_PROPORTION` class invariants, as working `invariant_*`
+/// methods per ADR-003 decision 8 (invariants become `is_valid()`-family
+/// methods now; the walker/accumulator `Validate` framework remains the P11
+/// deliverable).
+///
+/// PORT NOTE: `Type_validity`, and the type-kind-dependent invariants, are
+/// partially structural once `type_: ProportionKind` is a closed enum rather
+/// than a bare `Integer` (see `type_`'s own doc comment) — `Type_validity` in
+/// particular is true by construction — but the value-relationship invariants
+/// (`denominator = 1` for `pk_unitary`, `denominator = 100` for `pk_percent`,
+/// integrality for the fraction kinds, `denominator /= 0`) constrain the
+/// runtime relationship between `type_` and `numerator`/`denominator`, which
+/// no enum alone can enforce, so each is transcribed literally.
+impl DvProportion {
+    /// `Type_validity`: `valid_proportion_kind (type)`.
+    ///
+    /// True by construction here (any [`ProportionKind`] value is valid), but
+    /// transcribed literally through the spec's own
+    /// [`ProportionKind::valid_proportion_kind`] against the enum's `i32`
+    /// discriminant.
+    pub fn invariant_type_validity(&self) -> bool {
+        ProportionKind::valid_proportion_kind(i32::from(self.type_))
+    }
+
+    /// `Precision_validity`: `precision = 0 implies is_integral`.
+    pub fn invariant_precision_validity(&self) -> bool {
+        !matches!(self.precision, Some(Integer(0))) || self.is_integral()
+    }
+
+    /// `Is_integral_validity`: `is_integral implies (numerator.floor =
+    /// numerator and denominator.floor = denominator)`.
+    ///
+    /// PORT NOTE: the spec's `numerator.floor = numerator` is transcribed as
+    /// "the value has no fractional part" (`fract() == 0.0` on the backing
+    /// `f64`), equivalent for finite values and avoiding a float-to-float
+    /// `== floor()` comparison.
+    pub fn invariant_is_integral_validity(&self) -> bool {
+        !self.is_integral()
+            || (self.numerator.0.fract() == 0.0 && self.denominator.0.fract() == 0.0)
+    }
+
+    /// `Fraction_validity`: `(type = pk_fraction or type =
+    /// pk_integer_fraction) implies is_integral`.
+    pub fn invariant_fraction_validity(&self) -> bool {
+        !matches!(
+            self.type_,
+            ProportionKind::Fraction | ProportionKind::IntegerFraction
+        ) || self.is_integral()
+    }
+
+    /// `Unitary_validity`: `type = pk_unitary implies denominator = 1`.
+    ///
+    /// PORT NOTE: the exact `denominator = 1` comparison is spec-intended
+    /// (unitary proportions carry an exact integer denominator); compared via
+    /// the `Real` newtype so it reads as an exact value check rather than a
+    /// raw-`f64` literal comparison.
+    pub fn invariant_unitary_validity(&self) -> bool {
+        self.type_ != ProportionKind::Unitary || self.denominator == Real(1.0)
+    }
+
+    /// `Percent_validity`: `type = pk_percent implies denominator = 100`.
+    ///
+    /// PORT NOTE: exact `denominator = 100` comparison via the `Real`
+    /// newtype, as for `invariant_unitary_validity`.
+    pub fn invariant_percent_validity(&self) -> bool {
+        self.type_ != ProportionKind::Percent || self.denominator == Real(100.0)
+    }
+
+    /// `Valid_denominator`: `denominator /= 0.0`.
+    pub fn invariant_valid_denominator(&self) -> bool {
+        self.denominator.0 != 0.0
+    }
+
+    /// All seven class invariants combined, as a single validity check per
+    /// ADR-003 decision 8.
+    pub fn is_valid(&self) -> bool {
+        self.invariant_type_validity()
+            && self.invariant_precision_validity()
+            && self.invariant_is_integral_validity()
+            && self.invariant_fraction_validity()
+            && self.invariant_unitary_validity()
+            && self.invariant_percent_validity()
+            && self.invariant_valid_denominator()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::quantity::dv_quantified::DvQuantifiedData;
+
+    fn proportion(
+        numerator: f64,
+        denominator: f64,
+        kind: ProportionKind,
+        precision: Option<i32>,
+    ) -> DvProportion {
+        DvProportion {
+            type_tag: TypeTag::new(),
+            amount: DvAmountData {
+                quantified: DvQuantifiedData {
+                    ordered: DvOrderedData {
+                        normal_status: None,
+                        normal_range: None,
+                        other_reference_ranges: None,
+                    },
+                    magnitude_status: None,
+                    accuracy: None,
+                },
+                accuracy_is_percent: None,
+                accuracy: None,
+            },
+            numerator: Real(numerator),
+            denominator: Real(denominator),
+            type_: kind,
+            precision: precision.map(Integer),
+        }
+    }
+
+    /// Spec: "a magnitude function which is computed as the result of the
+    /// numerator/denominator division".
+    #[test]
+    fn magnitude_is_numerator_over_denominator() {
+        assert_eq!(
+            proportion(30.0, 100.0, ProportionKind::Percent, None).magnitude(),
+            Real(0.3)
+        );
+        assert_eq!(
+            proportion(1.0, 2.0, ProportionKind::Fraction, Some(0)).magnitude(),
+            Real(0.5)
+        );
+    }
+
+    /// Spec `is_integral`: "True if ... precision is 0."
+    #[test]
+    fn is_integral_reflects_precision_zero() {
+        assert!(proportion(1.0, 2.0, ProportionKind::Fraction, Some(0)).is_integral());
+        assert!(!proportion(1.5, 2.0, ProportionKind::Ratio, Some(2)).is_integral());
+        assert!(!proportion(1.0, 2.0, ProportionKind::Ratio, None).is_integral());
+    }
+
+    /// Spec `is_strictly_comparable_to`: "Return True if the type of this
+    /// proportion is the same as the type of other."
+    #[test]
+    fn strictly_comparable_when_types_match() {
+        let a = proportion(30.0, 100.0, ProportionKind::Percent, None);
+        let b = proportion(40.0, 100.0, ProportionKind::Percent, None);
+        assert!(a.is_strictly_comparable_to(&b));
+        let ratio = proportion(1.0, 128.0, ProportionKind::Ratio, None);
+        assert!(!a.is_strictly_comparable_to(&ratio));
+    }
+
+    /// Spec `Percent_validity`: `type = pk_percent implies denominator = 100`.
+    #[test]
+    fn percent_validity_invariant() {
+        assert!(
+            proportion(30.0, 100.0, ProportionKind::Percent, None).invariant_percent_validity()
+        );
+        assert!(
+            !proportion(30.0, 50.0, ProportionKind::Percent, None).invariant_percent_validity()
+        );
+        // Non-percent kinds are unconstrained by this invariant.
+        assert!(proportion(1.0, 50.0, ProportionKind::Ratio, None).invariant_percent_validity());
+    }
+
+    /// Spec `Unitary_validity`: `type = pk_unitary implies denominator = 1`.
+    #[test]
+    fn unitary_validity_invariant() {
+        assert!(proportion(5.0, 1.0, ProportionKind::Unitary, None).invariant_unitary_validity());
+        assert!(!proportion(5.0, 2.0, ProportionKind::Unitary, None).invariant_unitary_validity());
+    }
+
+    /// Spec `Fraction_validity`: `(pk_fraction or pk_integer_fraction)
+    /// implies is_integral`.
+    #[test]
+    fn fraction_validity_invariant() {
+        assert!(
+            proportion(1.0, 2.0, ProportionKind::Fraction, Some(0)).invariant_fraction_validity()
+        );
+        // Fraction kind but precision != 0 (not integral): violated.
+        assert!(
+            !proportion(1.0, 2.0, ProportionKind::Fraction, Some(2)).invariant_fraction_validity()
+        );
+    }
+
+    /// Spec `Valid_denominator`: `denominator /= 0.0`.
+    #[test]
+    fn valid_denominator_invariant() {
+        assert!(proportion(1.0, 2.0, ProportionKind::Ratio, None).invariant_valid_denominator());
+        assert!(!proportion(1.0, 0.0, ProportionKind::Ratio, None).invariant_valid_denominator());
+    }
+
+    /// `is_valid` combines all seven; a well-formed percentage passes and a
+    /// bad-denominator percentage fails.
+    #[test]
+    fn is_valid_combines_all_invariants() {
+        assert!(proportion(30.0, 100.0, ProportionKind::Percent, None).is_valid());
+        assert!(!proportion(30.0, 50.0, ProportionKind::Percent, None).is_valid());
+    }
+
+    /// `negative` negates the numerator, preserving the denominator (and thus
+    /// `type_`/`precision`), so `magnitude()` flips sign and type validity is
+    /// preserved.
+    #[test]
+    fn negative_negates_numerator_and_preserves_type_validity() {
+        let percent = proportion(30.0, 100.0, ProportionKind::Percent, None);
+        let neg = percent.negative();
+        assert_eq!(neg.numerator, Real(-30.0));
+        assert_eq!(neg.denominator, Real(100.0));
+        assert_eq!(neg.type_, ProportionKind::Percent);
+        assert_eq!(neg.magnitude(), Real(-0.3));
+        // Denominator-dependent type validity survives negation.
+        assert!(neg.invariant_percent_validity());
+    }
+
+    /// `is_simple` routes through the overridden `ordered_data()`.
+    #[test]
+    fn is_simple_reflects_the_embedded_ordered_state() {
+        assert!(proportion(1.0, 2.0, ProportionKind::Ratio, None).is_simple());
+    }
+}
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: RM 1.1.0 data_types.quantity — docs/research/spec-cache/RM-1.1.0/uml_classes/dv_proportion.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master06-quantity_package.adoc §Class Descriptions / dv_proportion.adoc §DV_PROPORTION Class
-//   confidence: low
-//   todos: 8
-//   note: multiple inheritance (PROPORTION_KIND + DV_AMOUNT) handled per ADR-001 §2 — PROPORTION_KIND is a constants-only class reached via direct ProportionKind::* calls, not a supertrait; type_: ProportionKind is a closed-enum judgment call over the spec's literal Integer typing; add/subtract/multiply/negative all stubbed todo!() since ratio-combination rules for arithmetic are unstated at any level; is_equal's own Meaning cell literally says "DV_AMOUNT" not "DV_PROPORTION" (flagged, transcribed verbatim); the seven invariants recorded but not enforced; forward-references CODE_PHRASE pending sibling data_types::text package. P4: Serialize/Deserialize added; `amount` flattened; `type_` carries a functional #[serde(rename = "type")] and serializes via ProportionKind's own i32 encoding; numerator/denominator/precision carry new TODO(port)s (Real/Integer lack serde in openehr-foundation).
+//   confidence: medium
+//   todos: 4
+//   note: multiple inheritance (PROPORTION_KIND + DV_AMOUNT) handled per ADR-001 §2 — PROPORTION_KIND is a constants-only class reached via direct ProportionKind::* calls, not a supertrait; type_: ProportionKind is a closed-enum judgment call over the spec's literal Integer typing. magnitude()/is_integral()/is_strictly_comparable_to implemented per table; all seven class invariants now working invariant_* methods (+ is_valid) per ADR-003 §8, unit-tested. negative() implemented via numerator negation (the unique type-validity-preserving representation — cf. its PORT NOTE). add/subtract/multiply kept as genuine published-spec-defect todo!()s (no Post_result and no canonical/invariant-preserving result representation for ratio arithmetic — P17/P18). is_equal's own Meaning cell literally says "DV_AMOUNT" not "DV_PROPORTION" (flagged, transcribed verbatim). Remaining TODO: forward-reference CODE_PHRASE pending the sibling data_types::text package (present in-tree; reconciled at P17). P4: Serialize/Deserialize added; `amount` flattened; `type_` carries a functional #[serde(rename = "type")] and serializes via ProportionKind's own i32 encoding; Real/Integer serde gaps closed in openehr-foundation.
 // ─────────────────────────────────────────────

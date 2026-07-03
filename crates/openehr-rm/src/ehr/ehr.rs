@@ -151,65 +151,157 @@ impl TypeName for Ehr {
     const NAME: &'static str = TYPE_NAME;
 }
 
+/// `true` if every `OBJECT_REF` in `refs` (an optional `List<OBJECT_REF>`)
+/// has `type = type_name`. A `None` list is `for_all` over the empty set,
+/// which is vacuously true, matching the `0..1` cardinality of the
+/// `contributions`/`compositions`/`folders` attributes.
+fn all_refs_of_type(refs: Option<&Vec<ObjectRef>>, type_name: &str) -> bool {
+    refs.is_none_or(|list| list.iter().all(|r| r.r#type == type_name))
+}
+
 impl Ehr {
     /// Invariant `Contributions_valid`:
     /// `for_all c in contributions | c.type.is_equal("CONTRIBUTION")`.
     ///
-    /// TODO(port): not yet enforced by a constructor/`Validate` impl; awaits
-    /// the RM invariant framework (`.claude/rules/rm-transcription.md`
-    /// "Invariants").
+    /// Type-name check (ADR-003 §8), reading each `OBJECT_REF.type`.
+    #[must_use]
     pub fn invariant_contributions_valid(&self) -> bool {
-        todo!("port: for_all c in contributions | c.type.is_equal(\"CONTRIBUTION\")")
+        all_refs_of_type(self.contributions.as_ref(), "CONTRIBUTION")
     }
 
     /// Invariant `Ehr_access_valid`:
     /// `ehr_access.type.is_equal("VERSIONED_EHR_ACCESS")`.
-    ///
-    /// TODO(port): not yet enforced.
+    #[must_use]
     pub fn invariant_ehr_access_valid(&self) -> bool {
-        todo!("port: ehr_access.type.is_equal(\"VERSIONED_EHR_ACCESS\")")
+        self.ehr_access.r#type == "VERSIONED_EHR_ACCESS"
     }
 
     /// Invariant `Ehr_status_valid`:
     /// `ehr_status.type.is_equal("VERSIONED_EHR_STATUS")`.
-    ///
-    /// TODO(port): not yet enforced.
+    #[must_use]
     pub fn invariant_ehr_status_valid(&self) -> bool {
-        todo!("port: ehr_status.type.is_equal(\"VERSIONED_EHR_STATUS\")")
+        self.ehr_status.r#type == "VERSIONED_EHR_STATUS"
     }
 
     /// Invariant `Compositions_valid`:
     /// `for_all c in compositions | c.type.is_equal("VERSIONED_COMPOSITION")`.
-    ///
-    /// TODO(port): not yet enforced.
+    #[must_use]
     pub fn invariant_compositions_valid(&self) -> bool {
-        todo!("port: for_all c in compositions | c.type.is_equal(\"VERSIONED_COMPOSITION\")")
+        all_refs_of_type(self.compositions.as_ref(), "VERSIONED_COMPOSITION")
     }
 
     /// Invariant `Directory_valid`:
     /// `directory /= Void implies directory.type.is_equal("VERSIONED_FOLDER")`.
-    ///
-    /// TODO(port): not yet enforced.
+    #[must_use]
     pub fn invariant_directory_valid(&self) -> bool {
-        todo!("port: directory /= Void implies directory.type.is_equal(\"VERSIONED_FOLDER\")")
+        self.directory
+            .as_ref()
+            .is_none_or(|d| d.r#type == "VERSIONED_FOLDER")
     }
 
     /// Invariant `Folders_valid`:
     /// `folders /= Void implies for_all f in folders | f.type.is_equal("VERSIONED_FOLDER")`.
-    ///
-    /// TODO(port): not yet enforced.
+    #[must_use]
     pub fn invariant_folders_valid(&self) -> bool {
-        todo!(
-            "port: folders /= Void implies for_all f in folders | f.type.is_equal(\"VERSIONED_FOLDER\")"
-        )
+        all_refs_of_type(self.folders.as_ref(), "VERSIONED_FOLDER")
     }
 
     /// Invariant `Directory_in_folders`:
     /// `folders /= Void implies folders.item(1) = directory`.
     ///
-    /// TODO(port): not yet enforced.
+    /// `folders.item(1)` is the first (1-indexed) member; when `folders` is
+    /// present, `directory` must reference it (see the `folders`/`directory`
+    /// doc comments and the RM 1.1.0 backward-compatibility note).
+    #[must_use]
     pub fn invariant_directory_in_folders(&self) -> bool {
-        todo!("port: folders /= Void implies folders.item(1) = directory")
+        match &self.folders {
+            None => true,
+            Some(folders) => self.directory.as_ref() == folders.first(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use openehr_base::identification::object_id::ObjectId;
+    use openehr_base::identification::uid_based_id::{UidBasedId, UidBasedIdData};
+
+    fn hier(value: &str) -> HierObjectId {
+        HierObjectId {
+            type_tag: TypeTag::new(),
+            uid_based_id: UidBasedIdData {
+                value: value.to_string(),
+            },
+        }
+    }
+
+    fn object_ref(r#type: &str) -> ObjectRef {
+        ObjectRef {
+            type_tag: TypeTag::new(),
+            namespace: "local".to_string(),
+            r#type: r#type.to_string(),
+            id: ObjectId::UidBased(UidBasedId::HierObjectId(hier(
+                "8849182c-82ad-4088-a07f-48ead4180515",
+            ))),
+        }
+    }
+
+    fn date_time(value: &str) -> DvDateTime {
+        serde_json::from_value(serde_json::json!({ "value": value }))
+            .expect("test DV_DATE_TIME literal deserializes")
+    }
+
+    fn ehr() -> Ehr {
+        Ehr {
+            type_tag: TypeTag::new(),
+            system_id: hier("openEHR.system"),
+            ehr_id: hier("7d44b88c-4199-4bad-97dc-d78268e01398"),
+            contributions: None,
+            ehr_status: object_ref("VERSIONED_EHR_STATUS"),
+            ehr_access: object_ref("VERSIONED_EHR_ACCESS"),
+            compositions: None,
+            directory: None,
+            time_created: date_time("2020-01-01T00:00:00"),
+            folders: None,
+        }
+    }
+
+    #[test]
+    fn reference_type_invariants_check_object_ref_type_names() {
+        let mut e = ehr();
+        assert!(e.invariant_ehr_status_valid());
+        assert!(e.invariant_ehr_access_valid());
+        assert!(e.invariant_contributions_valid()); // None: vacuously true
+        assert!(e.invariant_compositions_valid());
+
+        e.ehr_status = object_ref("SOMETHING_ELSE");
+        assert!(!e.invariant_ehr_status_valid());
+
+        e.compositions = Some(vec![object_ref("VERSIONED_COMPOSITION")]);
+        assert!(e.invariant_compositions_valid());
+        e.compositions = Some(vec![object_ref("NOT_A_COMPOSITION")]);
+        assert!(!e.invariant_compositions_valid());
+    }
+
+    #[test]
+    fn directory_in_folders_requires_directory_to_be_the_first_folder() {
+        let mut e = ehr();
+        // folders = None: vacuously true.
+        assert!(e.invariant_directory_in_folders());
+        assert!(e.invariant_folders_valid());
+        assert!(e.invariant_directory_valid());
+
+        let folder = object_ref("VERSIONED_FOLDER");
+        e.folders = Some(vec![folder.clone()]);
+        e.directory = Some(folder.clone());
+        assert!(e.invariant_directory_in_folders());
+        assert!(e.invariant_folders_valid());
+        assert!(e.invariant_directory_valid());
+
+        // directory points elsewhere → invariant fails.
+        e.directory = Some(object_ref("SOME_OTHER_FOLDER"));
+        assert!(!e.invariant_directory_in_folders());
     }
 }
 
@@ -218,6 +310,6 @@ impl Ehr {
 //   source: RM 1.1.0 ehr — docs/research/spec-cache/RM-1.1.0/ehr/uml_classes/ehr.adoc (Release-1.1.0 @ 3cbd85b)
 //   source_loc: master04-ehr_package.adoc §Class Descriptions / uml_classes/ehr.adoc §EHR Class
 //   confidence: high
-//   todos: 8
-//   note: EHR has no Inherit row at all (not LOCATABLE, not PATHABLE) — verified against the published table, documented prominently; all 7 class invariants stubbed pending the RM Validate framework. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl (no-op struct-level rename deleted); HierObjectId/ObjectRef (openehr-base) and DvDateTime (data_types) need their own serde derives before this actually round-trips.
+//   todos: 2
+//   note: EHR has no Inherit row at all (not LOCATABLE, not PATHABLE) — verified against the published table, documented prominently. P5/ADR-003 §8: all 7 class invariants implemented as OBJECT_REF type-name checks (Contributions/Ehr_access/Ehr_status/Compositions/Directory/Folders_valid + Directory_in_folders), pinned by unit tests. Remaining 2 TODO(port) are the two forward-ref import comments. P4/ADR-002: self-tagging TypeTag<Self> first field + TypeName impl.
 // ─────────────────────────────────────────────
