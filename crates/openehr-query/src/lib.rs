@@ -12,8 +12,9 @@
 //! Layers (built incrementally):
 //! - [`lexer`] — `logos` tokenizer from `AqlLexer.g4`. ✅
 //! - [`ast`] — the syntax tree, one type per `AqlParser.g4` rule. ✅
-//! - `parser` — `chumsky` parser tokens → [`ast::SelectQuery`]. (next)
+//! - [`parser`] — `chumsky` parser tokens → [`ast::SelectQuery`]. ✅
 //! - `semantics` — path analysis against Web Templates. (later)
 
 pub mod ast;
 pub mod lexer;
+pub mod parser;
