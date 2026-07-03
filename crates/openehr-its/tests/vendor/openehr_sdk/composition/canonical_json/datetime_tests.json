@@ -1,0 +1,286 @@
+{
+  "_type": "COMPOSITION",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "Test all types"
+  },
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-EHR-COMPOSITION.test_all_types.v1"
+    },
+    "template_id": {
+      "_type": "TEMPLATE_ID",
+      "value": "test_all_types.en.v1"
+    },
+    "rm_version": "1.0.2"
+  },
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.test_all_types.v1",
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_639-1"
+    },
+    "code_string": "en"
+  },
+  "territory": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_3166-1"
+    },
+    "code_string": "UY"
+  },
+  "category": {
+    "_type": "DV_CODED_TEXT",
+    "value": "event",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "433"
+    }
+  },
+  "composer": {
+    "_type": "PARTY_IDENTIFIED",
+    "external_ref": {
+      "_type": "PARTY_REF",
+      "id": {
+        "_type": "HIER_OBJECT_ID",
+        "value": "b7c07d35-fa06-4280-8e65-eabdfbe64fdc"
+      },
+      "namespace": "DEMOGRAPHIC",
+      "type": "PERSON"
+    },
+    "name": "Dr. House"
+  },
+  "context": {
+    "_type": "EVENT_CONTEXT",
+    "start_time": {
+      "_type": "DV_DATE_TIME",
+      "value": "2019-01-14T18:36:49,294+00:00"
+    },
+    "setting": {
+      "_type": "DV_CODED_TEXT",
+      "value": "primary nursing care",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "openehr"
+        },
+        "code_string": "229"
+      }
+    }
+  },
+  "content": [
+    {
+      "_type": "OBSERVATION",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "Test all types"
+      },
+      "archetype_node_id": "openEHR-EHR-OBSERVATION.test_all_types.v1",
+      "language": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "ISO_639-1"
+        },
+        "code_string": "en"
+      },
+      "encoding": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "Unicode"
+        },
+        "code_string": "UTF-8"
+      },
+      "subject": {
+        "_type": "PARTY_SELF"
+      },
+      "data": {
+        "_type": "HISTORY",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "Event Series"
+        },
+        "archetype_node_id": "at0001",
+        "origin": {
+          "_type": "DV_DATE_TIME",
+          "value": "2019-01-28T21:22:49,326+00:00"
+        },
+        "events": [
+          {
+            "_type": "POINT_EVENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Cualquier evento"
+            },
+            "archetype_node_id": "at0002",
+            "time": {
+              "_type": "DV_DATE_TIME",
+              "value": "2019-01-28T21:22:49,332+00:00"
+            },
+            "data": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "Arbol"
+              },
+              "archetype_node_id": "at0003",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "datetime_partial_1"
+                  },
+                  "archetype_node_id": "at0010.1",
+                  "value": {
+                    "_type": "DV_DATE",
+                    "value": "2019-01-28"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "datetime_partial_2"
+                  },
+                  "archetype_node_id": "at0010.2",
+                  "value": {
+                    "_type": "DV_DATE_TIME",
+                    "value": "2019-01-28T10"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "datetime_partial_2"
+                  },
+                  "archetype_node_id": "at0010.21",
+                  "value": {
+                    "_type": "DV_DATE_TIME",
+                    "value": "2019-01-28T10+07:00"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "datetime_partial_3"
+                  },
+                  "archetype_node_id": "at0010.3",
+                  "value": {
+                    "_type": "DV_DATE",
+                    "value": "2019-01"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "datetime_partial_4"
+                  },
+                  "archetype_node_id": "at0010.4",
+                  "value": {
+                    "_type": "DV_DATE",
+                    "value": "2019"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "datetime any"
+                  },
+                  "archetype_node_id": "at0011",
+                  "value": {
+                    "_type": "DV_DATE_TIME",
+                    "value": "2019-01-28T21:22:49,427+07:00"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "time"
+                  },
+                  "archetype_node_id": "at0012.1",
+                  "value": {
+                    "_type": "DV_TIME",
+                    "value": "18:36:49"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "time_2"
+                  },
+                  "archetype_node_id": "at0012.2",
+                  "value": {
+                    "_type": "DV_TIME",
+                    "value": "18:36"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "time_3"
+                  },
+                  "archetype_node_id": "at0012.3",
+                  "value": {
+                    "_type": "DV_TIME",
+                    "value": "18"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "time_2"
+                  },
+                  "archetype_node_id": "at0012.4",
+                  "value": {
+                    "_type": "DV_TIME",
+                    "value": "18:36+07:00"
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "interval datetime"
+                  },
+                  "archetype_node_id": "at0014",
+                  "value": {
+                    "_type": "DV_INTERVAL",
+                    "lower": {
+                      "_type": "DV_DATE_TIME",
+                      "value": "2019-01-28T21:22:49,426+07:00"
+                    },
+                    "upper": {
+                      "_type": "DV_DATE_TIME",
+                      "value": "2019-01-28T21:22:49,426+08:00"
+                    },
+                    "lower_unbounded": false,
+                    "upper_unbounded": false
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

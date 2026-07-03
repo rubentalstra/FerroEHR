@@ -1,0 +1,27 @@
+[package]
+name = "openehr-its"
+version = "0.1.0"
+description = "openEHR ITS (Implementation Technology Specifications): canonical JSON + XML serialization, ITS-REST OpenAPI contract, ITS-BMM. Mirrors the specifications-ITS-{JSON,XML,REST,BMM} repos."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+quick-xml.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+openehr-rm = { path = "../openehr-rm" }
+serde_json.workspace = true
+
+[lints]
+workspace = true
+
+[package.metadata.cargo-machete]
+# Reserved for imminent work: quick-xml for ITS-XML (P5), thiserror for the crate error type.
+ignored = ["quick-xml", "thiserror"]

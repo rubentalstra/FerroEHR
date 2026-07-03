@@ -1,26 +1,19 @@
-// TODO(port): P17 warning burn-down — pedantic findings Phase-A transcription
-// legitimately trips; remove and fix per-site at P17.
+//! openEHR BASE (foundation + base types), generated from the BMM meta-model.
+//!
+//! @generated module tree by openehr-codegen (ADR-004). The type files
+//! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
+
 #![allow(
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::cast_precision_loss,
     clippy::doc_markdown,
+    clippy::doc_link_with_quotes,
+    clippy::tabs_in_doc_comments,
     clippy::doc_lazy_continuation,
+    clippy::struct_excessive_bools,
     clippy::module_inception,
-    clippy::must_use_candidate,
-    clippy::return_self_not_must_use,
-    clippy::struct_excessive_bools
+    clippy::large_enum_variant
 )]
 
-//! openEHR BASE Release-1.2.0 — Base Types (definitions, builtins,
-//! identification, resource).
-//!
-//! Spec crate written from the specifications; no Java counterpart in this
-//! repository. Transcribed in P1 alongside `openehr-foundation`; module
-//! wiring pulled forward from P17 so the crate compiles and the IDE can
-//! index it.
-
-pub mod builtins;
-pub mod definitions;
-pub mod identification;
+pub mod base_types;
+pub mod foundation_types;
+pub mod prelude;
 pub mod resource;

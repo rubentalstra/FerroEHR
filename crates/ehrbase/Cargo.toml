@@ -1,0 +1,29 @@
+[package]
+name = "ehrbase"
+version = "0.1.0"
+description = "EHRbase server binary: persistence, AQL execution engine (ASL), versioning, contributions"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+openehr-base = { path = "../openehr-base" }
+openehr-term = { path = "../openehr-term" }
+openehr-rm = { path = "../openehr-rm" }
+openehr-its = { path = "../openehr-its" }
+openehr-lang = { path = "../openehr-lang" }
+openehr-am = { path = "../openehr-am" }
+openehr-flat = { path = "../openehr-flat" }
+openehr-query = { path = "../openehr-query" }
+ehrbase-rest = { path = "../ehrbase-rest" }
+ehrbase-compat = { path = "../ehrbase-compat" }
+
+[lints]
+workspace = true
+
+[package.metadata.cargo-machete]
+# Scaffolded dependency graph (ADR-004 / phase 0R); these internal crates are wired now and consumed when this crate is ported (P6+).
+ignored = ["ehrbase-compat", "ehrbase-rest", "openehr-am", "openehr-base", "openehr-flat", "openehr-its", "openehr-lang", "openehr-query", "openehr-rm", "openehr-term"]

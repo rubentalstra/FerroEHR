@@ -2,11 +2,20 @@
 paths: ["crates/**/*.rs"]
 ---
 
-# Rust style — faithful port first
+# Rust style — faithful port first (application code)
 
-This applies to every `.rs` file in the workspace, whether it replaces a moved
-`.java` file or transcribes an openEHR spec class. Faithfulness beats
-idiomatic Rust during Stage 1 (PORT_MASTER_PLAN.md Section 4).
+This applies to hand-written `.rs` files: the EHRbase application port
+(`ehrbase-*`) and the hand-written spec crates (`openehr-its`, `openehr-flat`,
+`openehr-term`, the tooling crates, and `*_impl.rs` behaviour files). For the
+EHRbase Java port, faithfulness beats idiomatic Rust during Stage 1
+(PORT_MASTER_PLAN.md Section 4).
+
+**Generated files do not follow these rules.** The openEHR spec crates
+(`openehr-base`, `openehr-rm`, `openehr-am`) are generated from BMM (ADR-004);
+every `// @generated` file is idiomatic-by-construction and **must never be
+hand-edited** — change the emitter (`openehr-codegen`) and regenerate. The
+"mirror the source" and PORT STATUS-trailer rules below do **not** apply to
+them.
 
 ## Mirror the source
 
@@ -46,7 +55,7 @@ web service, not a runtime).
 ## Type and error conventions
 
 - `thiserror` error enums in library crates; `anyhow` only in the
-  `openehr-server` binary. No `unwrap`/`expect` outside `#[cfg(test)]`; use
+  `ehrbase` binary. No `unwrap`/`expect` outside `#[cfg(test)]`; use
   `todo!()` or `// TODO(port):` where the real value is not yet available.
 - Closed openEHR subtype sets (`DATA_VALUE`, `ITEM`, `CONTENT_ITEM`,
   `PARTY_PROXY`, `VERSION<T>`) are Rust `enum`s. Trait objects only for

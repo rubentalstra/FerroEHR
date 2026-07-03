@@ -1,0 +1,310 @@
+<terminology name="openehr" language="pt" version="3.1.0" date="2024-04-11">
+	<codeset issuer="openehr" openehr_id="compression_algorithms" name="compression algorithms" external_id="openehr_compression_algorithms">
+		<code value="compress"/>
+		<code value="deflate"/>
+		<code value="gzip"/>
+		<code value="zlib"/>
+		<code value="other"/>
+	</codeset>
+	<codeset issuer="openehr" openehr_id="integrity_check_algorithms" name="integrity check algorithms" external_id="openehr_integrity_check_algorithms">
+		<code value="SHA-1"/>
+		<code value="SHA-224"/>
+		<code value="SHA-256"/>
+		<code value="SHA-384"/>
+		<code value="SHA-512"/>
+		<code value="SHA-512/224"/>
+		<code value="SHA-512/256"/>
+	</codeset>
+	<codeset issuer="openehr" openehr_id="normal_statuses" name="normal statuses" external_id="openehr_normal_statuses">
+		<code value="HHH"/>
+		<code value="HH"/>
+		<code value="H"/>
+		<code value="N"/>
+		<code value="L"/>
+		<code value="LL"/> 
+		<code value="LLL"/>
+	</codeset>
+	<group openehr_id="attestation_reason" name="razão de atestação">
+		<concept id="240" rubric="assinado"/>
+		<concept id="648" rubric="testemunhado"/>
+	</group>
+	<group openehr_id="audit_change_type" name="tipo de auditoria de modificação">
+		<concept id="249" rubric="criação"/>
+		<concept id="250" rubric="alteração"/>
+		<concept id="251" rubric="modificação"/>
+		<concept id="252" rubric="síntese"/>
+		<concept id="523" rubric="eliminado"/>
+		<concept id="666" rubric="atestação"/>
+		<concept id="816" rubric="restauração"/>
+		<concept id="817" rubric="conversão de formatos"/>
+		<concept id="253" rubric="desconhecido"/>
+	</group>
+	<group openehr_id="composition_category" name="categoria de composição">
+		<concept id="431" rubric="persistente"/>
+		<concept id="433" rubric="evento"/>
+		<concept id="451" rubric="episódico"/>
+		<concept id="815" rubric="relatório"/>
+	</group>
+	<group openehr_id="property" name="propriedade">
+		<concept id="339" rubric="Aceleração"/>
+		<concept id="342" rubric="Aceleração, angular"/>
+		<concept id="381" rubric="Quantidade (Eq)"/>
+		<concept id="384" rubric="Quantidade (mol)"/>
+		<concept id="497" rubric="Ângulo, plano"/>
+		<concept id="500" rubric="Ângulo, sólido"/>
+		<concept id="335" rubric="Área"/>
+		<concept id="119" rubric="Concentração"/>
+		<concept id="350" rubric="Densidade"/>
+		<concept id="362" rubric="Coeficiente de difusão"/>
+		<concept id="501" rubric="Capacitância elétrica"/>
+		<concept id="498" rubric="Carga elétrica"/>
+		<concept id="502" rubric="Condutância elétrica"/>
+		<concept id="334" rubric="Corrente elétrica"/>
+		<concept id="377" rubric="Intensidade do campo elétrico"/>
+		<concept id="655" rubric="Energia potencial elétrica"/>
+		<concept id="121" rubric="Energia"/>
+		<concept id="366" rubric="Densidade de energia"/>
+		<concept id="508" rubric="Dose de energia"/>
+		<concept id="365" rubric="Energia por área"/>
+		<concept id="364" rubric="Energia, linear"/>
+		<concept id="347" rubric="Taxa de fluxo, massa"/>
+		<concept id="352" rubric="Taxa de fluxo, massa/força"/>
+		<concept id="351" rubric="Taxa de fluxo, massa/volume"/>
+		<concept id="126" rubric="Taxa de fluxo, volume"/>
+		<concept id="348" rubric="Fluxo, massa"/>
+		<concept id="355" rubric="Força"/>
+		<concept id="358" rubric="Força por massa"/>
+		<concept id="357" rubric="Força, corpo"/>
+		<concept id="382" rubric="Frequência"/>
+		<concept id="586" rubric="Taxa de filtração glomerular"/>
+		<concept id="373" rubric="Coeficiente de transferência de calor"/>
+		<concept id="505" rubric="Iluminância"/>
+		<concept id="379" rubric="Indutância"/>
+		<concept id="122" rubric="Comprimento"/>
+		<concept id="499" rubric="Intensidade luminosa"/>
+		<concept id="123" rubric="Intensidade sonora"/>
+		<concept id="504" rubric="Fluxo luminoso"/>
+		<concept id="378" rubric="Fluxo magnético"/>
+		<concept id="503" rubric="Densidade de fluxo magnético"/>
+		<concept id="124" rubric="Massa"/>
+		<concept id="385" rubric="Massa (UI)"/>
+		<concept id="445" rubric="Massa (unidades)"/>
+		<concept id="349" rubric="Massa por área"/>
+		<concept id="344" rubric="Momento de inércia, área"/>
+		<concept id="345" rubric="Momento de inércia, massa"/>
+		<concept id="340" rubric="Momento"/>
+		<concept id="346" rubric="Momento, taxa de fluxo"/>
+		<concept id="343" rubric="Momento, angular"/>
+		<concept id="363" rubric="Potência"/>
+		<concept id="369" rubric="Densidade de potência"/>
+		<concept id="368" rubric="Fluxo de potência"/>
+		<concept id="367" rubric="Potência, linear"/>
+		<concept id="125" rubric="Pressão"/>
+		<concept id="507" rubric="Proporção"/>
+		<concept id="380" rubric="Real qualificado"/>
+		<concept id="506" rubric="Radioactividade"/>
+		<concept id="375" rubric="Resistência"/>
+		<concept id="370" rubric="Energia específica"/>
+		<concept id="371" rubric="Calor específico, gás constante"/>
+		<concept id="337" rubric="Superfície específica"/>
+		<concept id="336" rubric="Volume específico"/>
+		<concept id="354" rubric="Peso específico"/>
+		<concept id="356" rubric="Tensão superficial"/>
+		<concept id="127" rubric="Temperatura"/>
+		<concept id="372" rubric="Condutividade térmica"/>
+		<concept id="128" rubric="Tempo"/>
+		<concept id="359" rubric="Torque"/>
+		<concept id="338" rubric="Velocidade"/>
+		<concept id="341" rubric="Velocidade, angular"/>
+		<concept id="360" rubric="Viscosidade, dinâmica"/>
+		<concept id="361" rubric="Viscosidade, cinemática"/>
+		<concept id="374" rubric="Potencial eléctrico"/>
+		<concept id="129" rubric="volume"/>
+		<concept id="130" rubric="Trabalho"/>
+		<concept id="685" rubric="Poder de refracção"/>
+		<concept id="118" rubric="Não definido"/>
+		<concept id="709" rubric="Fracção de tempo"/>
+		<concept id="708" rubric="Taxa de variação, pressão"/>
+		<concept id="754" rubric="Taxa de variação, frequência"/>
+		<concept id="755" rubric="Arbitrário"/>
+		<concept id="756" rubric="Taxa de dose de medicação"/>
+		<concept id="757" rubric="Potência espectral"/>
+		<concept id="758" rubric="Densidade de potência espectral"/>
+		<concept id="759" rubric="Ritmo"/>
+		<concept id="760" rubric="Actividade enzimática"/>
+	</group>
+	<group openehr_id="version_lifecycle_state" name="estado de ciclo de vida de versão">
+		<concept id="532" rubric="completo"/><!-- warning: the rubric for this concept is 'completed' in the 'instruction states' group (known issue, see SPECPR-51) -->
+		<concept id="553" rubric="incompleto"/>
+		<concept id="523" rubric="eliminado"/>
+		<concept id="800" rubric="inativo"/>
+		<concept id="801" rubric="abandonado"/>
+	</group>
+	<group openehr_id="participation_function" name="função de participação">
+		<concept id="253" rubric="desconhecido"/>
+	</group>
+	<group openehr_id="null_flavours" name="null flavours">
+		<concept id="271" rubric="sem informação"/>
+		<concept id="253" rubric="desconhecido"/>
+		<concept id="272" rubric="mascarado"/>
+		<concept id="273" rubric="não aplicável"/>
+	</group>
+	<group openehr_id="participation_mode" name="modo de participação">
+		<concept id="193" rubric="não especificado"/>
+		<concept id="216" rubric="comunicação cara-a-cara"/>
+		<concept id="223" rubric="comunicação interpretada cara-a-cara"/>
+		<concept id="217" rubric="assinatura (cara-a-cara)"/>
+		<concept id="195" rubric="audiovisual ao vivo; videoconferência; videofone"/>
+		<concept id="198" rubric="videoconferência"/>
+		<concept id="197" rubric="videofone"/>
+		<concept id="218" rubric="assinatura por vídeo"/>
+		<concept id="224" rubric="comunicação interpretada por vídeo"/>
+		<concept id="194" rubric="audiovisual assíncrono; vídeo gravado"/>
+		<concept id="196" rubric="vídeo gravado"/>
+		<concept id="202" rubric="apenas áudio em directo; telefone; telefone por internet; teleconferência"/>
+		<concept id="204" rubric="telefone"/>
+		<concept id="203" rubric="teleconferência"/>
+		<concept id="205" rubric="telefone por internet"/>
+		<concept id="222" rubric="áudio interpretado"/>
+		<concept id="199" rubric="áudio assíncrono; ditado; correio de voz"/>
+		<concept id="200" rubric="ditado"/>
+		<concept id="201" rubric="correio de voz"/>
+		<concept id="212" rubric="apenas texto em directo; chat na Internet; chat por SMS; nota escrita interactiva"/>
+		<concept id="213" rubric="chat por internet"/>
+		<concept id="214" rubric="chat por SMS"/>
+		<concept id="215" rubric="nota escrita interactiva"/>
+		<concept id="206" rubric="texto assíncrono; correio electrónico; fax; carta; nota manuscrita; mensagem SMS"/>
+		<concept id="211" rubric="nota manuscrita"/>
+		<concept id="210" rubric="carta impressa/datilografada"/>
+		<concept id="207" rubric="email"/>
+		<concept id="208" rubric="fax/telefax"/>
+		<concept id="221" rubric="texto traduzido"/>
+		<concept id="209" rubric="mensagem SMS"/>
+		<concept id="219" rubric="fisicamente presente"/>
+		<concept id="220" rubric="fisicamente remoto"/>
+	</group>
+	<group openehr_id="instruction_states" name="estados de instrução">
+		<concept id="524" rubric="inicial"/>
+		<concept id="526" rubric="planeado"/>
+		<concept id="527" rubric="adiado"/>
+		<concept id="528" rubric="cancelado"/>
+		<concept id="529" rubric="agendado"/>
+		<concept id="245" rubric="activo"/>
+		<concept id="530" rubric="suspenso"/>
+		<concept id="531" rubric="abortado"/>
+		<concept id="532" rubric="concluído"/><!-- warning: the rubric for this concept is 'complete' in the 'version lifecycle state' group (known issue, see SPECPR-51) -->
+		<concept id="533" rubric="expirado"/>
+	</group>
+	<group openehr_id="instruction_transitions" name="transições de instrução">
+		<concept id="535" rubric="iniciar"/>
+		<concept id="536" rubric="planear etapa"/>
+		<concept id="537" rubric="adiar"/>
+		<concept id="538" rubric="restaurar"/>
+		<concept id="166" rubric="cancelar"/>
+		<concept id="542" rubric="etapa adiada"/>
+		<concept id="539" rubric="agendar"/>
+		<concept id="534" rubric="etapa agendada"/>
+		<concept id="540" rubric="iniciar"/>
+		<concept id="541" rubric="executar"/>
+		<concept id="543" rubric="etapa activa"/>
+		<concept id="544" rubric="suspender"/>
+		<concept id="545" rubric="etapa suspensa"/>
+		<concept id="546" rubric="retomar"/>
+		<concept id="547" rubric="abortar"/>
+		<concept id="548" rubric="terminar"/>
+		<concept id="549" rubric="tempo esgotado"/>
+		<concept id="550" rubric="notificação abortada"/>
+		<concept id="551" rubric="notificação concluída"/>
+		<concept id="552" rubric="notificação cancelada"/>
+	</group>
+	<group openehr_id="subject_relationship" name="relacionamento de sujeito">
+		<concept id="0" rubric="próprio"/>
+		<concept id="3" rubric="feto"/>
+		<concept id="10" rubric="mãe"/>
+		<concept id="9" rubric="pai"/>
+		<concept id="6" rubric="dador"/>
+		<concept id="253" rubric="desconhecido"/>
+		<concept id="261" rubric="filha adoptiva"/>
+		<concept id="260" rubric="filho adoptivo"/>
+		<concept id="259" rubric="pai adoptivo"/>
+		<concept id="258" rubric="mãe adoptiva"/>
+		<concept id="256" rubric="pai biológico"/>
+		<concept id="255" rubric="mãe biológica"/>
+		<concept id="23" rubric="irmão"/>
+		<concept id="28" rubric="filho"/>
+		<concept id="265" rubric="coabitante"/>
+		<concept id="257" rubric="primo(a)"/>
+		<concept id="29" rubric="filha"/>
+		<concept id="264" rubric="guardião(ã)"/>
+		<concept id="39" rubric="tia materna"/>
+		<concept id="8" rubric="avô materno"/>
+		<concept id="7" rubric="avó materna"/>
+		<concept id="38" rubric="tio materno"/>
+		<concept id="189" rubric="recém-nascido"/>
+		<concept id="254" rubric="pai/mãe"/>
+		<concept id="22" rubric="companheiro/cônjuge"/>
+		<concept id="41" rubric="tia paterna"/>
+		<concept id="36" rubric="avô paterno"/>
+		<concept id="37" rubric="avó paterna"/>
+		<concept id="40" rubric="tio paterno"/>
+		<concept id="27" rubric="irmão(ã)"/>
+		<concept id="24" rubric="irmã"/>
+		<concept id="31" rubric="filho"/>
+		<concept id="263" rubric="padrasto"/>
+		<concept id="262" rubric="madrasta"/>
+		<concept id="25" rubric="meio-irmão"/>
+		<concept id="26" rubric="meia-irmã"/>
+	</group>
+	<group openehr_id="term_mapping_purpose" name="propósito de mapeamento de termo">
+		<concept id="669" rubric="saúde pública"/>
+		<concept id="670" rubric="reembolso"/>
+		<concept id="671" rubric="estudo de investigação"/>
+	</group>
+	<group openehr_id="event_math_function" name="função matemática de evento">
+		<concept id="145" rubric="mínimo"/>
+		<concept id="144" rubric="máximo"/>
+		<concept id="267" rubric="moda"/>
+		<concept id="268" rubric="mediana"/>
+		<concept id="146" rubric="média"/>
+		<concept id="147" rubric="alteração"/>
+		<concept id="148" rubric="total"/>
+		<concept id="149" rubric="variação"/>
+		<concept id="521" rubric="decréscimo"/>
+		<concept id="522" rubric="acréscimo"/>
+		<concept id="640" rubric="real"/>
+	</group>
+	<group openehr_id="setting" name="configuração">
+		<concept id="225" rubric="cuidados domiciliários"/>
+		<concept id="227" rubric="cuidados de emergência"/>
+		<concept id="228" rubric="cuidados médicos primários"/>
+		<concept id="229" rubric="cuidados de enfermagem primários"/>
+		<concept id="230" rubric="cuidados de saúde primários"/>
+		<concept id="231" rubric="cuidados de obstetrícia"/>
+		<concept id="232" rubric="cuidados médicos secundários"/>
+		<concept id="233" rubric="cuidados de enfermagem secundários"/>
+		<concept id="234" rubric="cuidados de saúde especializada"/>
+		<concept id="235" rubric="cuidados de saúde complementares"/>
+		<concept id="236" rubric="cuidados dentários"/>
+		<concept id="237" rubric="cuidados em lares residenciais"/>
+		<concept id="802" rubric="cuidados de saúde mental"/>
+		<concept id="238" rubric="outros cuidados"/>
+	</group>
+	<group openehr_id="extract_content_type" name="extract content type">
+		<concept id="803" rubric="registo de saúde electrónico em openEHR"/>
+		<concept id="804" rubric="openEHR demográfico"/>
+		<concept id="805" rubric="Sincronização openEHR"/>
+		<concept id="806" rubric="openEHR genérico"/>
+		<concept id="807" rubric="Registro electrónico médico genérico"/>
+		<concept id="808" rubric="Outro"/>
+	</group>
+	<group openehr_id="extract_action_type" name="extract action type">
+		<concept id="809" rubric="cancelar"/>
+		<concept id="810" rubric="reenviar"/>
+		<concept id="811" rubric="enviar novo"/>
+	</group>
+	<group openehr_id="extract_update_trigger_event_type" name="extract update trigger event type">
+		<concept id="812" rubric="qualquer alteração"/>
+		<concept id="813" rubric="correcção"/>
+		<concept id="814" rubric="actualização"/>
+	</group>
+</terminology>

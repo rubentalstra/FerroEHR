@@ -1,0 +1,18 @@
+[package]
+name = "openehr-query"
+version = "0.1.0"
+description = "openEHR QUERY (AQL 1.1.0): hand-written lexer + parser + AST from the ANTLR4 grammar (no ANTLR runtime)"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+logos.workspace = true
+chumsky.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

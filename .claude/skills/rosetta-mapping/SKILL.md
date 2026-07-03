@@ -11,11 +11,15 @@ argument-hint: "<mapping to add, e.g. 'Java Optional<BigDecimal> -> Rust Option<
 
 # /rosetta-mapping
 
-`docs/ROSETTA.md` is the living lookup table referenced by every porter and
-transcriber (`docs/PORTING.md` is the static rule set this file extends with
-concrete, discovered mappings). It has two tables: **Java → Rust** (for
-ported EHRbase application code) and **openEHR spec → Rust** (for native
-transcription).
+> **⚠️ ADR-004:** only append to the **Java → Rust** table now. The **openEHR
+> spec → Rust** table is historical — those mappings are produced by
+> `openehr-codegen`, so record spec-shape decisions in the emitter / the eventual
+> `codegen.toml`, not here.
+
+`docs/ROSETTA.md` is the living lookup table for the EHRbase application port
+(`docs/PORTING.md` is the static rule set this file extends with concrete,
+discovered mappings). Its live table is **Java → Rust** (ported `ehrbase-*`
+code); the **openEHR spec → Rust** table is frozen (generator-owned).
 
 ## Steps
 

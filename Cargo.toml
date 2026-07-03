@@ -36,6 +36,9 @@ missing_debug_implementations = "warn"
 # ─────────────────────────────────────────────────────────────────────────────
 [workspace.dependencies]
 
+# ── openEHR spec-generation (ADR-004) ────────────────────────────────────────
+openehr-derive = { path = "crates/openehr-derive" }
+
 # ── Web framework & HTTP core ────────────────────────────────────────────────
 axum = "0.8"                        # 0.8.8 current (MSRV 1.78)
 axum-extra = { version = "0.12.6", features = ["typed-header", "query"] }
@@ -106,6 +109,11 @@ sea-query-binder = { version = "0.7", features = ["sqlx-postgres", "with-uuid", 
 deadpool-postgres = "0.14"         # optional pipelined hot-read path (verify latest)
 tokio-postgres = "0.7"            # paired with deadpool for pipelining
 
+# ── Proc-macro toolkit (openehr-derive) ──────────────────────────────────────
+syn = { version = "2", features = ["full"] }
+quote = "1"
+proc-macro2 = "1"
+
 # ── Serialization & data formats ─────────────────────────────────────────────
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["preserve_order"] }
@@ -131,7 +139,7 @@ miette = { version = "7", features = ["fancy"] }
 
 # ── Identifiers, time, validation ────────────────────────────────────────────
 uuid = { version = "1", features = ["v4", "v7", "serde", "fast-rng"] }
-jiff = { version = "0.2", features = ["serde"] }   # 1.0 not yet out as of 2026-07; 0.2 is current
+jiff = { version = "0.2.31", features = ["serde"] }   # 1.0 not yet out as of 2026-07; 0.2.31 pinned for ISO 8601 temporal work
 garde = { version = "0.23.0", features = ["derive"] }   # verify latest
 url = "2"
 

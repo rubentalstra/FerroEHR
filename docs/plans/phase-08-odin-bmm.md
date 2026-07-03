@@ -1,5 +1,7 @@
 # Phase 08 — ODIN + BMM parsers
 
+> **⚠️ ADR-004 (2026-07-03):** this phase's openEHR spec layer is now GENERATED from the BMM meta-model by `openehr-codegen`, not hand-transcribed. Read `docs/ADRs/ADR-004-spec-driven-codegen.md` and the "Code generation" section of `CLAUDE.md`. Tasks/notes below describe the superseded hand-transcription approach.
+
 - Status: not-started
 - Started: -   Owner: Ruben
 - Consumes (spec/layer): LANG 1.0.0 (BMM schema v2.3) / Layer 6a

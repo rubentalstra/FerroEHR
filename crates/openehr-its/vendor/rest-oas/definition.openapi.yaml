@@ -1,0 +1,3778 @@
+openapi: 3.0.3
+info:
+  title: Definition API
+  version: latest
+  x-status: STABLE
+  x-spec: definition
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: https://specifications.openehr.org/
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: https://creativecommons.org/licenses/by-nd/3.0/
+  description: |
+    ## Description
+
+    ### Purpose
+
+    This specification describes service endpoints, resources and operations as well as details of requests and responses that interact with the openEHR Definition API in a RESTful manner.
+
+    ### Related Documents
+
+    Prerequisite documents for reading this document include:
+
+    - The [Operational Template 2](https://specifications.openehr.org/releases/AM/latest/OPT2.html)
+    - The [Archetype Query Language (AQL)](https://specifications.openehr.org/releases/QUERY/latest/AQL.html) 
+
+    Related documents include:
+
+    - The [openEHR Architecture Overview](https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html)
+    - The [Archetype Technology Overview](https://specifications.openehr.org/releases/AM/latest/Overview.html)
+    - The [openEHR Global Class Index](https://specifications.openehr.org/classes)
+    - The [XML-Schemas (XSD)](https://specifications.openehr.org/releases/ITS-XML/latest)
+    - The [JSON-Schemas](https://specifications.openehr.org/releases/ITS-JSON/latest) and [Simplified Formats](simplified_formats.html)
+
+    ### Status
+
+    This specification is in the `STABLE` state, and can be downloaded as [OpenAPI specification](https://spec.openapis.org/oas/v3.0.3) file (in YAML format) [for validation](computable/OAS/definition-validation.openapi.yaml), or [for code generators](computable/OAS/definition-codegen.openapi.yaml).
+    Users are encouraged to comment on and/or advise on these paragraphs as well as the main content.
+
+    The development version of this document can be found at <https://specifications.openehr.org/releases/ITS-REST/development/definition.html>.
+servers:
+  - url: https://{baseUrl}/v1
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+security: []
+tags:
+  - name: ADL1.4
+    x-displayName: ADL1.4 TEMPLATE
+    description: |
+      Management of [AOM and ADL 1.4](https://specifications.openehr.org/releases/AM/latest) Operational Templates (OPTs). 
+      These templates can be created using [modelling tools](https://www.openehr.org/downloads/modellingtools) such as the Template Designer and the Archetype Designer. 
+
+      Operational templates simplify the creation of openEHR-based input or storage implementations by, for a specific COMPOSITION template (use case), collecting all labels, requirements and constraints from all contained archetypes and sub-templates into a single easily parsed file. 
+      This file can be a basis for UI-generation/creation and for data validation.
+  - name: ADL2
+    x-displayName: ADL2 TEMPLATE
+    description: |
+      Management of [AOM2](https://specifications.openehr.org/releases/AM/latest/AOM2.html#_templates) templates.
+
+      See also [ADL2 Template specifications](https://specifications.openehr.org/releases/AM/latest/ADL2.html#_templates).
+  - name: Query
+    x-displayName: Stored Query
+    description: |
+      Management of stored (registered) queries in the system, including creation of new versions and retrieval by qualified name and version. 
+
+      These endpoints enable registration and lifecycle management of reusable queries available for later execution.    
+
+      Stored queries are identified by their [qualified name and version](query.html#tag/Qualified_query_name).
+      They can be executed using the [query endpoint](query.html#tag/Query/operation/query_execute_stored_query_body).
+  - name: TemplateList_schema
+    x-displayName: Template list
+    description: |
+      This resource represents the list of `Template` meta-information associated with uploaded templates, including identifiers, names, versions and related attributes that help clients discover available templates.
+
+      <SchemaDefinition schemaRef="#/components/schemas/TemplateList" />
+  - name: Template_schema
+    x-displayName: Template
+    description: |
+      The following resources are formally specified in the [Archetype Model](https://specifications.openehr.org/releases/AM/latest) as AOM/ADL 1.4 Operational Templates (OPTs) and as [AOM2 templates](https://specifications.openehr.org/releases/AM/latest/AOM2.html#_templates).
+      <div class="mb-5"></div>
+
+      The AOM/ADL 1.4 `OPERATIONAL_TEMPLATE` resource:
+      <SchemaDefinition schemaRef="#/components/schemas/OperationalTemplate" />
+
+      The AOM/ADL 2 `OPERATIONAL_TEMPLATE` resource:
+      <SchemaDefinition schemaRef="#/components/schemas/OperationalTemplateV2" />
+
+      The `WebTemplate` alternative resource:
+      <SchemaDefinition schemaRef="#/components/schemas/WebTemplate" />
+  - name: StoredQuery_schema
+    x-displayName: Stored Query
+    description: |
+      This resource represents the definition of a stored query, including its qualified name, versioning and parameter declarations. Stored queries provide a reusable, immutable way to identify a specific AQL statement that can be executed later.
+
+      <SchemaDefinition schemaRef="#/components/schemas/StoredQuery" />
+paths:
+  /definition/template/adl1.4:
+    post:
+      operationId: definition_template_adl1.4_upload
+      summary: Upload a template
+      description: |
+        Upload a new ADL 1.4 operational template (OPT).
+      tags:
+        - ADL1.4
+      parameters:
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_Template'
+        - name: Content-Type
+          in: header
+          style: simple
+          schema:
+            type: string
+            enum:
+              - application/xml
+      requestBody:
+        description: ''
+        content:
+          application/xml:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/OperationalTemplate'
+            example: |-
+              <template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.openehr.org/v1">
+                  <language>
+                      <terminology_id>
+                          <value>ISO_639-1</value>
+                      </terminology_id>
+                      <code_string>en</code_string>
+                  </language>
+                  <description>
+                      <original_author id="Original Author">Not Specified</original_author>
+                      <lifecycle_state>Initial</lifecycle_state>
+                      <other_details id="MetaDataSet:Sample Set ">Template metadata sample set</other_details>
+                      <other_details id="Acknowledgements"></other_details>
+                      <other_details id="Business Process Level"></other_details>
+                      <other_details id="Care setting"></other_details>
+                      <other_details id="Client group"></other_details>
+                      <other_details id="Clinical Record Element"></other_details>
+                      <other_details id="Copyright"></other_details>
+                      <other_details id="Issues"></other_details>
+                      <other_details id="Owner"></other_details>
+                      <other_details id="Sign off"></other_details>
+                      <other_details id="Speciality"></other_details>
+                      <other_details id="User roles"></other_details>
+                      <details>
+                          <language>
+                              <terminology_id>
+                                  <value>ISO_639-1</value>
+                              </terminology_id>
+                              <code_string>en</code_string>
+                          </language>
+                          <purpose>Not Specified</purpose>
+                      </details>
+                  </description>
+                  <uid>
+                      <value>b4d7f203-b329-4e89-a58a-c605b19e94de</value>
+                  </uid>
+                  <template_id>
+                      <value>Vital Signs</value>
+                  </template_id>
+                  <concept>Vital Signs</concept>
+                  <definition>
+                      <rm_type_name>COMPOSITION</rm_type_name>
+                      <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                      </occurrences>
+                      <node_id>at0000</node_id>
+                      ...
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_Template_adl1_4_upload'
+        '400':
+          $ref: '#/components/responses/400'
+        '409':
+          $ref: '#/components/responses/409_template_already_exists'
+    get:
+      operationId: definition_template_adl1.4_list
+      summary: List templates
+      description: |
+        List the available ADL 1.4 operational templates (OPT) on the system.
+      tags:
+        - ADL1.4
+      parameters:
+        - $ref: '#/components/parameters/Accept_JSON'
+        - $ref: '#/components/parameters/filter_template_id'
+        - $ref: '#/components/parameters/concept'
+        - $ref: '#/components/parameters/filter_version'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/fetch'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_TemplateList_adl1_4'
+  /definition/template/adl1.4/{template_id}:
+    get:
+      operationId: definition_template_adl1.4_get
+      summary: Get a template
+      description: |
+        Retrieves the ADL 1.4 operational template (OPT) identified by `template_id` identifier.
+
+        Note that this can return either the original (canonical) `XML` based OPT format (if called with the `Accept: application/xml` request header), as well as the simplified `JSON`-based “web template” format (if called with the `Accept: application/openehr.wt+json` request header). For more details see the [data representation specification](overview.html#tag/Resources/Data-representation).
+      tags:
+        - ADL1.4
+      parameters:
+        - $ref: '#/components/parameters/template_id'
+        - $ref: '#/components/parameters/Accept_Template'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Template_adl1_4_retrieved'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_template_id'
+        '406':
+          $ref: '#/components/responses/406'
+  /definition/template/adl1.4/{template_id}/example:
+    get:
+      operationId: definition_template_adl1.4_example_get
+      summary: Get example data by template
+      description: |
+        Generates and retrieves an example data instance based on an ADL 1.4 operational template (OPT) identified by the `template_id` parameter.
+
+        The generated example can be either of type `input` (i.e., ready to be submitted to the repository) or `output` (as it would appear when retrieved from the repository).
+        This behavior is controlled by the `type` query parameter.
+
+        The level of detail in the generated example can be customized using the `detail_level` query parameter.
+        It affects the number and complexity of nested elements, the inclusion or exclusion of optional elements, and the depth of data point details.
+        The supported values are:
+        - `required`: a minimal composition including only mandatory data points; intended for training purposes and expected to be committable without adjustment
+        - `medium`: a fairly realistic set of data points, including some optional RM attributes and elements; intended to be committable (e.g., it should not contain more than one choice element, even if the template allows it)
+        - `complete`: a full representation of all possible data points; not expected to be committable or realistic, and intended as reference guidance for how parts of the RM should be represented
+
+        > NOTE: The implementation and completeness of these examples are not specified, and vendors may produce different results.
+        These examples are intended as pedagogical tools; their output should not be used in production.
+
+        When the server does not support the requested `type` or `detail_level`, it will fall back to the closest supported level, or it may return an error (typically `400 Bad Request`).
+
+        The format of the returned data instance can be controlled via the `Accept` header. See the [data representation specification](overview.html#tag/Resources/Data-representation) for supported formats.tags:
+      tags:
+        - ADL1.4
+      parameters:
+        - $ref: '#/components/parameters/template_id'
+        - $ref: '#/components/parameters/example_type'
+        - $ref: '#/components/parameters/example_detail_level'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Template_example_retrieved'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_template_id'
+        '406':
+          $ref: '#/components/responses/406'
+  /definition/template/adl2:
+    post:
+      operationId: definition_template_adl2_upload
+      summary: Upload a template
+      description: |
+        Upload a new ADL2 operational template.
+      tags:
+        - ADL2
+      parameters:
+        - $ref: '#/components/parameters/at_version'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_Template_adl2'
+        - name: Content-Type
+          in: header
+          style: simple
+          schema:
+            type: string
+            enum:
+              - text/plain
+      requestBody:
+        description: ''
+        content:
+          text/plain:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/OperationalTemplateV2'
+                - type: string
+            example: |-
+              operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)
+                  openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+              specialize
+                  openEHR-EHR-COMPOSITION.discharge.v1
+
+              language
+                  original_language = <[ISO_639-1::en]>
+
+              description
+                  lifecycle_state = <"unmanaged">
+                  original_author = <
+                      ["name"] = <"Ian McNicoll">
+                      ["organisation"] = <"openEHR Foundation">
+                      ["email"] = <"ian.mcnicoll@openehr.org">
+              ...
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_Template_adl2_upload'
+        '400':
+          $ref: '#/components/responses/400'
+        '409':
+          $ref: '#/components/responses/409_template_already_exists'
+    get:
+      operationId: definition_template_adl2_list
+      summary: List templates
+      description: |
+        List the available ADL2 operational templates on the system.
+      tags:
+        - ADL2
+      parameters:
+        - $ref: '#/components/parameters/Accept_JSON'
+        - $ref: '#/components/parameters/filter_template_id'
+        - $ref: '#/components/parameters/concept'
+        - $ref: '#/components/parameters/filter_version'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/fetch'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_TemplateList_adl2'
+  /definition/template/adl2/{template_id}:
+    get:
+      operationId: definition_template_adl2_get
+      summary: Get a template
+      description: |
+        Retrieves the latest version of the ADL2 operational template identified by `template_id` identifier.
+      tags:
+        - ADL2
+      parameters:
+        - $ref: '#/components/parameters/template_id_adl2'
+        - $ref: '#/components/parameters/Accept_Template_adl2'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Template_adl2_retrieved'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_template_id'
+  /definition/template/adl2/{template_id}/example:
+    get:
+      operationId: definition_template_adl2_example_get
+      summary: Get example data by template
+      description: |
+        Generates and retrieves an example data instance based on an ADL2 operational template (OPT) identified by the `template_id` parameter.
+
+        The generated example can be either an `input` type (ready for submission to the repository) or an `output` type (as it would appear when retrieved from the repository), controlled by the `type` parameter.
+
+        The level of detail in the generated example can be customized using the `detail_level` parameter, which affects:
+        - Number and complexity of nested elements
+        - Inclusion/exclusion of optional elements
+        - Depth of data point details
+
+        The format of the returned data instance can be controlled via the `Accept` header. See the [data representation specification](overview.html#tag/Resources/Data-representation) for supported formats.
+      tags:
+        - ADL2
+      parameters:
+        - $ref: '#/components/parameters/template_id_adl2'
+        - $ref: '#/components/parameters/example_type'
+        - $ref: '#/components/parameters/example_detail_level'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Template_example_retrieved'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_template_id'
+        '406':
+          $ref: '#/components/responses/406'
+  /definition/template/adl2/{template_id}/{version}:
+    get:
+      operationId: definition_template_adl2_version_get
+      summary: Get a template at version
+      deprecated: true
+      description: |
+        Retrieves the ADL2 operational template identified by `template_id` identifier, at specified `version`.
+      tags:
+        - ADL2
+      parameters:
+        - $ref: '#/components/parameters/template_id'
+        - $ref: '#/components/parameters/version'
+        - $ref: '#/components/parameters/Accept_Template_adl2'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Template_adl2_retrieved'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_template_id_or_version'
+  /definition/query/{qualified_query_name}:
+    get:
+      operationId: definition_query_list
+      summary: List stored queries
+      description: |
+        Retrieves list of all stored queries on the system matched by `qualified_query_name` as pattern.
+
+        If pattern should given be in the format of `[{namespace}::]{query-name}`, and when is empty, it will be treated as "wildcard" in the search.   
+
+        Examples:
+          - `GET https://openEHRSys.example.com/v1/definition/query/org.openehr` will list all versions of all queries with names starting with `org.openehr`
+          - `GET https://openEHRSys.example.com/v1/definition/query/org.openehr::compositions` will list all versions of the query named `org.openehr::compositions`
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/Accept_JSON'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_QueryList'
+    put:
+      operationId: definition_query_store.yaml
+      summary: Store a query
+      description: |
+        Stores a new query, or updates an existing query on the system.
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/query_type'
+        - $ref: '#/components/parameters/Accept_JSON'
+        - $ref: '#/components/parameters/ContentType_text'
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              $ref: '#/components/schemas/AQL'
+            example: |-
+              SELECT c FROM
+                EHR e
+                  CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1]
+                    CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1]
+              WHERE
+                obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_StoredQuery_stored'
+        '400':
+          $ref: '#/components/responses/400'
+  /definition/query/{qualified_query_name}/{version}:
+    put:
+      operationId: definition_query_version_store.yaml
+      summary: Store a query version
+      description: |
+        Stores a query, at a specified `version`, on the system.
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/version'
+        - $ref: '#/components/parameters/query_type'
+        - $ref: '#/components/parameters/Accept_JSON'
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              $ref: '#/components/schemas/AQL'
+            example: |-
+              SELECT c FROM
+                EHR e
+                  CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1]
+                    CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1]
+              WHERE
+                obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_StoredQuery_stored'
+        '400':
+          $ref: '#/components/responses/400'
+        '409':
+          $ref: '#/components/responses/409_StoredQuery_version'
+    get:
+      operationId: definition_query_version_get
+      summary: Get stored query at version
+      description: |
+        Retrieves the definition of a particular stored query (at specified version) and its associated metadata.
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/version'
+        - $ref: '#/components/parameters/Accept_JSON'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_StoredQuery_get'
+        '404':
+          $ref: '#/components/responses/404_Query_version'
+components:
+  schemas:
+    TemplateMetadata:
+      title: TemplateMetadata
+      required:
+        - template_id
+        - concept
+        - archetype_id
+        - created_timestamp
+      type: object
+      properties:
+        template_id:
+          type: string
+        version:
+          type: string
+          deprecated: true
+        concept:
+          type: string
+        archetype_id:
+          type: string
+        created_timestamp:
+          type: string
+      description: Uploaded TEMPLATE meta information.
+    TemplateList:
+      title: TemplateList
+      type: array
+      items:
+        $ref: '#/components/schemas/TemplateMetadata'
+      description: |
+        List of uploaded TEMPLATE resources.
+    OperationalTemplate:
+      title: OPERATIONAL_TEMPLATE
+      type: object
+      xml:
+        name: response200
+    LocalizedNames:
+      title: LocalizedNames
+      required:
+        - en
+      type: object
+      properties:
+        en:
+          type: string
+      example:
+        en: Vital Signs
+    LocalizedDescriptions:
+      title: LocalizedDescriptions
+      required:
+        - sl
+      type: object
+      properties:
+        sl:
+          type: string
+      example:
+        sl: Generic encounter or progress note composition
+    LocalizedNames1:
+      title: LocalizedNames1
+      required:
+        - sl
+      type: object
+      properties:
+        sl:
+          type: string
+      example:
+        sl: Podrobnosti
+    LocalizedNames2:
+      title: LocalizedNames2
+      required:
+        - sl
+      type: object
+      properties:
+        sl:
+          type: string
+        en:
+          type: string
+      example:
+        sl: Tagi
+    Annotations:
+      title: Annotations
+      type: object
+      properties:
+        comment:
+          type: string
+        default:
+          type: string
+      example:
+        comment: Tags applied to the composition. They can contain various ids, such as episode id, central case id or other types of information forming composition meta-data.
+    Precision:
+      title: Precision
+      required:
+        - minOp
+        - min
+        - maxOp
+        - max
+      type: object
+      properties:
+        minOp:
+          type: string
+        min:
+          type: integer
+          format: int32
+        maxOp:
+          type: string
+        max:
+          type: integer
+          format: int32
+      example:
+        minOp: '>='
+        min: 1
+        maxOp: <=
+        max: 1
+    Range:
+      title: Range
+      required:
+        - minOp
+        - min
+      type: object
+      properties:
+        minOp:
+          type: string
+        min:
+          type: integer
+          format: int32
+        maxOp:
+          type: string
+        max:
+          type: integer
+          format: int32
+      example:
+        minOp: '>='
+        min: 0
+        maxOp: <
+        max: 1000
+    Validation:
+      title: Validation
+      type: object
+      properties:
+        precision:
+          $ref: '#/components/schemas/Precision'
+        range:
+          $ref: '#/components/schemas/Range'
+      example:
+        precision:
+          minOp: '>='
+          min: 1
+          maxOp: <=
+          max: 1
+    LocalizedLabels:
+      title: LocalizedLabels
+      required:
+        - sl
+      type: object
+      properties:
+        sl:
+          type: string
+      example:
+        sl: Gol
+    List:
+      title: List
+      required:
+        - value
+        - label
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        validation:
+          $ref: '#/components/schemas/Validation'
+        localizedLabels:
+          $ref: '#/components/schemas/LocalizedLabels'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+      example:
+        value: °C
+        label: °C
+        validation:
+          precision:
+            minOp: '>='
+            min: 1
+            maxOp: <=
+            max: 1
+    Validation1:
+      title: Validation1
+      required:
+        - range
+      type: object
+      properties:
+        range:
+          $ref: '#/components/schemas/Range'
+        precision:
+          $ref: '#/components/schemas/Precision'
+      example:
+        range:
+          minOp: '>='
+          min: 0
+          maxOp: <
+          max: 1000
+        precision:
+          minOp: '>='
+          min: 0
+          maxOp: <=
+          max: 0
+    Input:
+      title: Input
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        suffix:
+          type: string
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/List'
+          description: ''
+        defaultValue:
+          type: string
+        validation:
+          $ref: '#/components/schemas/Validation1'
+      example:
+        type: TEXT
+    SNOMEDCT:
+      title: SNOMEDCT
+      required:
+        - value
+        - terminologyId
+      type: object
+      properties:
+        value:
+          type: string
+        terminologyId:
+          type: string
+      example:
+        value: '163030003'
+        terminologyId: SNOMED-CT(2003)
+    TermBindings:
+      title: TermBindings
+      required:
+        - SNOMED-CT
+      type: object
+      properties:
+        SNOMED-CT:
+          $ref: '#/components/schemas/SNOMEDCT'
+      example:
+        SNOMED-CT:
+          value: '163030003'
+          terminologyId: SNOMED-CT(2003)
+    Input1:
+      title: Input1
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        suffix:
+          type: string
+      example:
+        type: INTEGER
+    Child3:
+      title: Child3
+      required:
+        - id
+        - localizedName
+        - rmType
+        - nodeId
+        - min
+        - max
+        - localizedNames
+        - localizedDescriptions
+        - aqlPath
+        - inputs
+      type: object
+      properties:
+        id:
+          type: string
+        localizedName:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames1'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        aqlPath:
+          type: string
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Input1'
+          description: ''
+        name:
+          type: string
+      example:
+        id: count_value
+        localizedName: Size
+        rmType: DV_COUNT
+        nodeId: ''
+        min: 0
+        max: 1
+        localizedNames:
+          sl: Velikost
+        localizedDescriptions:
+          sl: Velikost naprave
+        aqlPath: /content[openEHR-EHR-OBSERVATION.blood_pressure.v1]/protocol[at0011]/items[openEHR-EHR-CLUSTER.device.v1]/items[at0016]/value
+        inputs:
+          - type: INTEGER
+    Child2:
+      title: Child2
+      required:
+        - id
+        - name
+        - localizedName
+        - rmType
+        - nodeId
+        - min
+        - max
+        - localizedNames
+        - localizedDescriptions
+        - aqlPath
+        - inputs
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        localizedName:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames2'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        annotations:
+          $ref: '#/components/schemas/Annotations'
+        aqlPath:
+          type: string
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Input'
+          description: ''
+        dependsOn:
+          type: array
+          items:
+            type: string
+          description: ''
+        inContext:
+          type: boolean
+        termBindings:
+          $ref: '#/components/schemas/TermBindings'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child3'
+          description: ''
+      example:
+        id: tags
+        name: Tags
+        localizedName: Tags
+        rmType: DV_TEXT
+        nodeId: at0008
+        min: 1
+        max: -1
+        localizedNames:
+          sl: Tagi
+        localizedDescriptions:
+          sl: '*'
+        annotations:
+          comment: Tags applied to the composition. They can contain various ids, such as episode id, central case id or other types of information forming composition meta-data.
+        aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+        inputs:
+          - type: TEXT
+    List1:
+      title: List1
+      required:
+        - value
+        - label
+        - localizedLabels
+        - localizedDescriptions
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        localizedLabels:
+          $ref: '#/components/schemas/LocalizedLabels'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+      example:
+        value: at0022
+        label: Mouth
+        localizedLabels:
+          sl: Usta
+        localizedDescriptions:
+          sl: '*Temperature is measured within the mouth(en)'
+    Input2:
+      title: Input2
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        suffix:
+          type: string
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/List1'
+          description: ''
+      example:
+        type: DATETIME
+    Annotations1:
+      title: Annotations1
+      type: object
+      properties:
+        comment:
+          type: string
+        view:pass_through:
+          type: string
+      example:
+        comment: 'Perloff D, Grim C, Flack J, Frohlich ED, Hill M, McDonald M, Morgenstern BZ. Human blood pressure determination by sphygmomanometry. Circulation 1993;88;2460-2470. '
+    Child1:
+      title: Child1
+      required:
+        - id
+        - name
+        - rmType
+        - min
+        - max
+        - aqlPath
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        localizedName:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames1'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        aqlPath:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child2'
+          description: ''
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Input2'
+          description: ''
+        inContext:
+          type: boolean
+        dependsOn:
+          type: array
+          items:
+            type: string
+          description: ''
+        annotations:
+          $ref: '#/components/schemas/Annotations1'
+        termBindings:
+          $ref: '#/components/schemas/TermBindings'
+        proportionTypes:
+          type: array
+          items:
+            type: string
+          description: ''
+      example:
+        id: context_detail
+        name: Context detail
+        localizedName: Context detail
+        rmType: CLUSTER
+        nodeId: openEHR-EHR-CLUSTER.context_detail.v1
+        min: 0
+        max: -1
+        localizedNames:
+          sl: Podrobnosti
+        localizedDescriptions:
+          sl: Dodatni podatki o kontekstu
+        aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]
+        children:
+          - id: tags
+            name: Tags
+            localizedName: Tags
+            rmType: DV_TEXT
+            nodeId: at0008
+            min: 1
+            max: -1
+            localizedNames:
+              sl: Tagi
+            localizedDescriptions:
+              sl: '*'
+            annotations:
+              comment: Tags applied to the composition. They can contain various ids, such as episode id, central case id or other types of information forming composition meta-data.
+            aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+            inputs:
+              - type: TEXT
+    List2:
+      title: List2
+      required:
+        - value
+        - label
+        - localizedLabels
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        localizedLabels:
+          $ref: '#/components/schemas/LocalizedLabels'
+      example:
+        value: '433'
+        label: event
+        localizedLabels:
+          sl: ''
+    Input3:
+      title: Input3
+      required:
+        - suffix
+        - type
+      type: object
+      properties:
+        suffix:
+          type: string
+        type:
+          type: string
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/List2'
+          description: ''
+        terminology:
+          type: string
+      example:
+        suffix: code
+        type: CODED_TEXT
+        list:
+          - value: '433'
+            label: event
+            localizedLabels:
+              sl: ''
+        terminology: openehr
+    Child:
+      title: Child
+      required:
+        - id
+        - rmType
+        - min
+        - max
+        - aqlPath
+      type: object
+      properties:
+        id:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        aqlPath:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child1'
+          description: ''
+        name:
+          type: string
+        localizedName:
+          type: string
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames1'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        termBindings:
+          $ref: '#/components/schemas/TermBindings'
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Input3'
+          description: ''
+        inContext:
+          type: boolean
+      example:
+        id: context
+        rmType: EVENT_CONTEXT
+        nodeId: ''
+        min: 1
+        max: 1
+        aqlPath: /context
+        children:
+          - id: context_detail
+            name: Context detail
+            localizedName: Context detail
+            rmType: CLUSTER
+            nodeId: openEHR-EHR-CLUSTER.context_detail.v1
+            min: 0
+            max: -1
+            localizedNames:
+              sl: Podrobnosti
+            localizedDescriptions:
+              sl: Dodatni podatki o kontekstu
+            aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]
+            children:
+              - id: tags
+                name: Tags
+                localizedName: Tags
+                rmType: DV_TEXT
+                nodeId: at0008
+                min: 1
+                max: -1
+                localizedNames:
+                  sl: Tagi
+                localizedDescriptions:
+                  sl: '*'
+                annotations:
+                  comment: Tags applied to the composition. They can contain various ids, such as episode id, central case id or other types of information forming composition meta-data.
+                aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+                inputs:
+                  - type: TEXT
+          - id: start_time
+            name: Start_time
+            rmType: DV_DATE_TIME
+            min: 0
+            max: 1
+            aqlPath: /context/start_time
+            inputs:
+              - type: DATETIME
+            inContext: true
+          - id: setting
+            name: Setting
+            rmType: DV_CODED_TEXT
+            min: 0
+            max: 1
+            aqlPath: /context/setting
+            inputs:
+              - suffix: code
+                type: TEXT
+              - suffix: value
+                type: TEXT
+            inContext: true
+    Tree:
+      title: Tree
+      required:
+        - id
+        - name
+        - localizedName
+        - rmType
+        - nodeId
+        - min
+        - max
+        - localizedNames
+        - localizedDescriptions
+        - aqlPath
+        - children
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        localizedName:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        aqlPath:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child'
+    WebTemplate:
+      title: WebTemplate
+      required:
+        - templateId
+        - version
+        - defaultLanguage
+        - languages
+        - tree
+      type: object
+      properties:
+        templateId:
+          type: string
+        version:
+          type: string
+        defaultLanguage:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        tree:
+          $ref: '#/components/schemas/Tree'
+    TemplateIdentifier:
+      title: Identifier
+      required:
+        - template_id
+      type: object
+      properties:
+        template_id:
+          type: string
+          description: The fully qualified template identifier.
+      example:
+        template_id: org.highmed::openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0
+    Error:
+      title: Error
+      required:
+        - message
+        - validationErrors
+      type: object
+      properties:
+        message:
+          type: string
+        validationErrors:
+          type: array
+          items:
+            type: string
+          description: ''
+      example:
+        message: Error message
+        validationErrors:
+          - error1
+          - error2
+    Pathable:
+      title: PATHABLE
+      type: object
+      properties:
+        _type:
+          type: string
+      discriminator:
+        propertyName: _type
+        mapping:
+          ACTION: '#/components/schemas/Action'
+          ACTIVITY: '#/components/schemas/Activity'
+          ACTOR: '#/components/schemas/Actor'
+          ADDRESS: '#/components/schemas/Address'
+          ADMIN_ENTRY: '#/components/schemas/AdminEntry'
+          AGENT: '#/components/schemas/Agent'
+          CAPABILITY: '#/components/schemas/Capability'
+          CARE_ENTRY: '#/components/schemas/CareEntry'
+          CLUSTER: '#/components/schemas/Clstr'
+          COMPOSITION: '#/components/schemas/Composition'
+          CONTACT: '#/components/schemas/Contact'
+          CONTENT_ITEM: '#/components/schemas/ContentItem'
+          DATA_STRUCTURE: '#/components/schemas/DataStructure'
+          EHR_STATUS: '#/components/schemas/EhrStatus'
+          ELEMENT: '#/components/schemas/Element'
+          ENTRY: '#/components/schemas/AbstractEntry'
+          EVALUATION: '#/components/schemas/Evaluation'
+          EVENT: '#/components/schemas/Event'
+          EVENT_CONTEXT: '#/components/schemas/EventContext'
+          FOLDER: '#/components/schemas/Folder'
+          GROUP: '#/components/schemas/Group'
+          HISTORY: '#/components/schemas/History'
+          INSTRUCTION: '#/components/schemas/Instruction'
+          INSTRUCTION_DETAILS: '#/components/schemas/InstructionDetails'
+          ISM_TRANSITION: '#/components/schemas/IsmTransition'
+          ITEM: '#/components/schemas/Item'
+          ITEM_LIST: '#/components/schemas/ItemList'
+          ITEM_SINGLE: '#/components/schemas/ItemSingle'
+          ITEM_STRUCTURE: '#/components/schemas/ItemStructure'
+          ITEM_TABLE: '#/components/schemas/ItemTable'
+          ITEM_TREE: '#/components/schemas/ItemTree'
+          LOCATABLE: '#/components/schemas/Locatable'
+          OBSERVATION: '#/components/schemas/Observation'
+          ORGANISATION: '#/components/schemas/Organisation'
+          PARTY: '#/components/schemas/Party'
+          PARTY_IDENTITY: '#/components/schemas/PartyIdentity'
+          PARTY_RELATIONSHIP: '#/components/schemas/PartyRelationship'
+          PERSON: '#/components/schemas/Person'
+          ROLE: '#/components/schemas/Role'
+          SECTION: '#/components/schemas/Section'
+          Versionable: '#/components/schemas/Versionable'
+    DataValue:
+      title: DATA_VALUE
+      type: object
+      properties:
+        _type:
+          type: string
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_AMOUNT: '#/components/schemas/DvAmount'
+          DV_BOOLEAN: '#/components/schemas/DvBoolean'
+          DV_CODED_TEXT: '#/components/schemas/DvCodedText'
+          DV_COUNT: '#/components/schemas/DvCount'
+          DV_DATE: '#/components/schemas/DvDate'
+          DV_DATE_TIME: '#/components/schemas/DvDateTime'
+          DV_DURATION: '#/components/schemas/DvDuration'
+          DV_EHR_URI: '#/components/schemas/DvEhrUri'
+          DV_ENCAPSULATED: '#/components/schemas/DvEncapsulated'
+          DV_IDENTIFIER: '#/components/schemas/DvIdentifier'
+          DV_INTERVAL: '#/components/schemas/DvInterval'
+          DV_INTERVAL_of_DATE: '#/components/schemas/DvIntervalOfDate'
+          DV_INTERVAL_of_DATE_TIME: '#/components/schemas/DvIntervalOfDateTime'
+          DV_MULTIMEDIA: '#/components/schemas/DvMultimedia'
+          DV_ORDERED: '#/components/schemas/DvOrdered'
+          DV_ORDINAL: '#/components/schemas/DvOrdinal'
+          DV_PARSABLE: '#/components/schemas/DvParsable'
+          DV_PROPORTION: '#/components/schemas/DvProportion'
+          DV_QUANTIFIED: '#/components/schemas/DvQuantified'
+          DV_QUANTITY: '#/components/schemas/DvQuantity'
+          DV_SCALE: '#/components/schemas/DvScale'
+          DV_STATE: '#/components/schemas/DvState'
+          DV_TEMPORAL: '#/components/schemas/DvTemporal'
+          DV_TEXT: '#/components/schemas/DvText'
+          DV_TIME: '#/components/schemas/DvTime'
+          DV_URI: '#/components/schemas/DvUri'
+    DvUri:
+      title: DV_URI
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataValue'
+      properties:
+        _type:
+          type: string
+          default: DV_URI
+        value:
+          type: string
+      example:
+        _type: DV_URI
+        value: https://www.example.com
+      x-discriminator-value: DV_URI
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_EHR_URI: '#/components/schemas/DvEhrUri'
+    DvEhrUri:
+      title: DV_EHR_URI
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvUri'
+      properties:
+        _type:
+          enum:
+            - DV_EHR_URI
+          type: string
+      example:
+        _type: DV_EHR_URI
+        value: ehr://system_id/ehr_id/top_level_structure_locator/path_inside_top_level_structure
+      x-discriminator-value: DV_EHR_URI
+    DvText:
+      title: DV_TEXT
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataValue'
+      properties:
+        _type:
+          type: string
+          default: DV_TEXT
+        value:
+          type: string
+        hyperlink:
+          $ref: '#/components/schemas/DvUri'
+        formatting:
+          type: string
+        mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TermMapping'
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        encoding:
+          $ref: '#/components/schemas/CodePhrase'
+      example:
+        _type: DV_TEXT
+        value: Text value
+      x-discriminator-value: DV_TEXT
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_CODED_TEXT: '#/components/schemas/DvCodedText'
+    ObjectId:
+      title: OBJECT_ID
+      required:
+        - value
+      type: object
+      properties:
+        _type:
+          type: string
+        value:
+          type: string
+      discriminator:
+        propertyName: _type
+        mapping:
+          ARCHETYPE_ID: '#/components/schemas/ArchetypeId'
+          GENERIC_ID: '#/components/schemas/GenericId'
+          HIER_OBJECT_ID: '#/components/schemas/HierObjectId'
+          OBJECT_VERSION_ID: '#/components/schemas/ObjectVersionId'
+          TEMPLATE_ID: '#/components/schemas/TemplateId'
+          TERMINOLOGY_ID: '#/components/schemas/TerminologyId'
+          UID_BASED_ID: '#/components/schemas/UidBasedId'
+    TerminologyId:
+      title: TERMINOLOGY_ID
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ObjectId'
+      properties:
+        _type:
+          enum:
+            - TERMINOLOGY_ID
+          type: string
+      x-discriminator-value: TERMINOLOGY_ID
+    CodePhrase:
+      title: CODE_PHRASE
+      required:
+        - terminology_id
+        - code_string
+      type: object
+      properties:
+        terminology_id:
+          $ref: '#/components/schemas/TerminologyId'
+        code_string:
+          type: string
+        preferred_term:
+          type: string
+      example:
+        terminology_id:
+          value: local
+        code_string: at0001
+    DvCodedText:
+      title: DV_CODED_TEXT
+      required:
+        - defining_code
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvText'
+      properties:
+        _type:
+          enum:
+            - DV_CODED_TEXT
+          type: string
+        defining_code:
+          $ref: '#/components/schemas/CodePhrase'
+      example:
+        value: Coded text value
+        defining_code:
+          terminology_id:
+            value: local
+          code_string: at0001
+      x-discriminator-value: DV_CODED_TEXT
+    TermMapping:
+      title: TERM_MAPPING
+      required:
+        - match
+        - target
+      type: object
+      properties:
+        match:
+          pattern: ^[><=?]$
+          type: string
+        purpose:
+          $ref: '#/components/schemas/DvCodedText'
+        target:
+          $ref: '#/components/schemas/CodePhrase'
+    UidBasedId:
+      title: UID_BASED_ID
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ObjectId'
+      x-discriminator-value: UID_BASED_ID
+      discriminator:
+        propertyName: _type
+        mapping:
+          HIER_OBJECT_ID: '#/components/schemas/HierObjectId'
+          OBJECT_VERSION_ID: '#/components/schemas/ObjectVersionId'
+    HierObjectId:
+      title: HIER_OBJECT_ID
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/UidBasedId'
+      properties:
+        _type:
+          enum:
+            - HIER_OBJECT_ID
+          type: string
+        value:
+          type: string
+      example:
+        value: 6cb19121-4307-4648-9da0-d62e4d51f19b
+      x-discriminator-value: HIER_OBJECT_ID
+    ObjectVersionId:
+      title: OBJECT_VERSION_ID
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/UidBasedId'
+      properties:
+        _type:
+          enum:
+            - OBJECT_VERSION_ID
+          type: string
+      example:
+        value: 6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+      x-discriminator-value: OBJECT_VERSION_ID
+    Link:
+      title: LINK
+      required:
+        - meaning
+        - type
+        - target
+      type: object
+      properties:
+        meaning:
+          $ref: '#/components/schemas/DvText'
+        type:
+          $ref: '#/components/schemas/DvText'
+        target:
+          $ref: '#/components/schemas/DvEhrUri'
+    ArchetypeId:
+      title: ARCHETYPE_ID
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ObjectId'
+      properties:
+        _type:
+          enum:
+            - ARCHETYPE_ID
+          type: string
+      x-discriminator-value: ARCHETYPE_ID
+    TemplateId:
+      title: TEMPLATE_ID
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ObjectId'
+      properties:
+        _type:
+          enum:
+            - TEMPLATE_ID
+          type: string
+      x-discriminator-value: TEMPLATE_ID
+    Archetyped:
+      title: ARCHETYPED
+      required:
+        - archetype_id
+        - rm_version
+      type: object
+      properties:
+        archetype_id:
+          $ref: '#/components/schemas/ArchetypeId'
+        template_id:
+          $ref: '#/components/schemas/TemplateId'
+        rm_version:
+          type: string
+      example:
+        archetype_id:
+          value: openEHR-EHR-COMPOSITION.encounter.v1
+        template_id:
+          value: Example.v1::c7ec861c-c413-39ff-9965-a198ebf44747
+        rm_version: 1.0.2
+      additionalProperties: false
+    DvIdentifier:
+      title: DV_IDENTIFIER
+      required:
+        - id
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataValue'
+      properties:
+        _type:
+          enum:
+            - DV_IDENTIFIER
+          type: string
+        issuer:
+          type: string
+        assigner:
+          type: string
+        id:
+          type: string
+        type:
+          type: string
+      description: |
+        Type for representing identifiers of real-world entities. Typical identifiers include drivers licence number, social security number, veterans affairs number, prescription id, order id, and so on.
+
+        DV_IDENTIFIER is used to represent any identifier of a real thing, issued by some authority or agency.
+      example:
+        id: 16b74749-e6aa-4945-b760-b42bdc07098a
+        type: Patient
+      x-discriminator-value: DV_IDENTIFIER
+    DvEncapsulated:
+      title: DV_ENCAPSULATED
+      required:
+        - _type
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataValue'
+      properties:
+        _type:
+          type: string
+        charset:
+          $ref: '#/components/schemas/CodePhrase'
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_MULTIMEDIA: '#/components/schemas/DvMultimedia'
+          DV_PARSABLE: '#/components/schemas/DvParsable'
+    DvMultimedia:
+      title: DV_MULTIMEDIA
+      required:
+        - media_type
+        - size
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvEncapsulated'
+      properties:
+        _type:
+          enum:
+            - DV_MULTIMEDIA
+          type: string
+        alternate_text:
+          type: string
+        uri:
+          $ref: '#/components/schemas/DvUri'
+        data:
+          type: string
+        media_type:
+          $ref: '#/components/schemas/CodePhrase'
+        compression_algorithm:
+          $ref: '#/components/schemas/CodePhrase'
+        integrity_check:
+          type: string
+        integrity_check_algorithm:
+          $ref: '#/components/schemas/CodePhrase'
+        thumbnail:
+          $ref: '#/components/schemas/DvMultimedia'
+        size:
+          type: integer
+      x-discriminator-value: DV_MULTIMEDIA
+    DvParsable:
+      title: DV_PARSABLE
+      required:
+        - value
+        - formalism
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvEncapsulated'
+      properties:
+        _type:
+          enum:
+            - DV_PARSABLE
+          type: string
+        value:
+          type: string
+        formalism:
+          type: string
+      x-discriminator-value: DV_PARSABLE
+    GenericId:
+      title: GENERIC_ID
+      required:
+        - scheme
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ObjectId'
+      properties:
+        _type:
+          enum:
+            - GENERIC_ID
+          type: string
+        scheme:
+          type: string
+      x-discriminator-value: GENERIC_ID
+    ObjectRef:
+      title: OBJECT_REF
+      required:
+        - namespace
+        - type
+        - id
+      type: object
+      properties:
+        namespace:
+          type: string
+        type:
+          type: string
+        id:
+          $ref: '#/components/schemas/ObjectId'
+      example:
+        id:
+          _type: OBJECT_VERSION_ID
+          value: fb458d9c-1323-42bc-b7f8-787f3660a0b5::openEHRSys.example.com::1
+        namespace: local
+        type: COMPOSITION
+      discriminator:
+        propertyName: _type
+        mapping:
+          PARTY_REF: '#/components/schemas/PartyRef'
+    PartyRef:
+      title: PARTY_REF
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ObjectRef'
+      properties:
+        type:
+          pattern: ^PERSON|ORGANISATION|GROUP|AGENT|ROLE|PARTY|ACTOR$
+          type: string
+        id:
+          $ref: '#/components/schemas/HierObjectId'
+      description: Identifier for parties in a demographic or identity service.
+      example:
+        id:
+          _type: HIER_OBJECT_ID
+          value: b52b9408-7048-4ec8-94bd-831fb0727e67
+        namespace: local
+        type: PERSON
+    PartyProxy:
+      title: PARTY_PROXY
+      required:
+        - _type
+      type: object
+      properties:
+        _type:
+          type: string
+        external_ref:
+          $ref: '#/components/schemas/PartyRef'
+      discriminator:
+        propertyName: _type
+        mapping:
+          PARTY_IDENTIFIED: '#/components/schemas/PartyIdentified'
+          PARTY_RELATED: '#/components/schemas/PartyRelated'
+          PARTY_SELF: '#/components/schemas/PartySelf'
+    PartyIdentified:
+      title: PARTY_IDENTIFIED
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PartyProxy'
+      properties:
+        _type:
+          type: string
+          default: PARTY_IDENTIFIED
+        name:
+          type: string
+        identifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvIdentifier'
+      example:
+        _type: PARTY_IDENTIFIED
+        external_ref:
+          id:
+            _type: GENERIC_ID
+            value: 16b74749-e6aa-4945-b760-b42bdc07098a
+            scheme: pid
+          namespace: openEHRSys.example.com
+          type: PERSON
+        name: A name
+      x-discriminator-value: PARTY_IDENTIFIED
+      discriminator:
+        propertyName: _type
+        mapping:
+          PARTY_RELATED: '#/components/schemas/PartyRelated'
+    PartyRelated:
+      title: PARTY_RELATED
+      required:
+        - relationship
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PartyIdentified'
+      properties:
+        _type:
+          enum:
+            - PARTY_RELATED
+          type: string
+        relationship:
+          $ref: '#/components/schemas/DvCodedText'
+      x-discriminator-value: PARTY_RELATED
+    PartySelf:
+      title: PARTY_SELF
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PartyProxy'
+      properties:
+        _type:
+          enum:
+            - PARTY_SELF
+          type: string
+      x-discriminator-value: PARTY_SELF
+    DvInterval:
+      title: DV_INTERVAL
+      required:
+        - lower_unbounded
+        - upper_unbounded
+        - lower_included
+        - upper_included
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataValue'
+      properties:
+        _type:
+          type: string
+          default: DV_INTERVAL
+        lower_unbounded:
+          type: boolean
+        upper_unbounded:
+          type: boolean
+        lower_included:
+          type: boolean
+        upper_included:
+          type: boolean
+      x-discriminator-value: DV_INTERVAL
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_INTERVAL_of_DATE: '#/components/schemas/DvIntervalOfDate'
+          DV_INTERVAL_of_DATE_TIME: '#/components/schemas/DvIntervalOfDateTime'
+    ReferenceRange:
+      title: REFERENCE_RANGE
+      required:
+        - meaning
+        - range
+      type: object
+      properties:
+        meaning:
+          $ref: '#/components/schemas/DvText'
+        range:
+          $ref: '#/components/schemas/DvInterval'
+    DvOrdered:
+      title: DV_ORDERED
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataValue'
+      properties:
+        _type:
+          type: string
+          default: DV_ORDERED
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+      x-discriminator-value: DV_ORDERED
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_AMOUNT: '#/components/schemas/DvAmount'
+          DV_COUNT: '#/components/schemas/DvCount'
+          DV_DATE: '#/components/schemas/DvDate'
+          DV_DATE_TIME: '#/components/schemas/DvDateTime'
+          DV_DURATION: '#/components/schemas/DvDuration'
+          DV_ORDINAL: '#/components/schemas/DvOrdinal'
+          DV_PROPORTION: '#/components/schemas/DvProportion'
+          DV_QUANTIFIED: '#/components/schemas/DvQuantified'
+          DV_QUANTITY: '#/components/schemas/DvQuantity'
+          DV_SCALE: '#/components/schemas/DvScale'
+          DV_TEMPORAL: '#/components/schemas/DvTemporal'
+          DV_TIME: '#/components/schemas/DvTime'
+    DvQuantified:
+      title: DV_QUANTIFIED
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvOrdered'
+      properties:
+        _type:
+          type: string
+          default: DV_QUANTIFIED
+        magnitude_status:
+          type: string
+          default: '='
+      x-discriminator-value: DV_QUANTIFIED
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_AMOUNT: '#/components/schemas/DvAmount'
+          DV_COUNT: '#/components/schemas/DvCount'
+          DV_DATE: '#/components/schemas/DvDate'
+          DV_DATE_TIME: '#/components/schemas/DvDateTime'
+          DV_DURATION: '#/components/schemas/DvDuration'
+          DV_PROPORTION: '#/components/schemas/DvProportion'
+          DV_QUANTITY: '#/components/schemas/DvQuantity'
+          DV_TEMPORAL: '#/components/schemas/DvTemporal'
+          DV_TIME: '#/components/schemas/DvTime'
+    DvAmount:
+      title: DV_AMOUNT
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvQuantified'
+      properties:
+        _type:
+          type: string
+          default: DV_AMOUNT
+        accuracy_is_percent:
+          type: boolean
+        accuracy:
+          type: number
+      x-discriminator-value: DV_AMOUNT
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_COUNT: '#/components/schemas/DvCount'
+          DV_DURATION: '#/components/schemas/DvDuration'
+          DV_PROPORTION: '#/components/schemas/DvProportion'
+          DV_QUANTITY: '#/components/schemas/DvQuantity'
+    DvDuration:
+      title: DV_DURATION
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvAmount'
+      properties:
+        _type:
+          enum:
+            - DV_DURATION
+          type: string
+        value:
+          type: string
+      x-discriminator-value: DV_DURATION
+    DvTemporal:
+      title: DV_TEMPORAL
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvQuantified'
+      properties:
+        _type:
+          type: string
+          default: DV_TEMPORAL
+        accuracy:
+          $ref: '#/components/schemas/DvDuration'
+      x-discriminator-value: DV_TEMPORAL
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_DATE: '#/components/schemas/DvDate'
+          DV_DATE_TIME: '#/components/schemas/DvDateTime'
+          DV_TIME: '#/components/schemas/DvTime'
+    DvDateTime:
+      title: DV_DATE_TIME
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvTemporal'
+      properties:
+        _type:
+          enum:
+            - DV_DATE_TIME
+          type: string
+        value:
+          type: string
+          format: date-time
+      example:
+        _type: DV_DATE_TIME
+        value: '2017-08-15T10:37:15.422+02:00'
+      x-discriminator-value: DV_DATE_TIME
+    Locatable:
+      title: LOCATABLE
+      required:
+        - name
+        - archetype_node_id
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Pathable'
+      properties:
+        name:
+          $ref: '#/components/schemas/DvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+      discriminator:
+        propertyName: _type
+        mapping:
+          ACTION: '#/components/schemas/Action'
+          ACTIVITY: '#/components/schemas/Activity'
+          ACTOR: '#/components/schemas/Actor'
+          ADDRESS: '#/components/schemas/Address'
+          ADMIN_ENTRY: '#/components/schemas/AdminEntry'
+          AGENT: '#/components/schemas/Agent'
+          CAPABILITY: '#/components/schemas/Capability'
+          CARE_ENTRY: '#/components/schemas/CareEntry'
+          CLUSTER: '#/components/schemas/Clstr'
+          COMPOSITION: '#/components/schemas/Composition'
+          CONTACT: '#/components/schemas/Contact'
+          CONTENT_ITEM: '#/components/schemas/ContentItem'
+          DATA_STRUCTURE: '#/components/schemas/DataStructure'
+          EHR_STATUS: '#/components/schemas/EhrStatus'
+          ELEMENT: '#/components/schemas/Element'
+          ENTRY: '#/components/schemas/AbstractEntry'
+          EVALUATION: '#/components/schemas/Evaluation'
+          EVENT: '#/components/schemas/Event'
+          FOLDER: '#/components/schemas/Folder'
+          GROUP: '#/components/schemas/Group'
+          HISTORY: '#/components/schemas/History'
+          INSTRUCTION: '#/components/schemas/Instruction'
+          ITEM: '#/components/schemas/Item'
+          ITEM_LIST: '#/components/schemas/ItemList'
+          ITEM_SINGLE: '#/components/schemas/ItemSingle'
+          ITEM_STRUCTURE: '#/components/schemas/ItemStructure'
+          ITEM_TABLE: '#/components/schemas/ItemTable'
+          ITEM_TREE: '#/components/schemas/ItemTree'
+          OBSERVATION: '#/components/schemas/Observation'
+          ORGANISATION: '#/components/schemas/Organisation'
+          PARTY: '#/components/schemas/Party'
+          PARTY_IDENTITY: '#/components/schemas/PartyIdentity'
+          PARTY_RELATIONSHIP: '#/components/schemas/PartyRelationship'
+          PERSON: '#/components/schemas/Person'
+          ROLE: '#/components/schemas/Role'
+          SECTION: '#/components/schemas/Section'
+          Versionable: '#/components/schemas/Versionable'
+    DataStructure:
+      title: DATA_STRUCTURE
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        _type:
+          type: string
+      x-discriminator-value: DATA_STRUCTURE
+      discriminator:
+        propertyName: _type
+        mapping:
+          ITEM_LIST: '#/components/schemas/ItemList'
+          ITEM_SINGLE: '#/components/schemas/ItemSingle'
+          ITEM_STRUCTURE: '#/components/schemas/ItemStructure'
+          ITEM_TABLE: '#/components/schemas/ItemTable'
+          ITEM_TREE: '#/components/schemas/ItemTree'
+    ItemStructure:
+      title: ITEM_STRUCTURE
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataStructure'
+      properties:
+        _type:
+          type: string
+      x-discriminator-value: ITEM_STRUCTURE
+      discriminator:
+        propertyName: _type
+        mapping:
+          ITEM_LIST: '#/components/schemas/ItemList'
+          ITEM_SINGLE: '#/components/schemas/ItemSingle'
+          ITEM_TABLE: '#/components/schemas/ItemTable'
+          ITEM_TREE: '#/components/schemas/ItemTree'
+    Item:
+      title: ITEM
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        _type:
+          type: string
+      x-discriminator-value: ITEM
+      discriminator:
+        propertyName: _type
+        mapping:
+          CLUSTER: '#/components/schemas/Clstr'
+          ELEMENT: '#/components/schemas/Element'
+    DvBoolean:
+      title: DV_BOOLEAN
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataValue'
+      properties:
+        _type:
+          enum:
+            - DV_BOOLEAN
+          type: string
+        value:
+          type: boolean
+      x-discriminator-value: DV_BOOLEAN
+    DvCount:
+      title: DV_COUNT
+      required:
+        - magnitude
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvAmount'
+      properties:
+        _type:
+          enum:
+            - DV_COUNT
+          type: string
+        magnitude:
+          type: integer
+          format: int64
+      x-discriminator-value: DV_COUNT
+    DvDate:
+      title: DV_DATE
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvTemporal'
+      properties:
+        _type:
+          enum:
+            - DV_DATE
+          type: string
+        value:
+          type: string
+          format: date
+      example:
+        _type: DV_DATE
+        value: '2017-08-15'
+      x-discriminator-value: DV_DATE
+    DvOrdinal:
+      title: DV_ORDINAL
+      required:
+        - symbol
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvOrdered'
+      properties:
+        _type:
+          enum:
+            - DV_ORDINAL
+          type: string
+        symbol:
+          $ref: '#/components/schemas/DvCodedText'
+        value:
+          type: integer
+      x-discriminator-value: DV_ORDINAL
+    DvProportion:
+      title: DV_PROPORTION
+      required:
+        - numerator
+        - denominator
+        - type
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvAmount'
+      properties:
+        _type:
+          enum:
+            - DV_PROPORTION
+          type: string
+        numerator:
+          type: number
+        denominator:
+          type: number
+        type:
+          type: integer
+        precision:
+          type: integer
+      x-discriminator-value: DV_PROPORTION
+    DvQuantity:
+      title: DV_QUANTITY
+      required:
+        - magnitude
+        - units
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvAmount'
+      properties:
+        _type:
+          enum:
+            - DV_QUANTITY
+          type: string
+        magnitude:
+          type: number
+        precision:
+          type: integer
+        units:
+          type: string
+        units_system:
+          type: string
+        units_display_name:
+          type: string
+      x-discriminator-value: DV_QUANTITY
+    DvScale:
+      title: DV_SCALE
+      required:
+        - symbol
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvOrdered'
+      properties:
+        _type:
+          enum:
+            - DV_SCALE
+          type: string
+        symbol:
+          $ref: '#/components/schemas/DvCodedText'
+        value:
+          type: number
+      x-discriminator-value: DV_SCALE
+    DvState:
+      title: DV_STATE
+      required:
+        - value
+        - is_terminal
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataValue'
+      properties:
+        _type:
+          enum:
+            - DV_STATE
+          type: string
+        value:
+          $ref: '#/components/schemas/DvCodedText'
+        is_terminal:
+          type: boolean
+      x-discriminator-value: DV_STATE
+    DvTime:
+      title: DV_TIME
+      required:
+        - value
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvTemporal'
+      properties:
+        _type:
+          enum:
+            - DV_TIME
+          type: string
+        value:
+          type: string
+          format: time
+      example:
+        _type: DV_TIME
+        value: '08:20:12'
+      x-discriminator-value: DV_TIME
+    Element:
+      title: ELEMENT
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Item'
+      properties:
+        _type:
+          enum:
+            - ELEMENT
+          type: string
+        null_flavour:
+          $ref: '#/components/schemas/DvCodedText'
+        value:
+          $ref: '#/components/schemas/DataValue'
+        null_reason:
+          $ref: '#/components/schemas/DvText'
+      x-discriminator-value: ELEMENT
+    ItemSingle:
+      title: ITEM_SINGLE
+      required:
+        - item
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ItemStructure'
+      properties:
+        _type:
+          enum:
+            - ITEM_SINGLE
+          type: string
+        item:
+          $ref: '#/components/schemas/Element'
+      x-discriminator-value: ITEM_SINGLE
+    ItemList:
+      title: ITEM_LIST
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ItemStructure'
+      properties:
+        _type:
+          enum:
+            - ITEM_LIST
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Element'
+      x-discriminator-value: ITEM_LIST
+    Clstr:
+      title: CLUSTER
+      required:
+        - items
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Item'
+      properties:
+        _type:
+          enum:
+            - CLUSTER
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+      x-discriminator-value: CLUSTER
+    ItemTable:
+      title: ITEM_TABLE
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ItemStructure'
+      properties:
+        _type:
+          enum:
+            - ITEM_TABLE
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Clstr'
+      x-discriminator-value: ITEM_TABLE
+    ItemTree:
+      title: ITEM_TREE
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ItemStructure'
+      properties:
+        _type:
+          enum:
+            - ITEM_TREE
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+          description: See [ITEM](#tag/ITEM_schema) schema details.
+      x-discriminator-value: ITEM_TREE
+    FeederAuditDetails:
+      title: FEEDER_AUDIT_DETAILS
+      required:
+        - system_id
+      type: object
+      properties:
+        system_id:
+          type: string
+        location:
+          $ref: '#/components/schemas/PartyIdentified'
+        subject:
+          $ref: '#/components/schemas/PartyProxy'
+        provider:
+          $ref: '#/components/schemas/PartyIdentified'
+        time:
+          $ref: '#/components/schemas/DvDateTime'
+        version_id:
+          type: string
+        other_details:
+          $ref: '#/components/schemas/ItemStructure'
+    FeederAudit:
+      title: FEEDER_AUDIT
+      required:
+        - originating_system_audit
+      type: object
+      properties:
+        originating_system_item_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvIdentifier'
+        feeder_system_item_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvIdentifier'
+        original_content:
+          $ref: '#/components/schemas/DvEncapsulated'
+        originating_system_audit:
+          $ref: '#/components/schemas/FeederAuditDetails'
+        feeder_system_audit:
+          $ref: '#/components/schemas/FeederAuditDetails'
+    Versionable:
+      title: Versionable
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      description: A Versionable resource
+      discriminator:
+        propertyName: _type
+        mapping:
+          ACTOR: '#/components/schemas/Actor'
+          AGENT: '#/components/schemas/Agent'
+          COMPOSITION: '#/components/schemas/Composition'
+          EHR_STATUS: '#/components/schemas/EhrStatus'
+          FOLDER: '#/components/schemas/Folder'
+          GROUP: '#/components/schemas/Group'
+          ORGANISATION: '#/components/schemas/Organisation'
+          PARTY: '#/components/schemas/Party'
+          PERSON: '#/components/schemas/Person'
+          ROLE: '#/components/schemas/Role'
+    DvIntervalOfDateTime:
+      title: DV_INTERVAL_of_DATE_TIME
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvInterval'
+      properties:
+        _type:
+          type: string
+          default: DV_INTERVAL
+        lower:
+          $ref: '#/components/schemas/DvDateTime'
+        upper:
+          $ref: '#/components/schemas/DvDateTime'
+      x-discriminator-value: DV_INTERVAL_of_DATE_TIME
+    Participation:
+      title: PARTICIPATION
+      required:
+        - function
+        - performer
+      type: object
+      properties:
+        function:
+          $ref: '#/components/schemas/DvText'
+        mode:
+          $ref: '#/components/schemas/DvCodedText'
+        performer:
+          $ref: '#/components/schemas/PartyProxy'
+        time:
+          $ref: '#/components/schemas/DvIntervalOfDateTime'
+    EventContext:
+      title: EVENT_CONTEXT
+      required:
+        - start_time
+        - setting
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Pathable'
+      properties:
+        start_time:
+          $ref: '#/components/schemas/DvDateTime'
+        end_time:
+          $ref: '#/components/schemas/DvDateTime'
+        location:
+          type: string
+        setting:
+          $ref: '#/components/schemas/DvCodedText'
+        other_context:
+          $ref: '#/components/schemas/ItemStructure'
+        health_care_facility:
+          $ref: '#/components/schemas/PartyIdentified'
+        participations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Participation'
+      x-discriminator-value: EVENT_CONTEXT
+    ContentItem:
+      title: CONTENT_ITEM
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      discriminator:
+        propertyName: _type
+        mapping:
+          ACTION: '#/components/schemas/Action'
+          ADMIN_ENTRY: '#/components/schemas/AdminEntry'
+          CARE_ENTRY: '#/components/schemas/CareEntry'
+          ENTRY: '#/components/schemas/AbstractEntry'
+          EVALUATION: '#/components/schemas/Evaluation'
+          INSTRUCTION: '#/components/schemas/Instruction'
+          OBSERVATION: '#/components/schemas/Observation'
+          SECTION: '#/components/schemas/Section'
+    Section:
+      title: SECTION
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ContentItem'
+      properties:
+        _type:
+          enum:
+            - SECTION
+          type: string
+        items:
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentItem'
+          description: See [CONTENT_ITEM](#tag/CONTENT_ITEM_schema) schema details.
+      x-discriminator-value: SECTION
+    AbstractEntry:
+      title: ENTRY
+      required:
+        - language
+        - encoding
+        - subject
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ContentItem'
+      properties:
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        encoding:
+          $ref: '#/components/schemas/CodePhrase'
+        other_participations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Participation'
+        workflow_id:
+          $ref: '#/components/schemas/ObjectRef'
+        subject:
+          $ref: '#/components/schemas/PartyProxy'
+        provider:
+          $ref: '#/components/schemas/PartyProxy'
+      discriminator:
+        propertyName: _type
+        mapping:
+          ACTION: '#/components/schemas/Action'
+          ADMIN_ENTRY: '#/components/schemas/AdminEntry'
+          CARE_ENTRY: '#/components/schemas/CareEntry'
+          EVALUATION: '#/components/schemas/Evaluation'
+          INSTRUCTION: '#/components/schemas/Instruction'
+          OBSERVATION: '#/components/schemas/Observation'
+    AdminEntry:
+      title: ADMIN_ENTRY
+      required:
+        - data
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AbstractEntry'
+      properties:
+        _type:
+          enum:
+            - ADMIN_ENTRY
+          type: string
+        data:
+          $ref: '#/components/schemas/ItemStructure'
+      x-discriminator-value: ADMIN_ENTRY
+    CareEntry:
+      title: CARE_ENTRY
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AbstractEntry'
+      properties:
+        protocol:
+          $ref: '#/components/schemas/ItemStructure'
+        guideline_id:
+          $ref: '#/components/schemas/ObjectRef'
+      discriminator:
+        propertyName: _type
+        mapping:
+          ACTION: '#/components/schemas/Action'
+          EVALUATION: '#/components/schemas/Evaluation'
+          INSTRUCTION: '#/components/schemas/Instruction'
+          OBSERVATION: '#/components/schemas/Observation'
+    Event:
+      title: EVENT
+      required:
+        - time
+        - data
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        _type:
+          type: string
+          default: EVENT
+        time:
+          $ref: '#/components/schemas/DvDateTime'
+        state:
+          $ref: '#/components/schemas/ItemStructure'
+        data:
+          $ref: '#/components/schemas/ItemStructure'
+      x-discriminator-value: EVENT
+    History:
+      title: HISTORY
+      required:
+        - origin
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        _type:
+          type: string
+          default: HISTORY
+        origin:
+          $ref: '#/components/schemas/DvDateTime'
+        period:
+          $ref: '#/components/schemas/DvDuration'
+        duration:
+          $ref: '#/components/schemas/DvDuration'
+        summary:
+          $ref: '#/components/schemas/ItemStructure'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+      x-discriminator-value: HISTORY
+    Observation:
+      title: OBSERVATION
+      required:
+        - data
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CareEntry'
+      properties:
+        _type:
+          enum:
+            - OBSERVATION
+          type: string
+        data:
+          $ref: '#/components/schemas/History'
+        state:
+          $ref: '#/components/schemas/History'
+      x-discriminator-value: OBSERVATION
+    Evaluation:
+      title: EVALUATION
+      required:
+        - data
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CareEntry'
+      properties:
+        _type:
+          enum:
+            - EVALUATION
+          type: string
+        data:
+          $ref: '#/components/schemas/ItemStructure'
+      x-discriminator-value: EVALUATION
+    Activity:
+      title: ACTIVITY
+      required:
+        - action_archetype_id
+        - description
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        _type:
+          enum:
+            - ACTIVITY
+          type: string
+        timing:
+          $ref: '#/components/schemas/DvParsable'
+        action_archetype_id:
+          type: string
+        description:
+          $ref: '#/components/schemas/ItemStructure'
+      x-discriminator-value: ACTIVITY
+    Instruction:
+      title: INSTRUCTION
+      required:
+        - narrative
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CareEntry'
+      properties:
+        _type:
+          enum:
+            - INSTRUCTION
+          type: string
+        narrative:
+          $ref: '#/components/schemas/DvText'
+        expiry_time:
+          $ref: '#/components/schemas/DvDateTime'
+        wf_definition:
+          $ref: '#/components/schemas/DvParsable'
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+      x-discriminator-value: INSTRUCTION
+    IsmTransition:
+      title: ISM_TRANSITION
+      required:
+        - current_state
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Pathable'
+      properties:
+        _type:
+          enum:
+            - ISM_TRANSITION
+          type: string
+        current_state:
+          $ref: '#/components/schemas/DvCodedText'
+        transition:
+          $ref: '#/components/schemas/DvCodedText'
+        careflow_step:
+          $ref: '#/components/schemas/DvCodedText'
+        reason:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvText'
+      x-discriminator-value: ISM_TRANSITION
+    LocatableRef:
+      title: LOCATABLE_REF
+      required:
+        - namespace
+        - type
+        - id
+      type: object
+      properties:
+        namespace:
+          type: string
+        type:
+          type: string
+        id:
+          $ref: '#/components/schemas/UidBasedId'
+        path:
+          type: string
+    InstructionDetails:
+      title: INSTRUCTION_DETAILS
+      required:
+        - instruction_id
+        - activity_id
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Pathable'
+      properties:
+        _type:
+          enum:
+            - INSTRUCTION_DETAILS
+          type: string
+        instruction_id:
+          $ref: '#/components/schemas/LocatableRef'
+        activity_id:
+          type: string
+        wf_details:
+          $ref: '#/components/schemas/ItemStructure'
+      x-discriminator-value: INSTRUCTION_DETAILS
+    Action:
+      title: ACTION
+      required:
+        - time
+        - ism_transition
+        - description
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CareEntry'
+      properties:
+        _type:
+          enum:
+            - ACTION
+          type: string
+        time:
+          $ref: '#/components/schemas/DvDateTime'
+        ism_transition:
+          $ref: '#/components/schemas/IsmTransition'
+        instruction_details:
+          $ref: '#/components/schemas/InstructionDetails'
+        description:
+          $ref: '#/components/schemas/ItemStructure'
+      x-discriminator-value: ACTION
+    Composition:
+      title: COMPOSITION
+      required:
+        - language
+        - territory
+        - category
+        - composer
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Versionable'
+      properties:
+        _type:
+          enum:
+            - COMPOSITION
+          type: string
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        territory:
+          $ref: '#/components/schemas/CodePhrase'
+        category:
+          $ref: '#/components/schemas/DvCodedText'
+        context:
+          $ref: '#/components/schemas/EventContext'
+        composer:
+          $ref: '#/components/schemas/PartyProxy'
+        content:
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentItem'
+          description: See [CONTENT_ITEM](#tag/CONTENT_ITEM_schema) schema details.
+      description: A COMPOSITION resource
+      example:
+        archetype_node_id: openEHR-EHR-COMPOSITION.encounter.v1
+        name:
+          value: Vital Signs
+        uid:
+          _type: OBJECT_VERSION_ID
+          value: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+        archetype_details:
+          archetype_id:
+            value: openEHR-EHR-COMPOSITION.encounter.v1
+          template_id:
+            value: Example.v1::c7ec861c-c413-39ff-9965-a198ebf44747
+          rm_version: 1.0.2
+        language:
+          terminology_id:
+            value: ISO_639-1
+          code_string: en
+        territory:
+          terminology_id:
+            value: ISO_3166-1
+          code_string: NL
+        category:
+          value: event
+          defining_code:
+            terminology_id:
+              value: openehr
+            code_string: '433'
+        composer:
+          _type: PARTY_IDENTIFIED
+          external_ref:
+            id:
+              _type: GENERIC_ID
+              value: 16b74749-e6aa-4945-b760-b42bdc07098a
+              scheme: pid
+            namespace: openEHRSys.example.com
+            type: PERSON
+          name: A name
+        context:
+          start_time:
+            value: '2014-11-18T09:50:35.000+01:00'
+          setting:
+            value: other care
+            defining_code:
+              terminology_id:
+                value: openehr
+              code_string: '238'
+        content: []
+      x-discriminator-value: COMPOSITION
+    EhrStatus:
+      title: EHR_STATUS
+      required:
+        - subject
+        - is_queryable
+        - is_modifiable
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Versionable'
+      properties:
+        _type:
+          enum:
+            - EHR_STATUS
+          type: string
+        subject:
+          $ref: '#/components/schemas/PartyProxy'
+        is_queryable:
+          type: boolean
+          default: true
+        is_modifiable:
+          type: boolean
+          default: true
+        other_details:
+          $ref: '#/components/schemas/ItemStructure'
+      description: An EHR_STATUS resource
+      example:
+        archetype_node_id: openEHR-EHR-EHR_STATUS.generic.v1
+        name:
+          value: EHR status
+        uid:
+          _type: OBJECT_VERSION_ID
+          value: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+        subject:
+          _type: PARTY_SELF
+        is_queryable: true
+        is_modifiable: true
+      x-discriminator-value: EHR_STATUS
+    Folder:
+      title: FOLDER
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Versionable'
+      properties:
+        _type:
+          enum:
+            - FOLDER
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+        folders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Folder'
+        details:
+          $ref: '#/components/schemas/ItemStructure'
+      description: A FOLDER resource
+      example:
+        archetype_node_id: openEHR-EHR-FOLDER.directory.v1
+        name:
+          value: Directory
+        uid:
+          _type: OBJECT_VERSION_ID
+          value: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+        items: []
+        folders: []
+      x-discriminator-value: FOLDER
+    PartyIdentity:
+      title: PARTY_IDENTITY
+      required:
+        - details
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        details:
+          $ref: '#/components/schemas/ItemStructure'
+    ListOfPartyIdentity:
+      title: ListOfPartyIdentity
+      type: array
+      items:
+        $ref: '#/components/schemas/PartyIdentity'
+    Address:
+      title: ADDRESS
+      required:
+        - details
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        details:
+          $ref: '#/components/schemas/ItemStructure'
+    DvIntervalOfDate:
+      title: DV_INTERVAL_of_DATE
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DvInterval'
+      properties:
+        _type:
+          type: string
+          default: DV_INTERVAL
+        lower:
+          $ref: '#/components/schemas/DvDate'
+        upper:
+          $ref: '#/components/schemas/DvDate'
+      x-discriminator-value: DV_INTERVAL_of_DATE
+    Contact:
+      title: CONTACT
+      required:
+        - addresses
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        _type:
+          enum:
+            - CONTACT
+          type: string
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+    ListOfContact:
+      title: ListOfContact
+      type: array
+      items:
+        $ref: '#/components/schemas/Contact'
+    PartyRelationship:
+      title: PARTY_RELATIONSHIP
+      required:
+        - source
+        - target
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        source:
+          $ref: '#/components/schemas/PartyRef'
+        target:
+          $ref: '#/components/schemas/PartyRef'
+        details:
+          $ref: '#/components/schemas/ItemStructure'
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+    ListOfPartyRelationship:
+      title: ListOfPartyRelationShip
+      type: array
+      items:
+        $ref: '#/components/schemas/PartyRelationship'
+    Party:
+      title: PARTY
+      required:
+        - identities
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Versionable'
+      properties:
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/ItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+      discriminator:
+        propertyName: _type
+        mapping:
+          ACTOR: '#/components/schemas/Actor'
+          AGENT: '#/components/schemas/Agent'
+          GROUP: '#/components/schemas/Group'
+          ORGANISATION: '#/components/schemas/Organisation'
+          PERSON: '#/components/schemas/Person'
+          ROLE: '#/components/schemas/Role'
+    Actor:
+      title: ACTOR
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Party'
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+      discriminator:
+        propertyName: _type
+        mapping:
+          AGENT: '#/components/schemas/Agent'
+          GROUP: '#/components/schemas/Group'
+          ORGANISATION: '#/components/schemas/Organisation'
+          PERSON: '#/components/schemas/Person'
+    Agent:
+      title: AGENT
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Actor'
+      properties:
+        _type:
+          enum:
+            - AGENT
+          type: string
+      x-discriminator-value: AGENT
+    Group:
+      title: GROUP
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Actor'
+      properties:
+        _type:
+          enum:
+            - GROUP
+          type: string
+      x-discriminator-value: GROUP
+    Organisation:
+      title: ORGANISATION
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Actor'
+      properties:
+        _type:
+          enum:
+            - ORGANISATION
+          type: string
+      x-discriminator-value: ORGANISATION
+    Person:
+      title: PERSON
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Actor'
+      properties:
+        _type:
+          enum:
+            - PERSON
+          type: string
+      x-discriminator-value: PERSON
+    Capability:
+      title: CAPABILITY
+      required:
+        - credentials
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Locatable'
+      properties:
+        _type:
+          enum:
+            - CAPABILITY
+          type: string
+        credentials:
+          $ref: '#/components/schemas/ItemStructure'
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+    ListOfCapability:
+      title: ListOfCapability
+      type: array
+      items:
+        $ref: '#/components/schemas/Capability'
+    Role:
+      title: ROLE
+      required:
+        - performer
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Party'
+      properties:
+        _type:
+          enum:
+            - ROLE
+          type: string
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+        performer:
+          $ref: '#/components/schemas/PartyRef'
+        capabilities:
+          $ref: '#/components/schemas/ListOfCapability'
+      x-discriminator-value: ROLE
+    OperationalTemplateV2:
+      title: OPERATIONAL_TEMPLATE_V2
+      type: object
+    QueryName:
+      title: QueryName
+      type: string
+      description: |
+        The (fully qualified) name of the query (when is registered as a stored query), in a format of `[{namespace}::]{query-name}`. 
+        See [Query Name](#tag/Qualified_query_name) for details on syntax.
+      example: org.openehr::compositions
+    QueryType:
+      title: QueryType
+      type: string
+      description: |
+        Query formalism type.
+      default: AQL
+      example: AQL
+    QueryVersion:
+      title: QueryVersion
+      type: string
+      description: |
+        The SEMVER version number of the Stored Query.
+      example: 1.0.1
+    AQL:
+      title: AQL
+      type: string
+      description: |
+        The given AQL query.
+      example: SELECT e/ehr_id/value, c/context/start_time/value as startTime, obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic, c/uid/value AS cid, c/name FROM EHR e CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1] CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1] WHERE obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp
+    StoredQuery:
+      title: StoredQuery
+      required:
+        - name
+        - type
+        - version
+        - saved
+        - q
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/QueryName'
+        type:
+          $ref: '#/components/schemas/QueryType'
+        version:
+          $ref: '#/components/schemas/QueryVersion'
+        saved:
+          type: string
+          format: date-time
+        q:
+          $ref: '#/components/schemas/AQL'
+      description: |
+        Stored Query content meta information.
+      example:
+        name: org.openehr::compositions
+        type: aql
+        version: 1.0.1
+        saved: '2017-07-16T19:20:30.450+01:00'
+        q: SELECT c FROM EHR e[ehr_id/value=$ehr_id] CONTAINS COMPOSITION c[$compositionid] WHERE c/name/value = 'Vitals'
+    QueryList:
+      title: QueryList
+      type: array
+      items:
+        $ref: '#/components/schemas/StoredQuery'
+      description: |
+        List of Stored Query resources.
+      example:
+        - name: org.openehr::compositions
+          type: aql
+          version: 1.0.1
+          saved: '2017-07-16T19:20:30.450+01:00'
+          q: |-
+            SELECT c  FROM EHR e[ehr_id/value=$ehr_id] 
+              CONTAINS COMPOSITION c[$compositionid] 
+            WHERE c/name/value = 'Vitals'
+        - name: org.openehr::compositions
+          type: aql
+          version: 1.1.7
+          saved: '2018-06-13T09:37:20.530+01:00'
+          q: |-
+            SELECT c  FROM EHR e[ehr_id/value=$ehr_id] 
+              CONTAINS COMPOSITION c[$uid] 
+            WHERE c/name/value = 'Vitals'
+  parameters:
+    Accept_JSON:
+      name: Accept
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+    filter_template_id:
+      name: template_id
+      in: query
+      description: |
+        Pattern for matching `template_id` (supports wildcards `*`)
+      style: form
+      schema:
+        type: string
+        example: vital*
+    concept:
+      name: concept
+      in: query
+      description: |
+        PAttern for matching `concept` (supports wildcards `*`)
+      style: form
+      schema:
+        type: string
+        example: '*signs*'
+    filter_version:
+      name: version
+      in: query
+      description: |
+        Filter by version (e.g. `1.2.*` or use `*` for all versions), taken from `template_id`; if missing, then only the latest version will be returned.
+      style: form
+      schema:
+        type: string
+        example: 1.2.*
+    offset:
+      name: offset
+      in: query
+      description: |
+        The row number in result-set to start result-set from (`0`-based), default is `0`.
+      style: form
+      explode: true
+      schema:
+        type: integer
+        default: 0
+        example: 10
+    fetch:
+      name: fetch
+      in: query
+      description: |
+        Number of rows to fetch (the default depends on the implementation).
+      style: form
+      explode: true
+      schema:
+        type: integer
+        example: 10
+    Prefer:
+      name: Prefer
+      in: header
+      description: |
+        Request header to indicate the preference over response details.
+        The response will contain the entire resource when the `Prefer` header has a value of `return=representation`, or only the resource identifier (e.g., the `uid`) when the value is `return=identifier`.
+      required: false
+      style: simple
+      schema:
+        type: string
+        enum:
+          - return=representation
+          - return=minimal
+          - return=identifier
+        default: return=minimal
+    Accept_Template:
+      name: Accept
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+          - application/openehr.wt+json
+    template_id:
+      name: template_id
+      in: path
+      description: |
+        Template identifier or partial reference. A partial `template_id` will resolve to “latest” major version of that template
+      required: true
+      style: simple
+      schema:
+        type: string
+      examples:
+        legacy:
+          summary: Legacy format
+          value: Vital Signs
+        legacy_version:
+          summary: Legacy format with major version
+          value: vital_signs.v1
+        hrid:
+          summary: Human Readable Identifier (HRID) format
+          value: org.highmed::openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0
+        partial:
+          summary: Partial HRID format, resolves to latest major version
+          value: openEHR-EHR-COMPOSITION.t_vital_signs.v1
+    example_type:
+      name: type
+      in: query
+      description: |
+        Type of use for the data example.
+      style: form
+      explode: true
+      schema:
+        type: string
+        enum:
+          - input
+          - output
+        default: input
+    example_detail_level:
+      name: detail_level
+      in: query
+      description: |
+        The level of data points details of the example.
+      style: form
+      explode: true
+      schema:
+        type: string
+        enum:
+          - required
+          - medium
+          - complete
+        default: required
+    Accept_LOCATABLE:
+      name: Accept
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+          - application/openehr.wt.flat+json
+          - application/openehr.wt.structured+json
+    at_version:
+      name: version
+      in: query
+      style: form
+      explode: true
+      deprecated: true
+      schema:
+        type: string
+        example: 1.0.1
+    Accept_Template_adl2:
+      name: Accept
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+          - text/plain
+    template_id_adl2:
+      name: template_id
+      in: path
+      description: |
+        Template identifier or partial reference. A partial `template_id` will resolve to “latest” major version of that template
+      required: true
+      style: simple
+      schema:
+        type: string
+      examples:
+        hrid:
+          summary: Human Readable Identifier (HRID) format
+          value: org.highmed::openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0
+        partial:
+          summary: Partial HRID format, resolves to latest major version
+          value: openEHR-EHR-COMPOSITION.t_vital_signs.v1
+    version:
+      name: version
+      in: path
+      description: |
+        A SEMVER version number.
+        This can be an exact version (e.g. `1.7.1`), or a pattern as partial prefix, in a form of `{major}` or `{major}.{minor}` (e.g. `1` or `1.0`), in which case the highest (latest) version matching the prefix will be considered.
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: '1.0'
+    qualified_query_name:
+      name: qualified_query_name
+      in: path
+      description: |
+        The (fully qualified) name of the query to be executed, in a format of `[{namespace}::]{query-name}`. See [Query Name](#tag/Qualified_query_name) for details on syntax.
+      required: true
+      style: simple
+      schema:
+        $ref: '#/components/schemas/QueryName'
+    query_type:
+      name: query_type
+      in: query
+      description: |
+        Parameter indicating the query language/type.
+      style: form
+      explode: true
+      schema:
+        type: string
+        default: AQL
+        example: AQL
+    ContentType_text:
+      name: Content-Type
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - text/plain
+  headers:
+    ContentType_JSON:
+      schema:
+        type: string
+        enum:
+          - application/json
+    Location_Template_adl1_4:
+      description: |
+        The `Location` response header indicates the URL of the Template resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/definition/template/adl1.4/Vital%20Signs
+    ETag_Template_adl1_4:
+      description: |
+        The `ETag` (i.e. entity tag) response header is an identifier of Template.
+      schema:
+        type: string
+        example: W/"b4d7f203-b329-4e89-a58a-c605b19e94de"
+    ContentType_Template:
+      schema:
+        type: string
+        enum:
+          - application/xml
+          - application/json
+          - application/openehr.wt+json
+    ContentType_LOCATABLE:
+      schema:
+        type: string
+        enum:
+          - application/xml
+          - application/json
+          - application/openehr.wt.flat+json
+          - application/openehr.wt.structured+json
+    Location_Template_adl2:
+      description: |
+        The `Location` response header indicates the URL of the Template resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+    ETag_Template_adl2:
+      description: |
+        The `ETag` (i.e. entity tag) response header is an identifier of Template.
+      schema:
+        type: string
+        example: W/"d8d643db-1cee-48ce-b609-12053077758f"
+    ContentType_Template_adl2:
+      schema:
+        type: string
+        enum:
+          - application/xml
+          - application/json
+          - text/plain
+    Location_Query:
+      description: |
+        The `Location` response header indicates the URL of the Stored Query resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/definition/query/org.openehr::compositions/1.0.1
+  responses:
+    '400':
+      description: |
+        `400 Bad Request` is returned when the request could not be parsed or is invalid (e.g. malformed request URL syntax, missing required header or parameter, or syntactically invalid header, parameter or content). 
+        The response body MAY contain error details.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '406':
+      description: |
+        `406 Not Acceptable` is returned when the service cannot produce a response matching `Accept` request header, i.e. content type or format is not supported.
+    200_TemplateList_adl1_4:
+      description: |
+        `200 OK` is returned when the template list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_JSON'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateList'
+          example:
+            - template_id: Vital Signs
+              concept: Vital Signs
+              archetype_id: openEHR-EHR-COMPOSITION.encounter.v1
+              created_timestamp: '2017-08-14T19:24:56.639Z'
+    201_Template_adl1_4_upload:
+      description: |
+        `201 Created` is returned when the template has been successfully uploaded.
+        If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+        If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+      headers:
+        Location:
+          $ref: '#/components/headers/Location_Template_adl1_4'
+        ETag:
+          $ref: '#/components/headers/ETag_Template_adl1_4'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_Template'
+      content:
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/OperationalTemplate'
+        application/openehr.wt+json:
+          schema:
+            $ref: '#/components/schemas/WebTemplate'
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateIdentifier'
+    409_template_already_exists:
+      description: |
+        `409 Conflict` is returned when a template with same `template_id` already exists.
+    200_Template_adl1_4_retrieved:
+      description: |
+        `200 OK` is returned when the template is successfully retrieved.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag_Template_adl1_4'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_Template'
+      content:
+        application/xml:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/OperationalTemplate'
+              - type: string
+          example: |
+            <template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.openehr.org/v1">
+                <language>
+                    <terminology_id>
+                        <value>ISO_639-1</value>
+                    </terminology_id>
+                    <code_string>en</code_string>
+                </language>
+                <description>
+                    <original_author id="Original Author">Not Specified</original_author>
+                    <lifecycle_state>Initial</lifecycle_state>
+                    <other_details id="MetaDataSet:Sample Set ">Template metadata sample set</other_details>
+                    <other_details id="Acknowledgements"></other_details>
+                    <other_details id="Business Process Level"></other_details>
+                    <other_details id="Care setting"></other_details>
+                    <other_details id="Client group"></other_details>
+                    <other_details id="Clinical Record Element"></other_details>
+                    <other_details id="Copyright"></other_details>
+                    <other_details id="Issues"></other_details>
+                    <other_details id="Owner"></other_details>
+                    <other_details id="Sign off"></other_details>
+                    <other_details id="Speciality"></other_details>
+                    <other_details id="User roles"></other_details>
+                    <details>
+                        <language>
+                            <terminology_id>
+                                <value>ISO_639-1</value>
+                            </terminology_id>
+                            <code_string>en</code_string>
+                        </language>
+                        <purpose>Not Specified</purpose>
+                    </details>
+                </description>
+                <uid>
+                    <value>b4d7f203-b329-4e89-a58a-c605b19e94de</value>
+                </uid>
+                <template_id>
+                    <value>Vital Signs</value>
+                </template_id>
+                <concept>Vital Signs</concept>
+                <definition>
+                    <rm_type_name>COMPOSITION</rm_type_name>
+                    <occurrences>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0000</node_id>
+                    ...
+        application/openehr.wt+json:
+          schema:
+            $ref: '#/components/schemas/WebTemplate'
+    404_unknown_template_id:
+      description: |
+        `404 Not Found` is returned when a template with the specified `template_id` does not exist.
+    200_Template_example_retrieved:
+      description: |
+        `200 OK` is returned when the template is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Composition'
+              - $ref: '#/components/schemas/EhrStatus'
+              - $ref: '#/components/schemas/Folder'
+              - $ref: '#/components/schemas/Agent'
+              - $ref: '#/components/schemas/Group'
+              - $ref: '#/components/schemas/Organisation'
+              - $ref: '#/components/schemas/Person'
+              - $ref: '#/components/schemas/Role'
+    200_TemplateList_adl2:
+      description: |
+        `200 OK` is returned when the template list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_JSON'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateList'
+          example:
+            - template_id: openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+              concept: Clinical detail
+              archetype_id: openEHR-EHR-COMPOSITION.discharge.v1
+              created_timestamp: '2017-08-14T19:24:56.639Z'
+            - template_id: openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0
+              concept: Vital Signs
+              archetype_id: openEHR-EHR-COMPOSITION.encounter.v1
+              created_timestamp: '2017-08-14T19:24:56.639Z'
+    201_Template_adl2_upload:
+      description: |
+        `201 Created` is returned when the template has been successfully uploaded.
+        If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+        If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+      headers:
+        Location:
+          $ref: '#/components/headers/Location_Template_adl2'
+        ETag:
+          $ref: '#/components/headers/ETag_Template_adl2'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_Template_adl2'
+      content:
+        text/plain:
+          schema:
+            $ref: '#/components/schemas/OperationalTemplateV2'
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateIdentifier'
+    200_Template_adl2_retrieved:
+      description: |
+        `200 OK` is returned when the template is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_Template_adl2'
+      content:
+        text/plain:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/OperationalTemplateV2'
+              - type: string
+          example: |-
+            operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)
+                openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+            specialize
+                openEHR-EHR-COMPOSITION.discharge.v1
+
+            language
+                original_language = <[ISO_639-1::en]>
+
+            description
+                lifecycle_state = <"unmanaged">
+                original_author = <
+                    ["name"] = <"Ian McNicoll">
+                    ["organisation"] = <"openEHR Foundation">
+                    ["email"] = <"ian.mcnicoll@openehr.org">
+            ...
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OperationalTemplateV2'
+    404_unknown_template_id_or_version:
+      description: |
+        `404 Not Found` is returned when a template with the specified `template_id` at given `version` does not exist.
+    200_QueryList:
+      description: |
+        `200 OK` is returned when the query resources are successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_JSON'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/QueryList'
+    200_StoredQuery_stored:
+      description: |
+        `200 OK` is returned when the query was successfully stored.
+      headers:
+        Location:
+          $ref: '#/components/headers/Location_Query'
+    200_StoredQuery_get:
+      description: |
+        `200 OK` is returned when the stored AQL is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_JSON'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StoredQuery'
+    404_Query_version:
+      description: |
+        `404 Not Found` is returned when a stored query with `qualified_query_name` and `version` does not exist.
+    409_StoredQuery_version:
+      description: |
+        `409 Conflict` is returned when a query with the given `qualified_query_name` and `version` already exists on the server.
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - ADL1.4
+      - ADL2
+      - Query
+  - name: Resources
+    tags:
+      - TemplateList_schema
+      - Template_schema
+      - StoredQuery_schema

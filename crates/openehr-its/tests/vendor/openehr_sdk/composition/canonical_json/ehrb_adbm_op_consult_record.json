@@ -1,0 +1,297 @@
+{
+    "_type": "COMPOSITION",
+    "name": {
+        "_type": "DV_TEXT",
+        "value": "Routine checkup"
+    },
+    "archetype_details": {
+        "archetype_id": {
+            "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+        },
+        "template_id": {
+            "value": "EHRN-ABDM-OPConsultRecord.v2.0"
+        },
+        "rm_version": "1.0.4"
+    },
+    "language": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+            "_type": "TERMINOLOGY_ID",
+            "value": "ISO_639-1"
+        },
+        "code_string": "en"
+    },
+    "territory": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+            "_type": "TERMINOLOGY_ID",
+            "value": "ISO_3166-1"
+        },
+        "code_string": "IN"
+    },
+    "category": {
+        "_type": "DV_CODED_TEXT",
+        "value": "event",
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+                "_type": "TERMINOLOGY_ID",
+                "value": "openehr"
+            },
+            "code_string": "433"
+        }
+    },
+    "composer": {
+        "_type": "PARTY_IDENTIFIED",
+        "external_ref": {
+            "_type": "PARTY_REF",
+            "namespace": "https://sbx.ayushehr.ehr.network",
+            "type": "PARTY",
+            "id": {
+                "_type": "GENERIC_ID",
+                "value": "e17fe1c1-5379-4ee7-a0ae-ec5f8065d261",
+                "scheme": "Practitioner"
+            }
+        },
+        "name": "Max Mustermann"
+    },
+    "context": {
+        "_type": "EVENT_CONTEXT",
+        "start_time": {
+            "_type": "DV_DATE_TIME",
+            "value": "2022-02-03T04:05:06"
+        },
+        "location": "OPD Cabin",
+        "setting": {
+            "_type": "DV_CODED_TEXT",
+            "value": "primary medical care",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                    "_type": "TERMINOLOGY_ID",
+                    "value": "openehr"
+                },
+                "code_string": "228"
+            }
+        },
+        "other_context": {
+            "_type": "ITEM_TREE",
+            "name": {
+                "_type": "DV_TEXT",
+                "value": "Tree"
+            },
+            "items": [
+                {
+                    "_type": "CLUSTER",
+                    "name": {
+                        "_type": "DV_TEXT",
+                        "value": "ABDM metadata"
+                    },
+                    "archetype_details": {
+                        "archetype_id": {
+                            "value": "openEHR-EHR-CLUSTER.abdm_metadata.v0"
+                        },
+                        "rm_version": "1.0.4"
+                    },
+                    "items": [
+                        {
+                            "_type": "ELEMENT",
+                            "name": {
+                                "_type": "DV_TEXT",
+                                "value": "Document type"
+                            },
+                            "value": {
+                                "_type": "DV_CODED_TEXT",
+                                "value": "Clinical consultation report",
+                                "defining_code": {
+                                    "_type": "CODE_PHRASE",
+                                    "terminology_id": {
+                                        "_type": "TERMINOLOGY_ID",
+                                        "value": "SNOMED CT"
+                                    },
+                                    "code_string": "371530004"
+                                }
+                            },
+                            "archetype_node_id": "at0001"
+                        },
+                        {
+                            "_type": "ELEMENT",
+                            "name": {
+                                "_type": "DV_TEXT",
+                                "value": "Status"
+                            },
+                            "value": {
+                                "_type": "DV_CODED_TEXT",
+                                "value": "final",
+                                "defining_code": {
+                                    "_type": "CODE_PHRASE",
+                                    "terminology_id": {
+                                        "_type": "TERMINOLOGY_ID",
+                                        "value": "local"
+                                    },
+                                    "code_string": "at0004"
+                                }
+                            },
+                            "archetype_node_id": "at0002"
+                        }
+                    ],
+                    "archetype_node_id": "openEHR-EHR-CLUSTER.abdm_metadata.v0"
+                }
+            ],
+            "archetype_node_id": "at0001"
+        },
+        "health_care_facility": {
+            "_type": "PARTY_IDENTIFIED",
+            "external_ref": {
+                "_type": "PARTY_REF",
+                "namespace": "https://sbx.ayushehr.ehr.network",
+                "type": "PARTY",
+                "id": {
+                    "_type": "GENERIC_ID",
+                    "value": "e17fe1c1-5379-4ee7-a0ae-ec5f8065d261",
+                    "scheme": "Organization"
+                }
+            },
+            "name": "XYZ Clinic"
+        }
+    },
+    "content": [
+        {
+            "_type": "ADMIN_ENTRY",
+            "name": {
+                "_type": "DV_TEXT",
+                "value": "Document attachment"
+            },
+            "archetype_details": {
+                "archetype_id": {
+                    "value": "openEHR-EHR-ADMIN_ENTRY.document_attachment.v0"
+                },
+                "rm_version": "1.0.4"
+            },
+            "language": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                    "_type": "TERMINOLOGY_ID",
+                    "value": "ISO_639-1"
+                },
+                "code_string": "en"
+            },
+            "encoding": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                    "_type": "TERMINOLOGY_ID",
+                    "value": "IANA_character-sets"
+                },
+                "code_string": "UTF-8"
+            },
+            "subject": {
+                "_type": "PARTY_SELF"
+            },
+            "data": {
+                "_type": "ITEM_TREE",
+                "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Item tree"
+                },
+                "items": [
+                    {
+                        "_type": "ELEMENT",
+                        "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Name"
+                        },
+                        "value": {
+                            "_type": "DV_TEXT",
+                            "value": "OP consult record"
+                        },
+                        "archetype_node_id": "at0005"
+                    },
+                    {
+                        "_type": "ELEMENT",
+                        "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Status"
+                        },
+                        "value": {
+                            "_type": "DV_CODED_TEXT",
+                            "value": "final",
+                            "defining_code": {
+                                "_type": "CODE_PHRASE",
+                                "terminology_id": {
+                                    "_type": "TERMINOLOGY_ID",
+                                    "value": "local"
+                                },
+                                "code_string": "at0010"
+                            }
+                        },
+                        "archetype_node_id": "at0008"
+                    },
+                    {
+                        "_type": "CLUSTER",
+                        "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Media file"
+                        },
+                        "archetype_details": {
+                            "archetype_id": {
+                                "value": "openEHR-EHR-CLUSTER.media_file.v1"
+                            },
+                            "rm_version": "1.0.4"
+                        },
+                        "items": [
+                            {
+                                "_type": "ELEMENT",
+                                "name": {
+                                    "_type": "DV_TEXT",
+                                    "value": "Content"
+                                },
+                                "value": {
+                                    "_type": "DV_MULTIMEDIA",
+                                    "data": "U2hhbGwgQmUgQmFzZTY0IGVuY29kZWQ=",
+                                    "media_type": {
+                                        "_type": "CODE_PHRASE",
+                                        "terminology_id": {
+                                            "_type": "TERMINOLOGY_ID",
+                                            "value": "IANA_media-types"
+                                        },
+                                        "code_string": "text/plain"
+                                    },
+                                    "size": 33
+                                },
+                                "archetype_node_id": "at0001"
+                            },
+                            {
+                                "_type": "ELEMENT",
+                                "name": {
+                                    "_type": "DV_TEXT",
+                                    "value": "Content name"
+                                },
+                                "value": {
+                                    "_type": "DV_TEXT",
+                                    "value": "Consultation record"
+                                },
+                                "archetype_node_id": "at0002"
+                            },
+                            {
+                                "_type": "ELEMENT",
+                                "name": {
+                                    "_type": "DV_TEXT",
+                                    "value": "Created"
+                                },
+                                "value": {
+                                    "_type": "DV_DATE_TIME",
+                                    "value": "2022-02-03T04:05:06"
+                                },
+                                "archetype_node_id": "at0004"
+                            }
+                        ],
+                        "archetype_node_id": "openEHR-EHR-CLUSTER.media_file.v1"
+                    }
+                ],
+                "archetype_node_id": "at0003"
+            },
+            "archetype_node_id": "openEHR-EHR-ADMIN_ENTRY.document_attachment.v0"
+        }
+    ],
+    "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1"
+}

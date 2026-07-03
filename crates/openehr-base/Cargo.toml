@@ -1,7 +1,7 @@
 [package]
 name = "openehr-base"
 version = "0.1.0"
-description = "openEHR BASE 1.2.0 Base Types: definitions, builtins, identification, resource"
+description = "openEHR BASE 1.3.0: foundation + base types (generated from BMM, ADR-004)"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -10,11 +10,22 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-openehr-foundation = { path = "../openehr-foundation" }
+openehr-derive.workspace = true
 serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
 
 [lints]
 workspace = true
+
+[package.metadata.cargo-machete]
+# serde_json is emitted by the generator only for schema Any fields; this crate currently has none.
+ignored = ["serde_json"]
+
+[lib]
+# Generated doc comments are verbatim openEHR spec prose (indented examples,
+# fenced snippets), not runnable Rust — behaviour tests live in *_impl.rs.
+doctest = false

@@ -36,7 +36,7 @@ Phase 01. No enterprise feature (RBAC etc.) is built here, only catalogued.
 - [x] Generate the .claude/ harness (rules, skills, agents) — 6 rules, 9 skills, 7 agents (incl. delivered porter)
 - [x] Generate the docs/ tree (VERSIONS, PORTING, ROSETTA, LIFETIMES.tsv, PROGRESS, architecture, ADR template, research README, plans/) — 31 files
 - [x] Run the v1-vs-v2 archaeology diff into docs/enterprise/v1-vs-v2-delta.md (record only; build nothing) — 287 lines; real losses: ABAC + multi-tenancy (PG RLS); authn/plugin survived
-- [x] git mv the EHRbase Java into the three server crates per Section 9.1; Flyway migrations verbatim to crates/openehr-server/migrations/ — 428 java files, 42 migration files, zero left in Maven layout
+- [x] git mv the EHRbase Java into the three server crates per Section 9.1; Flyway migrations verbatim to crates/ehrbase/migrations/ — 428 java files, 42 migration files, zero left in Maven layout
 - [x] Remove the Maven-era GitHub workflows and fork-sync pull.yml (replaced by the Rust CI pipeline) — 12 workflows + pull.yml (hardreset sync would have wiped the fork); all recoverable from git history
 - [ ] Commit the two research dossiers to docs/research/ — pending delivery of the dossier texts (README placeholder in place)
 - [x] Verify: cargo build --workspace, cargo fmt --all --check, cargo deny check, attribution-guard test commit — all green; nextest runs (0 tests yet)
@@ -54,18 +54,18 @@ Phase 01. No enterprise feature (RBAC etc.) is built here, only catalogued.
 
 - Java landing scheme: each Maven module gets its own directory under its
   crate, module root package stripped (rest-openehr `org/ehrbase/rest` →
-  `openehr-rest/src/`; service/aql/rm_db_format/config/plugin/cli/api/db/
-  application under `openehr-server/src/<module>/`). Keeps `service`'s own
+  `ehrbase-rest/src/`; service/aql/rm_db_format/config/plugin/cli/api/db/
+  application under `ehrbase/src/<module>/`). Keeps `service`'s own
   `plugin` subpackage separate from the `plugin` module; aql-engine's
   module-level `org.ehrbase.openehr.util` landed at `src/aql/util`.
-- `api` module moved wholesale to `openehr-server/src/api/`; its openEHR-DTO
+- `api` module moved wholesale to `ehrbase/src/api/`; its openEHR-DTO
   half is superseded by the spec crates (written from the specs), the split
   into service traits happens at porting time (Section 9.1 note).
 - Test trees to `crates/*/tests/java/<module>/`, test/main resources to
   `tests/resources/<module>/` and `resources/<module>/`.
 - Maven poms are co-located with the sources they built (crate root for
   rest-openehr / rest-ehr-scape; `src/<module>/pom.xml` inside
-  openehr-server), read-only until P99. Workspace-level poms sit at the
+  ehrbase), read-only until P99. Workspace-level poms sit at the
   workspace root beside their Cargo successor: reactor `pom.xml`,
   `bom.pom.xml` (the Java dependency-pin reference), and
   `test-coverage.pom.xml`. `.mvn/jvm.config` (JVM memory flags, no port
@@ -73,7 +73,7 @@ Phase 01. No enterprise feature (RBAC etc.) is built here, only catalogued.
 - `base` module no longer exists at v2.33 (dissolved upstream) — mapping row moot.
 - No generated jOOQ code was committed upstream (build-time generation), so
   "discard jOOQ" was a no-op; the one hand-written helper
-  (AdditionalSQLFunctions) went to `openehr-server/src/db/`.
+  (AdditionalSQLFunctions) went to `ehrbase/src/db/`.
 - 12 Maven-era GitHub workflows + fork-sync `pull.yml` (hardreset from
   upstream) deleted in favor of the Rust ci.yml/release.yml; recover any of
   them from git history when a phase needs the idea (Docker publish at P99,

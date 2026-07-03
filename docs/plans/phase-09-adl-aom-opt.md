@@ -1,5 +1,7 @@
 # Phase 09 — ADL 1.4 + AOM 1.4 + OPT 1.4 XML
 
+> **⚠️ ADR-004 (2026-07-03):** this phase's openEHR spec layer is now GENERATED from the BMM meta-model by `openehr-codegen`, not hand-transcribed. Read `docs/ADRs/ADR-004-spec-driven-codegen.md` and the "Code generation" section of `CLAUDE.md`. Tasks/notes below describe the superseded hand-transcription approach.
+
 - Status: not-started
 - Started: -   Owner: Ruben
 - Consumes (spec/layer): AM 2.3.0, ODIN, BMM / Layer 6b

@@ -1,36 +1,37 @@
 ---
-paths: ["crates/openehr-serde/**", "crates/openehr-flat/**"]
+paths: ["crates/openehr-its/**", "crates/openehr-flat/**"]
 ---
 
 # Serialization rules — canonical JSON, canonical XML, FLAT/STRUCTURED
 
-## The `_type` mechanism (ADR-002 — normative, do not improvise)
+## The `_type` mechanism (ADR-004 supersedes ADR-002 — do not improvise)
 
-Every concrete RM/BASE class self-tags. The mechanism is
-`openehr_foundation::serde_support::{TypeName, TypeTag}`:
+Canonical-JSON `_type` self-tagging is now handled by the
+**`#[derive(OpenEhrType)]`** proc-macro (`openehr-derive`), emitted on every
+generated concrete class by `openehr-codegen`. There is **no** `TypeTag` field
+and no `openehr_foundation::serde_support` module any more (both deleted with
+ADR-004). Do not add them back.
 
-- `impl TypeName for Foo { const NAME: &'static str = TYPE_NAME; }`
-  (single-source the string from the file's existing `TYPE_NAME` const).
-- First struct field:
-  `#[serde(rename = "_type", default = "TypeTag::new")] pub type_tag:
-  TypeTag<Self>` (generics: `TypeTag<Foo<T>>` + `impl<T> TypeName for
-  Foo<T>`). The function-path `default = "TypeTag::new"` is mandatory —
-  bare `default` adds a spurious `T: Default` bound on generic containers.
-- Closed subtype-set enums are `#[serde(untagged)]`; never
-  `#[serde(tag = "_type")]` (it duplicates the payload's own tag). List
-  structurally richer variants first (`DvCodedText` before bare `DvText`).
-- Abstract classes and embedded `*Data` structs get **no** tag; a `*Data`
-  struct doubling as a bare concrete parent (`DvTextData` ≙ plain
-  `DV_TEXT`) implements `TypeName` so the enum's bare variant can carry
-  `TypeTag<FooData>` beside the `#[serde(flatten)]`ed data.
-- Struct-level `#[serde(rename = "CLASS")]` is a verified no-op on the wire
-  — delete it wherever found; it must never stand in for a `_type` tag.
+What the derive does (so you know the contract, not so you hand-write it):
 
-`openehr-serde` (canonical JSON + canonical XML) and `openehr-flat`
-(FLAT/STRUCTURED/Web Template) have no Java to port — both are written from
-specifications and vendor conventions (PORT_MASTER_PLAN.md Sections 7.3,
-7.4, 14.4). `insta` golden vectors are the acceptance instrument for both:
-a serializer is not done until its output matches a pinned snapshot.
+- **Serialize** emits `"_type": "<CLASS>"` as the first entry, then each field;
+  `Option` fields are omitted when `None`, `Vec` fields when empty (no `null`s).
+- **Deserialize** accepts input with or without `_type`; a present-but-wrong
+  `_type` is an error (this is what lets an untagged enum dispatch on the tag).
+- Closed subtype-set enums are `#[serde(untagged)]` (the emitter writes these);
+  never `#[serde(tag = "_type")]`.
+
+If a `_type`/serialization behaviour is wrong, fix the **emitter** or the
+**derive macro** and regenerate — never hand-edit a `// @generated` file.
+
+`openehr-its` (canonical JSON entry points + canonical **XML** + the interop
+fidelity gate) and `openehr-flat` (FLAT/STRUCTURED/Web Template) are
+hand-written from specifications and vendor conventions (PORT_MASTER_PLAN.md
+Sections 7.3, 7.4). The acceptance instrument for JSON is the **real EHRbase
+canonical-JSON corpus** round-trip in `openehr-its/tests/vendor/`
+(deserialize → re-serialize → normalized value-equality + ITS-JSON schema
+validation), not hand-built fixtures; `insta` golden vectors are the instrument
+for XML and FLAT.
 
 ## Canonical JSON (ITS-JSON)
 
@@ -74,7 +75,8 @@ a serializer is not done until its output matches a pinned snapshot.
 
 ## General
 
-Every file here still needs the PORT STATUS trailer (source = the spec
-section or vendor doc consulted, e.g. "ITS-JSON commit `<hash>`, §DV_TEXT")
-and the annotation vocabulary from `rust-style.md`. Redact volatile fields
-(timestamps, generated UUIDs) in `insta` snapshots before committing them.
+Hand-written files here (the XML layer, the fidelity-gate tests, FLAT) carry
+the PORT STATUS trailer (source = the spec section or vendor doc consulted) and
+the annotation vocabulary from `rust-style.md`. Generated files (none live here
+today) never carry the trailer. Redact volatile fields (timestamps, generated
+UUIDs) in `insta` snapshots before committing them.
