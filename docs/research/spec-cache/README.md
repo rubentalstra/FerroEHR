@@ -21,6 +21,7 @@ and should follow the same provenance rule:
 |---|---|---|---|
 | TERM | 3.0.0 | `crates/openehr-terminology/assets/` | Terminology XML, external terminologies, PropertyUnitData, and XSDs |
 | ITS-JSON | development | `crates/openehr-serde/schemas/openehr_rm_1.1.0_all.json` | Pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6` |
+| Real-world canonical-JSON corpus | — | `crates/openehr-serde/tests/vendor/` | `ehrbase/openEHR_SDK` @ `22b01e0c99b53669394e56da29c2410838b5cf7e` (Apache-2.0); 72 canonical instances (composition/contribution/ehr/folder/item_structure). Full provenance + exclusions in `crates/openehr-serde/tests/vendor/PROVENANCE.md`. Used as the P4/P5 serde round-trip integration oracle. |
 
 ## Rule
 

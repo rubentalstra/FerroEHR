@@ -1,0 +1,184 @@
+{
+  "_type": "COMPOSITION",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "Multi_list"
+  },
+  "archetype_details": {
+    "archetype_id": {
+      "value": "openEHR-EHR-COMPOSITION.report.v1"
+    },
+    "template_id": {
+      "value": "Multi_list"
+    },
+    "rm_version": "1.0.4"
+  },
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_639-1"
+    },
+    "code_string": "en"
+  },
+  "territory": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_3166-1"
+    },
+    "code_string": "US"
+  },
+  "category": {
+    "_type": "DV_CODED_TEXT",
+    "value": "event",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "433"
+    }
+  },
+  "composer": {
+    "_type": "PARTY_IDENTIFIED",
+    "name": "Silvia Blake"
+  },
+  "context": {
+    "_type": "EVENT_CONTEXT",
+    "start_time": {
+      "_type": "DV_DATE_TIME",
+      "value": "2021-10-12T15:21:54.236793+02:00"
+    },
+    "setting": {
+      "_type": "DV_CODED_TEXT",
+      "value": "other care",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "openehr"
+        },
+        "code_string": "238"
+      }
+    },
+    "other_context": {
+      "_type": "ITEM_TREE",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "Tree"
+      },
+      "items": [
+        {
+          "_type": "ELEMENT",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Report ID"
+          },
+          "value": {
+            "_type": "DV_TEXT",
+            "value": "Report ID 43"
+          },
+          "archetype_node_id": "at0002"
+        },
+        {
+          "_type": "ELEMENT",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Status"
+          },
+          "value": {
+            "_type": "DV_TEXT",
+            "value": "Status 1"
+          },
+          "archetype_node_id": "at0005"
+        }
+      ],
+      "archetype_node_id": "at0001"
+    },
+    "health_care_facility": {
+      "_type": "PARTY_IDENTIFIED",
+      "external_ref": {
+        "_type": "PARTY_REF",
+        "namespace": "HOSPITAL-NS",
+        "type": "PARTY",
+        "id": {
+          "_type": "GENERIC_ID",
+          "value": "9091",
+          "scheme": "HOSPITAL-NS"
+        }
+      },
+      "name": "Hospital"
+    },
+    "participations": [
+      {
+        "_type": "PARTICIPATION",
+        "function": {
+          "_type": "DV_TEXT",
+          "value": "requester"
+        },
+        "mode": {
+          "_type": "DV_CODED_TEXT",
+          "value": "face-to-face communication",
+          "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "openehr"
+            },
+            "code_string": "216"
+          }
+        },
+        "performer": {
+          "_type": "PARTY_IDENTIFIED",
+          "external_ref": {
+            "_type": "PARTY_REF",
+            "namespace": "HOSPITAL-NS",
+            "type": "PARTY",
+            "id": {
+              "_type": "GENERIC_ID",
+              "value": "000",
+              "scheme": "HOSPITAL-NS"
+            }
+          },
+          "name": "Dr. Marcus Johnson"
+        }
+      },
+      {
+        "_type": "PARTICIPATION",
+        "function": {
+          "_type": "DV_TEXT",
+          "value": "performer"
+        },
+        "mode": {
+          "_type": "DV_CODED_TEXT",
+          "value": "not specified",
+          "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "openehr"
+            },
+            "code_string": "193"
+          }
+        },
+        "performer": {
+          "_type": "PARTY_IDENTIFIED",
+          "external_ref": {
+            "_type": "PARTY_REF",
+            "namespace": "ANOTHER-HOSPITAL-NS",
+            "type": "PARTY",
+            "id": {
+              "_type": "GENERIC_ID",
+              "value": "123",
+              "scheme": "HOSPITAL-NS"
+            }
+          },
+          "name": "Zaza Markham"
+        }
+      }
+    ]
+  },
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.report.v1"
+}
