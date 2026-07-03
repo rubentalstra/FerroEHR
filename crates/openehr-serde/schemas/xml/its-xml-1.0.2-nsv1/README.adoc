@@ -1,0 +1,5 @@
+# specifications-ITS-XML
+XML Implementation Technology Specification
+
+## Purpose
+This repository holds mainly XML Schema files that are intended to be used by https://specifications.openehr.org/releases/1.0.2[openEHR Release 1.0.2].

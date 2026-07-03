@@ -2,17 +2,20 @@
 
 - Status: not-started
 - Started: -   Owner: Ruben
-- Consumes (spec/layer): RM 1.1.0 / current ITS-XML 2.0.0 / Layer 5b (legacy 1.0.2 descoped)
+- Consumes (spec/layer): RM 1.1.0 model / ITS-XML 1.0.2 STABLE, namespace `http://schemas.openehr.org/v1` / Layer 5b
 - Compile required: no (Phase A)
 
 ## Objectives
 
 Implement canonical XML serialization and deserialization for the RM classes
-against the RM 1.1.0 / current ITS-XML (2.0.0) schemas, using `quick-xml`,
-with a `xmllint --c14n` shell fallback for canonical XML (C14N) where exact
-byte-for-byte canonicalization matters. The legacy ITS-XML 1.0.2 dual-support
-is descoped (see the PARITY NOTE below) — we serialize the latest openEHR
-spec only, matching RM 1.1.0.
+against the **ITS-XML 1.0.2 STABLE** schemas (namespace
+`http://schemas.openehr.org/v1`), using `quick-xml`, with a `xmllint --c14n`
+shell fallback for canonical XML (C14N) where exact byte-for-byte
+canonicalization matters. v1/1.0.2 is the target because it is (a) the latest
+*stable* ITS-XML release — 2.0.0 is TRIAL/in-development — and (b) exactly
+what stock EHRbase emits (`archie` uses the v1-namespace schemas), so it is
+what a 1:1 faithful port requires. The RM *model* stays 1.1.0 internally; only
+the XML *wire format* is the v1 lineage. See the DECISION note below.
 
 ## Preconditions
 
@@ -23,13 +26,18 @@ spec only, matching RM 1.1.0.
 
 ## Scope
 
-In: `quick-xml`-based ser/de for every RM class against RM 1.1.0 XSDs
-(`Common.xsd`, `DataTypes.xsd`, `DataStructures.xsd`, `Ehr.xsd`,
-`Demographic.xsd`), AM 1.4 OPT XSD types consumed later by Phase 09, C14N
-fallback.
-Out: OPT 1.4 XML parsing proper (Phase 09 owns that; this phase only ensures
-the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
-`rm.ehr_extract`, out of scope per Phase 03).
+In: `quick-xml`-based ser/de for the RM classes EHRbase serializes, against
+the vendored v1 ITS-XML 1.0.2 bundle
+(`crates/openehr-serde/schemas/xml/its-xml-1.0.2-nsv1/`): `BaseTypes.xsd`
+(data types + identification), `Structure.xsd` (data structures + LOCATABLE),
+`Content.xsd` (EHR entries), `Composition.xsd` (COMPOSITION/EVENT_CONTEXT),
+`Version.xsd` (change control), `Resource.xsd`. C14N fallback.
+Out: OPT/template XML (`Archetype.xsd`, `Template.xsd`, `CompositionTemplate.xsd`,
+`OpenehrProfile.xsd` — Phase 09 owns that; this phase only ensures the
+RM-level XML types exist), the `Extract.xsd` EHR-extract (matches
+`rm.ehr_extract`, out of scope per Phase 03), and demographic XML (the v1
+`ALL/` bundle ships no demographic schema — EHRbase does not emit demographic
+XML; defer to a synthetic pass only if a later phase needs it).
 
 ## Tasks
 
@@ -67,31 +75,47 @@ the RM-level XML types it needs exist), the legacy EhrExtract XSD (matches
       `#[serde(default)]` read-leniency for archie's default-omission (output
       unchanged, still ITS-JSON 1.1.0 conformant). serde + all four spec
       crates green.
-- [ ] Vendor RM 1.1.0 XSDs (`Common.xsd`, `DataTypes.xsd`, `DataStructures.xsd`, `Ehr.xsd`, `Demographic.xsd`) from `specifications-ITS-XML/components/RM/Release-1.1.0/` into `openehr-serde/schemas/`. TARGET RM 1.1.0 / current ITS-XML (2.0.0) ONLY — the legacy 1.0.2 dual-support is DESCOPED per project direction (2026-07-03): we serialize the latest openEHR spec, not two lineages. See PARITY NOTE below.
-- [ ] Implement `quick-xml` serialization for rm.data_types matching `DataTypes.xsd`, namespace `http://schemas.openehr.org/v1`
-- [ ] Implement `quick-xml` serialization for rm.data_structures matching `DataStructures.xsd`
-- [ ] Implement `quick-xml` serialization for rm.common and rm.ehr matching `Common.xsd` and `Ehr.xsd`
-- [ ] Implement `quick-xml` serialization for rm.demographic matching `Demographic.xsd`
+- [x] Vendor the ITS-XML XSD bundles for reference — completed 2026-07-03.
+      Both lineages are under `crates/openehr-serde/schemas/xml/` with
+      `PROVENANCE.md`: `its-xml-1.0.2-nsv1/` (the v1-namespace STABLE bundle,
+      tag `Release-1.0.2v2` @ `f7a93777`, = what EHRbase emits, the P5 TARGET)
+      and `its-xml-2.0.0-nsv2/` (RM 1.1.0 + BASE 1.2.0 + AM 1.4 + OET + QUERY,
+      `master` @ `de8b37ba`, retained as latest-spec / Stage-3 reference).
+- [ ] Implement `quick-xml` ser/de for rm.data_types + identification matching `BaseTypes.xsd`, namespace `http://schemas.openehr.org/v1`, attribute-based `xsi:type` discriminators
+- [ ] Implement `quick-xml` ser/de for rm.data_structures + rm.common LOCATABLE matching `Structure.xsd`
+- [ ] Implement `quick-xml` ser/de for rm.ehr content/entries matching `Content.xsd`
+- [ ] Implement `quick-xml` ser/de for COMPOSITION/EVENT_CONTEXT (`Composition.xsd`) and change-control VERSION/CONTRIBUTION/AUDIT_DETAILS (`Version.xsd`) + AUTHORED_RESOURCE (`Resource.xsd`)
 - [ ] Implement the `xmllint --c14n` shell-out fallback for canonical XML (C14N) comparison in tests
-- [ ] Write insta golden-vector tests for XML round-trip (serialize -> deserialize -> equal) per RM package
-- [ ] Add PORT STATUS trailers; update `docs/ROSETTA.md` with XML-specific quirks (namespace handling, attribute vs element choices)
+- [ ] Write XML round-trip tests (serialize -> deserialize -> equal) using the real EHRbase v1 composition fixtures already in-repo (`crates/openehr-server/tests/resources/service/samples/*.xml`) as the primary oracle, mirroring the JSON real-world-corpus approach
+- [ ] Add PORT STATUS trailers; update `docs/ROSETTA.md` with XML-specific quirks (v1 namespace, `xsi:type` discriminator vs JSON `_type`, attribute vs element choices, `archetype_node_id` as an attribute)
 
-## PARITY NOTE — ITS-XML version (added 2026-07-03)
+## DECISION — ITS-XML namespace/version (settled 2026-07-03)
 
-Project direction: target **RM 1.1.0 / current ITS-XML (2.0.0)** only; the
-legacy 1.0.2 dual-round-trip is descoped. RM stays pinned at 1.1.0 everywhere
-(it always was — the "1.0.2" formerly in scope was the *ITS-XML* schema
-lineage, a separate axis from the Reference Model version, not RM 1.0.2).
-Open item to confirm when XML ser/de is actually built: verify which ITS-XML
-lineage stock EHRbase (v2.33.0 parity baseline) *emits* for canonical XML —
-if it emits `v1`-namespace 1.0.x-style XML, byte-parity at the REST surface
-may require reading that shape even though we standardize output on the
-current schema. Resolve at P5-XML implementation time, before P18 parity.
+**Target ITS-XML 1.0.2 STABLE, namespace `http://schemas.openehr.org/v1`.**
+
+The "RM version" and the "ITS-XML namespace" are independent axes. RM stays
+pinned at 1.1.0 everywhere (JSON is unaffected). For XML specifically, v1/1.0.2
+wins on both criteria that matter:
+
+1. **Latest STABLE.** ITS-XML 2.0.0 (namespace `v2`) is TRIAL/in-development;
+   1.0.2 is the current STABLE release. Latest-stable ≠ latest-dev.
+2. **1:1 parity.** Stock EHRbase (parity baseline v2.33.0) emits v1-namespace
+   canonical XML — confirmed in-repo: `TemplateServiceImp.java` sets the OPT
+   root QName to `http://schemas.openehr.org/v1`, and the real composition
+   fixtures at `crates/openehr-server/tests/resources/service/samples/*.xml`
+   declare `xmlns:v1="http://schemas.openehr.org/v1"` with attribute-based
+   `xsi:type` discriminators. EHRbase's RM XML comes from `archie`, which
+   bundles the v1 schemas.
+
+Adopting v2/RM-1.1.0 XML is a Stage-3 improvement, not part of the faithful
+port. The v2 bundle is vendored (`its-xml-2.0.0-nsv2/`) only as reference for
+that later work. (This reverses an earlier same-day scoping note that had
+tentatively targeted v2; the evidence above settled it toward v1.)
 
 ## Exit criteria
 
-- [ ] Every RM class round-trips through canonical XML with `insta`-pinned output
-- [ ] Canonical XML output validates against the RM 1.1.0 / current ITS-XML (2.0.0) XSDs
+- [ ] The RM classes EHRbase serializes round-trip through v1 canonical XML with output pinned/validated
+- [ ] Canonical XML output validates against the vendored v1 ITS-XML 1.0.2 XSDs (`its-xml-1.0.2-nsv1/`) and matches the in-repo EHRbase composition fixtures
 - [ ] C14N fallback is invoked successfully in at least one test
 
 ## Decisions made this phase

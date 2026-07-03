@@ -47,7 +47,7 @@ independently. Pin each one exactly:
 | QUERY (AQL) | 1.1.0 | STABLE | |
 | LANG (BMM / ODIN / EL) | 1.0.0 | STABLE (mixed) | BMM schema v2.3 |
 | TERM (Terminology) | 3.0.0 | STABLE | XML file internally v3.1.0 |
-| ITS-XML (XSDs) | 2.0.0 | TRIAL (1.0.2 stable) | target 2.0.0 (current, for RM 1.1.0) ONLY; legacy 1.0.2 dual-support descoped 2026-07-03 — serialize the latest spec, single lineage. EHRbase's emitted-XML lineage to be confirmed at P5-XML build time (see phase-05 PARITY NOTE). |
+| ITS-XML (XSDs) | 1.0.2 | STABLE (2.0.0 TRIAL) | TARGET 1.0.2, namespace `http://schemas.openehr.org/v1` (settled 2026-07-03): it is the latest *stable* ITS-XML (2.0.0 is TRIAL/in-development) and is exactly what stock EHRbase emits (`archie`), so it is what a 1:1 port requires. RM *model* stays 1.1.0; only the XML wire format is v1. Both bundles vendored at `crates/openehr-serde/schemas/xml/` (v1 = target; v2 = Stage-3 reference). See phase-05 DECISION note. |
 | ITS-REST (REST API) | 1.0.3 | STABLE | ADMIN API is dev-branch only |
 | ITS-JSON (JSON Schemas) | development | DEVELOPMENT | pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6` (master, 2021-10-31); `components/openehr_rm_1.1.0_all.json` vendored at `crates/openehr-serde/schemas/` |
 | ITS-BMM (BMM instances) | per-RM | STABLE per-schema | |
