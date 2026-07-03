@@ -1,0 +1,186 @@
+== Operator Syntax Examples
+
+The following sub-sections illustrate various AQL operators with examples.
+
+=== matches
+
+The following examples show how the ADL `matches` operator may be used within AQL statements.
+
+NOTE: the ADL expressions on the right-hand side of the `matches` operator are in ADL 1.4 format.
+
+.Scenario: *Get all blood glucose values and their corresponding subject ids, where blood glucose > 11 mmol/L or blood glucose >= 200 mg/dL*
+----
+SELECT
+    e/ehr_status/subject/external_ref/id/value,
+    o/data[at0001]/events[at0002 and name/value='Any event']/data[at0003]/items[at0013.1]/value
+FROM EHR e CONTAINS COMPOSITION c
+    CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.laboratory-glucose.v1]
+WHERE
+    o/data[at0001]/events[at0002 and name/value='Any event']/data[at0003]/items[at0013.1]/value matches {
+        C_DV_QUANTITY<
+            list = <
+               ["1"] = <
+                   units = <"mmol/L">
+                   magnitude = <|>=11|>
+               >
+               ["2"] = <
+                   units=<"mg/dL">
+                   magnitude=<|>=200|>
+               >
+            >
+        >
+    }
+----
+
+----
+SELECT
+    e/ehr_status/subject/external_ref/id/value as subjectId,
+    a/items[at0001]/value as analyteName,
+    a/items[at0001]/value as analyteResult
+FROM EHR e
+    CONTAINS COMPOSITION c
+        CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.laboratory_test_result.v1]
+            CONTAINS CLUSTER a[openEHR-EHR-CLUSTER.laboratory_test_analyte.v1]
+WHERE
+    (a/items[at0001]/value/defining_code/code_string matches {'14743-9','2345-7'} AND a/items[at0001]/value/defining_code/terminology_id = 'LOINC')
+    AND
+    ((a/items[at0024]/value/magnitude > 11 AND a/items[at0024]/value/units matches {'mmol/L'})
+        OR (a/items[at0024]/value/magnitude >= 200 AND a/items[at0024]/value/units matches {'mg/dL'}))
+----
+
+.Scenario: *Get all blood glucose values and their corresponding ehr ids, where blood glucose level is between 5-6 mmol/L or between 90-110 mg/dL*
+----
+SELECT
+    e/ehr_id,
+    o/data[at0001]/events[at0002 and name/value='Any event']/data[at0003]/items[at0013.1]/value
+EHR e CONTAINS COMPOSITION c
+    CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.laboratory-glucose.v1]
+WHERE
+    o/data[at0001]/events[at0002 and name/value='Any event']/data[at0003]/items[at0013.1]/value matches {
+        C_DV_QUANTITY<
+            list = <
+                ["1"] = <
+                    units = <"mmol/L">
+                    magnitude = <|5.0..6.0|>
+                >
+                ["2"] = <
+                    units = <"mg/dL">
+                    magnitude = <|90..110|>
+                >
+            >
+        >
+    }
+----
+
+.Alternative
+----
+SELECT
+    e/ehr_id/value as ehrId,
+    a/items[at0001]/value as analyteName,
+    a/items[at0001]/value as analyteResult
+FROM EHR e
+    CONTAINS COMPOSITION c
+        CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.laboratory_test_result.v1]
+            CONTAINS CLUSTER a[openEHR-EHR-CLUSTER.laboratory_test_analyte.v1]
+WHERE
+    (a/items[at0001]/value/defining_code/code_string matches {'14743-9','2345-7'} AND a/items[at0001]/value/defining_code/terminology_id = 'LOINC')
+    AND
+    ((a/items[at0024]/value/magnitude >= 5 AND a/items[at0024]/value/magnitude <=6 AND a/items[at0024]/value/units matches {'mmol/L'})
+        OR (a/items[at0024]/value/magnitude >= 90 AND a/items[at0024]/value/magnitude >= 110 AND a/items[at0024]/value/units matches {'mg/dL'}))
+----
+
+.Scenario: *HbA1c > 7.0%*
+----
+SELECT
+    e/ehr_id,
+    o/data[at0001]/events[at0002 and name/value='Any event']/data[at0003]/items[at0013.1]/value
+EHR e CONTAINS COMPOSITION c
+    CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.laboratory-glucose.v1]
+WHERE
+    o/data[at0001]/events[at0002 and name/value='Any event']/data[at0003]/items[at0013.1]/value matches {
+        DV_PROPORTION matches {
+            numerator matches {|>7.0|}
+            denominator matches {|100.0|}
+        }
+    }
+----
+
+.Alternative
+----
+SELECT
+    e/ehr_id/value as ehrId,
+    p/data[at0001]/events[at0002]/data[at0003]/items[at0006]/value as spo2Numerator
+FROM EHR e
+    CONTAINS COMPOSITION c
+        CONTAINS OBSERVATION p[openEHR-EHR-OBSERVATION.pulse_oximetry.v1]
+WHERE
+    p/data[at0001]/events[at0002]/data[at0003]/items[at0006]/value/numerator <= 96
+----
+
+.Scenario: *Total cholesterol >= 5.0 mmol/L or LDL-C >= 3.0 mmol/L*
+----
+SELECT
+    e/ehr_id,
+    o/data[at0001]/events[at0002]/data[at0003]/items[at0013.1] AS TotalC,
+    o/data[at0001]/events[at0002]/data[at0003]/items[at0011.1, 'Fractions']/items[at0013.4, 'LDL-Cholesterol'] AS LDLC
+EHR e CONTAINS COMPOSITION c
+    CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.laboratory-hba1c.v1]
+WHERE
+    o/data[at0001]/events[at0002, 'Any event']/data[at0003]/items[at0013.1]/value matches {
+        DV_QUANTITY matches {
+            units matches {"mmol/L"}
+            magnitude matches {|>=5.0|}
+        }
+    }
+    OR
+    o/data[at0001]/events[at0002]/data[at0003]/items[at0011.1, 'Fractions']/items[at0013.4, 'LDL-Cholesterol']/value matches {
+        DV_QUANTITY matches {
+            units matches {"mmol/L"}
+            magnitude matches {|>=3.0|}
+        }
+    }
+----
+
+
+=== Arithmetic operators
+
+The following example shows how arithmetic operators may be used within AQL statements.
+
+.Scenario: *For each recorded administration of ampicillin check for problem diagnosis of skin rash that is within 2 days of the administration date*
+----
+SELECT e/ehr_id
+FROM EHR e CONTAINS (COMPOSITION c1
+   CONTAINS ACTION a [openEHR-EHR-ACTION.medication.v1]
+      CONTAINS ITEM_TREE it [openEHR-EHR-ITEM_TREE.medication.v1]) AND
+      CONTAINS (COMPOSITION c2 CONTAINS EVALUATION eval [openEHR-EHR-EVALUATION.problem-diagnosis.v1])
+WHERE
+   it/description[openEHR-EHR-ITEM_TREE.medication.v1]/items[at0001]/value matches {"SNOMED::31087008"} AND
+   eval/data[at0001]/items[at0002.1]/value/value/defining_code matches {
+      CODE_PHRASE matches {[SNOMED::294506009, 21626009]}
+   } AND
+   eval/data[at0001]/items[at0010]/value - it/description[openEHR-EHR-ITEM_TREE.medication.v1]/items[at0018]/items[at0019]/value matches {
+      DV_DURATION matches {
+         value matches{<=P2d}
+      }
+   }
+----
+
+
+=== Nest Query and 'Not in'
+
+The following example shows the use of a nested query and the `not-in` operator.
+
+.Scenario: *All patients who have not been discharged*
+----
+SELECT e/ehr_id
+FROM
+   EHR e CONTAINS
+      ADMIN_ENTRY ae1 [openEHR-EHR-ADMIN_ENTRY.admission.v1]
+WHERE
+   ae1/encounter_id/value not in (
+      SELECT ae2/encounter_id/value
+      FROM
+         EHR e CONTAINS
+            ADMIN_ENTRY ae2 [openEHR-EHR-ADMIN_ENTRY.discharge.v1]
+   )
+----
