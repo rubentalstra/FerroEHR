@@ -1,0 +1,1365 @@
+{
+  "_type": "COMPOSITION",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "Bericht"
+  },
+  "uid": {
+    "_type": "OBJECT_VERSION_ID",
+    "value": "93a018f1-ad95-4d52-bb8f-0f64d7f7cce6::ehrbase.org::1"
+  },
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-EHR-COMPOSITION.report.v1"
+    },
+    "template_id": {
+      "_type": "TEMPLATE_ID",
+      "value": "Corona_Anamnese"
+    },
+    "rm_version": "1.0.4"
+  },
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.report.v1",
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_639-1"
+    },
+    "code_string": "de"
+  },
+  "territory": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_3166-1"
+    },
+    "code_string": "DE"
+  },
+  "category": {
+    "_type": "DV_CODED_TEXT",
+    "value": "event",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "433"
+    }
+  },
+  "composer": {
+    "_type": "PARTY_IDENTIFIED",
+    "name": "birger.haarbrandt@plri.de"
+  },
+  "context": {
+    "_type": "EVENT_CONTEXT",
+    "start_time": {
+      "_type": "DV_DATE_TIME",
+      "value": "2020-05-11T22:53:12.039139+02:00"
+    },
+    "setting": {
+      "_type": "DV_CODED_TEXT",
+      "value": "other care",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "openehr"
+        },
+        "code_string": "238"
+      }
+    }
+  },
+  "content": [
+    {
+      "_type": "OBSERVATION",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "Geschichte/Historie"
+      },
+      "archetype_details": {
+        "_type": "ARCHETYPED",
+        "archetype_id": {
+          "_type": "ARCHETYPE_ID",
+          "value": "openEHR-EHR-OBSERVATION.story.v1"
+        },
+        "rm_version": "1.0.4"
+      },
+      "archetype_node_id": "openEHR-EHR-OBSERVATION.story.v1",
+      "language": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "ISO_639-1"
+        },
+        "code_string": "de"
+      },
+      "encoding": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "IANA_character-sets"
+        },
+        "code_string": "UTF-8"
+      },
+      "subject": {
+        "_type": "PARTY_SELF"
+      },
+      "data": {
+        "_type": "HISTORY",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "Event Series"
+        },
+        "archetype_node_id": "at0001",
+        "origin": {
+          "_type": "DV_DATE_TIME",
+          "value": "2020-05-11T22:53:12.039139+02:00"
+        },
+        "events": [
+          {
+            "_type": "POINT_EVENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Beliebiges Ereignis"
+            },
+            "archetype_node_id": "at0002",
+            "time": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "data": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "Tree"
+              },
+              "archetype_node_id": "at0003",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Geschichte"
+                  },
+                  "archetype_node_id": "at0004",
+                  "value": {
+                    "_type": "DV_TEXT",
+                    "value": "War in Ischgl"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "_type": "SECTION",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "Symptome"
+      },
+      "archetype_details": {
+        "_type": "ARCHETYPED",
+        "archetype_id": {
+          "_type": "ARCHETYPE_ID",
+          "value": "openEHR-EHR-SECTION.adhoc.v1"
+        },
+        "rm_version": "1.0.4"
+      },
+      "archetype_node_id": "openEHR-EHR-SECTION.adhoc.v1",
+      "items": [
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Husten"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Ereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Spezifisches Symptom/Anzeichen"
+                      },
+                      "archetype_node_id": "at0022",
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Bezeichnung des Symptoms oder Anzeichens."
+                          },
+                          "archetype_node_id": "at0004",
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "Husten"
+                          }
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Vorhanden?"
+                          },
+                          "archetype_node_id": "at0005",
+                          "value": {
+                            "_type": "DV_CODED_TEXT",
+                            "value": "Vorhanden",
+                            "defining_code": {
+                              "_type": "CODE_PHRASE",
+                              "terminology_id": {
+                                "_type": "TERMINOLOGY_ID",
+                                "value": "local"
+                              },
+                              "code_string": "at0023"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Schnupfen"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Ereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Spezifisches Symptom/Anzeichen"
+                      },
+                      "archetype_node_id": "at0022",
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Bezeichnung des Symptoms oder Anzeichens."
+                          },
+                          "archetype_node_id": "at0004",
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "Schnupfen"
+                          }
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Vorhanden?"
+                          },
+                          "archetype_node_id": "at0005",
+                          "value": {
+                            "_type": "DV_CODED_TEXT",
+                            "value": "Vorhanden",
+                            "defining_code": {
+                              "_type": "CODE_PHRASE",
+                              "terminology_id": {
+                                "_type": "TERMINOLOGY_ID",
+                                "value": "local"
+                              },
+                              "code_string": "at0023"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Heiserkeit"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Ereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Spezifisches Symptom/Anzeichen"
+                      },
+                      "archetype_node_id": "at0022",
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Bezeichnung des Symptoms oder Anzeichens."
+                          },
+                          "archetype_node_id": "at0004",
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "Heiserkeit"
+                          }
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Vorhanden?"
+                          },
+                          "archetype_node_id": "at0005",
+                          "value": {
+                            "_type": "DV_CODED_TEXT",
+                            "value": "Nicht vorhanden",
+                            "defining_code": {
+                              "_type": "CODE_PHRASE",
+                              "terminology_id": {
+                                "_type": "TERMINOLOGY_ID",
+                                "value": "local"
+                              },
+                              "code_string": "at0024"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Fieber oder erhöhte Körpertemperatur"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Ereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Spezifisches Symptom/Anzeichen"
+                      },
+                      "archetype_node_id": "at0022",
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Bezeichnung des Symptoms oder Anzeichens."
+                          },
+                          "archetype_node_id": "at0004",
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "Fieber oder erhöhte Körpertemperatur"
+                          }
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Vorhanden?"
+                          },
+                          "archetype_node_id": "at0005",
+                          "value": {
+                            "_type": "DV_CODED_TEXT",
+                            "value": "Vorhanden",
+                            "defining_code": {
+                              "_type": "CODE_PHRASE",
+                              "terminology_id": {
+                                "_type": "TERMINOLOGY_ID",
+                                "value": "local"
+                              },
+                              "code_string": "at0023"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Körpertemperatur"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.body_temperature.v2"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.body_temperature.v2",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0002",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Ereignis"
+                },
+                "archetype_node_id": "at0003",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Single"
+                  },
+                  "archetype_node_id": "at0001",
+                  "items": [
+                    {
+                      "_type": "ELEMENT",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Temperatur"
+                      },
+                      "archetype_node_id": "at0004",
+                      "value": {
+                        "_type": "DV_QUANTITY",
+                        "magnitude": 39,
+                        "units": "°C"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Gestörter Geruchssinn"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Ereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Spezifisches Symptom/Anzeichen"
+                      },
+                      "archetype_node_id": "at0022",
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Bezeichnung des Symptoms oder Anzeichens."
+                          },
+                          "archetype_node_id": "at0004",
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "gestörter Geruchssinn"
+                          }
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Vorhanden?"
+                          },
+                          "archetype_node_id": "at0005",
+                          "value": {
+                            "_type": "DV_CODED_TEXT",
+                            "value": "Nicht vorhanden",
+                            "defining_code": {
+                              "_type": "CODE_PHRASE",
+                              "terminology_id": {
+                                "_type": "TERMINOLOGY_ID",
+                                "value": "local"
+                              },
+                              "code_string": "at0024"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Gestörter Geschmackssinn"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Ereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Spezifisches Symptom/Anzeichen"
+                      },
+                      "archetype_node_id": "at0022",
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Bezeichnung des Symptoms oder Anzeichens."
+                          },
+                          "archetype_node_id": "at0004",
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "gestörter Geschmackssinn"
+                          }
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Vorhanden?"
+                          },
+                          "archetype_node_id": "at0005",
+                          "value": {
+                            "_type": "DV_CODED_TEXT",
+                            "value": "Nicht vorhanden",
+                            "defining_code": {
+                              "_type": "CODE_PHRASE",
+                              "terminology_id": {
+                                "_type": "TERMINOLOGY_ID",
+                                "value": "local"
+                              },
+                              "code_string": "at0024"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Durchfall"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.symptom_sign_screening.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Ereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Spezifisches Symptom/Anzeichen"
+                      },
+                      "archetype_node_id": "at0022",
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Bezeichnung des Symptoms oder Anzeichens."
+                          },
+                          "archetype_node_id": "at0004",
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "Durchfall"
+                          }
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Vorhanden?"
+                          },
+                          "archetype_node_id": "at0005",
+                          "value": {
+                            "_type": "DV_CODED_TEXT",
+                            "value": "Nicht vorhanden",
+                            "defining_code": {
+                              "_type": "CODE_PHRASE",
+                              "terminology_id": {
+                                "_type": "TERMINOLOGY_ID",
+                                "value": "local"
+                              },
+                              "code_string": "at0024"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "_type": "SECTION",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "Risikogebiet"
+      },
+      "archetype_details": {
+        "_type": "ARCHETYPED",
+        "archetype_id": {
+          "_type": "ARCHETYPE_ID",
+          "value": "openEHR-EHR-SECTION.adhoc.v1"
+        },
+        "rm_version": "1.0.4"
+      },
+      "archetype_node_id": "openEHR-EHR-SECTION.adhoc.v1",
+      "items": [
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Historie der Reise"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.travel_history.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.travel_history.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "POINT_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Jedes Ereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "ELEMENT",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Aufenthalt in den letzten 14 Tage in einem der Risikogebiete für Coronainfektion oder Kontakt zu Menschen, die dort waren"
+                      },
+                      "archetype_node_id": "at0111",
+                      "value": {
+                        "_type": "DV_CODED_TEXT",
+                        "value": "Ja",
+                        "defining_code": {
+                          "_type": "CODE_PHRASE",
+                          "terminology_id": {
+                            "_type": "TERMINOLOGY_ID",
+                            "value": "local"
+                          },
+                          "code_string": "at0112"
+                        }
+                      }
+                    },
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Ortsbeschreibung"
+                      },
+                      "archetype_node_id": "at0134",
+                      "items": [
+                        {
+                          "_type": "CLUSTER",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Standort"
+                          },
+                          "archetype_details": {
+                            "_type": "ARCHETYPED",
+                            "archetype_id": {
+                              "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-CLUSTER.location.v1"
+                            },
+                            "rm_version": "1.0.4"
+                          },
+                          "archetype_node_id": "openEHR-EHR-CLUSTER.location.v1",
+                          "items": [
+                            {
+                              "_type": "ELEMENT",
+                              "name": {
+                                "_type": "DV_TEXT",
+                                "value": "Standortbeschreibung"
+                              },
+                              "archetype_node_id": "at0046",
+                              "value": {
+                                "_type": "DV_TEXT",
+                                "value": "Norditalien"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "_type": "OBSERVATION",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "Reisefall"
+          },
+          "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+              "_type": "ARCHETYPE_ID",
+              "value": "openEHR-EHR-OBSERVATION.travel_event.v0"
+            },
+            "rm_version": "1.0.4"
+          },
+          "archetype_node_id": "openEHR-EHR-OBSERVATION.travel_event.v0",
+          "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "ISO_639-1"
+            },
+            "code_string": "de"
+          },
+          "encoding": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "IANA_character-sets"
+            },
+            "code_string": "UTF-8"
+          },
+          "subject": {
+            "_type": "PARTY_SELF"
+          },
+          "data": {
+            "_type": "HISTORY",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "History"
+            },
+            "archetype_node_id": "at0001",
+            "origin": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-05-11T22:53:12.039139+02:00"
+            },
+            "events": [
+              {
+                "_type": "INTERVAL_EVENT",
+                "name": {
+                  "_type": "DV_TEXT",
+                  "value": "Beliebiges Intervallereignis"
+                },
+                "archetype_node_id": "at0002",
+                "time": {
+                  "_type": "DV_DATE_TIME",
+                  "value": "2020-05-11T22:53:12.039139+02:00"
+                },
+                "data": {
+                  "_type": "ITEM_TREE",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tree"
+                  },
+                  "archetype_node_id": "at0003",
+                  "items": [
+                    {
+                      "_type": "ELEMENT",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Letzte Reise?"
+                      },
+                      "archetype_node_id": "at0004",
+                      "value": {
+                        "_type": "DV_CODED_TEXT",
+                        "value": "Ja - national",
+                        "defining_code": {
+                          "_type": "CODE_PHRASE",
+                          "terminology_id": {
+                            "_type": "TERMINOLOGY_ID",
+                            "value": "local"
+                          },
+                          "code_string": "at0006"
+                        }
+                      }
+                    },
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Bestimmte Reise"
+                      },
+                      "archetype_node_id": "at0008",
+                      "items": [
+                        {
+                          "_type": "CLUSTER",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Bestimmtes Reiseziel"
+                          },
+                          "archetype_node_id": "at0010",
+                          "items": [
+                            {
+                              "_type": "ELEMENT",
+                              "name": {
+                                "_type": "DV_TEXT",
+                                "value": "Land"
+                              },
+                              "archetype_node_id": "at0011",
+                              "value": {
+                                "_type": "DV_TEXT",
+                                "value": "Deutschland"
+                              }
+                            },
+                            {
+                              "_type": "ELEMENT",
+                              "name": {
+                                "_type": "DV_TEXT",
+                                "value": "Bundesland / Region"
+                              },
+                              "archetype_node_id": "at0012",
+                              "value": {
+                                "_type": "DV_TEXT",
+                                "value": "Baden-Württemberg"
+                              }
+                            },
+                            {
+                              "_type": "ELEMENT",
+                              "name": {
+                                "_type": "DV_TEXT",
+                                "value": "Stadt"
+                              },
+                              "archetype_node_id": "at0013",
+                              "value": {
+                                "_type": "DV_TEXT",
+                                "value": "Mannheim"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "width": {
+                  "_type": "DV_DURATION",
+                  "value": "P0D"
+                },
+                "math_function": {
+                  "_type": "DV_CODED_TEXT",
+                  "value": "mean",
+                  "defining_code": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": {
+                      "_type": "TERMINOLOGY_ID",
+                      "value": "openehr"
+                    },
+                    "code_string": "146"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

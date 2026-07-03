@@ -1,8 +1,0 @@
----
-source: crates/openehr-serde/tests/full_rm_canonical_json.rs
-expression: v.value
----
-{
-  "_type": "OBJECT_VERSION_ID",
-  "value": "8849182c-82ad-4088-a07f-48ead4180515::ehrbase.example.org::1"
-}

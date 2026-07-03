@@ -5,6 +5,12 @@ surfaces it exposes, the pipelines behind those surfaces, and how the target
 Rust workspace is organized. It distills `PORT_MASTER_PLAN.md` Sections 6–9;
 that document is authoritative on any discrepancy.
 
+> **⚠️ ADR-004:** the openEHR-spec crates are **generated from the BMM
+> meta-model** by `openehr-codegen`, not hand-written; crate names split into
+> `openehr-*` (spec) / `ehrbase-*` (application). Where this doc says the spec
+> crates are "written fresh" / "transcribed", read "generated". See
+> `docs/ADRs/ADR-004-spec-driven-codegen.md`.
+
 ## What EHRbase is
 
 EHRbase is a Spring Boot openEHR Clinical Data Repository (CDR): a server
@@ -40,7 +46,7 @@ data. The pipeline, in order:
 
 1. **Parse** — lex + parse AQL text against the QUERY 1.1.0 grammar into an
    AST. Upstream uses an ANTLR grammar; this port reimplements the grammar
-   natively (`openehr-aql`, via `logos` + `chumsky`/`winnow`).
+   natively (`openehr-query`, via `logos` + `chumsky`/`winnow`).
 2. **Semantic / path analysis** — resolve archetype paths in the query
    against the relevant Web Templates, producing typed, path-resolved query
    nodes.
@@ -84,15 +90,15 @@ update moves the prior row to `_history` before writing the new current row,
 so `VERSIONED_OBJECT`/`ORIGINAL_VERSION` semantics are reconstructable from
 two tables rather than a single append-only log.
 
-The Rust port keeps the migrations verbatim (`openehr-server/migrations/`)
+The Rust port keeps the migrations verbatim (`ehrbase/migrations/`)
 and replaces jOOQ's generated DSL with `sea-query` + `sqlx` for query
 construction and execution. The RM ↔ row-per-locatable bridge itself is
-`rm-db-format`, ported into `openehr-server/src/rm_db_format/`.
+`rm-db-format`, ported into `ehrbase/src/rm_db_format/`.
 
 ## Serialization formats
 
 - **Canonical JSON** — the primary wire format, `_type`-discriminated,
-  targeting the openEHR ITS-JSON schemas (`openehr-serde`).
+  targeting the openEHR ITS-JSON schemas (`openehr-its`).
 - **Canonical XML** — JAXB/XSD-shaped in EHRbase; targets ITS-XML 1.0.2 and
   2.0.0 in this port, for round-trip with both schema generations.
 - **FLAT (simSDT) / STRUCTURED (structSDT)** — Better/Marand vendor formats
@@ -118,50 +124,50 @@ the reverse):
 openehr-foundation
       │
       ▼
-openehr-base ──────────────► openehr-terminology
+openehr-base ──────────────► openehr-term
       │                             │
       ▼                             ▼
       └──────────► openehr-rm ◄─────┘
                        │
         ┌──────────────┼───────────────┐
         ▼              ▼               ▼
-  openehr-serde   openehr-odin    (consumed by
-        │              │           openehr-adl,
+  openehr-its   openehr-odin    (consumed by
+        │              │           openehr-am,
         │              ▼           below)
         │        openehr-bmm
         │              │
         └──────┬───────┘
                ▼
-          openehr-adl ──────────────► openehr-flat
+          openehr-am ──────────────► openehr-flat
                │                            │
                ▼                            │
-          openehr-aql                       │
+          openehr-query                       │
                │                            │
                ▼                            │
-          openehr-rest ◄────────────────────┘
+          ehrbase-rest ◄────────────────────┘
                │
                ▼
-     openehr-ehrbase-compat
+     ehrbase-compat
                │
                ▼
-         openehr-server   (binary; depends on all of the above)
+         ehrbase   (binary; depends on all of the above)
 ```
 
 | Crate | Role | Depends on |
 |---|---|---|
 | `openehr-foundation` | BASE Foundation Types: `Any`, `Interval<T>`, containers, ISO 8601 temporals, functional types | — |
 | `openehr-base` | BASE Base Types: definitions, builtins, identification, resource | `openehr-foundation` |
-| `openehr-terminology` | TERM 3.x XML bundle + terminology service | `openehr-base` |
-| `openehr-rm` | RM 1.1.0: data_types, data_structures, common, ehr, demographic, integration, support | `openehr-base`, `openehr-terminology` |
-| `openehr-serde` | Canonical JSON (ITS-JSON) + canonical XML (ITS-XML), `_type` dispatch | `openehr-rm` |
+| `openehr-term` | TERM 3.x XML bundle + terminology service | `openehr-base` |
+| `openehr-rm` | RM 1.1.0: data_types, data_structures, common, ehr, demographic, integration, support | `openehr-base`, `openehr-term` |
+| `openehr-its` | Canonical JSON (ITS-JSON) + canonical XML (ITS-XML), `_type` dispatch | `openehr-rm` |
 | `openehr-odin` | ODIN parser | — |
 | `openehr-bmm` | BMM object model + P_BMM parser (schema v2.3) | `openehr-odin` |
-| `openehr-adl` | ADL 1.4 + ADL 2 parsers, AOM 1.4 + AOM 2, OPT 1.4 XML, OPT 2 flattener | `openehr-odin`, `openehr-bmm`, `openehr-rm`, `openehr-serde` |
-| `openehr-flat` | FLAT / STRUCTURED / Web Template (Better semantics + EHRbase quirks) | `openehr-rm`, `openehr-serde`, `openehr-adl` |
-| `openehr-aql` | AQL 1.1.0 lexer + parser + AST + semantic analyser | `openehr-rm`, `openehr-adl` |
-| `openehr-rest` | ITS-REST 1.0.3 server + client (axum). **Receives** EHRbase REST Java. | `openehr-rm`, `openehr-serde`, `openehr-adl`, `openehr-aql` |
-| `openehr-ehrbase-compat` | EHRbase-compatible endpoint aliases, admin API, OPT 1.4 ingestion, WebTemplate export, EhrScape. **Receives** EhrScape + admin Java. | `openehr-rest`, `openehr-flat` |
-| `openehr-server` | Reference binary: persistence (sqlx + sea-query), AQL execution engine (ASL), versioning, contributions. **Receives** most server Java. | all of the above |
+| `openehr-am` | ADL 1.4 + ADL 2 parsers, AOM 1.4 + AOM 2, OPT 1.4 XML, OPT 2 flattener | `openehr-odin`, `openehr-bmm`, `openehr-rm`, `openehr-its` |
+| `openehr-flat` | FLAT / STRUCTURED / Web Template (Better semantics + EHRbase quirks) | `openehr-rm`, `openehr-its`, `openehr-am` |
+| `openehr-query` | AQL 1.1.0 lexer + parser + AST + semantic analyser | `openehr-rm`, `openehr-am` |
+| `ehrbase-rest` | ITS-REST 1.0.3 server + client (axum). **Receives** EHRbase REST Java. | `openehr-rm`, `openehr-its`, `openehr-am`, `openehr-query` |
+| `ehrbase-compat` | EHRbase-compatible endpoint aliases, admin API, OPT 1.4 ingestion, WebTemplate export, EhrScape. **Receives** EhrScape + admin Java. | `ehrbase-rest`, `openehr-flat` |
+| `ehrbase` | Reference binary: persistence (sqlx + sea-query), AQL execution engine (ASL), versioning, contributions. **Receives** most server Java. | all of the above |
 
 ## Port-difficulty map
 

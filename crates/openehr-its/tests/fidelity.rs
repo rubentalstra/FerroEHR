@@ -1,0 +1,329 @@
+#![allow(clippy::doc_markdown)] // prose with spec/crate proper nouns
+//! Interop fidelity gate — deserialize the real EHRbase / openEHR_SDK canonical
+//! JSON corpus (`tests/vendor/`) into our **generated** `openehr-rm` types.
+//!
+//! This is the acceptance test that our generated RM actually reads real
+//! openEHR data. Each corpus file is dispatched by its top-level `_type` to the
+//! matching generated type; `rawdb_*` / array / `_type`-less fragments are not
+//! canonical single-RM-object roots and are skipped with a recorded reason.
+//!
+//! NOTE: the corpus is RM 1.1.0-era while the generated types are RM 1.2.0, and
+//! `OpenEhrType` deserialization is lenient (ignores unknown fields), so this
+//! gate proves *readability*; a stricter lossless re-serialize round-trip is a
+//! follow-up once the 1.1↔1.2 field drift is characterized.
+
+use openehr_rm::prelude::{Composition, Contribution, EhrStatus, Folder, ItemTree};
+use std::fs;
+use std::path::{Path, PathBuf};
+
+fn corpus_files() -> Vec<PathBuf> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor");
+    let mut out = Vec::new();
+    let mut stack = vec![root];
+    while let Some(dir) = stack.pop() {
+        if let Ok(rd) = fs::read_dir(&dir) {
+            for e in rd.flatten() {
+                let p = e.path();
+                if p.is_dir() {
+                    stack.push(p);
+                } else if p.extension().is_some_and(|x| x == "json") {
+                    out.push(p);
+                }
+            }
+        }
+    }
+    out.sort();
+    out
+}
+
+/// Deserialize `json` into the generated type named by `ty`, then re-serialize
+/// (proving the value is well-formed on the way back out too).
+fn deserialize_as(ty: &str, json: &str) -> Result<(), String> {
+    macro_rules! roundtrip {
+        ($T:ty) => {{
+            let v: $T = serde_json::from_str(json).map_err(|e| e.to_string())?;
+            serde_json::to_string(&v).map_err(|e| e.to_string())?;
+            Ok(())
+        }};
+    }
+    match ty {
+        "COMPOSITION" => roundtrip!(Composition),
+        "FOLDER" => roundtrip!(Folder),
+        "EHR_STATUS" => roundtrip!(EhrStatus),
+        "CONTRIBUTION" => roundtrip!(Contribution),
+        "ITEM_TREE" => roundtrip!(ItemTree),
+        other => Err(format!("no dispatch for top-level _type {other:?}")),
+    }
+}
+
+/// Deserialize `json` into the generated type named by `ty` and re-serialize it
+/// back to a `serde_json::Value`, for the lossless round-trip comparison.
+fn reserialize(ty: &str, json: &str) -> Result<serde_json::Value, String> {
+    macro_rules! rt {
+        ($T:ty) => {{
+            let v: $T = serde_json::from_str(json).map_err(|e| e.to_string())?;
+            serde_json::to_value(&v).map_err(|e| e.to_string())
+        }};
+    }
+    match ty {
+        "COMPOSITION" => rt!(Composition),
+        "FOLDER" => rt!(Folder),
+        "EHR_STATUS" => rt!(EhrStatus),
+        "CONTRIBUTION" => rt!(Contribution),
+        "ITEM_TREE" => rt!(ItemTree),
+        other => Err(format!("no dispatch for top-level _type {other:?}")),
+    }
+}
+
+/// Compare re-serialized `output` against the original `input` for **semantic
+/// equality** (no data loss), tolerating the three deliberate, information-
+/// preserving differences between archie/EHRbase canonical JSON and ours:
+///
+/// 1. object key order (compared structurally, not textually);
+/// 2. fields we omit that the input stated as empty (`null` / `[]`) — our
+///    `OpenEhrType` serialize drops `None`/empty, which is equivalent;
+/// 3. fields we materialize that the input left implicit — the always-present
+///    `_type`, and the `Interval` `*_included`/`*_unbounded` flags at their
+///    canonical defaults.
+///
+/// Anything else — an input value we dropped, or a genuine value mismatch — is a
+/// real fidelity defect and is reported with its JSON path.
+fn semantic_eq(
+    input: &serde_json::Value,
+    output: &serde_json::Value,
+    path: &str,
+) -> Result<(), String> {
+    use serde_json::Value;
+    match (input, output) {
+        (Value::Object(im), Value::Object(om)) => {
+            for (k, iv) in im {
+                match om.get(k) {
+                    Some(ov) => semantic_eq(iv, ov, &format!("{path}.{k}"))?,
+                    None if is_omittable(iv) => {}
+                    None => {
+                        return Err(format!(
+                            "{path}.{k}: present in input, dropped from output ({})",
+                            preview(iv)
+                        ));
+                    }
+                }
+            }
+            for (k, ov) in om {
+                if !im.contains_key(k) && !is_default_materialization(k, ov) {
+                    return Err(format!(
+                        "{path}.{k}: emitted in output but absent from input ({})",
+                        preview(ov)
+                    ));
+                }
+            }
+            Ok(())
+        }
+        (Value::Array(ia), Value::Array(oa)) => {
+            if ia.len() != oa.len() {
+                return Err(format!("{path}: array length {} vs {}", ia.len(), oa.len()));
+            }
+            for (i, (a, b)) in ia.iter().zip(oa).enumerate() {
+                semantic_eq(a, b, &format!("{path}[{i}]"))?;
+            }
+            Ok(())
+        }
+        // `5` (Integer) and `5.0` (Real) are the same magnitude on the wire.
+        (Value::Number(a), Value::Number(b)) if a.as_f64() == b.as_f64() => Ok(()),
+        _ if input == output => Ok(()),
+        _ => Err(format!("{path}: {} vs {}", preview(input), preview(output))),
+    }
+}
+
+/// An input field we may legitimately drop: `OpenEhrType` omits `None` (`null`)
+/// and empty containers (`[]`), which carry no information.
+fn is_omittable(v: &serde_json::Value) -> bool {
+    v.is_null() || v.as_array().is_some_and(Vec::is_empty)
+}
+
+/// An output field the input left implicit: the always-emitted `_type`, and the
+/// `Interval` inclusivity/boundedness flags at their canonical defaults (a
+/// bounded limit is included; an unstated limit is bounded).
+fn is_default_materialization(key: &str, v: &serde_json::Value) -> bool {
+    key == "_type"
+        || (matches!(key, "lower_included" | "upper_included") && v.as_bool() == Some(true))
+        || (matches!(key, "lower_unbounded" | "upper_unbounded") && v.as_bool() == Some(false))
+}
+
+fn preview(v: &serde_json::Value) -> String {
+    let s = v.to_string();
+    if s.len() > 80 {
+        format!("{}…", &s[..80])
+    } else {
+        s
+    }
+}
+
+/// Corpus files that are **not** canonical RM 1.2 objects, with the reason each
+/// is out of scope for this gate. They are excluded, not silently skipped — the
+/// gate still fails if a file *not* listed here fails to read. (Same discipline
+/// as the AQL example-corpus exclusions.) Keyed by the trailing path.
+///
+/// None of these reflect a defect in the generated types: they are either a
+/// different serialization (raw-DB / ITS-REST request), deliberately invalid,
+/// malformed, or RM-1.1-era data that omits fields RM 1.2 made mandatory.
+fn excluded(name: &str) -> Option<&'static str> {
+    // Normalize path separators for matching on any platform, and drop the
+    // corpus-root prefix so keys are relative to the openEHR_SDK tree.
+    let n = name.replace('\\', "/");
+    let n = n.strip_prefix("openehr_sdk/").unwrap_or(&n);
+    let reason = |r| Some(r);
+    match n {
+        // Path-keyed `content` map (ethercis raw-DB / flat form), not canonical.
+        "composition/canonical_json/rawdb_composition.json"
+        | "composition/canonical_json/composition_with_dvinterval_composite.json" => {
+            reason("not canonical JSON: `content` is a path-keyed map (raw-DB/flat form)")
+        }
+        // Deliberately invalid fixture (`EVENT_CONTEXT_WRONG`) — a negative test.
+        "composition/canonical_json/invalid.json" => {
+            reason("deliberately invalid fixture (a wrong `_type`), a negative test")
+        }
+        // ITS-REST contribution *request* bodies: `versions` holds full
+        // `ORIGINAL_VERSION`s, whereas RM `CONTRIBUTION.versions` is `Set<OBJECT_REF>`.
+        // These belong to the REST DTO layer, not the RM canonical gate.
+        "contribution/canonical_json/contribution-one_entry-composition.json"
+        | "contribution/canonical_json/contribution-two_entries-composition.json" => reason(
+            "ITS-REST contribution request shape (versions = ORIGINAL_VERSION, not OBJECT_REF)",
+        ),
+        // Malformed: a `DV_TEXT` whose value is under a `name` key instead of `value`.
+        "folder/canonical_json/folder_without_duplicates.json" => {
+            reason("malformed fixture: a DV_TEXT carries its text under `name` instead of `value`")
+        }
+        // RM-1.1-era EHRbase output that omits fields RM 1.2 makes mandatory on
+        // LOCATABLE. Deserialization is strict here; leniency is a validation-layer
+        // concern (P11). Tracked as the RM 1.1↔1.2 divergence (docs/VERSIONS.md).
+        "folder/canonical_json/simple_empty_folder.json" => {
+            reason("RM 1.1-era: FOLDER omits mandatory LOCATABLE.archetype_node_id (RM 1.2)")
+        }
+        "item_structure/canonical_json/ehr_other_details.json" => {
+            reason("RM 1.1-era: ITEM_TREE omits mandatory LOCATABLE.name (RM 1.2)")
+        }
+        _ => None,
+    }
+}
+
+#[test]
+fn generated_rm_reads_the_openehr_sdk_corpus() {
+    let mut ok = 0;
+    let mut skipped = 0;
+    let mut excluded_count = 0;
+    let mut failures: Vec<(String, String)> = Vec::new();
+
+    for path in corpus_files() {
+        let txt = fs::read_to_string(&path).unwrap();
+        let name = path
+            .strip_prefix(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor"))
+            .unwrap_or(&path)
+            .display()
+            .to_string();
+        if let Some(reason) = excluded(&name) {
+            println!("excluded {name}: {reason}");
+            excluded_count += 1;
+            continue;
+        }
+        // Only canonical single-RM-object roots (a top-level `_type`).
+        let Ok(serde_json::Value::Object(map)) = serde_json::from_str::<serde_json::Value>(&txt)
+        else {
+            skipped += 1; // arrays / non-objects (rawdb helpers)
+            continue;
+        };
+        let Some(ty) = map.get("_type").and_then(|v| v.as_str()) else {
+            skipped += 1; // _type-less fragments (rawdb / wrapped)
+            continue;
+        };
+        match deserialize_as(ty, &txt) {
+            Ok(()) => ok += 1,
+            Err(e) => failures.push((name, e)),
+        }
+    }
+
+    println!(
+        "openEHR_SDK corpus: {ok} read OK, {skipped} skipped (non-canonical-root), \
+         {excluded_count} excluded (documented), {} failed",
+        failures.len()
+    );
+    for (f, e) in failures.iter().take(30) {
+        println!("\n--- FAILED: {f}\n  {e}");
+    }
+    assert!(ok > 0, "no corpus files were read");
+    assert!(
+        failures.is_empty(),
+        "{} canonical corpus file(s) failed to deserialize into the generated RM types",
+        failures.len()
+    );
+}
+
+/// Excluded from the *round-trip* gate only (they read fine, but their input is
+/// not itself faithfully re-emittable): a malformed field the parser correctly
+/// drops. Kept separate from [`excluded`] so the readability gate still covers
+/// them.
+fn roundtrip_only_excluded(name: &str) -> Option<&'static str> {
+    let n = name.replace('\\', "/");
+    let n = n.strip_prefix("openehr_sdk/").unwrap_or(&n);
+    match n {
+        // `feeder_system_audit` is placed directly on an INSTRUCTION; it is a
+        // field of FEEDER_AUDIT and belongs under `feeder_audit`. We correctly
+        // ignore the misplaced key, so it cannot round-trip.
+        "composition/canonical_json/all_types_systematic_tests_feeder_audit.json" => Some(
+            "malformed fixture: `feeder_system_audit` misplaced on LOCATABLE (belongs under `feeder_audit`)",
+        ),
+        _ => None,
+    }
+}
+
+/// The strong gate: every canonical file **round-trips losslessly** — deserialize
+/// into the generated RM, re-serialize, and confirm the output is semantically
+/// equal to the input (see [`semantic_eq`] for the three tolerated, information-
+/// preserving differences). This is what proves nothing is silently dropped.
+#[test]
+fn generated_rm_round_trips_the_openehr_sdk_corpus() {
+    let mut ok = 0;
+    let mut excluded_count = 0;
+    let mut failures: Vec<(String, String)> = Vec::new();
+
+    for path in corpus_files() {
+        let txt = fs::read_to_string(&path).unwrap();
+        let name = path
+            .strip_prefix(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor"))
+            .unwrap_or(&path)
+            .display()
+            .to_string();
+        if excluded(&name).is_some() || roundtrip_only_excluded(&name).is_some() {
+            excluded_count += 1;
+            continue;
+        }
+        let Ok(serde_json::Value::Object(map)) = serde_json::from_str::<serde_json::Value>(&txt)
+        else {
+            continue; // non-canonical root (handled by the readability gate)
+        };
+        let Some(ty) = map.get("_type").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let input: serde_json::Value = serde_json::from_str(&txt).unwrap();
+        match reserialize(ty, &txt) {
+            Ok(output) => match semantic_eq(&input, &output, "") {
+                Ok(()) => ok += 1,
+                Err(e) => failures.push((name, e)),
+            },
+            Err(e) => failures.push((name, e)),
+        }
+    }
+
+    println!(
+        "openEHR_SDK round-trip: {ok} lossless, {excluded_count} excluded (documented), {} failed",
+        failures.len()
+    );
+    for (f, e) in failures.iter().take(30) {
+        println!("\n--- LOSSY: {f}\n  {e}");
+    }
+    assert!(ok > 0, "no corpus files were round-tripped");
+    assert!(
+        failures.is_empty(),
+        "{} canonical corpus file(s) did not round-trip losslessly",
+        failures.len()
+    );
+}

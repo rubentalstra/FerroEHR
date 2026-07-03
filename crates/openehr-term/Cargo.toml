@@ -1,0 +1,28 @@
+[package]
+name = "openehr-term"
+version = "0.1.0"
+description = "openEHR TERM 3.1.0 terminology data model, generated from BMM (ADR-004); vendored terminology XML in assets/"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+openehr-base = { path = "../openehr-base" }
+openehr-derive.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true
+
+[package.metadata.cargo-machete]
+# serde_json is emitted by the generator only for schema Any fields; this crate currently has none.
+ignored = ["serde_json"]
+
+[lib]
+# Generated doc comments are verbatim openEHR spec prose (indented examples,
+# fenced snippets), not runnable Rust — behaviour tests live in *_impl.rs.
+doctest = false

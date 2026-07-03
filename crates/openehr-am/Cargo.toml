@@ -1,0 +1,25 @@
+[package]
+name = "openehr-am"
+version = "0.1.0"
+description = "openEHR AM: Archetype Model 1.4.0 (am14) + 2.4.0 (am24), generated from BMM (ADR-004)"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+openehr-base = { path = "../openehr-base" }
+openehr-lang = { path = "../openehr-lang" }
+openehr-derive.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+# Generated doc comments are verbatim openEHR spec prose (indented examples,
+# fenced snippets), not runnable Rust — behaviour tests live in *_impl.rs.
+doctest = false

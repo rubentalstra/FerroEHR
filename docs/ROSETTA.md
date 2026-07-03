@@ -1,16 +1,22 @@
 # ROSETTA — Living Mapping Registry
 
-This is the living Java↔Rust and openEHR-spec↔Rust mapping registry for the
-port. Unlike `docs/PORTING.md` (the general rule set, fixed once written),
-this file accumulates one row per concrete symbol as it gets ported or
-transcribed, so a later session or subagent can look up "where did `X` go"
-without re-deriving it.
+> **⚠️ ADR-004 status:** the **openEHR spec → Rust** table below is now
+> *historical* — those mappings are produced by the code generator
+> (`openehr-codegen`), so the generator's emitter + override map is the live
+> source of truth, not this table. The rows are preserved because they capture
+> hard-won *directed deviations* (e.g. `Octet`→`u8`, `Real`→`f64`,
+> `UUID.value`→`uuid::Uuid`) that should seed the eventual `codegen.toml`. Do not
+> hand-transcribe from this table. The **Java → Rust** table is still live for
+> the `ehrbase-*` application port.
 
-Maintained by the `rosetta-curator` agent and the `rosetta-mapping` skill.
-Append rows as files are ported or transcribed; do not delete a row once a
-symbol has landed, even if the symbol is later renamed — update the row in
-place instead. Kind values are free text but should stay consistent within a
-table (e.g. `struct`, `enum`, `trait`, `fn`, `module`).
+This is the living Java↔Rust and openEHR-spec↔Rust mapping registry for the
+port. The Java↔Rust rows accumulate one per concrete symbol as it gets ported,
+so a later session can look up "where did `X` go" without re-deriving it.
+
+Maintained by the `rosetta-curator` agent and the `rosetta-mapping` skill (for
+the Java→Rust domain). Append rows as application files are ported; do not
+delete a row once a symbol has landed. Kind values are free text but should
+stay consistent within a table (e.g. `struct`, `enum`, `trait`, `fn`, `module`).
 
 ## Java → Rust
 
@@ -72,17 +78,17 @@ table (e.g. `struct`, `enum`, `trait`, `fn`, `module`).
 | `ROUTINE<ARGS>`/`FUNCTION<ARGS,RESULT>`/`PROCEDURE<ARGS>` (BASE foundation_types.functional) | `functional::routine::Routine<Args: Tuple>` trait / `Function = dyn Fn(Args)->Result` / `Procedure = dyn Fn(Args)` | trait + alias | ROUTINE description text contradicts its own signature (flagged, confidence low) — transcribed from signature. |
 | `Bag<T>` | (not transcribed) | — | BASE 1.2.0 declares no Bag class; phase task wording was loose. Do not invent. |
 | `UID` (abstract, BASE identification) | `openehr_base::identification::uid::{UidData, Uid, UidApi}` | struct+enum+trait | Abstract-with-attributes-used-polymorphically: Data embeds, enum closes the subtype set, Api trait shares accessors. |
-| `ISO_OID` / `UUID` / `INTERNET_ID` | `identification::{iso_oid::IsoOid, uuid::Uuid, internet_id::InternetId}` | struct | Pure UID subtypes; `Uuid` deliberately not backed by the uuid crate this pass. |
+| `ISO_OID` / `UUID` / `INTERNET_ID` | `identification::{iso_oid::IsoOid, uuid::Uuid, internet_id::InternetId}` | struct | Pure string-backed UID subtypes; `uid::Uid::parse_value` classifies raw strings from the official BASE grammar, with the external `uuid` crate used only to validate canonical 8-4-4-4-12 UUID text. |
 | `OBJECT_ID` (abstract) | `identification::object_id::{ObjectIdData, ObjectId, ObjectIdApi}` | struct+enum+trait | `ObjectId` enum nests `UidBasedId` (not flattened) so covariant narrowing stays type-direct. |
-| `UID_BASED_ID` (abstract) | `identification::uid_based_id::{UidBasedIdData, UidBasedId, UidBasedIdApi}` | struct+enum+trait | root/extension/has_extension as default trait methods over `value`. |
-| `HIER_OBJECT_ID` / `OBJECT_VERSION_ID` / `VERSION_TREE_ID` | `identification::{hier_object_id, object_version_id, version_tree_id}` | struct | ObjectVersionId's object_id()/creating_system_id() deferred (UID format-sniffing parser todo). |
+| `UID_BASED_ID` (abstract) | `identification::uid_based_id::{UidBasedIdData, UidBasedId, UidBasedIdApi}` | struct+enum+trait | root/extension/has_extension as default trait methods over `value`; `root()` parses the root UID, and `try_root()` is available for unchecked raw strings before Validate enforcement. |
+| `HIER_OBJECT_ID` / `OBJECT_VERSION_ID` / `VERSION_TREE_ID` | `identification::{hier_object_id, object_version_id, version_tree_id}` | struct | `OBJECT_VERSION_ID.object_id()` and `creating_system_id()` parse their UID substrings; fallible `try_*` accessors expose invalid unchecked input without weakening the spec-named functions. |
 | `ARCHETYPE_ID` / `TEMPLATE_ID` / `TERMINOLOGY_ID` / `GENERIC_ID` | `identification::{archetype_id, template_id, terminology_id, generic_id}` | struct | ArchetypeId multi-axis via EBNF string-splitting; TemplateId lexical form spec-undetermined. |
 | `OBJECT_REF` / `PARTY_REF` / `LOCATABLE_REF` | `identification::{object_ref, party_ref, locatable_ref}` | struct | `type` → `r#type`; PartyRef Type_validity as VALID_TYPES const; LocatableRef is the ADR-001 §6 worked example (`id: UidBasedId`). |
 | `_type` discriminator, pre-P4 | `pub const TYPE_NAME: &str` on each concrete class | const | serde not yet a dep of base/foundation; replace with `#[serde(rename)]` at P4. |
 | `Temporal` (BASE foundation_types.time) | `openehr_foundation::time::temporal::Temporal` | trait | `Ordered` supertrait, no members; NOT blanket-implemented (contrast OrderedNumeric) — names a semantic category, concrete types write an explicit empty impl. |
 | `Time_Definitions` (BASE foundation_types.time) | `openehr_foundation::time::time_definitions::TimeDefinitions` | struct (zero-sized, assoc consts+fns) | Template for inheriting a constants-only class: not a supertrait; descendants call `TimeDefinitions::*` directly. |
 | `Iso8601_type` (BASE foundation_types.time, MI) | `openehr_foundation::time::iso8601_type::{Iso8601Type, Iso8601TypeCore}` | trait + struct | ADR-001 §2 worked example: `Iso8601Type: Temporal`; `value: String` embedded via `Iso8601TypeCore` `core` field (future serde flatten at P4/P5). |
-| `Iso8601_date`/`_time`/`_date_time`/`_duration`/`_timezone` | `openehr_foundation::time::iso8601_*::Iso8601{Date,Time,DateTime,Duration,Timezone}` | struct | Partial-precision ISO 8601 string wrappers, not resolved instants; parsing/arithmetic `todo!()` pending jiff-backed engine at P17 — do not add jiff to openehr-foundation before then. |
+| `Iso8601_date`/`_time`/`_date_time`/`_duration`/`_timezone` | `openehr_foundation::time::iso8601_*::Iso8601{Date,Time,DateTime,Duration,Timezone}` | struct | Partial-precision ISO 8601 string wrappers, not resolved instants; `jiff` 0.2.31 backs strict component parsing, validity, comparison, duration magnitude, and exact-date/time arithmetic. Calendar add/subtract over incomplete precision remains a deliberate TODO(port) until the policy is chosen. |
 | `TERMINOLOGY_SERVICE` (RM 1.1.0 support) | `openehr_terminology::TerminologyService` | struct | Preconditions surface as Option; constants-class Inherit realised as direct calls; `bundled()` is a LazyLock singleton over vendored assets. |
 | `TERMINOLOGY_ACCESS` (RM 1.1.0 support, interface) | `openehr_terminology::{TerminologyAccess, BundledTerminologyAccess}` | trait+struct | Three published-table defects transcribed per intent and flagged (bare CODE_PHRASE return, parameterless has_code_for_group_id, rubric language). |
 | `CODE_SET_ACCESS` (RM 1.1.0 support, interface) | `openehr_terminology::{CodeSetAccess, BundledCodeSetAccess}` | trait+struct | `has_lang` delegates to `has_code` (spec defines no distinct semantics outside the languages set). |
@@ -108,6 +114,7 @@ table (e.g. `struct`, `enum`, `trait`, `fn`, `module`).
 | `ITEM_TAG` (RM common.tags) | `openehr_rm::common::directory::item_tag::ItemTag` | struct | Declared by master07-tags.adoc (a real RM 1.1.0 class, not experimental); colocated under directory/ with a loud provenance PORT NOTE. |
 | `VERSIONED_OBJECT<T>` internal storage | `Vec<Version<T>>` | struct | Spec explicitly leaves representation undefined — PORT-NOTEd choice. |
 | `DATA_VALUE` (RM data_types, abstract, no attributes) | `openehr_rm::data_types::data_value::{DataValueApi, DataValue}` | trait+enum | §1 trait + §4 closed enum, no Data struct (stateless); enum spans all subpackages via forward refs. Inherits OPENEHR_DEFINITIONS constants class → direct calls, no supertrait. |
+| `DV_URI` / `DV_EHR_URI` | `openehr_rm::data_types::uri::{dv_uri::{DvUriData, DvUri}, dv_ehr_uri::DvEhrUri}` | struct | URI value remains a stored `String`; scheme/path/query/fragment accessors extract RFC3986 components without normalising, so RM plain-text URI allowance preserves spaces, dot segments, and empty authority paths. |
 | `DV_TEXT` / `DV_CODED_TEXT` (RM data_types.text) | `text::dv_text::{DvTextData, DvText, DvTextApi}` + `dv_coded_text::DvCodedText` | struct+enum+trait | Triple extended to a CONCRETE parent/child pair — DV_PARAGRAPH.items: List<DV_TEXT> is a load-bearing substitutability site. Overlap with DataValue::CodedText flagged for P4/P17. |
 | `TERM_MAPPING.match: char` (closed 4-value domain) | `text::term_mapping::MatchKind` | enum | Closed-VALUE-domain → enum (distinct from closed-class-hierarchy); TryFrom<char>/as_char() bridge. |
 | `CODE_PHRASE` (RM data_types.text) | `text::code_phrase::CodePhrase` | struct | No Inherit row — standalone leaf, NOT a DATA_VALUE; embeds openehr_base TerminologyId; three-way TerminologyCode reconciliation documented, deferred to P17. |
@@ -135,3 +142,15 @@ table (e.g. `struct`, `enum`, `trait`, `fn`, `module`).
 | concrete class embedding a concrete parent (PARTY_REF←OBJECT_REF, ATTESTATION←AUDIT_DETAILS, PARTY_RELATED←PARTY_IDENTIFIED) | re-declare parent fields or embed an untagged `*Data` split | pattern | ADR-002; flattening the self-tagged parent leaks a wrong inner `_type` — verified failure mode |
 | `VERSIONED_OBJECT.versions` internal store | `#[serde(skip_serializing_if = "Vec::is_empty")]` | field | not part of the ITS-JSON wire shape (uid/owner_id/time_created only) |
 | `RESOURCE_DESCRIPTION_ITEM.language` etc. (`type TerminologyCode = String` placeholder) | real `openehr_foundation` `TerminologyCode` | field | placeholder alias reconciled at P4 (foundation type now serde-ready), ahead of the planned P17 |
+| definite temporal arithmetic (`Iso8601_*.add/subtract/diff`) | seconds via `Time_definitions` `AVERAGE_DAYS_IN_{YEAR,MONTH}` + exact `jiff::SignedDuration` | fn | ADR-003 §1; `diff` returns definite units only (days-and-below, never nominal Y/M) |
+| nominal temporal arithmetic (`add_nominal`/`subtract_nominal`) | calendar `jiff::Span` on civil values, end-of-month clamping | fn | ADR-003 §2; sub-day components stay exact |
+| arithmetic on a partial ISO 8601 value | fill unknown components with minimums → compute → truncate to the receiver's precision | pattern | ADR-003 §3; timezone text preserved verbatim, arithmetic is civil |
+| `Integer.modulo`/`Integer64.modulo` sign (spec-silent) | truncated division (Rust `%`, == Java `%`) | fn | ADR-003 §4; `// PORT NOTE` at each site |
+| RFC 3986 URI validity (`Uri`/`DV_URI`/`DV_EHR_URI`) | `url` crate for absolute URIs, RFC 3986 generic-syntax check otherwise; stored text never normalized | fn | ADR-003 §5; `openehr-foundation` gained the `url` dep |
+| `Container<T>` iteration primitive (spec declares none) | required `fn items(&self) -> impl Iterator<Item=&T>` (RPITIT, explicit `<'a>` lifetime); `there_exists`/`for_all`/`matching`/`select` become default methods | trait | ADR-003 §6; `Set`/`Hash` document unordered iteration |
+| `Any.instance_of(type_name)` (reflection-by-name) | left unimplemented, documented deviation (no Rust type registry) | note | ADR-003 §7; not a `todo!()` |
+| RM invariant taking terminology (`is_change_type_valid` etc.) | `fn invariant_x(&self, &TerminologyService) -> bool` via `has_code_for_group_id` / `code_set_for_id(..).has_code(..)` | pattern | ADR-003 §8; working method now, P11 Validate-framework wiring later |
+| genuinely spec-underdetermined function (DV_PROPORTION/DV_COUNT arithmetic, HISTORY `as_hierarchy`, ITEM_TABLE key-column, `VERSION.canonical_form`) | `todo!("port: <cited reason>")` | pattern | do NOT invent behaviour openEHR leaves undefined; cite the spec defect or the later phase |
+| HL7v3 GTS `PIVL<T>`/`EIVL<T>` textual subset (DV_PERIODIC/GENERAL_TIME_SPECIFICATION) | `regex` + `LazyLock<Regex>` parser in `time_specification::hl7v3_syntax` | module | ISO-8601 `difference` passes through, Better shorthand (`1mo`→`P1M`) normalized; full GTS deferred |
+| canonical-JSON round-trip oracle | real EHRbase `openEHR_SDK` corpus in `crates/openehr-its/tests/vendor/` (deserialize→re-serialize→normalized equality + ITS-JSON schema validation) | test pattern | replaced circular hand-built fixtures; provenance in `tests/vendor/PROVENANCE.md` |
+| archie default-omitted `Interval` boolean flags on the wire | `#[serde(default)]`/`default_true` read-leniency; output re-emits all four (schema-conformant) | field | round-trip normalizer rule R3 tolerates the re-materialized default; ADR-003 / `Point_interval` defaults |

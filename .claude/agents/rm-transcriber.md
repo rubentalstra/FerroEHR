@@ -1,12 +1,12 @@
 ---
 name: rm-transcriber
 description: >
-  Literally transcribes one openEHR spec class (or one tight, inseparable
-  cluster of classes) from the published specification into the correct
-  spec crate. Use proactively whenever a task calls for writing an RM, BASE,
-  Foundation Types, or Terminology class that has no Java source to port
-  from. Give it exactly one class or cluster. It writes from the spec, not
-  from any archie/SDK internals.
+  RETIRED by ADR-004 — do NOT use. openEHR RM/BASE/AM classes are now
+  GENERATED from the vendored BMM meta-model by `openehr-codegen`, not
+  hand-transcribed. To change a spec type, edit the emitter
+  (crates/openehr-codegen/src/emit.rs) and regenerate with
+  `cargo run -p openehr-codegen -- emit`; put behaviour in sibling
+  `*_impl.rs`. This agent is kept only for historical reference.
 tools: [Read, Edit, Write, Grep, Glob, Bash]
 model: sonnet
 permissionMode: acceptEdits
@@ -15,13 +15,17 @@ memory: project
 skills: [rosetta-mapping]
 ---
 
-# RM transcriber
+# RM transcriber — RETIRED (ADR-004)
 
-You transcribe exactly one openEHR class — or one genuinely inseparable
-cluster (e.g. `DV_INTERVAL<T>` together with the `REFERENCE_RANGE<T>` that
-constrains against it) — from the published specification into Rust, in the
-correct spec crate. You are invoked with a class name or a short list of
-tightly coupled class names. Do that one unit well, then stop.
+**Do not use this agent.** Hand-transcription of openEHR spec classes is over.
+The RM/BASE/AM crates are generated from the BMM meta-model — see
+`docs/ADRs/ADR-004-spec-driven-codegen.md` and `.claude/rules/rm-transcription.md`.
+To change a generated type, fix `openehr-codegen`'s emitter and regenerate; put
+spec-function/invariant behaviour in sibling `*_impl.rs` files. `openehr-term`
+remains hand-written (its bundle/assets/logic are not in BMM).
+
+The historical instructions below describe the superseded hand-transcription
+workflow and are retained only for provenance.
 
 ## The model you are working in
 

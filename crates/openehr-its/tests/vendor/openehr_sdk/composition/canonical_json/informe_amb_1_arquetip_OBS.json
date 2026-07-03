@@ -1,0 +1,482 @@
+{
+  "_type": "COMPOSITION",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "informe_amb_1_arquetip_OBS"
+  },
+  "archetype_details": {
+    "archetype_id": {
+      "value": "openEHR-EHR-COMPOSITION.informe_ad_hoc.v0"
+    },
+    "template_id": {
+      "value": "informe_amb_1_arquetip_OBS"
+    },
+    "rm_version": "1.0.4"
+  },
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_639-1"
+    },
+    "code_string": "en"
+  },
+  "territory": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_3166-1"
+    },
+    "code_string": "ES"
+  },
+  "category": {
+    "_type": "DV_CODED_TEXT",
+    "value": "episodic",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "451"
+    }
+  },
+  "composer": {
+    "_type": "PARTY_IDENTIFIED",
+    "name": "P.openehr"
+  },
+  "context": {
+    "_type": "EVENT_CONTEXT",
+    "start_time": {
+      "_type": "DV_DATE_TIME",
+      "value": "2025-01-13T16:15:17,9801747"
+    },
+    "setting": {
+      "_type": "DV_CODED_TEXT",
+      "value": "primary medical care",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "openehr"
+        },
+        "code_string": "228"
+      }
+    }
+  },
+  "content": [
+    {
+      "_type": "OBSERVATION",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "resum_RIQCat"
+      },
+      "archetype_details": {
+        "archetype_id": {
+          "value": "openEHR-EHR-COMPOSITION.informe_ad_hoc.v0"
+        },
+        "template_id": {
+          "value": "informe_amb_1_arquetip_OBS"
+        },
+        "rm_version": "1.0.4"
+      },
+      "language": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "ISO_639-1"
+        },
+        "code_string": "en"
+      },
+      "encoding": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "IANA_character-sets"
+        },
+        "code_string": "UTF-8"
+      },
+      "subject": {
+        "_type": "PARTY_IDENTIFIED",
+        "name": "P.openehr"
+      },
+      "data": {
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "History"
+        },
+        "origin": {
+          "_type": "DV_DATE_TIME",
+          "value": "2025-01-13T16:15:17,9801747"
+        },
+        "events": [
+          {
+            "_type": "POINT_EVENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Any event"
+            },
+            "time": {
+              "_type": "DV_DATE_TIME",
+              "value": "2025-01-13T16:15:17,9801747"
+            },
+            "data": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "Tree"
+              },
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Centre realitzador"
+                  },
+                  "value": {
+                    "_type": "DV_TEXT",
+                    "value": "Sant Pau"
+                  },
+                  "archetype_node_id": "at0004"
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Data d'ingrés del pacient"
+                  },
+                  "value": {
+                    "_type": "DV_DATE_TIME",
+                    "value": "2025-01-01T11:42:00"
+                  },
+                  "archetype_node_id": "at0005"
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Data d'intervenció del pacient"
+                  },
+                  "value": {
+                    "_type": "DV_DATE_TIME",
+                    "value": "2025-01-02T11:42:00"
+                  },
+                  "archetype_node_id": "at0006"
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Data d'alta del pacient"
+                  },
+                  "value": {
+                    "_type": "DV_DATE_TIME",
+                    "value": "2025-01-07T11:42:00"
+                  },
+                  "archetype_node_id": "at0007"
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Tipus d'intervenció"
+                  },
+                  "value": {
+                    "_type": "DV_ORDINAL",
+                    "symbol": {
+                      "_type": "DV_CODED_TEXT",
+                      "value": "Primera intervenció",
+                      "defining_code": {
+                        "_type": "CODE_PHRASE",
+                        "terminology_id": {
+                          "_type": "TERMINOLOGY_ID",
+                          "value": "local"
+                        },
+                        "code_string": "at0009"
+                      }
+                    },
+                    "value": 1
+                  },
+                  "archetype_node_id": "at0008"
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Codi procediment"
+                  },
+                  "value": {
+                    "_type": "DV_TEXT",
+                    "value": "0FB00ZZ"
+                  },
+                  "archetype_node_id": "at0012"
+                },
+                {
+                  "_type": "CLUSTER",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Implant"
+                  },
+                  "items": [
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Implant 1"
+                      },
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Codi tipus implant EMDN"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "P0701"
+                          },
+                          "archetype_node_id": "at0024"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número identificatiu de l'implant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "111"
+                          },
+                          "archetype_node_id": "at0025"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número de serie de l'implant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "333"
+                          },
+                          "archetype_node_id": "at0027"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Nom/descripció del producte"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "444"
+                          },
+                          "archetype_node_id": "at0028"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Nom del fabricant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "555"
+                          },
+                          "archetype_node_id": "at0029"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número d'identificació del fabricant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "666"
+                          },
+                          "archetype_node_id": "at0030"
+                        }
+                      ],
+                      "archetype_node_id": "at0014"
+                    },
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Implant 2"
+                      },
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Codi tipus implant EMDN"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "P0702"
+                          },
+                          "archetype_node_id": "at0031"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número identificatiu de l'implant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "1111"
+                          },
+                          "archetype_node_id": "at0032"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número de serie de l'implant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "3333"
+                          },
+                          "archetype_node_id": "at0034"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Nom/descripció del producte"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "4444"
+                          },
+                          "archetype_node_id": "at0035"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Nom del fabricant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "5555"
+                          },
+                          "archetype_node_id": "at0036"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número d'identificació del fabricant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "6666"
+                          },
+                          "archetype_node_id": "at0037"
+                        }
+                      ],
+                      "archetype_node_id": "at0015"
+                    },
+                    {
+                      "_type": "CLUSTER",
+                      "name": {
+                        "_type": "DV_TEXT",
+                        "value": "Implant 3"
+                      },
+                      "items": [
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Codi tipus implant EMDN"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "P0703"
+                          },
+                          "archetype_node_id": "at0038"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número identificatiu de l'implant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "11111"
+                          },
+                          "archetype_node_id": "at0039"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número de serie de l'implant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "33333"
+                          },
+                          "archetype_node_id": "at0041"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Nom/descripció del producte"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "55555"
+                          },
+                          "archetype_node_id": "at0042"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Nom del fabricant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "44444"
+                          },
+                          "archetype_node_id": "at0043"
+                        },
+                        {
+                          "_type": "ELEMENT",
+                          "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Número d'identificació del fabricant"
+                          },
+                          "value": {
+                            "_type": "DV_TEXT",
+                            "value": "66666"
+                          },
+                          "archetype_node_id": "at0044"
+                        }
+                      ],
+                      "archetype_node_id": "at0016"
+                    }
+                  ],
+                  "archetype_node_id": "at0013"
+                }
+              ],
+              "archetype_node_id": "at0003"
+            },
+            "archetype_node_id": "at0002"
+          }
+        ],
+        "archetype_node_id": "at0001"
+      },
+      "archetype_node_id": "openEHR-EHR-OBSERVATION.resum_riqcat.v0"
+    }
+  ],
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.informe_ad_hoc.v0"
+}
