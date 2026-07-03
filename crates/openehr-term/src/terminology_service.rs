@@ -46,7 +46,7 @@ impl TerminologyService {
     pub fn from_bundled_assets() -> Result<Self, TerminologyError> {
         let mut terminologies = Vec::new();
         for (language, xml) in assets::bundled_language_xml() {
-            let terminology = parse_terminology(xml, "openehr_terminology.xml")?;
+            let terminology = parse_terminology(xml, "openehr_term.xml")?;
             debug_assert_eq!(terminology.language, language);
             terminologies.push(terminology);
         }

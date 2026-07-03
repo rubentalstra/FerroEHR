@@ -1,17 +1,17 @@
 ---
-paths: ["crates/openehr-server/**"]
+paths: ["crates/ehrbase/**"]
 ---
 
 # sqlx + sea-query conventions
 
-`openehr-server` is the only crate that talks to PostgreSQL. It replaces
+`ehrbase` is the only crate that talks to PostgreSQL. It replaces
 EHRbase's jOOQ + Flyway persistence layer with `sqlx` 0.9 (driver, pool,
 migrations) and `sea-query` 0.32 + `sea-query-binder` 0.7 (the jOOQ-DSL
 analogue for the AQL→SQL engine). Target PostgreSQL 18.4+.
 
 ## Migrations
 
-- `crates/openehr-server/migrations/` holds the Flyway SQL copied **verbatim**
+- `crates/ehrbase/migrations/` holds the Flyway SQL copied **verbatim**
   from EHRbase's `jooq-pg` module in the Phase 0 `git mv`. Do not edit a
   migration that has already shipped in a prior phase — append a new
   migration file instead, exactly as Flyway/EHRbase would have.

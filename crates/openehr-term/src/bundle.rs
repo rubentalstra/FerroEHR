@@ -1,7 +1,7 @@
-//! Parsed model of `openehr_terminology.xml` (and the structurally identical
+//! Parsed model of `openehr_term.xml` (and the structurally identical
 //! `openehr_external_terminologies.xml`), plus the quick-xml pull parser.
 //!
-//! The document shape (per `assets/schema/openehr_terminology.xsd`):
+//! The document shape (per `assets/schema/openehr_term.xsd`):
 //!
 //! ```xml
 //! <terminology name="openehr" language="en" version="3.0.0" date="...">
@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn parses_the_bundled_en_terminology() {
-        let t = parse_terminology(assets::OPENEHR_TERMINOLOGY_EN, "en/openehr_terminology.xml")
+        let t = parse_terminology(assets::OPENEHR_TERMINOLOGY_EN, "en/openehr_term.xml")
             .expect("bundled en terminology must parse");
         assert_eq!(t.name, "openehr");
         assert_eq!(t.language, "en");
@@ -306,7 +306,7 @@ mod tests {
         // SPECPR-51: concept id 532 has rubric "complete" in
         // 'version lifecycle state' but "completed" in 'instruction states'.
         // The bundle keeps both, untouched, in document order.
-        let t = parse_terminology(assets::OPENEHR_TERMINOLOGY_EN, "en/openehr_terminology.xml")
+        let t = parse_terminology(assets::OPENEHR_TERMINOLOGY_EN, "en/openehr_term.xml")
             .expect("bundled en terminology must parse");
 
         let version_lifecycle = t
@@ -333,8 +333,8 @@ mod tests {
 
 // ─────────────────────────────────────────────
 // PORT STATUS
-//   source: TERM Release-3.0.0 computable/XML (openehr_terminology.xsd shape) — crates/openehr-terminology/assets/ (Release-3.0.0 @ d45ef3e)
-//   source_loc: assets/schema/openehr_terminology.xsd
+//   source: TERM Release-3.0.0 computable/XML (openehr_term.xsd shape) — crates/openehr-term/assets/ (Release-3.0.0 @ d45ef3e)
+//   source_loc: assets/schema/openehr_term.xsd
 //   confidence: high
 //   todos: 0
 //   note: duplicates kept verbatim (SPECPR-51 id=532); parser is shared by the language bundles and the external terminologies file

@@ -1,7 +1,7 @@
 //! openEHR TERM 3.x — terminology bundle and terminology service API.
 //!
 //! Spec crate: bundles the vendored TERM Release-3.0.0 XML assets
-//! (`openehr_terminology.xml` per language, the external ISO/IANA code sets,
+//! (`openehr_term.xml` per language, the external ISO/IANA code sets,
 //! `PropertyUnitData.xml`) and implements the `rm.support.terminology`
 //! service surface (`TERMINOLOGY_SERVICE`, `TERMINOLOGY_ACCESS`,
 //! `CODE_SET_ACCESS`, and the two identifier constants classes).

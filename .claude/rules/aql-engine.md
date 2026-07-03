@@ -1,5 +1,5 @@
 ---
-paths: ["crates/openehr-aql/**", "crates/openehr-server/src/aql/**"]
+paths: ["crates/openehr-query/**", "crates/ehrbase/src/aql/**"]
 ---
 
 # AQL engine rules
@@ -8,10 +8,10 @@ The AQL engine is the crown jewel and the hardest part of the port
 (PORT_MASTER_PLAN.md Section 6, difficulty map: AQL planner/SQL generator are
 VERY HARD). It splits across two locations:
 
-- `crates/openehr-aql/` — the spec crate: AQL 1.1.0 lexer, parser, AST, and
+- `crates/openehr-query/` — the spec crate: AQL 1.1.0 lexer, parser, AST, and
   semantic/path analysis against Web Templates. No Java receives this; it is
   written from the QUERY 1.1.0 specification.
-- `crates/openehr-server/src/aql/` — receives EHRbase's `aql-engine` Maven
+- `crates/ehrbase/src/aql/` — receives EHRbase's `aql-engine` Maven
   module Java in place: the ASL (Abstract SQL Layer, EHRbase's own IR), the
   ASL rewrite/optimize passes, and the ASL→SQL translator.
 
@@ -49,11 +49,11 @@ generation pass simplify the emitted SQL, note that as `// PERF(port):`
 during Stage 1 and apply it only after parity (P19 Optimization), unless the
 phase task explicitly calls for using `JSON_TABLE` where viable (P13).
 
-## Boundary with openehr-server
+## Boundary with ehrbase
 
-`openehr-aql` produces a parsed, semantically-analyzed AST. Everything after
+`openehr-query` produces a parsed, semantically-analyzed AST. Everything after
 that (ASL construction, SQL generation, execution against `sqlx`/
-`sea-query`) lives in `openehr-server`. Keep this boundary; do not let SQL
+`sea-query`) lives in `ehrbase`. Keep this boundary; do not let SQL
 concerns leak into the spec crate, and do not let grammar/parsing concerns
 leak into the server crate.
 

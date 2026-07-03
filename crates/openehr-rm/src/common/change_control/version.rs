@@ -13,7 +13,7 @@ use openehr_base::identification::object_version_id::ObjectVersionId;
 use openehr_base::identification::uid::UidApi;
 use openehr_base::identification::uid_based_id::UidBasedIdData;
 use openehr_foundation::serde_support::TypeTag;
-use openehr_terminology::{
+use openehr_term::{
     OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
 };
 

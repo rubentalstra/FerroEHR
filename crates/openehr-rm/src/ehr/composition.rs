@@ -19,7 +19,7 @@ use crate::common::archetyped::locatable::LocatableData;
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
-use openehr_terminology::{
+use openehr_term::{
     CodeSetAccess, OpenehrCodeSetIdentifiers, OpenehrTerminologyGroupIdentifiers,
     TerminologyAccess, TerminologyCode, TerminologyService,
 };
@@ -213,7 +213,7 @@ mod tests {
     use openehr_base::identification::object_id::ObjectIdData;
     use openehr_base::identification::terminology_id::TerminologyId;
     use openehr_foundation::serde_support::TypeTag;
-    use openehr_terminology::TerminologyService;
+    use openehr_term::TerminologyService;
 
     fn code_phrase(terminology: &str, code: &str) -> CodePhrase {
         CodePhrase {

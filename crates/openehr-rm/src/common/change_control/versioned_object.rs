@@ -209,7 +209,7 @@ impl<T> VersionedObject<T> {
     /// PORT NOTE: the spec precondition is surfaced as `Option` (`None`
     /// where `has_version_id` fails) rather than a contract violation,
     /// matching the crate-wide precedent set by
-    /// `openehr_terminology::TerminologyService::terminology`.
+    /// `openehr_term::TerminologyService::terminology`.
     pub fn version_with_id(&self, a_version_uid: &ObjectVersionId) -> Option<&Version<T>> {
         self.versions
             .iter()

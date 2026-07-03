@@ -12,7 +12,7 @@ publish = false
 [dependencies]
 openehr-base = { path = "../openehr-base" }
 openehr-foundation = { path = "../openehr-foundation" }
-openehr-terminology = { path = "../openehr-terminology" }
+openehr-term = { path = "../openehr-term" }
 base64.workspace = true
 regex.workspace = true
 serde.workspace = true

@@ -22,7 +22,7 @@ use super::term_mapping::TermMapping;
 use crate::data_types::data_value::DataValueApi;
 use crate::data_types::uri::dv_uri::DvUri;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
-use openehr_terminology::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
+use openehr_term::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
 use serde::{Deserialize, Serialize};
 
 /// Canonical `_type` discriminator string for this class, single-sourced

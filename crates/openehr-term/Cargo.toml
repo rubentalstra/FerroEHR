@@ -1,5 +1,5 @@
 [package]
-name = "openehr-terminology"
+name = "openehr-term"
 version = "0.1.0"
 description = "openEHR TERM 3.x terminology bundle and terminology service"
 edition.workspace = true

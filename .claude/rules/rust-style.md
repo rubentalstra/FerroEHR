@@ -46,7 +46,7 @@ web service, not a runtime).
 ## Type and error conventions
 
 - `thiserror` error enums in library crates; `anyhow` only in the
-  `openehr-server` binary. No `unwrap`/`expect` outside `#[cfg(test)]`; use
+  `ehrbase` binary. No `unwrap`/`expect` outside `#[cfg(test)]`; use
   `todo!()` or `// TODO(port):` where the real value is not yet available.
 - Closed openEHR subtype sets (`DATA_VALUE`, `ITEM`, `CONTENT_ITEM`,
   `PARTY_PROXY`, `VERSION<T>`) are Rust `enum`s. Trait objects only for

@@ -1,7 +1,7 @@
 [package]
-name = "openehr-aql"
+name = "ehrbase-compat"
 version = "0.1.0"
-description = "AQL 1.1.0 lexer, parser, AST, and semantic analysis"
+description = "EHRbase-compatible endpoints: EhrScape, WebTemplate export; receives rest-ehr-scape"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -10,8 +10,8 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-openehr-rm = { path = "../openehr-rm" }
-openehr-adl = { path = "../openehr-adl" }
+ehrbase-rest = { path = "../ehrbase-rest" }
+openehr-flat = { path = "../openehr-flat" }
 
 [lints]
 workspace = true

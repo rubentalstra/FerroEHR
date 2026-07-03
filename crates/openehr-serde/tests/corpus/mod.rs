@@ -242,23 +242,23 @@ fn vendor_root() -> PathBuf {
 }
 
 /// The four in-repo EHRbase test resources referenced relative to this
-/// crate's manifest dir (they live in the sibling `openehr-server` crate).
+/// crate's manifest dir (they live in the sibling `ehrbase` crate).
 /// Each is paired with its dispatch class.
 const IN_REPO: &[(&str, &str)] = &[
     (
-        "../openehr-server/tests/resources/service/org/ehrbase/repository/conformance_ehrbase.de.v0_max.json",
+        "../ehrbase/tests/resources/service/org/ehrbase/repository/conformance_ehrbase.de.v0_max.json",
         "COMPOSITION",
     ),
     (
-        "../openehr-server/tests/resources/aql/org/ehrbase/openehr/aqlengine/testdata/composition.json",
+        "../ehrbase/tests/resources/aql/org/ehrbase/openehr/aqlengine/testdata/composition.json",
         "COMPOSITION",
     ),
     (
-        "../openehr-server/tests/resources/config/composition.json",
+        "../ehrbase/tests/resources/config/composition.json",
         "COMPOSITION",
     ),
     (
-        "../openehr-server/tests/resources/config/ehr_status.json",
+        "../ehrbase/tests/resources/config/ehr_status.json",
         "EHR_STATUS",
     ),
 ];
@@ -350,7 +350,7 @@ pub fn coverage_corpus() -> Vec<CorpusFile> {
 
     for (rel, class) in IN_REPO {
         let path = manifest_dir().join(rel);
-        // Strip the `../openehr-server/tests/resources/` prefix for a tidy id.
+        // Strip the `../ehrbase/tests/resources/` prefix for a tidy id.
         let short = rel.rsplit("resources/").next().unwrap_or(rel).to_string();
         files.push(CorpusFile {
             id: format!("in-repo/{short}"),

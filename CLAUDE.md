@@ -6,8 +6,10 @@ Pure-Rust 1:1 port of EHRbase (Java/Spring Boot to Rust), in a single root Cargo
 
 Single workspace. EHRbase's Java has been moved into `crates/openehr-*` (Phase 0 `git mv`). During the port, Java and Rust coexist in the same directory: port each `.java` to a `.rs` beside it, then delete the Java only in the phase that reaches parity.
 
-- `crates/openehr-foundation`, `openehr-base`, `openehr-terminology`, `openehr-rm`, `openehr-serde`, `openehr-odin`, `openehr-bmm`, `openehr-adl`, `openehr-flat`, `openehr-aql` — openEHR spec crates, written from the specifications (they have no Java; EHRbase used external `archie`/SDK).
-- `crates/openehr-rest`, `openehr-ehrbase-compat`, `openehr-server` — receive EHRbase's server Java, ported in place. `openehr-server` is the binary.
+**Crate naming (ADR-004):** `openehr-*` = the openEHR **specification** (increasingly *generated* from the vendored BMM meta-model, not hand-transcribed); `ehrbase-*` = the ported **EHRbase application**.
+
+- `crates/openehr-foundation`, `openehr-base`, `openehr-term`, `openehr-rm`, `openehr-serde`, `openehr-lang`, `openehr-am`, `openehr-flat`, `openehr-query` — openEHR spec crates, one per spec component (`openehr-lang` = LANG: ODIN + BMM; `openehr-am` = AM; `openehr-query` = AQL/QUERY). `openehr-codegen` (BMM→Rust generator) + `openehr-derive` (proc-macro) join this set. `openehr-foundation` folds into `openehr-base` at the codegen pass.
+- `crates/ehrbase-rest`, `ehrbase-compat`, `ehrbase` — the ported EHRbase application; receive EHRbase's server Java, ported in place. `ehrbase` is the binary.
 - `docs/` — plans, research, ADRs, ROSETTA, PORTING, VERSIONS, LIFETIMES.
 - `.claude/` — rules, skills, agents, hooks.
 
@@ -75,7 +77,7 @@ scripts/parity.sh              # add USE_REFERENCE_EHRBASE=1 for the negative-te
 
 Note: Phases P1 through P16 are not required to compile. `cargo build` is expected to fail until P17 (make-it-compile). This is by design; do not chase build errors during translation.
 
-Exception (since P4): `openehr-foundation`, `openehr-base`, `openehr-terminology`, `openehr-rm`, and `openehr-serde` DO compile and have green tests (`cargo test -p <crate>`). Changes to these five crates must keep them compiling, tested, and clippy-clean; ADR-003 fixes the policies for spec-underdetermined behaviour in them. The Phase-A no-compile allowance now applies only to the crates that have not yet reached this bar.
+Exception (since P4): `openehr-foundation`, `openehr-base`, `openehr-term`, `openehr-rm`, and `openehr-serde` DO compile and have green tests (`cargo test -p <crate>`). Changes to these five crates must keep them compiling, tested, and clippy-clean; ADR-003 fixes the policies for spec-underdetermined behaviour in them. The Phase-A no-compile allowance now applies only to the crates that have not yet reached this bar.
 
 ## Conventions
 

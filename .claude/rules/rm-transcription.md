@@ -1,5 +1,5 @@
 ---
-paths: ["crates/openehr-rm/**", "crates/openehr-base/**", "crates/openehr-foundation/**", "crates/openehr-terminology/**"]
+paths: ["crates/openehr-rm/**", "crates/openehr-base/**", "crates/openehr-foundation/**", "crates/openehr-term/**"]
 ---
 
 # RM / BASE / Terminology transcription rules
@@ -62,6 +62,6 @@ rather than skipping the trait entirely.
 ## Crate boundaries
 
 `openehr-foundation` (primitives, `Interval<T>`, ISO 8601 temporals) has no
-internal deps. `openehr-base` depends on it. `openehr-terminology` depends on
+internal deps. `openehr-base` depends on it. `openehr-term` depends on
 `openehr-base`. `openehr-rm` depends on both `openehr-base` and
-`openehr-terminology`. Never point a dependency arrow upward.
+`openehr-term`. Never point a dependency arrow upward.

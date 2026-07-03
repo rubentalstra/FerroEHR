@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 // worktree. Forward-reference to its eventual module path.
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
-use openehr_terminology::{
+use openehr_term::{
     OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
 };
 

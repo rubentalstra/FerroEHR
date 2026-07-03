@@ -1,5 +1,5 @@
 [package]
-name = "openehr-server"
+name = "ehrbase"
 version = "0.1.0"
 description = "EHRbase server binary: persistence, AQL execution engine (ASL), versioning, contributions"
 edition.workspace = true
@@ -12,16 +12,15 @@ publish = false
 [dependencies]
 openehr-foundation = { path = "../openehr-foundation" }
 openehr-base = { path = "../openehr-base" }
-openehr-terminology = { path = "../openehr-terminology" }
+openehr-term = { path = "../openehr-term" }
 openehr-rm = { path = "../openehr-rm" }
 openehr-serde = { path = "../openehr-serde" }
-openehr-odin = { path = "../openehr-odin" }
-openehr-bmm = { path = "../openehr-bmm" }
-openehr-adl = { path = "../openehr-adl" }
+openehr-lang = { path = "../openehr-lang" }
+openehr-am = { path = "../openehr-am" }
 openehr-flat = { path = "../openehr-flat" }
-openehr-aql = { path = "../openehr-aql" }
-openehr-rest = { path = "../openehr-rest" }
-openehr-ehrbase-compat = { path = "../openehr-ehrbase-compat" }
+openehr-query = { path = "../openehr-query" }
+ehrbase-rest = { path = "../ehrbase-rest" }
+ehrbase-compat = { path = "../ehrbase-compat" }
 
 [lints]
 workspace = true

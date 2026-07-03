@@ -32,7 +32,7 @@ pub enum TerminologyError {
         attribute: &'static str,
     },
 
-    /// The document structure deviates from the `openehr_terminology.xsd` shape.
+    /// The document structure deviates from the `openehr_term.xsd` shape.
     #[error("unexpected structure in {source_name}: {detail}")]
     UnexpectedStructure {
         /// Which bundled asset was being parsed.

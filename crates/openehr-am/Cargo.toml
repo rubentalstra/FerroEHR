@@ -1,7 +1,7 @@
 [package]
-name = "openehr-rest"
+name = "openehr-am"
 version = "0.1.0"
-description = "openEHR ITS-REST 1.0.3 server surface (axum); receives EHRbase rest-openehr"
+description = "ADL 1.4 + ADL 2 parsers, AOM 1.4 + AOM 2, OPT 1.4 XML, OPT 2 flattener"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -10,13 +10,13 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+openehr-lang = { path = "../openehr-lang" }
 openehr-rm = { path = "../openehr-rm" }
 openehr-serde = { path = "../openehr-serde" }
-openehr-adl = { path = "../openehr-adl" }
-openehr-aql = { path = "../openehr-aql" }
 
 [features]
-admin-api = []
+adl2 = []
+opt2 = []
 
 [lints]
 workspace = true

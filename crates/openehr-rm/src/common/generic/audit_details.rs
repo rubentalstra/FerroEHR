@@ -35,7 +35,7 @@ use crate::data_types::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
-use openehr_terminology::{
+use openehr_term::{
     OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
 };
 use serde::{Deserialize, Serialize};

@@ -27,9 +27,9 @@
 //!   `crate::support::measurement_service::MeasurementService`.
 //! - `TERMINOLOGY_SERVICE` was transcribed in **P2**, directly into the
 //!   `openehr-terminology` crate, as
-//!   [`openehr_terminology::TerminologyService`] — a **concrete struct**
+//!   [`openehr_term::TerminologyService`] — a **concrete struct**
 //!   backed by the bundled TERM Release-3.0.0 XML assets
-//!   (`crates/openehr-terminology/src/terminology_service.rs`), with
+//!   (`crates/openehr-term/src/terminology_service.rs`), with
 //!   inherent (non-trait) methods and a process-wide `bundled()`
 //!   singleton accessor. It is not a trait, and no
 //!   `TerminologyServiceTrait`-shaped abstraction over it exists anywhere
@@ -54,7 +54,7 @@
 //!    touching a crate this transcription is not scoped to touch.
 //! 2. Model `EXTERNAL_ENVIRONMENT_ACCESS` asymmetrically: a
 //!    `MeasurementService` trait bound (behaviour) plus an *owned or
-//!    borrowed* `&'static openehr_terminology::TerminologyService`
+//!    borrowed* `&'static openehr_term::TerminologyService`
 //!    field/accessor (state — since it is a concrete singleton-style
 //!    service, not a per-instance implementor), which matches how
 //!    `TerminologyService::bundled()` is actually consumed today but
@@ -74,7 +74,7 @@ use super::measurement_service::MeasurementService;
 /// TODO(port): add the `TERMINOLOGY_SERVICE` half of this mixin's
 /// inheritance once a decision is made between (1) a
 /// `TerminologyServiceApi` trait extracted from
-/// `openehr_terminology::TerminologyService`, or (2) a concrete
+/// `openehr_term::TerminologyService`, or (2) a concrete
 /// dependency field/accessor. Do not add either speculatively here.
 pub trait ExternalEnvironmentAccess: MeasurementService {}
 

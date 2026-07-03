@@ -37,7 +37,7 @@ use crate::data_types::date_time::dv_duration::DvDuration;
 use crate::data_types::date_time::dv_time::DvTime;
 use openehr_foundation::primitive_types::any::Any;
 use openehr_foundation::primitive_types::ordered::Ordered;
-use openehr_terminology::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
+use openehr_term::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
 use serde::{Deserialize, Serialize};
 
 /// Shared attribute state of `DV_ORDERED` and its descendants.

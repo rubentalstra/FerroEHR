@@ -20,7 +20,7 @@
 //! abstract class's own per-class table declares no attributes it inherits
 //! from `DATA_VALUE` beyond the implicit closed-subtype-set membership.
 use crate::data_types::text::code_phrase::CodePhrase;
-use openehr_terminology::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
+use openehr_term::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
 use serde::{Deserialize, Serialize};
 
 /// Embedded parent state for `DV_ENCAPSULATED`'s attributes.

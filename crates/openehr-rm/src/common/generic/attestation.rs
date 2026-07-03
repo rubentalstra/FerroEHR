@@ -56,7 +56,7 @@ use crate::data_types::encapsulated::dv_multimedia::DvMultimedia;
 use crate::data_types::text::dv_text::DvText;
 use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
-use openehr_terminology::{
+use openehr_term::{
     OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
 };
 use serde::{Deserialize, Serialize};

@@ -2,7 +2,7 @@
 //!
 //! Provenance: `github.com/openEHR/specifications-TERM`, tag
 //! `Release-3.0.0`, commit `d45ef3e21a05d3759101ae7bdb260e8193a3d0da`,
-//! vendored verbatim under `crates/openehr-terminology/assets/` (see the
+//! vendored verbatim under `crates/openehr-term/assets/` (see the
 //! README there). The English bundle is always present; other languages ride
 //! behind `lang-*` feature flags.
 //!
@@ -59,7 +59,7 @@ pub fn bundled_language_xml() -> Vec<(&'static str, &'static str)> {
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: TERM Release-3.0.0 computable/XML assets (vendored) — specifications-TERM @ d45ef3e
-//   source_loc: crates/openehr-terminology/assets/
+//   source_loc: crates/openehr-term/assets/
 //   confidence: high
 //   todos: 0
 //   note: lang-de / lang-fr are declared-but-empty features until upstream ships those bundles

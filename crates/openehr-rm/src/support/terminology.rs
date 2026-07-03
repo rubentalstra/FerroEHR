@@ -13,11 +13,11 @@
 //!
 //! | Spec class | Kind | Landed as |
 //! |---|---|---|
-//! | `TERMINOLOGY_SERVICE` | class (mixin-inherits two constants classes) | [`openehr_terminology::TerminologyService`] — concrete struct, `crates/openehr-terminology/src/terminology_service.rs` |
-//! | `TERMINOLOGY_ACCESS` | interface | [`openehr_terminology::TerminologyAccess`] (trait) + [`openehr_terminology::BundledTerminologyAccess`] (impl), `crates/openehr-terminology/src/terminology_access.rs` |
-//! | `CODE_SET_ACCESS` | interface | [`openehr_terminology::CodeSetAccess`] (trait) + [`openehr_terminology::BundledCodeSetAccess`] (impl), `crates/openehr-terminology/src/code_set_access.rs` |
-//! | `OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS` | constants class | [`openehr_terminology::OpenehrTerminologyGroupIdentifiers`], `crates/openehr-terminology/src/openehr_terminology_group_identifiers.rs` |
-//! | `OPENEHR_CODE_SET_IDENTIFIERS` | constants class | [`openehr_terminology::OpenehrCodeSetIdentifiers`], `crates/openehr-terminology/src/openehr_code_set_identifiers.rs` |
+//! | `TERMINOLOGY_SERVICE` | class (mixin-inherits two constants classes) | [`openehr_term::TerminologyService`] — concrete struct, `crates/openehr-term/src/terminology_service.rs` |
+//! | `TERMINOLOGY_ACCESS` | interface | [`openehr_term::TerminologyAccess`] (trait) + [`openehr_term::BundledTerminologyAccess`] (impl), `crates/openehr-term/src/terminology_access.rs` |
+//! | `CODE_SET_ACCESS` | interface | [`openehr_term::CodeSetAccess`] (trait) + [`openehr_term::BundledCodeSetAccess`] (impl), `crates/openehr-term/src/code_set_access.rs` |
+//! | `OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS` | constants class | [`openehr_term::OpenehrTerminologyGroupIdentifiers`], `crates/openehr-term/src/openehr_terminology_group_identifiers.rs` |
+//! | `OPENEHR_CODE_SET_IDENTIFIERS` | constants class | [`openehr_term::OpenehrCodeSetIdentifiers`], `crates/openehr-term/src/openehr_code_set_identifiers.rs` |
 //!
 //! This was a deliberate P2 decision (not made by this transcription pass):
 //! `openehr-terminology` is a dependency leaf that is already wired and
@@ -27,7 +27,7 @@
 //! `openehr-rm`'s `Cargo.toml` already declares
 //! `openehr-terminology = { path = "../openehr-terminology" }` as a
 //! dependency, so these types are already reachable from `openehr-rm` code
-//! via `openehr_terminology::...` — see, for example, the mismatch
+//! via `openehr_term::...` — see, for example, the mismatch
 //! documented in `external_environment_access.rs`, which depends on this
 //! fact directly.
 //!
@@ -47,7 +47,7 @@
 //! re-export here, e.g.:
 //!
 //! ```ignore
-//! pub use openehr_terminology::{
+//! pub use openehr_term::{
 //!     BundledCodeSetAccess, BundledTerminologyAccess, CodeSetAccess,
 //!     OpenehrCodeSetIdentifiers, OpenehrTerminologyGroupIdentifiers,
 //!     TerminologyAccess, TerminologyService,
@@ -56,7 +56,7 @@
 //!
 //! Not added speculatively now: whether `openehr-rm::support` should
 //! re-export these types, versus callers importing
-//! `openehr_terminology::*` directly, is a P17 crate-API-surface decision,
+//! `openehr_term::*` directly, is a P17 crate-API-surface decision,
 //! not a transcription one.
 //!
 //! # `support.assumed_types`

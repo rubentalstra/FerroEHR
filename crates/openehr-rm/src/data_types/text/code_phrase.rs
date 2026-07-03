@@ -24,10 +24,10 @@ pub const TYPE_NAME: &str = "CODE_PHRASE";
 /// `CODE_PHRASE` has three attributes and no ancestor state to embed, so it
 /// is transcribed as a plain leaf struct.
 ///
-/// # Relationship to `openehr_terminology::TerminologyCode`
+/// # Relationship to `openehr_term::TerminologyCode`
 ///
 /// PORT NOTE: `openehr-terminology`'s `TerminologyAccess`/`CodeSetAccess`
-/// service trait signatures (P2, `crates/openehr-terminology/src/
+/// service trait signatures (P2, `crates/openehr-term/src/
 /// terminology_code.rs`) return a local `TerminologyCode` struct — a
 /// deliberate, documented stand-in for this very class, because
 /// `openehr-terminology` sits *below* `openehr-rm` in the dependency graph
@@ -46,7 +46,7 @@ pub const TYPE_NAME: &str = "CODE_PHRASE";
 /// terminology identifier with a code string) but are not the same
 /// spec class and this transcription does not conflate them.
 ///
-/// **Reconciliation of all three (`CODE_PHRASE`, `openehr_terminology::
+/// **Reconciliation of all three (`CODE_PHRASE`, `openehr_term::
 /// TerminologyCode`, `openehr_foundation::terminology_types::
 /// TerminologyCode`) is deferred to P17** (make-it-compile), per the
 /// invoking task's explicit instruction — this doc comment records the
@@ -124,5 +124,5 @@ impl CodePhrase {
 //   source_loc: master05-text_package.adoc §Class Descriptions / code_phrase.adoc §CODE_PHRASE Class
 //   confidence: high
 //   todos: 3
-//   note: no Inherit row published for this class (transcribed as a standalone leaf, not a DATA_VALUE subtype); terminology_id forward-references openehr_base::identification::terminology_id::TerminologyId (already transcribed, same-direction dependency); see the doc comment for the full CODE_PHRASE / openehr_terminology::TerminologyCode / openehr_foundation Terminology_code reconciliation deferred to P17 (the reconciliation note plus the Code_string_valid field/method doc pair account for the 3). P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("CODE_PHRASE"); inert struct-level #[serde(rename)] deleted; the stale TerminologyId-lacks-serde TODO resolved (openehr-base identification now derives serde).
+//   note: no Inherit row published for this class (transcribed as a standalone leaf, not a DATA_VALUE subtype); terminology_id forward-references openehr_base::identification::terminology_id::TerminologyId (already transcribed, same-direction dependency); see the doc comment for the full CODE_PHRASE / openehr_term::TerminologyCode / openehr_foundation Terminology_code reconciliation deferred to P17 (the reconciliation note plus the Code_string_valid field/method doc pair account for the 3). P4/ADR-002: self-tags via TypeTag<Self> first field + TypeName ("CODE_PHRASE"); inert struct-level #[serde(rename)] deleted; the stale TerminologyId-lacks-serde TODO resolved (openehr-base identification now derives serde).
 // ─────────────────────────────────────────────

@@ -1,7 +1,7 @@
 [package]
-name = "openehr-bmm"
+name = "openehr-query"
 version = "0.1.0"
-description = "BMM object model and P_BMM parser (BMM schema v2.3)"
+description = "AQL 1.1.0 lexer, parser, AST, and semantic analysis"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -10,7 +10,8 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-openehr-odin = { path = "../openehr-odin" }
+openehr-rm = { path = "../openehr-rm" }
+openehr-am = { path = "../openehr-am" }
 
 [lints]
 workspace = true

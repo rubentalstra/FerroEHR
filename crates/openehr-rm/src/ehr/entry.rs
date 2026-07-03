@@ -29,7 +29,7 @@ use crate::common::generic::participation::Participation;
 use crate::common::generic::party_proxy::PartyProxy;
 use crate::data_types::text::code_phrase::CodePhrase;
 use openehr_base::identification::object_ref::ObjectRef;
-use openehr_terminology::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
+use openehr_term::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
 use serde::{Deserialize, Serialize};
 
 /// Embedded attribute state of the abstract `ENTRY` class.
@@ -183,7 +183,7 @@ mod tests {
     use openehr_base::identification::object_id::ObjectIdData;
     use openehr_base::identification::terminology_id::TerminologyId;
     use openehr_foundation::serde_support::TypeTag;
-    use openehr_terminology::TerminologyService;
+    use openehr_term::TerminologyService;
 
     /// Minimal concrete `EntryApi` implementor for exercising the trait's
     /// default methods (mirrors `locatable.rs`'s `TestLocatable`), avoiding

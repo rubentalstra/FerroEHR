@@ -12,7 +12,7 @@ publish = false
 [dependencies]
 openehr-rm = { path = "../openehr-rm" }
 openehr-serde = { path = "../openehr-serde" }
-openehr-adl = { path = "../openehr-adl" }
+openehr-am = { path = "../openehr-am" }
 
 [features]
 ehrbase-quirks = []

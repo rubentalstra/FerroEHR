@@ -29,7 +29,7 @@ use crate::data_types::encapsulated::dv_encapsulated::{DvEncapsulatedApi, DvEnca
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::uri::dv_uri::DvUri;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
-use openehr_terminology::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
+use openehr_term::{CodeSetAccess, OpenehrCodeSetIdentifiers, TerminologyService};
 use serde::{Deserialize, Serialize};
 
 /// Canonical-JSON base64 bridge for `DV_MULTIMEDIA.data`/`integrity_check`.

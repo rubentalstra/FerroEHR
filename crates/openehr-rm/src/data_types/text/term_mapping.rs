@@ -20,7 +20,7 @@
 use super::code_phrase::CodePhrase;
 use super::dv_coded_text::DvCodedText;
 use openehr_foundation::serde_support::{TypeName, TypeTag};
-use openehr_terminology::{
+use openehr_term::{
     OpenehrTerminologyGroupIdentifiers, TerminologyAccess, TerminologyCode, TerminologyService,
 };
 use serde::{Deserialize, Serialize};
@@ -236,7 +236,7 @@ impl TermMapping {
     /// the openEHR "term mapping purpose" grouper.
     ///
     /// PORT NOTE: `has_code_for_group_id` matches on the `code_string` alone
-    /// (see `openehr_terminology::BundledTerminologyAccess`), so the
+    /// (see `openehr_term::BundledTerminologyAccess`), so the
     /// [`TerminologyCode`] carrier is built with the openEHR terminology id
     /// and the purpose's own code string.
     pub fn invariant_purpose_valid(&self, terminology: &TerminologyService) -> bool {
