@@ -174,13 +174,33 @@ fn write_crate(
         std::fs::remove_dir_all(&src)?;
     }
     std::fs::create_dir_all(&src)?;
+    let mut written = Vec::with_capacity(files.len());
     for f in files {
         let full = src.join(&f.path);
         if let Some(parent) = full.parent() {
             std::fs::create_dir_all(parent)?;
         }
         std::fs::write(&full, &f.body)?;
+        written.push(full);
     }
+    rustfmt(&written)?;
     println!("emitted {} files into {}", files.len(), src.display());
+    Ok(())
+}
+
+/// Run `rustfmt` over the generated files so the emitted output is exactly what
+/// `cargo fmt --all --check` expects (line wrapping, empty `{}`, import order,
+/// …), instead of the emitter having to reproduce every rustfmt rule by hand.
+fn rustfmt(files: &[PathBuf]) -> Result<(), Box<dyn std::error::Error>> {
+    if files.is_empty() {
+        return Ok(());
+    }
+    let status = std::process::Command::new("rustfmt")
+        .args(["--edition", "2024", "--quiet"])
+        .args(files)
+        .status()?;
+    if !status.success() {
+        return Err(format!("rustfmt failed with status {status}").into());
+    }
     Ok(())
 }

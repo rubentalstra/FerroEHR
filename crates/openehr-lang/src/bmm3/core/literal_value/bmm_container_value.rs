@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "BMM_CONTAINER_VALUE")]
 pub struct BmmContainerValue {
-
     // inherited: BMM_LITERAL_VALUE
     /// A serial representation of the value.
     pub value_literal: String,

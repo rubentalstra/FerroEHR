@@ -9,7 +9,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "DV_EHR_URI")]
 pub struct DvEhrUri {
-
     // inherited: DV_URI
     /// Value of URI as a String. 'Plain-text' URIs are allowed, enabling better readability, but must be RFC-3986 encoded in use.
     pub value: String,

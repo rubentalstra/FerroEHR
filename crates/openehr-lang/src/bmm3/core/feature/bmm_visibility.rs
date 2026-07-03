@@ -8,5 +8,4 @@ use openehr_derive::OpenEhrType;
 /// TODO: define schemes; probably need to support C++/Java scheme as well as better type-based schemes.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "BMM_VISIBILITY")]
-pub struct BmmVisibility {
-}
+pub struct BmmVisibility {}

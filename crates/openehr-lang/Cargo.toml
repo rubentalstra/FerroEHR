@@ -17,3 +17,8 @@ serde_json.workspace = true
 
 [lints]
 workspace = true
+
+[lib]
+# Generated doc comments are verbatim openEHR spec prose (indented examples,
+# fenced snippets), not runnable Rust — behaviour tests live in *_impl.rs.
+doctest = false

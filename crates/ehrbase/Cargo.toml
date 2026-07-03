@@ -23,3 +23,7 @@ ehrbase-compat = { path = "../ehrbase-compat" }
 
 [lints]
 workspace = true
+
+[package.metadata.cargo-machete]
+# Scaffolded dependency graph (ADR-004 / phase 0R); these internal crates are wired now and consumed when this crate is ported (P6+).
+ignored = ["ehrbase-compat", "ehrbase-rest", "openehr-am", "openehr-base", "openehr-flat", "openehr-its", "openehr-lang", "openehr-query", "openehr-rm", "openehr-term"]

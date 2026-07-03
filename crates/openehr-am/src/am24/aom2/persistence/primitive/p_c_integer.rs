@@ -6,5 +6,4 @@ use openehr_derive::OpenEhrType;
 /// Constraint on instances of Integer.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "P_C_INTEGER")]
-pub struct PCInteger {
-}
+pub struct PCInteger {}

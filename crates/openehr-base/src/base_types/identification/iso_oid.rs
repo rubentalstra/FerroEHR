@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "ISO_OID")]
 pub struct IsoOid {
-
     // inherited: UID
     /// The value of the id.
     pub value: String,

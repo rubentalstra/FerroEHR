@@ -6,5 +6,4 @@ use openehr_derive::OpenEhrType;
 /// Defines an object providing proxy access to a code_set.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "CODE_SET_ACCESS")]
-pub struct CodeSetAccess {
-}
+pub struct CodeSetAccess {}

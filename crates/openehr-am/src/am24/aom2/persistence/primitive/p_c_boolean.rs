@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "P_C_BOOLEAN")]
 pub struct PCBoolean {
-
     // inherited: P_C_OBJECT
     /// Reference model type that this node corresponds to.
     pub rm_type_name: String,

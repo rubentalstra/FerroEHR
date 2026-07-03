@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "HIER_OBJECT_ID")]
 pub struct HierObjectId {
-
     // inherited: OBJECT_ID
     /// The value of the id in the form defined below.
     pub value: String,

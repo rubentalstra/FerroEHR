@@ -21,5 +21,5 @@ pub mod demographic;
 pub mod ehr;
 pub mod ehr_extract;
 pub mod integration;
-pub mod support;
 pub mod prelude;
+pub mod support;

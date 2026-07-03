@@ -13,5 +13,5 @@
     clippy::large_enum_variant
 )]
 
-pub mod terminology;
 pub mod prelude;
+pub mod terminology;

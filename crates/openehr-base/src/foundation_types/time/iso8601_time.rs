@@ -15,7 +15,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "Iso8601_time")]
 pub struct Iso8601Time {
-
     // inherited: Iso8601_type
     /// Representation of all descendants is a single String.
     pub value: String,

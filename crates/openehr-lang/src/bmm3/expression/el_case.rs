@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "EL_CASE")]
 pub struct ElCase<T> {
-
     // inherited: EL_DECISION_BRANCH
     /// Result expression of conditional, if its `_condition_` evaluates to True.
     pub result: T,

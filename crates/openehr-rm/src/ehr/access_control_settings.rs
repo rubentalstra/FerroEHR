@@ -6,5 +6,4 @@ use openehr_derive::OpenEhrType;
 /// Access Control Settings for the EHR and components. Intended to support multiple access control schemes. Currently implementation dependent.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "ACCESS_CONTROL_SETTINGS")]
-pub struct AccessControlSettings {
-}
+pub struct AccessControlSettings {}

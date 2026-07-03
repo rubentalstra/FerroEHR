@@ -6,6 +6,7 @@ use openehr_derive::OpenEhrType;
 /// Object representing annotations on an archetype. These can be of various forms, with a documentation form defined so far, which has a multi-level tabular structure [ [ [String value, String key], path key], language key]. Example instance, showing the documentation structure.
 ///
 /// --------
+/// ```text
 ///     documentation = <
 ///         ["en"] = <
 ///            ["/data[id2]"] = <
@@ -18,6 +19,7 @@ use openehr_derive::OpenEhrType;
 ///            >
 ///         >
 ///     >
+/// ```
 /// --------
 ///
 /// Other sub-structures might have different keys, e.g.  based on programming languages, UI toolkits etc.
@@ -25,5 +27,8 @@ use openehr_derive::OpenEhrType;
 #[openehr(type_name = "RESOURCE_ANNOTATIONS")]
 pub struct ResourceAnnotations {
     /// Documentary annotations in a multi-level keyed structure.
-    pub documentation: std::collections::BTreeMap<String, std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>>,
+    pub documentation: std::collections::BTreeMap<
+        String,
+        std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,
+    >,
 }

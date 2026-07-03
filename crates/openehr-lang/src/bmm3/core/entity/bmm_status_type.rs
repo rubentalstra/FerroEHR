@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "BMM_STATUS_TYPE")]
 pub struct BmmStatusType {
-
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
     pub documentation: Option<String>,

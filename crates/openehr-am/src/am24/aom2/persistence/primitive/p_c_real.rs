@@ -6,5 +6,4 @@ use openehr_derive::OpenEhrType;
 /// Constraint on instances of Real.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "P_C_REAL")]
-pub struct PCReal {
-}
+pub struct PCReal {}

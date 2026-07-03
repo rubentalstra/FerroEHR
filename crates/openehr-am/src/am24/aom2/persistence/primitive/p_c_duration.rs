@@ -5,5 +5,4 @@ use openehr_derive::OpenEhrType;
 
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "P_C_DURATION")]
-pub struct PCDuration {
-}
+pub struct PCDuration {}

@@ -6,5 +6,4 @@ use openehr_derive::OpenEhrType;
 /// Abstract parent of feature extensions.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "BMM_FEATURE_EXTENSION")]
-pub struct BmmFeatureExtension {
-}
+pub struct BmmFeatureExtension {}

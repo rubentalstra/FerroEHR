@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "INTERNET_ID")]
 pub struct InternetId {
-
     // inherited: UID
     /// The value of the id.
     pub value: String,

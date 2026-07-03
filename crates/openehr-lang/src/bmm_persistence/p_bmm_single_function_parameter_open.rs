@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN")]
 pub struct PBmmSingleFunctionParameterOpen {
-
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
     pub documentation: Option<String>,

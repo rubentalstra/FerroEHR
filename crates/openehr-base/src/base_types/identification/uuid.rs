@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "UUID")]
 pub struct Uuid {
-
     // inherited: UID
     /// The value of the id.
     pub value: uuid::Uuid,

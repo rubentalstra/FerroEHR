@@ -9,7 +9,7 @@ use openehr_derive::OpenEhrType;
 pub struct CTemporalDefinitions {
     /// List of allowed date constraints. Contains the values:
     ///
-    /// ```
+    /// ```text
     /// "YYYY-MM-DD"    -- full date required
     /// "YYYY-MM-??"    -- day optional
     /// "YYYY-MM-XX"    -- day prohibited
@@ -24,19 +24,25 @@ pub struct CTemporalDefinitions {
     /// "YYYY-MM-DD": [],
     ///
     /// "YYYY-MM-??": ["YYYY-MM-DD",
+    /// ```text
     ///                "YYYY-MM-XX"],
     ///
+    /// ```
     /// "YYYY-MM-XX": [],
     ///
     /// "YYYY-??-??": ["YYYY-MM-??",
+    /// ```text
     ///                "YYYY-MM-DD",
     ///                "YYYY-MM-XX",
     ///                "YYYY-??-XX",
     ///                "YYYY-XX-XX"],
     ///
+    /// ```
     /// "YYYY-??-XX": ["YYYY-MM-XX",
+    /// ```text
     ///               "YYYY-XX-XX"],
     ///
+    /// ```
     /// "YYYY-XX-XX": []
     /// ----
     ///
@@ -44,7 +50,7 @@ pub struct CTemporalDefinitions {
     pub valid_date_constraint_replacements: std::collections::BTreeMap<String, Vec<String>>,
     /// List of allowed time constraints. Contains the values:
     ///
-    /// ```
+    /// ```text
     /// "HH:MM:SS"    -- full time required
     /// "HH:MM:??"    -- seconds optional
     /// "HH:MM:XX"    -- minutes required, seconds prohibited
@@ -58,15 +64,19 @@ pub struct CTemporalDefinitions {
     /// "HH:MM:SS": [],
     ///
     /// "HH:MM:??": ["HH:MM:SS",
+    /// ```text
     ///              "HH:MM:XX"],
     ///
+    /// ```
     /// "HH:MM:XX": [],
     ///
     /// "HH-??-??": ["HH:MM:??",
+    /// ```text
     ///              "HH:MM:SS",
     ///              "HH:MM:XX",
     ///              "HH:??:XX"],
     ///
+    /// ```
     /// "HH-??-XX": ["HH:MM:XX"]
     /// ----
     ///
@@ -74,7 +84,7 @@ pub struct CTemporalDefinitions {
     pub valid_time_constraint_replacements: std::collections::BTreeMap<String, Vec<String>>,
     /// List of allowed date/time constraints. Contains the values:
     ///
-    /// ```
+    /// ```text
     /// "YYYY-MM-DDTHH:MM:SS"    -- full date/time required
     /// "YYYY-MM-DDTHH:MM:??"    -- seconds optional
     /// "YYYY-MM-DDTHH:MM:XX"    -- seconds prohibited
@@ -89,22 +99,28 @@ pub struct CTemporalDefinitions {
     /// "YYYY-MM-DDTHH:MM:SS": [],
     ///
     /// "YYYY-MM-DDTHH:MM:??": ["YYYY-MM-DDTHH:MM:SS",
+    /// ```text
     ///                         "YYYY-MM-DDTHH:MM:XX"],
     ///
+    /// ```
     /// "YYYY-MM-DDTHH:MM:XX": [],
     ///
     /// "YYYY-MM-DDTHH:??:??": ["YYYY-MM-DDTHH:??:XX",
+    /// ```text
     ///                         "YYYY-MM-DDTHH:MM:SS",
     ///                         "YYYY-MM-DDTHH:MM:??",
     ///                         "YYYY-MM-DDTHH:MM:XX"],
     ///
+    /// ```
     /// "YYYY-MM-DDTHH:??:XX": ["YYYY-MM-DDTHH:MM:XX"],
     ///
     /// "YYYY-??-??T??:??:??": ["YYYY-MM-DDTHH:MM:SS",
+    /// ```text
     ///                         "YYYY-MM-DDTHH:MM:??",
     ///                         "YYYY-MM-DDTHH:MM:XX",
     ///                         "YYYY-MM-DDTHH:??:??",
     ///                         "YYYY-MM-DDTHH:??:XX"]
+    /// ```
     /// ----
     pub valid_date_time_constraint_replacements: std::collections::BTreeMap<String, Vec<String>>,
 }

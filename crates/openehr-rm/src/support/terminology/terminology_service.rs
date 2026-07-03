@@ -6,5 +6,4 @@ use openehr_derive::OpenEhrType;
 /// Defines an object providing proxy access to a terminology service.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "TERMINOLOGY_SERVICE")]
-pub struct TerminologyService {
-}
+pub struct TerminologyService {}

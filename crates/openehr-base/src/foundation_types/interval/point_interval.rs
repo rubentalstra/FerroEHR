@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "Point_interval")]
 pub struct PointInterval<T> {
-
     // inherited: Interval
     /// Lower bound.
     pub lower: Option<T>,

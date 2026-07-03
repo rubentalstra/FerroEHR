@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "Multiplicity_interval")]
 pub struct MultiplicityInterval {
-
     // inherited: Interval
     /// Lower bound.
     pub lower: Option<i32>,

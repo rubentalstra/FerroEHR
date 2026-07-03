@@ -7,7 +7,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "VALUE_SET")]
 pub struct ValueSet {
-
     // inherited: TERMINOLOGY_RELATION
     /// Code of source term of this relation.
     pub id: String,

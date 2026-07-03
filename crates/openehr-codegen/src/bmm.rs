@@ -555,14 +555,14 @@ mod tests {
                 );
                 assert!(matches!(item, BmmType::Generic { root, .. } if root == "REFERENCE_RANGE"));
             }
-            other => panic!("expected container, got {other:?}"),
+            other @ BmmPropKind::Single(_) => panic!("expected container, got {other:?}"),
         }
 
         match &by("links").kind {
             BmmPropKind::Container { item, .. } => {
                 assert_eq!(item, &BmmType::Simple("LINK".into()));
             }
-            other => panic!("expected container, got {other:?}"),
+            other @ BmmPropKind::Single(_) => panic!("expected container, got {other:?}"),
         }
     }
 

@@ -6,5 +6,4 @@ use openehr_derive::OpenEhrType;
 /// Defines an object providing proxy access to a measurement information service.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "MEASUREMENT_SERVICE")]
-pub struct MeasurementService {
-}
+pub struct MeasurementService {}

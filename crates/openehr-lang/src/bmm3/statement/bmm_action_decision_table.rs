@@ -6,5 +6,4 @@ use openehr_derive::OpenEhrType;
 /// Specialised form of Decision Table that allows only procedure call agents (lambdas) as the result of branches.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "BMM_ACTION_DECISION_TABLE")]
-pub struct BmmActionDecisionTable {
-}
+pub struct BmmActionDecisionTable {}

@@ -9,7 +9,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "TERMINOLOGY_ID")]
 pub struct TerminologyId {
-
     // inherited: OBJECT_ID
     /// The value of the id in the form defined below.
     pub value: String,

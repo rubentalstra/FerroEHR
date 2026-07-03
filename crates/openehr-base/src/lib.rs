@@ -15,5 +15,5 @@
 
 pub mod base_types;
 pub mod foundation_types;
-pub mod resource;
 pub mod prelude;
+pub mod resource;

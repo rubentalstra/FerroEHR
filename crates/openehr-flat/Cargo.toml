@@ -19,3 +19,7 @@ ehrbase-quirks = []
 
 [lints]
 workspace = true
+
+[package.metadata.cargo-machete]
+# Scaffolded dependency graph (ADR-004 / phase 0R); these internal crates are wired now and consumed when this crate is ported (P6+).
+ignored = ["openehr-am", "openehr-its", "openehr-rm"]

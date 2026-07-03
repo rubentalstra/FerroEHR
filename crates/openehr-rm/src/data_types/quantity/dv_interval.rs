@@ -11,7 +11,6 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "DV_INTERVAL")]
 pub struct DvInterval<T> {
-
     // inherited: Interval
     /// Lower bound.
     pub lower: Option<T>,
