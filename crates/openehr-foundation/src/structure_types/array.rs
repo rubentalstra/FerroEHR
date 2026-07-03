@@ -39,23 +39,20 @@ impl<T> Array<T> {
     /// PORT NOTE: the spec types `a_key` as `Integer` (signed, 32-bit) while
     /// Rust's native indexing takes `usize`; transcribed with an `i32`
     /// parameter to match the spec signature literally, converting
-    /// internally. TODO(port) below covers the unspecified out-of-range
-    /// behaviour.
+    /// internally.
     ///
-    /// TODO(port): the spec does not state what happens for a key outside
-    /// the array's bounds (no precondition/postcondition given in the
-    /// per-class table, unlike e.g. `List`'s explicit `First_validity`/
-    /// `Last_validity` invariants). A negative `a_key` or one `>= count()`
-    /// is left as `todo!()` rather than guessing between a panic, `Option`,
-    /// or `Result` contract the spec does not itself state.
+    /// PORT NOTE: the spec does not state what happens for a key outside
+    /// the array's bounds (no precondition/postcondition is given in the
+    /// per-class table). Widened to `Option<&T>` — `None` for a negative or
+    /// `>= count()` key — matching the crate's established "or Void"
+    /// treatment of spec-silent partial functions (`List::first`/`last`,
+    /// `Hash::item`, `Container::select`), rather than panicking on a
+    /// contract the spec does not itself state.
     #[must_use]
-    pub fn item(&self, a_key: i32) -> &T {
-        match usize::try_from(a_key) {
-            Ok(index) if index < self.0.len() => &self.0[index],
-            // TODO(port): spec is silent on out-of-range/negative key
-            // behaviour for `item`; see doc comment above.
-            _ => todo!("Array::item: a_key out of range, spec does not define this behaviour"),
-        }
+    pub fn item(&self, a_key: i32) -> Option<&T> {
+        usize::try_from(a_key)
+            .ok()
+            .and_then(|index| self.0.get(index))
     }
 }
 
@@ -72,6 +69,15 @@ impl<T: PartialEq> Container<T> for Array<T> {
 
     fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    /// Iteration accessor required by `Container<T>` (ADR-003 decision 6);
+    /// yields items in contiguous-storage (index) order.
+    fn items<'a>(&'a self) -> impl Iterator<Item = &'a T>
+    where
+        T: 'a,
+    {
+        self.0.iter()
     }
 }
 
@@ -124,11 +130,42 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Array<T> {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::super::container::Container;
+    use super::Array;
+
+    // Spec: `item(a_key: Integer): T` — "Return item for key a_key". The
+    // out-of-range/negative cases are spec-silent, widened to None (see the
+    // PORT NOTE on `item`).
+    #[test]
+    fn item_returns_the_keyed_element_or_none_when_out_of_range() {
+        let array = Array(vec!["a", "b", "c"]);
+        assert_eq!(array.item(0), Some(&"a"));
+        assert_eq!(array.item(2), Some(&"c"));
+        assert_eq!(array.item(3), None);
+        assert_eq!(array.item(-1), None);
+        assert_eq!(Array::<&str>(vec![]).item(0), None);
+    }
+
+    // Spec Container functions inherited by Array.
+    #[test]
+    fn container_functions_over_an_array() {
+        let array = Array(vec![5, 6]);
+        assert!(array.has(&5));
+        assert!(!array.has(&7));
+        assert_eq!(array.count(), 2);
+        assert!(!array.is_empty());
+        assert!(array.there_exists(|v| *v == 6));
+        assert!(array.for_all(|v| *v >= 5));
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.structures §Class Definitions — docs/research/spec-cache/BASE-1.2.0/uml_classes/array.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master04-structure_types.adoc §Class Definitions / array.adoc §Array Class
-//   confidence: medium
-//   todos: 3
-//   note: item()'s out-of-range/negative-key behaviour is unspecified by the spec, left as todo!() with an accompanying TODO(port) comment (two markers for that one gap); count()'s i32 cast shares List's unspecified-overflow gap (third marker). Backed by Vec<T> like List<T> (spec's contiguous-storage assumption), kept as a separate newtype since Array and List are separate classes with distinct function sets. P4: canonical JSON uses object form `{_type:"ARRAY",items?}` so the class definition is schema-coverable without changing the storage type.
+//   confidence: high
+//   todos: 1
+//   note: item()'s out-of-range/negative-key behaviour is spec-silent, widened to Option<&T> per the crate's "or Void" convention (PORT NOTE on the method); count()'s i32 cast shares List's unspecified-overflow gap (the remaining TODO). Backed by Vec<T> like List<T> (spec's contiguous-storage assumption), kept as a separate newtype since Array and List are separate classes with distinct function sets. P4: canonical JSON uses object form `{_type:"ARRAY",items?}` so the class definition is schema-coverable without changing the storage type.
 // ─────────────────────────────────────────────

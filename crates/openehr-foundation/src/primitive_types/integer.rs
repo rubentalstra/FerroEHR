@@ -57,12 +57,10 @@ impl Integer {
     ///
     /// Return `self` modulo `other`.
     ///
-    /// TODO(port): the spec does not state the sign convention (Euclidean
-    /// vs. truncated remainder) for negative operands. Rust's `%` on `i32`
-    /// is truncated (sign follows the dividend), used here as the direct
-    /// translation of the underlying primitive operator pending a spec
-    /// clarification; flagged rather than silently assumed correct for
-    /// every RM call site that will eventually use this.
+    /// PORT NOTE: the spec does not state the sign convention for negative
+    /// operands; per ADR-003 decision 4 this is truncated division (the
+    /// result takes the dividend's sign) — Rust's native `%`, identical to
+    /// Java's `%`, i.e. the behaviour a faithful EHRbase port exercises.
     #[must_use]
     pub fn modulo(&self, other: &Integer) -> Integer {
         Integer(self.0 % other.0)
@@ -115,32 +113,10 @@ impl Numeric for Integer {
         Integer(self.0 * other.0)
     }
 
-    /// PORT NOTE: `Numeric::divide` is same-type (`Self -> Self`) per the
-    /// trait's shape, but the spec's actual `Integer.divide` effector
-    /// returns `Double` (see the inherent `Integer::divide` method above,
-    /// which is the spec-faithful one). This trait-required override exists
-    /// only to satisfy `Numeric`'s object shape; TODO(port) tracks removing
-    /// `divide`/`exponent` from the `Numeric` trait once every concrete
-    /// `Numeric` type in this cluster exists and the trait can be
-    /// re-shaped without an interim inconsistency.
-    fn divide(&self, _other: &Self) -> Self {
-        // TODO(port): Numeric::divide cannot express Integer's true
-        // Integer -> Double result; see PORT NOTE above and Integer::divide.
-        todo!(
-            "Integer as Numeric::divide: spec-accurate divide returns Double, see Integer::divide"
-        )
-    }
-
-    /// See `divide` PORT NOTE above; same trait/inherent-method split
-    /// applies to `exponent`.
-    fn exponent(&self, _other: &Self) -> Self {
-        // TODO(port): Numeric::exponent cannot express Integer's true
-        // (Double) -> Double signature; see PORT NOTE above and
-        // Integer::exponent.
-        todo!(
-            "Integer as Numeric::exponent: spec-accurate exponent takes/returns Double, see Integer::exponent"
-        )
-    }
+    // PORT NOTE: the spec's `divide`/`exponent` effectors for Integer
+    // return/take `Double` and live as the inherent methods above; the
+    // `Numeric` trait deliberately does not carry those two members (see
+    // the PORT NOTE on the trait in `numeric.rs`).
 
     /// `negative` __alias__ `"-"` `(): Integer` (effected).
     fn negative(&self) -> Self {
@@ -148,11 +124,66 @@ impl Numeric for Integer {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::Integer;
+    use crate::primitive_types::double::Double;
+    use crate::primitive_types::numeric::Numeric;
+    use crate::primitive_types::ordered::Ordered;
+
+    // Spec: divide (alias "/") "Integer division", result covariantly
+    // narrowed to Double.
+    #[test]
+    fn divide_returns_a_double() {
+        assert_eq!(Integer(7).divide(&Integer(2)), Double(3.5));
+        assert_eq!(Integer(-6).divide(&Integer(4)), Double(-1.5));
+    }
+
+    // Spec: exponent (alias "^") "Integer exponentiation", parameter and
+    // result both Double.
+    #[test]
+    fn exponent_takes_and_returns_double() {
+        assert_eq!(Integer(2).exponent(&Double(10.0)), Double(1024.0));
+        assert_eq!(Integer(9).exponent(&Double(0.5)), Double(3.0));
+    }
+
+    // Spec: modulo (alias "mod") "Return self modulo other"; sign
+    // convention is truncated division per ADR-003 decision 4 (result takes
+    // the dividend's sign, matching Rust's and Java's `%`).
+    #[test]
+    fn modulo_uses_truncated_division_per_adr_003() {
+        assert_eq!(Integer(7).modulo(&Integer(3)), Integer(1));
+        assert_eq!(Integer(-7).modulo(&Integer(3)), Integer(-1));
+        assert_eq!(Integer(7).modulo(&Integer(-3)), Integer(1));
+        assert_eq!(Integer(-7).modulo(&Integer(-3)), Integer(-1));
+    }
+
+    // Spec Numeric effectors: add/subtract/multiply/negative (same-type).
+    #[test]
+    fn same_type_arithmetic_effectors() {
+        assert_eq!(Integer(2).add(&Integer(3)), Integer(5));
+        assert_eq!(Integer(2).subtract(&Integer(3)), Integer(-1));
+        assert_eq!(Integer(2).multiply(&Integer(3)), Integer(6));
+        assert_eq!(Integer(2).negative(), Integer(-2));
+    }
+
+    // Spec Ordered: less_than (effected) plus the Post_result-derived
+    // default comparisons.
+    #[test]
+    fn ordered_comparisons() {
+        assert!(Integer(1).less_than(&Integer(2)));
+        assert!(!Integer(2).less_than(&Integer(1)));
+        assert!(Integer(2).less_than_or_equal(&Integer(2)));
+        assert!(Integer(3).greater_than(&Integer(2)));
+        assert!(Integer(3).greater_than_or_equal(&Integer(3)));
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.primitive_types — docs/research/spec-cache/BASE-1.2.0/uml_classes/integer.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master03-primitive_types.adoc §Class Definitions / integer.adoc §Integer Class
-//   confidence: medium
-//   todos: 3
-//   note: Numeric trait's divide/exponent cannot carry Integer's true Integer->Double / Double->Double signatures, so the trait impls are stubbed todo!() and the spec-accurate versions live as inherent methods; modulo's sign convention for negative operands is unspecified by the spec.
+//   confidence: high
+//   todos: 0
+//   note: spec-accurate divide (Integer -> Double) and exponent (Double -> Double) live as inherent methods since the Numeric trait no longer carries those members (numeric.rs PORT NOTE); modulo uses truncated division per ADR-003 decision 4 (spec is silent on the sign convention).
 // ─────────────────────────────────────────────

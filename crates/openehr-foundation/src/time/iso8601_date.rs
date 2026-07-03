@@ -19,12 +19,17 @@
 //! rationale and the jiff-bridging plan for P17.
 use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
+use crate::time::iso8601_arithmetic::{
+    anchored_jiff_date, definite_duration_string_from_seconds, format_date_at_precision,
+    nominal_span, signed_duration_from_seconds,
+};
 use crate::time::iso8601_duration::Iso8601Duration;
-use crate::time::iso8601_parser::parse_date;
+use crate::time::iso8601_parser::{parse_date, parse_duration};
 use crate::time::iso8601_timezone::Iso8601Timezone;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
 use crate::time::time_definitions::TimeDefinitions;
+use jiff::civil::{DateTime, Time};
 use serde::{Deserialize, Serialize};
 
 /// `Iso8601_date` embeds the `Iso8601_type` parent state (`value: String`)
@@ -93,7 +98,8 @@ impl Iso8601Date {
     ///
     #[must_use]
     pub fn month_unknown(&self) -> bool {
-        parse_date(&self.core.value).is_none_or(|parsed| parsed.month_unknown())
+        parse_date(&self.core.value)
+            .is_none_or(super::iso8601_parser::ParsedIso8601Date::month_unknown)
     }
 
     /// `day_unknown(): Boolean`.
@@ -103,45 +109,70 @@ impl Iso8601Date {
     ///
     #[must_use]
     pub fn day_unknown(&self) -> bool {
-        parse_date(&self.core.value).is_none_or(|parsed| parsed.day_unknown())
+        parse_date(&self.core.value)
+            .is_none_or(super::iso8601_parser::ParsedIso8601Date::day_unknown)
     }
 
     /// `add` __alias__ `"+"` `(a_diff: Iso8601_duration) -> Iso8601_date`.
     ///
     /// Arithmetic addition of a duration to a date.
     ///
-    /// TODO(port): definite-arithmetic addition; deferred to the internal
-    /// engine (see the `time_types` chapter's "definite vs nominal" split —
-    /// this is the `_add_()` definite form, contrast `add_nominal` below).
+    /// Definite arithmetic per master06-time_types.adoc §Computational
+    /// Functions and ADR-003 policy 1: the duration is treated as an exact
+    /// quantity (`to_seconds()`, converting years/months via
+    /// `Time_Definitions::AVERAGE_DAYS_IN_YEAR`/`AVERAGE_DAYS_IN_MONTH`),
+    /// applied as an exact `jiff::SignedDuration` to the anchored civil
+    /// date (ADR-003 policy 3: unknown month/day filled with 01), and the
+    /// result truncated back to this date's original precision.
+    ///
+    /// PORT NOTE: the spec declares no error channel for the arithmetic
+    /// functions; on an unparseable receiver (cannot occur for validated
+    /// values) or an out-of-range result (year outside 0000–9999), the
+    /// receiver is returned unchanged — the same fallback convention as
+    /// `Iso8601Duration::divide`'s undefined-divisor case.
     #[must_use]
     pub fn add(&self, a_diff: &Iso8601Duration) -> Iso8601Date {
-        let _ = a_diff;
-        todo!("Iso8601Date::add: definite-duration addition deferred to the internal engine")
+        self.definite_shift(a_diff.to_seconds())
     }
 
     /// `subtract` __alias__ `"-"` `(a_diff: Iso8601_duration) -> Iso8601_date`.
     ///
     /// Arithmetic subtraction of a duration from a date.
     ///
-    /// TODO(port): definite-arithmetic subtraction; deferred to the
-    /// internal engine.
+    /// Definite arithmetic; see `add` for semantics, policy, and the
+    /// fallback PORT NOTE.
     #[must_use]
     pub fn subtract(&self, a_diff: &Iso8601Duration) -> Iso8601Date {
-        let _ = a_diff;
-        todo!(
-            "Iso8601Date::subtract: definite-duration subtraction deferred to the internal engine"
-        )
+        self.definite_shift(-a_diff.to_seconds())
     }
 
     /// `diff` __alias__ `"-"` `(a_date: Iso8601_date) -> Iso8601_duration`.
     ///
     /// Difference of two dates.
     ///
-    /// TODO(port): deferred to the internal engine.
+    /// Definite arithmetic per ADR-003 policy 1: the difference of the two
+    /// anchored civil dates (receiver minus argument), returned as a
+    /// normalized `Iso8601_duration` in definite units only (days and
+    /// below — never years/months, which are nominal units).
+    ///
+    /// PORT NOTE: the spec does not state the operand order; transcribed as
+    /// receiver minus argument, matching the `"-"` operator alias reading
+    /// (`self - a_date`). If either value is unparseable the result is the
+    /// zero duration (see the fallback PORT NOTE on `add`).
     #[must_use]
     pub fn diff(&self, a_date: &Iso8601Date) -> Iso8601Duration {
-        let _ = a_date;
-        todo!("Iso8601Date::diff: deferred to the internal engine")
+        let seconds = match (
+            parse_date(&self.core.value).and_then(anchored_jiff_date),
+            parse_date(&a_date.core.value).and_then(anchored_jiff_date),
+        ) {
+            (Some(left), Some(right)) => left.duration_since(right).as_secs_f64(),
+            _ => 0.0,
+        };
+        Iso8601Duration {
+            core: Iso8601TypeCore {
+                value: definite_duration_string_from_seconds(seconds),
+            },
+        }
     }
 
     /// `add_nominal` __alias__ `"++"` `(a_diff: Iso8601_duration) -> Iso8601_date`.
@@ -158,29 +189,66 @@ impl Iso8601Date {
     ///   be 28 Feb in a non-leap year (i.e. three less) and 29 Feb in a leap
     ///   year (i.e. two less).
     ///
-    /// TODO(port): nominal calendrical arithmetic; deferred to the internal
-    /// engine (candidate for a direct `jiff` calendar-arithmetic bridge at
-    /// P17, since this is exactly the "everyday" leap/short-month handling
-    /// `jiff` already implements).
+    /// Nominal calendrical arithmetic per master06-time_types.adoc
+    /// §Computational Functions and ADR-003 policy 2: years/months/weeks/
+    /// days are applied as calendar units via `jiff::Span` on the anchored
+    /// civil value (jiff's end-of-month clamping is exactly the spec's
+    /// "one or two days less where the following month is shorter"
+    /// behaviour), sub-day components as exact time; the result is
+    /// truncated back to this date's original precision. See the fallback
+    /// PORT NOTE on `add`.
     #[must_use]
     pub fn add_nominal(&self, a_diff: &Iso8601Duration) -> Iso8601Date {
-        let _ = a_diff;
-        todo!("Iso8601Date::add_nominal: nominal-duration addition deferred to the internal engine")
+        self.nominal_shift(a_diff, false)
     }
 
     /// `subtract_nominal` __alias__ `"--"` `(a_diff: Iso8601_duration) -> Iso8601_date`.
     ///
     /// Subtraction of nominal duration represented by `a_diff`. See
-    /// `add_nominal` for semantics.
-    ///
-    /// TODO(port): nominal calendrical arithmetic; deferred to the internal
-    /// engine.
+    /// `add_nominal` for semantics, policy, and the fallback PORT NOTE.
     #[must_use]
     pub fn subtract_nominal(&self, a_diff: &Iso8601Duration) -> Iso8601Date {
-        let _ = a_diff;
-        todo!(
-            "Iso8601Date::subtract_nominal: nominal-duration subtraction deferred to the internal engine"
-        )
+        self.nominal_shift(a_diff, true)
+    }
+
+    /// Shared definite-arithmetic engine call: anchor (ADR-003 policy 3),
+    /// apply the exact seconds as a `jiff::SignedDuration` at civil
+    /// midnight, truncate back to the receiver's precision.
+    fn definite_shift(&self, seconds: f64) -> Iso8601Date {
+        let result = parse_date(&self.core.value).and_then(|parsed| {
+            let anchored = anchored_jiff_date(parsed)?;
+            let duration = signed_duration_from_seconds(seconds)?;
+            let shifted = DateTime::from_parts(anchored, Time::midnight())
+                .checked_add(duration)
+                .ok()?;
+            format_date_at_precision(parsed, shifted.date(), parsed.extended)
+        });
+        result.map_or_else(|| self.clone(), Self::from_value)
+    }
+
+    /// Shared nominal-arithmetic engine call: anchor, apply the duration's
+    /// components as a calendar `jiff::Span` (negated for subtraction),
+    /// truncate back to the receiver's precision.
+    fn nominal_shift(&self, a_diff: &Iso8601Duration, negate: bool) -> Iso8601Date {
+        let result = parse_date(&self.core.value).and_then(|parsed| {
+            let anchored = anchored_jiff_date(parsed)?;
+            let span = parse_duration(&a_diff.core.value)
+                .as_ref()
+                .and_then(nominal_span)?;
+            let span = if negate { span.negate() } else { span };
+            let shifted = DateTime::from_parts(anchored, Time::midnight())
+                .checked_add(span)
+                .ok()?;
+            format_date_at_precision(parsed, shifted.date(), parsed.extended)
+        });
+        result.map_or_else(|| self.clone(), Self::from_value)
+    }
+
+    /// Internal constructor from an already-formatted value string.
+    fn from_value(value: String) -> Iso8601Date {
+        Iso8601Date {
+            core: Iso8601TypeCore { value },
+        }
     }
 }
 
@@ -220,6 +288,22 @@ impl Temporal for Iso8601Date {}
 impl Iso8601Type for Iso8601Date {
     fn core(&self) -> &Iso8601TypeCore {
         &self.core
+    }
+
+    /// `as_string(): String`.
+    ///
+    /// Return the string value in extended format: a compact-form value
+    /// (`"20040215"`) is reformatted with `-` separators at its original
+    /// precision (`"2004-02-15"`), effecting the "in extended format"
+    /// contract the `Iso8601Type::as_string` default cannot honour without
+    /// parsing. An unparseable value is returned verbatim.
+    fn as_string(&self) -> String {
+        parse_date(&self.core.value)
+            .and_then(|parsed| {
+                let anchored = anchored_jiff_date(parsed)?;
+                format_date_at_precision(parsed, anchored, true)
+            })
+            .unwrap_or_else(|| self.core.value.clone())
     }
 
     /// `is_partial(): Boolean` (effected).
@@ -276,11 +360,153 @@ impl Iso8601Date {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn date(value: &str) -> Iso8601Date {
+        Iso8601Date {
+            core: Iso8601TypeCore {
+                value: value.to_string(),
+            },
+        }
+    }
+
+    fn duration(value: &str) -> Iso8601Duration {
+        Iso8601Duration {
+            core: Iso8601TypeCore {
+                value: value.to_string(),
+            },
+        }
+    }
+
+    #[test]
+    fn definite_and_nominal_month_addition_diverge() {
+        // Spec's own P1M example: nominal lands on the same day next month,
+        // definite applies exactly 30.42 days (Feb 15 + 30 days = Mar 16 in
+        // the 2004 leap year; the 0.42-day remainder stays sub-day and is
+        // truncated away at date precision).
+        let d = date("2004-02-15");
+        assert_eq!(d.add_nominal(&duration("P1M")).core.value, "2004-03-15");
+        assert_eq!(d.add(&duration("P1M")).core.value, "2004-03-16");
+    }
+
+    #[test]
+    fn definite_and_nominal_year_addition_diverge_across_leap_day() {
+        // 2004 is a leap year: definite P1Y = 365.24 days lands one day
+        // short of the nominal same-date-next-year.
+        let d = date("2004-02-15");
+        assert_eq!(d.add(&duration("P1Y")).core.value, "2005-02-14");
+        assert_eq!(d.add_nominal(&duration("P1Y")).core.value, "2005-02-15");
+    }
+
+    #[test]
+    fn nominal_month_addition_clamps_to_end_of_month() {
+        assert_eq!(
+            date("2004-01-31").add_nominal(&duration("P1M")).core.value,
+            "2004-02-29"
+        );
+        assert_eq!(
+            date("2003-01-31").add_nominal(&duration("P1M")).core.value,
+            "2003-02-28"
+        );
+    }
+
+    #[test]
+    fn nominal_year_addition_clamps_leap_day() {
+        // Spec text: 29 Feb of a leap year ++ P1Y = 28 Feb of the next year.
+        assert_eq!(
+            date("2004-02-29").add_nominal(&duration("P1Y")).core.value,
+            "2005-02-28"
+        );
+    }
+
+    #[test]
+    fn nominal_subtraction_clamps_too() {
+        assert_eq!(
+            date("2004-03-31")
+                .subtract_nominal(&duration("P1M"))
+                .core
+                .value,
+            "2004-02-29"
+        );
+    }
+
+    #[test]
+    fn definite_day_and_week_arithmetic_is_exact() {
+        assert_eq!(
+            date("2004-02-28").add(&duration("P1D")).core.value,
+            "2004-02-29"
+        );
+        assert_eq!(
+            date("2004-02-28").add(&duration("P2D")).core.value,
+            "2004-03-01"
+        );
+        assert_eq!(
+            date("2004-02-15").add(&duration("P1W")).core.value,
+            "2004-02-22"
+        );
+        assert_eq!(
+            date("2004-03-01").subtract(&duration("P1D")).core.value,
+            "2004-02-29"
+        );
+    }
+
+    #[test]
+    fn partial_precision_is_anchored_then_truncated() {
+        // "2004-02" anchors to 2004-02-01, shifts, and keeps YYYY-MM.
+        assert_eq!(
+            date("2004-02").add_nominal(&duration("P1M")).core.value,
+            "2004-03"
+        );
+        assert_eq!(
+            date("2004").add_nominal(&duration("P1Y")).core.value,
+            "2005"
+        );
+        // Compact partials keep the compact form.
+        assert_eq!(
+            date("200402").add_nominal(&duration("P1M")).core.value,
+            "200403"
+        );
+        // Definite month addition on a partial: 2004-02-01 + 30.42 days
+        // lands on 2004-03-02, truncated back to month precision.
+        assert_eq!(date("2004-02").add(&duration("P1M")).core.value, "2004-03");
+    }
+
+    #[test]
+    fn diff_returns_definite_units_and_is_antisymmetric() {
+        let later = date("2004-03-16");
+        let earlier = date("2004-02-15");
+        assert_eq!(later.diff(&earlier).core.value, "P30D");
+        assert_eq!(earlier.diff(&later).core.value, "-P30D");
+        // Anchored partials: 2004-01-01 minus 2003-01-01 = 365 days (2003
+        // is not a leap year); never expressed in years/months.
+        assert_eq!(date("2004").diff(&date("2003")).core.value, "P365D");
+        assert_eq!(date("2005").diff(&date("2004")).core.value, "P366D");
+    }
+
+    #[test]
+    fn out_of_range_result_falls_back_to_receiver() {
+        let d = date("9999-12-31");
+        assert_eq!(d.add(&duration("P2D")).core.value, "9999-12-31");
+        let d = date("0000");
+        assert_eq!(d.subtract(&duration("P1Y")).core.value, "0000");
+    }
+
+    #[test]
+    fn as_string_reformats_compact_to_extended() {
+        assert_eq!(date("20040215").as_string(), "2004-02-15");
+        assert_eq!(date("200402").as_string(), "2004-02");
+        assert_eq!(date("2004").as_string(), "2004");
+        assert_eq!(date("2004-02-15").as_string(), "2004-02-15");
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.time — docs/research/spec-cache/BASE-1.2.0/uml_classes/iso8601_date.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_date.adoc §Iso8601_date Class
-//   confidence: medium
-//   todos: 5
-//   note: string accessors, partiality, extended-form detection, and ordering delegate to the shared BASE ISO 8601 parser; arithmetic bodies remain TODO(port) because partial-date calendar arithmetic needs an explicit policy beyond the accessor grammar. The four spec invariants are transcribed as plain boolean methods (not a Validate impl, out of scope for foundation-types values) calling TimeDefinitions::* directly per the iso8601_type.rs multiple-inheritance note.
+//   confidence: high
+//   todos: 0
+//   note: string accessors, partiality, extended-form detection, and ordering delegate to the shared BASE ISO 8601 parser; add/subtract/diff (definite, averages 365.24/30.42 as exact SignedDuration) and add_nominal/subtract_nominal (jiff Span calendar units with end-of-month clamping) implemented per ADR-003 policies 1-3 via iso8601_arithmetic.rs, with partial-precision anchoring + truncation and a documented return-receiver fallback for out-of-range results; as_string now effects the extended-format contract. The four spec invariants remain plain boolean methods calling TimeDefinitions::* directly per the iso8601_type.rs multiple-inheritance note.
 // ─────────────────────────────────────────────

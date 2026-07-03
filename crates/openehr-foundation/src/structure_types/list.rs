@@ -67,6 +67,15 @@ impl<T: PartialEq> Container<T> for List<T> {
     fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Iteration accessor required by `Container<T>` (ADR-003 decision 6);
+    /// yields items in the list's insertion order.
+    fn items<'a>(&'a self) -> impl Iterator<Item = &'a T>
+    where
+        T: 'a,
+    {
+        self.0.iter()
+    }
 }
 
 impl<T: PartialEq> Any for List<T> {
@@ -111,6 +120,37 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for List<T> {
             return Err(D::Error::custom("expected _type \"LIST\""));
         }
         Ok(List(wire.items.unwrap_or_default()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::container::Container;
+    use super::List;
+
+    // Spec First_validity/Last_validity: `not is_empty implies first/last
+    // /= Void` — non-empty lists yield the first/last element, empty lists
+    // yield None (the "or Void" widening documented on the methods).
+    #[test]
+    fn first_and_last_follow_the_validity_invariants() {
+        let list = List(vec![10, 20, 30]);
+        assert_eq!(list.first(), Some(&10));
+        assert_eq!(list.last(), Some(&30));
+        let empty = List::<i32>(vec![]);
+        assert_eq!(empty.first(), None);
+        assert_eq!(empty.last(), None);
+    }
+
+    // Spec Container functions: has ("Test for membership of a value"),
+    // count ("Number of items in container"), is_empty.
+    #[test]
+    fn container_functions_over_a_list() {
+        let list = List(vec![1, 2, 2]);
+        assert!(list.has(&2));
+        assert!(!list.has(&9));
+        assert_eq!(list.count(), 3);
+        assert!(!list.is_empty());
+        assert!(List::<i32>(vec![]).is_empty());
     }
 }
 

@@ -420,22 +420,22 @@ pub fn parse_duration(input: &str) -> Option<ParsedIso8601Duration> {
             }
             match (in_time, bytes[index]) {
                 (false, b'Y') if !seen_years && date_rank < 1 => {
-                    parsed.years = parse_unsigned_component(number)?
+                    parsed.years = parse_unsigned_component(number)?;
                 }
                 (false, b'M') if !seen_months && date_rank < 2 => {
-                    parsed.months = parse_unsigned_component(number)?
+                    parsed.months = parse_unsigned_component(number)?;
                 }
                 (false, b'W') if !seen_weeks && date_rank < 3 => {
-                    parsed.weeks = parse_unsigned_component(number)?
+                    parsed.weeks = parse_unsigned_component(number)?;
                 }
                 (false, b'D') if !seen_days && date_rank < 4 => {
-                    parsed.days = parse_unsigned_component(number)?
+                    parsed.days = parse_unsigned_component(number)?;
                 }
                 (true, b'H') if !seen_hours && time_rank < 1 => {
-                    parsed.hours = parse_unsigned_component(number)?
+                    parsed.hours = parse_unsigned_component(number)?;
                 }
                 (true, b'M') if !seen_minutes && time_rank < 2 => {
-                    parsed.minutes = parse_unsigned_component(number)?
+                    parsed.minutes = parse_unsigned_component(number)?;
                 }
                 (true, b'S') if !seen_seconds && time_rank < 3 => {
                     let (whole, fraction) = split_duration_seconds(number)?;
@@ -562,15 +562,15 @@ fn valid_parsed_time(parsed: ParsedIso8601Time) -> bool {
     if parsed.hour < 0 || parsed.hour >= TimeDefinitions::HOURS_IN_DAY {
         return false;
     }
-    if let Some(minute) = parsed.minute {
-        if !TimeDefinitions::valid_minute(minute) {
-            return false;
-        }
+    if let Some(minute) = parsed.minute
+        && !TimeDefinitions::valid_minute(minute)
+    {
+        return false;
     }
-    if let Some(second) = parsed.second {
-        if !TimeDefinitions::valid_second(second) {
-            return false;
-        }
+    if let Some(second) = parsed.second
+        && !TimeDefinitions::valid_second(second)
+    {
+        return false;
     }
     !parsed.has_fractional_second || parsed.second.is_some()
 }

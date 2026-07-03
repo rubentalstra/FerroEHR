@@ -111,24 +111,48 @@ impl Numeric for Real {
         Real(self.0 * other.0)
     }
 
-    fn divide(&self, _other: &Self) -> Self {
-        // TODO(port): Numeric::divide cannot express Real's true
-        // Real -> Double result; see Real::divide for the spec-accurate
-        // overload.
-        todo!("Real as Numeric::divide: spec-accurate divide returns Double, see Real::divide")
-    }
-
-    fn exponent(&self, _other: &Self) -> Self {
-        // TODO(port): Numeric::exponent cannot express Real's true
-        // (Double) -> Double signature; see Real::exponent.
-        todo!(
-            "Real as Numeric::exponent: spec-accurate exponent takes/returns Double, see Real::exponent"
-        )
-    }
+    // PORT NOTE: the spec's `divide` (Real -> Double) and `exponent`
+    // (Double -> Double) effectors live as the inherent methods above; the
+    // `Numeric` trait deliberately does not carry those two members (see
+    // the PORT NOTE on the trait in `numeric.rs`).
 
     /// `negative` __alias__ `"-"` `(): Real` (effected).
     fn negative(&self) -> Self {
         Real(-self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Real;
+    use crate::primitive_types::double::Double;
+    use crate::primitive_types::integer::Integer;
+    use crate::primitive_types::numeric::Numeric;
+
+    // Spec: floor "Return the greatest integer no greater than the value of
+    // this object".
+    #[test]
+    fn floor_is_greatest_integer_no_greater() {
+        assert_eq!(Real(3.7).floor(), Integer(3));
+        assert_eq!(Real(-3.2).floor(), Integer(-4));
+        assert_eq!(Real(5.0).floor(), Integer(5));
+    }
+
+    // Spec: divide "Real number division" -> Double; exponent takes and
+    // returns Double.
+    #[test]
+    fn divide_and_exponent_involve_double() {
+        assert_eq!(Real(7.0).divide(&Real(2.0)), Double(3.5));
+        assert_eq!(Real(2.0).exponent(&Double(3.0)), Double(8.0));
+    }
+
+    // Spec Numeric effectors (same-type shape).
+    #[test]
+    fn same_type_arithmetic_effectors() {
+        assert_eq!(Real(1.5).add(&Real(2.5)), Real(4.0));
+        assert_eq!(Real(1.5).subtract(&Real(0.5)), Real(1.0));
+        assert_eq!(Real(1.5).multiply(&Real(2.0)), Real(3.0));
+        assert_eq!(Real(1.5).negative(), Real(-1.5));
     }
 }
 
@@ -137,6 +161,6 @@ impl Numeric for Real {
 //   source: BASE 1.2.0 foundation_types.primitive_types — docs/research/spec-cache/BASE-1.2.0/uml_classes/real.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master03-primitive_types.adoc §Class Definitions / real.adoc §Real Class
 //   confidence: medium
-//   todos: 2
-//   note: DIRECTED DEVIATION — spec text literally describes Real as single-precision (32-bit); backed by f64 (same as Double) per explicit transcription-pass instruction, not spec literalism. Flag for review if float-precision parity ever matters. divide/exponent Numeric-trait impls stubbed as in Integer/Integer64 (see numeric.rs PORT NOTE).
+//   todos: 0
+//   note: DIRECTED DEVIATION — spec text literally describes Real as single-precision (32-bit); backed by f64 (same as Double) per explicit transcription-pass instruction, not spec literalism. Flag for review if float-precision parity ever matters. Spec-accurate divide/exponent are inherent methods; the Numeric trait no longer carries those members (numeric.rs PORT NOTE).
 // ─────────────────────────────────────────────

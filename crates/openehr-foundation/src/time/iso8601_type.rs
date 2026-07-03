@@ -49,14 +49,15 @@
 //! `Iso8601_*` type in this module (`Iso8601Date`, `Iso8601Time`,
 //! `Iso8601DateTime`, `Iso8601Duration`, `Iso8601Timezone`) carries its
 //! `value: String` representation and exposes the spec's declared accessor/
-//! arithmetic functions as methods, with `todo!()` bodies wherever string
-//! parsing is required and deferred.
+//! arithmetic functions as methods.
 //!
-//! PERF(port) / PORT NOTE: the internal engine backing these string-parsing
-//! and arithmetic bodies is expected to bridge to `jiff`'s calendar/duration
-//! types. The dependency is now wired into `openehr-foundation` at the
-//! workspace-pinned `0.2.31`; the method bodies below remain TODO until the
-//! parser/arithmetic pass chooses the exact openEHR partial-precision policy.
+//! PORT NOTE: the internal engine backing the string-parsing and arithmetic
+//! bodies bridges to `jiff`'s calendar/duration types (workspace-pinned
+//! `0.2`): parsing lives in `iso8601_parser.rs`, arithmetic in
+//! `iso8601_arithmetic.rs`. The openEHR partial-precision policy is fixed
+//! by ADR-003 (anchor unknown components at their minimum, compute on the
+//! anchored civil value, truncate the result back to the receiver's
+//! original precision).
 use crate::time::temporal::Temporal;
 use serde::{Deserialize, Serialize};
 // PORT NOTE: `Any` and `Ordered` are not imported here even though the
@@ -112,14 +113,15 @@ pub trait Iso8601Type: Temporal {
     /// compact-vs-extended re-formatting is implemented, see the TODO
     /// below).
     ///
-    /// TODO(port): this default simply returns the stored `value` verbatim.
-    /// The spec's actual contract is "in extended format" specifically —
-    /// i.e. a value stored in *compact* form (`is_extended() == false`, see
-    /// below) should be reformatted with `-`/`:` separators before being
-    /// returned. That reformatting is string-parsing work deferred to the
-    /// internal engine (see the module doc's jiff-bridging plan); until
-    /// then this returns the raw value unconditionally, which is only
-    /// correct when the stored value is already extended.
+    /// PORT NOTE: this default returns the stored `value` verbatim. The
+    /// spec's actual contract is "in extended format" specifically — a
+    /// value stored in *compact* form should be reformatted with `-`/`:`
+    /// separators. `Iso8601Date`, `Iso8601Time`, `Iso8601DateTime`, and
+    /// `Iso8601Timezone` override this method to effect that reformatting
+    /// via the `iso8601_arithmetic` engine; only `Iso8601Duration` relies
+    /// on this default, correctly — a duration's `is_extended()` is
+    /// unconditionally `true`, so there is no compact form to convert (see
+    /// the documented non-override in `iso8601_duration.rs`).
     fn as_string(&self) -> String {
         self.core().value.clone()
     }
@@ -154,7 +156,7 @@ pub trait Iso8601Type: Temporal {
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.time — docs/research/spec-cache/BASE-1.2.0/uml_classes/iso8601_type.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_type.adoc §Iso8601_type Class
-//   confidence: medium
-//   todos: 1
-//   note: multiple-inheritance worked example (ADR-001 §2) — Temporal composes as an ordinary supertrait, but Time_Definitions is a constants/free-fn struct with no trait shape, so that half of the Inherit relation is transcribed as direct TimeDefinitions::* calls from concrete descendants rather than a second supertrait bound; as_string's default returns the raw stored value verbatim pending the jiff-backed compact->extended reformatting engine.
+//   confidence: high
+//   todos: 0
+//   note: multiple-inheritance worked example (ADR-001 §2) — Temporal composes as an ordinary supertrait, but Time_Definitions is a constants/free-fn struct with no trait shape, so that half of the Inherit relation is transcribed as direct TimeDefinitions::* calls from concrete descendants rather than a second supertrait bound; as_string's default returns the raw stored value, with the compact->extended reformatting effected by per-class overrides backed by iso8601_arithmetic.rs (only Iso8601Duration, always-extended by definition, relies on the default).
 // ─────────────────────────────────────────────

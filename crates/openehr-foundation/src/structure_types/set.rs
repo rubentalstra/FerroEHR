@@ -42,6 +42,22 @@ impl<T: Eq + Hash> Container<T> for Set<T> {
     fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Iteration accessor required by `Container<T>` (ADR-003 decision 6),
+    /// implemented directly over the backing `HashSet`'s own iterator.
+    ///
+    /// PORT NOTE: a `HashSet` has no contiguous storage and no defined
+    /// order, so the inherited `there_exists`/`for_all`/`matching`/`select`
+    /// operate in unspecified iteration order here — `select`'s "first
+    /// item matching" is an arbitrary matching item for a Set, which is
+    /// consistent with the spec's own "unordered container" description of
+    /// this class.
+    fn items<'a>(&'a self) -> impl Iterator<Item = &'a T>
+    where
+        T: 'a,
+    {
+        self.0.iter()
+    }
 }
 
 impl<T: Eq + Hash> Any for Set<T> {
@@ -86,6 +102,46 @@ impl<'de, T: Eq + Hash + Deserialize<'de>> Deserialize<'de> for Set<T> {
             return Err(D::Error::custom("expected _type \"SET\""));
         }
         Ok(Set(wire.items.unwrap_or_default()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::container::Container;
+    use super::Set;
+    use std::collections::HashSet;
+
+    fn set(items: &[i32]) -> Set<i32> {
+        Set(items.iter().copied().collect::<HashSet<i32>>())
+    }
+
+    // Spec Container functions over the unordered, unique-membership Set.
+    #[test]
+    fn container_functions_over_a_set() {
+        let s = set(&[1, 2, 3]);
+        assert!(s.has(&2));
+        assert!(!s.has(&9));
+        assert_eq!(s.count(), 3);
+        assert!(!s.is_empty());
+        assert!(set(&[]).is_empty());
+    }
+
+    // The inherited quantifiers/selectors work directly over the HashSet
+    // backing (ADR-003 decision 6); select returns an arbitrary matching
+    // item since a Set is unordered.
+    #[test]
+    fn quantifiers_and_selectors_over_the_hashset_backing() {
+        let s = set(&[1, 2, 3, 4]);
+        assert!(s.there_exists(|v| *v == 3));
+        assert!(s.for_all(|v| *v >= 1));
+        assert!(!s.for_all(|v| v % 2 == 0));
+        let evens = s.matching(|v| v % 2 == 0);
+        let mut evens_sorted = evens.0.clone();
+        evens_sorted.sort_unstable();
+        assert_eq!(evens_sorted, vec![2, 4]);
+        let selected = s.select(|v| v % 2 == 0);
+        assert!(matches!(selected, Some(2 | 4)));
+        assert_eq!(s.select(|v| *v > 10), None);
     }
 }
 

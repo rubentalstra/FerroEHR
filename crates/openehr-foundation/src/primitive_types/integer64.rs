@@ -74,10 +74,10 @@ impl Integer64 {
     ///
     /// Large integer modulus.
     ///
-    /// TODO(port): as with `Integer::modulo`, the spec does not state the
-    /// sign convention for negative operands; Rust's `%` (truncated
-    /// remainder) is used as the direct primitive-operator translation
-    /// pending clarification.
+    /// PORT NOTE: as with `Integer::modulo`, the spec does not state the
+    /// sign convention for negative operands; per ADR-003 decision 4 this
+    /// is truncated division (Rust's/Java's `%` — the result takes the
+    /// dividend's sign).
     #[must_use]
     pub fn modulo(&self, other: &Integer) -> Integer64 {
         Integer64(self.0 % i64::from(other.0))
@@ -142,25 +142,57 @@ impl Numeric for Integer64 {
         Integer64(self.0 * other.0)
     }
 
-    fn divide(&self, _other: &Self) -> Self {
-        // TODO(port): Numeric::divide cannot express Integer64's true
-        // (Integer) -> Double result; see Integer64::divide for the
-        // spec-accurate overload.
-        todo!(
-            "Integer64 as Numeric::divide: spec-accurate divide returns Double, see Integer64::divide"
-        )
-    }
-
-    fn exponent(&self, _other: &Self) -> Self {
-        // TODO(port): Numeric::exponent cannot express Integer64's true
-        // (Double) -> Double signature; see Integer64::exponent.
-        todo!(
-            "Integer64 as Numeric::exponent: spec-accurate exponent takes/returns Double, see Integer64::exponent"
-        )
-    }
+    // PORT NOTE: the spec's `divide`/`exponent` effectors for Integer64
+    // take an `Integer`/`Double` operand and return `Double`, living as the
+    // inherent methods above; the `Numeric` trait deliberately does not
+    // carry those two members (see the PORT NOTE on the trait in
+    // `numeric.rs`).
 
     fn negative(&self) -> Self {
         Integer64(-self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Integer64;
+    use crate::primitive_types::double::Double;
+    use crate::primitive_types::integer::Integer;
+
+    // Spec: the arithmetic effectors take an Integer (32-bit) operand and
+    // return Integer64 (asymmetric widening, straight from the table).
+    #[test]
+    fn widening_arithmetic_with_an_integer_operand() {
+        assert_eq!(
+            Integer64(5_000_000_000).add(&Integer(2)),
+            Integer64(5_000_000_002)
+        );
+        assert_eq!(Integer64(10).subtract(&Integer(3)), Integer64(7));
+        assert_eq!(Integer64(4).multiply(&Integer(3)), Integer64(12));
+    }
+
+    // Spec: divide "Large integer division" -> Double; exponent takes and
+    // returns Double.
+    #[test]
+    fn divide_and_exponent_involve_double() {
+        assert_eq!(Integer64(7).divide(&Integer(2)), Double(3.5));
+        assert_eq!(Integer64(3).exponent(&Double(2.0)), Double(9.0));
+    }
+
+    // Spec: modulo "Large integer modulus"; truncated division per ADR-003
+    // decision 4.
+    #[test]
+    fn modulo_uses_truncated_division_per_adr_003() {
+        assert_eq!(Integer64(7).modulo(&Integer(3)), Integer64(1));
+        assert_eq!(Integer64(-7).modulo(&Integer(3)), Integer64(-1));
+        assert_eq!(Integer64(7).modulo(&Integer(-3)), Integer64(1));
+    }
+
+    // Spec: negative "Generate the negative of the current Integer64 value".
+    #[test]
+    fn negative_value_negates() {
+        assert_eq!(Integer64(42).negative_value(), Integer64(-42));
+        assert_eq!(Integer64(-1).negative_value(), Integer64(1));
     }
 }
 
@@ -168,7 +200,7 @@ impl Numeric for Integer64 {
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.primitive_types — docs/research/spec-cache/BASE-1.2.0/uml_classes/integer64.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master03-primitive_types.adoc §Class Definitions / integer64.adoc §Integer64 Class
-//   confidence: medium
-//   todos: 2
-//   note: spec's actual arithmetic overloads all take a 32-bit Integer operand (asymmetric widening) transcribed as inherent methods; the Numeric trait impl provides a same-type Integer64+Integer64 specialization instead since the trait cannot express the widening shape, with divide/exponent stubbed as in Integer.
+//   confidence: high
+//   todos: 0
+//   note: spec's actual arithmetic overloads all take a 32-bit Integer operand (asymmetric widening) transcribed as inherent methods; the Numeric trait impl provides a same-type Integer64+Integer64 specialization for add/subtract/multiply/negative, and the trait no longer carries divide/exponent (numeric.rs PORT NOTE). modulo uses truncated division per ADR-003 decision 4.
 // ─────────────────────────────────────────────

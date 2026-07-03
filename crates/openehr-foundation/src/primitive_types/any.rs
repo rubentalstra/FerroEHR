@@ -62,33 +62,29 @@ pub trait Any {
     /// Type name of an object as a string. May include generic parameters,
     /// as in `"Interval<Time>"`.
     ///
-    /// TODO(port): the spec signature takes `an_object` as an explicit
+    /// TODO(port): P17 — the spec signature takes `an_object` as an explicit
     /// parameter (a class-level/static-style function on `Any`) rather than
     /// operating on `self`; that shape does not have a direct trait-method
     /// equivalent without a `Self: 'static` + `std::any::type_name` bridge
     /// or a per-type constant. Left as an instance method returning the
-    /// receiver's own type name until the generic-parameter rendering
-    /// question (needed once `Interval<T>` and other generics exist) is
-    /// resolved.
+    /// receiver's own type name; revisit the generic-parameter rendering
+    /// (`"Interval<Time>"`-style names for `Interval<T>` and other
+    /// generics) in the P17 make-it-compile pass.
     fn type_of(&self) -> String;
 
     /// `instance_of(a_type: String) -> Any` (abstract).
     ///
     /// Create a new instance of a type, named by string.
     ///
-    /// PORT NOTE: this is a reflective factory function — construct an
-    /// instance of an arbitrary type from its name at runtime. Rust has no
-    /// built-in reflection-by-type-name; a faithful transcription requires a
-    /// type registry (e.g. a `HashMap<&str, fn() -> Box<dyn Any>>`) that does
-    /// not exist yet at this layer of the crate and would have to live above
-    /// every concrete type this trait is implemented for, not inside the
-    /// trait itself. Not modelled as a trait method here; left as a
-    /// documented gap. A later phase may add a free function or registry in
-    /// this module once the full set of foundation types is known.
-    ///
-    /// TODO(port): decide and implement the type registry, if this function
-    /// is ever actually exercised by ported code (the spec marks it
-    /// abstract, but no RM class transcribed so far calls it directly).
+    /// PORT NOTE (documented deviation, ADR-003 decision 7): this is a
+    /// reflective factory function — construct an instance of an arbitrary
+    /// type from its name at runtime. Rust has no reflection-by-type-name
+    /// short of a global type registry (e.g. a `HashMap<&str, fn() ->
+    /// Box<dyn Any>>`), and EHRbase has zero consumers of this function, so
+    /// per the ADR the method deliberately stays a stub returning `None`
+    /// rather than growing a registry nothing uses. This is a permanent,
+    /// recorded deviation, not unfinished work; if a genuine consumer ever
+    /// appears, the registry design question reopens then.
     #[must_use]
     fn instance_of(_a_type: &str) -> Option<Self>
     where
@@ -120,6 +116,6 @@ impl Any for i64 {
 //   source: BASE 1.2.0 foundation_types.primitive_types — docs/research/spec-cache/BASE-1.2.0/uml_classes/any.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master03-primitive_types.adoc §Class Definitions / any.adoc §Any Class
 //   confidence: medium
-//   todos: 2
-//   note: instance_of has no faithful static-dispatch shape in Rust without a type registry; type_of's class-level signature needs revisiting once generic types (Interval<T>) exist to render "Interval<Time>"-style names.
+//   todos: 1
+//   note: instance_of is a permanent documented deviation per ADR-003 decision 7 (no type registry, zero EHRbase consumers); type_of's class-level signature and generic-name rendering ("Interval<Time>") deferred to P17.
 // ─────────────────────────────────────────────

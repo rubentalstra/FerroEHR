@@ -34,6 +34,27 @@ impl Double {
     pub fn floor(&self) -> Integer {
         Integer(self.0.floor() as i32)
     }
+
+    /// `divide` __alias__ `"/"` `(other: Double) -> Double` (effected).
+    ///
+    /// PORT NOTE: `Double` is the one concrete type in this cluster whose
+    /// spec-declared `divide` happens to be same-type (`Double, Double ->
+    /// Double`); it is nonetheless an inherent method, like every other
+    /// concrete type's `divide`, because the `Numeric` trait deliberately
+    /// does not carry the spec's `divide`/`exponent` members (see the PORT
+    /// NOTE on the trait in `numeric.rs`).
+    #[must_use]
+    pub fn divide(&self, other: &Double) -> Double {
+        Double(self.0 / other.0)
+    }
+
+    /// `exponent` __alias__ `"^"` `(other: Double) -> Double` (effected).
+    ///
+    /// Same inherent-method note as `divide` above.
+    #[must_use]
+    pub fn exponent(&self, other: &Double) -> Double {
+        Double(self.0.powf(other.0))
+    }
 }
 
 impl Any for Double {
@@ -75,27 +96,40 @@ impl Numeric for Double {
         Double(self.0 * other.0)
     }
 
-    /// `divide` __alias__ `"/"` `(other: Double) -> Double` (effected).
-    ///
-    /// PORT NOTE: `Double` is the one concrete type in this cluster whose
-    /// spec-declared `divide` result actually matches `Numeric::divide`'s
-    /// same-type trait shape (`Double, Double -> Double`) — no inherent
-    /// override needed, unlike `Integer`/`Integer64`/`Real`, whose `divide`
-    /// narrows to `Double` from a *different* concrete type.
-    fn divide(&self, other: &Self) -> Self {
-        Double(self.0 / other.0)
-    }
-
-    /// `exponent` __alias__ `"^"` `(other: Double) -> Double` (effected).
-    ///
-    /// Same same-type-shape note as `divide` above applies to `exponent`.
-    fn exponent(&self, other: &Self) -> Self {
-        Double(self.0.powf(other.0))
-    }
-
     /// `negative` __alias__ `"-"` `(): Double` (effected).
     fn negative(&self) -> Self {
         Double(-self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Double;
+    use crate::primitive_types::integer::Integer;
+    use crate::primitive_types::numeric::Numeric;
+
+    // Spec: floor "Return the greatest integer no greater than the value of
+    // this object".
+    #[test]
+    fn floor_is_greatest_integer_no_greater() {
+        assert_eq!(Double(2.9).floor(), Integer(2));
+        assert_eq!(Double(-2.1).floor(), Integer(-3));
+    }
+
+    // Spec: divide/exponent are Double -> Double effectors.
+    #[test]
+    fn divide_and_exponent_are_same_type() {
+        assert_eq!(Double(1.0).divide(&Double(4.0)), Double(0.25));
+        assert_eq!(Double(2.0).exponent(&Double(-1.0)), Double(0.5));
+    }
+
+    // Spec Numeric effectors (same-type shape).
+    #[test]
+    fn same_type_arithmetic_effectors() {
+        assert_eq!(Double(0.5).add(&Double(0.25)), Double(0.75));
+        assert_eq!(Double(0.5).subtract(&Double(0.25)), Double(0.25));
+        assert_eq!(Double(0.5).multiply(&Double(4.0)), Double(2.0));
+        assert_eq!(Double(0.5).negative(), Double(-0.5));
     }
 }
 
@@ -105,5 +139,5 @@ impl Numeric for Double {
 //   source_loc: master03-primitive_types.adoc §Class Definitions / double.adoc §Double Class
 //   confidence: high
 //   todos: 0
-//   note: only concrete Numeric effector in this cluster whose divide/exponent match the trait's same-type shape exactly, so Numeric is fully implemented here with no stub/todo split (contrast Integer/Integer64/Real).
+//   note: divide/exponent are inherent methods (the one same-type pair in the cluster) since the Numeric trait no longer carries those members (numeric.rs PORT NOTE); trait carries add/subtract/multiply/negative.
 // ─────────────────────────────────────────────

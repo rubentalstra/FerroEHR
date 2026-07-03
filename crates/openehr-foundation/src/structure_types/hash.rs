@@ -86,6 +86,20 @@ impl<K: Ordered + Eq + StdHash, V: PartialEq> Container<V> for OpenEhrHash<K, V>
     fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Iteration accessor required by `Container<V>` (ADR-003 decision 6),
+    /// implemented directly over the backing `HashMap`'s value iterator.
+    ///
+    /// PORT NOTE: `Hash<K,V>` inherits `Container<V>` (the *values* are the
+    /// contained items), so iteration is over values; a `HashMap` has no
+    /// defined order, so the inherited quantifiers/selectors operate in
+    /// unspecified iteration order here (same note as `Set::items`).
+    fn items<'a>(&'a self) -> impl Iterator<Item = &'a V>
+    where
+        V: 'a,
+    {
+        self.0.values()
+    }
 }
 
 impl<K: Ordered + Eq + StdHash, V: PartialEq> Any for OpenEhrHash<K, V> {
@@ -108,6 +122,49 @@ impl<K: Ordered + Eq + StdHash, V: PartialEq> Any for OpenEhrHash<K, V> {
 
     fn type_of(&self) -> String {
         "Hash".to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::container::Container;
+    use super::OpenEhrHash;
+    use crate::primitive_types::string::OpenEhrString;
+    use std::collections::HashMap;
+
+    fn sample() -> OpenEhrHash<OpenEhrString, i32> {
+        let mut map = HashMap::new();
+        map.insert(OpenEhrString("one".to_string()), 1);
+        map.insert(OpenEhrString("two".to_string()), 2);
+        OpenEhrHash(map)
+    }
+
+    // Spec: has_key "Test for presence of a_key"; item "Return item for key
+    // a_key" (missing key widened to None per the PORT NOTE on the method).
+    #[test]
+    fn has_key_and_item_look_up_by_key() {
+        let hash = sample();
+        let one = OpenEhrString("one".to_string());
+        let three = OpenEhrString("three".to_string());
+        assert!(hash.has_key(&one));
+        assert!(!hash.has_key(&three));
+        assert_eq!(hash.item(&one), Some(&1));
+        assert_eq!(hash.item(&three), None);
+    }
+
+    // Spec Container<V> functions: `has` tests membership of a *value*
+    // (distinct from has_key), count/is_empty, plus the inherited
+    // quantifiers over the HashMap's values.
+    #[test]
+    fn container_functions_operate_over_values() {
+        let hash = sample();
+        assert!(hash.has(&2));
+        assert!(!hash.has(&9));
+        assert_eq!(hash.count(), 2);
+        assert!(!hash.is_empty());
+        assert!(hash.there_exists(|v| *v == 1));
+        assert!(hash.for_all(|v| *v >= 1));
+        assert_eq!(hash.select(|v| *v > 10), None);
     }
 }
 

@@ -20,6 +20,7 @@
 //! P17.
 use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
+use crate::time::iso8601_arithmetic::format_timezone;
 use crate::time::iso8601_parser::parse_timezone;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
@@ -61,7 +62,10 @@ impl Iso8601Timezone {
     ///
     #[must_use]
     pub fn minute(&self) -> i32 {
-        parse_timezone(&self.core.value).map_or(0, |parsed| parsed.minute_value())
+        parse_timezone(&self.core.value).map_or(
+            0,
+            super::iso8601_parser::ParsedIso8601Timezone::minute_value,
+        )
     }
 
     /// `sign(): Integer`.
@@ -79,7 +83,8 @@ impl Iso8601Timezone {
     ///
     #[must_use]
     pub fn minute_unknown(&self) -> bool {
-        parse_timezone(&self.core.value).is_none_or(|parsed| parsed.minute_unknown())
+        parse_timezone(&self.core.value)
+            .is_none_or(super::iso8601_parser::ParsedIso8601Timezone::minute_unknown)
     }
 
     /// `is_gmt(): Boolean`.
@@ -88,7 +93,8 @@ impl Iso8601Timezone {
     ///
     #[must_use]
     pub fn is_gmt(&self) -> bool {
-        parse_timezone(&self.core.value).is_some_and(|parsed| parsed.is_gmt())
+        parse_timezone(&self.core.value)
+            .is_some_and(super::iso8601_parser::ParsedIso8601Timezone::is_gmt)
     }
 }
 
@@ -123,6 +129,21 @@ impl Ordered for Iso8601Timezone {
 impl Temporal for Iso8601Timezone {}
 
 impl Iso8601Type for Iso8601Timezone {
+    /// `as_string(): String`.
+    ///
+    /// Return timezone string in extended format: a compact-form offset
+    /// (`"+0230"`) is reformatted with a `:` separator (`"+02:30"`),
+    /// effecting the "in extended format" contract the
+    /// `Iso8601Type::as_string` default cannot honour without parsing.
+    /// `"Z"` and hour-only offsets (`"+02"`) are already their own extended
+    /// form; an unparseable value is returned verbatim.
+    fn as_string(&self) -> String {
+        parse_timezone(&self.core.value).map_or_else(
+            || self.core.value.clone(),
+            |parsed| format_timezone(parsed, true),
+        )
+    }
+
     /// `is_partial(): Boolean` (effected).
     ///
     /// True if this time zone is partial, i.e. if minutes is missing.
@@ -187,5 +208,5 @@ impl Iso8601Timezone {
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_timezone.adoc §Iso8601_timezone Class
 //   confidence: medium
 //   todos: 0
-//   note: minute()'s published description text ("Extract the hour part...") looks like a copy-paste artifact from hour() immediately above it in the table, transcribed with the name-implied minute semantics and flagged rather than silently corrected; Max_hour_valid permits +00/Z despite the table's conflicting hour>0 wording so UTC remains valid. Accessors and ordering delegate to the shared BASE ISO 8601 parser.
+//   note: minute()'s published description text ("Extract the hour part...") looks like a copy-paste artifact from hour() immediately above it in the table, transcribed with the name-implied minute semantics and flagged rather than silently corrected; Max_hour_valid permits +00/Z despite the table's conflicting hour>0 wording so UTC remains valid. Accessors and ordering delegate to the shared BASE ISO 8601 parser; as_string now effects the extended-format contract via iso8601_arithmetic::format_timezone.
 // ─────────────────────────────────────────────

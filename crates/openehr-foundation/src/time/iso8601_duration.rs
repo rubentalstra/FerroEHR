@@ -143,7 +143,10 @@ impl Iso8601Duration {
     ///
     #[must_use]
     pub fn to_seconds(&self) -> f64 {
-        parse_duration(&self.core.value).map_or(0.0, |parsed| parsed.to_seconds())
+        parse_duration(&self.core.value).map_or(
+            0.0,
+            super::iso8601_parser::ParsedIso8601Duration::to_seconds,
+        )
     }
 
     /// `as_string(): String`.
@@ -353,6 +356,49 @@ impl Iso8601Duration {
     pub fn invariant_fractional_second_valid(&self) -> bool {
         let fs = self.fractional_seconds();
         (0.0..1.0).contains(&fs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn duration(value: &str) -> Iso8601Duration {
+        Iso8601Duration {
+            core: Iso8601TypeCore {
+                value: value.to_string(),
+            },
+        }
+    }
+
+    #[test]
+    fn to_seconds_applies_average_year_and_month_lengths() {
+        // ADR-003 policy 1: P1M = 30.42 days, P1Y = 365.24 days.
+        assert_eq!(duration("P1M").to_seconds(), 2_628_288.0);
+        assert_eq!(duration("P1Y").to_seconds(), 31_556_736.0);
+        assert_eq!(duration("P1W").to_seconds(), 604_800.0);
+        assert_eq!(duration("PT1H30M").to_seconds(), 5_400.0);
+        assert_eq!(duration("-PT30S").to_seconds(), -30.0);
+    }
+
+    #[test]
+    fn duration_arithmetic_goes_via_seconds() {
+        assert_eq!(
+            duration("P1D").add(&duration("PT12H")).to_seconds(),
+            129_600.0
+        );
+        assert_eq!(
+            duration("P1D").subtract(&duration("PT12H")).to_seconds(),
+            43_200.0
+        );
+        assert_eq!(duration("PT10S").multiply(2.5).to_seconds(), 25.0);
+        assert_eq!(duration("PT10S").divide(4.0).to_seconds(), 2.5);
+        assert_eq!(duration("PT10S").negative().to_seconds(), -10.0);
+    }
+
+    #[test]
+    fn divide_by_zero_preserves_the_receiver() {
+        assert_eq!(duration("PT10S").divide(0.0).core.value, "PT10S");
     }
 }
 

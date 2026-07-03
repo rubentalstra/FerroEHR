@@ -12,6 +12,8 @@ publish = false
 [dependencies]
 jiff.workspace = true
 serde.workspace = true
+thiserror.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

@@ -25,8 +25,12 @@
 //! full rationale and the jiff-bridging plan for P17.
 use crate::primitive_types::any::Any;
 use crate::primitive_types::ordered::Ordered;
+use crate::time::iso8601_arithmetic::{
+    definite_duration_string_from_seconds, format_date_time_at_precision, nominal_span,
+    signed_duration_from_seconds,
+};
 use crate::time::iso8601_duration::Iso8601Duration;
-use crate::time::iso8601_parser::parse_date_time;
+use crate::time::iso8601_parser::{parse_date_time, parse_duration};
 use crate::time::iso8601_timezone::Iso8601Timezone;
 use crate::time::iso8601_type::{Iso8601Type, Iso8601TypeCore};
 use crate::time::temporal::Temporal;
@@ -220,37 +224,62 @@ impl Iso8601DateTime {
     ///
     /// Arithmetic addition of a duration to a date/time.
     ///
-    /// TODO(port): definite-arithmetic addition; deferred to the internal
-    /// engine.
+    /// Definite arithmetic per master06-time_types.adoc §Computational
+    /// Functions and ADR-003 policy 1: the duration is an exact quantity
+    /// (`to_seconds()`, averages 365.24/30.42 for years/months), applied as
+    /// an exact `jiff::SignedDuration` to the anchored civil date-time
+    /// (unknown minute/second/fraction filled with 0, ADR-003 policy 3),
+    /// and the result truncated back to this value's original precision.
+    /// Timezone text is preserved verbatim; the arithmetic is civil (no
+    /// DST — a fixed ISO 8601 offset carries no zone rules).
+    ///
+    /// PORT NOTE: the spec declares no error channel; on an unparseable
+    /// receiver or an out-of-range result (year outside 0000–9999), the
+    /// receiver is returned unchanged — the same fallback convention as
+    /// `Iso8601Duration::divide`.
     #[must_use]
     pub fn add(&self, a_diff: &Iso8601Duration) -> Iso8601DateTime {
-        let _ = a_diff;
-        todo!("Iso8601DateTime::add: definite-duration addition deferred to the internal engine")
+        self.definite_shift(a_diff.to_seconds())
     }
 
     /// `subtract` __alias__ `"-"` `(a_diff: Iso8601_duration) -> Iso8601_date_time`.
     ///
     /// Arithmetic subtraction of a duration from a date/time.
     ///
-    /// TODO(port): definite-arithmetic subtraction; deferred to the
-    /// internal engine.
+    /// Definite arithmetic; see `add` for semantics, policy, and the
+    /// fallback PORT NOTE.
     #[must_use]
     pub fn subtract(&self, a_diff: &Iso8601Duration) -> Iso8601DateTime {
-        let _ = a_diff;
-        todo!(
-            "Iso8601DateTime::subtract: definite-duration subtraction deferred to the internal engine"
-        )
+        self.definite_shift(-a_diff.to_seconds())
     }
 
     /// `diff` __alias__ `"-"` `(a_date_time: Iso8601_date_time) -> Iso8601_duration`.
     ///
     /// Difference of two date/times.
     ///
-    /// TODO(port): deferred to the internal engine.
+    /// Definite arithmetic per ADR-003 policy 1: the difference of the two
+    /// anchored civil date-times (receiver minus argument, fractional
+    /// seconds included), returned as a normalized `Iso8601_duration` in
+    /// definite units only (days and below — never years/months).
+    ///
+    /// PORT NOTE: operand order is receiver minus argument; see
+    /// `Iso8601Date::diff`. Unparseable operands yield the zero duration.
     #[must_use]
     pub fn diff(&self, a_date_time: &Iso8601DateTime) -> Iso8601Duration {
-        let _ = a_date_time;
-        todo!("Iso8601DateTime::diff: deferred to the internal engine")
+        let seconds = match (
+            parse_date_time(&self.core.value)
+                .and_then(super::iso8601_parser::ParsedIso8601DateTime::as_jiff_datetime),
+            parse_date_time(&a_date_time.core.value)
+                .and_then(super::iso8601_parser::ParsedIso8601DateTime::as_jiff_datetime),
+        ) {
+            (Some(left), Some(right)) => left.duration_since(right).as_secs_f64(),
+            _ => 0.0,
+        };
+        Iso8601Duration {
+            core: Iso8601TypeCore {
+                value: definite_duration_string_from_seconds(seconds),
+            },
+        }
     }
 
     /// `add_nominal` __alias__ `"++"` `(a_diff: Iso8601_duration) -> Iso8601_date_time`.
@@ -275,14 +304,15 @@ impl Iso8601DateTime {
     /// data-loss bug rather than a plausible spec intent — flagged loudly
     /// here rather than propagated silently.
     ///
-    /// TODO(port): nominal calendrical arithmetic; deferred to the internal
-    /// engine.
+    /// Nominal calendrical arithmetic per master06-time_types.adoc
+    /// §Computational Functions and ADR-003 policy 2: years/months/weeks/
+    /// days as calendar units via `jiff::Span` on the anchored civil
+    /// date-time (end-of-month clamping per jiff), sub-day components as
+    /// exact time; result truncated back to this value's original
+    /// precision. See the fallback PORT NOTE on `add`.
     #[must_use]
     pub fn add_nominal(&self, a_diff: &Iso8601Duration) -> Iso8601DateTime {
-        let _ = a_diff;
-        todo!(
-            "Iso8601DateTime::add_nominal: nominal-duration addition deferred to the internal engine"
-        )
+        self.nominal_shift(a_diff, false)
     }
 
     /// `subtract_nominal` __alias__ `"--"` `(a_diff: Iso8601_duration) -> Iso8601_date_time`.
@@ -295,14 +325,47 @@ impl Iso8601DateTime {
     /// `Iso8601_date`; transcribed as `Iso8601DateTime` for the same
     /// same-type-pattern and data-loss reasoning.
     ///
-    /// TODO(port): nominal calendrical arithmetic; deferred to the internal
-    /// engine.
+    /// Nominal calendrical arithmetic; see `add_nominal` for semantics,
+    /// policy, and the fallback PORT NOTE on `add`.
     #[must_use]
     pub fn subtract_nominal(&self, a_diff: &Iso8601Duration) -> Iso8601DateTime {
-        let _ = a_diff;
-        todo!(
-            "Iso8601DateTime::subtract_nominal: nominal-duration subtraction deferred to the internal engine"
-        )
+        self.nominal_shift(a_diff, true)
+    }
+
+    /// Shared definite-arithmetic engine call: anchor (ADR-003 policy 3),
+    /// apply the exact seconds as a `jiff::SignedDuration` on the civil
+    /// date-time, truncate back to the receiver's precision.
+    fn definite_shift(&self, seconds: f64) -> Iso8601DateTime {
+        let result = parse_date_time(&self.core.value).and_then(|parsed| {
+            let anchored = parsed.as_jiff_datetime()?;
+            let duration = signed_duration_from_seconds(seconds)?;
+            let shifted = anchored.checked_add(duration).ok()?;
+            format_date_time_at_precision(parsed, shifted, parsed.extended, false)
+        });
+        result.map_or_else(|| self.clone(), Self::from_value)
+    }
+
+    /// Shared nominal-arithmetic engine call: anchor, apply the duration's
+    /// components as a calendar `jiff::Span` (negated for subtraction) on
+    /// the civil date-time, truncate back to the receiver's precision.
+    fn nominal_shift(&self, a_diff: &Iso8601Duration, negate: bool) -> Iso8601DateTime {
+        let result = parse_date_time(&self.core.value).and_then(|parsed| {
+            let anchored = parsed.as_jiff_datetime()?;
+            let span = parse_duration(&a_diff.core.value)
+                .as_ref()
+                .and_then(nominal_span)?;
+            let span = if negate { span.negate() } else { span };
+            let shifted = anchored.checked_add(span).ok()?;
+            format_date_time_at_precision(parsed, shifted, parsed.extended, false)
+        });
+        result.map_or_else(|| self.clone(), Self::from_value)
+    }
+
+    /// Internal constructor from an already-formatted value string.
+    fn from_value(value: String) -> Iso8601DateTime {
+        Iso8601DateTime {
+            core: Iso8601TypeCore { value },
+        }
     }
 }
 
@@ -357,6 +420,23 @@ impl Temporal for Iso8601DateTime {}
 impl Iso8601Type for Iso8601DateTime {
     fn core(&self) -> &Iso8601TypeCore {
         &self.core
+    }
+
+    /// `as_string(): String`.
+    ///
+    /// Return the string value in extended format: a compact-form value
+    /// (`"20040215T103005"`) is reformatted with `-`/`:` separators (and
+    /// the canonical `±hh:mm` timezone form) at its original precision,
+    /// effecting the "in extended format" contract the
+    /// `Iso8601Type::as_string` default cannot honour without parsing. An
+    /// unparseable value is returned verbatim.
+    fn as_string(&self) -> String {
+        parse_date_time(&self.core.value)
+            .and_then(|parsed| {
+                let anchored = parsed.as_jiff_datetime()?;
+                format_date_time_at_precision(parsed, anchored, true, true)
+            })
+            .unwrap_or_else(|| self.core.value.clone())
     }
 
     /// `is_partial(): Boolean` (effected).
@@ -495,11 +575,153 @@ impl Iso8601DateTime {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn date_time(value: &str) -> Iso8601DateTime {
+        Iso8601DateTime {
+            core: Iso8601TypeCore {
+                value: value.to_string(),
+            },
+        }
+    }
+
+    fn duration(value: &str) -> Iso8601Duration {
+        Iso8601Duration {
+            core: Iso8601TypeCore {
+                value: value.to_string(),
+            },
+        }
+    }
+
+    #[test]
+    fn definite_and_nominal_month_addition_diverge() {
+        // Definite P1M = exactly 30.42 days = 2 628 288 s.
+        let dt = date_time("2004-02-15T10:00:00");
+        assert_eq!(dt.add(&duration("P1M")).core.value, "2004-03-16T20:04:48");
+        assert_eq!(
+            dt.add_nominal(&duration("P1M")).core.value,
+            "2004-03-15T10:00:00"
+        );
+    }
+
+    #[test]
+    fn definite_day_addition_is_exactly_24h() {
+        assert_eq!(
+            date_time("2004-02-28T23:30:00")
+                .add(&duration("P1D"))
+                .core
+                .value,
+            "2004-02-29T23:30:00"
+        );
+        assert_eq!(
+            date_time("2004-02-29T23:30:00")
+                .add(&duration("PT1H"))
+                .core
+                .value,
+            "2004-03-01T00:30:00"
+        );
+    }
+
+    #[test]
+    fn nominal_addition_clamps_then_applies_exact_time() {
+        // 2004-01-31 +1 nominal month clamps to 2004-02-29 (leap year),
+        // then the exact 2h rolls over into the next day.
+        assert_eq!(
+            date_time("2004-01-31T23:00:00")
+                .add_nominal(&duration("P1MT2H"))
+                .core
+                .value,
+            "2004-03-01T01:00:00"
+        );
+        assert_eq!(
+            date_time("2004-03-31T10:00:00")
+                .subtract_nominal(&duration("P1M"))
+                .core
+                .value,
+            "2004-02-29T10:00:00"
+        );
+    }
+
+    #[test]
+    fn partial_precision_is_anchored_then_truncated() {
+        // Second unknown: anchored to :00, shifted, kept at hh:mm.
+        assert_eq!(
+            date_time("2004-02-15T10:30")
+                .add(&duration("PT30M"))
+                .core
+                .value,
+            "2004-02-15T11:00"
+        );
+        // Hour-only time part.
+        assert_eq!(
+            date_time("2004-02-15T10").add(&duration("PT1H")).core.value,
+            "2004-02-15T11"
+        );
+    }
+
+    #[test]
+    fn timezone_text_is_preserved_verbatim_and_arithmetic_is_civil() {
+        assert_eq!(
+            date_time("2004-02-15T10:00:00Z")
+                .add(&duration("PT1H"))
+                .core
+                .value,
+            "2004-02-15T11:00:00Z"
+        );
+        assert_eq!(
+            date_time("2004-02-15T10:00:00+02:00")
+                .add_nominal(&duration("P1D"))
+                .core
+                .value,
+            "2004-02-16T10:00:00+02:00"
+        );
+    }
+
+    #[test]
+    fn diff_returns_definite_units_and_is_antisymmetric() {
+        let later = date_time("2004-03-16T20:04:48");
+        let earlier = date_time("2004-02-15T10:00:00");
+        assert_eq!(later.diff(&earlier).core.value, "P30DT10H4M48S");
+        assert_eq!(earlier.diff(&later).core.value, "-P30DT10H4M48S");
+        assert_eq!(
+            date_time("2004-02-15T10:00:00.5")
+                .diff(&date_time("2004-02-15T10:00:00"))
+                .core
+                .value,
+            "PT0.5S"
+        );
+    }
+
+    #[test]
+    fn out_of_range_result_falls_back_to_receiver() {
+        let dt = date_time("9999-12-31T23:00:00");
+        assert_eq!(dt.add(&duration("P2D")).core.value, "9999-12-31T23:00:00");
+    }
+
+    #[test]
+    fn as_string_reformats_compact_to_extended() {
+        assert_eq!(
+            date_time("20040215T103005").as_string(),
+            "2004-02-15T10:30:05"
+        );
+        assert_eq!(
+            date_time("20040215T1030+0230").as_string(),
+            "2004-02-15T10:30+02:30"
+        );
+        assert_eq!(
+            date_time("2004-02-15T10:30:05Z").as_string(),
+            "2004-02-15T10:30:05Z"
+        );
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 foundation_types.time — docs/research/spec-cache/BASE-1.2.0/uml_classes/iso8601_date_time.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master06-time_types.adoc §Class Definitions / iso8601_date_time.adoc §Iso8601_date_time Class
-//   confidence: low
-//   todos: 5
-//   note: string accessors, partiality, extended-form detection, ordering, and the hour-validity spec gap now delegate to the shared BASE ISO 8601 parser; arithmetic bodies remain TODO(port) because partial date-time calendar arithmetic needs an explicit policy beyond the accessor grammar. Several published-table inconsistencies remain flagged rather than silently corrected — add_nominal/subtract_nominal's stated Iso8601_date return type (transcribed as Iso8601DateTime instead, with reasoning), minute_unknown/second_unknown descriptions both worded as "is known" or copy-pasted from each other, Month_valid/Day_valid stated unconditionally unlike Iso8601_date's conditional form, Partial_validity_year/month sharing an identical condition, and Partial_validity_hour depending on an hour_unknown() accessor never declared in this class's own Functions table.
+//   confidence: medium
+//   todos: 0
+//   note: string accessors, partiality, extended-form detection, ordering, and the hour-validity spec gap delegate to the shared BASE ISO 8601 parser; add/subtract/diff (definite, averages as exact SignedDuration) and add_nominal/subtract_nominal (jiff Span calendar units, clamping) implemented per ADR-003 policies 1-3 via iso8601_arithmetic.rs with anchoring + truncation, timezone text verbatim, and a documented return-receiver fallback; as_string now effects the extended-format contract. Published-table inconsistencies remain flagged rather than silently corrected — add_nominal/subtract_nominal's stated Iso8601_date return type (transcribed as Iso8601DateTime, with reasoning), minute_unknown/second_unknown wording, unconditional Month_valid/Day_valid, duplicate Partial_validity_year/month, and Partial_validity_hour's undeclared hour_unknown() accessor.
 // ─────────────────────────────────────────────
