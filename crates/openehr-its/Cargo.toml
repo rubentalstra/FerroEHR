@@ -16,10 +16,8 @@ quick-xml.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+openehr-rm = { path = "../openehr-rm" }
 serde_json.workspace = true
-# NOTE: the full fidelity gate (round-trip the corpus through generated
-# `openehr-rm` types + ITS-JSON schema validation) will re-add
-# `openehr-rm` and `jsonschema` here.
 
 [lints]
 workspace = true

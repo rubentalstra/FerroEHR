@@ -8,6 +8,7 @@ pub mod c_attribute;
 pub mod c_attribute_tuple;
 pub mod c_complex_object;
 pub mod c_complex_object_proxy;
+pub mod c_defined_object;
 pub mod c_object;
 pub mod c_primitive_object;
 pub mod c_primitive_tuple;

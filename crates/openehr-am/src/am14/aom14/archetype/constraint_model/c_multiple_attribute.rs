@@ -4,6 +4,7 @@
 use openehr_derive::OpenEhrType;
 use crate::am14::aom14::archetype::constraint_model::c_object::CObject;
 use crate::am14::aom14::archetype::constraint_model::cardinality::Cardinality;
+use openehr_base::prelude::Interval;
 
 /// Concrete model of constraint on multiply-valued (ie. container) attribute node.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -14,7 +15,7 @@ pub struct CMultipleAttribute {
     /// Reference model attribute within the enclosing type represented by a C_OBJECT.
     pub rm_attribute_name: String,
     /// Constraint on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not).
-    pub existence: serde_json::Value,
+    pub existence: Interval<i32>,
     /// Child C_OBJECT nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes.
     pub children: Vec<CObject>,
     /// Cardinality of this attribute constraint, if it constraints a container attribute.

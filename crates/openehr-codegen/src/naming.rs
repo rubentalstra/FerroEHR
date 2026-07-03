@@ -28,21 +28,36 @@ pub fn type_name(spec: &str) -> String {
 #[must_use]
 pub fn field_ident(spec: &str) -> String {
     match spec {
-        // Keywords that cannot be raw identifiers (`crate`/`self`/`super`/`Self`)
-        // or that we deliberately suffix for readability.
+        // Keywords that cannot be raw identifiers (`crate`/`self`/`super`/`Self`),
+        // and `use` which we deliberately suffix for readability by convention.
         "use" => "use_".to_string(),
         "crate" => "crate_".to_string(),
         "self" => "self_".to_string(),
         "super" => "super_".to_string(),
         "Self" => "Self_".to_string(),
-        // Keywords that work fine as raw identifiers.
-        "type" | "move" | "ref" | "in" | "for" | "match" | "loop" | "fn" | "let" | "mod"
-        | "impl" | "as" | "box" | "final" | "macro" | "override" | "priv" | "typeof"
-        | "unsized" | "virtual" | "yield" | "become" | "abstract" | "do" => {
-            format!("r#{spec}")
-        }
+        // Every other Rust keyword works fine as a raw identifier.
+        _ if is_raw_escapable_keyword(spec) => format!("r#{spec}"),
         _ => spec.to_string(),
     }
+}
+
+/// Whether `s` is a Rust keyword that must be written as a raw identifier
+/// (`r#{s}`) when used as a field name. Excludes `crate`/`self`/`super`/`Self`
+/// (which cannot be raw and are handled separately in [`field_ident`]).
+fn is_raw_escapable_keyword(s: &str) -> bool {
+    matches!(
+        s,
+        // Strict keywords (2015).
+        "as" | "break" | "const" | "continue" | "dyn" | "else" | "enum" | "extern"
+        | "false" | "fn" | "for" | "if" | "impl" | "in" | "let" | "loop" | "match"
+        | "mod" | "move" | "mut" | "pub" | "ref" | "return" | "static" | "struct"
+        | "trait" | "true" | "type" | "unsafe" | "where" | "while"
+        // Edition 2018/2024 keywords.
+        | "async" | "await" | "gen"
+        // Reserved keywords.
+        | "abstract" | "become" | "box" | "do" | "final" | "macro" | "override"
+        | "priv" | "typeof" | "unsized" | "virtual" | "yield" | "try"
+    )
 }
 
 /// The `#[serde(rename = "..")]` value needed for a field, if its emitted

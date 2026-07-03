@@ -5,6 +5,7 @@ use openehr_derive::OpenEhrType;
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_base::prelude::MultiplicityInterval;
 
 /// A constraint defined by proxy, using a reference to an object constraint defined elsewhere in the same archetype. Note that since this object refers to another node, there are two objects with available occurrences values. The local occurrences value on a `COMPLEX_OBJECT_PROXY` should always be used; when setting this from a serialised form, if no occurrences is mentioned, the target occurrences should be used (not the standard default of `{1..1}`); otherwise the locally specified occurrences should be used as normal. When serialising out, if the occurrences is the same as that of the target, it can be left out.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -21,7 +22,7 @@ pub struct CComplexObjectProxy {
     pub rm_type_name: String,
     /// Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
     /// Only set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.
-    pub occurrences: Option<serde_json::Value>,
+    pub occurrences: Option<MultiplicityInterval>,
     /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
     ///
     /// For `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.

@@ -10,8 +10,12 @@ use crate::composition::content::entry::evaluation::Evaluation;
 use crate::composition::content::entry::instruction::Instruction;
 use crate::composition::content::entry::observation::Observation;
 use crate::composition::content::navigation::section::Section;
+use crate::data_structures::history::history::History;
+use crate::data_structures::history::interval_event::IntervalEvent;
+use crate::data_structures::history::point_event::PointEvent;
 use crate::data_structures::item_structure::item_list::ItemList;
 use crate::data_structures::item_structure::item_single::ItemSingle;
+use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_structures::item_structure::item_table::ItemTable;
 use crate::data_structures::item_structure::item_tree::ItemTree;
 use crate::data_structures::representation::cluster::Cluster;
@@ -66,7 +70,9 @@ pub enum Locatable {
     GenericContentItem(GenericContentItem),
     GenericEntry(GenericEntry),
     Group(Group),
+    History(History<ItemStructure>),
     Instruction(Instruction),
+    IntervalEvent(IntervalEvent<ItemStructure>),
     ItemList(ItemList),
     ItemSingle(ItemSingle),
     ItemTable(ItemTable),
@@ -77,6 +83,7 @@ pub enum Locatable {
     PartyIdentity(PartyIdentity),
     PartyRelationship(PartyRelationship),
     Person(Person),
+    PointEvent(PointEvent<ItemStructure>),
     Role(Role),
     Section(Section),
 }

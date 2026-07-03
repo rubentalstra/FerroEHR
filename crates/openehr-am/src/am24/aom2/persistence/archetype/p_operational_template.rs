@@ -5,8 +5,11 @@ use openehr_derive::OpenEhrType;
 use crate::am24::aom2::persistence::archetype::p_archetype_hrid::PArchetypeHrid;
 use crate::am24::aom2::persistence::constraint_model::p_c_complex_object::PCComplexObject;
 use crate::am24::aom2::persistence::terminology::p_archetype_terminology::PArchetypeTerminology;
+use crate::am24::aom2::terminology::archetype_term::ArchetypeTerm;
 use openehr_base::prelude::ResourceDescription;
 use openehr_base::prelude::TranslationDetails;
+use openehr_base::prelude::Uid;
+use openehr_lang::prelude::ElBooleanExpression;
 
 /// Root object of an operational template. An operational template is derived from a TEMPLATE definition and the ARCHETYPEs and/or TEMPLATE_OVERLAYs mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.
 ///
@@ -27,7 +30,7 @@ pub struct POperationalTemplate {
     /// The terminology of the archetype.
     pub terminology: PArchetypeTerminology,
     /// Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub rules: Vec<serde_json::Value>,
+    pub rules: Vec<ElBooleanExpression>,
 
     // inherited: P_AUTHORED_RESOURCE
     /// Unique identifier of the family of archetypes having the same interface identifier (same major version).
@@ -39,7 +42,7 @@ pub struct POperationalTemplate {
     /// True if this resource is under any kind of change control (even file copying), in which case revision history is created.
     pub is_controlled: Option<bool>,
     /// Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.
-    pub annotations: Option<serde_json::Value>,
+    pub annotations: Option<std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>>,
     /// List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.
     pub translations: Vec<TranslationDetails>,
 
@@ -47,7 +50,7 @@ pub struct POperationalTemplate {
     /// ADL version if archteype was read in from an ADL sharable archetype.
     pub adl_version: Option<String>,
     /// Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.
-    pub build_uid: serde_json::Value,
+    pub build_uid: Uid,
     /// Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.
     pub rm_release: String,
     /// If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.
@@ -56,5 +59,5 @@ pub struct POperationalTemplate {
     /// Compendium of flattened terminologies of archetypes externally referenced from this archetype, keyed by archetype identifier. This will almost always be present in a template.
     pub component_terminologies: Option<std::collections::BTreeMap<String, PArchetypeTerminology>>,
     /// Directory of term definitions as a two-level  table. The outer hash keys are term codes,  e.g. "at4", and the inner hash key are term  attribute names, e.g. "text", "description" etc.
-    pub terminology_extracts: Option<serde_json::Value>,
+    pub terminology_extracts: Option<std::collections::BTreeMap<String, std::collections::BTreeMap<String, ArchetypeTerm>>>,
 }

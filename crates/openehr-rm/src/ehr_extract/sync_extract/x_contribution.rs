@@ -15,5 +15,5 @@ pub struct XContribution {
     /// Audit of Contribution in source system.
     pub audit: AuditDetails,
     /// Serialised Versions from Contribution in source system.
-    pub versions: Vec<Version>,
+    pub versions: Vec<Version<XContribution>>,
 }

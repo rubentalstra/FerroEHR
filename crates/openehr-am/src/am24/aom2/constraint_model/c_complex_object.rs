@@ -7,6 +7,7 @@ use crate::am24::aom2::constraint_model::c_attribute::CAttribute;
 use crate::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_base::prelude::MultiplicityInterval;
 
 /// Constraint on complex objects, i.e. any object that consists of other object constraints.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -23,7 +24,7 @@ pub struct CComplexObject {
     pub rm_type_name: String,
     /// Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
     /// Only set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.
-    pub occurrences: Option<serde_json::Value>,
+    pub occurrences: Option<MultiplicityInterval>,
     /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
     ///
     /// For `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.

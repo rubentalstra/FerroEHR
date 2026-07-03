@@ -2,6 +2,7 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Time;
 use openehr_base::prelude::ValidityKind;
 
@@ -20,5 +21,5 @@ pub struct CTime {
     /// Validity of timezone in constrained date.
     pub timezone_validity: Option<ValidityKind>,
     /// Interval of Times specifying constraint.
-    pub range: Option<serde_json::Value>,
+    pub range: Option<Interval<Iso8601Time>>,
 }

@@ -2,6 +2,7 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Date;
 use openehr_base::prelude::ValidityKind;
 
@@ -16,5 +17,5 @@ pub struct CDate {
     /// Validity of month in constrained date.
     pub month_validity: Option<ValidityKind>,
     /// Interval of Dates specifying constraint.
-    pub range: Option<serde_json::Value>,
+    pub range: Option<Interval<Iso8601Date>>,
 }

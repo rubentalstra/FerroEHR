@@ -9,7 +9,7 @@ use openehr_base::prelude::ObjectRef;
 /// Versions whose content is an `ORIGINAL_VERSION` copied from another location; this class inherits `_commit_audit_` and `_contribution_` from `VERSION<T>`, providing imported versions with their own audit trail and Contribution, distinct from those of the imported `ORIGINAL_VERSION`.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "IMPORTED_VERSION")]
-pub struct ImportedVersion {
+pub struct ImportedVersion<T> {
 
     // inherited: VERSION
     /// Contribution in which this version was added.
@@ -19,5 +19,5 @@ pub struct ImportedVersion {
     /// Audit trail corresponding to the committal of this version to the `VERSIONED_OBJECT`.
     pub commit_audit: AuditDetails,
     /// The `ORIGINAL_VERSION` object that was imported.
-    pub item: OriginalVersion<serde_json::Value>,
+    pub item: OriginalVersion<T>,
 }

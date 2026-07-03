@@ -11,6 +11,8 @@ use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::data_types::quantity::date_time::dv_time::DvTime;
 use crate::data_types::quantity::dv_count::DvCount;
+use crate::data_types::quantity::dv_interval::DvInterval;
+use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::dv_ordinal::DvOrdinal;
 use crate::data_types::quantity::dv_proportion::DvProportion;
 use crate::data_types::quantity::dv_quantity::DvQuantity;
@@ -37,6 +39,7 @@ pub enum DataValue {
     DvEhrUri(DvEhrUri),
     DvGeneralTimeSpecification(DvGeneralTimeSpecification),
     DvIdentifier(DvIdentifier),
+    DvInterval(DvInterval<DvOrdered>),
     DvMultimedia(DvMultimedia),
     DvOrdinal(DvOrdinal),
     DvParagraph(DvParagraph),

@@ -41,7 +41,7 @@ pub struct CTemporalDefinitions {
     /// ----
     ///
     /// In the above, an empty list value indicates no replacements possible.
-    pub valid_date_constraint_replacements: serde_json::Value,
+    pub valid_date_constraint_replacements: std::collections::BTreeMap<String, Vec<String>>,
     /// List of allowed time constraints. Contains the values:
     ///
     /// ```
@@ -71,7 +71,7 @@ pub struct CTemporalDefinitions {
     /// ----
     ///
     /// In the above, an empty list value indicates no replacements possible.
-    pub valid_time_constraint_replacements: serde_json::Value,
+    pub valid_time_constraint_replacements: std::collections::BTreeMap<String, Vec<String>>,
     /// List of allowed date/time constraints. Contains the values:
     ///
     /// ```
@@ -106,5 +106,5 @@ pub struct CTemporalDefinitions {
     ///                         "YYYY-MM-DDTHH:??:??",
     ///                         "YYYY-MM-DDTHH:??:XX"]
     /// ----
-    pub valid_date_time_constraint_replacements: serde_json::Value,
+    pub valid_date_time_constraint_replacements: std::collections::BTreeMap<String, Vec<String>>,
 }

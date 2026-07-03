@@ -11,6 +11,7 @@ use openehr_base::prelude::ResourceDescription;
 use openehr_base::prelude::TerminologyCode;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uuid;
+use openehr_lang::prelude::StatementSet;
 
 /// Root object of an operational template. An operational template is derived from a `TEMPLATE` definition and the `ARCHETYPEs` and/or `TEMPLATE_OVERLAYs` mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.
 ///
@@ -31,7 +32,7 @@ pub struct OperationalTemplate {
     /// The terminology of the archetype.
     pub terminology: Box<ArchetypeTerminology>,
     /// Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub rules: Vec<serde_json::Value>,
+    pub rules: Vec<StatementSet>,
     pub rm_overlay: Option<RmOverlay>,
 
     // inherited: AUTHORED_RESOURCE

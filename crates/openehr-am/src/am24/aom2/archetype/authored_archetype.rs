@@ -11,6 +11,7 @@ use openehr_base::prelude::ResourceDescription;
 use openehr_base::prelude::TerminologyCode;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uuid;
+use openehr_lang::prelude::StatementSet;
 
 /// Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -29,7 +30,7 @@ pub struct AuthoredArchetype {
     /// The terminology of the archetype.
     pub terminology: Box<ArchetypeTerminology>,
     /// Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub rules: Vec<serde_json::Value>,
+    pub rules: Vec<StatementSet>,
     pub rm_overlay: Option<RmOverlay>,
 
     // inherited: AUTHORED_RESOURCE

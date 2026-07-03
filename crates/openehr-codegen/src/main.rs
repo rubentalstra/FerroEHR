@@ -41,6 +41,12 @@ const TERM_BMM: &str = "openehr_term_3.1.0.bmm.json";
 const AM14_BMM: &str = "openehr_am_1.4.0.bmm.json";
 const AM24_BMM: &str = "openehr_am_2.4.0.bmm.json";
 const LANG_BMM: &str = "openehr_lang_1.1.0.bmm.json";
+/// LANG's model spans two vendored files: the primary one above (persisted BMM
+/// with `EXPR_*` and `STATEMENT_SET`/`ASSERTION`, which AM's rules/slots
+/// reference) and this BMM-3 file (the full `BMM_*` object model with the
+/// `EL_*` expression language, which AM's persisted-archetype rules reference).
+/// Both are merged into the `openehr-lang` crate.
+const LANG_BMM3: &str = "openehr_lang_1.1.0-bmm3.bmm.json";
 
 fn load(file: &str) -> Result<BmmSchema, Box<dyn std::error::Error>> {
     let src = std::fs::read_to_string(Path::new(VENDOR).join(file))?;
@@ -110,8 +116,28 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
         &emit::emit_crate(&rm_model, &rm, &ext_base, RM_DOC),
     )?;
 
-    // openehr-am: two versions in one crate, each depending on openehr-base.
-    // Each version merges BASE so its ancestors (e.g. ARCHETYPE ←
+    // openehr-lang: the BMM/P_BMM object model (86 classes), fully generated.
+    // The generator's own reader lives here in `openehr-codegen`, so there is no
+    // bootstrap cycle. The runtime ODIN/EL parsers are future hand-written work.
+    // Emitted before AM because AM's rule model references LANG types
+    // (`ARCHETYPE.rules : List<STATEMENT_SET>`, `ARCHETYPE_SLOT.includes :
+    // List<ASSERTION>`), so AM resolves them against `openehr_lang::prelude`.
+    let lang = load(LANG_BMM)?.combined(&load(LANG_BMM3)?);
+    let lang_model = Model::merged(&[&base, &lang]);
+    write_crate(
+        "openehr-lang",
+        &emit::emit_crate(&lang_model, &lang, &ext_base, LANG_DOC),
+    )?;
+    let lang_specs = emit::emittable_specs(&lang_model, &lang);
+    let ext_base_lang = External::default()
+        .with(
+            emit::emittable_specs(&base_model, &base),
+            "openehr_base::prelude",
+        )
+        .with(lang_specs, "openehr_lang::prelude");
+
+    // openehr-am: two versions in one crate, each depending on openehr-base and
+    // openehr-lang. Each version merges BASE so its ancestors (e.g. ARCHETYPE ←
     // AUTHORED_RESOURCE) resolve; the two are kept in separate models because
     // AM 1.4 and 2.4 share class names.
     let am14 = load(AM14_BMM)?;
@@ -120,7 +146,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let m24 = Model::merged(&[&base, &am24]);
     let am_files = emit::emit_multi_crate(
         &[("am14", &m14, &am14), ("am24", &m24, &am24)],
-        &ext_base,
+        &ext_base_lang,
         AM_DOC,
     );
     write_crate("openehr-am", &am_files)?;
@@ -132,16 +158,6 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     write_crate(
         "openehr-term",
         &emit::emit_crate(&term_model, &term, &ext_base, TERM_DOC),
-    )?;
-
-    // openehr-lang: the BMM/P_BMM object model (86 classes), fully generated.
-    // The generator's own reader lives here in `openehr-codegen`, so there is no
-    // bootstrap cycle. The runtime ODIN/EL parsers are future hand-written work.
-    let lang = load(LANG_BMM)?;
-    let lang_model = Model::merged(&[&base, &lang]);
-    write_crate(
-        "openehr-lang",
-        &emit::emit_crate(&lang_model, &lang, &ext_base, LANG_DOC),
     )?;
     Ok(())
 }

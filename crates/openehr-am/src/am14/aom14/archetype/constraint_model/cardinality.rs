@@ -2,13 +2,14 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::Interval;
 
 /// Express constraints on the cardinality of container objects which are the values of multiply-valued attributes, including uniqueness and ordering, providing the means to state that a container acts like a logical list, set or bag. The cardinality cannot contradict the cardinality of the corresponding attribute within the relevant reference model.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "CARDINALITY")]
 pub struct Cardinality {
     /// The interval of this cardinality.
-    pub interval: serde_json::Value,
+    pub interval: Interval<i32>,
     /// True if the members of the container attribute to which this cardinality refers are ordered.
     pub is_ordered: bool,
     /// True if the members of the container attribute to which this cardinality refers are unique.

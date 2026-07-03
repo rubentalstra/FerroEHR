@@ -6,6 +6,7 @@ use crate::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
 use crate::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use crate::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
 use crate::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_lang::prelude::StatementSet;
 
 /// A concrete form of the bare `ARCHETYPE` class, used to represent overlays in a source template. Overlays have no meta-data of their own, and are instead documented by their owning template.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -24,6 +25,6 @@ pub struct TemplateOverlay {
     /// The terminology of the archetype.
     pub terminology: Box<ArchetypeTerminology>,
     /// Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub rules: Vec<serde_json::Value>,
+    pub rules: Vec<StatementSet>,
     pub rm_overlay: Option<RmOverlay>,
 }

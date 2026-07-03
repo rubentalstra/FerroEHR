@@ -2,6 +2,7 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::Interval;
 
 /// Constraint on instances of Integer.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -12,5 +13,5 @@ pub struct CInteger {
     /// Set of Integers specifying constraint.
     pub list: Vec<i32>,
     /// Range of Integers specifying constraint.
-    pub range: Option<serde_json::Value>,
+    pub range: Option<Interval<i32>>,
 }

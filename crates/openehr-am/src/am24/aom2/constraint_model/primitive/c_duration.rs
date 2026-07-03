@@ -5,7 +5,9 @@ use openehr_derive::OpenEhrType;
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Duration;
+use openehr_base::prelude::MultiplicityInterval;
 
 /// Constraint on instances representing duration, which is assumed to have the same parts as the ISO 8601 duration string. Thus, constraints are of the form `"PWD"` (weeks and/or days), `"PDTHMS"` (days, hours, minutes, seconds) and so on.
 ///
@@ -30,7 +32,7 @@ pub struct CDuration {
     pub rm_type_name: String,
     /// Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
     /// Only set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.
-    pub occurrences: Option<serde_json::Value>,
+    pub occurrences: Option<MultiplicityInterval>,
     /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
     ///
     /// For `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.
@@ -53,7 +55,7 @@ pub struct CDuration {
     /// Formal constraint on the assumed primitive `Iso8601_duration` type, in the form of one or more `Interval<Iso8601_duration>`.
     ///
     /// For a pattern constraint or no constraint, use an empty list.
-    pub constraint: Vec<serde_json::Value>,
+    pub constraint: Vec<Interval<Iso8601Duration>>,
 
     // inherited: C_TEMPORAL
     /// Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.

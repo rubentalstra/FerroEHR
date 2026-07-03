@@ -5,6 +5,7 @@ use openehr_derive::OpenEhrType;
 use crate::common::change_control::original_version::OriginalVersion;
 use crate::common::generic::revision_history::RevisionHistory;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
+use crate::demographic::party::Party;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ObjectRef;
 
@@ -27,5 +28,5 @@ pub struct XVersionedParty {
     /// Optional revision history of the original `VERSIONED_OBJECT`. If included, it is the complete revision history.
     pub revision_history: Option<RevisionHistory>,
     /// 0 or more Versions from the original `VERSIONED_OBJECT`, according to the Extract specification.
-    pub versions: Vec<OriginalVersion<serde_json::Value>>,
+    pub versions: Vec<OriginalVersion<Party>>,
 }

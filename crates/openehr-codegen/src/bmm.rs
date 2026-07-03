@@ -206,6 +206,22 @@ impl BmmSchema {
         }
     }
 
+    /// Combine another schema's classes and packages into this one (set union;
+    /// `self` wins on class-name collisions). openEHR ships some components
+    /// across several vendored BMM files — LANG's model spans a persisted-BMM
+    /// / `EXPR_*` file and a BMM-object-model / `EL_*` file — and a single crate
+    /// must emit the union of both.
+    #[must_use]
+    pub fn combined(mut self, other: &BmmSchema) -> Self {
+        for (name, class) in &other.classes {
+            self.classes
+                .entry(name.clone())
+                .or_insert_with(|| class.clone());
+        }
+        self.packages.extend(other.packages.iter().cloned());
+        self
+    }
+
     /// A map from class name to its leaf package name (the innermost package
     /// that directly lists the class), for deriving the module layout.
     #[must_use]
@@ -362,7 +378,11 @@ fn parse_property(node: &Value) -> BmmProperty {
 }
 
 fn parse_cardinality(v: &Value) -> BmmCardinality {
-    let lower = v.get("lower").and_then(Value::as_u64).unwrap_or(0) as u32;
+    let lower = v
+        .get("lower")
+        .and_then(Value::as_u64)
+        .and_then(|u| u32::try_from(u).ok())
+        .unwrap_or(0);
     let upper = if v
         .get("upper_unbounded")
         .and_then(Value::as_bool)
@@ -370,7 +390,9 @@ fn parse_cardinality(v: &Value) -> BmmCardinality {
     {
         None
     } else {
-        v.get("upper").and_then(Value::as_u64).map(|u| u as u32)
+        v.get("upper")
+            .and_then(Value::as_u64)
+            .and_then(|u| u32::try_from(u).ok())
     };
     BmmCardinality { lower, upper }
 }
@@ -387,19 +409,21 @@ fn parse_container_item(td: &Value) -> BmmType {
     }
 }
 
-/// A `type_def` with `root_type` + `generic_parameters` → a generic type;
-/// otherwise a simple `type`.
+/// A `type_def` with `root_type` → a generic type; otherwise a simple `type`.
+/// The generic arguments come either as `generic_parameters` (a list, whose
+/// entries may be bare type names *or* nested `type_def`s) or as
+/// `generic_parameter_defs` (an ordered map of named params, used for
+/// `Hash<K,V>`; `serde_json`'s `preserve_order` keeps K before V).
 fn parse_type_def(td: &Value) -> BmmType {
     if let Some(root) = td.get("root_type").and_then(Value::as_str) {
-        let params = td
-            .get("generic_parameters")
-            .and_then(Value::as_array)
-            .map(|a| {
-                a.iter()
-                    .filter_map(|x| x.as_str().map(|s| BmmType::Simple(s.to_string())))
-                    .collect()
-            })
-            .unwrap_or_default();
+        let params: Vec<BmmType> =
+            if let Some(arr) = td.get("generic_parameters").and_then(Value::as_array) {
+                arr.iter().map(parse_generic_param).collect()
+            } else if let Some(obj) = td.get("generic_parameter_defs").and_then(Value::as_object) {
+                obj.values().map(parse_type_def).collect()
+            } else {
+                Vec::new()
+            };
         BmmType::Generic {
             root: root.to_string(),
             params,
@@ -408,6 +432,15 @@ fn parse_type_def(td: &Value) -> BmmType {
         BmmType::Simple(t.to_string())
     } else {
         BmmType::Simple("Any".to_string())
+    }
+}
+
+/// A single `generic_parameters` entry: a bare type name (`"String"`) or a
+/// nested `type_def` (`{ "root_type": "Interval", "generic_parameters": [...] }`).
+fn parse_generic_param(x: &Value) -> BmmType {
+    match x.as_str() {
+        Some(s) => BmmType::Simple(s.to_string()),
+        None => parse_type_def(x),
     }
 }
 

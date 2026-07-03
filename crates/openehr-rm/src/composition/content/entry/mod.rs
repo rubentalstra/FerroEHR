@@ -3,6 +3,8 @@
 pub mod action;
 pub mod activity;
 pub mod admin_entry;
+pub mod care_entry;
+pub mod entry;
 pub mod evaluation;
 pub mod instruction;
 pub mod instruction_details;

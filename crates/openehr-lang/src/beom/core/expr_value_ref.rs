@@ -7,6 +7,7 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "EXPR_VALUE_REF")]
 pub struct ExprValueRef {
+
     // inherited: EXPR_LEAF
     /// The reference item from which the value of this node can be computed.
     pub item: Option<serde_json::Value>,

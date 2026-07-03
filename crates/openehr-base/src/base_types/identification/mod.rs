@@ -13,6 +13,7 @@ pub mod object_version_id;
 pub mod party_ref;
 pub mod template_id;
 pub mod terminology_id;
+pub mod uid;
 pub mod uid_based_id;
 pub mod uuid;
 pub mod version_tree_id;

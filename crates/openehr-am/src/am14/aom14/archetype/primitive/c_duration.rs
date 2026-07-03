@@ -2,6 +2,7 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Duration;
 
 /// ISO 8601-compatible constraint on instances of Duration. In ISO 8601 terms, constraints might are of the form “PWD” (weeks and/or days), “PDTHMS” (days, hours, minutes, seconds) and so on.
@@ -31,5 +32,5 @@ pub struct CDuration {
     /// True if fractional seconds are allowed in the constrained Duration.
     pub fractional_seconds_allowed: Option<bool>,
     /// Range of Durations specifying constraint.
-    pub range: Option<serde_json::Value>,
+    pub range: Option<Interval<Iso8601Duration>>,
 }

@@ -5,3 +5,4 @@ pub mod iso8601_date_time;
 pub mod iso8601_duration;
 pub mod iso8601_time;
 pub mod iso8601_timezone;
+pub mod iso8601_type;

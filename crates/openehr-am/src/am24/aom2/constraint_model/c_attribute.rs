@@ -5,6 +5,8 @@ use openehr_derive::OpenEhrType;
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::am24::aom2::constraint_model::c_object::CObject;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
+use openehr_base::prelude::Cardinality;
+use openehr_base::prelude::MultiplicityInterval;
 
 /// Abstract model of constraint on any kind of attribute in a class model.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -18,13 +20,13 @@ pub struct CAttribute {
     /// Reference model attribute within the enclosing type represented by a `C_OBJECT`.
     pub rm_attribute_name: String,
     /// Constraint settable on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not). Only set if it overrides the underlying reference model or parent archetype in the case of specialised archetypes.
-    pub existence: Option<serde_json::Value>,
+    pub existence: Option<MultiplicityInterval>,
     /// Child `C_OBJECT` nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes.
     pub children: Vec<CObject>,
     /// Path to the parent object of this attribute (i.e. doesn’t include the name of this attribute). Used only for attributes in differential form, specialised archetypes. Enables only the re-defined parts of a specialised archetype to be expressed, at the path where they occur.
     pub differential_path: Option<String>,
     /// Cardinality constraint of attribute, if a container attribute.
-    pub cardinality: Option<serde_json::Value>,
+    pub cardinality: Option<Cardinality>,
     /// Flag indicating whether this attribute constraint is on a container (i.e. multiply-valued) attribute.
     pub is_multiple: bool,
 }

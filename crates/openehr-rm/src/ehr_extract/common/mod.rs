@@ -3,6 +3,7 @@
 pub mod extract;
 pub mod extract_action_request;
 pub mod extract_chapter;
+pub mod extract_content_item;
 pub mod extract_entity_chapter;
 pub mod extract_entity_manifest;
 pub mod extract_error;

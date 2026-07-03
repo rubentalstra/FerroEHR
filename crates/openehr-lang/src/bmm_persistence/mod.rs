@@ -18,6 +18,7 @@ pub mod p_bmm_generic_type;
 pub mod p_bmm_indexed_container_property;
 pub mod p_bmm_indexed_container_type;
 pub mod p_bmm_interface;
+pub mod p_bmm_model_element;
 pub mod p_bmm_open_type;
 pub mod p_bmm_package;
 pub mod p_bmm_package_container;

@@ -79,7 +79,11 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         let Some(ident) = f.ident.clone() else {
             return Err(syn::Error::new_spanned(f, "expected a named field"));
         };
-        let wire = field_rename(f)?.unwrap_or_else(|| ident.to_string());
+        // Default wire name = the field ident with any raw-identifier prefix
+        // stripped (`r#type` → `type`), matching serde's own derive. An explicit
+        // `#[openehr(rename = "…")]` overrides this.
+        let wire = field_rename(f)?
+            .unwrap_or_else(|| ident.to_string().trim_start_matches("r#").to_string());
         let kind = classify(&f.ty);
         fields.push(FieldInfo {
             ident,

@@ -2,6 +2,7 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use crate::am24::aom2::terminology::archetype_term::ArchetypeTerm;
 use crate::am24::aom2::terminology::value_set::ValueSet;
 
 /// Local ontology of an archetype.
@@ -14,11 +15,11 @@ pub struct PArchetypeTerminology {
     /// table. The outer hash keys are term codes,
     /// e.g. "at0004", and the inner hash key are term
     /// attribute names, e.g. "text", "description" etc.
-    pub term_definitions: serde_json::Value,
+    pub term_definitions: std::collections::BTreeMap<String, std::collections::BTreeMap<String, ArchetypeTerm>>,
     /// Directory of term bindings as a two-level
     /// table. The outer hash keys are local term codes,
     /// e.g. "at0004", and the inner hash keys are terminology
     /// code phrases, e.g. "SNOMED(2003)::163034007" etc.
-    pub term_bindings: Option<serde_json::Value>,
+    pub term_bindings: Option<std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>>,
     pub value_sets: Option<std::collections::BTreeMap<String, ValueSet>>,
 }

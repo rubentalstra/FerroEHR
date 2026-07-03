@@ -25,5 +25,5 @@ use openehr_derive::OpenEhrType;
 #[openehr(type_name = "RESOURCE_ANNOTATIONS")]
 pub struct ResourceAnnotations {
     /// Documentary annotations in a multi-level keyed structure.
-    pub documentation: serde_json::Value,
+    pub documentation: std::collections::BTreeMap<String, std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>>,
 }

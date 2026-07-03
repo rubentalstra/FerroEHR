@@ -5,5 +5,6 @@ pub mod assertion_variable;
 pub mod expr_binary_operator;
 pub mod expr_item;
 pub mod expr_leaf;
+pub mod expr_operator;
 pub mod expr_unary_operator;
 pub mod operator_kind;

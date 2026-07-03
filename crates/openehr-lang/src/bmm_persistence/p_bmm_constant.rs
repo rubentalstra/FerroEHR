@@ -7,6 +7,7 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "P_BMM_CONSTANT")]
 pub struct PBmmConstant {
+
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
     pub documentation: Option<String>,

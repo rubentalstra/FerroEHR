@@ -80,10 +80,9 @@ struct ResolvedProp<'a> {
 
 /// Foundation classes that are **mapped to Rust and never emitted**: the
 /// container types, marker/functional/service classes, and constant holders.
-/// Scalar primitives are handled by [`primitive`]. Two interval classes need a
-/// generic-ancestor binding the BMM does not carry (`Multiplicity_interval` =
-/// `Interval<Integer>`), so they are skipped in this pass and become a
-/// `codegen.toml` override later.
+/// Scalar primitives are handled by [`primitive`]. `Multiplicity_interval` and
+/// `Cardinality` *are* emitted (real structs with fields); their inherited
+/// `Interval<Integer>` binding is supplied by [`class_binding`].
 const SKIP: &[&str] = &[
     // containers → Vec / handled by container properties
     "Container",
@@ -91,7 +90,6 @@ const SKIP: &[&str] = &[
     "Set",
     "Array",
     "Hash",
-    "Bag",
     // abstract marker / algebraic traits (no data)
     "Any",
     "Ordered",
@@ -116,9 +114,6 @@ const SKIP: &[&str] = &[
     "Time_Definitions",
     "BASIC_DEFINITIONS",
     "OPENEHR_DEFINITIONS",
-    // interval classes needing a generic-ancestor binding not present in BMM
-    "Multiplicity_interval",
-    "Cardinality",
 ];
 
 impl Model {
@@ -195,14 +190,15 @@ impl Model {
         false
     }
 
-    /// Concrete, emittable, non-generic descendants of `name` (for enum slots).
+    /// Concrete, emittable descendants of `name` (for enum slots). Generic
+    /// descendants are included — the enum is emitted generic over the abstract
+    /// class's own params (e.g. `Event<T> { PointEvent(PointEvent<T>), … }`).
     fn enum_variants(&self, name: &str) -> Vec<String> {
         self.classes
             .values()
             .filter(|c| {
                 !c.is_abstract
                     && c.name != name
-                    && c.generic_params.is_empty()
                     && !Self::is_mapped(&c.name)
                     && self.inherits(&c.name, name)
             })
@@ -263,19 +259,32 @@ impl Model {
 
     /// Render a BMM type to Rust. `local` is the set of spec class names emitted
     /// in the current crate; `external` maps types provided by dependency
-    /// crates. A referenced class in neither (or a malformed container) degrades
-    /// to `serde_json::Value`. Local and external class types render as the bare
-    /// ident (the import machinery adds the right `use`).
+    /// crates. `subst` binds a generic parameter name to a concrete spec type
+    /// (an ancestor-generic binding the BMM drops, e.g. `Multiplicity_interval`'s
+    /// `T` → `Integer`). A referenced class in neither `local` nor `external`
+    /// (or a malformed container) degrades to `serde_json::Value`. Local and
+    /// external class types render as the bare ident (the import machinery adds
+    /// the right `use`).
     fn render_type(
         &self,
         t: &BmmType,
         generics: &[String],
+        subst: &BTreeMap<String, String>,
         local: &BTreeSet<String>,
         external: &External,
     ) -> String {
         match t {
             BmmType::Simple(n) => {
-                if let Some(p) = primitive(n) {
+                if let Some(concrete) = subst.get(n) {
+                    // A bound ancestor-generic parameter: render the concrete.
+                    self.render_type(
+                        &BmmType::Simple(concrete.clone()),
+                        generics,
+                        subst,
+                        local,
+                        external,
+                    )
+                } else if let Some(p) = primitive(n) {
                     p.to_string()
                 } else if generics.iter().any(|g| g == n) {
                     n.clone()
@@ -284,20 +293,27 @@ impl Model {
                 } else if local.contains(n) || external.contains(n) {
                     // A bare reference to a *generic* class (BMM omits the args,
                     // e.g. `normal_range: DV_INTERVAL`) is filled with each type
-                    // parameter's bound (`DV_INTERVAL` → `DvInterval<DvOrdered>`),
-                    // or `serde_json::Value` for an unbounded parameter.
+                    // parameter's bound (`DV_INTERVAL` → `DvInterval<DvOrdered>`).
+                    // An *unbounded* parameter (the versioned-content `T` of the
+                    // VERSION family) is threaded from the enclosing scope's type
+                    // params (`generics`, then bound `subst` values), so it stays
+                    // strongly typed instead of degrading to `serde_json::Value`.
                     match self.generic_param_bounds(n) {
                         Some(bounds) => {
+                            let mut content = Self::scope_content_types(generics, subst);
                             let args: Vec<String> = bounds
                                 .iter()
                                 .map(|b| match b {
                                     Some(bound) => self.render_type(
                                         &BmmType::Simple(bound.clone()),
                                         generics,
+                                        subst,
                                         local,
                                         external,
                                     ),
-                                    None => "serde_json::Value".to_string(),
+                                    None => content
+                                        .next()
+                                        .unwrap_or_else(|| "serde_json::Value".to_string()),
                                 })
                                 .collect();
                             format!("{}<{}>", naming::type_name(n), args.join(", "))
@@ -311,7 +327,7 @@ impl Model {
             BmmType::Generic { root, params } => {
                 let ps: Vec<String> = params
                     .iter()
-                    .map(|p| self.render_type(p, generics, local, external))
+                    .map(|p| self.render_type(p, generics, subst, local, external))
                     .collect();
                 // Foundation container generics map to Rust collections; a
                 // container with the wrong arity (e.g. the deeply-nested
@@ -320,10 +336,12 @@ impl Model {
                     "Hash" if ps.len() == 2 => {
                         format!("std::collections::BTreeMap<{}>", ps.join(", "))
                     }
-                    "Hash" => "serde_json::Value".to_string(),
                     "List" | "Array" if ps.len() == 1 => format!("Vec<{}>", ps[0]),
                     "Set" if ps.len() == 1 => format!("std::collections::BTreeSet<{}>", ps[0]),
-                    "List" | "Array" | "Set" => "serde_json::Value".to_string(),
+                    // A container of the wrong arity (e.g. the deeply-nested
+                    // free-form `Hash` in RESOURCE_ANNOTATIONS) or a type neither
+                    // emitted here nor by a dependency → free-form JSON.
+                    "Hash" | "List" | "Array" | "Set" => "serde_json::Value".to_string(),
                     _ if !local.contains(root) && !external.contains(root) => {
                         "serde_json::Value".to_string()
                     }
@@ -353,25 +371,92 @@ impl Model {
         if class.generic_params.is_empty() {
             return Vec::new();
         }
+        // An abstract class is emitted as an untagged enum generic over the
+        // declared params any *concrete variant* uses — a subtype family whose
+        // parameter is exposed only by descendants (`VERSION<T>` carries `T`
+        // only through `ORIGINAL_VERSION.data: T`) still needs `Version<T>`, and
+        // a bare reference to it must resolve to the same arity.
+        if class.is_abstract {
+            let variants = self.enum_variants(name);
+            return class
+                .generic_params
+                .iter()
+                .filter(|g| {
+                    variants.iter().any(|d| {
+                        self.used_generic_params(d)
+                            .iter()
+                            .any(|(n, _)| *n == g.name)
+                    })
+                })
+                .map(|g| (g.name.clone(), self.resolved_param_bound(name, &g.name)))
+                .collect();
+        }
         let declared: BTreeSet<&str> = class
             .generic_params
             .iter()
             .map(|g| g.name.as_str())
             .collect();
         let mut used = BTreeSet::new();
+        let mut threads_own_param = false;
         for rp in self.flattened_props(class) {
             match &rp.prop.kind {
                 BmmPropKind::Single(t) | BmmPropKind::Container { item: t, .. } => {
                     collect_param_uses(t, &declared, &mut used);
+                    // A bare reference to an *unbounded* generic class threads
+                    // this class's own parameter into that open slot
+                    // (`IMPORTED_VERSION.item: ORIGINAL_VERSION` →
+                    // `OriginalVersion<T>`), so the parameter is used even though
+                    // it never appears literally in the (BMM-dropped) type args.
+                    if let BmmType::Simple(n) = t
+                        && self
+                            .generic_param_bounds(n)
+                            .is_some_and(|b| b.iter().any(Option::is_none))
+                    {
+                        threads_own_param = true;
+                    }
                 }
             }
         }
         class
             .generic_params
             .iter()
-            .filter(|g| used.contains(g.name.as_str()))
-            .map(|g| (g.name.clone(), g.conforms_to.clone()))
+            .filter(|g| used.contains(g.name.as_str()) || threads_own_param)
+            .map(|g| (g.name.clone(), self.resolved_param_bound(name, &g.name)))
             .collect()
+    }
+
+    /// The `conforms_to` bound of generic parameter `param` on `class`, resolved
+    /// up the ancestor chain. A subclass may redeclare an inherited parameter
+    /// without repeating its bound (`INTERVAL_EVENT<T>` re-lists `T` but the
+    /// `T: ITEM_STRUCTURE` bound lives on `EVENT<T>`); the bound is inherited by
+    /// parameter name, since the family reuses the same name down the hierarchy.
+    fn resolved_param_bound(&self, class_name: &str, param: &str) -> Option<String> {
+        let class = self.get(class_name)?;
+        if let Some(g) = class.generic_params.iter().find(|g| g.name == param)
+            && let Some(bound) = &g.conforms_to
+        {
+            return Some(bound.clone());
+        }
+        class
+            .ancestors
+            .iter()
+            .find_map(|anc| self.resolved_param_bound(anc, param))
+    }
+
+    /// The concrete content types available in the current emission scope, in
+    /// priority order, for threading into an *unbounded* generic slot: the free
+    /// generic-parameter names first (a generic class threads its own `T`), then
+    /// the rendered values of any ancestor-generic `subst` bindings (a
+    /// monomorphized class threads its bound content type).
+    fn scope_content_types(
+        generics: &[String],
+        subst: &BTreeMap<String, String>,
+    ) -> std::vec::IntoIter<String> {
+        let mut v: Vec<String> = generics.to_vec();
+        for val in subst.values() {
+            v.push(primitive(val).map_or_else(|| naming::type_name(val), str::to_string));
+        }
+        v.into_iter()
     }
 
     /// The bounds to auto-fill for a bare reference to a generic class, or
@@ -402,8 +487,17 @@ impl Model {
             }
             BmmType::Generic { root, params } => {
                 out.insert(root.clone());
-                for p in params {
-                    self.effective_roots(p, out);
+                // Only recurse into the args that survive rendering: a container
+                // (`List<T>` → `Vec<T>`) keeps them, but a spec class whose sole
+                // param was unused is monomorphized (`BMM_LITERAL_VALUE<BMM_TYPE>`
+                // → `BmmLiteralValue`), dropping the args — mirror `render_type`
+                // so imports/cycle detection do not see a phantom arg.
+                let keeps_args = matches!(root.as_str(), "List" | "Array" | "Set" | "Hash")
+                    || self.generic_param_bounds(root).is_some();
+                if keeps_args {
+                    for p in params {
+                        self.effective_roots(p, out);
+                    }
                 }
             }
         }
@@ -412,7 +506,12 @@ impl Model {
     /// The emittable spec class names a class refers to in its (flattened)
     /// fields — for computing precise `use` imports. Excludes primitives,
     /// generic params, mapped/skip types, and `Any`.
-    fn referenced_specs(&self, class: &BmmClass, generics: &[String]) -> BTreeSet<String> {
+    fn referenced_specs(
+        &self,
+        class: &BmmClass,
+        generics: &[String],
+        subst: &BTreeMap<String, String>,
+    ) -> BTreeSet<String> {
         let mut roots = BTreeSet::new();
         for rp in self.flattened_props(class) {
             match &rp.prop.kind {
@@ -422,9 +521,38 @@ impl Model {
         }
         roots
             .into_iter()
+            // Substitute a bound generic parameter (`T` → `COMPOSITION`) so the
+            // concrete content type is imported, not the parameter name.
+            .map(|n| subst.get(&n).cloned().unwrap_or(n))
             .filter(|n| !Self::is_mapped(n) && n != "Any" && !generics.iter().any(|g| g == n))
             .collect()
     }
+}
+
+/// Ancestor-generic bindings the BMM drops (it records `ancestors` and some
+/// generic-content property types as bare class names, losing the `<Integer>` /
+/// `<COMPOSITION>` argument). Maps a class's generic-parameter name to the
+/// concrete spec type it is instantiated with, so the emitter can substitute it
+/// instead of degrading the field to `serde_json::Value`. Seeded here; slated to
+/// move to `codegen.toml` alongside [`type_override`].
+fn class_binding(class: &str) -> BTreeMap<String, String> {
+    let pairs: &[(&str, &str)] = match class {
+        // "An Interval of Integer" — openEHR files it under `primitive_types`
+        // without carrying the `Interval<Integer>` binding.
+        "Multiplicity_interval" => &[("T", "Integer")],
+        // The EHR-Extract version containers bind the versioned-content type
+        // that `X_VERSIONED_OBJECT<T>` leaves open.
+        "X_VERSIONED_COMPOSITION" => &[("T", "COMPOSITION")],
+        "X_VERSIONED_EHR_ACCESS" => &[("T", "EHR_ACCESS")],
+        "X_VERSIONED_EHR_STATUS" => &[("T", "EHR_STATUS")],
+        "X_VERSIONED_PARTY" => &[("T", "PARTY")],
+        "X_VERSIONED_FOLDER" => &[("T", "FOLDER")],
+        _ => &[],
+    };
+    pairs
+        .iter()
+        .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+        .collect()
 }
 
 /// The set of primitive spec types → Rust types (ADR-004 type map).
@@ -499,18 +627,19 @@ fn decide<'a>(model: &Model, class: &'a BmmClass, used: &BTreeSet<String>) -> Em
         return Emission::Skip;
     }
     if class.is_abstract {
-        if used.contains(&class.name) {
-            let variants = model.enum_variants(&class.name);
-            if variants.is_empty() {
-                // Abstract, referenced as a field type, but no concrete
-                // descendants in this schema (e.g. `AUTHORED_RESOURCE` in BASE —
-                // its concretes live in AM). Emit its own fields as a struct so
-                // the reference resolves; a cross-schema pass can promote it to
-                // an enum later.
-                Emission::Struct
-            } else {
-                Emission::Enum(variants)
-            }
+        let variants = model.enum_variants(&class.name);
+        if !variants.is_empty() {
+            // A closed polymorphic slot. Emit the untagged enum whenever the
+            // class has concrete descendants — even if *this* schema never uses
+            // it as a field type, because a downstream crate may (e.g. `Interval`
+            // is a BASE foundation type referenced by AM's `Interval<Integer>`).
+            Emission::Enum(variants)
+        } else if used.contains(&class.name) {
+            // Abstract, referenced as a field type, but no concrete descendants
+            // in this schema (e.g. `AUTHORED_RESOURCE` in BASE — its concretes
+            // live in AM). Emit its own fields as a struct so the reference
+            // resolves; a cross-schema pass can promote it to an enum later.
+            Emission::Struct
         } else {
             Emission::Skip
         }
@@ -547,14 +676,15 @@ struct Version {
 /// Produces the type files, the `mod.rs` tree, and a `prelude.rs`; the caller
 /// assembles `lib.rs`.
 fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &External) -> Version {
-    let class_pkg = class_paths(schema);
-    let used = model.used_as_type();
-
     struct Planned<'a> {
         class: &'a BmmClass,
         emission: Emission<'a>,
         chain: Vec<String>,
     }
+
+    let class_pkg = class_paths(schema);
+    let used = model.used_as_type();
+
     // Spec class names emitted in this version; anything referenced outside it
     // degrades to `serde_json::Value` so the crate stays self-contained.
     let mut local: BTreeSet<String> = BTreeSet::new();
@@ -590,7 +720,9 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
     for p in &planned {
         let body = match &p.emission {
             Emission::Struct => emit_struct(model, p.class, &index, &local, external),
-            Emission::Enum(variants) => emit_enum(p.class, variants, &index, external),
+            Emission::Enum(variants) => {
+                emit_enum(model, p.class, variants, &index, &local, external)
+            }
             Emission::Newtype(prim) => emit_newtype(p.class, prim),
             Emission::Skip => unreachable!(),
         };
@@ -790,9 +922,11 @@ fn emit_struct(
     } else {
         format!("<{}>", generics.join(", "))
     };
+    // Ancestor-generic bindings the BMM dropped (`T` → `Integer`/`COMPOSITION`).
+    let subst = class_binding(&class.name);
 
     let mut b = String::new();
-    let imports = import_lines(model, class, &generics, &ty, index, external);
+    let imports = import_lines(model, class, &generics, &subst, &ty, index, external);
     struct_header(&mut b, &class.name, &imports);
     doc_block(&mut b, class.documentation.as_deref(), "");
     b.push_str("#[derive(Debug, Clone, PartialEq, OpenEhrType)]\n");
@@ -813,7 +947,7 @@ fn emit_struct(
         if let Some(rename) = naming::serde_rename(&p.name, &ident) {
             b.push_str(&format!("    #[openehr(rename = \"{rename}\")]\n"));
         }
-        let rust_ty = field_type(model, class, p, &generics, local, external);
+        let rust_ty = field_type(model, class, p, &generics, &subst, local, external);
         b.push_str(&format!("    pub {ident}: {rust_ty},\n"));
     }
 
@@ -843,6 +977,7 @@ fn field_type(
     class: &BmmClass,
     p: &crate::bmm::BmmProperty,
     generics: &[String],
+    subst: &BTreeMap<String, String>,
     local: &BTreeSet<String>,
     external: &External,
 ) -> String {
@@ -851,7 +986,7 @@ fn field_type(
             let overridden = type_override(&class.name, &p.name);
             let mut inner = match overridden {
                 Some(rust) => rust.to_string(),
-                None => model.render_type(t, generics, local, external),
+                None => model.render_type(t, generics, subst, local, external),
             };
             // Box a field that would make the struct infinitely sized: direct
             // self-recursion, mutual recursion (RESOURCE_DESCRIPTION ↔
@@ -883,24 +1018,100 @@ fn field_type(
         BmmPropKind::Container { item, .. } => {
             format!(
                 "Vec<{}>",
-                model.render_type(item, generics, local, external)
+                model.render_type(item, generics, subst, local, external)
             )
         }
     }
 }
 
 fn emit_enum(
+    model: &Model,
     class: &BmmClass,
     variants: &[String],
     index: &BTreeMap<String, Vec<String>>,
+    local: &BTreeSet<String>,
     external: &External,
 ) -> String {
     let ty = naming::type_name(&class.name);
+    // The enum is generic over the abstract class's declared params that any
+    // concrete variant uses (`VERSION<T>` exposes `T` only through
+    // `ORIGINAL_VERSION.data: T`); `used_generic_params` resolves this uniformly
+    // so a bare reference elsewhere renders the same arity.
+    let enum_generics: Vec<String> = model
+        .used_generic_params(&class.name)
+        .into_iter()
+        .map(|(n, _)| n)
+        .collect();
+    let gen_decl = if enum_generics.is_empty() {
+        String::new()
+    } else {
+        format!("<{}>", enum_generics.join(", "))
+    };
     let mut b = String::new();
+    let no_subst = BTreeMap::new();
 
+    // Compute payloads first (so imports can be derived from what they touch).
+    let payloads: Vec<(String, String)> = variants
+        .iter()
+        .map(|d| {
+            let variant = naming::type_name(d);
+            let d_generic = !model.used_generic_params(d).is_empty();
+            let payload = if d_generic && !enum_generics.is_empty() {
+                // Same subtype family: thread the enum's own params (`Event<T>`
+                // → `PointEvent(PointEvent<T>)`).
+                format!("{variant}<{}>", enum_generics.join(", "))
+            } else {
+                // Non-generic enum (e.g. `DataValue`) with a generic variant:
+                // bound-fill the variant (`DvInterval(DvInterval<DvOrdered>)`).
+                model.render_type(
+                    &BmmType::Simple(d.clone()),
+                    &enum_generics,
+                    &no_subst,
+                    local,
+                    external,
+                )
+            };
+            // Box a variant whose payload embeds the enum type by value — a
+            // recursive subtype family (`EL_TERMINAL` ⊇ `EL_CASE_TABLE<EL_TERMINAL>`
+            // whose bound-filled `T` is `EL_TERMINAL` again) is otherwise
+            // infinitely sized. A `Vec`/map payload already breaks the cycle.
+            let already_indirect =
+                payload.starts_with("Vec<") || payload.starts_with("std::collections::");
+            let cyclic = !already_indirect && {
+                let mut roots = BTreeSet::new();
+                model.effective_roots(&BmmType::Simple(d.clone()), &mut roots);
+                roots.iter().any(|r| {
+                    !Model::is_mapped(r)
+                        && r != d
+                        && (r == &class.name || model.reaches(r, &class.name, &mut BTreeSet::new()))
+                })
+            };
+            let payload = if cyclic {
+                format!("Box<{payload}>")
+            } else {
+                payload
+            };
+            (variant, payload)
+        })
+        .collect();
+
+    // Imports: every emittable spec type each payload embeds. For a variant
+    // threaded over the enum's own params (`IntervalEvent<T>`) that is just the
+    // variant type; for a bound-filled variant (`DvInterval<DvOrdered>`) it also
+    // includes the auto-filled bound args. Mirror the payload decision so we do
+    // not import a bound type the payload never names.
     let mut imports: BTreeSet<String> = BTreeSet::new();
-    for v in variants {
-        add_import(&mut imports, v, &ty, index, external);
+    for d in variants {
+        let mut roots = BTreeSet::new();
+        let d_generic = !model.used_generic_params(d).is_empty();
+        if d_generic && !enum_generics.is_empty() {
+            roots.insert(d.clone());
+        } else {
+            model.effective_roots(&BmmType::Simple(d.clone()), &mut roots);
+        }
+        for r in roots {
+            add_import(&mut imports, &r, &ty, index, external);
+        }
     }
     enum_header(&mut b, &class.name, &imports);
     doc_block(&mut b, class.documentation.as_deref(), "");
@@ -910,10 +1121,9 @@ fn emit_enum(
     ));
     b.push_str("#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n");
     b.push_str("#[serde(untagged)]\n");
-    b.push_str(&format!("pub enum {ty} {{\n"));
-    for d in variants {
-        let variant = naming::type_name(d);
-        b.push_str(&format!("    {variant}({variant}),\n"));
+    b.push_str(&format!("pub enum {ty}{gen_decl} {{\n"));
+    for (variant, payload) in &payloads {
+        b.push_str(&format!("    {variant}({payload}),\n"));
     }
     b.push_str("}\n");
     b
@@ -942,12 +1152,13 @@ fn import_lines(
     model: &Model,
     class: &BmmClass,
     generics: &[String],
+    subst: &BTreeMap<String, String>,
     self_ident: &str,
     index: &BTreeMap<String, Vec<String>>,
     external: &External,
 ) -> BTreeSet<String> {
     let mut imports = BTreeSet::new();
-    for spec in model.referenced_specs(class, generics) {
+    for spec in model.referenced_specs(class, generics, subst) {
         add_import(&mut imports, &spec, self_ident, index, external);
     }
     imports

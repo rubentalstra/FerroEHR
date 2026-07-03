@@ -16,7 +16,17 @@ for our exact pinned versions.
 | openehr_am_1.4.0.bmm.json   | components/AM/json/openehr_am_1.4.0.bmm.json     |
 | openehr_am_2.4.0.bmm.json   | components/AM/json/openehr_am_2.4.0.bmm.json     |
 | openehr_lang_1.1.0.bmm.json | components/LANG/json/openehr_lang_1.1.0.bmm.json |
+| openehr_lang_1.1.0-bmm3.bmm.json | components/LANG/BMM/json/openehr_lang_1.1.0.bmm.json (BMM-3 schema) |
 
 These are the deterministic input to `openehr-codegen` (ADR-004). The ODIN
 reader in `openehr-lang::odin` is retained for ADL/ODIN *instance* parsing
 (P8/P9), not for BMM ingestion.
+
+LANG ships across **two** BMM files that the generator merges into the single
+`openehr-lang` crate (`BmmSchema::combined`): the primary
+`openehr_lang_1.1.0.bmm.json` carries the persisted-BMM (`P_BMM_*`), the
+older `EXPR_*` expression model, and `STATEMENT_SET`/`ASSERTION` (which AM's
+`rules`/`includes` reference); the `-bmm3` file carries the full `BMM_*`
+object model and the `EL_*` expression language (which AM's persisted-archetype
+`rules : List<EL_BOOLEAN_EXPRESSION>` reference). Neither file alone resolves
+every AM reference, so both are required.

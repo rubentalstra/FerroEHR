@@ -5,7 +5,9 @@ use openehr_derive::OpenEhrType;
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Date;
+use openehr_base::prelude::MultiplicityInterval;
 
 /// Constraint on instances representing dates in the form either of a set of validity values, or else date ranges based on the `C_ORDERED` list constraint.
 ///
@@ -24,7 +26,7 @@ pub struct CDate {
     pub rm_type_name: String,
     /// Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
     /// Only set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.
-    pub occurrences: Option<serde_json::Value>,
+    pub occurrences: Option<MultiplicityInterval>,
     /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
     ///
     /// For `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.
@@ -47,7 +49,7 @@ pub struct CDate {
     /// Formal constraint on the assumed primitive `Iso8601_date` type, in the form of one or more `Interval<Iso8601_date>`.
     ///
     /// For a pattern constraint or no constraint, use an empty list.
-    pub constraint: Vec<serde_json::Value>,
+    pub constraint: Vec<Interval<Iso8601Date>>,
 
     // inherited: C_TEMPORAL
     /// Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.
