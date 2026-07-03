@@ -17,7 +17,7 @@ permissionMode: default
 > so there are no hand-transcribed spec files to review — a `// @generated` file
 > is never reviewed for fidelity (fix the emitter instead). This agent now
 > reviews **hand-written** files: the EHRbase Java→Rust application port
-> (`ehrbase-*`), the hand-written spec crates (`openehr-term`, `openehr-serde`,
+> (`ehrbase-*`), the hand-written spec crates (`openehr-term`, `openehr-its`,
 > `openehr-flat`, tooling), and `*_impl.rs` behaviour. The
 > "RM-transcription-specific" guidance below is retained for historical context
 > only.

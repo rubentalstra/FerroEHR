@@ -1,0 +1,179 @@
+{
+    "_type": "COMPOSITION",
+    "name": {
+        "_type": "DV_TEXT",
+        "value": "my_spanish_template_v0"
+    },
+    "archetype_details": {
+        "archetype_id": {
+            "value": "openEHR-EHR-COMPOSITION.my_spanish_composition.v0"
+        },
+        "template_id": {
+            "value": "my_spanish_template_v0"
+        },
+        "rm_version": "1.0.4"
+    },
+    "language": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+            "_type": "TERMINOLOGY_ID",
+            "value": "ISO_639-1"
+        },
+        "code_string": "es"
+    },
+    "territory": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+            "_type": "TERMINOLOGY_ID",
+            "value": "ISO_3166-1"
+        },
+        "code_string": "DE"
+    },
+    "category": {
+        "_type": "DV_CODED_TEXT",
+        "value": "evento",
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+                "_type": "TERMINOLOGY_ID",
+                "value": "openehr"
+            },
+            "code_string": "433"
+        }
+    },
+    "composer": {
+        "_type": "PARTY_IDENTIFIED",
+        "name": "Max Mustermann"
+    },
+    "context": {
+        "_type": "EVENT_CONTEXT",
+        "start_time": {
+            "_type": "DV_DATE_TIME",
+            "value": "2022-02-03T04:05:06"
+        },
+        "setting": {
+            "_type": "DV_CODED_TEXT",
+            "value": "hogar",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                    "_type": "TERMINOLOGY_ID",
+                    "value": "openehr"
+                },
+                "code_string": "225"
+            }
+        }
+    },
+    "content": [
+        {
+            "_type": "OBSERVATION",
+            "name": {
+                "_type": "DV_TEXT",
+                "value": "my_spanish_observation"
+            },
+            "archetype_details": {
+                "archetype_id": {
+                    "value": "openEHR-EHR-OBSERVATION.my_spanish_observation.v0"
+                },
+                "rm_version": "1.0.4"
+            },
+            "language": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                    "_type": "TERMINOLOGY_ID",
+                    "value": "ISO_639-1"
+                },
+                "code_string": "es"
+            },
+            "encoding": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                    "_type": "TERMINOLOGY_ID",
+                    "value": "IANA_character-sets"
+                },
+                "code_string": "ISO-10646-UTF-1"
+            },
+            "workflow_id": {
+                "_type": "OBJECT_REF",
+                "namespace": "unknown",
+                "type": "ANY",
+                "id": {
+                    "_type": "GENERIC_ID",
+                    "value": "6f07d505-065c-39a3-8f00-a59ee338d108",
+                    "scheme": "scheme"
+                }
+            },
+            "subject": {
+                "_type": "PARTY_SELF"
+            },
+            "guideline_id": {
+                "_type": "OBJECT_REF",
+                "namespace": "unknown",
+                "type": "ANY",
+                "id": {
+                    "_type": "GENERIC_ID",
+                    "value": "5a8c859e-5545-3b40-86c5-4ee645bb86d1",
+                    "scheme": "scheme"
+                }
+            },
+            "data": {
+                "name": {
+                    "_type": "DV_TEXT",
+                    "value": "History"
+                },
+                "origin": {
+                    "_type": "DV_DATE_TIME",
+                    "value": "2022-02-03T04:05:06"
+                },
+                "period": {
+                    "_type": "DV_DURATION",
+                    "value": "PT0S"
+                },
+                "duration": {
+                    "_type": "DV_DURATION",
+                    "value": "PT0S"
+                },
+                "events": [
+                    {
+                        "_type": "POINT_EVENT",
+                        "name": {
+                            "_type": "DV_TEXT",
+                            "value": "Any event"
+                        },
+                        "time": {
+                            "_type": "DV_DATE_TIME",
+                            "value": "2022-02-03T04:05:06"
+                        },
+                        "data": {
+                            "_type": "ITEM_TREE",
+                            "name": {
+                                "_type": "DV_TEXT",
+                                "value": "Tree"
+                            },
+                            "items": [
+                                {
+                                    "_type": "ELEMENT",
+                                    "name": {
+                                        "_type": "DV_TEXT",
+                                        "value": "my_spanish_quantity"
+                                    },
+                                    "value": {
+                                        "_type": "DV_QUANTITY",
+                                        "units": "mm",
+                                        "magnitude": 22.0
+                                    },
+                                    "archetype_node_id": "at0004"
+                                }
+                            ],
+                            "archetype_node_id": "at0003"
+                        },
+                        "archetype_node_id": "at0002"
+                    }                   
+                ],
+                "archetype_node_id": "at0001"
+            },
+            "archetype_node_id": "openEHR-EHR-OBSERVATION.my_spanish_observation.v0"
+        }
+    ],
+    "archetype_node_id": "openEHR-EHR-COMPOSITION.my_spanish_composition.v0"
+}

@@ -1,0 +1,523 @@
+{
+  "_type": "COMPOSITION",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "Encounter"
+  },
+  "uid": {
+    "_type": "OBJECT_VERSION_ID",
+    "value": "95705e9e-d658-4e60-8e42-240db4478179::ehrbase.org::1"
+  },
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+    },
+    "template_id": {
+      "_type": "TEMPLATE_ID",
+      "value": "ehrbase_multi_occurrence.de.v1"
+    },
+    "rm_version": "1.0.4"
+  },
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_639-1"
+    },
+    "code_string": "de"
+  },
+  "territory": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_3166-1"
+    },
+    "code_string": "DE"
+  },
+  "category": {
+    "_type": "DV_CODED_TEXT",
+    "value": "event",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "433"
+    }
+  },
+  "composer": {
+    "_type": "PARTY_IDENTIFIED",
+    "name": "Test"
+  },
+  "context": {
+    "_type": "EVENT_CONTEXT",
+    "start_time": {
+      "_type": "DV_DATE_TIME",
+      "value": "2020-10-06T13:30:34,314872+02:00"
+    },
+    "end_time": {
+      "_type": "DV_DATE_TIME",
+      "value": "2020-10-06T13:30:34,317875+02:00"
+    },
+    "setting": {
+      "_type": "DV_CODED_TEXT",
+      "value": "dental care",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "openehr"
+        },
+        "code_string": "236"
+      }
+    }
+  },
+  "content": [
+    {
+      "_type": "OBSERVATION",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "Body temperature"
+      },
+      "archetype_node_id": "openEHR-EHR-OBSERVATION.body_temperature.v2",
+      "language": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "ISO_639-1"
+        },
+        "code_string": "de"
+      },
+      "encoding": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "IANA_character-sets"
+        },
+        "code_string": "UTF-8"
+      },
+      "subject": {
+        "_type": "PARTY_SELF"
+      },
+      "protocol": {
+        "_type": "ITEM_TREE",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "Protocol"
+        },
+        "archetype_node_id": "at0020",
+        "items": [
+          {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Location of measurement"
+            },
+            "archetype_node_id": "at0021",
+            "value": {
+              "_type": "DV_CODED_TEXT",
+              "value": "Forehead",
+              "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                  "_type": "TERMINOLOGY_ID",
+                  "value": "local"
+                },
+                "code_string": "at0061"
+              }
+            }
+          }
+        ]
+      },
+      "data": {
+        "_type": "HISTORY",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "History"
+        },
+        "archetype_node_id": "at0002",
+        "origin": {
+          "_type": "DV_DATE_TIME",
+          "value": "2020-10-06T13:30:34,326872+02:00"
+        },
+        "events": [
+          {
+            "_type": "POINT_EVENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Any event"
+            },
+            "archetype_node_id": "at0003",
+            "time": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-10-06T13:30:34,328873+02:00"
+            },
+            "data": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "Tree"
+              },
+              "archetype_node_id": "at0001",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Temperature"
+                  },
+                  "archetype_node_id": "at0004",
+                  "value": {
+                    "_type": "DV_QUANTITY",
+                    "magnitude": 22.0,
+                    "units": "Cel"
+                  }
+                }
+              ]
+            },
+            "state": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "State"
+              },
+              "archetype_node_id": "at0029",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Body exposure"
+                  },
+                  "archetype_node_id": "at0030",
+                  "value": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "Appropriate clothing/bedding",
+                    "defining_code": {
+                      "_type": "CODE_PHRASE",
+                      "terminology_id": {
+                        "_type": "TERMINOLOGY_ID",
+                        "value": "local"
+                      },
+                      "code_string": "at0033"
+                    }
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Current day of menstrual cycle"
+                  },
+                  "archetype_node_id": "at0065",
+                  "value": {
+                    "_type": "DV_COUNT",
+                    "magnitude": 3
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "_type": "POINT_EVENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Any event"
+            },
+            "archetype_node_id": "at0003",
+            "time": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-10-06T13:30:34,328873+02:00"
+            },
+            "data": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "Tree"
+              },
+              "archetype_node_id": "at0001",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Temperature"
+                  },
+                  "archetype_node_id": "at0004",
+                  "value": {
+                    "_type": "DV_QUANTITY",
+                    "magnitude": 11.0,
+                    "units": "Cel"
+                  }
+                }
+              ]
+            },
+            "state": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "State"
+              },
+              "archetype_node_id": "at0029",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Body exposure"
+                  },
+                  "archetype_node_id": "at0030",
+                  "value": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "Appropriate clothing/bedding",
+                    "defining_code": {
+                      "_type": "CODE_PHRASE",
+                      "terminology_id": {
+                        "_type": "TERMINOLOGY_ID",
+                        "value": "local"
+                      },
+                      "code_string": "at0033"
+                    }
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Current day of menstrual cycle"
+                  },
+                  "archetype_node_id": "at0065",
+                  "value": {
+                    "_type": "DV_COUNT",
+                    "magnitude": 3
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "_type": "OBSERVATION",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "Body temperature"
+      },
+      "archetype_node_id": "openEHR-EHR-OBSERVATION.body_temperature.v2",
+      "language": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "ISO_639-1"
+        },
+        "code_string": "de"
+      },
+      "encoding": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "IANA_character-sets"
+        },
+        "code_string": "UTF-8"
+      },
+      "subject": {
+        "_type": "PARTY_SELF"
+      },
+      "protocol": {
+        "_type": "ITEM_TREE",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "Protocol"
+        },
+        "archetype_node_id": "at0020",
+        "items": [
+          {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Location of measurement"
+            },
+            "archetype_node_id": "at0021",
+            "value": {
+              "_type": "DV_TEXT",
+              "value": "location"
+            }
+          }
+        ]
+      },
+      "data": {
+        "_type": "HISTORY",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "History"
+        },
+        "archetype_node_id": "at0002",
+        "origin": {
+          "_type": "DV_DATE_TIME",
+          "value": "2020-10-06T13:30:34,328873+02:00"
+        },
+        "events": [
+          {
+            "_type": "POINT_EVENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Any event"
+            },
+            "archetype_node_id": "at0003",
+            "time": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-10-06T13:30:34,328873+02:00"
+            },
+            "data": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "Tree"
+              },
+              "archetype_node_id": "at0001",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Temperature"
+                  },
+                  "archetype_node_id": "at0004",
+                  "value": {
+                    "_type": "DV_QUANTITY",
+                    "magnitude": 22.0,
+                    "units": "Cel"
+                  }
+                }
+              ]
+            },
+            "state": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "State"
+              },
+              "archetype_node_id": "at0029",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Body exposure"
+                  },
+                  "archetype_node_id": "at0030",
+                  "value": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "Appropriate clothing/bedding",
+                    "defining_code": {
+                      "_type": "CODE_PHRASE",
+                      "terminology_id": {
+                        "_type": "TERMINOLOGY_ID",
+                        "value": "local"
+                      },
+                      "code_string": "at0033"
+                    }
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Current day of menstrual cycle"
+                  },
+                  "archetype_node_id": "at0065",
+                  "value": {
+                    "_type": "DV_COUNT",
+                    "magnitude": 3
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "_type": "POINT_EVENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Any event"
+            },
+            "archetype_node_id": "at0003",
+            "time": {
+              "_type": "DV_DATE_TIME",
+              "value": "2020-10-06T13:30:34,328873+02:00"
+            },
+            "data": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "Tree"
+              },
+              "archetype_node_id": "at0001",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Temperature"
+                  },
+                  "archetype_node_id": "at0004",
+                  "value": {
+                    "_type": "DV_QUANTITY",
+                    "magnitude": 11.0,
+                    "units": "Cel"
+                  }
+                }
+              ]
+            },
+            "state": {
+              "_type": "ITEM_TREE",
+              "name": {
+                "_type": "DV_TEXT",
+                "value": "State"
+              },
+              "archetype_node_id": "at0029",
+              "items": [
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Body exposure"
+                  },
+                  "archetype_node_id": "at0030",
+                  "value": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "Appropriate clothing/bedding",
+                    "defining_code": {
+                      "_type": "CODE_PHRASE",
+                      "terminology_id": {
+                        "_type": "TERMINOLOGY_ID",
+                        "value": "local"
+                      },
+                      "code_string": "at0033"
+                    }
+                  }
+                },
+                {
+                  "_type": "ELEMENT",
+                  "name": {
+                    "_type": "DV_TEXT",
+                    "value": "Current day of menstrual cycle"
+                  },
+                  "archetype_node_id": "at0065",
+                  "value": {
+                    "_type": "DV_COUNT",
+                    "magnitude": 3
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

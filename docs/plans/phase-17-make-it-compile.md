@@ -33,7 +33,7 @@ Phase 18's job), new feature work, optimization.
 - [ ] Fix `openehr-foundation` and `openehr-base` (dependency leaves) to zero errors
 - [ ] Fix `openehr-terminology` to zero errors
 - [ ] Fix `openehr-rm` to zero errors
-- [ ] Fix `openehr-serde`, `openehr-odin`, `openehr-bmm` to zero errors
+- [ ] Fix `openehr-its`, `openehr-odin`, `openehr-bmm` to zero errors
 - [ ] Fix `openehr-adl`, `openehr-flat`, `openehr-aql` to zero errors
 - [ ] Fix `openehr-rest`, `openehr-ehrbase-compat` to zero errors
 - [ ] Fix `openehr-server` (the binary, depends on everything) to zero errors

@@ -50,9 +50,9 @@ on 2026-07-03 (the versions available as clean `*.bmm.json`).
 | QUERY (AQL) | 1.1.0 | STABLE | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
 | LANG (BMM / ODIN / EL) | 1.0.0 | STABLE (mixed) | `openehr-lang` — the ODIN + BMM reader that feeds codegen |
 | TERM (Terminology) | 3.1.0 | STABLE | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
-| ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL) | STABLE | canonical XML in `openehr-serde` (hand-written, `quick-xml`); namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-serde/schemas/xml/`. |
+| ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL) | STABLE | canonical XML in `openehr-its` (hand-written, `quick-xml`); namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
 | ITS-REST (REST API) | 1.0.3 | STABLE | ADMIN API is dev-branch only |
-| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-serde/schemas/` |
+| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/` |
 | ITS-BMM (BMM meta-model, JSON) | per-component (see above) | STABLE per-schema | **the codegen input**; vendored `*.bmm.json` at `crates/openehr-codegen/vendor/bmm/` with provenance |
 
 **Parity note:** these are the *latest* spec versions; stock EHRbase/`archie`

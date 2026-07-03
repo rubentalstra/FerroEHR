@@ -87,6 +87,6 @@ TODO(port), 104 PORT NOTE, hazards grep-verified), committed in four package
 commits. One agent stalled at the very end (ehr composition cluster) but its
 14 files were complete and verified; only a trailer count needed fixing.
 Next is P4 (docs/plans/phase-04-serialization-json.md): canonical JSON in
-openehr-serde — serde derives finally land there; the TYPE_NAME consts
+openehr-its — serde derives finally land there; the TYPE_NAME consts
 across base/rm become #[serde(rename)] attributes, and insta golden vectors
 against ITS-JSON (pin a commit) become the acceptance instrument.

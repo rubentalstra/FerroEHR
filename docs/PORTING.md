@@ -12,7 +12,7 @@ This file is a lookup table, not prose. Two mapping domains are covered:
 **Java → Rust** (for the EHRbase application code in `ehrbase-rest`,
 `ehrbase-compat`, `ehrbase`) — hand-applied during the port — and **openEHR
 spec → Rust** (for the generated `openehr-base`, `openehr-rm`, `openehr-am`, and
-the hand-written `openehr-term`, `openehr-serde`, `openehr-flat`, `openehr-lang`,
+the hand-written `openehr-term`, `openehr-its`, `openehr-flat`, `openehr-lang`,
 `openehr-query`) — now encoded in the generator.
 
 For the full narrative rationale behind these rules, see `PORT_MASTER_PLAN.md`

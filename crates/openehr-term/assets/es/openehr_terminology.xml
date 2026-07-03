@@ -1,4 +1,4 @@
-<terminology name="openehr" language="es" version="3.0.0" date="2023-06-26">
+<terminology name="openehr" language="es" version="3.1.0" date="2024-04-11">
     <codeset issuer="openehr" openehr_id="compression_algorithms" name="compression algorithms" external_id="openehr_compression_algorithms">
         <code value="compress" description="compresión"/>
         <code value="deflate" description="deflación"/>

@@ -8,7 +8,7 @@ Single workspace. EHRbase's Java has been moved into `crates/openehr-*` (Phase 0
 
 **Crate naming (ADR-004):** `openehr-*` = the openEHR **specification** (increasingly *generated* from the vendored BMM meta-model, not hand-transcribed); `ehrbase-*` = the ported **EHRbase application**.
 
-- `crates/openehr-foundation`, `openehr-base`, `openehr-term`, `openehr-rm`, `openehr-serde`, `openehr-lang`, `openehr-am`, `openehr-flat`, `openehr-query` — openEHR spec crates, one per spec component (`openehr-lang` = LANG: ODIN + BMM; `openehr-am` = AM; `openehr-query` = AQL/QUERY). `openehr-codegen` (BMM→Rust generator) + `openehr-derive` (proc-macro) join this set. `openehr-foundation` folds into `openehr-base` at the codegen pass.
+- `crates/openehr-foundation`, `openehr-base`, `openehr-term`, `openehr-rm`, `openehr-its`, `openehr-lang`, `openehr-am`, `openehr-flat`, `openehr-query` — openEHR spec crates, one per spec component (`openehr-lang` = LANG: ODIN + BMM; `openehr-am` = AM; `openehr-query` = AQL/QUERY). `openehr-codegen` (BMM→Rust generator) + `openehr-derive` (proc-macro) join this set. `openehr-foundation` folds into `openehr-base` at the codegen pass.
 - `crates/ehrbase-rest`, `ehrbase-compat`, `ehrbase` — the ported EHRbase application; receive EHRbase's server Java, ported in place. `ehrbase` is the binary.
 - `docs/` — plans, research, ADRs, ROSETTA, PORTING, VERSIONS, LIFETIMES.
 - `.claude/` — rules, skills, agents, hooks.
@@ -22,7 +22,7 @@ Single workspace. EHRbase's Java has been moved into `crates/openehr-*` (Phase 0
 - **Generated crates** (`openehr-base`, `openehr-rm`, `openehr-am` with both `am14`/`am24`): every type file starts with `// @generated … DO NOT EDIT`. **Never hand-edit a generated file.** To change output, edit the emitter (`crates/openehr-codegen/src/emit.rs`) or its override map, then regenerate. `openehr-foundation` no longer exists (folded into `openehr-base`).
 - **Hand-written spec behaviour** (invariants, spec functions per ADR-003) lives in sibling `*_impl.rs` files the generator never rewrites.
 - **Hand-written tooling** (edit freely, normal Rust): `openehr-lang` (ODIN + BMM reader), `openehr-codegen` (emitter), `openehr-derive` (proc-macro).
-- **NOT generated** (hand-written for good reason): `openehr-term` (terminology bundle + XML assets + access logic — BMM only has ~6 interface classes), `openehr-serde` (ITS-XML serialization + the interop fidelity gate), `openehr-flat` (SDT), and every `ehrbase-*` app crate (ported from EHRbase Java).
+- **NOT generated** (hand-written for good reason): `openehr-term` (terminology bundle + XML assets + access logic — BMM only has ~6 interface classes), `openehr-its` (ITS-XML serialization + the interop fidelity gate), `openehr-flat` (SDT), and every `ehrbase-*` app crate (ported from EHRbase Java).
 - **Pinned spec versions:** RM 1.2.0, BASE 1.3.0, TERM 3.1.0, AM 1.4.0 + 2.4.0 (see `docs/VERSIONS.md`). These are the latest; they diverge from what stock EHRbase/`archie` emits (RM 1.1.0-era) — a Stage-1 REST-parity consideration.
 
 ## Phase workflow (the loop)
@@ -89,7 +89,7 @@ scripts/parity.sh              # add USE_REFERENCE_EHRBASE=1 for the negative-te
 
 Note: Phases P1 through P16 are not required to compile. `cargo build` is expected to fail until P17 (make-it-compile). This is by design; do not chase build errors during translation.
 
-Compile status (post ADR-004): the **generated** spec crates `openehr-base`, `openehr-rm`, and `openehr-am` compile and are lib-clippy-clean — keep them that way by fixing the *emitter*, never by hand-editing generated files. `openehr-lang`, `openehr-codegen`, and `openehr-derive` are hand-written tooling and must stay compiling + clippy-clean. `openehr-term` compiles (hand-written). `openehr-serde`'s library compiles but its tests need re-wiring against the generated types (the interop fidelity gate). The Phase-A no-compile allowance applies to the crates not yet reached (the `ehrbase-*` app crates and the parser crates awaiting their phases).
+Compile status (post ADR-004): the **generated** spec crates `openehr-base`, `openehr-rm`, and `openehr-am` compile and are lib-clippy-clean — keep them that way by fixing the *emitter*, never by hand-editing generated files. `openehr-lang`, `openehr-codegen`, and `openehr-derive` are hand-written tooling and must stay compiling + clippy-clean. `openehr-term` compiles (hand-written). `openehr-its`'s library compiles but its tests need re-wiring against the generated types (the interop fidelity gate). The Phase-A no-compile allowance applies to the crates not yet reached (the `ehrbase-*` app crates and the parser crates awaiting their phases).
 
 ## Conventions
 

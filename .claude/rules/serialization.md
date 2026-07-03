@@ -1,5 +1,5 @@
 ---
-paths: ["crates/openehr-serde/**", "crates/openehr-flat/**"]
+paths: ["crates/openehr-its/**", "crates/openehr-flat/**"]
 ---
 
 # Serialization rules — canonical JSON, canonical XML, FLAT/STRUCTURED
@@ -24,11 +24,11 @@ What the derive does (so you know the contract, not so you hand-write it):
 If a `_type`/serialization behaviour is wrong, fix the **emitter** or the
 **derive macro** and regenerate — never hand-edit a `// @generated` file.
 
-`openehr-serde` (canonical JSON entry points + canonical **XML** + the interop
+`openehr-its` (canonical JSON entry points + canonical **XML** + the interop
 fidelity gate) and `openehr-flat` (FLAT/STRUCTURED/Web Template) are
 hand-written from specifications and vendor conventions (PORT_MASTER_PLAN.md
 Sections 7.3, 7.4). The acceptance instrument for JSON is the **real EHRbase
-canonical-JSON corpus** round-trip in `openehr-serde/tests/vendor/`
+canonical-JSON corpus** round-trip in `openehr-its/tests/vendor/`
 (deserialize → re-serialize → normalized value-equality + ITS-JSON schema
 validation), not hand-built fixtures; `insta` golden vectors are the instrument
 for XML and FLAT.

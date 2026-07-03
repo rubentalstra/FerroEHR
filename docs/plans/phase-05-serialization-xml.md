@@ -28,7 +28,7 @@ the XML *wire format* is the v1 lineage. See the DECISION note below.
 
 In: `quick-xml`-based ser/de for the RM classes EHRbase serializes, against
 the vendored v1 ITS-XML 1.0.2 bundle
-(`crates/openehr-serde/schemas/xml/its-xml-1.0.2-nsv1/`): `BaseTypes.xsd`
+(`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/`): `BaseTypes.xsd`
 (data types + identification), `Structure.xsd` (data structures + LOCATABLE),
 `Content.xsd` (EHR entries), `Composition.xsd` (COMPOSITION/EVENT_CONTEXT),
 `Version.xsd` (change control), `Resource.xsd`. C14N fallback.
@@ -63,7 +63,7 @@ XML; defer to a synthetic pass only if a later phase needs it).
       key columns), spec-TBD (`VERSION.canonical_form`), Security-IM scope
       (`EHR_ACCESS.scheme`), or P11 path-evaluator wiring
 - [x] Real-world canonical JSON acceptance: vendor the `ehrbase/openEHR_SDK`
-      canonical corpus (72 files @ `22b01e0c`) + rewrite `openehr-serde`
+      canonical corpus (72 files @ `22b01e0c`) + rewrite `openehr-its`
       tests to round-trip real EHRbase data (deserialize → re-serialize →
       equality) and ITS-JSON schema-validate, with explicit class-coverage
       and minimal synthetic gap fixtures for the demographic package —
@@ -76,7 +76,7 @@ XML; defer to a synthetic pass only if a later phase needs it).
       unchanged, still ITS-JSON 1.1.0 conformant). serde + all four spec
       crates green.
 - [x] Vendor the ITS-XML XSD bundles for reference — completed 2026-07-03.
-      Both lineages are under `crates/openehr-serde/schemas/xml/` with
+      Both lineages are under `crates/openehr-its/schemas/xml/` with
       `PROVENANCE.md`: `its-xml-1.0.2-nsv1/` (the v1-namespace STABLE bundle,
       tag `Release-1.0.2v2` @ `f7a93777`, = what EHRbase emits, the P5 TARGET)
       and `its-xml-2.0.0-nsv2/` (RM 1.1.0 + BASE 1.2.0 + AM 1.4 + OET + QUERY,
@@ -136,7 +136,7 @@ tentatively targeted v2; the evidence above settled it toward v1.)
 - Spec inputs should be cached or vendored before use. `docs/research/spec-cache/README.md`
   is now the inventory/policy for transcription caches, while computable
   validation inputs stay beside the crate that uses them (e.g.
-  `openehr-serde/schemas/` for ITS schemas).
+  `openehr-its/schemas/` for ITS schemas).
 - `jiff` is pinned at workspace version `0.2.31` and wired into
   `openehr-foundation`. The first parser-backed ISO 8601 implementation now
   covers BASE date/time/timezone/duration validity, component accessors,

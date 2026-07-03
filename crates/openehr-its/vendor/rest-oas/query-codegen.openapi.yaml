@@ -1,0 +1,704 @@
+openapi: 3.0.3
+info:
+  title: Query API
+  version: latest
+  x-status: STABLE
+  x-spec: query
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: https://specifications.openehr.org/
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: https://creativecommons.org/licenses/by-nd/3.0/
+  description: |
+    ## Description
+
+    ### Purpose
+
+    This specification describes the service endpoints and data-models used when querying an openEHR system. 
+
+    The [Archetype Query Language (AQL)](https://specifications.openehr.org/releases/QUERY/latest/AQL.html) is the primary query language.
+
+    ### Related Documents
+
+    Prerequisite documents for reading this document include:
+
+    - The [Archetype Query Language (AQL)](https://specifications.openehr.org/releases/QUERY/latest/AQL.html)
+
+    Related documents include:
+
+    - The [openEHR Architecture Overview](https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html)
+    - The [openEHR Global Class Index](https://specifications.openehr.org/classes)
+    - The [XML-Schemas (XSD)](https://specifications.openehr.org/releases/ITS-XML/latest)
+    - The [JSON-Schemas](https://specifications.openehr.org/releases/ITS-JSON/latest) and [Simplified Formats](simplified_formats.html)
+
+    ### Status
+
+    This specification is in the `STABLE` state, and can be downloaded as [OpenAPI specification](https://spec.openapis.org/oas/v3.0.3) file (in YAML format) [for validation](computable/OAS/query-validation.openapi.yaml), or [for code generators](computable/OAS/query-codegen.openapi.yaml).
+    Users are encouraged to comment on and/or advise on these paragraphs as well as the main content.
+
+    The development version of this document can be found at <https://specifications.openehr.org/releases/ITS-REST/development/query.html>.
+servers:
+  - url: https://{baseUrl}/v1
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+security: []
+tags:
+  - name: Query_types
+    x-displayName: Query types
+    description: |
+      [comment]: # (title: Query types)
+
+      ## Single EHR queries
+
+      A common use-case is to execute queries within a specific EHR. 
+
+      This is achieved by supplying an `ehr_id` query parameter or setting an `openehr-ehr-id` request header.
+
+
+      ## Population queries
+
+      Population queries are queries which are executed on several EHRs in the same request.
+      These queries are not referring or using any `ehr_id` parameter to constrain the scope on a specific EHR. 
+
+      Examples of use-cases can be:
+      - Ward lists,
+      - Explore correlations between patients in a pandemic situation,
+      - Research, e.g. epidemiology, population health.
+
+
+      ## Stored queries
+
+      Stored queries are queries which have their definition stored (registered) on the server. 
+      These are identified by their [qualified name and version](#tag/Qualified_query_name).
+
+      Using stored queries has several advantages:
+      - separation of responsibilities (some users/developers write queries, others just call/execute them and consume the responses),
+      - no need to pass long query string over the network.
+
+      Queries can be stored or, once stored, their definition can be retrieved using the [definition endpoint](definition.html#tag/Query).
+
+
+      ## Ad-hoc queries
+
+      As opposed to stored queries, ad-hoc type queries do not have their definitions stored on the server, nor any associated identifier.
+      These queries will be executed as-is, as part of the request body or as a query parameter, by the [Execute ad-hoc AQL](#tag/Query/operation/query_execute_adhoc_query) operation endpoint. 
+  - name: Qualified_query_name
+    x-displayName: Qualified query name
+    description: |+
+      [comment]: # (title: Qualified query name)
+
+      Stored queries are identified by their name, used as `qualified_query_name`, and an optional `version` number.
+
+      Usually a `qualified_query_name` has a format of `[{namespace}::]{query-name}`.
+
+      The `namespace` is optional, and when used it should be in a form of a reverse domain name, which allows for separation of use of stored queries by teams, companies, etc.
+      The `query-name` may include any combination of characters, matched by the pattern `[a-zA-Z0-9_.-]`. 
+
+      > NOTE: The `query-name` value must not be `aql` (case-insensitive), as that is a reserved name.
+
+      Examples of valid `qualified_query_name`:
+      - `org.openehr::my_compositions`
+      - `my_compositions`
+      - `ehr::all_influenza_vacc_candidates`
+
+      The `version` identifier is in the format specified by [SEMVER](https://semver.org/) style (i.e. `major.minor.patch`).
+      When only a partial `version` pattern is supplied, or when `version` is not supplied at all, the system must use the latest `version` with the supplied prefix - i.e. if only `major` or `major.minor` is used, then the latest query version matching supplied prefix will be used.
+
+  - name: Request
+    x-displayName: Request details
+    description: |+
+      [comment]: # (title: Request details)
+
+      Below is a mostly self-documented AQL query in a request body.
+
+      ```json
+      {
+          "q": "SELECT o/data[at0002]/events[at0003]/data[at0001]/items[at0004]/value/magnitude AS temperature, o/data[at0002]/events[at0003]/data[at0001]/items[at0004]/value/units AS unit FROM EHR[ehr_id/value='554f896d-faca-4513-bddf-664541146308d'] CONTAINS Observation o[openEHR-EHR-OBSERVATION.body_temperature-zn.v1] WHERE o/data[at0002]/events[at0003]/data[at0001]/items[at0004]/value/magnitude > $temperature AND o/data[at0002]/events[at0003]/data[at0001]/items[at0.63 and name/value='Symptoms']/value/defining_code/code_string=$chills ORDER BY temperature DESC FETCH 3",
+          "query_parameters": {
+              "temperature": 38.5,
+              "chills": "at0.64"
+          }
+      }
+      ```
+
+      ## GET vs POST
+
+      Requests based on the `GET` method have URI length restriction, or some characters might not be allowed and have to be encoded.
+      Long queries in the `q` parameter and having a long list of `query_parameters` may add up to reach that limit, thus we recommend clients using the `POST` method instead of `GET`.
+
+      ## Common Headers and Query Parameters 
+
+      All query execution requests SHOULD support at least the following parameters:
+      - `ehr_id` - used to execute the query within a single EHR context: an EHR identifier taken from EHR.ehr_id.value
+      - `offset` - used for paging: the row number in result to start result-set from (`0`-based); default `0`
+      - `fetch` - used for paging: the number of rows to fetch (i.e. limit); default depends on the implementation, but cannot be combined with [AQL-top](https://specifications.openehr.org/releases/QUERY/latest/AQL.html#_top)
+      - other parameter(s) to replace placeholder(s) within the query, here generically named `query_parameters` (see [below](#tag/Request/Common-Headers-and-Query-Parameters/Query-parameters)).
+
+      Related request headers:
+      - `openehr-ehr-id` - used to execute the query within a single EHR context: an EHR identifier taken from EHR.ehr_id.value
+
+      Related response headers:
+      - `ETag` - A unique identifier of the resultSet
+
+
+      ### About the ehr_id parameter
+
+      The `ehr_id` parameter SHOULD be supplied by clients when executing single EHR queries and MAY be used by the underlying backend to perform routing, optimizations or similar. It MUST NOT be supplied for 'population queries' and similar multi-patient queries.
+
+      Depending on the needs, clients MAY supply it as a query parameter `ehr_id` or alternatively as a request header named `openehr-ehr-id`.
+
+
+      ### Query parameters
+
+      Depending on each query definition, various query parameters SHOULD be supported, generically named `query_parameters`
+      in this specification, but in the real request they will have specific names (e.g. `uid`, `systolic_bp`, etc.)
+      according to their names in the query definition.
+
+      Provided query parameters SHOULD NOT be prefixed with `$` sign. Instead, the server will (whenever necessary)
+      add the prefix or format queries as valid AQL queries.
+
+      As an example, for the following AQL query
+      ```
+      SELECT c/name/value FROM COMPOSITION c WHERE c/uid/value = $uid
+      ```
+      named as `'myQuery'`, the client can supply the `uid` as a query parameter:
+      ```
+      GET https://openEHRSys.example.com/v1/query/myQuery?uid=90910cf0-66a0-4382-b1f8-c0f27e81b42d::openEHRSys.example.com::1
+      ```
+
+      As another example, the request
+      ```
+      GET https://openEHRSys.example.com/v1/query/com.vendor::compositions?temperature_from=36&temperature_unit=Cel
+      ```
+      will pass query parameters `temperature_from` and `temperature_unit` to the underlying AQL query named `com.vendor::compositions`.
+
+      See [AQL-parameters](https://specifications.openehr.org/releases/QUERY/latest/AQL.html#_parameters) specification for more details.
+
+  - name: Response
+    x-displayName: Response details
+    description: |
+      [comment]: # (title: Response details)
+
+      ## RESULT_SET response
+
+      Below is a synthesized RESULT_SET response with all attributes.
+
+      <SchemaDefinition schemaRef="#/components/schemas/ResultSet" />
+
+      ## Metadata
+
+      RESULT_SET metadata comprise a set of optional (implementation dependent) attributes, useful for debugging. 
+
+      <SchemaDefinition schemaRef="#/components/schemas/ResultSetMetadata" />
+  - name: Query
+    x-displayName: Execute Query
+    description: |
+      Execution of [AQL queries](https://specifications.openehr.org/releases/QUERY/latest/AQL.html).
+
+      Endpoints support ad-hoc and stored query execution, parameterisation, and retrieval of results.
+  - name: Query_schema
+    x-displayName: Query Execute
+    description: |
+      The following resources relate to the [Archetype Query Language (AQL)](https://specifications.openehr.org/releases/QUERY/latest/AQL.html) and express the request structures used to execute queries via this API.
+      <div class="mb-5"></div>
+
+      The `AdhocQueryExecute` resource:
+      <SchemaDefinition schemaRef="#/components/schemas/AdhocQueryExecute" />
+
+      <div class="mb-5"></div>
+
+      The stored-query execute, known as the `Query` resource:
+      <SchemaDefinition schemaRef="#/components/schemas/Query" />
+  - name: RESULT_SET_schema
+    x-displayName: RESULT_SET
+    description: |
+      Structured result of query execution, typically tabular data with column metadata and row values produced by evaluating an AQL statement.
+      <SchemaDefinition schemaRef="#/components/schemas/ResultSet" />
+paths:
+  /query/aql:
+    get:
+      operationId: query_execute_adhoc_query
+      summary: Execute ad-hoc AQL
+      description: |
+        Execute a given ad-hoc AQL query, supplied by `q` parameter, fetching `fetch` numbers of rows from `offset` and passing `query_parameters` to the underlying query engine.
+
+        See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/ehr_id_Query'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/fetch'
+        - $ref: '#/components/parameters/query_parameters'
+        - $ref: '#/components/parameters/Accept_JSON'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Query'
+        '400':
+          $ref: '#/components/responses/400_Query'
+        '408':
+          $ref: '#/components/responses/408_Query'
+    post:
+      operationId: query_execute_adhoc_query_body
+      summary: Execute ad-hoc AQL (POST)
+      description: |
+        Execute a given ad-hoc AQL query, supplied by `q` attribute, fetching `fetch` numbers of rows from `offset` and passing `query_parameters` to the underlying query engine.
+
+        See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/Accept_JSON'
+        - $ref: '#/components/parameters/ContentType_JSON'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdhocQueryExecute'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Query'
+        '400':
+          $ref: '#/components/responses/400_Query'
+        '408':
+          $ref: '#/components/responses/408_Query'
+  /query/{qualified_query_name}:
+    get:
+      operationId: query_execute_stored_query
+      summary: Execute stored AQL
+      description: |
+        Execute a stored query, identified by the supplied `qualified_query_name` (at latest version), fetching `fetch` numbers of rows from `offset` and passing `query_parameters` to the underlying query engine.
+
+        See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
+
+        Queries can be stored or, once stored, their definition can be retrieved using the [definition endpoint](definition.html#tag/Query).
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/ehr_id_Query'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/fetch'
+        - $ref: '#/components/parameters/query_parameters'
+        - $ref: '#/components/parameters/Accept_JSON'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Query'
+        '400':
+          $ref: '#/components/responses/400_Query'
+        '404':
+          $ref: '#/components/responses/404_Query'
+        '408':
+          $ref: '#/components/responses/408_Query'
+    post:
+      operationId: query_execute_stored_query_body
+      summary: Execute stored AQL (POST)
+      description: |
+        Execute a stored query, identified by the supplied `qualified_query_name` (at latest version).  
+
+        See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
+          
+        Queries can be stored or, once stored, their definition can be retrieved using the [definition endpoint](definition.html#tag/Query).
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/Accept_JSON'
+        - $ref: '#/components/parameters/ContentType_JSON'
+      requestBody:
+        description: |
+          Specifications for a stored AQL query execution.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Query'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Query'
+        '400':
+          $ref: '#/components/responses/400_Query'
+        '404':
+          $ref: '#/components/responses/404_Query'
+        '408':
+          $ref: '#/components/responses/408_Query'
+  /query/{qualified_query_name}/{version}:
+    get:
+      operationId: query_execute_stored_query_version
+      summary: Execute stored AQL version
+      description: |
+        Execute a stored query, identified by the supplied `qualified_query_name` (at specified `version`), fetching `fetch` numbers of rows from `offset` and passing `query_parameters` to the underlying query engine.
+
+        See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
+
+        Queries can be stored or, once stored, their definition can be retrieved  using the [definition endpoint](definition.html#tag/Query).
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/version'
+        - $ref: '#/components/parameters/ehr_id_Query'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/fetch'
+        - $ref: '#/components/parameters/query_parameters'
+        - $ref: '#/components/parameters/Accept_JSON'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Query'
+        '400':
+          $ref: '#/components/responses/400_Query'
+        '404':
+          $ref: '#/components/responses/404_Query_version'
+        '408':
+          $ref: '#/components/responses/408_Query'
+    post:
+      operationId: query_execute_stored_query_version_body
+      summary: Execute stored AQL version (POST)
+      description: |
+        Execute a stored query, identified by the supplied `qualified_query_name` (at specified `version`).  
+
+        See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
+          
+        Queries can be stored or, once stored, their definition can be retrieved using the [definition endpoint](definition.html#tag/Query).
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/version'
+        - $ref: '#/components/parameters/Accept_JSON'
+        - $ref: '#/components/parameters/ContentType_JSON'
+      requestBody:
+        description: |
+          Specifications for a stored AQL query execution.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Query'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Query'
+        '400':
+          $ref: '#/components/responses/400_Query'
+        '404':
+          $ref: '#/components/responses/404_Query_version'
+        '408':
+          $ref: '#/components/responses/408_Query'
+components:
+  schemas:
+    AQL:
+      title: AQL
+      type: string
+      description: |
+        The given AQL query.
+      example: SELECT e/ehr_id/value, c/context/start_time/value as startTime, obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic, c/uid/value AS cid, c/name FROM EHR e CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1] CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1] WHERE obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp
+    QueryParameters:
+      title: QueryParameters
+      type: object
+      description: |
+        A set of query parameters.
+      example:
+        ehr_id: 7d44b88c-4199-4bad-97dc-d78268e01398
+        systolic_bp: 140
+      additionalProperties: true
+    ResultSetMetadata:
+      title: ResultSetMetadata
+      type: object
+      properties:
+        _href:
+          type: string
+          description: URL of the executed query (only for GET endpoint).
+          format: uri
+        _type:
+          type: string
+          description: The type of the serialized result object.
+        _schema_version:
+          type: string
+          description: The version of the specification defining the serialized object.
+        _created:
+          type: string
+          description: Result creation time (in the extended ISO 8601 format).
+          format: date-time
+        _generator:
+          type: string
+          description: Some identifier of the application that generated the result, useful for debugging.
+        _executed_aql:
+          type: string
+          description: |
+            The actual AQL query that was executed by the server, after replacing the query parameters. 
+            This attribute is not mandatory, but is useful for debugging.
+      description: |
+        RESULT_SET metadata.
+      example:
+        _href: https://openEHRSys.example.com/v1/query/org.openehr::compositions
+        _type: RESULTSET
+        _schema_version: 1.0.0
+        _created: '2017-08-19T00:25:47.568+02:00'
+        _generator: openEHRSys.ResultSets.Serialization.Json.ResultSetJsonWriter (5.0.0.0)
+        _executed_aql: SELECT e/ehr_id/value, c/context/start_time/value as startTime, obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic, c/uid/value AS cid, c/name FROM EHR e CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1] CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1] WHERE obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= 50
+      additionalProperties: true
+    QueryName:
+      title: QueryName
+      type: string
+      description: |
+        The (fully qualified) name of the query (when is registered as a stored query), in a format of `[{namespace}::]{query-name}`. 
+        See [Query Name](#tag/Qualified_query_name) for details on syntax.
+      example: org.openehr::compositions
+    ResultSetColumn:
+      title: RESULT_SET_COLUMN
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: |
+            Name of the column. 
+            When column alias is not present in the AQL, a `0`-based column index is used prefixed by a hash sign (i.e. `#0`, `#1`...)
+        path:
+          type: string
+          description: |
+            Path from the given AQL of the specified column.
+      description: |
+        An AQL column specification (e.g. a pair of column `name` and associated AQL `path`).
+      example:
+        name: '#0'
+        path: /ehr_id/value
+    ResultSetRow:
+      title: RESULT_SET_ROW
+      type: array
+      items: {}
+      description: |
+        A set of cells representing a RESULT_SET row, one cell for each column. 
+        Content of a cell is `ANY` (i.e. a `OBJECT` in most programming languages).
+      example:
+        - 81433066-c417-4813-9b29-79783e7bed23
+        - '2017-02-16T13:50:11.308+01:00'
+        - 140
+        - 90910cf0-66a0-4382-b1f8-c0f27e81b42d::openEHRSys.example.com::1
+        - _type: DV_TEXT
+          value: Labs
+    ResultSet:
+      title: RESULT_SET
+      required:
+        - rows
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/ResultSetMetadata'
+        name:
+          $ref: '#/components/schemas/QueryName'
+        q:
+          $ref: '#/components/schemas/AQL'
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultSetColumn'
+          description: |
+            A set of AQL column specifications, defined in the given AQL.
+          example:
+            - name: '#0'
+              path: /ehr_id/value
+            - name: startTime
+              path: /context/start_time/value
+            - name: systolic
+              path: /data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude
+            - name: cid
+              path: /uid/value
+            - name: '#4'
+              path: /name
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultSetRow'
+          description: |
+            An ordered set of RESULT_SET rows.
+    Offset:
+      title: Offset
+      type: integer
+      description: |
+        The row number in result-set to start result-set from (`0`-based), default is `0`.
+      format: int32
+      default: 0
+      example: 10
+    Fetch:
+      title: Fetch
+      type: integer
+      description: |
+        Number of rows to fetch (the default depends on the implementation).
+      format: int32
+      example: 10
+    AdhocQueryExecute:
+      title: AdhocQueryExecute
+      required:
+        - q
+      type: object
+      properties:
+        q:
+          $ref: '#/components/schemas/AQL'
+        offset:
+          $ref: '#/components/schemas/Offset'
+        fetch:
+          $ref: '#/components/schemas/Fetch'
+        query_parameters:
+          $ref: '#/components/schemas/QueryParameters'
+    Query:
+      title: Query
+      required:
+        - offset
+        - fetch
+        - query_parameters
+      type: object
+      properties:
+        offset:
+          $ref: '#/components/schemas/Offset'
+        fetch:
+          $ref: '#/components/schemas/Fetch'
+        query_parameters:
+          $ref: '#/components/schemas/QueryParameters'
+  parameters:
+    q:
+      name: q
+      in: query
+      description: |
+        The AQL query to be executed.
+      required: true
+      style: form
+      explode: true
+      schema:
+        $ref: '#/components/schemas/AQL'
+    ehr_id_Query:
+      name: ehr_id
+      in: query
+      description: |
+        An optional parameter to execute the query within an EHR context.
+      style: form
+      explode: true
+      schema:
+        type: string
+        format: uuid
+        example: 7d44b88c-4199-4bad-97dc-d78268e01398
+    offset:
+      name: offset
+      in: query
+      description: |
+        The row number in result-set to start result-set from (`0`-based), default is `0`.
+      style: form
+      explode: true
+      schema:
+        type: integer
+        default: 0
+        example: 10
+    fetch:
+      name: fetch
+      in: query
+      description: |
+        Number of rows to fetch (the default depends on the implementation).
+      style: form
+      explode: true
+      schema:
+        type: integer
+        example: 10
+    query_parameters:
+      name: query_parameters
+      in: query
+      description: |
+        Query parameters (can appear multiple times).
+      style: form
+      explode: true
+      schema:
+        $ref: '#/components/schemas/QueryParameters'
+    Accept_JSON:
+      name: Accept
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+    ContentType_JSON:
+      name: Content-Type
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+    qualified_query_name:
+      name: qualified_query_name
+      in: path
+      description: |
+        The (fully qualified) name of the query to be executed, in a format of `[{namespace}::]{query-name}`. See [Query Name](#tag/Qualified_query_name) for details on syntax.
+      required: true
+      style: simple
+      schema:
+        $ref: '#/components/schemas/QueryName'
+    version:
+      name: version
+      in: path
+      description: |
+        A SEMVER version number.
+        This can be an exact version (e.g. `1.7.1`), or a pattern as partial prefix, in a form of `{major}` or `{major}.{minor}` (e.g. `1` or `1.0`), in which case the highest (latest) version matching the prefix will be considered.
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: '1.0'
+  headers:
+    ETag_RESULT_SET:
+      description: |
+        The `ETag` (i.e. entity tag) response header is an identifier of the RESULT_SET.
+      schema:
+        type: string
+        example: W/"cdbb5db1-e466-4429-a9e5-bf80a54e120b"
+    ContentType_JSON:
+      schema:
+        type: string
+        enum:
+          - application/json
+  responses:
+    200_Query:
+      description: |
+        `200 OK` is returned when the server is able to execute the query.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag_RESULT_SET'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_JSON'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResultSet'
+    400_Query:
+      description: |
+        `400 Bad Request` is returned when the server was unable to execute the query due to invalid input, e.g. a required parameter is missing, or at least one of the parameters has an invalid syntax.
+    408_Query:
+      description: |
+        `408 Request Timeout` is returned when there is a query execution timeout (i.e. maximum query execution time reached, therefore the server aborted the execution of the query).
+    404_Query:
+      description: |
+        `404 Not Found` is returned when a stored query with `qualified_query_name` does not exist.
+    404_Query_version:
+      description: |
+        `404 Not Found` is returned when a stored query with `qualified_query_name` and `version` does not exist.
+x-tagGroups:
+  - name: Docs
+    tags:
+      - Query_types
+      - Qualified_query_name
+      - Request
+      - Response
+  - name: Resource endpoints
+    tags:
+      - Query
+  - name: Resources
+    tags:
+      - Query_schema
+      - RESULT_SET_schema

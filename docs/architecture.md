@@ -98,7 +98,7 @@ construction and execution. The RM ↔ row-per-locatable bridge itself is
 ## Serialization formats
 
 - **Canonical JSON** — the primary wire format, `_type`-discriminated,
-  targeting the openEHR ITS-JSON schemas (`openehr-serde`).
+  targeting the openEHR ITS-JSON schemas (`openehr-its`).
 - **Canonical XML** — JAXB/XSD-shaped in EHRbase; targets ITS-XML 1.0.2 and
   2.0.0 in this port, for round-trip with both schema generations.
 - **FLAT (simSDT) / STRUCTURED (structSDT)** — Better/Marand vendor formats
@@ -131,7 +131,7 @@ openehr-base ──────────────► openehr-term
                        │
         ┌──────────────┼───────────────┐
         ▼              ▼               ▼
-  openehr-serde   openehr-odin    (consumed by
+  openehr-its   openehr-odin    (consumed by
         │              │           openehr-am,
         │              ▼           below)
         │        openehr-bmm
@@ -159,13 +159,13 @@ openehr-base ──────────────► openehr-term
 | `openehr-base` | BASE Base Types: definitions, builtins, identification, resource | `openehr-foundation` |
 | `openehr-term` | TERM 3.x XML bundle + terminology service | `openehr-base` |
 | `openehr-rm` | RM 1.1.0: data_types, data_structures, common, ehr, demographic, integration, support | `openehr-base`, `openehr-term` |
-| `openehr-serde` | Canonical JSON (ITS-JSON) + canonical XML (ITS-XML), `_type` dispatch | `openehr-rm` |
+| `openehr-its` | Canonical JSON (ITS-JSON) + canonical XML (ITS-XML), `_type` dispatch | `openehr-rm` |
 | `openehr-odin` | ODIN parser | — |
 | `openehr-bmm` | BMM object model + P_BMM parser (schema v2.3) | `openehr-odin` |
-| `openehr-am` | ADL 1.4 + ADL 2 parsers, AOM 1.4 + AOM 2, OPT 1.4 XML, OPT 2 flattener | `openehr-odin`, `openehr-bmm`, `openehr-rm`, `openehr-serde` |
-| `openehr-flat` | FLAT / STRUCTURED / Web Template (Better semantics + EHRbase quirks) | `openehr-rm`, `openehr-serde`, `openehr-am` |
+| `openehr-am` | ADL 1.4 + ADL 2 parsers, AOM 1.4 + AOM 2, OPT 1.4 XML, OPT 2 flattener | `openehr-odin`, `openehr-bmm`, `openehr-rm`, `openehr-its` |
+| `openehr-flat` | FLAT / STRUCTURED / Web Template (Better semantics + EHRbase quirks) | `openehr-rm`, `openehr-its`, `openehr-am` |
 | `openehr-query` | AQL 1.1.0 lexer + parser + AST + semantic analyser | `openehr-rm`, `openehr-am` |
-| `ehrbase-rest` | ITS-REST 1.0.3 server + client (axum). **Receives** EHRbase REST Java. | `openehr-rm`, `openehr-serde`, `openehr-am`, `openehr-query` |
+| `ehrbase-rest` | ITS-REST 1.0.3 server + client (axum). **Receives** EHRbase REST Java. | `openehr-rm`, `openehr-its`, `openehr-am`, `openehr-query` |
 | `ehrbase-compat` | EHRbase-compatible endpoint aliases, admin API, OPT 1.4 ingestion, WebTemplate export, EhrScape. **Receives** EhrScape + admin Java. | `ehrbase-rest`, `openehr-flat` |
 | `ehrbase` | Reference binary: persistence (sqlx + sea-query), AQL execution engine (ASL), versioning, contributions. **Receives** most server Java. | all of the above |
 

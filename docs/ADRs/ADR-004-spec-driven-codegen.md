@@ -104,7 +104,7 @@ BMM, deterministically.** Concretely:
 - **Harder / follow-on work, honestly**:
   - The fidelity gate (EHRbase canonical-JSON corpus round-trip) must be
     re-implemented against the generated types; the old hand-written tests in
-    `openehr-serde/tests` reference the removed API and are currently broken.
+    `openehr-its/tests` reference the removed API and are currently broken.
     The vendored corpus data is preserved.
   - Some precision is traded for a clean first cut: cross-schema-only references
     and free-form `Hash` degrade to `serde_json::Value`; monomorphized

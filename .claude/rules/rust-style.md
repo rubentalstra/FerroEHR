@@ -5,7 +5,7 @@ paths: ["crates/**/*.rs"]
 # Rust style — faithful port first (application code)
 
 This applies to hand-written `.rs` files: the EHRbase application port
-(`ehrbase-*`) and the hand-written spec crates (`openehr-serde`, `openehr-flat`,
+(`ehrbase-*`) and the hand-written spec crates (`openehr-its`, `openehr-flat`,
 `openehr-term`, the tooling crates, and `*_impl.rs` behaviour files). For the
 EHRbase Java port, faithfulness beats idiomatic Rust during Stage 1
 (PORT_MASTER_PLAN.md Section 4).

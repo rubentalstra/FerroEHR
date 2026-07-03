@@ -11,7 +11,7 @@ publish = false
 
 [dependencies]
 openehr-rm = { path = "../openehr-rm" }
-openehr-serde = { path = "../openehr-serde" }
+openehr-its = { path = "../openehr-its" }
 openehr-am = { path = "../openehr-am" }
 
 [features]

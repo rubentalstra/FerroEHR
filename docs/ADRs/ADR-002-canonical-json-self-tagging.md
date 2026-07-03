@@ -7,7 +7,7 @@
 
 ITS-JSON canonical JSON identifies every object's RM class with a `"_type"`
 key (uppercase class name). The vendored schema
-(`crates/openehr-serde/schemas/openehr_rm_1.1.0_all.json`, pinned commit
+(`crates/openehr-its/schemas/openehr_rm_1.1.0_all.json`, pinned commit
 `5acae056248e917a4b4c56f7e712f4fcfeb616a6`) defines `_type` as a `const`
 property on **all 134 concrete class definitions** and defines **no entry at
 all for abstract classes** (`DATA_VALUE`, `LOCATABLE`, `OBJECT_ID`, … are
@@ -33,11 +33,11 @@ The struct-level mechanism decision was explicitly deferred in the agent
 memos ("raise an ADR before rolling out") but the rollout happened anyway.
 This ADR is that decision, made after the fact and applied uniformly.
 
-Rust constraint: the orphan rule forbids `openehr-serde` from implementing
+Rust constraint: the orphan rule forbids `openehr-its` from implementing
 `Serialize` for `openehr-rm`/`openehr-base` types, so whatever the mechanism
 is, it must live on (or below) the crates that define the types. The phase
-plan's wording "serde impls in `openehr-serde`" was never implementable as
-written; `openehr-serde` instead owns the acceptance instrument (golden
+plan's wording "serde impls in `openehr-its`" was never implementable as
+written; `openehr-its` instead owns the acceptance instrument (golden
 vectors, schema validation, round-trip tests).
 
 ## Decision
@@ -69,7 +69,7 @@ vectors, schema validation, round-trip tests).
 4. **`TypeTag` lives in `openehr-foundation::serde_support`** — the
    dependency root, reachable by `openehr-base` and `openehr-rm`; flagged
    `PORT NOTE` as infrastructure, not a spec class.
-5. **`openehr-serde` owns the acceptance instrument**: the full-RM coverage
+5. **`openehr-its` owns the acceptance instrument**: the full-RM coverage
    test enumerating all 134 schema definitions. Each definition must have a
    fixture with an insta golden vector, jsonschema validation, and
    serialize/deserialize round-trip coverage.
@@ -87,7 +87,7 @@ vectors, schema validation, round-trip tests).
 - Untagged enums produce weak error messages ("data did not match any
   variant") on malformed input. Accepted for P4; if REST-surface error
   parity demands better diagnostics, hand-written deserializers can be
-  layered in `openehr-serde` at P17/P18 without changing the wire format.
+  layered in `openehr-its` at P17/P18 without changing the wire format.
 - Input with a *missing* `_type` in an **abstract** slot falls back to
   structural (declaration-order) matching instead of erroring. ITS-JSON
   declares such input invalid, so this leniency is harmless for valid data;
@@ -111,6 +111,6 @@ vectors, schema validation, round-trip tests).
   Rejected for P4: a new proc-macro crate is heavier infrastructure than a
   ZST field, harder to audit for spec fidelity, and not needed to reach
   correct output; can be revisited at Stage 3 if the field is judged noisy.
-- **Serialize via wrapper newtypes in `openehr-serde`.** Rejected: the
+- **Serialize via wrapper newtypes in `openehr-its`.** Rejected: the
   orphan rule workaround would require wrapping the entire nested object
   graph, effectively duplicating the RM type tree.
