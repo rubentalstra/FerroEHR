@@ -2,8 +2,10 @@
 //!
 //! Recursively collects every distinct `_type` reachable across ALL
 //! RM-canonical real files (`corpus::coverage_corpus` — the round-trippable
-//! set PLUS the four `#[ignore]`d naked-interval compositions, which are still
-//! valid RM data) and pins coverage two ways so it can never silently drift:
+//! set plus any `corpus::ROUND_TRIP_IGNORED` files, which are still valid RM
+//! data; that list is presently empty, so coverage currently coincides with
+//! the round-trippable set) and pins coverage two ways so it can never
+//! silently drift:
 //!
 //! - [`COVERED_FLOOR`] — the classes the corpus reaches today. The test
 //!   asserts every one is STILL reached, so coverage cannot silently shrink.

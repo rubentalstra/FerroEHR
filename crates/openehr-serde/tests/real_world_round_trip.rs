@@ -41,10 +41,26 @@
 //!   single number type; the schema types RM real fields as `number`, which
 //!   admits integer literals. (`as_f64` is exact for every integer below
 //!   2^53; RM integer fields are nowhere near it.)
+//! - **R3 (interval default flags)** — the four `DV_INTERVAL` / foundation
+//!   `Interval<T>` boolean flags carry spec defaults: `lower_included` and
+//!   `upper_included` default `true` (per `Point_interval`, an interval over a
+//!   single value is inclusive at both ends), while `lower_unbounded` and
+//!   `upper_unbounded` default `false`. archie (openEHR's reference RM lib,
+//!   used by EHRbase) declares these with those defaults and omits them from
+//!   output when they hold the default, whereas the ITS-JSON 1.1.0 schema
+//!   lists all four `required`, so our serializer always re-emits them.
+//!   Exactly analogous to R1: when OUR output carries one of these four keys
+//!   AT ITS SPEC DEFAULT and the INPUT omits that key at the same structural
+//!   position, that flag is stripped from our output before comparison. The
+//!   rule is scoped to exactly those four key names at exactly their default
+//!   values, and fires ONLY when the input omits the key — so a flag whose
+//!   value differs from the default, or one the input actually supplied, is
+//!   never masked and still compares as a hard difference.
 //!
 //! Everything else must match exactly: same keys, same array order, same
 //! scalar values, nothing dropped or added. No rule ever masks a position
-//! where the ORIGINAL carries information we lost.
+//! where the ORIGINAL carries information we lost — R1 and R3 only ever drop
+//! a value WE added that the schema requires but the source left implicit.
 
 mod corpus;
 
@@ -108,6 +124,47 @@ fn strip_redundant_type_tags(ours: &mut Value, original: &Value) {
         (Value::Array(ours), Value::Array(original)) => {
             for (ours_child, original_child) in ours.iter_mut().zip(original) {
                 strip_redundant_type_tags(ours_child, original_child);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// The four `DV_INTERVAL` / foundation `Interval<T>` boolean flags together
+/// with their spec default values (see normalizer rule **R3**). These key
+/// names are interval-specific in the RM, so matching by name alone is safe —
+/// no other class carries a field so named.
+const INTERVAL_DEFAULT_FLAGS: &[(&str, bool)] = &[
+    ("lower_included", true),
+    ("upper_included", true),
+    ("lower_unbounded", false),
+    ("upper_unbounded", false),
+];
+
+/// Normalizer rule **R3**: strip a defaulted interval flag from OUR output
+/// wherever it sits at its spec default AND the ORIGINAL omits it at the same
+/// structural position. The walk is strictly parallel (objects by key, arrays
+/// by index), mirroring [`strip_redundant_type_tags`]. A flag whose value is
+/// non-default, or one the original actually supplied, is left untouched so it
+/// still surfaces in [`collect_diffs`].
+fn strip_defaulted_interval_flags(ours: &mut Value, original: &Value) {
+    match (ours, original) {
+        (Value::Object(ours), Value::Object(original)) => {
+            for &(key, default) in INTERVAL_DEFAULT_FLAGS {
+                let ours_is_default = ours.get(key) == Some(&Value::Bool(default));
+                if ours_is_default && !original.contains_key(key) {
+                    ours.shift_remove(key);
+                }
+            }
+            for (key, ours_child) in ours.iter_mut() {
+                if let Some(original_child) = original.get(key) {
+                    strip_defaulted_interval_flags(ours_child, original_child);
+                }
+            }
+        }
+        (Value::Array(ours), Value::Array(original)) => {
+            for (ours_child, original_child) in ours.iter_mut().zip(original) {
+                strip_defaulted_interval_flags(ours_child, original_child);
             }
         }
         _ => {}
@@ -183,8 +240,11 @@ fn check_file(class: &str, input: &Value) -> Result<(), String> {
         ));
     }
 
-    // d: normalized (R1 then R2-aware) structural equality with the original.
+    // d: normalized (R1 + R3, then R2-aware) structural equality with the
+    // original. R1 (redundant `_type`) and R3 (defaulted interval flags) touch
+    // disjoint key sets, so their order relative to each other is immaterial.
     strip_redundant_type_tags(&mut ours, input);
+    strip_defaulted_interval_flags(&mut ours, input);
     let mut diffs = Vec::new();
     collect_diffs("$", &ours, input, &mut diffs);
     if !diffs.is_empty() {
@@ -251,10 +311,14 @@ fn real_world_corpus_round_trips() {
     });
 }
 
-/// Every excluded AND every round-trip-ignored vendored file must still exist
-/// on disk, so `corpus::EXCLUSIONS` / `corpus::ROUND_TRIP_IGNORED` stay
-/// auditable: a vanished (or renamed) vendored file becomes a red test rather
-/// than a silently missing oracle.
+/// Every excluded (and every round-trip-ignored, if any) vendored file must
+/// still exist on disk, so `corpus::EXCLUSIONS` / `corpus::ROUND_TRIP_IGNORED`
+/// stay auditable: a vanished (or renamed) vendored file becomes a red test
+/// rather than a silently missing oracle. `ROUND_TRIP_IGNORED` is currently
+/// empty — the four naked-`DV_INTERVAL` files it used to hold now round-trip
+/// under normalizer R3, and the feeder-audit variant moved to `EXCLUSIONS`
+/// (schema-invalid source) — so this test presently audits `EXCLUSIONS`, with
+/// the `ROUND_TRIP_IGNORED` loop kept as a no-op extension point.
 #[test]
 fn excluded_and_ignored_files_still_exist() {
     let root =
@@ -278,50 +342,10 @@ fn excluded_and_ignored_files_still_exist() {
     );
 }
 
-/// Drives one [`corpus::ROUND_TRIP_IGNORED`] file through the same pipeline as
-/// the data-driven test. These are `#[ignore]`d because they cannot byte-
-/// round-trip against archie/SDK output (see each `#[ignore]` reason); run
-/// `cargo test -- --ignored` to observe each failing for exactly that reason
-/// (the `lower_included`/`upper_included` our output re-adds).
-fn run_ignored(rel: &str) {
-    let rel = rel.to_string();
-    on_big_stack(move || {
-        let file = corpus::ignored_file(&rel);
-        let input = corpus::read_json(&file.path);
-        if let Err(msg) = check_file(&file.class, &input) {
-            panic!("[{}] ({})\n  {}", file.id, file.class, msg);
-        }
-    });
-}
-
-#[test]
-#[ignore = "RM 1.0.4/archie omits default-valued Interval.lower_included/upper_included; ITS-JSON 1.1.0 requires them, so our output re-adds them"]
-fn ignored_all_types_no_multimedia() {
-    run_ignored("composition/canonical_json/all_types_no_multimedia.json");
-}
-
-#[test]
-#[ignore = "RM 1.0.4/archie omits default-valued Interval.lower_included/upper_included; ITS-JSON 1.1.0 requires them, so our output re-adds them"]
-fn ignored_all_types_systematic_tests() {
-    run_ignored("composition/canonical_json/all_types_systematic_tests.json");
-}
-
-#[test]
-#[ignore = "RM 1.0.4/archie omits default-valued Interval.lower_included/upper_included; ITS-JSON 1.1.0 requires them, so our output re-adds them"]
-fn ignored_all_types_systematic_tests_feeder_audit() {
-    run_ignored("composition/canonical_json/all_types_systematic_tests_feeder_audit.json");
-}
-
-#[test]
-#[ignore = "RM 1.0.4/archie omits default-valued Interval.lower_included/upper_included; ITS-JSON 1.1.0 requires them, so our output re-adds them"]
-fn ignored_datetime_tests() {
-    run_ignored("composition/canonical_json/datetime_tests.json");
-}
-
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: ehrbase/openEHR_SDK canonical_json corpus @ 22b01e0c (tests/vendor) + in-repo EHRbase resources + ITS-JSON pinned commit 5acae056248e917a4b4c56f7e712f4fcfeb616a6
 //   source_loc: n/a
 //   confidence: high
-//   note: PRIMARY acceptance oracle — data-driven real-world deserialize → re-serialize → normalized (R1/R2) Value equality + ITS-JSON schema validation of OUR output; all failures reported at once; exclusions + round-trip-ignored files audited by excluded_and_ignored_files_still_exist; 4 naked-DV_INTERVAL files carried as #[ignore]d tests (archie omits default-valued included flags)
+//   note: PRIMARY acceptance oracle — data-driven real-world deserialize → re-serialize → normalized (R1 _type + R3 interval-default-flags one-directional strips, R2 numeric) Value equality + ITS-JSON schema validation of OUR output; all failures reported at once; EXCLUSIONS audited by excluded_and_ignored_files_still_exist. R3 lets the naked-DV_INTERVAL stress files round-trip in the data-driven test (archie omits default-valued lower/upper_included; ITS-JSON 1.1.0 requires them); ROUND_TRIP_IGNORED is now empty (the feeder-audit variant is EXCLUDED for placing schema-invalid `feeder_system_audit` keys directly on INSTRUCTION/ADMIN_ENTRY, which a faithful RM deserializer correctly drops).
 // ─────────────────────────────────────────────

@@ -180,42 +180,56 @@ pub const EXCLUSIONS: &[(&str, &str)] = &[
         "item_structure/canonical_json/ehr_other_details.json",
         "standalone ITEM_TREE fragment missing required name + archetype_node_id",
     ),
+    // The `all_types` systematic composition, feeder-audit variant. Beyond the
+    // naked-`DV_INTERVAL` default flags that normalizer R3 tolerates (see
+    // `real_world_round_trip.rs`), this file places a bare
+    // `feeder_system_audit` (a FEEDER_AUDIT_DETAILS) DIRECTLY on an INSTRUCTION
+    // (`content[2].items[0].items[0].items[0]`, system_id `SECTION-FA`) and on
+    // an ADMIN_ENTRY (`content[2].items[0].items[1]`, system_id
+    // `ADMIN-ENTRY-FA`) — i.e. as a stray key on the content item itself, NOT
+    // nested inside the RM `feeder_audit: FEEDER_AUDIT` attribute.
+    // `feeder_system_audit` is a member of FEEDER_AUDIT, never of
+    // LOCATABLE/CONTENT_ITEM/ENTRY, and the ITS-JSON schema types INSTRUCTION
+    // and ADMIN_ENTRY with `additionalProperties: false` (neither declares a
+    // `feeder_system_audit` property), so both keys are schema-INVALID on those
+    // classes. A faithful RM deserializer correctly drops them, so the file
+    // cannot byte-round-trip — and re-emitting them would fail this harness's
+    // own ITS-JSON output-validation gate. This is a non-canonical source, not
+    // a serde bug: verified independently that a WELL-FORMED `feeder_audit` on
+    // these same nested-in-SECTION content items round-trips cleanly (5→5), and
+    // the file's three well-formed `feeder_audit`s (on COMPOSITION,
+    // content[0] OBSERVATION, content[1] EVALUATION) DO survive intact — only
+    // the two stray keys are lost. FEEDER_AUDIT / FEEDER_AUDIT_DETAILS coverage
+    // is retained via `compo_feeder_audit_details.json`.
+    (
+        "composition/canonical_json/all_types_systematic_tests_feeder_audit.json",
+        "places a bare `feeder_system_audit` directly on an INSTRUCTION and an ADMIN_ENTRY \
+         (not inside the RM `feeder_audit: FEEDER_AUDIT`); ITS-JSON forbids it on those classes \
+         (additionalProperties:false), so a faithful deserializer drops it and it cannot round-trip",
+    ),
 ];
 
 /// Valid RM-canonical files that deserialize and re-serialize cleanly and
 /// whose OUTPUT is ITS-JSON 1.1.0 conformant, but which cannot be BYTE-round-
 /// tripped against their source because of a documented archie/SDK ↔ ITS-JSON
-/// 1.1.0 wire difference. They are kept OUT of the data-driven round-trip set
-/// and driven instead by individual `#[ignore]`d tests in
-/// `real_world_round_trip.rs` (so `--ignored` shows each failing for exactly
-/// the stated reason), while still counting toward `coverage_corpus`.
-pub const ROUND_TRIP_IGNORED: &[(&str, &str)] = &[
-    // The four `all_types`/`datetime` DV_INTERVAL stress fixtures OMIT the
-    // default-valued Interval.lower_included/upper_included flags — archie
-    // (openEHR's reference RM lib, used by EHRbase) declares
-    // `boolean lowerIncluded = true` and serializes with default-value
-    // omission. Our deserializer defaults them (matching archie and the
-    // Point_interval spec), but our serializer re-emits all four because the
-    // ITS-JSON 1.1.0 schema lists them `required`, so the round-trip adds
-    // `lower_included:true`/`upper_included:true` the source left implicit.
-    // Semantically identical; only the redundant-default omission differs.
-    (
-        "composition/canonical_json/all_types_no_multimedia.json",
-        "RM 1.0.4/archie omits default-valued Interval.lower_included/upper_included; ITS-JSON 1.1.0 requires them, so our output re-adds them",
-    ),
-    (
-        "composition/canonical_json/all_types_systematic_tests.json",
-        "RM 1.0.4/archie omits default-valued Interval.lower_included/upper_included; ITS-JSON 1.1.0 requires them, so our output re-adds them",
-    ),
-    (
-        "composition/canonical_json/all_types_systematic_tests_feeder_audit.json",
-        "RM 1.0.4/archie omits default-valued Interval.lower_included/upper_included; ITS-JSON 1.1.0 requires them, so our output re-adds them",
-    ),
-    (
-        "composition/canonical_json/datetime_tests.json",
-        "RM 1.0.4/archie omits default-valued Interval.lower_included/upper_included; ITS-JSON 1.1.0 requires them, so our output re-adds them",
-    ),
-];
+/// 1.1.0 wire difference that is NOT expressible as a one-directional
+/// normalizer rule. Files here are kept OUT of the data-driven round-trip set
+/// while still counting toward `coverage_corpus`.
+///
+/// This list is **currently empty**. It formerly held the four
+/// `all_types`/`datetime` `DV_INTERVAL` stress fixtures, which omit the
+/// default-valued `Interval.lower_included`/`upper_included` flags (archie
+/// declares `boolean lowerIncluded = true` and serializes with default-value
+/// omission, while the ITS-JSON 1.1.0 schema lists all four `required`, so our
+/// serializer re-emits them). That difference is one-directional and
+/// value-preserving, so it is now handled by normalizer rule **R3** in
+/// `real_world_round_trip.rs` and those files round-trip in the data-driven
+/// test. The feeder-audit variant of that fixture additionally carries
+/// schema-invalid stray `feeder_system_audit` keys and moved to [`EXCLUSIONS`]
+/// instead (a non-canonical source, not a wire difference). The constant is
+/// retained as the extension point for any future file that genuinely cannot
+/// round-trip for a reason a normalizer rule must not paper over.
+pub const ROUND_TRIP_IGNORED: &[(&str, &str)] = &[];
 
 /// Absolute path to this crate's manifest directory.
 fn manifest_dir() -> PathBuf {
@@ -311,9 +325,10 @@ fn class_of(rel: &str, value: &Value) -> String {
 
 /// The coverage corpus: every RM-canonical file — every vendored
 /// `canonical_json` file not in [`EXCLUSIONS`], plus the four in-repo EHRbase
-/// resources. This INCLUDES the [`ROUND_TRIP_IGNORED`] files, because they
-/// are valid RM data that reaches real classes (only their byte round-trip is
-/// blocked by a wire difference). Used by `class_coverage.rs`.
+/// resources. Any [`ROUND_TRIP_IGNORED`] files are also included here (they
+/// are valid RM data that reaches real classes, blocked only from the byte
+/// round-trip); that list is presently empty, so coverage currently coincides
+/// with [`round_trippable`]. Used by `class_coverage.rs`.
 pub fn coverage_corpus() -> Vec<CorpusFile> {
     let excluded: BTreeSet<&str> = EXCLUSIONS.iter().map(|(f, _)| *f).collect();
     let root = vendor_root();
@@ -347,9 +362,11 @@ pub fn coverage_corpus() -> Vec<CorpusFile> {
     files
 }
 
-/// The data-driven round-trip corpus: [`coverage_corpus`] minus the
-/// [`ROUND_TRIP_IGNORED`] files (those are driven by dedicated `#[ignore]`d
-/// tests instead). Every file here is expected to byte-round-trip.
+/// The data-driven round-trip corpus: [`coverage_corpus`] minus any
+/// [`ROUND_TRIP_IGNORED`] files. Every file here is expected to round-trip to
+/// value-equality with its source under the `real_world_round_trip.rs`
+/// normalizer. [`ROUND_TRIP_IGNORED`] is presently empty, so this currently
+/// equals [`coverage_corpus`].
 pub fn round_trippable() -> Vec<CorpusFile> {
     let ignored: BTreeSet<&str> = ROUND_TRIP_IGNORED.iter().map(|(f, _)| *f).collect();
     coverage_corpus()
@@ -361,19 +378,6 @@ pub fn round_trippable() -> Vec<CorpusFile> {
                 .is_some_and(|rel| ignored.contains(rel))
         })
         .collect()
-}
-
-/// Resolves one [`ROUND_TRIP_IGNORED`] vendor-relative path to an absolute
-/// path + dispatch class, for the individual `#[ignore]`d round-trip tests.
-pub fn ignored_file(rel: &str) -> CorpusFile {
-    let path = vendor_root().join(rel);
-    let value = read_json(&path);
-    let class = class_of(rel, &value);
-    CorpusFile {
-        id: format!("vendor/{rel}"),
-        path,
-        class,
-    }
 }
 
 /// Parses the vendored schema root once.
