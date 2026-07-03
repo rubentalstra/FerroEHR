@@ -124,9 +124,9 @@ fn path_parsers<'a>() -> (
     let archetype = select! { Token::ArchetypeHrid(s) => ArchetypePredicate::Hrid(s) }
         .or(parameter().map(ArchetypePredicate::Parameter));
 
-    // nodePredicate (common forms): a node/archetype code with optional name,
-    // a parameter, or a standard comparison. (Boolean AND/OR node predicates
-    // are TODO(port): a later refinement.)
+    // nodePredicate : node/archetype code (+optional name) | parameter |
+    //   objectPath MATCHES CONTAINED_REGEX | standardPredicate |
+    //   nodePredicate (AND|OR) nodePredicate. AND binds tighter than OR.
     let name_constraint = select! {
         Token::String(s) => NodeNameConstraint::String(unquote(&s)),
         Token::TermCode(s) => NodeNameConstraint::TermCode(s),
@@ -145,12 +145,27 @@ fn path_parsers<'a>() -> (
     let node_archetype = select! { Token::ArchetypeHrid(s) => s }
         .then(just(Token::Comma).ignore_then(name_constraint).or_not())
         .map(|(hrid, name)| NodePredicate::Archetype { hrid, name });
-    let node = node_code
+    let node_matches_regex = object
+        .clone()
+        .then_ignore(just(Token::Matches))
+        .then(select! { Token::ContainedRegex(s) => s })
+        .map(|(path, regex)| NodePredicate::MatchesRegex { path, regex });
+    let node_atom = node_code
         .or(node_archetype)
         .or(parameter().map(NodePredicate::Parameter))
+        .or(node_matches_regex)
         .or(standard
             .clone()
             .map(|s| NodePredicate::Standard(Box::new(s))));
+    let node_and = node_atom.clone().foldl(
+        just(Token::And).ignore_then(node_atom.clone()).repeated(),
+        |l, r| NodePredicate::And(Box::new(l), Box::new(r)),
+    );
+    let node = node_and
+        .clone()
+        .foldl(just(Token::Or).ignore_then(node_and).repeated(), |l, r| {
+            NodePredicate::Or(Box::new(l), Box::new(r))
+        });
 
     // pathPredicate : '[' (standardPredicate | archetypePredicate | nodePredicate) ']'
     // Ordered so the most specific (archetype/node codes) win before the
@@ -426,17 +441,17 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
             }));
 
     let where_expr = recursive(|where_expr| {
-        let atom = identified_expr
-            .map(WhereExpr::Identified)
-            .or(where_expr
-                .clone()
-                .delimited_by(just(Token::LeftParen), just(Token::RightParen)))
-            .or(just(Token::Not)
-                .ignore_then(where_expr.clone())
-                .map(|e| WhereExpr::Not(Box::new(e))));
-        let and = atom
+        let atom = identified_expr.map(WhereExpr::Identified).or(where_expr
             .clone()
-            .foldl(just(Token::And).ignore_then(atom).repeated(), |l, r| {
+            .delimited_by(just(Token::LeftParen), just(Token::RightParen)));
+        // Precedence: NOT (unary, tightest) > AND > OR. `NOT a AND b` parses as
+        // `(NOT a) AND b`; group with parens for `NOT (a AND b)`.
+        let unary = just(Token::Not)
+            .repeated()
+            .foldr(atom, |_not, e| WhereExpr::Not(Box::new(e)));
+        let and = unary
+            .clone()
+            .foldl(just(Token::And).ignore_then(unary).repeated(), |l, r| {
                 WhereExpr::And(Box::new(l), Box::new(r))
             });
         and.clone()
@@ -490,6 +505,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
                 limit,
             },
         )
+        .then_ignore(end())
 }
 
 #[cfg(test)]
@@ -572,13 +588,84 @@ mod tests {
             .expect("parse");
         assert!(matches!(q.where_, Some(WhereExpr::Or(_, _))));
     }
+
+    #[test]
+    fn not_binds_tighter_than_and() {
+        // NOT a AND b  ⇒  And(Not(a), b)  — not Not(And(a,b))
+        let q = parse_str("SELECT c FROM COMPOSITION c WHERE NOT EXISTS c/x AND EXISTS c/y")
+            .expect("parse");
+        match q.where_ {
+            Some(WhereExpr::And(l, _)) => assert!(matches!(*l, WhereExpr::Not(_))),
+            other => panic!("expected And(Not(..), ..), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn node_predicate_boolean_tree() {
+        let q = parse_str("SELECT o FROM OBSERVATION o[at0001 AND value/magnitude > 5]")
+            .expect("parse");
+        match &q.from {
+            ContainsExpr::Contained {
+                operand:
+                    ClassExprOperand::Class {
+                        predicate: Some(PathPredicate::Node(n)),
+                        ..
+                    },
+                ..
+            } => assert!(matches!(**n, NodePredicate::And(_, _))),
+            other => panic!("expected node AND predicate, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn contained_regex_predicate() {
+        let q = parse_str("SELECT o FROM OBSERVATION o[name/value MATCHES {/blood.*/}]")
+            .expect("parse");
+        assert!(matches!(
+            &q.from,
+            ContainsExpr::Contained {
+                operand: ClassExprOperand::Class {
+                    predicate: Some(PathPredicate::Node(_)),
+                    ..
+                },
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn trailing_tokens_are_rejected() {
+        // EOF is enforced: junk after a complete query must fail.
+        assert!(parse_str("SELECT c FROM COMPOSITION c EXTRA").is_err());
+    }
+
+    #[test]
+    fn nested_contains_and_matches_valueset() {
+        let q = parse_str(
+            "SELECT a/value FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o \
+             WHERE o/value/defining_code MATCHES {'at0001', 'at0002'}",
+        )
+        .expect("parse");
+        // EHR CONTAINS (COMPOSITION CONTAINS OBSERVATION)
+        assert!(matches!(
+            &q.from,
+            ContainsExpr::Contained {
+                contains: Some(_),
+                ..
+            }
+        ));
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Matches { .. }))
+        ));
+    }
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: openEHR QUERY (AQL) — vendor/grammar/AqlParser.g4 @ specifications-QUERY 10cb73f
 //   source_loc: 198 lines (.g4)
-//   confidence: medium
-//   todos: 1
-//   note: core grammar via chumsky; nodePredicate boolean trees TODO; semantic path analysis is a later pass.
+//   confidence: high
+//   todos: 0
+//   note: full AqlParser.g4 (incl nodePredicate AND/OR + MATCHES regex, EOF enforced, NOT precedence); validated against the official example corpus (tests/corpus.rs). Semantic path analysis vs Web Templates is a separate later pass (needs P10).
 // ─────────────────────────────────────────────

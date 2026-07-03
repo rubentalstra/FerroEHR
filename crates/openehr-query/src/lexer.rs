@@ -185,6 +185,15 @@ pub enum Token {
     #[regex(r"[a-zA-Z][a-zA-Z0-9+.\-]*://[^ \t\r\n{}]*", |lex| lex.slice().to_owned())]
     Uri(String),
 
+    // A contained regex, e.g. `{/pattern/}` or `{/pattern/; 'name'}` (used in a
+    // node predicate's `objectPath MATCHES CONTAINED_REGEX`). Whole thing is one
+    // token so its inner `/` and `{}` are not mistaken for other symbols.
+    #[regex(
+        r"\{[ \t\r\n]*/(\\.|[^/\r\n])*/[ \t\r\n]*(;[ \t\r\n]*'([^'\\]|\\.)*')?[ \t\r\n]*\}",
+        |lex| lex.slice().to_owned()
+    )]
+    ContainedRegex(String),
+
     // Scientific and plain numerics (order: sci before plain via length).
     #[regex(r"[0-9]+[eE][+\-]?[0-9]+", |lex| lex.slice().to_owned())]
     SciInteger(String),

@@ -293,6 +293,13 @@ pub enum NodePredicate {
     Parameter(String),
     /// `objectPath COMPARISON_OPERATOR operand`
     Standard(Box<StandardPredicate>),
+    /// `objectPath MATCHES CONTAINED_REGEX`
+    MatchesRegex {
+        /// The constrained path.
+        path: ObjectPath,
+        /// The raw `{/regex/}` token text.
+        regex: String,
+    },
     /// `nodePredicate AND nodePredicate`
     And(Box<NodePredicate>, Box<NodePredicate>),
     /// `nodePredicate OR nodePredicate`

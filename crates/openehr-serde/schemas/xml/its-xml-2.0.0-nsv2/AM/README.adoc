@@ -1,6 +1,0 @@
-# Archetype 1.4
-
-openEHR https://specifications.openehr.org/releases/AM/Release-2.0.6/AOM1.4.html[Archetype 1.4] XML schema - part of openEHR Release-1.0.2.
-
-### Acknowledgements
-Authored by https://www.oceanhealthsystems.com[Ocean Health Systems] - 2008.12.22
