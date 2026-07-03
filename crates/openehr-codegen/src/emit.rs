@@ -126,6 +126,17 @@ impl Model {
         let Some(class) = self.get(from) else {
             return false;
         };
+        // An abstract class is emitted as an untagged enum; a cycle can run
+        // through its variants (e.g. ARCHETYPE_CONSTRAINT ↔ ARCHETYPE_SLOT,
+        // EXPR_ITEM ↔ EXPR_BINARY_OPERATOR). Traverse them too.
+        if class.is_abstract {
+            for d in self.enum_variants(from) {
+                if d == target || self.reaches(&d, target, seen) {
+                    return true;
+                }
+            }
+            return false;
+        }
         for rp in self.flattened_props(class) {
             if let BmmPropKind::Single(t) = &rp.prop.kind {
                 let root = t.root_name();
@@ -353,22 +364,26 @@ struct Emitted {
     ident: String,
 }
 
-/// Emit a full crate `src/` for one schema: one file per emitted class, plus a
-/// generated `mod.rs` tree, `prelude.rs`, and `lib.rs`.
-#[must_use]
-pub fn emit_crate(model: &Model, schema: &BmmSchema, crate_doc: &str) -> Vec<GenFile> {
+/// The generated files for one schema version plus its top-level module names.
+struct Version {
+    files: Vec<GenFile>,
+    /// Top-level module names of this version (under its prefix, if any).
+    top: BTreeSet<String>,
+}
+
+/// Emit one schema version under `prefix` (empty for a single-version crate).
+/// Produces the type files, the `mod.rs` tree, and a `prelude.rs`; the caller
+/// assembles `lib.rs`.
+fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str) -> Version {
     let class_pkg = class_paths(schema);
     let used = model.used_as_type();
 
-    // Pass 1: decide emission + module path for every class → build the index.
     struct Planned<'a> {
         class: &'a BmmClass,
         emission: Emission<'a>,
         chain: Vec<String>,
     }
-    let mut planned = Vec::new();
-    let mut index: BTreeMap<String, Vec<String>> = BTreeMap::new(); // ident → chain
-    // Spec class names emitted in this crate; anything referenced outside it
+    // Spec class names emitted in this version; anything referenced outside it
     // degrades to `serde_json::Value` so the crate stays self-contained.
     let mut local: BTreeSet<String> = BTreeSet::new();
     for (name, class) in &schema.classes {
@@ -376,19 +391,21 @@ pub fn emit_crate(model: &Model, schema: &BmmSchema, crate_doc: &str) -> Vec<Gen
             local.insert(name.clone());
         }
     }
+
+    let mut planned = Vec::new();
+    let mut index: BTreeMap<String, Vec<String>> = BTreeMap::new(); // ident → chain
     for (name, class) in &schema.classes {
         let emission = decide(model, class, &used);
         if matches!(emission, Emission::Skip) {
             continue;
         }
         let pkg = class_pkg.get(name).cloned().unwrap_or_default();
-        let mut chain: Vec<String> = pkg
-            .split('/')
-            .filter(|s| !s.is_empty())
-            .map(str::to_string)
-            .collect();
-        let module = naming::field_ident(&to_snake(name));
-        chain.push(module);
+        let mut chain: Vec<String> = Vec::new();
+        if !prefix.is_empty() {
+            chain.push(prefix.to_string());
+        }
+        chain.extend(pkg.split('/').filter(|s| !s.is_empty()).map(str::to_string));
+        chain.push(naming::field_ident(&to_snake(name)));
         index.insert(naming::type_name(name), chain.clone());
         planned.push(Planned {
             class,
@@ -397,7 +414,6 @@ pub fn emit_crate(model: &Model, schema: &BmmSchema, crate_doc: &str) -> Vec<Gen
         });
     }
 
-    // Pass 2: emit each file with precise imports resolved through the index.
     let mut files = Vec::new();
     for p in &planned {
         let body = match &p.emission {
@@ -406,19 +422,61 @@ pub fn emit_crate(model: &Model, schema: &BmmSchema, crate_doc: &str) -> Vec<Gen
             Emission::Newtype(prim) => emit_newtype(p.class, prim),
             Emission::Skip => unreachable!(),
         };
-        let path = format!("{}.rs", p.chain.join("/"));
-        files.push(GenFile { path, body });
+        files.push(GenFile {
+            path: format!("{}.rs", p.chain.join("/")),
+            body,
+        });
     }
 
-    // Module tree, prelude, lib.
-    let chains: Vec<Vec<String>> = planned.iter().map(|p| p.chain.clone()).collect();
+    let type_chains: Vec<Vec<String>> = planned.iter().map(|p| p.chain.clone()).collect();
     let emitted: Vec<Emitted> = index
         .into_iter()
         .map(|(ident, chain)| Emitted { chain, ident })
         .collect();
-    files.extend(emit_module_tree(&chains));
-    files.push(emit_prelude(&emitted));
-    files.push(emit_lib(&top_modules(&chains), crate_doc));
+
+    // Module tree. For a prefixed version, also register `<prefix>/prelude` so
+    // the prefix `mod.rs` declares it.
+    let mut tree_chains = type_chains.clone();
+    let prelude_path = if prefix.is_empty() {
+        "prelude.rs".to_string()
+    } else {
+        tree_chains.push(vec![prefix.to_string(), "prelude".to_string()]);
+        format!("{prefix}/prelude.rs")
+    };
+    files.extend(emit_module_tree(&tree_chains));
+    files.push(emit_prelude(&emitted, &prelude_path));
+
+    // Top modules: the prefix itself if prefixed, else the type roots.
+    let top = if prefix.is_empty() {
+        top_modules(&type_chains)
+    } else {
+        std::iter::once(prefix.to_string()).collect()
+    };
+    Version { files, top }
+}
+
+/// Emit a single-version crate (`openehr-base`): one schema, top-level modules,
+/// crate `prelude`, and `lib.rs`.
+#[must_use]
+pub fn emit_crate(model: &Model, schema: &BmmSchema, crate_doc: &str) -> Vec<GenFile> {
+    let v = emit_version(model, schema, "");
+    let mut files = v.files;
+    files.push(emit_lib(&v.top, true, crate_doc));
+    files
+}
+
+/// Emit a multi-version crate (`openehr-am`): each `(prefix, model, schema)`
+/// becomes a top-level version module (`am14`, `am24`) with its own prelude.
+#[must_use]
+pub fn emit_multi_crate(versions: &[(&str, &Model, &BmmSchema)], crate_doc: &str) -> Vec<GenFile> {
+    let mut files = Vec::new();
+    let mut top: BTreeSet<String> = BTreeSet::new();
+    for (prefix, model, schema) in versions {
+        let v = emit_version(model, schema, prefix);
+        files.extend(v.files);
+        top.extend(v.top);
+    }
+    files.push(emit_lib(&top, false, crate_doc));
     files
 }
 
@@ -451,7 +509,7 @@ fn top_modules(chains: &[Vec<String>]) -> BTreeSet<String> {
     chains.iter().filter_map(|c| c.first().cloned()).collect()
 }
 
-fn emit_lib(top: &BTreeSet<String>, crate_doc: &str) -> GenFile {
+fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> GenFile {
     let mut b = String::new();
     for line in crate_doc.lines() {
         b.push_str(&format!("//! {line}\n"));
@@ -459,25 +517,39 @@ fn emit_lib(top: &BTreeSet<String>, crate_doc: &str) -> GenFile {
     b.push_str("//!\n//! @generated module tree by openehr-codegen (ADR-004). The type files\n");
     b.push_str("//! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.\n\n");
     // Lint exceptions inherent to faithful spec generation:
-    //  - doc comments are verbatim openEHR spec text (bare URLs, un-backticked terms);
-    //  - some spec classes carry >3 boolean flags (e.g. `Interval` bounds).
-    b.push_str("#![allow(clippy::doc_markdown, clippy::struct_excessive_bools)]\n\n");
+    //  - doc comments are verbatim openEHR spec text (bare URLs, un-backticked
+    //    terms, tabs, quote-style links, loose list continuation);
+    //  - some spec classes carry >3 boolean flags (e.g. `Interval` bounds);
+    //  - the package tree can nest a module of the same name (module_inception);
+    //  - closed-slot enums can have size-disparate variants.
+    b.push_str(
+        "#![allow(\n    \
+         clippy::doc_markdown,\n    \
+         clippy::doc_link_with_quotes,\n    \
+         clippy::tabs_in_doc_comments,\n    \
+         clippy::doc_lazy_continuation,\n    \
+         clippy::struct_excessive_bools,\n    \
+         clippy::module_inception,\n    \
+         clippy::large_enum_variant\n\
+         )]\n\n",
+    );
     for m in top {
         b.push_str(&format!("pub mod {m};\n"));
     }
-    b.push_str("pub mod prelude;\n");
+    if include_prelude {
+        b.push_str("pub mod prelude;\n");
+    }
     GenFile {
         path: "lib.rs".to_string(),
         body: b,
     }
 }
 
-fn emit_prelude(emitted: &[Emitted]) -> GenFile {
+fn emit_prelude(emitted: &[Emitted], path: &str) -> GenFile {
     let mut b = String::from(
-        "//! Crate prelude: re-exports every generated spec type.\n\
-         //!\n//! @generated by openehr-codegen (ADR-004). Generated modules do\n\
-         //! `use crate::prelude::*` is not used; imports are precise per file, but\n\
-         //! downstream crates and hand-written code may `use <crate>::prelude::*`.\n\n",
+        "//! Prelude: re-exports every generated spec type of this version.\n\
+         //!\n//! @generated by openehr-codegen (ADR-004). Per-file imports are precise;\n\
+         //! downstream crates and hand-written code may `use <path>::*`.\n\n",
     );
     let mut lines: Vec<String> = emitted
         .iter()
@@ -489,7 +561,7 @@ fn emit_prelude(emitted: &[Emitted]) -> GenFile {
         b.push('\n');
     }
     GenFile {
-        path: "prelude.rs".to_string(),
+        path: path.to_string(),
         body: b,
     }
 }

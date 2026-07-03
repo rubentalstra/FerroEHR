@@ -1,7 +1,7 @@
 [package]
 name = "openehr-am"
 version = "0.1.0"
-description = "ADL 1.4 + ADL 2 parsers, AOM 1.4 + AOM 2, OPT 1.4 XML, OPT 2 flattener"
+description = "openEHR AM: Archetype Model 1.4.0 (am14) + 2.4.0 (am24), generated from BMM (ADR-004)"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -10,13 +10,9 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-openehr-lang = { path = "../openehr-lang" }
-openehr-rm = { path = "../openehr-rm" }
-openehr-serde = { path = "../openehr-serde" }
-
-[features]
-adl2 = []
-opt2 = []
+openehr-derive.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true

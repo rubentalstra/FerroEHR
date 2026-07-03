@@ -20,7 +20,7 @@ pub struct ResourceDescription {
     /// Additional non language-sensitive resource meta-data, as a list of name/value pairs.
     pub other_details: Option<std::collections::BTreeMap<String, String>>,
     /// Reference to owning resource.
-    pub parent_resource: Box<AuthoredResource>,
+    pub parent_resource: AuthoredResource,
     /// Details of all parts of resource description that are natural language-dependent, keyed by language code.
     pub details: std::collections::BTreeMap<String, ResourceDescriptionItem>,
 }

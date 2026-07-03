@@ -1,5 +1,17 @@
-//! ADL 1.4 + ADL 2 parsers, AOM 1.4 + AOM 2, OPT 1.4 XML ingestion, and the
-//! OPT 2 flattener (`adl2`/`opt2` features; the EHRbase-compatible slice is
-//! ADL 1.4 / OPT 1.4 XML).
+//! openEHR AM (Archetype Model): am14 (AM 1.4.0, for ADL 1.4) and am24 (AM 2.4.0, for ADL 2) — both generated from BMM. Both ADL versions are in use.
 //!
-//! Populated in P9 (`docs/plans/phase-09-adl-aom-opt.md`).
+//! @generated module tree by openehr-codegen (ADR-004). The type files
+//! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
+
+#![allow(
+    clippy::doc_markdown,
+    clippy::doc_link_with_quotes,
+    clippy::tabs_in_doc_comments,
+    clippy::doc_lazy_continuation,
+    clippy::struct_excessive_bools,
+    clippy::module_inception,
+    clippy::large_enum_variant
+)]
+
+pub mod am14;
+pub mod am24;
