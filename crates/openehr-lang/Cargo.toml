@@ -1,7 +1,7 @@
 [package]
 name = "openehr-lang"
 version = "0.1.0"
-description = "openEHR LANG 1.0.0: ODIN + BMM (P_BMM) + EL"
+description = "openEHR LANG 1.1.0: BMM/P_BMM object model, generated from BMM (ADR-004). ODIN + EL parsers are future hand-written runtime work (P8/P9)."
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -10,6 +10,9 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+openehr-base = { path = "../openehr-base" }
+openehr-derive.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 
 [lints]

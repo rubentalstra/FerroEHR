@@ -1,5 +1,11 @@
 //! BMM object model + loader (openEHR **LANG 1.0.0**, `P_BMM` persisted form).
 //!
+//! This is `openehr-codegen`'s **internal** BMM reader — the generator's own
+//! tooling, not an openEHR spec artifact (so it lives here, not in the generated
+//! `openehr-lang` crate). It models more of the meta-model than the emitter
+//! currently consumes, hence the module-wide `dead_code` allowance.
+#![allow(dead_code)]
+//!
 //! Loads a vendored `*.bmm.json` schema (the canonical JSON serialization of
 //! the openEHR BMM meta-model) into a typed [`BmmSchema`]: packages (the module
 //! tree), classes (with ancestors, abstractness, generic parameters), and each
@@ -9,7 +15,7 @@
 //! JSON is used rather than the ODIN form because it is a cleaner, structured
 //! serialization of the identical meta-model (real arrays, structured
 //! `cardinality`, explicit `_type` tags) and `serde_json` parses it robustly.
-//! The [`crate::odin`] reader is retained for ADL/ODIN *instance* parsing
+//! (An ODIN text reader for ADL/ODIN *instance* parsing is future runtime work
 //! (P8/P9), not for BMM ingestion.
 //!
 //! This is the deterministic model that `openehr-codegen` walks to emit the

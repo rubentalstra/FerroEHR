@@ -8,11 +8,12 @@
 //!   `openehr-codegen emit [OUTDIR]`  — emit Rust into OUTDIR (default:
 //!                                       `target/codegen-preview`).
 
+mod bmm;
 mod emit;
 mod naming;
 
+use bmm::BmmSchema;
 use emit::{External, Model};
-use openehr_lang::bmm::BmmSchema;
 use std::path::{Path, PathBuf};
 
 const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
@@ -39,6 +40,7 @@ const RM_BMM: &str = "openehr_rm_1.2.0.bmm.json";
 const TERM_BMM: &str = "openehr_term_3.1.0.bmm.json";
 const AM14_BMM: &str = "openehr_am_1.4.0.bmm.json";
 const AM24_BMM: &str = "openehr_am_2.4.0.bmm.json";
+const LANG_BMM: &str = "openehr_lang_1.1.0.bmm.json";
 
 fn load(file: &str) -> Result<BmmSchema, Box<dyn std::error::Error>> {
     let src = std::fs::read_to_string(Path::new(VENDOR).join(file))?;
@@ -79,6 +81,9 @@ const RM_DOC: &str = "openEHR RM (Reference Model), generated from the BMM meta-
 const TERM_DOC: &str = "openEHR TERM (Terminology) data model, generated from the BMM \
     meta-model. The vendored terminology XML content lives in `assets/` (data, not \
     generated); an XML→model loader is added when composition validation needs it.";
+const LANG_DOC: &str = "openEHR LANG: the BMM / P_BMM object model, generated from the BMM \
+    meta-model. The generator's own BMM reader lives in openehr-codegen (tooling, not spec); \
+    the runtime ODIN and EL parsers are future hand-written work (P8/P9).";
 
 fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
     let base = load(BASE_BMM)?;
@@ -127,6 +132,16 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     write_crate(
         "openehr-term",
         &emit::emit_crate(&term_model, &term, &ext_base, TERM_DOC),
+    )?;
+
+    // openehr-lang: the BMM/P_BMM object model (86 classes), fully generated.
+    // The generator's own reader lives here in `openehr-codegen`, so there is no
+    // bootstrap cycle. The runtime ODIN/EL parsers are future hand-written work.
+    let lang = load(LANG_BMM)?;
+    let lang_model = Model::merged(&[&base, &lang]);
+    write_crate(
+        "openehr-lang",
+        &emit::emit_crate(&lang_model, &lang, &ext_base, LANG_DOC),
     )?;
     Ok(())
 }

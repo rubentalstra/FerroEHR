@@ -17,8 +17,8 @@
 //! - Foundation **primitives / containers / marker traits** are mapped to Rust
 //!   (bool, i32, Vec, …) and never emitted (see [`SKIP`] and [`primitive`]).
 
+use crate::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
 use crate::naming;
-use openehr_lang::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A merged BMM model (e.g. BASE + RM) used for ancestor flattening and type
@@ -75,7 +75,7 @@ pub fn emittable_specs(model: &Model, schema: &BmmSchema) -> BTreeSet<String> {
 /// (for the `// inherited: X` banner).
 struct ResolvedProp<'a> {
     owner: String,
-    prop: &'a openehr_lang::bmm::BmmProperty,
+    prop: &'a crate::bmm::BmmProperty,
 }
 
 /// Foundation classes that are **mapped to Rust and never emitted**: the
@@ -750,7 +750,7 @@ fn emit_prelude(emitted: &[Emitted], path: &str) -> GenFile {
 /// Build a class → nested directory path map from the package tree, e.g.
 /// `DV_QUANTITY` → `data_types/quantity`.
 fn class_paths(schema: &BmmSchema) -> BTreeMap<String, String> {
-    fn walk(p: &openehr_lang::bmm::BmmPackage, prefix: &str, out: &mut BTreeMap<String, String>) {
+    fn walk(p: &crate::bmm::BmmPackage, prefix: &str, out: &mut BTreeMap<String, String>) {
         let seg = p.name.rsplit('.').next().unwrap_or(&p.name);
         let path = if prefix.is_empty() {
             seg.to_string()
@@ -841,7 +841,7 @@ fn type_override(class: &str, field: &str) -> Option<&'static str> {
 fn field_type(
     model: &Model,
     class: &BmmClass,
-    p: &openehr_lang::bmm::BmmProperty,
+    p: &crate::bmm::BmmProperty,
     generics: &[String],
     local: &BTreeSet<String>,
     external: &External,

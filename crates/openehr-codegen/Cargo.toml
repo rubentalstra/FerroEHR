@@ -14,7 +14,7 @@ name = "openehr-codegen"
 path = "src/main.rs"
 
 [dependencies]
-openehr-lang = { path = "../openehr-lang" }
+serde_json.workspace = true
 
 [lints]
 workspace = true

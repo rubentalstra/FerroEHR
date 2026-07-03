@@ -1,15 +1,19 @@
-//! openEHR **LANG 1.0.0** component: ODIN, BMM, and the Expression Language (EL).
+//! openEHR LANG: the BMM / P_BMM object model, generated from the BMM meta-model. The generator's own BMM reader lives in openehr-codegen (tooling, not spec); the runtime ODIN and EL parsers are future hand-written work (P8/P9).
 //!
-//! - [`odin`]: ODIN parser (canonical grammar: specifications-BASE `odin.g4`).
-//! - [`bmm`]: BMM object model + `P_BMM` (persisted BMM, schema v2.3) reader.
-//!   BMM schema files are themselves ODIN documents, so `bmm` builds on `odin`.
-//! - `el`: Expression Language — added when a consuming phase needs it.
-//!
-//! `bmm` is also consumed at build time by the `openehr-codegen` tool, which
-//! generates the spec crates from the vendored openEHR BMM meta-model.
-//!
-//! Populated in P8 (`docs/plans/phase-08-odin-bmm.md`) and pulled forward by
-//! the spec-driven codegen work (ADR-004).
+//! @generated module tree by openehr-codegen (ADR-004). The type files
+//! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
 
+#![allow(
+    clippy::doc_markdown,
+    clippy::doc_link_with_quotes,
+    clippy::tabs_in_doc_comments,
+    clippy::doc_lazy_continuation,
+    clippy::struct_excessive_bools,
+    clippy::module_inception,
+    clippy::large_enum_variant
+)]
+
+pub mod beom;
 pub mod bmm;
-pub mod odin;
+pub mod bmm_persistence;
+pub mod prelude;
