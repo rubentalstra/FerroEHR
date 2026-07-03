@@ -120,6 +120,13 @@ tentatively targeted v2; the evidence above settled it toward v1.)
 
 ## Decisions made this phase
 
+- [ADR-004](../ADRs/ADR-004-spec-driven-codegen.md): generate the openEHR spec
+  crates from the vendored BMM meta-model rather than hand-transcribing them.
+  Supersedes ADR-001/002 as hand-authoring conventions (their intent is now
+  realized by `openehr-codegen`); ADR-003 still governs the hand-written
+  behaviour layer. `openehr-base`, `openehr-rm`, and `openehr-am` (both AM 1.4
+  and 2.4) are now generated and compile clean; `openehr-foundation` folded into
+  `openehr-base`; crate naming split into `openehr-*` (spec) / `ehrbase-*` (app).
 - ADR-003 fixes the policies for every spec-underdetermined behaviour hit by
   the P1–P3 spec-completion pass: definite vs nominal ISO 8601 arithmetic
   (jiff-backed), partial-precision anchoring, `Integer.modulo` truncated
