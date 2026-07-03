@@ -87,18 +87,118 @@ impl TypeName for PartyRef {
     const NAME: &'static str = TYPE_NAME;
 }
 
+/// Error raised by [`PartyRef::new`].
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum PartyRefError {
+    /// The inherited `namespace` attribute fails `OBJECT_REF`'s
+    /// legal-value pattern (see
+    /// [`super::object_ref::is_namespace_valid`]).
+    #[error(
+        "invalid PARTY_REF namespace {0:?}: must match [a-zA-Z][a-zA-Z0-9_.:\\/&?=+-]* (spec legal values)"
+    )]
+    InvalidNamespace(String),
+    /// The `type` attribute violates the `Type_validity` invariant (must
+    /// be one of [`VALID_TYPES`]).
+    #[error(
+        "invalid PARTY_REF type {0:?}: Type_validity requires one of PERSON, ORGANISATION, GROUP, AGENT, ROLE, PARTY, ACTOR"
+    )]
+    InvalidType(String),
+}
+
 impl PartyRef {
+    /// Fallible constructor enforcing the `Type_validity` invariant plus
+    /// the inherited `OBJECT_REF.namespace` legal-value constraint
+    /// (ADR-003 decision 8: cheap invariants move into fallible
+    /// constructors now; the deep walker/accumulator validation framework
+    /// remains the P11 deliverable). Struct-literal construction remains
+    /// possible for unchecked wire data and is re-checkable via
+    /// [`PartyRef::is_type_valid`].
+    pub fn new(
+        namespace: impl Into<String>,
+        r#type: impl Into<String>,
+        id: ObjectId,
+    ) -> Result<Self, PartyRefError> {
+        let namespace = namespace.into();
+        if !super::object_ref::is_namespace_valid(&namespace) {
+            return Err(PartyRefError::InvalidNamespace(namespace));
+        }
+        let r#type = r#type.into();
+        if !VALID_TYPES.contains(&r#type.as_str()) {
+            return Err(PartyRefError::InvalidType(r#type));
+        }
+        Ok(Self {
+            type_tag: TypeTag::new(),
+            namespace,
+            r#type,
+            id,
+        })
+    }
+
     /// Invariant `Type_validity`: `type.is_equal("PERSON") or
     /// type.is_equal("ORGANISATION") or type.is_equal("GROUP") or
     /// type.is_equal("AGENT") or type.is_equal("ROLE") or
     /// type.is_equal("PARTY") or type.is_equal("ACTOR")`.
     ///
-    /// TODO(port): not yet wired into a constructor or the RM `Validate`
-    /// framework (`.claude/rules/rm-transcription.md` "Invariants"); this
-    /// method lets a future `Validate` impl call the check directly once
-    /// that framework lands.
+    /// Enforced at construction by [`PartyRef::new`]; kept as a working
+    /// re-check so the P11 `Validate` framework (and unchecked
+    /// struct-literal values) can call it directly.
     pub fn is_type_valid(&self) -> bool {
         VALID_TYPES.contains(&self.r#type.as_str())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::identification::generic_id::GenericId;
+    use crate::identification::object_id::ObjectIdData;
+
+    fn some_id() -> ObjectId {
+        ObjectId::GenericId(GenericId {
+            type_tag: TypeTag::new(),
+            object_id: ObjectIdData {
+                value: "id-1".to_string(),
+            },
+            scheme: "test".to_string(),
+        })
+    }
+
+    #[test]
+    fn new_accepts_every_spec_listed_party_type() {
+        for r#type in VALID_TYPES {
+            let party_ref = PartyRef::new("demographic", *r#type, some_id());
+            assert!(party_ref.is_ok(), "expected {type:?} to be accepted");
+            assert!(party_ref.is_ok_and(|p| p.is_type_valid()));
+        }
+    }
+
+    #[test]
+    fn new_rejects_type_validity_violations() {
+        // Type_validity is an exact, case-sensitive is_equal comparison.
+        assert_eq!(
+            PartyRef::new("demographic", "person", some_id()),
+            Err(PartyRefError::InvalidType("person".to_string()))
+        );
+        assert_eq!(
+            PartyRef::new("demographic", "GUIDELINE", some_id()),
+            Err(PartyRefError::InvalidType("GUIDELINE".to_string()))
+        );
+    }
+
+    #[test]
+    fn new_rejects_inherited_namespace_violations() {
+        assert_eq!(
+            PartyRef::new("9bad", "PERSON", some_id()),
+            Err(PartyRefError::InvalidNamespace("9bad".to_string()))
+        );
+    }
+
+    #[test]
+    fn is_type_valid_re_checks_unchecked_values() {
+        let mut party_ref = PartyRef::new("local", "PERSON", some_id()).expect("valid");
+        assert!(party_ref.is_type_valid());
+        party_ref.r#type = "WIDGET".to_string();
+        assert!(!party_ref.is_type_valid());
     }
 }
 
@@ -106,7 +206,7 @@ impl PartyRef {
 // PORT STATUS
 //   source: BASE 1.2.0 base_types.identification §PARTY_REF — docs/research/spec-cache/BASE-1.2.0/uml_classes/party_ref.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / party_ref.adoc §PARTY_REF Class
-//   confidence: medium
-//   todos: 1
-//   note: Type_validity invariant modelled as a VALID_TYPES const + is_type_valid() check rather than narrowing the `type` field to an enum, since the spec table does not mark OBJECT_REF.type as (redefined) here — ambiguity noted in the transcription report.
+//   confidence: high
+//   todos: 0
+//   note: Type_validity invariant modelled as a VALID_TYPES const + is_type_valid() check rather than narrowing the `type` field to an enum, since the spec table does not mark OBJECT_REF.type as (redefined) here; PartyRef::new enforces Type_validity + the inherited namespace pattern (ADR-003 §8).
 // ─────────────────────────────────────────────

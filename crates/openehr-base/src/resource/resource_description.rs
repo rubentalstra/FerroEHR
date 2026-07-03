@@ -85,11 +85,17 @@ pub struct ResourceDescription {
     /// as `Weak<..>` rather than an owning field per the RM transcription
     /// rules on reverse pointers — see the type-level doc above.
     ///
-    /// TODO(port): the spec's `{default = }` annotation appears to mark
-    /// this attribute as having a default value expression, but the table
-    /// leaves the default's right-hand side empty/unspecified in the cached
-    /// text. Not otherwise actionable until construction/assembly code
-    /// exists to interpret it.
+    /// PORT NOTE (published-spec defect, no action possible): the class
+    /// table renders this attribute's signature with a trailing
+    /// `{default = }` whose right-hand side is empty — verbatim
+    /// `{default{nbsp}={nbsp}}` in the published AsciiDoc
+    /// (docs/research/spec-cache/BASE-1.2.0/uml_classes/resource_description.adoc)
+    /// — i.e. the UML extraction emitted the default-value slot without any
+    /// default expression. There is therefore no default value to encode; a
+    /// freshly built `ResourceDescription` starts with an unattached
+    /// back-reference (`Weak::new()`), which is also the only meaningful
+    /// "default" for a non-owning parent pointer. Revisit only if a later
+    /// BASE release publishes an actual expression.
     pub parent_resource: Weak<AuthoredResource>,
 
     /// `custodian_namespace`: `String`, cardinality 0..1.
@@ -220,7 +226,7 @@ impl Serialize for ResourceDescription {
             .as_ref()
             .map(|items| items.iter().collect())
             .unwrap_or_default();
-        details.sort_by(|(left, _), (right, _)| left.cmp(right));
+        details.sort_by_key(|(left, _)| *left);
         let detail_values: Vec<&ResourceDescriptionItem> =
             details.into_iter().map(|(_, item)| item).collect();
         state.serialize_field("details", &detail_values)?;
@@ -303,6 +309,6 @@ impl<'de> Deserialize<'de> for ResourceDescription {
 //   source: BASE 1.2.0 resource §RESOURCE_DESCRIPTION — docs/research/spec-cache/BASE-1.2.0/uml_classes/resource_description.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master02-resource_package.adoc §Class Descriptions / resource_description.adoc §RESOURCE_DESCRIPTION Class
 //   confidence: medium
-//   todos: 2
-//   note: parent_resource modelled as Weak<AuthoredResource> per the reverse-pointer rule; the spec's bare `{default = }` annotation on that attribute is not otherwise actionable yet. No invariants published for this class. P4: custom serde maps the in-memory BASE 1.2.0 shape to the pinned ITS-JSON object shape (`lifecycle_state` string, `details` array, placeholder `parent_resource` object).
+//   todos: 0
+//   note: parent_resource modelled as Weak<AuthoredResource> per the reverse-pointer rule; the spec's bare `{default = }` annotation is a published-table defect (empty default expression) recorded as a PORT NOTE — Weak::new() is the de facto default. No invariants published for this class. P4: custom serde maps the in-memory BASE 1.2.0 shape to the pinned ITS-JSON object shape (`lifecycle_state` string, `details` array, placeholder `parent_resource` object).
 // ─────────────────────────────────────────────

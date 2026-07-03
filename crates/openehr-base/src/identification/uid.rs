@@ -27,10 +27,35 @@ pub struct UidData {
     ///
     /// Invariant `Value_valid`: `not value.empty`.
     ///
-    /// TODO(port): invariant not yet enforced by a constructor/`Validate`
-    /// impl; recorded here as a doc note pending the RM invariant framework
-    /// (`.claude/rules/rm-transcription.md` "Invariants").
+    /// Enforced by [`UidData::new`] (ADR-003 decision 8); struct-literal
+    /// construction remains possible for unchecked wire data (the deep
+    /// walker/accumulator validation framework is the P11 deliverable).
     pub value: String,
+}
+
+/// Error raised by [`UidData::new`] when the `Value_valid` invariant is
+/// violated.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum UidDataError {
+    /// `Value_valid`: `not value.empty`.
+    #[error("UID value must not be empty (Value_valid)")]
+    Empty,
+}
+
+impl UidData {
+    /// Fallible constructor enforcing the abstract parent's `Value_valid`
+    /// invariant (`not value.empty`).
+    ///
+    /// The concrete subtypes' stricter lexical grammars are checked by
+    /// [`Uid::parse_value`] (which also classifies the string into the
+    /// right concrete subtype).
+    pub fn new(value: impl Into<String>) -> Result<Self, UidDataError> {
+        let value = value.into();
+        if value.is_empty() {
+            return Err(UidDataError::Empty);
+        }
+        Ok(Self { value })
+    }
 }
 
 /// `UID` is abstract in the spec and is used polymorphically wherever an
@@ -278,6 +303,17 @@ mod tests {
         assert!(Uid::parse_value("3com.example").is_err());
         assert!(matches!(Uid::parse_value("x.9"), Ok(Uid::InternetId(_))));
     }
+
+    #[test]
+    fn uid_data_new_enforces_value_valid() {
+        assert_eq!(
+            UidData::new("1.2.840.10008"),
+            Ok(UidData {
+                value: "1.2.840.10008".to_string()
+            })
+        );
+        assert_eq!(UidData::new(""), Err(UidDataError::Empty));
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -285,6 +321,6 @@ mod tests {
 //   source: BASE 1.2.0 base_types.identification §UID — docs/research/spec-cache/BASE-1.2.0/uml_classes/uid.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / uid.adoc §UID Class
 //   confidence: high
-//   todos: 1
-//   note: Value_valid invariant (not value.empty) recorded but not yet enforced; awaits the RM Validate-trait framework. UID string classification is implemented from the official BASE grammar's mutually-exclusive ISO_OID/UUID/INTERNET_ID patterns. P4/ADR-002: Uid enum is #[serde(untagged)], _type dispatch comes from each concrete payload's TypeTag; UidData stays untagged (embedded abstract-parent state).
+//   todos: 0
+//   note: Value_valid invariant (not value.empty) enforced by UidData::new (ADR-003 §8); deep validation framework stays P11. UID string classification is implemented from the official BASE grammar's mutually-exclusive ISO_OID/UUID/INTERNET_ID patterns. P4/ADR-002: Uid enum is #[serde(untagged)], _type dispatch comes from each concrete payload's TypeTag; UidData stays untagged (embedded abstract-parent state).
 // ─────────────────────────────────────────────

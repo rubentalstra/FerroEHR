@@ -30,11 +30,43 @@ pub struct UidBasedIdData {
     /// `value`: the value of the id, in the form `root [ '::' extension ]`.
     ///
     /// Invariant `Has_extension_valid`: `extension.is_empty xor
-    /// has_extension` — see [`UidBasedIdApi::has_extension`].
-    ///
-    /// TODO(port): invariant not yet enforced by a constructor/`Validate`
-    /// impl.
+    /// has_extension` — see [`UidBasedIdApi::has_extension`]. Since
+    /// `has_extension()` is *defined* as `not extension().is_empty()`, that
+    /// invariant holds by construction for any value; what a constructor
+    /// can usefully enforce is the lexical form itself (`root = uid` per
+    /// the identification package's Syntaxes section), which
+    /// [`UidBasedIdData::new`] does (ADR-003 decision 8). Struct-literal
+    /// construction remains possible for unchecked wire data.
     pub value: String,
+}
+
+/// Error raised by [`UidBasedIdData::new`].
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum UidBasedIdError {
+    /// The value is empty (inherited `OBJECT_ID`/`UID` non-emptiness).
+    #[error("UID_BASED_ID value must not be empty")]
+    Empty,
+    /// The `root` part (left of the first `::`) does not match any BASE
+    /// `UID` concrete lexical form (`iso_oid | uuid | internet_id`).
+    #[error("invalid UID_BASED_ID root {0:?}: must be an ISO_OID, UUID, or INTERNET_ID")]
+    InvalidRoot(String),
+}
+
+impl UidBasedIdData {
+    /// Fallible constructor enforcing the `root [ '::' extension ]`
+    /// lexical form: the value is non-empty and its `root` part parses as
+    /// one of the BASE `UID` concrete grammars.
+    pub fn new(value: impl Into<String>) -> Result<Self, UidBasedIdError> {
+        let value = value.into();
+        if value.is_empty() {
+            return Err(UidBasedIdError::Empty);
+        }
+        let root = uid_based_root_value(&value);
+        if !Uid::is_valid_value(root) {
+            return Err(UidBasedIdError::InvalidRoot(root.to_string()));
+        }
+        Ok(Self { value })
+    }
 }
 
 /// `UID_BASED_ID` is abstract and used polymorphically wherever an
@@ -158,13 +190,30 @@ mod tests {
 
         assert!(id.try_root().is_none());
     }
+
+    #[test]
+    fn uid_based_id_data_new_enforces_the_lexical_form() {
+        // Bare root, UUID root with extension, OBJECT_VERSION_ID-shaped
+        // three-part value — all valid (root parses as a UID).
+        assert!(UidBasedIdData::new("uk.nhs.ehr1").is_ok());
+        assert!(
+            UidBasedIdData::new("8849182c-82ad-4088-a07f-48ead4180515::ehrbase.org::1").is_ok()
+        );
+        assert!(UidBasedIdData::new("1.2.840.10008::extension text").is_ok());
+
+        assert_eq!(UidBasedIdData::new(""), Err(UidBasedIdError::Empty));
+        assert_eq!(
+            UidBasedIdData::new("not a uid::local value"),
+            Err(UidBasedIdError::InvalidRoot("not a uid".to_string()))
+        );
+    }
 }
 
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 base_types.identification §UID_BASED_ID — docs/research/spec-cache/BASE-1.2.0/uml_classes/uid_based_id.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / uid_based_id.adoc §UID_BASED_ID Class
-//   confidence: medium
-//   todos: 1
-//   note: root() now classifies the root string via the official BASE UID grammar (ISO_OID vs UUID vs INTERNET_ID); Has_extension_valid invariant recorded but not enforced. P4/ADR-002: UidBasedId enum is #[serde(untagged)], _type dispatch comes from each concrete payload's TypeTag; UidBasedIdData stays untagged (embedded abstract-parent state).
+//   confidence: high
+//   todos: 0
+//   note: root() now classifies the root string via the official BASE UID grammar (ISO_OID vs UUID vs INTERNET_ID); UidBasedIdData::new enforces the root-is-a-UID lexical form (ADR-003 §8), Has_extension_valid holds by construction. P4/ADR-002: UidBasedId enum is #[serde(untagged)], _type dispatch comes from each concrete payload's TypeTag; UidBasedIdData stays untagged (embedded abstract-parent state).
 // ─────────────────────────────────────────────

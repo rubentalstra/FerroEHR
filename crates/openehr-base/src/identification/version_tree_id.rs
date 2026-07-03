@@ -39,10 +39,25 @@ pub struct VersionTreeId {
     ///
     /// Invariant `Value_valid`: `not value.is_empty`.
     ///
-    /// TODO(port): invariants not yet enforced by a constructor/`Validate`
-    /// impl; see the full invariant list in the doc comment on
-    /// [`VersionTreeId::is_branch`] and below.
+    /// Together with `Trunk_version_valid`, `Branch_number_valid`,
+    /// `Branch_version_valid`, and `Branch_validity`, this pins the lexical
+    /// form to `[1-9][0-9]*(\.[1-9][0-9]*\.[1-9][0-9]*)?` — a 1- or 3-part
+    /// dot-separated identifier whose parts are integers `>= 1`. Enforced
+    /// by [`VersionTreeId::new`] (ADR-003 decision 8); struct-literal
+    /// construction remains possible for unchecked wire data and is
+    /// re-checkable via [`VersionTreeId::is_valid_value`].
     pub value: String,
+}
+
+/// Error raised by [`VersionTreeId::new`].
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum VersionTreeIdError {
+    /// The value violates the class invariants: it must be a 1-part
+    /// (`trunk_version`) or 3-part (`trunk_version.branch_number.
+    /// branch_version`) dot-separated identifier whose parts are integers
+    /// starting at 1 (no leading zeros, no 2-part form).
+    #[error("invalid VERSION_TREE_ID {0:?}: must match [1-9][0-9]*(\\.[1-9][0-9]*\\.[1-9][0-9]*)?")]
+    InvalidSyntax(String),
 }
 
 impl TypeName for VersionTreeId {
@@ -50,6 +65,39 @@ impl TypeName for VersionTreeId {
 }
 
 impl VersionTreeId {
+    /// Fallible constructor enforcing the class invariants (`Value_valid`,
+    /// `Trunk_version_valid`, `Branch_number_valid`,
+    /// `Branch_version_valid`, `Branch_validity`) over the lexical form
+    /// `trunk_version [ '.' branch_number '.' branch_version ]`.
+    pub fn new(value: impl Into<String>) -> Result<Self, VersionTreeIdError> {
+        let value = value.into();
+        if !Self::is_valid_value(&value) {
+            return Err(VersionTreeIdError::InvalidSyntax(value));
+        }
+        Ok(Self {
+            type_tag: TypeTag::new(),
+            value,
+        })
+    }
+
+    /// `true` when `value` satisfies every class invariant, i.e. matches
+    /// `[1-9][0-9]*(\.[1-9][0-9]*\.[1-9][0-9]*)?`.
+    ///
+    /// PORT NOTE: implemented with plain string checks rather than the
+    /// `regex` crate — a dependency is not warranted for this pattern.
+    #[must_use]
+    pub fn is_valid_value(value: &str) -> bool {
+        fn is_positive_integer(part: &str) -> bool {
+            // `[1-9][0-9]*`: numbering starts at 1, so no leading zeros
+            // and no bare "0".
+            let mut bytes = part.bytes();
+            matches!(bytes.next(), Some(b'1'..=b'9')) && bytes.all(|b| b.is_ascii_digit())
+        }
+
+        let parts: Vec<&str> = value.split('.').collect();
+        matches!(parts.len(), 1 | 3) && parts.into_iter().all(is_positive_integer)
+    }
+
     /// `trunk_version(): String`.
     ///
     /// Trunk version number; numbering starts at 1. The part of `value`
@@ -134,11 +182,69 @@ impl VersionTreeId {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_accepts_one_and_three_part_forms() {
+        for valid in ["1", "2", "42", "1.2.3", "10.20.30", "1.1.1"] {
+            assert!(
+                VersionTreeId::new(valid).is_ok(),
+                "expected {valid:?} to be valid"
+            );
+        }
+    }
+
+    #[test]
+    fn new_rejects_invariant_violations() {
+        for invalid in [
+            "",        // Value_valid
+            "0",       // Trunk_version_valid: >= 1
+            "1.2",     // Branch_validity: both branch parts or neither
+            "1.0.0",   // Branch_number_valid / Branch_version_valid: >= 1
+            "1.2.0",   // Branch_version_valid: >= 1
+            "01",      // no leading zeros ([1-9][0-9]*)
+            "1.02.3",  // no leading zeros in branch_number
+            "1.2.3.4", // no 4-part form
+            "a",       // not an integer
+            "1..3",    // empty middle part
+            "-1",      // not a positive integer
+        ] {
+            assert_eq!(
+                VersionTreeId::new(invalid),
+                Err(VersionTreeIdError::InvalidSyntax(invalid.to_string())),
+                "expected {invalid:?} to be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn trunk_only_id_has_no_branch_parts() {
+        let id = VersionTreeId::new("1").expect("valid");
+        assert_eq!(id.trunk_version(), "1");
+        assert!(!id.is_branch());
+        assert_eq!(id.branch_number(), "");
+        assert_eq!(id.branch_version(), "");
+        assert!(id.is_first());
+    }
+
+    #[test]
+    fn branched_id_exposes_branch_parts() {
+        let id = VersionTreeId::new("2.1.4").expect("valid");
+        assert_eq!(id.trunk_version(), "2");
+        assert!(id.is_branch());
+        assert_eq!(id.branch_number(), "1");
+        assert_eq!(id.branch_version(), "4");
+        assert!(!id.is_first());
+    }
+}
+
 // ─────────────────────────────────────────────
 // PORT STATUS
 //   source: BASE 1.2.0 base_types.identification §VERSION_TREE_ID — docs/research/spec-cache/BASE-1.2.0/uml_classes/version_tree_id.adoc (Release-1.2.0 @ 9064413)
 //   source_loc: master05-identification_package.adoc §Class Descriptions / version_tree_id.adoc §VERSION_TREE_ID Class
 //   confidence: medium
-//   todos: 2
-//   note: branch_number/branch_version return empty String for the non-branch case rather than Option<String>, resolving a table-vs-invariant cardinality tension in the spec text; is_first derived from the Is_first_validity invariant since it has no Functions-table entry of its own. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted.
+//   todos: 1
+//   note: VersionTreeId::new + is_valid_value enforce the full invariant set (ADR-003 §8); branch_number/branch_version return empty String for the non-branch case rather than Option<String>, resolving a table-vs-invariant cardinality tension in the spec text; is_first derived from the Is_first_validity invariant since it has no Functions-table entry of its own. P4/ADR-002: self-tags via TypeTag<Self> first field (NAME single-sourced from TYPE_NAME); inert struct-level #[serde(rename)] deleted.
 // ─────────────────────────────────────────────
