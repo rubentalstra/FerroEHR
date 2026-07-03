@@ -1,189 +1,174 @@
 # EHRbase-rs
 
-![Maven Central](https://img.shields.io/maven-central/v/org.ehrbase.openehr/server) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/ehrbase/ehrbase?sort=semver) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ehrbase_ehrbase&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ehrbase_ehrbase) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![CI](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/ci.yml)
+[![Rust](https://img.shields.io/badge/rust-1.96%2B-orange.svg?logo=rust)](rust-toolchain.toml)
+[![Edition](https://img.shields.io/badge/edition-2024-blue.svg?logo=rust)](Cargo.toml)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791.svg?logo=postgresql&logoColor=white)](docs/VERSIONS.md)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 [![EHRbase Logo](ehrbase.png)](ehrbase.png)
 
-EHRbase is an [openEHR](https://www.openehr.org/) Clinical Data Repository, providing a standard-based backend for
-interoperable clinical applications. It implements the latest version of the openEHR Reference Model (RM 1.1.0) and
-version 1.4 of the Archetype Definition Language (ADL). Applications can use the capabilities of EHRbase through the
-latest version of the [openEHR REST API](https://specifications.openehr.org/releases/ITS-REST/latest/) and model-based
-queries using the [Archetype Query Language](https://specifications.openehr.org/releases/QUERY/latest/AQL.html).
+> [!IMPORTANT]
+> **This is a hard fork of [`ehrbase/ehrbase`](https://github.com/ehrbase/ehrbase) — a from-scratch, pure-Rust reimplementation.**
+> The upstream project is a Java/Spring Boot application. This fork re-implements the
+> same [openEHR](https://www.openehr.org/) Clinical Data Repository in **Rust**, with no
+> JVM, no `archie`/openEHR-SDK, and no ANTLR runtime. It is an active work in progress
+> (see [Status](#status)); it is **not** a drop-in replacement for upstream EHRbase yet.
+
+**EHRbase-rs** is a pure-Rust [openEHR](https://www.openehr.org/) Clinical Data Repository:
+a standards-based backend for interoperable clinical applications. It targets the openEHR
+Reference Model, the [openEHR REST API](https://specifications.openehr.org/releases/ITS-REST/latest/),
+and model-based queries via the [Archetype Query Language (AQL)](https://specifications.openehr.org/releases/QUERY/latest/AQL.html) —
+the same surface as upstream EHRbase, but built natively in Rust.
+
+The goal, in one line:
+
+> A faithful, 1:1, pure-Rust reimplementation of EHRbase that behaves identically at the
+> openEHR REST API surface, backed by a natively-generated openEHR stack.
+
+The authoritative plan is [`PORT_MASTER_PLAN.md`](PORT_MASTER_PLAN.md).
 
 ----
 
-## Release notes
+## Why a Rust fork?
 
-Please check the [CHANGELOG](https://github.com/ehrbase/ehrbase/blob/develop/CHANGELOG.md)
+- **Pure Rust, no JVM.** The Reference Model, serialization, terminology, ADL/AOM, and
+  AQL are all implemented in Rust — no Java runtime and no foreign-language bindings in
+  the running server.
+- **Spec-driven, not hand-written.** The openEHR **specification** crates are *generated
+  deterministically* from openEHR's machine-readable BMM meta-model (see
+  [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md)), so a spec-version bump is a
+  re-run, not a rewrite.
+- **Modern stack.** Rust 1.96 / edition 2024, `tokio` + `axum`, `sqlx` + `sea-query`,
+  PostgreSQL 18.
+
+## Status
+
+> [!WARNING]
+> Early-stage. The openEHR **spec layer** is generated and passing its fidelity gate;
+> the **EHRbase application** port (REST, persistence, AQL engine) is underway. There is
+> no runnable server yet. Per the port plan, phases P1–P16 are not expected to compile
+> in full until the make-it-compile phase (P17).
+
+What works today:
+
+- **Generated openEHR spec crates** — `openehr-base` (BASE 1.3.0), `openehr-rm` (RM 1.2.0),
+  `openehr-am` (AM 1.4.0 + 2.4.0), `openehr-term` (TERM 3.1.0), `openehr-lang` (LANG 1.1.0)
+  — all compile clean and clippy-clean, emitted by `openehr-codegen` from the vendored BMM.
+- **Fidelity gate** — the generated Reference Model **reads and losslessly round-trips**
+  the real EHRbase / openEHR_SDK canonical-JSON corpus (`openehr-its/tests/fidelity.rs`).
+- **AQL parser** — a hand-written `logos` + `chumsky` parser for the full AQL grammar
+  (`openehr-query`), validated against the official example corpus.
+
+## Architecture
+
+Two families of crates, per [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md):
+
+| Prefix | Meaning | Source |
+|---|---|---|
+| `openehr-*` | the openEHR **specification** | generated from the vendored BMM meta-model (or hand-written runtime parsers) |
+| `ehrbase-*` | the ported **EHRbase application** | ported file-by-file from the upstream Java |
+
+```
+crates/
+├── openehr-codegen    # BMM → Rust emitter (the generator)
+├── openehr-derive     # #[derive(OpenEhrType)] — canonical-JSON _type (de)serialization
+├── openehr-base       # BASE: foundation + base types        ┐
+├── openehr-rm         # RM: Reference Model                  │ generated
+├── openehr-am         # AM: ADL/AOM (am14 + am24)             │ from BMM
+├── openehr-term       # TERM: terminology (hand-written)     ┘
+├── openehr-lang       # LANG: BMM / ODIN / EL object model
+├── openehr-query      # QUERY: AQL lexer + parser (logos + chumsky)
+├── openehr-its        # ITS: canonical JSON/XML + REST contract + fidelity gate
+├── openehr-flat       # FLAT / STRUCTURED / Web Template (SDT)
+├── ehrbase-rest       # openEHR REST API surface (axum)      ┐
+├── ehrbase-compat     # EHRbase-specific endpoints, admin    │ ported from
+└── ehrbase            # the server binary                    ┘ EHRbase Java
+```
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Language | Rust stable **1.96** (MSRV 1.96), **edition 2024** |
+| Database | **PostgreSQL 18** (target 18.4+) |
+| Web / async | `axum` 0.8, `tower`, `hyper` 1, `tokio` 1 |
+| Persistence | `sqlx` 0.9 + `sea-query` 0.32 |
+| Serialization | `serde` / `serde_json`, `quick-xml` |
+| Parsers | `logos` (lexer) + `chumsky` (parser) — **no ANTLR runtime** |
+| Codegen | `openehr-codegen` (BMM → Rust) + `openehr-derive` |
+
+The authoritative, fully-pinned dependency set lives in the root `Cargo.toml`
+`[workspace.dependencies]`; version pins are recorded in [`docs/VERSIONS.md`](docs/VERSIONS.md).
+
+## Building and testing
+
+You will need the Rust toolchain pinned in [`rust-toolchain.toml`](rust-toolchain.toml)
+(stable 1.96, installed automatically by `rustup`). PostgreSQL 18 (via Docker or local)
+is needed for the database integration tests.
+
+```shell
+# Build the workspace
+cargo build --workspace
+
+# Run the tests (unit + integration)
+cargo nextest run --workspace
+# Doctests
+cargo test --workspace --doc
+
+# Lint & format
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo fmt --all --check
+
+# Regenerate the openEHR spec crates from the vendored BMM meta-model
+cargo run -p openehr-codegen -- emit
+```
+
+> [!NOTE]
+> The `openehr-base` / `openehr-rm` / `openehr-am` / `openehr-term` / `openehr-lang`
+> crates are **generated** (`// @generated … DO NOT EDIT`). To change one, edit the
+> emitter (`crates/openehr-codegen/src/emit.rs`) or a sibling `*_impl.rs` and regenerate
+> — never hand-edit a generated file. See [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md).
 
 ## Documentation
 
-Check out the documentation at https://docs.ehrbase.org
+- [`PORT_MASTER_PLAN.md`](PORT_MASTER_PLAN.md) — the authoritative port plan.
+- [`docs/ADRs/ADR-004-spec-driven-codegen.md`](docs/ADRs/ADR-004-spec-driven-codegen.md) — why the spec layer is generated from BMM.
+- [`docs/VERSIONS.md`](docs/VERSIONS.md) — the pinned language, database, and openEHR spec versions.
+- [`docs/PORTING.md`](docs/PORTING.md) / [`docs/ROSETTA.md`](docs/ROSETTA.md) — the Java↔Rust and spec↔Rust mapping rules.
 
-## Quick Start: Run EHRbase with Docker
+For openEHR concepts and the upstream reference implementation, see the
+[EHRbase documentation](https://docs.ehrbase.org) and the
+[openEHR specifications](https://specifications.openehr.org/).
 
-> [!TIP]
-> The fastest way to get started with EHRbase and openEHR is the **EHRbase Sandbox** available at https://sandkiste.ehrbase.org/.
-> 
-> For a deployment on premise read below.
+## Relationship to upstream EHRbase
 
-Check out the Installation guide at https://docs.ehrbase.org/docs/EHRbase/installation
-
-## Building and Installing EHRbase
-
-These instructions will get you a copy of the project up and running on your local machine **for development and testing
-purposes**. Please read these instructions carefully. See [deployment](#deployment) for notes on how to deploy the
-project on a live system.
-
-### Prerequisites
-
-You will need Java JDK/JRE 25 (preferably openJDK: e.g. from https://adoptopenjdk.net/)
-
-Docker is required to build EHRbase.
-
-You will need a Postgres Database (at least Version 15 or higher, Version 16 recommended) (Docker image or local installation).
-We recommend the Docker image to get started quickly.
-
-### Installing
-
-#### 1. Setup database
-
-Run `./createdb.sql` as `postgres` User.
-
-You can also use this Docker image which is a preconfigured Postgres database:
-
-```shell
-    docker network create ehrbase-net
-    docker run --name ehrdb --network ehrbase-net -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 ehrbase/ehrbase-v2-postgres:16.2
-```
-
-(For a preconfigured EHRbase application Docker image and its usage see the [Installation](https://docs.ehrbase.org/docs/EHRbase/installation) guide.
-
-#### 2. Setup Maven environment
-
-Edit the database properties in  `./pom.xml` if necessary
-
-#### 3. Build EHRbase
-
-Run `mvn package`
-
-#### 4. Run EHRbase
-
-Replace the * with the current version, e.g. `application/target/ehrbase-2.0.0.jar`
-
-`java -jar application/target/ehrbase-*.jar`
-
-### Authentication Types
-
-#### 1. Basic Auth
-
-EHRbase can use Basic Authentication for all resources. This means you have to send an 'Authorization' header
-set with keyword `Basic` followed by the authentication information in Base64 encoded username and password. To
-generate the Base64 encoded username and password combination create the string after the following schema:
-`username:password`.
-
-The Basic Auth mechanism is implemented as "opt-in" and can be activated either by providing an environment variable
-`SECURITY_AUTHTYPE=BASIC` with the start command or by adding the value into the target application.yml file.
-
-Currently we have support one user with password which can be set via environment variables `SECURITY_AUTHUSER` and
-`SECURITY_AUTHPASSWORD`. By default these values are set with `ehrbase-user` and `authPassword=SuperSecretPassword`
-and can be overridden by environment values. Alternatively you can set them inside the corresponding application.yml
-file.
-
-The same applies to the *admin* user, via `SECURITY_AUTHADMINUSER`, `SECURITY_AUTHADMINPASSWORD`
-and their default values of `ehrbase-admin` and `EvenMoreSecretPassword`.
-
-#### 2. OAuth2
-
-Environment variable `SECURITY_AUTHTYPE=OAUTH` is enabling OAuth2 authentication.
-
-Additionally, setting the following variable to point to the existing OAuth2 server and realm is necessary:
-`SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI=http://localhost:8081/auth/realms/ehrbase`
-
-Two roles are available: a user role, and admin role. By default, these roles are expected to be named `USER` and
-`ADMIN`. The names of these roles can be customised through the `SECURITY_OAUTH2USERROLE` and `SECURITY_OAUTH2ADMINROLE`
-environment variables. Users should have their roles assigned accordingly, either in the `realm_access.roles` or `scope`
-claim of the JWT used for authentication.
+This fork tracks EHRbase as its behavioural reference (imported at v2.33.0) and aims for
+parity at the openEHR REST surface. It deliberately pins the **latest** openEHR spec
+versions (RM 1.2.0, BASE 1.3.0, AM 1.4.0 + 2.4.0), which diverge from the RM 1.1.0-era
+wire format stock EHRbase emits — a known Stage-1 REST-parity consideration tracked in
+[`docs/VERSIONS.md`](docs/VERSIONS.md). It is not affiliated with or endorsed by the
+upstream EHRbase project or vitagroup.
 
 ## Contributing
 
-### Codestyle/Formatting
-
-EHRbase java sourcecode is using [palantir-java-format](https://github.com/palantir/palantir-java-format) codestyle.
-The formatting is checked and applied using
-the [spotless-maven-plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven).
-To apply the codestyle run the `com.diffplug.spotless:spotless-maven-plugin:apply` maven goal in the root directory of
-the project.
-To check if the code conforms to the codestyle run the `com.diffplug.spotless:spotless-maven-plugin:check` maven goal in
-the root directory of the project.
-These maven goals can also be run for a single module by running them in the modules' subdirectory.
-
-To make sure all code conforms to the codestyle, the "check-codestyle" check is run on all pull requests.
-Pull requests not passing this check shall not be merged.
-
-If you wish to automatically apply the formatting on commit for *.java files, a simple pre-commit hook script "
-pre-commit.sh" is available in the root directory of this repository.
-To enable the hook you can either copy the script to or create a symlink for it at `.git/hooks/pre-commit`.
-The git hook will run the "apply" goal for the whole project, but formatting changes will only be staged for already
-staged files, to avoid including unrelated changes.
-
-In case there is a section of code that you carefully formatted in a special way the formatting can be turned off for
-that section like this:
-
-```
-everything here will be reformatted..
-
-// @formatter:off
-
-    This is not affected by spotless-plugin reformatting...
-            And will stay as is it is!
-
-// @formatter:on
-
-everything here will be reformatted..
-```
-
-Please be aware that `@formatter:off/on` should only be used on rare occasions to increase readability of complex code and shall be looked at critically when reviewing merge requests.
-
-## Running the tests
-
-For integration tests please refer to the [integration-test](https://github.com/ehrbase/integration-tests) repository
-
-## Deployment
-
- 1. `java -jar application/target/ehrbase-*.jar` You can override the application properties (like database settings) using the normal spring boot mechanism: [Command-Line Arguments in Spring Boot](https://www.baeldung.com/spring-boot-command-line-arguments)
- 2. Browse to Swagger UI --> http://localhost:8080/ehrbase/swagger-ui.html
-
-## Updating
-
-Before updating to a new version of EHRBase check [UPDATING.md](UPDATING.md) for any backwards-incompatible changes and additional
-steps needed in EHRBase. New Releases may introduce DB changes. It is thus recommend to make a DB backup before
-updating.
-
-## Built With
-
-* [Maven](https://maven.apache.org/) - Dependency Management
-
-----
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
+Code must be `cargo fmt` clean and pass `cargo clippy … -D warnings`; the same checks run
+in CI on every pull request.
 
 ## Acknowledgments
 
-EHRbase contains code and derived code from EtherCIS (ethercis.org) which has been developed by Christian Chevalley (
-ADOC Software Development Co.,Ltd).
-Dr. Tony Shannon and Phil Berret of the [Ripple Foundation CIC Ltd, UK](https://ripple.foundation/) and Dr. Ian
-McNicoll (FreshEHR Ltd.) greatly contributed to EtherCIS.
+This project is a fork of, and owes its architecture to, **EHRbase**, jointly developed by
+[vitasystems GmbH](https://www.vitagroup.ag/) and the
+[Peter L. Reichertz Institute (PLRI)](https://www.plri.de/). Upstream EHRbase in turn
+contains code derived from EtherCIS and relies on the openEHR Reference Model implementation
+[Archie](https://github.com/openEHR/archie) by Nedap.
 
-EHRbase heavily relies on the openEHR Reference Model implementation ([Archie](https://github.com/openEHR/archie)) made
-by Nedap. Many thanks to Pieter Bos and his team for their work!
-
-EHRbase is jointly developed by [Vitasystems GmbH](https://www.vitagroup.ag/de_DE/Ueber-uns/vitasystems)
-and [Peter L. Reichertz Institute for Medical Informatics of TU Braunschweig and Hannover Medical School](https://www.plri.de/)
-
+The openEHR specifications and the machine-readable BMM meta-model that this project
+generates from are published by the [openEHR Foundation](https://www.openehr.org/).
 
 ## License
 
-EHRbase uses the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
-
-## Stargazers over time
-
-[![Stargazers over time](https://starchart.cc/ehrbase/ehrbase.svg)](https://starchart.cc/ehrbase/ehrbase)
+EHRbase-rs is licensed under the [Apache License, Version 2.0](LICENSE), the same license
+as upstream EHRbase.
