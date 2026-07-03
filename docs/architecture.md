@@ -5,6 +5,12 @@ surfaces it exposes, the pipelines behind those surfaces, and how the target
 Rust workspace is organized. It distills `PORT_MASTER_PLAN.md` Sections 6–9;
 that document is authoritative on any discrepancy.
 
+> **⚠️ ADR-004:** the openEHR-spec crates are **generated from the BMM
+> meta-model** by `openehr-codegen`, not hand-written; crate names split into
+> `openehr-*` (spec) / `ehrbase-*` (application). Where this doc says the spec
+> crates are "written fresh" / "transcribed", read "generated". See
+> `docs/ADRs/ADR-004-spec-driven-codegen.md`.
+
 ## What EHRbase is
 
 EHRbase is a Spring Boot openEHR Clinical Data Repository (CDR): a server

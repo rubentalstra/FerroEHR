@@ -7,6 +7,38 @@ This file is the single source of truth. Claude Code reads this first and scaffo
 
 ---
 
+> ## ⚠️ AMENDMENT (2026-07-03, ADR-004): the openEHR spec layer is GENERATED, not hand-transcribed
+>
+> This plan originally called for **literal, class-by-class hand-transcription**
+> of the openEHR Reference Model, Base Types, AM, etc. (Sections 4, 7, 10, 14).
+> **That approach is superseded.** openEHR publishes a machine-readable
+> meta-model (BMM); we now **generate** the spec crates from it deterministically
+> with `openehr-codegen`. See `docs/ADRs/ADR-004-spec-driven-codegen.md` and the
+> "Code generation" section of `CLAUDE.md`.
+>
+> Read the rest of this document with these substitutions:
+> - **"transcribe the RM/BASE/AM classes by hand"** → generate them from the
+>   vendored `*.bmm.json`; never hand-write or hand-edit a `// @generated` file.
+>   Change the emitter and regenerate. Spec *behaviour* (invariants, functions)
+>   lives in hand-written sibling `*_impl.rs` files.
+> - **Crate names (Section 5/9):** `openehr-*` = spec (generated) / `ehrbase-*` =
+>   the EHRbase application (ported from Java). `openehr-foundation` folded into
+>   `openehr-base`; `openehr-terminology`→`openehr-term`, `openehr-odin`+`openehr-bmm`→
+>   `openehr-lang`, `openehr-adl`→`openehr-am`, `openehr-aql`→`openehr-query`,
+>   `openehr-rest`→`ehrbase-rest`, `openehr-ehrbase-compat`→`ehrbase-compat`,
+>   `openehr-server`→`ehrbase` (binary). New crates: `openehr-codegen`, `openehr-derive`.
+> - **Version pins (Section 3):** bumped to latest — RM 1.2.0, BASE 1.3.0,
+>   TERM 3.1.0, AM 1.4.0 + 2.4.0 (see `docs/VERSIONS.md`).
+> - **`openehr-term`** stays hand-written (BMM has only its interface classes).
+> - ADR-001/002 (hand-authoring conventions) are superseded *as conventions* by
+>   ADR-004; ADR-003 (spec-gap policies) still governs the `*_impl.rs` behaviour.
+>
+> The narrative below is preserved for its architecture, difficulty map, phase
+> sequencing, and Rust-stack decisions, which remain valid. Only the *method* for
+> producing the spec layer changed: generate, don't hand-transcribe.
+
+---
+
 ## 0. How Claude Code should use this document
 
 1. Read this entire file before creating anything.

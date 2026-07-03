@@ -1,5 +1,7 @@
 # Phase 04 — Canonical JSON serialization (ITS-JSON)
 
+> **⚠️ ADR-004 (2026-07-03):** this phase's openEHR spec layer is now GENERATED from the BMM meta-model by `openehr-codegen`, not hand-transcribed. Read `docs/ADRs/ADR-004-spec-driven-codegen.md` and the "Code generation" section of `CLAUDE.md`. Tasks/notes below describe the superseded hand-transcription approach.
+
 - Status: done
 - Started: 2026-07-02   Owner: Ruben
 - Consumes (spec/layer): ITS-JSON (development, pinned commit) / Layer 5a

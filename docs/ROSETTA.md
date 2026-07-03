@@ -1,16 +1,22 @@
 # ROSETTA — Living Mapping Registry
 
-This is the living Java↔Rust and openEHR-spec↔Rust mapping registry for the
-port. Unlike `docs/PORTING.md` (the general rule set, fixed once written),
-this file accumulates one row per concrete symbol as it gets ported or
-transcribed, so a later session or subagent can look up "where did `X` go"
-without re-deriving it.
+> **⚠️ ADR-004 status:** the **openEHR spec → Rust** table below is now
+> *historical* — those mappings are produced by the code generator
+> (`openehr-codegen`), so the generator's emitter + override map is the live
+> source of truth, not this table. The rows are preserved because they capture
+> hard-won *directed deviations* (e.g. `Octet`→`u8`, `Real`→`f64`,
+> `UUID.value`→`uuid::Uuid`) that should seed the eventual `codegen.toml`. Do not
+> hand-transcribe from this table. The **Java → Rust** table is still live for
+> the `ehrbase-*` application port.
 
-Maintained by the `rosetta-curator` agent and the `rosetta-mapping` skill.
-Append rows as files are ported or transcribed; do not delete a row once a
-symbol has landed, even if the symbol is later renamed — update the row in
-place instead. Kind values are free text but should stay consistent within a
-table (e.g. `struct`, `enum`, `trait`, `fn`, `module`).
+This is the living Java↔Rust and openEHR-spec↔Rust mapping registry for the
+port. The Java↔Rust rows accumulate one per concrete symbol as it gets ported,
+so a later session can look up "where did `X` go" without re-deriving it.
+
+Maintained by the `rosetta-curator` agent and the `rosetta-mapping` skill (for
+the Java→Rust domain). Append rows as application files are ported; do not
+delete a row once a symbol has landed. Kind values are free text but should
+stay consistent within a table (e.g. `struct`, `enum`, `trait`, `fn`, `module`).
 
 ## Java → Rust
 

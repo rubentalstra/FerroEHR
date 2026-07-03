@@ -13,11 +13,23 @@ Single workspace. EHRbase's Java has been moved into `crates/openehr-*` (Phase 0
 - `docs/` — plans, research, ADRs, ROSETTA, PORTING, VERSIONS, LIFETIMES.
 - `.claude/` — rules, skills, agents, hooks.
 
+## Code generation (ADR-004) — READ THIS FIRST
+
+**The openEHR spec crates are GENERATED from the vendored BMM meta-model, not hand-written.** Do **not** hand-transcribe or hand-edit RM/BASE/AM classes — that era is over (see `docs/ADRs/ADR-004-spec-driven-codegen.md`). openEHR publishes a machine-readable meta-model (BMM); we generate idiomatic Rust from it deterministically.
+
+- **Pipeline:** vendored `*.bmm.json` (in `crates/openehr-codegen/vendor/bmm/`) → `openehr-lang::bmm` (loader) → `openehr-codegen` (emitter) → the spec crates. `openehr-derive`'s `#[derive(OpenEhrType)]` supplies canonical-JSON `_type` (de)serialization on the emitted types.
+- **Regenerate:** `cargo run -p openehr-codegen -- emit` rewrites `openehr-base`, `openehr-rm`, and `openehr-am` in place. `-- check` validates the BMM loads.
+- **Generated crates** (`openehr-base`, `openehr-rm`, `openehr-am` with both `am14`/`am24`): every type file starts with `// @generated … DO NOT EDIT`. **Never hand-edit a generated file.** To change output, edit the emitter (`crates/openehr-codegen/src/emit.rs`) or its override map, then regenerate. `openehr-foundation` no longer exists (folded into `openehr-base`).
+- **Hand-written spec behaviour** (invariants, spec functions per ADR-003) lives in sibling `*_impl.rs` files the generator never rewrites.
+- **Hand-written tooling** (edit freely, normal Rust): `openehr-lang` (ODIN + BMM reader), `openehr-codegen` (emitter), `openehr-derive` (proc-macro).
+- **NOT generated** (hand-written for good reason): `openehr-term` (terminology bundle + XML assets + access logic — BMM only has ~6 interface classes), `openehr-serde` (ITS-XML serialization + the interop fidelity gate), `openehr-flat` (SDT), and every `ehrbase-*` app crate (ported from EHRbase Java).
+- **Pinned spec versions:** RM 1.2.0, BASE 1.3.0, TERM 3.1.0, AM 1.4.0 + 2.4.0 (see `docs/VERSIONS.md`). These are the latest; they diverge from what stock EHRbase/`archie` emits (RM 1.1.0-era) — a Stage-1 REST-parity consideration.
+
 ## Phase workflow (the loop)
 
 1. Read `docs/plans/current-phase.md`.
 2. Pick the next unchecked task in the referenced phase file.
-3. Do the work. Delegate per-file ports to the `porter` subagent; delegate spec transcription to `rm-transcriber`. Prefer subagents over inline work when it would burn context.
+3. Do the work. For the openEHR **spec** layer, change the generator and regenerate (never hand-write spec classes — see Code generation above). For the EHRbase **application** port (`ehrbase-*` crates), delegate per-file Java→Rust ports to the `porter` subagent. (The `rm-transcriber` agent and `/transcribe-rm-class` skill are retired by ADR-004 — do not hand-transcribe spec classes.) Prefer subagents over inline work when it would burn context.
 4. Tick the task `- [ ]` to `- [x]` and add a one-line note.
 5. Commit as `phase-NN: <task>` on a `claude/phase-NN-*` branch.
 6. When the phase's exit criteria are all met, run `/phase-done`, update `docs/PROGRESS.md`, and advance `current-phase.md`.
@@ -77,23 +89,21 @@ scripts/parity.sh              # add USE_REFERENCE_EHRBASE=1 for the negative-te
 
 Note: Phases P1 through P16 are not required to compile. `cargo build` is expected to fail until P17 (make-it-compile). This is by design; do not chase build errors during translation.
 
-Exception (since P4): `openehr-foundation`, `openehr-base`, `openehr-term`, `openehr-rm`, and `openehr-serde` DO compile and have green tests (`cargo test -p <crate>`). Changes to these five crates must keep them compiling, tested, and clippy-clean; ADR-003 fixes the policies for spec-underdetermined behaviour in them. The Phase-A no-compile allowance now applies only to the crates that have not yet reached this bar.
+Compile status (post ADR-004): the **generated** spec crates `openehr-base`, `openehr-rm`, and `openehr-am` compile and are lib-clippy-clean — keep them that way by fixing the *emitter*, never by hand-editing generated files. `openehr-lang`, `openehr-codegen`, and `openehr-derive` are hand-written tooling and must stay compiling + clippy-clean. `openehr-term` compiles (hand-written). `openehr-serde`'s library compiles but its tests need re-wiring against the generated types (the interop fidelity gate). The Phase-A no-compile allowance applies to the crates not yet reached (the `ehrbase-*` app crates and the parser crates awaiting their phases).
 
 ## Conventions
 
-- Crate boundaries mirror openEHR components (see `PORT_MASTER_PLAN.md` Section 9). Keep dependencies pointing downward: server → spec crates, never the reverse.
-- Faithful port first. Mirror the source file's names, method names, field order, and control flow. Note idiomatic alternatives in comments rather than applying them during Stage 1.
-- Closed openEHR subtype sets become Rust `enum`s (`DataValue`, `Item`, `ContentItem`, `PartyProxy`, `Version<T>`). Trait objects only for genuinely archetype-driven runtime polymorphism.
-- `PATHABLE.parent()` and other back-references use `Weak` or an index, never an owning reference.
-- Recursive containment (`FOLDER`, `CLUSTER`, `ITEM_TREE`, `SECTION`, `DV_MULTIMEDIA.thumbnail`) is boxed.
-- `thiserror` in library crates; `anyhow` only in the binary. No `unwrap`/`expect` outside tests; use `todo!()` or `// TODO(port):` where the real value is not yet available.
+- Crate boundaries mirror openEHR components (see `PORT_MASTER_PLAN.md` Section 9). Keep dependencies pointing downward: app (`ehrbase-*`) → spec (`openehr-*`), never the reverse.
+- **Two different disciplines by layer.** Spec crates (`openehr-*`) = *generated* idiomatic Rust from BMM (ADR-004): the emitter decides shape; the fidelity bar is wire + semantic + invariant parity, not literal spec-shape mirroring. Application crates (`ehrbase-*`) = *faithful Java→Rust port*: mirror the source's names, method names, field order, and control flow.
+- Emission choices the generator already makes (do not re-litigate per class): closed openEHR subtype sets → untagged Rust `enum`s; recursion (`FOLDER`, `CLUSTER`, `ITEM_TREE`, `SECTION`, `DV_MULTIMEDIA.thumbnail`, F-bounded ranges) → `Box`; `_type` via `#[derive(OpenEhrType)]`; strong types where unambiguous (`uuid::Uuid`, etc.). Behavioural back-references (`PATHABLE.parent()`) in hand-written `*_impl.rs` use `Weak` or an index, never an owning reference.
+- `thiserror` in hand-written library crates; `anyhow` only in the binary. No `unwrap`/`expect` outside tests.
 - Async-first: the server is I/O-bound on Postgres; use idiomatic tokio/axum (this is not the Bun "no-Tokio" case).
-- Keep the openEHR class name visible on each transcribed type (doc comment + serde rename to the canonical `_type` string).
 
 ## IMPORTANT hard rules
 
+- **Never hand-edit a `// @generated` file.** The generated spec crates (`openehr-base`, `openehr-rm`, `openehr-am`) are produced by `openehr-codegen`; edit the emitter or the `*_impl.rs` sibling and regenerate, never the generated file itself.
 - **Never edit a `.java` file that has no completed Rust counterpart, and never edit Maven build files** (`pom.xml`, `mvnw`, `mvnw.cmd`, `.mvn/`). A `PreToolUse` hook enforces this. Delete a Java file only in the same phase its Rust replacement reaches parity.
-- **Every ported or transcribed file ends with a `// PORT STATUS` trailer** (source, source_loc, confidence, todos, note).
+- **Every hand-ported application file ends with a `// PORT STATUS` trailer** (source, source_loc, confidence, todos, note). Generated files do **not** carry the trailer — their `// @generated` header is their provenance.
 - **Use the annotation vocabulary**: `// TODO(port):`, `// PERF(port):`, `// PORT NOTE:`, `// SAFETY:`.
 - **Branches are `claude/*`.** Never force-push `main`. Never delete files under `docs/plans/`.
 - **NEVER add AI/Claude attribution to commits or PRs. This is an absolute rule with no exceptions.** Do not add a `Co-Authored-By: Claude` trailer (or any co-author trailer). Do not write "Generated with Claude Code", "🤖 Generated with...", "Co-authored-by: Claude", or any similar line, emoji, or footer in a commit message, commit body, commit trailer, PR title, PR description, PR comment, issue, or code comment. Commit messages and PR text describe only the change itself. If you ever find yourself about to add such a line, stop and remove it. When configuring git or opening PRs, do not pass any flag or template that injects attribution.
@@ -106,6 +116,7 @@ Exception (since P4): `openehr-foundation`, `openehr-base`, `openehr-term`, `ope
 
 - @AGENTS.md
 - @PORT_MASTER_PLAN.md
+- @docs/ADRs/ADR-004-spec-driven-codegen.md (the codegen decision — read before touching any spec crate)
 - @docs/PORTING.md
 - @docs/ROSETTA.md
 - @docs/VERSIONS.md

@@ -2,11 +2,20 @@
 paths: ["crates/**/*.rs"]
 ---
 
-# Rust style — faithful port first
+# Rust style — faithful port first (application code)
 
-This applies to every `.rs` file in the workspace, whether it replaces a moved
-`.java` file or transcribes an openEHR spec class. Faithfulness beats
-idiomatic Rust during Stage 1 (PORT_MASTER_PLAN.md Section 4).
+This applies to hand-written `.rs` files: the EHRbase application port
+(`ehrbase-*`) and the hand-written spec crates (`openehr-serde`, `openehr-flat`,
+`openehr-term`, the tooling crates, and `*_impl.rs` behaviour files). For the
+EHRbase Java port, faithfulness beats idiomatic Rust during Stage 1
+(PORT_MASTER_PLAN.md Section 4).
+
+**Generated files do not follow these rules.** The openEHR spec crates
+(`openehr-base`, `openehr-rm`, `openehr-am`) are generated from BMM (ADR-004);
+every `// @generated` file is idiomatic-by-construction and **must never be
+hand-edited** — change the emitter (`openehr-codegen`) and regenerate. The
+"mirror the source" and PORT STATUS-trailer rules below do **not** apply to
+them.
 
 ## Mirror the source
 

@@ -6,8 +6,16 @@ description: >
   Section 9 dependency arrows) and a doc-comment-only lib.rs. Use when a
   phase's task list calls for standing up a crate that does not exist yet.
 allowed-tools: [Read, Write, Bash]
-argument-hint: "<crate-name, e.g. openehr-terminology>"
+argument-hint: "<crate-name, e.g. ehrbase-rest>"
 ---
+
+> **⚠️ ADR-004 / naming:** crate names split `openehr-*` (spec) / `ehrbase-*`
+> (application); the binary is `ehrbase`. Read the amendment banner at the top
+> of `PORT_MASTER_PLAN.md` for the current names (e.g. `openehr-term`,
+> `openehr-lang`, `openehr-am`, `openehr-query`, `ehrbase-rest`, `ehrbase`). Do
+> not scaffold `openehr-foundation` (folded into `openehr-base`) or the retired
+> old names. Generated spec crates get their `lib.rs`/`src` from
+> `openehr-codegen`, not this skill.
 
 # /crate-scaffold
 
@@ -33,9 +41,9 @@ that needs a new crate uses this too.
      immediately (e.g. `serde` for a spec crate that will serialize). Do not
      pre-add dependencies "just in case" — add them when a task actually
      needs them.
-   - If the crate is `openehr-server`, it is a binary: also add
-     `[[bin]] name = "openehr-server" path = "src/main.rs"`.
-3. **Create `crates/<name>/src/lib.rs`** (or `main.rs` for `openehr-server`)
+   - If the crate is `ehrbase` (the application binary), also add
+     `[[bin]] name = "ehrbase" path = "src/main.rs"`.
+3. **Create `crates/<name>/src/lib.rs`** (or `main.rs` for the `ehrbase` binary)
    containing only a top-of-file doc comment: the crate's one-line purpose
    (from Section 9), which spec component or Maven module it corresponds to,
    and a note that it starts empty pending its phase. No `mod` declarations,

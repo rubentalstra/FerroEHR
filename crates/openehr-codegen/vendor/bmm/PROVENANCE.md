@@ -15,6 +15,7 @@ for our exact pinned versions.
 | openehr_term_3.1.0.bmm.json | components/TERM/json/openehr_term_3.1.0.bmm.json |
 | openehr_am_1.4.0.bmm.json   | components/AM/json/openehr_am_1.4.0.bmm.json     |
 | openehr_am_2.4.0.bmm.json   | components/AM/json/openehr_am_2.4.0.bmm.json     |
+| openehr_lang_1.1.0.bmm.json | components/LANG/json/openehr_lang_1.1.0.bmm.json |
 
 These are the deterministic input to `openehr-codegen` (ADR-004). The ODIN
 reader in `openehr-lang::odin` is retained for ADL/ODIN *instance* parsing

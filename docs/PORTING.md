@@ -1,16 +1,22 @@
 # Porting Rules (the Rosetta core)
 
-This file is a lookup table, not prose. It is consulted per-file during
-translation — by a human or by the `porter`/`rm-transcriber` subagents — so
-every entry must be scannable in isolation. Two mapping domains are covered:
-**Java → Rust** (for the EHRbase application code moved into `openehr-rest`,
-`openehr-ehrbase-compat`, `openehr-server`) and **openEHR spec → Rust** (for
-the native transcription in `openehr-foundation`, `openehr-base`,
-`openehr-rm`, `openehr-terminology`, `openehr-odin`, `openehr-bmm`,
-`openehr-adl`, `openehr-flat`, `openehr-aql`, `openehr-serde`).
+> **⚠️ Scope (ADR-004):** the **openEHR spec → Rust** mapping domain below is
+> now realized by the **code generator** (`openehr-codegen`), not by hand — do
+> not hand-transcribe spec classes. Those rules survive here as documentation of
+> what the emitter produces (and as the contract for the `codegen.toml` override
+> layer), not as a per-file hand-authoring checklist. The **Java → Rust** domain
+> is still hand-applied for the `ehrbase-*` application port. See
+> `docs/ADRs/ADR-004-spec-driven-codegen.md`.
+
+This file is a lookup table, not prose. Two mapping domains are covered:
+**Java → Rust** (for the EHRbase application code in `ehrbase-rest`,
+`ehrbase-compat`, `ehrbase`) — hand-applied during the port — and **openEHR
+spec → Rust** (for the generated `openehr-base`, `openehr-rm`, `openehr-am`, and
+the hand-written `openehr-term`, `openehr-serde`, `openehr-flat`, `openehr-lang`,
+`openehr-query`) — now encoded in the generator.
 
 For the full narrative rationale behind these rules, see `PORT_MASTER_PLAN.md`
-Sections 4 and 14, which this file transcribes and keeps current.
+Sections 4 and 14, and ADR-004 for how the spec domain is now generated.
 
 ---
 

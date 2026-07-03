@@ -37,23 +37,31 @@ plus `JSON_TABLE()` inherited from PG 17. Managed providers may lag on
 ## openEHR specification matrix
 
 There is no umbrella "openEHR Release" version; each component versions
-independently. Pin each one exactly:
+independently. **The spec crates are generated from the vendored BMM
+meta-model (ADR-004), so the BMM version pins below are load-bearing** — they
+are the actual codegen input, not just documentation. Pins bumped to *latest*
+on 2026-07-03 (the versions available as clean `*.bmm.json`).
 
 | Component | Version | Status | Notes |
 |---|---|---|---|
-| BASE (Foundation Types + Base Types) | 1.2.0 | STABLE | transcribe first |
-| RM (Reference Model) | 1.1.0 | STABLE | literal transcription, ~108 classes |
-| AM (Archetype Model) | 2.3.0 | STABLE (OPT 2 in dev) | ADL 1.4, ADL 2, AOM 1.4, AOM 2, OPT 1.4 all stable |
-| QUERY (AQL) | 1.1.0 | STABLE | |
-| LANG (BMM / ODIN / EL) | 1.0.0 | STABLE (mixed) | BMM schema v2.3 |
-| TERM (Terminology) | 3.0.0 | STABLE | XML file internally v3.1.0 |
-| ITS-XML (XSDs) | 1.0.2 | STABLE (2.0.0 TRIAL) | TARGET 1.0.2, namespace `http://schemas.openehr.org/v1` (settled 2026-07-03): it is the latest *stable* ITS-XML (2.0.0 is TRIAL/in-development) and is exactly what stock EHRbase emits (`archie`), so it is what a 1:1 port requires. RM *model* stays 1.1.0; only the XML wire format is v1. Both bundles vendored at `crates/openehr-serde/schemas/xml/` (v1 = target; v2 = Stage-3 reference). See phase-05 DECISION note. |
+| BASE (Foundation Types + Base Types) | **1.3.0** | STABLE | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
+| RM (Reference Model) | **1.2.0** | STABLE | generated → `openehr-rm` |
+| AM (Archetype Model) | **1.4.0 + 2.4.0** | STABLE | generated → `openehr-am`, both versions as `am14` (ADL 1.4) + `am24` (ADL 2) |
+| QUERY (AQL) | 1.1.0 | STABLE | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
+| LANG (BMM / ODIN / EL) | 1.0.0 | STABLE (mixed) | `openehr-lang` — the ODIN + BMM reader that feeds codegen |
+| TERM (Terminology) | 3.1.0 | STABLE | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
+| ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL) | STABLE | canonical XML in `openehr-serde` (hand-written, `quick-xml`); namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-serde/schemas/xml/`. |
 | ITS-REST (REST API) | 1.0.3 | STABLE | ADMIN API is dev-branch only |
-| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6` (master, 2021-10-31); `components/openehr_rm_1.1.0_all.json` vendored at `crates/openehr-serde/schemas/` |
-| ITS-BMM (BMM instances) | per-RM | STABLE per-schema | |
+| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-serde/schemas/` |
+| ITS-BMM (BMM meta-model, JSON) | per-component (see above) | STABLE per-schema | **the codegen input**; vendored `*.bmm.json` at `crates/openehr-codegen/vendor/bmm/` with provenance |
 
-See `PORT_MASTER_PLAN.md` Section 7 for the class-by-class transcription scope
-and Section 3 for the full narrative behind each pin.
+**Parity note:** these are the *latest* spec versions; stock EHRbase/`archie`
+emits an RM 1.1.0-era wire format. Track this divergence as a Stage-1 REST
+parity consideration — the fidelity gate (EHRbase canonical-JSON corpus
+round-trip) is where it will surface.
+
+See `docs/ADRs/ADR-004-spec-driven-codegen.md` for how generation works and
+`PORT_MASTER_PLAN.md` Section 7 for the component scope.
 
 ## EHRbase reference point
 
