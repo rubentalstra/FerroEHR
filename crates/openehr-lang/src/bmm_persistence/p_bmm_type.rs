@@ -3,7 +3,6 @@
 use serde::{Deserialize, Serialize};
 use crate::bmm_persistence::p_bmm_container_type::PBmmContainerType;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
-use crate::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType;
 use crate::bmm_persistence::p_bmm_open_type::PBmmOpenType;
 use crate::bmm_persistence::p_bmm_simple_type::PBmmSimpleType;
 
@@ -14,7 +13,6 @@ use crate::bmm_persistence::p_bmm_simple_type::PBmmSimpleType;
 pub enum PBmmType {
     PBmmContainerType(PBmmContainerType),
     PBmmGenericType(PBmmGenericType),
-    PBmmIndexedContainerType(PBmmIndexedContainerType),
     PBmmOpenType(PBmmOpenType),
     PBmmSimpleType(PBmmSimpleType),
 }

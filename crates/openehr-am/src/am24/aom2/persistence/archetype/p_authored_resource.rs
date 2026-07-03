@@ -2,8 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use crate::am24::aom2::persistence::archetype::p_authored_archetype::PAuthoredArchetype;
-use crate::am24::aom2::persistence::archetype::p_operational_template::POperationalTemplate;
-use crate::am24::aom2::persistence::archetype::p_template::PTemplate;
 
 /// Abstract idea of an online resource created by a human author.
 /// Closed subtype set of `P_AUTHORED_RESOURCE` (ADR-004): dispatched on each payload's `_type`.
@@ -11,6 +9,4 @@ use crate::am24::aom2::persistence::archetype::p_template::PTemplate;
 #[serde(untagged)]
 pub enum PAuthoredResource {
     PAuthoredArchetype(PAuthoredArchetype),
-    POperationalTemplate(POperationalTemplate),
-    PTemplate(PTemplate),
 }

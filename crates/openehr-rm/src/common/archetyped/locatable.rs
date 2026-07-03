@@ -35,7 +35,6 @@ use crate::ehr::ehr_status::EhrStatus;
 use crate::ehr_extract::common::extract::Extract;
 use crate::ehr_extract::common::extract_action_request::ExtractActionRequest;
 use crate::ehr_extract::common::extract_chapter::ExtractChapter;
-use crate::ehr_extract::common::extract_entity_chapter::ExtractEntityChapter;
 use crate::ehr_extract::common::extract_folder::ExtractFolder;
 use crate::ehr_extract::common::extract_request::ExtractRequest;
 use crate::ehr_extract::generic_extract::generic_content_item::GenericContentItem;
@@ -63,11 +62,10 @@ pub enum Locatable {
     Extract(Extract),
     ExtractActionRequest(ExtractActionRequest),
     ExtractChapter(ExtractChapter),
-    ExtractEntityChapter(ExtractEntityChapter),
     ExtractFolder(ExtractFolder),
     ExtractRequest(ExtractRequest),
     Folder(Folder),
-    GenericContentItem(GenericContentItem),
+    GenericContentItem(Box<GenericContentItem>),
     GenericEntry(GenericEntry),
     Group(Group),
     History(History<ItemStructure>),

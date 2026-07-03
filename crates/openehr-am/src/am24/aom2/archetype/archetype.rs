@@ -2,8 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use crate::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use crate::am24::aom2::archetype::operational_template::OperationalTemplate;
-use crate::am24::aom2::archetype::template::Template;
 use crate::am24::aom2::archetype::template_overlay::TemplateOverlay;
 
 /// The `ARCHETYPE` class defines the core formal model of the root object of any archetype or template. It includes only basic identification information, and otherwise provides the structural connections from the Archetype to its constituent parts, i.e. definition (a `C_COMPLEX_OBJECT`), terminology (`ARCHEYTPE_TERMINOLOGY`) and so on.
@@ -12,8 +10,6 @@ use crate::am24::aom2::archetype::template_overlay::TemplateOverlay;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Archetype {
-    AuthoredArchetype(AuthoredArchetype),
-    OperationalTemplate(OperationalTemplate),
-    Template(Template),
-    TemplateOverlay(TemplateOverlay),
+    AuthoredArchetype(Box<AuthoredArchetype>),
+    TemplateOverlay(Box<TemplateOverlay>),
 }

@@ -45,6 +45,11 @@ struct FieldInfo {
     wire: String,
     kind: FieldKind,
     ty: Type,
+    /// A literal default (`"true"` / `"false"` / …) for a `Plain` field the wire
+    /// may omit — e.g. archie omits the `Interval` `*_included`/`*_unbounded`
+    /// flags. When set, the field deserializes to this default if absent instead
+    /// of erroring, and is always re-emitted on serialize.
+    default: Option<String>,
 }
 
 enum FieldKind {
@@ -85,11 +90,13 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         let wire = field_rename(f)?
             .unwrap_or_else(|| ident.to_string().trim_start_matches("r#").to_string());
         let kind = classify(&f.ty);
+        let default = field_default(f)?;
         fields.push(FieldInfo {
             ident,
             wire,
             kind,
             ty: f.ty.clone(),
+            default,
         });
     }
 
@@ -151,12 +158,38 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         let s = de_bounds.join(", ");
         quote! { #[serde(bound(deserialize = #s))] }
     };
+    // Default-value helper fns for `Plain` fields the wire may omit (e.g. the
+    // `Interval` `*_included`/`*_unbounded` flags), injected into the shadow's
+    // const block so `#[serde(default = "…")]` can name them.
+    let default_fn_ident =
+        |f: &FieldInfo| format_ident!("__default_{}", f.ident.to_string().trim_start_matches("r#"));
+    let default_fns: Vec<proc_macro2::TokenStream> = fields
+        .iter()
+        .filter_map(|f| {
+            let lit = f.default.as_ref()?;
+            let fname = default_fn_ident(f);
+            let ty = &f.ty;
+            let val: proc_macro2::TokenStream = lit.parse().ok()?;
+            Some(quote! { fn #fname() -> #ty { #val } })
+        })
+        .collect();
+
     let shadow_fields = fields.iter().map(|f| {
         let id = &f.ident;
         let ty = &f.ty;
         let wire = &f.wire;
         // Every field is optional-with-default on the shadow so missing keys are
-        // tolerated; plain fields are then required back in the conversion.
+        // tolerated; plain fields are then required back in the conversion,
+        // unless the field carries an explicit default.
+        if let FieldKind::Plain = f.kind
+            && f.default.is_some()
+        {
+            let fname = default_fn_ident(f).to_string();
+            return quote! {
+                #[serde(rename = #wire, default = #fname)]
+                #id: #ty,
+            };
+        }
         match f.kind {
             FieldKind::Optional | FieldKind::Container => quote! {
                 #[serde(rename = #wire, default)]
@@ -171,6 +204,11 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let convert_fields = fields.iter().map(|f| {
         let id = &f.ident;
         let wire = &f.wire;
+        if let FieldKind::Plain = f.kind
+            && f.default.is_some()
+        {
+            return quote! { #id: shadow.#id, };
+        }
         match f.kind {
             FieldKind::Optional | FieldKind::Container => quote! {
                 #id: shadow.#id,
@@ -196,6 +234,8 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         }
 
         const _: () = {
+            #(#default_fns)*
+
             #[derive(::serde::Deserialize)]
             #[allow(non_camel_case_types, non_snake_case)]
             #shadow_bound_attr
@@ -259,22 +299,40 @@ fn openehr_type_name(input: &DeriveInput) -> syn::Result<LitStr> {
 
 /// Read an optional `#[openehr(rename = "...")]` on a field.
 fn field_rename(field: &syn::Field) -> syn::Result<Option<String>> {
-    let mut rename = None;
+    field_attr(field, "rename")
+}
+
+/// Read an optional `#[openehr(default = "<expr>")]` on a field — a literal Rust
+/// expression (`"true"`, `"false"`) used as the field's default when the wire
+/// omits it (kept as a string here; the derive parses it as tokens).
+fn field_default(field: &syn::Field) -> syn::Result<Option<String>> {
+    field_attr(field, "default")
+}
+
+/// Read a single string-valued `#[openehr(<key> = "...")]` field attribute,
+/// ignoring the other recognized keys (`rename`, `default`).
+fn field_attr(field: &syn::Field, key: &str) -> syn::Result<Option<String>> {
+    const KNOWN: &[&str] = &["rename", "default"];
+    let mut found = None;
     for attr in &field.attrs {
         if !attr.path().is_ident("openehr") {
             continue;
         }
         attr.parse_nested_meta(|meta| {
-            if meta.path.is_ident("rename") {
+            if meta.path.is_ident(key) {
                 let value = meta.value()?;
-                rename = Some(value.parse::<LitStr>()?.value());
+                found = Some(value.parse::<LitStr>()?.value());
+                Ok(())
+            } else if KNOWN.iter().any(|k| meta.path.is_ident(k)) {
+                // Recognized elsewhere; consume its value and skip.
+                let _ = meta.value()?.parse::<LitStr>()?;
                 Ok(())
             } else {
-                Err(meta.error("unknown openehr field attribute (expected `rename`)"))
+                Err(meta.error("unknown openehr field attribute (expected `rename`/`default`)"))
             }
         })?;
     }
-    Ok(rename)
+    Ok(found)
 }
 
 /// Classify a field type as `Option<_>`, `Vec<_>`, or plain by its head path.

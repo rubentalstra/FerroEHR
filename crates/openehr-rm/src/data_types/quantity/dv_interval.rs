@@ -18,11 +18,15 @@ pub struct DvInterval<T> {
     /// Upper bound.
     pub upper: Option<T>,
     /// True if `_lower_` boundary open (i.e. = `-infinity`).
+    #[openehr(default = "false")]
     pub lower_unbounded: bool,
     /// True if `_upper_` boundary open (i.e. = `+infinity`).
+    #[openehr(default = "false")]
     pub upper_unbounded: bool,
     /// True if `_lower_` boundary value included in range, if `not _lower_unbounded_`.
+    #[openehr(default = "true")]
     pub lower_included: bool,
     /// True if `_upper_` boundary value included in range if `not _upper_unbounded_`.
+    #[openehr(default = "true")]
     pub upper_included: bool,
 }

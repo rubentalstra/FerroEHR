@@ -10,7 +10,7 @@ use crate::am14::aom14::archetype::assertion::expr_unary_operator::ExprUnaryOper
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ExprItem {
-    ExprBinaryOperator(ExprBinaryOperator),
+    ExprBinaryOperator(Box<ExprBinaryOperator>),
     ExprLeaf(ExprLeaf),
-    ExprUnaryOperator(ExprUnaryOperator),
+    ExprUnaryOperator(Box<ExprUnaryOperator>),
 }

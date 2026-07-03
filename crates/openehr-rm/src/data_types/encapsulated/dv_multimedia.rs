@@ -20,13 +20,13 @@ pub struct DvMultimedia {
     /// URI reference to electronic information stored outside the record as a file, database entry etc, if supplied as a reference.
     pub uri: Option<DvUri>,
     /// The actual data found at `_uri_`, if supplied inline.
-    pub data: Vec<u8>,
+    pub data: Option<String>,
     /// Data media type coded from openEHR code set  media types  (interface for the IANA MIME types code set).
     pub media_type: CodePhrase,
     /// Compression type, a coded value from the openEHR Integrity check code set. Void means no compression.
     pub compression_algorithm: Option<CodePhrase>,
     /// Binary cryptographic integrity checksum.
-    pub integrity_check: Vec<u8>,
+    pub integrity_check: Option<String>,
     /// Type of integrity check, a coded value from the openEHR `Integrity check` code set.
     pub integrity_check_algorithm: Option<CodePhrase>,
     /// The thumbnail for this item, if one exists; mainly for graphics formats.

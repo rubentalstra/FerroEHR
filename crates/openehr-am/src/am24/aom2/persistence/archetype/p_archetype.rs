@@ -2,8 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use crate::am24::aom2::persistence::archetype::p_authored_archetype::PAuthoredArchetype;
-use crate::am24::aom2::persistence::archetype::p_operational_template::POperationalTemplate;
-use crate::am24::aom2::persistence::archetype::p_template::PTemplate;
 
 /// Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.
 ///
@@ -13,6 +11,4 @@ use crate::am24::aom2::persistence::archetype::p_template::PTemplate;
 #[serde(untagged)]
 pub enum PArchetype {
     PAuthoredArchetype(PAuthoredArchetype),
-    POperationalTemplate(POperationalTemplate),
-    PTemplate(PTemplate),
 }

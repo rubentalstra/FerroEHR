@@ -11,8 +11,8 @@ use crate::data_structures::item_structure::item_tree::ItemTree;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ItemStructure {
-    ItemList(ItemList),
-    ItemSingle(ItemSingle),
-    ItemTable(ItemTable),
-    ItemTree(ItemTree),
+    ItemList(Box<ItemList>),
+    ItemSingle(Box<ItemSingle>),
+    ItemTable(Box<ItemTable>),
+    ItemTree(Box<ItemTree>),
 }

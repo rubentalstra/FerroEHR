@@ -5,14 +5,10 @@ use crate::bmm_persistence::p_bmm_class::PBmmClass;
 use crate::bmm_persistence::p_bmm_constant::PBmmConstant;
 use crate::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter;
 use crate::bmm_persistence::p_bmm_container_property::PBmmContainerProperty;
-use crate::bmm_persistence::p_bmm_enumeration::PBmmEnumeration;
-use crate::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger;
-use crate::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString;
 use crate::bmm_persistence::p_bmm_function::PBmmFunction;
 use crate::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter;
 use crate::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty;
-use crate::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty;
 use crate::bmm_persistence::p_bmm_interface::PBmmInterface;
 use crate::bmm_persistence::p_bmm_package::PBmmPackage;
 use crate::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter;
@@ -29,14 +25,10 @@ pub enum PBmmModelElement {
     PBmmConstant(PBmmConstant),
     PBmmContainerFunctionParameter(PBmmContainerFunctionParameter),
     PBmmContainerProperty(PBmmContainerProperty),
-    PBmmEnumeration(PBmmEnumeration),
-    PBmmEnumerationInteger(PBmmEnumerationInteger),
-    PBmmEnumerationString(PBmmEnumerationString),
     PBmmFunction(PBmmFunction),
     PBmmGenericFunctionParameter(PBmmGenericFunctionParameter),
     PBmmGenericParameter(PBmmGenericParameter),
     PBmmGenericProperty(PBmmGenericProperty),
-    PBmmIndexedContainerProperty(PBmmIndexedContainerProperty),
     PBmmInterface(PBmmInterface),
     PBmmPackage(PBmmPackage),
     PBmmSingleFunctionParameter(PBmmSingleFunctionParameter),

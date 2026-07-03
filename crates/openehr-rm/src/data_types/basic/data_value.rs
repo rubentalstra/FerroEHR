@@ -17,12 +17,10 @@ use crate::data_types::quantity::dv_ordinal::DvOrdinal;
 use crate::data_types::quantity::dv_proportion::DvProportion;
 use crate::data_types::quantity::dv_quantity::DvQuantity;
 use crate::data_types::quantity::dv_scale::DvScale;
-use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_paragraph::DvParagraph;
 use crate::data_types::text::dv_text::DvText;
 use crate::data_types::time_specification::dv_general_time_specification::DvGeneralTimeSpecification;
 use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
-use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
 use crate::data_types::uri::dv_uri::DvUri;
 
 /// Abstract parent of all `DV_` data value types.
@@ -31,12 +29,10 @@ use crate::data_types::uri::dv_uri::DvUri;
 #[serde(untagged)]
 pub enum DataValue {
     DvBoolean(DvBoolean),
-    DvCodedText(DvCodedText),
     DvCount(DvCount),
     DvDate(DvDate),
     DvDateTime(DvDateTime),
     DvDuration(DvDuration),
-    DvEhrUri(DvEhrUri),
     DvGeneralTimeSpecification(DvGeneralTimeSpecification),
     DvIdentifier(DvIdentifier),
     DvInterval(DvInterval<DvOrdered>),

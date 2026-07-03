@@ -9,6 +9,6 @@ use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum BmmRoutine {
-    BmmFunction(BmmFunction),
+    BmmFunction(Box<BmmFunction>),
     BmmProcedure(BmmProcedure),
 }

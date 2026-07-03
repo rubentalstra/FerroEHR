@@ -3,7 +3,6 @@
 use serde::{Deserialize, Serialize};
 use crate::bmm_persistence::p_bmm_container_property::PBmmContainerProperty;
 use crate::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty;
-use crate::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty;
 use crate::bmm_persistence::p_bmm_single_property::PBmmSingleProperty;
 use crate::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen;
 
@@ -14,7 +13,6 @@ use crate::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen;
 pub enum PBmmProperty {
     PBmmContainerProperty(PBmmContainerProperty),
     PBmmGenericProperty(PBmmGenericProperty),
-    PBmmIndexedContainerProperty(PBmmIndexedContainerProperty),
     PBmmSingleProperty(PBmmSingleProperty),
     PBmmSinglePropertyOpen(PBmmSinglePropertyOpen),
 }

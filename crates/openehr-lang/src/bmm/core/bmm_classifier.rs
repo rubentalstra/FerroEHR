@@ -3,22 +3,12 @@
 use serde::{Deserialize, Serialize};
 use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
-use crate::bmm3::core::entity::bmm_function_type::BmmFunctionType;
-use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
 use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
-use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
 use crate::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
-use crate::bmm3::core::entity::bmm_procedure_type::BmmProcedureType;
-use crate::bmm3::core::entity::bmm_property_type::BmmPropertyType;
-use crate::bmm3::core::entity::bmm_routine_type::BmmRoutineType;
 use crate::bmm3::core::entity::bmm_signature::BmmSignature;
-use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
 use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
 use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString;
 use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
 use crate::bmm::core::bmm_open_type::BmmOpenType;
 
@@ -29,21 +19,11 @@ use crate::bmm::core::bmm_open_type::BmmOpenType;
 pub enum BmmClassifier {
     BmmClass(BmmClass),
     BmmContainerType(BmmContainerType),
-    BmmEnumeration(BmmEnumeration),
-    BmmEnumerationInteger(BmmEnumerationInteger),
-    BmmEnumerationString(BmmEnumerationString),
-    BmmFunctionType(BmmFunctionType),
-    BmmGenericClass(BmmGenericClass),
     BmmGenericParameter(BmmGenericParameter),
     BmmGenericType(BmmGenericType),
-    BmmIndexedContainerType(BmmIndexedContainerType),
     BmmOpenType(BmmOpenType),
     BmmParameterType(BmmParameterType),
-    BmmProcedureType(BmmProcedureType),
-    BmmPropertyType(BmmPropertyType),
-    BmmRoutineType(BmmRoutineType),
     BmmSignature(BmmSignature),
-    BmmSimpleClass(BmmSimpleClass),
     BmmSimpleType(BmmSimpleType),
     BmmStatusType(BmmStatusType),
     BmmTupleType(BmmTupleType),

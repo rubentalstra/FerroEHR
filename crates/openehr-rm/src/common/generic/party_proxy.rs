@@ -2,7 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use crate::common::generic::party_identified::PartyIdentified;
-use crate::common::generic::party_related::PartyRelated;
 use crate::common::generic::party_self::PartySelf;
 
 /// Abstract concept of a proxy description of a party, including an optional link to data for this party in a demographic or other identity management system. Sub- typed into `PARTY_IDENTIFIED` and `PARTY_SELF`.
@@ -11,6 +10,5 @@ use crate::common::generic::party_self::PartySelf;
 #[serde(untagged)]
 pub enum PartyProxy {
     PartyIdentified(PartyIdentified),
-    PartyRelated(PartyRelated),
     PartySelf(PartySelf),
 }

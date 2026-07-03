@@ -14,11 +14,11 @@ use crate::beom::core::expr_variable_ref::ExprVariableRef;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Expression {
-    ExprBinaryOperator(ExprBinaryOperator),
-    ExprForAll(ExprForAll),
+    ExprBinaryOperator(Box<ExprBinaryOperator>),
+    ExprForAll(Box<ExprForAll>),
     ExprFunctionCall(ExprFunctionCall),
     ExprLiteral(ExprLiteral),
-    ExprUnaryOperator(ExprUnaryOperator),
+    ExprUnaryOperator(Box<ExprUnaryOperator>),
     ExprValueRef(ExprValueRef),
     ExprVariableRef(ExprVariableRef),
 }

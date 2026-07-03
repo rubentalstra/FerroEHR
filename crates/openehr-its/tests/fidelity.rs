@@ -56,10 +56,59 @@ fn deserialize_as(ty: &str, json: &str) -> Result<(), String> {
     }
 }
 
+/// Corpus files that are **not** canonical RM 1.2 objects, with the reason each
+/// is out of scope for this gate. They are excluded, not silently skipped — the
+/// gate still fails if a file *not* listed here fails to read. (Same discipline
+/// as the AQL example-corpus exclusions.) Keyed by the trailing path.
+///
+/// None of these reflect a defect in the generated types: they are either a
+/// different serialization (raw-DB / ITS-REST request), deliberately invalid,
+/// malformed, or RM-1.1-era data that omits fields RM 1.2 made mandatory.
+fn excluded(name: &str) -> Option<&'static str> {
+    // Normalize path separators for matching on any platform, and drop the
+    // corpus-root prefix so keys are relative to the openEHR_SDK tree.
+    let n = name.replace('\\', "/");
+    let n = n.strip_prefix("openehr_sdk/").unwrap_or(&n);
+    let reason = |r| Some(r);
+    match n {
+        // Path-keyed `content` map (ethercis raw-DB / flat form), not canonical.
+        "composition/canonical_json/rawdb_composition.json"
+        | "composition/canonical_json/composition_with_dvinterval_composite.json" => {
+            reason("not canonical JSON: `content` is a path-keyed map (raw-DB/flat form)")
+        }
+        // Deliberately invalid fixture (`EVENT_CONTEXT_WRONG`) — a negative test.
+        "composition/canonical_json/invalid.json" => {
+            reason("deliberately invalid fixture (a wrong `_type`), a negative test")
+        }
+        // ITS-REST contribution *request* bodies: `versions` holds full
+        // `ORIGINAL_VERSION`s, whereas RM `CONTRIBUTION.versions` is `Set<OBJECT_REF>`.
+        // These belong to the REST DTO layer, not the RM canonical gate.
+        "contribution/canonical_json/contribution-one_entry-composition.json"
+        | "contribution/canonical_json/contribution-two_entries-composition.json" => reason(
+            "ITS-REST contribution request shape (versions = ORIGINAL_VERSION, not OBJECT_REF)",
+        ),
+        // Malformed: a `DV_TEXT` whose value is under a `name` key instead of `value`.
+        "folder/canonical_json/folder_without_duplicates.json" => {
+            reason("malformed fixture: a DV_TEXT carries its text under `name` instead of `value`")
+        }
+        // RM-1.1-era EHRbase output that omits fields RM 1.2 makes mandatory on
+        // LOCATABLE. Deserialization is strict here; leniency is a validation-layer
+        // concern (P11). Tracked as the RM 1.1↔1.2 divergence (docs/VERSIONS.md).
+        "folder/canonical_json/simple_empty_folder.json" => {
+            reason("RM 1.1-era: FOLDER omits mandatory LOCATABLE.archetype_node_id (RM 1.2)")
+        }
+        "item_structure/canonical_json/ehr_other_details.json" => {
+            reason("RM 1.1-era: ITEM_TREE omits mandatory LOCATABLE.name (RM 1.2)")
+        }
+        _ => None,
+    }
+}
+
 #[test]
 fn generated_rm_reads_the_openehr_sdk_corpus() {
     let mut ok = 0;
     let mut skipped = 0;
+    let mut excluded_count = 0;
     let mut failures: Vec<(String, String)> = Vec::new();
 
     for path in corpus_files() {
@@ -69,6 +118,11 @@ fn generated_rm_reads_the_openehr_sdk_corpus() {
             .unwrap_or(&path)
             .display()
             .to_string();
+        if let Some(reason) = excluded(&name) {
+            println!("excluded {name}: {reason}");
+            excluded_count += 1;
+            continue;
+        }
         // Only canonical single-RM-object roots (a top-level `_type`).
         let Ok(serde_json::Value::Object(map)) = serde_json::from_str::<serde_json::Value>(&txt)
         else {
@@ -86,7 +140,8 @@ fn generated_rm_reads_the_openehr_sdk_corpus() {
     }
 
     println!(
-        "openEHR_SDK corpus: {ok} read OK, {skipped} skipped (non-canonical-root), {} failed",
+        "openEHR_SDK corpus: {ok} read OK, {skipped} skipped (non-canonical-root), \
+         {excluded_count} excluded (documented), {} failed",
         failures.len()
     );
     for (f, e) in failures.iter().take(30) {
@@ -95,7 +150,7 @@ fn generated_rm_reads_the_openehr_sdk_corpus() {
     assert!(ok > 0, "no corpus files were read");
     assert!(
         failures.is_empty(),
-        "{} corpus file(s) failed to deserialize into the generated RM types",
+        "{} canonical corpus file(s) failed to deserialize into the generated RM types",
         failures.len()
     );
 }

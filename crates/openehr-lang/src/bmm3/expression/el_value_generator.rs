@@ -15,12 +15,12 @@ use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ElValueGenerator {
-    ElFunctionAgent(ElFunctionAgent),
-    ElFunctionCall(ElFunctionCall),
-    ElProcedureAgent(ElProcedureAgent),
-    ElPropertyRef(ElPropertyRef),
+    ElFunctionAgent(Box<ElFunctionAgent>),
+    ElFunctionCall(Box<ElFunctionCall>),
+    ElProcedureAgent(Box<ElProcedureAgent>),
+    ElPropertyRef(Box<ElPropertyRef>),
     ElReadonlyVariable(ElReadonlyVariable),
-    ElStaticRef(ElStaticRef),
+    ElStaticRef(Box<ElStaticRef>),
     ElTypeRef(ElTypeRef),
     ElWritableVariable(ElWritableVariable),
 }

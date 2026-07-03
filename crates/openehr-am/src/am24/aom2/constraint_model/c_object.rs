@@ -2,7 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use crate::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
-use crate::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
 use crate::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use crate::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
 use crate::am24::aom2::constraint_model::primitive::c_boolean::CBoolean;
@@ -21,7 +20,6 @@ use crate::am24::aom2::constraint_model::primitive::c_time::CTime;
 #[serde(untagged)]
 pub enum CObject {
     ArchetypeSlot(ArchetypeSlot),
-    CArchetypeRoot(CArchetypeRoot),
     CBoolean(CBoolean),
     CComplexObject(CComplexObject),
     CComplexObjectProxy(CComplexObjectProxy),

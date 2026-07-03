@@ -19,7 +19,7 @@ pub struct BmmIndexedContainerType {
     /// The type of the container. This converts to the root_type in BMM_GENERIC_TYPE.
     pub container_type: BmmClass,
     /// The target type; this converts to the first parameter in generic_parameters in BMM_GENERIC_TYPE.
-    pub base_type: Box<BmmType>,
+    pub base_type: BmmType,
     /// The key (index) type of the container, e.g. `String` in `Hash<String,EVENT_ACTION>`.
     pub index_type: BmmSimpleType,
 }

@@ -35,7 +35,7 @@ pub struct PTemplate {
     /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
     pub original_language: String,
     /// Description and lifecycle information of the resource.
-    pub description: Option<Box<ResourceDescription>>,
+    pub description: Option<ResourceDescription>,
     /// True if this resource is under any kind of change control (even file copying), in which case revision history is created.
     pub is_controlled: Option<bool>,
     /// Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.

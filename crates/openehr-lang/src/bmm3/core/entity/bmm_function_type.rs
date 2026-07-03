@@ -16,7 +16,7 @@ pub struct BmmFunctionType {
 
     // inherited: BMM_SIGNATURE
     /// Result type of signature.
-    pub result_type: Box<BmmType>,
+    pub result_type: BmmType,
 
     // inherited: BMM_ROUTINE_TYPE
     /// Type of arguments in the signature, if any; represented as a type-tuple (list of arbitrary types).

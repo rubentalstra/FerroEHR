@@ -2,7 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use crate::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
-use crate::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
 use crate::am24::aom2::constraint_model::c_attribute::CAttribute;
 use crate::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use crate::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
@@ -21,18 +20,17 @@ use crate::am24::aom2::constraint_model::primitive::c_time::CTime;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ArchetypeConstraint {
-    ArchetypeSlot(ArchetypeSlot),
-    CArchetypeRoot(CArchetypeRoot),
-    CAttribute(CAttribute),
-    CBoolean(CBoolean),
-    CComplexObject(CComplexObject),
-    CComplexObjectProxy(CComplexObjectProxy),
-    CDate(CDate),
-    CDateTime(CDateTime),
-    CDuration(CDuration),
-    CInteger(CInteger),
-    CReal(CReal),
-    CString(CString),
-    CTerminologyCode(CTerminologyCode),
-    CTime(CTime),
+    ArchetypeSlot(Box<ArchetypeSlot>),
+    CAttribute(Box<CAttribute>),
+    CBoolean(Box<CBoolean>),
+    CComplexObject(Box<CComplexObject>),
+    CComplexObjectProxy(Box<CComplexObjectProxy>),
+    CDate(Box<CDate>),
+    CDateTime(Box<CDateTime>),
+    CDuration(Box<CDuration>),
+    CInteger(Box<CInteger>),
+    CReal(Box<CReal>),
+    CString(Box<CString>),
+    CTerminologyCode(Box<CTerminologyCode>),
+    CTime(Box<CTime>),
 }

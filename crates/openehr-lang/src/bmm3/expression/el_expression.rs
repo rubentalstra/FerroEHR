@@ -26,8 +26,8 @@ use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
 #[serde(untagged)]
 pub enum ElExpression {
     ElAttached(ElAttached),
-    ElBinaryOperator(ElBinaryOperator),
-    ElBooleanExpression(ElBooleanExpression),
+    ElBinaryOperator(Box<ElBinaryOperator>),
+    ElBooleanExpression(Box<ElBooleanExpression>),
     ElCaseTable(ElCaseTable<ElTerminal>),
     ElConditionChain(ElConditionChain<ElTerminal>),
     ElDefined(ElDefined),
@@ -40,6 +40,6 @@ pub enum ElExpression {
     ElStaticRef(ElStaticRef),
     ElTuple(ElTuple),
     ElTypeRef(ElTypeRef),
-    ElUnaryOperator(ElUnaryOperator),
+    ElUnaryOperator(Box<ElUnaryOperator>),
     ElWritableVariable(ElWritableVariable),
 }

@@ -190,11 +190,18 @@ impl Model {
         false
     }
 
-    /// Concrete, emittable descendants of `name` (for enum slots). Generic
-    /// descendants are included — the enum is emitted generic over the abstract
-    /// class's own params (e.g. `Event<T> { PointEvent(PointEvent<T>), … }`).
+    /// The *immediate* concrete, emittable subtypes of `name` — the variants of
+    /// its untagged enum. Generic descendants are included (the enum is emitted
+    /// generic over the class's own params, `Event<T> { PointEvent(PointEvent<T>) }`).
+    ///
+    /// A descendant `D` is dropped when another concrete descendant `C` sits
+    /// between `name` and `D`, because `C` is itself emitted as an enum that
+    /// covers `D` — so the enums nest by the type hierarchy (`DATA_VALUE ⊇ DvText`,
+    /// `DvText ⊇ DvCodedText`) instead of `DATA_VALUE` flatly listing both
+    /// `DV_TEXT` and `DV_CODED_TEXT` (which would double-match on the wire).
     fn enum_variants(&self, name: &str) -> Vec<String> {
-        self.classes
+        let all: Vec<String> = self
+            .classes
             .values()
             .filter(|c| {
                 !c.is_abstract
@@ -203,6 +210,13 @@ impl Model {
                     && self.inherits(&c.name, name)
             })
             .map(|c| c.name.clone())
+            .collect();
+        all.iter()
+            .filter(|d| {
+                !all.iter()
+                    .any(|c| c.as_str() != d.as_str() && self.inherits(d, c))
+            })
+            .cloned()
             .collect()
     }
 
@@ -615,7 +629,14 @@ pub struct GenFile {
 /// What to emit for a class.
 enum Emission<'a> {
     Struct,
+    /// Untagged enum for an *abstract* polymorphic slot: one variant per
+    /// immediate concrete subtype (the abstract class itself is not instantiable).
     Enum(Vec<String>),
+    /// Untagged enum for a *concrete* class that also has subtypes
+    /// (`DV_TEXT` → `DV_CODED_TEXT`): a field typed as the parent accepts either.
+    /// Emits a `{Name}Data` struct for the class's own instances plus a `{Name}`
+    /// enum over `{Name}Data` and each immediate concrete subtype.
+    PolyEnum(Vec<String>),
     /// Transparent newtype over a Rust primitive (an enumeration-of-strings, …).
     Newtype(&'a str),
     Skip,
@@ -644,8 +665,15 @@ fn decide<'a>(model: &Model, class: &'a BmmClass, used: &BTreeSet<String>) -> Em
             Emission::Skip
         }
     } else {
-        // Concrete: a 0-field class whose sole ancestor is a primitive is an
-        // enumeration-style newtype (VALIDITY_KIND → String).
+        // Concrete but with its own concrete subtypes: a field typed as this
+        // class accepts the subtype too (`DV_TEXT` holds a `DV_CODED_TEXT`, a
+        // coded name), so emit a polymorphic enum plus the `{Name}Data` struct.
+        let variants = model.enum_variants(&class.name);
+        if !variants.is_empty() {
+            return Emission::PolyEnum(variants);
+        }
+        // Concrete leaf: a 0-field class whose sole ancestor is a primitive is
+        // an enumeration-style newtype (VALIDITY_KIND → String).
         let flattened = model.flattened_props(class);
         if flattened.is_empty()
             && class.ancestors.len() == 1
@@ -721,7 +749,10 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
         let body = match &p.emission {
             Emission::Struct => emit_struct(model, p.class, &index, &local, external),
             Emission::Enum(variants) => {
-                emit_enum(model, p.class, variants, &index, &local, external)
+                emit_enum(model, p.class, variants, false, &index, &local, external)
+            }
+            Emission::PolyEnum(variants) => {
+                emit_enum(model, p.class, variants, true, &index, &local, external)
             }
             Emission::Newtype(prim) => emit_newtype(p.class, prim),
             Emission::Skip => unreachable!(),
@@ -911,27 +942,50 @@ fn emit_struct(
     external: &External,
 ) -> String {
     let ty = naming::type_name(&class.name);
-    // Only the params actually used in fields (see `used_generic_params`).
-    let generics: Vec<String> = model
-        .used_generic_params(&class.name)
-        .into_iter()
-        .map(|(name, _)| name)
-        .collect();
-    let gen_decl = if generics.is_empty() {
-        String::new()
-    } else {
-        format!("<{}>", generics.join(", "))
-    };
-    // Ancestor-generic bindings the BMM dropped (`T` → `Integer`/`COMPOSITION`).
+    let generics = struct_generics(model, class);
     let subst = class_binding(&class.name);
 
     let mut b = String::new();
     let imports = import_lines(model, class, &generics, &subst, &ty, index, external);
     struct_header(&mut b, &class.name, &imports);
+    b.push_str(&render_struct_def(
+        model, class, &ty, &generics, &subst, local, external,
+    ));
+    b
+}
+
+/// The params a struct is generic over (see `used_generic_params`).
+fn struct_generics(model: &Model, class: &BmmClass) -> Vec<String> {
+    model
+        .used_generic_params(&class.name)
+        .into_iter()
+        .map(|(name, _)| name)
+        .collect()
+}
+
+/// The struct definition (doc, derive, fields) under the name `struct_ty`,
+/// without the file header. `struct_ty` is normally `type_name(class)`, but a
+/// polymorphic-concrete class emits its own instances as `{Name}Data` (the
+/// enum owns `{Name}`). The canonical `_type` stays the class name either way.
+fn render_struct_def(
+    model: &Model,
+    class: &BmmClass,
+    struct_ty: &str,
+    generics: &[String],
+    subst: &BTreeMap<String, String>,
+    local: &BTreeSet<String>,
+    external: &External,
+) -> String {
+    let gen_decl = if generics.is_empty() {
+        String::new()
+    } else {
+        format!("<{}>", generics.join(", "))
+    };
+    let mut b = String::new();
     doc_block(&mut b, class.documentation.as_deref(), "");
     b.push_str("#[derive(Debug, Clone, PartialEq, OpenEhrType)]\n");
     b.push_str(&format!("#[openehr(type_name = \"{}\")]\n", class.name));
-    b.push_str(&format!("pub struct {ty}{gen_decl} {{\n"));
+    b.push_str(&format!("pub struct {struct_ty}{gen_decl} {{\n"));
 
     let props = model.flattened_props(class);
     let mut prev_owner: Option<&str> = None;
@@ -947,7 +1001,10 @@ fn emit_struct(
         if let Some(rename) = naming::serde_rename(&p.name, &ident) {
             b.push_str(&format!("    #[openehr(rename = \"{rename}\")]\n"));
         }
-        let rust_ty = field_type(model, class, p, &generics, &subst, local, external);
+        if let Some(default) = field_default(&rp.owner, &p.name) {
+            b.push_str(&format!("    #[openehr(default = \"{default}\")]\n"));
+        }
+        let rust_ty = field_type(model, class, p, generics, subst, local, external);
         b.push_str(&format!("    pub {ident}: {rust_ty},\n"));
     }
 
@@ -966,6 +1023,22 @@ fn type_override(class: &str, field: &str) -> Option<&'static str> {
         // A UUID is an RFC-4122 canonical UUID — use the `uuid` crate directly.
         // (ISO_OID / INTERNET_ID / OBJECT_VERSION_ID are *not* plain UUIDs.)
         ("UUID", "value") => Some("uuid::Uuid"),
+        _ => None,
+    }
+}
+
+/// A serde default for a field the canonical wire may omit, keyed by the field's
+/// declaring class (`owner`) and name. `Interval`'s inclusivity/boundedness
+/// flags are mandatory in the BMM but archie/EHRbase omit them: a bounded limit
+/// is *included* by default, and an unstated limit is *bounded* by default.
+/// The value is a literal Rust expression consumed by `#[openehr(default = …)]`.
+fn field_default(owner: &str, field: &str) -> Option<&'static str> {
+    if owner != "Interval" {
+        return None;
+    }
+    match field {
+        "lower_included" | "upper_included" => Some("true"),
+        "lower_unbounded" | "upper_unbounded" => Some("false"),
         _ => None,
     }
 }
@@ -1016,6 +1089,18 @@ fn field_type(
             }
         }
         BmmPropKind::Container { item, .. } => {
+            // A byte buffer (`Array<Octet>` / `List<Octet>`, e.g.
+            // `DV_MULTIMEDIA.data`) is inline base64 *text* on the canonical
+            // wire, not a JSON array — carry the base64 verbatim as a `String`
+            // (decoding is a behaviour-layer concern), like other broader-than-a-
+            // crate openEHR types. Optionality follows the property.
+            if item.root_name() == "Octet" {
+                return if p.is_mandatory {
+                    "String".to_string()
+                } else {
+                    "Option<String>".to_string()
+                };
+            }
             format!(
                 "Vec<{}>",
                 model.render_type(item, generics, subst, local, external)
@@ -1028,6 +1113,7 @@ fn emit_enum(
     model: &Model,
     class: &BmmClass,
     variants: &[String],
+    self_data: bool,
     index: &BTreeMap<String, Vec<String>>,
     local: &BTreeSet<String>,
     external: &External,
@@ -1071,20 +1157,18 @@ fn emit_enum(
                     external,
                 )
             };
-            // Box a variant whose payload embeds the enum type by value — a
-            // recursive subtype family (`EL_TERMINAL` ⊇ `EL_CASE_TABLE<EL_TERMINAL>`
-            // whose bound-filled `T` is `EL_TERMINAL` again) is otherwise
-            // infinitely sized. A `Vec`/map payload already breaks the cycle.
+            // Box a variant that would make the enum infinitely sized: either
+            // the payload embeds the enum type by value via a bound-filled arg
+            // (`EL_TERMINAL` ⊇ `EL_CASE_TABLE<EL_TERMINAL>`), or the variant's
+            // own fields reach back to the enum (`BMM_TYPE` ⊇ `BMM_CONTAINER_TYPE`
+            // whose `base_type` is a `BMM_TYPE`). A `Vec`/map payload already
+            // breaks the cycle.
             let already_indirect =
                 payload.starts_with("Vec<") || payload.starts_with("std::collections::");
             let cyclic = !already_indirect && {
                 let mut roots = BTreeSet::new();
                 model.effective_roots(&BmmType::Simple(d.clone()), &mut roots);
-                roots.iter().any(|r| {
-                    !Model::is_mapped(r)
-                        && r != d
-                        && (r == &class.name || model.reaches(r, &class.name, &mut BTreeSet::new()))
-                })
+                roots.contains(&class.name) || model.reaches(d, &class.name, &mut BTreeSet::new())
             };
             let payload = if cyclic {
                 format!("Box<{payload}>")
@@ -1094,6 +1178,22 @@ fn emit_enum(
             (variant, payload)
         })
         .collect();
+
+    // A polymorphic *concrete* class also carries its own instances: append a
+    // `{Name}({Name}Data)` variant last (least-rich, so richer subtypes match
+    // first on the untagged wire), and emit the `{Name}Data` struct in-file.
+    let data_ty = format!("{ty}Data");
+    let data_generics = struct_generics(model, class);
+    let data_subst = class_binding(&class.name);
+    let mut payloads = payloads;
+    if self_data {
+        let data_payload = if data_generics.is_empty() {
+            data_ty.clone()
+        } else {
+            format!("{data_ty}<{}>", data_generics.join(", "))
+        };
+        payloads.push((ty.clone(), data_payload));
+    }
 
     // Imports: every emittable spec type each payload embeds. For a variant
     // threaded over the enum's own params (`IntervalEvent<T>`) that is just the
@@ -1113,10 +1213,70 @@ fn emit_enum(
             add_import(&mut imports, &r, &ty, index, external);
         }
     }
-    enum_header(&mut b, &class.name, &imports);
-    doc_block(&mut b, class.documentation.as_deref(), "");
+    // The in-file `{Name}Data` struct pulls in imports for the class's own fields.
+    if self_data {
+        imports.extend(
+            model
+                .referenced_specs(class, &data_generics, &data_subst)
+                .iter()
+                .filter_map(|spec| {
+                    let ident = naming::type_name(spec);
+                    if ident == ty {
+                        return None;
+                    }
+                    if let Some(chain) = index.get(&ident) {
+                        Some(format!("use crate::{}::{};", chain.join("::"), ident))
+                    } else {
+                        external
+                            .prelude_of(spec)
+                            .map(|path| format!("use {path}::{ident};"))
+                    }
+                }),
+        );
+    }
+
+    // Header: an untagged enum uses serde derives; a polymorphic-concrete file
+    // also emits an `OpenEhrType` struct, so it needs that import too.
     b.push_str(&format!(
-        "/// Closed subtype set of `{}` (ADR-004): dispatched on each payload's `_type`.\n",
+        "// @generated by openehr-codegen from BMM (`{}`) — DO NOT EDIT.\n",
+        class.name
+    ));
+    if self_data {
+        b.push_str("// Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).\n");
+    }
+    b.push('\n');
+    b.push_str("use serde::{Deserialize, Serialize};\n");
+    if self_data {
+        b.push_str("use openehr_derive::OpenEhrType;\n");
+    }
+    for imp in &imports {
+        b.push_str(imp);
+        b.push('\n');
+    }
+    b.push('\n');
+
+    // The `{Name}Data` struct (the class's own instances) precedes the enum.
+    if self_data {
+        b.push_str(&render_struct_def(
+            model,
+            class,
+            &data_ty,
+            &data_generics,
+            &data_subst,
+            local,
+            external,
+        ));
+        b.push('\n');
+    }
+
+    doc_block(&mut b, class.documentation.as_deref(), "");
+    let slot = if self_data {
+        "Polymorphic slot"
+    } else {
+        "Closed subtype set"
+    };
+    b.push_str(&format!(
+        "/// {slot} of `{}` (ADR-004): dispatched on each payload's `_type`.\n",
         class.name
     ));
     b.push_str("#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n");
@@ -1190,18 +1350,6 @@ fn struct_header(b: &mut String, class: &str, imports: &BTreeSet<String>) {
         "// @generated by openehr-codegen from BMM (`{class}`) — DO NOT EDIT.\n\
          // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).\n\n\
          use openehr_derive::OpenEhrType;\n"
-    ));
-    for imp in imports {
-        b.push_str(imp);
-        b.push('\n');
-    }
-    b.push('\n');
-}
-
-fn enum_header(b: &mut String, class: &str, imports: &BTreeSet<String>) {
-    b.push_str(&format!(
-        "// @generated by openehr-codegen from BMM (`{class}`) — DO NOT EDIT.\n\n\
-         use serde::{{Deserialize, Serialize}};\n"
     ));
     for imp in imports {
         b.push_str(imp);

@@ -15,5 +15,5 @@ pub struct BmmPropertyType {
 
     // inherited: BMM_SIGNATURE
     /// Result type of signature.
-    pub result_type: Box<BmmType>,
+    pub result_type: BmmType,
 }

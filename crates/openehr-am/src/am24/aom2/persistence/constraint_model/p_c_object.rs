@@ -2,7 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use crate::am24::aom2::persistence::constraint_model::p_archetype_slot::PArchetypeSlot;
-use crate::am24::aom2::persistence::constraint_model::p_c_archetype_root::PCArchetypeRoot;
 use crate::am24::aom2::persistence::constraint_model::p_c_complex_object::PCComplexObject;
 use crate::am24::aom2::persistence::constraint_model::p_c_complex_object_proxy::PCComplexObjectProxy;
 use crate::am24::aom2::persistence::primitive::p_c_boolean::PCBoolean;
@@ -15,7 +14,6 @@ use crate::am24::aom2::persistence::primitive::p_c_terminology_code::PCTerminolo
 #[serde(untagged)]
 pub enum PCObject {
     PArchetypeSlot(PArchetypeSlot),
-    PCArchetypeRoot(PCArchetypeRoot),
     PCBoolean(PCBoolean),
     PCComplexObject(PCComplexObject),
     PCComplexObjectProxy(PCComplexObjectProxy),

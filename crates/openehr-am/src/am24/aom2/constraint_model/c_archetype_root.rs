@@ -26,7 +26,7 @@ pub struct CArchetypeRoot {
 
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.
-    pub parent: Option<Box<ArchetypeConstraint>>,
+    pub parent: Option<ArchetypeConstraint>,
     pub soc_parent: Option<CSecondOrder>,
 
     // inherited: C_OBJECT
