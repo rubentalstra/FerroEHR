@@ -58,16 +58,47 @@ pub struct Interval<T: Ordered> {
     pub upper: Option<T>,
     /// `lower_unbounded`: `Boolean` (1..1). `lower` boundary open (i.e. =
     /// -infinity).
+    ///
+    /// PORT NOTE (deserialization leniency, interop-justified): `#[serde(default)]`
+    /// (→ `false`). The spec marks this `1..1`, but real openEHR canonical
+    /// JSON produced by the openEHR reference library `archie` (which EHRbase
+    /// uses) OMITS the four interval boolean flags when they equal their
+    /// defaults, because `archie`'s `Interval` declares
+    /// `boolean lowerUnbounded = false; ... boolean lowerIncluded = true;`
+    /// and serializes with default-value omission. The `Point_interval<T>`
+    /// spec class independently sanctions exactly these defaults
+    /// (`{default = false}` for the `unbounded` pair, `{default = true}` for
+    /// the `included` pair). So a `DV_INTERVAL` on the wire that omits these
+    /// flags is legitimate real-world data whose intended value is the
+    /// default; defaulting on read makes us able to consume it (parity with
+    /// EHRbase). Serialization is unchanged — we always emit all four, so our
+    /// output stays conformant to the ITS-JSON 1.1.0 schema (which lists them
+    /// `required`).
+    #[serde(default)]
     pub lower_unbounded: bool,
     /// `upper_unbounded`: `Boolean` (1..1). `upper` boundary open (i.e. =
-    /// +infinity).
+    /// +infinity). See the `lower_unbounded` PORT NOTE (`default = false`).
+    #[serde(default)]
     pub upper_unbounded: bool,
     /// `lower_included`: `Boolean` (1..1). `lower` boundary value included
-    /// in range if not `lower_unbounded`.
+    /// in range if not `lower_unbounded`. See the `lower_unbounded` PORT
+    /// NOTE; deserialization default is `true` (archie's
+    /// `boolean lowerIncluded = true` and the `Point_interval` spec default).
+    #[serde(default = "default_true")]
     pub lower_included: bool,
     /// `upper_included`: `Boolean` (1..1). `upper` boundary value included
-    /// in range if not `upper_unbounded`.
+    /// in range if not `upper_unbounded`. See the `lower_unbounded` PORT
+    /// NOTE; deserialization default is `true`.
+    #[serde(default = "default_true")]
     pub upper_included: bool,
+}
+
+/// serde default for `Interval::lower_included` / `upper_included` — `true`,
+/// matching the `Point_interval<T>` spec redefinition (`{default = true}`)
+/// and archie's `boolean lowerIncluded = true`. Used only to fill an omitted
+/// flag on deserialization; see the `lower_unbounded` field PORT NOTE.
+fn default_true() -> bool {
+    true
 }
 
 impl<T: Ordered> Interval<T> {
@@ -432,6 +463,33 @@ mod tests {
         assert!(!bad.limits_consistent());
         assert!(!bad.is_valid());
     }
+
+    /// Real openEHR canonical JSON (archie / EHRbase) omits the four
+    /// interval boolean flags when they equal their defaults. Deserialization
+    /// must fill them with archie's defaults (`unbounded → false`,
+    /// `included → true`, i.e. a closed bounded interval) — matching the
+    /// `Point_interval<T>` spec redefinition — so a "naked" `DV_INTERVAL`
+    /// (only `lower`/`upper`) is consumable. See the field PORT NOTEs.
+    #[test]
+    fn deserialize_defaults_omitted_flags_to_archie_defaults() {
+        // Naked interval: neither the unbounded nor the included pair present.
+        let naked: Interval<Integer> =
+            serde_json::from_str(r#"{"lower":123,"upper":234}"#).expect("naked interval parses");
+        assert!(!naked.lower_unbounded);
+        assert!(!naked.upper_unbounded);
+        assert!(naked.lower_included, "omitted lower_included defaults true");
+        assert!(naked.upper_included, "omitted upper_included defaults true");
+        assert_eq!(naked.lower, Some(Integer(123)));
+        assert_eq!(naked.upper, Some(Integer(234)));
+
+        // Explicit flags still win over the defaults.
+        let explicit: Interval<Integer> = serde_json::from_str(
+            r#"{"lower":1,"upper":5,"lower_included":false,"upper_included":false,"lower_unbounded":false,"upper_unbounded":false}"#,
+        )
+        .expect("explicit interval parses");
+        assert!(!explicit.lower_included);
+        assert!(!explicit.upper_included);
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -440,5 +498,5 @@ mod tests {
 //   source_loc: master05-interval.adoc §Class Definitions / interval.adoc §Interval Class
 //   confidence: high
 //   todos: 0
-//   note: has() implemented from the Meaning column's unambiguous grouping (the printed Post_result parenthesization is a published defect, PORT-NOTEd); intersects() uses mathematical overlap (the "at least one limit strictly inside" prose is self-contradictory, PORT-NOTEd); contains() is non-strict inclusion. Invariants Lower/Upper_included_valid + Limits_consistent are working methods (is_valid combines them); Limits_comparable is satisfied structurally by the shared T. P4: added #[serde(skip_serializing_if = "Option::is_none")] on `lower`/`upper` — DV_INTERVAL's ITS-JSON schema types these as plain (non-nullable) objects when present, so the prior unconditional `null` emission for an unbounded limit failed schema validation.
+//   note: has() implemented from the Meaning column's unambiguous grouping (the printed Post_result parenthesization is a published defect, PORT-NOTEd); intersects() uses mathematical overlap (the "at least one limit strictly inside" prose is self-contradictory, PORT-NOTEd); contains() is non-strict inclusion. Invariants Lower/Upper_included_valid + Limits_consistent are working methods (is_valid combines them); Limits_comparable is satisfied structurally by the shared T. P4: added #[serde(skip_serializing_if = "Option::is_none")] on `lower`/`upper` — DV_INTERVAL's ITS-JSON schema types these as plain (non-nullable) objects when present, so the prior unconditional `null` emission for an unbounded limit failed schema validation. P5 (real-world round-trip): added #[serde(default)] on the four boolean flags (unbounded→false, included→true via default_true) so a "naked" DV_INTERVAL that omits default-valued flags — as archie/EHRbase emit — deserializes; serialization still emits all four (ITS-JSON 1.1.0 requires them).
 // ─────────────────────────────────────────────

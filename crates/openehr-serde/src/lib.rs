@@ -14,10 +14,22 @@
 //! - the canonical entry points ([`to_canonical_json`],
 //!   [`to_canonical_json_pretty`], [`from_canonical_json`]) the server
 //!   crates use so no caller reaches for raw `serde_json` conventions,
-//! - the Phase 04 acceptance instrument
-//!   (`tests/full_rm_canonical_json.rs`): a coverage partition over every
-//!   schema class definition, per-class round-trip + jsonschema
-//!   validation, and insta golden vectors.
+//! - the acceptance instrument, which is now REAL-WORLD data rather than
+//!   circular hand-built fixtures:
+//!   - `tests/real_world_round_trip.rs` — the PRIMARY oracle: deserialize →
+//!     re-serialize → normalized value-equality + ITS-JSON schema validation
+//!     over the vendored `ehrbase/openEHR_SDK` `canonical_json` corpus plus
+//!     four in-repo `EHRbase` resources (`tests/vendor/PROVENANCE.md`);
+//!   - `tests/class_coverage.rs` — a transparent, pinned coverage partition
+//!     (reached classes vs a documented uncovered set) over that corpus;
+//!   - `tests/gap_fixtures.rs` — minimal SYNTHETIC instances only for the
+//!     classes no real data reaches (the `rm.demographic` package and a few
+//!     rare data-value types), round-tripped and schema-validated.
+//!
+//!   The former circular suite (`full_rm_canonical_json.rs`, its
+//!   `tests/fixtures/`, and the 134 hand-built insta snapshots) was deleted:
+//!   it validated our own constructed objects against our own schema, which
+//!   proved nothing about interoperability.
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -28,7 +40,7 @@ pub const RM_SCHEMA_JSON: &str = include_str!("../schemas/openehr_rm_1.1.0_all.j
 
 /// Serialize an RM value to canonical JSON (compact form).
 ///
-/// The canonical conventions (`_type` first on every object, snake_case
+/// The canonical conventions (`_type` first on every object, `snake_case`
 /// keys, omitted nulls, `{_type, value}` UIDs, inline-base64
 /// `DV_MULTIMEDIA.data`) are carried by the RM types' own serde impls per
 /// ADR-002; this function is the single named entry point so intent is

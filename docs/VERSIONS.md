@@ -47,7 +47,7 @@ independently. Pin each one exactly:
 | QUERY (AQL) | 1.1.0 | STABLE | |
 | LANG (BMM / ODIN / EL) | 1.0.0 | STABLE (mixed) | BMM schema v2.3 |
 | TERM (Terminology) | 3.0.0 | STABLE | XML file internally v3.1.0 |
-| ITS-XML (XSDs) | 2.0.0 | TRIAL (1.0.2 stable) | support both for round-trip |
+| ITS-XML (XSDs) | 2.0.0 | TRIAL (1.0.2 stable) | target 2.0.0 (current, for RM 1.1.0) ONLY; legacy 1.0.2 dual-support descoped 2026-07-03 — serialize the latest spec, single lineage. EHRbase's emitted-XML lineage to be confirmed at P5-XML build time (see phase-05 PARITY NOTE). |
 | ITS-REST (REST API) | 1.0.3 | STABLE | ADMIN API is dev-branch only |
 | ITS-JSON (JSON Schemas) | development | DEVELOPMENT | pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6` (master, 2021-10-31); `components/openehr_rm_1.1.0_all.json` vendored at `crates/openehr-serde/schemas/` |
 | ITS-BMM (BMM instances) | per-RM | STABLE per-schema | |
