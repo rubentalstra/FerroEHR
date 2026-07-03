@@ -2,6 +2,7 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::Iso8601Duration;
 
 /// ISO 8601-compatible constraint on instances of Duration. In ISO 8601 terms, constraints might are of the form “PWD” (weeks and/or days), “PDTHMS” (days, hours, minutes, seconds) and so on.
 ///
@@ -15,7 +16,7 @@ use openehr_derive::OpenEhrType;
 #[openehr(type_name = "C_DURATION")]
 pub struct CDuration {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
-    pub assumed_value: Option<serde_json::Value>,
+    pub assumed_value: Option<Iso8601Duration>,
     pub years_allowed: Option<bool>,
     /// True if months are allowed in the constrained Duration.
     pub months_allowed: Option<bool>,

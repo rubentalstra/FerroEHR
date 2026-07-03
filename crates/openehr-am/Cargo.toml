@@ -10,6 +10,7 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+openehr-base = { path = "../openehr-base" }
 openehr-derive.workspace = true
 serde.workspace = true
 serde_json.workspace = true

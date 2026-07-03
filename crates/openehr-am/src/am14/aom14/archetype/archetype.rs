@@ -5,25 +5,31 @@ use openehr_derive::OpenEhrType;
 use crate::am14::aom14::archetype::assertion::assertion::Assertion;
 use crate::am14::aom14::archetype::constraint_model::c_complex_object::CComplexObject;
 use crate::am14::aom14::archetype::ontology::archetype_ontology::ArchetypeOntology;
+use openehr_base::prelude::ArchetypeId;
+use openehr_base::prelude::HierObjectId;
+use openehr_base::prelude::ResourceAnnotations;
+use openehr_base::prelude::ResourceDescription;
+use openehr_base::prelude::TerminologyCode;
+use openehr_base::prelude::TranslationDetails;
 
 /// Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "ARCHETYPE")]
 pub struct Archetype {
     /// OID identifier of this archetype.
-    pub uid: Option<serde_json::Value>,
+    pub uid: Option<HierObjectId>,
 
     // inherited: AUTHORED_RESOURCE
     /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
-    pub original_language: serde_json::Value,
+    pub original_language: TerminologyCode,
     /// Description and lifecycle information of the resource.
-    pub description: Option<serde_json::Value>,
+    pub description: Option<Box<ResourceDescription>>,
     /// True if this resource is under any kind of change control (even file copying), in which case revision history is created.
     pub is_controlled: Option<bool>,
     /// Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.
-    pub annotations: Option<serde_json::Value>,
+    pub annotations: Option<ResourceAnnotations>,
     /// List of details for each natural translation made of this resource, keyed by language code. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
-    pub translations: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    pub translations: Option<std::collections::BTreeMap<String, TranslationDetails>>,
     /// Root node of the definition of this archetype.
     pub definition: CComplexObject,
     /// The ontology of the archetype.
@@ -31,11 +37,11 @@ pub struct Archetype {
     /// ADL version if archetype was read in from an ADL sharable archetype.
     pub adl_version: Option<String>,
     /// Multi-axial identifier of this archetype in archetype space.
-    pub archetype_id: serde_json::Value,
+    pub archetype_id: ArchetypeId,
     /// The normative meaning of the archetype as a whole, expressed as a local archetype code, typically “at0000”.
     pub concept: String,
     /// Identifier of the specialisation parent of this archetype.
-    pub parent_archetype_id: Option<serde_json::Value>,
+    pub parent_archetype_id: Option<ArchetypeId>,
     /// Invariant statements about this object. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
     pub invariants: Vec<Assertion>,
 }

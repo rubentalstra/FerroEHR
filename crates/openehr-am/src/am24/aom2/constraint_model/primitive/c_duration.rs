@@ -5,6 +5,7 @@ use openehr_derive::OpenEhrType;
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_base::prelude::Iso8601Duration;
 
 /// Constraint on instances representing duration, which is assumed to have the same parts as the ISO 8601 duration string. Thus, constraints are of the form `"PWD"` (weeks and/or days), `"PDTHMS"` (days, hours, minutes, seconds) and so on.
 ///
@@ -42,9 +43,9 @@ pub struct CDuration {
     /// Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_ = True`.
     pub sibling_order: Option<SiblingOrder>,
     /// Default value set in a template, and present in an operational template. Generally limited to leaf and near-leaf nodes.
-    pub default_value: Option<serde_json::Value>,
+    pub default_value: Option<Iso8601Duration>,
     /// Value to be assumed if none sent in data.
-    pub assumed_value: Option<serde_json::Value>,
+    pub assumed_value: Option<Iso8601Duration>,
 
     // inherited: C_PRIMITIVE_OBJECT
     /// True if this object represents a constraint on an enumerated type from the reference model, where the latter is assumed to be based on a primitive type, generally Integer or String.

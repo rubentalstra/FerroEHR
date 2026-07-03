@@ -7,6 +7,11 @@ use crate::am24::aom2::archetype::template_overlay::TemplateOverlay;
 use crate::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use crate::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
 use crate::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_base::prelude::ResourceAnnotations;
+use openehr_base::prelude::ResourceDescription;
+use openehr_base::prelude::TerminologyCode;
+use openehr_base::prelude::TranslationDetails;
+use openehr_base::prelude::Uuid;
 
 /// Class representing source template, i.e. a kind of archetype that may include template overlays, and may be restricted by tools to only defining mandations, prohibitions, and restrictions on elements already defined in the flat parent.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -30,23 +35,23 @@ pub struct Template {
 
     // inherited: AUTHORED_RESOURCE
     /// Unique identifier of the family of archetypes having the same interface identifier (same major version).
-    pub uid: Option<serde_json::Value>,
+    pub uid: Option<Uuid>,
     /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
-    pub original_language: serde_json::Value,
+    pub original_language: TerminologyCode,
     /// Description and lifecycle information of the resource.
-    pub description: Option<serde_json::Value>,
+    pub description: Option<Box<ResourceDescription>>,
     /// True if this resource is under any kind of change control (even file copying), in which case revision history is created.
     pub is_controlled: Option<bool>,
     /// Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.
-    pub annotations: Option<serde_json::Value>,
+    pub annotations: Option<ResourceAnnotations>,
     /// List of details for each natural translation made of this resource, keyed by language code. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
-    pub translations: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    pub translations: Option<std::collections::BTreeMap<String, TranslationDetails>>,
 
     // inherited: AUTHORED_ARCHETYPE
     /// ADL version if archetype was read in from an ADL sharable archetype.
     pub adl_version: Option<String>,
     /// Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.
-    pub build_uid: serde_json::Value,
+    pub build_uid: Uuid,
     /// Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.
     pub rm_release: String,
     /// If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.

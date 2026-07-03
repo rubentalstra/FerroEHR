@@ -2,27 +2,29 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::Iso8601DateTime;
+use openehr_base::prelude::ValidityKind;
 
 /// ISO 8601-compatible constraint on instances of Date_Time. There is no validity flag for ‘year’, since it must always be by definition mandatory in order to have a sensible date/time at all. Syntax expressions of instances of this class include “YYYY-MM-DDT??:??:??” (date/time with optional time) and “YYYY-MMDDTHH:MM:xx” (date/time, seconds not allowed).
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "C_DATE_TIME")]
 pub struct CDateTime {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
-    pub assumed_value: Option<serde_json::Value>,
+    pub assumed_value: Option<Iso8601DateTime>,
     /// Validity of month in constrained date.
-    pub month_validity: Option<serde_json::Value>,
+    pub month_validity: Option<ValidityKind>,
     /// Validity of day in constrained date.
-    pub day_validity: Option<serde_json::Value>,
+    pub day_validity: Option<ValidityKind>,
     /// Validity of hour in constrained time.
-    pub hour_validity: Option<serde_json::Value>,
+    pub hour_validity: Option<ValidityKind>,
     /// Validity of minute in constrained time.
-    pub minute_validity: Option<serde_json::Value>,
+    pub minute_validity: Option<ValidityKind>,
     /// Validity of second in constrained time.
-    pub second_validity: Option<serde_json::Value>,
+    pub second_validity: Option<ValidityKind>,
     /// Validity of millisecond in constrained time.
-    pub millisecond_validity: Option<serde_json::Value>,
+    pub millisecond_validity: Option<ValidityKind>,
     /// Validity of timezone in constrained date.
-    pub timezone_validity: Option<serde_json::Value>,
+    pub timezone_validity: Option<ValidityKind>,
     /// Range of Date_times specifying constraint.
     pub range: Option<serde_json::Value>,
 }

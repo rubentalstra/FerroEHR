@@ -11,7 +11,7 @@
 mod emit;
 mod naming;
 
-use emit::Model;
+use emit::{External, Model};
 use openehr_lang::bmm::BmmSchema;
 use std::path::{Path, PathBuf};
 
@@ -75,25 +75,45 @@ fn crates_root() -> PathBuf {
 const AM_DOC: &str = "openEHR AM (Archetype Model): am14 (AM 1.4.0, for ADL 1.4) and am24 \
     (AM 2.4.0, for ADL 2) — both generated from BMM. Both ADL versions are in use.";
 
+const RM_DOC: &str = "openEHR RM (Reference Model), generated from the BMM meta-model.";
+
 fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
     let base = load(BASE_BMM)?;
     let rm = load(RM_BMM)?;
 
-    // openehr-base: single version.
-    let base_model = Model::merged(&[&base, &rm]);
+    // openehr-base: single version, no dependency crates.
+    let base_model = Model::merged(&[&base]);
+    let no_ext = External::default();
     write_crate(
         "openehr-base",
-        &emit::emit_crate(&base_model, &base, BASE_DOC),
+        &emit::emit_crate(&base_model, &base, &no_ext, BASE_DOC),
     )?;
 
-    // openehr-am: two versions in one crate. Each version merges BASE so its
-    // ancestors (e.g. ARCHETYPE ← AUTHORED_RESOURCE) resolve; they are kept in
-    // separate models because AM 1.4 and 2.4 share class names.
+    // Types exported by openehr-base — downstream crates resolve references to
+    // these against `openehr_base::prelude` instead of degrading to Value.
+    let base_specs = emit::emittable_specs(&base_model, &base);
+    let ext_base = External::default().with(base_specs, "openehr_base::prelude");
+
+    // openehr-rm: single version, depends on openehr-base.
+    let rm_model = Model::merged(&[&base, &rm]);
+    write_crate(
+        "openehr-rm",
+        &emit::emit_crate(&rm_model, &rm, &ext_base, RM_DOC),
+    )?;
+
+    // openehr-am: two versions in one crate, each depending on openehr-base.
+    // Each version merges BASE so its ancestors (e.g. ARCHETYPE ←
+    // AUTHORED_RESOURCE) resolve; the two are kept in separate models because
+    // AM 1.4 and 2.4 share class names.
     let am14 = load(AM14_BMM)?;
     let am24 = load(AM24_BMM)?;
     let m14 = Model::merged(&[&base, &am14]);
     let m24 = Model::merged(&[&base, &am24]);
-    let am_files = emit::emit_multi_crate(&[("am14", &m14, &am14), ("am24", &m24, &am24)], AM_DOC);
+    let am_files = emit::emit_multi_crate(
+        &[("am14", &m14, &am14), ("am24", &m24, &am24)],
+        &ext_base,
+        AM_DOC,
+    );
     write_crate("openehr-am", &am_files)?;
     Ok(())
 }

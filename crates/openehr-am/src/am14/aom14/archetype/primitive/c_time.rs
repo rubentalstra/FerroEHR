@@ -2,21 +2,23 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::Iso8601Time;
+use openehr_base::prelude::ValidityKind;
 
 /// ISO 8601-compatible constraint on instances of Time. There is no validity flag for ‘hour’, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include “HH:??:xx” (time with optional minutes and seconds not allowed).
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "C_TIME")]
 pub struct CTime {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
-    pub assumed_value: Option<serde_json::Value>,
+    pub assumed_value: Option<Iso8601Time>,
     /// Validity of minute in constrained time.
-    pub minute_validity: Option<serde_json::Value>,
+    pub minute_validity: Option<ValidityKind>,
     /// Validity of second in constrained time.
-    pub second_validity: Option<serde_json::Value>,
+    pub second_validity: Option<ValidityKind>,
     /// Validity of millisecond in constrained time.
-    pub millisecond_validity: Option<serde_json::Value>,
+    pub millisecond_validity: Option<ValidityKind>,
     /// Validity of timezone in constrained date.
-    pub timezone_validity: Option<serde_json::Value>,
+    pub timezone_validity: Option<ValidityKind>,
     /// Interval of Times specifying constraint.
     pub range: Option<serde_json::Value>,
 }

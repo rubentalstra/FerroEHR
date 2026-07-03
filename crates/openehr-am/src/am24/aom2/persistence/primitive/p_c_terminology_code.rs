@@ -2,6 +2,7 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::TerminologyCode;
 
 /// Constrainer type for instances of TERMINOLOGY_CODE. The primary expression of the constraint is in the property `tuple_constraint', and comes in 3 variations:
 /// * a single at-code
@@ -23,8 +24,8 @@ pub struct PCTerminologyCode {
 
     // inherited: P_C_DEFINED_OBJECT
     pub is_frozen: Option<bool>,
-    pub default_value: serde_json::Value,
-    pub assumed_value: Option<serde_json::Value>,
+    pub default_value: TerminologyCode,
+    pub assumed_value: Option<TerminologyCode>,
 
     // inherited: P_C_PRIMITIVE_OBJECT
     /// True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.

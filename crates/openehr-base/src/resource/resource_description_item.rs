@@ -2,14 +2,14 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
-use crate::foundation_types::terminology::code_phrase::CodePhrase;
+use crate::foundation_types::terminology::terminology_code::TerminologyCode;
 
 /// Language-specific detail of resource description. When a resource is translated for use in another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to be copied and translated into the new language.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "RESOURCE_DESCRIPTION_ITEM")]
 pub struct ResourceDescriptionItem {
-    /// The localised language in which the items in this description item are written. Coded from openEHR code set `languages`.
-    pub language: CodePhrase,
+    /// The localised language in which the items in this description item are written. Encoded following the RFC 5646 standard, using ISO 639-1 (two-character) language codes, e.g. "en". It may include a region subtag conforming to ISO 3166-1 alpha-2 (two-character country codes), e.g. "pt-br" for Brazilian Portuguese.
+    pub language: TerminologyCode,
     /// Purpose of the resource.
     pub purpose: String,
     /// Keywords which characterise this resource, used e.g. for indexing and searching.
@@ -19,10 +19,8 @@ pub struct ResourceDescriptionItem {
     pub use_: Option<String>,
     /// Description of any misuses of the resource, i.e. contexts in which it should not be used.
     pub misuse: Option<String>,
-    /// Optional copyright statement for the resource as a knowledge resource.
-    pub copyright: Option<String>,
     /// URIs of original clinical document(s) or description of which resource is a formalisation, in the language of this description item; keyed by meaning.
     pub original_resource_uri: Option<std::collections::BTreeMap<String, String>>,
-    /// Additional language-sensitive resource metadata, as a list of name/value pairs.
+    /// Additional language-senstive resource metadata, as a list of name/value pairs.
     pub other_details: Option<std::collections::BTreeMap<String, String>>,
 }

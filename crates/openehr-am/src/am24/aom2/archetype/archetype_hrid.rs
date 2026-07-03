@@ -2,6 +2,7 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::VersionStatus;
 
 /// Human-readable structured identifier (HRID) for an archetype or template.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -25,7 +26,7 @@ pub struct ArchetypeHrid {
     /// * release_candidate: `"rc"`
     /// * alpha: `"alpha"`
     /// * beta: `"beta"`
-    pub version_status: serde_json::Value,
+    pub version_status: VersionStatus,
     /// The build count since last increment of any version part.
     pub build_count: String,
 }

@@ -2,7 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
-use crate::foundation_types::terminology::code_phrase::CodePhrase;
+use crate::base_types::identification::uuid::Uuid;
+use crate::foundation_types::terminology::terminology_code::TerminologyCode;
+use crate::resource::resource_annotations::ResourceAnnotations;
 use crate::resource::resource_description::ResourceDescription;
 use crate::resource::translation_details::TranslationDetails;
 
@@ -10,14 +12,16 @@ use crate::resource::translation_details::TranslationDetails;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "AUTHORED_RESOURCE")]
 pub struct AuthoredResource {
+    /// Unique identifier of the family of archetypes having the same interface identifier (same major version).
+    pub uid: Option<Uuid>,
     /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
-    pub original_language: CodePhrase,
-    /// True if this resource is under any kind of change control (even file copying), in which case revision history is created.
-    pub is_controlled: Option<bool>,
-    /// List of details for each natural-language translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
-    pub translations: Option<std::collections::BTreeMap<String, TranslationDetails>>,
+    pub original_language: TerminologyCode,
     /// Description and lifecycle information of the resource.
     pub description: Option<Box<ResourceDescription>>,
-    /// The revision history of the resource. Only required if `_is_controlled_ = True` (avoids large revision histories for informal or private editing situations).
-    pub revision_history: Option<serde_json::Value>,
+    /// True if this resource is under any kind of change control (even file copying), in which case revision history is created.
+    pub is_controlled: Option<bool>,
+    /// Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.
+    pub annotations: Option<ResourceAnnotations>,
+    /// List of details for each natural translation made of this resource, keyed by language code. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
+    pub translations: Option<std::collections::BTreeMap<String, TranslationDetails>>,
 }

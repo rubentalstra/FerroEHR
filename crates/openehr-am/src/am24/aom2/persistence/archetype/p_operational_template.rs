@@ -5,6 +5,8 @@ use openehr_derive::OpenEhrType;
 use crate::am24::aom2::persistence::archetype::p_archetype_hrid::PArchetypeHrid;
 use crate::am24::aom2::persistence::constraint_model::p_c_complex_object::PCComplexObject;
 use crate::am24::aom2::persistence::terminology::p_archetype_terminology::PArchetypeTerminology;
+use openehr_base::prelude::ResourceDescription;
+use openehr_base::prelude::TranslationDetails;
 
 /// Root object of an operational template. An operational template is derived from a TEMPLATE definition and the ARCHETYPEs and/or TEMPLATE_OVERLAYs mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.
 ///
@@ -33,13 +35,13 @@ pub struct POperationalTemplate {
     /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
     pub original_language: String,
     /// Description and lifecycle information of the resource.
-    pub description: Option<serde_json::Value>,
+    pub description: Option<Box<ResourceDescription>>,
     /// True if this resource is under any kind of change control (even file copying), in which case revision history is created.
     pub is_controlled: Option<bool>,
     /// Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.
     pub annotations: Option<serde_json::Value>,
     /// List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.
-    pub translations: Vec<serde_json::Value>,
+    pub translations: Vec<TranslationDetails>,
 
     // inherited: P_AUTHORED_ARCHETYPE
     /// ADL version if archteype was read in from an ADL sharable archetype.

@@ -2,13 +2,14 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
+use openehr_base::prelude::CodePhrase;
 
 /// Constrainer object representing a single Ordinal value.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "ORDINAL")]
 pub struct Ordinal {
     /// Terminology code providing the Ordinal's symbol.
-    pub symbol: serde_json::Value,
+    pub symbol: CodePhrase,
     /// Ordinal value.
     pub value: i32,
 }

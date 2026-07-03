@@ -6,6 +6,7 @@ use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstrai
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_base::prelude::TerminologyCode;
 
 /// Constrainer type for instances of `Terminology_code`. The constraint attribute can contain:
 ///
@@ -41,9 +42,9 @@ pub struct CTerminologyCode {
     pub is_deprecated: Option<bool>,
     /// Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_ = True`.
     pub sibling_order: Option<SiblingOrder>,
-    pub default_value: Option<serde_json::Value>,
+    pub default_value: Option<TerminologyCode>,
     /// Assumed Terminology code value.
-    pub assumed_value: Option<serde_json::Value>,
+    pub assumed_value: Option<TerminologyCode>,
 
     // inherited: C_PRIMITIVE_OBJECT
     /// True if this object represents a constraint on an enumerated type from the reference model, where the latter is assumed to be based on a primitive type, generally Integer or String.

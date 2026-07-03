@@ -2,18 +2,22 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).
 
 use openehr_derive::OpenEhrType;
-use crate::foundation_types::terminology::code_phrase::CodePhrase;
+use crate::foundation_types::terminology::terminology_code::TerminologyCode;
 
 /// Class providing details of a natural language translation.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "TRANSLATION_DETAILS")]
 pub struct TranslationDetails {
-    /// Language of the translation.
-    pub language: CodePhrase,
-    /// Translator name and other demographic details.
+    /// Language of the translation, encoded following the RFC 5646 standard, using ISO 639-1 (two-character) language codes, e.g. "en". It may include a region subtag conforming to ISO 3166-1 alpha-2 (two-character country codes), e.g. "pt-br" for Brazilian Portuguese.
+    pub language: TerminologyCode,
+    /// Primary translator name and other demographic details.
     pub author: std::collections::BTreeMap<String, String>,
-    /// Accreditation of translator, usually a national translator's registration or association membership id.
-    pub accreditaton: Option<String>,
+    /// Accreditation of primary translator or group, usually a national translator's registration or association membership id.
+    pub accreditation: Option<String>,
     /// Any other meta-data.
     pub other_details: Option<std::collections::BTreeMap<String, String>>,
+    /// Version of this resource last time it was translated into the language represented by this `TRANSLATION_DETAILS` object.
+    pub version_last_translated: Option<String>,
+    /// Additional contributors to this translation, each listed in the preferred format of the relevant organisation for the artefacts in question. A typical default is `"name <email>"` if nothing else is specified.
+    pub other_contributors: Vec<String>,
 }
