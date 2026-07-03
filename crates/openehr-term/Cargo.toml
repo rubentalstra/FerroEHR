@@ -1,7 +1,7 @@
 [package]
 name = "openehr-term"
 version = "0.1.0"
-description = "openEHR TERM 3.x terminology bundle and terminology service"
+description = "openEHR TERM 3.1.0 terminology data model, generated from BMM (ADR-004); vendored terminology XML in assets/"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -11,15 +11,9 @@ publish = false
 
 [dependencies]
 openehr-base = { path = "../openehr-base" }
-quick-xml.workspace = true
-thiserror.workspace = true
-
-[features]
-lang-de = []
-lang-es = []
-lang-fr = []
-lang-pt = []
-lang-ja = []
+openehr-derive.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true

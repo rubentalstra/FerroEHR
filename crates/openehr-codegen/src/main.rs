@@ -76,10 +76,14 @@ const AM_DOC: &str = "openEHR AM (Archetype Model): am14 (AM 1.4.0, for ADL 1.4)
     (AM 2.4.0, for ADL 2) — both generated from BMM. Both ADL versions are in use.";
 
 const RM_DOC: &str = "openEHR RM (Reference Model), generated from the BMM meta-model.";
+const TERM_DOC: &str = "openEHR TERM (Terminology) data model, generated from the BMM \
+    meta-model. The vendored terminology XML content lives in `assets/` (data, not \
+    generated); an XML→model loader is added when composition validation needs it.";
 
 fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
     let base = load(BASE_BMM)?;
     let rm = load(RM_BMM)?;
+    let term = load(TERM_BMM)?;
 
     // openehr-base: single version, no dependency crates.
     let base_model = Model::merged(&[&base]);
@@ -115,6 +119,15 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
         AM_DOC,
     );
     write_crate("openehr-am", &am_files)?;
+
+    // openehr-term: the TERM data model (CODE_SET, TERMINOLOGY, …), depends on
+    // openehr-base (TERMINOLOGY.date : Iso8601_date). The vendored terminology
+    // XML in `assets/` is data (outside `src/`, survives regen).
+    let term_model = Model::merged(&[&base, &term]);
+    write_crate(
+        "openehr-term",
+        &emit::emit_crate(&term_model, &term, &ext_base, TERM_DOC),
+    )?;
     Ok(())
 }
 
