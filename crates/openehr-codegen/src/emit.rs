@@ -8,13 +8,17 @@
 //!   containers (optional containers get `default` + `skip_serializing_if`).
 //! - **Enums** (`#[serde(untagged)]`) for abstract classes used as a property
 //!   type — the closed polymorphic slots (`DATA_VALUE`, `ITEM`, …).
-//! - **Generics** only for classes the BMM declares generic (`Interval<T>`,
-//!   `DV_INTERVAL<T>`); the actual type argument is emitted at each use site.
-//! - `_type` is handled by `#[derive(OpenEhrType)]` (the `openehr-derive`
-//!   proc-macro), not a per-struct field.
+//! - **Transparent newtypes** for enumeration classes that are just a
+//!   primitive on the wire (`VALIDITY_KIND` → `String`).
+//! - **Generics** only for classes the BMM declares generic (`Interval<T>`);
+//!   the actual type argument is emitted at each use site.
+//! - `_type` is handled by `#[derive(OpenEhrType)]` (`openehr-derive`), not a
+//!   per-struct field.
+//! - Foundation **primitives / containers / marker traits** are mapped to Rust
+//!   (bool, i32, Vec, …) and never emitted (see [`SKIP`] and [`primitive`]).
 
 use crate::naming;
-use openehr_lang::bmm::{BmmClass, BmmPackage, BmmPropKind, BmmSchema, BmmType};
+use openehr_lang::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A merged BMM model (e.g. BASE + RM) used for ancestor flattening and type
@@ -29,6 +33,49 @@ struct ResolvedProp<'a> {
     owner: String,
     prop: &'a openehr_lang::bmm::BmmProperty,
 }
+
+/// Foundation classes that are **mapped to Rust and never emitted**: the
+/// container types, marker/functional/service classes, and constant holders.
+/// Scalar primitives are handled by [`primitive`]. Two interval classes need a
+/// generic-ancestor binding the BMM does not carry (`Multiplicity_interval` =
+/// `Interval<Integer>`), so they are skipped in this pass and become a
+/// `codegen.toml` override later.
+const SKIP: &[&str] = &[
+    // containers → Vec / handled by container properties
+    "Container",
+    "List",
+    "Set",
+    "Array",
+    "Hash",
+    "Bag",
+    // abstract marker / algebraic traits (no data)
+    "Any",
+    "Ordered",
+    "Numeric",
+    "Ordered_Numeric",
+    "Comparable",
+    "Temporal",
+    // functional types
+    "TUPLE",
+    "TUPLE1",
+    "TUPLE2",
+    "ROUTINE",
+    "FUNCTION",
+    "PROCEDURE",
+    // service interfaces (no data)
+    "Env",
+    "Locale",
+    "Math",
+    "Quantity_converter",
+    "Statistical_evaluator",
+    // constant-holder classes (no data; become assoc consts in *_impl.rs)
+    "Time_Definitions",
+    "BASIC_DEFINITIONS",
+    "OPENEHR_DEFINITIONS",
+    // interval classes needing a generic-ancestor binding not present in BMM
+    "Multiplicity_interval",
+    "Cardinality",
+];
 
 impl Model {
     /// Merge several schemas into one class map (later schemas override earlier
@@ -48,6 +95,11 @@ impl Model {
         self.classes.get(name)
     }
 
+    /// Is `name` mapped to Rust rather than emitted (primitive or [`SKIP`])?
+    fn is_mapped(name: &str) -> bool {
+        primitive(name).is_some() || SKIP.contains(&name)
+    }
+
     /// Does `class` inherit from `target` (transitively)?
     fn inherits(&self, class: &str, target: &str) -> bool {
         let Some(c) = self.get(class) else {
@@ -61,18 +113,49 @@ impl Model {
         false
     }
 
-    /// All concrete classes that inherit from `name` (excluding `name` itself),
-    /// in name order.
-    fn concrete_descendants(&self, name: &str) -> Vec<String> {
+    /// Can `from` transitively reach `target` through **`Single`** (non-`Vec`)
+    /// field types? Used to detect struct-sizing cycles that need boxing
+    /// (`Vec`/`Box` already break a cycle; `Option<T>` and plain `T` do not).
+    fn reaches(&self, from: &str, target: &str, seen: &mut BTreeSet<String>) -> bool {
+        if from == target {
+            return true;
+        }
+        if !seen.insert(from.to_string()) {
+            return false;
+        }
+        let Some(class) = self.get(from) else {
+            return false;
+        };
+        for rp in self.flattened_props(class) {
+            if let BmmPropKind::Single(t) = &rp.prop.kind {
+                let root = t.root_name();
+                if Self::is_mapped(root) {
+                    continue;
+                }
+                if root == target || self.reaches(root, target, seen) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// Concrete, emittable, non-generic descendants of `name` (for enum slots).
+    fn enum_variants(&self, name: &str) -> Vec<String> {
         self.classes
             .values()
-            .filter(|c| !c.is_abstract && c.name != name && self.inherits(&c.name, name))
+            .filter(|c| {
+                !c.is_abstract
+                    && c.name != name
+                    && c.generic_params.is_empty()
+                    && !Self::is_mapped(&c.name)
+                    && self.inherits(&c.name, name)
+            })
             .map(|c| c.name.clone())
             .collect()
     }
 
-    /// Class names used anywhere as a property type (single, container item, or
-    /// generic argument) — the candidates for closed-enum slots.
+    /// Class names used anywhere as a property type — enum-slot candidates.
     fn used_as_type(&self) -> BTreeSet<String> {
         let mut used = BTreeSet::new();
         for c in self.classes.values() {
@@ -123,14 +206,18 @@ impl Model {
 
     // ── type rendering ──────────────────────────────────────────────────────
 
-    fn render_type(&self, t: &BmmType, generics: &[String]) -> String {
+    /// Render a BMM type to Rust. `local` is the set of spec class names emitted
+    /// in the current crate; a referenced class outside it (or a malformed
+    /// container) degrades to `serde_json::Value` so the crate stays
+    /// self-contained.
+    fn render_type(&self, t: &BmmType, generics: &[String], local: &BTreeSet<String>) -> String {
         match t {
             BmmType::Simple(n) => {
                 if let Some(p) = primitive(n) {
                     p.to_string()
                 } else if generics.iter().any(|g| g == n) {
                     n.clone()
-                } else if n == "Any" {
+                } else if n == "Any" || !local.contains(n) {
                     "serde_json::Value".to_string()
                 } else {
                     naming::type_name(n)
@@ -139,11 +226,41 @@ impl Model {
             BmmType::Generic { root, params } => {
                 let ps: Vec<String> = params
                     .iter()
-                    .map(|p| self.render_type(p, generics))
+                    .map(|p| self.render_type(p, generics, local))
                     .collect();
-                format!("{}<{}>", naming::type_name(root), ps.join(", "))
+                // Foundation container generics map to Rust collections; a
+                // container with the wrong arity (e.g. the deeply-nested
+                // free-form `Hash` in RESOURCE_ANNOTATIONS) is free-form JSON.
+                match root.as_str() {
+                    "Hash" if ps.len() == 2 => {
+                        format!("std::collections::BTreeMap<{}>", ps.join(", "))
+                    }
+                    "Hash" => "serde_json::Value".to_string(),
+                    "List" | "Array" if ps.len() == 1 => format!("Vec<{}>", ps[0]),
+                    "Set" if ps.len() == 1 => format!("std::collections::BTreeSet<{}>", ps[0]),
+                    "List" | "Array" | "Set" => "serde_json::Value".to_string(),
+                    _ if !local.contains(root) => "serde_json::Value".to_string(),
+                    _ => format!("{}<{}>", naming::type_name(root), ps.join(", ")),
+                }
             }
         }
+    }
+
+    /// The emittable spec class names a class refers to in its (flattened)
+    /// fields — for computing precise `use` imports. Excludes primitives,
+    /// generic params, mapped/skip types, and `Any`.
+    fn referenced_specs(&self, class: &BmmClass, generics: &[String]) -> BTreeSet<String> {
+        let mut roots = BTreeSet::new();
+        for rp in self.flattened_props(class) {
+            match &rp.prop.kind {
+                BmmPropKind::Single(t) => collect_roots(t, &mut roots),
+                BmmPropKind::Container { item, .. } => collect_roots(item, &mut roots),
+            }
+        }
+        roots
+            .into_iter()
+            .filter(|n| !Self::is_mapped(n) && n != "Any" && !generics.iter().any(|g| g == n))
+            .collect()
     }
 }
 
@@ -154,7 +271,8 @@ fn primitive(name: &str) -> Option<&'static str> {
         "Integer" => "i32",
         "Integer64" => "i64",
         "Real" | "Double" => "f64",
-        "String" | "Uri" | "Terminology_code" => "String",
+        // `Uri` is a plain string until the strong-newtype override lands.
+        "String" | "Uri" => "String",
         "Octet" => "u8",
         "Character" => "char",
         _ => return None,
@@ -183,55 +301,203 @@ pub struct GenFile {
     pub body: String,
 }
 
-/// Emit every concrete struct and closed-slot enum for one schema, laid out by
-/// the schema's package tree. `model` supplies cross-schema ancestors/types.
-#[must_use]
-pub fn emit_schema(model: &Model, schema: &BmmSchema) -> Vec<GenFile> {
-    let class_pkg = class_paths(schema);
-    let used = model.used_as_type();
-    let mut files = Vec::new();
+/// What to emit for a class.
+enum Emission<'a> {
+    Struct,
+    Enum(Vec<String>),
+    /// Transparent newtype over a Rust primitive (an enumeration-of-strings, …).
+    Newtype(&'a str),
+    Skip,
+}
 
-    for (name, class) in &schema.classes {
-        let pkg = class_pkg
-            .get(name)
-            .cloned()
-            .unwrap_or_else(|| "misc".to_string());
-        let module = naming::field_ident(&to_snake(name));
-        let path = format!("{pkg}/{module}.rs");
-
-        let body = if class.is_abstract {
-            if used.contains(name) {
-                let descendants = model
-                    .concrete_descendants(name)
-                    .into_iter()
-                    // skip generic descendants for now (need type-arg inference)
-                    .filter(|d| model.get(d).is_some_and(|c| c.generic_params.is_empty()))
-                    .collect::<Vec<_>>();
-                if descendants.is_empty() {
-                    continue;
-                }
-                emit_enum(class, &descendants)
+/// Decide how a class is emitted.
+fn decide<'a>(model: &Model, class: &'a BmmClass, used: &BTreeSet<String>) -> Emission<'a> {
+    if Model::is_mapped(&class.name) {
+        return Emission::Skip;
+    }
+    if class.is_abstract {
+        if used.contains(&class.name) {
+            let variants = model.enum_variants(&class.name);
+            if variants.is_empty() {
+                // Abstract, referenced as a field type, but no concrete
+                // descendants in this schema (e.g. `AUTHORED_RESOURCE` in BASE —
+                // its concretes live in AM). Emit its own fields as a struct so
+                // the reference resolves; a cross-schema pass can promote it to
+                // an enum later.
+                Emission::Struct
             } else {
-                // abstract, not a slot type → its fields flatten into concretes;
-                // nothing to emit as a standalone type.
-                continue;
+                Emission::Enum(variants)
             }
         } else {
-            emit_struct(model, class)
-        };
+            Emission::Skip
+        }
+    } else {
+        // Concrete: a 0-field class whose sole ancestor is a primitive is an
+        // enumeration-style newtype (VALIDITY_KIND → String).
+        let flattened = model.flattened_props(class);
+        if flattened.is_empty()
+            && class.ancestors.len() == 1
+            && let Some(prim) = primitive(&class.ancestors[0])
+        {
+            return Emission::Newtype(prim);
+        }
+        Emission::Struct
+    }
+}
 
+/// One emitted type and the module chain it lives in (for import + prelude).
+struct Emitted {
+    /// Module chain under the crate root, e.g. `["base_types","identification","uid"]`.
+    chain: Vec<String>,
+    /// Rust type identifier, e.g. `Uid`.
+    ident: String,
+}
+
+/// Emit a full crate `src/` for one schema: one file per emitted class, plus a
+/// generated `mod.rs` tree, `prelude.rs`, and `lib.rs`.
+#[must_use]
+pub fn emit_crate(model: &Model, schema: &BmmSchema, crate_doc: &str) -> Vec<GenFile> {
+    let class_pkg = class_paths(schema);
+    let used = model.used_as_type();
+
+    // Pass 1: decide emission + module path for every class → build the index.
+    struct Planned<'a> {
+        class: &'a BmmClass,
+        emission: Emission<'a>,
+        chain: Vec<String>,
+    }
+    let mut planned = Vec::new();
+    let mut index: BTreeMap<String, Vec<String>> = BTreeMap::new(); // ident → chain
+    // Spec class names emitted in this crate; anything referenced outside it
+    // degrades to `serde_json::Value` so the crate stays self-contained.
+    let mut local: BTreeSet<String> = BTreeSet::new();
+    for (name, class) in &schema.classes {
+        if !matches!(decide(model, class, &used), Emission::Skip) {
+            local.insert(name.clone());
+        }
+    }
+    for (name, class) in &schema.classes {
+        let emission = decide(model, class, &used);
+        if matches!(emission, Emission::Skip) {
+            continue;
+        }
+        let pkg = class_pkg.get(name).cloned().unwrap_or_default();
+        let mut chain: Vec<String> = pkg
+            .split('/')
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .collect();
+        let module = naming::field_ident(&to_snake(name));
+        chain.push(module);
+        index.insert(naming::type_name(name), chain.clone());
+        planned.push(Planned {
+            class,
+            emission,
+            chain,
+        });
+    }
+
+    // Pass 2: emit each file with precise imports resolved through the index.
+    let mut files = Vec::new();
+    for p in &planned {
+        let body = match &p.emission {
+            Emission::Struct => emit_struct(model, p.class, &index, &local),
+            Emission::Enum(variants) => emit_enum(p.class, variants, &index),
+            Emission::Newtype(prim) => emit_newtype(p.class, prim),
+            Emission::Skip => unreachable!(),
+        };
+        let path = format!("{}.rs", p.chain.join("/"));
         files.push(GenFile { path, body });
     }
 
+    // Module tree, prelude, lib.
+    let chains: Vec<Vec<String>> = planned.iter().map(|p| p.chain.clone()).collect();
+    let emitted: Vec<Emitted> = index
+        .into_iter()
+        .map(|(ident, chain)| Emitted { chain, ident })
+        .collect();
+    files.extend(emit_module_tree(&chains));
+    files.push(emit_prelude(&emitted));
+    files.push(emit_lib(&top_modules(&chains), crate_doc));
     files
 }
 
+/// Build every `mod.rs` from the set of emitted module chains.
+fn emit_module_tree(chains: &[Vec<String>]) -> Vec<GenFile> {
+    // dir path ("" = root is handled by lib.rs) → set of child module idents.
+    let mut dirs: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for chain in chains {
+        for i in 1..chain.len() {
+            let dir = chain[..i].join("/");
+            dirs.entry(dir).or_default().insert(chain[i].clone());
+        }
+    }
+    dirs.into_iter()
+        .map(|(dir, children)| {
+            let mut b = String::from("// @generated by openehr-codegen — DO NOT EDIT.\n\n");
+            for c in &children {
+                b.push_str(&format!("pub mod {c};\n"));
+            }
+            GenFile {
+                path: format!("{dir}/mod.rs"),
+                body: b,
+            }
+        })
+        .collect()
+}
+
+/// Top-level module names (first chain segment), deduped.
+fn top_modules(chains: &[Vec<String>]) -> BTreeSet<String> {
+    chains.iter().filter_map(|c| c.first().cloned()).collect()
+}
+
+fn emit_lib(top: &BTreeSet<String>, crate_doc: &str) -> GenFile {
+    let mut b = String::new();
+    for line in crate_doc.lines() {
+        b.push_str(&format!("//! {line}\n"));
+    }
+    b.push_str("//!\n//! @generated module tree by openehr-codegen (ADR-004). The type files\n");
+    b.push_str("//! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.\n\n");
+    // Lint exceptions inherent to faithful spec generation:
+    //  - doc comments are verbatim openEHR spec text (bare URLs, un-backticked terms);
+    //  - some spec classes carry >3 boolean flags (e.g. `Interval` bounds).
+    b.push_str("#![allow(clippy::doc_markdown, clippy::struct_excessive_bools)]\n\n");
+    for m in top {
+        b.push_str(&format!("pub mod {m};\n"));
+    }
+    b.push_str("pub mod prelude;\n");
+    GenFile {
+        path: "lib.rs".to_string(),
+        body: b,
+    }
+}
+
+fn emit_prelude(emitted: &[Emitted]) -> GenFile {
+    let mut b = String::from(
+        "//! Crate prelude: re-exports every generated spec type.\n\
+         //!\n//! @generated by openehr-codegen (ADR-004). Generated modules do\n\
+         //! `use crate::prelude::*` is not used; imports are precise per file, but\n\
+         //! downstream crates and hand-written code may `use <crate>::prelude::*`.\n\n",
+    );
+    let mut lines: Vec<String> = emitted
+        .iter()
+        .map(|e| format!("pub use crate::{}::{};", e.chain.join("::"), e.ident))
+        .collect();
+    lines.sort();
+    for l in lines {
+        b.push_str(&l);
+        b.push('\n');
+    }
+    GenFile {
+        path: "prelude.rs".to_string(),
+        body: b,
+    }
+}
+
 /// Build a class → nested directory path map from the package tree, e.g.
-/// `DV_QUANTITY` → `data_types/quantity`. Each level's segment is the last
-/// dotted component of the package name (`org.openehr.rm.data_types` →
-/// `data_types`).
+/// `DV_QUANTITY` → `data_types/quantity`.
 fn class_paths(schema: &BmmSchema) -> BTreeMap<String, String> {
-    fn walk(p: &BmmPackage, prefix: &str, out: &mut BTreeMap<String, String>) {
+    fn walk(p: &openehr_lang::bmm::BmmPackage, prefix: &str, out: &mut BTreeMap<String, String>) {
         let seg = p.name.rsplit('.').next().unwrap_or(&p.name);
         let path = if prefix.is_empty() {
             seg.to_string()
@@ -252,7 +518,12 @@ fn class_paths(schema: &BmmSchema) -> BTreeMap<String, String> {
     out
 }
 
-fn emit_struct(model: &Model, class: &BmmClass) -> String {
+fn emit_struct(
+    model: &Model,
+    class: &BmmClass,
+    index: &BTreeMap<String, Vec<String>>,
+    local: &BTreeSet<String>,
+) -> String {
     let ty = naming::type_name(&class.name);
     let generics: Vec<String> = class
         .generic_params
@@ -266,9 +537,10 @@ fn emit_struct(model: &Model, class: &BmmClass) -> String {
     };
 
     let mut b = String::new();
-    file_header(&mut b, &class.name);
+    let imports = import_lines(model, class, &generics, &ty, index);
+    struct_header(&mut b, &class.name, &imports);
     doc_block(&mut b, class.documentation.as_deref(), "");
-    b.push_str("#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, OpenEhrType)]\n");
+    b.push_str("#[derive(Debug, Clone, PartialEq, OpenEhrType)]\n");
     b.push_str(&format!("#[openehr(type_name = \"{}\")]\n", class.name));
     b.push_str(&format!("pub struct {ty}{gen_decl} {{\n"));
 
@@ -276,7 +548,6 @@ fn emit_struct(model: &Model, class: &BmmClass) -> String {
     let mut prev_owner: Option<&str> = None;
     for rp in &props {
         let p = rp.prop;
-        // `// inherited: X` banner once per run of same-owner inherited fields
         if rp.owner != class.name && prev_owner != Some(rp.owner.as_str()) {
             b.push_str(&format!("\n    // inherited: {}\n", rp.owner));
         }
@@ -285,63 +556,83 @@ fn emit_struct(model: &Model, class: &BmmClass) -> String {
 
         let ident = naming::field_ident(&p.name);
         if let Some(rename) = naming::serde_rename(&p.name, &ident) {
-            b.push_str(&format!("    #[serde(rename = \"{rename}\")]\n"));
+            b.push_str(&format!("    #[openehr(rename = \"{rename}\")]\n"));
         }
-
-        let (rust_ty, extra_serde) = field_type(model, class, p, &generics);
-        for attr in extra_serde {
-            b.push_str(&format!("    {attr}\n"));
-        }
+        let rust_ty = field_type(model, class, p, &generics, local);
         b.push_str(&format!("    pub {ident}: {rust_ty},\n"));
     }
 
     b.push_str("}\n");
-    trailer(&mut b, &class.name, "struct");
     b
 }
 
-/// Compute a field's Rust type and any serde attribute lines.
+/// Field-level type overrides mapping a `(class, field)` to a proven Rust crate
+/// type instead of the BMM primitive (ADR-004 override layer). Seeded here;
+/// slated to move to `codegen.toml`. Only unambiguous mappings belong here —
+/// where openEHR's semantics are broader than a crate (partial-precision ISO
+/// 8601, plain-text URIs) the field stays `String` and the crate is used in the
+/// hand-written `*_impl.rs` behavior instead.
+fn type_override(class: &str, field: &str) -> Option<&'static str> {
+    match (class, field) {
+        // A UUID is an RFC-4122 canonical UUID — use the `uuid` crate directly.
+        // (ISO_OID / INTERNET_ID / OBJECT_VERSION_ID are *not* plain UUIDs.)
+        ("UUID", "value") => Some("uuid::Uuid"),
+        _ => None,
+    }
+}
+
+/// Compute a field's Rust type (`OpenEhrType` handles skip-if-none/empty, so no
+/// serde attributes are needed on the field).
 fn field_type(
     model: &Model,
     class: &BmmClass,
     p: &openehr_lang::bmm::BmmProperty,
     generics: &[String],
-) -> (String, Vec<String>) {
+    local: &BTreeSet<String>,
+) -> String {
     match &p.kind {
         BmmPropKind::Single(t) => {
-            let mut inner = model.render_type(t, generics);
-            // box direct self-recursion (e.g. DV_MULTIMEDIA.thumbnail)
-            if t.root_name() == class.name {
+            let overridden = type_override(&class.name, &p.name);
+            let mut inner = match overridden {
+                Some(rust) => rust.to_string(),
+                None => model.render_type(t, generics, local),
+            };
+            // Box direct self-recursion, and mutual recursion that would make
+            // the struct infinitely sized (e.g. RESOURCE_DESCRIPTION ↔
+            // AUTHORED_RESOURCE). Skips overridden/mapped types.
+            let root = t.root_name();
+            let cyclic = overridden.is_none()
+                && !Model::is_mapped(root)
+                && local.contains(root)
+                && (root == class.name || model.reaches(root, &class.name, &mut BTreeSet::new()));
+            if cyclic {
                 inner = format!("Box<{inner}>");
             }
             if p.is_mandatory {
-                (inner, vec![])
+                inner
             } else {
-                (
-                    format!("Option<{inner}>"),
-                    vec!["#[serde(skip_serializing_if = \"Option::is_none\")]".to_string()],
-                )
+                format!("Option<{inner}>")
             }
         }
         BmmPropKind::Container { item, .. } => {
-            let inner = model.render_type(item, generics);
-            let ty = format!("Vec<{inner}>");
-            if p.is_mandatory {
-                (ty, vec![])
-            } else {
-                (
-                    ty,
-                    vec!["#[serde(default, skip_serializing_if = \"Vec::is_empty\")]".to_string()],
-                )
-            }
+            format!("Vec<{}>", model.render_type(item, generics, local))
         }
     }
 }
 
-fn emit_enum(class: &BmmClass, descendants: &[String]) -> String {
+fn emit_enum(
+    class: &BmmClass,
+    variants: &[String],
+    index: &BTreeMap<String, Vec<String>>,
+) -> String {
     let ty = naming::type_name(&class.name);
     let mut b = String::new();
-    file_header(&mut b, &class.name);
+
+    let mut imports: BTreeSet<String> = BTreeSet::new();
+    for v in variants {
+        add_import(&mut imports, &naming::type_name(v), &ty, index);
+    }
+    enum_header(&mut b, &class.name, &imports);
     doc_block(&mut b, class.documentation.as_deref(), "");
     b.push_str(&format!(
         "/// Closed subtype set of `{}` (ADR-004): dispatched on each payload's `_type`.\n",
@@ -350,25 +641,83 @@ fn emit_enum(class: &BmmClass, descendants: &[String]) -> String {
     b.push_str("#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n");
     b.push_str("#[serde(untagged)]\n");
     b.push_str(&format!("pub enum {ty} {{\n"));
-    for d in descendants {
+    for d in variants {
         let variant = naming::type_name(d);
         b.push_str(&format!("    {variant}({variant}),\n"));
     }
     b.push_str("}\n");
-    trailer(&mut b, &class.name, "enum");
     b
 }
 
-// ── formatting helpers ───────────────────────────────────────────────────────
+fn emit_newtype(class: &BmmClass, prim: &str) -> String {
+    let ty = naming::type_name(&class.name);
+    let mut b = String::new();
+    b.push_str(&format!(
+        "// @generated by openehr-codegen from BMM (`{}`) — DO NOT EDIT.\n\n\
+         use serde::{{Deserialize, Serialize}};\n\n",
+        class.name
+    ));
+    doc_block(&mut b, class.documentation.as_deref(), "");
+    b.push_str("#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]\n");
+    b.push_str("#[serde(transparent)]\n");
+    b.push_str(&format!("pub struct {ty}(pub {prim});\n"));
+    b
+}
 
-fn file_header(b: &mut String, class: &str) {
+// ── import + header helpers ──────────────────────────────────────────────────
+
+/// Precise `use crate::...;` lines for a struct's referenced spec types.
+fn import_lines(
+    model: &Model,
+    class: &BmmClass,
+    generics: &[String],
+    self_ident: &str,
+    index: &BTreeMap<String, Vec<String>>,
+) -> BTreeSet<String> {
+    let mut imports = BTreeSet::new();
+    for spec in model.referenced_specs(class, generics) {
+        add_import(&mut imports, &naming::type_name(&spec), self_ident, index);
+    }
+    imports
+}
+
+fn add_import(
+    imports: &mut BTreeSet<String>,
+    ident: &str,
+    self_ident: &str,
+    index: &BTreeMap<String, Vec<String>>,
+) {
+    if ident == self_ident {
+        return;
+    }
+    if let Some(chain) = index.get(ident) {
+        imports.insert(format!("use crate::{}::{};", chain.join("::"), ident));
+    }
+}
+
+fn struct_header(b: &mut String, class: &str, imports: &BTreeSet<String>) {
     b.push_str(&format!(
         "// @generated by openehr-codegen from BMM (`{class}`) — DO NOT EDIT.\n\
          // Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).\n\n\
-         use crate::prelude::*;\n\
-         use openehr_derive::OpenEhrType;\n\
-         use serde::{{Deserialize, Serialize}};\n\n"
+         use openehr_derive::OpenEhrType;\n"
     ));
+    for imp in imports {
+        b.push_str(imp);
+        b.push('\n');
+    }
+    b.push('\n');
+}
+
+fn enum_header(b: &mut String, class: &str, imports: &BTreeSet<String>) {
+    b.push_str(&format!(
+        "// @generated by openehr-codegen from BMM (`{class}`) — DO NOT EDIT.\n\n\
+         use serde::{{Deserialize, Serialize}};\n"
+    ));
+    for imp in imports {
+        b.push_str(imp);
+        b.push('\n');
+    }
+    b.push('\n');
 }
 
 fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
@@ -381,19 +730,6 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
             b.push_str(&format!("{indent}/// {line}\n"));
         }
     }
-}
-
-fn trailer(b: &mut String, class: &str, kind: &str) {
-    b.push_str(&format!(
-        "\n// ─────────────────────────────────────────────\n\
-         // PORT STATUS\n\
-         //   source: openEHR BMM meta-model — class {class} ({kind})\n\
-         //   source_loc: n/a\n\
-         //   confidence: high\n\
-         //   todos: 0\n\
-         //   note: @generated by openehr-codegen (ADR-004); regenerate, do not hand-edit.\n\
-         // ─────────────────────────────────────────────\n"
-    ));
 }
 
 /// `DV_QUANTITY` → `dv_quantity`, `Iso8601_date` → `iso8601_date`.

@@ -175,11 +175,18 @@ impl BmmSchema {
             .map(|m| m.values().map(parse_package).collect())
             .unwrap_or_default();
 
+        // Classes come from two sibling sections: `class_definitions` (the
+        // model's own classes) and `primitive_types` (foundation built-ins —
+        // primitives, containers, `Interval`, ISO 8601, terminology). Both are
+        // needed so ancestor flattening and type resolution work; the emitter
+        // decides which to actually emit.
         let mut classes = BTreeMap::new();
-        if let Some(defs) = doc.get("class_definitions").and_then(Value::as_object) {
-            for node in defs.values() {
-                let class = parse_class(node);
-                classes.insert(class.name.clone(), class);
+        for section in ["primitive_types", "class_definitions"] {
+            if let Some(defs) = doc.get(section).and_then(Value::as_object) {
+                for node in defs.values() {
+                    let class = parse_class(node);
+                    classes.insert(class.name.clone(), class);
+                }
             }
         }
 
