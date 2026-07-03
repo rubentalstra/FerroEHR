@@ -1,0 +1,20 @@
+[package]
+name = "openehr-codegen"
+version = "0.1.0"
+description = "BMM-driven code generator: emits the openEHR spec crates from the vendored BMM meta-model (ADR-004)"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[[bin]]
+name = "openehr-codegen"
+path = "src/main.rs"
+
+[dependencies]
+openehr-lang = { path = "../openehr-lang" }
+
+[lints]
+workspace = true
