@@ -16,7 +16,6 @@ serde_json.workspace = true
 
 [dev-dependencies]
 openehr-base = { path = "../openehr-base" }
-openehr-foundation = { path = "../openehr-foundation" }
 insta.workspace = true
 jsonschema.workspace = true
 serde_path_to_error.workspace = true

@@ -10,7 +10,6 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-openehr-foundation = { path = "../openehr-foundation" }
 openehr-base = { path = "../openehr-base" }
 openehr-term = { path = "../openehr-term" }
 openehr-rm = { path = "../openehr-rm" }
