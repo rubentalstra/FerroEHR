@@ -1,3 +1,9 @@
+#![allow(
+    clippy::many_single_char_names,
+    clippy::too_many_lines,
+    clippy::match_same_arms
+)]
+
 //! ODIN reader (openEHR **LANG 1.0.0**; canonical grammar: specifications-BASE
 //! `odin.g4`).
 //!
