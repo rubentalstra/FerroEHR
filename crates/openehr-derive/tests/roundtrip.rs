@@ -1,9 +1,7 @@
 //! Behavioural tests for `#[derive(OpenEhrType)]`.
+#![allow(clippy::float_cmp, clippy::approx_constant)]
 
 use openehr_derive::OpenEhrType;
-use serde::Deserialize;
-#[allow(unused_imports)]
-use serde::Serialize;
 
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "DV_QUANTITY")]
@@ -38,7 +36,10 @@ fn serialize_injects_type_first_and_skips_none_and_empty() {
     assert_eq!(v["units"], "kg");
     assert_eq!(v["use"], "weight"); // renamed
     assert!(v.get("precision").is_none(), "None omitted");
-    assert!(v.get("other_reference_ranges").is_none(), "empty Vec omitted");
+    assert!(
+        v.get("other_reference_ranges").is_none(),
+        "empty Vec omitted"
+    );
     // `_type` must be the first key for canonical output.
     let s = serde_json::to_string(&q).unwrap();
     assert!(s.starts_with(r#"{"_type":"DV_QUANTITY""#), "got {s}");

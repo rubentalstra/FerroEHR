@@ -56,6 +56,7 @@ enum FieldKind {
     Plain,
 }
 
+#[allow(clippy::too_many_lines)]
 fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let name = &input.ident;
     let type_name = openehr_type_name(input)?;
@@ -75,7 +76,9 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
 
     let mut fields = Vec::new();
     for f in &named.named {
-        let ident = f.ident.clone().expect("named field");
+        let Some(ident) = f.ident.clone() else {
+            return Err(syn::Error::new_spanned(f, "expected a named field"));
+        };
         let wire = field_rename(f)?.unwrap_or_else(|| ident.to_string());
         let kind = classify(&f.ty);
         fields.push(FieldInfo {
