@@ -190,11 +190,31 @@ fn emit_to_xml(
 
 fn emit_write_field(b: &mut String, f: &XmlField) {
     if f.target == "Hash" {
-        let _ = writeln!(
-            b,
-            "// TODO(port): skipped map field `{}` (Hash)",
-            f.rust_name
-        );
+        let (name, rust) = (&f.wire_name, &f.rust_name);
+        if f.map_value.as_deref() == Some("String") {
+            // `Hash<String, String>` → repeated `<name id="key">value</name>`
+            // (the openEHR `StringDictionaryItem` shape).
+            if f.optional {
+                let _ = writeln!(
+                    b,
+                    "if let Some(m) = &self.{rust} {{ for (k, v) in m {{ w.write_kv_element(\"{name}\", k, v)?; }} }}"
+                );
+            } else {
+                let _ = writeln!(
+                    b,
+                    "for (k, v) in &self.{rust} {{ w.write_kv_element(\"{name}\", k, v)?; }}"
+                );
+            }
+        } else {
+            // `Hash<String, ComplexType>` (translations, RESOURCE_ANNOTATIONS):
+            // archetype-resource metadata serialized via ADL/AOM, off the RM
+            // canonical-XML wire; its RM-XML shape is not spec-defined here.
+            let _ = writeln!(
+                b,
+                "// PORT NOTE: Hash<String, {}> field `{rust}` is off the RM canonical-XML wire (resource metadata); not serialized.",
+                f.map_value.as_deref().unwrap_or("?")
+            );
+        }
         return;
     }
     let (name, rust, target) = (&f.wire_name, &f.rust_name, &f.target);
@@ -229,7 +249,12 @@ fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
             let (hdr, args) = generic_header(generics, "crate::xml::runtime::FromXml");
             let attrs = attr_names(spec, xsd);
             let is_attr = |f: &XmlField| attrs.contains(&f.wire_name);
-            let is_hash = |f: &XmlField| f.target == "Hash";
+            // `Hash<String, String>` is parsed inline (StringDictionaryItem);
+            // `Hash<String, ComplexType>` is off-wire and defaulted.
+            let is_str_hash =
+                |f: &XmlField| f.target == "Hash" && f.map_value.as_deref() == Some("String");
+            let is_cplx_hash =
+                |f: &XmlField| f.target == "Hash" && f.map_value.as_deref() != Some("String");
             let _ = write!(
                 b,
                 "impl{hdr} crate::xml::runtime::FromXml for {prelude}::{rust}{args} {{\n\
@@ -239,9 +264,11 @@ fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
             // inference — each `__x` is pinned by its construction site below
             // (`field: __x…`), so boxing and type overrides resolve without
             // naming (and repeating the import of) the field type here.
-            for f in fields.iter().filter(|f| !is_attr(f) && !is_hash(f)) {
+            for f in fields.iter().filter(|f| !is_attr(f) && !is_cplx_hash(f)) {
                 let var = acc_var(&f.rust_name);
-                if f.multiple {
+                if is_str_hash(f) {
+                    let _ = writeln!(b, "let mut {var} = std::collections::BTreeMap::new();");
+                } else if f.multiple {
                     let _ = writeln!(b, "let mut {var} = Vec::new();");
                 } else {
                     let _ = writeln!(b, "let mut {var} = None;");
@@ -249,9 +276,16 @@ fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
             }
             b.push_str("loop { match reader.read()? {\n");
             b.push_str("crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {\n");
-            for f in fields.iter().filter(|f| !is_attr(f) && !is_hash(f)) {
+            for f in fields.iter().filter(|f| !is_attr(f) && !is_cplx_hash(f)) {
                 let var = acc_var(&f.rust_name);
-                if f.multiple {
+                if is_str_hash(f) {
+                    // StringDictionaryItem: `<name id="key">value</name>`.
+                    let _ = writeln!(
+                        b,
+                        "\"{}\" => {{ let __k = __c.attr(\"id\").unwrap_or(\"\").to_string(); let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?; {var}.insert(__k, __v); }}",
+                        f.wire_name
+                    );
+                } else if f.multiple {
                     let _ = writeln!(
                         b,
                         "\"{}\" => {{ {var}.push(crate::xml::runtime::FromXml::from_xml(reader, &__c)?); }}",
@@ -288,8 +322,18 @@ fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
                             f.wire_name, f.wire_name
                         );
                     }
-                } else if is_hash(f) {
+                } else if is_cplx_hash(f) {
                     let _ = writeln!(b, "{fname}: Default::default(),");
+                } else if is_str_hash(f) {
+                    let var = acc_var(fname);
+                    if f.optional {
+                        let _ = writeln!(
+                            b,
+                            "{fname}: if {var}.is_empty() {{ None }} else {{ Some({var}) }},"
+                        );
+                    } else {
+                        let _ = writeln!(b, "{fname}: {var},");
+                    }
                 } else if f.multiple || f.optional {
                     let _ = writeln!(b, "{fname}: {},", acc_var(fname));
                 } else {

@@ -1461,6 +1461,10 @@ pub struct XmlField {
     pub optional: bool,
     pub multiple: bool,
     pub target: String,
+    /// For a `Hash<String, V>` field (`target == "Hash"`), the value type's spec
+    /// name (`V`); `None` otherwise. `Some("String")` is serialized inline as the
+    /// openEHR `StringDictionaryItem` shape.
+    pub map_value: Option<String>,
 }
 
 /// One variant of an untagged enum, for the forwarding `ToXml`/`FromXml` impl.
@@ -1522,12 +1526,20 @@ impl Model {
                     BmmPropKind::Single(t) => (false, t.root_name().to_string()),
                     BmmPropKind::Container { item, .. } => (!octet, item.root_name().to_string()),
                 };
+                // The value type of a `Hash<K, V>` field (second generic arg).
+                let map_value = match &p.kind {
+                    BmmPropKind::Single(BmmType::Generic { root, params }) if root == "Hash" => {
+                        params.get(1).map(|v| v.root_name().to_string())
+                    }
+                    _ => None,
+                };
                 XmlField {
                     wire_name: p.name.clone(),
                     rust_name: naming::field_ident(&p.name),
                     optional: !p.is_mandatory && !multiple,
                     multiple,
                     target,
+                    map_value,
                 }
             })
             .collect()

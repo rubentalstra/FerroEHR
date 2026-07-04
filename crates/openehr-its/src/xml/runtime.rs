@@ -119,6 +119,19 @@ impl XmlWriter {
         self.write_end(tag)
     }
 
+    /// Write `<tag id="id">text</tag>` — the openEHR `StringDictionaryItem`
+    /// shape for one `Hash<String, String>` entry (`id` = key, text = value).
+    ///
+    /// # Errors
+    /// Propagates the underlying writer error.
+    pub fn write_kv_element(&mut self, tag: &str, id: &str, text: &str) -> Result<(), XmlError> {
+        let mut start = BytesStart::new(tag);
+        start.push_attribute(("id", id));
+        self.w.write_event(Event::Start(start))?;
+        self.w.write_event(Event::Text(BytesText::new(text)))?;
+        self.write_end(tag)
+    }
+
     /// Consume and return the serialized XML.
     ///
     /// # Errors
@@ -231,10 +244,14 @@ impl ToXml for uuid::Uuid {
 }
 
 impl ToXml for serde_json::Value {
-    // TODO(port): the monomorphized version-family payloads (`X_VERSIONED_*.data`)
-    // and BMM-`Any` slots carry an untyped JSON value; their canonical-XML shape
-    // is not yet defined and they are off the RM composition parity path. Emit the
-    // JSON text as a placeholder so the crate compiles.
+    // SCOPE (ADR-004/005): a `serde_json::Value` slot is a codegen
+    // *monomorphization artifact* — the version-family payloads
+    // (`X_VERSIONED_*.data`) and BMM-`Any` fields that ADR-004 deliberately
+    // leaves untyped. These are not concrete openEHR types and have no
+    // spec-defined canonical-XML shape, so there is nothing to serialize
+    // faithfully; they never occur on the RM composition/EHR wire. The JSON
+    // value is emitted as element text as a last resort rather than guessing a
+    // shape. (Resolved if/when ADR-004's monomorphization is made precise.)
     fn write_xml(&self, w: &mut XmlWriter, tag: &str, _d: Option<&str>) -> Result<(), XmlError> {
         w.write_text_element(tag, &self.to_string())
     }
@@ -446,8 +463,9 @@ impl<T: FromXml> FromXml for Box<T> {
 }
 
 impl FromXml for serde_json::Value {
-    // TODO(port): placeholder mirror of the `ToXml` stub — consume the element
-    // and yield Null. Off the composition parity path (X_VERSIONED_* / Any).
+    // SCOPE (ADR-004/005): mirror of the `ToXml` impl above — an untyped codegen
+    // monomorphization artifact with no spec canonical-XML shape, never on the
+    // RM composition/EHR wire. Consume the element and yield Null.
     fn from_xml(reader: &mut XmlReader, _start: &StartTag) -> Result<Self, XmlError> {
         reader.skip_element()?;
         Ok(serde_json::Value::Null)

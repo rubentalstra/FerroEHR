@@ -171,7 +171,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::AuthoredResource {
         if let Some(v) = &self.description {
             v.write_xml(w, "description", Some("RESOURCE_DESCRIPTION"))?;
         }
-        // TODO(port): skipped map field `translations` (Hash)
+        // PORT NOTE: Hash<String, TRANSLATION_DETAILS> field `translations` is off the RM canonical-XML wire (resource metadata); not serialized.
         w.write_end(tag)?;
         Ok(())
     }
@@ -1816,7 +1816,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceAnnotations {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        // TODO(port): skipped map field `documentation` (Hash)
+        // PORT NOTE: Hash<String, Hash> field `documentation` is off the RM canonical-XML wire (resource metadata); not serialized.
         w.write_end(tag)?;
         Ok(())
     }
@@ -1868,7 +1868,9 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescription {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        // TODO(port): skipped map field `original_author` (Hash)
+        for (k, v) in &self.original_author {
+            w.write_kv_element("original_author", k, v)?;
+        }
         for v in &self.other_contributors {
             v.write_xml(w, "other_contributors", Some("String"))?;
         }
@@ -1877,8 +1879,12 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescription {
         if let Some(v) = &self.resource_package_uri {
             v.write_xml(w, "resource_package_uri", Some("String"))?;
         }
-        // TODO(port): skipped map field `other_details` (Hash)
-        // TODO(port): skipped map field `details` (Hash)
+        if let Some(m) = &self.other_details {
+            for (k, v) in m {
+                w.write_kv_element("other_details", k, v)?;
+            }
+        }
+        // PORT NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
         self.parent_resource
             .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
         w.write_end(tag)?;
@@ -1892,6 +1898,7 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __title = None;
+        let mut __original_author = std::collections::BTreeMap::new();
         let mut __original_namespace = None;
         let mut __original_publisher = None;
         let mut __other_contributors = Vec::new();
@@ -1901,12 +1908,21 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
         let mut __custodian_organisation = None;
         let mut __copyright = None;
         let mut __licence = None;
+        let mut __ip_acknowledgements = std::collections::BTreeMap::new();
+        let mut __references = std::collections::BTreeMap::new();
         let mut __resource_package_uri = None;
+        let mut __conversion_details = std::collections::BTreeMap::new();
+        let mut __other_details = std::collections::BTreeMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "title" => {
                         __title = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    "original_author" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __original_author.insert(__k, __v);
                     }
                     "original_namespace" => {
                         __original_namespace =
@@ -1942,9 +1958,29 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
                     "licence" => {
                         __licence = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
+                    "ip_acknowledgements" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __ip_acknowledgements.insert(__k, __v);
+                    }
+                    "references" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __references.insert(__k, __v);
+                    }
                     "resource_package_uri" => {
                         __resource_package_uri =
                             Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    "conversion_details" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __conversion_details.insert(__k, __v);
+                    }
+                    "other_details" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __other_details.insert(__k, __v);
                     }
                     _ => reader.skip_element()?,
                 },
@@ -1959,7 +1995,7 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
         }
         Ok(openehr_base::prelude::ResourceDescription {
             title: __title,
-            original_author: Default::default(),
+            original_author: __original_author,
             original_namespace: __original_namespace,
             original_publisher: __original_publisher,
             other_contributors: __other_contributors,
@@ -1973,12 +2009,28 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
             custodian_organisation: __custodian_organisation,
             copyright: __copyright,
             licence: __licence,
-            ip_acknowledgements: Default::default(),
-            references: Default::default(),
+            ip_acknowledgements: if __ip_acknowledgements.is_empty() {
+                None
+            } else {
+                Some(__ip_acknowledgements)
+            },
+            references: if __references.is_empty() {
+                None
+            } else {
+                Some(__references)
+            },
             resource_package_uri: __resource_package_uri,
-            conversion_details: Default::default(),
+            conversion_details: if __conversion_details.is_empty() {
+                None
+            } else {
+                Some(__conversion_details)
+            },
             details: Default::default(),
-            other_details: Default::default(),
+            other_details: if __other_details.is_empty() {
+                None
+            } else {
+                Some(__other_details)
+            },
         })
     }
 }
@@ -2016,8 +2068,16 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescriptionIt
         if let Some(v) = &self.misuse {
             v.write_xml(w, "misuse", Some("String"))?;
         }
-        // TODO(port): skipped map field `original_resource_uri` (Hash)
-        // TODO(port): skipped map field `other_details` (Hash)
+        if let Some(m) = &self.original_resource_uri {
+            for (k, v) in m {
+                w.write_kv_element("original_resource_uri", k, v)?;
+            }
+        }
+        if let Some(m) = &self.other_details {
+            for (k, v) in m {
+                w.write_kv_element("other_details", k, v)?;
+            }
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -2033,6 +2093,8 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
         let mut __keywords = Vec::new();
         let mut __use_ = None;
         let mut __misuse = None;
+        let mut __original_resource_uri = std::collections::BTreeMap::new();
+        let mut __other_details = std::collections::BTreeMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -2050,6 +2112,16 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
                     }
                     "misuse" => {
                         __misuse = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    "original_resource_uri" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __original_resource_uri.insert(__k, __v);
+                    }
+                    "other_details" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __other_details.insert(__k, __v);
                     }
                     _ => reader.skip_element()?,
                 },
@@ -2072,8 +2144,16 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
             keywords: __keywords,
             use_: __use_,
             misuse: __misuse,
-            original_resource_uri: Default::default(),
-            other_details: Default::default(),
+            original_resource_uri: if __original_resource_uri.is_empty() {
+                None
+            } else {
+                Some(__original_resource_uri)
+            },
+            other_details: if __other_details.is_empty() {
+                None
+            } else {
+                Some(__other_details)
+            },
         })
     }
 }
@@ -2217,11 +2297,17 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::TranslationDetails {
         w.write_start(__e)?;
         self.language
             .write_xml(w, "language", Some("Terminology_code"))?;
-        // TODO(port): skipped map field `author` (Hash)
+        for (k, v) in &self.author {
+            w.write_kv_element("author", k, v)?;
+        }
         if let Some(v) = &self.accreditation {
             v.write_xml(w, "accreditation", Some("String"))?;
         }
-        // TODO(port): skipped map field `other_details` (Hash)
+        if let Some(m) = &self.other_details {
+            for (k, v) in m {
+                w.write_kv_element("other_details", k, v)?;
+            }
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -2233,7 +2319,9 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::TranslationDetails 
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __language = None;
+        let mut __author = std::collections::BTreeMap::new();
         let mut __accreditation = None;
+        let mut __other_details = std::collections::BTreeMap::new();
         let mut __version_last_translated = None;
         let mut __other_contributors = Vec::new();
         loop {
@@ -2242,9 +2330,19 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::TranslationDetails 
                     "language" => {
                         __language = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
+                    "author" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __author.insert(__k, __v);
+                    }
                     "accreditation" => {
                         __accreditation =
                             Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    "other_details" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __other_details.insert(__k, __v);
                     }
                     "version_last_translated" => {
                         __version_last_translated =
@@ -2269,9 +2367,13 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::TranslationDetails 
             language: __language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element language".into())
             })?,
-            author: Default::default(),
+            author: __author,
             accreditation: __accreditation,
-            other_details: Default::default(),
+            other_details: if __other_details.is_empty() {
+                None
+            } else {
+                Some(__other_details)
+            },
             version_last_translated: __version_last_translated,
             other_contributors: __other_contributors,
         })
@@ -3998,7 +4100,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::AuthoredResource {
         if let Some(v) = &self.description {
             v.write_xml(w, "description", Some("RESOURCE_DESCRIPTION"))?;
         }
-        // TODO(port): skipped map field `translations` (Hash)
+        // PORT NOTE: Hash<String, TRANSLATION_DETAILS> field `translations` is off the RM canonical-XML wire (resource metadata); not serialized.
         if let Some(v) = &self.revision_history {
             v.write_xml(w, "revision_history", Some("REVISION_HISTORY"))?;
         }
@@ -10335,7 +10437,11 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::GenericContentItem {
         if let Some(v) = &self.system_id {
             v.write_xml(w, "system_id", Some("String"))?;
         }
-        // TODO(port): skipped map field `other_details` (Hash)
+        if let Some(m) = &self.other_details {
+            for (k, v) in m {
+                w.write_kv_element("other_details", k, v)?;
+            }
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -10366,6 +10472,7 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::GenericContentItem {
         let mut __version_id = None;
         let mut __version_set_id = None;
         let mut __system_id = None;
+        let mut __other_details = std::collections::BTreeMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -10436,6 +10543,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::GenericContentItem {
                     "system_id" => {
                         __system_id = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
+                    "other_details" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __other_details.insert(__k, __v);
+                    }
                     _ => reader.skip_element()?,
                 },
                 crate::xml::runtime::XmlEvent::End => break,
@@ -10474,7 +10586,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::GenericContentItem {
             version_id: __version_id,
             version_set_id: __version_set_id,
             system_id: __system_id,
-            other_details: Default::default(),
+            other_details: if __other_details.is_empty() {
+                None
+            } else {
+                Some(__other_details)
+            },
         })
     }
 }
@@ -14771,7 +14887,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ResourceDescription {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        // TODO(port): skipped map field `original_author` (Hash)
+        for (k, v) in &self.original_author {
+            w.write_kv_element("original_author", k, v)?;
+        }
         for v in &self.other_contributors {
             v.write_xml(w, "other_contributors", Some("String"))?;
         }
@@ -14780,8 +14898,12 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ResourceDescription {
         if let Some(v) = &self.resource_package_uri {
             v.write_xml(w, "resource_package_uri", Some("String"))?;
         }
-        // TODO(port): skipped map field `other_details` (Hash)
-        // TODO(port): skipped map field `details` (Hash)
+        if let Some(m) = &self.other_details {
+            for (k, v) in m {
+                w.write_kv_element("other_details", k, v)?;
+            }
+        }
+        // PORT NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
         self.parent_resource
             .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
         w.write_end(tag)?;
@@ -14794,13 +14916,20 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let mut __original_author = std::collections::BTreeMap::new();
         let mut __other_contributors = Vec::new();
         let mut __lifecycle_state = None;
         let mut __resource_package_uri = None;
+        let mut __other_details = std::collections::BTreeMap::new();
         let mut __parent_resource = None;
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
+                    "original_author" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __original_author.insert(__k, __v);
+                    }
                     "other_contributors" => {
                         __other_contributors
                             .push(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -14812,6 +14941,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
                     "resource_package_uri" => {
                         __resource_package_uri =
                             Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    "other_details" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __other_details.insert(__k, __v);
                     }
                     "parent_resource" => {
                         __parent_resource =
@@ -14829,13 +14963,17 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
             }
         }
         Ok(openehr_rm::prelude::ResourceDescription {
-            original_author: Default::default(),
+            original_author: __original_author,
             other_contributors: __other_contributors,
             lifecycle_state: __lifecycle_state.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element lifecycle_state".into())
             })?,
             resource_package_uri: __resource_package_uri,
-            other_details: Default::default(),
+            other_details: if __other_details.is_empty() {
+                None
+            } else {
+                Some(__other_details)
+            },
             parent_resource: __parent_resource.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element parent_resource".into())
             })?,
@@ -14880,8 +15018,16 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ResourceDescriptionItem
         if let Some(v) = &self.copyright {
             v.write_xml(w, "copyright", Some("String"))?;
         }
-        // TODO(port): skipped map field `original_resource_uri` (Hash)
-        // TODO(port): skipped map field `other_details` (Hash)
+        if let Some(m) = &self.original_resource_uri {
+            for (k, v) in m {
+                w.write_kv_element("original_resource_uri", k, v)?;
+            }
+        }
+        if let Some(m) = &self.other_details {
+            for (k, v) in m {
+                w.write_kv_element("other_details", k, v)?;
+            }
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -14898,6 +15044,8 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescriptionIt
         let mut __use_ = None;
         let mut __misuse = None;
         let mut __copyright = None;
+        let mut __original_resource_uri = std::collections::BTreeMap::new();
+        let mut __other_details = std::collections::BTreeMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -14918,6 +15066,16 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescriptionIt
                     }
                     "copyright" => {
                         __copyright = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    "original_resource_uri" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __original_resource_uri.insert(__k, __v);
+                    }
+                    "other_details" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __other_details.insert(__k, __v);
                     }
                     _ => reader.skip_element()?,
                 },
@@ -14941,8 +15099,16 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescriptionIt
             use_: __use_,
             misuse: __misuse,
             copyright: __copyright,
-            original_resource_uri: Default::default(),
-            other_details: Default::default(),
+            original_resource_uri: if __original_resource_uri.is_empty() {
+                None
+            } else {
+                Some(__original_resource_uri)
+            },
+            other_details: if __other_details.is_empty() {
+                None
+            } else {
+                Some(__other_details)
+            },
         })
     }
 }
@@ -15749,8 +15915,14 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::TranslationDetails {
         w.write_start(__e)?;
         self.language
             .write_xml(w, "language", Some("CODE_PHRASE"))?;
-        // TODO(port): skipped map field `author` (Hash)
-        // TODO(port): skipped map field `other_details` (Hash)
+        for (k, v) in &self.author {
+            w.write_kv_element("author", k, v)?;
+        }
+        if let Some(m) = &self.other_details {
+            for (k, v) in m {
+                w.write_kv_element("other_details", k, v)?;
+            }
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -15762,16 +15934,28 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::TranslationDetails {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __language = None;
+        let mut __author = std::collections::BTreeMap::new();
         let mut __accreditaton = None;
+        let mut __other_details = std::collections::BTreeMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "language" => {
                         __language = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
+                    "author" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __author.insert(__k, __v);
+                    }
                     "accreditaton" => {
                         __accreditaton =
                             Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    "other_details" => {
+                        let __k = __c.attr("id").unwrap_or("").to_string();
+                        let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
+                        __other_details.insert(__k, __v);
                     }
                     _ => reader.skip_element()?,
                 },
@@ -15788,9 +15972,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::TranslationDetails {
             language: __language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element language".into())
             })?,
-            author: Default::default(),
+            author: __author,
             accreditaton: __accreditaton,
-            other_details: Default::default(),
+            other_details: if __other_details.is_empty() {
+                None
+            } else {
+                Some(__other_details)
+            },
         })
     }
 }
