@@ -24,10 +24,13 @@ the same surface as upstream EHRbase, but built natively in Rust.
 
 The goal, in one line:
 
-> A faithful, 1:1, pure-Rust reimplementation of EHRbase that behaves identically at the
-> openEHR REST API surface, backed by a natively-generated openEHR stack.
+> A pure-Rust openEHR CDR that is **spec-conformant and behavior-compatible with
+> EHRbase** at the REST/AQL surface — a natively-generated openEHR stack with a
+> modern idiomatic Rust application on top, **not** a class-by-class Java port.
 
-The authoritative plan is [`PORT_MASTER_PLAN.md`](PORT_MASTER_PLAN.md).
+The roadmap lives in [`docs/plans/`](docs/plans/) + [`docs/PROGRESS.md`](docs/PROGRESS.md);
+the design decisions are [ADR-004/005/006](docs/ADRs/). See
+[`docs/architecture.md`](docs/architecture.md) for the full picture.
 
 ----
 
@@ -46,29 +49,34 @@ The authoritative plan is [`PORT_MASTER_PLAN.md`](PORT_MASTER_PLAN.md).
 ## Status
 
 > [!WARNING]
-> Early-stage. The openEHR **spec layer** is generated and passing its fidelity gate;
-> the **EHRbase application** port (REST, persistence, AQL engine) is underway. There is
-> no runnable server yet. Per the port plan, phases P1–P16 are not expected to compile
-> in full until the make-it-compile phase (P17).
+> Early-stage. The openEHR **spec + serialization + REST-contract foundation** is generated
+> and passing its fidelity gates; the **EHRbase application** (REST, persistence, service,
+> AQL engine, auth) is the remaining Stage-1 work and is built as compiling, tested
+> increments (`docs/plans/` phases 09–20). There is no runnable server yet.
 
-What works today:
+What works today (the generated foundation, all compiling + clippy-clean):
 
-- **Generated openEHR spec crates** — `openehr-base` (BASE 1.3.0), `openehr-rm` (RM 1.2.0),
-  `openehr-am` (AM 1.4.0 + 2.4.0), `openehr-term` (TERM 3.1.0), `openehr-lang` (LANG 1.1.0)
-  — all compile clean and clippy-clean, emitted by `openehr-codegen` from the vendored BMM.
-- **Fidelity gate** — the generated Reference Model **reads and losslessly round-trips**
-  the real EHRbase / openEHR_SDK canonical-JSON corpus (`openehr-its/tests/fidelity.rs`).
+- **Generated spec crates** — `openehr-base` (BASE 1.3.0), `openehr-rm` (RM 1.2.0),
+  `openehr-am` (AM 1.4.0 + 2.4.0), `openehr-term` (TERM 3.1.0), `openehr-lang` (LANG 1.1.0),
+  emitted by `openehr-codegen` from the vendored BMM.
+- **Canonical JSON + XML + the ITS-REST contract** — JSON `_type` self-tagging + validation,
+  generated XML `ToXml`/`FromXml`, and generated ITS-REST DTOs/server-traits/routes, all in
+  `openehr-its` (ADR-005).
+- **Fidelity gates** — the generated RM **reads, losslessly round-trips, and validates**
+  the real EHRbase / openEHR_SDK canonical-JSON corpus against the ITS-JSON schema; XML
+  round-trips (48 compositions + real EHRbase XML fixtures). A `codegen-drift` CI job keeps
+  the generated layer in sync with the specs.
 - **AQL parser** — a hand-written `logos` + `chumsky` parser for the full AQL grammar
   (`openehr-query`), validated against the official example corpus.
 
 ## Architecture
 
-Two families of crates, per [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md):
+Two families of crates (ADR-004/005/006):
 
 | Prefix | Meaning | Source |
 |---|---|---|
-| `openehr-*` | the openEHR **specification** | generated from the vendored BMM meta-model (or hand-written runtime parsers) |
-| `ehrbase-*` | the ported **EHRbase application** | ported file-by-file from the upstream Java |
+| `openehr-*` | the openEHR **specification + serialization + REST contract** | generated from the vendored BMM/XSD/OAS (plus hand-written runtimes + the AQL parser) |
+| `ehrbase-*` | the **EHRbase application** | modern idiomatic Rust on the generated crates, with EHRbase's Java as the behavioural reference |
 
 ```
 crates/
@@ -82,9 +90,9 @@ crates/
 ├── openehr-query      # QUERY: AQL lexer + parser (logos + chumsky)
 ├── openehr-its        # ITS: canonical JSON/XML + REST contract + fidelity gate
 ├── openehr-flat       # FLAT / STRUCTURED / Web Template (SDT)
-├── ehrbase-rest       # openEHR REST API surface (axum)      ┐
-├── ehrbase-compat     # EHRbase-specific endpoints, admin    │ ported from
-└── ehrbase            # the server binary                    ┘ EHRbase Java
+├── ehrbase-rest       # openEHR REST API surface (axum) + auth  ┐
+├── ehrbase-compat     # EHRbase-specific endpoints, admin       │ idiomatic app on
+└── ehrbase            # the server binary + service + AQL engine ┘ the openehr-* crates
 ```
 
 ## Tech stack
@@ -94,10 +102,11 @@ crates/
 | Language | Rust stable **1.96** (MSRV 1.96), **edition 2024** |
 | Database | **PostgreSQL 18** (target 18.4+) |
 | Web / async | `axum` 0.8, `tower`, `hyper` 1, `tokio` 1 |
-| Persistence | `sqlx` 0.9 + `sea-query` 0.32 |
+| Persistence | `sqlx` 0.9 + `sea-query` 1.0 (not sea-orm) |
+| Auth | `jsonwebtoken`, `oauth2`, `openidconnect`, `argon2` — Basic + OAuth2/OIDC |
 | Serialization | `serde` / `serde_json`, `quick-xml` |
 | Parsers | `logos` (lexer) + `chumsky` (parser) — **no ANTLR runtime** |
-| Codegen | `openehr-codegen` (BMM → Rust) + `openehr-derive` |
+| Codegen | `openehr-codegen` (BMM/XSD/OAS → Rust) + `openehr-derive` |
 
 The authoritative, fully-pinned dependency set lives in the root `Cargo.toml`
 `[workspace.dependencies]`; version pins are recorded in [`docs/VERSIONS.md`](docs/VERSIONS.md).
@@ -121,8 +130,10 @@ cargo test --workspace --doc
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo fmt --all --check
 
-# Regenerate the openEHR spec crates from the vendored BMM meta-model
-cargo run -p openehr-codegen -- emit
+# Regenerate the openEHR spec + ITS layer from the vendored specs
+cargo run -p openehr-codegen -- emit        # spec crates from BMM
+cargo run -p openehr-codegen -- emit-xml    # canonical-XML impls (openehr-its)
+cargo run -p openehr-codegen -- emit-rest   # ITS-REST contract (openehr-its)
 ```
 
 > [!NOTE]
@@ -133,10 +144,11 @@ cargo run -p openehr-codegen -- emit
 
 ## Documentation
 
-- [`PORT_MASTER_PLAN.md`](PORT_MASTER_PLAN.md) — the authoritative port plan.
-- [`docs/ADRs/ADR-004-spec-driven-codegen.md`](docs/ADRs/ADR-004-spec-driven-codegen.md) — why the spec layer is generated from BMM.
-- [`docs/VERSIONS.md`](docs/VERSIONS.md) — the pinned language, database, and openEHR spec versions.
-- [`docs/PORTING.md`](docs/PORTING.md) / [`docs/ROSETTA.md`](docs/ROSETTA.md) — the Java↔Rust and spec↔Rust mapping rules.
+- [`docs/plans/`](docs/plans/) + [`docs/PROGRESS.md`](docs/PROGRESS.md) — the roadmap (what's done, what's next).
+- [`docs/architecture.md`](docs/architecture.md) — the system design.
+- [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md) / [ADR-005](docs/ADRs/ADR-005-its-codegen.md) — why the spec + ITS layers are generated.
+- [ADR-006](docs/ADRs/ADR-006-application-port-philosophy.md) — the application-layer philosophy (idiomatic Rust, not a 1:1 Java port; auth; stack).
+- [`docs/VERSIONS.md`](docs/VERSIONS.md) + [`docs/postgres-features.md`](docs/postgres-features.md) — pinned versions + the PG 17/18 features we use.
 
 For openEHR concepts and the upstream reference implementation, see the
 [EHRbase documentation](https://docs.ehrbase.org) and the

@@ -1,208 +1,162 @@
-# Target Architecture
+# Architecture
 
-This is a summary of the system this port produces: what EHRbase is, the
-surfaces it exposes, the pipelines behind those surfaces, and how the target
-Rust workspace is organized. It distills `PORT_MASTER_PLAN.md` Sections 6–9;
-that document is authoritative on any discrepancy.
+A pure-Rust openEHR Clinical Data Repository (CDR) that is **openEHR-spec-
+conformant and behavior-compatible with EHRbase** at the REST/AQL surface.
+Two layers:
 
-> **⚠️ ADR-004:** the openEHR-spec crates are **generated from the BMM
-> meta-model** by `openehr-codegen`, not hand-written; crate names split into
-> `openehr-*` (spec) / `ehrbase-*` (application). Where this doc says the spec
-> crates are "written fresh" / "transcribed", read "generated". See
-> `docs/ADRs/ADR-004-spec-driven-codegen.md`.
+1. **The openEHR foundation (`openehr-*`) — generated from the official
+   machine-readable specs, and done.** The spec types, canonical serialization,
+   the ITS-REST contract, and the AQL front end are produced deterministically
+   by `openehr-codegen` (ADR-004/005), not hand-written.
+2. **The EHRbase application (`ehrbase-*`) — modern idiomatic Rust built on that
+   foundation (ADR-006).** The server, persistence, service layer, AQL execution
+   engine, validation, and auth — using proper crates, consuming the generated
+   `openehr-*` types directly, following EHRbase's Java as the *behavioural
+   reference* (not a class-by-class port). This is the remaining Stage-1 work.
 
-## What EHRbase is
+Authoritative roadmap: `docs/plans/` (phases `00–20, 99`) + `docs/PROGRESS.md`.
+Decisions: `docs/ADRs/ADR-004` (spec codegen), `ADR-005` (ITS codegen),
+`ADR-006` (application philosophy).
 
-EHRbase is a Spring Boot openEHR Clinical Data Repository (CDR): a server
-that stores, versions, and queries clinical data shaped by openEHR archetypes
-and templates, exposed through the standard openEHR REST API plus a set of
-EHRbase-specific extensions. The upstream Maven reactor is organized into
-modules — `api`, `application`, `aql-engine`, `base`, `bom`, `cli`,
-`configuration`, `db_scripts`, `jooq-pg`, `plugin`, `rest-ehr-scape`,
-`rest-openehr`, `rm-db-format`, `service`, `test-coverage`/`tests` — which
-this port's Phase 0 `git mv` step concentrates into three Rust server crates
-plus ten openEHR-spec crates written fresh (see "Workspace layout" below).
+## The generated openEHR foundation (done)
 
-## REST surface
+- **Spec types** (BMM → Rust, `openehr-codegen -- emit`): `openehr-base` (BASE
+  1.3.0), `openehr-rm` (RM 1.2.0 — the domain model everything consumes),
+  `openehr-am` (AM 1.4 + 2.4, as `am14`/`am24`), `openehr-term` (TERM data
+  classes + hand-written bundle/assets), `openehr-lang` (BMM/P_BMM model).
+- **Canonical JSON** — `#[derive(OpenEhrType)]` (`openehr-derive`) puts `_type`
+  self-tagging on every type; `openehr-its::json` is the entry points +
+  ITS-JSON schema validation.
+- **Canonical XML** (`emit-xml`) — generated `ToXml`/`FromXml` over a hand-written
+  `quick-xml` runtime, from the vendored XSDs + BMM field model (`openehr-its`).
+- **ITS-REST contract** (`emit-rest`) — generated DTOs + `#[async_trait]` server
+  traits + route tables per API group, from the vendored OpenAPI (`openehr-its`);
+  the application implements the traits.
+- **AQL front end** — hand-written `logos`+`chumsky` lexer/parser/AST
+  (`openehr-query`), corpus-validated.
 
-Base path `/ehrbase/rest/openehr/v1`, implementing openEHR ITS-REST 1.0.3:
+Fidelity is proven by gates (`openehr-its/tests/`): the openEHR_SDK canonical-
+JSON corpus reads + round-trips losslessly + validates against the ITS-JSON
+schema; XML round-trips (48 compositions + real EHRbase XML fixtures). A
+`codegen-drift` CI job regenerates everything and fails on any diff — the
+generated layer can never silently drift from the specs.
 
-- **EHR** — create/read EHRs, EHR_STATUS.
-- **COMPOSITION** — versioned clinical documents.
-- **DIRECTORY / FOLDER** — the EHR's folder hierarchy.
-- **CONTRIBUTION** — the audit/versioning envelope every write belongs to.
-- **QUERY** — ad hoc AQL (`/aql`) and stored queries.
-- **DEFINITION** — template management (`/template/adl1.4`, `/template/adl2`,
-  the latter mostly `501 Not Implemented` upstream).
+## What the application does (EHRbase behaviour, idiomatic Rust)
 
-EHRbase-specific additions layered on top: the Admin API (`/rest/admin`),
-`/rest/status`, `/management/*`, experimental Item Tags, and the legacy
-EhrScape API (`/rest/ecis/v1/*`) for FLAT/STRUCTURED payloads.
+### REST surface (`ehrbase-rest`, `ehrbase-compat`)
 
-## The AQL pipeline (the crown jewel)
+Base path `/ehrbase/rest/openehr/v1`, ITS-REST 1.0.3: **EHR** / **EHR_STATUS**,
+**COMPOSITION** (versioned), **DIRECTORY/FOLDER**, **CONTRIBUTION** (the
+audit/versioning envelope), **QUERY** (ad-hoc `/aql` + stored), **DEFINITION**
+(templates). EHRbase extensions: Admin API (`/rest/admin`), `/rest/status`,
+`/management/*`, Item Tags, and the EhrScape API (`/rest/ecis/v1/*`, in
+`ehrbase-compat`). The server is `axum` implementing the generated ITS-REST
+server traits, with a `tower-http` middleware stack and content negotiation
+(canonical JSON/XML via `openehr-its`).
 
-AQL (Archetype Query Language) is openEHR's query language over archetyped
-data. The pipeline, in order:
+### Authentication (Stage 1)
 
-1. **Parse** — lex + parse AQL text against the QUERY 1.1.0 grammar into an
-   AST. Upstream uses an ANTLR grammar; this port reimplements the grammar
-   natively (`openehr-query`, via `logos` + `chumsky`/`winnow`).
-2. **Semantic / path analysis** — resolve archetype paths in the query
-   against the relevant Web Templates, producing typed, path-resolved query
-   nodes.
-3. **AST → ASL** — lower the analyzed AST into EHRbase's own intermediate
-   representation, the Abstract SQL Layer (ASL). This is the layer that knows
-   about the row-per-locatable persistence shape without yet committing to
-   literal SQL text.
-4. **ASL rewrite / optimize** — rule-based rewrites over the ASL (predicate
-   pushdown, redundant-join elimination, and similar).
-5. **ASL → SQL** — generate literal SQL: JSONB path extraction, array
-   unnesting for repeating structures, and a `current` + `_history` table
-   UNION so a query transparently spans live and versioned data. PostgreSQL
-   18's `JSON_TABLE()` (inherited from PG 17) is used where it can replace
-   hand-rolled JSONB extraction.
-6. **Execute** — run the generated SQL against PostgreSQL.
-7. **Assemble RESULT_SET** — reshape the flat SQL result rows back into the
-   openEHR RESULT_SET wire schema (1.0.3).
+**Basic auth + OAuth2/OIDC** (Keycloak-style) as an `axum`/`tower` middleware —
+`argon2`, `jsonwebtoken`, `oauth2`, `openidconnect`. Fine-grained
+**RBAC/attribute authorization is Stage 2** (matches EHRbase's own layering).
 
-This pipeline plus RM transcription plus the persistence bridge (below) make
-up roughly 60% of the total port's complexity; see "Port-difficulty map".
+### AQL engine (the crown jewel — `openehr-query` front end → `ehrbase` engine)
 
-## Persistence model (v2 shape)
+Parsed AST (done) → semantic/path analysis vs WebTemplates → **ASL** (an
+abstract-SQL IR) → PostgreSQL (`sea-query`: JSONB path extraction, array
+unnesting, `current` + `_history` `UNION`, `JSON_TABLE` where viable) → execute
+(`sqlx`) → assemble the `RESULT_SET` (1.0.3). Built idiomatically **following
+EHRbase's proven ASL approach** (its `aql-engine` Java is the reference); the
+ASL IR is kept as a distinct pass — it is what makes the hard cases tractable.
 
-The v2 schema decomposes each composition **row-per-locatable**: every
-LOCATABLE node in a composition tree becomes its own row, with leaf
-attributes held as JSONB rather than one row per whole composition. Key
-tables:
+### Persistence (v2 schema — `sqlx` + `sea-query`, not sea-orm)
 
-- `ehr.comp_data` / `ehr.comp_data_history` — the decomposed locatable rows,
-  current and historical.
-- `ehr.comp_version` — version envelope per composition version.
-- `ehr.ehr`, `ehr.ehr_status_data`, `ehr.ehr_folder_data` — EHR-level state.
-- `ehr.contribution` — the audit/versioning envelope; every write inserts one.
-- `ehr.audit_details` — who/when/why for every write; every write inserts one.
-- `ehr.template_store` — ingested OPT templates.
-- `ehr.stored_query` — saved AQL queries.
-- `ehr.item_tag` — the experimental Item Tags feature.
+The **real EHRbase v2 schema** is reused verbatim (the vendored Flyway SQL in
+`crates/ehrbase/migrations/`, run via `sqlx migrate`). It decomposes each
+composition **row-per-locatable**: every LOCATABLE node is a row with leaf
+attributes as JSONB. Key tables: `ehr.comp_data`/`_history` (decomposed rows),
+`ehr.comp_version`, `ehr.ehr`/`ehr_status_data`/`ehr_folder_data`,
+`ehr.contribution` + `ehr.audit_details` (every write inserts both),
+`ehr.template_store`, `ehr.stored_query`, `ehr.item_tag`. Versioning uses paired
+`current`/`_history` tables. The RM↔JSONB bridge (`rm-db-format`) lives in
+`ehrbase/src/rm_db_format/`, over the generated `openehr-rm` types.
 
-Versioning uses paired current/`_history` tables driven by triggers: an
-update moves the prior row to `_history` before writing the new current row,
-so `VERSIONED_OBJECT`/`ORIGINAL_VERSION` semantics are reconstructable from
-two tables rather than a single append-only log.
+### Templates, validation, FLAT
 
-The Rust port keeps the migrations verbatim (`ehrbase/migrations/`)
-and replaces jOOQ's generated DSL with `sea-query` + `sqlx` for query
-construction and execution. The RM ↔ row-per-locatable bridge itself is
-`rm-db-format`, ported into `ehrbase/src/rm_db_format/`.
+OPT 1.4 XML ingestion → `openehr-am`; a WebTemplate builder (`moka`-cached);
+composition validation (a validation walker over the WebTemplate + terminology
+binding via `openehr-term`); FLAT/STRUCTURED/Web-Template JSON in `openehr-flat`
+(Better `web-template` semantics; EHRbase quirks behind a feature flag).
 
-## Serialization formats
+## PostgreSQL 18
 
-- **Canonical JSON** — the primary wire format, `_type`-discriminated,
-  targeting the openEHR ITS-JSON schemas (`openehr-its`).
-- **Canonical XML** — JAXB/XSD-shaped in EHRbase; targets ITS-XML 1.0.2 and
-  2.0.0 in this port, for round-trip with both schema generations.
-- **FLAT (simSDT) / STRUCTURED (structSDT)** — Better/Marand vendor formats
-  being retro-standardized as SDT; implemented in `openehr-flat` against
-  Better's `web-template` semantics plus documented EHRbase quirks.
-- **Web Template JSON** — the flattened, path-addressable template shape both
-  FLAT/STRUCTURED and AQL path analysis are built on.
-- A newer Matrix format exists upstream and is lower priority.
+We target **PG 18** (EHRbase Java targets PG 15/16) to use two majors of new
+capability — `uuidv7()`, temporal `WITHOUT OVERLAPS` constraints, `RETURNING
+OLD/NEW`, `JSON_TABLE` + SQL/JSON functions, B-tree skip scan, async I/O,
+generated columns, OAuth. See `docs/postgres-features.md` for the full feature
+delta and where each phase uses it.
 
 ## Workspace layout (13 crates)
 
-Crate boundaries mirror openEHR component boundaries: each crate maps ~1:1 to
-a spec component and versions independently. Ten crates are openEHR-spec
-crates that start empty and are written from the published specifications
-(EHRbase itself sourced this surface from the external `archie`/openEHR-SDK
-libraries, which are not in this repo). Three crates receive EHRbase's actual
-server Java via the Phase 0 `git mv` and are ported in place.
-
-Dependency arrows (downward only — server code depends on spec crates, never
-the reverse):
+Dependencies point downward only: app (`ehrbase-*`) → spec (`openehr-*`).
 
 ```
-openehr-foundation
-      │
-      ▼
-openehr-base ──────────────► openehr-term
-      │                             │
-      ▼                             ▼
-      └──────────► openehr-rm ◄─────┘
-                       │
-        ┌──────────────┼───────────────┐
-        ▼              ▼               ▼
-  openehr-its   openehr-odin    (consumed by
-        │              │           openehr-am,
-        │              ▼           below)
-        │        openehr-bmm
-        │              │
-        └──────┬───────┘
-               ▼
-          openehr-am ──────────────► openehr-flat
-               │                            │
-               ▼                            │
-          openehr-query                       │
-               │                            │
-               ▼                            │
-          ehrbase-rest ◄────────────────────┘
-               │
-               ▼
-     ehrbase-compat
-               │
-               ▼
-         ehrbase   (binary; depends on all of the above)
+openehr-derive (proc-macro)        openehr-codegen (BMM/XSD/OAS → Rust generator)
+        │                                   │  (generates ▼)
+        └───────────────► openehr-base ─────┴─► openehr-rm ─► openehr-am
+                               │                    │            (am14/am24)
+                               ▼                    ▼
+                          openehr-term         openehr-lang
+                               │                    │
+                               ▼                    ▼
+   openehr-query ◄─── openehr-rm ───► openehr-its ───► openehr-flat
+        │                                 │                 │
+        └──────────► ehrbase-rest ◄───────┴─────────────────┘
+                          │
+                          ▼
+                    ehrbase-compat ─► ehrbase (binary)
 ```
 
-| Crate | Role | Depends on |
+| Crate | Role | Kind |
 |---|---|---|
-| `openehr-foundation` | BASE Foundation Types: `Any`, `Interval<T>`, containers, ISO 8601 temporals, functional types | — |
-| `openehr-base` | BASE Base Types: definitions, builtins, identification, resource | `openehr-foundation` |
-| `openehr-term` | TERM 3.x XML bundle + terminology service | `openehr-base` |
-| `openehr-rm` | RM 1.1.0: data_types, data_structures, common, ehr, demographic, integration, support | `openehr-base`, `openehr-term` |
-| `openehr-its` | Canonical JSON (ITS-JSON) + canonical XML (ITS-XML), `_type` dispatch | `openehr-rm` |
-| `openehr-odin` | ODIN parser | — |
-| `openehr-bmm` | BMM object model + P_BMM parser (schema v2.3) | `openehr-odin` |
-| `openehr-am` | ADL 1.4 + ADL 2 parsers, AOM 1.4 + AOM 2, OPT 1.4 XML, OPT 2 flattener | `openehr-odin`, `openehr-bmm`, `openehr-rm`, `openehr-its` |
-| `openehr-flat` | FLAT / STRUCTURED / Web Template (Better semantics + EHRbase quirks) | `openehr-rm`, `openehr-its`, `openehr-am` |
-| `openehr-query` | AQL 1.1.0 lexer + parser + AST + semantic analyser | `openehr-rm`, `openehr-am` |
-| `ehrbase-rest` | ITS-REST 1.0.3 server + client (axum). **Receives** EHRbase REST Java. | `openehr-rm`, `openehr-its`, `openehr-am`, `openehr-query` |
-| `ehrbase-compat` | EHRbase-compatible endpoint aliases, admin API, OPT 1.4 ingestion, WebTemplate export, EhrScape. **Receives** EhrScape + admin Java. | `ehrbase-rest`, `openehr-flat` |
-| `ehrbase` | Reference binary: persistence (sqlx + sea-query), AQL execution engine (ASL), versioning, contributions. **Receives** most server Java. | all of the above |
+| `openehr-base` | BASE 1.3.0 (foundation + base types + identification) | generated |
+| `openehr-rm` | RM 1.2.0 — the domain model | generated |
+| `openehr-am` | AM 1.4 + 2.4 (AOM) as `am14`/`am24` | generated |
+| `openehr-term` | TERM data classes + terminology bundle/assets | generated + hand-written |
+| `openehr-lang` | BMM/P_BMM object model | generated |
+| `openehr-its` | Canonical JSON + generated XML (`ToXml`/`FromXml`) + generated ITS-REST contract + runtimes + fidelity gates | generated + hand-written |
+| `openehr-query` | AQL 1.1.0 lexer + parser + AST | hand-written |
+| `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
+| `openehr-codegen` | The BMM/XSD/OAS → Rust generator (`emit`/`emit-xml`/`emit-rest`) | tooling |
+| `openehr-derive` | `#[derive(OpenEhrType)]` proc-macro | tooling |
+| `ehrbase-rest` | ITS-REST server (`axum`) + auth; implements the generated traits | application |
+| `ehrbase-compat` | EhrScape, admin API, WebTemplate/FLAT endpoints | application |
+| `ehrbase` | Binary: persistence, service layer, AQL engine, versioning, config, CLI | application |
 
-## Port-difficulty map
+The `ehrbase-*` crates carry EHRbase's Java in-tree as the **read-only
+behavioural reference**, deleted per-subsystem as each reaches parity (P99).
 
-| Area | Difficulty | Share |
-|---|---|---|
-| REST controllers, DTOs, admin, security wiring, cache, config, metrics, Swagger, migrations, CLI, item tags, stored queries, AQL DTO model | EASY | ~15% |
-| Service orchestration & transactions, jOOQ→sea-query, schema, canonical JSON, OPT XML parsing, versioning, EhrScape, terminology client, AQL grammar parsing | MEDIUM | ~25% |
-| RM classes (own transcription), WebTemplate builder, composition validation, canonical XML, FLAT/STRUCTURED, AQL path analysis, result rebuild, rm-db-format | HARD | ~35% |
-| AQL planner (AST→ASL), AQL SQL generator (ASL→SQL), full ADL2/AOM2 (deferrable) | VERY HARD | ~25% |
+## Build sequence & stages
 
-Critical path (~60% of total complexity): RM transcription + the AQL engine
-(parse + plan + SQL + result) + rm-db-format + composition validation. Phases
-are sequenced so an increasingly capable partial system is usable at each
-boundary rather than requiring the whole stack before anything runs.
+- **Stage 1** (`docs/plans/`): the generated foundation is done; the application
+  is built as **compiling, tested increments** in dependency order — **P09**
+  persistence → **P10** rm-db-format → **P11** REST+auth → **P12** service →
+  **P13** templates → **P14** WebTemplate → **P15** validation → **P16** AQL
+  engine → **P17** FLAT/EhrScape → **P18** integration → **P19** conformance &
+  parity (≥99% at the REST surface vs stock EHRbase) → **P20** optimization →
+  **P99** cutover.
+- **Stage 2** (after parity holds): restore the enterprise capabilities EHRbase
+  removed pre-v2 — RBAC/attribute authz (highest priority), the plugin system,
+  multi-tenancy — from the `reference/v1` archaeology.
+- **Stage 3**: idiomatic refinement, performance, new capabilities.
 
-## Stage sequencing
+## Verification
 
-The whole project in one line:
-
-> **Stage 1:** faithful 1:1 Rust-native port → **Stage 2:** restore
-> enterprise features (RBAC and others removed between the v1 and v2 lines)
-> → **Stage 3:** improve the codebase.
-
-- **Stage 1** is everything in `PORT_MASTER_PLAN.md` Section 10's phase table
-  (P0–P99): transcribe the openEHR spec surface natively, port EHRbase's
-  server Java in place, make the workspace compile (P17), and reach ≥99%
-  behavioural parity at the REST surface against stock EHRbase (P18).
-  Phases P1–P16 are explicitly not required to compile — capturing intent
-  correctly is the goal, not a green `cargo build`, until P17.
-- **Stage 2** begins only once P18 parity holds. It restores capabilities
-  EHRbase removed between its pre-v2 line and v2 — RBAC/access control being
-  the highest-priority candidate — based on the archaeology diff produced in
-  Phase 0 against the `reference/v1` git ref. Each confirmed item gets its
-  own Stage 2 phase file.
-- **Stage 3** is idiomatic refactoring, performance work, new capabilities,
-  and any upstream-worthy cleanups. It happens only after Stage 2, once the
-  codebase is both faithful and feature-complete relative to the pre-v2
-  baseline.
+- **Fidelity gates** (spec/serialization): JSON read + lossless round-trip +
+  ITS-JSON schema validation; XML round-trip + real EHRbase-XML fixtures.
+- **Parity harness** (`scripts/parity.sh`, P19): drives our server and a stock
+  EHRbase with identical requests and diffs responses; the `USE_REFERENCE_EHRBASE=1`
+  negative gate keeps parity tests honest. This — not class-level mirroring — is
+  how "behavior-compatible" is proven.
+- **Drift check** (`scripts/check-codegen-drift.sh` + CI): the generated layer is
+  always in sync with the vendored specs.
