@@ -1,0 +1,260 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/C_ATTRIBUTE-detailed.json",
+    "title": "C_ATTRIBUTE",
+    "description": "Abstract model of constraint on any kind of attribute in a class model.",
+    "$comments": "Defined in Aom2 IM, inherits from ARCHETYPE_CONSTRAINT",
+    "type": "object",
+    "properties": {
+        "parent": {
+            "description": "Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.",
+            "$ref": "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+        },
+        "soc_parent": {
+            "$ref": "all-detailed.json#/definitions/C_SECOND_ORDER"
+        },
+        "rm_attribute_name": {
+            "description": "Reference model attribute within the enclosing type represented by a `C_OBJECT`.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "existence": {
+            "description": "Constraint settable on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not). Only set if it overrides the underlying reference model or parent archetype in the case of specialised archetypes.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Multiplicity_interval"
+        },
+        "children": {
+            "description": "Child `C_OBJECT` nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes. ",
+            "type": "array",
+            "items": {
+                "$ref": "all-detailed.json#/definitions/C_OBJECT"
+            }
+        },
+        "differential_path": {
+            "description": "Path to the parent object of this attribute (i.e. doesn\u2019t include the name of this attribute). Used only for attributes in differential form, specialised archetypes. Enables only the re-defined parts of a specialised archetype to be expressed, at the path where they occur.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "cardinality": {
+            "description": "Cardinality constraint of attribute, if a container attribute.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Cardinality"
+        },
+        "is_multiple": {
+            "description": "Flag indicating whether this attribute constraint is on a container (i.e. multiply-valued) attribute.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        }
+    },
+    "required": [
+        "rm_attribute_name",
+        "is_multiple"
+    ],
+    "$inherits": [
+        "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+    ],
+    "$functions": {
+        "codes_conformant": {
+            "description": "True if a_child_code conforms to a_parent_code in the sense of specialisation, i.e. is a_child_code the same as or more specialised than a_parent_code.",
+            "parameters": {
+                "a_child_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "a_parent_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_child_code",
+                "a_parent_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_adl_code": {
+            "description": "True if a_code is any kind of ADL archetype local code.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_id_code": {
+            "description": "True if a_code is an 'id' code.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_value_code": {
+            "description": "True if a_code is an 'at' code, i.e. a code representing a single terminology item.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_value_set_code": {
+            "description": "True if a_code is an 'ac' code, i.e. a code referring to a terminologyvalue set.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_redefined_code": {
+            "description": "A code has been specialised if there is a non-zero code index anywhere above the last index e.g. \n\n* at0.0.1 -> False\n* at1.0.1 -> True",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "code_exists_at_level": {
+            "description": "Is `a_code' valid at level `a_level' or less, i.e. if we remove its trailing specialised part corresponding to specialisation below `a_level', and then any trailing '.0' pieces, do we end up with a valid code? If so it means that the code corresponds to a real node from `a_level' or higher.",
+            "parameters": {
+                "a-code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "a_level": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                }
+            },
+            "required_parameters": [
+                "a-code",
+                "a_level"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_prohibited": {
+            "description": "True if this `C_ATTRIBUTE` has an existence constraint of 0..0, i.e. prohibition.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "has_path": {
+            "description": "True if the relative path a_path exists at this node.",
+            "parameters": {
+                "a_path": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_path"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "path": {
+            "description": "Path of this node relative to root of archetype.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "c_conforms_to": {
+            "description": "True if constraints represented by this node, ignoring any sub-parts, are narrower or the same as other. \nTypically used during validation of special-ised archetype nodes.",
+            "parameters": {
+                "other": {
+                    "$ref": "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+                },
+                "rmcc": []
+            },
+            "required_parameters": [
+                "other",
+                "rmcc"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "c_congruent_to": {
+            "description": "True if constraints represented by this node contain no further redefinitions with respect to the node other, with the exception of node_id redefnition in `C_OBJECT` nodes. \n\nTypically used to test if an inherited node locally contains any constraints.",
+            "parameters": {
+                "other": {
+                    "$ref": "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+                }
+            },
+            "required_parameters": [
+                "other"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_second_order_constrained": {
+            "description": "True if there is a second order constraint such as a tuple constraint on this node.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_root": {
+            "description": "True if this node is the root of the tree.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_leaf": {
+            "description": "True if this node is a terminal node in the tree structure, i.e. having no child nodes.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "any_allowed": {
+            "description": "True if there is no effective constraint on the children of the RM attribute to which this `C_ATTRIBUTE` refers.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_mandatory": {
+            "description": "True if this `C_ATTRIBUTE` has an existence constraint of 1..1, i..e. mandation.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "rm_attribute_path": {
+            "description": "Path of this attribute with respect to owning `C_OBJECT`, including differential path where applicable.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "is_single": {
+            "description": "True if this node logically represents a single-valued attribute. Evaluated as not is_multiple.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "$invariants": {
+        "Post": "Result = existence /= Void and then existence.is_prohibited"
+    }
+}

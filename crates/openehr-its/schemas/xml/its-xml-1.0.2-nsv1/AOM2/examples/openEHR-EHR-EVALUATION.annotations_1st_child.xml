@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<archetype xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://schemas.openehr.org/v1 ../P_Archetype.xsd"
+ xmlns="http://schemas.openehr.org/v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:im="http://www.openehr.org/1.0.2" is_generated="true" adl_version="2.0.5" rm_release="1.0.2">
+    <artefact_type>archetype</artefact_type>
+    <archetype_id rm_publisher="openEHR" rm_package="EHR" rm_class="EVALUATION" release_version="1.0.0" version_status="0" build_count="0" physical_id="openEHR-EHR-EVALUATION.annotations_1st_child.v1.0.0">
+        <concept_id>annotations_1st_child</concept_id>
+    </archetype_id>
+    <parent_archetype_id>openEHR-EHR-EVALUATION.annotations_parent.v1</parent_archetype_id>
+    <definition xsi:type="P_C_COMPLEX_OBJECT" node_id="id1.1" rm_type_name="EVALUATION">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="data">
+            <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2" rm_type_name="ITEM_TREE">
+                <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" cardinality="1..*; unordered" is_multiple="true">
+                    <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3" rm_type_name="ELEMENT" occurrences="1..*">
+                        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+                            <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="DV_CODED_TEXT">
+                                <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+                                    <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+                                        <constraint>ac1</constraint>
+                                    </children>
+                                </attributes>
+                            </children>
+                        </attributes>
+                    </children>
+                    <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.7" rm_type_name="ELEMENT" occurrences="0..1">
+                        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+                            <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.5" rm_type_name="DV_TEXT">
+                            </children>
+                        </attributes>
+                    </children>
+                    <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.8" rm_type_name="ELEMENT" occurrences="0..1">
+                        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+                            <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.6" rm_type_name="DV_TEXT">
+                            </children>
+                        </attributes>
+                    </children>
+                    <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.9" rm_type_name="ELEMENT" occurrences="0..1">
+                        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+                            <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.7" rm_type_name="DV_TEXT">
+                            </children>
+                        </attributes>
+                    </children>
+                    <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.10" rm_type_name="ELEMENT" occurrences="0..1">
+                        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+                            <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.8" rm_type_name="DV_TEXT">
+                            </children>
+                        </attributes>
+                    </children>
+                </attributes>
+            </children>
+        </attributes>
+    </definition>
+    <terminology original_language="ISO_639-1::en">
+        <term_definitions id="en">
+            <items id="id1">
+                <text>General statement of exclusions or states</text>
+                <description>A category of conditions or states which have been excluded</description>
+            </items>
+            <items id="id3">
+                <text>Statement</text>
+                <description>The statement about what is excluded</description>
+            </items>
+            <items id="at4">
+                <text>No significant illness</text>
+                <description>The person has no significant medical condition</description>
+            </items>
+            <items id="at5">
+                <text>No significant past history</text>
+                <description>The person has no significant past medical history</description>
+            </items>
+            <items id="at6">
+                <text>No significant family history</text>
+                <description>The person has no relatives with significant health problems</description>
+            </items>
+            <items id="at7">
+                <text>No known adverse reactions</text>
+                <description>The person has had no adverse reactions, including intolerances, sensitivities or allergies, to medications, food, animals or chemicals</description>
+            </items>
+            <items id="at8">
+                <text>No known sensitivities</text>
+                <description>No sensitivity to any medications, foods or substances</description>
+            </items>
+            <items id="at9">
+                <text>No known intolerances</text>
+                <description>No known or recorded intolerances to medications, foods or other substances</description>
+            </items>
+            <items id="at10">
+                <text>No relevant past history</text>
+                <description>No past problems or procedures relevant to the current situation</description>
+            </items>
+            <items id="at11">
+                <text>No hospitalisations</text>
+                <description>No admissions to hospital</description>
+            </items>
+            <items id="at12">
+                <text>No major surgery</text>
+                <description>No major operations or procedures</description>
+            </items>
+            <items id="at13">
+                <text>No relevant family history</text>
+                <description>No family history relevant to the current situation</description>
+            </items>
+            <items id="at14">
+                <text>No known allergies</text>
+                <description>No allergies known to any medications, foods or substances</description>
+            </items>
+            <items id="ac1">
+                <text>Statement</text>
+                <description>The statement about what is excluded</description>
+            </items>
+            <items id="id0.10">
+                <text>No known intolerance to</text>
+                <description>Positive statement about intolerances to substances that are explicitly known to have not been identified at the time of recording.</description>
+            </items>
+            <items id="id0.7">
+                <text>No known adverse reaction to</text>
+                <description>Positive statement about adverse reactions to substances that are explicitly known to have not been identified at the time of recording.</description>
+            </items>
+            <items id="id0.8">
+                <text>No known allergic reaction to</text>
+                <description>Positive statement about allergic reactions to substances that are explicitly known to have not been identified at the time of recording.</description>
+            </items>
+            <items id="id0.9">
+                <text>No known hypersensitivity reaction to</text>
+                <description>Positive statement about hypersensitivity reactions to substances that are explicitly known to have not been identified at the time of recording.</description>
+            </items>
+            <items id="id1.1">
+                <text>Exclusion statement - Adverse Reaction</text>
+                <description>Statements about Adverse Reactions that need to be positively recorded as absent or excluded.</description>
+            </items>
+        </term_definitions>
+        <value_sets id="ac1">
+            <members>at4</members>
+            <members>at5</members>
+            <members>at6</members>
+            <members>at7</members>
+            <members>at10</members>
+            <members>at13</members>
+            <members>at14</members>
+            <members>at11</members>
+            <members>at12</members>
+            <members>at8</members>
+            <members>at9</members>
+        </value_sets>
+    </terminology>
+    <original_language>ISO_639-1::en</original_language>
+    <description>
+        <lifecycle_state>unmanaged</lifecycle_state>
+        <original_author id="name">Thomas Beale</original_author>
+        <original_author id="date">12/12/2010</original_author>
+        <copyright>copyright (c) 2010 openEHR Foundation</copyright>
+        <details id="en">
+            <language>ISO_639-1::en</language>
+            <purpose>To test use of annotations; based on CKM Adverse reactions archetype</purpose>
+        </details>
+        <other_details id="regression">PASS</other_details>
+    </description>
+    <annotations>
+        <documentation id="en">
+            <items id="/data[id2]">
+                <items id="ui">passthrough</items>
+            </items>
+            <items id="/data[id2]/items[id3]">
+                <items id="design note">this is a SPECIALISED design note on Statement</items>
+                <items id="requirements note">this is a requirements note on Statement</items>
+                <items id="medline ref">this is a medline ref on Statement</items>
+                <items id="NEW TAG">this is a SPECIALISED design note on Statement</items>
+            </items>
+            <items id="/data[id2]/items[id0.8]">
+                <items id="design note">this is a design note on allergic reaction</items>
+                <items id="requirements note">this is a requirements note on allergic reaction</items>
+                <items id="medline ref">this is a medline ref on allergic reaction</items>
+            </items>
+            <items id="/data[id2]/items[id0.10]">
+                <items id="design note">this is a design note on intelerance</items>
+                <items id="requirements note">this is a requirements note on intolerance</items>
+                <items id="national data dictionary">NDD ref for intolerance</items>
+            </items>
+        </documentation>
+    </annotations>
+    <is_controlled>false</is_controlled>
+</archetype>

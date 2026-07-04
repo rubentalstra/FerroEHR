@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: System API
+  version: latest
+  x-status: STABLE
+  x-spec: system
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: https://specifications.openehr.org/
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: https://creativecommons.org/licenses/by-nd/3.0/
+  description: |
+    ## Description
+
+    ### Purpose
+
+    This specification describes service endpoints, resources and operations as well as details of requests and responses that interact with the openEHR System API in a RESTful manner.
+
+    ### Related Documents
+
+    Prerequisite documents for reading this document include:
+
+    - The [openEHR REST API Specifications Overview](overview.html)
+    - The [openEHR Architecture Overview](https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html)
+
+    Related documents include:
+
+    - The [openEHR Global Class Index](https://specifications.openehr.org/classes)
+    - The [XML-Schemas (XSD)](https://specifications.openehr.org/releases/ITS-XML/latest)
+    - The [JSON-Schemas](https://specifications.openehr.org/releases/ITS-JSON/latest) and [Simplified Formats](simplified_formats.html)
+
+    ### Status
+
+    This specification is in the `STABLE` state, and can be downloaded as [OpenAPI specification](https://spec.openapis.org/oas/v3.0.3) file (in YAML format) [for validation](computable/OAS/system-validation.openapi.yaml), or [for code generators](computable/OAS/system-codegen.openapi.yaml).
+    Users are encouraged to comment on and/or advise on these paragraphs as well as the main content.
+
+    The development version of this document can be found at <https://specifications.openehr.org/releases/ITS-REST/development/system.html>.
+servers:
+  - url: https://{baseUrl}/v1
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+security: []
+tags:
+  - name: Conformance
+    description: Retrieving system options and conformance information.
+paths:
+  /:
+    options:
+      operationId: options
+      summary: Options and Conformance
+      description: |
+        The `OPTIONS` HTTP method allows a client to determine the options and/or requirements associated with a resource, service or with the system, without implying a resource action.
+
+        Services SHOULD respond to this method with the appropriate HTTP codes, headers and potentially with a payload revealing more details about themselves.
+
+        Another use-case for this method is related to exposing service capabilities for a conformance manifest.
+      tags:
+        - Options
+      parameters:
+        - $ref: '#/components/parameters/Accept_JSON'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_options'
+components:
+  parameters:
+    Accept_JSON:
+      name: Accept
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+  headers:
+    Allow:
+      description: |
+        The `Allow` header lists the set of methods supported.
+      schema:
+        type: string
+        example: GET, POST, PUT, DELETE, OPTIONS
+    ContentType_JSON:
+      schema:
+        type: string
+        enum:
+          - application/json
+  schemas:
+    Options:
+      title: Options
+      type: object
+      properties:
+        solution:
+          type: string
+        solution_version:
+          type: string
+        vendor:
+          type: string
+        restapi_specs_version:
+          type: string
+        conformance_profile:
+          type: string
+        endpoints:
+          type: array
+          items:
+            type: string
+      example:
+        solution: openEHRSys
+        solution_version: v1.0
+        vendor: My-openEHR
+        restapi_specs_version: 1.1.0
+        conformance_profile: STANDARD
+        endpoints:
+          - /ehr
+          - /demographic
+          - /definition
+          - /query
+          - /admin
+  responses:
+    200_options:
+      description: |
+        `200 OK` is returned when options and conformance statement was retrieved successfully.
+      headers:
+        Allow:
+          $ref: '#/components/headers/Allow'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_JSON'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Options'
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - Options

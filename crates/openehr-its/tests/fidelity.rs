@@ -12,6 +12,7 @@
 //! gate proves *readability*; a stricter lossless re-serialize round-trip is a
 //! follow-up once the 1.1↔1.2 field drift is characterized.
 
+use openehr_its::json::validate_canonical;
 use openehr_rm::prelude::{Composition, Contribution, EhrStatus, Folder, ItemTree};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -326,4 +327,67 @@ fn generated_rm_round_trips_the_openehr_sdk_corpus() {
         "{} canonical corpus file(s) did not round-trip losslessly",
         failures.len()
     );
+}
+
+/// Schema-validation gate: every canonical file, re-serialized through the
+/// generated RM types, **validates against the vendored ITS-JSON schema**
+/// (`openehr_rm_1.1.0_all.json`). This proves our output conforms to the openEHR
+/// JSON contract, not merely that it round-trips. All 53 canonical files
+/// conform with no schema-specific exclusions (the RM 1.1↔1.2 divergence does
+/// not break validation — the schema's per-class definitions accept our output);
+/// only the shared readability/round-trip exclusions apply.
+#[test]
+fn generated_rm_output_validates_against_its_json_schema() {
+    let mut ok = 0;
+    let mut excluded_count = 0;
+    let mut failures: Vec<(String, String)> = Vec::new();
+
+    for path in corpus_files() {
+        let txt = fs::read_to_string(&path).unwrap();
+        let name = path
+            .strip_prefix(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor"))
+            .unwrap_or(&path)
+            .display()
+            .to_string();
+        if excluded(&name).is_some() || roundtrip_only_excluded(&name).is_some() {
+            excluded_count += 1;
+            continue;
+        }
+        let Ok(serde_json::Value::Object(map)) = serde_json::from_str::<serde_json::Value>(&txt)
+        else {
+            continue;
+        };
+        let Some(ty) = map.get("_type").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        match reserialize(ty, &txt) {
+            Ok(output) => match validate_canonical(&output) {
+                Ok(()) => ok += 1,
+                Err(errs) => failures.push((name, errs.join("; "))),
+            },
+            Err(e) => failures.push((name, e)),
+        }
+    }
+
+    println!(
+        "ITS-JSON schema validation: {ok} conformant, {excluded_count} excluded, {} failed",
+        failures.len()
+    );
+    for (f, e) in failures.iter().take(30) {
+        println!("\n--- INVALID: {f}\n  {}", preview_str(e));
+    }
+    assert!(ok > 0, "no corpus files were schema-validated");
+    assert!(
+        failures.is_empty(),
+        "{} corpus file(s) failed ITS-JSON schema validation",
+        failures.len()
+    );
+}
+
+fn preview_str(s: &str) -> String {
+    if s.len() > 300 {
+        format!("{}…", &s[..300])
+    } else {
+        s.to_string()
+    }
 }

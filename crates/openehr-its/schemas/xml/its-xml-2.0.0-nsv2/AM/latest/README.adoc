@@ -1,0 +1,6 @@
+# Archetype 2.0.6
+
+openEHR https://specifications.openehr.org/releases/AM/latest[Archetype latest] XML schema - uses AOM-like types.
+
+### Acknowledgements
+Authored by https://www.openehr.org[openEHR Foundation] - 2014.03.22

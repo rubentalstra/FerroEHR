@@ -1,0 +1,59 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/P_C_BOOLEAN-detailed.json",
+    "title": "P_C_BOOLEAN",
+    "description": "Constraint on instances of Boolean. Both attributes cannot be set to False, since this would mean that the Boolean value being constrained cannot be True or False.",
+    "$comments": "Defined in P_aom2 IM, inherits from P_C_PRIMITIVE_OBJECT",
+    "type": "object",
+    "properties": {
+        "rm_type_name": {
+            "description": "Reference model type that this node corresponds to. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "occurrences": {
+            "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "node_id": {
+            "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "is_deprecated": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "is_frozen": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "default_value": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "assumed_value": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "is_enumerated_type_constraint": {
+            "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "constraint": {
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "required": [
+        "rm_type_name",
+        "node_id",
+        "default_value"
+    ],
+    "$inherits": [
+        "all-detailed.json#/definitions/P_C_PRIMITIVE_OBJECT"
+    ],
+    "$functions": {
+        "specialisation_depth": {
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+            }
+        }
+    }
+}

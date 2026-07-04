@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_DATE.json",
+    "title": "C_DATE",
+    "description": "ISO 8601-compatible constraint on instances of Date in the form either of a set of validity values, or an actual date range. There is no validity flag for \u2018year\u2019, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include \u201cYYYY-??-??\u201d (date with optional month and day).",
+    "$comments": "Defined in Archetype IM, inherits from C_PRIMITIVE",
+    "type": "object",
+    "properties": {
+        "assumed_value": {
+            "description": "The value to assume if this item is not included in data, due to being part of an optional structure."
+        },
+        "day_validity": {
+            "description": "Validity of day in constrained date."
+        },
+        "month_validity": {
+            "description": "Validity of month in constrained date."
+        },
+        "timezone_validity": {
+            "description": "Validity of timezone in constrained date."
+        },
+        "range": {
+            "description": "Interval of Dates specifying constraint."
+        }
+    }
+}

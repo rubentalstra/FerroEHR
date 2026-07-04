@@ -92,6 +92,19 @@ jobs:
           components: clippy
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
+  # ── Generated code must stay in sync with the vendored specs (ADR-004/005) ──
+  codegen-drift:
+    name: codegen drift
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ vars.PORT_STRICT != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt
+      - name: Regenerate and diff
+        run: bash scripts/check-codegen-drift.sh
+
   # ── Advisory until P17: build + tests against PostgreSQL 18.4 ────────────────
   test:
     name: build & test (pg18)

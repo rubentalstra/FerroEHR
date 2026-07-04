@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="16.1">
+    <meta>
+        <filters directoryPatterns="" filePatterns="" positiveFilePatterns="" showHiddenFiles="false"/>
+        <options/>
+    </meta>
+    <projectTree name="AOM_XSD.xpr">
+        <folder path="examples/"/>
+        <file name="Archetype.xsd"/>
+        <file name="ArchetypeCommon.xsd"/>
+        <file name="BaseTypes.xsd"/>
+        <file name="P_Archetype.xsd"/>
+        <file name="Resource.xsd"/>
+        <file name="Rules.xsd"/>
+    </projectTree>
+</project>

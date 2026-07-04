@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/Time.json",
+    "definitions": {
+        "TIME": {
+            "type": "object",
+            "required": [
+            ],
+            "properties": {
+                "value": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "TIME"
+                }
+            },
+            "description": "Time type based on IS8601 representation.",
+            "additionalProperties": false
+        }
+    }
+}

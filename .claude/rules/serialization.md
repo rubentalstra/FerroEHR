@@ -52,14 +52,24 @@ for XML and FLAT.
 
 ## Canonical XML (ITS-XML)
 
+**GENERATED (ADR-005 supersedes the "hand-written / not a codegen source" rule
+below).** The `ToXml`/`FromXml` impls for the RM/BASE types are emitted by
+`openehr-codegen`'s `emit-xml` target into `openehr-its/src/xml/generated/`,
+driven by the vendored XSDs (the wire shape) + the BMM model (the Rust fields).
+Do **not** hand-edit a `// @generated` XML impl — change the emitter
+(`openehr-codegen/src/emit_xml.rs` / `xsd.rs`) and regenerate. The hand-written
+part is the runtime (`xml/runtime.rs`: the `ToXml`/`FromXml` traits + `quick-xml`
+reader/writer) and the entry points. Regenerate with
+`cargo run -p openehr-codegen -- emit-xml`.
+
 - Namespace is `http://schemas.openehr.org/v1` for both schema versions.
 - Support both the TRIAL 2.0.0 XSDs and the legacy STABLE 1.0.2 bundle for
   round-trip; do not drop 1.0.2 support once 2.0.0 lands.
 - C14N (canonical XML) uses the `xmllint --c14n` shell fallback for now —
   do not hand-roll a C14N implementation.
-- Use `quick-xml` (`serialize` feature) as the XML layer; JAXB/XSD-generated
-  Java classes have no Rust equivalent to bind to — the schema is a
-  validation target, not a codegen source.
+- Use `quick-xml` as the XML layer. Per ADR-005 the XSD **is** a codegen
+  source (it supplies element order + the attribute/element split + `xsi:type`
+  slots that BMM does not encode); it remains a validation target too.
 
 ## FLAT / STRUCTURED / Web Template
 

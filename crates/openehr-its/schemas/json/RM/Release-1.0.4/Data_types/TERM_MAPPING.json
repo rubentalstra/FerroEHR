@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/TERM_MAPPING.json",
+    "definitions": {
+        "TERM_MAPPING": {
+            "type": "object",
+            "required": [
+                "match",
+                "target"
+            ],
+            "properties": {
+                "match": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/DV_CODED_TEXT.json#/definitions/DV_CODED_TEXT"
+                },
+                "target": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "TERM_MAPPING"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

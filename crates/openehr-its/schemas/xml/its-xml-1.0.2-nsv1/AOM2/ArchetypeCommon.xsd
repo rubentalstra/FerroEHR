@@ -1,0 +1,85 @@
+<?xml version="1.1" encoding="utf-8"?>
+<!-- openEHR Archetype 2.0.6 XML schema -->
+<!-- Authored by openEHR Foundation 2014.03.22  -->
+<xs:schema xmlns="http://schemas.openehr.org/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://schemas.openehr.org/v1" elementFormDefault="qualified" version="2.0.5"
+	id="ArchetypeCommon.xsd"
+    xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" vc:minVersion="1.1">
+
+	<xs:include schemaLocation="BaseTypes.xsd"/>
+	
+	<xs:simpleType name="archetypeNodeId">
+		<xs:restriction base="xs:string">
+			<xs:pattern
+				value="([a-zA-Z][\w_]*-[\w][\w_]*-[\w][\w_]*\.[\w][\w_]*(-[\w][\w_]*)*\.v\d+(\.\d)*)|(at(0\.[0-9]{1,4}|[0-9]{4})(\.[0-9]{1,3})*)"
+			/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="atCode">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="at(0\.[0-9]{1,4}|[0-9]{4})(\.[0-9]{1,3})*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="ARCHETYPE_TERM">
+		<xs:sequence>
+			<xs:element name="text" type="xs:string"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:string" use="required"/>
+	</xs:complexType>
+
+	<xs:complexType name="SIBLING_ORDER" >
+		<xs:sequence>
+			<xs:element name="sibling_node_id" type="xs:string"/>
+		</xs:sequence>			
+		<xs:attribute name="is_before" type="xs:boolean"/>
+	</xs:complexType>
+
+	<xs:simpleType name="DateConstraintPattern">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[yY][yY][yY][yY]-[mM?X][mM?X]-[dD?X][dD?X]"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="DateTimeConstraintPattern">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[yY][yY][yY][yY]-[mM?][mM?]-[dD?X][dD?X][T][hH?X][hH?X]:[mM?X][mM?X]:[sS?X][sS?X]"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="TimeConstraintPattern">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[hH][hH]:[mM?X][mM?X]:[sS?X][sS?X]"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="DurationConstraintPattern">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="(P[yY]?[mM]?[wW]?[dD]?T[hH]?[mM]?[sS]?)|(P[yY]?[mM]?[wW]?[dD]?)"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="CodeDefinitionSet">
+		<xs:sequence>
+			<xs:element name="items" type="ARCHETYPE_TERM" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:string" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="TermBindingSet">
+		<xs:sequence>
+			<xs:element name="items" type="StringDictionaryItem" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:string" use="required"/>
+	</xs:complexType>
+
+	
+	<xs:complexType name="VALUE_SET">
+		<xs:sequence>
+			<xs:element name="members" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:string" use="required"/>
+	</xs:complexType>
+</xs:schema>

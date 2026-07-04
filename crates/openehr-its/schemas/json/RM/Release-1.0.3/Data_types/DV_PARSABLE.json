@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_PARSABLE.json",
+    "definitions": {
+        "DV_PARSABLE": {
+            "type": "object",
+            "required": [
+                "value",
+                "formalism"
+            ],
+            "properties": {
+                "charset": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "language": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "formalism": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "DV_PARSABLE"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

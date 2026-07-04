@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/P_aom2/P_AUTHORED_RESOURCE.json",
+    "title": "P_AUTHORED_RESOURCE",
+    "description": "Abstract idea of an online resource created by a human author. \n",
+    "$comments": "Defined in P_aom2 IM, abstract",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "P_AUTHORED_ARCHETYPE",
+                "P_TEMPLATE",
+                "P_OPERATIONAL_TEMPLATE"
+            ]
+        },
+        "original_language": {
+            "description": "Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "is_controlled": {
+            "description": "True if this resource is under any kind of change control (even file copying), in which case revision history is created. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "translations": {
+            "description": "List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all.json#/definitions/TRANSLATION_DETAILS"
+            }
+        },
+        "description": {
+            "description": "Description and lifecycle information of the resource.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all.json#/definitions/RESOURCE_DESCRIPTION"
+        },
+        "uid": {
+            "description": "Unique identifier of the family of archetypes having the same interface identifier (same major version).",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "annotations": {
+            "description": "Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Hash_of_String_Hash_of_String_String"
+        }
+    },
+    "required": [
+        "_type",
+        "original_language"
+    ]
+}

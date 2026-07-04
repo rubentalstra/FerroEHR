@@ -1,0 +1,55 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/ARCHETYPE_ONTOLOGY.json",
+    "title": "ARCHETYPE_ONTOLOGY",
+    "description": "Local ontology of an archetype.",
+    "$comments": "Defined in Archetype IM",
+    "type": "object",
+    "properties": {
+        "term_codes": {
+            "description": "List of all term codes in the ontology. Most of these correspond to \u201cat\u201d codes in an ADL archetype, which are the node_ids on C_OBJECT descendants. There may be an extra one, if a different term is used as the overall archetype concept from that used as the node_id of the outermost C_OBJECT in the definition part.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+            },
+            "minItems": 1
+        },
+        "constraint_codes": {
+            "description": "List of all term codes in the ontology. These correspond to the \u201cac\u201d codes in an ADL archetype, or equivalently, the CONSTRAINT_REF.reference values in the archetype definition.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+            },
+            "minItems": 1
+        },
+        "parent_archetype": {
+            "description": "Archetype which owns this terminology.",
+            "$ref": "all.json#/definitions/ARCHETYPE"
+        },
+        "terminologies_available": {
+            "description": "List of terminologies to which term or constraint bindings exist in this terminology.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+            }
+        },
+        "specialisation_depth": {
+            "description": "Specialisation depth of this archetype. Unspecialised archetypes have depth 0, with each additional level of specialisation adding 1 to the specialisation_depth.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/Integer"
+        },
+        "term_attribute_names": {
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+            },
+            "minItems": 1
+        }
+    },
+    "required": [
+        "term_codes",
+        "constraint_codes",
+        "parent_archetype",
+        "specialisation_depth",
+        "term_attribute_names"
+    ]
+}

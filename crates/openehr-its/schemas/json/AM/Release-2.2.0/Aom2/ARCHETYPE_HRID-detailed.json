@@ -1,0 +1,95 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/ARCHETYPE_HRID-detailed.json",
+    "title": "ARCHETYPE_HRID",
+    "description": "Human-readable structured identifier (HRID) for an archetype or template.",
+    "$comments": "Defined in Aom2 IM",
+    "type": "object",
+    "properties": {
+        "namespace": {
+            "description": "Reverse domain name namespace identifier.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "rm_publisher": {
+            "description": "Name of the Reference Model publisher.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "rm_package": {
+            "description": "Name of the package in whose reachability graph the `_rm_class_` class is found (there can be more than one possibility in many reference models).",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "rm_class": {
+            "description": "Name of the root class of this archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "concept_id": {
+            "description": "The short concept name of the archetype as used in the multi-axial `_archetype_hrid_`.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "release_version": {
+            "description": "The full numeric version of this archetype consisting of 3 parts, e.g. `\"1.8.2\"`. The `_archetype_hrid_` feature includes only the major version.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "version_status": {
+            "description": "The status of the version, i.e.:\n\n* released: (empty string)\n* release_candidate: `\"rc\"`\n* alpha: `\"alpha\"`\n* beta: `\"beta\"`"
+        },
+        "build_count": {
+            "description": "The build count since last increment of any version part.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        }
+    },
+    "required": [
+        "rm_publisher",
+        "rm_package",
+        "rm_class",
+        "concept_id",
+        "release_version",
+        "version_status",
+        "build_count"
+    ],
+    "$functions": {
+        "semantic_id": {
+            "description": "The 'interface' form of the HRID, i.e. down to the major version.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "physical_id": {
+            "description": "The 'physical' form of the HRID, i.e. with complete version information specified by `_version_id()_`.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "version_id": {
+            "description": "Full version identifier string, based on `_release_version_`, `_version_status_`, and `_build_count_` e.g. `\"1.8.2-rc.4\"`.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "major_version": {
+            "description": "Major version of this archetype, extracted from `_release_version_`.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "minor_version": {
+            "description": "Minor version of this archetype, extracted from `_release_version_`.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "patch_version": {
+            "description": "Patch version of this archetype, extracted from `_release_version_`. Equivalent to patch version in patch version in `semver.org` sytem.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        }
+    },
+    "$invariants": {
+        "Inv_rm_publisher_validity": "not rm_publisher.is_empty",
+        "Inv_rm_package_validity": "not rm_package.is_empty",
+        "Inv_class_name_validity": "not rm_class.is_empty",
+        "Inv_concept_id_validity": "not concept_id.is_empty",
+        "Inv_release_version_validity": "valid_version (release_version)"
+    }
+}

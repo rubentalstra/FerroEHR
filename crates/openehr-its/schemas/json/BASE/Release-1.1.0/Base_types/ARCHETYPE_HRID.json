@@ -1,0 +1,50 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/ARCHETYPE_HRID.json",
+    "definitions": {
+        "ARCHETYPE_HRID": {
+            "type": "object",
+            "required": [
+                "namespace",
+                "rm_publisher",
+                "rm_package",
+                "rm_class",
+                "concept_id",
+                "release_version",
+                "version_status",
+                "build_count"
+            ],
+            "properties": {
+                "namespace": {
+                    "type": "string"
+                },
+                "rm_publisher": {
+                    "type": "string"
+                },
+                "rm_package": {
+                    "type": "string"
+                },
+                "rm_class": {
+                    "type": "string"
+                },
+                "concept_id": {
+                    "type": "string"
+                },
+                "release_version": {
+                    "type": "string"
+                },
+                "version_status": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/VERSION_STATUS.json#/definitions/VERSION_STATUS"
+                },
+                "build_count": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "ARCHETYPE_HRID"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

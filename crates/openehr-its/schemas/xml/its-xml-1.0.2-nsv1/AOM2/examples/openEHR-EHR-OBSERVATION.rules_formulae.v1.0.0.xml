@@ -1,0 +1,747 @@
+<?xml version="1.0" encoding="utf-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:im="http://www.openehr.org/1.0.2" is_generated="true" adl_version="2.0.5" rm_release="1.0.2">
+ <artefact_type>archetype</artefact_type>
+ <archetype_id rm_publisher="openEHR" rm_package="EHR" rm_class="OBSERVATION" release_version="1.0.0" version_status="0" build_count="0" physical_id="openEHR-EHR-OBSERVATION.rules_formulae.v1.0.0">
+  <concept_id>rules_formulae</concept_id>
+ </archetype_id>
+ <definition xsi:type="P_C_COMPLEX_OBJECT" node_id="id1" rm_type_name="OBSERVATION">
+  <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="data">
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2" rm_type_name="HISTORY">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="events" cardinality="1..*; unordered" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="EVENT" occurrences="0..*">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="data">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ITEM_TREE">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1054" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1055</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint upper_included="false">
+               <lower>0.0</lower>
+               <upper>1000.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>mm[Hg]</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1055" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1055</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint upper_included="false">
+               <lower>0.0</lower>
+               <upper>1000.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>mm[Hg]</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1007" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1056" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1055</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint upper_included="false">
+               <lower>0.0</lower>
+               <upper>1000.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>mm[Hg]</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1008" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1057" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1055</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint upper_included="false">
+               <lower>0.0</lower>
+               <upper>1000.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>mm[Hg]</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id34" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1058" rm_type_name="DV_TEXT">
+           </children>
+          </attributes>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="state">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id8" rm_type_name="ITEM_TREE">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id9" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1059" rm_type_name="DV_CODED_TEXT">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <assumed_value>at1002</assumed_value>
+              <constraint>ac1</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1053" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1060" rm_type_name="DV_TEXT">
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_ARCHETYPE_SLOT" node_id="id1031" rm_type_name="CLUSTER" occurrences="0..1">
+          <includes xsi:type="ASSERTION" type="Boolean">
+           <expression xsi:type="EXPR_BINARY_OPERATOR" type="Boolean">
+            <operator value="2007">
+            </operator>
+            <left_operand xsi:type="EXPR_LEAF" type="String" reference_type="attribute">
+             <item>archetype_id/value</item>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF" type="C_STRING" reference_type="constraint">
+             <item>
+              <rm_type_name>STRING</rm_type_name>
+              <constraint>/openEHR-EHR-CLUSTER\.level_of_exertion(-a-zA-Z0-9_]+)*\.v1/</constraint>
+              <is_path_compressible>false</is_path_compressible>
+              <is_enumerated_type_constraint>false</is_enumerated_type_constraint>
+              <is_deprecated>false</is_deprecated>
+              <is_frozen>false</is_frozen>
+             </item>
+            </right_operand>
+           </expression>
+          </includes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1044" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1061" rm_type_name="DV_CODED_TEXT">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <assumed_value>at1045</assumed_value>
+              <constraint>ac2</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1006" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1062" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1059</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint>
+               <lower>-90.0</lower>
+               <upper>90.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>°</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1043" rm_type_name="INTERVAL_EVENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="math_function">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1063" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>at1060</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="width">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1064" rm_type_name="DV_DURATION">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+         <children xsi:type="P_C_DURATION" node_id="id9999" rm_type_name="String">
+          <constraint>
+           <lower>PT24H</lower>
+          </constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="data">
+       <children xsi:type="P_C_COMPLEX_OBJECT_PROXY" node_id="id1065" rm_type_name="ITEM_TREE">
+        <target_path>/data[id2]/events[id7]/data[id4]</target_path>
+       </children>
+      </attributes>
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="state">
+       <children xsi:type="P_C_COMPLEX_OBJECT_PROXY" node_id="id1066" rm_type_name="ITEM_TREE">
+        <target_path>/data[id2]/events[id7]/state[id8]</target_path>
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+  </attributes>
+  <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="protocol">
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id12" rm_type_name="ITEM_TREE">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id14" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1067" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac3</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1034" rm_type_name="CLUSTER" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="ELEMENT" occurrences="0..1">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1068" rm_type_name="DV_CODED_TEXT">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+           <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+            <constraint>ac4</constraint>
+           </children>
+          </attributes>
+         </children>
+        </attributes>
+       </children>
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1035" rm_type_name="ELEMENT" occurrences="0..1">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1069" rm_type_name="DV_TEXT">
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1036" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1070" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac5</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1039" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1071" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1011" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1072" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac6</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_ARCHETYPE_SLOT" node_id="id1026" rm_type_name="CLUSTER" occurrences="0..1">
+      <includes xsi:type="ASSERTION" type="Boolean">
+       <expression xsi:type="EXPR_BINARY_OPERATOR" type="Boolean">
+        <operator value="2007">
+        </operator>
+        <left_operand xsi:type="EXPR_LEAF" type="String" reference_type="attribute">
+         <item>archetype_id/value</item>
+        </left_operand>
+        <right_operand xsi:type="EXPR_LEAF" type="C_STRING" reference_type="constraint">
+         <item>
+          <rm_type_name>STRING</rm_type_name>
+          <constraint>/openEHR-EHR-CLUSTER\.device([a-zA-Z0-9_]+)*\.v1/</constraint>
+          <is_path_compressible>false</is_path_compressible>
+          <is_enumerated_type_constraint>false</is_enumerated_type_constraint>
+          <is_deprecated>false</is_deprecated>
+          <is_frozen>false</is_frozen>
+         </item>
+        </right_operand>
+       </expression>
+      </includes>
+     </children>
+    </attributes>
+   </children>
+  </attributes>
+ </definition>
+ <rules xsi:type="ASSERTION" type="Boolean" tag="mean_arterial_pressure">
+  <expression xsi:type="EXPR_BINARY_OPERATOR" type="Boolean">
+   <operator value="2001">
+   </operator>
+   <left_operand xsi:type="EXPR_LEAF" type="Double" reference_type="attribute">
+    <item>/data[id2]/events[id7]/data[id4]/items[id1007]/value/magnitude</item>
+   </left_operand>
+   <right_operand xsi:type="EXPR_BINARY_OPERATOR" type="Integer">
+    <operator value="2022">
+    </operator>
+    <left_operand xsi:type="EXPR_BINARY_OPERATOR" type="Integer">
+     <operator value="2020">
+     </operator>
+     <left_operand xsi:type="EXPR_LEAF" type="Double" reference_type="attribute">
+      <item>/data[id2]/events[id7]/data[id4]/items[id6]/value/magnitude</item>
+     </left_operand>
+     <right_operand xsi:type="EXPR_LEAF" type="Real" reference_type="constant">
+      <item>0.33</item>
+     </right_operand>
+    </left_operand>
+    <right_operand xsi:type="EXPR_BINARY_OPERATOR" type="Integer">
+     <operator value="2021">
+     </operator>
+     <left_operand xsi:type="EXPR_LEAF" type="Double" reference_type="attribute">
+      <item>/data[id2]/events[id7]/data[id4]/items[id5]/value/magnitude</item>
+     </left_operand>
+     <right_operand xsi:type="EXPR_LEAF" type="Double" reference_type="attribute">
+      <item>/data[id2]/events[id7]/data[id4]/items[id6]/value/magnitude</item>
+     </right_operand>
+    </right_operand>
+   </right_operand>
+  </expression>
+ </rules>
+ <rules xsi:type="ASSERTION" type="Boolean" tag="pulse_pressure">
+  <expression xsi:type="EXPR_BINARY_OPERATOR" type="Boolean">
+   <operator value="2001">
+   </operator>
+   <left_operand xsi:type="EXPR_LEAF" type="Double" reference_type="attribute">
+    <item>/data[id2]/events[id7]/data[id4]/items[id1008]/value/magnitude</item>
+   </left_operand>
+   <right_operand xsi:type="EXPR_BINARY_OPERATOR" type="Integer">
+    <operator value="2021">
+    </operator>
+    <left_operand xsi:type="EXPR_LEAF" type="Double" reference_type="attribute">
+     <item>/data[id2]/events[id7]/data[id4]/items[id5]/value/magnitude</item>
+    </left_operand>
+    <right_operand xsi:type="EXPR_LEAF" type="Double" reference_type="attribute">
+     <item>/data[id2]/events[id7]/data[id4]/items[id6]/value/magnitude</item>
+    </right_operand>
+   </right_operand>
+  </expression>
+ </rules>
+ <terminology original_language="ISO_639-1::en">
+  <term_definitions id="en">
+   <items id="id1">
+    <text>Blood Pressure</text>
+    <description>The local measurement of arterial blood pressure which is a surrogate for arterial. pressure in the systemic circulation.  Most commonly, use of the term &apos;blood pressure&apos; refers to measurement of brachial artery pressure in the upper arm.</description>
+   </items>
+   <items id="id2">
+    <text>history</text>
+    <description>history Structural node</description>
+   </items>
+   <items id="id5">
+    <text>Systolic</text>
+    <description>Peak systemic arterial blood pressure  - measured in systolic or contraction phase of the heart cycle.</description>
+   </items>
+   <items id="id6">
+    <text>Diastolic</text>
+    <description>Minimum systemic arterial blood pressure - measured in the diastolic or relaxation phase of the heart cycle.</description>
+   </items>
+   <items id="id7">
+    <text>any event</text>
+    <description>Default event</description>
+   </items>
+   <items id="id9">
+    <text>Position</text>
+    <description>The position of the subject at the time of measurement.</description>
+   </items>
+   <items id="id12">
+    <text>list structure</text>
+    <description>list structure</description>
+   </items>
+   <items id="id14">
+    <text>Cuff size</text>
+    <description>The size of the cuff used for blood pressure measurement.  </description>
+   </items>
+   <items id="id15">
+    <text>Location of measurement</text>
+    <description>Common body sites where blood pressure is recorded.</description>
+   </items>
+   <items id="at16">
+    <text>Adult Thigh</text>
+    <description>A cuff used for an adult thigh - bladder approx 20cm x 42cm.</description>
+   </items>
+   <items id="at17">
+    <text>Large Adult</text>
+    <description>A cuff for adults with larger arms - bladder approx 16cm x 38cm.</description>
+   </items>
+   <items id="at18">
+    <text>Adult</text>
+    <description>A cuff that is standard for an adult - bladder approx 13cm x 30cm.</description>
+   </items>
+   <items id="at26">
+    <text>Right arm</text>
+    <description>The right arm of the person.</description>
+   </items>
+   <items id="at27">
+    <text>Left arm</text>
+    <description>The left arm of the person.</description>
+   </items>
+   <items id="at28">
+    <text>Right thigh</text>
+    <description>The right thigh of the person.</description>
+   </items>
+   <items id="at29">
+    <text>Left thigh</text>
+    <description>The left thigh of the person.</description>
+   </items>
+   <items id="id34">
+    <text>Comment</text>
+    <description>Comment on blood pressure measurement.</description>
+   </items>
+   <items id="at1001">
+    <text>Standing</text>
+    <description>Standing at the time of blood pressure measurement.</description>
+   </items>
+   <items id="at1002">
+    <text>Sitting</text>
+    <description>Sitting (for example on bed or chair) at the time of blood pressure measurement.</description>
+   </items>
+   <items id="at1003">
+    <text>Reclining</text>
+    <description>Reclining at the time of blood pressure measurement.</description>
+   </items>
+   <items id="at1004">
+    <text>Lying</text>
+    <description>Lying flat at the time of blood pressure measurement.</description>
+   </items>
+   <items id="id1006">
+    <text>Tilt</text>
+    <description>The craniocaudal tilt of the surface on which the person is lying at the time of measurement.</description>
+   </items>
+   <items id="id1007">
+    <text>Mean Arterial Pressure</text>
+    <description>The average arterial pressure that occurs over the entire course of the heart contraction and relaxation cycle.</description>
+   </items>
+   <items id="id1008">
+    <text>Pulse Pressure</text>
+    <description>The difference between the systolic and diastolic pressure.</description>
+   </items>
+   <items id="at1009">
+    <text>Small Adult</text>
+    <description>A cuff used for a small adult - bladder approx 10cm x 24cm.</description>
+   </items>
+   <items id="at1010">
+    <text>Paediatric/Child</text>
+    <description>A cuff that is appropriate for a child or adult with a thin arm - bladder approx 8cm x 21cm.</description>
+   </items>
+   <items id="id1011">
+    <text>Diastolic endpoint</text>
+    <description>Record which Korotkoff sound is used for determining diastolic pressure using auscultative method.</description>
+   </items>
+   <items id="at1012">
+    <text>Phase IV</text>
+    <description>The fourth Korotkoff sound is identified as an abrupt muffling of sounds.</description>
+   </items>
+   <items id="at1013">
+    <text>Phase V</text>
+    <description>The fifth Korotkoff sound is identified by absence of sounds as the cuff pressure drops below the diastolic blood pressure.</description>
+   </items>
+   <items id="at1015">
+    <text>Lying with tilt to left</text>
+    <description>Lying flat with some lateral tilt, usually angled towards the left side.   Commonly required in the last trimester of pregnancy to relieve aortocaval compression.</description>
+   </items>
+   <items id="at1019">
+    <text>Infant</text>
+    <description>A cuff used for infants - bladder approx 5cm x 15cm.</description>
+   </items>
+   <items id="at1020">
+    <text>Neonatal</text>
+    <description>A cuff used for a neonate, assuming cuff is the appropriate size for maturity and birthweight of the neonate.</description>
+   </items>
+   <items id="at1021">
+    <text>Right wrist</text>
+    <description>The right wrist of the subject.</description>
+   </items>
+   <items id="at1022">
+    <text>Left wrist</text>
+    <description>The left wrist of the subject.</description>
+   </items>
+   <items id="id1026">
+    <text>Device</text>
+    <description>Details about sphygmomanometer or other device used to measure the blood pressure.</description>
+   </items>
+   <items id="at1027">
+    <text>Right ankle</text>
+    <description>The right ankle of the subject.</description>
+   </items>
+   <items id="id1031">
+    <text>Exertion  </text>
+    <description>Details about physical activity undertaken at the time of blood pressure.measurement.</description>
+   </items>
+   <items id="at1032">
+    <text>Left ankle</text>
+    <description>The left ankle of the subject.</description>
+   </items>
+   <items id="at1033">
+    <text>Finger</text>
+    <description>A finger of the subject.  Identification of the finger can be recorded in &apos;Specific Location&apos; data element, if required.</description>
+   </items>
+   <items id="id1034">
+    <text>Location</text>
+    <description>Body location where blood pressure is measured.  Use &apos;Location of measurement&apos; to select from common sites.  Use &apos;Specific location&apos; to record more specific details or a site that is not in the common set or to refer to an external terminology.</description>
+   </items>
+   <items id="id1035">
+    <text>Specific location</text>
+    <description>Specific details about the body site where blood pressure is recorded.</description>
+   </items>
+   <items id="id1036">
+    <text>Method</text>
+    <description>Method of measurement of blood pressure.</description>
+   </items>
+   <items id="at1037">
+    <text>Auscultation</text>
+    <description>Method of measuring blood pressure externally, using a stethoscope and Korotkoff sounds.</description>
+   </items>
+   <items id="at1038">
+    <text>Palpation</text>
+    <description>Method of measuring blood pressure externally, using palpation (usually of the brachial or radial arteries).</description>
+   </items>
+   <items id="id1039">
+    <text>Mean Arterial Pressure Formula</text>
+    <description>Formula used to calculate the MAP (if recorded in data).</description>
+   </items>
+   <items id="at1040">
+    <text>Machine</text>
+    <description>Method of measuring blood pressure externally, using a blood pressure machine.</description>
+   </items>
+   <items id="at1041">
+    <text>Invasive</text>
+    <description>Method of measuring blood pressure internally ie involving penetration of the skin and measuring inside blood vessels.</description>
+   </items>
+   <items id="id1043">
+    <text>24 hour average </text>
+    <description>Estimate of the average blood pressure over a 24 hour period.</description>
+   </items>
+   <items id="id1044">
+    <text>Sleep status</text>
+    <description>Sleep status - supports interpretation of 24 hour ambulatory blood pressure records. </description>
+   </items>
+   <items id="at1045">
+    <text>Alert &amp; awake</text>
+    <description>Subject is fully conscious.</description>
+   </items>
+   <items id="at1046">
+    <text>Sleeping</text>
+    <description>Subject is in the natural state of bodily rest.</description>
+   </items>
+   <items id="at1052">
+    <text>Toe</text>
+    <description>A toe of the subject.   Identification of the toe can be recorded in &apos;Specific Location&apos; data element, if required.</description>
+   </items>
+   <items id="id1053">
+    <text>Confounding factors</text>
+    <description>Comment on and record other incidental factors that may be contributing to the blood pressure measurement.  For example, level of anxiety or &apos;white coat syndrome&apos;; pain or fever; changes in atmospheric pressure etc.</description>
+   </items>
+   <items id="at1054">
+    <text>Intra-arterial</text>
+    <description>Invasive measurement via transducer access line within an artery. Location of the transducer can be recorded in &apos;Specific Location&apos; data element, if required.</description>
+   </items>
+   <items id="ac1">
+    <text>Position</text>
+    <description>The position of the subject at the time of measurement.</description>
+   </items>
+   <items id="ac2">
+    <text>Sleep status</text>
+    <description>Sleep status - supports interpretation of 24 hour ambulatory blood pressure records. </description>
+   </items>
+   <items id="ac3">
+    <text>Cuff size</text>
+    <description>The size of the cuff used for blood pressure measurement.  </description>
+   </items>
+   <items id="ac4">
+    <text>Location of measurement</text>
+    <description>Common body sites where blood pressure is recorded.</description>
+   </items>
+   <items id="ac5">
+    <text>Method</text>
+    <description>Method of measurement of blood pressure.</description>
+   </items>
+   <items id="ac6">
+    <text>Diastolic endpoint</text>
+    <description>Record which Korotkoff sound is used for determining diastolic pressure using auscultative method.</description>
+   </items>
+   <items id="at1055">
+    <text>pressure</text>
+    <description>pressure</description>
+   </items>
+   <items id="at1058">
+    <text>(added by post-parse processor)</text>
+    <description>(added by post-parse processor)</description>
+   </items>
+   <items id="at1059">
+    <text>(added by post-parse processor)</text>
+    <description>(added by post-parse processor)</description>
+   </items>
+   <items id="at1060">
+    <text>(added by post-parse processor)</text>
+    <description>(added by post-parse processor)</description>
+   </items>
+  </term_definitions>
+  <term_bindings id="SNOMED-CT">
+   <items id="id1">http://snomedct.info/id/163020007</items>
+   <items id="id5">http://snomedct.info/id/163030003</items>
+   <items id="id6">http://snomedct.info/id/163031004</items>
+   <items id="id14">http://snomedct.info/id/246153002</items>
+  </term_bindings>
+  <term_bindings id="openehr">
+   <items id="at1055">http://openehr.org/id/125</items>
+   <items id="at1059">http://openehr.org/id/497</items>
+   <items id="at1060">http://openehr.org/id/146</items>
+  </term_bindings>
+  <value_sets id="ac1">
+   <members>at1001</members>
+   <members>at1002</members>
+   <members>at1003</members>
+   <members>at1004</members>
+   <members>at1015</members>
+  </value_sets>
+  <value_sets id="ac2">
+   <members>at1045</members>
+   <members>at1046</members>
+  </value_sets>
+  <value_sets id="ac3">
+   <members>at16</members>
+   <members>at17</members>
+   <members>at18</members>
+   <members>at1009</members>
+   <members>at1010</members>
+   <members>at1019</members>
+   <members>at1020</members>
+  </value_sets>
+  <value_sets id="ac4">
+   <members>at26</members>
+   <members>at27</members>
+   <members>at28</members>
+   <members>at29</members>
+   <members>at1021</members>
+   <members>at1022</members>
+   <members>at1027</members>
+   <members>at1032</members>
+   <members>at1033</members>
+   <members>at1052</members>
+   <members>at1054</members>
+  </value_sets>
+  <value_sets id="ac5">
+   <members>at1037</members>
+   <members>at1038</members>
+   <members>at1040</members>
+   <members>at1041</members>
+  </value_sets>
+  <value_sets id="ac6">
+   <members>at1012</members>
+   <members>at1013</members>
+  </value_sets>
+ </terminology>
+ <original_language>ISO_639-1::en</original_language>
+ <description>
+  <lifecycle_state>unmanaged</lifecycle_state>
+  <original_author id="name">Thomas Beale</original_author>
+  <original_author id="email">thomas.beale@openEHR.org</original_author>
+  <original_author id="organisation">openEHR Foundation &lt;http://www.openEHR.org&gt;</original_author>
+  <original_author id="date">2014-01-22</original_author>
+  <custodian_namespace>org.openehr</custodian_namespace>
+  <custodian_organisation>openEHR Foundation &lt;http://www.openEHR.org&gt;</custodian_organisation>
+  <copyright>Copyright © 2014 openEHR Foundation &lt;http://www.openEHR.org&gt;</copyright>
+  <licence>Creative Commons CC-BY-SA &lt;https://creativecommons.org/licenses/by-sa/3.0/&gt;</licence>
+  <details id="en">
+   <language>ISO_639-1::en</language>
+   <purpose>Illustrate rules that define formulae based on archetype data points. This example defines two rules based on well known blood pressure formulae, viz &apos;mean arterial pressure&apos; and &apos;pulse pressure&apos;. These both use</purpose>
+   <keywords>ADL</keywords>
+   <keywords>test</keywords>
+   <keywords>rules</keywords>
+  </details>
+  <other_details id="regression">PASS</other_details>
+ </description>
+ <is_controlled>false</is_controlled>
+</archetype>

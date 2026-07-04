@@ -1,0 +1,7 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2_profile/Hash_of_String_AOM_TYPE_MAPPING.json",
+    "title": "Hash<String, AOM_TYPE_MAPPING>",
+    "$comments": "Defined in Aom2_profile IM, inherits from Hash",
+    "type": "object"
+}

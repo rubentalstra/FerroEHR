@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2_profile/AOM_PROFILE-detailed.json",
+    "title": "AOM_PROFILE",
+    "description": "Profile of common settings relating to use of reference model(s) and terminology for a given archetype developing organisation.",
+    "$comments": "Defined in Aom2_profile IM",
+    "type": "object",
+    "properties": {
+        "aom_rm_type_substitutions": {
+            "description": "Allowed type substitutions: Actual RM type names keyed by AOM built-in types which can subsitute for them in an archetype. E.g. <value = \"String\", key = \"ISO8601_DATE\"> means that if RM property TYPE.some_property is of type String, an ISO8601_DATE is allowed at that position in the archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+        },
+        "aom_lifecycle_mappings": {
+            "description": "List of mappings of lifecycle state names used in archetypes to AOM lifecycle state names. value = AOM lifecycle state; key = source lifecycle state.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+        },
+        "profile_name": {
+            "description": "Name of this profile, usually based on the publisher it pertains to e.g. \"openEHR\", \"cdisc\", etc.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "aom_rm_type_mappings": {
+            "description": "Mappings from AOM built-in types to actual types in RM: whenever the type name is encountered in an archetype, it is mapped to a specific RM type.",
+            "type": "array",
+            "items": {
+                "$ref": "all-detailed.json#/definitions/AOM_TYPE_MAPPING"
+            }
+        },
+        "rm_primitive_type_equivalences": {
+            "description": "Equivalences of RM primitive types to in-built set of primitive types. Used to determine which AOM C_PRIMITIVE_OBJECT descendant is used for a primitive type. Typical entries:\n\n* value\tkey\n* \"Real\"\t\"Double\"\n* \"Integer\"\t\"Integer64\"",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+        }
+    },
+    "required": [
+        "profile_name"
+    ]
+}

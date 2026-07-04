@@ -1,0 +1,65 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/C_SECOND_ORDER-detailed.json",
+    "title": "C_SECOND_ORDER",
+    "description": "Abstract parent of classes defining second order constraints.",
+    "$comments": "Defined in Aom2 IM, abstract",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "C_ATTRIBUTE_TUPLE",
+                "C_PRIMITIVE_TUPLE"
+            ]
+        },
+        "members": {
+            "description": "Members of this second order constrainer. Normally redefined in descendants.",
+            "type": "array",
+            "items": {
+                "$ref": "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+            }
+        }
+    },
+    "required": [
+        "_type"
+    ],
+    "$abstract": true,
+    "$children": [
+        "all-detailed.json#/definitions/C_ATTRIBUTE_TUPLE",
+        "all-detailed.json#/definitions/C_PRIMITIVE_TUPLE"
+    ],
+    "$functions": {
+        "c_conforms_to": {
+            "description": "True if constraints represented by this node, ignoring any sub-parts, are narrower or the same as other. Typically used during validation of specialised archetype nodes.",
+            "parameters": {
+                "other": {
+                    "$ref": "all-detailed.json#/definitions/C_SECOND_ORDER"
+                },
+                "rmcc": {
+                    "description": "RM conformance checker - a lambda (i.e. function object) that can compute conformance of type-names within the  Reference Model on which the current archetype is based. The signature provides two arguments representing respectively, the `_rm_type_name_` of the current node and the `_rm_type_name_` of the node being redefined in a specialisation parent archetype."
+                }
+            },
+            "required_parameters": [
+                "other",
+                "rmcc"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "c_congruent_to": {
+            "description": "True if constraints represented by this node contain no further redefinitions with respect to the node other. Typically used to test if an inherited node locally contains any constraints.",
+            "parameters": {
+                "other": {
+                    "$ref": "all-detailed.json#/definitions/C_SECOND_ORDER"
+                }
+            },
+            "required_parameters": [
+                "other"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    }
+}

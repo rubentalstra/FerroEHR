@@ -1,0 +1,142 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/ADL_CODE_DEFINITIONS-detailed.json",
+    "title": "ADL_CODE_DEFINITIONS",
+    "description": "Definitions relating to the internal code system of archetypes.",
+    "$comments": "Defined in Aom2 IM",
+    "properties": {
+        "_type": {
+            "enum": [
+                "ADL_CODE_DEFINITIONS",
+                "C_ATTRIBUTE",
+                "C_COMPLEX_OBJECT_PROXY",
+                "ARCHETYPE_SLOT",
+                "C_COMPLEX_OBJECT",
+                "C_BOOLEAN",
+                "C_STRING",
+                "C_TERMINOLOGY_CODE",
+                "C_INTEGER",
+                "C_REAL",
+                "C_TIME",
+                "C_DATE",
+                "C_DATE_TIME",
+                "C_DURATION",
+                "C_ARCHETYPE_ROOT"
+            ]
+        }
+    },
+    "$children": [
+        "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+    ],
+    "$functions": {
+        "codes_conformant": {
+            "description": "True if a_child_code conforms to a_parent_code in the sense of specialisation, i.e. is a_child_code the same as or more specialised than a_parent_code.",
+            "parameters": {
+                "a_child_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "a_parent_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_child_code",
+                "a_parent_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_adl_code": {
+            "description": "True if a_code is any kind of ADL archetype local code.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_id_code": {
+            "description": "True if a_code is an 'id' code.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_value_code": {
+            "description": "True if a_code is an 'at' code, i.e. a code representing a single terminology item.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_value_set_code": {
+            "description": "True if a_code is an 'ac' code, i.e. a code referring to a terminologyvalue set.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_redefined_code": {
+            "description": "A code has been specialised if there is a non-zero code index anywhere above the last index e.g. \n\n* at0.0.1 -> False\n* at1.0.1 -> True",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "code_exists_at_level": {
+            "description": "Is `a_code' valid at level `a_level' or less, i.e. if we remove its trailing specialised part corresponding to specialisation below `a_level', and then any trailing '.0' pieces, do we end up with a valid code? If so it means that the code corresponds to a real node from `a_level' or higher.",
+            "parameters": {
+                "a-code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "a_level": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                }
+            },
+            "required_parameters": [
+                "a-code",
+                "a_level"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "$invariants": {
+        "Post": "Result = a_code.starts_with (Value_set_code_leader)"
+    }
+}

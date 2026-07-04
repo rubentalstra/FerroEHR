@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2_profile/AOM_PROPERTY_MAPPING-detailed.json",
+    "title": "AOM_PROPERTY_MAPPING",
+    "description": "Data object expressing a mapping between two class properties.",
+    "$comments": "Defined in Aom2_profile IM",
+    "type": "object",
+    "properties": {
+        "source_property_name": {
+            "description": "Name of property in source class.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "target_property_name": {
+            "description": "Name of property in target class.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        }
+    },
+    "required": [
+        "source_property_name",
+        "target_property_name"
+    ]
+}

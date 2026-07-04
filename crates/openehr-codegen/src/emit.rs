@@ -737,6 +737,12 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
         chain.extend(pkg.split('/').filter(|s| !s.is_empty()).map(str::to_string));
         chain.push(naming::field_ident(&to_snake(name)));
         index.insert(naming::type_name(name), chain.clone());
+        // A polymorphic-concrete class emits a sibling `{Name}Data` struct in the
+        // same file (the enum owns `{Name}`); export it from the prelude too so
+        // downstream code (e.g. the generated XML impls) can name it.
+        if matches!(emission, Emission::PolyEnum(_)) {
+            index.insert(format!("{}Data", naming::type_name(name)), chain.clone());
+        }
         planned.push(Planned {
             class,
             emission,
@@ -1436,4 +1442,218 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
 /// `DV_QUANTITY` → `dv_quantity`, `Iso8601_date` → `iso8601_date`.
 fn to_snake(spec: &str) -> String {
     spec.to_lowercase()
+}
+
+// ── XML codegen support (ADR-005) ─────────────────────────────────────────────
+// A thin, semantic view of the generated types for the XML emitter (`emit_xml`).
+// The XML wire *shape* (element order, attribute-vs-element, xsi:type) comes from
+// the XSD reader; this supplies the matching Rust facts (field idents, Option/Vec,
+// enum variants, generics) so the generated impls compile against the emitted
+// structs. Boxing is transparent to `.write_xml()`, so it is deliberately ignored.
+
+/// One field of an instantiable type. The XML element/attribute name is the
+/// openEHR property name (`wire_name`); the Rust accessor is `rust_name`.
+/// `target` is the spec type of the value (item type for containers), passed as
+/// the declared type so a polymorphic value emits `xsi:type`.
+pub struct XmlField {
+    pub wire_name: String,
+    pub rust_name: String,
+    pub optional: bool,
+    pub multiple: bool,
+    pub target: String,
+    /// For a `Hash<String, V>` field (`target == "Hash"`), the value type's spec
+    /// name (`V`); `None` otherwise. `Some("String")` is serialized inline as the
+    /// openEHR `StringDictionaryItem` shape.
+    pub map_value: Option<String>,
+    /// A mandatory field archie omits at its default (the `Interval` inclusivity/
+    /// boundedness flags): the Rust default expression (`true`/`false`) to use on
+    /// deserialization when the element is absent. `None` = genuinely required.
+    pub default: Option<String>,
+}
+
+/// One variant of an untagged enum, for the forwarding `ToXml`/`FromXml` impl.
+#[allow(dead_code)] // `spec` consumed by the FromXml pass (landing next)
+pub struct XmlVariant {
+    /// Rust variant identifier (`DvCodedText`, or the enum's own name for the
+    /// polymorphic-concrete self-data variant).
+    pub ident: String,
+    /// The concrete spec type this variant carries (`DV_CODED_TEXT`), i.e. its
+    /// `xsi:type` value on the wire.
+    pub spec: String,
+}
+
+/// An instantiable type needing a `ToXml`/`FromXml` impl.
+// `spec` is consumed by the `FromXml` pass (xsi:type → variant dispatch), landing
+// next; keep it now so the type is stable across both directions.
+#[allow(dead_code)]
+pub enum XmlType {
+    /// A struct: a plain `Struct` class, or a `PolyEnum`'s `{Name}Data`.
+    Struct {
+        spec: String,
+        rust: String,
+        generics: Vec<String>,
+        fields: Vec<XmlField>,
+    },
+    /// An untagged enum (abstract slot or polymorphic-concrete) — forwards to
+    /// the active variant's payload.
+    Enum {
+        spec: String,
+        rust: String,
+        generics: Vec<String>,
+        variants: Vec<XmlVariant>,
+        /// xsi:type deserialization map: every concrete descendant spec (and the
+        /// enum's own spec, if concrete) → the direct variant ident it routes
+        /// into. A deep type (`DV_CODED_TEXT` in a `DATA_VALUE` slot) routes into
+        /// the intermediate variant (`DvText`), which recurses.
+        dispatch: Vec<(String, String)>,
+    },
+    /// A transparent newtype over a primitive (`VALIDITY_KIND(String)`) — writes
+    /// its inner value as element text.
+    Newtype { spec: String, rust: String },
+}
+
+impl Model {
+    /// The flattened fields of a concrete class for XML emission (same order and
+    /// flattening as struct emission).
+    #[must_use]
+    pub fn xml_fields(&self, class_name: &str) -> Vec<XmlField> {
+        let Some(class) = self.get(class_name) else {
+            return Vec::new();
+        };
+        self.flattened_props(class)
+            .iter()
+            .map(|rp| {
+                let p = rp.prop;
+                let octet = matches!(&p.kind,
+                    BmmPropKind::Container { item, .. } if item.root_name() == "Octet");
+                let (multiple, target) = match &p.kind {
+                    BmmPropKind::Single(t) => (false, t.root_name().to_string()),
+                    BmmPropKind::Container { item, .. } => (!octet, item.root_name().to_string()),
+                };
+                // The value type of a `Hash<K, V>` field (second generic arg).
+                let map_value = match &p.kind {
+                    BmmPropKind::Single(BmmType::Generic { root, params }) if root == "Hash" => {
+                        params.get(1).map(|v| v.root_name().to_string())
+                    }
+                    _ => None,
+                };
+                XmlField {
+                    wire_name: p.name.clone(),
+                    rust_name: naming::field_ident(&p.name),
+                    optional: !p.is_mandatory && !multiple,
+                    multiple,
+                    target,
+                    map_value,
+                    default: field_default(&rp.owner, &p.name).map(str::to_string),
+                }
+            })
+            .collect()
+    }
+
+    /// The xsi:type deserialization map for an enum: every concrete descendant
+    /// spec (and the enum's own spec, if concrete) → the direct variant ident it
+    /// routes into. `direct` is the enum's immediate variant specs. A deep type
+    /// routes into its intermediate direct variant, which recurses.
+    fn xsi_dispatch(&self, enum_spec: &str, direct: &[String]) -> Vec<(String, String)> {
+        let mut out = Vec::new();
+        for (name, class) in &self.classes {
+            if class.is_abstract || Self::is_mapped(name) {
+                continue;
+            }
+            if name != enum_spec && !self.inherits(name, enum_spec) {
+                continue;
+            }
+            let ident = if name == enum_spec {
+                naming::type_name(enum_spec) // polymorphic-concrete self-data variant
+            } else if let Some(v) = direct
+                .iter()
+                .find(|v| v.as_str() == name || self.inherits(name, v))
+            {
+                naming::type_name(v)
+            } else {
+                continue;
+            };
+            out.push((name.clone(), ident));
+        }
+        out
+    }
+
+    /// Generic parameter names a type exposes (`Version<T>` → `["T"]`).
+    #[must_use]
+    pub fn xml_generics(&self, class_name: &str) -> Vec<String> {
+        self.used_generic_params(class_name)
+            .into_iter()
+            .map(|(n, _)| n)
+            .collect()
+    }
+
+    /// The instantiable XML types of a schema, in class order.
+    #[must_use]
+    pub fn xml_types(&self, schema: &BmmSchema) -> Vec<XmlType> {
+        let used = self.used_as_type();
+        let mut out = Vec::new();
+        for (name, class) in &schema.classes {
+            let generics = self.xml_generics(name);
+            let rust = naming::type_name(name);
+            match decide(self, class, &used) {
+                Emission::Struct => out.push(XmlType::Struct {
+                    spec: name.clone(),
+                    rust,
+                    generics,
+                    fields: self.xml_fields(name),
+                }),
+                Emission::PolyEnum(variants) => {
+                    out.push(XmlType::Struct {
+                        spec: name.clone(),
+                        rust: format!("{rust}Data"),
+                        generics: generics.clone(),
+                        fields: self.xml_fields(name),
+                    });
+                    let mut vs: Vec<XmlVariant> = variants
+                        .iter()
+                        .map(|v| XmlVariant {
+                            ident: naming::type_name(v),
+                            spec: v.clone(),
+                        })
+                        .collect();
+                    // The polymorphic-concrete self-data variant is emitted last,
+                    // its identifier is the enum's own name (`DvText(DvTextData)`).
+                    vs.push(XmlVariant {
+                        ident: rust.clone(),
+                        spec: name.clone(),
+                    });
+                    let dispatch = self.xsi_dispatch(name, &variants);
+                    out.push(XmlType::Enum {
+                        spec: name.clone(),
+                        rust,
+                        generics,
+                        variants: vs,
+                        dispatch,
+                    });
+                }
+                Emission::Enum(variants) => {
+                    let dispatch = self.xsi_dispatch(name, &variants);
+                    out.push(XmlType::Enum {
+                        spec: name.clone(),
+                        rust,
+                        generics,
+                        variants: variants
+                            .iter()
+                            .map(|v| XmlVariant {
+                                ident: naming::type_name(v),
+                                spec: v.clone(),
+                            })
+                            .collect(),
+                        dispatch,
+                    });
+                }
+                Emission::Newtype(_) => out.push(XmlType::Newtype {
+                    spec: name.clone(),
+                    rust,
+                }),
+                Emission::Skip => {}
+            }
+        }
+        out
+    }
 }

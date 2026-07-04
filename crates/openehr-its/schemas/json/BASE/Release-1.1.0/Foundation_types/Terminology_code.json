@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/Terminology_code.json",
+    "definitions": {
+        "TERMINOLOGY_CODE": {
+            "type": "object",
+            "required": [
+                "terminology_id",
+                "code_string",
+                "uri"
+            ],
+            "properties": {
+                "terminology_id": {
+                    "type": "string"
+                },
+                "terminology_version": {
+                    "type": "string"
+                },
+                "code_string": {
+                    "type": "string"
+                },
+                "uri": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/Uri.json#/definitions/URI"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "TERMINOLOGY_CODE"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

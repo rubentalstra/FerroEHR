@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Base_types/ISO8601_TYPE.json",
+    "definitions": {
+        "ISO8601_TYPE": {
+            "type": "object",
+            "required": [
+            ],
+            "properties": {
+                "_type": {
+                    "type": "string",
+                    "const": "ISO8601_TYPE"
+                }
+            }
+        }
+    }
+}

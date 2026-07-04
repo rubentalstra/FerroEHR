@@ -1,0 +1,178 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Ehr_extract/MESSAGE.json",
+    "definitions": {
+        "MESSAGE": {
+            "type": "object",
+            "required": [
+                "author",
+                "audit",
+                "content"
+            ],
+            "properties": {
+                "author": {
+                    "allOf": [
+                        {
+                            "required": [
+                                "_type"
+                            ],
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "PARTY_SELF",
+                                        "PARTY_IDENTIFIED",
+                                        "PARTY_RELATED"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_SELF"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Common/PARTY_SELF.json#/definitions/PARTY_SELF"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_IDENTIFIED"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Common/PARTY_IDENTIFIED.json#/definitions/PARTY_IDENTIFIED"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_RELATED"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Common/PARTY_RELATED.json#/definitions/PARTY_RELATED"
+                            }
+                        }
+                    ]
+                },
+                "audit": {
+                    "allOf": [
+                        {
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "ATTESTATION",
+                                        "AUDIT_DETAILS"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "ATTESTATION"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Common/ATTESTATION.json#/definitions/ATTESTATION"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "AUDIT_DETAILS"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Common/AUDIT_DETAILS.json#/definitions/AUDIT_DETAILS"
+                            }
+                        },
+                        {
+                            "if": {
+                                "not": {
+                                    "required": [
+                                        "_type"
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Common/AUDIT_DETAILS.json#/definitions/AUDIT_DETAILS"
+                            }
+                        }
+                    ]
+                },
+                "content": {
+                    "allOf": [
+                        {
+                            "required": [
+                                "_type"
+                            ],
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "SYNC_EXTRACT",
+                                        "SYNC_EXTRACT_REQUEST"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "SYNC_EXTRACT"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Ehr_extract/SYNC_EXTRACT.json#/definitions/SYNC_EXTRACT"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "SYNC_EXTRACT_REQUEST"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Ehr_extract/SYNC_EXTRACT_REQUEST.json#/definitions/SYNC_EXTRACT_REQUEST"
+                            }
+                        }
+                    ]
+                },
+                "signature": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "MESSAGE"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

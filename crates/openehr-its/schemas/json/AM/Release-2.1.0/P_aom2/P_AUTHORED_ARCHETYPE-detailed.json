@@ -1,0 +1,134 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/P_AUTHORED_ARCHETYPE-detailed.json",
+    "title": "P_AUTHORED_ARCHETYPE",
+    "description": "Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.",
+    "$comments": "Defined in P_aom2 IM, inherits from P_ARCHETYPE, P_AUTHORED_RESOURCE, AUTHORED_RESOURCE",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "P_AUTHORED_ARCHETYPE",
+                "P_TEMPLATE",
+                "P_OPERATIONAL_TEMPLATE"
+            ]
+        },
+        "uid": {
+            "description": "Unique identifier of the family of archetypes having the same interface identifier (same major version).",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "original_language": {
+            "description": "Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "description": {
+            "description": "Description and lifecycle information of the resource.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/RESOURCE_DESCRIPTION"
+        },
+        "is_controlled": {
+            "description": "True if this resource is under any kind of change control (even file copying), in which case revision history is created. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "annotations": {
+            "description": "Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_Hash_of_String_String"
+        },
+        "translations": {
+            "description": "List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/TRANSLATION_DETAILS"
+            }
+        },
+        "parent_archetype_id": {
+            "description": "Identifier of the specialisation parent of this archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "archetype_id": {
+            "description": "Identifier of this archetype.",
+            "$ref": "all-detailed.json#/definitions/P_ARCHETYPE_HRID"
+        },
+        "is_differential": {
+            "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "definition": {
+            "description": "Root node of the definition of this archetype.",
+            "$ref": "all-detailed.json#/definitions/P_C_COMPLEX_OBJECT"
+        },
+        "terminology": {
+            "description": "The terminology of the archetype.",
+            "$ref": "all-detailed.json#/definitions/P_ARCHETYPE_TERMINOLOGY"
+        },
+        "rules": {
+            "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+            "type": "array"
+        },
+        "adl_version": {
+            "description": "ADL version if archteype was read in from an ADL sharable archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "build_uid": {
+            "description": "Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/all-detailed.json#/definitions/UID"
+        },
+        "rm_release": {
+            "description": "Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "is_generated": {
+            "description": "If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "other_meta_data": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+        }
+    },
+    "required": [
+        "original_language",
+        "archetype_id",
+        "is_differential",
+        "definition",
+        "terminology",
+        "build_uid",
+        "rm_release",
+        "is_generated",
+        "other_meta_data"
+    ],
+    "$inherits": [
+        "all-detailed.json#/definitions/P_ARCHETYPE",
+        "all-detailed.json#/definitions/P_AUTHORED_RESOURCE",
+        "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/AUTHORED_RESOURCE"
+    ],
+    "$children": [
+        "all-detailed.json#/definitions/P_TEMPLATE",
+        "all-detailed.json#/definitions/P_OPERATIONAL_TEMPLATE"
+    ],
+    "$functions": {
+        "current_revision": {
+            "description": "Most recent revision in revision_history if is_controlled else  (uncontrolled) . ",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "languages_available": {
+            "description": "Total list of languages available in this resource, derived from original_language and translations. ",
+            "return": {
+                "type": "array",
+                "items": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "minItems": 1
+            }
+        }
+    },
+    "$invariants": {
+        "Original_language_valid": "code_set (Code_set_id_languages).has_code (original_language.as_string)",
+        "Current_revision_valid": "(current_revision /= Void and not is_controlled) implies current_revision.is_equal (\"(uncontrolled)\")",
+        "Translations_valid": "translations /= Void implies (not translations.is_empty and not translations.has (orginal_language.code_string))",
+        "Description_valid": "translations /= Void implies (description.details.for_all (d &#124;\ntranslations.has_key (d.language.code_string)))",
+        "Languages_available_valid": "languages_available.has (original_language)",
+        "Revision_history_valid": "is_controlled xor revision_history = Void",
+        "Post": "Result = revision_history.most_recent_version"
+    }
+}

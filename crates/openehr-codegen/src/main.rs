@@ -10,13 +10,33 @@
 
 mod bmm;
 mod emit;
+mod emit_rest;
+mod emit_xml;
 mod naming;
+mod oas;
+mod xsd;
 
 use bmm::BmmSchema;
 use emit::{External, Model};
 use std::path::{Path, PathBuf};
 
 const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
+/// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
+/// generated XML/REST code).
+#[allow(dead_code)] // used by the emit-xml/emit-rest writers (landing incrementally)
+const ITS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../openehr-its");
+/// v1 (namespace `.../v1`) RM-instance XSD bundle dir — the Stage-1 parity target.
+const XSD_V1_DIR: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL"
+);
+/// v2 (namespace `.../v2`) XSD root (per-component release folders). Reserved for
+/// a future v2-specific trait if the wire shape ever diverges from v1 (ADR-005).
+#[allow(dead_code)]
+const XSD_V2_DIR: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../openehr-its/schemas/xml/its-xml-2.0.0-nsv2"
+);
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -24,8 +44,13 @@ fn main() {
     let result = match cmd {
         "check" => cmd_check(),
         "emit" => cmd_emit(args.get(1).map(PathBuf::from)),
+        "check-xsd" => cmd_check_xsd(),
+        "emit-xml" => cmd_emit_xml(),
+        "emit-rest" => cmd_emit_rest(),
         other => {
-            eprintln!("unknown command {other:?}; use `check` or `emit [OUTDIR]`");
+            eprintln!(
+                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, or `emit-rest`"
+            );
             std::process::exit(2);
         }
     };
@@ -35,18 +60,22 @@ fn main() {
     }
 }
 
-const BASE_BMM: &str = "openehr_base_1.3.0.bmm.json";
-const RM_BMM: &str = "openehr_rm_1.2.0.bmm.json";
-const TERM_BMM: &str = "openehr_term_3.1.0.bmm.json";
-const AM14_BMM: &str = "openehr_am_1.4.0.bmm.json";
-const AM24_BMM: &str = "openehr_am_2.4.0.bmm.json";
-const LANG_BMM: &str = "openehr_lang_1.1.0.bmm.json";
+// Paths are relative to `VENDOR` and mirror the upstream ITS-BMM layout
+// (`components/<COMPONENT>/json/…`) — the full meta-model is vendored verbatim
+// (json + odin + yaml, all released versions); the JSON forms below are the
+// codegen input for our pinned versions (see `docs/VERSIONS.md`).
+const BASE_BMM: &str = "components/BASE/json/openehr_base_1.3.0.bmm.json";
+const RM_BMM: &str = "components/RM/json/openehr_rm_1.2.0.bmm.json";
+const TERM_BMM: &str = "components/TERM/json/openehr_term_3.1.0.bmm.json";
+const AM14_BMM: &str = "components/AM/json/openehr_am_1.4.0.bmm.json";
+const AM24_BMM: &str = "components/AM/json/openehr_am_2.4.0.bmm.json";
+const LANG_BMM: &str = "components/LANG/json/openehr_lang_1.1.0.bmm.json";
 /// LANG's model spans two vendored files: the primary one above (persisted BMM
 /// with `EXPR_*` and `STATEMENT_SET`/`ASSERTION`, which AM's rules/slots
 /// reference) and this BMM-3 file (the full `BMM_*` object model with the
 /// `EL_*` expression language, which AM's persisted-archetype rules reference).
 /// Both are merged into the `openehr-lang` crate.
-const LANG_BMM3: &str = "openehr_lang_1.1.0-bmm3.bmm.json";
+const LANG_BMM3: &str = "components/LANG/json/openehr_lang_1.1.0-bmm3.bmm.json";
 
 fn load(file: &str) -> Result<BmmSchema, Box<dyn std::error::Error>> {
     let src = std::fs::read_to_string(Path::new(VENDOR).join(file))?;
@@ -69,6 +98,154 @@ fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
             s.classes.len(),
         );
     }
+    Ok(())
+}
+
+/// Emit the ITS-REST contract (DTOs, param structs, server trait, route table)
+/// for each API group into `openehr-its/src/rest/generated/` (ADR-005).
+fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
+    // Groups with operations (overview is an index, system has none).
+    const GROUPS: &[&str] = &["admin", "definition", "demographic", "ehr", "query"];
+    let base = load(BASE_BMM)?;
+    let rm = load(RM_BMM)?;
+    let base_model = Model::merged(&[&base]);
+    let rm_model = Model::merged(&[&base, &rm]);
+    // OAS $ref names are PascalCase (`EhrStatus`) — the same as the emitted Rust
+    // type names — so map each crate's emittable spec names through `type_name`.
+    let names = emit_rest::RmNames {
+        base: emit::emittable_specs(&base_model, &base)
+            .iter()
+            .map(|s| naming::type_name(s))
+            .collect(),
+        rm: emit::emittable_specs(&rm_model, &rm)
+            .iter()
+            .map(|s| naming::type_name(s))
+            .collect(),
+    };
+
+    let oas_dir = Path::new(ITS_ROOT).join("vendor/rest-oas");
+    let gen_dir = Path::new(ITS_ROOT).join("src/rest/generated");
+    std::fs::create_dir_all(&gen_dir)?;
+
+    let mut written = Vec::new();
+    for group in GROUPS {
+        let oas = oas::Oas::parse_file(&oas_dir.join(format!("{group}-codegen.openapi.yaml")))?;
+        let body = emit_rest::emit_group(&oas, group, &names);
+        let path = gen_dir.join(format!("{group}.rs"));
+        std::fs::write(&path, &body)?;
+        written.push(path);
+    }
+    let mod_rs = {
+        let mut s = String::from(
+            "// @generated by openehr-codegen (emit-rest, ADR-005) — DO NOT EDIT.\n\
+             //! ITS-REST contract, one module per API group.\n\n",
+        );
+        for g in GROUPS {
+            s.push_str(&format!("pub mod {g};\n"));
+        }
+        s
+    };
+    let mod_path = gen_dir.join("mod.rs");
+    std::fs::write(&mod_path, mod_rs)?;
+    written.push(mod_path);
+
+    rustfmt(&written)?;
+    println!("emitted {} files into {}", written.len(), gen_dir.display());
+    Ok(())
+}
+
+/// Emit canonical-XML `ToXml`/`FromXml` impls for the RM/BASE spec types into
+/// `openehr-its/src/xml/generated/` (ADR-005). Generates both wire lineages: v1
+/// (`.../v1`, parity target) and v2 (`.../v2`, latest).
+fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
+    let base = load(BASE_BMM)?;
+    let rm = load(RM_BMM)?;
+    let base_model = Model::merged(&[&base]);
+    let rm_model = Model::merged(&[&base, &rm]);
+
+    // The RM-instance wire shape (element names, order, xsi:type, attributes) is
+    // identical across the two ITS-XML lineages; they differ only by the root
+    // `xmlns` string, which the `Namespace` serialize-time param selects. So a
+    // single `ToXml` impl set — generated from the v1 (parity) XSD — serves both
+    // (one impl per type; a second set would be a duplicate-impl conflict). The
+    // v2 XSDs stay vendored; a genuine v2 structural divergence, if it ever
+    // appears, would get its own trait then.
+    let v1 = xsd::XsdModel::parse_files(&xsd::v1_files(Path::new(XSD_V1_DIR)))?;
+
+    let gen_dir = Path::new(ITS_ROOT).join("src/xml/generated");
+    std::fs::create_dir_all(&gen_dir)?;
+
+    let schemas = [
+        emit_xml::XmlSchema {
+            model: &base_model,
+            schema: &base,
+            prelude: "openehr_base::prelude",
+        },
+        emit_xml::XmlSchema {
+            model: &rm_model,
+            schema: &rm,
+            prelude: "openehr_rm::prelude",
+        },
+    ];
+    let mut unmatched = Vec::new();
+    let body = emit_xml::emit_file(&schemas, &v1, &mut unmatched);
+    let impls_path = gen_dir.join("impls.rs");
+    std::fs::write(&impls_path, &body)?;
+
+    let mod_rs = "// @generated by openehr-codegen (emit-xml, ADR-005) — DO NOT EDIT.\n\
+        //! Canonical-XML `ToXml`/`FromXml` impls for the RM/BASE spec types.\n\n\
+        mod impls;\n";
+    let mod_path = gen_dir.join("mod.rs");
+    std::fs::write(&mod_path, mod_rs)?;
+
+    let written = vec![impls_path, mod_path];
+    rustfmt(&written)?;
+    println!(
+        "emitted {} files into {} ({} XSD-only elements without a BMM field skipped)",
+        written.len(),
+        gen_dir.display(),
+        unmatched.len()
+    );
+    Ok(())
+}
+
+/// Diagnostic: parse the vendored v1 RM-instance XSDs and print a summary +
+/// a couple of flattened views, to validate the XSD reader (ADR-005).
+fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
+    let files = xsd::v1_files(Path::new(XSD_V1_DIR));
+    let model = xsd::XsdModel::parse_files(&files)?;
+    println!(
+        "✓ v1 XSDs: namespace={} types={}",
+        model.namespace,
+        model.types.len()
+    );
+    let abstract_n = model.types.values().filter(|t| t.is_abstract).count();
+    println!("  abstract={abstract_n}");
+    for probe in ["ELEMENT", "DV_CODED_TEXT", "COMPOSITION"] {
+        if let Some(t) = model.types.get(probe) {
+            let (attrs, elems) = model.flattened(probe);
+            println!(
+                "  {probe}: base={:?} attrs=[{}] elems=[{}]",
+                t.base,
+                attrs
+                    .iter()
+                    .map(|a| a.name.as_str())
+                    .collect::<Vec<_>>()
+                    .join(","),
+                elems
+                    .iter()
+                    .map(|e| e.name.as_str())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            );
+        }
+    }
+    let dv = model.descendants("DATA_VALUE");
+    println!(
+        "  DATA_VALUE concrete descendants ({}): {}",
+        dv.len(),
+        dv.join(",")
+    );
     Ok(())
 }
 
