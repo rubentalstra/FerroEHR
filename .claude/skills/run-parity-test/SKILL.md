@@ -6,7 +6,7 @@ description: >
   including the USE_REFERENCE_EHRBASE=1 negative-test gate. Use when the
   user asks to check parity, run the parity harness, or verify a fix against
   stock EHRbase.
-allowed-tools: [Read, Bash, Agent]
+allowed-tools: [Read, Bash]
 argument-hint: "[--negative-gate] [test-name-filter]"
 ---
 
@@ -19,10 +19,9 @@ at the REST surface on Linux x86_64 first.
 
 ## Steps
 
-1. **Delegate to the `parity-checker` subagent** for anything beyond a quick
-   sanity run — it is scoped for exactly this and writes nothing but a
-   report.
-2. If running directly: execute `scripts/parity.sh`, optionally filtered by
+Run **in-session** (no subagents/worktrees).
+
+1. Execute `scripts/parity.sh`, optionally filtered by
    `$1` if the harness supports a test-name filter. Add
    `USE_REFERENCE_EHRBASE=1` when `--negative-gate` is passed, or whenever
    validating a **new** parity test — a parity test is only valid if it

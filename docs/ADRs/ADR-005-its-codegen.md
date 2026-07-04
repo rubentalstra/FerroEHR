@@ -6,7 +6,7 @@
 - **Supersedes (in part):** the "ITS-XML is hand-written, the schema is a
   *validation target, not a codegen source*" rule in
   `.claude/rules/serialization.md`, and the "REST server is code-first via
-  `utoipa`" framing of phase P6 — as *methods*. The behavioural targets they
+  `utoipa`" framing of phase P11 — as *methods*. The behavioural targets they
   set (wire parity with stock EHRbase; the ITS-REST 1.0.3 contract) stand.
 
 ## Context
@@ -28,7 +28,7 @@ schema:
 - **ITS-BMM** — the meta-model itself (already ADR-004's codegen input).
 
 The forcing question: are the XML and REST surfaces hand-written (per the
-original P5/P6 framing), or generated from their vendored schemas, the same way
+original P05/P11 framing), or generated from their vendored schemas, the same way
 ADR-004 generates types from BMM? The prior rules said hand-written for XML and
 code-first for REST. That predates the working ADR-004 generator and the
 completed ITS vendoring, and it is the slow/error-prone path ADR-004 set out to
@@ -140,7 +140,7 @@ existing `openehr-codegen` tool.** Concretely:
   for now: the RM-instance wire shape is identical bar the root `xmlns`, so one
   impl set + a namespace parameter suffices; a second trait is dead weight until
   a real v2 structural divergence appears.
-- **REST code-first via `utoipa`** (the P6 framing): hand-write DTOs + handlers,
+- **REST code-first via `utoipa`** (the P11 framing): hand-write DTOs + handlers,
   emit *our* OAS. Rejected as the primary path: it hand-writes every DTO and
   lets our contract drift from openEHR's authoritative OAS. Kept only as an
   optional drift-check running the other direction.

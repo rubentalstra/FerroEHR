@@ -28,11 +28,16 @@ for standalone publication may relax to 1.94/1.95 at that time.
 | Required extensions | `uuid-ossp`, `pgcrypto`, `pg_trgm` |
 
 PostgreSQL is the only component in the stack with a meaningful version delta
-(EHRbase v2 recommends PG 16; we target PG 18). PG 18 brings asynchronous I/O,
+(EHRbase Java targets PG 15/16; we target PG 18). PG 18 brings asynchronous I/O,
 native `uuidv7()`, B-tree skip scan, temporal `PRIMARY KEY`/`UNIQUE`/`FOREIGN
-KEY`, `RETURNING OLD/NEW`, self-join elimination, and OR-to-array planning,
-plus `JSON_TABLE()` inherited from PG 17. Managed providers may lag on
-`io_uring`; still target PG 18 and let the AIO benefit follow once available.
+KEY`, `RETURNING OLD/NEW`, virtual generated columns, self-join elimination, and
+OR-to-`ANY` planning, plus `JSON_TABLE()` + the SQL/JSON functions inherited
+from PG 17. **See `docs/postgres-features.md`** for the full PG 17+18 feature
+delta over PG 16 and where each app phase (P09/P12/P16/P11/P20) uses it —
+"the best possible system" means exploiting these. Minor releases (18.1–18.4,
+17.x) are bugfix/security only (no new features); pin the latest patch (18.4,
+2026-05-14). Managed providers may lag on `io_uring`; still target PG 18 and let
+the AIO benefit follow.
 
 ## openEHR specification matrix
 

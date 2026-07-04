@@ -38,7 +38,7 @@ BMM, deterministically.** Concretely:
    `openehr-derive` supplies the `#[derive(OpenEhrType)]` macro used by the
    emitted types. Input is JSON, not the ODIN form — it is a cleaner, structured
    serialization of the identical meta-model. (The ODIN reader in
-   `openehr-lang::odin` is retained for ADL/ODIN *instance* parsing at P8/P9,
+   `openehr-lang::odin` is retained for ADL/ODIN *instance* parsing at P06/P13,
    off the codegen path.)
 
 2. **Target = best-possible idiomatic Rust, not a mirror of the old code, and
@@ -86,8 +86,9 @@ BMM, deterministically.** Concretely:
 
 5. **Override layer.** A small set of decisions BMM cannot express (strong
    newtypes, primitive backing, name escapes, the `UUID`→`uuid::Uuid` mapping)
-   is currently a hardcoded map in the emitter, slated to move to a
-   `codegen.toml` seeded from `docs/ROSETTA.md`.
+   is currently a hardcoded map in the emitter (`emit.rs`: `type_override`,
+   `class_binding`, `field_default`), slated to move to a `codegen.toml` seeded
+   from that map.
 
 6. **Crate naming (from the same work).** `openehr-*` = the spec (generated);
    `ehrbase-*` = the ported application. `openehr-foundation` folds into

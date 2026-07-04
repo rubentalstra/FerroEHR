@@ -586,12 +586,3 @@ mod tests {
         );
     }
 }
-
-// ─────────────────────────────────────────────
-// PORT STATUS
-//   source: openEHR LANG 1.0.0 BMM / P_BMM persisted meta-model (specifications-ITS-BMM, JSON)
-//   source_loc: n/a
-//   confidence: high
-//   todos: 0
-//   note: structural model for codegen (ADR-004); loads the JSON BMM serialization.
-// ─────────────────────────────────────────────
