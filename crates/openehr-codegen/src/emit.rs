@@ -1493,6 +1493,11 @@ pub enum XmlType {
         rust: String,
         generics: Vec<String>,
         variants: Vec<XmlVariant>,
+        /// xsi:type deserialization map: every concrete descendant spec (and the
+        /// enum's own spec, if concrete) → the direct variant ident it routes
+        /// into. A deep type (`DV_CODED_TEXT` in a `DATA_VALUE` slot) routes into
+        /// the intermediate variant (`DvText`), which recurses.
+        dispatch: Vec<(String, String)>,
     },
     /// A transparent newtype over a primitive (`VALIDITY_KIND(String)`) — writes
     /// its inner value as element text.
@@ -1526,6 +1531,34 @@ impl Model {
                 }
             })
             .collect()
+    }
+
+    /// The xsi:type deserialization map for an enum: every concrete descendant
+    /// spec (and the enum's own spec, if concrete) → the direct variant ident it
+    /// routes into. `direct` is the enum's immediate variant specs. A deep type
+    /// routes into its intermediate direct variant, which recurses.
+    fn xsi_dispatch(&self, enum_spec: &str, direct: &[String]) -> Vec<(String, String)> {
+        let mut out = Vec::new();
+        for (name, class) in &self.classes {
+            if class.is_abstract || Self::is_mapped(name) {
+                continue;
+            }
+            if name != enum_spec && !self.inherits(name, enum_spec) {
+                continue;
+            }
+            let ident = if name == enum_spec {
+                naming::type_name(enum_spec) // polymorphic-concrete self-data variant
+            } else if let Some(v) = direct
+                .iter()
+                .find(|v| v.as_str() == name || self.inherits(name, v))
+            {
+                naming::type_name(v)
+            } else {
+                continue;
+            };
+            out.push((name.clone(), ident));
+        }
+        out
     }
 
     /// Generic parameter names a type exposes (`Version<T>` → `["T"]`).
@@ -1572,25 +1605,31 @@ impl Model {
                         ident: rust.clone(),
                         spec: name.clone(),
                     });
+                    let dispatch = self.xsi_dispatch(name, &variants);
                     out.push(XmlType::Enum {
                         spec: name.clone(),
                         rust,
                         generics,
                         variants: vs,
+                        dispatch,
                     });
                 }
-                Emission::Enum(variants) => out.push(XmlType::Enum {
-                    spec: name.clone(),
-                    rust,
-                    generics,
-                    variants: variants
-                        .iter()
-                        .map(|v| XmlVariant {
-                            ident: naming::type_name(v),
-                            spec: v.clone(),
-                        })
-                        .collect(),
-                }),
+                Emission::Enum(variants) => {
+                    let dispatch = self.xsi_dispatch(name, &variants);
+                    out.push(XmlType::Enum {
+                        spec: name.clone(),
+                        rust,
+                        generics,
+                        variants: variants
+                            .iter()
+                            .map(|v| XmlVariant {
+                                ident: naming::type_name(v),
+                                spec: v.clone(),
+                            })
+                            .collect(),
+                        dispatch,
+                    });
+                }
                 Emission::Newtype(_) => out.push(XmlType::Newtype {
                     spec: name.clone(),
                     rust,

@@ -8,6 +8,7 @@
 //! cannot express — hence explicit generated impls over this runtime rather than
 //! a serde derive.
 
+use quick_xml::Reader;
 use quick_xml::Writer;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 
@@ -236,5 +237,219 @@ impl ToXml for serde_json::Value {
     // JSON text as a placeholder so the crate compiles.
     fn write_xml(&self, w: &mut XmlWriter, tag: &str, _d: Option<&str>) -> Result<(), XmlError> {
         w.write_text_element(tag, &self.to_string())
+    }
+}
+
+// ── deserialization (FromXml) ─────────────────────────────────────────────────
+
+/// An owned start tag (element name + attributes), decoupled from the borrowed
+/// reader so it can cross recursive `from_xml` calls.
+#[derive(Debug, Clone)]
+pub struct StartTag {
+    pub name: String,
+    pub attrs: Vec<(String, String)>,
+}
+
+impl StartTag {
+    /// The value of attribute `key`, if present.
+    #[must_use]
+    pub fn attr(&self, key: &str) -> Option<&str> {
+        self.attrs
+            .iter()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.as_str())
+    }
+
+    /// The `xsi:type` discriminator, if present (any namespace prefix).
+    #[must_use]
+    pub fn xsi_type(&self) -> Option<&str> {
+        self.attrs
+            .iter()
+            .find(|(k, _)| k == "xsi:type" || k.ends_with(":type") && k.contains("xsi"))
+            .map(|(_, v)| v.as_str())
+    }
+}
+
+/// One decoded XML event (owned).
+#[derive(Debug)]
+pub enum XmlEvent {
+    Start(StartTag),
+    End,
+    Text(String),
+    Eof,
+}
+
+/// Reads canonical openEHR XML, yielding owned [`XmlEvent`]s. Empty elements are
+/// expanded to Start+End so callers only handle those four cases.
+pub struct XmlReader<'a> {
+    r: Reader<&'a [u8]>,
+}
+
+impl std::fmt::Debug for XmlReader<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("XmlReader").finish_non_exhaustive()
+    }
+}
+
+impl<'a> XmlReader<'a> {
+    #[must_use]
+    pub fn new(xml: &'a str) -> Self {
+        let mut r = Reader::from_str(xml);
+        r.config_mut().expand_empty_elements = true;
+        Self { r }
+    }
+
+    /// Read the next meaningful event.
+    ///
+    /// # Errors
+    /// Propagates parse errors.
+    pub fn read(&mut self) -> Result<XmlEvent, XmlError> {
+        loop {
+            let ev = self
+                .r
+                .read_event()
+                .map_err(|e| XmlError::Parse(e.to_string()))?;
+            match ev {
+                Event::Start(e) => return Ok(XmlEvent::Start(to_start_tag(&e)?)),
+                Event::End(_) => return Ok(XmlEvent::End),
+                Event::Text(t) => {
+                    let raw = t.decode().map_err(|e| XmlError::Parse(e.to_string()))?;
+                    let s = quick_xml::escape::unescape(&raw)
+                        .map_err(|e| XmlError::Parse(e.to_string()))?;
+                    return Ok(XmlEvent::Text(s.into_owned()));
+                }
+                Event::Eof => return Ok(XmlEvent::Eof),
+                // An entity reference in text (`&apos;`, `&#39;`) arrives as a
+                // separate event in quick-xml 0.41 — resolve it to its text so
+                // leaf accumulation keeps it.
+                Event::GeneralRef(e) => {
+                    if let Some(c) = e
+                        .resolve_char_ref()
+                        .map_err(|e| XmlError::Parse(e.to_string()))?
+                    {
+                        return Ok(XmlEvent::Text(c.to_string()));
+                    }
+                    let name = e.decode().map_err(|e| XmlError::Parse(e.to_string()))?;
+                    let resolved = match name.as_ref() {
+                        "amp" => "&",
+                        "lt" => "<",
+                        "gt" => ">",
+                        "apos" => "'",
+                        "quot" => "\"",
+                        other => {
+                            return Err(XmlError::Parse(format!("unknown entity &{other};")));
+                        }
+                    };
+                    return Ok(XmlEvent::Text(resolved.to_string()));
+                }
+                // Decl / Comment / PI / CData / DocType: skip.
+                _ => {}
+            }
+        }
+    }
+
+    /// Consume the rest of the current element's subtree (its start already read).
+    ///
+    /// # Errors
+    /// Propagates parse errors; errors on premature EOF.
+    pub fn skip_element(&mut self) -> Result<(), XmlError> {
+        let mut depth = 1i32;
+        while depth > 0 {
+            match self.read()? {
+                XmlEvent::Start(_) => depth += 1,
+                XmlEvent::End => depth -= 1,
+                XmlEvent::Eof => return Err(XmlError::Parse("unexpected EOF in element".into())),
+                XmlEvent::Text(_) => {}
+            }
+        }
+        Ok(())
+    }
+}
+
+fn to_start_tag(e: &BytesStart<'_>) -> Result<StartTag, XmlError> {
+    let name = String::from_utf8_lossy(e.name().as_ref()).into_owned();
+    let mut attrs = Vec::new();
+    for a in e.attributes() {
+        let a = a.map_err(|e| XmlError::Parse(e.to_string()))?;
+        let k = String::from_utf8_lossy(a.key.as_ref()).into_owned();
+        let raw = std::str::from_utf8(&a.value).map_err(|e| XmlError::Parse(e.to_string()))?;
+        let v = quick_xml::escape::unescape(raw)
+            .map_err(|e| XmlError::Parse(e.to_string()))?
+            .into_owned();
+        attrs.push((k, v));
+    }
+    Ok(StartTag { name, attrs })
+}
+
+/// Deserialize a value from an openEHR canonical-XML document.
+///
+/// # Errors
+/// Propagates parse errors.
+pub fn from_xml<T: FromXml>(xml: &str) -> Result<T, XmlError> {
+    let mut reader = XmlReader::new(xml);
+    loop {
+        match reader.read()? {
+            XmlEvent::Start(s) => return T::from_xml(&mut reader, &s),
+            XmlEvent::Eof => return Err(XmlError::Parse("no root element".into())),
+            _ => {}
+        }
+    }
+}
+
+/// A value that deserializes from canonical openEHR XML. `from_xml` is called
+/// after the element's start tag has been read (`start`); it consumes events
+/// through the matching end tag.
+pub trait FromXml: Sized {
+    /// # Errors
+    /// Propagates parse errors.
+    fn from_xml(reader: &mut XmlReader, start: &StartTag) -> Result<Self, XmlError>;
+}
+
+impl FromXml for String {
+    fn from_xml(reader: &mut XmlReader, _start: &StartTag) -> Result<Self, XmlError> {
+        let mut text = String::new();
+        loop {
+            match reader.read()? {
+                XmlEvent::Text(t) => text.push_str(&t),
+                XmlEvent::End => break,
+                XmlEvent::Start(_) => reader.skip_element()?, // stray child in a text leaf
+                XmlEvent::Eof => return Err(XmlError::Parse("EOF in text element".into())),
+            }
+        }
+        Ok(text)
+    }
+}
+
+macro_rules! impl_from_xml_parse {
+    ($($t:ty),*) => {$(
+        impl FromXml for $t {
+            fn from_xml(reader: &mut XmlReader, start: &StartTag) -> Result<Self, XmlError> {
+                let s = String::from_xml(reader, start)?;
+                s.trim().parse::<$t>().map_err(|e| XmlError::Parse(format!("{e}: {s:?}")))
+            }
+        }
+    )*};
+}
+impl_from_xml_parse!(bool, i32, i64, u8, f32, f64, char);
+
+impl FromXml for uuid::Uuid {
+    fn from_xml(reader: &mut XmlReader, start: &StartTag) -> Result<Self, XmlError> {
+        let s = String::from_xml(reader, start)?;
+        uuid::Uuid::parse_str(s.trim()).map_err(|e| XmlError::Parse(e.to_string()))
+    }
+}
+
+impl<T: FromXml> FromXml for Box<T> {
+    fn from_xml(reader: &mut XmlReader, start: &StartTag) -> Result<Self, XmlError> {
+        Ok(Box::new(T::from_xml(reader, start)?))
+    }
+}
+
+impl FromXml for serde_json::Value {
+    // TODO(port): placeholder mirror of the `ToXml` stub — consume the element
+    // and yield Null. Off the composition parity path (X_VERSIONED_* / Any).
+    fn from_xml(reader: &mut XmlReader, _start: &StartTag) -> Result<Self, XmlError> {
+        reader.skip_element()?;
+        Ok(serde_json::Value::Null)
     }
 }
