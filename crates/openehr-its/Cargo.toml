@@ -14,6 +14,7 @@ serde.workspace = true
 serde_json.workspace = true
 quick-xml.workspace = true
 thiserror.workspace = true
+jsonschema.workspace = true
 base64.workspace = true
 uuid.workspace = true
 # The generated ITS-REST contract: an async_trait server trait + axum-typed DTOs.

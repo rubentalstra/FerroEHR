@@ -1465,6 +1465,10 @@ pub struct XmlField {
     /// name (`V`); `None` otherwise. `Some("String")` is serialized inline as the
     /// openEHR `StringDictionaryItem` shape.
     pub map_value: Option<String>,
+    /// A mandatory field archie omits at its default (the `Interval` inclusivity/
+    /// boundedness flags): the Rust default expression (`true`/`false`) to use on
+    /// deserialization when the element is absent. `None` = genuinely required.
+    pub default: Option<String>,
 }
 
 /// One variant of an untagged enum, for the forwarding `ToXml`/`FromXml` impl.
@@ -1540,6 +1544,7 @@ impl Model {
                     multiple,
                     target,
                     map_value,
+                    default: field_default(&rp.owner, &p.name).map(str::to_string),
                 }
             })
             .collect()

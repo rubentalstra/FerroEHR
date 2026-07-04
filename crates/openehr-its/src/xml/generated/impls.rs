@@ -1189,18 +1189,10 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::MultiplicityInterva
         Ok(openehr_base::prelude::MultiplicityInterval {
             lower: __lower,
             upper: __upper,
-            lower_unbounded: __lower_unbounded.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element lower_unbounded".into())
-            })?,
-            upper_unbounded: __upper_unbounded.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element upper_unbounded".into())
-            })?,
-            lower_included: __lower_included.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element lower_included".into())
-            })?,
-            upper_included: __upper_included.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element upper_included".into())
-            })?,
+            lower_unbounded: __lower_unbounded.unwrap_or(false),
+            upper_unbounded: __upper_unbounded.unwrap_or(false),
+            lower_included: __lower_included.unwrap_or(true),
+            upper_included: __upper_included.unwrap_or(true),
         })
     }
 }
@@ -1727,18 +1719,10 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
         Ok(openehr_base::prelude::ProperIntervalData {
             lower: __lower,
             upper: __upper,
-            lower_unbounded: __lower_unbounded.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element lower_unbounded".into())
-            })?,
-            upper_unbounded: __upper_unbounded.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element upper_unbounded".into())
-            })?,
-            lower_included: __lower_included.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element lower_included".into())
-            })?,
-            upper_included: __upper_included.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element upper_included".into())
-            })?,
+            lower_unbounded: __lower_unbounded.unwrap_or(false),
+            upper_unbounded: __upper_unbounded.unwrap_or(false),
+            lower_included: __lower_included.unwrap_or(true),
+            upper_included: __upper_included.unwrap_or(true),
         })
     }
 }
@@ -6205,18 +6189,10 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
         Ok(openehr_rm::prelude::DvInterval {
             lower: __lower,
             upper: __upper,
-            lower_unbounded: __lower_unbounded.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element lower_unbounded".into())
-            })?,
-            upper_unbounded: __upper_unbounded.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element upper_unbounded".into())
-            })?,
-            lower_included: __lower_included.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element lower_included".into())
-            })?,
-            upper_included: __upper_included.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element upper_included".into())
-            })?,
+            lower_unbounded: __lower_unbounded.unwrap_or(false),
+            upper_unbounded: __upper_unbounded.unwrap_or(false),
+            lower_included: __lower_included.unwrap_or(true),
+            upper_included: __upper_included.unwrap_or(true),
         })
     }
 }

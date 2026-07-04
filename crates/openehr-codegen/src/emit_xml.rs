@@ -336,6 +336,10 @@ fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
                     }
                 } else if f.multiple || f.optional {
                     let _ = writeln!(b, "{fname}: {},", acc_var(fname));
+                } else if let Some(default) = &f.default {
+                    // Mandatory field archie omits at its default (Interval flags):
+                    // use the default when the element is absent.
+                    let _ = writeln!(b, "{fname}: {}.unwrap_or({default}),", acc_var(fname));
                 } else {
                     let _ = writeln!(
                         b,

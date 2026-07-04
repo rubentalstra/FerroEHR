@@ -277,13 +277,15 @@ impl StartTag {
             .map(|(_, v)| v.as_str())
     }
 
-    /// The `xsi:type` discriminator, if present (any namespace prefix).
+    /// The `xsi:type` discriminator, if present, with any namespace prefix on
+    /// the *value* stripped (`v1:CLUSTER` → `CLUSTER`) so dispatch matches the
+    /// bare openEHR type name regardless of the document's prefix convention.
     #[must_use]
     pub fn xsi_type(&self) -> Option<&str> {
         self.attrs
             .iter()
-            .find(|(k, _)| k == "xsi:type" || k.ends_with(":type") && k.contains("xsi"))
-            .map(|(_, v)| v.as_str())
+            .find(|(k, _)| k == "xsi:type" || (k.ends_with(":type") && k.contains("xsi")))
+            .map(|(_, v)| v.rsplit(':').next().unwrap_or(v))
     }
 }
 
