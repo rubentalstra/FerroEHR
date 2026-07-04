@@ -1,0 +1,230 @@
+//! XSD reader for the XML codegen (ADR-005).
+//!
+//! Parses the vendored openEHR ITS-XML schemas into a small structural model
+//! the XML emitter needs and BMM does not encode: for each `xs:complexType`,
+//! which properties are XML **attributes** vs child **elements**, the child
+//! **order** (canonical XML is order-sensitive), the inheritance `base`, and the
+//! `abstract` flag. From these it derives a subtype index for `xsi:type`
+//! polymorphic dispatch.
+//!
+//! Only the RM *instance* schemas are read (`BaseTypes`, Structure, Content,
+//! Composition, …) — not the OPT/AOM constraint schemas (`CompositionTemplate`,
+//! Archetype, …), which redefine some type names (`ELEMENT`, `CODE_PHRASE`) for
+//! the archetype world and would collide.
+
+use std::collections::BTreeMap;
+use std::path::Path;
+
+/// A parsed XSD type model: openEHR complexType name → [`XsdType`].
+pub struct XsdModel {
+    /// Target XML namespace (`http://schemas.openehr.org/v1` or `…/v2`).
+    pub namespace: String,
+    pub types: BTreeMap<String, XsdType>,
+}
+
+/// One `xs:complexType` (its *local* attributes/elements — inheritance is via
+/// [`XsdType::base`], resolved by [`XsdModel::flattened`]).
+pub struct XsdType {
+    pub name: String,
+    pub is_abstract: bool,
+    /// The `xs:extension`/`xs:restriction` base type, if any.
+    pub base: Option<String>,
+    /// Local attributes, declaration order.
+    pub attributes: Vec<XsdAttr>,
+    /// Local child elements, sequence order.
+    pub elements: Vec<XsdElem>,
+}
+
+#[derive(Clone)]
+#[allow(dead_code)] // type_name/required consumed by the emit-xml emitter (landing next)
+pub struct XsdAttr {
+    pub name: String,
+    pub type_name: String,
+    pub required: bool,
+}
+
+#[derive(Clone)]
+#[allow(dead_code)] // type_name/optional/multiple consumed by the emit-xml emitter (landing next)
+pub struct XsdElem {
+    pub name: String,
+    pub type_name: String,
+    pub optional: bool,
+    pub multiple: bool,
+}
+
+impl XsdModel {
+    /// Parse a curated set of XSD files into one merged model. Later files do
+    /// not override types already seen (the caller curates a conflict-free set).
+    ///
+    /// # Errors
+    /// Returns an error if a file cannot be read or parsed as XML.
+    pub fn parse_files(paths: &[std::path::PathBuf]) -> Result<Self, String> {
+        let mut types: BTreeMap<String, XsdType> = BTreeMap::new();
+        let mut namespace = String::new();
+        for path in paths {
+            let text = std::fs::read_to_string(path)
+                .map_err(|e| format!("read {}: {e}", path.display()))?;
+            let doc = roxmltree::Document::parse(&text)
+                .map_err(|e| format!("parse {}: {e}", path.display()))?;
+            let root = doc.root_element();
+            if namespace.is_empty()
+                && let Some(ns) = root.attribute("targetNamespace")
+            {
+                namespace = ns.to_string();
+            }
+            for node in root.children().filter(|n| local(n) == "complexType") {
+                if let Some(t) = parse_complex_type(node) {
+                    types.entry(t.name.clone()).or_insert(t);
+                }
+            }
+        }
+        Ok(Self { namespace, types })
+    }
+
+    /// The flattened (ancestor-first) attributes + elements for a concrete type,
+    /// walking the `base` chain. Attributes precede elements on the wire; within
+    /// each, ancestors come first (matching the flattened generated struct
+    /// field order).
+    #[must_use]
+    pub fn flattened(&self, name: &str) -> (Vec<XsdAttr>, Vec<XsdElem>) {
+        // Collect the chain root→…→self, then concatenate in that order.
+        let mut chain: Vec<&XsdType> = Vec::new();
+        let mut cur = self.types.get(name);
+        while let Some(t) = cur {
+            chain.push(t);
+            cur = t.base.as_deref().and_then(|b| self.types.get(b));
+        }
+        chain.reverse(); // ancestor-first
+        let mut attrs = Vec::new();
+        let mut elems = Vec::new();
+        for t in chain {
+            attrs.extend(t.attributes.iter().cloned());
+            elems.extend(t.elements.iter().cloned());
+        }
+        (attrs, elems)
+    }
+
+    /// The concrete descendants of `name` (types whose `base` chain reaches
+    /// `name`), i.e. the valid `xsi:type` values for a slot declared as `name`.
+    #[must_use]
+    pub fn descendants(&self, name: &str) -> Vec<String> {
+        self.types
+            .values()
+            .filter(|t| !t.is_abstract && self.is_a(&t.name, name))
+            .map(|t| t.name.clone())
+            .collect()
+    }
+
+    /// Whether `sub` is `sup` or transitively extends it.
+    #[must_use]
+    pub fn is_a(&self, sub: &str, sup: &str) -> bool {
+        let mut cur = Some(sub.to_string());
+        while let Some(n) = cur {
+            if n == sup {
+                return true;
+            }
+            cur = self.types.get(&n).and_then(|t| t.base.clone());
+        }
+        false
+    }
+}
+
+fn local<'input>(n: &roxmltree::Node<'_, 'input>) -> &'input str {
+    n.tag_name().name()
+}
+
+fn parse_complex_type(node: roxmltree::Node) -> Option<XsdType> {
+    let name = node.attribute("name")?.to_string();
+    let is_abstract = node.attribute("abstract") == Some("true");
+    let mut ty = XsdType {
+        name,
+        is_abstract,
+        base: None,
+        attributes: Vec::new(),
+        elements: Vec::new(),
+    };
+    // Content is either wrapped in complexContent/simpleContent > extension|restriction,
+    // or a direct sequence/choice/all + attributes on the complexType itself.
+    for child in node.children().filter(roxmltree::Node::is_element) {
+        match local(&child) {
+            "complexContent" | "simpleContent" => {
+                for deriv in child.children().filter(roxmltree::Node::is_element) {
+                    if matches!(local(&deriv), "extension" | "restriction") {
+                        ty.base = deriv.attribute("base").map(str::to_string);
+                        collect_content(deriv, &mut ty);
+                    }
+                }
+            }
+            "sequence" | "choice" | "all" => collect_particle(child, &mut ty.elements),
+            "attribute" => push_attr(child, &mut ty.attributes),
+            _ => {}
+        }
+    }
+    Some(ty)
+}
+
+/// Collect the element/attribute content directly under an extension/restriction
+/// (or the complexType itself).
+fn collect_content(container: roxmltree::Node, ty: &mut XsdType) {
+    for child in container.children().filter(roxmltree::Node::is_element) {
+        match local(&child) {
+            "sequence" | "choice" | "all" => collect_particle(child, &mut ty.elements),
+            "attribute" => push_attr(child, &mut ty.attributes),
+            _ => {}
+        }
+    }
+}
+
+/// Recurse a particle (sequence/choice/all), collecting `xs:element`s in order.
+/// Does not descend into an element's own inline `complexType`.
+fn collect_particle(particle: roxmltree::Node, out: &mut Vec<XsdElem>) {
+    for child in particle.children().filter(roxmltree::Node::is_element) {
+        match local(&child) {
+            "element" => {
+                let Some(name) = child.attribute("name") else {
+                    continue; // ref-based element: not used by the RM instance schemas
+                };
+                let type_name = child.attribute("type").unwrap_or("").to_string();
+                let min = child.attribute("minOccurs").unwrap_or("1");
+                let max = child.attribute("maxOccurs").unwrap_or("1");
+                out.push(XsdElem {
+                    name: name.to_string(),
+                    type_name,
+                    optional: min == "0",
+                    multiple: max == "unbounded" || max.parse::<u32>().unwrap_or(1) > 1,
+                });
+            }
+            "sequence" | "choice" | "all" => collect_particle(child, out),
+            _ => {}
+        }
+    }
+}
+
+fn push_attr(node: roxmltree::Node, out: &mut Vec<XsdAttr>) {
+    let Some(name) = node.attribute("name") else {
+        return;
+    };
+    out.push(XsdAttr {
+        name: name.to_string(),
+        type_name: node.attribute("type").unwrap_or("").to_string(),
+        required: node.attribute("use") == Some("required"),
+    });
+}
+
+/// The RM *instance* XSD file basenames per lineage (order = merge order).
+/// Excludes the OPT/AOM constraint schemas that redefine RM type names.
+pub const RM_FILES_V1: &[&str] = &[
+    "BaseTypes.xsd",
+    "Structure.xsd",
+    "Content.xsd",
+    "Composition.xsd",
+    "Version.xsd",
+    "Extract.xsd",
+    "Resource.xsd",
+];
+
+/// Resolve the v1 RM-instance file paths under the `ALL/` bundle dir.
+#[must_use]
+pub fn v1_files(all_dir: &Path) -> Vec<std::path::PathBuf> {
+    RM_FILES_V1.iter().map(|f| all_dir.join(f)).collect()
+}

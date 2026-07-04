@@ -1,0 +1,116 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Ehr_extract/X_CONTRIBUTION.json",
+    "definitions": {
+        "X_CONTRIBUTION": {
+            "type": "object",
+            "required": [
+                "uid",
+                "audit"
+            ],
+            "properties": {
+                "uid": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Support/HIER_OBJECT_ID.json#/definitions/HIER_OBJECT_ID"
+                },
+                "audit": {
+                    "allOf": [
+                        {
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "ATTESTATION",
+                                        "AUDIT_DETAILS"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "ATTESTATION"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/ATTESTATION.json#/definitions/ATTESTATION"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "AUDIT_DETAILS"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/AUDIT_DETAILS.json#/definitions/AUDIT_DETAILS"
+                            }
+                        },
+                        {
+                            "if": {
+                                "not": {
+                                    "required": [
+                                        "_type"
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/AUDIT_DETAILS.json#/definitions/AUDIT_DETAILS"
+                            }
+                        }
+                    ]
+                },
+                "versions": {
+                    "type": "array",
+                    "items": {
+                        "allOf": [
+                            {
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "_type": {
+                                            "const": "ORIGINAL_VERSION"
+                                        }
+                                    }
+                                },
+                                "then": {
+                                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/ORIGINAL_VERSION.json#/definitions/ORIGINAL_VERSION"
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "_type": {
+                                            "const": "IMPORTED_VERSION"
+                                        }
+                                    }
+                                },
+                                "then": {
+                                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/IMPORTED_VERSION.json#/definitions/IMPORTED_VERSION"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "X_CONTRIBUTION"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

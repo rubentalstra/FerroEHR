@@ -1,0 +1,657 @@
+<?xml version="1.0" encoding="utf-8"?>
+<archetype xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://schemas.openehr.org/v1 ../P_Archetype.xsd"
+ xmlns="http://schemas.openehr.org/v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:im="http://www.openehr.org/1.0.2" is_generated="true" adl_version="2.0.5" rm_release="2.0.2">
+ <artefact_type>archetype</artefact_type>
+ <archetype_id rm_publisher="CIMI" rm_package="CORE" rm_class="ITEM_GROUP" release_version="1.0.0" version_status="0" build_count="0" physical_id="CIMI-CORE-ITEM_GROUP.differential_panel_in_body_fluid.v1.0.0">
+  <concept_id>differential_panel_in_body_fluid</concept_id>
+ </archetype_id>
+ <parent_archetype_id>CIMI-CORE-ITEM_GROUP.laboratory_panel.v1</parent_archetype_id>
+ <definition xsi:type="P_C_COMPLEX_OBJECT" node_id="id1.1.1.1.1" rm_type_name="ITEM_GROUP" is_deprecated="false" is_frozen="false">
+  <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="participation" is_multiple="true">
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2" rm_type_name="PARTICIPATION" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="function" is_multiple="false">
+     <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODED_TEXT" is_deprecated="false" is_frozen="false" is_enumerated_type_constraint="false">
+      <constraint>at1</constraint>
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3" rm_type_name="PARTICIPATION" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="function" is_multiple="false">
+     <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODED_TEXT" is_deprecated="false" is_frozen="false" is_enumerated_type_constraint="false">
+      <constraint>at2</constraint>
+     </children>
+    </attributes>
+   </children>
+  </attributes>
+  <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="item" is_multiple="true">
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id4" rm_type_name="ITEM_GROUP" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.cluster.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..*" is_deprecated="false" is_frozen="false">
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.1" rm_type_name="ELEMENT" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.101" rm_type_name="IDENTIFIER" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.2.1" rm_type_name="ELEMENT" occurrences="1" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODED_TEXT" is_deprecated="false" is_frozen="false" is_enumerated_type_constraint="false">
+      <constraint>at0.0.0.0.1</constraint>
+     </children>
+    </attributes>
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="null_flavor" existence="0" is_multiple="false">
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.0.1" rm_type_name="ELEMENT" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.0.101" rm_type_name="TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id4.0.0.1" rm_type_name="ITEM_GROUP" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.specimen.v3</archetype_ref>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.0.2" rm_type_name="ELEMENT" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.0.102" rm_type_name="CODED_TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.0.3" rm_type_name="ELEMENT" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.0.103" rm_type_name="CODED_TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.0.4" rm_type_name="ELEMENT" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.0.104" rm_type_name="CODED_TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1" rm_type_name="ITEM_GROUP" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.laboratory_test.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.3" rm_type_name="ELEMENT" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.103" rm_type_name="TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.4" rm_type_name="ELEMENT" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.104" rm_type_name="TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.5" rm_type_name="ELEMENT" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.105" rm_type_name="TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.6" rm_type_name="ELEMENT" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.106" rm_type_name="TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.7" rm_type_name="ELEMENT" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.107" rm_type_name="TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.8" rm_type_name="ELEMENT" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.108" rm_type_name="TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5.0.9" rm_type_name="ELEMENT" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value" is_multiple="false">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.0.109" rm_type_name="TEXT" is_deprecated="false" is_frozen="false">
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id4.0.1" rm_type_name="ITEM_GROUP" occurrences="0..*" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.observation_action_set.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.1" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.lymphocytes_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.2" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.promyelocytes_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.3" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.myelocytes_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.4" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.metamyelocytes_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.5" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.prolymphocytes_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.6" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.plasma_cells_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.7" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.promonocytes_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.8" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.cells_identified_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.9" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.cell_fractions_per_differential__interpretation__in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.10" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.blasts_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.11" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.eosinophils_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.12" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.leukocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.13" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.leukocytes_other_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.14" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.lymphocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.15" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.monocytes_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.16" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.mononuclear_cells_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.17" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.mononuclear_cells_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.18" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.neutrophils_band_form_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.19" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.neutrophils_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.20" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.polymorphonuclear_cells_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.21" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.basophils_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.22" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.mesothelial_cells_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.23" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.lymphocytes_variant_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.24" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.macrophages_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.25" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.monocytes_plus_macrophages_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.26" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.neutrophils_segmented_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.27" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.neutrophils_segmented_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.28" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.nonhematic_cells_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.29" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.unspecified_cells_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.30" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.neutrophils_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.31" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.unidentified_cells_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.32" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.unidentified_cells_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.33" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.promyelocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.34" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.promonocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.35" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.prolymphocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.36" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.polymorphonuclear_cells_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.37" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.plasma_cells_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.38" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.nonhematic_cells_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.39" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.neutrophils_band_form_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.40" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.myelocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.41" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.metamyelocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.42" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.macrophages_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.43" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.lymphocytes_variant_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.44" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.lymphocytes_abnormal_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.45" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.leukocytes_other_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.46" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.histiocytes_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.47" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.histiocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.48" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.eosinophils_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.49" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.blasts_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.50" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.basophils_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.51" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.monocytes_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.52" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.lymphocytes_abnormal_per_100_leukocytes_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.53" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.unspecified_cells_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.54" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.mesothelial_cells_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+   <children xsi:type="P_C_ARCHETYPE_ROOT" node_id="id0.1.1.1.55" rm_type_name="ITEM_GROUP" occurrences="0..1" is_deprecated="false" is_frozen="false">
+    <archetype_ref>CIMI-CORE-ITEM_GROUP.monocytes_plus_macrophages_count_per_volume_in_body_fluid.v1</archetype_ref>
+   </children>
+  </attributes>
+ </definition>
+ <terminology original_language="ISO_639-1::en">
+  <term_definitions id="en">
+   <items id="id1">
+    <text>Clinical Statment</text>
+   </items>
+   <items id="at1">
+    <text>Subject of record</text>
+   </items>
+   <items id="id2">
+    <text>Subject of record</text>
+   </items>
+   <items id="at2">
+    <text>Information subject</text>
+   </items>
+   <items id="id3">
+    <text>Information subject</text>
+   </items>
+   <items id="id4">
+    <text>Cluster</text>
+   </items>
+   <items id="id5">
+    <text>Element</text>
+   </items>
+   <items id="id0.1">
+    <text>Clinical statement</text>
+   </items>
+   <items id="id1.1">
+    <text>Compound clinical statement</text>
+   </items>
+   <items id="id0.1.1">
+    <text>Observation</text>
+   </items>
+   <items id="id0.1.2">
+    <text>Observation set</text>
+   </items>
+   <items id="id1.1.1">
+    <text>Observation set</text>
+   </items>
+   <items id="id4.0.1">
+    <text>Action set</text>
+   </items>
+   <items id="id5.0.1">
+    <text>Identifier</text>
+   </items>
+   <items id="id5.0.2">
+    <text>Code</text>
+   </items>
+   <items id="id5.0.3">
+    <text>Reason</text>
+   </items>
+   <items id="id5.0.4">
+    <text>Method</text>
+   </items>
+   <items id="id5.0.5">
+    <text>Status</text>
+   </items>
+   <items id="id5.0.6">
+    <text>Priority</text>
+   </items>
+   <items id="id5.0.7">
+    <text>Interpretation category</text>
+   </items>
+   <items id="id5.0.8">
+    <text>Sequence</text>
+   </items>
+   <items id="id5.0.9">
+    <text>Comment</text>
+   </items>
+   <items id="id0.1.1.1">
+    <text>Laboratory test</text>
+   </items>
+   <items id="id0.1.2.1">
+    <text>Laboratory panel</text>
+   </items>
+   <items id="id1.1.1.1">
+    <text>Laboratory panel</text>
+   </items>
+   <items id="id4.0.0.1">
+    <text>Specimen</text>
+   </items>
+   <items id="id5.0.0.1">
+    <text>Diagnostic service</text>
+   </items>
+   <items id="id5.0.0.2">
+    <text>Poct indicator</text>
+   </items>
+   <items id="id5.0.0.3">
+    <text>Diagnosis</text>
+   </items>
+   <items id="id5.0.0.4">
+    <text>Conclusion</text>
+   </items>
+   <items id="id5.0.2.1">
+    <text>Panel code</text>
+   </items>
+   <items id="at0.0.0.0.1">
+    <text>Differential panel - Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.1">
+    <text>Lymphocytes/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.10">
+    <text>Blasts/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.11">
+    <text>Eosinophils/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.12">
+    <text>Leukocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.13">
+    <text>Leukocytes other/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.14">
+    <text>Lymphocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.15">
+    <text>Monocytes/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.16">
+    <text>Mononuclear cells [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.17">
+    <text>Mononuclear cells/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.18">
+    <text>Neutrophils.band form/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.19">
+    <text>Neutrophils/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.2">
+    <text>Promyelocytes/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.20">
+    <text>Polymorphonuclear cells/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.21">
+    <text>Basophils/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.22">
+    <text>Mesothelial cells/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.23">
+    <text>Lymphocytes Variant/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.24">
+    <text>Macrophages/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.25">
+    <text>Monocytes+Macrophages/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.26">
+    <text>Neutrophils.segmented [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.27">
+    <text>Neutrophils.segmented/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.28">
+    <text>Nonhematic cells/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.29">
+    <text>Unspecified cells/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.3">
+    <text>Myelocytes/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.30">
+    <text>Neutrophils [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.31">
+    <text>Unidentified cells/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.32">
+    <text>Unidentified cells [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.33">
+    <text>Promyelocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.34">
+    <text>Promonocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.35">
+    <text>Prolymphocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.36">
+    <text>Polymorphonuclear cells [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.37">
+    <text>Plasma cells [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.38">
+    <text>Nonhematic cells [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.39">
+    <text>Neutrophils.band form [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.4">
+    <text>Metamyelocytes/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.40">
+    <text>Myelocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.41">
+    <text>Metamyelocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.42">
+    <text>Macrophages [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.43">
+    <text>Lymphocytes Variant [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.44">
+    <text>Lymphocytes Abnormal [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.45">
+    <text>Leukocytes other [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.46">
+    <text>Histiocytes/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.47">
+    <text>Histiocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.48">
+    <text>Eosinophils [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.49">
+    <text>Blasts [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.5">
+    <text>Prolymphocytes/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.50">
+    <text>Basophils [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.51">
+    <text>Monocytes [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.52">
+    <text>Lymphocytes Abnormal/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.53">
+    <text>Unspecified cells [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.54">
+    <text>Mesothelial cells [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.55">
+    <text>Monocytes+Macrophages [#/volume] in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.6">
+    <text>Plasma cells/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.7">
+    <text>Promonocytes/100 leukocytes in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.8">
+    <text>Cells identified in Body fluid</text>
+   </items>
+   <items id="id0.1.1.1.9">
+    <text>Cell Fractions/Differential [interpretation] in Body fluid</text>
+   </items>
+   <items id="id1.1.1.1.1">
+    <text>Differential panel - Body fluid</text>
+   </items>
+  </term_definitions>
+  <term_bindings id="snomed-ct">
+   <items id="at1">http://snomed.info/id/419358007</items>
+   <items id="at2">http://snomed.info/id/_________</items>
+   <items id="id3">http://snomed.info/id/131195008</items>
+   <items id="id5.0.3">http://snomed.info/id/363702006</items>
+   <items id="id5.0.4">http://snomed.info/id/260686004</items>
+   <items id="id5.0.5">http://snomed.info/id/408730004</items>
+   <items id="id5.0.6">http://snomed.info/id/260870009</items>
+   <items id="id5.0.7">http://snomed.info/id/363713009</items>
+   <items id="id4.0.0.1">http://snomed.info/id/116686009</items>
+  </term_bindings>
+  <term_bindings id="loinc">
+   <items id="id1.1.1.1.1">http://loinc.org/id/29580-8</items>
+   <items id="at0.0.0.0.1">http://loinc.org/id/29580-8</items>
+   <items id="id0.1.1.1.1">http://loinc.org/id/11031-2</items>
+   <items id="id0.1.1.1.2">http://loinc.org/id/17799-8</items>
+   <items id="id0.1.1.1.3">http://loinc.org/id/17800-4</items>
+   <items id="id0.1.1.1.4">http://loinc.org/id/17801-2</items>
+   <items id="id0.1.1.1.5">http://loinc.org/id/17802-0</items>
+   <items id="id0.1.1.1.6">http://loinc.org/id/17803-8</items>
+   <items id="id0.1.1.1.7">http://loinc.org/id/17804-6</items>
+   <items id="id0.1.1.1.8">http://loinc.org/id/19077-7</items>
+   <items id="id0.1.1.1.9">http://loinc.org/id/20999-9</items>
+   <items id="id0.1.1.1.10">http://loinc.org/id/26448-1</items>
+   <items id="id0.1.1.1.11">http://loinc.org/id/26452-3</items>
+   <items id="id0.1.1.1.12">http://loinc.org/id/26466-3</items>
+   <items id="id0.1.1.1.13">http://loinc.org/id/26473-9</items>
+   <items id="id0.1.1.1.14">http://loinc.org/id/26476-2</items>
+   <items id="id0.1.1.1.15">http://loinc.org/id/26487-9</items>
+   <items id="id0.1.1.1.16">http://loinc.org/id/26490-3</items>
+   <items id="id0.1.1.1.17">http://loinc.org/id/26493-7</items>
+   <items id="id0.1.1.1.18">http://loinc.org/id/26510-8</items>
+   <items id="id0.1.1.1.19">http://loinc.org/id/26513-2</items>
+   <items id="id0.1.1.1.20">http://loinc.org/id/26518-1</items>
+   <items id="id0.1.1.1.21">http://loinc.org/id/28543-7</items>
+   <items id="id0.1.1.1.22">http://loinc.org/id/28544-5</items>
+   <items id="id0.1.1.1.23">http://loinc.org/id/30417-0</items>
+   <items id="id0.1.1.1.24">http://loinc.org/id/30427-9</items>
+   <items id="id0.1.1.1.25">http://loinc.org/id/30437-8</items>
+   <items id="id0.1.1.1.26">http://loinc.org/id/30452-7</items>
+   <items id="id0.1.1.1.27">http://loinc.org/id/30453-5</items>
+   <items id="id0.1.1.1.28">http://loinc.org/id/30457-6</items>
+   <items id="id0.1.1.1.29">http://loinc.org/id/30469-1</items>
+   <items id="id0.1.1.1.30">http://loinc.org/id/32709-8</items>
+   <items id="id0.1.1.1.31">http://loinc.org/id/34985-2</items>
+   <items id="id0.1.1.1.32">http://loinc.org/id/34988-6</items>
+   <items id="id0.1.1.1.33">http://loinc.org/id/34996-9</items>
+   <items id="id0.1.1.1.34">http://loinc.org/id/34997-7</items>
+   <items id="id0.1.1.1.35">http://loinc.org/id/34998-5</items>
+   <items id="id0.1.1.1.36">http://loinc.org/id/35002-5</items>
+   <items id="id0.1.1.1.37">http://loinc.org/id/35006-6</items>
+   <items id="id0.1.1.1.38">http://loinc.org/id/35008-2</items>
+   <items id="id0.1.1.1.39">http://loinc.org/id/35014-0</items>
+   <items id="id0.1.1.1.40">http://loinc.org/id/35016-5</items>
+   <items id="id0.1.1.1.41">http://loinc.org/id/35031-4</items>
+   <items id="id0.1.1.1.42">http://loinc.org/id/35036-3</items>
+   <items id="id0.1.1.1.43">http://loinc.org/id/35045-4</items>
+   <items id="id0.1.1.1.44">http://loinc.org/id/35046-2</items>
+   <items id="id0.1.1.1.45">http://loinc.org/id/35051-2</items>
+   <items id="id0.1.1.1.46">http://loinc.org/id/35055-3</items>
+   <items id="id0.1.1.1.47">http://loinc.org/id/35057-9</items>
+   <items id="id0.1.1.1.48">http://loinc.org/id/35063-7</items>
+   <items id="id0.1.1.1.49">http://loinc.org/id/35067-8</items>
+   <items id="id0.1.1.1.50">http://loinc.org/id/35071-0</items>
+   <items id="id0.1.1.1.51">http://loinc.org/id/35076-9</items>
+   <items id="id0.1.1.1.52">http://loinc.org/id/35077-7</items>
+   <items id="id0.1.1.1.53">http://loinc.org/id/35078-5</items>
+   <items id="id0.1.1.1.54">http://loinc.org/id/35079-3</items>
+   <items id="id0.1.1.1.55">http://loinc.org/id/35099-1</items>
+  </term_bindings>
+ </terminology>
+ <original_language>ISO_639-1::en</original_language>
+ <description>
+  <lifecycle_state>unmanaged</lifecycle_state>
+  <original_author id="name">Patrick Langford &amp;lt;patrick@neuronsong.com&amp;gt;</original_author>
+  <original_author id="organisation">Intermountain Healthcare &amp;lt;http://intermountainhealthcare.org&amp;gt;</original_author>
+  <custodian_namespace>org.opencimi</custodian_namespace>
+  <custodian_organisation>Clinical Information Modeling Initiative &amp;lt;http://opencimi.org&amp;gt;</custodian_organisation>
+  <copyright>Copyright (c) Clinical Information Modelling Initiative &amp;lt;http://opencimi.org&amp;gt;</copyright>
+  <licence>Creative Commons CC-BY &amp;lt;https://creativecommons.org/licenses/by/3.0/&amp;gt;</licence>
+  <ip_acknowledgements id="loinc">This content from LOINC® is copyright © 1995 Regenstrief Institute, Inc. and the LOINC Committee, and available at no cost under the license at http://loinc.org/terms-of-use</ip_acknowledgements>
+  <ip_acknowledgements id="snomed">This specification includes SNOMED Clinical Terms® (SNOMED CT®) which is used by permission of the International Health Terminology Standards Development Organization (IHTSDO). All rights reserved. SNOMED CT® was originally created by the College of American Pathologists. &apos;SNOMED&apos; and &apos;SNOMED CT&apos; are registered trademarks of the IHTSDO (www.ihtsdo.org). Use of any SNOMED CT content (including codes, identifiers, terms, expressions or derivatives) in any operational system (including any Data Creation System or Data Analysis System as defined in the SNOMED CT Affiliate License Agreement) is subject to the terms and conditions of the SNOMED CT Affiliate License (www.ihtsdo.org/license.pdf) or to a written variation to that agreement that has been agreed and formally executed between the IHTSDO and the Affiliate Licensee.</ip_acknowledgements>
+  <details id="en">
+   <language>ISO_639-1::en</language>
+   <purpose>Archetype for CIMI &apos;Differential panel - Body fluid&apos; concept</purpose>
+   <use>Use for Differential panel - Body fluid.</use>
+   <keywords>Differential</keywords>
+   <keywords>panel</keywords>
+   <keywords>-</keywords>
+   <keywords>Body</keywords>
+   <keywords>fluid</keywords>
+  </details>
+  <other_contributors>Linda Bird &amp;lt;lbi@ihtsdo.org&amp;gt;</other_contributors>
+  <other_contributors>Joey Coyle &amp;lt;joey@xcoyle.com&amp;gt;</other_contributors>
+  <other_contributors>Stan Huff &amp;lt;Stan.Huff@imail.org&amp;gt;</other_contributors>
+  <other_contributors>Harold Solbrig &amp;lt;Solbrig.Harold@mayo.edu&amp;gt;</other_contributors>
+  <other_contributors>Thomas Beale &amp;lt;thomas.beale@oceaninformatics.com&amp;gt;</other_contributors>
+ </description>
+ <is_controlled>false</is_controlled>
+</archetype>

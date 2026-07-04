@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Ehr_extract/ADDRESSED_MESSAGE.json",
+    "definitions": {
+        "ADDRESSED_MESSAGE": {
+            "type": "object",
+            "required": [
+                "sender",
+                "sender_reference"
+            ],
+            "properties": {
+                "sender": {
+                    "type": "string"
+                },
+                "sender_reference": {
+                    "type": "string"
+                },
+                "addressees": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "urgency": {
+                    "type": "integer"
+                },
+                "message": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Ehr_extract/MESSAGE.json#/definitions/MESSAGE"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "ADDRESSED_MESSAGE"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

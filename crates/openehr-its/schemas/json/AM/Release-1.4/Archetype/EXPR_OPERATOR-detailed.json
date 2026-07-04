@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/EXPR_OPERATOR-detailed.json",
+    "title": "EXPR_OPERATOR",
+    "description": "Abstract parent of operator types.",
+    "$comments": "Defined in Archetype IM, abstract, inherits from EXPR_ITEM",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "EXPR_UNARY_OPERATOR",
+                "EXPR_BINARY_OPERATOR"
+            ]
+        },
+        "type": {
+            "description": "Type name of this item in the mathematical sense. For leaf nodes, must be the name of a primitive type, or else a reference model type. The type for any relational or boolean operator will be \u201cBoolean\u201d, while the type for any arithmetic operator, will be \u201cReal\u201d or \u201cInteger\u201d.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        },
+        "precedence_overridden": {
+            "description": "True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree. If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "operator": {
+            "description": "Code of operator."
+        }
+    },
+    "required": [
+        "_type",
+        "type",
+        "operator"
+    ],
+    "$abstract": true,
+    "$inherits": [
+        "all-detailed.json#/definitions/EXPR_ITEM"
+    ],
+    "$children": [
+        "all-detailed.json#/definitions/EXPR_UNARY_OPERATOR",
+        "all-detailed.json#/definitions/EXPR_BINARY_OPERATOR"
+    ]
+}

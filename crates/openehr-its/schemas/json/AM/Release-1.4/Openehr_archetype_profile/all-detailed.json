@@ -1,0 +1,8 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Openehr_archetype_profile/all-detailed.json",
+    "title": "Openehr_archetype_profile IM definitions",
+    "$comments": "Part of AM component, Release-1.4 version.",
+    "$component": "AM",
+    "$version": "Release-1.4"
+}

@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="utf-8"?>
+<archetype xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://schemas.openehr.org/v1 ../P_Archetype.xsd"
+ xmlns="http://schemas.openehr.org/v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:im="http://www.openehr.org/1.0.2" is_generated="true" adl_version="2.0.5" rm_release="1.0.2">
+ <artefact_type>archetype</artefact_type>
+ <archetype_id rm_publisher="openEHR" rm_package="EHR" rm_class="CLUSTER" release_version="1.0.0" version_status="0" build_count="0" physical_id="openEHR-EHR-CLUSTER.lab_test_panel-lipid_studies.v1.0.0">
+  <concept_id>lab_test_panel-lipid_studies</concept_id>
+ </archetype_id>
+ <parent_archetype_id>openEHR-EHR-CLUSTER.lab_test_panel.v1</parent_archetype_id>
+ <definition xsi:type="P_C_COMPLEX_OBJECT" node_id="id1.1" rm_type_name="CLUSTER">
+  <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3" rm_type_name="CLUSTER">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2" rm_type_name="ELEMENT" occurrences="0..1">
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ELEMENT">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id16" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id17" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac1</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id18" rm_type_name="DV_DATE_TIME">
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_ARCHETYPE_SLOT" node_id="id14" rm_type_name="CLUSTER">
+    <includes type="Boolean">
+     <expression xsi:type="EXPR_BINARY_OPERATOR" type="Boolean">
+      <operator value="2007">
+      </operator>
+      <left_operand xsi:type="EXPR_LEAF" type="String" reference_type="attribute">
+       <item>archetype_id/value</item>
+      </left_operand>
+      <right_operand xsi:type="EXPR_LEAF" type="C_STRING" reference_type="constraint">
+       <item>
+        <rm_type_name>STRING</rm_type_name>
+        <constraint>/.*/</constraint>
+        <is_path_compressible>false</is_path_compressible>
+        <is_enumerated_type_constraint>false</is_enumerated_type_constraint>
+        <is_deprecated>false</is_deprecated>
+        <is_frozen>false</is_frozen>
+       </item>
+      </right_operand>
+     </expression>
+    </includes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3.1" rm_type_name="CLUSTER">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2.1" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.1" rm_type_name="DV_QUANTITY">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>at0.1</constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+         <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+          <constraint upper_unbounded="true">
+           <lower>0.0</lower>
+          </constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+         <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+          <constraint>mmol/l</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ELEMENT">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id16" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id17" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac1</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id18" rm_type_name="DV_DATE_TIME">
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3.2" rm_type_name="CLUSTER">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2.2" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.2" rm_type_name="DV_QUANTITY">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>at0.1</constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+         <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+          <constraint upper_unbounded="true">
+           <lower>0.0</lower>
+          </constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+         <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+          <constraint>mmol/l</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ELEMENT">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id16" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id17" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac1</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id18" rm_type_name="DV_DATE_TIME">
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3.3" rm_type_name="CLUSTER">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2.3" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.3" rm_type_name="DV_QUANTITY">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>at0.1</constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+         <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+          <constraint upper_unbounded="true">
+           <lower>0.0</lower>
+          </constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+         <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+          <constraint>mmol/l</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ELEMENT">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id16" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id17" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac1</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id18" rm_type_name="DV_DATE_TIME">
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3.4" rm_type_name="CLUSTER">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2.4" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.4" rm_type_name="DV_QUANTITY">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>at0.1</constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+         <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+          <constraint upper_unbounded="true">
+           <lower>0.0</lower>
+          </constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+         <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+          <constraint>mosmol/l</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ELEMENT">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id16" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id17" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac1</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id18" rm_type_name="DV_DATE_TIME">
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3.5" rm_type_name="CLUSTER">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2.5" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id0.5" rm_type_name="DV_QUANTITY">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>at0.1</constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+         <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+          <constraint upper_unbounded="true">
+           <lower>0.0</lower>
+          </constraint>
+         </children>
+        </attributes>
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+         <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+          <constraint>mosmol/l</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ELEMENT">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id16" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id17" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac1</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id18" rm_type_name="DV_DATE_TIME">
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id3.6" rm_type_name="CLUSTER">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2" rm_type_name="ELEMENT" occurrences="0..1">
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ELEMENT">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id16" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id17" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac1</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id18" rm_type_name="DV_DATE_TIME">
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+  </attributes>
+ </definition>
+ <terminology original_language="ISO_639-1::en">
+  <term_definitions id="en">
+   <items id="id1">
+    <text>Laboratory test panel</text>
+    <description>Laboratory test results as a single value or in a panel/battery format common to clinical pathology testing.</description>
+   </items>
+   <items id="id2">
+    <text>Result Value</text>
+    <description>Actual value of the result.</description>
+   </items>
+   <items id="id3">
+    <text>Laboratory Result</text>
+    <description>Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.</description>
+   </items>
+   <items id="id4">
+    <text>Result Comment</text>
+    <description>Comment about the Result.</description>
+   </items>
+   <items id="id5">
+    <text>Reference Range Guidance</text>
+    <description>Additional advice on the applicability of the reference range.</description>
+   </items>
+   <items id="id6">
+    <text>Result Value Status</text>
+    <description>The status of the result value.</description>
+   </items>
+   <items id="id7">
+    <text>DateTime Result Value Status</text>
+    <description>The date and/or time that the entire result was issued for the recorded ‘Result value status’.</description>
+   </items>
+   <items id="at8">
+    <text>Registered</text>
+    <description>No result yet available.</description>
+   </items>
+   <items id="at9">
+    <text>Interim</text>
+    <description>This is an initial or interim result: data may be missing or verification not been performed.</description>
+   </items>
+   <items id="at10">
+    <text>Final</text>
+    <description>The result is complete and verified by the responsible pathologist.</description>
+   </items>
+   <items id="at11">
+    <text>Amended</text>
+    <description>The result has been modified subsequent to being Final, and is complete and verified by the responsible pathologist.</description>
+   </items>
+   <items id="at12">
+    <text>Cancelled/Aborted</text>
+    <description>The result is unavailable because the test was not started or not completed.</description>
+   </items>
+   <items id="at13">
+    <text>Not requested</text>
+    <description>The result is not available as the test was not requested.</description>
+   </items>
+   <items id="id14">
+    <text>Other Detail</text>
+    <description>Further details including the specimen for the panel or a further nested panel.</description>
+   </items>
+   <items id="ac1">
+    <text>Result Value Status (synthesised)</text>
+    <description>The status of the result value. (synthesised)</description>
+   </items>
+   <items id="at0.1">
+    <text>(added by post-parse processor)</text>
+    <description>(added by post-parse processor)</description>
+   </items>
+   <items id="id1.1">
+    <text>Lipid studies panel</text>
+    <description>Laboratory test results as a single value or in a panel/battery format common to clinical pathology testing.!</description>
+   </items>
+   <items id="id2.1">
+    <text>LDL Cholesterol</text>
+    <description>Actual value of the result.</description>
+   </items>
+   <items id="id2.2">
+    <text>HDL Cholesterol</text>
+    <description>Actual value of the result.</description>
+   </items>
+   <items id="id2.3">
+    <text>Ratio</text>
+    <description>Actual value of the result.</description>
+   </items>
+   <items id="id2.4">
+    <text>Triglyceride</text>
+    <description>Actual value of the result.</description>
+   </items>
+   <items id="id2.5">
+    <text>Total cholesterol</text>
+    <description>Actual value of the result.</description>
+   </items>
+   <items id="id3.1">
+    <text>LDL Cholesterol Result</text>
+    <description>Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.</description>
+   </items>
+   <items id="id3.2">
+    <text>HDL Cholesterol Result</text>
+    <description>Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.</description>
+   </items>
+   <items id="id3.3">
+    <text>Ratio Result</text>
+    <description>Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.</description>
+   </items>
+   <items id="id3.4">
+    <text>Triglyceride Result</text>
+    <description>Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.</description>
+   </items>
+   <items id="id3.5">
+    <text>Total Result</text>
+    <description>Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.</description>
+   </items>
+   <items id="id3.6">
+    <text>! - Laboratory Result</text>
+    <description>Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.</description>
+   </items>
+  </term_definitions>
+  <value_sets id="ac1">
+   <members>at8</members>
+   <members>at9</members>
+   <members>at10</members>
+   <members>at11</members>
+   <members>at12</members>
+   <members>at13</members>
+  </value_sets>
+ </terminology>
+ <original_language>ISO_639-1::en</original_language>
+ <description>
+  <lifecycle_state>unmanaged</lifecycle_state>
+  <original_author id="name">Ian McNicoll</original_author>
+  <original_author id="organisation">freshEHR Clinical Informatics, UK</original_author>
+  <original_author id="email">ian@freshehr.com</original_author>
+  <original_author id="date">2014-04-18</original_author>
+  <copyright>(c) 2014 openEHR Foundation</copyright>
+  <details id="en">
+   <language>ISO_639-1::en</language>
+   <purpose>Test flattening of overlays of new elements onto cloned structures.</purpose>
+  </details>
+  <other_details id="regression">PASS</other_details>
+ </description>
+ <is_controlled>false</is_controlled>
+</archetype>

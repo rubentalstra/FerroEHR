@@ -1,0 +1,100 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/TEMPLATE_OVERLAY-detailed.json",
+    "title": "TEMPLATE_OVERLAY",
+    "description": "A concrete form of the bare `ARCHETYPE` class, used to represent overlays in a source template. Overlays have no meta-data of their own, and are instead documented by their owning template.",
+    "$comments": "Defined in Aom2 IM, inherits from ARCHETYPE",
+    "type": "object",
+    "properties": {
+        "parent_archetype_id": {
+            "description": "Archetype reference of the specialisation par-ent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or can be deeper.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "archetype_id": {
+            "description": "Identifier of this archetype.",
+            "$ref": "all-detailed.json#/definitions/ARCHETYPE_HRID"
+        },
+        "is_differential": {
+            "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "definition": {
+            "description": "Root node of the definition of this archetype.",
+            "$ref": "all-detailed.json#/definitions/C_COMPLEX_OBJECT"
+        },
+        "terminology": {
+            "description": "The terminology of the archetype.",
+            "$ref": "all-detailed.json#/definitions/ARCHETYPE_TERMINOLOGY"
+        },
+        "rules": {
+            "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+            "type": "array"
+        },
+        "rm_overlay": {
+            "$ref": "all-detailed.json#/definitions/RM_OVERLAY"
+        }
+    },
+    "required": [
+        "archetype_id",
+        "is_differential",
+        "definition",
+        "terminology"
+    ],
+    "$inherits": [
+        "all-detailed.json#/definitions/ARCHETYPE"
+    ],
+    "$functions": {
+        "concept_code": {
+            "description": "The concept code of the root object of the archetype, also standing for the concept of the archetype as a whole.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "physical_paths": {
+            "description": "Set of language-independent paths extracted from archetype. Paths obey Xpath-like syntax and are formed from alternations of `C_OBJECT._node_id_` and `C_ATTRIBUTE._rm_attribute_name_` values. ",
+            "return": {
+                "type": "array",
+                "items": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "minItems": 1
+            }
+        },
+        "logical_paths": {
+            "description": "Set of language-dependent paths extracted from archetype. Paths obey the same syntax as physical_paths, but with node_ids replaced by their meanings from the terminology. ",
+            "parameters": {
+                "lang": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "lang"
+            ],
+            "return": {
+                "type": "array",
+                "items": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "minItems": 1
+            }
+        },
+        "specialisation_depth": {
+            "description": "Specialisation depth of this archetype; larger than 0 if this archetype has a parent. Derived from terminology.specialisation_depth.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+            }
+        },
+        "is_specialised": {
+            "description": "True if this archetype is a specialisation of another. ",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "$invariants": {
+        "Invariant_concept_valid": "terminology.has_term_code (concept_code)",
+        "Invariant_specialisation_validity": "is_specialised implies specialisation_depth > 0",
+        "post-condition": "Result implies parent_archetype_hrid /= Void",
+        "Inv_is_specialised": "is_specialised"
+    }
+}

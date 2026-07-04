@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_SINGLE_ATTRIBUTE.json",
+    "title": "C_SINGLE_ATTRIBUTE",
+    "description": "Concrete model of constraint on a single-valued attribute node. The meaning of the inherited children attribute is that they are alternatives.",
+    "$comments": "Defined in Archetype IM, inherits from C_ATTRIBUTE",
+    "type": "object",
+    "properties": {
+        "rm_attribute_name": {
+            "description": "Reference model attribute within the enclosing type represented by a C_OBJECT.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+        },
+        "existence": {
+            "description": "Constraint on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not).",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/Interval_of_Integer"
+        },
+        "children": {
+            "description": "Child C_OBJECT nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes. ",
+            "type": "array",
+            "items": {
+                "$ref": "all.json#/definitions/C_OBJECT"
+            }
+        }
+    },
+    "required": [
+        "rm_attribute_name",
+        "existence"
+    ]
+}

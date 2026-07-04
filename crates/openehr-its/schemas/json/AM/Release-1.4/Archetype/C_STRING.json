@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_STRING.json",
+    "title": "C_STRING",
+    "description": "Constraint on instances of STRING. ",
+    "$comments": "Defined in Archetype IM, inherits from C_PRIMITIVE",
+    "type": "object",
+    "properties": {
+        "assumed_value": {
+            "description": "The value to assume if this item is not included in data, due to being part of an optional structure.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+        },
+        "pattern": {
+            "description": "Regular expression pattern for proposed instances of String to match.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+        },
+        "list": {
+            "description": "Set of Strings specifying constraint.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+            }
+        },
+        "list_open": {
+            "description": "True if the list is being used to specify the constraint but is not considered exhaustive.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/Boolean"
+        }
+    },
+    "required": [
+        "list_open"
+    ]
+}

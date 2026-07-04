@@ -1,0 +1,79 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_DURATION-detailed.json",
+    "title": "C_DURATION",
+    "description": "ISO 8601-compatible constraint on instances of Duration. In ISO 8601 terms, constraints might are of the form \u201cPWD\u201d (weeks and/or days), \u201cPDTHMS\u201d (days, hours, minutes, seconds) and so on.\n\nBoth range and the constraint pattern can be set at the same time, corresponding to the ADL constraint `\"PWD/|P0W..P50W|\"`.\n\nAs for all of openEHR, two ISO 8601 exceptions are allowed: \n\n* the \u2018W\u2019 (week) designator can be mixed in - the allowed patterns are: `P[Y|y][M|m][D|d][T[H|h][M|m][S|s]]` and `P[W|w]`;\n* the values used in an interval constraint may be negated, i.e. a leading minus (`'-'`) sign may be used.\n",
+    "$comments": "Defined in Archetype IM, inherits from C_PRIMITIVE",
+    "type": "object",
+    "properties": {
+        "assumed_value": {
+            "description": "The value to assume if this item is not included in data, due to being part of an optional structure."
+        },
+        "years_allowed": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "months_allowed": {
+            "description": "True if months are allowed in the constrained Duration.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "weeks_allowed": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "days_allowed": {
+            "description": "True if days are allowed in the constrained Duration.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "hours_allowed": {
+            "description": "True if hours are allowed in the constrained Duration.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "minutes_allowed": {
+            "description": "True if minutes are allowed in the constrained Duration.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "seconds_allowed": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "fractional_seconds_allowed": {
+            "description": "True if fractional seconds are allowed in the constrained Duration.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+        },
+        "range": {
+            "description": "Range of Durations specifying constraint."
+        }
+    },
+    "$inherits": [
+        "all-detailed.json#/definitions/C_PRIMITIVE"
+    ],
+    "$functions": {
+        "default_value": {
+            "description": "Generate a default value from this constraint object.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+            }
+        },
+        "has_assumed_value": {
+            "description": "True if there is an assumed value.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "valid_value": {
+            "description": "True if a_value is valid with respect to constraint expressed in concrete instance of this type.",
+            "parameters": {
+                "a_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+                }
+            },
+            "required_parameters": [
+                "a_value"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "$invariants": {
+        "Assumed_value_valid": "has_assumed_value implies valid_value(assumed_value)"
+    }
+}

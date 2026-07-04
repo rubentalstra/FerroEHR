@@ -1,15 +1,34 @@
-# Vendored openEHR ITS material (all from the individual spec repos' master, 2026-07-03)
+# Vendored openEHR ITS material (all four `specifications-ITS-*` repos)
 
-Fetched directly from each `specifications-ITS-*` repo's `master` (NOT the
-`specifications-ITS` umbrella submodules, which can lag years behind).
+Fetched directly from each `specifications-ITS-*` repo (NOT the
+`specifications-ITS` umbrella submodules, which can lag). Every surface is
+vendored **verbatim** (full upstream tree) — "literally everything
+machine-readable" — with the prose `.adoc`, diagrams, and PHP/Makefile build
+tooling deliberately excluded.
 
-| Surface | Repo | master SHA | Vendored to |
+| Surface | Repo | Pinned ref | Vendored to |
 |---|---|---|---|
-| ITS-JSON schema | specifications-ITS-JSON | `5acae056…` (frozen 2021; development status, latest available) | `../schemas/openehr_rm_1.1.0_all.json` |
-| ITS-XML XSDs    | specifications-ITS-XML  | `de8b37ba…` | `../schemas/xml/components/` (RM ≤1.1.0, BASE ≤1.2.0, AM 1.4, OET 1.0.1) |
-| ITS-REST OAS    | specifications-ITS-REST | `e8a093e9…` | `rest-oas/*.openapi.yaml` (all 7 API groups × codegen/html/validation = 21 files) |
-| ITS-BMM meta-model | specifications-ITS-BMM | `37b31739…` | `../../openehr-codegen/vendor/bmm/*.bmm.json` (codegen input) |
+| ITS-JSON schemas | specifications-ITS-JSON | `5acae056…` (master) | `../schemas/json/` (verbatim `components/`, 784 files) |
+| ITS-XML XSDs (v2/nsv2) | specifications-ITS-XML | `de8b37ba…` (master) | `../schemas/xml/its-xml-2.0.0-nsv2/` (70 XSDs) |
+| ITS-XML XSDs (v1/nsv1) | specifications-ITS-XML | `f7a93777…` (tag `Release-1.0.2v2`) | `../schemas/xml/its-xml-1.0.2-nsv1/` (17 XSDs — parity target) |
+| ITS-REST OAS | specifications-ITS-REST | `e8a093e9…` (master) | `rest-oas/*.openapi.yaml` (all 21: 7 groups × codegen/html/validation) |
+| ITS-BMM meta-model | specifications-ITS-BMM | `37b31739…` (master) | `../../openehr-codegen/vendor/bmm/components/` (json+odin+yaml, 54 files) |
 
-Related (verified at latest master the same day):
-- QUERY grammar + examples @ `10cb73fe…` → `../../openehr-query/vendor/`
-- TERM terminology XML @ `007d0dd…` → `../../openehr-term/assets/`
+Per-surface detail + policy live beside each set:
+- `../schemas/json/PROVENANCE.md`
+- `../schemas/xml/PROVENANCE.md`
+- `rest-oas/PROVENANCE.md`
+- `../../openehr-codegen/vendor/bmm/PROVENANCE.md`
+
+## How each surface is consumed (ADR-004 + ADR-005)
+
+- **BMM** -> `openehr-codegen emit` generates the RM/BASE/AM/TERM/LANG spec crates.
+- **XSDs** -> `openehr-codegen emit-xml` generates canonical-XML (de)ser onto the
+  RM types (both v1 default + v2 flagged).
+- **OAS** -> `openehr-codegen emit-rest` generates the REST contract (DTOs +
+  params + server trait + router) into `openehr-its`; `ehrbase-rest` implements it.
+- **JSON schemas** -> validation oracle for the canonical-JSON fidelity gate.
+
+Related (verified at latest master the same day, vendored elsewhere):
+- QUERY grammar + examples -> `../../openehr-query/vendor/`
+- TERM terminology XML -> `../../openehr-term/assets/`

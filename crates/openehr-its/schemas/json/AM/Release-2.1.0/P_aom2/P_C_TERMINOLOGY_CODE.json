@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/P_C_TERMINOLOGY_CODE.json",
+    "title": "P_C_TERMINOLOGY_CODE",
+    "description": "Constrainer type for instances of TERMINOLOGY_CODE. The primary expression of the constraint is in the property `tuple_constraint', and comes in 3 variations:\n* a single at-code\n* a single ac-code, representing a value-set that is defined in the archetype terminology\n* a list of at- and/or ac-codes, representing the possibilities of a tuple constraint\nThe last possibility above is enabled by the merge_tuple routine, which enables the constraint of another single-valued C_TERMINOLOGY_CODE to be merged with the current one.",
+    "$comments": "Defined in P_aom2 IM, inherits from P_C_PRIMITIVE_OBJECT",
+    "type": "object",
+    "properties": {
+        "rm_type_name": {
+            "description": "Reference model type that this node corresponds to. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "occurrences": {
+            "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "node_id": {
+            "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "is_deprecated": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "is_frozen": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "default_value": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Terminology_code"
+        },
+        "assumed_value": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Terminology_code"
+        },
+        "is_enumerated_type_constraint": {
+            "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "constraint": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        }
+    },
+    "required": [
+        "rm_type_name",
+        "node_id",
+        "default_value",
+        "constraint"
+    ]
+}

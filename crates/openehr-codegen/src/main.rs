@@ -11,12 +11,22 @@
 mod bmm;
 mod emit;
 mod naming;
+mod xsd;
 
 use bmm::BmmSchema;
 use emit::{External, Model};
 use std::path::{Path, PathBuf};
 
 const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
+/// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
+/// generated XML/REST code).
+#[allow(dead_code)] // used by the emit-xml/emit-rest writers (landing incrementally)
+const ITS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../openehr-its");
+/// v1 (namespace `.../v1`) RM-instance XSD bundle dir — the Stage-1 parity target.
+const XSD_V1_DIR: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL"
+);
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -24,8 +34,9 @@ fn main() {
     let result = match cmd {
         "check" => cmd_check(),
         "emit" => cmd_emit(args.get(1).map(PathBuf::from)),
+        "check-xsd" => cmd_check_xsd(),
         other => {
-            eprintln!("unknown command {other:?}; use `check` or `emit [OUTDIR]`");
+            eprintln!("unknown command {other:?}; use `check`, `emit [OUTDIR]`, or `check-xsd`");
             std::process::exit(2);
         }
     };
@@ -35,18 +46,22 @@ fn main() {
     }
 }
 
-const BASE_BMM: &str = "openehr_base_1.3.0.bmm.json";
-const RM_BMM: &str = "openehr_rm_1.2.0.bmm.json";
-const TERM_BMM: &str = "openehr_term_3.1.0.bmm.json";
-const AM14_BMM: &str = "openehr_am_1.4.0.bmm.json";
-const AM24_BMM: &str = "openehr_am_2.4.0.bmm.json";
-const LANG_BMM: &str = "openehr_lang_1.1.0.bmm.json";
+// Paths are relative to `VENDOR` and mirror the upstream ITS-BMM layout
+// (`components/<COMPONENT>/json/…`) — the full meta-model is vendored verbatim
+// (json + odin + yaml, all released versions); the JSON forms below are the
+// codegen input for our pinned versions (see `docs/VERSIONS.md`).
+const BASE_BMM: &str = "components/BASE/json/openehr_base_1.3.0.bmm.json";
+const RM_BMM: &str = "components/RM/json/openehr_rm_1.2.0.bmm.json";
+const TERM_BMM: &str = "components/TERM/json/openehr_term_3.1.0.bmm.json";
+const AM14_BMM: &str = "components/AM/json/openehr_am_1.4.0.bmm.json";
+const AM24_BMM: &str = "components/AM/json/openehr_am_2.4.0.bmm.json";
+const LANG_BMM: &str = "components/LANG/json/openehr_lang_1.1.0.bmm.json";
 /// LANG's model spans two vendored files: the primary one above (persisted BMM
 /// with `EXPR_*` and `STATEMENT_SET`/`ASSERTION`, which AM's rules/slots
 /// reference) and this BMM-3 file (the full `BMM_*` object model with the
 /// `EL_*` expression language, which AM's persisted-archetype rules reference).
 /// Both are merged into the `openehr-lang` crate.
-const LANG_BMM3: &str = "openehr_lang_1.1.0-bmm3.bmm.json";
+const LANG_BMM3: &str = "components/LANG/json/openehr_lang_1.1.0-bmm3.bmm.json";
 
 fn load(file: &str) -> Result<BmmSchema, Box<dyn std::error::Error>> {
     let src = std::fs::read_to_string(Path::new(VENDOR).join(file))?;
@@ -69,6 +84,46 @@ fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
             s.classes.len(),
         );
     }
+    Ok(())
+}
+
+/// Diagnostic: parse the vendored v1 RM-instance XSDs and print a summary +
+/// a couple of flattened views, to validate the XSD reader (ADR-005).
+fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
+    let files = xsd::v1_files(Path::new(XSD_V1_DIR));
+    let model = xsd::XsdModel::parse_files(&files)?;
+    println!(
+        "✓ v1 XSDs: namespace={} types={}",
+        model.namespace,
+        model.types.len()
+    );
+    let abstract_n = model.types.values().filter(|t| t.is_abstract).count();
+    println!("  abstract={abstract_n}");
+    for probe in ["ELEMENT", "DV_CODED_TEXT", "COMPOSITION"] {
+        if let Some(t) = model.types.get(probe) {
+            let (attrs, elems) = model.flattened(probe);
+            println!(
+                "  {probe}: base={:?} attrs=[{}] elems=[{}]",
+                t.base,
+                attrs
+                    .iter()
+                    .map(|a| a.name.as_str())
+                    .collect::<Vec<_>>()
+                    .join(","),
+                elems
+                    .iter()
+                    .map(|e| e.name.as_str())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            );
+        }
+    }
+    let dv = model.descendants("DATA_VALUE");
+    println!(
+        "  DATA_VALUE concrete descendants ({}): {}",
+        dv.len(),
+        dv.join(",")
+    );
     Ok(())
 }
 

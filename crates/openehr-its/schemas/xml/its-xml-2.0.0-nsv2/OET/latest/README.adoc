@@ -1,0 +1,7 @@
+# Template
+
+Latest OET Template XML schema - originally part of openEHR Release-1.0.1.
+
+### Acknowledgements
+Authored by https://www.oceanhealthsystems.com[Ocean Health Systems] - 2007.04.02
+Revised by https://www.openehr.org[openEHR Foundation] - 2019.01.10

@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_ATTRIBUTE.json",
+    "title": "C_ATTRIBUTE",
+    "description": "Abstract model of constraint on any kind of attribute node.",
+    "$comments": "Defined in Archetype IM, abstract, inherits from ARCHETYPE_CONSTRAINT",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "C_SINGLE_ATTRIBUTE",
+                "C_MULTIPLE_ATTRIBUTE"
+            ]
+        },
+        "rm_attribute_name": {
+            "description": "Reference model attribute within the enclosing type represented by a C_OBJECT.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+        },
+        "existence": {
+            "description": "Constraint on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not).",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/Interval_of_Integer"
+        },
+        "children": {
+            "description": "Child C_OBJECT nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes. ",
+            "type": "array",
+            "items": {
+                "$ref": "all.json#/definitions/C_OBJECT"
+            }
+        }
+    },
+    "required": [
+        "_type",
+        "rm_attribute_name",
+        "existence"
+    ]
+}

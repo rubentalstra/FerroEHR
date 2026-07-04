@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/ARCHETYPE_TERM.json",
+    "title": "ARCHETYPE_TERM",
+    "description": "Representation of any coded entity (term or constraint) in the archetype ontology.",
+    "$comments": "Defined in Aom2 IM",
+    "type": "object",
+    "properties": {
+        "code": {
+            "description": "Code of this term. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "text": {
+            "description": "Short term text, typically for display.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "description": {
+            "description": "Full description text.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "other_items": {
+            "description": "Hash of keys and corresponding values for other items in a term, e.g. provenance.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Hash_of_String_String"
+        }
+    },
+    "required": [
+        "code",
+        "text",
+        "description"
+    ]
+}

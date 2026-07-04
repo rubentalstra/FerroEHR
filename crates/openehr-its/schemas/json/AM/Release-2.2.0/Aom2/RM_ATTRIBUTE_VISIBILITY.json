@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/RM_ATTRIBUTE_VISIBILITY.json",
+    "title": "RM_ATTRIBUTE_VISIBILITY",
+    "description": "Definition of visibility of an RM attribute within a larger archetype structure.",
+    "$comments": "Defined in Aom2 IM",
+    "type": "object",
+    "properties": {
+        "visibility": {
+            "description": "Visibility setting of a non-archetyped RM attribute (RM attributes that are constrained or within the archetyped structure are visible by default)."
+        },
+        "alias": {
+            "description": "Optional alias for the attribute referenced by the path.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Terminology_code"
+        }
+    }
+}

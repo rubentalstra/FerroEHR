@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/SIBLING_ORDER-detailed.json",
+    "title": "SIBLING_ORDER",
+    "description": "Defines the order indicator that can be used on a `C_OBJECT` within a container attribute in a specialised archetype to indicate its order with respect to a sibling defined in a higher specialisation level.\n\nMisuse: This type cannot be used on a `C_OBJECT` other than one within a container attribute in a specialised archetype.",
+    "$comments": "Defined in Aom2 IM",
+    "type": "object",
+    "properties": {
+        "is_before": {
+            "description": "True if the order relationship is \u2018before\u2019, if False, it is \u2018after\u2019.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "sibling_node_id": {
+            "description": "Node identifier of sibling before or after which this node should come.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        }
+    },
+    "required": [
+        "is_before",
+        "sibling_node_id"
+    ],
+    "$functions": {
+        "is_after": {
+            "description": "True if the order relationship is `_after_`, computed as the negation of `_is_before_`.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    }
+}
