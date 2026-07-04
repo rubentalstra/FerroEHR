@@ -368,12 +368,3 @@ mod tests {
         );
     }
 }
-
-// ─────────────────────────────────────────────
-// PORT STATUS
-//   source: openEHR QUERY (AQL) — vendor/grammar/AqlLexer.g4 @ specifications-QUERY 10cb73f
-//   source_loc: 325 lines (.g4)
-//   confidence: medium
-//   todos: 0
-//   note: token layer; quoted temporals lexed as String (typed later); parser + AST next.
-// ─────────────────────────────────────────────

@@ -660,12 +660,3 @@ mod tests {
         ));
     }
 }
-
-// ─────────────────────────────────────────────
-// PORT STATUS
-//   source: openEHR QUERY (AQL) — vendor/grammar/AqlParser.g4 @ specifications-QUERY 10cb73f
-//   source_loc: 198 lines (.g4)
-//   confidence: high
-//   todos: 0
-//   note: full AqlParser.g4 (incl nodePredicate AND/OR + MATCHES regex, EOF enforced, NOT precedence); validated against the official example corpus (tests/corpus.rs). Semantic path analysis vs Web Templates is a separate later pass (needs P10).
-// ─────────────────────────────────────────────

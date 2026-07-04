@@ -86,8 +86,9 @@ BMM, deterministically.** Concretely:
 
 5. **Override layer.** A small set of decisions BMM cannot express (strong
    newtypes, primitive backing, name escapes, the `UUID`→`uuid::Uuid` mapping)
-   is currently a hardcoded map in the emitter, slated to move to a
-   `codegen.toml` seeded from `docs/ROSETTA.md`.
+   is currently a hardcoded map in the emitter (`emit.rs`: `type_override`,
+   `class_binding`, `field_default`), slated to move to a `codegen.toml` seeded
+   from that map.
 
 6. **Crate naming (from the same work).** `openehr-*` = the spec (generated);
    `ehrbase-*` = the ported application. `openehr-foundation` folds into
