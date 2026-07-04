@@ -35,6 +35,32 @@ Single workspace. **Crate naming:** `openehr-*` = the openEHR **specification** 
 
 Checkboxes on disk survive `/clear` and `/compact`; the built-in todo tool is session-scoped, so the phase files are the durable layer.
 
+## Model orchestration (workflows & subagents)
+
+**When the session runs on Fable 5 (effort `high`), Fable is the orchestrator, not the implementer.** Fable plans, coordinates, reviews, and does the taste- and intelligence-heavy work itself; it fans implementation out to subagents via the `Agent` tool (`model: 'opus'`) or a `Workflow` (per-agent `model`). The main loop does not auto-delegate — this section is the standing instruction that it should.
+
+Why this split (not "spin everything to a cheaper worker"): the win is **context isolation, parallelism, and sparing the orchestrator's capacity** — keep Fable's context clean and let Opus workers grind through file-heavy implementation in parallel. It is *not* an intelligence upgrade (see the table — Fable outranks Opus on both intelligence and cost), so delegate by the *nature of the work*, never reflexively.
+
+Rankings, higher = better. `cost` is relative spend, `intelligence` is how hard a problem the model can be handed unsupervised, `taste` covers code quality / API design / clarity. Models are the ones the `Agent`/`Workflow` `model` parameter accepts.
+
+| model     | cost | intelligence | taste |
+|-----------|------|--------------|-------|
+| fable-5   | 2    | 9            | 9     |
+| opus-4.8  | 4    | 7            | 8     |
+| sonnet-5  | 5    | 5            | 7     |
+| haiku-4.5 | 1    | 4            | 3     |
+
+How to apply (these are defaults, not limits — override when the output doesn't meet the bar; intelligence > taste > cost when axes conflict for anything that ships):
+
+- **Orchestrator (Fable 5, high):** owns the phase loop, architecture, ADR decisions, spec-parity judgement, and the hard bespoke logic (AQL AST→ASL→SQL, versioning, validation, RM↔JSONB). Keeps these in-context rather than delegating — they need top intelligence + taste and are the project's critical path.
+- **Delegate to Opus-4.8 subagents:** bulk/parallelizable implementation on a clear spec (wiring handlers, DTO/trait impls against the generated ITS-REST contract, migrations, sqlx/sea-query query building, test scaffolding), file-heavy investigation, and codebase analysis — anything that would otherwise burn the orchestrator's context. Fan out several concurrently in one message.
+- **Fable-5 subagents:** use when a delegated task still needs top intelligence/taste (a tricky algorithm port, an API-shape decision) but you want it off the main context.
+- **sonnet-5:** cheap mechanical passes where correctness is easy to verify (mechanical refactors, boilerplate). **Never use Haiku for substantive work.**
+- **Reviews:** an Opus-4.8 (or Fable-5) reviewer subagent, read-only, as an independent perspective before committing a subsystem — especially spec/wire parity and the AQL engine.
+- Effort: keep Fable on `high` (xhigh is token-hungry; max/extra is a furnace for worse output). Use `effort: 'low'` for cheap mechanical worker stages, higher tiers only for the hardest verify/judge stages.
+
+Discipline unchanged: subagents still obey the hard rules below (never hand-edit `// @generated`, never edit unported `.java`/Maven files, no test-weakening, `claude/*` branches, no AI attribution) — deviations surface at the parity harness, so delegate with a tight spec and verify the result.
+
 ## Tech stack (pinned)
 
 Toolchain: Rust stable **1.96** (1.96.1), MSRV 1.96, **edition 2024**, resolver v3. Pin via `rust-toolchain.toml`.
