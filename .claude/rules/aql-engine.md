@@ -4,58 +4,43 @@ paths: ["crates/openehr-query/**", "crates/ehrbase/src/aql/**"]
 
 # AQL engine rules
 
-The AQL engine is the crown jewel and the hardest part of the port
-(PORT_MASTER_PLAN.md Section 6, difficulty map: AQL planner/SQL generator are
-VERY HARD). It splits across two locations:
+The AQL engine is the crown jewel and the hardest part (P16). It spans two
+locations:
 
-- `crates/openehr-query/` — the spec crate: AQL 1.1.0 lexer, parser, AST, and
-  semantic/path analysis against Web Templates. No Java receives this; it is
-  written from the QUERY 1.1.0 specification.
-- `crates/ehrbase/src/aql/` — receives EHRbase's `aql-engine` Maven
-  module Java in place: the ASL (Abstract SQL Layer, EHRbase's own IR), the
-  ASL rewrite/optimize passes, and the ASL→SQL translator.
+- `crates/openehr-query/` — the spec crate: AQL 1.1.0 **lexer + AST + parser**,
+  **done** (`logos` + `chumsky`, corpus-validated). Semantic path analysis
+  against WebTemplates is done as part of the engine (P16), consuming this AST.
+- `crates/ehrbase/src/aql/` — the **execution engine** (P16): AST → an
+  abstract-SQL IR (ASL) → PostgreSQL, built in **idiomatic Rust following
+  EHRbase's proven approach** (its `aql-engine` Java — `asl`, `pathanalysis`,
+  `querywrapper`, `sql`, `featurecheck` — is the read-only behavioural reference,
+  not a class-mirror template; ADR-006).
 
 ## No ANTLR, ever
 
-EHRbase's grammar is ANTLR4. We reimplement it natively — **no ANTLR
-runtime is a dependency of the running server, ever.** Use `logos` 0.15 for
-the lexer and `chumsky` 0.10 (or `winnow` 0.7) for the parser. Grammar
-sources to transcribe from (not bind to):
+The parser is `logos` + `chumsky` (`openehr-query`), reimplemented from the
+QUERY 1.1.0 grammar — **no ANTLR runtime is ever a dependency of the server.**
+This is done; don't revisit it.
 
-- Canonical AQL grammar: `specifications-QUERY/docs/AQL/grammar/AqlLexer.g4`
-  and `AqlParser.g4`.
-- Reference ANTLR grammars for cross-checking token/rule names:
-  `openEHR/openEHR-antlr4` → `reader_aql/src/main/antlr/*.g4`.
+## The pipeline (follow EHRbase's approach, idiomatically)
 
-Port the grammar's token and rule structure faithfully into the lexer/parser
-combinator shape; do not invent a different grammar even where chumsky makes
-a different factoring tempting.
+parse (`openehr-query`, done) → semantic/path analysis vs WebTemplate →
+**AST → ASL** (abstract-SQL IR) → ASL rewrite/optimize → **ASL → SQL** (via
+`sea-query`: JSONB path extraction, array unnesting, current+history `UNION`,
+`JSON_TABLE` where viable) → execute (`sqlx`) → assemble `RESULT_SET` (schema
+1.0.3). Keep these as distinct passes/modules — EHRbase's ASL IR is a proven
+design worth following (it's how the hard cases stay tractable), and stage
+boundaries make behaviour debuggable against the reference. Write idiomatic Rust;
+do **not** mirror the Java class layout, and do **not** collapse the IR away.
 
-## Pipeline stays structurally faithful
+**ASL is EHRbase's own IR, not an openEHR spec artifact** — follow its shape as
+the reference. Use PG 18/17 features (`JSON_TABLE`, skip scan) where they
+simplify the emitted SQL; a pure perf tuning of the SQL that isn't needed for
+correctness is a `// PERF(port):` for P20 (Optimization).
 
-The Java pipeline is: parse → semantic/path analysis against Web Templates →
-**AST → ASL** → ASL rewrite/optimize → **ASL → SQL** (JSONB path extraction,
-array unnesting, current+history UNION) → execute → assemble RESULT_SET
-(schema 1.0.3). Port each stage as its own module/pass mirroring the Java
-class boundaries in `aql-engine`'s `AqlSqlLayer`, ASL model classes, and
-optimizer passes. Do not collapse stages together even if a end-to-end
-rewrite would be shorter — a later phase can only debug this by comparing
-stage-by-stage against the Java source.
+## Boundary
 
-**ASL is EHRbase's own intermediate representation, not an openEHR spec
-artifact.** Port it as-is from the Java; do not redesign the IR even though
-it is bespoke. If PG 18/17 features (`JSON_TABLE`, skip scan) let a later SQL
-generation pass simplify the emitted SQL, note that as `// PERF(port):`
-during Stage 1 and apply it only after parity (P19 Optimization), unless the
-phase task explicitly calls for using `JSON_TABLE` where viable (P13).
-
-## Boundary with ehrbase
-
-`openehr-query` produces a parsed, semantically-analyzed AST. Everything after
-that (ASL construction, SQL generation, execution against `sqlx`/
-`sea-query`) lives in `ehrbase`. Keep this boundary; do not let SQL
-concerns leak into the spec crate, and do not let grammar/parsing concerns
-leak into the server crate.
-
-Every file here still needs the PORT STATUS trailer and annotation
-vocabulary from `rust-style.md`.
+`openehr-query` produces a parsed, semantically-analysable AST; everything after
+(ASL, SQL generation via `sea-query`, execution via `sqlx`) lives in `ehrbase`.
+Keep it clean: no SQL in the spec crate, no grammar/parsing in the server crate.
+Behaviour is verified by the parity harness (P19), not by class-level diffing.

@@ -29,7 +29,7 @@ Single workspace. EHRbase's Java has been moved into `crates/openehr-*` (Phase 0
 
 1. Read `docs/plans/current-phase.md`.
 2. Pick the next unchecked task in the referenced phase file.
-3. Do the work. For the openEHR **spec** layer, change the generator and regenerate (never hand-write spec classes — see Code generation above). For the EHRbase **application** port (`ehrbase-*` crates), delegate per-file Java→Rust ports to the `porter` subagent. (The `rm-transcriber` agent and `/transcribe-rm-class` skill are retired by ADR-004 — do not hand-transcribe spec classes.) Prefer subagents over inline work when it would burn context.
+3. Do the work **in this session** — no subagent or worktree delegation (build in the open so it can be watched and corrected). For the openEHR **spec** layer, change the generator and regenerate (never hand-write spec classes — see Code generation above). For the EHRbase **application** (`ehrbase-*`), build **idiomatic modern Rust on top of the generated `openehr-*` crates** (ADR-006), consulting the in-tree EHRbase Java as the *behavioural reference* — not a per-file 1:1 port. Build compiling, tested increments.
 4. Tick the task `- [ ]` to `- [x]` and add a one-line note.
 5. Commit as `phase-NN: <task>` on a `claude/phase-NN-*` branch.
 6. When the phase's exit criteria are all met, run `/phase-done`, update `docs/PROGRESS.md`, and advance `current-phase.md`.

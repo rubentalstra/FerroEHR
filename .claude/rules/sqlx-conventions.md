@@ -2,23 +2,20 @@
 paths: ["crates/ehrbase/**"]
 ---
 
-# sqlx + sea-query conventions
+# sqlx + sea-query conventions (P09 persistence, P16 AQL)
 
-`ehrbase` is the only crate that talks to PostgreSQL. It replaces
-EHRbase's jOOQ + Flyway persistence layer with `sqlx` 0.9 (driver, pool,
-migrations) and `sea-query` 0.32 + `sea-query-binder` 0.7 (the jOOQ-DSL
-analogue for the AQL→SQL engine). Target PostgreSQL 18.4+.
+`ehrbase` is the only crate that talks to PostgreSQL, using `sqlx` 0.9 (driver,
+pool, migrations) + `sea-query` 1.0 + `sea-query-binder` (the dynamic SQL builder
+for the AQL→SQL engine). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
 
 ## Migrations
 
-- `crates/ehrbase/migrations/` holds the Flyway SQL copied **verbatim**
-  from EHRbase's `jooq-pg` module in the Phase 0 `git mv`. Do not edit a
-  migration that has already shipped in a prior phase — append a new
-  migration file instead, exactly as Flyway/EHRbase would have.
-  `sqlx migrate` numbering conventions apply to any brand-new migration this
-  port adds beyond the copied set.
-- Generated jOOQ code itself is discarded, not ported — `sea-query` +
-  hand-written row-mapping structs replace it.
+- `crates/ehrbase/migrations/` holds the **real EHRbase v2 Flyway SQL** (41
+  files, vendored verbatim). Run them via `sqlx migrate` — this **is** the schema;
+  do not re-author DDL. Append a new migration only for a genuinely new need,
+  following `sqlx migrate` numbering.
+- No jOOQ codegen — `sea-query` `Iden` table/column definitions + hand-written
+  row-mapping structs (over the generated `openehr-rm` types) replace it.
 
 ## Queries
 
@@ -37,21 +34,18 @@ analogue for the AQL→SQL engine). Target PostgreSQL 18.4+.
 
 ## Transactions and service boundaries
 
-- Transaction boundaries mirror the Java service layer's boundaries
-  (`service` module in EHRbase): one `sqlx::Transaction` per service-level
-  write operation (composition create/update, contribution commit, EHR
-  status change), matching what the Java transaction demarcation covered —
-  do not merge or split transactions relative to the source without a
-  `// PORT NOTE:`.
-- Every write that the Java layer paired with an `audit_details` +
-  `contribution` insert must do the same here, in the same transaction.
+- One `sqlx::Transaction` per service-level write (composition create/update,
+  contribution commit, EHR-status change), matching **EHRbase's transaction
+  semantics** (its `service` module is the behavioural reference — match what it
+  makes atomic, idiomatically).
+- Every write emits an `audit_details` + `contribution` row in the same
+  transaction, as EHRbase does.
 
 ## Testing
 
 - `testcontainers` + `testcontainers-modules` run a real PostgreSQL 18 for
-  integration tests; verify migrations apply cleanly as part of that setup.
-  See `testing.md` for the full test discipline.
+  integration tests; verify the vendored migrations apply cleanly as part of
+  that setup. See `testing.md` for the full test discipline.
 
-Every file in this crate still needs the PORT STATUS trailer and annotation
-vocabulary from `rust-style.md`; this file only adds persistence-specific
-rules on top.
+This file adds persistence-specific rules on top of `rust-style.md` (idiomatic
+app code, ADR-006) — no PORT STATUS trailer.

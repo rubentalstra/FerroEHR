@@ -21,12 +21,12 @@ tool is session-scoped only. If it isn't ticked here, it isn't done.
 
 1. Read `docs/plans/current-phase.md`.
 2. Pick the next unchecked task in the referenced phase file.
-3. Do the work. The spec + ITS layer is **generated** (ADR-004/005) — change the
-   emitter and regenerate, never hand-edit `// @generated`. The application layer
-   (`ehrbase-*`) is **built idiomatically** on the generated `openehr-*` crates
-   (ADR-006), consulting the in-tree EHRbase Java as the behavioural reference —
-   *not* a per-file 1:1 port (the `rm-transcriber` agent is retired; the `porter`
-   agent's literal-port mode no longer applies to the app layer).
+3. Do the work **in this session** (no subagents/worktrees — build in the open).
+   The spec + ITS layer is **generated** (ADR-004/005) — change the emitter and
+   regenerate (`/regen-codegen`), never hand-edit `// @generated`. The
+   application layer (`ehrbase-*`) is **built idiomatically** on the generated
+   `openehr-*` crates (ADR-006), consulting the in-tree EHRbase Java as the
+   behavioural reference — *not* a per-file 1:1 port. Build compiling + tested.
 4. Tick the task `- [ ]` to `- [x]` and add a one-line note.
 5. Commit as `phase-NN: <task>` on a `claude/phase-NN-*` branch.
 6. When the phase's exit criteria are all met, run `/phase-done`, update

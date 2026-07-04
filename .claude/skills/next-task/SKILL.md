@@ -2,9 +2,8 @@
 name: next-task
 description: >
   Reads the current phase file, picks the first unchecked task, and restates
-  it as a concrete work plan naming the files involved and which agent
-  should do the work. Use when the user asks "what's next" or "what should
-  I work on".
+  it as a concrete in-session work plan naming the files and crates involved.
+  Use when the user asks "what's next" or "what should I work on".
 allowed-tools: [Read, Grep, Glob]
 argument-hint: (none)
 ---
@@ -29,13 +28,13 @@ is a separate step the caller takes after seeing the plan.
      or a spec component, resolve it against
      `PORT_MASTER_PLAN.md` Section 9.1 (Maven→crate mapping) or Section 7.1
      (RM class inventory).
-   - **Which agent / mechanism** should do it: **openEHR spec layer**
-     (`openehr-base`/`openehr-rm`/`openehr-am`) → **the code generator**, not an
-     agent — change `openehr-codegen`'s emitter and run
-     `cargo run -p openehr-codegen -- emit` (ADR-004; the `rm-transcriber` agent
-     is retired). Per-file EHRbase Java→Rust ports (`ehrbase-*`) → `porter`.
-     Read-only fidelity check afterward → `port-reviewer`. "Run the tests and
-     report" → `test-runner`. Harness/docs scaffolding (not code) → inline.
+   - **Which mechanism** applies (all done **in-session**, no subagents/worktrees):
+     **openEHR spec/ITS layer** (`openehr-base`/`openehr-rm`/`openehr-am`/
+     `openehr-its`) → **the code generator** — change `openehr-codegen`'s emitter
+     and run `cargo run -p openehr-codegen -- emit`/`emit-xml`/`emit-rest`
+     (ADR-004/005). **EHRbase application** (`ehrbase-*`) → build idiomatic modern
+     Rust on the generated `openehr-*` crates (ADR-006), consulting EHRbase Java
+     as the behavioural reference — not a per-file port. Build compiling + tested.
    - **What "done" looks like** for this task specifically, distinct from
      the phase's overall exit criteria.
 4. **Do not tick the checkbox or commit** — that happens after the work is
