@@ -191,12 +191,14 @@ The whole project in one line:
 > enterprise features (RBAC and others removed between the v1 and v2 lines)
 > → **Stage 3:** improve the codebase.
 
-- **Stage 1** is everything in `PORT_MASTER_PLAN.md` Section 10's phase table
-  (P0–P99): transcribe the openEHR spec surface natively, port EHRbase's
-  server Java in place, make the workspace compile (P17), and reach ≥99%
-  behavioural parity at the REST surface against stock EHRbase (P18).
-  Phases P1–P16 are explicitly not required to compile — capturing intent
-  correctly is the goal, not a green `cargo build`, until P17.
+- **Stage 1** (see `docs/plans/` phases `00–20, 99`, the authoritative roadmap;
+  ADR-004/005/006): the openEHR spec + serialization + REST-contract foundation
+  is **generated** and compiling (`openehr-*`); the remaining work is the
+  EHRbase **application** (`ehrbase-*`), built as a modern idiomatic Rust service
+  on the generated crates (ADR-006) — persistence → rm-db-format → REST+auth →
+  service → templates → validation → AQL engine → FLAT → integration (P18) →
+  ≥99% REST parity vs stock EHRbase (P19). App phases build as **compiling,
+  tested increments** (the old "need not compile" gate is retired).
 - **Stage 2** begins only once P18 parity holds. It restores capabilities
   EHRbase removed between its pre-v2 line and v2 — RBAC/access control being
   the highest-priority candidate — based on the archaeology diff produced in

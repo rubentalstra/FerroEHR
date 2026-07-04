@@ -7,6 +7,15 @@
 > layer), not as a per-file hand-authoring checklist. The **Java → Rust** domain
 > is still hand-applied for the `ehrbase-*` application port. See
 > `docs/ADRs/ADR-004-spec-driven-codegen.md`.
+>
+> **⚠️ Scope (ADR-006):** the **Java → Rust** domain below is now a *reference*,
+> not a literal-port checklist. The `ehrbase-*` application is built as a
+> **modern idiomatic Rust service** consuming the generated `openehr-*` crates —
+> we do **not** mirror EHRbase's Java class structure (rule 1), and the
+> application phases are built as **compiling, tested increments** (rule 2's
+> "need not compile" no longer applies). The type/idiom maps stay useful; the
+> "mirror the source" and PORT-STATUS-trailer conventions do not apply to
+> idiomatic app code. See `docs/ADRs/ADR-006-application-port-philosophy.md`.
 
 This file is a lookup table, not prose. Two mapping domains are covered:
 **Java → Rust** (for the EHRbase application code in `ehrbase-rest`,

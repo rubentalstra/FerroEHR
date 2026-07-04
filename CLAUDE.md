@@ -87,9 +87,20 @@ cargo audit && cargo deny check
 scripts/parity.sh              # add USE_REFERENCE_EHRBASE=1 for the negative-test gate
 ```
 
-Note: Phases P1 through P16 are not required to compile. `cargo build` is expected to fail until P17 (make-it-compile). This is by design; do not chase build errors during translation.
+Note (ADR-006 superseded the old "phases need not compile" gate): the spec + ITS
+foundation is generated and **compiling**, and the **application phases build as
+compiling, tested increments** on top of it. Do not defer compilation; keep every
+crate you touch green. (The historical Bun-style "P1–P16 need not compile" rule
+applied only while hand-transcribing the spec, which no longer happens.)
 
-Compile status (post ADR-004): the **generated** spec crates `openehr-base`, `openehr-rm`, and `openehr-am` compile and are lib-clippy-clean — keep them that way by fixing the *emitter*, never by hand-editing generated files. `openehr-lang`, `openehr-codegen`, and `openehr-derive` are hand-written tooling and must stay compiling + clippy-clean. `openehr-term` compiles (hand-written). `openehr-its`'s library compiles but its tests need re-wiring against the generated types (the interop fidelity gate). The Phase-A no-compile allowance applies to the crates not yet reached (the `ehrbase-*` app crates and the parser crates awaiting their phases).
+Compile status: the **generated** spec crates `openehr-base`, `openehr-rm`,
+`openehr-am` compile and are lib-clippy-clean — keep them that way by fixing the
+*emitter*, never by hand-editing generated files. `openehr-lang`,
+`openehr-codegen`, `openehr-derive` (hand-written tooling), `openehr-term`
+(hand-written), `openehr-query` (AQL parser), and `openehr-its` (canonical
+JSON/XML + generated ITS-REST contract; all fidelity gates green) all compile +
+clippy-clean. The `ehrbase-*` application crates are the remaining work (the
+Stage-1 app build, `docs/plans/` phases 09–20) and are built compiling per phase.
 
 ## Conventions
 
@@ -109,7 +120,7 @@ Compile status (post ADR-004): the **generated** spec crates `openehr-base`, `op
 - **NEVER add AI/Claude attribution to commits or PRs. This is an absolute rule with no exceptions.** Do not add a `Co-Authored-By: Claude` trailer (or any co-author trailer). Do not write "Generated with Claude Code", "🤖 Generated with...", "Co-authored-by: Claude", or any similar line, emoji, or footer in a commit message, commit body, commit trailer, PR title, PR description, PR comment, issue, or code comment. Commit messages and PR text describe only the change itself. If you ever find yourself about to add such a line, stop and remove it. When configuring git or opening PRs, do not pass any flag or template that injects attribution.
 - **Never weaken, skip, or delete a test** to make the port pass, and never edit a test to route around a bug it exposes. A parity test is valid only if it still fails against stock EHRbase without our fix (`USE_REFERENCE_EHRBASE=1`).
 - **Tick the phase checkbox and commit before ending a session.** A `Stop` hook enforces this.
-- **Phases P1-P16 do not need to compile.** Capture intent; do not get stuck on the compiler.
+- **Application phases build as compiling, tested increments** (ADR-006) on top of the generated `openehr-*` crates — do not defer compilation. (The old "phases need not compile" rule applied only to the retired hand-transcription era.)
 - The v1 enterprise code (RBAC and others) is a Stage 2 concern. Do not build it during Stage 1; it lives only as the read-only `reference/v1` git ref until then.
 
 ## References

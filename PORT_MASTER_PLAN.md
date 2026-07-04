@@ -39,6 +39,39 @@ This file is the single source of truth. Claude Code reads this first and scaffo
 
 ---
 
+> ## ⚠️ AMENDMENT (2026-07-04, ADR-005 + ADR-006): ITS is generated; the app is a modern idiomatic service
+>
+> Two further changes since ADR-004 make **the phase files (`docs/plans/`) and
+> `docs/PROGRESS.md` the authoritative roadmap — read them, and ADR-005/ADR-006,
+> before this §10 table.**
+>
+> - **ADR-005** — the **ITS layer is generated** too: canonical **XML**
+>   (`ToXml`/`FromXml`) and the **ITS-REST contract** (DTOs + `#[async_trait]`
+>   server traits + routes) are emitted into `openehr-its` (`emit-xml`/`emit-rest`);
+>   canonical JSON validation + all fidelity gates are green. So the JSON + XML
+>   serialization and the REST *contract* are **done**, and the AQL parser is
+>   **done** (`openehr-query`).
+> - **ADR-006** — the **EHRbase application** is built as a **modern idiomatic
+>   Rust service on top of the generated `openehr-*` crates**, *not* a literal
+>   1:1 Java-structure port. This **supersedes principles 1 & 3** (literal
+>   transcription) *for the application layer*, and **retires the "early phases
+>   need not compile" gate (§4.1)** for it — app phases are built as compiling,
+>   tested increments. Stack: `axum`/`tower-http`, `sqlx`+`sea-query` (not
+>   sea-orm), `oauth2`/`openidconnect`/`jsonwebtoken`/`argon2` for **Basic +
+>   OAuth2/OIDC auth** (Stage 1; RBAC Stage 2), `utoipa`, `moka`. Bespoke server
+>   logic (AQL engine, versioning, validation, RM↔JSONB) follows EHRbase's
+>   *algorithm* as the reference; the **parity harness (§15)** is the acceptance
+>   instrument.
+>
+> **The §10 table below is superseded by the rewritten phase files, which were
+> renumbered (2026-07-04) into one clean `00→20, 99` sequence** (foundation
+> `00–08`, application build `09–20`, cutover `99`). The real Stage-1 build order
+> is **P09 → P10 → P11 → P12 → P13 → P14 → P15 → P16 → P17 → P18 → P19 → P20 →
+> P99** (see `docs/plans/current-phase.md` and `docs/PROGRESS.md`). The
+> "compile?" column no longer applies to the app phases.
+
+---
+
 ## 0. How Claude Code should use this document
 
 1. Read this entire file before creating anything.

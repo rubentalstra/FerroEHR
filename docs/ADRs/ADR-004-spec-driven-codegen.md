@@ -38,7 +38,7 @@ BMM, deterministically.** Concretely:
    `openehr-derive` supplies the `#[derive(OpenEhrType)]` macro used by the
    emitted types. Input is JSON, not the ODIN form — it is a cleaner, structured
    serialization of the identical meta-model. (The ODIN reader in
-   `openehr-lang::odin` is retained for ADL/ODIN *instance* parsing at P8/P9,
+   `openehr-lang::odin` is retained for ADL/ODIN *instance* parsing at P06/P13,
    off the codegen path.)
 
 2. **Target = best-possible idiomatic Rust, not a mirror of the old code, and
