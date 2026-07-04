@@ -1,0 +1,165 @@
+<?xml version="1.1" encoding="utf-8"?>
+<!-- openEHR Archetype 2.0.6 XML schema -->
+<!-- Authored by openEHR Foundation 2014.03.22  -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.openehr.org/v1"
+	targetNamespace="http://schemas.openehr.org/v1" elementFormDefault="qualified" version="v1.0.2"
+	id="BaseTypes.xsd"
+    xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" vc:minVersion="1.1">
+	<xs:complexType name="TERMINOLOGY_CODE">
+		<xs:sequence>
+			<xs:element name="terminology_id" type="xs:string"/>
+			<xs:element name="code_string" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:simpleType name="Iso8601DateTime">
+		<xs:restriction base="xs:string">
+			<!--<xs:pattern
+				value="\d{4}((0[1-9]|1[0-2])((0[1-9]|[12]\d|3[01])(T?([01]\d|2[0-3])([0-5]\d([0-5]\d([,.]\d+)?)?)?(Z|([+\-]((0\d)|(1[0-2]))(00|30)?))?)?)?)?|\d{4}(\-(0[1-9]|1[0-2])(\-(0[1-9]|[12]\d|3[01])(T([01]\d|2[0-3])(:[0-5]\d(:[0-5]\d([,.]\d+)?)?)?(Z|([+\-]((0\d)|(1[0-2]))(:(00|30))?))?)?)?)?"
+			/>-->
+			<!-- support +13:00 timezone (e.g. Auckland summer time) -->
+			<xs:pattern
+				value="\d{4}((0[1-9]|1[0-2])((0[1-9]|[12]\d|3[01])(T?([01]\d|2[0-3])([0-5]\d([0-5]\d([,.]\d+)?)?)?(Z|([+\-]((0\d)|(1[0-3]))(00|30)?))?)?)?)?|\d{4}(\-(0[1-9]|1[0-2])(\-(0[1-9]|[12]\d|3[01])(T([01]\d|2[0-3])(:[0-5]\d(:[0-5]\d([,.]\d+)?)?)?(Z|([+\-]((0\d)|(1[0-3]))(:(00|30))?))?)?)?)?"
+			/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="Iso8601Date">
+		<xs:restriction base="xs:string">
+			<xs:pattern
+				value="\d{4}((((0[1-9])|(1[0-2]))((0[1-9])|([12]\d)|(3[01]))?)?|(\-(((0[1-9])|(1[0-2]))(\-((0[1-9])|([12]\d)|(3[01])))?)?)?)"
+			/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="Iso8601Time">
+		<xs:restriction base="xs:string">
+			<!--<xs:pattern
+				value="([01]\d|2[0-3])([0-5]\d([0-5]\d([,.]\d+)?)?)?(Z|([+\-]((0\d)|(1[0-2]))(00|30)?))?|([01]\d|2[0-3])(:[0-5]\d(:[0-5]\d([,.]\d+)?)?)?(Z|([+\-]((0\d)|(1[0-2]))(:(00|30))?))?"
+			/>-->
+			<!-- support +13:00 timezone (e.g. Auckland summer time) -->
+			<xs:pattern
+				value="([01]\d|2[0-3])([0-5]\d([0-5]\d([,.]\d+)?)?)?(Z|([+\-]((0\d)|(1[0-3]))(00|30)?))?|([01]\d|2[0-3])(:[0-5]\d(:[0-5]\d([,.]\d+)?)?)?(Z|([+\-]((0\d)|(1[0-3]))(:(00|30))?))?"
+			/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="Iso8601Duration">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="P(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="matchString">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="\?"/>
+			<xs:pattern value="&lt;"/>
+			<xs:pattern value=">"/>
+			<xs:pattern value="="/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="Uid">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[0-9A-Fa-f]+-[0-9A-Fa-f]+-[0-9A-Fa-f]+-[0-9A-Fa-f]"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="InternetId">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="\w+(\.\w+)*"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="Interval" abstract="true">
+		<xs:attribute name="lower_included" type="xs:boolean" use="optional"/>
+		<xs:attribute name="upper_included" type="xs:boolean" use="optional"/>
+		<xs:attribute name="lower_unbounded" type="xs:boolean" use="optional"/>
+		<xs:attribute name="upper_unbounded" type="xs:boolean" use="optional"/>
+	</xs:complexType>
+	
+	<xs:complexType name="IntervalOfInteger">
+		<xs:complexContent>
+			<xs:extension base="Interval">
+				<xs:sequence>
+					<xs:element name="lower" type="xs:int" minOccurs="0"/>
+					<xs:element name="upper" type="xs:int" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="MultiplicityInterval">
+		<xs:complexContent>
+			<xs:extension base="IntervalOfInteger">
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="IntervalOfReal">
+		<xs:complexContent>
+			<xs:extension base="Interval">
+				<xs:sequence>
+					<xs:element name="lower" type="xs:float" minOccurs="0"/>
+					<xs:element name="upper" type="xs:float" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="IntervalOfDate">
+		<xs:complexContent>
+			<xs:extension base="Interval">
+				<xs:sequence>
+					<xs:element name="lower" type="Iso8601Date" minOccurs="0"/>
+					<xs:element name="upper" type="Iso8601Date" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="IntervalOfDateTime">
+		<xs:complexContent>
+			<xs:extension base="Interval">
+				<xs:sequence>
+					<xs:element name="lower" type="Iso8601DateTime" minOccurs="0"/>
+					<xs:element name="upper" type="Iso8601DateTime" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="IntervalOfTime">
+		<xs:complexContent>
+			<xs:extension base="Interval">
+				<xs:sequence>
+					<xs:element name="lower" type="Iso8601Time" minOccurs="0"/>
+					<xs:element name="upper" type="Iso8601Time" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="IntervalOfDuration">
+		<xs:complexContent>
+			<xs:extension base="Interval">
+				<xs:sequence>
+					<xs:element name="lower" type="Iso8601Duration" minOccurs="0"/>
+					<xs:element name="upper" type="Iso8601Duration" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="StringDictionaryItem">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="id" type="xs:string" use="required"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:simpleType name="VALIDITY_KIND">
+		<xs:restriction base="xs:integer">
+			<xs:enumeration value="1001" id="mandatory"/>
+			<xs:enumeration value="1002" id="optional"/>
+			<xs:enumeration value="1003" id="disallowed"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

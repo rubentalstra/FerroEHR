@@ -1,0 +1,95 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_SINGLE_ATTRIBUTE-detailed.json",
+    "title": "C_SINGLE_ATTRIBUTE",
+    "description": "Concrete model of constraint on a single-valued attribute node. The meaning of the inherited children attribute is that they are alternatives.",
+    "$comments": "Defined in Archetype IM, inherits from C_ATTRIBUTE",
+    "type": "object",
+    "properties": {
+        "rm_attribute_name": {
+            "description": "Reference model attribute within the enclosing type represented by a C_OBJECT.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        },
+        "existence": {
+            "description": "Constraint on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not).",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Interval_of_Integer"
+        },
+        "children": {
+            "description": "Child C_OBJECT nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes. ",
+            "type": "array",
+            "items": {
+                "$ref": "all-detailed.json#/definitions/C_OBJECT"
+            }
+        }
+    },
+    "required": [
+        "rm_attribute_name",
+        "existence"
+    ],
+    "$inherits": [
+        "all-detailed.json#/definitions/C_ATTRIBUTE"
+    ],
+    "$functions": {
+        "is_subset_of": {
+            "description": "True if constraints represented by this node, ignoring any sub-parts, are narrower or the same as other. \nTypically used during validation of special-ised archetype nodes.",
+            "parameters": {
+                "other": {
+                    "$ref": "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+                }
+            },
+            "required_parameters": [
+                "other"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_valid": {
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "path": {
+            "description": "Path of this node relative to root of archetype.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "has_path": {
+            "description": "True if the relative path a_path exists at this node.",
+            "parameters": {
+                "a_path": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_path"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "any_allowed": {
+            "description": "True if any value (i.e. instance) of the reference model attribute represented by this C_ATTIRBUTE is allowed.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "alternatives": {
+            "description": "List of alternative constraints for the single child of this attribute within the data.",
+            "return": {
+                "type": "array",
+                "items": {
+                    "$ref": "all-detailed.json#/definitions/C_OBJECT"
+                }
+            }
+        }
+    },
+    "$invariants": {
+        "Post": "Result := children = Void or else children.is_empty",
+        "Path_exists": "path /= Void",
+        "Rm_attribute_name_valid": "not rm_attribute_name.is_empty",
+        "Existence_set": "existence.lower >= 0 and existence.upper <= 1",
+        "Children_validity": "any_allowed xor children /= Void"
+    }
+}

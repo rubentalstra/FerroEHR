@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Ehr_extract/EXTRACT_VERSION_SPEC.json",
+    "definitions": {
+        "EXTRACT_VERSION_SPEC": {
+            "type": "object",
+            "required": [
+                "include_all_versions",
+                "include_revision_history",
+                "include_data"
+            ],
+            "properties": {
+                "include_all_versions": {
+                    "type": "boolean"
+                },
+                "commit_time_interval": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Data_types/DV_INTERVAL.json#/definitions/DV_INTERVAL"
+                },
+                "include_revision_history": {
+                    "type": "boolean"
+                },
+                "include_data": {
+                    "type": "boolean"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "EXTRACT_VERSION_SPEC"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

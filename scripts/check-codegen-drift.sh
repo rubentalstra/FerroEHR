@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Regenerate every codegen output and fail if any drifted from the vendored
+# specs (ADR-004 for BMM → spec crates; ADR-005 for the ITS XML/REST surfaces).
+#
+# The generated code is a pure function of the vendored specs + the emitter, so
+# a clean checkout must regenerate byte-identically. This guards against someone
+# hand-editing a `// @generated` file, or changing the emitter without
+# regenerating. Run in CI and locally before committing generator changes.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# Paths the emit targets own (and only those).
+GENERATED=(
+  crates/openehr-base/src
+  crates/openehr-rm/src
+  crates/openehr-am/src
+  crates/openehr-term/src
+  crates/openehr-lang/src
+  crates/openehr-its/src/xml/generated
+  crates/openehr-its/src/rest/generated
+)
+
+echo "regenerating spec crates (BMM → RM/BASE/AM/TERM/LANG)…"
+cargo run -q -p openehr-codegen -- emit
+echo "regenerating ITS-XML (ToXml/FromXml impls)…"
+cargo run -q -p openehr-codegen -- emit-xml
+echo "regenerating ITS-REST (DTOs + traits + routes)…"
+cargo run -q -p openehr-codegen -- emit-rest
+
+if ! git diff --quiet -- "${GENERATED[@]}"; then
+  echo "::error::Generated code is out of sync with the vendored specs." >&2
+  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-rest, then commit." >&2
+  git diff --stat -- "${GENERATED[@]}" >&2
+  exit 1
+fi
+
+echo "✓ Generated code is in sync with the vendored specs."

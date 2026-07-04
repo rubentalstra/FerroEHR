@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/RESOURCE_DESCRIPTION_ITEM.json",
+    "definitions": {
+        "RESOURCE_DESCRIPTION_ITEM": {
+            "type": "object",
+            "required": [
+                "language",
+                "purpose",
+                "other_details"
+            ],
+            "properties": {
+                "language": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/Terminology_code.json#/definitions/TERMINOLOGY_CODE"
+                },
+                "purpose": {
+                    "type": "string"
+                },
+                "keywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "use": {
+                    "type": "string"
+                },
+                "misuse": {
+                    "type": "string"
+                },
+                "copyright": {
+                    "type": "string"
+                },
+                "original_resource_uri": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "other_details": {
+                    "type": "object"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "RESOURCE_DESCRIPTION_ITEM"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

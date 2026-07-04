@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/VALUE_SET.json",
+    "title": "VALUE_SET",
+    "description": "Representation of a flat value set within the archetype terminology.",
+    "$comments": "Defined in Aom2 IM, inherits from TERMINOLOGY_RELATION",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "Code of source term of this relation.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "members": {
+            "description": "List of target terms in this relation.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+            },
+            "minItems": 1
+        }
+    },
+    "required": [
+        "id",
+        "members"
+    ]
+}

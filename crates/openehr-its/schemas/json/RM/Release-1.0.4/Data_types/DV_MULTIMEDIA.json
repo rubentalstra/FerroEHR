@@ -1,0 +1,109 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/DV_MULTIMEDIA.json",
+    "definitions": {
+        "DV_MULTIMEDIA": {
+            "type": "object",
+            "required": [
+                "media_type",
+                "size"
+            ],
+            "properties": {
+                "charset": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "language": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "alternate_text": {
+                    "type": "string"
+                },
+                "uri": {
+                    "allOf": [
+                        {
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "DV_EHR_URI",
+                                        "DV_URI"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "DV_EHR_URI"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/DV_EHR_URI.json#/definitions/DV_EHR_URI"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "DV_URI"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/DV_URI.json#/definitions/DV_URI"
+                            }
+                        },
+                        {
+                            "if": {
+                                "not": {
+                                    "required": [
+                                        "_type"
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/DV_URI.json#/definitions/DV_URI"
+                            }
+                        }
+                    ]
+                },
+                "data": {
+                    "type": "string",
+                    "contentEncoding": "base64"
+                },
+                "media_type": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "compression_algorithm": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "integrity_check": {
+                    "type": "string",
+                    "contentEncoding": "base64"
+                },
+                "integrity_check_algorithm": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "thumbnail": {
+                    "$ref": "#/definitions/DV_MULTIMEDIA"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "DV_MULTIMEDIA"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

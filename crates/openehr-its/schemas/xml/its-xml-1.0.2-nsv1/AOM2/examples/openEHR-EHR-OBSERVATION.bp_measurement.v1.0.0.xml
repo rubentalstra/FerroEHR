@@ -1,0 +1,3585 @@
+<?xml version="1.0" encoding="utf-8"?>
+<archetype xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://schemas.openehr.org/v1 ../P_Archetype.xsd"
+ xmlns="http://schemas.openehr.org/v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:im="http://www.openehr.org/1.0.2" is_generated="true" adl_version="2.0.5" rm_release="1.0.2">
+ <artefact_type>archetype</artefact_type>
+ <archetype_id rm_publisher="openEHR" rm_package="EHR" rm_class="OBSERVATION" release_version="1.0.0" version_status="0" build_count="0" physical_id="openEHR-EHR-OBSERVATION.blood_pressure.v1.0.0">
+  <concept_id>blood_pressure</concept_id>
+ </archetype_id>
+ <definition xsi:type="P_C_COMPLEX_OBJECT" node_id="id1" rm_type_name="OBSERVATION">
+  <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="data">
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id2" rm_type_name="HISTORY">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="events" cardinality="1..*; unordered" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id7" rm_type_name="EVENT">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="data">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id4" rm_type_name="ITEM_TREE">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id5" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1054" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1055</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint upper_included="false">
+               <lower>0.0</lower>
+               <upper>1000.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>mm[Hg]</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id6" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1055" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1055</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint upper_included="false">
+               <lower>0.0</lower>
+               <upper>1000.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>mm[Hg]</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1007" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1056" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1055</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint upper_included="false">
+               <lower>0.0</lower>
+               <upper>1000.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>mm[Hg]</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1008" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1057" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1055</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint upper_included="false">
+               <lower>0.0</lower>
+               <upper>1000.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>mm[Hg]</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id34" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1058" rm_type_name="DV_TEXT">
+           </children>
+          </attributes>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="state">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id8" rm_type_name="ITEM_TREE">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id9" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1059" rm_type_name="DV_CODED_TEXT">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <assumed_value>at1002</assumed_value>
+              <constraint>ac1</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1053" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1060" rm_type_name="DV_TEXT">
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_ARCHETYPE_SLOT" node_id="id1031" rm_type_name="CLUSTER" occurrences="0..1">
+          <includes type="Boolean">
+           <expression xsi:type="EXPR_BINARY_OPERATOR" type="Boolean">
+            <operator value="2007">
+            </operator>
+            <left_operand xsi:type="EXPR_LEAF" type="String" reference_type="attribute">
+             <item>archetype_id/value</item>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF" type="C_STRING" reference_type="constraint">
+             <item>
+              <rm_type_name>STRING</rm_type_name>
+              <constraint>/openEHR-EHR-CLUSTER\.level_of_exertion(-a-zA-Z0-9_]+)*\.v1/</constraint>
+              <is_path_compressible>false</is_path_compressible>
+              <is_enumerated_type_constraint>false</is_enumerated_type_constraint>
+              <is_deprecated>false</is_deprecated>
+              <is_frozen>false</is_frozen>
+             </item>
+            </right_operand>
+           </expression>
+          </includes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1044" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1061" rm_type_name="DV_CODED_TEXT">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <assumed_value>at1045</assumed_value>
+              <constraint>ac2</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1006" rm_type_name="ELEMENT" occurrences="0..1">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+           <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1062" rm_type_name="DV_QUANTITY">
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="property">
+             <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+              <constraint>at1056</constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="magnitude">
+             <children xsi:type="P_C_REAL" node_id="id9999" rm_type_name="Double">
+              <constraint>
+               <lower>-90.0</lower>
+               <upper>90.0</upper>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="precision">
+             <children xsi:type="P_C_INTEGER" node_id="id9999" rm_type_name="INTEGER">
+              <constraint>
+               <lower>0</lower>
+              </constraint>
+             </children>
+            </attributes>
+            <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="units">
+             <children xsi:type="P_C_STRING" node_id="id9999" rm_type_name="STRING">
+              <constraint>°</constraint>
+             </children>
+            </attributes>
+           </children>
+          </attributes>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1043" rm_type_name="INTERVAL_EVENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="math_function">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1063" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>at1057</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="width">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1064" rm_type_name="DV_DURATION">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+         <children xsi:type="P_C_DURATION" node_id="id9999" rm_type_name="String">
+          <constraint>
+           <lower>PT24H</lower>
+          </constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="data">
+       <children xsi:type="P_C_COMPLEX_OBJECT_PROXY" node_id="id1065" rm_type_name="ITEM_TREE">
+        <target_path>/data[id2]/events[id7]/data[id4]</target_path>
+       </children>
+      </attributes>
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="state">
+       <children xsi:type="P_C_COMPLEX_OBJECT_PROXY" node_id="id1066" rm_type_name="ITEM_TREE">
+        <target_path>/data[id2]/events[id7]/state[id8]</target_path>
+       </children>
+      </attributes>
+     </children>
+    </attributes>
+   </children>
+  </attributes>
+  <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="protocol">
+   <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id12" rm_type_name="ITEM_TREE">
+    <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id14" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1067" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac3</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1034" rm_type_name="CLUSTER" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="items" is_multiple="true">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id15" rm_type_name="ELEMENT" occurrences="0..1">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1068" rm_type_name="DV_CODED_TEXT">
+          <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+           <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+            <constraint>ac4</constraint>
+           </children>
+          </attributes>
+         </children>
+        </attributes>
+       </children>
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1035" rm_type_name="ELEMENT" occurrences="0..1">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+         <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1069" rm_type_name="DV_TEXT">
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1036" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1070" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac5</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1039" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1071" rm_type_name="DV_TEXT">
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1011" rm_type_name="ELEMENT" occurrences="0..1">
+      <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="value">
+       <children xsi:type="P_C_COMPLEX_OBJECT" node_id="id1072" rm_type_name="DV_CODED_TEXT">
+        <attributes xsi:type="P_C_ATTRIBUTE" rm_attribute_name="defining_code">
+         <children xsi:type="P_C_TERMINOLOGY_CODE" node_id="id9999" rm_type_name="CODE_PHRASE">
+          <constraint>ac6</constraint>
+         </children>
+        </attributes>
+       </children>
+      </attributes>
+     </children>
+     <children xsi:type="P_ARCHETYPE_SLOT" node_id="id1026" rm_type_name="CLUSTER" occurrences="0..1">
+      <includes type="Boolean">
+       <expression xsi:type="EXPR_BINARY_OPERATOR" type="Boolean">
+        <operator value="2007">
+        </operator>
+        <left_operand xsi:type="EXPR_LEAF" type="String" reference_type="attribute">
+         <item>archetype_id/value</item>
+        </left_operand>
+        <right_operand xsi:type="EXPR_LEAF" type="C_STRING" reference_type="constraint">
+         <item>
+          <rm_type_name>STRING</rm_type_name>
+          <constraint>/openEHR-EHR-CLUSTER\.device(-a-zA-Z0-9_]+)*\.v1/</constraint>
+          <is_path_compressible>false</is_path_compressible>
+          <is_enumerated_type_constraint>false</is_enumerated_type_constraint>
+          <is_deprecated>false</is_deprecated>
+          <is_frozen>false</is_frozen>
+         </item>
+        </right_operand>
+       </expression>
+      </includes>
+     </children>
+    </attributes>
+   </children>
+  </attributes>
+ </definition>
+ <terminology original_language="ISO_639-1::en">
+  <term_definitions id="en">
+   <items id="id1">
+    <text>Blood Pressure</text>
+    <description>The local measurement of arterial blood pressure which is a surrogate for arterial. pressure in the systemic circulation.  Most commonly, use of the term &apos;blood pressure&apos; refers to measurement of brachial artery pressure in the upper arm.</description>
+   </items>
+   <items id="id2">
+    <text>history</text>
+    <description>History Structural node.</description>
+   </items>
+   <items id="id5">
+    <text>Systolic</text>
+    <description>Peak systemic arterial blood pressure  - measured in systolic or contraction phase of the heart cycle.</description>
+   </items>
+   <items id="id6">
+    <text>Diastolic</text>
+    <description>Minimum systemic arterial blood pressure - measured in the diastolic or relaxation phase of the heart cycle.</description>
+   </items>
+   <items id="id7">
+    <text>any event</text>
+    <description>Default event.</description>
+   </items>
+   <items id="id9">
+    <text>Position</text>
+    <description>The position of the subject at the time of measurement.</description>
+   </items>
+   <items id="id12">
+    <text>Tree</text>
+    <description>List structure.</description>
+   </items>
+   <items id="id14">
+    <text>Cuff size</text>
+    <description>The size of the cuff used for blood pressure measurement.</description>
+   </items>
+   <items id="id15">
+    <text>Location of measurement</text>
+    <description>Common body sites where blood pressure is recorded.</description>
+   </items>
+   <items id="at16">
+    <text>Adult Thigh</text>
+    <description>A cuff used for an adult thigh - bladder approx 20cm x 42cm.</description>
+   </items>
+   <items id="at17">
+    <text>Large Adult</text>
+    <description>A cuff for adults with larger arms - bladder approx 16cm x 38cm.</description>
+   </items>
+   <items id="at18">
+    <text>Adult</text>
+    <description>A cuff that is standard for an adult - bladder approx 13cm x 30cm.</description>
+   </items>
+   <items id="at26">
+    <text>Right arm</text>
+    <description>The right arm of the person.</description>
+   </items>
+   <items id="at27">
+    <text>Left arm</text>
+    <description>The left arm of the person.</description>
+   </items>
+   <items id="at28">
+    <text>Right thigh</text>
+    <description>The right thigh of the person.</description>
+   </items>
+   <items id="at29">
+    <text>Left thigh</text>
+    <description>The left thigh of the person.</description>
+   </items>
+   <items id="id34">
+    <text>Comment</text>
+    <description>Comment on blood pressure measurement.</description>
+   </items>
+   <items id="at1001">
+    <text>Standing</text>
+    <description>Standing at the time of blood pressure measurement.</description>
+   </items>
+   <items id="at1002">
+    <text>Sitting</text>
+    <description>Sitting (for example on bed or chair) at the time of blood pressure measurement.</description>
+   </items>
+   <items id="at1003">
+    <text>Reclining</text>
+    <description>Reclining at the time of blood pressure measurement.</description>
+   </items>
+   <items id="at1004">
+    <text>Lying</text>
+    <description>Lying flat at the time of blood pressure measurement.</description>
+   </items>
+   <items id="id1006">
+    <text>Tilt</text>
+    <description>The craniocaudal tilt of the surface on which the person is lying at the time of measurement.</description>
+   </items>
+   <items id="id1007">
+    <text>Mean Arterial Pressure</text>
+    <description>The average arterial pressure that occurs over the entire course of the heart contraction and relaxation cycle.</description>
+   </items>
+   <items id="id1008">
+    <text>Pulse Pressure</text>
+    <description>The difference between the systolic and diastolic pressure.</description>
+   </items>
+   <items id="at1009">
+    <text>Small Adult</text>
+    <description>A cuff used for a small adult - bladder approx 10cm x 24cm.</description>
+   </items>
+   <items id="at1010">
+    <text>Paediatric/Child</text>
+    <description>A cuff that is appropriate for a child or adult with a thin arm - bladder approx 8cm x 21cm.</description>
+   </items>
+   <items id="id1011">
+    <text>Diastolic endpoint</text>
+    <description>Record which Korotkoff sound is used for determining diastolic pressure using auscultative method.</description>
+   </items>
+   <items id="at1012">
+    <text>Phase IV</text>
+    <description>The fourth Korotkoff sound is identified as an abrupt muffling of sounds.</description>
+   </items>
+   <items id="at1013">
+    <text>Phase V</text>
+    <description>The fifth Korotkoff sound is identified by absence of sounds as the cuff pressure drops below the diastolic blood pressure.</description>
+   </items>
+   <items id="at1015">
+    <text>Lying with tilt to left</text>
+    <description>Lying flat with some lateral tilt, usually angled towards the left side.   Commonly required in the last trimester of pregnancy to relieve aortocaval compression.</description>
+   </items>
+   <items id="at1019">
+    <text>Infant</text>
+    <description>A cuff used for infants - bladder approx 5cm x 15cm.</description>
+   </items>
+   <items id="at1020">
+    <text>Neonatal</text>
+    <description>A cuff used for a neonate, assuming cuff is the appropriate size for maturity and birthweight of the neonate.</description>
+   </items>
+   <items id="at1021">
+    <text>Right wrist</text>
+    <description>The right wrist of the subject.</description>
+   </items>
+   <items id="at1022">
+    <text>Left wrist</text>
+    <description>The left wrist of the subject.</description>
+   </items>
+   <items id="id1026">
+    <text>Device</text>
+    <description>Details about sphygmomanometer or other device used to measure the blood pressure.</description>
+   </items>
+   <items id="at1027">
+    <text>Right ankle</text>
+    <description>The right ankle of the subject.</description>
+   </items>
+   <items id="id1031">
+    <text>Exertion  </text>
+    <description>Details about physical activity undertaken at the time of blood pressure.measurement.</description>
+   </items>
+   <items id="at1032">
+    <text>Left ankle</text>
+    <description>The left ankle of the subject.</description>
+   </items>
+   <items id="at1033">
+    <text>Finger</text>
+    <description>A finger of the subject.  Identification of the finger can be recorded in &apos;Specific Location&apos; data element, if required.</description>
+   </items>
+   <items id="id1034">
+    <text>Location</text>
+    <description>Body location where blood pressure is measured.  Use &apos;Location of measurement&apos; to select from common sites.  Use &apos;Specific location&apos; to record more specific details or a site that is not in the common set or to refer to an external terminology.</description>
+   </items>
+   <items id="id1035">
+    <text>Specific location</text>
+    <description>Specific details about the body site where blood pressure is recorded.</description>
+   </items>
+   <items id="id1036">
+    <text>Method</text>
+    <description>Method of measurement of blood pressure.</description>
+   </items>
+   <items id="at1037">
+    <text>Auscultation</text>
+    <description>Method of measuring blood pressure externally, using a stethoscope and Korotkoff sounds.</description>
+   </items>
+   <items id="at1038">
+    <text>Palpation</text>
+    <description>Method of measuring blood pressure externally, using palpation (usually of the brachial or radial arteries).</description>
+   </items>
+   <items id="id1039">
+    <text>Mean Arterial Pressure Formula</text>
+    <description>Formula used to calculate the MAP (if recorded in data).</description>
+   </items>
+   <items id="at1040">
+    <text>Machine</text>
+    <description>Method of measuring blood pressure externally, using a blood pressure machine.</description>
+   </items>
+   <items id="at1041">
+    <text>Invasive</text>
+    <description>Method of measuring blood pressure internally ie involving penetration of the skin and measuring inside blood vessels.</description>
+   </items>
+   <items id="id1043">
+    <text>24 hour average </text>
+    <description>Estimate of the average blood pressure over a 24 hour period.</description>
+   </items>
+   <items id="id1044">
+    <text>Sleep status</text>
+    <description>Sleep status - supports interpretation of 24 hour ambulatory blood pressure records.</description>
+   </items>
+   <items id="at1045">
+    <text>Alert &amp;amp; awake</text>
+    <description>Subject is fully conscious.</description>
+   </items>
+   <items id="at1046">
+    <text>Sleeping</text>
+    <description>Subject is in the natural state of bodily rest.</description>
+   </items>
+   <items id="at1052">
+    <text>Toe</text>
+    <description>A toe of the subject.   Identification of the toe can be recorded in &apos;Specific Location&apos; data element, if required.</description>
+   </items>
+   <items id="id1053">
+    <text>Confounding factors</text>
+    <description>Comment on and record other incidental factors that may be contributing to the blood pressure measurement.  For example, level of anxiety or &apos;white coat syndrome&apos;; pain or fever; changes in atmospheric pressure etc.</description>
+   </items>
+   <items id="at1054">
+    <text>Intra-arterial</text>
+    <description>Invasive measurement via transducer access line within an artery. Location of the transducer can be recorded in &apos;Specific Location&apos; data element, if required.</description>
+   </items>
+   <items id="at1055">
+    <text>Pressure</text>
+    <description>Pressure</description>
+   </items>
+   <items id="at1056">
+    <text>Angle, plane</text>
+    <description>Angle, plane</description>
+   </items>
+   <items id="at1057">
+    <text>mean</text>
+    <description>mean</description>
+   </items>
+   <items id="ac1">
+    <text>Position (synthesised)</text>
+    <description>The position of the subject at the time of measurement. (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>Sleep status (synthesised)</text>
+    <description>Sleep status - supports interpretation of 24 hour ambulatory blood pressure records. (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>Cuff size (synthesised)</text>
+    <description>The size of the cuff used for blood pressure measurement. (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>Location of measurement (synthesised)</text>
+    <description>Common body sites where blood pressure is recorded. (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>Method (synthesised)</text>
+    <description>Method of measurement of blood pressure. (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>Diastolic endpoint (synthesised)</text>
+    <description>Record which Korotkoff sound is used for determining diastolic pressure using auscultative method. (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="ja">
+   <items id="id1">
+    <text>血圧</text>
+    <description>全身に循環する動脈圧を示すものとして，局所で測定される血圧。一般的には「血圧」とは上腕で上腕動脈を測定したものをさすことが多い。</description>
+   </items>
+   <items id="id2">
+    <text>history</text>
+    <description>history 構造ノード</description>
+   </items>
+   <items id="id5">
+    <text>収縮期</text>
+    <description>1つ以上の脈の間で最高値を示す全身の動脈圧 - 心機図の収縮期で測定される</description>
+   </items>
+   <items id="id6">
+    <text>拡張期</text>
+    <description>1つ以上の脈の間で最低値を示す全身の動脈圧 - 心機図の拡張期で測定される</description>
+   </items>
+   <items id="id7">
+    <text>任意のイベント</text>
+    <description>デフォルトのイベント</description>
+   </items>
+   <items id="id9">
+    <text>体位</text>
+    <description>計測のときの対象者の体位</description>
+   </items>
+   <items id="id12">
+    <text>list構造</text>
+    <description>list構造</description>
+   </items>
+   <items id="id14">
+    <text>カフサイズ</text>
+    <description>血圧測定のために使われるカフの大きさ.</description>
+   </items>
+   <items id="id15">
+    <text>計測部位</text>
+    <description>血圧が一般的に測定される身体の部位</description>
+   </items>
+   <items id="at16">
+    <text>成人大腿</text>
+    <description>成人の大腿で血圧を測定するためのカフ。袋の大きさはおよそ 20cm x 42cm.</description>
+   </items>
+   <items id="at17">
+    <text>大柄な成人</text>
+    <description>大柄な成人のためのカフ。 袋の大きさはおよそ 16cm x 38cm.</description>
+   </items>
+   <items id="at18">
+    <text>成人</text>
+    <description>一般的な成人のためのカフ - 袋の大きさはおよそ 13cm x 30cm.</description>
+   </items>
+   <items id="at26">
+    <text>右腕</text>
+    <description>人の右腕</description>
+   </items>
+   <items id="at27">
+    <text>左腕</text>
+    <description>人の左腕</description>
+   </items>
+   <items id="at28">
+    <text>右大腿</text>
+    <description>人の右大腿</description>
+   </items>
+   <items id="at29">
+    <text>左大腿</text>
+    <description>人の左大腿。</description>
+   </items>
+   <items id="id34">
+    <text>コメント</text>
+    <description>血圧測定のコメント</description>
+   </items>
+   <items id="at1001">
+    <text>立位</text>
+    <description>血圧測定時に立位でいること。</description>
+   </items>
+   <items id="at1002">
+    <text>座位</text>
+    <description>血圧測定時に（たとえば、ベッドやいすの上で）坐位でいること。</description>
+   </items>
+   <items id="at1003">
+    <text>斜位</text>
+    <description>血圧測定時に斜位でいること。</description>
+   </items>
+   <items id="at1004">
+    <text>臥位</text>
+    <description>血圧測定時に臥位でいること。</description>
+   </items>
+   <items id="id1006">
+    <text>ティルト</text>
+    <description>血圧測定時に個人の体表面が頭尾方向に傾斜しているということ。</description>
+   </items>
+   <items id="id1007">
+    <text>平均同脈圧</text>
+    <description>縮拡張サイクルのすべての過程における動脈圧の平均値.</description>
+   </items>
+   <items id="id1008">
+    <text>脈圧</text>
+    <description>1回の収縮サイクルでの血圧の変動</description>
+   </items>
+   <items id="at1009">
+    <text>小柄な成人</text>
+    <description>小柄な成人のためのカフ - 袋の大きさはおよそ 10cm x 24cm.</description>
+   </items>
+   <items id="at1010">
+    <text>幼児/省に</text>
+    <description>小児あるいは痩せた成人のためのカフ - 袋の大きさはおよそ 8cm x 21cm.</description>
+   </items>
+   <items id="id1011">
+    <text>拡張期終末</text>
+    <description>拡張期圧を決めるためにどのコロトコフ音が使用されたかについて記録.</description>
+   </items>
+   <items id="at1012">
+    <text>4期</text>
+    <description>コロトコフの4音。急速に減弱する時期.</description>
+   </items>
+   <items id="at1013">
+    <text>5期</text>
+    <description>コロトコフの5音が聴取される時期。カフ圧が拡張期圧を下回り音が聴取されなくなる時期</description>
+   </items>
+   <items id="at1015">
+    <text>左側臥位</text>
+    <description>側臥位　通常は左側　通常は妊娠最終トリメスタで必要となる体位。一般的には妊娠の第3トリメスターで大動脈・静脈を圧排から解放するために求められる体位である。</description>
+   </items>
+   <items id="at1019">
+    <text>幼児</text>
+    <description>幼児のために使われるカフ - 袋の大きさはおよそ 5cm x 15cm.</description>
+   </items>
+   <items id="at1020">
+    <text>新生児</text>
+    <description>新生児用のカフ 想定されるカフは新生児の生下時体重と成熟度に応じて適切なものであること.</description>
+   </items>
+   <items id="at1021">
+    <text>右手首</text>
+    <description>対象の右手首</description>
+   </items>
+   <items id="at1022">
+    <text>左手首</text>
+    <description>対象の左手首</description>
+   </items>
+   <items id="id1026">
+    <text>測定機器</text>
+    <description>水銀血圧計あるいはそのほかの血圧を測定するために使われる機器.</description>
+   </items>
+   <items id="at1027">
+    <text>右足首</text>
+    <description>対象の右足首</description>
+   </items>
+   <items id="id1031">
+    <text>労作</text>
+    <description>血圧測定時に行われた肉体的運動についての詳細。</description>
+   </items>
+   <items id="at1032">
+    <text>左足首</text>
+    <description>対象の左足首</description>
+   </items>
+   <items id="at1033">
+    <text>指</text>
+    <description>対象の指。指の識別は必要であれば｢特定部位」エレメントで記録される</description>
+   </items>
+   <items id="id1034">
+    <text>部位</text>
+    <description>血圧測定を行った体の部位。「測定部位」を一般的な場所では利用する。「特定部位」はより詳細に部位を特定したり、外部のターミノロジーや一般的な用語にはない部位を指すために用いる。</description>
+   </items>
+   <items id="id1035">
+    <text>特定部位</text>
+    <description>血圧が測定される場所についての詳細な記録.</description>
+   </items>
+   <items id="id1036">
+    <text>方法</text>
+    <description>血圧を測定する方法。</description>
+   </items>
+   <items id="at1037">
+    <text>聴診</text>
+    <description>聴診器を使いコロトコフ音で外部から血圧を測定する方法.</description>
+   </items>
+   <items id="at1038">
+    <text>触診</text>
+    <description>脈拍(通常は上腕動脈あるいは橈骨動脈）を触診することにより外部から血圧を測定する方法</description>
+   </items>
+   <items id="id1039">
+    <text>平均同脈圧の計算式</text>
+    <description>平均同脈圧を計算するために使われた式（もしデータに記録されていれば）</description>
+   </items>
+   <items id="at1040">
+    <text>機械</text>
+    <description>血圧測定器を使って外部から血圧を測定する方法.</description>
+   </items>
+   <items id="at1041">
+    <text>侵襲的</text>
+    <description>経皮的に動脈を穿刺し，血管内部から血圧を測定する方法.</description>
+   </items>
+   <items id="id1043">
+    <text>24時間平均</text>
+    <description>24時間にわたる推定平均血圧</description>
+   </items>
+   <items id="id1044">
+    <text>睡眠状況</text>
+    <description>睡眠状況 24時間外来血圧記録の解釈を助けるため</description>
+   </items>
+   <items id="at1045">
+    <text>覚醒</text>
+    <description>対象は完全に意識がある。</description>
+   </items>
+   <items id="at1046">
+    <text>睡眠中</text>
+    <description>対象は自然な休養状態にある</description>
+   </items>
+   <items id="at1052">
+    <text>足先</text>
+    <description>対象の足尖部。足尖部の識別は必要であれば「特定部位」エレメントに記録される</description>
+   </items>
+   <items id="id1053">
+    <text>交絡因子</text>
+    <description>血圧測定に寄与しうるその他の偶発的な要素についてのコメント。たとえば、不安の程度や「白衣性高血圧」、痛みや怒り、大気圧の変化など。</description>
+   </items>
+   <items id="at1054">
+    <text>動脈内</text>
+    <description>動脈内のトランスデューサーに接続されたラインから侵襲的に測定する方法。動脈の部位は必要であれば「特定部位」エレメントに記録される</description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>体位 (synthesised)</text>
+    <description>計測のときの対象者の体位 (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>睡眠状況 (synthesised)</text>
+    <description>睡眠状況 24時間外来血圧記録の解釈を助けるため (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>カフサイズ (synthesised)</text>
+    <description>血圧測定のために使われるカフの大きさ. (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>計測部位 (synthesised)</text>
+    <description>血圧が一般的に測定される身体の部位 (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>方法 (synthesised)</text>
+    <description>血圧を測定する方法。 (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>拡張期終末 (synthesised)</text>
+    <description>拡張期圧を決めるためにどのコロトコフ音が使用されたかについて記録. (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="de">
+   <items id="id1">
+    <text>Blutdruck</text>
+    <description>Die lokale Messung des arteriellen Blutdrucks als Surrogat für den arteriellen Druck in der systemischen Zirkulation. Häufig wird der Ausdruck &apos;Blutdruck&apos; zur Bezeichung der Messung des brachialen Ateriendrucks im Oberarm verwendet.</description>
+   </items>
+   <items id="id2">
+    <text>Historie</text>
+    <description>Historie</description>
+   </items>
+   <items id="id5">
+    <text>Systolisch</text>
+    <description>Der höchste arterielle Blutdruck eines Zyklus - gemessen in der systolischen oder Kontraktionsphase des Herzens.</description>
+   </items>
+   <items id="id6">
+    <text>Diastolisch</text>
+    <description>Der minimale systemische arterielle Blutdruck eines Zyklus - gemessen in der diastolischen oder Entspannungsphase des Herzens.</description>
+   </items>
+   <items id="id7">
+    <text>any event</text>
+    <description>Default event</description>
+   </items>
+   <items id="id9">
+    <text>Position</text>
+    <description>Die Position der untersuchten Person während der Messung.</description>
+   </items>
+   <items id="id12">
+    <text>Listenstruktur</text>
+    <description>Listenstruktur</description>
+   </items>
+   <items id="id14">
+    <text>Manschettengröße</text>
+    <description>Die Größe der Manschette, die zur Blutdruckmessung benutzt wurde.</description>
+   </items>
+   <items id="id15">
+    <text>Körperstelle der Messung</text>
+    <description>Gewöhnliche Körperstellen, an denen der Blutdruck gemessen wird.</description>
+   </items>
+   <items id="at16">
+    <text>Oberschenkel eines Erwachsenen</text>
+    <description>Eine Manschette für den Oberschenkel eines Erwachsenen - ca. 20cm x 42cm.</description>
+   </items>
+   <items id="at17">
+    <text>Großer Erwachsener</text>
+    <description>Eine Manschette für Erwachsene mit größeren Armen - ca. 16cm x 38cm.</description>
+   </items>
+   <items id="at18">
+    <text>Erwachsener</text>
+    <description>Eine Standard-Manschette für einen Erwachsenen - ca. 13cm x 30cm.</description>
+   </items>
+   <items id="at26">
+    <text>Rechter Arm</text>
+    <description>Der rechte Arm der Person.</description>
+   </items>
+   <items id="at27">
+    <text>Linker Arm</text>
+    <description>Der linke Arm der Person.</description>
+   </items>
+   <items id="at28">
+    <text>Rechter Oberschenkel</text>
+    <description>Der rechte Oberschenkel der Person.</description>
+   </items>
+   <items id="at29">
+    <text>Linker Oberschenkel</text>
+    <description>Der linke Oberschenkel der Person.</description>
+   </items>
+   <items id="id34">
+    <text>Kommentar</text>
+    <description>Kommentar zur Blutdruckmessung.</description>
+   </items>
+   <items id="at1001">
+    <text>Stehend</text>
+    <description>Stehend zum Zeitpunkt der Blutdruckmessung.</description>
+   </items>
+   <items id="at1002">
+    <text>Sitzend</text>
+    <description>Sitzend zum Zeitpunkt der Blutdruckmessung (z.B. auf einem Bett oder Stuhl).</description>
+   </items>
+   <items id="at1003">
+    <text>Zurückgelehnt</text>
+    <description>Patient zurückgelehnt zum Zeitpunkt der Blutdruckmessung.</description>
+   </items>
+   <items id="at1004">
+    <text>Liegend</text>
+    <description>Flach liegend zum Zeitpunkt der Blutdruckmessung.</description>
+   </items>
+   <items id="id1006">
+    <text>Neigung</text>
+    <description>Die cranio-kaudale Neigung der Oberfläche auf der die Person zum Zeitpunkt der Messung liegt.</description>
+   </items>
+   <items id="id1007">
+    <text>Mittlerer arterieller Druck</text>
+    <description>Der mittlerer arterielle Druck über den gesamten Verlauf der Konktraktions- und Entspannungsphase des Herzens.</description>
+   </items>
+   <items id="id1008">
+    <text>Pulsdruck</text>
+    <description>Der Abstand zwischen dem systolischen und dem diastolischen Blutdruckwert.</description>
+   </items>
+   <items id="at1009">
+    <text>Kleiner Erwachsener</text>
+    <description>Eine Manschette für einen kleinen Erwachsenen - ca. 10cm x 24cm.</description>
+   </items>
+   <items id="at1010">
+    <text>Pädiatrisch/Kind</text>
+    <description>Eine Manschette für ein Kind oder auch einen Erwachsenen mit einem schmalen Arm - 8cm x 21cm.</description>
+   </items>
+   <items id="id1011">
+    <text>Diastolischer Endpunkt</text>
+    <description>Dient der Dokumentation des Korotkoff-Geräusches, das verwendet wird, um bei auskultarischer Messung den diastolischen Blutdruck zu bestimmen.</description>
+   </items>
+   <items id="at1012">
+    <text>Phase IV</text>
+    <description>Das 4. Korotkoff-Geräusch - Die Geräusche klingen plätzlich gedämpft.</description>
+   </items>
+   <items id="at1013">
+    <text>Phase V</text>
+    <description>Das 5. Korotkoff-Geräusch - die Geräusche verschwinden völlig während der Manschettendruck unter den diastolischen Blutdruck fällt.</description>
+   </items>
+   <items id="at1015">
+    <text>Nach links geneigt liegend</text>
+    <description>Flach liegend mit seitlicher Neigung, normalerweise zur linken Seite. Häufig verwendet im letzten Drittel eine Schwangerschaft, um aorto-cavale Kompression zu vermeiden.</description>
+   </items>
+   <items id="at1019">
+    <text>Kleinkind</text>
+    <description>Eine Manschette für Kleinkinder und Säuglinge - ca. 5cm x 15cm.</description>
+   </items>
+   <items id="at1020">
+    <text>Neonatal</text>
+    <description>Eine Manschette für Neugeborene mit passender Größe für die Reife und das Geburtsgewicht des Neugeborenen.</description>
+   </items>
+   <items id="at1021">
+    <text>Rechtes Handgelenk</text>
+    <description>Das rechte Handgelenk der Person.</description>
+   </items>
+   <items id="at1022">
+    <text>Linkes Handgelenk</text>
+    <description>Das linke Handgelenk der Person.</description>
+   </items>
+   <items id="id1026">
+    <text>Gerät</text>
+    <description>Details über das Sphygmomanometer oder ein anderes Gerät, dass zur Blutdruckmessung verwendet wird.</description>
+   </items>
+   <items id="at1027">
+    <text>Rechtes Fußgelenk</text>
+    <description>Das rechte Fußgelenk der Person.</description>
+   </items>
+   <items id="id1031">
+    <text>Anstrengung</text>
+    <description>Details über physische Aktivitäten zur Zeit der Blutdruckmessung.</description>
+   </items>
+   <items id="at1032">
+    <text>Linkes Fußgelenk</text>
+    <description>Das linke Fußgelenk der Person</description>
+   </items>
+   <items id="at1033">
+    <text>Finger</text>
+    <description>Ein Finger der Person. Der Finger kann, falls benötigt, als &apos;Spezifische Stelle&apos; genauer identifiziert werden.</description>
+   </items>
+   <items id="id1034">
+    <text>Körperstelle</text>
+    <description>Körperstelle der Blutdruckmessung. &apos;Körperstelle der Messung&apos; kann für die gewöhnlichen Stellen verwendet werden. &apos;Spezifische Stelle&apos; wird für die Aufzeichnung spezifischer Details einer Körperstelle, die nicht in den gewöhnlichen Stellen enthalten ist, verwendet, Sie kann auch verwendet werden, um auf eine externe Teminologie zu verweisen.</description>
+   </items>
+   <items id="id1035">
+    <text>Spezifische Stelle</text>
+    <description>Spezifische Details über die Körperstelle, an der der Blutdruck gemessen wird.</description>
+   </items>
+   <items id="id1036">
+    <text>Methode</text>
+    <description>Methode der Messung des Blutdrucks.</description>
+   </items>
+   <items id="at1037">
+    <text>Auskultation</text>
+    <description>Auskulatorische Messung unter Benutzung eines Stethoskops und der Korotkoff-Geräusche.</description>
+   </items>
+   <items id="at1038">
+    <text>Palpation</text>
+    <description>Palpatorische Messung, normalerweise an den brachialen oder radialen Arterien.</description>
+   </items>
+   <items id="id1039">
+    <text>Formel für mittleren arterieller Druck</text>
+    <description>Die Formel die ggf. verwendet wurde, um den mittleren arteriellen Druck zu berechnen.</description>
+   </items>
+   <items id="at1040">
+    <text>Machine</text>
+    <description>Messung durch eine Blutdruckmaschine.</description>
+   </items>
+   <items id="at1041">
+    <text>Invasiv</text>
+    <description>Invasive Messung des Blutdrucks innerhalb eines Gefäßes.</description>
+   </items>
+   <items id="id1043">
+    <text>24 Stunden Durchschnitt</text>
+    <description>Schätzung des durchschnittlichen Blutdrucks über eine 24-stündigen Zeitraum.</description>
+   </items>
+   <items id="id1044">
+    <text>Schlafzustand</text>
+    <description>Schlafzustand  - unterstützt die Auswertung von 24-stündigen ambulanten Aufzeichnungen des Blutdrucks.</description>
+   </items>
+   <items id="at1045">
+    <text>Aufmerksam und wach</text>
+    <description>Die untersuchte Person ist bei vollem Bewusstsein.</description>
+   </items>
+   <items id="at1046">
+    <text>Schlafend</text>
+    <description>Die untersuchte Person schläft.</description>
+   </items>
+   <items id="at1052">
+    <text>Zeh</text>
+    <description>Ein Zeh der Person. Der Zeh kann, falls benötigt, als &apos;Spezifische Stelle&apos; genauer identifiziert werden.</description>
+   </items>
+   <items id="id1053">
+    <text>Einflussfaktoren</text>
+    <description>Kommentar und Aufzeichung anderer Faktoren die ggf. zu dem Ergebnis der Blutdruckmessung beitragen können. Die kann z.B. bei belastenden Situationen der Fall sein (z.B. sog. Weißkittelhypertonie, Schmerzen, Fieber, Änderungen im atmosphärischen Druck).</description>
+   </items>
+   <items id="at1054">
+    <text>Intra-arteriell</text>
+    <description>Invasive Messung über einen arteriellen Drucksensor. Die genaue Stelle des Drucksensors kann, falls benötigt, als &apos;Spezifische Stelle&apos; genauer identifiziert werden.</description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>Position (synthesised)</text>
+    <description>Die Position der untersuchten Person während der Messung. (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>Schlafzustand (synthesised)</text>
+    <description>Schlafzustand  - unterstützt die Auswertung von 24-stündigen ambulanten Aufzeichnungen des Blutdrucks. (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>Manschettengröße (synthesised)</text>
+    <description>Die Größe der Manschette, die zur Blutdruckmessung benutzt wurde. (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>Körperstelle der Messung (synthesised)</text>
+    <description>Gewöhnliche Körperstellen, an denen der Blutdruck gemessen wird. (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>Methode (synthesised)</text>
+    <description>Methode der Messung des Blutdrucks. (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>Diastolischer Endpunkt (synthesised)</text>
+    <description>Dient der Dokumentation des Korotkoff-Geräusches, das verwendet wird, um bei auskultarischer Messung den diastolischen Blutdruck zu bestimmen. (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="zh-cn">
+   <items id="id1">
+    <text>血压</text>
+    <description>代表体循环动脉压的动脉血压的局部测量。最为常见的情况就是，采用“血压”一词来表示上臂肱动脉血压的测量。</description>
+   </items>
+   <items id="id2">
+    <text>历史</text>
+    <description>历史结构节点</description>
+   </items>
+   <items id="id5">
+    <text>收缩压</text>
+    <description>在心动周期的收缩期所测量到的体循环动脉血压峰值。 </description>
+   </items>
+   <items id="id6">
+    <text>舒张压</text>
+    <description>在心动周期的舒张期所测量到的体循环动脉血压最低值（谷值，最小值）。 </description>
+   </items>
+   <items id="id7">
+    <text>任何事件</text>
+    <description>默认事件</description>
+   </items>
+   <items id="id9">
+    <text>体位</text>
+    <description>测量时受检对象的体位或者说身体姿势。</description>
+   </items>
+   <items id="id12">
+    <text>列表结构</text>
+    <description>列表结构</description>
+   </items>
+   <items id="id14">
+    <text>袖带尺寸</text>
+    <description>用于血压测量的袖带（臂带，袖套，臂围）的大小或者说尺寸。</description>
+   </items>
+   <items id="id15">
+    <text>测量位置</text>
+    <description>血压测量和记录的常见身体部位。</description>
+   </items>
+   <items id="at16">
+    <text>成年人大腿型</text>
+    <description>适用于成年人大腿的袖带（臂带，袖套，臂围） - 气囊尺寸约为 20cm x 42cm。</description>
+   </items>
+   <items id="at17">
+    <text>成年人粗大型</text>
+    <description>适用于上肢较为粗大的成年人的袖带（臂带，袖套，臂围） - 气囊尺寸约为16cm x 38cm。</description>
+   </items>
+   <items id="at18">
+    <text>成年人标准型</text>
+    <description>适用于成年人的标准袖带（臂带，袖套，臂围） - 气囊尺寸约为13cm x 30cm。</description>
+   </items>
+   <items id="at26">
+    <text>右臂</text>
+    <description>受检对象的右臂。</description>
+   </items>
+   <items id="at27">
+    <text>左臂</text>
+    <description>受检对象的左臂。</description>
+   </items>
+   <items id="at28">
+    <text>右腿</text>
+    <description>受检对象的右腿。</description>
+   </items>
+   <items id="at29">
+    <text>左腿</text>
+    <description>受检对象的左腿。</description>
+   </items>
+   <items id="id34">
+    <text>注释</text>
+    <description>有关血压值的注释、评论或意见。</description>
+   </items>
+   <items id="at1001">
+    <text>立位</text>
+    <description>测量血压时身体处于站立体位</description>
+   </items>
+   <items id="at1002">
+    <text>坐位</text>
+    <description>测量血压时身体处于坐位，又称为“坐姿”。</description>
+   </items>
+   <items id="at1003">
+    <text>侧卧位</text>
+    <description>测量血压时身体处于45度角侧卧位或者说采取的是斜靠的姿势。</description>
+   </items>
+   <items id="at1004">
+    <text>平卧位</text>
+    <description>测量血压时受检者采取的是平躺或者说平卧的姿势，又称为“仰卧位”。</description>
+   </items>
+   <items id="id1006">
+    <text>倾斜</text>
+    <description>测量时受检对象采取卧位时所基于的表面的轴位倾斜（craniocaudal tilt，头尾方向的倾斜）。</description>
+   </items>
+   <items id="id1007">
+    <text>平均动脉压</text>
+    <description>又称为“平均动脉血压”，指的是在整个心脏收缩与舒张周期过程中出现的动脉压均值（平均动脉压）。 </description>
+   </items>
+   <items id="id1008">
+    <text>脉压</text>
+    <description>收缩压与舒张压之间的差值，又称为“脉压差”或“脉搏压”。</description>
+   </items>
+   <items id="at1009">
+    <text>成年人细小型</text>
+    <description>适用于体型瘦小的成年人的袖带（臂带，袖套，臂围） - 气囊尺寸约为10cm x 24cm。</description>
+   </items>
+   <items id="at1010">
+    <text>儿科型/儿童型</text>
+    <description>适用于儿童或上肢较瘦成年人的袖带（臂带，袖套，臂围） - 气囊尺寸约为8cm x 21cm。</description>
+   </items>
+   <items id="id1011">
+    <text>舒张期终点</text>
+    <description>旨在记录当确定舒张压时所采用的究竟是哪种柯氏音。</description>
+   </items>
+   <items id="at1012">
+    <text>第IV时相</text>
+    <description>将声音的突然减弱（消音，捂住，低沉）或者说其向捂音的突然转变确定为第IV柯氏音，即柯氏音的第IV时相（变音）。</description>
+   </items>
+   <items id="at1013">
+    <text>第V时相</text>
+    <description>将声音随着袖带压力降至舒张压以下时声音的消失确定为第V柯氏音，即柯氏音的第V时相。</description>
+   </items>
+   <items id="at1015">
+    <text>左斜卧位</text>
+    <description>测量血压时受检者采取的是平躺或者说平卧姿势，且有向侧位一定程度的倾斜，通常是斜向左侧。在妊娠晚期，为了缓解主腔静脉压迫（aortocaval compression），常常需要采取这种体位。</description>
+   </items>
+   <items id="at1019">
+    <text>婴幼儿型</text>
+    <description>适用于婴幼儿的袖带（臂带，袖套，臂围） - 气囊尺寸约为5cm x 15cm。</description>
+   </items>
+   <items id="at1020">
+    <text>新生儿型</text>
+    <description>适用于新生儿的袖带（臂带，袖套，臂围），且假定袖带尺寸适合于新生儿的成熟度和出生体重。</description>
+   </items>
+   <items id="at1021">
+    <text>右手腕</text>
+    <description>受检对象的右手腕。</description>
+   </items>
+   <items id="at1022">
+    <text>左手腕</text>
+    <description>受检对象的左手腕。</description>
+   </items>
+   <items id="id1026">
+    <text>装置</text>
+    <description>关于用于测量血压的血压计或其他装置（仪器，设备）的详情。</description>
+   </items>
+   <items id="at1027">
+    <text>右踝</text>
+    <description>受检对象的右踝。</description>
+   </items>
+   <items id="id1031">
+    <text>体力活动</text>
+    <description>关于血压测量时所从事的体力活动或者说身体活动的详情。</description>
+   </items>
+   <items id="at1032">
+    <text>左踝</text>
+    <description>受检对象的左踝。</description>
+   </items>
+   <items id="at1033">
+    <text>手指</text>
+    <description>受检对象的手指。如果需要的话，可在数据元“特殊位置”（Specific Location）之中记录所测手指的标识信息。 </description>
+   </items>
+   <items id="id1034">
+    <text>位置</text>
+    <description>血压测量的身体位置。采用“测量位置”（Location of measurement）从常见部位之中进行选择。采用“特殊位置”（Specific location）来记录更为具体的细节信息或者常用集合之中所没有的部位，或者用于引用外部术语集。</description>
+   </items>
+   <items id="id1035">
+    <text>特殊位置</text>
+    <description>关于血压测量的身体部位的特殊细节信息。</description>
+   </items>
+   <items id="id1036">
+    <text>方法</text>
+    <description>血压测量方法。</description>
+   </items>
+   <items id="at1037">
+    <text>听诊法</text>
+    <description>利用听诊器和柯氏音（Korotkoff sounds）在身体外部测量血压的方法。</description>
+   </items>
+   <items id="at1038">
+    <text>触诊法</text>
+    <description>利用触诊（扪诊）在身体外部测量血压的方法（通常采用的是对肱动脉或桡动脉的触诊）。</description>
+   </items>
+   <items id="id1039">
+    <text>平均动脉压公式</text>
+    <description>用于计算平均动脉压（Mean Arterial Pressure，MAP，平均动脉血压）的公式（如果在数据之中加以记录的话）。</description>
+   </items>
+   <items id="at1040">
+    <text>仪器法</text>
+    <description>利用血压测量设备（仪器，装置）在身体外部测量血压的方法。</description>
+   </items>
+   <items id="at1041">
+    <text>有创法</text>
+    <description>在身体内部测量血压的方法，也就是说涉及到皮肤穿刺和在血管内进行测量。</description>
+   </items>
+   <items id="id1043">
+    <text>*24小时均值</text>
+    <description>24小时期间血压均值的估计</description>
+   </items>
+   <items id="id1044">
+    <text>睡眠状态</text>
+    <description>睡眠状态  - 旨在支持对于24小时流动式/门诊血压记录的解释。</description>
+   </items>
+   <items id="at1045">
+    <text>警觉且清醒</text>
+    <description>受检对象意识完全清楚。</description>
+   </items>
+   <items id="at1046">
+    <text>睡眠状态</text>
+    <description>受检对象处在全身休息的自然状态下。</description>
+   </items>
+   <items id="at1052">
+    <text>脚趾</text>
+    <description>受检对象的脚趾。如果需要的话，可在数据元“特殊位置”（Specific Location）之中记录所测脚趾的标识信息。 </description>
+   </items>
+   <items id="id1053">
+    <text>干扰因素</text>
+    <description>旨在记录和说明可能影响血压测量结果的偶然因素。例如，焦虑/进展程度或“白大褂综合征（white coat syndrome）”、疼痛、发热、大气压变化等等。</description>
+   </items>
+   <items id="at1054">
+    <text>动脉内</text>
+    <description>在动脉内借助于传感器接入线路进行的有创式测量。如果需要的话，可在数据元“特殊位置”（Specific Location）之中记录传感器的位置。 </description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>体位 (synthesised)</text>
+    <description>测量时受检对象的体位或者说身体姿势。 (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>睡眠状态 (synthesised)</text>
+    <description>睡眠状态  - 旨在支持对于24小时流动式/门诊血压记录的解释。 (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>袖带尺寸 (synthesised)</text>
+    <description>用于血压测量的袖带（臂带，袖套，臂围）的大小或者说尺寸。 (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>测量位置 (synthesised)</text>
+    <description>血压测量和记录的常见身体部位。 (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>方法 (synthesised)</text>
+    <description>血压测量方法。 (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>舒张期终点 (synthesised)</text>
+    <description>旨在记录当确定舒张压时所采用的究竟是哪种柯氏音。 (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="nl">
+   <items id="id1">
+    <text>Bloeddruk</text>
+    <description>De lokale meting van de arteriële bloeddruk, welke surrogaat is voor de arteriële druk in de systemische circulatie. Meest gebruikelijk is dat de term &apos;bloeddruk&apos;  refereert aan de meting van de bloeddruk van de arterie brachialis in de bovenarm.</description>
+   </items>
+   <items id="id2">
+    <text>Geschiedenis</text>
+    <description>Gestructureerde geschiedenismap</description>
+   </items>
+   <items id="id5">
+    <text>Systole</text>
+    <description>De maximale (piek) systemische arteriele bloeddruk - gemeten in de systolische of samentrekkingsfase van de hartslag</description>
+   </items>
+   <items id="id6">
+    <text>Diastole</text>
+    <description>Laagste systemische arteriele bloeddruk -  gemeten in de diastolische of ontspanningsfase van de hartslag</description>
+   </items>
+   <items id="id7">
+    <text>any event</text>
+    <description>Default gebeurtenis</description>
+   </items>
+   <items id="id9">
+    <text>Houding</text>
+    <description>De houding van het individu op het moment van de meting</description>
+   </items>
+   <items id="id12">
+    <text>lijst structuur</text>
+    <description>lijst structuur</description>
+   </items>
+   <items id="id14">
+    <text>Manchet grootte</text>
+    <description>De grootte van de manchet gebruikt bij de meting</description>
+   </items>
+   <items id="id15">
+    <text>Plaats van meting</text>
+    <description>Gewoonlijke lichaamslocaties waar bloeddruk gemeten wordt.</description>
+   </items>
+   <items id="at16">
+    <text>Volwassen dijbeen</text>
+    <description>Een manchet voor een volwassen dijbeen - manchet grootte ca. 20cm x 42cm.</description>
+   </items>
+   <items id="at17">
+    <text>Grote volwassene</text>
+    <description>Een manchet voor volwassenen met langere armen, manchet grootte ca. 16cm x 38cm.</description>
+   </items>
+   <items id="at18">
+    <text>Volwassene</text>
+    <description>De standaard manchet voor een volwassene - manchet grootte ca. 13cm x 30cm</description>
+   </items>
+   <items id="at26">
+    <text>Rechterarm</text>
+    <description>De rechterarm van de persoon.</description>
+   </items>
+   <items id="at27">
+    <text>Linkerarm</text>
+    <description>De linkerarm van de persoon.</description>
+   </items>
+   <items id="at28">
+    <text>Rechterdijbeen</text>
+    <description>Het rechterdijbeen van de persoon.</description>
+   </items>
+   <items id="at29">
+    <text>Linkerdijbeen</text>
+    <description>De linkerdijbeen van de persoon.</description>
+   </items>
+   <items id="id34">
+    <text>Opmerking</text>
+    <description>Opmerking over de gemeten bloeddruk</description>
+   </items>
+   <items id="at1001">
+    <text>Staand</text>
+    <description>Bloeddrukmeting bij staand individu</description>
+   </items>
+   <items id="at1002">
+    <text>Zittend</text>
+    <description>Bloeddrukmeting bij zittend (b.v. op bed of in stoel) individu</description>
+   </items>
+   <items id="at1003">
+    <text>Halfzittend</text>
+    <description>Halfzittend op het moment van de bloeddrukmeting</description>
+   </items>
+   <items id="at1004">
+    <text>Liggend</text>
+    <description>Platliggend op het moment van de bloeddrukmeting</description>
+   </items>
+   <items id="id1006">
+    <text>Schuinte</text>
+    <description>De craniocaudale schuinte van het oppervlak waarop het individu ligt op het moment van de meting</description>
+   </items>
+   <items id="id1007">
+    <text>Gemiddelde arteriële druk</text>
+    <description>De gemiddelde bloeddruk gedurende 1 cyclus van samentrekken en ontspannen van het hart.</description>
+   </items>
+   <items id="id1008">
+    <text>Polsdruk</text>
+    <description>Het verschil tussen de systolische en diastolische bloeddruk</description>
+   </items>
+   <items id="at1009">
+    <text>Kleine volwassene</text>
+    <description>Een manchet voor een kleine volwassene - manchet maat ca. 10cm x 24cm.</description>
+   </items>
+   <items id="at1010">
+    <text>Pediatrie/kinder</text>
+    <description>Een manchet voor een kind of volwassene met een dunne arm - manchet grootte ca. 8cm x 21cm.</description>
+   </items>
+   <items id="id1011">
+    <text>Diastolisch eindpunt</text>
+    <description>Om te registreren welk Korotkoff geluid gebruikt is om de diastolische druk te meten door de auscultatieve methode.</description>
+   </items>
+   <items id="at1012">
+    <text>Fase IV</text>
+    <description>Het vierde Korotkoff geluid wordt gedefinieerd als een abrupte vermindering van geluid</description>
+   </items>
+   <items id="at1013">
+    <text>Fase 5</text>
+    <description>Het vijfde Korotkoff geluid is geïdentificeerd door afwezigheid van geluiden als de manchetdruk onder diastolische bloeddruk komt.</description>
+   </items>
+   <items id="at1015">
+    <text>Liggend met kanteling naar linkerzijde</text>
+    <description>Platliggend met enige laterale kanteling, meestal gekanteld naar de linkerzijde. Gebruikelijk benodigd in het laatste trimester van de zwangerschap om aortacavale compressie te verlichten.</description>
+   </items>
+   <items id="at1019">
+    <text>Zuigeling</text>
+    <description>Een manchet voor zuigelingen - manchet maat ca. 5cm x 15cm.</description>
+   </items>
+   <items id="at1020">
+    <text>Neonaat</text>
+    <description>Een manchet voor een neonaat, er van uitgaande dat de manchet de juiste maat is voor volgroeidheid en geboortegewicht van de neonaat</description>
+   </items>
+   <items id="at1021">
+    <text>Rechterpols</text>
+    <description>De rechterpols van de persoon</description>
+   </items>
+   <items id="at1022">
+    <text>Linkerpols</text>
+    <description>De linkerpols van de persoon.</description>
+   </items>
+   <items id="id1026">
+    <text>Apparaat</text>
+    <description>Details over sphygmomanometerof ander apparaat om de bloeddruk te meten.</description>
+   </items>
+   <items id="at1027">
+    <text>Rechterenkel</text>
+    <description>De rechterenkel van de persoon</description>
+   </items>
+   <items id="id1031">
+    <text>Inspanning</text>
+    <description>Details over de lichamelijke inspanning die ondernomen wordt op het moment van de bloeddrukmeting</description>
+   </items>
+   <items id="at1032">
+    <text>Linkerenkel</text>
+    <description>De linkerenkel van de persoon</description>
+   </items>
+   <items id="at1033">
+    <text>Vinger</text>
+    <description>Een vinger van de persoon. Identificatie van de vinger kan zo nodig worden opgeslagen  in &apos;specifieke locatie&apos; data element.</description>
+   </items>
+   <items id="id1034">
+    <text>Locatie</text>
+    <description>Lichaamslocatie waar de bloeddrukmeting is gemeten. Gebruik &apos;locatie van meting&apos; om gebruikelijke plaatsen te selecteren. Gebruik &apos;specifieke locatie&apos; om meer specifieke details of locatie te registreren, die niet in de gebruikelijke set staan of om aan een externe terminologie te refereren.</description>
+   </items>
+   <items id="id1035">
+    <text>Specifieke locatie</text>
+    <description>Specifieke details over de lichaamsplaats waar de bloeddruk is gemeten.</description>
+   </items>
+   <items id="id1036">
+    <text>Methodiek</text>
+    <description>De methode van de meting van de bloeddruk</description>
+   </items>
+   <items id="at1037">
+    <text>Auscultatie</text>
+    <description>Uitwendige meting van de bloeddruk, met gebruikmaking van een stethoscoop en Korotkoff geluiden.</description>
+   </items>
+   <items id="at1038">
+    <text>Palpatie</text>
+    <description>Uitwendige meting van de bloeddruk, met gebruikmaking van palpatie (meestal de arterie brachialis of radialis)</description>
+   </items>
+   <items id="id1039">
+    <text>Gemiddelde arteriële druk formule</text>
+    <description>Formule om de MAP (mean arterial pressure=gemiddelde arteriële druk) te berekenen (als deze data opgeslagen wordt).</description>
+   </items>
+   <items id="at1040">
+    <text>Machinaal</text>
+    <description>Uitwendige meting van de bloeddruk, met gebruikmaking van een mechanische bloeddrukmeter</description>
+   </items>
+   <items id="at1041">
+    <text>Invasief</text>
+    <description>Inwendige meting van de bloeddruk, inclusief penetratie van de huid en meting in het bloedvat.</description>
+   </items>
+   <items id="id1043">
+    <text>24 uur gemiddelde</text>
+    <description>Inschatting van de gemiddelde bloeddruk over een periode van 24 uur</description>
+   </items>
+   <items id="id1044">
+    <text>Slaap/waak toestand</text>
+    <description>Slaap/waak toestand, ondersteunt de interpretatie van de 24-uurs bloeddrukmeting.</description>
+   </items>
+   <items id="at1045">
+    <text>Alert en wakker</text>
+    <description>Individu is volledig bij bewustzijn</description>
+   </items>
+   <items id="at1046">
+    <text>Slapend</text>
+    <description>Individu is in de natuurlijke slaap.</description>
+   </items>
+   <items id="at1052">
+    <text>Teen</text>
+    <description>Een teen van de persoon. Identificatie van de vinger kan zo nodig worden opgeslagen  in &apos;specifieke locatie&apos; data element.</description>
+   </items>
+   <items id="id1053">
+    <text>Beïnvloedende factoren</text>
+    <description>Opmerking over en vastleggen van andere incidentele factoren die de bloeddrukmeting zouden kunnen beïnvloeden. Bijvoorbeeld, mate van angst, of &apos;witte jas syndroom&apos;; pijn of koorts; veranderingen in atmosferische druk etc.</description>
+   </items>
+   <items id="at1054">
+    <text>Intra-arterieel</text>
+    <description>Invasieve meting via lijn met transducer in een arterie. Locatie van de transducer kan, zo nodig, opgeslagen worden in &apos;specifieke locatie&apos; data element.</description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>Houding (synthesised)</text>
+    <description>De houding van het individu op het moment van de meting (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>Slaap/waak toestand (synthesised)</text>
+    <description>Slaap/waak toestand, ondersteunt de interpretatie van de 24-uurs bloeddrukmeting. (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>Manchet grootte (synthesised)</text>
+    <description>De grootte van de manchet gebruikt bij de meting (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>Plaats van meting (synthesised)</text>
+    <description>Gewoonlijke lichaamslocaties waar bloeddruk gemeten wordt. (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>Methodiek (synthesised)</text>
+    <description>De methode van de meting van de bloeddruk (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>Diastolisch eindpunt (synthesised)</text>
+    <description>Om te registreren welk Korotkoff geluid gebruikt is om de diastolische druk te meten door de auscultatieve methode. (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="ru">
+   <items id="id1">
+    <text>АД</text>
+    <description>Локальное измерение артериального давления, которое является суррогатом артериального давления в системном кровотоке. Как правило, термин относится к давления плечевой артерии на предплечье.
+</description>
+   </items>
+   <items id="id2">
+    <text>*history(en)</text>
+    <description>*history Structural node(en)</description>
+   </items>
+   <items id="id5">
+    <text>Систолическое</text>
+    <description>Пик системного артериального давления - измеряется в систолиу или в фазу сокращения сердца</description>
+   </items>
+   <items id="id6">
+    <text>Диастолическое</text>
+    <description>Минимальное системное артериальное давление - измеряется в диастолу или в фазу релаксации сердца.</description>
+   </items>
+   <items id="id7">
+    <text>Любое событие</text>
+    <description>*Default event(en)</description>
+   </items>
+   <items id="id9">
+    <text>Поза</text>
+    <description>Поза пациента во время измерения давления.</description>
+   </items>
+   <items id="id12">
+    <text>*list structure(en)</text>
+    <description>*list structure(en)</description>
+   </items>
+   <items id="id14">
+    <text>Размер манжеты(ru)</text>
+    <description>Размер манжеты для измерения кровяного давления.</description>
+   </items>
+   <items id="id15">
+    <text>Место измерения</text>
+    <description>Обобщенное место тела, в которм производится измерение артериального давления.</description>
+   </items>
+   <items id="at16">
+    <text>Взрослая для бедра</text>
+    <description>Манжеты для бедра  взрослого- пузырь приблизительно 20см х 42см.</description>
+   </items>
+   <items id="at17">
+    <text>Взрослая большая</text>
+    <description>Манжета для руки взрослого, увеличенного объёма -  пузырь приблизительно 16cm x 38cm.</description>
+   </items>
+   <items id="at18">
+    <text>Взрослая</text>
+    <description>Манжета стандартная для взрослого - пузырь приблизительно 13 х 30cm.</description>
+   </items>
+   <items id="at26">
+    <text>Правая рука</text>
+    <description>Правая рука пациента.</description>
+   </items>
+   <items id="at27">
+    <text>Левая рука</text>
+    <description>Левая рука пациента.</description>
+   </items>
+   <items id="at28">
+    <text>Правое бедро</text>
+    <description>Правое бедро пациента.</description>
+   </items>
+   <items id="at29">
+    <text>Левое бедро</text>
+    <description>Левое бедро пациента.</description>
+   </items>
+   <items id="id34">
+    <text>Комментарии</text>
+    <description>Комментарии к измерению кровяного давления.</description>
+   </items>
+   <items id="at1001">
+    <text>Стоя</text>
+    <description>Пациент стоит во время измерения АД.</description>
+   </items>
+   <items id="at1002">
+    <text>Сидя</text>
+    <description>Пациент сидит во время измерения АД (на стуле, кровати или кресле).</description>
+   </items>
+   <items id="at1003">
+    <text>Реклинация</text>
+    <description>Пациент лежит в вынужденной неизменной позе (на реклинации)во время измерения АД.</description>
+   </items>
+   <items id="at1004">
+    <text>Лёжа</text>
+    <description>Пациент лежит во время измерения АД.</description>
+   </items>
+   <items id="id1006">
+    <text>Наклонная поверхность</text>
+    <description>краниокаудальный наклон поверхности, на которой лежит пациент во время измерения АД.</description>
+   </items>
+   <items id="id1007">
+    <text>Среднего артериального давления крови</text>
+    <description>Среднее артериальное давление на всём протяжении цикла сокращения и релаксации сердца.</description>
+   </items>
+   <items id="id1008">
+    <text>Пульсовое давление</text>
+    <description>Разница между систолическим и диастолическим давлением.</description>
+   </items>
+   <items id="at1009">
+    <text>Взрослая малая</text>
+    <description>Манжета взрослая малая - пузырь приблизительно 10 x 24cm.</description>
+   </items>
+   <items id="at1010">
+    <text>Педиатрическая(детская)</text>
+    <description>Манжета для детей или взрослых с тонкой рукой - пузырь примерно 8см x 21cm.</description>
+   </items>
+   <items id="id1011">
+    <text>Диастолическая конечная точка</text>
+    <description>Запись звука Короткова который используют для определения диастолического давления с помощью метода аускультации.</description>
+   </items>
+   <items id="at1012">
+    <text>Фаза 4</text>
+    <description>Четвёртый звук Короткова, определяющийся как резкое приглушение звуков.</description>
+   </items>
+   <items id="at1013">
+    <text>Фаза 5</text>
+    <description>Пятый звук Короткова определяется отсутствием звуков, так как давление в манжете падает ниже диастолического артериального давления.</description>
+   </items>
+   <items id="at1015">
+    <text>Лёжа с наклоном влево</text>
+    <description>Лёжа на плоской поверхности с боковым наклоном, как правило, под углом по направлению с левой стороны. Обычно требуется в последнем триместре беременности, чтобы облегчить сдавление нижней полой вены.</description>
+   </items>
+   <items id="at1019">
+    <text>Для младенцев</text>
+    <description>Манжета для младенцев - пузырь приблизительно 5см x 15cm.</description>
+   </items>
+   <items id="at1020">
+    <text>Для новорожденных</text>
+    <description>Манжета для новорожденных, используется в соответствии с весом новорожденного.</description>
+   </items>
+   <items id="at1021">
+    <text>Правое запястье</text>
+    <description>Правое запястье пациента.</description>
+   </items>
+   <items id="at1022">
+    <text>Левое запястье</text>
+    <description>Левое запястье пациента.</description>
+   </items>
+   <items id="id1026">
+    <text>Устройство</text>
+    <description>Информация о сфигмоманометре или другом устройстве, используемом для измерения АД.</description>
+   </items>
+   <items id="at1027">
+    <text>Правая лодыжка</text>
+    <description>Правая лодыжка пациента.</description>
+   </items>
+   <items id="id1031">
+    <text>Нагрузка</text>
+    <description>Подробная информация о физической деятельности, осуществляемой во время измерения АД.</description>
+   </items>
+   <items id="at1032">
+    <text>Левая лодыжка</text>
+    <description>Левая лодыжка пациента</description>
+   </items>
+   <items id="at1033">
+    <text>Палец руки</text>
+    <description>Палец руки пациента. Уточнение может быть записано в элемент данных &quot;Точное месторасположение&quot;, в случае необходимости.</description>
+   </items>
+   <items id="id1034">
+    <text>*Location(en)</text>
+    <description>Место тела, где измеряется АД. Используйте &quot;Место измерения&quot;, чтобы выбрать из обобщённых мест. Используйте &quot;Точное местограсположение&quot;, чтобы записать более конкретную информацию или место, которое не входит в обобщённый список или обратиться к внешней терминологии.</description>
+   </items>
+   <items id="id1035">
+    <text>Точное месторасположение</text>
+    <description>Конкретные сведения о месте тела, где  регистрируется АД.</description>
+   </items>
+   <items id="id1036">
+    <text>Метод</text>
+    <description>Метод измерения кровяного давления.</description>
+   </items>
+   <items id="at1037">
+    <text>Аускультация</text>
+    <description>Неинвазивный метод измерения АД с использованием стетоскопа и звуков Короткова.</description>
+   </items>
+   <items id="at1038">
+    <text>Пальпация</text>
+    <description>Неинвазивный метод измерения АД с использованием пальпации (обычно плечевой или лучевой артерии).</description>
+   </items>
+   <items id="id1039">
+    <text>Формула среднего артериального давления</text>
+    <description>Формула, используемая для вычисления СрАД (если требуется записывать).</description>
+   </items>
+   <items id="at1040">
+    <text>Автоматический тонометр</text>
+    <description>Неинвазивный метод измерения АД с помощью автоматического тонометра.</description>
+   </items>
+   <items id="at1041">
+    <text>Инвазивный</text>
+    <description>Инвазивный метод измерения АД, с помещением датчика внутри кровеносного сосуда.</description>
+   </items>
+   <items id="id1043">
+    <text>Среднее за 24 часа</text>
+    <description>Оценка среднего АД за период в 24 часа.</description>
+   </items>
+   <items id="id1044">
+    <text>Стадия сна(ru)</text>
+    <description>Стадия сна - для интерпретации записи амбулаторного измерения АД в течение 42 часов.</description>
+   </items>
+   <items id="at1045">
+    <text>Пробуждение и подъём</text>
+    <description>Пациент полностью в сознании.</description>
+   </items>
+   <items id="at1046">
+    <text>Сон</text>
+    <description>Пациент находится в состоянии естественного покоя, тело расслаблено.</description>
+   </items>
+   <items id="at1052">
+    <text>Палец ноги</text>
+    <description>Палец ноги пациента. Уточнение может быть записано в элемент данных &quot;Точное месторасположение&quot;, в случае необходимости.</description>
+   </items>
+   <items id="id1053">
+    <text>Стохастические факторы(ru)</text>
+    <description>Комментарий и записи других случайных факторов, которые могут способствовать измерению артериального давления. Например,&quot;боязнь белого халата&quot; или боль и жар, изменения атмосферного давления т.д.</description>
+   </items>
+   <items id="at1054">
+    <text>Внутриартериальное</text>
+    <description>Инвазивное измерение с помощью датчика линии доступа в артерию. Расположение датчика могут быть записаны в элемент данных &quot;Точное месторасположение&quot;, в случае необходимости.</description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>Поза (synthesised)</text>
+    <description>Поза пациента во время измерения давления. (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>Стадия сна(ru) (synthesised)</text>
+    <description>Стадия сна - для интерпретации записи амбулаторного измерения АД в течение 42 часов. (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>Размер манжеты(ru) (synthesised)</text>
+    <description>Размер манжеты для измерения кровяного давления. (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>Место измерения (synthesised)</text>
+    <description>Обобщенное место тела, в которм производится измерение артериального давления. (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>Метод (synthesised)</text>
+    <description>Метод измерения кровяного давления. (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>Диастолическая конечная точка (synthesised)</text>
+    <description>Запись звука Короткова который используют для определения диастолического давления с помощью метода аускультации. (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="fa">
+   <items id="id1">
+    <text>فشار خون</text>
+    <description>اندازه گیری موضعی فشار خون وریدی، که جایگزینی برای فشار وریدی در گردش خون کلی است.
+معمولا واژه &quot;فشار خون&quot; به اندازه گیری فشار ورید بازویی در روی بازو گفته می شود</description>
+   </items>
+   <items id="id2">
+    <text>تاریخچه</text>
+    <description>گره ساختاری تاریخچه </description>
+   </items>
+   <items id="id5">
+    <text>سیستولیک</text>
+    <description>اوج فشار خون وریدی کلی که در سیستولیک یا فاز انقباضی چرخه گردش خون اندازه گیری می شود </description>
+   </items>
+   <items id="id6">
+    <text>دیاستولیک</text>
+    <description>حداقل فشار خون وریدی کلی که در دیاستولیک یا فاز انبساطی چرخه گردش خون اندازه گیری می شود</description>
+   </items>
+   <items id="id7">
+    <text>هر رویداد</text>
+    <description>رویداد پیش فرض</description>
+   </items>
+   <items id="id9">
+    <text>موقعیت</text>
+    <description>موقعیت فرد در زمان اندازه گیری </description>
+   </items>
+   <items id="id12">
+    <text>ساختار لیست</text>
+    <description>ساختار لیست </description>
+   </items>
+   <items id="id14">
+    <text>اندازه کاف</text>
+    <description>اندازه کاف استفاده شده برای اندازه گیری فشار خون</description>
+   </items>
+   <items id="id15">
+    <text>*Location of measurement(en)</text>
+    <description>*Common body sites where blood pressure is recorded.(en)</description>
+   </items>
+   <items id="at16">
+    <text>ران بزرگسال</text>
+    <description>کاف استفاده شده در ران بزرگسال -اندازه مثانه 20 سانتی متر در 42 سانتی متر</description>
+   </items>
+   <items id="at17">
+    <text>بزرگسال درشت</text>
+    <description>کاف بزرگسالان با برآمدگی بازوی بزرگتر در حدود 16 در 38 سانتیمتر</description>
+   </items>
+   <items id="at18">
+    <text>*Adult(en)</text>
+    <description>*A cuff that is standard for an adult - bladder approx 13cm x 30cm.(en)</description>
+   </items>
+   <items id="at26">
+    <text>*Right arm(en)</text>
+    <description>*The right arm of the person.(en)</description>
+   </items>
+   <items id="at27">
+    <text>*Left arm(en)</text>
+    <description>*The left arm of the person.(en)</description>
+   </items>
+   <items id="at28">
+    <text>*Right thigh(en)</text>
+    <description>*The right thigh of the person.(en)</description>
+   </items>
+   <items id="at29">
+    <text>*Left thigh(en)</text>
+    <description>*The left thigh of the person.(en)</description>
+   </items>
+   <items id="id34">
+    <text>نظر</text>
+    <description>نظر در مورد اندازه گیری فشار خون</description>
+   </items>
+   <items id="at1001">
+    <text>ایستاده</text>
+    <description>ایستاده در زمان اندازه گیری فشار خون</description>
+   </items>
+   <items id="at1002">
+    <text>نشسته</text>
+    <description>نشسته ( به عنوان مثال روی تخت یا صندلی) در زمان اندازه گیری فشار خون</description>
+   </items>
+   <items id="at1003">
+    <text>خمیده</text>
+    <description>خمیده در زمان اندازه گیری فشار خون</description>
+   </items>
+   <items id="at1004">
+    <text>خوابیده</text>
+    <description>خوابیده در زمان اندازه گیری فشار خون</description>
+   </items>
+   <items id="id1006">
+    <text>شیب</text>
+    <description>شیب طولی سطحی که فرد در حین اندازه گیری رون آن دراز کشیده است</description>
+   </items>
+   <items id="id1007">
+    <text>میانگین فشار وریدی</text>
+    <description>متوسط فشار خون وریدی که در کل دوره انقباظ و انبساط قلبی رخ می دهد</description>
+   </items>
+   <items id="id1008">
+    <text>فشار نبضی</text>
+    <description>تفاوت بین فشار سیستولیک و دیاستولیک</description>
+   </items>
+   <items id="at1009">
+    <text>*Small Adult(en)</text>
+    <description>*A cuff used for a small adult - bladder approx 10cm x 24cm.(en)</description>
+   </items>
+   <items id="at1010">
+    <text>*Paediatric/Child(en)</text>
+    <description>*A cuff that is appropriate for a child or adult with a thin arm - bladder approx 8cm x 21cm.(en)</description>
+   </items>
+   <items id="id1011">
+    <text>*Diastolic endpoint(en)</text>
+    <description>*Record which Korotkoff sound is used for determining diastolic pressure using auscultative method.(en)</description>
+   </items>
+   <items id="at1012">
+    <text>*Phase IV(en)</text>
+    <description>*The fourth Korotkoff sound is identified as an abrupt muffling of sounds.(en)</description>
+   </items>
+   <items id="at1013">
+    <text>*Phase V(en)</text>
+    <description>*The fifth Korotkoff sound is identified by absence of sounds as the cuff pressure drops below the diastolic blood pressure.(en)</description>
+   </items>
+   <items id="at1015">
+    <text>خوابیده  به چپ</text>
+    <description>خوابیدن صاف با کمی تمایل به یک سمت، معمولا به جهت چپ میل کرده و عموما در سه ماهه آخر حاملگی برای تسکین فشار آئورت نیاز به آن است</description>
+   </items>
+   <items id="at1019">
+    <text>*Infant(en)</text>
+    <description>*A cuff used for infants - bladder approx 5cm x 15cm.(en)</description>
+   </items>
+   <items id="at1020">
+    <text>*Neonatal(en)</text>
+    <description>*A cuff used for a neonate, assuming cuff is the appropriate size for maturity and birthweight of the neonate.(en)</description>
+   </items>
+   <items id="at1021">
+    <text>*Right wrist(en)</text>
+    <description>*The right wrist of the subject.(en)</description>
+   </items>
+   <items id="at1022">
+    <text>*Left wrist(en)</text>
+    <description>*The left wrist of the subject.(en)</description>
+   </items>
+   <items id="id1026">
+    <text>*Device(en)</text>
+    <description>*Details about sphygmomanometer or other device used to measure the blood pressure.(en)</description>
+   </items>
+   <items id="at1027">
+    <text>*Right ankle(en)</text>
+    <description>*The right ankle of the subject.(en)</description>
+   </items>
+   <items id="id1031">
+    <text>تقلا</text>
+    <description>جزییاتی درباره فعالیت فیزیکی انجام شده در زمان اندازه گیری فشار خون </description>
+   </items>
+   <items id="at1032">
+    <text>*Left ankle(en)</text>
+    <description>*The left ankle of the subject.(en)</description>
+   </items>
+   <items id="at1033">
+    <text>*Finger(en)</text>
+    <description>*A finger of the subject.  Identification of the finger can be recorded in &apos;Specific Location&apos; data element, if required.(en)</description>
+   </items>
+   <items id="id1034">
+    <text>*Location(en)</text>
+    <description>*Body location where blood pressure is measured.  Use &apos;Location of measurement&apos; to select from common sites.  Use &apos;Specific location&apos; to record more specific details or a site that is not in the common set or to refer to an external terminology.(en)</description>
+   </items>
+   <items id="id1035">
+    <text>*Specific location(en)</text>
+    <description>*Specific details about the body site where blood pressure is recorded.(en)</description>
+   </items>
+   <items id="id1036">
+    <text>*Method(en)</text>
+    <description>*Method of measurement of blood pressure.(en)</description>
+   </items>
+   <items id="at1037">
+    <text>*Auscultation(en)</text>
+    <description>*Method of measuring blood pressure externally, using a stethoscope and Korotkoff sounds.(en)</description>
+   </items>
+   <items id="at1038">
+    <text>*Palpation(en)</text>
+    <description>*Method of measuring blood pressure externally, using palpation (usually of the brachial or radial arteries).(en)</description>
+   </items>
+   <items id="id1039">
+    <text>*Mean Arterial Pressure Formula(en)</text>
+    <description>*Formula used to calculate the MAP (if recorded in data).(en)</description>
+   </items>
+   <items id="at1040">
+    <text>*Machine(en)</text>
+    <description>*Method of measuring blood pressure externally, using a blood pressure machine.(en)</description>
+   </items>
+   <items id="at1041">
+    <text>*Invasive(en)</text>
+    <description>*Method of measuring blood pressure internally ie involving penetration of the skin and measuring inside blood vessels.(en)</description>
+   </items>
+   <items id="id1043">
+    <text>میانگین 24 ساعته</text>
+    <description>برآورد میانگین فشار خون در دوره زمانی 24 ساعته</description>
+   </items>
+   <items id="id1044">
+    <text>وضعیت خواب</text>
+    <description>وضعیت خواب- به تفسیر ثبتهای صورت گرفته از فشار خون در خانه در طول 24 ساعت کمک می کند </description>
+   </items>
+   <items id="at1045">
+    <text>هشیار و بیدار</text>
+    <description>فرد کاملا به هوش است </description>
+   </items>
+   <items id="at1046">
+    <text>خوابیده</text>
+    <description>فرد در حالت طبیعی استراحت بدنی است</description>
+   </items>
+   <items id="at1052">
+    <text>*Toe(en)</text>
+    <description>*A toe of the subject.   Identification of the toe can be recorded in &apos;Specific Location&apos; data element, if required.(en)</description>
+   </items>
+   <items id="id1053">
+    <text>عوامل مبهم</text>
+    <description>نظردهی و ثبت سایر عوامل ضمنی که ممکن است به اندازه گیری فشار خون کمک کنند . به عنوان مثال سطح اضطراب یا &quot;سندرم روپوش سفید&quot;، درد یا تب ، تغییرات فشار جوی و غیره </description>
+   </items>
+   <items id="at1054">
+    <text>*Intra-arterial(en)</text>
+    <description>*Invasive measurement via transducer access line within an artery. Location of the transducer can be recorded in &apos;Specific Location&apos; data element, if required.(en)</description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>موقعیت (synthesised)</text>
+    <description>موقعیت فرد در زمان اندازه گیری  (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>وضعیت خواب (synthesised)</text>
+    <description>وضعیت خواب- به تفسیر ثبتهای صورت گرفته از فشار خون در خانه در طول 24 ساعت کمک می کند  (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>اندازه کاف (synthesised)</text>
+    <description>اندازه کاف استفاده شده برای اندازه گیری فشار خون (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>*Location of measurement(en) (synthesised)</text>
+    <description>*Common body sites where blood pressure is recorded.(en) (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>*Method(en) (synthesised)</text>
+    <description>*Method of measurement of blood pressure.(en) (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>*Diastolic endpoint(en) (synthesised)</text>
+    <description>*Record which Korotkoff sound is used for determining diastolic pressure using auscultative method.(en) (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="ar-sy">
+   <items id="id1">
+    <text>ضغط الدم</text>
+    <description>قياس موضعي لضغط الدم الشرياني و الذي يحل محل الضغط الشرياني في الدورة الدموية الجهازية. 
+و عادة ما يستخدم مصطلح &quot;ضغط الدم&quot; لللإشارة إلى قياس ضغط دم الشريان العضُدي في أعلى الذراع.</description>
+   </items>
+   <items id="id2">
+    <text>التاريخ</text>
+    <description>العقدة التركيبية للتاريخ</description>
+   </items>
+   <items id="id5">
+    <text>الانقباضي</text>
+    <description>ذروة ضغط الدم الشرياني الجهازي - يتم قياسه في طور الانقباض من دورة القلب</description>
+   </items>
+   <items id="id6">
+    <text>الانبساطي</text>
+    <description>الحد الأدني لضغط الدم الشرياني الجهازي - يتم قياسها في طور الانبساط - الارتخاء من دورة القلب</description>
+   </items>
+   <items id="id7">
+    <text>إحدى الوقائع</text>
+    <description>الواقعة التلقائية</description>
+   </items>
+   <items id="id9">
+    <text>الموضع</text>
+    <description>موضع الشخص في وقت القياس</description>
+   </items>
+   <items id="id12">
+    <text>تركيب القائمة</text>
+    <description>تركيب القائمة</description>
+   </items>
+   <items id="id14">
+    <text>حجم الكُفَّة</text>
+    <description>حجم الكُفَّة المستخدمة في قياس ضغط الدم</description>
+   </items>
+   <items id="id15">
+    <text>موضع القياس</text>
+    <description>الأماكن المعتادة من الجسم التي يتم فيها عادة قياس ضغط الدم</description>
+   </items>
+   <items id="at16">
+    <text>فخذ البالغ</text>
+    <description>كفة تستخدم لفخذ البالغ - مثانة/ كيسة من 20 سينتيمتر * 42 سينتيمتر تقريبا</description>
+   </items>
+   <items id="at17">
+    <text>بالغ كبير</text>
+    <description>كفة للبالغين ذوي الأذرع الكبيرة - المثانة/ الكيسة 16 سينتيمتر * 38 سينتيمتر تقريبا</description>
+   </items>
+   <items id="at18">
+    <text>البالغ</text>
+    <description>كفة عيارية للبالغين - مثانة من 13 سينتيمتر * 30 سينتيمتر تقريبا</description>
+   </items>
+   <items id="at26">
+    <text>الذراع الأيمن</text>
+    <description>الذراع الأيمن للشخص</description>
+   </items>
+   <items id="at27">
+    <text>الذراع الأيسر</text>
+    <description>الذراع الأيسر للشخص</description>
+   </items>
+   <items id="at28">
+    <text>الفخذ الأيمن</text>
+    <description>الفخذ الأيمن للشخص</description>
+   </items>
+   <items id="at29">
+    <text>الفخذ الأيسر</text>
+    <description>الفخذ الأيسر للشخص</description>
+   </items>
+   <items id="id34">
+    <text>تعليق</text>
+    <description>تعليق حول قياس ضغط الدم</description>
+   </items>
+   <items id="at1001">
+    <text>واقف</text>
+    <description>الشخص واقف عند القيام بقياس ضغط الدم</description>
+   </items>
+   <items id="at1002">
+    <text>جالس</text>
+    <description>الشخص جالس (مثلا على سرير أو كرسي) عند القيام بقياس ضغط الدم</description>
+   </items>
+   <items id="at1003">
+    <text>مضطجع</text>
+    <description>الشخص مضطجع عند القيام بقياس ضغط الدم</description>
+   </items>
+   <items id="at1004">
+    <text>مستلقٍ</text>
+    <description>الشخص مستلقٍ بشكل مستوٍ عند القيام بقياس ضغط الدم</description>
+   </items>
+   <items id="id1006">
+    <text>الانحناء</text>
+    <description>الانحناء الرأسي الذنبي على السطح الذي يستلقي عليه الشخص في أثناء القياس</description>
+   </items>
+   <items id="id1007">
+    <text>متوسط الضغط الشرياني</text>
+    <description>متوسط الضغط الشرياني الذي يحدث خلال جميع أطوار دورة القلب الواحدة من انقباض و انبساط/ ارتخاء</description>
+   </items>
+   <items id="id1008">
+    <text>الضغط عند النبض</text>
+    <description>الفرق بين ضغط الدم الانقباضي و الانبساطي</description>
+   </items>
+   <items id="at1009">
+    <text>البالغ الصغير</text>
+    <description>كفة تستخدم للبالغ الصغير - مثانة/ كيسة من 10 سينتيمتر * 24 سينتيمتر تقريبا</description>
+   </items>
+   <items id="at1010">
+    <text>طفل</text>
+    <description>كفة تستخدم للطفل أو البالغ ذي الذراع الرفيعة - من 8 سينتيمتر * 21 سينتيمتر تقريبا</description>
+   </items>
+   <items id="id1011">
+    <text>النقطة النهائية الانبساطية/ الارتخائية</text>
+    <description>تستخدم أصوات كورتكوف لتحديد ضغط الدم الانبساطي باستخدام طريقة التسمُّع</description>
+   </items>
+   <items id="at1012">
+    <text>الطور الرابع</text>
+    <description>يتم التعرف على صوت كورتكوف الرابع على أنه تخفيت منفصل</description>
+   </items>
+   <items id="at1013">
+    <text>الطور الخامس</text>
+    <description>يتم التعرف على صوت كورتكوف الخامس بغياب الأصوات حيث ينخفض ضغط الكفة تحت ضغط الدم الانبساطي</description>
+   </items>
+   <items id="at1015">
+    <text>مستلق و مائل لجانبه الأيسر</text>
+    <description>الشخص مستلق بشكل مستو مع ميل جانبي بزاوية تجاه جانبه الأيسر. عادة ما يُحتاج إلى هذا الوضع في الأثلوث الأخير من الحمل لتخفيف الانضغاط الأبهري الجوفي</description>
+   </items>
+   <items id="at1019">
+    <text>رضيع</text>
+    <description>كفة تستخدم للرضيع - مثانة/ كيسة من 5 سينتيمتر * 15 سينتيمتر تقريبا</description>
+   </items>
+   <items id="at1020">
+    <text>حديث الولادة</text>
+    <description>الكفة المستخدمة لحديثي الولادة, على افتراض أن الكفة مناسبة للحجم و النضج و الوزن عند ولادة الطفل</description>
+   </items>
+   <items id="at1021">
+    <text>الساعد الأيمن</text>
+    <description>الساعد الأيمن للشخص</description>
+   </items>
+   <items id="at1022">
+    <text>الساعد الأيسر</text>
+    <description>الساعد الأيسر للشخص</description>
+   </items>
+   <items id="id1026">
+    <text>الجهيزة</text>
+    <description>تفاصيل حول جهاز ضغط الدم الزئبقي أو جهيزة أخرى تستخدم لقياس ضغط الدم</description>
+   </items>
+   <items id="at1027">
+    <text>الكاحل الأيمن</text>
+    <description>الكاحل الأيمن للشخص</description>
+   </items>
+   <items id="id1031">
+    <text>المجهود</text>
+    <description>تفاصيل حول النشاط البدني الذي يتم القيام به في وقت قياس ضغط الدم.</description>
+   </items>
+   <items id="at1032">
+    <text>الكاحل الأيسر</text>
+    <description>الكاحل الأيسر للشخص</description>
+   </items>
+   <items id="at1033">
+    <text>الأصبع</text>
+    <description>أصبع الشخص. تعريف الأصبع الذي يتم تسجيله كنوع بيانات (مكان معيَّن), حسب الحاجة</description>
+   </items>
+   <items id="id1034">
+    <text>الموضع</text>
+    <description>الموضع من الجسم الذي يتم قياس ضغط الدم عنده. 
+استخدم (موضع القياس) للاختيار من الأماكن المعتادة. 
+استخدم (موضع معيَّن) لتسجيل تفاصيل أكثر تحديدا أو موضعا ليس في مجموعة الخيارات المعتادة أو للإشارة إلى مجموعة مصطلحات خارجية.</description>
+   </items>
+   <items id="id1035">
+    <text>موقع معين</text>
+    <description>تفاصلي معينة عن الموقع من الجسم الذي يتم فيه قياس ضغط الدم</description>
+   </items>
+   <items id="id1036">
+    <text>الطريقة</text>
+    <description>طريقة قياس ضغط الدم</description>
+   </items>
+   <items id="at1037">
+    <text>التسمع</text>
+    <description>طريقة خارجية لقياس ضغط الدم, باستخدام سماعة طبيب أو أصوات كوروتكوف</description>
+   </items>
+   <items id="at1038">
+    <text>الجس</text>
+    <description>طريقة خارجية لقياس ضغط الدم, باستخدام الجس - عادةً الشرايين الذراعية و الكعبري</description>
+   </items>
+   <items id="id1039">
+    <text>صيغة متوسط الضغط الشرياني</text>
+    <description>الصيغة المستخدمة لقياس متوسط الضغط الشرياني - إذا تم تسجيل بياناتها</description>
+   </items>
+   <items id="at1040">
+    <text>الآلة</text>
+    <description>طريقة خارجية لقياس ضغط الدم بالستخدام آلة قياس ضغط الدم</description>
+   </items>
+   <items id="at1041">
+    <text>باضع</text>
+    <description>طريقة داخلية لقيسا ضغط الدم, و ذلك يعني اختراق الجلد/ البشرة داخل الأوعية الدموية</description>
+   </items>
+   <items id="id1043">
+    <text>المتوسط خلال 24 ساعة</text>
+    <description>تقدير متوسط ضغط الدم خلال فترة من 24 ساعة</description>
+   </items>
+   <items id="id1044">
+    <text>حالة النوم</text>
+    <description>حالة النوم - تدعم تفسير قياسات ضغط الدم المِسيارية خلال 24 ساعة</description>
+   </items>
+   <items id="at1045">
+    <text>متنبه و يقظ</text>
+    <description>الشخص واعٍ بشكل كامل</description>
+   </items>
+   <items id="at1046">
+    <text>نائم</text>
+    <description>الشخص في الحالة الطبيعية الخاصة بالراحة الجسدية</description>
+   </items>
+   <items id="at1052">
+    <text>أصبع القدم</text>
+    <description>أصبع قدم الشخص. 
+يمكن تسجيل تعريف أصبع القدم كنوع بيانات (موضع معيَّن), حسب الحاجة.</description>
+   </items>
+   <items id="id1053">
+    <text>العوامل المربكة</text>
+    <description>تعليق حول و تسجيل للعوامل الطارئة التي قد تسهم في قياس ضغط الدم. مثلا, مستوى القلق أو متلازمة البالطو الأبيض أو الألم أو الحمى أو التغييرات في الضغط الجوي,, إلى آخره</description>
+   </items>
+   <items id="at1054">
+    <text>داخل الشريان</text>
+    <description>قياس باضع عن طريق دخول خط تِرجام في داخل الشريان. 
+يمكن تسجيل الترجام كنوع بيانات (موضع معيَّن), حسب الحاجة.</description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>الموضع (synthesised)</text>
+    <description>موضع الشخص في وقت القياس (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>حالة النوم (synthesised)</text>
+    <description>حالة النوم - تدعم تفسير قياسات ضغط الدم المِسيارية خلال 24 ساعة (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>حجم الكُفَّة (synthesised)</text>
+    <description>حجم الكُفَّة المستخدمة في قياس ضغط الدم (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>موضع القياس (synthesised)</text>
+    <description>الأماكن المعتادة من الجسم التي يتم فيها عادة قياس ضغط الدم (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>الطريقة (synthesised)</text>
+    <description>طريقة قياس ضغط الدم (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>النقطة النهائية الانبساطية/ الارتخائية (synthesised)</text>
+    <description>تستخدم أصوات كورتكوف لتحديد ضغط الدم الانبساطي باستخدام طريقة التسمُّع (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="es-ar">
+   <items id="id1">
+    <text>Presión Arterial</text>
+    <description>La medición local de la tensión arterial que deriva de la medida de la presión arterial en la circulación sistémica. Comúnmente el uso de &apos;presión arterial&apos; se refiere a la medida de la presión de la arteria braquial por encima del pliegue del codo.</description>
+   </items>
+   <items id="id2">
+    <text>historia</text>
+    <description>historia Nodo estructural</description>
+   </items>
+   <items id="id5">
+    <text>Sistólica</text>
+    <description>Presión arterial sistólica pico - medido en sístole o la fase de contracción del ciclo cardíaco</description>
+   </items>
+   <items id="id6">
+    <text>Diástole</text>
+    <description>Presión arterial sistémica mínima - medido durante la diástole o fase de relajación del ciclo cardíaco.</description>
+   </items>
+   <items id="id7">
+    <text>cualquier evento</text>
+    <description>Evento por defecto</description>
+   </items>
+   <items id="id9">
+    <text>Posición</text>
+    <description>La posición del individuo en el momento del registro.</description>
+   </items>
+   <items id="id12">
+    <text>estructura de lista</text>
+    <description>estructura tipo lista</description>
+   </items>
+   <items id="id14">
+    <text>Tamaño del manguito</text>
+    <description>El tamaño del manguito usado para la toma de la presión arterial</description>
+   </items>
+   <items id="id15">
+    <text>Localización de la medida</text>
+    <description>Sitios comunes del cuerpo donde se registra la presión arterial</description>
+   </items>
+   <items id="at16">
+    <text>Muslo Adulto</text>
+    <description>Un manguito usado para el muslo del adulto - cámara de caucho aproximadamente de 20cm x 42 cm</description>
+   </items>
+   <items id="at17">
+    <text>Adulto grande</text>
+    <description>Un manguito para adultos con brazos mas grandes - cámara de caucho aproximadamente de 16cm x 38cm.</description>
+   </items>
+   <items id="at18">
+    <text>Adulto</text>
+    <description>Un manguito estándar para adulto - cámara de caucho approximadamente de 13cm x 30cm.</description>
+   </items>
+   <items id="at26">
+    <text>Brazo derecho</text>
+    <description>El brazo derecho del individuo</description>
+   </items>
+   <items id="at27">
+    <text>Brazo izquierdo</text>
+    <description>El brazo izquierdo del individuo</description>
+   </items>
+   <items id="at28">
+    <text>Muslo derecho</text>
+    <description>El muslo derecho del individuo</description>
+   </items>
+   <items id="at29">
+    <text>Muslo izquierdo</text>
+    <description>El muslo izquierdo del individuo</description>
+   </items>
+   <items id="id34">
+    <text>Comentario</text>
+    <description>Comentario sobre la medición de la presión sanguínea</description>
+   </items>
+   <items id="at1001">
+    <text>De pie</text>
+    <description>De pie al momento de la medición de la tensión arterial.</description>
+   </items>
+   <items id="at1002">
+    <text>Sentado</text>
+    <description>Sentado (en la cama o en una silla) durante el registro de la presión arterial </description>
+   </items>
+   <items id="at1003">
+    <text>Reclinado</text>
+    <description>Reclinado (semisentado) durante el registro de la presión arterial</description>
+   </items>
+   <items id="at1004">
+    <text>Acostado</text>
+    <description>Acostado horizontal durante la medición de la presión arterial</description>
+   </items>
+   <items id="id1006">
+    <text>Inclinación</text>
+    <description>La inclinación craneo-caudal de la superficie sobre la cual el sujeto esta acostado al momento de la medición</description>
+   </items>
+   <items id="id1007">
+    <text>Presión Arterial Media</text>
+    <description>La presión arterial promedio que ocurre durante el ciclo entero de la contracción y relajación del corazon</description>
+   </items>
+   <items id="id1008">
+    <text>Presión de Pulso</text>
+    <description>La diferencia entre la presión sistólica y la presión diastólica</description>
+   </items>
+   <items id="at1009">
+    <text>Adulto pequeño</text>
+    <description>Un manguito usado para adulto pequeño - cámara de caucho approximadamente de 10cm x 24cm.</description>
+   </items>
+   <items id="at1010">
+    <text>Pediátrico/Niño</text>
+    <description>Un manguito que es apropiado para un niño o un adulto con brazos delgados - cámara de caucho approximadamente 8cm x 21cm.</description>
+   </items>
+   <items id="id1011">
+    <text>Punto final diastólica</text>
+    <description>Registro usando los sonidos de Korotkoff para determinar la presión diastólica</description>
+   </items>
+   <items id="at1012">
+    <text>Fase IV</text>
+    <description>El cuarto sonido de Korotkoff se identifica como una abrupta amortiguación de sonidos.</description>
+   </items>
+   <items id="at1013">
+    <text>Fase V</text>
+    <description>El quinto sonido de Korotkoff se identifica como la ausencia de sonidos a medida que la presión del manguito insuflado cae por debajo de la presión arterial diastólica.</description>
+   </items>
+   <items id="at1015">
+    <text>Acostado e inclinado levemente sobre su costado izquierdo</text>
+    <description>Acostado horizontal e inclinado levemente sobre su costado izquierdo. Comúnmente se requiere durante el último trimestre del embarazo para aliviar la compresión aortocava.</description>
+   </items>
+   <items id="at1019">
+    <text>Infantil</text>
+    <description>Un manguito usado para infantes - cámara de caucho approximadamente de 5cm x 15cm.</description>
+   </items>
+   <items id="at1020">
+    <text>Neonatal</text>
+    <description>Un manguito usado para neonatos, asumiendo que es del tamaño adecuado para la madurez y el peso corporal del neonato.</description>
+   </items>
+   <items id="at1021">
+    <text>Muñeca derecha</text>
+    <description>La muñeca derecha del individuo.</description>
+   </items>
+   <items id="at1022">
+    <text>Muñeca izquierda</text>
+    <description>La muñeca inquierda del individuo.</description>
+   </items>
+   <items id="id1026">
+    <text>Dispositivo</text>
+    <description>Detalles del esfingomanómetro u otro dispositivo usado para medir la presión arterial.</description>
+   </items>
+   <items id="at1027">
+    <text>Tobillo derecho </text>
+    <description>El tobillo derecho del individuo.</description>
+   </items>
+   <items id="id1031">
+    <text>Ejercicio</text>
+    <description>Detalles de la actividad física realizados durante la medición de la presión arterial </description>
+   </items>
+   <items id="at1032">
+    <text>Tobillo izquierdo</text>
+    <description>El tobillo izquierdo del individuo</description>
+   </items>
+   <items id="at1033">
+    <text>Dedo</text>
+    <description>Un dedo del individuo. La identificación del dedo puede ser registrado en el data elemento: &apos;Localización específica&apos; si se requiere. </description>
+   </items>
+   <items id="id1034">
+    <text>Localización</text>
+    <description>Localización del cuerpo donde se mide la presión arterial. Use &apos;Localización de la medida&apos; para seleccionar los sitios más comunes. Use &apos;Localización específica&apos; para registrar detalles mas específicos o un sitio que no pertenece al conjunto mas común o para referirse a una terminología externa.</description>
+   </items>
+   <items id="id1035">
+    <text>Localización específica</text>
+    <description>Detalles específicos sobre el sitio corporal donde se registro la presión arterial</description>
+   </items>
+   <items id="id1036">
+    <text>Método</text>
+    <description>Método de la medición de la presión arterial</description>
+   </items>
+   <items id="at1037">
+    <text>Auscultación</text>
+    <description>Método de la medición de la presión arterial externa, usando un estetoscopio y los sonidos de Korotkoff</description>
+   </items>
+   <items id="at1038">
+    <text>Palpación</text>
+    <description>Método de medición de la presión arterial externa, usando palpación (normalmente de la arteria humeral o radial).</description>
+   </items>
+   <items id="id1039">
+    <text>Fórmula de la Presión Arterial Media (PAM)</text>
+    <description>Fórmula usada para calcular la PAM (si se registra en el campo data)</description>
+   </items>
+   <items id="at1040">
+    <text>Máquina</text>
+    <description>Método de medición de la presión arterial externa, utilizando un monitor automático (mecánico) de presión arterial</description>
+   </items>
+   <items id="at1041">
+    <text>Invasivo</text>
+    <description>Método de medición de la presión arterial interna o sea invasiva: punción de la piel y la introducción de un cateter para medir dentro de un vaso sanguíneo.</description>
+   </items>
+   <items id="id1043">
+    <text>Promedio de 24 horas</text>
+    <description>Estimativo de la media de la presión arterial sobre un período de 24 horas</description>
+   </items>
+   <items id="id1044">
+    <text>Estado del sueño</text>
+    <description>Estado del sueño - soporta la interpretación de los registros de presión arterial ambulatorios de 24 horas</description>
+   </items>
+   <items id="at1045">
+    <text>Alerta y despierto</text>
+    <description>El sujeto esta plenamente consciente</description>
+   </items>
+   <items id="at1046">
+    <text>Dormido</text>
+    <description>El sujeto esta en un estado natural de sueño corporal</description>
+   </items>
+   <items id="at1052">
+    <text>Dedo del pie</text>
+    <description>Un dedo del pie del individuo.  La identificación del dedo del pie puede ser registrado en el data elemento: &apos;Localización específica&apos; si se requiere. </description>
+   </items>
+   <items id="id1053">
+    <text>Factores confluentes</text>
+    <description>Comentario y registro sobre otros factores que pueden incidir sobre la medición de la presión arterial. Por ejemplo: nivel de ansiedad o &quot;síndrome del guardapolvo blanco&quot;; dolor o fiebre; cambios en la presión atmosférica etc.</description>
+   </items>
+   <items id="at1054">
+    <text>Intra-arterial</text>
+    <description>Medición invasiva mediante una vía de acceso transductor, dentro de la arteria.  La localización del transductor puede ser registrado en el data elemento: &apos;Localización específica&apos; si se requiere. </description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>Posición (synthesised)</text>
+    <description>La posición del individuo en el momento del registro. (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>Estado del sueño (synthesised)</text>
+    <description>Estado del sueño - soporta la interpretación de los registros de presión arterial ambulatorios de 24 horas (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>Tamaño del manguito (synthesised)</text>
+    <description>El tamaño del manguito usado para la toma de la presión arterial (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>Localización de la medida (synthesised)</text>
+    <description>Sitios comunes del cuerpo donde se registra la presión arterial (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>Método (synthesised)</text>
+    <description>Método de la medición de la presión arterial (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>Punto final diastólica (synthesised)</text>
+    <description>Registro usando los sonidos de Korotkoff para determinar la presión diastólica (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="pt-br">
+   <items id="id1">
+    <text>Pressão Arterial</text>
+    <description>A medida local da pressão sanguínea arterial, a qual é uma substituta da pressão arterial na circulação arterial sistêmica. Mais comumente o uso do termo pressão arterial se refere à medida da pressão da artéria braquial no antebraço.</description>
+   </items>
+   <items id="id2">
+    <text>história</text>
+    <description>nodo Estrutural história</description>
+   </items>
+   <items id="id5">
+    <text>Sistólica</text>
+    <description>Pressão arterial sistêmica máxima - medida na fase sistólica ou de contração do ciclo cardíaco.</description>
+   </items>
+   <items id="id6">
+    <text>Diastólica</text>
+    <description>Pressão arterial sistêmica mínima - medida na fase diastólica ou de  dilatação do ciclo cardíaco.</description>
+   </items>
+   <items id="id7">
+    <text>qualquer evento</text>
+    <description>evento Default, padrão predeterminado</description>
+   </items>
+   <items id="id9">
+    <text>Posição</text>
+    <description>A posição do sujeito na hora da medida.</description>
+   </items>
+   <items id="id12">
+    <text>estrutura de lista</text>
+    <description>estrutura de lista</description>
+   </items>
+   <items id="id14">
+    <text>Tamanho da braçadeira</text>
+    <description>Tamanho da braçadeira  usada para medir a pressão arterial.</description>
+   </items>
+   <items id="id15">
+    <text>Local de Medida</text>
+    <description>Locais do corpo mais comuns onde a pressão arterial é medida.</description>
+   </items>
+   <items id="at16">
+    <text>Coxa de adulto</text>
+    <description>Uma braçadeira  usada na coxa de um aduto - manguito de aproximadamente 20cm x 42cm.</description>
+   </items>
+   <items id="at17">
+    <text>Adulto Grande</text>
+    <description>Uma braçadeira para adultos com braço largo - manguito de aproximadamente 16cm x 38cm.</description>
+   </items>
+   <items id="at18">
+    <text>Adulto</text>
+    <description>Uma braçadeira padrão para adultos - manguito de aproximadamente 13cm x 30cm.</description>
+   </items>
+   <items id="at26">
+    <text>Braço direito</text>
+    <description>O braço direito da pessoa.</description>
+   </items>
+   <items id="at27">
+    <text>Braço esquerdo</text>
+    <description>O braço esquerdo da pessoa.</description>
+   </items>
+   <items id="at28">
+    <text>Coxa direita</text>
+    <description>A coxa direita da pessoa.</description>
+   </items>
+   <items id="at29">
+    <text>Coxa esquerda</text>
+    <description>A coxa esquerda da pessoa.</description>
+   </items>
+   <items id="id34">
+    <text>Comentários</text>
+    <description>Comentários sobre a medida da pressão arterial.</description>
+   </items>
+   <items id="at1001">
+    <text>Em pé</text>
+    <description>Em pé na hora da medida da pressão arterial.</description>
+   </items>
+   <items id="at1002">
+    <text>Sentado</text>
+    <description>Sentado (por exemplo na cama ou em uma cadeira) na hora da medida da pressão arterial.</description>
+   </items>
+   <items id="at1003">
+    <text>Reclinado</text>
+    <description>Reclinado na hora da medida da pressão arterial.</description>
+   </items>
+   <items id="at1004">
+    <text>Deitado</text>
+    <description>Deitado sem reclinação hora da medida da pressão arterial.</description>
+   </items>
+   <items id="id1006">
+    <text>Nível de inclinação</text>
+    <description>O nível de  inclinação crânio-caudal da superfície sobre a qual a pessoa está deitada no momento da medição.</description>
+   </items>
+   <items id="id1007">
+    <text>Pressão arterial Média</text>
+    <description>A pressão arterial média que ocorrre ao longo de todo o  ciclo de contração e dilatação do coração.</description>
+   </items>
+   <items id="id1008">
+    <text>Pressão de Pulso</text>
+    <description>A diferença entre a pressão sistólica e diastólica.</description>
+   </items>
+   <items id="at1009">
+    <text>Adulto pequeno</text>
+    <description>Uma braçadeira usada para adultos pequenos -manguito de aproximadamente 10cm x 24cm.</description>
+   </items>
+   <items id="at1010">
+    <text>Criança/Pediátrico</text>
+    <description>Manguito apropriao para uma criança ou um adulto com um braço fino - bolsa de aproximadamente 8cm x 21cm.</description>
+   </items>
+   <items id="id1011">
+    <text>Final da diástole</text>
+    <description>Registro  do som Korotkoff usado para determinar a pressão arterial diastólica, usando o método auscultativo.</description>
+   </items>
+   <items id="at1012">
+    <text>Fhase IV.</text>
+    <description>O quarto som de  Korotkoff é  identificado como um súbito abafamento dos sons.</description>
+   </items>
+   <items id="at1013">
+    <text>Phase V</text>
+    <description>O quinto som de Korotkoff é identificado pela ausência de sons,  pois a pressão da braçadeira cai abaixo da pressão diastólica do sangue.</description>
+   </items>
+   <items id="at1015">
+    <text>Deitado com inclinação para esquerda</text>
+    <description>Deitado sem reclinação com alguma inclinação lateral, usualmente com angulação para o lado esquerdo. Comumente requerido no último trimestre da gravidez para aliviar a compressão aortocaval.</description>
+   </items>
+   <items id="at1019">
+    <text>Criança pequena </text>
+    <description>Uma braçadeira utilizada em crianças  pequenas - manguito de aproximadamente 5cm x 15cm.</description>
+   </items>
+   <items id="at1020">
+    <text>Neonatal</text>
+    <description>Uma braçadeira usada para um recém-nascido, supondo que o tamanho é apropriado para a maturidade e o peso ao nascer do neonato.</description>
+   </items>
+   <items id="at1021">
+    <text>Pulso direito</text>
+    <description>O pulso direito da pessoa.</description>
+   </items>
+   <items id="at1022">
+    <text>Pulso esquerdo</text>
+    <description>O pulso esquerdo da pessoa.</description>
+   </items>
+   <items id="id1026">
+    <text>Aparelho</text>
+    <description>Detalhes sobre o esfigmomanômetro ou outro aparelho utilizado para medir a pressão sanguínea.</description>
+   </items>
+   <items id="at1027">
+    <text>Tornozelo direito</text>
+    <description>O tornozelo direito da pessoa.</description>
+   </items>
+   <items id="id1031">
+    <text>Esforço físico</text>
+    <description>Detalhes sobre atividade física realizada na hora da medida da pressão arterial.</description>
+   </items>
+   <items id="at1032">
+    <text>Tornozelo esquerdo</text>
+    <description>O tornozelo esquerdo da pessoa.</description>
+   </items>
+   <items id="at1033">
+    <text>Dedo da mão</text>
+    <description>O dedo da mão da pessoa. A identificação do dedo pode ser registrada no elemento de dado &apos;Local Específico&apos;, se requerido.</description>
+   </items>
+   <items id="id1034">
+    <text>Local</text>
+    <description>Local do corpo onde  foi medida a pressão arterial.  Use  &apos;Local da Medida&apos; para selecionar entre os locais mais comuns.  Use &apos;Local Específico&apos; para registrar detalhes mais específicos ou um local que não está representado no conjunto comum ou para se referenciar a uma terminologia externa.</description>
+   </items>
+   <items id="id1035">
+    <text>Local Específico</text>
+    <description>Detalhes específicos sobre o local do corpo onde a pressão arterial é registrada.</description>
+   </items>
+   <items id="id1036">
+    <text>Método</text>
+    <description>Método de medida da pressão arterial.</description>
+   </items>
+   <items id="at1037">
+    <text>Ausculta</text>
+    <description>Método de medir a pressão externamente, usando o estetoscópiso e os sons Korotkoff.</description>
+   </items>
+   <items id="at1038">
+    <text>Palpação</text>
+    <description>Método de medir a pressão arterial externamente, usando a palpação (geralmente artérias braquiais ou radiais).</description>
+   </items>
+   <items id="id1039">
+    <text>Fórmula de Pressão Arterial Média</text>
+    <description>Fórmula usada para calcular a pressão arterial média (PAM), se registrada em dados.</description>
+   </items>
+   <items id="at1040">
+    <text>Aparelho de pressão</text>
+    <description>Método de medir a pressão arterial externamente, usando o aparelho de pressão arterial.</description>
+   </items>
+   <items id="at1041">
+    <text>Invasivo</text>
+    <description>Método de medir a pressão arterial internamente, isto é, envolvendo a penetração da pele e a medida interior dos vasos sanguíneos.</description>
+   </items>
+   <items id="id1043">
+    <text>Media de 24 horas</text>
+    <description>Estimativa da pressão arterial média em um período de 24 horas.</description>
+   </items>
+   <items id="id1044">
+    <text>Status do sono</text>
+    <description>Status do sono - apóia a interpretação do registro do mapa de pressão arterial (ambulatorial de 24 horas).</description>
+   </items>
+   <items id="at1045">
+    <text>Alerta e acordado</text>
+    <description>Sujeito está totalmente consciente.</description>
+   </items>
+   <items id="at1046">
+    <text>Dormindo</text>
+    <description>Sujeito está no estado natural de descanso corporal.</description>
+   </items>
+   <items id="at1052">
+    <text>Dedo do pé</text>
+    <description>O dedo do pé da pessoa. A identificação do dedo do pé pode ser registrada  no elemento de dado &apos;Local Específico&apos;, se requerido.</description>
+   </items>
+   <items id="id1053">
+    <text>Fatores confundidores</text>
+    <description>Comentários sobre e registros de outros fatores incidentais que possam estar contribuindo na medida da pressão sanguínea. Por exemplo, nível de ansiedade ou &quot;síndrome do jaleco branco&quot;; dor ou febre; mudanças na pressão atmosférica, etc.</description>
+   </items>
+   <items id="at1054">
+    <text>Intra-arterial</text>
+    <description>Medida invasiva da pressão em uma artéria acessada  por um cateter . Local do transductor pode ser registrado no elemento de dado  &apos;Local Específico&apos;, se requerido.</description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>Posição (synthesised)</text>
+    <description>A posição do sujeito na hora da medida. (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>Status do sono (synthesised)</text>
+    <description>Status do sono - apóia a interpretação do registro do mapa de pressão arterial (ambulatorial de 24 horas). (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>Tamanho da braçadeira (synthesised)</text>
+    <description>Tamanho da braçadeira  usada para medir a pressão arterial. (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>Local de Medida (synthesised)</text>
+    <description>Locais do corpo mais comuns onde a pressão arterial é medida. (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>Método (synthesised)</text>
+    <description>Método de medida da pressão arterial. (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>Final da diástole (synthesised)</text>
+    <description>Registro  do som Korotkoff usado para determinar a pressão arterial diastólica, usando o método auscultativo. (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_definitions id="ko">
+   <items id="id1">
+    <text>*혈압(ko)</text>
+    <description>*체순환에서 동맥압을 대신하는 동맥혈압의 국소 측정. 보통은 &apos;혈압&apos;이라는 용어의 사용은 상완에서 상완동맥의 측정을 의미한다.(ko)</description>
+   </items>
+   <items id="id2">
+    <text>*history(en)</text>
+    <description>*History Structural node.(en)</description>
+   </items>
+   <items id="id5">
+    <text>*수축기(ko)</text>
+    <description>*최대 체동맥 혈압 - 심장 싸이클의 수축기에서 측정.(ko)</description>
+   </items>
+   <items id="id6">
+    <text>*이완기(ko)</text>
+    <description>*최소 체동맥 혈압 - 심장 싸이클의 이완기에서 측정됨.(ko)</description>
+   </items>
+   <items id="id7">
+    <text>*any event(en)</text>
+    <description>*Default event.(en)</description>
+   </items>
+   <items id="id9">
+    <text>*자세(ko)</text>
+    <description>*측정 시에 대상의 자세.(ko)</description>
+   </items>
+   <items id="id12">
+    <text>*Tree(en)</text>
+    <description>*List structure.(en)</description>
+   </items>
+   <items id="id14">
+    <text>*Cuff 크기 (ko)</text>
+    <description>*혈압 측정을 위해 사용되는 cuff의 크기.(ko)</description>
+   </items>
+   <items id="id15">
+    <text>*측정 위치(ko)</text>
+    <description>*혈압이 기록되는 일반적인 신체 위치(Common body sites).(ko)</description>
+   </items>
+   <items id="at16">
+    <text>*성인 허벅지(ko)</text>
+    <description>*성인 허벅지을 위한 cuff - bladder가 약 20cm x 42cm.(ko)</description>
+   </items>
+   <items id="at17">
+    <text>*큰 성인(ko)</text>
+    <description>*큰 팔을 가진 성인을 위한 cuff - bladder가 약 16cm x 38cm.(ko)</description>
+   </items>
+   <items id="at18">
+    <text>*성인(ko)</text>
+    <description>*성인을 위한 표준인 cuff - bladder가 약 13cm x 30cm.(ko)</description>
+   </items>
+   <items id="at26">
+    <text>*우측 팔(ko)</text>
+    <description>*사람의 우측 팔.(ko)</description>
+   </items>
+   <items id="at27">
+    <text>*좌측 팔(ko)</text>
+    <description>*사람의 좌측 팔.(ko)</description>
+   </items>
+   <items id="at28">
+    <text>*우측 허벅지(ko)</text>
+    <description>*사람의 우측 허벅지.(ko)</description>
+   </items>
+   <items id="at29">
+    <text>*좌측 허벅지(ko)</text>
+    <description>*사람의 좌측 허벅지.(ko)</description>
+   </items>
+   <items id="id34">
+    <text>*코멘트(ko)</text>
+    <description>*혈압 측정에 관한 코멘트.(ko)</description>
+   </items>
+   <items id="at1001">
+    <text>*선 자세 - Standing(ko)</text>
+    <description>*혈압측정 시에 서있는 자세.(ko)</description>
+   </items>
+   <items id="at1002">
+    <text>*앉은 자세 - sitting(ko)</text>
+    <description>**혈압 측정시에 앉은 자세(침대 또는 의자).(ko)</description>
+   </items>
+   <items id="at1003">
+    <text>*비스듬한 자세 - Reclinig(ko)</text>
+    <description>*혈압 측정시에 비스듬한 자세(reclining).(ko)</description>
+   </items>
+   <items id="at1004">
+    <text>*누운 자세 - lying(ko)</text>
+    <description>*혈압 측정시에 바로 누운 자세.(ko)</description>
+   </items>
+   <items id="id1006">
+    <text>*Tilt(en)</text>
+    <description>*측정 시에 사람이 누워있는 면의 기울임 상태.(ko)</description>
+   </items>
+   <items id="id1007">
+    <text>*평균 동맥압(ko)</text>
+    <description>*심장의 수축과 이완 싸이클 전체과정 동안에 발생하는 평균 동맥압.(ko)</description>
+   </items>
+   <items id="id1008">
+    <text>*맥압(ko)</text>
+    <description>*수축기와 이완기 혈압 간의 차이(ko)</description>
+   </items>
+   <items id="at1009">
+    <text>*작은 성인(ko)</text>
+    <description>*작은 성인을 위해 사용되는 cuff - bladder가 약 10cm x 24cm.(ko)</description>
+   </items>
+   <items id="at1010">
+    <text>*소아/아동(ko)</text>
+    <description>*아동이나 얋은 팔을 가진 성인에게 적합한 cuff - bladder가 약 8cm x 21cm.(ko)</description>
+   </items>
+   <items id="id1011">
+    <text>*이완기 종점(ko)</text>
+    <description>*청진법을 이용하여 이완기 압력을 결정하는데 사용되는 Korotkoff sound를 기록.(ko)</description>
+   </items>
+   <items id="at1012">
+    <text>*Phase IV(en)</text>
+    <description>*4번째 Korotkoff sound가 갑작스런 약해지는 소리로 확인된다.(ko)</description>
+   </items>
+   <items id="at1013">
+    <text>*Phase V(en)</text>
+    <description>*5번째 Korotkoff sound는 cuff 압력이 이완기 혈압 아래로 떨어져 소리가 없어짐으로써 확인된다.(ko)
+</description>
+   </items>
+   <items id="at1015">
+    <text>*왼쪽으로 누운 자세 - Lying with tilt to left(ko)</text>
+    <description>*보통 왼쪽으로 기울린, 옆쪽으로 기울여 누운 자세. 보통 임신 3기에 동정맥압력을 완화하기위해 필요함.(ko)</description>
+   </items>
+   <items id="at1019">
+    <text>*영아(ko)</text>
+    <description>*영아을 위해 사용되는 cuff - bladder가 약 5cm x 15cm.(ko)</description>
+   </items>
+   <items id="at1020">
+    <text>*신생아(ko)</text>
+    <description>*신생아를 위해 사용되는 cuff, cuff는 신생아의 성숙도와 몸무게에 대한 적절한 크기가 가정됨.(ko)</description>
+   </items>
+   <items id="at1021">
+    <text>*우측 손목(ko)</text>
+    <description>*대상의 우측 손목.(ko)</description>
+   </items>
+   <items id="at1022">
+    <text>*좌측 손목(ko)</text>
+    <description>*대상의 좌측 손목.(ko)</description>
+   </items>
+   <items id="id1026">
+    <text>*장비(ko)</text>
+    <description>*혈압을 측정하는데 사용되는 혈압계 또는 기타 장비에 대한 상세내용.(ko)</description>
+   </items>
+   <items id="at1027">
+    <text>*우측 발목(ko)</text>
+    <description>*대상의 우측 발목.(ko)</description>
+   </items>
+   <items id="id1031">
+    <text>*활동 - exertion (ko)</text>
+    <description>*혈압 측정시에 수행 중인 육체활동에 대한 상세내용.(ko)</description>
+   </items>
+   <items id="at1032">
+    <text>*좌측 발목(ko)</text>
+    <description>**대상의 좌측 발목.(ko)</description>
+   </items>
+   <items id="at1033">
+    <text>*손가락(ko)</text>
+    <description>*대상의 손가락. 필요하다면 손가락의 식별은 &apos;Specific Location&apos; data element에 기록될 수 있다.(ko)</description>
+   </items>
+   <items id="id1034">
+    <text>*위치(ko)</text>
+    <description>*혈압이 측정되는 신체 위치. Common site에서 선택된 &apos;Location of measurement&apos;를 사용. 특정한 상세내용 또는 common set에 없는 위치를 기록 혹은 외부 용어체계를 참조하기 위해서는 &apos;Specific location&apos;를 사용.(ko)
+
+</description>
+   </items>
+   <items id="id1035">
+    <text>*특정 위치(Specific location)(ko)</text>
+    <description>*혈압이 기록되는 신체 위치에 대한 특별한 상세내역.(ko)</description>
+   </items>
+   <items id="id1036">
+    <text>*측정 방법(ko)</text>
+    <description>*혈압 측정의 방법.(ko)</description>
+   </items>
+   <items id="at1037">
+    <text>*청진(ko)</text>
+    <description>*청진기와 Korotkoff sounds을 사용하여 외부에서 혈압을 측정하는 방법.(ko)</description>
+   </items>
+   <items id="at1038">
+    <text>*타진(ko)</text>
+    <description>*(보통 상완 또는 요골동맥의) 타진을 사용하여 외부에서 혈압을 측정하는 방법.(ko)</description>
+   </items>
+   <items id="id1039">
+    <text>*평균 동맥압 공식(ko)</text>
+    <description>*(데이터 내에 기록되어 있다면) MAP를 계산하는데 사용되는 공식.(ko)</description>
+   </items>
+   <items id="at1040">
+    <text>*장비(ko)</text>
+    <description>*혈압 측정 장비를 사용하여 외부에서 혈압을 측정하는 방법.(ko)</description>
+   </items>
+   <items id="at1041">
+    <text>*침습적 방법(ko)</text>
+    <description>*내부에서 즉 피부를 통과하여 혈관 내에서 혈압을 측정하는 방법.(ko)</description>
+   </items>
+   <items id="id1043">
+    <text>*24시간 평균 (ko)</text>
+    <description>*24시간 동안의 평균 혈압의 추정.(ko)</description>
+   </items>
+   <items id="id1044">
+    <text>*수면 상태(ko)</text>
+    <description>*수면 상태 - 24시간 활동 혈압기록에 대한 해석 지원.(ko)</description>
+   </items>
+   <items id="at1045">
+    <text>*각성과 기상 상태(ko)</text>
+    <description>*대상은 완전한 의식이 있다.(ko)</description>
+   </items>
+   <items id="at1046">
+    <text>*수면 상태(ko)</text>
+    <description>*대상은 신체적으로 자연적인 휴식 상태에 있다.(ko)</description>
+   </items>
+   <items id="at1052">
+    <text>*발가락(ko)</text>
+    <description>*대상의 발가락. 필요하다면 발가락의 식별은 &apos;Specific Location&apos; data element에 기록될 수 있다.(ko)</description>
+   </items>
+   <items id="id1053">
+    <text>*혼란변수(ko)</text>
+    <description>*혈압측정에 영향을 줄 수 있는 기타 우연한 변수들에 대한 코멘트와 기록. 예를 들어, 불안 또는 &apos;백의신드롬&apos;의 레벨; 통증 또는 발열; 대기압의 변화 등.(ko)</description>
+   </items>
+   <items id="at1054">
+    <text>*동맥 내(ko)</text>
+    <description>*동맥 내에 탐촉자 접근 선(transducer access line)을 통한 침습적인 측정. 필요하다면 탐촉자의 위치는 &apos;Specific Location&apos; data element에 기록될 수 있다.(ko)</description>
+   </items>
+   <items id="at1055">
+    <text>*Pressure (en)</text>
+    <description>*Pressure (en)</description>
+   </items>
+   <items id="at1056">
+    <text>*Angle, plane (en)</text>
+    <description>*Angle, plane (en)</description>
+   </items>
+   <items id="at1057">
+    <text>*mean (en)</text>
+    <description>*mean (en)</description>
+   </items>
+   <items id="ac1">
+    <text>*자세(ko) (synthesised)</text>
+    <description>*측정 시에 대상의 자세.(ko) (synthesised)</description>
+   </items>
+   <items id="ac2">
+    <text>*수면 상태(ko) (synthesised)</text>
+    <description>*수면 상태 - 24시간 활동 혈압기록에 대한 해석 지원.(ko) (synthesised)</description>
+   </items>
+   <items id="ac3">
+    <text>*Cuff 크기 (ko) (synthesised)</text>
+    <description>*혈압 측정을 위해 사용되는 cuff의 크기.(ko) (synthesised)</description>
+   </items>
+   <items id="ac4">
+    <text>*측정 위치(ko) (synthesised)</text>
+    <description>*혈압이 기록되는 일반적인 신체 위치(Common body sites).(ko) (synthesised)</description>
+   </items>
+   <items id="ac5">
+    <text>*측정 방법(ko) (synthesised)</text>
+    <description>*혈압 측정의 방법.(ko) (synthesised)</description>
+   </items>
+   <items id="ac6">
+    <text>*이완기 종점(ko) (synthesised)</text>
+    <description>*청진법을 이용하여 이완기 압력을 결정하는데 사용되는 Korotkoff sound를 기록.(ko) (synthesised)</description>
+   </items>
+  </term_definitions>
+  <term_bindings id="SNOMED-CT">
+   <items id="id1">http://snomed.info/id/163020007</items>
+   <items id="id5">http://snomed.info/id/163030003</items>
+   <items id="id6">http://snomed.info/id/163031004</items>
+   <items id="id14">http://snomed.info/id/246153002</items>
+  </term_bindings>
+  <term_bindings id="openehr">
+   <items id="at1055">http://openehr.org/id/125</items>
+   <items id="at1056">http://openehr.org/id/497</items>
+   <items id="at1057">http://openehr.org/id/146</items>
+  </term_bindings>
+  <value_sets id="ac3">
+   <members>at16</members>
+   <members>at17</members>
+   <members>at18</members>
+   <members>at1009</members>
+   <members>at1010</members>
+   <members>at1019</members>
+   <members>at1020</members>
+  </value_sets>
+  <value_sets id="ac1">
+   <members>at1001</members>
+   <members>at1002</members>
+   <members>at1003</members>
+   <members>at1004</members>
+   <members>at1015</members>
+  </value_sets>
+  <value_sets id="ac2">
+   <members>at1045</members>
+   <members>at1046</members>
+  </value_sets>
+  <value_sets id="ac4">
+   <members>at26</members>
+   <members>at27</members>
+   <members>at28</members>
+   <members>at29</members>
+   <members>at1021</members>
+   <members>at1022</members>
+   <members>at1027</members>
+   <members>at1032</members>
+   <members>at1033</members>
+   <members>at1052</members>
+   <members>at1054</members>
+  </value_sets>
+  <value_sets id="ac5">
+   <members>at1037</members>
+   <members>at1038</members>
+   <members>at1040</members>
+   <members>at1041</members>
+  </value_sets>
+  <value_sets id="ac6">
+   <members>at1012</members>
+   <members>at1013</members>
+  </value_sets>
+ </terminology>
+ <original_language>ISO_639-1::en</original_language>
+ <translations id="de">
+  <language>ISO_639-1::de</language>
+  <author id="name">Sebastian Garde, Jasmin Buck</author>
+  <author id="organisation">Ocean Informatics, University of Heidelberg</author>
+ </translations>
+ <translations id="zh-cn">
+  <language>ISO_639-1::zh-cn</language>
+  <author id="name">Chunlan Ma, Lin Zhang</author>
+  <author id="organisation">Ocean Informatics, BIPH</author>
+  <author id="email">, linforest@163.com</author>
+  <accreditation>What goes here?</accreditation>
+ </translations>
+ <translations id="ko">
+  <language>ISO_639-1::ko</language>
+  <author id="name">Seung-Jong Yu</author>
+  <author id="organisation">NOUSCO Co.,Ltd.</author>
+  <author id="email">seungjong.yu@gmail.com</author>
+ </translations>
+ <translations id="ar-sy">
+  <language>ISO_639-1::ar-sy</language>
+  <author id="name">Mona Saleh</author>
+ </translations>
+ <translations id="es-ar">
+  <language>ISO_639-1::es-ar</language>
+  <author id="name">Domingo Liotta</author>
+  <author id="organisation">Universidad de Morón</author>
+  <author id="email">domingo_liotta@hotmail.com</author>
+  <accreditation>Universidad de Morón</accreditation>
+ </translations>
+ <translations id="fa">
+  <language>ISO_639-1::fa</language>
+  <author id="name">Shahla Foozonkhah</author>
+  <author id="organisation">Ocean Informatics</author>
+  <author id="email">shahla.foozonkhah@oceaninformatics.com</author>
+ </translations>
+ <translations id="ru">
+  <language>ISO_639-1::ru</language>
+  <author id="name">Igor Lizunov</author>
+  <author id="email">i.lizunov@infinnity.ru</author>
+ </translations>
+ <translations id="ja">
+  <language>ISO_639-1::ja</language>
+  <author id="name">Shinji Kobayashi</author>
+  <author id="organisation">Kyoto University</author>
+  <author id="email">skoba@moss.gr.jp</author>
+ </translations>
+ <translations id="nl">
+  <language>ISO_639-1::nl</language>
+  <author id="name">Marja Buur</author>
+  <author id="organisation">M.C.A.</author>
+  <author id="email">m.buur-krom@mca.nl</author>
+ </translations>
+ <translations id="pt-br">
+  <language>ISO_639-1::pt-br</language>
+  <author id="name">Jussara Rözsch</author>
+  <author id="organisation">OpenEHR  Foundation</author>
+  <author id="email">jussara.macedo@gmail.com</author>
+  <accreditation>Medical Doctor, Psychiarist, Clinical Modeller, openEHR Diretor, ehealth infostructuture WG ccoordinator- brazilian  ehealth program</accreditation>
+ </translations>
+ <description>
+  <lifecycle_state>unmanaged</lifecycle_state>
+  <original_author id="name">Sam Heard</original_author>
+  <original_author id="organisation">Ocean Informatics</original_author>
+  <original_author id="email">sam.heard@oceaninformatics.com</original_author>
+  <original_author id="date">2006-03-22</original_author>
+  <copyright>© openEHR Foundation</copyright>
+  <details id="ja">
+   <language>ISO_639-1::ja</language>
+   <purpose>個人の全身動脈血圧を記録するためのもの。</purpose>
+   <use>測定方法や身体部位を問わず、すべての血圧についての表現が記録するために使用される。このアーキタイプはすべての臨床シナリオを網羅することを目指している。たとえば、家庭用の血圧計で自己測定した血圧や、集中治療において機械的に計測された一連の血圧などである。
+患者の体位や運動、攻落する因子や研究におけるティルト台の角度を識別することにより、計測についての理解を手助けする豊富なステートモデルもある。
+指定されているイベントは、24時間平均血圧に制限されているが、テンプレートではデフォルトの「任意のイベント」にさらなる制約を加えることで、特定の時間や間隔にわたって（数学的機能を追加したり、削除して）、血圧を記録するように、血圧測定にタイする特定の要求を行うようにすることができる。</use>
+   <keywords>観察</keywords>
+   <keywords>計測</keywords>
+   <keywords>血圧</keywords>
+   <keywords>バイタルサイン</keywords>
+   <keywords>平均動脈圧</keywords>
+   <keywords>脈圧</keywords>
+   <keywords>収縮期</keywords>
+   <keywords>拡張期</keywords>
+   <keywords>RR間隔</keywords>
+   <keywords>非観血血圧</keywords>
+   <misuse>静脈内圧のためには使用されない
+全身に循環する動脈圧の代理としてではない、たとえば、右肺動脈の計測といった動脈圧の計測としては用いられない。
+このような場合には、関連した特殊化であるOBSERVATION.intravascular_pressureを利用すること。</misuse>
+  </details>
+  <details id="de">
+   <language>ISO_639-1::de</language>
+   <purpose>Dient der Dokumentation des systemischen arteriellen Blutdrucks einer Person.</purpose>
+   <use>Alle Blutdruckmessungen werden unter Zuhilfenahme dieses Archetypen dokumentiert, unabhängig davon, welche Methode oder Körperstelle zur Messung benutzt wurden. Der Archetyp dient der Dokumentation des Blutdrucks in alle klinischen Szenarien - z.B. durch eine Blutdruckmaschine zuhause; eine Notfallmessung durch Palpation und ein Sphygmomanometer; Messungen beim Hausarzt oder im Rahmen von Belastungstests; sowie einer Serie von Messungen durch eine Maschine auf der Intensivstation.
+Der Archetyp beinhaltet ein umfassendes Status-Modell, das die Interpretation der Messung unterstützt, indem Position, Anstrengung, Einflussfaktoren, Neigungswinkel angegeben werden können.
+Benannte Ereignisse wurden auf den 24-stündigen Durchschnitt beschränkt, jedoch können Templates jederzeit das standardmäßig vorhandene Ereignis (&apos;any event&apos;) weiter einschränken, um spezifischen Anforderungen gerecht zu werden, wie z.B. der Messung zu bestimmten Zeitpunkten, oder über eine Anzahl von Intervallen (+/- mathematische Funktionen).</use>
+   <keywords>Beobachtungen</keywords>
+   <keywords>Messungen</keywords>
+   <keywords>Vitalparameter</keywords>
+   <keywords>Mittlerer arterieller Druck</keywords>
+   <keywords>Pulsdruck</keywords>
+   <keywords>systolisch</keywords>
+   <keywords>diastolisch</keywords>
+   <keywords>RR</keywords>
+   <keywords>Riva-Rocci</keywords>
+   <keywords>NIBP</keywords>
+   <misuse>Nicht benutzen zur Dokumentation des intravenösen Drucks.
+Nicht benutzen zur Dokumentation des arteriellen Blutdrucks, welcher KEIN Surrogat für den arteriellen Druck in der systemischen Zirkluation ist, z.B. die spezifische Messung des rechten pulmonaren Arteriendrucks.
+In diesem Fall sollte der OBSERVATION.intravascular_pressure Archetyp bzw. dessen Spezialisierungen verwendet werden.</misuse>
+  </details>
+  <details id="zh-cn">
+   <language>ISO_639-1::zh-cn</language>
+   <purpose>旨在记录一个人的体循环血压（systemic blood pressure，全身血压，系统血压）。此测量结果原始型记录的是收缩压和舒张压，所采取的记录方式适合于视为代表全身体循环血压的结果。</purpose>
+   <use>用于记录体循环血压测量结果的所有表达形式，无论其用于记录结果的究竟是什么方法或身体位置。本原始型旨在采集所有临床场景下的血压测量结果；例如，采用家用血压测量仪进行的自助检测、采用触诊方法和血压计进行的收缩压紧急评估、临床会诊或运动负荷试验过程中进行的测量以及重症监护过程中利用仪器所完成的一系列测量。
+这是一个丰富的状态模型，支持通过确定患者体位、运动情况、干扰因素以及研究工作所采用的倾斜工作台的角度，来解释测量结果。
+具名事件（named events）仅限于24小时期间的均值；不过，可以利用模板来进一步约束默认的“any event”（任何事件），以满足关于血压测量的具体需要，诸如按具体的时间点（时刻）来记录血压，或者是记录为变化范围（+/-数学函数）。</use>
+   <keywords>观察</keywords>
+   <keywords>观测</keywords>
+   <keywords>观察指标</keywords>
+   <keywords>观测指标</keywords>
+   <keywords>观察结果</keywords>
+   <keywords>观测结果</keywords>
+   <keywords>观察项目</keywords>
+   <keywords>观测项目</keywords>
+   <keywords>检测</keywords>
+   <keywords>测量</keywords>
+   <keywords>测定</keywords>
+   <keywords>检测指标</keywords>
+   <keywords>测量指标</keywords>
+   <keywords>测定指标</keywords>
+   <keywords>检测结果</keywords>
+   <keywords>测量结果</keywords>
+   <keywords>测定结果</keywords>
+   <keywords>检测项目</keywords>
+   <keywords>测量项目</keywords>
+   <keywords>测定项目</keywords>
+   <keywords>血压</keywords>
+   <keywords>blood pressure</keywords>
+   <keywords>bp</keywords>
+   <keywords>生命体征</keywords>
+   <keywords>体征</keywords>
+   <keywords>平均动脉压</keywords>
+   <keywords>脉压</keywords>
+   <keywords>脉搏压</keywords>
+   <keywords>收缩压</keywords>
+   <keywords>舒张压</keywords>
+   <keywords>收缩期</keywords>
+   <keywords>舒张期</keywords>
+   <keywords>RR</keywords>
+   <keywords>无创性测压法</keywords>
+   <keywords>non-invasive blood pressure</keywords>
+   <keywords>NIBP</keywords>
+   <misuse>并不用于静脉内血压。
+并不用于并非代表体循环动脉压的动脉血压的测量，如右肺动脉压的专用测量指标。
+在上述这两种情况下，请采用血管内压力观察指标原始型（OBSERVATION.intravascular_pressure）及相关的特化形式。</misuse>
+  </details>
+  <details id="nl">
+   <language>ISO_639-1::nl</language>
+   <purpose>Het registreren van de systemische arteriele bloeddruk van een individu.</purpose>
+   <use>Wordt gebruikt om alle weergaven van de systemische bloeddruk te registreren, ongeacht welke methode of welke lichaamslocatie is gebruikt om de meting te doen. Het archetype is bedoeld om bloeddruk metingen in alle klinische scenario&apos;s vast te leggen - bijvoorbeeld, zelf-meting met een thuis bloeddrukmeter; een nood beoordeling van de systolische bloeddruk met behulp van palpatie en een drukmanchet; metingen tijdens consulten, overleg of tijdens inspannings stress testen, en een reeks van metingen die door een apparaat zijn gedaan in de intensieve zorg.
+Er is een uitgebreid status model dat interpretatie van metingen ondersteunt, door patiënt positie, inspanning, beïnvloedende factoren en de hoek/het aantal graden waarin de onderzoekstafel staat, te specificeren.
+Genoemde gebeurtenissen zijn gelimiteerd tot een gemiddelde over een periode van 24 uur, maar templates kunnen de standaard &apos;iedere gebeurtenis&apos; verder vernauwen om specifieke eisen voor de bloeddrukmeting, zoals registreren van de bloeddruk op een specifiek tijdsmoment, of over een reeks van intervallen (+/- statistisch gebruik) te faciliteren.
+</use>
+   <keywords>observaties</keywords>
+   <keywords>meting</keywords>
+   <keywords>blddr</keywords>
+   <keywords>vitale functies</keywords>
+   <keywords>gemiddelde arteriele druk</keywords>
+   <keywords>polsdruk</keywords>
+   <keywords>systolisch</keywords>
+   <keywords>diastolisch</keywords>
+   <keywords>RR</keywords>
+   <keywords>NIBP</keywords>
+   <keywords>tensie</keywords>
+   <misuse>Niet te gebruiken voor intraveneuze druk.
+Niet te gebruiken voor de meting van de arteriele bloeddruk welke geen surrogaat is voor de arteriele druk in de systemische circulatie, bv de specifieke meting van de rechter arterie pulmonalis druk.
+Gebruik OBSERVATION.intravascular_pressure en gerelateerde specialisaties in beide situaties.</misuse>
+  </details>
+  <details id="ru">
+   <language>ISO_639-1::ru</language>
+   <purpose>Для записи системного артериального давления крови человека.</purpose>
+   <use>Используется для записи всех представлений измерения системного артериального  кровяного давления, независимо от используемого метода или расположения тела пациента. Архетип предназначен для записи измерений давления во всех клинических сценариях - например, самостоятельное измерение давления крови домашним автоматическим манометром, в чрезвычайной  ситуации использование  пальпации пульсовой волны и сфигмоманометр; измерений в ходе клинических консультаций или в ходе осуществления стресс-тестирования, а также серии измерений, выполненных аппаратом в реанимации.
+Поддерживает интерпретацию измерений путем определения позиции пациента, физические упражнения, осложняющих факторов и угла наклона стола в научных исследованиях.
+Предполаагется интервал между измерениями 24 часа, однако может быть дополнено событиями (по умолчанию &quot;любое событие&quot;) для удовлетворения специфических требований для измерения кровяного давления, такие как записи в отношении кровяного давления конкретные моменты времени, или в диапазоне интервалов.</use>
+   <keywords>обследование</keywords>
+   <keywords>измерение</keywords>
+   <keywords>артериальное давление</keywords>
+   <keywords>диастолическое</keywords>
+   <keywords>систолическое</keywords>
+   <misuse>Не следует использовать для внутривенного давления.
+Не следует использовать для измерения артериального давления, которое не является суррогатом артериального давления в системном кровотоке, например, конкретные измерения давления в легочной артерии.
+Использовать OBSERVATION.intravascular_pressure и смежных специальностей в обоих этих ситуациях.
+</misuse>
+  </details>
+  <details id="fa">
+   <language>ISO_639-1::fa</language>
+   <purpose>ثبت نمودن فشار خون وریدی کل یک فرد</purpose>
+   <use>برای ثبت هر چیز نشاندهنده اندازه گیری فشاره خون وریدی کل، جدا از ابنکه برای ثبت آن از چه شیوه ای یا کدام بخش از بدن استفاده شده باشد، بکار می رود. این الگوساز برای گردآوری اندازه گیری فشار خون در همه سناریوهای بالینی طراحی شده است، مانند اندازه گیری توسط خود فرد بوسیله دستگاه فشار خون خانگی، ارزیابی اورژانسی سیستولیک با لمس نبض و یک &quot;فشارسنج خون&quot;، اندازه گیریهای انجام گرفته در مشاوره بالینی یا حین تست ورزشی، و یا یک رشته از اندازه گیریهای دستگاه مراقبت های ویژه.
+مدل حالت توانمندی وجود دارد که تفسیر اندازه گیری ها را از طریق شناسایی موقعیت بیمار، ورزش، فاکتورهای مبهم و تست تخت شیبدار، پشتیبانی می کند.
+رویدادهای نام گذاری شده بگونه ای محدود شده اند که روی یک دوره 24 ساعته میانگین گیری کنند هر چند که الگو ها می توانند پیش فرض -هر گونه  رویداد- را برای فراهم کردن خواسته های خاص از اندازه گیری فشار خون، با محدودیتهایی نظیر ثبت فشار خون سر وقت یا روی رنجی از فاصله های زمانی (با عمل جمع یا منها)، بیشتر محدود کنند 
+</use>
+   <keywords>مشاهدات</keywords>
+   <keywords>اندازه گیری</keywords>
+   <keywords>فشار خون</keywords>
+   <keywords>علایم حیاتی</keywords>
+   <keywords>میانگین فشار وریدی</keywords>
+   <keywords>فشار نبض</keywords>
+   <keywords>سیستولیک</keywords>
+   <keywords>دیاستولیک</keywords>
+   <keywords>تنفسهای سریع</keywords>
+   <keywords>فشار خون غیر تهاجمی</keywords>
+   <misuse>برای فشار داخل وریدی استفاده نشود.
+برای اندازه گیری فشار خون وریدی نباید استفاده شود که جایگزینی برای فشار وریدی در گردش خون کلی نیست، بعنوان مثال اندازه گیری خاص فشار وریدی ریه راست.
+
+ و تخصص های مربوطه برای موارد بالا بکار رود&quot;OBSERVATION.intravascular_pressure&quot;
+ 
+</misuse>
+  </details>
+  <details id="ar-sy">
+   <language>ISO_639-1::ar-sy</language>
+   <purpose>لتسجيل ضغط الدم الشرياني النظامي للشخص</purpose>
+   <use>يستخدم لتسجيل جميع طرق عرض ضغط الدم الشرايني النظامي, بغض النظر عن الطريقة أو الموضع من الجسم المستخدم في التسجيل.
+
+يستخدم هذا النموذج لالتقاط قياسات ضغط الدم في جميع السيناريوهات السريرية - مثلا, قياس ضغط الدم بواسطة الشخص لنفسه باستخدام آلة القياس المنزلية, تقييم الضغط الانقباضي في حالة الطوارئ باستخدام المجس و مقياس الضغط الزئبقي, القياسات التي تم أخذها في الاستشارات السريرية أو في أثناء اختبار الضغط البدني, و سلسلة من القياسات التي تتم باستخدام آلات العناية المركزة.
+
+يستخدم هذا النموذج الغني في تسجيل حالات القياس من خلال تفسيره في ضوء وضع المريض عند القياس, المجهود البدني, العوامل المربكة, و زاوية انحناء الطاولة المستخدمة عند القياس.
+
+تم تحديد بعض الوقائع إلى المتوسط خلال 24 ساعة, إلا أن القوالب تستطيع تقييد الاختيار التلقائي (إحدى الوقائع) لمتطلبات معينة حول قياسات ضغط الدم مثل تسجيل ضغط الدم في نقاط زمنية معينة أو خلال مدى من الفواصل الزمنية - زائد أو ناقص دوال حسابية</use>
+   <keywords>الملاحظات</keywords>
+   <keywords>القياس</keywords>
+   <keywords>ضغط الدم</keywords>
+   <keywords>العلامات الحياتية</keywords>
+   <keywords>متوسط الضغط الشرياني</keywords>
+   <keywords>الضغط عند النبض</keywords>
+   <keywords>الانقباضي</keywords>
+   <keywords>الانبساطي</keywords>
+   <keywords>معدل التنفس</keywords>
+   <keywords>قياس ضغط الدم غير الباضع</keywords>
+   <misuse>لا يستخدم لتسجيل الضغط داخل الوريد.
+لا يستخدم لقياس ضغط الدم الشرياني الذي لا يحل بديلا عن ضغط الدم الشرياني في الدورة الجهازية مثل قياسات معينة لضغط الشريان الرئوي الأيمن.
+استخدم نموذج ملاحظة. الضغط داخل الأوعية الدموية , و التخصيصات المتعلقة في كل من هذين الموقفين.</misuse>
+  </details>
+  <details id="es-ar">
+   <language>ISO_639-1::es-ar</language>
+   <purpose>Registrar la presión arterial sistémica de un individuo</purpose>
+   <use>Usar para registrar todas las representaciones de la presión arterial sistémica, sin importar que método o localización del cuerpo se use para el registro. El arquetipo se usa para capturar la medida de la presión arterial en todos los escenarios clínicos - por ejemplo: automedición con un tensiómetro de uso domiciliario; la evaluación en situación de emergencia, de la sistólica usando palpación y un esfingomanómetro; medidas tomadas durante la consulta clínica o durante la prueba de esfuerzo (ergometría); y la serie de medidas automáticas hechas en la Unidad de Cuidados Intensivos.
+Existe un variado modelo de situaciones que soporta la interpretación de mediciones a través de la interpretación de la posición del paciente, ejercicio, factores confluentes y el ángulo de inclinación de la camilla en situaciones de investigación.
+Los eventos se han limitado a promediarse sobre un intervalo de 24 horas, sin embargo plantillas pueden acotar la medida por defecto &apos;cualquier evento&apos; para ajustarse a requerimientos específicos de medida de la presión arterial como el Registro de la Tensión Arterial durante momentos específicos de tiempo, o sobre un rango de intervalos (+/- funciones matemáticas)
+
+ </use>
+   <keywords>observaciones(sp)</keywords>
+   <keywords>mediciones(sp)</keywords>
+   <keywords>presión arterial(sp)</keywords>
+   <keywords>signos vitales(sp)</keywords>
+   <keywords>presión arterial media(sp)</keywords>
+   <keywords>presión pulso(sp)</keywords>
+   <keywords>sistólica(sp)</keywords>
+   <keywords>diastólica(sp)</keywords>
+   <keywords>RR(en)</keywords>
+   <keywords>Presión Arterial No Invasiva(sp)</keywords>
+   <keywords>PANI(sp)</keywords>
+   <misuse>No debe usarse para la presión intravenosa
+No debe usarse para la medida de la presión arterial que NO deriva de la presión arterial de la circulación sistémica ej: la medida específica de la presión de la arteria Pulmonar (presión capilar)
+Usen Observación.presión_intravascular y especializaciones relacionadas para estas dos situaciones en particular.
+</misuse>
+  </details>
+  <details id="pt-br">
+   <language>ISO_639-1::pt-br</language>
+   <purpose>Para registrar a pressão arterial sistêmica de um indivíduo.</purpose>
+   <use>Usado para registrar todas as representações da medida da  pressão areterial sistêmica, não importando qual método ou localização corporal usada para registrá-la. O objetivo do arquétipo é capturar a pressão sanguínea em todos os cenários clínicos - por exemplo, auto-medida com um aparelho de pressão caseiro; um avaliação de emergência da pressão sistólica usando palpação e esfigmomanômetro; medidas realizadas em consultas clínicas ou durante testes de esforço; e uma série de medidas feitas por uma máquina em uma Unidade de Terapia Intensiva.
+Existe um modelo rico que apoia a interpretação de medidas através da identificação da posição do paciente, nível exercício, gatores confundidores e ângulo de uma mesa de inclinação em uma pesquisa.
+Eventos nomeados têm sido limitados em médica a um período de 24 horas, entretanto templates podem, posteriormente, restringir o padrão predeterminado &apos;qualquer evento&apos;  para atender a requisitos específicos registro de medida de pressão sanguínea em pontos no tempo específicos, ou em faixas de intervalos (+/-funções matemáticas).</use>
+   <keywords>observações</keywords>
+   <keywords>medidas</keywords>
+   <keywords>PA</keywords>
+   <keywords>pressão sanguínea</keywords>
+   <keywords>sinais vitais</keywords>
+   <keywords>Pressão arterial média</keywords>
+   <keywords>Pressão de Pulso</keywords>
+   <keywords>sistólica</keywords>
+   <keywords>diástólica</keywords>
+   <misuse>Não deve ser usada para registrar pressão intravenosa.
+Não deve ser usada para medida da pressão arterial que NÃO é um substituto da pressão arterial na circulação sistêmica, por exemplo, medida específica da pressão da artéria Pulmonar direita.
+Em ambas situações use OBSERVATION.intravascular_pressure e especializações relacionadas.</misuse>
+  </details>
+  <details id="ko">
+   <language>ISO_639-1::ko</language>
+   <purpose>개인의 체동맥혈압 기록</purpose>
+   <use>전신 동맥혈압측정의 모든 표현들을 저장하는데 사용, 어떤 방법 또는 신체부위와 관계없이 기록하는데 사용된다. 이 archetype은 모든 임상 시나리오에서 동맥혈압을 획득하기 위한 것이다 - 예를 들어, 가정 혈압기기를 이용한 자가 측정; 타진과 혈압계를 이용한 수축기의 응급평가; 임상 의뢰 또는 운동부하검사에서의 측정; 그리고 중환자실에서 기계에 의한 일련의 측정.
+
+여기에는 환자 자세, 운동, 혼란 변수 그리고 연구에서 틸트테이블의 각도를 통한 측정의 해석을 지원하는 풍부한 상태 모델(state model)이 있다.
+
+명명된 events는 24시간 동안의 평균에 제한되어 있지만 templates는 특정 시각 또는 기간(+/- 수학 함수)에 대한 혈압의 기록과 같은 혈압 측정을 위한 특정한 요구사항을 제공하기 위해서 default &apos;any event&apos;에 추가적인 constrain을 할 수 있다.</use>
+   <keywords>*관찰(ko)</keywords>
+   <keywords>*측정(ko)</keywords>
+   <keywords>*혈압(ko)</keywords>
+   <keywords>*생체징후(ko)</keywords>
+   <keywords>*평균 동맥 혈압(ko)</keywords>
+   <keywords>*맥압(ko)</keywords>
+   <keywords>*수축기의(ko)</keywords>
+   <keywords>*이완기의(ko)</keywords>
+   <keywords>*호흡수(ko)</keywords>
+   <keywords>*비침습적 혈압(ko)</keywords>
+   <misuse>*정맥혈압 측정을 위해서 사용되지 않는다.
+
+예를 들어 우폐동맥압과 같은 특별한 측정과 같이 체순환에서의 동맥압을 대신하지 않는 동맥혈압의 측정을 위해 사용되지 않는다.
+
+위의 2가지 상황에서는 OBSERVATION.intravascular_pressure와 관련된 specialisations를 사용하라.(ko)</misuse>
+  </details>
+  <details id="en">
+   <language>ISO_639-1::en</language>
+   <purpose>To record the systemic arterial blood pressure of an individual.</purpose>
+   <use>Use to record all representations of systemic arterial blood pressure measurement, no matter which method or body location is used to record it. The archetype is intended to capture blood pressure measurements in all clinical scenarios - for example, self-measurement with a home blood pressure machine; an emergency assessment of systolic using palpation and a sphygmomanometer; measurements taken in clinical consultations or during exercise stress testing; and a series of measurements made by a machine in Intensive Care.   
+There is a rich state model that supports interpretation of measurements through identifying patient position, exercise, confounding factors and angle of a tilt table in research. 
+Named events have been limited to average over a 24 hour period, however templates can further constrain the default &apos;any event&apos; to cater for specific requirements for blood pressure measurements such as recording Blood Pressure against specific points in time, or over a range of intervals (+/- mathematical functions).</use>
+   <keywords>observations</keywords>
+   <keywords>measurement</keywords>
+   <keywords>bp</keywords>
+   <keywords>vital signs</keywords>
+   <keywords>mean arterial pressure</keywords>
+   <keywords>pulse pressure</keywords>
+   <keywords>systolic</keywords>
+   <keywords>diastolic</keywords>
+   <keywords>RR</keywords>
+   <keywords>NIBP</keywords>
+   <misuse>Not to be used for intravenous pressure.
+Not to be used for the measurement of arterial blood pressure which is NOT a surrogate for arterial pressure in the systemic circulation eg specific measurement of right Pulmonary artery pressure.  
+Use OBSERVATION.intravascular_pressure and related specialisations in both of these situations.</misuse>
+  </details>
+  <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+  <other_contributors>Knut Bernstein, MEDIQ, Denmark</other_contributors>
+  <other_contributors>Marja Buur, Medisch Centrum Alkmaar, Netherlands</other_contributors>
+  <other_contributors>Rong Chen, Cambio Healthcare Systems, Sweden</other_contributors>
+  <other_contributors>Beatriz de Faria Leão, Zilics, Brazil</other_contributors>
+  <other_contributors>Paul Donaldson, Nursing Informatics Australia, Australia</other_contributors>
+  <other_contributors>Jose Florez Arango, Universidad de Antioquia, Colombia</other_contributors>
+  <other_contributors>Gerard Freriks, ERC, Netherlands</other_contributors>
+  <other_contributors>Sebastian Garde, Ocean Informatics, Germany</other_contributors>
+  <other_contributors>Anneke Goossen, Results 4 Care, Netherlands</other_contributors>
+  <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+  <other_contributors>Karsten Heusser, Hannover Medical School, Germany</other_contributors>
+  <other_contributors>Omer Hotomaroglu, Turkey</other_contributors>
+  <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+  <other_contributors>Derek Hoy, United Kingdom</other_contributors>
+  <other_contributors>Pieter Hummel, Medisch Centrum Alkmaar, Netherlands</other_contributors>
+  <other_contributors>Eugene Igras, IRIS Systems, Inc., Canada</other_contributors>
+  <other_contributors>Sundaresan Jagannathan, Scottish NHS, United Kingdom</other_contributors>
+  <other_contributors>Andrew James, University of Toronto, Canada</other_contributors>
+  <other_contributors>Heather Leslie, Ocean Informatics, Australia (Editor)</other_contributors>
+  <other_contributors>Rikard Lovstrom, Swedish Medical Association, Sweden</other_contributors>
+  <other_contributors>Rohan Martin, Ambulance Victoria, Australia</other_contributors>
+  <other_contributors>Ian McNicoll, Ocean Informatics, United Kingdom</other_contributors>
+  <other_contributors>Jeroen Meintjens, Medisch Centrum Alkmaar, Netherlands</other_contributors>
+  <other_contributors>Udo Müller-Oest, CompuGROUP Software, Germany</other_contributors>
+  <other_contributors>Melvin Reynolds, United Kingdom</other_contributors>
+  <other_contributors>Tony Shannon, NHS, United Kingdom</other_contributors>
+  <other_contributors>Hwei-Yee Tai, Tan Tock Seng Hospital, Singapore</other_contributors>
+  <other_contributors>Stef Verlinden, Vivici, Netherlands</other_contributors>
+  <other_contributors>Soon Ghee Yap, Singapore Health Services Pte Ltd, Singapore</other_contributors>
+  <other_details id="references">O&apos;Brien E, Asmar R, Beilin L, et al. European Society of Hypertension recommendations for conventional, ambulatory and home blood pressure measurement. Journal of Hypertension [Internet]. 2003 [cited 2009 Jul 30] ; 21(5):821-848. Available from http://www.bhsoc.org/bp_monitors/ESH_BP_rec.pdf
+
+Perloff D, Grim C, Flack J, Frohlich ED, Hill M, McDonald M, Morgenstern BZ. Human blood pressure determination by sphygmomanometry. Circulation [Internet]. 1993 [cited 2009 Jul 29] 88 (5): 2460.  Available from: http://circ.ahajournals.org/cgi/reprint/88/5/2460</other_details>
+  <other_details id="MD5-CAM-1.0.1">BE0B7519BA42267F15F7C82B9EA42E2E</other_details>
+ </description>
+ <is_controlled>false</is_controlled>
+</archetype>

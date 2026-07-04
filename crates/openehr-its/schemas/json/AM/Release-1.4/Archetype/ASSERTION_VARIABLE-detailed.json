@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/ASSERTION_VARIABLE-detailed.json",
+    "title": "ASSERTION_VARIABLE",
+    "description": "Definition of a named variable used in an assertion expression.",
+    "$comments": "Defined in Archetype IM",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "Name of variable.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        },
+        "definition": {
+            "description": "Formal definition of the variable.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        }
+    },
+    "required": [
+        "name",
+        "definition"
+    ]
+}

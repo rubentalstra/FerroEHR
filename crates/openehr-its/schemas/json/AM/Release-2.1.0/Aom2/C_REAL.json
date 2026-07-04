@@ -1,0 +1,61 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/C_REAL.json",
+    "title": "C_REAL",
+    "description": "Constraint on instances of Real.",
+    "$comments": "Defined in Aom2 IM, inherits from C_ORDERED",
+    "type": "object",
+    "properties": {
+        "parent": {
+            "description": "Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.",
+            "$ref": "all.json#/definitions/ARCHETYPE_CONSTRAINT"
+        },
+        "soc_parent": {
+            "description": "Inverse relationship for `ARCHETYPE_CONSTRAINT` node owned by `C_SECOND_ORDER._members_` attribute.",
+            "$ref": "all.json#/definitions/C_SECOND_ORDER"
+        },
+        "rm_type_name": {
+            "description": "Reference model type that this node corresponds to. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "occurrences": {
+            "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.\nOnly set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Multiplicity_interval"
+        },
+        "node_id": {
+            "description": "Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`, the id must be an id-code must be defined in the archetype terminology. For valid structures, all node ids are id-codes.\n\nFor `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "is_deprecated": {
+            "description": "True if this node and by implication all sub-nodes are deprecated for use.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "sibling_order": {
+            "description": "Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_` = True.",
+            "$ref": "all.json#/definitions/SIBLING_ORDER"
+        },
+        "default_value": {
+            "description": "Default value set in a template, and present in an operational template. Generally limited to leaf and near-leaf nodes.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Any"
+        },
+        "assumed_value": {
+            "description": "Value to be assumed if none sent in data.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Any"
+        },
+        "is_enumerated_type_constraint": {
+            "description": "True if this object represents a constraint on an enumerated type from the reference model, where the latter is assumed to be based on a primitive type, generally Integer or String.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "constraint": {
+            "description": "Formal constraint on `Real`, in the form of one or more `Interval<Real>`.\n\nTo represent no constraint, use an empty list.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Interval_of_Real"
+            }
+        }
+    },
+    "required": [
+        "rm_type_name",
+        "node_id"
+    ]
+}

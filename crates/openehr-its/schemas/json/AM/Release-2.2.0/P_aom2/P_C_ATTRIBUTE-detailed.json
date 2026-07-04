@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/P_aom2/P_C_ATTRIBUTE-detailed.json",
+    "title": "P_C_ATTRIBUTE",
+    "description": "Abstract model of constraint on any kind of attribute node.",
+    "$comments": "Defined in P_aom2 IM, inherits from P_ARCHETYPE_CONSTRAINT",
+    "type": "object",
+    "properties": {
+        "rm_attribute_name": {
+            "description": "Reference model attribute within the enclosing type represented by a C_OBJECT.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "existence": {
+            "description": "Constraint on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not).",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "children": {
+            "description": "Child C_OBJECT nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes. ",
+            "type": "array",
+            "items": {
+                "$ref": "all-detailed.json#/definitions/P_C_OBJECT"
+            }
+        },
+        "differential_path": {
+            "description": "Within a differential specialised archetype, may be set to represent a deep path within the structure to which this constraint and its child constraints apply.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "cardinality": {
+            "description": "Cardinality constraint of attribute, if a container attribute.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "is_multiple": {
+            "description": "Flag indicating whether this attribute constraint is on a container (i.e. multiply-valued) attribute.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        }
+    },
+    "required": [
+        "rm_attribute_name",
+        "is_multiple"
+    ],
+    "$inherits": [
+        "all-detailed.json#/definitions/P_ARCHETYPE_CONSTRAINT"
+    ]
+}
