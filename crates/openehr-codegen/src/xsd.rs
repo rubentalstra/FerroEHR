@@ -228,3 +228,26 @@ pub const RM_FILES_V1: &[&str] = &[
 pub fn v1_files(all_dir: &Path) -> Vec<std::path::PathBuf> {
     RM_FILES_V1.iter().map(|f| all_dir.join(f)).collect()
 }
+
+/// The v2 RM-instance XSDs, as (component-relative) paths. v2 splits the schemas
+/// per component (RM 1.1.0 + BASE 1.2.0) rather than one flat `ALL/` bundle.
+/// Reserved for a future v2-specific trait (ADR-005); the v1 shape currently
+/// serves both lineages (they differ only by root `xmlns`).
+#[allow(dead_code)]
+pub const RM_FILES_V2: &[&str] = &[
+    "BASE/Release-1.2.0/BaseTypes.xsd",
+    "BASE/Release-1.2.0/Resource.xsd",
+    "RM/Release-1.1.0/Common.xsd",
+    "RM/Release-1.1.0/DataTypes.xsd",
+    "RM/Release-1.1.0/DataStructures.xsd",
+    "RM/Release-1.1.0/Ehr.xsd",
+    "RM/Release-1.1.0/Demographic.xsd",
+    "RM/Release-1.1.0/EhrExtract.xsd",
+];
+
+/// Resolve the v2 RM-instance file paths under the `its-xml-2.0.0-nsv2/` root.
+#[must_use]
+#[allow(dead_code)] // reserved for a future v2-specific trait (ADR-005)
+pub fn v2_files(root: &Path) -> Vec<std::path::PathBuf> {
+    RM_FILES_V2.iter().map(|f| root.join(f)).collect()
+}
