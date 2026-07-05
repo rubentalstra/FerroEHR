@@ -1,17 +1,24 @@
-# Phase 17 — FLAT / STRUCTURED / Web Template + EhrScape
+# Phase 17 — EhrScape + admin compatibility surface
+
+> **Rescoped (2026-07-06):** WebTemplate + FLAT (simSDT) + STRUCTURED (structSDT)
+> conversion moved into **P14** (built there, full Better parity). P17 now covers
+> only the **EhrScape (`/rest/ecis/v1/*`) + admin** compatibility endpoints in
+> `ehrbase-compat`, reusing the `openehr-flat` converters P14 delivered.
 
 - Status: not-started (Stage-1 app build, step 9 of 13)
-- Consumes: `openehr-rm`, P14 (WebTemplate), P15 (validation), P12 (service)
+- Consumes: `openehr-flat` (WebTemplate/FLAT/STRUCTURED, P14), P15 (validation), P12 (service)
 - Compile required: yes (compiling, tested increment)
 - Decisions: ADR-006; serialization rule (Better semantics + `ehrbase-quirks` flag)
 
 ## Objectives
 
-The vendor formats and the EhrScape compatibility surface: FLAT (simSDT),
-STRUCTURED (structSDT), and Web Template JSON conversion in `openehr-flat`, plus
-the EhrScape (`/rest/ecis/v1/*`) + admin endpoints in `ehrbase-compat`. Target
-Better's `web-template` semantics; EHRbase quirks (`|unit` vs `|units`) live
-behind the `ehrbase-quirks` feature flag.
+The EhrScape compatibility surface: the EhrScape (`/rest/ecis/v1/*`) + admin
+endpoints in `ehrbase-compat`, reusing the `openehr-flat` FLAT/STRUCTURED/
+WebTemplate conversion built in P14. Target Better's `web-template` semantics;
+`|unit` is singular (no `|units` divergence — see the serialization rule);
+genuine Better extras (`|unit_system`/`|unit_display_name`) live behind the
+`ehrbase-quirks` feature flag. WebTemplate/FLAT/STRUCTURED are a compat layer,
+not CNF-conformance-gated.
 
 ## Preconditions
 
