@@ -11,6 +11,7 @@ publish = false
 
 [dependencies]
 anyhow.workspace = true
+async-trait.workspace = true
 figment.workspace = true
 jiff.workspace = true
 tokio.workspace = true

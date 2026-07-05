@@ -54,12 +54,16 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.agent_create(p, body).await?,
+                &state.backend().agent_create(p, body).await?,
             ))
         }
         "agent_get" => {
             let p = params::build::<AgentGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.agent_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().agent_get(p).await?,
+            ))
         }
         "agent_update" => {
             let p = params::build::<AgentUpdateParams>(&parts.path, q, h)?;
@@ -67,12 +71,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.agent_update(p, body).await?,
+                &state.backend().agent_update(p, body).await?,
             ))
         }
         "agent_delete" => {
             let p = params::build::<AgentDeleteParams>(&parts.path, q, h)?;
-            state.agent_delete(p).await?;
+            state.backend().agent_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "group_create" => {
@@ -82,12 +86,16 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.group_create(p, body).await?,
+                &state.backend().group_create(p, body).await?,
             ))
         }
         "group_get" => {
             let p = params::build::<GroupGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.group_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().group_get(p).await?,
+            ))
         }
         "group_update" => {
             let p = params::build::<GroupUpdateParams>(&parts.path, q, h)?;
@@ -95,12 +103,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.group_update(p, body).await?,
+                &state.backend().group_update(p, body).await?,
             ))
         }
         "group_delete" => {
             let p = params::build::<GroupDeleteParams>(&parts.path, q, h)?;
-            state.group_delete(p).await?;
+            state.backend().group_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "organisation_create" => {
@@ -110,12 +118,16 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.organisation_create(p, body).await?,
+                &state.backend().organisation_create(p, body).await?,
             ))
         }
         "organisation_get" => {
             let p = params::build::<OrganisationGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.organisation_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().organisation_get(p).await?,
+            ))
         }
         "organisation_update" => {
             let p = params::build::<OrganisationUpdateParams>(&parts.path, q, h)?;
@@ -123,12 +135,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.organisation_update(p, body).await?,
+                &state.backend().organisation_update(p, body).await?,
             ))
         }
         "organisation_delete" => {
             let p = params::build::<OrganisationDeleteParams>(&parts.path, q, h)?;
-            state.organisation_delete(p).await?;
+            state.backend().organisation_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "person_create" => {
@@ -138,12 +150,16 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.person_create(p, body).await?,
+                &state.backend().person_create(p, body).await?,
             ))
         }
         "person_get" => {
             let p = params::build::<PersonGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.person_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().person_get(p).await?,
+            ))
         }
         "person_update" => {
             let p = params::build::<PersonUpdateParams>(&parts.path, q, h)?;
@@ -151,12 +167,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.person_update(p, body).await?,
+                &state.backend().person_update(p, body).await?,
             ))
         }
         "person_delete" => {
             let p = params::build::<PersonDeleteParams>(&parts.path, q, h)?;
-            state.person_delete(p).await?;
+            state.backend().person_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "role_create" => {
@@ -166,12 +182,16 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.role_create(p, body).await?,
+                &state.backend().role_create(p, body).await?,
             ))
         }
         "role_get" => {
             let p = params::build::<RoleGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.role_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().role_get(p).await?,
+            ))
         }
         "role_update" => {
             let p = params::build::<RoleUpdateParams>(&parts.path, q, h)?;
@@ -179,12 +199,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.role_update(p, body).await?,
+                &state.backend().role_update(p, body).await?,
             ))
         }
         "role_delete" => {
             let p = params::build::<RoleDeleteParams>(&parts.path, q, h)?;
-            state.role_delete(p).await?;
+            state.backend().role_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "versioned_party_get" => {
@@ -192,7 +212,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_party_get(p).await?,
+                &state.backend().versioned_party_get(p).await?,
             ))
         }
         "versioned_party_revision_history" => {
@@ -200,7 +220,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_party_revision_history(p).await?,
+                &state.backend().versioned_party_revision_history(p).await?,
             ))
         }
         "versioned_party_version_get_at_time" => {
@@ -208,7 +228,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_party_version_get_at_time(p).await?,
+                &state
+                    .backend()
+                    .versioned_party_version_get_at_time(p)
+                    .await?,
             ))
         }
         "versioned_party_version_get_by_id" => {
@@ -216,7 +239,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_party_version_get_by_id(p).await?,
+                &state.backend().versioned_party_version_get_by_id(p).await?,
             ))
         }
         "contribution_create" => {
@@ -226,24 +249,34 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.contribution_create(p, body).await?,
+                // `contribution_*` is defined on both DemographicApi and EhrApi
+                // (shared method names); disambiguate on the trait-object backend.
+                &DemographicApi::contribution_create(state.backend(), p, body).await?,
             ))
         }
         "contribution_get" => {
             let p = params::build::<ContributionGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.contribution_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &DemographicApi::contribution_get(state.backend(), p).await?,
+            ))
         }
         "demographic_tags_get" => {
             let p = params::build::<DemographicTagsGetParams>(&parts.path, q, h)?;
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.demographic_tags_get(p).await?,
+                &state.backend().demographic_tags_get(p).await?,
             ))
         }
         "agent_tags_get" => {
             let p = params::build::<AgentTagsGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.agent_tags_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().agent_tags_get(p).await?,
+            ))
         }
         "agent_tags_update" => {
             let p = params::build::<AgentTagsUpdateParams>(&parts.path, q, h)?;
@@ -251,17 +284,21 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.agent_tags_update(p, body).await?,
+                &state.backend().agent_tags_update(p, body).await?,
             ))
         }
         "agent_tags_delete" => {
             let p = params::build::<AgentTagsDeleteParams>(&parts.path, q, h)?;
-            state.agent_tags_delete(p).await?;
+            state.backend().agent_tags_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "group_tags_get" => {
             let p = params::build::<GroupTagsGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.group_tags_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().group_tags_get(p).await?,
+            ))
         }
         "group_tags_update" => {
             let p = params::build::<GroupTagsUpdateParams>(&parts.path, q, h)?;
@@ -269,12 +306,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.group_tags_update(p, body).await?,
+                &state.backend().group_tags_update(p, body).await?,
             ))
         }
         "group_tags_delete" => {
             let p = params::build::<GroupTagsDeleteParams>(&parts.path, q, h)?;
-            state.group_tags_delete(p).await?;
+            state.backend().group_tags_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "organisation_tags_get" => {
@@ -282,7 +319,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.organisation_tags_get(p).await?,
+                &state.backend().organisation_tags_get(p).await?,
             ))
         }
         "organisation_tags_update" => {
@@ -291,17 +328,21 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.organisation_tags_update(p, body).await?,
+                &state.backend().organisation_tags_update(p, body).await?,
             ))
         }
         "organisation_tags_delete" => {
             let p = params::build::<OrganisationTagsDeleteParams>(&parts.path, q, h)?;
-            state.organisation_tags_delete(p).await?;
+            state.backend().organisation_tags_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "person_tags_get" => {
             let p = params::build::<PersonTagsGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.person_tags_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().person_tags_get(p).await?,
+            ))
         }
         "person_tags_update" => {
             let p = params::build::<PersonTagsUpdateParams>(&parts.path, q, h)?;
@@ -309,17 +350,21 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.person_tags_update(p, body).await?,
+                &state.backend().person_tags_update(p, body).await?,
             ))
         }
         "person_tags_delete" => {
             let p = params::build::<PersonTagsDeleteParams>(&parts.path, q, h)?;
-            state.person_tags_delete(p).await?;
+            state.backend().person_tags_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "role_tags_get" => {
             let p = params::build::<RoleTagsGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.role_tags_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().role_tags_get(p).await?,
+            ))
         }
         "role_tags_update" => {
             let p = params::build::<RoleTagsUpdateParams>(&parts.path, q, h)?;
@@ -327,12 +372,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.role_tags_update(p, body).await?,
+                &state.backend().role_tags_update(p, body).await?,
             ))
         }
         "role_tags_delete" => {
             let p = params::build::<RoleTagsDeleteParams>(&parts.path, q, h)?;
-            state.role_tags_delete(p).await?;
+            state.backend().role_tags_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         other => Err(RestError(openehr_its::rest::runtime::ApiError::Internal(
