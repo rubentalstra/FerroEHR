@@ -15,6 +15,7 @@
 mod aql;
 mod context;
 mod from_flat;
+mod graph;
 mod mappers;
 mod sub;
 mod to_flat;

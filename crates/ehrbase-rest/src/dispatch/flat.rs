@@ -1,7 +1,10 @@
-//! FLAT (simSDT) glue for the COMPOSITION endpoints.
+//! FLAT (simSDT) + STRUCTURED (structSDT) glue for the COMPOSITION endpoints.
 //!
-//! The FLAT format is a Better/EHRbase interop format (`openehr-flat`), served
-//! as `application/openehr.wt.flat+json`:
+//! Both are Better/EHRbase interop formats (`openehr-flat`), served as
+//! `application/openehr.wt.flat+json` and `application/openehr.wt.structured+json`.
+//! STRUCTURED is the pure nesting of the FLAT map (`openehr_flat::to_structured`
+//! / `from_structured`); the template-id resolution and `WebTemplate` caching are
+//! shared with FLAT. For FLAT specifically:
 //!
 //! * **input** (`Content-Type` FLAT on create/update): the flat map is rebuilt
 //!   into a canonical-JSON `COMPOSITION` via `openehr_flat::from_flat`, driven
@@ -117,4 +120,44 @@ pub(super) async fn composition_flat_response(
     let json =
         serde_json::to_string(&flat).map_err(|e| internal(format!("FLAT serialization: {e}")))?;
     Ok(negotiate::flat_json_body(status, json))
+}
+
+/// Parse a STRUCTURED (structSDT) request body into a canonical-JSON
+/// `COMPOSITION` via `openehr_flat::from_structured` (template id resolved as
+/// for FLAT: query param or `openEHR-TEMPLATE_ID` header).
+pub(super) async fn composition_from_structured(
+    state: &AppState,
+    query: Option<&str>,
+    headers: &HeaderMap,
+    body: &Bytes,
+) -> Result<Value, RestError> {
+    let template_id = request_template_id(query, headers).ok_or_else(|| {
+        bad_request(
+            "STRUCTURED composition input requires a template id via the `template_id` \
+             (or `templateId`) query parameter or the `openEHR-TEMPLATE_ID` header",
+        )
+    })?;
+    let structured: Value = serde_json::from_slice(body)
+        .map_err(|e| bad_request(format!("invalid STRUCTURED JSON: {e}")))?;
+    let wt = web_template_for(state, &template_id).await?;
+    openehr_flat::from_structured(&structured, &wt).map_err(|e| flat_err(&e))
+}
+
+/// Render a canonical-JSON composition as a STRUCTURED
+/// `application/openehr.wt.structured+json` response.
+pub(super) async fn composition_structured_response(
+    state: &AppState,
+    status: StatusCode,
+    comp: &Value,
+) -> Result<Response, RestError> {
+    let template_id = comp
+        .pointer("/archetype_details/template_id/value")
+        .and_then(Value::as_str)
+        .ok_or_else(|| internal("composition has no archetype_details/template_id"))?
+        .to_owned();
+    let wt = web_template_for(state, &template_id).await?;
+    let structured = openehr_flat::to_structured(comp, &wt).map_err(|e| flat_err(&e))?;
+    let json = serde_json::to_string(&structured)
+        .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;
+    Ok(negotiate::structured_json_body(status, json))
 }

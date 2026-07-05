@@ -141,7 +141,10 @@ pub fn build_web_template(opt: &OperationalTemplate) -> Result<WebTemplate, crat
 
     Ok(WebTemplate {
         template_id,
-        sem_ver: None, // TODO(port): extract semver from the template description.
+        // PORT NOTE: OPT 1.4 has no semantic-version field (semVer is an ADL2/OPT2
+        // concept), so the 1.4 adapter always emits `null` — matching what stock
+        // tooling produces for a 1.4 template. A value would only appear for OPT 2.
+        sem_ver: None,
         version: CURRENT_VERSION.to_owned(),
         default_language: ctx.default_language.clone(),
         languages: ctx.languages.clone(),

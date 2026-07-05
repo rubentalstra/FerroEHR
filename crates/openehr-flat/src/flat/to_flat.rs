@@ -48,9 +48,10 @@ fn walk(node: &WebTemplateNode, rm: &Value, prefix: &str, out: &mut FlatMap) {
         return;
     }
     for child in &node.children {
-        // The composition `context` is emitted via ctx/ (see `context`).
-        // TODO(port): archetyped `other_context` items under EVENT_CONTEXT.
-        if child.rm_type == "EVENT_CONTEXT" {
+        // Inside EVENT_CONTEXT only the archetyped `other_context` items are tree
+        // leaves; the standard context fields (start_time / setting /
+        // participations / …) are surfaced via ctx/ (see `context`).
+        if node.rm_type == "EVENT_CONTEXT" && !child.aql_path.contains("other_context") {
             continue;
         }
         let rel = aql::relative(&node.aql_path, &child.aql_path);

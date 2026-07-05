@@ -4,22 +4,21 @@
 //! path-segment entries, grouped as the [`WebTemplate`] tree is walked (matching
 //! each child by json-`id` / `alternativeJsonId`, `:i`-indexed instances kept in
 //! order), and each leaf's datum parts rebuild its `DATA_VALUE`. The RM
-//! structural nodes the web-template compacted away (`HISTORY`, `ITEM_TREE`, a
-//! single `EVENT`, the `ELEMENT` wrapper) are re-materialised from the relative
-//! AQL path between a node and its parent, with mandatory identity/occurrence
-//! fields filled so the result deserialises as an `openehr-rm` `Composition`.
-//! `ctx/…` keys rebuild the composition context (see [`context`](super::context)).
-//!
-//! Scope for this PR (recorded as `TODO(port)`): `INSTRUCTION.activities` /
-//! `ACTIVITY`, `ACTION.ism_transition`, nested `SECTION`s beyond `content`,
-//! `FOLDER`/DIRECTORY, feeder-audit / links / term-mappings / reference ranges,
-//! and archetyped `other_context`. Unroutable keys are collected and reported.
+//! structural nodes the web-template compacted away (`HISTORY`, a single
+//! `EVENT`, `ITEM_TREE`, the `ELEMENT` wrapper, `INSTRUCTION.activities` /
+//! `ACTIVITY`, `ACTION.ism_transition`, `SECTION`, archetyped `other_context`)
+//! are re-materialised from the relative AQL path between a node and its parent;
+//! a final [`graph::fill_structural_mandatory`] pass fills the RM-mandatory
+//! fields FLAT never surfaces (event `width`/`math_function`, activity
+//! `action_archetype_id`, ism `current_state`, …), so the result deserialises as
+//! an `openehr-rm` `Composition`. `ctx/…` keys rebuild the composition context
+//! (see [`context`](super::context)).
 
 use serde_json::{Map, Value, json};
 
 use super::mappers::{self};
 use super::sub::{Entry, FlatView, parse_key};
-use super::{aql, context};
+use super::{aql, context, graph};
 use crate::FlatError;
 use crate::webtemplate::{WebTemplate, WebTemplateNode};
 
@@ -78,7 +77,36 @@ pub fn from_flat(flat: &Map<String, Value>, wt: &WebTemplate) -> Result<Value, F
     ensure_template_id(&mut comp, &wt.tree, &wt.template_id);
     context::apply_ctx(flat, &mut comp);
     ensure_category(&mut comp);
-    Ok(Value::Object(comp))
+    let mut value = Value::Object(comp);
+    // Final structural pass: fill the RM-mandatory fields FLAT never surfaces
+    // (INTERVAL_EVENT width/math_function, ACTIVITY action_archetype_id, event
+    // data, item items, ism current_state) on every node — synthesised
+    // intermediates and web-template nodes alike — so the result deserialises as
+    // an `openehr-rm` Composition. `or_insert_with` never overwrites a
+    // datum-driven value, so the round-trip stays stable.
+    complete_tree(&mut value);
+    Ok(value)
+}
+
+/// Recursively fill each node's RM-mandatory structural fields (see
+/// [`graph::fill_structural_mandatory`]).
+fn complete_tree(v: &mut Value) {
+    match v {
+        Value::Object(m) => {
+            if let Some(ty) = m.get("_type").and_then(Value::as_str).map(str::to_owned) {
+                graph::fill_structural_mandatory(m, &ty, DEFAULT_TIME);
+            }
+            for child in m.values_mut() {
+                complete_tree(child);
+            }
+        }
+        Value::Array(a) => {
+            for e in a.iter_mut() {
+                complete_tree(e);
+            }
+        }
+        _ => {}
+    }
 }
 
 /// Build the RM value for `node` from its (root-relative) `entries`.
@@ -94,8 +122,11 @@ fn build(node: &WebTemplateNode, entries: &[Entry]) -> Value {
 
     let ctx_time = json!(DEFAULT_TIME);
     for child in &node.children {
-        if child.rm_type == "EVENT_CONTEXT" {
-            continue; // handled via ctx/
+        // Inside EVENT_CONTEXT only the archetyped `other_context` items are
+        // rebuilt from the tree; the mandatory context fields come from ctx/
+        // (merged by `context::apply_ctx`).
+        if node.rm_type == "EVENT_CONTEXT" && !child.aql_path.contains("other_context") {
+            continue;
         }
         // Gather the entries addressed to this child, grouped by :index.
         let mut groups: Vec<(Option<usize>, Vec<Entry>)> = Vec::new();
@@ -292,6 +323,9 @@ fn finish_identity(
     let rm_type = concrete_type(&node.rm_type);
     if rm_type.starts_with("DV_") || rm_type == "CODE_PHRASE" {
         return; // leaves already complete
+    }
+    if rm_type == "EVENT_CONTEXT" {
+        return; // PATHABLE, not LOCATABLE: no name/archetype; fields come from ctx/
     }
     // name
     obj.entry("name".to_owned()).or_insert_with(|| {

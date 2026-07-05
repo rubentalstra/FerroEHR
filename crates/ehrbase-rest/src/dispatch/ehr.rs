@@ -164,15 +164,26 @@ async fn run(
         }
         "composition_create" => {
             let p = params::build::<CompositionCreateParams>(&parts.path, q, h)?;
-            // A FLAT (wt.flat+json) body is rebuilt into a canonical composition.
+            // A FLAT/STRUCTURED (wt.flat/structured+json) body is rebuilt into a
+            // canonical composition.
             let body = if negotiate::is_flat_body(h) {
                 super::flat::composition_from_flat(&state, q, h, &parts.body).await?
+            } else if negotiate::is_structured_body(h) {
+                super::flat::composition_from_structured(&state, q, h, &parts.body).await?
             } else {
                 negotiate::rm_value::<Composition>(h, &parts.body)?
             };
             let created = state.backend().composition_create(p, body).await?;
             if negotiate::wants_flat(h) {
                 return super::flat::composition_flat_response(
+                    &state,
+                    StatusCode::CREATED,
+                    &created,
+                )
+                .await;
+            }
+            if negotiate::wants_structured(h) {
+                return super::flat::composition_structured_response(
                     &state,
                     StatusCode::CREATED,
                     &created,
@@ -192,6 +203,9 @@ async fn run(
             if negotiate::wants_flat(h) {
                 return super::flat::composition_flat_response(&state, ok, &comp).await;
             }
+            if negotiate::wants_structured(h) {
+                return super::flat::composition_structured_response(&state, ok, &comp).await;
+            }
             Ok(negotiate::respond_rm::<Composition>(
                 h,
                 ok,
@@ -203,12 +217,17 @@ async fn run(
             let p = params::build::<CompositionUpdateParams>(&parts.path, q, h)?;
             let body = if negotiate::is_flat_body(h) {
                 super::flat::composition_from_flat(&state, q, h, &parts.body).await?
+            } else if negotiate::is_structured_body(h) {
+                super::flat::composition_from_structured(&state, q, h, &parts.body).await?
             } else {
                 negotiate::rm_value::<Composition>(h, &parts.body)?
             };
             let updated = state.backend().composition_update(p, body).await?;
             if negotiate::wants_flat(h) {
                 return super::flat::composition_flat_response(&state, ok, &updated).await;
+            }
+            if negotiate::wants_structured(h) {
+                return super::flat::composition_structured_response(&state, ok, &updated).await;
             }
             Ok(negotiate::respond_rm::<Composition>(
                 h,

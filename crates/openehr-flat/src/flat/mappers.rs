@@ -117,6 +117,11 @@ pub(crate) fn leaf_to_flat(dv: &Value, slot_rm_type: &str, base: &str, out: &mut
         "DV_DATE_TIME" | "DV_DATE" | "DV_TIME" | "DV_DURATION" | "DV_URI" | "DV_EHR_URI" => {
             put(out, base, "", dv.get("value"));
         }
+        "DV_PARSABLE" => {
+            // Better `DvParsableToFlatMapper`: bare value + `|formalism`.
+            put(out, base, "", dv.get("value"));
+            put(out, base, "formalism", dv.get("formalism"));
+        }
         "DV_IDENTIFIER" => {
             put(out, base, "id", dv.get("id"));
             put(out, base, "type", dv.get("type"));
@@ -124,19 +129,26 @@ pub(crate) fn leaf_to_flat(dv: &Value, slot_rm_type: &str, base: &str, out: &mut
             put(out, base, "assigner", dv.get("assigner"));
         }
         "DV_MULTIMEDIA" => {
+            // Better `DvMultimediaToFlatMapper`: the bare value is the `uri`
+            // (inline `data` is not surfaced in FLAT), plus `|mediatype`,
+            // `|alternatetext`, and `|size` (only when > 0).
+            if let Some(uri) = dv.get("uri").filter(|u| !u.is_null()) {
+                put(out, base, "", uri.get("value"));
+            }
             if let Some(mt) = dv.get("media_type") {
                 put(out, base, "mediatype", mt.get("code_string"));
             }
             put(out, base, "alternatetext", dv.get("alternate_text"));
-            if let Some(data) = dv.get("data").filter(|d| !d.is_null()) {
-                put(out, base, "", Some(data));
-            } else if let Some(uri) = dv.get("uri") {
-                put(out, base, "", uri.get("value"));
+            if let Some(size) = dv.get("size").filter(|s| s.as_i64().is_some_and(|n| n > 0)) {
+                put(out, base, "size", Some(size));
             }
         }
         _ => {
-            // Records the gap: an unknown leaf type falls back to its `value`.
-            // TODO(port): DV_PARSABLE `|formalism`, PARTY_* leaves, reference ranges.
+            // Any remaining `DV_*` leaf falls back to its scalar `value`. Optional
+            // `DV_ORDERED` reference ranges (`normal_range` / `other_reference_ranges`)
+            // are not surfaced — they have no simplified-format (`|suffix`) shape and
+            // Better emits them only in the structural `_normal_range` form, outside
+            // the simplified scope; they are optional, so RM validity is unaffected.
             if let Some(v) = dv.get("value") {
                 put(out, base, "", Some(v));
             }
@@ -190,6 +202,8 @@ fn infer_leaf_type(view: &FlatView) -> Option<&'static str> {
         Some("DV_MULTIMEDIA")
     } else if view.suffix("id").is_some() {
         Some("DV_IDENTIFIER")
+    } else if view.suffix("formalism").is_some() {
+        Some("DV_PARSABLE")
     } else if view.suffix("code").is_some() {
         Some("DV_CODED_TEXT")
     } else {
@@ -223,8 +237,18 @@ fn build_for(base: &str, view: &FlatView) -> Option<Value> {
         }
         "DV_IDENTIFIER" => identifier_from_flat(view),
         "DV_MULTIMEDIA" => multimedia_from_flat(view),
+        "DV_PARSABLE" => parsable_from_flat(view),
         _ => bare_typed(view, base),
     }
+}
+
+fn parsable_from_flat(view: &FlatView) -> Option<Value> {
+    let value = view.bare().or_else(|| view.suffix("value"))?.clone();
+    let formalism = view
+        .suffix("formalism")
+        .cloned()
+        .unwrap_or_else(|| json!(""));
+    Some(json!({"_type": "DV_PARSABLE", "value": value, "formalism": formalism}))
 }
 
 fn text_value(value: Option<Value>, formatting: Option<Value>) -> Option<Value> {
@@ -376,8 +400,16 @@ fn identifier_from_flat(view: &FlatView) -> Option<Value> {
 }
 
 fn multimedia_from_flat(view: &FlatView) -> Option<Value> {
+    // Better `DvMultimediaFactory`: the bare value is the `uri`; `media_type` +
+    // `size` are RM-mandatory (size defaults to 0 when the FLAT lacks `|size`).
     let mut o = serde_json::Map::new();
     o.insert("_type".into(), json!("DV_MULTIMEDIA"));
+    if let Some(uri) = view.bare() {
+        o.insert(
+            "uri".into(),
+            json!({"_type": "DV_URI", "value": uri.clone()}),
+        );
+    }
     if let Some(mt) = view.suffix("mediatype") {
         o.insert(
             "media_type".into(),
@@ -387,10 +419,17 @@ fn multimedia_from_flat(view: &FlatView) -> Option<Value> {
     if let Some(a) = view.suffix("alternatetext") {
         o.insert("alternate_text".into(), a.clone());
     }
-    if let Some(data) = view.bare() {
-        o.insert("data".into(), data.clone());
-    }
-    if o.len() > 1 {
+    let size = view
+        .suffix("size")
+        .and_then(Value::as_i64)
+        .unwrap_or_else(|| {
+            view.suffix("size")
+                .and_then(|v| v.as_str()?.parse().ok())
+                .unwrap_or(0)
+        });
+    o.insert("size".into(), json!(size));
+    // Requires at least a media_type or uri to be a meaningful multimedia leaf.
+    if o.contains_key("media_type") || o.contains_key("uri") {
         Some(Value::Object(o))
     } else {
         None
