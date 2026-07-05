@@ -55,7 +55,8 @@ async fn run(
         }
         "definition_template_adl1.4_upload" => {
             let p = params::build::<DefinitionTemplateAdl14UploadParams>(&parts.path, q, h)?;
-            // TODO(port): P12 — parse OPT XML into the template model.
+            // The OPT 1.4 template arrives as canonical XML; the lenient reader
+            // hands it to the service as a JSON string, which it parses (opt14).
             let body = negotiate::lenient_value(&parts.body)?;
             Ok(negotiate::respond(
                 h,
@@ -68,11 +69,12 @@ async fn run(
         }
         "definition_template_adl1.4_get" => {
             let p = params::build::<DefinitionTemplateAdl14GetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
-                h,
-                StatusCode::OK,
-                &state.backend().definition_template_adl1_4_get(p).await?,
-            ))
+            // The service returns the stored OPT XML as a JSON string; serve it
+            // verbatim as application/xml (the canonical template artifact).
+            match state.backend().definition_template_adl1_4_get(p).await? {
+                serde_json::Value::String(xml) => Ok(negotiate::xml_body(StatusCode::OK, xml)),
+                other => Ok(negotiate::respond(h, StatusCode::OK, &other)),
+            }
         }
         "definition_template_adl1.4_example_get" => {
             let p = params::build::<DefinitionTemplateAdl14ExampleGetParams>(&parts.path, q, h)?;

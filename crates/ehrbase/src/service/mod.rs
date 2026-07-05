@@ -28,6 +28,7 @@ mod directory;
 mod ehr;
 mod item_tag;
 mod stored_query;
+mod template;
 mod versioned;
 mod vobject;
 

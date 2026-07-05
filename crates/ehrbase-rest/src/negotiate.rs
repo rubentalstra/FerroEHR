@@ -251,6 +251,17 @@ pub(crate) fn empty(status: StatusCode) -> Response {
     status.into_response()
 }
 
+/// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)
+/// verbatim as `application/xml`.
+pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {
+    let mut resp = (status, xml).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_XML),
+    );
+    resp
+}
+
 fn json_response<T: Serialize>(status: StatusCode, value: &T) -> Response {
     match openehr_its::json::to_canonical_json(value) {
         Ok(json) => {
