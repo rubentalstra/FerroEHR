@@ -4,6 +4,13 @@
 //! bodies accept JSON or canonical XML), calls the backend, and renders a
 //! negotiated response. The `ehr` group is served by the `ehrbase` service
 //! (P12); operations a backend does not implement surface as a 501.
+//!
+//! Response negotiation splits by payload kind: arms returning a single
+//! spec-typed RM object (COMPOSITION / `EHR_STATUS` / EHR / FOLDER) use
+//! [`negotiate::respond_rm`] and honour an XML `Accept`; arms returning a
+//! VERSION-family wrapper, revision history, item tags, or a CONTRIBUTION DTO
+//! use [`negotiate::respond`] and stay JSON-only, since those payloads have no
+//! spec-defined canonical-XML shape (a future typed-VERSION codegen effort).
 
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
@@ -22,7 +29,7 @@ use openehr_its::rest::generated::ehr::{
     VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
     VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
 };
-use openehr_rm::prelude::{Composition, EhrStatus, Folder};
+use openehr_rm::prelude::{Composition, Ehr, EhrStatus, Folder};
 
 use super::{BoxResponse, RequestParts};
 use crate::error::RestError;
@@ -50,61 +57,68 @@ async fn run(
     match op {
         "ehr_get_by_subject" => {
             let p = params::build::<EhrGetBySubjectParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Ehr>(
                 h,
                 ok,
                 &state.backend().ehr_get_by_subject(p).await?,
+                "ehr",
             ))
         }
         "ehr_create" => {
             let p = params::build::<EhrCreateParams>(&parts.path, q, h)?;
             let body = negotiate::optional_rm_value::<EhrStatus>(h, &parts.body)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Ehr>(
                 h,
                 StatusCode::CREATED,
                 &state.backend().ehr_create(p, body).await?,
+                "ehr",
             ))
         }
         "ehr_get_by_id" => {
             let p = params::build::<EhrGetByIdParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Ehr>(
                 h,
                 ok,
                 &state.backend().ehr_get_by_id(p).await?,
+                "ehr",
             ))
         }
         "ehr_create_with_id" => {
             let p = params::build::<EhrCreateWithIdParams>(&parts.path, q, h)?;
             let body = negotiate::optional_rm_value::<EhrStatus>(h, &parts.body)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Ehr>(
                 h,
                 StatusCode::CREATED,
                 &state.backend().ehr_create_with_id(p, body).await?,
+                "ehr",
             ))
         }
         "ehr_status_get_by_version_id" => {
             let p = params::build::<EhrStatusGetByVersionIdParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<EhrStatus>(
                 h,
                 ok,
                 &state.backend().ehr_status_get_by_version_id(p).await?,
+                "ehr_status",
             ))
         }
         "ehr_status_get_at_time" => {
             let p = params::build::<EhrStatusGetAtTimeParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<EhrStatus>(
                 h,
                 ok,
                 &state.backend().ehr_status_get_at_time(p).await?,
+                "ehr_status",
             ))
         }
         "ehr_status_update" => {
             let p = params::build::<EhrStatusUpdateParams>(&parts.path, q, h)?;
             let body = negotiate::rm_value::<EhrStatus>(h, &parts.body)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<EhrStatus>(
                 h,
                 ok,
                 &state.backend().ehr_status_update(p, body).await?,
+                "ehr_status",
             ))
         }
         "versioned_ehr_status_get" => {
@@ -151,27 +165,30 @@ async fn run(
         "composition_create" => {
             let p = params::build::<CompositionCreateParams>(&parts.path, q, h)?;
             let body = negotiate::rm_value::<Composition>(h, &parts.body)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Composition>(
                 h,
                 StatusCode::CREATED,
                 &state.backend().composition_create(p, body).await?,
+                "composition",
             ))
         }
         "composition_get" => {
             let p = params::build::<CompositionGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Composition>(
                 h,
                 ok,
                 &state.backend().composition_get(p).await?,
+                "composition",
             ))
         }
         "composition_update" => {
             let p = params::build::<CompositionUpdateParams>(&parts.path, q, h)?;
             let body = negotiate::rm_value::<Composition>(h, &parts.body)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Composition>(
                 h,
                 ok,
                 &state.backend().composition_update(p, body).await?,
+                "composition",
             ))
         }
         "composition_delete" => {
@@ -222,28 +239,31 @@ async fn run(
         }
         "directory_get_at_time" => {
             let p = params::build::<DirectoryGetAtTimeParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Folder>(
                 h,
                 ok,
                 &state.backend().directory_get_at_time(p).await?,
+                "folder",
             ))
         }
         "directory_update" => {
             let p = params::build::<DirectoryUpdateParams>(&parts.path, q, h)?;
             let body = negotiate::rm_value::<Folder>(h, &parts.body)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Folder>(
                 h,
                 ok,
                 &state.backend().directory_update(p, body).await?,
+                "folder",
             ))
         }
         "directory_create" => {
             let p = params::build::<DirectoryCreateParams>(&parts.path, q, h)?;
             let body = negotiate::rm_value::<Folder>(h, &parts.body)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Folder>(
                 h,
                 StatusCode::CREATED,
                 &state.backend().directory_create(p, body).await?,
+                "folder",
             ))
         }
         "directory_delete" => {
@@ -253,10 +273,11 @@ async fn run(
         }
         "directory_get_by_version_id" => {
             let p = params::build::<DirectoryGetByVersionIdParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
+            Ok(negotiate::respond_rm::<Folder>(
                 h,
                 ok,
                 &state.backend().directory_get_by_version_id(p).await?,
+                "folder",
             ))
         }
         "contribution_create" => {

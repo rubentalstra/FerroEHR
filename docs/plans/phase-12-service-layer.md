@@ -53,10 +53,17 @@ Now also done: `contribution_create` (atomic multi-version apply via the
 shared-contribution write path), REVISION_HISTORY (composition + EHR_STATUS),
 stored-query CRUD, item-tag CRUD, `ehr_get_by_subject`.
 
-Still open (not shortcuts — later phases / dependencies): typed XML *responses*
-(once handlers return typed RM values), composition→template linkage (needs P13
-`template_store`), demographic (RM phase), query/AQL execution (P16), fine-grained
-RBAC (Stage 2).
+Now also done: **typed XML responses** for the single spec-typed RM objects
+(COMPOSITION / EHR_STATUS / EHR / FOLDER) via `negotiate::respond_rm` — the
+handler's canonical-JSON value is re-typed into its `openehr-rm` type at the
+response edge so the generated `ToXml` runs (mirror of the `rm_value` request
+path). VERSION-family wrappers, revision histories, item tags, and CONTRIBUTION
+DTOs stay JSON-only (no spec-defined canonical-XML shape — a future
+typed-VERSION codegen effort).
+
+Still open (not shortcuts — later phases / dependencies): composition→template
+linkage (needs P13 `template_store`), demographic (RM phase), query/AQL
+execution (P16), fine-grained RBAC (Stage 2).
 
 ## Exit criteria
 

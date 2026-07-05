@@ -10,9 +10,14 @@
 //!   are parsed into the concrete `openehr-rm` type and re-emitted as the
 //!   canonical JSON `Value` the trait expects, so a handler never sees the wire
 //!   format. See [`rm_value`].
-//! - **XML responses** for the (currently untyped) stub payloads light up in P12
-//!   when handlers return typed RM values; [`respond_negotiated`] already renders
-//!   canonical XML for any `T: ToXml`. Until then [`respond`] serves JSON.
+//! - **XML responses** for the single spec-typed RM objects (composition,
+//!   `ehr_status`, ehr, folder) are served by [`respond_rm`]: the handler returns
+//!   canonical JSON as usual, and for an XML `Accept` the value is re-typed into
+//!   its concrete `openehr-rm` type at the response edge so the generated
+//!   `ToXml` runs — the mirror of the [`rm_value`] request path. Responses that
+//!   are not a single spec-typed RM value (VERSION-family wrappers, revision
+//!   histories, collections, item tags, contribution DTOs) have no spec-defined
+//!   canonical-XML shape and stay JSON-only via [`respond`].
 
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
@@ -172,10 +177,12 @@ fn parse_json(body: &Bytes) -> Result<serde_json::Value, ApiError> {
         .map_err(|e| ApiError::BadRequest(format!("invalid JSON body: {e}")))
 }
 
-/// Render a serializable payload as a JSON response. Used for the untyped stub
-/// payloads (`serde_json::Value` and collections); if the client requested XML
-/// exclusively, this returns 406 since a canonical XML shape needs a typed RM
-/// value (available in P12).
+/// Render a serializable payload as a JSON response. Used for responses that are
+/// not a single spec-typed RM value (`serde_json::Value` wrappers and
+/// collections: VERSION-family objects, revision histories, item tags,
+/// contribution DTOs); if the client requested XML exclusively, this returns 406
+/// since those payloads have no spec-defined canonical-XML shape. Single
+/// spec-typed RM objects use [`respond_rm`] instead.
 pub(crate) fn respond<T: Serialize>(
     headers: &HeaderMap,
     status: StatusCode,
@@ -192,31 +199,50 @@ pub(crate) fn respond<T: Serialize>(
     }
 }
 
-/// Render a typed RM value, honouring `Accept` for JSON or canonical XML.
-/// `root_tag` is the XML root element name (the RM attribute the value binds to,
-/// e.g. `composition`). This is the path P12 uses for typed responses.
-#[allow(dead_code)] // wired by P12 handlers returning typed RM values
-pub(crate) fn respond_negotiated<T: Serialize + ToXml>(
+/// Render a canonical-JSON `Value` that IS a single spec-typed RM object,
+/// honouring `Accept` for JSON or canonical XML. `T` is the concrete
+/// `openehr-rm` type the value encodes (e.g. [`openehr_rm::prelude::Composition`]);
+/// `root_tag` is the XML root element name. For XML the value is re-typed into
+/// `T` so the generated `ToXml` runs — the mirror of how [`rm_value`] re-types
+/// request bodies. A JSON `null` value (e.g. a future minimal-return create with
+/// no body) renders as a bodyless response in either format.
+pub(crate) fn respond_rm<T>(
     headers: &HeaderMap,
     status: StatusCode,
-    value: &T,
+    value: &serde_json::Value,
     root_tag: &str,
-) -> Response {
+) -> Response
+where
+    T: DeserializeOwned + Serialize + ToXml,
+{
     match response_format(headers) {
         Format::Json => json_response(status, value),
-        Format::Xml => match openehr_its::xml::to_canonical_xml(value, root_tag) {
-            Ok(xml) => {
-                let mut resp = (status, xml).into_response();
-                resp.headers_mut().insert(
-                    header::CONTENT_TYPE,
-                    HeaderValue::from_static(APPLICATION_XML),
-                );
-                resp
+        Format::Xml => {
+            if value.is_null() {
+                return empty(status);
             }
-            Err(e) => {
-                ApiError::Internal(format!("XML serialization failed: {e}")).into_response_body()
+            let typed: T = match serde_json::from_value(value.clone()) {
+                Ok(t) => t,
+                Err(e) => {
+                    return ApiError::Internal(format!(
+                        "re-typing canonical JSON to <{root_tag}> for the XML response failed: {e}"
+                    ))
+                    .into_response_body();
+                }
+            };
+            match openehr_its::xml::to_canonical_xml(&typed, root_tag) {
+                Ok(xml) => {
+                    let mut resp = (status, xml).into_response();
+                    resp.headers_mut().insert(
+                        header::CONTENT_TYPE,
+                        HeaderValue::from_static(APPLICATION_XML),
+                    );
+                    resp
+                }
+                Err(e) => ApiError::Internal(format!("XML serialization failed: {e}"))
+                    .into_response_body(),
             }
-        },
+        }
     }
 }
 
@@ -361,5 +387,56 @@ mod tests {
             lenient_value(&Bytes::from_static(br#"{"a":1}"#)).unwrap(),
             serde_json::json!({"a": 1})
         );
+    }
+
+    fn content_type(resp: &Response) -> Option<String> {
+        resp.headers()
+            .get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned)
+    }
+
+    #[test]
+    fn respond_rm_serves_json_by_default() {
+        use openehr_rm::prelude::DvText;
+        let value = serde_json::json!({"_type": "DV_TEXT", "value": "hello"});
+        let resp = respond_rm::<DvText>(&HeaderMap::new(), StatusCode::OK, &value, "value");
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(content_type(&resp).as_deref(), Some(APPLICATION_JSON));
+    }
+
+    #[test]
+    fn respond_rm_null_is_bodyless() {
+        use openehr_rm::prelude::DvText;
+        let h = headers(&[("accept", "application/xml")]);
+        let resp = respond_rm::<DvText>(
+            &h,
+            StatusCode::NO_CONTENT,
+            &serde_json::Value::Null,
+            "value",
+        );
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+        assert_ne!(content_type(&resp).as_deref(), Some(APPLICATION_XML));
+    }
+
+    #[tokio::test]
+    async fn respond_rm_renders_canonical_xml_for_xml_accept() {
+        use http_body_util::BodyExt;
+        use openehr_rm::prelude::DvText;
+
+        // The value the handler would return: a DV_TEXT as canonical JSON.
+        let value = serde_json::json!({"_type": "DV_TEXT", "value": "hello"});
+        let h = headers(&[("accept", "application/xml")]);
+        let resp = respond_rm::<DvText>(&h, StatusCode::OK, &value, "value");
+
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(content_type(&resp).as_deref(), Some(APPLICATION_XML));
+
+        let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+        let xml = String::from_utf8(bytes.to_vec()).expect("utf8");
+        // Real canonical XML from the generated `ToXml`, not the JSON-as-text stub.
+        assert!(xml.contains("<value"), "root element present: {xml}");
+        assert!(xml.contains("hello"), "leaf value present: {xml}");
+        assert!(!xml.contains("_type"), "not a serialized JSON blob: {xml}");
     }
 }
