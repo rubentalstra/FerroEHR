@@ -103,9 +103,10 @@ utoipa-rapidoc = { version = "6.0.0", features = ["axum"] }
 sqlx = { version = "0.9", default-features = false, features = [
   "runtime-tokio", "tls-rustls-aws-lc-rs", "postgres", "macros",
   "migrate", "uuid", "json", "rust_decimal", "chrono",
-] }                                  # 0.9.x (MSRV 1.94). NOTE: sqlx has no jiff feature yet; map jiff<->db manually or via chrono bridge.
+] }                                  # 0.9.x (MSRV 1.94). NOTE: sqlx has no jiff feature; use jiff-sqlx wrapper types at the query boundary.
 sea-query = { version = "1.0.1", features = ["backend-postgres", "with-uuid", "with-json", "with-rust_decimal", "postgres-array"] }
-sea-query-binder = { version = "0.7", features = ["sqlx-postgres", "with-uuid", "with-json", "with-rust_decimal"] }
+sea-query-sqlx = { version = "0.9.1", features = ["sqlx-postgres", "runtime-tokio", "tls-rustls-aws-lc-rs", "postgres-array", "with-uuid", "with-json", "with-rust_decimal"] }   # the sea-query 1.0 <-> sqlx 0.9 binder (successor of sea-query-binder, which is stuck on sea-query 0.32). NOTE: its with-jiff+postgres is unimplemented upstream — bind timestamps via jiff-sqlx on plain sqlx queries, or chrono at the binder boundary.
+jiff-sqlx = { version = "0.2.0", features = ["postgres"] }   # official jiff<->sqlx 0.9 codec for plain sqlx queries
 deadpool-postgres = "0.14"         # optional pipelined hot-read path (verify latest)
 tokio-postgres = "0.7"            # paired with deadpool for pipelining
 

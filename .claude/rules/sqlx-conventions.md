@@ -5,17 +5,28 @@ paths: ["crates/ehrbase/**"]
 # sqlx + sea-query conventions (P09 persistence, P16 AQL)
 
 `ehrbase` is the only crate that talks to PostgreSQL, using `sqlx` 0.9 (driver,
-pool, migrations) + `sea-query` 1.0 + `sea-query-binder` (the dynamic SQL builder
-for the AQL→SQL engine). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
+pool, migrations) + `sea-query` 1.0 + `sea-query-sqlx` (the dynamic SQL builder
++ binder; `sea-query-binder` is the obsolete sea-query-0.32 pairing — do not
+use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
 
-## Migrations
+## Migrations (ADR-007)
 
-- `crates/ehrbase/migrations/` holds the **real EHRbase v2 Flyway SQL** (41
-  files, vendored verbatim). Run them via `sqlx migrate` — this **is** the schema;
-  do not re-author DDL. Append a new migration only for a genuinely new need,
-  following `sqlx migrate` numbering.
-- No jOOQ codegen — `sea-query` `Iden` table/column definitions + hand-written
-  row-mapping structs (over the generated `openehr-rm` types) replace it.
+- `crates/ehrbase/migrations/{ext,ehr}/0001_baseline.sql` are **squashed
+  baselines** of the EHRbase v2 Flyway chain — provably identical to its end
+  state via the schema-equality test in `crates/ehrbase/tests/persistence.rs`
+  (the original chain is the executable fixture under
+  `crates/ehrbase/tests/resources/legacy_schema/`). Never edit an applied
+  baseline; never weaken the equality gate.
+- Create new migrations with the official CLI only:
+  `sqlx migrate add --source crates/ehrbase/migrations/<schema> --sequential <desc>`,
+  written as modern PG 18 SQL. When upstream EHRbase ships a new Flyway
+  migration, translate it into our next migration and extend the fixture + gate.
+- `ehrbase::db::run_migrations` bootstraps schemas + extensions and runs the
+  `ext` migrator before `ehr` (the `ehr` DDL uses `ext`'s collation); each set
+  keeps its own `_sqlx_migrations` table.
+- No jOOQ codegen — `sea-query` `Iden` table/column definitions (`db/iden.rs`) +
+  hand-written row-mapping structs (over the generated `openehr-rm` types)
+  replace it.
 
 ## Queries
 
@@ -26,9 +37,11 @@ for the AQL→SQL engine). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
   generated IDs, `RETURNING OLD/NEW` for audit/history writes, temporal
   constraints where the schema models versioned rows, skip scan/JSON_TABLE
   where they simplify AQL-generated SQL.
-- `sqlx` has **no `jiff` feature** — bridge `jiff` timestamps to
-  `sqlx`'s `chrono`/native types manually at the query boundary; do not
-  silently switch the whole crate to `chrono`.
+- `sqlx` has **no `jiff` feature** — use the official `jiff-sqlx` wrapper
+  types (`jiff_sqlx::Timestamp`, `.to_jiff()`) on plain sqlx queries. On
+  sea-query-built queries the binder's `with-jiff` is unimplemented upstream —
+  bind via SQL (`now()`) or a chrono value at the boundary; do not silently
+  switch the crate to `chrono`.
 - `rust_decimal` is the `BigDecimal` replacement for `DV_QUANTITY` and other
   fixed-point RM fields; use the `sqlx` `rust_decimal` feature, not `f64`.
 

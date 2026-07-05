@@ -1,3 +1,4 @@
+-- no-transaction (sqlx directive: replaces Flyway sidecar V15__data_tables_add_parent_num.sql.conf executeInTransaction=false; the migration calls a procedure that issues COMMIT)
 /*
  * Copyright (c) 2024 vitasystems GmbH.
  *
