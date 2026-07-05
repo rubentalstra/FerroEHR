@@ -1,0 +1,19 @@
+---
+source: crates/openehr-flat/tests/flat.rs
+expression: map
+---
+{
+  "ctx/composer_id": "1f31861a-b5fd-4052-b00b-32893371fcd4",
+  "ctx/composer_name": "Dr. House",
+  "ctx/id_namespace": "DEMOGRAPHIC",
+  "ctx/language": "en",
+  "ctx/setting|code": "229",
+  "ctx/setting|terminology": "openehr",
+  "ctx/setting|value": "primary nursing care",
+  "ctx/territory": "UY",
+  "ctx/time": "2019-01-28T21:22:19,501+00:00",
+  "minimal/category|code": "433",
+  "minimal/category|terminology": "openehr",
+  "minimal/category|value": "event",
+  "minimal/minimal:0/text": "original value"
+}

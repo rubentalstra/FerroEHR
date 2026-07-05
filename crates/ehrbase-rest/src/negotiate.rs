@@ -39,6 +39,8 @@ const APPLICATION_JSON: &str = "application/json";
 const APPLICATION_XML: &str = "application/xml";
 /// Better `web-template` JSON media type (interop format, `openehr-flat`).
 const APPLICATION_WT_JSON: &str = "application/openehr.wt+json";
+/// Better `web-template` FLAT (simSDT) JSON media type (`openehr-flat`).
+const APPLICATION_WT_FLAT_JSON: &str = "application/openehr.wt.flat+json";
 
 /// Whether the client explicitly asks for the Better `web-template` JSON format
 /// on `Accept` (`application/openehr.wt+json`).
@@ -50,6 +52,23 @@ pub(crate) fn wants_web_template(headers: &HeaderMap) -> bool {
     })
 }
 
+/// Whether the client asks for the FLAT (simSDT) format on `Accept`
+/// (`application/openehr.wt.flat+json`).
+pub(crate) fn wants_flat(headers: &HeaderMap) -> bool {
+    header_str(headers, header::ACCEPT).is_some_and(|accept| {
+        accept
+            .split(',')
+            .any(|r| r.trim().starts_with(APPLICATION_WT_FLAT_JSON))
+    })
+}
+
+/// Whether the request body is a FLAT (simSDT) composition
+/// (`Content-Type: application/openehr.wt.flat+json`).
+pub(crate) fn is_flat_body(headers: &HeaderMap) -> bool {
+    header_str(headers, header::CONTENT_TYPE)
+        .is_some_and(|ct| ct.trim().starts_with(APPLICATION_WT_FLAT_JSON))
+}
+
 /// Serve a pre-serialized `WebTemplate` JSON document as
 /// `application/openehr.wt+json`.
 pub(crate) fn wt_json_body(status: StatusCode, json: String) -> Response {
@@ -57,6 +76,17 @@ pub(crate) fn wt_json_body(status: StatusCode, json: String) -> Response {
     resp.headers_mut().insert(
         header::CONTENT_TYPE,
         HeaderValue::from_static(APPLICATION_WT_JSON),
+    );
+    resp
+}
+
+/// Serve a pre-serialized FLAT (simSDT) composition as
+/// `application/openehr.wt.flat+json`.
+pub(crate) fn flat_json_body(status: StatusCode, json: String) -> Response {
+    let mut resp = (status, json).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_WT_FLAT_JSON),
     );
     resp
 }

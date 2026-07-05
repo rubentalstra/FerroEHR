@@ -20,6 +20,7 @@ serde_json = { workspace = true }
 indexmap = { workspace = true }
 moka = { workspace = true }
 thiserror = { workspace = true }
+jiff = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true }

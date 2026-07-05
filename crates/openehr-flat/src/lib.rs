@@ -13,7 +13,9 @@
 
 pub mod cache;
 pub mod error;
+pub mod flat;
 pub mod webtemplate;
 
 pub use error::FlatError;
+pub use flat::{from_flat, to_flat};
 pub use webtemplate::{WebTemplate, build_web_template};
