@@ -33,8 +33,8 @@ the per-phase files for detail. Status values: `not-started`, `in-progress`,
 
 | # | Phase | Title | Status | Consumes / crates |
 |---|---|---|---|---|
-| 1 | 09 | Persistence foundation | **not-started (NEXT)** | `sqlx`+`sea-query`, vendored EHRbase v2 migrations, `testcontainers` PG18 |
-| 2 | 10 | rm-db-format (RM↔JSONB) | not-started | `openehr-rm`, P09 |
+| 1 | 09 | Persistence foundation | **done (2026-07-05)** | `ehrbase::db` (settings/pool/migrate/iden); squashed `0001_baseline.sql` per schema + schema-equality gate vs the legacy Flyway chain (ADR-007); `sea-query-sqlx` replaces `sea-query-binder`; testcontainers PG18, 8/8 tests |
+| 2 | 10 | rm-db-format (RM↔JSONB) | **not-started (NEXT)** | `openehr-rm`, P09 |
 | 3 | 11 | REST server foundation + **auth** | not-started | `axum`/`tower-http`, `openehr-its` traits, `oauth2`/`jsonwebtoken`/`argon2`, `utoipa` |
 | 4 | 12 | Service layer (versioning, contributions, audit) | not-started | P09/P10/P11, `sqlx` tx |
 | 5 | 13 | Template ingestion (OPT 1.4 XML, ADL/AOM) | not-started | `openehr-am`, `openehr-lang` |
