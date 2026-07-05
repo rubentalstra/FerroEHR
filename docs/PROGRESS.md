@@ -29,12 +29,19 @@ the per-phase files for detail. Status values: `not-started`, `in-progress`,
 | 07 | AQL parser + AST | done | `openehr-query` (logos + chumsky), corpus-validated. Path analysis → P16. |
 | 08 | ITS-REST contract | done | Generated (ADR-005) `emit-rest` → DTOs + server traits + routes in `openehr-its` (96 ops). |
 
+## Pivot (2026-07-05, ADR-008)
+
+Greenfield internals: our own PG18-native storage + AQL design; the
+compatibility target is **openEHR spec conformance** (CNF schedule), not
+EHRbase parity; the in-tree EHRbase Java reference was removed. ADR-006/007
+partially superseded. Phase files 10/16/19 re-scoped.
+
 ## Stage 1 application build — the remaining work (phases 09–20, 99, in order)
 
 | # | Phase | Title | Status | Consumes / crates |
 |---|---|---|---|---|
 | 1 | 09 | Persistence foundation | **done (2026-07-05)** | `ehrbase::db` (settings/pool/migrate/iden); squashed `0001_baseline.sql` per schema + schema-equality gate vs the legacy Flyway chain (ADR-007); `sea-query-sqlx` replaces `sea-query-binder`; testcontainers PG18, 8/8 tests |
-| 2 | 10 | rm-db-format (RM↔JSONB) | **not-started (NEXT)** | `openehr-rm`, P09 |
+| 2 | 10 | Storage foundation (greenfield node model, ADR-008) | **not-started (NEXT)** | `openehr-rm`/`openehr-its`, P09 infra, PG18 |
 | 3 | 11 | REST server foundation + **auth** | not-started | `axum`/`tower-http`, `openehr-its` traits, `oauth2`/`jsonwebtoken`/`argon2`, `utoipa` |
 | 4 | 12 | Service layer (versioning, contributions, audit) | not-started | P09/P10/P11, `sqlx` tx |
 | 5 | 13 | Template ingestion (OPT 1.4 XML, ADL/AOM) | not-started | `openehr-am`, `openehr-lang` |
@@ -43,7 +50,7 @@ the per-phase files for detail. Status values: `not-started`, `in-progress`,
 | 8 | 16 | AQL engine (AST→ASL→SQL) | not-started | `openehr-query`, P09/P10/P14, `sea-query` |
 | 9 | 17 | FLAT/STRUCTURED + EhrScape | not-started | `openehr-flat`, `ehrbase-compat`, P14 |
 | 10 | 18 | Workspace integration | not-started | binary wiring; delete ported-out Java |
-| 11 | 19 | Conformance & parity | not-started | parity harness (`USE_REFERENCE_EHRBASE=1`) |
+| 11 | 19 | openEHR conformance (CNF schedule, ADR-008) | not-started | `specifications-CNF` runners, corpus suites |
 | 12 | 20 | Optimization | not-started | PG18 AIO, pipelining, `JSON_TABLE` |
 | 13 | 99 | Cutover | not-started | delete residual Java/Maven; tag release |
 

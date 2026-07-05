@@ -39,6 +39,17 @@ This file is the single source of truth. Claude Code reads this first and scaffo
 
 ---
 
+> ## ⚠️ AMENDMENT (2026-07-05, ADR-008): greenfield internals; openEHR conformance replaces EHRbase parity
+>
+> The project pivoted: the application's **storage, versioning, and AQL engine
+> are our own PG18-native designs** (not ports of EHRbase's), and the
+> compatibility target is **openEHR spec conformance** (the CNF Platform
+> Conformance Test Schedule), not behavior-parity with EHRbase. The in-tree
+> EHRbase Java reference was removed (git history preserves it). Read
+> `docs/ADRs/ADR-008-greenfield-pg18-storage.md`; the phase files remain the
+> authoritative roadmap. References below to "parity harness",
+> "behavior-compatible with EHRbase", and the in-tree Java are historical.
+
 > ## ⚠️ AMENDMENT (2026-07-04, ADR-005 + ADR-006): ITS is generated; the app is a modern idiomatic service
 >
 > Two further changes since ADR-004 make **the phase files (`docs/plans/`) and
