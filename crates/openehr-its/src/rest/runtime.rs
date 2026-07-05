@@ -12,6 +12,10 @@ use http::StatusCode;
 pub enum ApiError {
     #[error("bad request: {0}")]
     BadRequest(String),
+    #[error("unauthorized: {0}")]
+    Unauthorized(String),
+    #[error("forbidden: {0}")]
+    Forbidden(String),
     #[error("not found: {0}")]
     NotFound(String),
     #[error("conflict: {0}")]
@@ -20,6 +24,10 @@ pub enum ApiError {
     PreconditionFailed(String),
     #[error("unprocessable entity: {0}")]
     Unprocessable(String),
+    #[error("unsupported media type: {0}")]
+    UnsupportedMediaType(String),
+    #[error("not acceptable: {0}")]
+    NotAcceptable(String),
     #[error("not implemented")]
     NotImplemented,
     #[error("internal error: {0}")]
@@ -32,10 +40,14 @@ impl ApiError {
     pub fn status(&self) -> StatusCode {
         match self {
             ApiError::BadRequest(_) => StatusCode::BAD_REQUEST,
+            ApiError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            ApiError::Forbidden(_) => StatusCode::FORBIDDEN,
             ApiError::NotFound(_) => StatusCode::NOT_FOUND,
             ApiError::Conflict(_) => StatusCode::CONFLICT,
             ApiError::PreconditionFailed(_) => StatusCode::PRECONDITION_FAILED,
             ApiError::Unprocessable(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            ApiError::UnsupportedMediaType(_) => StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            ApiError::NotAcceptable(_) => StatusCode::NOT_ACCEPTABLE,
             ApiError::NotImplemented => StatusCode::NOT_IMPLEMENTED,
             ApiError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }

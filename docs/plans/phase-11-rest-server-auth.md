@@ -15,9 +15,9 @@ is the "proper way" application entry surface — no hand-rolled routing/auth.
 
 ## Preconditions
 
-- [ ] ITS-REST contract generated (`emit-rest`, done)
-- [ ] P09/P10 available for handlers that touch storage (handlers can start as
-      `NotImplemented` and fill in as P12 lands)
+- [x] ITS-REST contract generated (`emit-rest`, done)
+- [x] P09/P10 available for handlers that touch storage (handlers start as
+      `NotImplemented`; the service layer fills them in P12)
 
 ## Scope
 
@@ -35,22 +35,70 @@ vs the vendored OAS); `/rest/status`, `/management/*`, health.
 
 ## Tasks
 
-- [ ] `axum` app + router from the generated server traits; `AppState`
-- [ ] `tower-http` middleware stack
-- [ ] Content negotiation JSON/XML (`openehr-its`); `ApiError` → response
-- [ ] **Basic auth** (argon2) + **OAuth2/OIDC** bearer auth middleware/extractor
-- [ ] Config (`figment`): auth mode(s), issuer/JWKS, CORS, etc.
-- [ ] `utoipa` OpenAPI + Swagger UI; status/management/health
-- [ ] Integration tests: routing, auth (401/403 paths), negotiation
+- [x] `axum` app + router from the generated server traits; `AppState` — a
+      generic HTTP dispatcher built from each group's `ROUTES` table
+      (`dispatch/`) rebuilds each `*Params` via a type-directed deserializer
+      (`params.rs`) and calls the trait method; the 5 `*Api` traits are
+      implemented on `AppState` (`api/`, `NotImplemented` stubs via a macro).
+- [x] `tower-http` middleware stack — trace, cors, compression, timeout,
+      request-id (+propagate), sensitive-headers (Authorization), catch-panic,
+      body-limit; normalize-path applied at serve time (wraps the router).
+- [x] Content negotiation JSON/XML (`openehr-its`); `ApiError` → response —
+      `negotiate.rs`; JSON wired end to end, XML request bodies decoded to
+      canonical JSON for the RM write paths (composition/ehr_status/directory),
+      typed XML responses ready for P12; `RestError` renders the openEHR JSON
+      error body. Extended `openehr-its` `ApiError` with
+      `Unauthorized`/`Forbidden`/`UnsupportedMediaType`/`NotAcceptable`.
+- [x] **Basic auth** (argon2) + **OAuth2/OIDC** bearer (jsonwebtoken over a JWKS;
+      HMAC / static-JWKS / discovered-via-`openidconnect` key sources) as one
+      axum middleware + an `AuthenticatedUser` extractor (`auth/`).
+- [x] Config (`figment`): `RestConfig` + `AuthConfig` (bind, base path, CORS,
+      swagger toggle, auth modes, issuer/JWKS/audience, admin-scope gate).
+- [x] `utoipa` OpenAPI + Swagger UI; `/rest/status`, `/health`,
+      `/management/info` (public). Binary (`ehrbase`) wired to boot & serve.
+- [x] Integration tests: routing, auth (401/403 paths), negotiation
+      (`tests/http.rs`, 16 tests) + 32 unit tests.
 
 ## Exit criteria
 
-- [ ] Server boots; every ITS-REST route is mounted (stubs return typed responses)
-- [ ] Basic + OAuth2/OIDC authentication enforced + tested; unauthenticated → 401
-- [ ] JSON and XML request/response negotiation works end to end
-- [ ] Compiles + clippy-clean
+- [x] Server boots; every ITS-REST route is mounted (stubs return typed
+      responses) — verified by booting the `ehrbase` binary and by the
+      integration suite across all five groups (ehr/demographic/definition/
+      query/admin).
+- [x] Basic + OAuth2/OIDC authentication enforced + tested; unauthenticated → 401
+      (with `WWW-Authenticate`); authenticated-but-unauthorized admin → 403.
+- [x] JSON and XML request/response negotiation works end to end — JSON fully at
+      the HTTP layer; canonical XML request decode proven end to end (RM types
+      via `openehr-its`); typed XML responses land with P12's typed payloads.
+- [x] Compiles + clippy-clean (workspace) + tested (`cargo nextest`).
 
 ## Decisions made this phase
 
 - Authentication (Basic + OAuth2/OIDC) is Stage-1; RBAC/authz is Stage-2 (ADR-006).
+  A coarse **admin-scope gate** is the Stage-1 seam (off by default).
 - The server implements the generated contract; it does not re-declare routes.
+  A **generic dispatcher** over the generated `ROUTES` tables + a type-directed
+  params deserializer avoids ~96 bespoke handlers while staying type-correct.
+- **Resource-server scope:** the CDR validates bearer JWTs (jsonwebtoken over a
+  JWKS, OIDC discovery via `openidconnect`); the `oauth2` authorization-code
+  *client* flow and `axum-login`/`tower-sessions` are not pulled in (a CDR is a
+  stateless resource server, not an OAuth2 client) — recorded as a PORT NOTE.
+- `jsonwebtoken` 10 uses the **aws-lc-rs** crypto provider (matches the rustls
+  stack); pin updated in the workspace manifest.
+- Design docs authored this session (Rust-native, Stage-2/observability):
+  `docs/enterprise/atna-audit.md` (ATNA audit trail) and `docs/observability.md`
+  (status/health/metrics on OpenTelemetry + Prometheus).
+
+## Handoff for next session (P12)
+
+P11 is complete: the `ehrbase-rest` axum app implements all five generated
+ITS-REST traits, boots via the `ehrbase` binary, enforces Basic + OAuth2/OIDC
+auth, and negotiates JSON/XML — handlers return `NotImplemented`. **P12** fills
+the handler bodies with the service layer: EHR / EHR_STATUS / COMPOSITION /
+CONTRIBUTION create/get/update/delete on the P10 node-codec storage, with
+versioning + contribution/audit, **end-to-end tested against a real PG 18.4
+testcontainer** (per the owner's directive to make the REST API genuinely
+e2e-testable). The dispatcher already decodes RM-typed bodies (incl. canonical
+XML) into the `serde_json::Value` the traits receive, so P12 works against typed
+values; wire typed XML *responses* via `negotiate::respond_negotiated` as typed
+payloads land.

@@ -42,8 +42,8 @@ partially superseded. Phase files 10/16/19 re-scoped.
 |---|---|---|---|---|
 | 1 | 09 | Persistence foundation | **done (2026-07-05)** | `ehrbase::db` (settings/pool/migrate/iden); squashed `0001_baseline.sql` per schema + schema-equality gate vs the legacy Flyway chain (ADR-007); `sea-query-sqlx` replaces `sea-query-binder`; testcontainers PG18, 8/8 tests |
 | 2 | 10 | Storage foundation (greenfield node model, ADR-008) | **done (2026-07-05)** | Spike-validated schema (node per-version + temporal vo_version + ext magnitude fns); lossless node codec (`ehrbase::storage`); 15/15 tests |
-| 3 | 11 | REST server foundation + **auth** | **not-started (NEXT)** | `axum`/`tower-http`, `openehr-its` traits, `oauth2`/`jsonwebtoken`/`argon2`, `utoipa` |
-| 4 | 12 | Service layer (versioning, contributions, audit) | not-started | P09/P10/P11, `sqlx` tx |
+| 3 | 11 | REST server foundation + **auth** | **done (2026-07-05)** | `ehrbase-rest` axum app: all 5 generated `*Api` traits mounted (~96 ops) via a generic `ROUTES` dispatcher + type-directed `*Params` deserializer; full `tower-http` stack; JSON/XML negotiation (`openehr-its`); Basic (argon2) + OAuth2/OIDC bearer (jsonwebtoken/JWKS, resource-server) as one middleware (401/403); `figment` config; Swagger UI + status/health/info; `ehrbase` binary boots. 48 crate + 107/107 workspace tests, clippy-clean |
+| 4 | 12 | Service layer (versioning, contributions, audit) | not-started (NEXT) | P09/P10/P11, `sqlx` tx; **full impl, e2e on PG 18.4** |
 | 5 | 13 | Template ingestion (OPT 1.4 XML, ADL/AOM) | not-started | `openehr-am`, `openehr-lang` |
 | 6 | 14 | WebTemplate builder | not-started | P13, `moka` |
 | 7 | 15 | Composition validation | not-started | P14, `openehr-term` |
