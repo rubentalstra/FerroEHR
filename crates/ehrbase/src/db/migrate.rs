@@ -3,34 +3,29 @@ use sqlx::migrate::Migrator;
 
 use crate::db::DbError;
 
-/// The `ext`-schema baseline (AQL aggregate functions and the `en_US` ICU
-/// collation), squashed from the `EHRbase` v2 Flyway chain (ADR-007). Must run
-/// before the `ehr` set, whose DDL references that collation.
+/// The `ext` schema: our openEHR support functions (`openehr_magnitude` and
+/// its ISO-8601 helpers, ADR-008). Runs before `ehr`.
 static EXT_MIGRATOR: Migrator = sqlx::migrate!("migrations/ext");
 
-/// The `ehr`-schema baseline — the `EHRbase` v2 CDR schema itself, squashed
-/// from the Flyway chain (ADR-007). A schema-equality test proves it matches
-/// the legacy chain's end state (`tests/resources/legacy_schema`/).
+/// The `ehr` schema — the greenfield PG18-native CDR schema (ADR-008,
+/// spike-validated at P10): the unified per-version `node` table, the
+/// temporal `vo_version` table, and the supporting tables.
 static EHR_MIGRATOR: Migrator = sqlx::migrate!("migrations/ehr");
 
-/// What Flyway/EHRbase provisioning did outside the migrations: the two
-/// schemas and the required extensions (`uuid-ossp` is exercised by the DDL;
-/// `pgcrypto`/`pg_trgm` complete the `EHRbase` baseline).
+/// Bootstrap done outside the migrations: the two schemas and `btree_gist`
+/// (required by the temporal `WITHOUT OVERLAPS` primary key).
 const BOOTSTRAP: &[&str] = &[
     "CREATE SCHEMA IF NOT EXISTS ext",
     "CREATE SCHEMA IF NOT EXISTS ehr",
-    r#"CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA ext"#,
-    "CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA ext",
-    "CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA ext",
+    "CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext",
 ];
 
 /// Bootstrap schemas/extensions and apply both migration sets.
 ///
 /// Each migrator runs on a connection whose `search_path` starts with its
 /// target schema, so the unqualified DDL and that set's `_sqlx_migrations`
-/// bookkeeping table land in the right schema — mirroring Flyway's two
-/// `flyway_schema_history` tables. Safe to call repeatedly (already-applied
-/// migrations are skipped).
+/// bookkeeping table land in the right schema. Safe to call repeatedly
+/// (already-applied migrations are skipped).
 ///
 /// # Errors
 ///
