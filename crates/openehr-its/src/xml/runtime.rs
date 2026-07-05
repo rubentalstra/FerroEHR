@@ -386,7 +386,14 @@ impl<'a> XmlReader<'a> {
 }
 
 fn to_start_tag(e: &BytesStart<'_>) -> Result<StartTag, XmlError> {
-    let name = String::from_utf8_lossy(e.name().as_ref()).into_owned();
+    // Strip any namespace prefix on the *element* name (`ns2:language` →
+    // `language`) so name-based child dispatch matches regardless of a
+    // document's prefix convention (some OPT exports qualify every element).
+    // Attribute keys are left intact, since `xsi:type` dispatch keys on the
+    // `xsi:` prefix. A default-namespace (unprefixed) name is unaffected.
+    let qname = e.name();
+    let raw = String::from_utf8_lossy(qname.as_ref());
+    let name = raw.rsplit(':').next().unwrap_or(&raw).to_string();
     let mut attrs = Vec::new();
     for a in e.attributes() {
         let a = a.map_err(|e| XmlError::Parse(e.to_string()))?;

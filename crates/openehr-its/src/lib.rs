@@ -23,5 +23,6 @@
 
 pub mod bmm;
 pub mod json;
+pub mod opt14;
 pub mod rest;
 pub mod xml;

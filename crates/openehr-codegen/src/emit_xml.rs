@@ -83,7 +83,9 @@ fn attr_names(spec: &str, xsd: &XsdModel) -> BTreeSet<String> {
 
 // ── serialization ─────────────────────────────────────────────────────────────
 
-fn emit_to_xml(
+/// Emit `impl ToXml` for one [`XmlType`]. Public so the OPT emitter
+/// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s (ADR-005).
+pub fn emit_to_xml(
     b: &mut String,
     ty: &XmlType,
     prelude: &str,
@@ -238,7 +240,9 @@ fn emit_write_field(b: &mut String, f: &XmlField) {
 
 // ── deserialization ─────────────────────────────────────────────────────────
 
-fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
+/// Emit `impl FromXml` for one [`XmlType`]. Public so the OPT emitter
+/// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s (ADR-005).
+pub fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
     match ty {
         XmlType::Struct {
             spec,
