@@ -6,16 +6,17 @@
 //! inherit the defaults wholesale (demographic, definition/templates P13, query
 //! P16, admin later).
 
+mod definition;
 mod ehr;
 
 use openehr_its::rest::generated::admin::AdminApi;
-use openehr_its::rest::generated::definition::DefinitionApi;
 use openehr_its::rest::generated::demographic::DemographicApi;
 use openehr_its::rest::generated::query::QueryApi;
 
 use super::EhrbaseService;
 
+// Not yet implemented — empty impls inherit the generated `NotImplemented`
+// defaults (demographic: RM phase; query/AQL: P16; admin: later).
 impl DemographicApi for EhrbaseService {}
-impl DefinitionApi for EhrbaseService {}
 impl QueryApi for EhrbaseService {}
 impl AdminApi for EhrbaseService {}

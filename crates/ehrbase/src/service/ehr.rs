@@ -36,6 +36,31 @@ impl EhrbaseService {
         self.ehr_summary(ehr_id).await
     }
 
+    /// Find an EHR by the subject its current `EHR_STATUS` names (external ref
+    /// `id.value` + `namespace`), returning the EHR summary.
+    pub(super) async fn ehr_by_subject(
+        &self,
+        subject_id: &str,
+        namespace: &str,
+    ) -> Result<Value, ServiceError> {
+        let ehr_id: Uuid = sqlx::query_scalar(
+            "SELECT v.ehr_id FROM vo_version v \
+             JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+             WHERE v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) AND NOT v.deleted \
+             AND n.data #>> '{subject,external_ref,id,value}' = $1 \
+             AND n.data #>> '{subject,external_ref,namespace}' = $2 \
+             LIMIT 1",
+        )
+        .bind(subject_id)
+        .bind(namespace)
+        .fetch_optional(&self.pool)
+        .await?
+        .ok_or_else(|| {
+            ServiceError::NotFound(format!("EHR for subject {subject_id}@{namespace}"))
+        })?;
+        self.ehr_summary(ehr_id).await
+    }
+
     /// Build the canonical EHR object for an existing EHR.
     pub(super) async fn ehr_summary(&self, ehr_id: Uuid) -> Result<Value, ServiceError> {
         let row = sqlx::query("SELECT time_created FROM ehr WHERE id = $1")

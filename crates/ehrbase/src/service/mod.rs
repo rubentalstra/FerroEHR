@@ -26,6 +26,8 @@ mod composition;
 mod contribution;
 mod directory;
 mod ehr;
+mod item_tag;
+mod stored_query;
 mod versioned;
 mod vobject;
 

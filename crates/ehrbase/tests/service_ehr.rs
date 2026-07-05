@@ -18,6 +18,7 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
+use openehr_its::rest::generated::definition::DefinitionApi;
 use openehr_its::rest::generated::ehr::EhrApi;
 
 struct Pg {
@@ -355,4 +356,131 @@ async fn revision_history_lists_every_version() {
     assert_eq!(items.len(), 2, "two versions after one update");
     assert_eq!(items[0]["_type"], "REVISION_HISTORY_ITEM");
     assert!(items[0]["audits"][0]["_type"] == "AUDIT_DETAILS");
+}
+
+#[tokio::test]
+async fn ehr_get_by_subject_finds_the_ehr() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("bysubject").await);
+
+    let status = json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": {
+            "_type": "PARTY_IDENTIFIED",
+            "external_ref": {
+                "_type": "PARTY_REF",
+                "namespace": "patients",
+                "type": "PERSON",
+                "id": { "_type": "HIER_OBJECT_ID", "value": "patient-123" }
+            }
+        },
+        "is_queryable": true,
+        "is_modifiable": true
+    });
+    let created = svc
+        .ehr_create(params(json!({})), Some(status))
+        .await
+        .expect("ehr");
+    let ehr_id = created["ehr_id"]["value"].as_str().unwrap().to_owned();
+
+    let found = svc
+        .ehr_get_by_subject(params(json!({
+            "subject_id": "patient-123", "subject_namespace": "patients"
+        })))
+        .await
+        .expect("get by subject");
+    assert_eq!(found["ehr_id"]["value"], ehr_id);
+
+    assert!(
+        svc.ehr_get_by_subject(params(json!({
+            "subject_id": "nobody", "subject_namespace": "patients"
+        })))
+        .await
+        .is_err()
+    );
+}
+
+#[tokio::test]
+async fn stored_query_crud() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("storedq").await);
+
+    let aql = "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned();
+    svc.definition_query_version_store_yaml(
+        params(json!({ "qualified_query_name": "org.example::all_comps", "version": "1.0.0" })),
+        aql.clone(),
+    )
+    .await
+    .expect("store query");
+
+    let got = svc
+        .definition_query_version_get(params(json!({
+            "qualified_query_name": "org.example::all_comps", "version": "1.0.0"
+        })))
+        .await
+        .expect("get query");
+    assert_eq!(got["q"], aql);
+    assert_eq!(got["version"], "1.0.0");
+    assert_eq!(got["type"], "AQL");
+
+    let list = svc
+        .definition_query_list(params(
+            json!({ "qualified_query_name": "org.example::all_comps" }),
+        ))
+        .await
+        .expect("list");
+    assert_eq!(list.len(), 1);
+}
+
+#[tokio::test]
+async fn item_tag_crud() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("itemtags").await);
+
+    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
+    let ehr_id = ehr["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let comp = svc
+        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("Tagged"))
+        .await
+        .expect("composition");
+    let vo_id = uid(&comp).split("::").next().unwrap().to_owned();
+
+    let has_key = |tags: &[std::collections::BTreeMap<String, Value>], k: &str| {
+        tags.iter()
+            .any(|t| t.get("key").and_then(Value::as_str) == Some(k))
+    };
+
+    let upserted = svc
+        .composition_tags_update(
+            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })),
+            vec![json!({ "key": "priority", "value": "high" })],
+        )
+        .await
+        .expect("tag update");
+    assert!(has_key(&upserted, "priority"));
+
+    let on_comp = svc
+        .composition_tags_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .await
+        .expect("comp tags");
+    assert_eq!(on_comp.len(), 1);
+
+    let all = svc
+        .ehr_tags_get(params(json!({ "ehr_id": ehr_id })))
+        .await
+        .expect("ehr tags");
+    assert_eq!(all.len(), 1);
+
+    svc.composition_tags_delete(params(json!({
+        "ehr_id": ehr_id, "uid_based_id": vo_id, "key": "priority"
+    })))
+    .await
+    .expect("delete tag");
+    let after = svc
+        .composition_tags_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .await
+        .expect("comp tags after");
+    assert!(after.is_empty());
 }

@@ -10,19 +10,24 @@ use uuid::Uuid;
 
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
+    CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
     CompositionUpdateParams, ContributionCreateParams, ContributionGetParams,
     DirectoryCreateParams, DirectoryDeleteParams, DirectoryGetAtTimeParams,
     DirectoryGetByVersionIdParams, DirectoryUpdateParams, EhrApi, EhrCreateParams,
-    EhrCreateWithIdParams, EhrGetByIdParams, EhrStatusGetAtTimeParams,
-    EhrStatusGetByVersionIdParams, EhrStatusUpdateParams, VersionedCompositionGetParams,
-    VersionedCompositionRevisionHistoryParams, VersionedCompositionVersionGetByIdParams,
-    VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
-    VersionedEhrStatusVersionGetByIdParams,
+    EhrCreateWithIdParams, EhrGetByIdParams, EhrGetBySubjectParams, EhrStatusGetAtTimeParams,
+    EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams, EhrStatusTagsGetParams,
+    EhrStatusTagsUpdateParams, EhrStatusUpdateParams, EhrTagsGetParams,
+    VersionedCompositionGetParams, VersionedCompositionRevisionHistoryParams,
+    VersionedCompositionVersionGetByIdParams, VersionedEhrStatusGetParams,
+    VersionedEhrStatusRevisionHistoryParams, VersionedEhrStatusVersionGetByIdParams,
 };
 use openehr_its::rest::runtime::ApiError;
 
 use crate::service::EhrbaseService;
 use crate::service::ehr::default_ehr_status;
+
+/// The item-tag list shape the contract returns.
+type Tags = Vec<std::collections::BTreeMap<String, Value>>;
 
 #[async_trait]
 impl EhrApi for EhrbaseService {
@@ -48,6 +53,12 @@ impl EhrApi for EhrbaseService {
 
     async fn ehr_get_by_id(&self, params: EhrGetByIdParams) -> Result<Value, ApiError> {
         Ok(self.ehr_summary(parse_ehr_id(&params.ehr_id)?).await?)
+    }
+
+    async fn ehr_get_by_subject(&self, params: EhrGetBySubjectParams) -> Result<Value, ApiError> {
+        Ok(self
+            .ehr_by_subject(&params.subject_id, &params.subject_namespace)
+            .await?)
     }
 
     // ── EHR_STATUS ───────────────────────────────────────────────────────────
@@ -245,6 +256,87 @@ impl EhrApi for EhrbaseService {
         })?;
         Ok(self.get_contribution(ehr_id, contribution_id).await?)
     }
+
+    // ── item tags ────────────────────────────────────────────────────────────
+    async fn ehr_tags_get(&self, params: EhrTagsGetParams) -> Result<Tags, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let tags = self
+            .ehr_tags(
+                ehr_id,
+                params.tag_key.as_deref(),
+                params.tag_value.as_deref(),
+                params.tag_target_path.as_deref(),
+            )
+            .await?;
+        Ok(tag_maps(tags))
+    }
+
+    async fn composition_tags_get(
+        &self,
+        params: CompositionTagsGetParams,
+    ) -> Result<Tags, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        Ok(tag_maps(self.target_tags(ehr_id, vo_id).await?))
+    }
+
+    async fn composition_tags_update(
+        &self,
+        params: CompositionTagsUpdateParams,
+        body: Vec<Value>,
+    ) -> Result<Tags, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        Ok(tag_maps(
+            self.upsert_tags(ehr_id, vo_id, "COMPOSITION", body).await?,
+        ))
+    }
+
+    async fn composition_tags_delete(
+        &self,
+        params: CompositionTagsDeleteParams,
+    ) -> Result<(), ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        Ok(self.delete_tag(ehr_id, vo_id, &params.key).await?)
+    }
+
+    async fn ehr_status_tags_get(&self, params: EhrStatusTagsGetParams) -> Result<Tags, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        Ok(tag_maps(self.target_tags(ehr_id, vo_id).await?))
+    }
+
+    async fn ehr_status_tags_update(
+        &self,
+        params: EhrStatusTagsUpdateParams,
+        body: Vec<Value>,
+    ) -> Result<Tags, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        Ok(tag_maps(
+            self.upsert_tags(ehr_id, vo_id, "EHR_STATUS", body).await?,
+        ))
+    }
+
+    async fn ehr_status_tags_delete(
+        &self,
+        params: EhrStatusTagsDeleteParams,
+    ) -> Result<(), ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        Ok(self.delete_tag(ehr_id, vo_id, &params.key).await?)
+    }
+}
+
+/// Convert JSON tag objects into the `Vec<BTreeMap>` the contract returns.
+fn tag_maps(tags: Vec<Value>) -> Tags {
+    tags.into_iter()
+        .map(|tag| match tag {
+            Value::Object(map) => map.into_iter().collect(),
+            _ => std::collections::BTreeMap::new(),
+        })
+        .collect()
 }
 
 fn parse_ehr_id(raw: &str) -> Result<Uuid, ApiError> {
