@@ -38,8 +38,8 @@ REST wiring (P11).
 
 ## Tasks
 
-- [ ] Storage spike: corpus-loaded candidate schema + query/bench validation
-      (decides temporal PK vs fallback, index set, fragment format)
+- [x] Storage spike: corpus-loaded candidate schema + query/bench validation
+      — `tests/storage_spike.rs`, results below (2026-07-05)
 - [ ] Final schema migrations (`ehr` schema re-authored; `ext` = our helper
       functions) + updated `Iden` defs + testcontainers gate updated
 - [ ] Node codec: decompose (canonical JSON → node rows) with nested-set
@@ -56,4 +56,36 @@ REST wiring (P11).
 
 ## Decisions made this phase
 
-- (record spike outcomes + any deviations from ADR-008 here)
+### Spike results (2026-07-05 — PG 18 testcontainer, 52-composition corpus ×100)
+
+| Measurement | Result |
+|---|---|
+| Load, fine granularity | 149,700 rows / 5,200 comps in ~10 s; table 71 MB + indexes 17 MB; avg fragment **359 B** (never TOASTed) |
+| Load, coarse (no ELEMENT/FEEDER_AUDIT rows) | 65,600 rows; 49 MB + 12 MB; avg fragment 681 B |
+| CONTAINS scoped to one versioned object (hot path) | **0.44 ms** (nested loop over the `(vo_id, num)` PK) |
+| CONTAINS corpus-wide (archetype-filtered) | ~42 ms for 6,300 matches (bitmap on `(rm_type, archetype)`) |
+| Leaf extraction (`jsonb_path_query_first`, 8,000 rows) | ~21 ms |
+| Magnitude ORDER BY, no index | ~14 ms (parallel sort) |
+| Magnitude ORDER BY, expression index | **1.1 ms** — Index Scan on `openehr_magnitude(...)` partial btree (`DESC NULLS LAST` spelled in the index) |
+| GIN `jsonb_ops` `$.**` equality anchor, full count | **7 ms**, Bitmap Heap Scan on the GIN index — recursive-descent anchors are index-served as researched |
+| Temporal PK `WITHOUT OVERLAPS` (needs `btree_gist`) | Overlap rejected ✓; `upper_inf` partial index serves LATEST ✓ |
+| Codec round-trip | Lossless on all 52 corpus compositions, both granularities |
+
+### Decisions closed by the spike
+
+- **Fine granularity** (every structure type incl. `ELEMENT` gets a row): the
+  ~30 % storage premium buys direct rows for every AQL-containable type,
+  ELEMENT-level promoted columns, and 359 B fragments (no TOAST). Coarse
+  rejected.
+- **Temporal `vo_version` model confirmed** (PG 18 `WITHOUT OVERLAPS` +
+  `btree_gist`); no fallback needed.
+- **`openehr_magnitude` as `IMMUTABLE` ext function + on-demand expression
+  indexes** confirmed (13.6 ms → 1.1 ms); no synthetic stored fields. Index
+  recipe: partial predicate matching the query + `DESC NULLS LAST` in the
+  index definition.
+- **GIN `jsonb_ops` on `node.data`** kept (serves `$.**` equality anchors);
+  never `jsonb_path_ops`.
+- **Node rows are stored per version** (`PK (vo_id, sys_version, num)`) so
+  `ALL_VERSIONS` queries the same table uniformly — an improvement over the
+  current/history split (updates are rare in clinical data; storage cost
+  acceptable).

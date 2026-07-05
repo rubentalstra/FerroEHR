@@ -33,6 +33,7 @@ ehrbase-compat = { path = "../ehrbase-compat" }
 
 [dev-dependencies]
 figment = { workspace = true, features = ["test"] }
+serde_json.workspace = true
 testcontainers.workspace = true
 testcontainers-modules.workspace = true
 tokio.workspace = true
