@@ -13,6 +13,17 @@ publish = false
 openehr-rm = { path = "../openehr-rm" }
 openehr-its = { path = "../openehr-its" }
 openehr-am = { path = "../openehr-am" }
+openehr-base = { path = "../openehr-base" }
+openehr-term = { path = "../openehr-term" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+indexmap = { workspace = true }
+moka = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt"] }
 
 [features]
 ehrbase-quirks = []
@@ -21,5 +32,6 @@ ehrbase-quirks = []
 workspace = true
 
 [package.metadata.cargo-machete]
-# Scaffolded dependency graph (ADR-004 / phase 0R); these internal crates are wired now and consumed when this crate is ported (P6+).
-ignored = ["openehr-am", "openehr-its", "openehr-rm"]
+# `openehr-am`/`openehr-term` are wired for the (later) FLAT/terminology paths; the
+# WebTemplate builder (this PR) resolves labels from the archetype rubrics like Better does.
+ignored = ["openehr-am", "openehr-term"]

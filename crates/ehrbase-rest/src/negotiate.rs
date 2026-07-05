@@ -37,6 +37,29 @@ pub(crate) enum Format {
 
 const APPLICATION_JSON: &str = "application/json";
 const APPLICATION_XML: &str = "application/xml";
+/// Better `web-template` JSON media type (interop format, `openehr-flat`).
+const APPLICATION_WT_JSON: &str = "application/openehr.wt+json";
+
+/// Whether the client explicitly asks for the Better `web-template` JSON format
+/// on `Accept` (`application/openehr.wt+json`).
+pub(crate) fn wants_web_template(headers: &HeaderMap) -> bool {
+    header_str(headers, header::ACCEPT).is_some_and(|accept| {
+        accept
+            .split(',')
+            .any(|r| r.trim().starts_with(APPLICATION_WT_JSON))
+    })
+}
+
+/// Serve a pre-serialized `WebTemplate` JSON document as
+/// `application/openehr.wt+json`.
+pub(crate) fn wt_json_body(status: StatusCode, json: String) -> Response {
+    let mut resp = (status, json).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_WT_JSON),
+    );
+    resp
+}
 
 fn is_json(media: &str) -> bool {
     let m = media.trim();
@@ -323,6 +346,23 @@ mod tests {
             response_format(&headers(&[("accept", "text/xml")])),
             Format::Xml
         );
+    }
+
+    #[test]
+    fn detects_web_template_accept() {
+        assert!(wants_web_template(&headers(&[(
+            "accept",
+            "application/openehr.wt+json"
+        )])));
+        assert!(wants_web_template(&headers(&[(
+            "accept",
+            "application/xml, application/openehr.wt+json"
+        )])));
+        assert!(!wants_web_template(&headers(&[(
+            "accept",
+            "application/xml"
+        )])));
+        assert!(!wants_web_template(&HeaderMap::new()));
     }
 
     #[test]
