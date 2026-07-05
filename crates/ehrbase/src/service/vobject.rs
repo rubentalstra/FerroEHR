@@ -363,6 +363,7 @@ pub(super) async fn create(
 }
 
 /// Commit a new version of an existing object under its own contribution.
+#[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(super) async fn update(
     tx: &mut PgConnection,
     ehr_id: Uuid,

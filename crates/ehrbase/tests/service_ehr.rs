@@ -3,7 +3,12 @@
 //! including versioning, optimistic concurrency, time-travel, and logical
 //! delete — driven through the generated `EhrApi` trait exactly as the REST
 //! layer calls it.
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::too_many_lines,
+    clippy::doc_markdown
+)]
 
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
