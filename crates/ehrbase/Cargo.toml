@@ -10,6 +10,16 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+figment.workspace = true
+jiff.workspace = true
+jiff-sqlx.workspace = true
+sea-query.workspace = true
+sea-query-sqlx.workspace = true
+serde.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
 openehr-base = { path = "../openehr-base" }
 openehr-term = { path = "../openehr-term" }
 openehr-rm = { path = "../openehr-rm" }
@@ -20,6 +30,12 @@ openehr-flat = { path = "../openehr-flat" }
 openehr-query = { path = "../openehr-query" }
 ehrbase-rest = { path = "../ehrbase-rest" }
 ehrbase-compat = { path = "../ehrbase-compat" }
+
+[dev-dependencies]
+figment = { workspace = true, features = ["test"] }
+testcontainers.workspace = true
+testcontainers-modules.workspace = true
+tokio.workspace = true
 
 [lints]
 workspace = true

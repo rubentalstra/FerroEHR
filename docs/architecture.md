@@ -71,8 +71,11 @@ ASL IR is kept as a distinct pass — it is what makes the hard cases tractable.
 
 ### Persistence (v2 schema — `sqlx` + `sea-query`, not sea-orm)
 
-The **real EHRbase v2 schema** is reused verbatim (the vendored Flyway SQL in
-`crates/ehrbase/migrations/`, run via `sqlx migrate`). It decomposes each
+The **real EHRbase v2 schema** is reused exactly: squashed
+`0001_baseline.sql` migrations (one per schema, `sqlx migrate`), proven
+identical to the vendored Flyway chain's end state by a schema-equality test
+(ADR-007; the chain is the fixture under
+`crates/ehrbase/tests/resources/legacy_schema/`). It decomposes each
 composition **row-per-locatable**: every LOCATABLE node is a row with leaf
 attributes as JSONB. Key tables: `ehr.comp_data`/`_history` (decomposed rows),
 `ehr.comp_version`, `ehr.ehr`/`ehr_status_data`/`ehr_folder_data`,
