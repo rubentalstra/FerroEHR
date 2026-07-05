@@ -53,7 +53,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.ehr_get_by_subject(p).await?,
+                &state.backend().ehr_get_by_subject(p).await?,
             ))
         }
         "ehr_create" => {
@@ -62,12 +62,16 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.ehr_create(p, body).await?,
+                &state.backend().ehr_create(p, body).await?,
             ))
         }
         "ehr_get_by_id" => {
             let p = params::build::<EhrGetByIdParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.ehr_get_by_id(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().ehr_get_by_id(p).await?,
+            ))
         }
         "ehr_create_with_id" => {
             let p = params::build::<EhrCreateWithIdParams>(&parts.path, q, h)?;
@@ -75,7 +79,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.ehr_create_with_id(p, body).await?,
+                &state.backend().ehr_create_with_id(p, body).await?,
             ))
         }
         "ehr_status_get_by_version_id" => {
@@ -83,7 +87,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.ehr_status_get_by_version_id(p).await?,
+                &state.backend().ehr_status_get_by_version_id(p).await?,
             ))
         }
         "ehr_status_get_at_time" => {
@@ -91,7 +95,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.ehr_status_get_at_time(p).await?,
+                &state.backend().ehr_status_get_at_time(p).await?,
             ))
         }
         "ehr_status_update" => {
@@ -100,7 +104,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.ehr_status_update(p, body).await?,
+                &state.backend().ehr_status_update(p, body).await?,
             ))
         }
         "versioned_ehr_status_get" => {
@@ -108,7 +112,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_ehr_status_get(p).await?,
+                &state.backend().versioned_ehr_status_get(p).await?,
             ))
         }
         "versioned_ehr_status_revision_history" => {
@@ -116,7 +120,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_ehr_status_revision_history(p).await?,
+                &state
+                    .backend()
+                    .versioned_ehr_status_revision_history(p)
+                    .await?,
             ))
         }
         "versioned_ehr_status_version_get_at_time" => {
@@ -124,7 +131,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_ehr_status_version_get_at_time(p).await?,
+                &state
+                    .backend()
+                    .versioned_ehr_status_version_get_at_time(p)
+                    .await?,
             ))
         }
         "versioned_ehr_status_version_get_by_id" => {
@@ -132,7 +142,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_ehr_status_version_get_by_id(p).await?,
+                &state
+                    .backend()
+                    .versioned_ehr_status_version_get_by_id(p)
+                    .await?,
             ))
         }
         "composition_create" => {
@@ -141,12 +154,16 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.composition_create(p, body).await?,
+                &state.backend().composition_create(p, body).await?,
             ))
         }
         "composition_get" => {
             let p = params::build::<CompositionGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.composition_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().composition_get(p).await?,
+            ))
         }
         "composition_update" => {
             let p = params::build::<CompositionUpdateParams>(&parts.path, q, h)?;
@@ -154,12 +171,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.composition_update(p, body).await?,
+                &state.backend().composition_update(p, body).await?,
             ))
         }
         "composition_delete" => {
             let p = params::build::<CompositionDeleteParams>(&parts.path, q, h)?;
-            state.composition_delete(p).await?;
+            state.backend().composition_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "versioned_composition_get" => {
@@ -167,7 +184,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_composition_get(p).await?,
+                &state.backend().versioned_composition_get(p).await?,
             ))
         }
         "versioned_composition_revision_history" => {
@@ -175,7 +192,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_composition_revision_history(p).await?,
+                &state
+                    .backend()
+                    .versioned_composition_revision_history(p)
+                    .await?,
             ))
         }
         "versioned_composition_version_get_at_time" => {
@@ -183,7 +203,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_composition_version_get_at_time(p).await?,
+                &state
+                    .backend()
+                    .versioned_composition_version_get_at_time(p)
+                    .await?,
             ))
         }
         "versioned_composition_version_get_by_id" => {
@@ -191,7 +214,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.versioned_composition_version_get_by_id(p).await?,
+                &state
+                    .backend()
+                    .versioned_composition_version_get_by_id(p)
+                    .await?,
             ))
         }
         "directory_get_at_time" => {
@@ -199,7 +225,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.directory_get_at_time(p).await?,
+                &state.backend().directory_get_at_time(p).await?,
             ))
         }
         "directory_update" => {
@@ -208,7 +234,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.directory_update(p, body).await?,
+                &state.backend().directory_update(p, body).await?,
             ))
         }
         "directory_create" => {
@@ -217,12 +243,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.directory_create(p, body).await?,
+                &state.backend().directory_create(p, body).await?,
             ))
         }
         "directory_delete" => {
             let p = params::build::<DirectoryDeleteParams>(&parts.path, q, h)?;
-            state.directory_delete(p).await?;
+            state.backend().directory_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "directory_get_by_version_id" => {
@@ -230,7 +256,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.directory_get_by_version_id(p).await?,
+                &state.backend().directory_get_by_version_id(p).await?,
             ))
         }
         "contribution_create" => {
@@ -241,23 +267,33 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.contribution_create(p, body).await?,
+                // `contribution_*` is defined on both EhrApi and DemographicApi
+                // (shared method names); disambiguate on the trait-object backend.
+                &EhrApi::contribution_create(state.backend(), p, body).await?,
             ))
         }
         "contribution_get" => {
             let p = params::build::<ContributionGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.contribution_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &EhrApi::contribution_get(state.backend(), p).await?,
+            ))
         }
         "ehr_tags_get" => {
             let p = params::build::<EhrTagsGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(h, ok, &state.ehr_tags_get(p).await?))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &state.backend().ehr_tags_get(p).await?,
+            ))
         }
         "composition_tags_get" => {
             let p = params::build::<CompositionTagsGetParams>(&parts.path, q, h)?;
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.composition_tags_get(p).await?,
+                &state.backend().composition_tags_get(p).await?,
             ))
         }
         "composition_tags_update" => {
@@ -266,12 +302,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.composition_tags_update(p, body).await?,
+                &state.backend().composition_tags_update(p, body).await?,
             ))
         }
         "composition_tags_delete" => {
             let p = params::build::<CompositionTagsDeleteParams>(&parts.path, q, h)?;
-            state.composition_tags_delete(p).await?;
+            state.backend().composition_tags_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "ehr_status_tags_get" => {
@@ -279,7 +315,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.ehr_status_tags_get(p).await?,
+                &state.backend().ehr_status_tags_get(p).await?,
             ))
         }
         "ehr_status_tags_update" => {
@@ -288,12 +324,12 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 ok,
-                &state.ehr_status_tags_update(p, body).await?,
+                &state.backend().ehr_status_tags_update(p, body).await?,
             ))
         }
         "ehr_status_tags_delete" => {
             let p = params::build::<EhrStatusTagsDeleteParams>(&parts.path, q, h)?;
-            state.ehr_status_tags_delete(p).await?;
+            state.backend().ehr_status_tags_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         other => Err(RestError(openehr_its::rest::runtime::ApiError::Internal(

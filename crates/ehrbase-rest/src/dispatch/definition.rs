@@ -12,14 +12,14 @@
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 
+// DefinitionApi methods resolve through the `dyn Backend` trait object; import only params.
 use openehr_its::rest::generated::definition::{
-    DefinitionApi, DefinitionQueryListParams, DefinitionQueryStoreYamlParams,
-    DefinitionQueryVersionGetParams, DefinitionQueryVersionStoreYamlParams,
-    DefinitionTemplateAdl2ExampleGetParams, DefinitionTemplateAdl2GetParams,
-    DefinitionTemplateAdl2ListParams, DefinitionTemplateAdl2UploadParams,
-    DefinitionTemplateAdl2VersionGetParams, DefinitionTemplateAdl14ExampleGetParams,
-    DefinitionTemplateAdl14GetParams, DefinitionTemplateAdl14ListParams,
-    DefinitionTemplateAdl14UploadParams,
+    DefinitionQueryListParams, DefinitionQueryStoreYamlParams, DefinitionQueryVersionGetParams,
+    DefinitionQueryVersionStoreYamlParams, DefinitionTemplateAdl2ExampleGetParams,
+    DefinitionTemplateAdl2GetParams, DefinitionTemplateAdl2ListParams,
+    DefinitionTemplateAdl2UploadParams, DefinitionTemplateAdl2VersionGetParams,
+    DefinitionTemplateAdl14ExampleGetParams, DefinitionTemplateAdl14GetParams,
+    DefinitionTemplateAdl14ListParams, DefinitionTemplateAdl14UploadParams,
 };
 
 use super::{BoxResponse, RequestParts};
@@ -50,7 +50,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_template_adl1_4_list(p).await?,
+                &state.backend().definition_template_adl1_4_list(p).await?,
             ))
         }
         "definition_template_adl1.4_upload" => {
@@ -60,7 +60,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.definition_template_adl1_4_upload(p, body).await?,
+                &state
+                    .backend()
+                    .definition_template_adl1_4_upload(p, body)
+                    .await?,
             ))
         }
         "definition_template_adl1.4_get" => {
@@ -68,7 +71,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_template_adl1_4_get(p).await?,
+                &state.backend().definition_template_adl1_4_get(p).await?,
             ))
         }
         "definition_template_adl1.4_example_get" => {
@@ -76,7 +79,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_template_adl1_4_example_get(p).await?,
+                &state
+                    .backend()
+                    .definition_template_adl1_4_example_get(p)
+                    .await?,
             ))
         }
         "definition_template_adl2_list" => {
@@ -84,7 +90,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_template_adl2_list(p).await?,
+                &state.backend().definition_template_adl2_list(p).await?,
             ))
         }
         "definition_template_adl2_upload" => {
@@ -94,7 +100,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
-                &state.definition_template_adl2_upload(p, body).await?,
+                &state
+                    .backend()
+                    .definition_template_adl2_upload(p, body)
+                    .await?,
             ))
         }
         "definition_template_adl2_get" => {
@@ -102,7 +111,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_template_adl2_get(p).await?,
+                &state.backend().definition_template_adl2_get(p).await?,
             ))
         }
         "definition_template_adl2_example_get" => {
@@ -110,7 +119,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_template_adl2_example_get(p).await?,
+                &state
+                    .backend()
+                    .definition_template_adl2_example_get(p)
+                    .await?,
             ))
         }
         "definition_template_adl2_version_get" => {
@@ -118,7 +130,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_template_adl2_version_get(p).await?,
+                &state
+                    .backend()
+                    .definition_template_adl2_version_get(p)
+                    .await?,
             ))
         }
         "definition_query_list" => {
@@ -126,13 +141,13 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_query_list(p).await?,
+                &state.backend().definition_query_list(p).await?,
             ))
         }
         "definition_query_store.yaml" => {
             let p = params::build::<DefinitionQueryStoreYamlParams>(&parts.path, q, h)?;
             let body = negotiate::text_body(&parts.body)?;
-            state.definition_query_store_yaml(p, body).await?;
+            state.backend().definition_query_store_yaml(p, body).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "definition_query_version_get" => {
@@ -140,13 +155,16 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.definition_query_version_get(p).await?,
+                &state.backend().definition_query_version_get(p).await?,
             ))
         }
         "definition_query_version_store.yaml" => {
             let p = params::build::<DefinitionQueryVersionStoreYamlParams>(&parts.path, q, h)?;
             let body = negotiate::text_body(&parts.body)?;
-            state.definition_query_version_store_yaml(p, body).await?;
+            state
+                .backend()
+                .definition_query_version_store_yaml(p, body)
+                .await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         other => Err(RestError(openehr_its::rest::runtime::ApiError::Internal(

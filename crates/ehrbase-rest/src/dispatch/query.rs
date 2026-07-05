@@ -7,8 +7,9 @@
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 
+// QueryApi methods resolve through the `dyn Backend` trait object; import only params.
 use openehr_its::rest::generated::query::{
-    QueryApi, QueryExecuteAdhocQueryBodyParams, QueryExecuteAdhocQueryParams,
+    QueryExecuteAdhocQueryBodyParams, QueryExecuteAdhocQueryParams,
     QueryExecuteStoredQueryBodyParams, QueryExecuteStoredQueryParams,
     QueryExecuteStoredQueryVersionBodyParams, QueryExecuteStoredQueryVersionParams,
 };
@@ -40,7 +41,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.query_execute_adhoc_query(p).await?,
+                &state.backend().query_execute_adhoc_query(p).await?,
             ))
         }
         "query_execute_adhoc_query_body" => {
@@ -49,7 +50,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.query_execute_adhoc_query_body(p, body).await?,
+                &state
+                    .backend()
+                    .query_execute_adhoc_query_body(p, body)
+                    .await?,
             ))
         }
         "query_execute_stored_query" => {
@@ -57,7 +61,7 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.query_execute_stored_query(p).await?,
+                &state.backend().query_execute_stored_query(p).await?,
             ))
         }
         "query_execute_stored_query_body" => {
@@ -66,7 +70,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.query_execute_stored_query_body(p, body).await?,
+                &state
+                    .backend()
+                    .query_execute_stored_query_body(p, body)
+                    .await?,
             ))
         }
         "query_execute_stored_query_version" => {
@@ -74,7 +81,10 @@ async fn run(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.query_execute_stored_query_version(p).await?,
+                &state
+                    .backend()
+                    .query_execute_stored_query_version(p)
+                    .await?,
             ))
         }
         "query_execute_stored_query_version_body" => {
@@ -84,6 +94,7 @@ async fn run(
                 h,
                 StatusCode::OK,
                 &state
+                    .backend()
                     .query_execute_stored_query_version_body(p, body)
                     .await?,
             ))

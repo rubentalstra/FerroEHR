@@ -169,6 +169,22 @@ fn is_admin_path(path: &str) -> bool {
     path.split('/').any(|seg| seg == "admin")
 }
 
+tokio::task_local! {
+    /// The authenticated principal for the request currently being handled.
+    static REQUEST_PRINCIPAL: Option<Principal>;
+}
+
+/// The authenticated principal for the current request, if any.
+///
+/// Set by [`middleware`] for the duration of request handling; downstream layers
+/// (notably the service layer, when attributing a CONTRIBUTION's committer) read
+/// it without the principal having to be threaded through the generated trait
+/// signatures. Returns `None` when unauthenticated or called outside a request.
+#[must_use]
+pub fn current_principal() -> Option<Principal> {
+    REQUEST_PRINCIPAL.try_with(Clone::clone).ok().flatten()
+}
+
 /// The authentication middleware. Attached to the API router; public endpoints
 /// (status, health, Swagger) are mounted outside it.
 pub async fn middleware(
@@ -177,7 +193,7 @@ pub async fn middleware(
     next: Next,
 ) -> Response {
     if !auth.enabled() {
-        return next.run(req).await;
+        return REQUEST_PRINCIPAL.scope(None, next.run(req)).await;
     }
 
     let path = req.uri().path().to_owned();
@@ -186,8 +202,11 @@ pub async fn middleware(
             if let Err(e) = auth.authorize_admin(&path, &principal) {
                 return RestError(e.to_api_error()).into_response();
             }
-            req.extensions_mut().insert(principal);
-            next.run(req).await
+            req.extensions_mut().insert(principal.clone());
+            // Publish the principal for the service layer (committer attribution).
+            REQUEST_PRINCIPAL
+                .scope(Some(principal), next.run(req))
+                .await
         }
         Err(e) => {
             let api = e.to_api_error();
