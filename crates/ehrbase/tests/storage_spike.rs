@@ -15,7 +15,17 @@
 //! Run explicitly (it is a measurement harness, not a CI gate):
 //! `SPIKE_SCALE=200 cargo nextest run -p ehrbase storage_spike --run-ignored all --no-capture`
 
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    // measurement harness: spike-grade casts/args are fine
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::needless_pass_by_value,
+    clippy::items_after_statements,
+    clippy::too_many_lines
+)]
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
@@ -66,11 +76,11 @@ CREATE UNIQUE INDEX vo_version_current_idx ON vo_version (vo_id) WHERE upper_inf
 CREATE UNIQUE INDEX vo_version_num_idx ON vo_version (vo_id, sys_version);
 "#;
 
-/// Draft `ext` magnitude function: numeric DV_ORDERED kinds are immutable-
+/// Draft `ext` magnitude function: numeric `DV_ORDERED` kinds are immutable-
 /// safe; temporal kinds go through our own deterministic partial-ISO parser
 /// (spike: date-time only, UTC-normalized — full spec formula lands in the
 /// real `ext` migration).
-const MAGNITUDE_FN: &str = r#"
+const MAGNITUDE_FN: &str = r"
 CREATE FUNCTION openehr_magnitude(dv jsonb) RETURNS numeric
 LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE AS $$
 DECLARE
@@ -100,13 +110,13 @@ BEGIN
 EXCEPTION WHEN others THEN
     RETURN NULL;
 END $$;
-"#;
+";
 
 // ─── spike decomposer (canonical JSON → node rows; promoted to src/ after) ──
 
 /// RM structure types (LOCATABLE descendants that occur in versioned-object
-/// content, + EVENT_CONTEXT and FEEDER_AUDIT). Fine granularity = all of
-/// them; coarse = without ELEMENT/FEEDER_AUDIT (leaf values stay inline).
+/// content, + `EVENT_CONTEXT` and `FEEDER_AUDIT`). Fine granularity = all of
+/// them; coarse = without `ELEMENT/FEEDER_AUDIT` (leaf values stay inline).
 const STRUCTURE_TYPES: &[&str] = &[
     "COMPOSITION",
     "EHR_STATUS",
@@ -261,10 +271,10 @@ fn corpus() -> Vec<Value> {
         let path = entry.expect("entry").path();
         if path.extension().is_some_and(|e| e == "json") {
             let text = std::fs::read_to_string(&path).expect("read corpus file");
-            if let Ok(v) = serde_json::from_str::<Value>(&text) {
-                if v.get("_type").and_then(Value::as_str) == Some("COMPOSITION") {
-                    out.push(v);
-                }
+            if let Ok(v) = serde_json::from_str::<Value>(&text)
+                && v.get("_type").and_then(Value::as_str) == Some("COMPOSITION")
+            {
+                out.push(v);
             }
         }
     }

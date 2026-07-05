@@ -1,47 +1,38 @@
-//! P09 integration tests: the baseline migrations apply cleanly on a real
-//! `PostgreSQL` 18, a `sea-query` round-trip works, and — the load-bearing
-//! gate — the squashed baseline produces a schema identical to the legacy
-//! `EHRbase` Flyway chain (ADR-007).
+//! P09/P10 integration tests: the greenfield schema (ADR-008) applies
+//! cleanly on a real `PostgreSQL` 18, the `ext` magnitude functions follow
+//! the spec formulas, the temporal versioning model behaves, and the node
+//! codec round-trips through the database.
 //!
 //! Requires Docker. Each test owns its container, so `Drop` removes it when
 //! the test finishes — nothing is left running afterwards.
 
-// Test code: expect/unwrap are fine here (see .claude/rules/testing.md).
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use std::path::Path;
 
-use ehrbase::db::{self, DbSettings, iden::Ehr};
-use sea_query::{Expr, PostgresQueryBuilder, Query};
-use sea_query_sqlx::SqlxBinder;
+use ehrbase::db::{self, DbSettings};
+use ehrbase::storage::{NodeRow, decompose, reassemble};
+use serde_json::Value;
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
-use testcontainers::core::{CmdWaitFor, ExecCommand, Mount};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
+use uuid::Uuid;
 
 /// Debian-based image: ICU-enabled and ships the contrib extensions.
 const PG_TAG: &str = "18";
 
-/// A test-owned `PostgreSQL` 18 server. The container is removed on `Drop`
-/// (end of the owning test), so no containers outlive the test run.
 struct Pg {
+    #[allow(dead_code)] // held for its Drop (container removal)
     container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
 
 impl Pg {
-    /// Start a fresh server with the legacy Flyway chain bind-mounted
-    /// read-only (used by the schema-equality gate).
     async fn start() -> Self {
-        let legacy = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/resources/legacy_schema");
         let container = Postgres::default()
             .with_tag(PG_TAG)
-            .with_mount(Mount::bind_mount(
-                legacy.to_string_lossy().into_owned(),
-                "/legacy_schema",
-            ))
             .start()
             .await
             .expect("start postgres:18 container (is Docker running?)");
@@ -61,7 +52,6 @@ impl Pg {
         }
     }
 
-    /// Create a database on this server and return settings for it.
     async fn create_database(&self, name: &str) -> DbSettings {
         let Self { host, port, .. } = self;
         let admin_url = format!("postgres://postgres:postgres@{host}:{port}/postgres");
@@ -74,15 +64,20 @@ impl Pg {
             .expect("create database");
         DbSettings::new(format!("postgres://postgres:postgres@{host}:{port}/{name}"))
     }
+
+    async fn migrated_pool(&self, name: &str) -> PgPool {
+        let settings = self.create_database(name).await;
+        let pool = db::connect(&settings).await.expect("pool");
+        db::run_migrations(&pool).await.expect("migrations apply");
+        pool
+    }
 }
 
 #[tokio::test]
 async fn migrations_apply_cleanly_and_idempotently() {
     let pg = Pg::start().await;
-    let settings = pg.create_database("mig_apply").await;
-    let pool = db::connect(&settings).await.expect("pool");
-    db::run_migrations(&pool).await.expect("migrations apply");
-    // Running again must be a no-op, not an error.
+    let pool = pg.migrated_pool("mig_apply").await;
+    // running again must be a no-op, not an error
     db::run_migrations(&pool)
         .await
         .expect("migrations idempotent");
@@ -95,262 +90,267 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .fetch_one(&pool)
         .await
         .expect("ehr bookkeeping");
-    assert_eq!(
-        (applied_ext, applied_ehr),
-        (1, 1),
-        "one baseline per schema"
-    );
+    assert_eq!((applied_ext, applied_ehr), (1, 1));
 
-    let tables: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM information_schema.tables \
-         WHERE table_schema = 'ehr' AND table_name <> '_sqlx_migrations'",
+    let tables: Vec<String> = sqlx::query_scalar(
+        "SELECT table_name FROM information_schema.tables \
+         WHERE table_schema = 'ehr' AND table_name <> '_sqlx_migrations' ORDER BY 1",
     )
-    .fetch_one(&pool)
+    .fetch_all(&pool)
     .await
-    .expect("table count");
-    assert_eq!(tables, 17, "the EHRbase v2 schema has 17 tables");
-}
-
-#[tokio::test]
-async fn sea_query_round_trip_through_ehr_table() {
-    let pg = Pg::start().await;
-    let settings = pg.create_database("smoke_roundtrip").await;
-    let pool = db::connect(&settings).await.expect("pool");
-    db::run_migrations(&pool).await.expect("migrations");
-
-    let id = uuid::Uuid::new_v4();
-    let (sql, values) = Query::insert()
-        .into_table(Ehr::Table)
-        .columns([Ehr::Id, Ehr::CreationDate])
-        .values([Expr::val(id), Expr::cust("now()")])
-        .expect("insert values")
-        .build_sqlx(PostgresQueryBuilder);
-    sqlx::query_with(AssertSqlSafe(sql), values)
-        .execute(&pool)
-        .await
-        .expect("insert via sea-query");
-
-    let row = sqlx::query("SELECT id, creation_date FROM ehr WHERE id = $1")
-        .bind(id)
-        .fetch_one(&pool)
-        .await
-        .expect("select back");
-    let read_id: uuid::Uuid = row.get("id");
-    let created: jiff_sqlx::Timestamp = row.get("creation_date");
-    assert_eq!(read_id, id);
-    let age = jiff::Timestamp::now() - created.to_jiff();
-    assert!(age.abs().get_hours() < 1, "creation_date is recent");
-}
-
-// ─── The schema-equality gate (ADR-007) ─────────────────────────────────────
-//
-// The shipped baseline migrations were squashed from the legacy EHRbase v2
-// Flyway chain. This test applies the ORIGINAL chain (bind-mounted from
-// tests/resources/legacy_schema/) to one database via psql inside the
-// container, the baseline to another via `db::run_migrations`, and asserts
-// the resulting schemas are identical at the pg_catalog level.
-//
-// Documented exceptions (ADR-007): the orphaned `tenant_id_seq` (legacy
-// leftover, deliberately not recreated) and sqlx's `_sqlx_migrations`
-// bookkeeping tables (baseline side only).
-
-async fn apply_legacy_chain(pg: &Pg, dbname: &str) {
-    let script = format!(
-        r#"set -e
-psql -U postgres -d {dbname} -v ON_ERROR_STOP=1 -q \
-  -c 'CREATE SCHEMA ext' -c 'CREATE SCHEMA ehr' \
-  -c 'CREATE EXTENSION "uuid-ossp" WITH SCHEMA ext' \
-  -c 'CREATE EXTENSION pgcrypto WITH SCHEMA ext' \
-  -c 'CREATE EXTENSION pg_trgm WITH SCHEMA ext'
-for f in /legacy_schema/ext/*.sql; do
-  PGOPTIONS='-c search_path=ext' psql -U postgres -d {dbname} -v ON_ERROR_STOP=1 -q -f "$f"
-done
-for f in /legacy_schema/ehr/*.sql; do
-  PGOPTIONS='-c search_path=ehr,ext' psql -U postgres -d {dbname} -v ON_ERROR_STOP=1 -q -f "$f"
-done
-"#
+    .expect("tables");
+    assert_eq!(
+        tables,
+        [
+            "audit",
+            "contribution",
+            "ehr",
+            "item_tag",
+            "node",
+            "stored_query",
+            "template_store",
+            "vo_version",
+        ]
     );
-    let mut result = pg
-        .container
-        .exec(
-            ExecCommand::new(["bash", "-c", &script]).with_cmd_ready_condition(CmdWaitFor::exit()),
-        )
-        .await
-        .expect("exec legacy chain");
-    let exit = result.exit_code().await.expect("exit code");
-    if exit != Some(0) {
-        let stderr =
-            String::from_utf8_lossy(&result.stderr_to_vec().await.unwrap_or_default()).into_owned();
-        panic!("legacy chain failed (exit {exit:?}):\n{stderr}");
-    }
-}
-
-/// A canonical, ordered description of everything schema-relevant in the
-/// `ehr` + `ext` schemas: columns, constraints, indexes, functions,
-/// aggregates, enum types, collations, sequences, storage options, comments.
-#[allow(clippy::too_many_lines)] // a flat list of catalog queries
-async fn schema_fingerprint(pool: &PgPool) -> String {
-    const SECTIONS: &[(&str, &str)] = &[
-        (
-            // Column position is compared as a dense rank, not the raw
-            // attnum: dropped columns in the legacy chain leave attnum gaps
-            // that carry no schema semantics; relative order must still match.
-            "columns",
-            "SELECT table_schema||'.'||table_name||'.'||column_name||'|'|| \
-                    (row_number() OVER (PARTITION BY table_schema, table_name \
-                                        ORDER BY ordinal_position))||'|'|| \
-                    COALESCE(data_type,'')||'|'||COALESCE(udt_name,'')||'|'||is_nullable||'|'|| \
-                    COALESCE(column_default,'')||'|'||COALESCE(collation_name,'') \
-             FROM information_schema.columns \
-             WHERE table_schema IN ('ehr','ext') AND table_name <> '_sqlx_migrations' \
-             ORDER BY 1",
-        ),
-        (
-            "constraints",
-            "SELECT n.nspname||'.'||cl.relname||'.'||c.conname||'|'||pg_get_constraintdef(c.oid) \
-             FROM pg_constraint c \
-             JOIN pg_class cl ON cl.oid = c.conrelid \
-             JOIN pg_namespace n ON n.oid = cl.relnamespace \
-             WHERE n.nspname IN ('ehr','ext') AND cl.relname <> '_sqlx_migrations' \
-             ORDER BY 1",
-        ),
-        (
-            "indexes",
-            "SELECT schemaname||'.'||tablename||'.'||indexname||'|'||indexdef \
-             FROM pg_indexes \
-             WHERE schemaname IN ('ehr','ext') AND tablename <> '_sqlx_migrations' \
-             ORDER BY 1",
-        ),
-        (
-            "functions",
-            "SELECT n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')|'|| \
-                    md5(pg_get_functiondef(p.oid)) \
-             FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace \
-             WHERE n.nspname IN ('ehr','ext') AND p.prokind = 'f' \
-             ORDER BY 1",
-        ),
-        (
-            "aggregates",
-            "SELECT n.nspname||'.'||p.proname||'|'||a.aggtransfn::text||'|'||a.aggfinalfn::text||'|'|| \
-                    a.aggcombinefn::text||'|'||COALESCE(a.agginitval,'')||'|'|| \
-                    a.aggsortop::regoperator::text||'|'||format_type(a.aggtranstype, NULL) \
-             FROM pg_aggregate a \
-             JOIN pg_proc p ON p.oid = a.aggfnoid \
-             JOIN pg_namespace n ON n.oid = p.pronamespace \
-             WHERE n.nspname IN ('ehr','ext') \
-             ORDER BY 1",
-        ),
-        (
-            "enum-types",
-            "SELECT n.nspname||'.'||t.typname||'|'||string_agg(e.enumlabel, ',' ORDER BY e.enumsortorder) \
-             FROM pg_type t \
-             JOIN pg_enum e ON e.enumtypid = t.oid \
-             JOIN pg_namespace n ON n.oid = t.typnamespace \
-             WHERE n.nspname IN ('ehr','ext') \
-             GROUP BY n.nspname, t.typname \
-             ORDER BY 1",
-        ),
-        (
-            "collations",
-            "SELECT n.nspname||'.'||c.collname||'|'||c.collprovider::text||'|'|| \
-                    COALESCE(c.colllocale, c.collcollate, '') \
-             FROM pg_collation c JOIN pg_namespace n ON n.oid = c.collnamespace \
-             WHERE n.nspname IN ('ehr','ext') \
-             ORDER BY 1",
-        ),
-        (
-            // ADR-007 exception: the orphaned legacy `tenant_id_seq` is
-            // deliberately absent from the baseline.
-            "sequences",
-            "SELECT sequence_schema||'.'||sequence_name \
-             FROM information_schema.sequences \
-             WHERE sequence_schema IN ('ehr','ext') AND sequence_name <> 'tenant_id_seq' \
-             ORDER BY 1",
-        ),
-        (
-            "reloptions",
-            "SELECT n.nspname||'.'||c.relname||'|'||COALESCE(array_to_string(c.reloptions, ','), '') \
-             FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace \
-             WHERE n.nspname IN ('ehr','ext') AND c.relkind = 'r' \
-               AND c.relname <> '_sqlx_migrations' \
-             ORDER BY 1",
-        ),
-        (
-            "attstorage",
-            "SELECT n.nspname||'.'||c.relname||'.'||a.attname||'|'||a.attstorage::text \
-             FROM pg_attribute a \
-             JOIN pg_class c ON c.oid = a.attrelid \
-             JOIN pg_namespace n ON n.oid = c.relnamespace \
-             WHERE n.nspname IN ('ehr','ext') AND c.relkind = 'r' \
-               AND a.attnum > 0 AND NOT a.attisdropped \
-               AND c.relname <> '_sqlx_migrations' \
-             ORDER BY 1",
-        ),
-        (
-            "comments",
-            "SELECT n.nspname||'.'||c.relname||'|'||d.description \
-             FROM pg_description d \
-             JOIN pg_class c ON c.oid = d.objoid AND d.objsubid = 0 \
-             JOIN pg_namespace n ON n.oid = c.relnamespace \
-             WHERE n.nspname IN ('ehr','ext') \
-             ORDER BY 1",
-        ),
-    ];
-
-    let mut fingerprint = String::new();
-    for (section, query) in SECTIONS {
-        let lines: Vec<String> = sqlx::query_scalar(*query)
-            .fetch_all(pool)
-            .await
-            .unwrap_or_else(|e| panic!("fingerprint section {section}: {e}"));
-        fingerprint.push_str("## ");
-        fingerprint.push_str(section);
-        fingerprint.push('\n');
-        fingerprint.push_str(&lines.join("\n"));
-        fingerprint.push('\n');
-    }
-    fingerprint
 }
 
 #[tokio::test]
-async fn baseline_schema_is_identical_to_legacy_flyway_chain() {
+async fn ext_magnitude_function_follows_the_spec_formulas() {
     let pg = Pg::start().await;
-    let legacy = pg.create_database("schema_legacy").await;
-    let baseline = pg.create_database("schema_baseline").await;
+    let pool = pg.migrated_pool("ext_magnitude").await;
 
-    apply_legacy_chain(&pg, "schema_legacy").await;
-    let baseline_pool = db::connect(&baseline).await.expect("baseline pool");
-    db::run_migrations(&baseline_pool)
-        .await
-        .expect("baseline migrations");
-
-    let legacy_pool = db::connect(&legacy).await.expect("legacy pool");
-    let legacy_fp = schema_fingerprint(&legacy_pool).await;
-    let baseline_fp = schema_fingerprint(&baseline_pool).await;
-
-    assert!(!legacy_fp.is_empty() && legacy_fp.contains("ehr.comp_data"));
-    if legacy_fp != baseline_fp {
-        let diff: Vec<String> = diff_lines(&legacy_fp, &baseline_fp);
-        panic!(
-            "baseline schema diverges from the legacy Flyway chain ({} differing lines):\n{}",
-            diff.len(),
-            diff.join("\n"),
+    let cases: &[(&str, f64)] = &[
+        (
+            r#"{"_type":"DV_QUANTITY","magnitude":117.0,"units":"mm[Hg]"}"#,
+            117.0,
+        ),
+        (r#"{"_type":"DV_COUNT","magnitude":3}"#, 3.0),
+        (r#"{"_type":"DV_ORDINAL","value":2}"#, 2.0),
+        (
+            r#"{"_type":"DV_PROPORTION","numerator":60.0,"denominator":100.0,"type":2}"#,
+            0.6,
+        ),
+        // days since 0001-01-01: 1970-01-01 => 719162
+        (r#"{"_type":"DV_DATE","value":"1970-01-01"}"#, 719_162.0),
+        (r#"{"_type":"DV_DATE","value":"1970"}"#, 719_162.0),
+        // seconds since 0001-01-01T00:00Z
+        (
+            r#"{"_type":"DV_DATE_TIME","value":"1970-01-01T00:00:00Z"}"#,
+            62_135_596_800.0,
+        ),
+        (
+            r#"{"_type":"DV_DATE_TIME","value":"1970-01-01T01:00:00+01:00"}"#,
+            62_135_596_800.0,
+        ),
+        (r#"{"_type":"DV_TIME","value":"10:55:41"}"#, 39_341.0),
+        (r#"{"_type":"DV_DURATION","value":"PT42M"}"#, 2_520.0),
+        (
+            r#"{"_type":"DV_DURATION","value":"P1Y"}"#,
+            365.24 * 86_400.0,
+        ),
+        (r#"{"_type":"DV_DURATION","value":"-PT30S"}"#, -30.0),
+    ];
+    for (dv, expected) in cases {
+        let got: Option<f64> = sqlx::query_scalar("SELECT openehr_magnitude($1::jsonb)::float8")
+            .bind(dv)
+            .fetch_one(&pool)
+            .await
+            .expect("magnitude call");
+        let got = got.unwrap_or_else(|| panic!("NULL magnitude for {dv}"));
+        assert!(
+            (got - expected).abs() < 1e-6,
+            "magnitude({dv}) = {got}, expected {expected}"
         );
     }
+    // unknown/unparseable values yield NULL, never an error
+    let none: Option<f64> =
+        sqlx::query_scalar("SELECT openehr_magnitude('{\"_type\":\"DV_TEXT\"}'::jsonb)::float8")
+            .fetch_one(&pool)
+            .await
+            .expect("null magnitude");
+    assert!(none.is_none());
 }
 
-/// Line-level diff of the two fingerprints (legacy = `-`, baseline = `+`).
-fn diff_lines(legacy: &str, baseline: &str) -> Vec<String> {
-    use std::collections::BTreeSet;
-    let legacy_set: BTreeSet<&str> = legacy.lines().collect();
-    let baseline_set: BTreeSet<&str> = baseline.lines().collect();
-    legacy_set
-        .difference(&baseline_set)
-        .map(|l| format!("- {l}"))
-        .chain(
-            baseline_set
-                .difference(&legacy_set)
-                .map(|l| format!("+ {l}")),
+#[tokio::test]
+async fn temporal_versioning_model_behaves() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("temporal").await;
+    let (vo, ehr_id) = seed_version(&pool).await;
+
+    // an overlapping period is impossible at the database
+    let overlap = sqlx::query(
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id)
+         SELECT $1, 'COMPOSITION', $2, 2, tstzrange(now(), NULL), contribution_id, audit_id
+         FROM vo_version WHERE vo_id = $1",
+    )
+    .bind(vo)
+    .bind(ehr_id)
+    .execute(&pool)
+    .await;
+    assert!(overlap.is_err(), "temporal PK must reject overlaps");
+
+    // close v1, open v2 — adjacent periods are fine
+    sqlx::query(
+        "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), now())
+         WHERE vo_id = $1 AND upper_inf(sys_period)",
+    )
+    .bind(vo)
+    .execute(&pool)
+    .await
+    .expect("close v1");
+    sqlx::query(
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id)
+         SELECT $1, 'COMPOSITION', $2, 2, tstzrange(upper(sys_period), NULL), contribution_id, audit_id
+         FROM vo_version WHERE vo_id = $1 AND sys_version = 1",
+    )
+    .bind(vo)
+    .bind(ehr_id)
+    .execute(&pool)
+    .await
+    .expect("open v2");
+
+    // LATEST_VERSION = the upper_inf partial index; ALL_VERSIONS = unfiltered
+    let current: i32 = sqlx::query_scalar(
+        "SELECT sys_version FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period)",
+    )
+    .bind(vo)
+    .fetch_one(&pool)
+    .await
+    .expect("current");
+    assert_eq!(current, 2);
+    let all: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE vo_id = $1")
+        .bind(vo)
+        .fetch_one(&pool)
+        .await
+        .expect("all versions");
+    assert_eq!(all, 2);
+}
+
+#[tokio::test]
+async fn node_codec_round_trips_through_the_database() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("codec_db").await;
+    let (vo, ehr_id) = seed_version(&pool).await;
+
+    let composition = corpus_sample();
+    let rows = decompose(composition.clone()).expect("decompose");
+    insert_nodes(&pool, vo, 1, ehr_id, &rows).await;
+
+    let read: Vec<NodeRow> = sqlx::query(
+        "SELECT num, num_cap, parent_num, citem_num, rm_type, archetype, name, path, data
+         FROM node WHERE vo_id = $1 AND sys_version = 1 ORDER BY num",
+    )
+    .bind(vo)
+    .fetch_all(&pool)
+    .await
+    .expect("read nodes")
+    .into_iter()
+    .map(|r| NodeRow {
+        num: r.get("num"),
+        num_cap: r.get("num_cap"),
+        parent_num: r.get("parent_num"),
+        citem_num: r.get("citem_num"),
+        rm_type: r.get("rm_type"),
+        archetype: r.get("archetype"),
+        name: r.get("name"),
+        path: r.get("path"),
+        data: r.get("data"),
+    })
+    .collect();
+
+    assert_eq!(read.len(), rows.len());
+    let reassembled = reassemble(&read).expect("reassemble");
+    assert_eq!(reassembled, composition, "DB round-trip must be lossless");
+
+    // the CONTAINS shape works against real rows
+    let contains: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM node c
+         JOIN node o ON o.vo_id = c.vo_id AND o.sys_version = c.sys_version
+                    AND o.num BETWEEN c.num AND c.num_cap
+         WHERE c.vo_id = $1 AND c.sys_version = 1 AND c.num = 0
+           AND o.rm_type = 'OBSERVATION'",
+    )
+    .bind(vo)
+    .fetch_one(&pool)
+    .await
+    .expect("contains query");
+    let expected = i64::try_from(rows.iter().filter(|r| r.rm_type == "OBSERVATION").count())
+        .expect("count fits");
+    assert_eq!(contains, expected);
+}
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+/// Creates ehr + audit + contribution + an open v1 `vo_version`; returns
+/// `(vo_id, ehr_id)`.
+async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
+    let ehr_id = Uuid::now_v7();
+    let vo = Uuid::now_v7();
+    sqlx::query("INSERT INTO ehr (id) VALUES ($1)")
+        .bind(ehr_id)
+        .execute(pool)
+        .await
+        .expect("ehr row");
+    let audit_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO audit (system_id, change_type, committer)
+         VALUES ('test.system', 'creation', '{\"_type\":\"PARTY_SELF\"}'::jsonb)
+         RETURNING id",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("audit row");
+    let contribution_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO contribution (ehr_id, audit_id) VALUES ($1, $2) RETURNING id",
+    )
+    .bind(ehr_id)
+    .bind(audit_id)
+    .fetch_one(pool)
+    .await
+    .expect("contribution row");
+    sqlx::query(
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id)
+         VALUES ($1, 'COMPOSITION', $2, 1, tstzrange(now(), NULL), $3, $4)",
+    )
+    .bind(vo)
+    .bind(ehr_id)
+    .bind(contribution_id)
+    .bind(audit_id)
+    .execute(pool)
+    .await
+    .expect("vo_version row");
+    (vo, ehr_id)
+}
+
+async fn insert_nodes(pool: &PgPool, vo: Uuid, sys_version: i32, ehr_id: Uuid, rows: &[NodeRow]) {
+    for row in rows {
+        sqlx::query(
+            "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num,
+                               ehr_id, rm_type, archetype, name, path, data)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
         )
-        .collect()
+        .bind(vo)
+        .bind(sys_version)
+        .bind(row.num)
+        .bind(row.num_cap)
+        .bind(row.parent_num)
+        .bind(row.citem_num)
+        .bind(ehr_id)
+        .bind(&row.rm_type)
+        .bind(&row.archetype)
+        .bind(&row.name)
+        .bind(&row.path)
+        .bind(&row.data)
+        .execute(pool)
+        .await
+        .expect("insert node");
+    }
+}
+
+/// A real corpus composition (the IPS — the largest one).
+fn corpus_sample() -> Value {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(
+        "../openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/ips_canonical.json",
+    );
+    serde_json::from_str(&std::fs::read_to_string(path).expect("read ips_canonical.json"))
+        .expect("parse composition")
 }

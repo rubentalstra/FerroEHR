@@ -4,7 +4,7 @@
 > this file (porting EHRbase's rm-db-format) is superseded; that port is
 > archived unmerged on `claude/phase-10-rm-db-format`.
 
-- Status: not-started (Stage-1 app build, step 2 of 13)
+- Status: done (2026-07-05)
 - Consumes: `openehr-rm` + `openehr-its` (canonical JSON), P09 infrastructure
   (pool/migrators/testcontainers)
 - Compile required: yes (compiling, tested increment)
@@ -21,8 +21,8 @@ Rust node codec: canonical composition ⇄ node rows, losslessly.
 
 ## Preconditions
 
-- [ ] ADR-008 merged (this phase implements it)
-- [ ] P09 infrastructure available (pool, migrator runner, testcontainers)
+- [x] ADR-008 merged (this phase implements it)
+- [x] P09 infrastructure available (pool, migrator runner, testcontainers)
 
 ## Scope
 
@@ -40,19 +40,23 @@ REST wiring (P11).
 
 - [x] Storage spike: corpus-loaded candidate schema + query/bench validation
       — `tests/storage_spike.rs`, results below (2026-07-05)
-- [ ] Final schema migrations (`ehr` schema re-authored; `ext` = our helper
-      functions) + updated `Iden` defs + testcontainers gate updated
-- [ ] Node codec: decompose (canonical JSON → node rows) with nested-set
-      numbering and path materialization
-- [ ] Node codec: reassemble (rows → canonical JSON), lossless
-- [ ] Corpus round-trip property/golden tests (48-composition corpus +
-      EHR_STATUS + FOLDER cases)
+- [x] Final schema migrations (`ehr/0001_schema.sql`: node per-version PK,
+      temporal vo_version, supporting tables; `ext/0001_openehr_functions.sql`:
+      full spec-formula `openehr_magnitude` + ISO-8601 helpers) + `Iden` defs
+      rewritten + persistence tests rebuilt (legacy fixture/gate removed)
+- [x] Node codec: decompose — `src/storage/codec.rs` (nested-set numbering,
+      citem tracking, readable COLLATE-C paths, canonical fragments)
+- [x] Node codec: reassemble — lossless inverse, order-independent input
+- [x] Corpus round-trip tests — all 52 corpus compositions in memory
+      (`tests/codec_corpus.rs`) + full DB round-trip of the IPS composition
+      incl. a CONTAINS interval-join check (`tests/persistence.rs`).
+      EHR_STATUS/FOLDER-specific cases follow with their service flows (P12)
 
 ## Exit criteria
 
-- [ ] Spike results recorded; schema decisions closed with data
-- [ ] Corpus decomposes + reassembles losslessly (nextest, testcontainers)
-- [ ] `cargo nextest run -p ehrbase` green; crate clippy-clean
+- [x] Spike results recorded; schema decisions closed with data
+- [x] Corpus decomposes + reassembles losslessly (nextest, testcontainers)
+- [x] `cargo nextest run -p ehrbase` green (15/15); crate clippy-clean (0 warnings)
 
 ## Decisions made this phase
 
@@ -89,3 +93,15 @@ REST wiring (P11).
   `ALL_VERSIONS` queries the same table uniformly — an improvement over the
   current/history split (updates are rare in clinical data; storage cost
   acceptable).
+
+## Handoff for next session
+
+P10 done: the greenfield schema is live (`migrations/{ext,ehr}/0001_*`,
+bootstrap = schemas + btree_gist), `ehrbase::storage` provides the lossless
+node codec (`decompose`/`reassemble`/`NodeRow`), `db::iden` matches the new
+tables, and the spike harness (`tests/storage_spike.rs`, ignored) remains as
+the measurement tool. Next: **P11 REST server + auth** — axum app
+implementing the generated ITS-REST traits (`openehr-its/src/rest/generated/`,
+5 traits + ROUTES tables), tower-http stack, content negotiation, Basic +
+OAuth2/OIDC. Verify `oauth2`/`openidconnect`/`tower-sessions`/`axum-login`
+pins docs-first before first use.
