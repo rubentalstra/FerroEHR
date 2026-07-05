@@ -24,12 +24,12 @@ the same surface as upstream EHRbase, but built natively in Rust.
 
 The goal, in one line:
 
-> A pure-Rust openEHR CDR that is **spec-conformant and behavior-compatible with
-> EHRbase** at the REST/AQL surface — a natively-generated openEHR stack with a
-> modern idiomatic Rust application on top, **not** a class-by-class Java port.
+> A pure-Rust, **openEHR-spec-conformant** CDR — a natively-generated openEHR
+> stack (ITS-REST 1.0.3, AQL 1.1) with a modern idiomatic Rust application and
+> greenfield PostgreSQL-18-native internals of our own design (ADR-008).
 
 The roadmap lives in [`docs/plans/`](docs/plans/) + [`docs/PROGRESS.md`](docs/PROGRESS.md);
-the design decisions are [ADR-004/005/006](docs/ADRs/). See
+the design decisions are [ADR-004/005/006/008](docs/ADRs/). See
 [`docs/architecture.md`](docs/architecture.md) for the full picture.
 
 ----
@@ -156,12 +156,13 @@ For openEHR concepts and the upstream reference implementation, see the
 
 ## Relationship to upstream EHRbase
 
-This fork tracks EHRbase as its behavioural reference (imported at v2.33.0) and aims for
-parity at the openEHR REST surface. It deliberately pins the **latest** openEHR spec
-versions (RM 1.2.0, BASE 1.3.0, AM 1.4.0 + 2.4.0), which diverge from the RM 1.1.0-era
-wire format stock EHRbase emits — a known Stage-1 REST-parity consideration tracked in
-[`docs/VERSIONS.md`](docs/VERSIONS.md). It is not affiliated with or endorsed by the
-upstream EHRbase project or vitagroup.
+This project began as an EHRbase fork (imported at v2.33.0) and keeps that history in
+git, but since [ADR-008](docs/ADRs/ADR-008-greenfield-pg18-storage.md) its internals are
+greenfield designs and its compatibility target is the **openEHR specifications** (the
+CNF conformance framework), not EHRbase parity. EHRbase remains valued prior art. This
+project pins the **latest** openEHR spec versions (RM 1.2.0, BASE 1.3.0, AM 1.4.0 +
+2.4.0; see [`docs/VERSIONS.md`](docs/VERSIONS.md)). It is not affiliated with or
+endorsed by the upstream EHRbase project or vitagroup.
 
 ## Contributing
 

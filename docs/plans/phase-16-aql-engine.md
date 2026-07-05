@@ -1,53 +1,57 @@
-# Phase 16 — AQL engine (AST → ASL → SQL) — the crown jewel
+# Phase 16 — AQL engine (our typed IR over the node model, ADR-008)
+
+> Re-scoped 2026-07-05 by ADR-008: our own design (no ASL port); EHRbase's
+> engine is prior art only.
 
 - Status: not-started (Stage-1 app build, step 8 of 13)
-- Consumes: `openehr-query` (AST, done), P09 (tables), P10 (rm-db-format row
-  layout), P14 (WebTemplate, for path analysis)
+- Consumes: `openehr-query` (AST, done), P10 (node model), P14 (WebTemplate),
+  the BMM-generated RM attribute model
 - Compile required: yes (compiling, tested increment)
-- Decisions: ADR-006 (follow EHRbase's ASL approach, idiomatic Rust)
+- Decisions: ADR-008
 
 ## Objectives
 
-Execute AQL: take the parsed AST (`openehr-query`), analyse its paths against
-WebTemplates, lower it through an **Abstract SQL Layer (ASL)** intermediate
-representation, generate PostgreSQL against the row-per-locatable JSONB schema
-(`sea-query`: JSONB path extraction, array unnesting, current + `_history`
-`UNION`, `JSON_TABLE` where viable), execute, and assemble the ITS-REST
-`RESULT_SET`. This is the highest-value bespoke subsystem; there is no crate for
-it. We follow **EHRbase's proven pipeline** (`crates/ehrbase/src/aql/` —
-`pathanalysis`, `asl`, `querywrapper`, `sql`, `featurecheck` — is the reference)
-in idiomatic Rust.
+Execute AQL 1.1: semantic/path analysis over a **BMM-generated RM attribute
+model** (no reflection, no hand-maintained tables — `openehr-codegen` /
+`openehr-lang` emit it), lowering into **our own typed query IR**, SQL
+generation via `sea-query` against the P10 node model (nested-set interval
+joins for CONTAINS, `jsonb_path_query_first` + jsonpath item methods +
+`openehr_magnitude` for typed leaf comparison/ordering, `JSON_TABLE` for
+array unnesting, GIN `jsonb_ops` `$.**` equality anchors as pre-filters),
+execution via `sqlx`, and `RESULT_SET` (ITS-REST 1.0.3) assembly.
 
 ## Preconditions
 
-- [ ] P09 (schema/tables), P10 (row layout the SQL targets), P14 (WebTemplate)
+- [ ] P10 (node model), P14 (WebTemplate), RM attribute model generated
 
 ## Scope
 
-**In:** semantic path analysis (AQL paths ↔ WebTemplate/RM); the ASL IR + AST→ASL
-lowering; ASL rewrite/optimize; ASL→SQL via `sea-query` (JSONB extraction,
-current+history UNION, `JSON_TABLE`); parameter binding; execute via `sqlx`;
-`RESULT_SET` assembly (schema 1.0.3); the QUERY endpoints (`/query/aql` ad-hoc +
-stored) wired via P11/P12; feature-check/reject unsupported AQL. **Out:** the
-front-end parser (P07, done); query result caching / perf tuning (P20).
+**In:** the RM attribute-model codegen target; path analysis + typing
+(candidate types, multi-valued detection, abstract→concrete expansion); the
+IR + AST→IR lowering; IR→SQL incl. versioning semantics (`LATEST_VERSION`
+partial-index path, `ALL_VERSIONS` — in scope, ADR-008); parameter binding;
+the feature envelope (accept/reject documented per construct); `/query/aql` +
+stored queries wired through P11/P12. **Out:** the parser (P07, done); query
+caching / perf tuning (P20).
 
 ## Tasks
 
-- [ ] Semantic path analysis against WebTemplates
-- [ ] ASL IR + AST→ASL lowering (+ rewrite/optimize)
-- [ ] ASL→SQL generator (`sea-query`, JSONB, current+history UNION, JSON_TABLE)
-- [ ] Execute (`sqlx`) + assemble `RESULT_SET`
-- [ ] Wire `/query/aql` (ad-hoc + stored) endpoints
-- [ ] Tests: AQL example corpus end-to-end + parity spot-checks vs EHRbase
+- [ ] `emit-rm-model` (or `openehr-lang` API): attribute→types, multiplicity,
+      descendant sets, structure classification — generated from BMM
+- [ ] Path analysis + typing against the generated model
+- [ ] Query IR + AST→IR lowering (incl. CONTAINS trees, version addressing)
+- [ ] IR→SQL via sea-query (interval joins, typed extraction, magnitude,
+      unnesting; LATEST/ALL_VERSIONS)
+- [ ] Execute + `RESULT_SET` assembly; QUERY endpoints live
+- [ ] AQL corpus end-to-end tests + the feature-envelope matrix
 
 ## Exit criteria
 
-- [ ] Representative AQL (the CDR conformance queries) execute end to end and
-      return correct `RESULT_SET`s over real data
-- [ ] current + `_history` semantics correct; JSONB extraction correct
-- [ ] Compiles + clippy-clean
+- [ ] The AQL conformance corpus executes correctly over real data
+      (testcontainers), including version addressing
+- [ ] Feature envelope documented; every rejection is an explicit typed error
+- [ ] Compiles + clippy-clean + nextest green
 
 ## Decisions made this phase
 
-- ASL IR mirrors EHRbase's *approach* (not its Java classes); optional hot-read
-  pipelining (`deadpool`/`tokio-postgres`) is a P20 concern, not here.
+- (record IR shape + envelope decisions here)

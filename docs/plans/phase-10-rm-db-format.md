@@ -1,45 +1,59 @@
-# Phase 10 — rm-db-format (RM ↔ JSONB row-per-locatable)
+# Phase 10 — Storage foundation (greenfield node model, ADR-008)
+
+> Re-scoped 2026-07-05 by ADR-008 (greenfield pivot). The original content of
+> this file (porting EHRbase's rm-db-format) is superseded; that port is
+> archived unmerged on `claude/phase-10-rm-db-format`.
 
 - Status: not-started (Stage-1 app build, step 2 of 13)
-- Consumes: `openehr-rm`, P09 (schema + `sea-query` tables)
+- Consumes: `openehr-rm` + `openehr-its` (canonical JSON), P09 infrastructure
+  (pool/migrators/testcontainers)
 - Compile required: yes (compiling, tested increment)
-- Decisions: ADR-006 (follow EHRbase's `rm-db-format` approach, idiomatic Rust)
+- Decisions: ADR-008 (own PG18-native storage; spec conformance target)
 
 ## Objectives
 
-The bridge between an in-memory RM object graph (`openehr-rm` types) and the
-decomposed **row-per-locatable** storage EHRbase uses: decompose a `COMPOSITION`
-(and `EHR_STATUS`, `FOLDER`) into `comp_data` rows with leaf-attribute JSONB, and
-reassemble the RM object graph from those rows. This is bespoke openEHR-server
-logic (no crate provides it), written idiomatically **following EHRbase's
-rm-db-format algorithm** (`crates/ehrbase/src/rm_db_format/` Java is the
-reference).
+Design-validate and build our own storage layer: the unified `node` table
+(nested-set decomposition, canonical JSON fragments, promoted predicate
+columns), the temporal `vo_version` table (`WITHOUT OVERLAPS`), supporting
+tables (`ehr`, `contribution`, `audit`, `template_store`, `stored_query`,
+`item_tag`), our `ext` helper functions (`openehr_magnitude` et al.), and the
+Rust node codec: canonical composition ⇄ node rows, losslessly.
 
 ## Preconditions
 
-- [ ] P09 done (tables + pool)
+- [ ] ADR-008 merged (this phase implements it)
+- [ ] P09 infrastructure available (pool, migrator runner, testcontainers)
 
 ## Scope
 
-**In:** decompose/recompose between `openehr-rm` graphs and the `comp_data`/
-`_history` row model; leaf JSONB encoding (reuse `openehr-its::json` canonical
-encoding — do not invent a second JSON shape); entity/path indexing needed for
-reassembly and AQL. **Out:** transaction/versioning orchestration (P12); the
-AQL SQL generator (P16, which reads this row layout).
+**In:** the storage spike (corpus → candidate schema in a testcontainer;
+representative CONTAINS/extract/order queries; temporal-PK validation;
+fragment-size measurement — results recorded in this file); the final schema
+as fresh `sqlx migrate add` migrations (replacing the ADR-007 baseline
+content); sea-query `Iden` defs; the node codec (decompose: canonical JSON →
+rows with `num`/`num_cap`/`parent_num`/`citem_num`/`path`; reassemble: rows →
+canonical JSON — no aliasing, no synthetic fields); corpus round-trip tests.
+**Out:** repository CRUD/versioning orchestration (P12), the AQL engine (P16),
+REST wiring (P11).
 
 ## Tasks
 
-- [ ] Decomposition walker: RM graph → `comp_data` rows (path, entity, leaf JSONB)
-- [ ] Reassembly: rows → RM graph (`openehr-rm` types) via canonical JSON
-- [ ] Round-trip property test (RM → rows → RM equal) over the corpus
-- [ ] Confidence check against EHRbase's decomposition for representative comps
+- [ ] Storage spike: corpus-loaded candidate schema + query/bench validation
+      (decides temporal PK vs fallback, index set, fragment format)
+- [ ] Final schema migrations (`ehr` schema re-authored; `ext` = our helper
+      functions) + updated `Iden` defs + testcontainers gate updated
+- [ ] Node codec: decompose (canonical JSON → node rows) with nested-set
+      numbering and path materialization
+- [ ] Node codec: reassemble (rows → canonical JSON), lossless
+- [ ] Corpus round-trip property/golden tests (48-composition corpus +
+      EHR_STATUS + FOLDER cases)
 
 ## Exit criteria
 
-- [ ] Corpus compositions decompose and reassemble losslessly (proptest/insta)
-- [ ] Row shape matches what the AQL engine (P16) will query
-- [ ] Compiles + clippy-clean
+- [ ] Spike results recorded; schema decisions closed with data
+- [ ] Corpus decomposes + reassembles losslessly (nextest, testcontainers)
+- [ ] `cargo nextest run -p ehrbase` green; crate clippy-clean
 
 ## Decisions made this phase
 
-- Leaf JSONB uses the canonical `openehr-its` encoding (single source of truth).
+- (record spike outcomes + any deviations from ADR-008 here)

@@ -14,9 +14,9 @@ Section 15). It applies to every crate, generated (ADR-004), hand-written, or po
 - **Never** edit a test to route around a runtime bug it exposes. If a test
   fails and the fix is unclear, leave it failing and record a
   `// TODO(port):` — do not touch the test to make it green.
-- A parity test is valid only if it still **fails** against stock Java
-  EHRbase without our fix. Model this as the `USE_REFERENCE_EHRBASE=1` mode
-  in the parity harness (`scripts/parity.sh`) — the negative-test gate.
+- Conformance/corpus tests assert the **openEHR specifications** (ADR-008):
+  cite the spec clause a test encodes; never adjust an expectation to match
+  an implementation bug.
 
 ## Tooling
 
@@ -52,7 +52,7 @@ third location.
 
 ## Target
 
-≥99% behavioural parity at the REST surface on Linux x86_64 first, then
+openEHR CNF conformance at the REST surface on Linux x86_64 first, then
 broaden. Phases P1-P16 do not need to compile, so most of this rule becomes
 fully active from P17 (make-it-compile) onward — but a spec-transcription
 phase that ships a hand-written unit test (e.g. an invariant check) must

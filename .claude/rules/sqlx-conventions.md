@@ -9,24 +9,20 @@ pool, migrations) + `sea-query` 1.0 + `sea-query-sqlx` (the dynamic SQL builder
 + binder; `sea-query-binder` is the obsolete sea-query-0.32 pairing — do not
 use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
 
-## Migrations (ADR-007)
+## Migrations (ADR-008)
 
-- `crates/ehrbase/migrations/{ext,ehr}/0001_baseline.sql` are **squashed
-  baselines** of the EHRbase v2 Flyway chain — provably identical to its end
-  state via the schema-equality test in `crates/ehrbase/tests/persistence.rs`
-  (the original chain is the executable fixture under
-  `crates/ehrbase/tests/resources/legacy_schema/`). Never edit an applied
-  baseline; never weaken the equality gate.
-- Create new migrations with the official CLI only:
+- The schema is **our own PG18-native design** (ADR-008): the unified `node`
+  table, the temporal `vo_version` table, supporting tables, and our `ext`
+  helper functions. The interim EHRbase-derived baseline (ADR-007) is replaced
+  wholesale at P10; nothing is deployed, so `0001` is re-authored.
+- Create migrations with the official CLI only:
   `sqlx migrate add --source crates/ehrbase/migrations/<schema> --sequential <desc>`,
-  written as modern PG 18 SQL. When upstream EHRbase ships a new Flyway
-  migration, translate it into our next migration and extend the fixture + gate.
+  written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,
+  `RETURNING OLD/NEW` where the design calls for them).
 - `ehrbase::db::run_migrations` bootstraps schemas + extensions and runs the
-  `ext` migrator before `ehr` (the `ehr` DDL uses `ext`'s collation); each set
-  keeps its own `_sqlx_migrations` table.
-- No jOOQ codegen — `sea-query` `Iden` table/column definitions (`db/iden.rs`) +
-  hand-written row-mapping structs (over the generated `openehr-rm` types)
-  replace it.
+  `ext` migrator before `ehr`; each set keeps its own `_sqlx_migrations` table.
+- `sea-query` `Iden` table/column definitions (`db/iden.rs`) + hand-written
+  row-mapping structs (over the generated `openehr-rm` types) — no ORM/codegen.
 
 ## Queries
 
@@ -48,9 +44,9 @@ use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
 ## Transactions and service boundaries
 
 - One `sqlx::Transaction` per service-level write (composition create/update,
-  contribution commit, EHR-status change), matching **EHRbase's transaction
-  semantics** (its `service` module is the behavioural reference — match what it
-  makes atomic, idiomatically).
+  contribution commit, EHR-status change), matching the openEHR
+  contribution/commit semantics (one CONTRIBUTION per change set — the spec
+  is the authority; ADR-008).
 - Every write emits an `audit_details` + `contribution` row in the same
   transaction, as EHRbase does.
 
