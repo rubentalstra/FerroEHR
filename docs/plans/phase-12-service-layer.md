@@ -49,10 +49,14 @@ history = the same table). "repositories" are the `ehrbase::service` modules ove
 - [x] Integration tests against testcontainers PG 18 (`tests/service_ehr.rs`):
       create→retrieve→update→version→time-travel→delete, conflict, not-found — 3/3.
 
-Still open (machinery ready; scoped next, not shortcuts): `contribution_create`
-(atomic multi-version apply — shared-contribution write path), REVISION_HISTORY,
-stored-query + item-tag CRUD, `ehr_get_by_subject`, template linkage (needs P13
-`template_store`), demographic (RM phase), query/AQL (P16), fine-grained RBAC (S2).
+Now also done: `contribution_create` (atomic multi-version apply via the
+shared-contribution write path), REVISION_HISTORY (composition + EHR_STATUS),
+stored-query CRUD, item-tag CRUD, `ehr_get_by_subject`.
+
+Still open (not shortcuts — later phases / dependencies): typed XML *responses*
+(once handlers return typed RM values), composition→template linkage (needs P13
+`template_store`), demographic (RM phase), query/AQL execution (P16), fine-grained
+RBAC (Stage 2).
 
 ## Exit criteria
 
