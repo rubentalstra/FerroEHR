@@ -7,4 +7,5 @@
 //! can drive them directly.
 
 pub mod db;
+pub mod service;
 pub mod storage;

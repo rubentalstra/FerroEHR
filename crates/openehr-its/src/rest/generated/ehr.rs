@@ -2,7 +2,13 @@
 //! ITS-REST contract for the `ehr` API group: DTOs, per-operation
 //! param structs, the `EhrApi` server trait, and the route table.
 
-#![allow(clippy::all, clippy::pedantic, clippy::nursery, dead_code)]
+#![allow(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    dead_code,
+    unused_variables
+)]
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -609,148 +615,202 @@ pub struct EhrStatusTagsDeleteParams {
     pub key: String,
 }
 
-/// Server contract for the `ehr` API group (ITS-REST). Implemented by
-/// `ehrbase-rest`; handler logic is the ported EHRbase behaviour.
+/// Server contract for the `ehr` API group (ITS-REST). Every method
+/// defaults to returning `ApiError::NotImplemented`, so an implementor
+/// (the application service, or a test stub) overrides only the
+/// operations it supports.
 #[async_trait::async_trait]
 pub trait EhrApi {
     /// `GET /ehr`
     async fn ehr_get_by_subject(
         &self,
         params: EhrGetBySubjectParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /ehr`
     async fn ehr_create(
         &self,
         params: EhrCreateParams,
         body: Option<serde_json::Value>,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}`
     async fn ehr_get_by_id(
         &self,
         params: EhrGetByIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /ehr/{ehr_id}`
     async fn ehr_create_with_id(
         &self,
         params: EhrCreateWithIdParams,
         body: Option<serde_json::Value>,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/ehr_status/{version_uid}`
     async fn ehr_status_get_by_version_id(
         &self,
         params: EhrStatusGetByVersionIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/ehr_status`
     async fn ehr_status_get_at_time(
         &self,
         params: EhrStatusGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /ehr/{ehr_id}/ehr_status`
     async fn ehr_status_update(
         &self,
         params: EhrStatusUpdateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status`
     async fn versioned_ehr_status_get(
         &self,
         params: VersionedEhrStatusGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`
     async fn versioned_ehr_status_revision_history(
         &self,
         params: VersionedEhrStatusRevisionHistoryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/version`
     async fn versioned_ehr_status_version_get_at_time(
         &self,
         params: VersionedEhrStatusVersionGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}`
     async fn versioned_ehr_status_version_get_by_id(
         &self,
         params: VersionedEhrStatusVersionGetByIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /ehr/{ehr_id}/composition`
     async fn composition_create(
         &self,
         params: CompositionCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/composition/{uid_based_id}`
     async fn composition_get(
         &self,
         params: CompositionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}`
     async fn composition_update(
         &self,
         params: CompositionUpdateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}`
     async fn composition_delete(
         &self,
         params: CompositionDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}`
     async fn versioned_composition_get(
         &self,
         params: VersionedCompositionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history`
     async fn versioned_composition_revision_history(
         &self,
         params: VersionedCompositionRevisionHistoryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version`
     async fn versioned_composition_version_get_at_time(
         &self,
         params: VersionedCompositionVersionGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}`
     async fn versioned_composition_version_get_by_id(
         &self,
         params: VersionedCompositionVersionGetByIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/directory`
     async fn directory_get_at_time(
         &self,
         params: DirectoryGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /ehr/{ehr_id}/directory`
     async fn directory_update(
         &self,
         params: DirectoryUpdateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /ehr/{ehr_id}/directory`
     async fn directory_create(
         &self,
         params: DirectoryCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /ehr/{ehr_id}/directory`
     async fn directory_delete(
         &self,
         params: DirectoryDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/directory/{version_uid}`
     async fn directory_get_by_version_id(
         &self,
         params: DirectoryGetByVersionIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /ehr/{ehr_id}/contribution`
     async fn contribution_create(
         &self,
         params: ContributionCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/contribution/{contribution_uid}`
     async fn contribution_get(
         &self,
         params: ContributionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/tags`
     async fn ehr_tags_get(
         &self,
@@ -758,7 +818,9 @@ pub trait EhrApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/composition/{uid_based_id}/tags`
     async fn composition_tags_get(
         &self,
@@ -766,7 +828,9 @@ pub trait EhrApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags`
     async fn composition_tags_update(
         &self,
@@ -775,12 +839,16 @@ pub trait EhrApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}`
     async fn composition_tags_delete(
         &self,
         params: CompositionTagsDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`
     async fn ehr_status_tags_get(
         &self,
@@ -788,7 +856,9 @@ pub trait EhrApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`
     async fn ehr_status_tags_update(
         &self,
@@ -797,12 +867,16 @@ pub trait EhrApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}`
     async fn ehr_status_tags_delete(
         &self,
         params: EhrStatusTagsDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for

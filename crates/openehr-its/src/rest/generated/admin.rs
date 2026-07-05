@@ -2,7 +2,13 @@
 //! ITS-REST contract for the `admin` API group: DTOs, per-operation
 //! param structs, the `AdminApi` server trait, and the route table.
 
-#![allow(clippy::all, clippy::pedantic, clippy::nursery, dead_code)]
+#![allow(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    dead_code,
+    unused_variables
+)]
 use serde::{Deserialize, Serialize};
 
 /// Parameters for `admin_ehr_delete` (path/query/header).
@@ -19,20 +25,26 @@ pub struct AdminEhrDeleteAllParams {
     pub ehr_id: Option<String>,
 }
 
-/// Server contract for the `admin` API group (ITS-REST). Implemented by
-/// `ehrbase-rest`; handler logic is the ported EHRbase behaviour.
+/// Server contract for the `admin` API group (ITS-REST). Every method
+/// defaults to returning `ApiError::NotImplemented`, so an implementor
+/// (the application service, or a test stub) overrides only the
+/// operations it supports.
 #[async_trait::async_trait]
 pub trait AdminApi {
     /// `DELETE /admin/ehr/{ehr_id}`
     async fn admin_ehr_delete(
         &self,
         params: AdminEhrDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /admin/ehr/all{?ehr_id*}`
     async fn admin_ehr_delete_all(
         &self,
         params: AdminEhrDeleteAllParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for

@@ -2,7 +2,13 @@
 //! ITS-REST contract for the `query` API group: DTOs, per-operation
 //! param structs, the `QueryApi` server trait, and the route table.
 
-#![allow(clippy::all, clippy::pedantic, clippy::nursery, dead_code)]
+#![allow(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    dead_code,
+    unused_variables
+)]
 use serde::{Deserialize, Serialize};
 
 pub type Aql = String;
@@ -152,43 +158,57 @@ pub struct QueryExecuteStoredQueryVersionBodyParams {
     pub content_type: Option<String>,
 }
 
-/// Server contract for the `query` API group (ITS-REST). Implemented by
-/// `ehrbase-rest`; handler logic is the ported EHRbase behaviour.
+/// Server contract for the `query` API group (ITS-REST). Every method
+/// defaults to returning `ApiError::NotImplemented`, so an implementor
+/// (the application service, or a test stub) overrides only the
+/// operations it supports.
 #[async_trait::async_trait]
 pub trait QueryApi {
     /// `GET /query/aql`
     async fn query_execute_adhoc_query(
         &self,
         params: QueryExecuteAdhocQueryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /query/aql`
     async fn query_execute_adhoc_query_body(
         &self,
         params: QueryExecuteAdhocQueryBodyParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /query/{qualified_query_name}`
     async fn query_execute_stored_query(
         &self,
         params: QueryExecuteStoredQueryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /query/{qualified_query_name}`
     async fn query_execute_stored_query_body(
         &self,
         params: QueryExecuteStoredQueryBodyParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /query/{qualified_query_name}/{version}`
     async fn query_execute_stored_query_version(
         &self,
         params: QueryExecuteStoredQueryVersionParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /query/{qualified_query_name}/{version}`
     async fn query_execute_stored_query_version_body(
         &self,
         params: QueryExecuteStoredQueryVersionBodyParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for

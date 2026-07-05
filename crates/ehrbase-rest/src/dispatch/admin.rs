@@ -3,9 +3,9 @@
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 
-use openehr_its::rest::generated::admin::{
-    AdminApi, AdminEhrDeleteAllParams, AdminEhrDeleteParams,
-};
+// The `AdminApi` methods resolve through the `dyn Backend` trait object, so only
+// the param types are imported here.
+use openehr_its::rest::generated::admin::{AdminEhrDeleteAllParams, AdminEhrDeleteParams};
 use openehr_its::rest::runtime::ApiError;
 
 use super::{BoxResponse, RequestParts};
@@ -32,12 +32,12 @@ async fn run(
     match op {
         "admin_ehr_delete" => {
             let p = params::build::<AdminEhrDeleteParams>(&parts.path, q, h)?;
-            state.admin_ehr_delete(p).await?;
+            state.backend().admin_ehr_delete(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         "admin_ehr_delete_all" => {
             let p = params::build::<AdminEhrDeleteAllParams>(&parts.path, q, h)?;
-            state.admin_ehr_delete_all(p).await?;
+            state.backend().admin_ehr_delete_all(p).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         other => Err(RestError(ApiError::Internal(format!(

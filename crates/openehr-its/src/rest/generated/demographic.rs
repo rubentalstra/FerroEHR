@@ -2,7 +2,13 @@
 //! ITS-REST contract for the `demographic` API group: DTOs, per-operation
 //! param structs, the `DemographicApi` server trait, and the route table.
 
-#![allow(clippy::all, clippy::pedantic, clippy::nursery, dead_code)]
+#![allow(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    dead_code,
+    unused_variables
+)]
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -686,8 +692,10 @@ pub struct RoleTagsDeleteParams {
     pub key: String,
 }
 
-/// Server contract for the `demographic` API group (ITS-REST). Implemented by
-/// `ehrbase-rest`; handler logic is the ported EHRbase behaviour.
+/// Server contract for the `demographic` API group (ITS-REST). Every method
+/// defaults to returning `ApiError::NotImplemented`, so an implementor
+/// (the application service, or a test stub) overrides only the
+/// operations it supports.
 #[async_trait::async_trait]
 pub trait DemographicApi {
     /// `POST /demographic/agent`
@@ -695,142 +703,194 @@ pub trait DemographicApi {
         &self,
         params: AgentCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/agent/{uid_based_id}`
     async fn agent_get(
         &self,
         params: AgentGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/agent/{uid_based_id}`
     async fn agent_update(
         &self,
         params: AgentUpdateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/agent/{uid_based_id}`
     async fn agent_delete(
         &self,
         params: AgentDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /demographic/group`
     async fn group_create(
         &self,
         params: GroupCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/group/{uid_based_id}`
     async fn group_get(
         &self,
         params: GroupGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/group/{uid_based_id}`
     async fn group_update(
         &self,
         params: GroupUpdateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/group/{uid_based_id}`
     async fn group_delete(
         &self,
         params: GroupDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /demographic/organisation`
     async fn organisation_create(
         &self,
         params: OrganisationCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/organisation/{uid_based_id}`
     async fn organisation_get(
         &self,
         params: OrganisationGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/organisation/{uid_based_id}`
     async fn organisation_update(
         &self,
         params: OrganisationUpdateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/organisation/{uid_based_id}`
     async fn organisation_delete(
         &self,
         params: OrganisationDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /demographic/person`
     async fn person_create(
         &self,
         params: PersonCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/person/{uid_based_id}`
     async fn person_get(
         &self,
         params: PersonGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/person/{uid_based_id}`
     async fn person_update(
         &self,
         params: PersonUpdateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/person/{uid_based_id}`
     async fn person_delete(
         &self,
         params: PersonDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /demographic/role`
     async fn role_create(
         &self,
         params: RoleCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/role/{uid_based_id}`
     async fn role_get(
         &self,
         params: RoleGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/role/{uid_based_id}`
     async fn role_update(
         &self,
         params: RoleUpdateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/role/{uid_based_id}`
     async fn role_delete(
         &self,
         params: RoleDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/versioned_party/{versioned_object_uid}`
     async fn versioned_party_get(
         &self,
         params: VersionedPartyGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/versioned_party/{versioned_object_uid}/revision_history`
     async fn versioned_party_revision_history(
         &self,
         params: VersionedPartyRevisionHistoryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version`
     async fn versioned_party_version_get_at_time(
         &self,
         params: VersionedPartyVersionGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`
     async fn versioned_party_version_get_by_id(
         &self,
         params: VersionedPartyVersionGetByIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /demographic/contribution`
     async fn contribution_create(
         &self,
         params: ContributionCreateParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/contribution/{contribution_uid}`
     async fn contribution_get(
         &self,
         params: ContributionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/tags`
     async fn demographic_tags_get(
         &self,
@@ -838,7 +898,9 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/agent/{uid_based_id}/tags`
     async fn agent_tags_get(
         &self,
@@ -846,7 +908,9 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/agent/{uid_based_id}/tags`
     async fn agent_tags_update(
         &self,
@@ -855,12 +919,16 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/agent/{uid_based_id}/tags/{key}`
     async fn agent_tags_delete(
         &self,
         params: AgentTagsDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/group/{uid_based_id}/tags`
     async fn group_tags_get(
         &self,
@@ -868,7 +936,9 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/group/{uid_based_id}/tags`
     async fn group_tags_update(
         &self,
@@ -877,12 +947,16 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/group/{uid_based_id}/tags/{key}`
     async fn group_tags_delete(
         &self,
         params: GroupTagsDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/organisation/{uid_based_id}/tags`
     async fn organisation_tags_get(
         &self,
@@ -890,7 +964,9 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/organisation/{uid_based_id}/tags`
     async fn organisation_tags_update(
         &self,
@@ -899,12 +975,16 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/organisation/{uid_based_id}/tags/{key}`
     async fn organisation_tags_delete(
         &self,
         params: OrganisationTagsDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/person/{uid_based_id}/tags`
     async fn person_tags_get(
         &self,
@@ -912,7 +992,9 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/person/{uid_based_id}/tags`
     async fn person_tags_update(
         &self,
@@ -921,12 +1003,16 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/person/{uid_based_id}/tags/{key}`
     async fn person_tags_delete(
         &self,
         params: PersonTagsDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /demographic/role/{uid_based_id}/tags`
     async fn role_tags_get(
         &self,
@@ -934,7 +1020,9 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /demographic/role/{uid_based_id}/tags`
     async fn role_tags_update(
         &self,
@@ -943,12 +1031,16 @@ pub trait DemographicApi {
     ) -> Result<
         Vec<std::collections::BTreeMap<String, serde_json::Value>>,
         crate::rest::runtime::ApiError,
-    >;
+    > {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `DELETE /demographic/role/{uid_based_id}/tags/{key}`
     async fn role_tags_delete(
         &self,
         params: RoleTagsDeleteParams,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for

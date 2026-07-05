@@ -2,7 +2,13 @@
 //! ITS-REST contract for the `definition` API group: DTOs, per-operation
 //! param structs, the `DefinitionApi` server trait, and the route table.
 
-#![allow(clippy::all, clippy::pedantic, clippy::nursery, dead_code)]
+#![allow(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    dead_code,
+    unused_variables
+)]
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -551,79 +557,109 @@ pub struct DefinitionQueryVersionStoreYamlParams {
     pub accept: Option<String>,
 }
 
-/// Server contract for the `definition` API group (ITS-REST). Implemented by
-/// `ehrbase-rest`; handler logic is the ported EHRbase behaviour.
+/// Server contract for the `definition` API group (ITS-REST). Every method
+/// defaults to returning `ApiError::NotImplemented`, so an implementor
+/// (the application service, or a test stub) overrides only the
+/// operations it supports.
 #[async_trait::async_trait]
 pub trait DefinitionApi {
     /// `GET /definition/template/adl1.4`
     async fn definition_template_adl1_4_list(
         &self,
         params: DefinitionTemplateAdl14ListParams,
-    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError>;
+    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /definition/template/adl1.4`
     async fn definition_template_adl1_4_upload(
         &self,
         params: DefinitionTemplateAdl14UploadParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /definition/template/adl1.4/{template_id}`
     async fn definition_template_adl1_4_get(
         &self,
         params: DefinitionTemplateAdl14GetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /definition/template/adl1.4/{template_id}/example`
     async fn definition_template_adl1_4_example_get(
         &self,
         params: DefinitionTemplateAdl14ExampleGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /definition/template/adl2`
     async fn definition_template_adl2_list(
         &self,
         params: DefinitionTemplateAdl2ListParams,
-    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError>;
+    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `POST /definition/template/adl2`
     async fn definition_template_adl2_upload(
         &self,
         params: DefinitionTemplateAdl2UploadParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /definition/template/adl2/{template_id}`
     async fn definition_template_adl2_get(
         &self,
         params: DefinitionTemplateAdl2GetParams,
-    ) -> Result<std::collections::BTreeMap<String, serde_json::Value>, crate::rest::runtime::ApiError>;
+    ) -> Result<std::collections::BTreeMap<String, serde_json::Value>, crate::rest::runtime::ApiError>
+    {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /definition/template/adl2/{template_id}/example`
     async fn definition_template_adl2_example_get(
         &self,
         params: DefinitionTemplateAdl2ExampleGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /definition/template/adl2/{template_id}/{version}`
     async fn definition_template_adl2_version_get(
         &self,
         params: DefinitionTemplateAdl2VersionGetParams,
-    ) -> Result<std::collections::BTreeMap<String, serde_json::Value>, crate::rest::runtime::ApiError>;
+    ) -> Result<std::collections::BTreeMap<String, serde_json::Value>, crate::rest::runtime::ApiError>
+    {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /definition/query/{qualified_query_name}`
     async fn definition_query_list(
         &self,
         params: DefinitionQueryListParams,
-    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError>;
+    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /definition/query/{qualified_query_name}`
     async fn definition_query_store_yaml(
         &self,
         params: DefinitionQueryStoreYamlParams,
         body: String,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `GET /definition/query/{qualified_query_name}/{version}`
     async fn definition_query_version_get(
         &self,
         params: DefinitionQueryVersionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError>;
+    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
     /// `PUT /definition/query/{qualified_query_name}/{version}`
     async fn definition_query_version_store_yaml(
         &self,
         params: DefinitionQueryVersionStoreYamlParams,
         body: String,
-    ) -> Result<(), crate::rest::runtime::ApiError>;
+    ) -> Result<(), crate::rest::runtime::ApiError> {
+        Err(crate::rest::runtime::ApiError::NotImplemented)
+    }
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for
