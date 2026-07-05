@@ -4,12 +4,12 @@ paths: ["crates/**/*.rs"]
 
 # Rust style — idiomatic application code (ADR-006)
 
-Applies to hand-written `.rs`: the EHRbase application (`ehrbase`,
+Applies to hand-written `.rs`: the application (`ehrbase`,
 `ehrbase-rest`, `ehrbase-compat`), the hand-written spec crates (`openehr-its`,
 `openehr-flat`, `openehr-term`, the tooling crates), and `*_impl.rs` behaviour
-files. **The application is modern idiomatic Rust built on the generated
-`openehr-*` crates — not a 1:1 Java port** (ADR-006). Write clean Rust; use
-EHRbase's Java only as the *behavioural reference*.
+files. **The application is modern idiomatic Rust of our own design, built on the
+generated `openehr-*` crates** (ADR-006/008). The openEHR specifications are
+the authority; EHRbase and other CDRs are prior art only.
 
 **Generated files are off-limits.** The openEHR spec/ITS crates (`openehr-base`,
 `openehr-rm`, `openehr-am`, and the generated code in `openehr-its`) are produced
@@ -28,15 +28,15 @@ change the emitter and regenerate (`cargo run -p openehr-codegen -- emit`/
   `Cargo.toml [workspace.dependencies]` (`dep.workspace = true`).
 - **Every crate you touch compiles + is clippy-clean + tested before you move
   on** (ADR-006 retired the "phases need not compile" gate for the app layer).
-- **EHRbase Java is the reference, not a template.** Match its behaviour at the
-  REST/AQL surface (verified by the parity harness); do not mirror its class/
-  method structure. Follow its *algorithm* for the hard bespoke logic (AQL
-  engine, versioning, validation, rm-db-format); don't reinvent from a blank slate.
+- **The specs are the authority; design the bespoke logic ourselves** (AQL
+  engine, versioning, validation, node codec — ADR-008), verified by the CNF
+  conformance suite + corpus tests. Consult prior art (upstream EHRbase, other
+  CDRs) when useful; never port it blindly.
 
 ## Annotation vocabulary (grep-able, where relevant)
 
-`// TODO(port):` unfinished work · `// PERF(port):` optimize after parity ·
-`// PORT NOTE:` a deliberate behavioural deviation from EHRbase (with the reason)
+`// TODO(port):` unfinished work · `// PERF(port):` optimize after conformance ·
+`// PORT NOTE:` a deliberate spec-gap or design decision (with the reason)
 · `// SAFETY:` justification for any `unsafe` (expect almost none — this is a
 web service). No PORT STATUS trailer on application code (that was the retired
 1:1-port convention).
