@@ -1,7 +1,7 @@
 [package]
 name = "ehrbase-rest"
 version = "0.1.0"
-description = "openEHR ITS-REST 1.0.3 server surface (axum); receives EHRbase rest-openehr"
+description = "openEHR ITS-REST 1.0.3 server surface (axum) + authentication"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -10,17 +10,57 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+# openEHR generated foundation: the domain model + the ITS-REST contract.
 openehr-rm = { path = "../openehr-rm" }
 openehr-its = { path = "../openehr-its" }
-openehr-am = { path = "../openehr-am" }
-openehr-query = { path = "../openehr-query" }
+
+# Web framework & HTTP core.
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+http = { workspace = true }
+bytes = { workspace = true }
+async-trait = { workspace = true }
+
+# Async runtime.
+tokio = { workspace = true }
+
+# Serialization & data structures.
+serde = { workspace = true }
+serde_json = { workspace = true }
+indexmap = { workspace = true }
+
+# Config, errors, observability, time.
+figment = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+jiff = { workspace = true }
+
+# Authentication: Basic (argon2) + OAuth2/OIDC bearer (jsonwebtoken over a JWKS,
+# issuer discovery via openidconnect, whose bundled reqwest does the network I/O).
+# See src/auth for the resource-server scope decision.
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+openidconnect = { workspace = true }
+moka = { workspace = true }
+
+# OpenAPI / Swagger UI (a drift-check against the vendored OAS, not the source).
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+tower = { workspace = true }
+axum = { workspace = true }
+http = { workspace = true }
+http-body-util = { workspace = true }
+serde_json = { workspace = true }
+figment = { workspace = true, features = ["test"] }
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
 
 [features]
 admin-api = []
 
 [lints]
 workspace = true
-
-[package.metadata.cargo-machete]
-# Scaffolded dependency graph (ADR-004 / phase 0R); these internal crates are wired now and consumed when this crate is ported (P6+).
-ignored = ["openehr-am", "openehr-its", "openehr-query", "openehr-rm"]
