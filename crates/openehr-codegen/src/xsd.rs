@@ -229,6 +229,26 @@ pub fn v1_files(all_dir: &Path) -> Vec<std::path::PathBuf> {
     RM_FILES_V1.iter().map(|f| all_dir.join(f)).collect()
 }
 
+/// The AM/OPT 1.4 constraint-schema closure (`Template.xsd` and its `xs:include`
+/// chain), for the `emit-opt` OPT generator (ADR-005). Order = merge order;
+/// `Template.xsd` first so the OPT-specific types (`OPERATIONAL_TEMPLATE`,
+/// `C_ARCHETYPE_ROOT`, …) win. `Resource.xsd` + `BaseTypes.xsd` overlap the
+/// RM-instance set — those types resolve to the already-generated `openehr-rm`/
+/// `openehr-base` XML impls; the AOM/OPT constraint types are generated fresh.
+pub const AM_FILES_V1: &[&str] = &[
+    "Template.xsd",
+    "OpenehrProfile.xsd",
+    "Archetype.xsd",
+    "Resource.xsd",
+    "BaseTypes.xsd",
+];
+
+/// Resolve the v1 AM/OPT constraint-schema file paths under the `ALL/` bundle dir.
+#[must_use]
+pub fn am_files_v1(all_dir: &Path) -> Vec<std::path::PathBuf> {
+    AM_FILES_V1.iter().map(|f| all_dir.join(f)).collect()
+}
+
 /// The v2 RM-instance XSDs, as (component-relative) paths. v2 splits the schemas
 /// per component (RM 1.1.0 + BASE 1.2.0) rather than one flat `ALL/` bundle.
 /// Reserved for a future v2-specific trait (ADR-005); the v1 shape currently

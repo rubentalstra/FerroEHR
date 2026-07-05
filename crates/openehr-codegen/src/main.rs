@@ -10,6 +10,7 @@
 
 mod bmm;
 mod emit;
+mod emit_opt;
 mod emit_rest;
 mod emit_xml;
 mod naming;
@@ -47,9 +48,10 @@ fn main() {
         "check-xsd" => cmd_check_xsd(),
         "emit-xml" => cmd_emit_xml(),
         "emit-rest" => cmd_emit_rest(),
+        "emit-opt" => cmd_emit_opt(),
         other => {
             eprintln!(
-                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, or `emit-rest`"
+                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-rest`, or `emit-opt`"
             );
             std::process::exit(2);
         }
@@ -202,6 +204,45 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
     rustfmt(&written)?;
     println!(
         "emitted {} files into {} ({} XSD-only elements without a BMM field skipped)",
+        written.len(),
+        gen_dir.display(),
+        unmatched.len()
+    );
+    Ok(())
+}
+
+/// Emit the OPT 1.4 model (`opt14`): typed Rust types + canonical-XML
+/// `ToXml`/`FromXml` for `OPERATIONAL_TEMPLATE`, generated from the AM/OPT
+/// constraint XSD closure (`Template.xsd` + includes). RM instance types
+/// resolve to the already-generated `openehr-base`/`openehr-rm` impls (ADR-005).
+fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
+    let base = load(BASE_BMM)?;
+    let rm = load(RM_BMM)?;
+    let base_model = Model::merged(&[&base]);
+    let rm_model = Model::merged(&[&base, &rm]);
+    let base_specs = emit::emittable_specs(&base_model, &base);
+    let rm_specs = emit::emittable_specs(&rm_model, &rm);
+
+    // The AM/OPT constraint schemas share `Resource.xsd`+`BaseTypes.xsd` with the
+    // RM-instance set; those shared types resolve to the RM/BASE XML impls.
+    let xsd = xsd::XsdModel::parse_files(&xsd::am_files_v1(Path::new(XSD_V1_DIR)))?;
+    let model = emit_opt::OptModel::new(&xsd, &base_specs, &rm_specs);
+
+    let gen_dir = Path::new(ITS_ROOT).join("src/opt14");
+    std::fs::create_dir_all(&gen_dir)?;
+
+    let mut unmatched = Vec::new();
+    let types_path = gen_dir.join("types.rs");
+    let impls_path = gen_dir.join("impls.rs");
+    let mod_path = gen_dir.join("mod.rs");
+    std::fs::write(&types_path, model.emit_types())?;
+    std::fs::write(&impls_path, model.emit_impls(&mut unmatched))?;
+    std::fs::write(&mod_path, emit_opt::OptModel::emit_mod())?;
+
+    let written = vec![types_path, impls_path, mod_path];
+    rustfmt(&written)?;
+    println!(
+        "emitted {} files into {} ({} XSD-only elements without a matching field skipped)",
         written.len(),
         gen_dir.display(),
         unmatched.len()
