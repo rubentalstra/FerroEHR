@@ -119,6 +119,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::MODIFICATION, "COMPOSITION update");
         let committed = vobject::update(
             &mut tx,
+            ehr_id,
             vo_id,
             Kind::Composition,
             composition,
@@ -143,7 +144,7 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::DELETED, "COMPOSITION delete");
-        vobject::delete(&mut tx, vo_id, Kind::Composition, None, &audit).await?;
+        vobject::delete(&mut tx, ehr_id, vo_id, Kind::Composition, None, &audit).await?;
         tx.commit().await?;
         Ok(())
     }

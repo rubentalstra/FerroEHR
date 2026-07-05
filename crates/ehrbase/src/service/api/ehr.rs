@@ -10,11 +10,13 @@ use uuid::Uuid;
 
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
-    CompositionUpdateParams, ContributionGetParams, DirectoryCreateParams, DirectoryDeleteParams,
-    DirectoryGetAtTimeParams, DirectoryGetByVersionIdParams, DirectoryUpdateParams, EhrApi,
-    EhrCreateParams, EhrCreateWithIdParams, EhrGetByIdParams, EhrStatusGetAtTimeParams,
+    CompositionUpdateParams, ContributionCreateParams, ContributionGetParams,
+    DirectoryCreateParams, DirectoryDeleteParams, DirectoryGetAtTimeParams,
+    DirectoryGetByVersionIdParams, DirectoryUpdateParams, EhrApi, EhrCreateParams,
+    EhrCreateWithIdParams, EhrGetByIdParams, EhrStatusGetAtTimeParams,
     EhrStatusGetByVersionIdParams, EhrStatusUpdateParams, VersionedCompositionGetParams,
-    VersionedCompositionVersionGetByIdParams, VersionedEhrStatusGetParams,
+    VersionedCompositionRevisionHistoryParams, VersionedCompositionVersionGetByIdParams,
+    VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
     VersionedEhrStatusVersionGetByIdParams,
 };
 use openehr_its::rest::runtime::ApiError;
@@ -96,6 +98,15 @@ impl EhrApi for EhrbaseService {
         Ok(self.status_version(ehr_id, vo_id, version).await?)
     }
 
+    async fn versioned_ehr_status_revision_history(
+        &self,
+        params: VersionedEhrStatusRevisionHistoryParams,
+    ) -> Result<Value, ApiError> {
+        Ok(self
+            .status_revision_history(parse_ehr_id(&params.ehr_id)?)
+            .await?)
+    }
+
     // ── COMPOSITION ──────────────────────────────────────────────────────────
     async fn composition_create(
         &self,
@@ -155,6 +166,15 @@ impl EhrApi for EhrbaseService {
         Ok(self.composition_version(ehr_id, vo_id, version).await?)
     }
 
+    async fn versioned_composition_revision_history(
+        &self,
+        params: VersionedCompositionRevisionHistoryParams,
+    ) -> Result<Value, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = parse_object_id(&params.versioned_object_uid)?;
+        Ok(self.revision_history(ehr_id, vo_id).await?)
+    }
+
     // ── DIRECTORY (FOLDER) ───────────────────────────────────────────────────
     async fn directory_create(
         &self,
@@ -206,6 +226,15 @@ impl EhrApi for EhrbaseService {
     }
 
     // ── CONTRIBUTION ─────────────────────────────────────────────────────────
+    async fn contribution_create(
+        &self,
+        params: ContributionCreateParams,
+        body: Value,
+    ) -> Result<Value, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        Ok(self.create_contribution(ehr_id, body).await?)
+    }
+
     async fn contribution_get(&self, params: ContributionGetParams) -> Result<Value, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
         let contribution_id = Uuid::parse_str(&params.contribution_uid).map_err(|_| {

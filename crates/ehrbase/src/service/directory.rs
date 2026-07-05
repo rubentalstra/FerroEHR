@@ -84,7 +84,17 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "DIRECTORY update");
-        vobject::update(&mut tx, vo_id, Kind::Folder, folder, expected, None, &audit).await?;
+        vobject::update(
+            &mut tx,
+            ehr_id,
+            vo_id,
+            Kind::Folder,
+            folder,
+            expected,
+            None,
+            &audit,
+        )
+        .await?;
         tx.commit().await?;
 
         self.directory_at(ehr_id, vo_id).await
@@ -100,7 +110,7 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::DELETED, "DIRECTORY delete");
-        vobject::delete(&mut tx, vo_id, Kind::Folder, expected, &audit).await?;
+        vobject::delete(&mut tx, ehr_id, vo_id, Kind::Folder, expected, &audit).await?;
         tx.commit().await?;
         Ok(())
     }

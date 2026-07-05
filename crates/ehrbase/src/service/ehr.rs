@@ -108,6 +108,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");
         let committed = vobject::update(
             &mut tx,
+            ehr_id,
             vo_id,
             Kind::EhrStatus,
             body,
@@ -131,6 +132,18 @@ impl EhrbaseService {
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
         Ok(Self::versioned_object(vo_id, ehr_id))
+    }
+
+    /// The `REVISION_HISTORY` of an EHR's `EHR_STATUS`.
+    pub(super) async fn status_revision_history(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Value, ServiceError> {
+        let (vo_id, _) = self
+            .current_vo(ehr_id, Kind::EhrStatus)
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+        self.revision_history(ehr_id, vo_id).await
     }
 
     /// An `ORIGINAL_VERSION` of an `EHR_STATUS` at a specific version.
@@ -212,7 +225,7 @@ pub(super) fn default_ehr_status() -> Value {
 /// principal of the current request (published by the auth middleware). Writes
 /// with no authenticated principal (auth disabled, or internal/system writes)
 /// are attributed to the system identity.
-fn committer() -> Value {
+pub(super) fn committer() -> Value {
     match ehrbase_rest::auth::current_principal() {
         Some(principal) => {
             let id_type = match principal.method {

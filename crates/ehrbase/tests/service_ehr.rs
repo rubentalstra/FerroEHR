@@ -273,3 +273,81 @@ async fn unknown_ehr_is_not_found() {
             .is_err()
     );
 }
+
+/// A `DV_CODED_TEXT` audit change_type (openEHR audit change-type group).
+fn change_type(code: &str, value: &str) -> Value {
+    json!({
+        "_type": "DV_CODED_TEXT", "value": value,
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+            "code_string": code
+        }
+    })
+}
+
+#[tokio::test]
+async fn contribution_commits_a_composition_atomically() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("contribution").await);
+
+    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
+    let ehr_id = ehr["ehr_id"]["value"].as_str().unwrap().to_owned();
+
+    let body = json!({
+        "audit": {
+            "change_type": change_type("249", "creation"),
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr. Contribution" }
+        },
+        "versions": [{
+            "data": composition("Via contribution"),
+            "commit_audit": { "change_type": change_type("249", "creation") }
+        }]
+    });
+    let contribution = svc
+        .contribution_create(params(json!({ "ehr_id": ehr_id })), body)
+        .await
+        .expect("contribution_create");
+    assert_eq!(contribution["_type"], "CONTRIBUTION");
+    let versions = contribution["versions"].as_array().expect("versions");
+    assert_eq!(versions.len(), 1);
+
+    // The version the contribution created is retrievable by its OBJECT_VERSION_ID.
+    let ovid = versions[0]["id"]["value"].as_str().unwrap().to_owned();
+    let comp = svc
+        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": ovid })))
+        .await
+        .expect("get created composition");
+    assert_eq!(comp["name"]["value"], "Via contribution");
+}
+
+#[tokio::test]
+async fn revision_history_lists_every_version() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("revhistory").await);
+
+    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
+    let ehr_id = ehr["ehr_id"]["value"].as_str().unwrap().to_owned();
+
+    let status = svc
+        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+        .await
+        .expect("status");
+    let ovid_v1 = uid(&status).to_owned();
+    svc.ehr_status_update(
+        params(json!({ "ehr_id": ehr_id, "If-Match": ovid_v1 })),
+        status,
+    )
+    .await
+    .expect("status update");
+
+    let history = svc
+        .versioned_ehr_status_revision_history(params(json!({ "ehr_id": ehr_id })))
+        .await
+        .expect("revision history");
+    assert_eq!(history["_type"], "REVISION_HISTORY");
+    let items = history["items"].as_array().expect("items");
+    assert_eq!(items.len(), 2, "two versions after one update");
+    assert_eq!(items[0]["_type"], "REVISION_HISTORY_ITEM");
+    assert!(items[0]["audits"][0]["_type"] == "AUDIT_DETAILS");
+}
