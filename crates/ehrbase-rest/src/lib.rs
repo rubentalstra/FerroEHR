@@ -4,9 +4,11 @@
 //! [`openehr_its::rest::generated`] as a modern, idiomatic axum application
 //! (ADR-005/006). The generated `ROUTES` tables drive an HTTP dispatcher
 //! ([`dispatch`]) that rebuilds each operation's `*Params`, negotiates content
-//! (canonical JSON / XML via `openehr-its`), and calls the trait method on
-//! [`AppState`]. In Stage 1 (P11) the handlers return
-//! `ApiError::NotImplemented`; P12 fills them with the service layer.
+//! (canonical JSON / XML via `openehr-its`), and calls the configured service
+//! [`Backend`] (dependency inversion — the DB-backed service lives in the
+//! `ehrbase` crate and is injected via [`AppState::with_backend`]). Operations a
+//! backend has not implemented return `ApiError::NotImplemented` (the generated
+//! traits' default); the default [`StubBackend`] implements none.
 //!
 //! Authentication (Stage 1) is HTTP Basic + OAuth2/OIDC bearer, applied as one
 //! middleware over the API router ([`auth`]). Fine-grained RBAC is Stage 2.

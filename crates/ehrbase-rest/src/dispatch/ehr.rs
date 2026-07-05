@@ -1,9 +1,9 @@
 //! HTTP dispatch for the `ehr` API group.
 //!
 //! Each arm rebuilds the operation's `*Params`, decodes any body (RM-typed
-//! bodies accept JSON or canonical XML), calls the trait method on [`AppState`],
-//! and renders a negotiated response. Handlers currently return
-//! `NotImplemented`; that surfaces here as a 501 response.
+//! bodies accept JSON or canonical XML), calls the backend, and renders a
+//! negotiated response. The `ehr` group is served by the `ehrbase` service
+//! (P12); operations a backend does not implement surface as a 501.
 
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;

@@ -2,8 +2,9 @@
 //!
 //! [`AppState`] is the type the generated ITS-REST server traits are
 //! implemented on (see [`crate::api`]). It is cheap to clone (an `Arc` inside)
-//! and is threaded through axum as router state. In Stage 1 it carries only
-//! configuration; P12 adds the storage pool and service dependencies.
+//! and is threaded through axum as router state. It carries the configuration
+//! and the service [`Backend`](crate::Backend) the dispatcher calls into (the
+//! DB-backed service is injected by the `ehrbase` crate; default `StubBackend`).
 
 use std::sync::Arc;
 
