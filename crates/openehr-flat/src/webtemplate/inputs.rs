@@ -15,8 +15,8 @@ use indexmap::IndexMap;
 use openehr_its::opt14::{CAttribute, CObject, CPrimitive, Intervalofinteger, Intervalofreal};
 
 use super::model::{
-    WebTemplateCodedValue, WebTemplateInput, WebTemplateInputType, WebTemplateRange,
-    WebTemplateValidation,
+    WebTemplateBindingCodedValue, WebTemplateCodedValue, WebTemplateInput, WebTemplateInputType,
+    WebTemplateRange, WebTemplateValidation,
 };
 
 /// Resolves rubric text for a `(terminology, code)` pair (the archetype
@@ -25,6 +25,10 @@ use super::model::{
 pub(crate) trait Labels {
     fn text(&self, terminology: &str, code: &str) -> Option<String>;
     fn localized(&self, terminology: &str, code: &str) -> IndexMap<String, String>;
+    /// External terminology bindings for `code` (the archetype ontology's
+    /// `term_bindings`), keyed by terminology — Better `findTermBindings` +
+    /// `getBindingCodedValue`, populating each coded value's `termBindings`.
+    fn term_bindings(&self, code: &str) -> IndexMap<String, WebTemplateBindingCodedValue>;
 }
 
 /// Build the `inputs` (and `proportion_types`) for a leaf node.
@@ -164,7 +168,14 @@ fn coded_values(
     let term = terminology.unwrap_or("local");
     codes
         .iter()
-        .map(|code| coded_value(term, code, labels))
+        .map(|code| {
+            let mut cv = coded_value(term, code, labels);
+            // Per-coded-value external term bindings (Better
+            // `CodePhraseWebTemplateInputBuilder.ConvertToWebTemplateCodedValueFunction`):
+            // the coded-text path adds them; ordinals/scales do not.
+            cv.term_bindings = labels.term_bindings(code);
+            cv
+        })
         .collect()
 }
 

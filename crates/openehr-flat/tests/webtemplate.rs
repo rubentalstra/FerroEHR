@@ -327,3 +327,110 @@ fn ids_are_deduplicated_within_a_parent() {
         .expect("build Testing Template N");
     assert_unique_sibling_ids(&wt.tree);
 }
+
+// ── term bindings (node + coded-value level) ─────────────────────────────────
+
+#[test]
+fn ontology_term_bindings_populate_node_and_coded_value_bindings() {
+    // A template whose archetype ontology carries `<term_bindings>` yields
+    // Better-shaped `termBindings` both on nodes (matched by the node's
+    // constraint node id — `WebTemplateBuilder.setTermBindings`) and on coded
+    // values (matched by the option code — `CodePhraseWebTemplateInputBuilder`).
+    let wt = build_from_file(&better_fixtures_dir().join("Across - Visual Acuity Report.opt"))
+        .expect("build Across - Visual Acuity Report");
+
+    // Node-level: a node bound to SNOMED-CT 422673001.
+    let mut node_binding: Option<openehr_flat::webtemplate::WebTemplateBindingCodedValue> = None;
+    for_each_node(&wt.tree, &mut |n| {
+        if let Some(b) = n.term_bindings.get("SNOMED-CT")
+            && b.value == "422673001"
+        {
+            node_binding = Some(b.clone());
+        }
+    });
+    let node_binding = node_binding.expect("a node bound to SNOMED-CT 422673001");
+    assert_eq!(node_binding.terminology_id, "SNOMED-CT");
+    // Better JSON shape/order: `value` then `terminologyId`.
+    assert_eq!(
+        serde_json::to_string(&node_binding).expect("serialize binding"),
+        r#"{"value":"422673001","terminologyId":"SNOMED-CT"}"#
+    );
+
+    // Coded-value-level: a coded option bound to SNOMED-CT 362503005.
+    let mut cv_binding: Option<openehr_flat::webtemplate::WebTemplateBindingCodedValue> = None;
+    for_each_node(&wt.tree, &mut |n| {
+        for input in &n.inputs {
+            for cv in &input.list {
+                if let Some(b) = cv.term_bindings.get("SNOMED-CT")
+                    && b.value == "362503005"
+                {
+                    cv_binding = Some(b.clone());
+                }
+            }
+        }
+    });
+    let cv_binding = cv_binding.expect("a coded value bound to SNOMED-CT 362503005");
+    assert_eq!(cv_binding.terminology_id, "SNOMED-CT");
+
+    // Every emitted binding — node- or coded-value-level — is well-formed.
+    for_each_node(&wt.tree, &mut |n| {
+        for (term, b) in &n.term_bindings {
+            assert!(!term.is_empty(), "empty terminology key at {}", n.aql_path);
+            assert!(!b.value.is_empty() && !b.terminology_id.is_empty());
+        }
+        for input in &n.inputs {
+            for cv in &input.list {
+                for (term, b) in &cv.term_bindings {
+                    assert!(!term.is_empty());
+                    assert!(!b.value.is_empty() && !b.terminology_id.is_empty());
+                }
+            }
+        }
+    });
+}
+
+// ── multiple coded-text compaction ───────────────────────────────────────────
+
+#[test]
+fn multiple_coded_text_alternatives_compact_to_one_node() {
+    // `action test.opt` constrains an ELEMENT value with two `DV_CODED_TEXT`
+    // alternatives (a local coded list + an unconstrained one). Better's
+    // `compactMultipleCodedTexts` merges them into ONE coded node carrying the
+    // union of the coded values — not two polymorphic `value`/`value2` siblings.
+    let wt =
+        build_from_file(&better_fixtures_dir().join("action test.opt")).expect("build action test");
+
+    let suffix = "items[at0061]/items[at0052]/value";
+    let mut at_path: Vec<(String, String, Vec<String>)> = Vec::new();
+    for_each_node(&wt.tree, &mut |n| {
+        if n.aql_path.ends_with(suffix) {
+            let codes: Vec<String> = n
+                .inputs
+                .iter()
+                .find(|i| i.suffix.as_deref() == Some("code"))
+                .map(|i| i.list.iter().map(|c| c.value.clone()).collect())
+                .unwrap_or_default();
+            at_path.push((n.rm_type.clone(), n.id.clone(), codes));
+        }
+    });
+
+    // Exactly one node at the choice path (the two alternatives merged into one).
+    assert_eq!(
+        at_path.len(),
+        1,
+        "expected a single compacted coded node at .../{suffix}, got {at_path:?}"
+    );
+    let (rm_type, id, codes) = &at_path[0];
+    assert_eq!(rm_type, "DV_CODED_TEXT");
+    // The merged list is the union of the alternatives' codes (dedup, in order):
+    // the constrained alternative's five codes; the unconstrained one adds none.
+    let codes: Vec<&str> = codes.iter().map(String::as_str).collect();
+    assert_eq!(
+        codes,
+        ["at0053", "at0054", "at0055", "at0056", "at0058"],
+        "merged coded list"
+    );
+    // Not split into a polymorphic `value`/`value2` pair.
+    assert_ne!(id, "coded_text_value");
+    assert_ne!(id, "coded_text_value2");
+}

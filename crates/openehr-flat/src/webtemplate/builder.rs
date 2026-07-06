@@ -14,19 +14,21 @@
 //! injection (needs the BMM RM attribute model, P16), `ISM_TRANSITION`/careflow
 //! synthesis, the "any" (unconstrained) ELEMENT value expansion, and archetype
 //! internal-ref target resolution — such nodes are emitted without their
-//! synthesized descendants rather than incorrectly.
+//! synthesized descendants rather than incorrectly. Node- and coded-value-level
+//! external `termBindings` and the multiple-coded-text compaction are wired.
 
 use std::collections::HashMap;
 
 use indexmap::IndexMap;
 use openehr_its::opt14::{
     ArchetypeTerm, CArchetypeRoot, CObject, CPrimitive, Cardinality, Intervalofinteger,
-    OperationalTemplate,
+    OperationalTemplate, TermBindingItem, Termbindingset,
 };
 
 use super::inputs::{self, Labels};
 use super::model::{
-    WebTemplate, WebTemplateCardinality, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
+    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateInput,
+    WebTemplateInputType, WebTemplateNode,
 };
 
 const CURRENT_VERSION: &str = "2.3";
@@ -70,11 +72,16 @@ struct Rubric {
 /// Ontology: `archetype_id → language → code → rubric`.
 type Ontology = HashMap<String, HashMap<String, HashMap<String, Rubric>>>;
 
+/// External term bindings per archetype, keyed by `archetype_id`: the archetype
+/// root's `term_bindings`. A node inherits its owning archetype root's bindings.
+type TermBindings = HashMap<String, Vec<Termbindingset>>;
+
 /// Build context shared across the walk.
 struct Ctx {
     default_language: String,
     languages: Vec<String>,
     ontology: Ontology,
+    term_bindings: TermBindings,
 }
 
 impl Ctx {
@@ -86,6 +93,56 @@ impl Ctx {
         self.rubric(arch_id, lang, code)
             .and_then(|r| r.text.clone())
     }
+
+    /// The external term bindings for `code` within `arch_id`'s archetype
+    /// (Better `findTermBindings` + `getBindingCodedValue`): for every terminology
+    /// whose binding set has an item matching `code`, the bound code phrase as a
+    /// `{value, terminologyId}`. Keyed by terminology, first match per terminology
+    /// wins, in binding-set order.
+    fn term_bindings_for(
+        &self,
+        arch_id: &str,
+        code: &str,
+    ) -> IndexMap<String, WebTemplateBindingCodedValue> {
+        let mut out = IndexMap::new();
+        if code.is_empty() {
+            return out;
+        }
+        let Some(sets) = self.term_bindings.get(arch_id) else {
+            return out;
+        };
+        for set in sets {
+            if out.contains_key(&set.terminology) {
+                continue;
+            }
+            if let Some(item) = set.items.iter().find(|it| it.code == code)
+                && let Some(bcv) = binding_coded_value(item)
+            {
+                out.insert(set.terminology.clone(), bcv);
+            }
+        }
+        out
+    }
+}
+
+/// Better `CodePhraseUtils.getBindingCodedValue`: the bound code phrase's code
+/// string with its terminology id (falling back to the binding item's own code
+/// when the code phrase carries no terminology). `None` when the bound code
+/// string is blank.
+fn binding_coded_value(item: &TermBindingItem) -> Option<WebTemplateBindingCodedValue> {
+    let code_phrase = &item.value;
+    if code_phrase.code_string.trim().is_empty() {
+        return None;
+    }
+    let terminology_id = if code_phrase.terminology_id.value.is_empty() {
+        item.code.clone()
+    } else {
+        code_phrase.terminology_id.value.clone()
+    };
+    Some(WebTemplateBindingCodedValue {
+        value: code_phrase.code_string.clone(),
+        terminology_id,
+    })
 }
 
 /// A [`Labels`] view bound to the current archetype, for coded-value rubrics.
@@ -109,6 +166,10 @@ impl Labels for ArchetypeLabels<'_> {
         }
         out
     }
+
+    fn term_bindings(&self, code: &str) -> IndexMap<String, WebTemplateBindingCodedValue> {
+        self.ctx.term_bindings_for(self.arch_id, code)
+    }
 }
 
 /// Build a [`WebTemplate`] from a parsed OPT 1.4 operational template.
@@ -130,6 +191,7 @@ pub fn build_web_template(opt: &OperationalTemplate) -> Result<WebTemplate, crat
     let ctx = Ctx {
         languages: collect_languages(opt, &default_language),
         ontology: collect_ontology(opt, &default_language),
+        term_bindings: collect_term_bindings(opt),
         default_language,
     };
 
@@ -227,9 +289,10 @@ fn create_node(
     } else {
         Some(name_code.to_owned())
     };
-    // TODO(port): node-level term bindings come from the archetype ontology's
-    // term_bindings; the corpus templates rarely carry them, so `term_bindings`
-    // is left empty until that binding model is wired.
+    // Node-level external term bindings: the archetype root's `term_bindings`
+    // whose item code matches this node's constraint node id (Better
+    // `WebTemplateBuilder.setTermBindings` via `amNode.nodeId`).
+    node.term_bindings = ctx.term_bindings_for(arch_id, name_code);
     node
 }
 
@@ -406,6 +469,7 @@ fn types_match(a: &str, b: &str) -> bool {
 
 fn process_children(mut node: WebTemplateNode, depth: usize) -> Option<WebTemplateNode> {
     compact_coded_text_with_other(&mut node.children);
+    compact_multiple_coded_texts(&mut node.children);
 
     if !node.has_input() && node.children.len() == 1 && depth > 1 && is_skippable(&node.rm_type) {
         let mut child = node.children.remove(0);
@@ -447,7 +511,86 @@ fn compact_coded_text_with_other(children: &mut Vec<WebTemplateNode>) {
         children[coded].inputs.push(other);
         children.remove(text);
     }
-    // TODO(port): compactMultipleCodedTexts (multiple defining_code merge).
+}
+
+/// Merge multiple sibling coded-text alternatives that share an aql path into a
+/// single coded node (Better `WebTemplateCompactor.compactMultipleCodedTexts`):
+/// when an ELEMENT `value` is a choice of coded texts, one node carries the
+/// union of the alternatives' coded values rather than several sibling nodes
+/// with polymorphic (`value`/`value2`) ids.
+///
+/// Better's rule, ported: children are grouped by path; a group of exactly two
+/// coded-text nodes is compacted — if one carries a validation-constrained input
+/// and the other does not, the constrained one is kept and the other dropped;
+/// otherwise the two coded lists are unioned (dedup by code, order preserved)
+/// onto the first node and the second is dropped.
+///
+/// PORT NOTE: our coded-text nodes fold `defining_code` into the node's `inputs`
+/// (Better keeps each `C_CODE_PHRASE` as its own `.../defining_code` node), so the
+/// qualifying pair is two same-path `DV_CODED_TEXT`/`CODE_PHRASE` siblings — the
+/// equivalent of Better's `path.endsWith("defining_code")` — and the coded lists
+/// are unioned directly rather than through Better's separate-node `mergeInputs`.
+fn compact_multiple_coded_texts(children: &mut Vec<WebTemplateNode>) {
+    // Group child indices by aql path, in first-seen order (Better
+    // `mergeChildrenWithMatchingPaths`).
+    let mut groups: IndexMap<String, Vec<usize>> = IndexMap::new();
+    for (i, child) in children.iter().enumerate() {
+        groups.entry(child.aql_path.clone()).or_default().push(i);
+    }
+
+    let mut to_remove: Vec<usize> = Vec::new();
+    // (keep, drop) pairs whose coded lists are unioned.
+    let mut merges: Vec<(usize, usize)> = Vec::new();
+    for idxs in groups.values() {
+        if idxs.len() != 2 {
+            continue; // Better only compacts an exact pair.
+        }
+        let (a, b) = (idxs[0], idxs[1]);
+        if !is_coded_text(&children[a]) || !is_coded_text(&children[b]) {
+            continue;
+        }
+        let constrained_a = is_input_constrained(&children[a]);
+        let constrained_b = is_input_constrained(&children[b]);
+        if constrained_a && !constrained_b {
+            to_remove.push(b);
+        } else if constrained_b && !constrained_a {
+            to_remove.push(a);
+        } else {
+            merges.push((a, b));
+        }
+    }
+
+    for (keep, drop) in merges {
+        let drop_list = children[drop]
+            .inputs
+            .first()
+            .map(|i| i.list.clone())
+            .unwrap_or_default();
+        if let Some(input) = children[keep].inputs.first_mut() {
+            for cv in drop_list {
+                if !input.list.iter().any(|existing| existing.value == cv.value) {
+                    input.list.push(cv);
+                }
+            }
+        }
+        to_remove.push(drop);
+    }
+
+    to_remove.sort_unstable();
+    to_remove.dedup();
+    for i in to_remove.into_iter().rev() {
+        children.remove(i);
+    }
+}
+
+/// A coded-text-family node (its `value` is `DV_CODED_TEXT`/`CODE_PHRASE`).
+fn is_coded_text(node: &WebTemplateNode) -> bool {
+    matches!(node.rm_type.as_str(), "DV_CODED_TEXT" | "CODE_PHRASE")
+}
+
+/// Better `isConstrained`: the node's first input carries a validation.
+fn is_input_constrained(node: &WebTemplateNode) -> bool {
+    node.inputs.first().is_some_and(|i| i.validation.is_some())
 }
 
 /// Copy the skipped wrapper's identity/occurrences onto the promoted child
@@ -598,6 +741,32 @@ fn collect_nested_roots<'a>(co: &'a CObject, out: &mut Vec<&'a CArchetypeRoot>) 
         for child in inputs::attribute_children(attr) {
             collect_nested_roots(child, out);
         }
+    }
+}
+
+/// Collect every archetype root's inline `term_bindings`, keyed by archetype id
+/// (Better attaches these to the archetype-root `AmNode`, inherited by
+/// descendants). First root wins for a repeated archetype id.
+fn collect_term_bindings(opt: &OperationalTemplate) -> TermBindings {
+    let mut out: TermBindings = HashMap::new();
+    collect_root_bindings(&opt.definition, &mut out);
+    out
+}
+
+fn collect_root_bindings(root: &CArchetypeRoot, out: &mut TermBindings) {
+    if !root.term_bindings.is_empty() {
+        out.entry(root.archetype_id.value.clone())
+            .or_insert_with(|| root.term_bindings.clone());
+    }
+    // Recurse into nested archetype roots (each carries its own bindings).
+    let mut nested = Vec::new();
+    for attr in &root.attributes {
+        for child in inputs::attribute_children(attr) {
+            collect_nested_roots(child, &mut nested);
+        }
+    }
+    for r in nested {
+        collect_root_bindings(r, out);
     }
 }
 
