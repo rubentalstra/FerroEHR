@@ -18,6 +18,45 @@
 //! `xsi:type`; the type declarations are emitted here, and their `ToXml`/
 //! `FromXml` impls are produced by reusing [`emit_xml::emit_to_xml`] /
 //! [`emit_xml::emit_from_xml`] over the [`XmlType`]s this module builds.
+//!
+//! # PORT NOTE: `opt14` is a deliberately-separate OPT-XML wire adapter (ADR-009)
+//!
+//! This module re-generates the AOM 1.4 `C_*` constraint tree that
+//! `openehr-am::am14` (BMM-generated) already carries. That duplication is
+//! **intentional and scoped**, not an oversight — the two models are *not*
+//! structurally reconcilable (see `docs/spec-audit/findings/09-templates-opt14.md`
+//! F-09-02 and `docs/ADRs/ADR-009-opt14-wire-model.md` for the field-by-field
+//! evidence and the full rationale). In summary, the Ocean **OPT-XML** wire shape
+//! (`Template.xsd` + `OpenehrProfile.xsd`, the codegen input here) diverges from
+//! the **AOM 1.4 BMM** logical model that drives `am14`:
+//!
+//! - **Different domain-type sets.** OPT-XML has `C_CODE_PHRASE`,
+//!   `C_CODE_REFERENCE`, `C_DV_ORDINAL`, `C_DV_QUANTITY`, `C_DV_STATE`; the BMM
+//!   `openehr_archetype_profile` has `C_CODED_TEXT`, `C_ORDINAL`, `C_QUANTITY`.
+//!   `C_DV_STATE` and `C_CODE_REFERENCE` have no `am14` counterpart at all.
+//! - **Different leaf shapes.** OPT-XML carries typed `assumed_value`
+//!   (`DV_QUANTITY`/`DV_ORDINAL`/`DV_STATE`/`CODE_PHRASE`) and `C_DV_ORDINAL.list`
+//!   of `DV_ORDINAL`; the BMM has `assumed_value: Any` (monomorphized to
+//!   `serde_json::Value`) and `C_ORDINAL.list` of the constraint type `ORDINAL`.
+//! - **Different `Interval` representation.** OPT-XML uses the XSD
+//!   `IntervalOf*` shape (generated as `Intervalof*` here); the BMM uses
+//!   `openehr_base::Interval<T>`.
+//! - **OPT-envelope-only types** with no BMM/AOM-1.4 counterpart
+//!   (`OPERATIONAL_TEMPLATE`, `C_ARCHETYPE_ROOT`, `T_COMPLEX_OBJECT`,
+//!   `T_ATTRIBUTE`, `T_CONSTRAINT`, `FLAT_ARCHETYPE_ONTOLOGY`, `STATE_MACHINE`).
+//!
+//! Resolving the shared `C_*` to `am14` (the way RM leaves resolve to
+//! `openehr_rm`/`openehr_base`) would force lossy mapping in both directions and
+//! would require synthesizing an XML codec against types whose shapes do not
+//! match the XSD element order / attribute split — the exact lossy shortcut
+//! ADR-009 rejects. So `opt14` stays a standalone XSD-shaped wire adapter.
+//!
+//! **Drift guard:** because the two models are generated independently (BMM →
+//! `am14`, XSD → `opt14`), an AOM-1.4 spec bump could silently drift them. The
+//! compile-time inventory sentinel in
+//! `crates/openehr-its/tests/opt14_am14_divergence.rs` fails the build if either
+//! model gains or loses a constraint type, forcing a reconciliation + an ADR-009
+//! update.
 
 use crate::emit::{XmlField, XmlType, XmlVariant};
 use crate::emit_xml::{emit_from_xml, emit_to_xml};
@@ -45,18 +84,34 @@ const FORCE_GENERATE: &[&str] = &[
 
 /// `StringDictionaryItem` is an XSD `simpleContent` helper (`<x id="k">v</x>`);
 /// it is never generated as a struct — its repeated-element usage is emitted as
-/// a `Hash<String, String>` (`BTreeMap`) map field, the same shape `emit-xml`
-/// uses for RM `Hash<String, String>` attributes.
+/// an order-preserving `IndexMap<String, String>` field.
+///
+/// PORT NOTE (F-09-05): the XSD models this as an ordered `sequence`, so
+/// `IndexMap` (insertion order = document order, keyed `.get()` for the
+/// `WebTemplate` consumer) is used rather than the alphabetical `BTreeMap` the RM
+/// `emit-xml` path uses — a `ToXml` re-serialization then preserves element
+/// order. A genuinely duplicate `id` (not a conformant-OPT case) is still
+/// collapsed last-wins by the map. The `OrderedDict` field target
+/// (vs `emit-xml`'s `Hash`) selects this shape without affecting the RM codec.
 const STRING_DICT_ITEM: &str = "StringDictionaryItem";
 
 /// OPT-envelope sections captured as opaque `serde_json::Value` (parsed by
-/// skipping their subtree). Both hold *differential*/*presentation* data — not
-/// the operational definition — and contain partial `C_OBJECT`s that omit
-/// otherwise-mandatory fields (`rm_type_name`, `occurrences`) plus anonymous
-/// inline complexTypes the XSD reader cannot flatten (`T_VIEW.constraints`).
-/// They are not needed for template ingestion, so they are skipped losslessly-
-/// enough (structure preserved down to these two roots).
-const OPAQUE_TYPES: &[&str] = &["T_CONSTRAINT", "T_VIEW"];
+/// skipping their subtree).
+///
+/// `T_VIEW` (the `<view>` presentation block) holds an **anonymous inline
+/// complexType** (`T_VIEW.constraints` → nested `items` with an `id` attribute
+/// and an `anySimpleType` value) that the XSD reader cannot flatten into a named
+/// type; it carries only presentation hints (`pass_through` markers), never the
+/// operational definition, so it is skipped.
+///
+/// `T_CONSTRAINT` (the top-level `<constraints>` block) is **no longer opaque**
+/// (F-09-03): it is a named `T_ATTRIBUTE` → `T_COMPLEX_OBJECT` tree carrying
+/// node `default_value` overlays, generated like any other type. Its
+/// differential children may omit `rm_type_name`/`occurrences`/`node_id`
+/// (they carry only `default_value` + `differential_path`); [`lenient_default`]
+/// fills those, so the corpus parses cleanly and the `default_value`s are
+/// preserved on the model for FLAT default-value population to consume.
+const OPAQUE_TYPES: &[&str] = &["T_VIEW"];
 
 /// A default expression for an XSD-mandatory field that real-world OPT exports
 /// (Ocean/tooling) nevertheless omit — so `from_xml` fills it instead of
@@ -64,9 +119,20 @@ const OPAQUE_TYPES: &[&str] = &["T_CONSTRAINT", "T_VIEW"];
 /// (both `IntervalOfInteger`) to the conservative `0..1` (present, optional
 /// single) so a missing multiplicity never over-constrains. The expression is
 /// emitted in the `opt14` impl context (prelude `crate::opt14`).
+///
+/// PORT NOTE (F-09-07): a defaulted `occurrences`/`existence` of `0..1` is a
+/// *fallback for non-conformant input only* — conformant OPTs always carry the
+/// element. It is a guess (a node that should be `1..1` is silently made
+/// optional-single), so any downstream multiplicity check (P15 validation) must
+/// resolve multiplicity from the `definition`/archetype, never trust a defaulted
+/// `0..1` from this reader.
 fn lenient_default(field_name: &str) -> Option<String> {
     match field_name {
-        "node_id" | "purpose" => Some("String::new()".to_owned()),
+        // `rm_type_name` joins the lenient set for differential
+        // `T_COMPLEX_OBJECT` children in real exports: `<constraints>` overlay
+        // nodes may carry only `default_value` + `differential_path`
+        // (e.g. the corpus `non_unique_aql_paths.opt`).
+        "node_id" | "purpose" | "rm_type_name" => Some("String::new()".to_owned()),
         "occurrences" | "existence" => Some(
             "crate::opt14::Intervalofinteger { \
              lower_included: Some(true), upper_included: Some(true), \
@@ -85,7 +151,8 @@ enum Resolved {
     /// `xs:anyType`/`xs:anySimpleType`/anonymous-inline → `serde_json::Value`
     /// (parsed by skipping the subtree — lossy but never errors).
     Value,
-    /// A repeated `StringDictionaryItem` element group → `BTreeMap<String,String>`.
+    /// A repeated `StringDictionaryItem` element group → order-preserving
+    /// `IndexMap<String,String>` (target `OrderedDict`).
     Hash,
     /// A type exported by `openehr-base` (resolved to its prelude).
     Base(String),
@@ -184,6 +251,15 @@ impl<'a> OptModel<'a> {
         }
         // A named `xs:simpleType` (restriction over string/integer): text on the
         // wire — `OPERATOR_KIND`, `Iso8601Date`, `VALIDITY_KIND`, patterns, … .
+        //
+        // PORT NOTE (F-09-06): the AOM integer-enum `*_KIND` restrictions
+        // (`VALIDITY_KIND` = 1001/1002/1003, `OPERATOR_KIND` = 2001..2024) are
+        // carried verbatim as their wire text (`"1001"`, `"2001"`), not decoded
+        // to a typed enum. This round-trips losslessly (text in, text out) and
+        // defers the validity/operator *semantics* to the consumer; the
+        // WebTemplate builder does not read these fields, so no fidelity is lost
+        // in practice. Emitting typed enums from the XSD `enumeration` facets is
+        // a possible future enhancement.
         Resolved::Primitive("String")
     }
 
@@ -209,7 +285,7 @@ impl<'a> OptModel<'a> {
             Resolved::Primitive(p) => ((*p).to_string(), String::new()),
             Resolved::Value => ("serde_json::Value".to_string(), String::new()),
             Resolved::Hash => (
-                "std::collections::BTreeMap<String, String>".to_string(),
+                "indexmap::IndexMap<String, String>".to_string(),
                 String::new(),
             ),
             Resolved::Base(n) => (format!("openehr_base::prelude::{n}"), raw_spec.to_string()),
@@ -266,7 +342,7 @@ impl<'a> OptModel<'a> {
                     rust_name,
                     optional: e.optional,
                     multiple: false,
-                    target: "Hash".to_string(),
+                    target: "OrderedDict".to_string(),
                     map_value: Some("String".to_string()),
                     default: None,
                 };
@@ -439,6 +515,14 @@ impl<'a> OptModel<'a> {
          /// Propagates canonical-XML parse errors.\n\
          pub fn from_xml(xml: &str) -> Result<OperationalTemplate, crate::xml::runtime::XmlError> {\n\
          crate::xml::runtime::from_xml(xml)\n\
+         }\n\n\
+         /// Serialize an [`OperationalTemplate`] back to OPT 1.4 XML (root\n\
+         /// `<template>`, `http://schemas.openehr.org/v1`).\n\
+         ///\n\
+         /// # Errors\n\
+         /// Propagates canonical-XML serialization errors.\n\
+         pub fn to_xml(opt: &OperationalTemplate) -> Result<String, crate::xml::runtime::XmlError> {\n\
+         crate::xml::runtime::to_xml(opt, \"template\", crate::xml::runtime::Namespace::V1)\n\
          }\n"
             .to_string()
     }

@@ -17,6 +17,9 @@ thiserror.workspace = true
 jsonschema.workspace = true
 base64.workspace = true
 uuid.workspace = true
+# The generated `opt14` model keeps `StringDictionaryItem` groups in
+# document order (XSD ordered sequence; F-09-05) — order-preserving map.
+indexmap.workspace = true
 # The generated ITS-REST contract: an async_trait server trait + axum-typed DTOs.
 async-trait.workspace = true
 axum.workspace = true
@@ -28,6 +31,10 @@ openehr-rm = { path = "../openehr-rm" }
 
 [dev-dependencies]
 serde_json.workspace = true
+# The opt14↔am14 divergence sentinel (`tests/opt14_am14_divergence.rs`,
+# ADR-009) exhaustively matches both constraint models so a spec bump that
+# grows either one fails the build until reconciled.
+openehr-am = { path = "../openehr-am" }
 
 [lints]
 workspace = true

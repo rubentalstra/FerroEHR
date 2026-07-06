@@ -557,7 +557,11 @@ pub fn emit_to_xml(
 }
 
 fn emit_write_field(b: &mut String, f: &XmlField) {
-    if f.target == "Hash" {
+    // `Hash` (RM `Hash<String,String>`, → `BTreeMap`) and `OrderedDict` (the OPT
+    // `StringDictionaryItem` group, → `IndexMap`, ADR-005 F-09-05) share the same
+    // `<name id="key">value</name>` wire shape; only the map container differs,
+    // and both iterate as `(k, v)` here.
+    if f.target == "Hash" || f.target == "OrderedDict" {
         let (name, rust) = (&f.wire_name, &f.rust_name);
         if f.map_value.as_deref() == Some("String") {
             // `Hash<String, String>` → repeated `<name id="key">value</name>`
@@ -619,10 +623,14 @@ pub fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel
             let (hdr, args) = generic_header(generics, "crate::xml::runtime::FromXml");
             let attrs = attr_names(spec, xsd);
             let is_attr = |f: &XmlField| attrs.contains(&f.wire_name);
-            // `Hash<String, String>` is parsed inline (StringDictionaryItem);
-            // `Hash<String, ComplexType>` is off-wire and defaulted.
-            let is_str_hash =
-                |f: &XmlField| f.target == "Hash" && f.map_value.as_deref() == Some("String");
+            // `Hash<String, String>` / `OrderedDict` are parsed inline
+            // (StringDictionaryItem); `Hash<String, ComplexType>` is off-wire and
+            // defaulted. `OrderedDict` (OPT `opt14`, F-09-05) accumulates into an
+            // order-preserving `IndexMap`; `Hash` (RM) into a `BTreeMap`.
+            let is_str_hash = |f: &XmlField| {
+                (f.target == "Hash" || f.target == "OrderedDict")
+                    && f.map_value.as_deref() == Some("String")
+            };
             let is_cplx_hash =
                 |f: &XmlField| f.target == "Hash" && f.map_value.as_deref() != Some("String");
             let _ = write!(
@@ -637,7 +645,11 @@ pub fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel
             for f in fields.iter().filter(|f| !is_attr(f) && !is_cplx_hash(f)) {
                 let var = acc_var(&f.rust_name);
                 if is_str_hash(f) {
-                    let _ = writeln!(b, "let mut {var} = std::collections::BTreeMap::new();");
+                    if f.target == "OrderedDict" {
+                        let _ = writeln!(b, "let mut {var} = indexmap::IndexMap::new();");
+                    } else {
+                        let _ = writeln!(b, "let mut {var} = std::collections::BTreeMap::new();");
+                    }
                 } else if f.multiple {
                     let _ = writeln!(b, "let mut {var} = Vec::new();");
                 } else {

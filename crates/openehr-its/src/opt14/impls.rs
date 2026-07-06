@@ -47,7 +47,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Annotation {
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
-        let mut __items = std::collections::BTreeMap::new();
+        let mut __items = indexmap::IndexMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -425,9 +425,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeInternalRef {
             }
         }
         Ok(crate::opt14::ArchetypeInternalRef {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -606,9 +604,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeSlot {
             }
         }
         Ok(crate::opt14::ArchetypeSlot {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -659,7 +655,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeTerm {
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
-        let mut __items = std::collections::BTreeMap::new();
+        let mut __items = indexmap::IndexMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -1082,9 +1078,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ConstraintRef {
             }
         }
         Ok(crate::opt14::ConstraintRef {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -1200,9 +1194,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CArchetypeRoot {
             }
         }
         Ok(crate::opt14::CArchetypeRoot {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -1422,9 +1414,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CCodePhrase {
             }
         }
         Ok(crate::opt14::CCodePhrase {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -1534,9 +1524,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CCodeReference {
             }
         }
         Ok(crate::opt14::CCodeReference {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -1626,9 +1614,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CComplexObject {
             }
         }
         Ok(crate::opt14::CComplexObject {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -1874,9 +1860,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDefinedObject {
             }
         }
         Ok(crate::opt14::CDefinedObject {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -2100,9 +2084,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvOrdinal {
             }
         }
         Ok(crate::opt14::CDvOrdinal {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -2203,9 +2185,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvQuantity {
             }
         }
         Ok(crate::opt14::CDvQuantity {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -2298,9 +2278,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvState {
             }
         }
         Ok(crate::opt14::CDvState {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -2723,9 +2701,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CPrimitiveObject {
             }
         }
         Ok(crate::opt14::CPrimitiveObject {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -4417,7 +4393,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::OperationalTemplate {
             v.write_xml(w, "annotations", Some("ANNOTATION"))?;
         }
         if let Some(v) = &self.constraints {
-            v.write_xml(w, "constraints", Some(""))?;
+            v.write_xml(w, "constraints", Some("T_CONSTRAINT"))?;
         }
         if let Some(v) = &self.view {
             v.write_xml(w, "view", Some(""))?;
@@ -4580,11 +4556,11 @@ impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescription {
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
-        let mut __original_author = std::collections::BTreeMap::new();
+        let mut __original_author = indexmap::IndexMap::new();
         let mut __other_contributors = Vec::new();
         let mut __lifecycle_state = None;
         let mut __resource_package_uri = None;
-        let mut __other_details = std::collections::BTreeMap::new();
+        let mut __other_details = indexmap::IndexMap::new();
         let mut __details = Vec::new();
         let mut __parent_resource = None;
         loop {
@@ -4710,8 +4686,8 @@ impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescriptionItem {
         let mut __use_ = None;
         let mut __misuse = None;
         let mut __copyright = None;
-        let mut __original_resource_uri = std::collections::BTreeMap::new();
-        let mut __other_details = std::collections::BTreeMap::new();
+        let mut __original_resource_uri = indexmap::IndexMap::new();
+        let mut __other_details = indexmap::IndexMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -5125,9 +5101,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::TranslationDetails {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __language = None;
-        let mut __author = std::collections::BTreeMap::new();
+        let mut __author = indexmap::IndexMap::new();
         let mut __accreditation = None;
-        let mut __other_details = std::collections::BTreeMap::new();
+        let mut __other_details = indexmap::IndexMap::new();
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -5330,9 +5306,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TComplexObject {
             }
         }
         Ok(crate::opt14::TComplexObject {
-            rm_type_name: __rm_type_name.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
-            })?,
+            rm_type_name: __rm_type_name.unwrap_or(String::new()),
             occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
@@ -5344,6 +5318,64 @@ impl crate::xml::runtime::FromXml for crate::opt14::TComplexObject {
             node_id: __node_id.unwrap_or(String::new()),
             attributes: __attributes,
             default_value: __default_value,
+        })
+    }
+}
+
+impl crate::xml::runtime::ToXml for crate::opt14::TConstraint {
+    fn xml_type_name(&self) -> &'static str {
+        "T_CONSTRAINT"
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        let mut __attrs: Vec<(&str, String)> = Vec::new();
+        if let Some(d) = declared {
+            if d != "T_CONSTRAINT" {
+                __attrs.push(("xsi:type", "T_CONSTRAINT".to_string()));
+            }
+        }
+        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        for (k, v) in &__attrs {
+            __e.push_attribute((*k, v.as_str()));
+        }
+        w.write_start(__e)?;
+        for v in &self.attributes {
+            v.write_xml(w, "attributes", Some("T_ATTRIBUTE"))?;
+        }
+        w.write_end(tag)?;
+        Ok(())
+    }
+}
+
+impl crate::xml::runtime::FromXml for crate::opt14::TConstraint {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let mut __attributes = Vec::new();
+        loop {
+            match reader.read()? {
+                crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
+                    "attributes" => {
+                        __attributes.push(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    _ => reader.skip_element()?,
+                },
+                crate::xml::runtime::XmlEvent::End => break,
+                crate::xml::runtime::XmlEvent::Text(_) => {}
+                crate::xml::runtime::XmlEvent::Eof => {
+                    return Err(crate::xml::runtime::XmlError::Parse(
+                        "unexpected EOF".into(),
+                    ));
+                }
+            }
+        }
+        Ok(crate::opt14::TConstraint {
+            attributes: __attributes,
         })
     }
 }

@@ -61,7 +61,20 @@ re-serializing via the generated `ToXml`.
 - **Code:** `crates/openehr-am/src/am14/aom14/archetype/constraint_model/*.rs` (`CComplexObject`, `CObject`, `ArchetypeSlot`, `ArchetypeConstraint`, `CPrimitiveObject`, `CDefinedObject`, `ArchetypeInternalRef`, …) + `openehr_archetype_profile/{c_quantity,c_ordinal,c_coded_text}.rs` vs `crates/openehr-its/src/opt14/types.rs:159-372` (the same ~30 constraint types re-declared).
 - **Problem:** There are now two parallel AOM 1.4 constraint models. `am14` is the BMM-generated, canonical-JSON (`#[derive(OpenEhrType)]`) differential model; `opt14` is an XSD-generated model carrying an XML codec plus the Ocean OPT-XML envelope types (`OPERATIONAL_TEMPLATE`, `C_ARCHETYPE_ROOT`, `T_COMPLEX_OBJECT`, `FLAT_ARCHETYPE_ONTOLOGY`, `C_CODE_REFERENCE`) that the AOM 1.4 BMM does not define. The envelope types justify a *scoped* adapter, but re-emitting the shared `C_*` constraint tree (rather than resolving to `am14` the way `emit-opt` already resolves RM leaves to `openehr_rm`/`openehr_base`) means the two models can silently drift, and any validation / path logic written against one will not match the other. The emitter comment (`emit_opt.rs:32-44`) documents only the *resource-metadata* divergence (`RESOURCE_DESCRIPTION.parent_resource` optionality), not the wholesale constraint-model duplication.
 - **Fix:** Decide and document (an ADR / `// PORT NOTE:`) whether `opt14` is a deliberate throwaway legacy-OPT-XML adapter (acceptable, but say so and keep it minimal) or should resolve its shared `C_*` types to `openehr_am::am14` and generate only the OPT envelope + the ToXml/FromXml wire layer. If kept separate, add a cross-model consistency check so an AOM 1.4 spec bump regenerates both consistently. Minimum action: expand the `emit_opt.rs` header to state the constraint-model duplication and its rationale.
-- [ ] fixed
+- [x] fixed — decided **keep both, deliberately** (W3-D, 2026-07-06) after a
+  field-by-field comparison: the XSD wire model and the BMM logical model are
+  not structurally reconcilable (different domain-type sets —
+  `C_CODE_PHRASE`/`C_CODE_REFERENCE`/`C_DV_ORDINAL`/`C_DV_QUANTITY`/`C_DV_STATE`
+  vs `C_CODED_TEXT`/`C_ORDINAL`/`C_QUANTITY`, with `C_DV_STATE`/`C_CODE_REFERENCE`
+  having no BMM counterpart; typed vs `Any` assumed values; `DV_ORDINAL` vs
+  `ORDINAL` lists; XSD `IntervalOf*` vs `Interval<T>`; OPT-only envelope types),
+  so consolidating onto `am14` would force lossy mapping in both directions.
+  Recorded in **[ADR-009](../../ADRs/ADR-009-opt14-wire-model.md)** (with the
+  divergence table); rationale also in the `emit_opt.rs` module header PORT NOTE;
+  drift guard added: `crates/openehr-its/tests/opt14_am14_divergence.rs` pins
+  both models' constraint inventories with exhaustive wildcard-free matches plus
+  the documented-asymmetry list, so a spec/XSD bump that changes either side
+  fails the build until the sentinel + ADR-009 are updated together.
 
 ### F-09-03: `T_CONSTRAINT` (`constraints`) and `T_VIEW` (`view`) are dropped from the parsed model
 - **Severity:** minor
@@ -69,7 +82,18 @@ re-serializing via the generated `ToXml`.
 - **Code:** `crates/openehr-codegen/src/emit_opt.rs:59` (`OPAQUE_TYPES = ["T_CONSTRAINT", "T_VIEW"]`); `crates/openehr-its/src/opt14/types.rs:526-527` (`constraints: Option<serde_json::Value>`, `view: Option<serde_json::Value>`); `crates/openehr-its/src/xml/runtime.rs:474-481` (`FromXml for serde_json::Value` returns `Value::Null` after skipping the subtree); `impls.rs:4487-4492`.
 - **Problem:** The template-level `constraints` overlay — which in the Ocean OPT format is where node **`default_value`s** and additional differential constraints (keyed by `differential_path`) live — and the `view` presentation block are parsed as `Null`; their subtrees are skipped. Any consumer of the parsed `OperationalTemplate` (WebTemplate builder, FLAT default-value population) never sees these defaults. GET is unaffected (verbatim XML is stored/served), and operational (flattened) templates usually fold constraints into `definition`, so impact is low — but `default_value`s carried only in `<constraints>` are lost to the model. The emitter comment calls this "skipped losslessly-enough"; it is not lossless.
 - **Fix:** If WebTemplate/FLAT ever needs template default values, model `T_CONSTRAINT`/`T_ATTRIBUTE`/`T_COMPLEX_OBJECT` properly (the anonymous inline `T_VIEW.constraints` complexType is the only genuinely awkward part and can stay `Value`). Otherwise, keep the scope boundary but change the header note from "losslessly-enough" to an explicit `// PORT NOTE:` that `default_value` overlays are dropped, and confirm no default-value corpus case depends on it.
-- [ ] fixed
+- [x] fixed — `T_CONSTRAINT` is now **generated** (removed from `OPAQUE_TYPES`;
+  W3-D, 2026-07-06): `OperationalTemplate.constraints` is a typed
+  `Option<TConstraint>` (`T_ATTRIBUTE` → `T_COMPLEX_OBJECT` with
+  `default_value: Option<DataValue>` + `differential_path`), so the overlay
+  defaults are available to WebTemplate/FLAT. Differential children that omit
+  `rm_type_name`/`occurrences`/`node_id` (real exports carry only
+  `default_value` + `differential_path`) are handled by the lenient-default
+  reader. `T_VIEW` (anonymous-inline presentation block, `pass_through` hints
+  only) stays the single documented opaque type. Asserted by
+  `opt14_corpus.rs::t_constraint_default_values_parsed` (a corpus overlay
+  `DV_TEXT` default parses with its value intact); the 10 corpus files carrying
+  `<constraints>` all parse + round-trip.
 
 ### F-09-04: 201 upload response omits `Location` header and returns JSON metadata instead of the OPT representation
 - **Severity:** minor
@@ -85,7 +109,18 @@ re-serializing via the generated `ToXml`.
 - **Code:** `crates/openehr-codegen/src/emit_opt.rs:46-50,258-272` (repeated `StringDictionaryItem` → `BTreeMap<String,String>`); `crates/openehr-its/src/opt14/types.rs:17,90,533,552,595`; corpus gate `crates/openehr-its/tests/opt14_corpus.rs` asserts parse-only.
 - **Problem:** Modelling a repeated id/value element group as `BTreeMap<String,String>` (a) reorders entries alphabetically on any `ToXml` re-serialization (the XSD is an ordered `sequence`), and (b) silently drops a later entry if two items share an `id`. For OPT `other_details` the id set is typically unique, and GET serves verbatim XML so the *endpoint* is unaffected — but the generated `ToXml` impls (which exist for every `opt14` type) would not round-trip these groups faithfully, and nothing tests that: the corpus gate only checks `from_xml(...).is_ok()` plus a 2-file field spot-check.
 - **Fix:** Prefer a `Vec<(String, String)>` (or an order-preserving multimap) for `StringDictionaryItem` groups to preserve order and duplicates; or, if the map is intentional, add a `// PORT NOTE:` recording the order/dup loss. Add a parse → `ToXml` → re-parse structural-equality gate over the corpus so model-level losslessness is actually asserted, not assumed.
-- [ ] fixed
+- [x] fixed — `StringDictionaryItem` groups now emit as order-preserving
+  `indexmap::IndexMap<String, String>` (new `OrderedDict` field target in the
+  emitter; the RM `emit-xml` `Hash`/`BTreeMap` path is untouched), so `ToXml`
+  re-serialization preserves XSD sequence/document order; duplicate-`id`
+  collapse (last-wins) is retained and documented in the emitter PORT NOTE
+  (not a conformant-OPT case). A public `opt14::to_xml` entry was added and the
+  corpus gate now includes `every_opt_template_round_trips` (parse → `ToXml` →
+  re-parse structural equality over all 91 files) plus
+  `string_dictionary_order_preserved` (explicit key-order assertion on a
+  fixture with non-alphabetical document order, since `IndexMap::eq` is
+  order-insensitive). The consumers (`openehr-flat` WebTemplate builder) keep
+  their `.get()` map API — 76/76 flat tests green unchanged.
 
 ### F-09-06: `VALIDITY_KIND` and `OPERATOR_KIND` enumerations carried as raw `String` codes
 - **Severity:** minor
@@ -93,7 +128,12 @@ re-serializing via the generated `ToXml`.
 - **Code:** `crates/openehr-codegen/src/emit_opt.rs:185-188` (a named `xs:simpleType` restriction resolves to `Resolved::Primitive("String")`); `crates/openehr-its/src/opt14/types.rs:203,212,368` (`timezone_validity: Option<String>`), `391,424` (`operator: String`).
 - **Problem:** The integer enumeration codes are carried as their literal wire text (`"1001"`, `"2001"`), not decoded to a typed enum or a semantic value. This round-trips as text and does not lose data, but it defers all validity/operator semantics to the consumer and diverges from how these `*_KIND` enums are modelled elsewhere. Low impact for template ingestion (these fields are rarely read by the WebTemplate builder), but a fidelity gap versus the AOM enum semantics.
 - **Fix:** Optionally emit typed enums (or `#[serde(transparent)]` newtypes) for named `xs:simpleType` integer restrictions with `enumeration` facets, mapping code→symbolic name from the XSD `id=` attributes. Otherwise record a `// PORT NOTE:` that `*_KIND` values are carried verbatim as wire codes.
-- [ ] fixed
+- [x] fixed — the documented option taken (W3-D): `// PORT NOTE (F-09-06)` at
+  the `resolve()` simple-type fallback in `emit_opt.rs` records that the
+  `*_KIND` integer-enum codes are carried verbatim as wire text (lossless
+  round-trip; semantics deferred to the consumer; WebTemplate does not read
+  these fields). Typed-enum emission from XSD `enumeration` facets noted as a
+  possible future enhancement.
 
 ### F-09-07: Lenient `occurrences`/`existence` default of `0..1` can misrepresent mandatory nodes
 - **Severity:** minor
@@ -101,7 +141,14 @@ re-serializing via the generated `ToXml`.
 - **Code:** `crates/openehr-codegen/src/emit_opt.rs:67-79` (`lenient_default` → `0..1` present/optional-single); applied at `212-299`.
 - **Problem:** When a real-world OPT omits `occurrences`/`existence`, the reader fills `0..1` (optional, single). That keeps imperfect exports parsing (a legitimate goal for a wire adapter), but `0..1` is a *guess*: a node that should be mandatory (`1..1`) or multi-valued is silently made optional-single. If composition validation (P15) ever consumes these multiplicities from the `opt14` model, the guess could weaken constraints. Conformant OPTs always include these elements, so the default only fires on non-conformant input.
 - **Fix:** Keep the leniency, but document (`// PORT NOTE:`) that a defaulted multiplicity is a fallback, and ensure validation resolves multiplicity from `definition` (or the archetype) rather than trusting a defaulted `0..1`. Consider logging when the default fires.
-- [ ] fixed
+- [x] fixed — leniency kept, documented (W3-D): `// PORT NOTE (F-09-07)` on
+  `lenient_default` in `emit_opt.rs` states the defaulted `0..1` is a
+  non-conformant-input fallback and a guess, and that downstream multiplicity
+  checks (P15 validation) must resolve multiplicity from the
+  `definition`/archetype rather than trust it. (`rm_type_name` also joined the
+  lenient set for differential `T_COMPLEX_OBJECT` overlay children, which carry
+  only `default_value` + `differential_path` in real exports — required for
+  F-09-03's T_CONSTRAINT generation to parse the full corpus.)
 
 ### F-09-08: `TemplateMetadata.concept`/`archetype_id` emitted as JSON `null`; `version` never emitted
 - **Severity:** minor
@@ -109,7 +156,9 @@ re-serializing via the generated `ToXml`.
 - **Code:** `crates/ehrbase/src/service/template.rs:67-71` (`concept`/`root_archetype` become `None` when empty), `126-137` (`template_json` emits `concept`/`archetype_id` as `null` when absent).
 - **Problem:** If an OPT has an empty `concept` or root archetype id, the list/metadata JSON emits `null` for a field the schema marks as a required string — a schema violation. Also `version` is never populated (acceptable, it is optional). Real conformant OPTs always carry a non-empty concept and root archetype, so this only bites on degenerate input, but the `.then_some(...)` → `null` path is a latent contract break.
 - **Fix:** Emit `""` (or reject the OPT at upload as invalid content, `400`) rather than `null` for the required `concept`/`archetype_id`; an OPT with no concept/root archetype is arguably invalid template content per `400_invalid_template_content`.
-- [ ] fixed
+- [ ] fixed — (W3-D note: not addressed in the opt14/codegen wave; the fix
+  lives in `crates/ehrbase/src/service/template.rs`, owned by the app-crate
+  work stream, same as F-09-04.)
 
 ## Hygiene notes
 
@@ -119,6 +168,10 @@ re-serializing via the generated `ToXml`.
   generated `ToXml` impls and the model-level losslessness (F-09-03, F-09-05) are
   untested. Given that OPT storage is verbatim-XML this is low-risk today, but the
   `ToXml` code path is entirely unexercised.
+  *(Resolved with F-09-05, W3-D 2026-07-06: `every_opt_template_round_trips`
+  now runs parse → `ToXml` → re-parse structural equality over all 91 corpus
+  files, plus explicit dictionary-order and T_CONSTRAINT default-value
+  assertions.)*
 
 - **`opt14` uses plain `#[derive(serde::Serialize/Deserialize)]`, not
   `#[derive(OpenEhrType)]`.** Its enums (`CObject`, `CAttribute`, `CDomainType`,
