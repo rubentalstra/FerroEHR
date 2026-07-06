@@ -91,24 +91,24 @@ Total: **180 findings**.
 ## Fix waves
 
 ### Wave 1 — critical spec divergences (wire-visible, CNF-failing)
-- [ ] W1-A **Version/audit render + coded values** — F-06-01, F-06-02, F-06-03,
+- [x] W1-A **Version/audit render + coded values** — F-06-01, F-06-02, F-06-03,
       F-06-05, F-01-06/07/08, F-02-06/07, F-11-01: emit `commit_audit`,
       `preceding_version_uid`, `time_created`; numeric change_type codes;
       real `lifecycle_state` incl. `523|deleted|`.
-- [ ] W1-B **Deleted-composition read path** — F-02-01, F-02-05: deleted →
+- [x] W1-B **Deleted-composition read path** — F-02-01, F-02-05: deleted →
       204-style outcome (no reassemble-before-check), delete honors
       `preceding_version_uid` (409 stale / 400 already-deleted).
-- [ ] W1-C **409 conflict semantics** — F-09-01, F-03-02, F-03-03: replace
+- [x] W1-C **409 conflict semantics** — F-09-01, F-03-02, F-03-03: replace
       upserts with insert-or-conflict for template upload + stored queries.
-- [ ] W1-D **Validation gate everywhere** — F-07-01, F-07-02: CONTRIBUTION
+- [x] W1-D **Validation gate everywhere** — F-07-01, F-07-02: CONTRIBUTION
       path validates; templateless compositions still get RM + terminology
       passes.
-- [ ] W1-E **XML `archetype_node_id` attribute closure** — F-05-01: extend the
+- [x] W1-E **XML `archetype_node_id` attribute closure** — F-05-01: extend the
       emitter's XSD closure (v2 `Ehr.xsd` is vendored) so EHR_STATUS etc. emit
       valid canonical XML.
 
 ### Wave 2 — major divergences + structural rewrites (full rewrites preferred)
-- [ ] W2-A **Typed response envelope** (headers channel): ETag/Location/
+- [x] W2-A **Typed response envelope** (headers channel): ETag/Location/
       Last-Modified + `Prefer` handling across all groups — F-01-01/02/03,
       F-02-02/03, F-03-01/04, F-09-04. Backend seam returns typed results, not
       bare `Value`.
@@ -128,9 +128,9 @@ Total: **180 findings**.
       combos → 422 (creation-on-existing, non-creation first version,
       deleted-with-data, attestation), contribution audit follows the spec
       aggregate rule; `service/codes.rs` is the single code⇄rubric home.)
-- [ ] W2-D **Explicit `_type` dispatcher** in `openehr-derive` for abstract
+- [x] W2-D **Explicit `_type` dispatcher** in `openehr-derive` for abstract
       slots — F-04-01/02/03.
-- [ ] W2-E **AQL front-end fixes** — F-08-01/02/03 + corpus-harness expansion.
+- [x] W2-E **AQL front-end fixes** — F-08-01/02/03 + corpus-harness expansion.
 - [x] W2-F **ITEM_TAG conformance** — F-03-05/06: PUT = full replace,
       OBJECT_REF-shaped response. (`replace_tags` full-collection replace incl.
       empty-list clear; OAS `ItemTag`-shaped wire form; RM key/value invariants
@@ -138,7 +138,7 @@ Total: **180 findings**.
 - [x] W2-G **Stored-query semver/name matching** — F-03-07/08. (SEMVER-prefix
       GET resolves to the highest match; LIST matches the qualified name as a
       prefix pattern, empty = wildcard.)
-- [ ] W2-H **Terminology validation completeness** — F-07-03/04, F-11-02/03/04.
+- [x] W2-H **Terminology validation completeness** — F-07-03/04, F-11-02/03/04.
 - [x] W2-I **XML ToXml/FromXml field-set symmetry + C14N gate** — F-05-02/03.
       Emitter reconciles BMM↔XSD field sets (guard + cited allowlist; 44
       previously-dropped fields now appended, no silent drops); C14N byte-parity
@@ -156,7 +156,7 @@ Total: **180 findings**.
       moka cache is the only cache; `AppState.web_templates` + the REST
       OPT-XML re-fetch/re-parse path deleted — FLAT/STRUCTURED/`wt+json` now
       share the exact WebTemplate composition validation uses.)
-- [ ] W2-L **RM spec functions layer** — F-12-01/02/04/05 (paths, magnitude,
+- [x] W2-L **RM spec functions layer** — F-12-01/02/04/05 (paths, magnitude,
       comparison, EVENT invariants) — feeds P16 AQL.
 
 ### Wave 3 — minor divergences, hygiene, consolidation
@@ -197,6 +197,21 @@ Total: **180 findings**.
       hardcoded `rm_version 1.0.4` — F-10-09 (2026-07-06 — single
       `flat::defaults::RM_VERSION = "1.2.0"` constant tied to the RM pin).
 - [ ] W3-F Remaining minors per findings files.
+
+## Status snapshot (2026-07-06, end of first fix push)
+
+**109 of 191 checkboxed findings fixed** (82 open — overwhelmingly minor/info
+plus deliberately-deferred decision items). All 8 criticals and every major
+scheduled in Waves 1-2 are closed; the Wave-3 structural consolidations
+(paths, dispatcher, quirks gating, opt14 ADR) are done. Branch health:
+**491/491 workspace tests pass, clippy 0 warnings, codegen drift green.**
+
+Per area (fixed/total): 01: 9/11 - 02: 8/13 - 03: 8/20 - 04: 3/6 - 05: 3/11 -
+06: 7/12 - 07: 4/15 - 08: 13/14 - 09: 6/8 - 10: 11/15 - 11: 5/8 - 12: 7/11 -
+13: 9/30 - 14: 16/17. The larger deferred clusters: area 03 QUERY-execution
+items (P16 scope), area 05 XML minors (interval flags, f32 runtime), area 07
+spec-underdetermined AOM 1.4 decision points (need ADR + CNF fixtures),
+area 13 openehr-flat builder-split refactors (deferred for regression risk).
 
 ## Progress log
 
