@@ -83,7 +83,25 @@ Counts: 1 critical, 2 major, 4 minor, 4 info.
   wire shape is identical across lineages bar the root `xmlns` — the emitter's own
   stated rationale for one impl set (main.rs:168-174) — so this is safe. Add a
   guard so a LOCATABLE subtype with an empty attribute set fails codegen.
-- [ ] fixed
+- **Fix applied (emitter):** `crates/openehr-codegen/src/xsd.rs` — the emit-xml
+  XSD input is now the v1 *served* core (`RM_FILES_V1_SERVED`: BaseTypes,
+  Structure, Content, Composition, Version, Resource) merged with the v2
+  RM-1.1.0 supplement (`RM_FILES_V2_SUPPLEMENT`: `Ehr.xsd`, `Demographic.xsd`,
+  `EhrExtract.xsd`) via `xml_emit_files`, wired in `main.rs::cmd_emit_xml`. v1
+  wins for shared/served types (`.or_insert`); the v2 files add the missing
+  LOCATABLE subtypes, whose base chain reaches the v1 `LOCATABLE` and so picks up
+  `archetype_node_id` as the required attribute + canonical element order. v1
+  `Extract.xsd` (the stale RM-1.0.2 model, whose `EXTRACT_ITEM` does **not**
+  extend LOCATABLE, contradicting the BMM) is dropped in favour of the
+  BMM-consistent v2 `EhrExtract.xsd`. A guard (`emit_xml.rs::check_locatable_attr`,
+  enforced in `emit_file`) now **fails codegen** if any emitted struct with an
+  `archetype_node_id` field lacks an XSD attribute classification for it.
+  Verified: all 16 affected types (EHR_STATUS/EHR_ACCESS, the 10 demographic
+  types, the 4 extract subtypes) now emit `archetype_node_id` as an attribute;
+  zero remaining element emissions; regression test
+  `crates/openehr-its/tests/xml_locatable_attr.rs` (EHR_STATUS, EHR_ACCESS,
+  PERSON, GENERIC_CONTENT_ITEM). All `openehr-its` gates green; drift idempotent.
+- [x] fixed
 
 ### F-05-02: `ToXml` writes the XSD element set but `FromXml` reads the BMM field set — BMM-only fields are silently dropped on XML output
 - **Severity:** major

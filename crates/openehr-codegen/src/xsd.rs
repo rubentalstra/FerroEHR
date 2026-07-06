@@ -229,6 +229,54 @@ pub fn v1_files(all_dir: &Path) -> Vec<std::path::PathBuf> {
     RM_FILES_V1.iter().map(|f| all_dir.join(f)).collect()
 }
 
+/// The v1 `ALL/` files that supply the **served** RM-instance closure. Merged
+/// first so shared/served types (COMPOSITION, SECTION, LOCATABLE, ENTRY, …) keep
+/// their v1 shape via [`XsdModel::parse_files`]'s first-wins `.or_insert`.
+///
+/// `Extract.xsd` is intentionally **excluded**: the v1 `ALL/` bundle carries the
+/// stale RM-1.0.2 EXTRACT model, whose `EXTRACT_ITEM` does **not** extend
+/// `LOCATABLE` — contradicting the RM-1.2.0 BMM (where `EXTRACT_ITEM` is a
+/// `LOCATABLE` subtype). The extract family is drawn from the v2 `EhrExtract.xsd`
+/// (see [`RM_FILES_V2_SUPPLEMENT`]) so its LOCATABLE ancestry — and the
+/// `archetype_node_id` **attribute** — resolves correctly.
+pub const RM_FILES_V1_SERVED: &[&str] = &[
+    "BaseTypes.xsd",
+    "Structure.xsd",
+    "Content.xsd",
+    "Composition.xsd",
+    "Version.xsd",
+    "Resource.xsd",
+];
+
+/// The v2 (RM 1.1.0) schemas that supply the RM-instance types the v1 `ALL/`
+/// bundle **lacks** (EHR + demographic) or carries **stale** (extract). Merged
+/// *after* the v1 served core so already-present served types keep their v1
+/// definition; only the missing types are added (via first-wins `.or_insert`).
+///
+/// The RM-instance wire shape is identical across the v1/v2 lineages bar the root
+/// `xmlns` (ADR-005, `main.rs` rationale), so the v1 `LOCATABLE` — base of all
+/// these types via the flatten walk — supplies the `archetype_node_id` attribute
+/// and canonical element order for `EHR_STATUS`/`EHR_ACCESS`, the demographic
+/// PARTY hierarchy, and the extract LOCATABLE subtypes. This closes F-05-01.
+pub const RM_FILES_V2_SUPPLEMENT: &[&str] = &[
+    "RM/Release-1.1.0/Ehr.xsd",
+    "RM/Release-1.1.0/Demographic.xsd",
+    "RM/Release-1.1.0/EhrExtract.xsd",
+];
+
+/// Resolve the merged emit-xml XSD input: the v1 served core under `v1_all_dir`
+/// (the `its-xml-1.0.2-nsv1/ALL` bundle) followed by the v2 EHR/demographic/
+/// extract supplement under `v2_root` (the `its-xml-2.0.0-nsv2` root). Order is
+/// load-bearing — v1 first so served types win (`.or_insert`).
+#[must_use]
+pub fn xml_emit_files(v1_all_dir: &Path, v2_root: &Path) -> Vec<std::path::PathBuf> {
+    RM_FILES_V1_SERVED
+        .iter()
+        .map(|f| v1_all_dir.join(f))
+        .chain(RM_FILES_V2_SUPPLEMENT.iter().map(|f| v2_root.join(f)))
+        .collect()
+}
+
 /// The AM/OPT 1.4 constraint-schema closure (`Template.xsd` and its `xs:include`
 /// chain), for the `emit-opt` OPT generator (ADR-005). Order = merge order;
 /// `Template.xsd` first so the OPT-specific types (`OPERATIONAL_TEMPLATE`,
