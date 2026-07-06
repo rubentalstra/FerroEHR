@@ -281,19 +281,54 @@ async fn unauthenticated_request_emits_401_record() {
 }
 
 #[tokio::test]
+async fn template_get_emits_template_record() {
+    let (sock, port) = listener().await;
+    let app = app(port, true).await;
+    // The template GET is audited as the Template class (R). The stub backend
+    // answers 501 → outcome 8; the template id is derived from the path.
+    let rec = drive_expect_record(
+        &app,
+        &sock,
+        req("GET", "/definition/template/adl1.4/vital_signs.v1", true),
+    )
+    .await;
+    assert_eq!(attr(&rec, "EventActionCode"), Some("R"));
+    assert!(rec.contains(r#"originalText="template""#));
+    assert!(
+        rec.contains(r#"ParticipantObjectID="vital_signs.v1""#),
+        "template id from the path: {rec}"
+    );
+}
+
+#[tokio::test]
+async fn demographic_get_emits_demographic_record() {
+    let (sock, port) = listener().await;
+    let app = app(port, true).await;
+    // Demographic is unimplemented (501) but fully audited: R + outcome 8, the
+    // party uid derived from the path.
+    let rec = drive_expect_record(&app, &sock, req("GET", "/demographic/person/p-42", true)).await;
+    assert_eq!(attr(&rec, "EventActionCode"), Some("R"));
+    assert_eq!(attr(&rec, "EventOutcomeIndicator"), Some("8"));
+    assert!(rec.contains(r#"originalText="demographic""#));
+    assert!(rec.contains(r#"ParticipantObjectID="p-42""#));
+}
+
+#[tokio::test]
 async fn login_event_is_suppressed_by_default() {
     let (sock, port) = listener().await;
-    // suppress_login=true: an authenticated request to an unaudited endpoint
-    // (template list) must NOT emit a login/application-activity record.
+    // suppress_login=true: an audited operation emits exactly ONE record (the
+    // operation itself) and no login/application-activity record.
     let app = app(port, true).await;
-    let _resp = app
-        .clone()
-        .oneshot(req("GET", "/definition/template/adl1.4", true))
-        .await
-        .expect("oneshot");
+    let rec =
+        drive_expect_record(&app, &sock, req("GET", "/definition/template/adl1.4", true)).await;
+    assert!(rec.contains(r#"originalText="template""#));
+    assert!(
+        !rec.contains("Application Activity"),
+        "no login record inside the op record: {rec}"
+    );
     assert!(
         recv_record(&sock).await.is_none(),
-        "suppressed login must emit no record"
+        "suppressed login must emit no second record"
     );
 }
 
@@ -301,11 +336,20 @@ async fn login_event_is_suppressed_by_default() {
 async fn login_event_emitted_when_not_suppressed() {
     let (sock, port) = listener().await;
     let app = app(port, false).await;
-    let rec =
+    // Not suppressed: the operation record AND a login (Application Activity)
+    // record are both emitted.
+    let first =
         drive_expect_record(&app, &sock, req("GET", "/definition/template/adl1.4", true)).await;
-    // A successful-authentication application-activity (login) event.
-    assert!(rec.contains(r#"originalText="Application Activity""#));
-    assert_eq!(attr(&rec, "UserID"), Some("alice"));
+    let second = recv_record(&sock).await.expect("login record");
+    let (op_rec, login_rec) = if first.contains("Application Activity") {
+        (second, first)
+    } else {
+        (first, second)
+    };
+    assert!(op_rec.contains(r#"originalText="template""#));
+    assert!(login_rec.contains(r#"originalText="Application Activity""#));
+    assert_eq!(attr(&login_rec, "UserID"), Some("alice"));
+    assert_eq!(attr(&login_rec, "EventOutcomeIndicator"), Some("0"));
 }
 
 /// A sender whose single-slot queue is deterministically full: the drain is

@@ -218,19 +218,31 @@ fn build_objects(
         });
     }
 
-    if object_class.has_object_uri()
-        && let Some(id) = &event.object_id
-    {
-        objects.push(ParticipantObject {
-            id: id.clone(),
-            type_code: OBJECT_TYPE_SYSTEM,
-            type_code_role: None,
-            data_life_cycle: Some(event.action.data_life_cycle()),
-            id_type_code: codes::OBJ_ID_URI,
-        });
+    if object_class.has_object_uri() {
+        // Patient-centric classes already carry the Patient-Number object; the
+        // URI object is added when the id is known. Non-patient classes
+        // (template / demographic) always carry the URI object, filled with
+        // `value_if_missing` when unknown (§3 missing-mandatory rule) so every
+        // record identifies its participant object.
+        let id = event.object_id.clone();
+        if let Some(id) = id {
+            objects.push(uri_object(id, event));
+        } else if !object_class.is_patient_centric() {
+            objects.push(uri_object(missing.to_owned(), event));
+        }
     }
 
     objects
+}
+
+fn uri_object(id: String, event: &AuditEvent) -> ParticipantObject {
+    ParticipantObject {
+        id,
+        type_code: OBJECT_TYPE_SYSTEM,
+        type_code_role: None,
+        data_life_cycle: Some(event.action.data_life_cycle()),
+        id_type_code: codes::OBJ_ID_URI,
+    }
 }
 
 fn write_code<W: std::io::Write>(
@@ -379,6 +391,50 @@ mod tests {
         assert!(xml.contains(r#"originalText="Search Criteria""#));
         assert!(xml.contains(r#"ParticipantObjectID="UNKNOWN""#));
         assert_audit_snapshot!("query_execute_E", xml);
+    }
+
+    #[test]
+    fn template_upload() {
+        let mut e = event(
+            EventActionCode::Create,
+            ObjectClass::Template,
+            EventOutcome::Success,
+        );
+        e.object_id = Some("vital_signs.v1".to_owned());
+        let xml = AuditMessage::build(&e, &ctx(), None).to_xml().expect("xml");
+        assert!(xml.contains(r#"EventActionCode="C""#));
+        assert!(xml.contains(r#"csd-code="110100""#));
+        assert!(xml.contains(r#"originalText="template""#));
+        assert!(xml.contains(r#"ParticipantObjectID="vital_signs.v1""#));
+        assert!(xml.contains(r#"originalText="URI""#));
+        assert_audit_snapshot!("template_upload_C", xml);
+    }
+
+    #[test]
+    fn template_list_without_id_uses_fill() {
+        // A template list has no single object id → URI object with the fill.
+        let e = event(
+            EventActionCode::Read,
+            ObjectClass::Template,
+            EventOutcome::Success,
+        );
+        let xml = AuditMessage::build(&e, &ctx(), None).to_xml().expect("xml");
+        assert!(xml.contains(r#"ParticipantObjectID="UNKNOWN""#));
+    }
+
+    #[test]
+    fn demographic_read() {
+        let mut e = event(
+            EventActionCode::Read,
+            ObjectClass::Demographic,
+            EventOutcome::Success,
+        );
+        e.object_id = Some("party-77".to_owned());
+        let xml = AuditMessage::build(&e, &ctx(), None).to_xml().expect("xml");
+        assert!(xml.contains(r#"csd-code="110110""#));
+        assert!(xml.contains(r#"originalText="demographic""#));
+        assert!(xml.contains(r#"ParticipantObjectID="party-77""#));
+        assert_audit_snapshot!("demographic_read_R", xml);
     }
 
     #[test]

@@ -32,7 +32,7 @@ impl Classification {
 }
 
 use EventActionCode::{Create, Delete, Execute, Read, Update};
-use ObjectClass::{Composition, Contribution, Directory, Ehr, Query};
+use ObjectClass::{Composition, Contribution, Demographic, Directory, Ehr, Query, Template};
 
 /// Classify an ITS-REST operation id. `None` means **unknown** — a generated
 /// operation that has not been classified (fails the coverage guard).
@@ -105,61 +105,63 @@ pub fn classify(op: &str) -> Option<Classification> {
         "admin_ehr_delete" => Classification::audited(Delete, Ehr),
         "admin_ehr_delete_all" => Classification::audited(Delete, Ehr),
 
-        // ── UNAUDITED: DEFINITION templates (OPT provisioning; §2 audits
-        //    stored queries only). PORT NOTE: could later be "Application
-        //    Activity" — deferred, out of §2 scope. ──────────────────────────
+        // ── DEFINITION: operational templates (OPT provisioning; beyond §2's
+        //    table, but the owner mandates total coverage — audited as the
+        //    Template class: upload → C, list/get/example/version → R) ────────
+        "definition_template_adl1.4_upload" | "definition_template_adl2_upload" => {
+            Classification::audited(Create, Template)
+        }
         "definition_template_adl1.4_list"
-        | "definition_template_adl1.4_upload"
         | "definition_template_adl1.4_get"
         | "definition_template_adl1.4_example_get"
         | "definition_template_adl2_list"
-        | "definition_template_adl2_upload"
         | "definition_template_adl2_get"
         | "definition_template_adl2_example_get"
-        | "definition_template_adl2_version_get" => Classification::Unaudited,
+        | "definition_template_adl2_version_get" => Classification::audited(Read, Template),
 
-        // ── UNAUDITED: DEMOGRAPHIC (not in §2 scope; unimplemented → 501).
-        //    Revisit if the demographic API is implemented. ──────────────────
+        // ── DEMOGRAPHIC (beyond §2's table; person-identifiable data, so it is
+        //    audited in full — currently unimplemented (501), which simply
+        //    yields failure outcomes until the API lands) ─────────────────────
         "agent_create"
-        | "agent_get"
-        | "agent_update"
-        | "agent_delete"
         | "group_create"
-        | "group_get"
-        | "group_update"
-        | "group_delete"
         | "organisation_create"
-        | "organisation_get"
-        | "organisation_update"
-        | "organisation_delete"
         | "person_create"
+        | "role_create" => Classification::audited(Create, Demographic),
+        "agent_get"
+        | "group_get"
+        | "organisation_get"
         | "person_get"
-        | "person_update"
-        | "person_delete"
-        | "role_create"
         | "role_get"
-        | "role_update"
-        | "role_delete"
         | "versioned_party_get"
         | "versioned_party_revision_history"
         | "versioned_party_version_get_at_time"
         | "versioned_party_version_get_by_id"
         | "demographic_tags_get"
         | "agent_tags_get"
-        | "agent_tags_update"
-        | "agent_tags_delete"
         | "group_tags_get"
-        | "group_tags_update"
-        | "group_tags_delete"
         | "organisation_tags_get"
-        | "organisation_tags_update"
-        | "organisation_tags_delete"
         | "person_tags_get"
+        | "role_tags_get" => Classification::audited(Read, Demographic),
+        "agent_update"
+        | "group_update"
+        | "organisation_update"
+        | "person_update"
+        | "role_update"
+        | "agent_tags_update"
+        | "group_tags_update"
+        | "organisation_tags_update"
         | "person_tags_update"
+        | "role_tags_update" => Classification::audited(Update, Demographic),
+        "agent_delete"
+        | "group_delete"
+        | "organisation_delete"
+        | "person_delete"
+        | "role_delete"
+        | "agent_tags_delete"
+        | "group_tags_delete"
+        | "organisation_tags_delete"
         | "person_tags_delete"
-        | "role_tags_get"
-        | "role_tags_update"
-        | "role_tags_delete" => Classification::Unaudited,
+        | "role_tags_delete" => Classification::audited(Delete, Demographic),
 
         _ => return None,
     };
@@ -214,24 +216,27 @@ mod tests {
         );
     }
 
+    /// Total coverage is **total**: every generated route entry is audited —
+    /// the `UNAUDITED` allowlist is empty (status/health/swagger live outside
+    /// the generated `ROUTES` tables and never reach the audit table).
     #[test]
     fn coverage_stats() {
         let ops = all_route_ops();
         let mut audited = 0;
-        let mut unaudited = 0;
+        let mut unaudited = Vec::new();
         for op in &ops {
             match classify(op) {
                 Some(Classification::Audited { .. }) => audited += 1,
-                Some(Classification::Unaudited) => unaudited += 1,
+                Some(Classification::Unaudited) => unaudited.push(*op),
                 None => {}
             }
         }
-        // Sanity: the clinical surface is audited; a real chunk is unaudited.
-        assert!(audited >= 40, "expected many audited routes, got {audited}");
-        assert!(
-            unaudited >= 40,
-            "expected many unaudited routes, got {unaudited}"
+        assert_eq!(
+            audited,
+            ops.len(),
+            "every generated route entry must be audited; unaudited: {unaudited:?}"
         );
+        assert!(unaudited.is_empty(), "unaudited ops: {unaudited:?}");
     }
 
     #[test]
@@ -243,14 +248,20 @@ mod tests {
             Some((Execute, Query))
         );
         assert_eq!(audit_for("admin_ehr_delete"), Some((Delete, Ehr)));
-        // Unaudited and unknown both yield no mapping.
-        assert_eq!(audit_for("definition_template_adl1.4_upload"), None);
-        assert_eq!(audit_for("no_such_operation"), None);
-        // But the unaudited one is classified (not unknown).
+        // Templates + demographic are fully audited.
         assert_eq!(
-            classify("definition_template_adl1.4_upload"),
-            Some(Classification::Unaudited)
+            audit_for("definition_template_adl1.4_upload"),
+            Some((Create, Template))
         );
+        assert_eq!(
+            audit_for("definition_template_adl1.4_get"),
+            Some((Read, Template))
+        );
+        assert_eq!(audit_for("person_create"), Some((Create, Demographic)));
+        assert_eq!(audit_for("person_update"), Some((Update, Demographic)));
+        assert_eq!(audit_for("role_tags_delete"), Some((Delete, Demographic)));
+        // Unknown ops yield no classification (fails the guard when generated).
+        assert_eq!(audit_for("no_such_operation"), None);
         assert_eq!(classify("no_such_operation"), None);
     }
 }

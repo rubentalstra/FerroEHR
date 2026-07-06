@@ -110,6 +110,16 @@ pub enum ObjectClass {
     Directory,
     /// Ad-hoc / stored query execution → "query"; a Search-Criteria participant.
     Query,
+    /// Operational template provisioning (DEFINITION `adl1.4`/`adl2` templates)
+    /// → "template"; an object-URI participant (the template id). Templates are
+    /// application-level artifacts, not patient records, so they sit in the
+    /// Application-Activity `EventID` family.
+    Template,
+    /// Demographic party (PERSON / AGENT / ORGANISATION / GROUP / ROLE /
+    /// versioned party) → "demographic"; an object-URI participant (the party
+    /// uid). Demographic data is person-identifiable, so it is audited under
+    /// the Patient-Record `EventID` family.
+    Demographic,
     /// Login / application activity → "Application Activity"; no clinical object.
     ApplicationActivity,
 }
@@ -125,6 +135,16 @@ impl ObjectClass {
             ObjectClass::Contribution => (EVENT_PATIENT_RECORD_CODE, "contribution"),
             ObjectClass::Directory => (EVENT_PATIENT_RECORD_CODE, "directory"),
             ObjectClass::Query => (EVENT_PATIENT_RECORD_CODE, "query"),
+            // PORT NOTE: the binding doc's §3 EventID table does not define
+            // template provisioning (its data-op family varies `originalText`
+            // under one DCM csd-code). Templates are not patient data, so they
+            // use the Application-Activity code (110100) with
+            // `originalText="template"` — same varied-text pattern.
+            ObjectClass::Template => (EVENT_APPLICATION_ACTIVITY_CODE, "template"),
+            // PORT NOTE: demographic parties are person-identifiable, so they
+            // use the Patient-Record code (110110) with
+            // `originalText="demographic"` (doc §3 pattern; not in its table).
+            ObjectClass::Demographic => (EVENT_PATIENT_RECORD_CODE, "demographic"),
             ObjectClass::ApplicationActivity => {
                 (EVENT_APPLICATION_ACTIVITY_CODE, "Application Activity")
             }
@@ -143,13 +163,17 @@ impl ObjectClass {
         )
     }
 
-    /// Whether this class carries a distinct object-URI participant (in addition
-    /// to the patient one) when an object id is known.
+    /// Whether this class carries an object-URI participant (in addition to the
+    /// patient one, for the patient-centric classes) when an object id is known.
     #[must_use]
     pub const fn has_object_uri(self) -> bool {
         matches!(
             self,
-            ObjectClass::Composition | ObjectClass::Contribution | ObjectClass::Directory
+            ObjectClass::Composition
+                | ObjectClass::Contribution
+                | ObjectClass::Directory
+                | ObjectClass::Template
+                | ObjectClass::Demographic
         )
     }
 

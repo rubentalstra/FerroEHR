@@ -43,8 +43,17 @@ caching / perf tuning (P20).
       `descendants`/`ancestors`/`is_a`/`is_structure_root`) from BASE+RM BMM;
       `is_structure_root` mirrors `ehrbase::storage::codec::STRUCTURE_TYPES`;
       wired into `emit`, the drift script, and `/regen-codegen`.
-- [ ] Path analysis + typing against the generated model
-- [ ] Query IR + AST→IR lowering (incl. CONTAINS trees, version addressing)
+- [x] Path analysis + typing against the generated model
+      — `ehrbase::aql::analyze`: the deterministic path split (structure-hop
+      prefix via `model::is_structure_root` + fragment jsonpath suffix),
+      abstract-slot expansion via `model::descendants`, multi-valued detection
+      (any list/set step), and the `Coercion` decision (Magnitude/Text/Temporal/
+      Boolean/Raw) incl. parent-aware temporal typing of `.../value` ISO leaves.
+- [x] Query IR + AST→IR lowering (incl. CONTAINS trees, version addressing)
+      — `ehrbase::aql::{ir,lower,error,mod}`: typed relational IR (no SQL) +
+      full-envelope lowering + `plan()` entry with `$param` validation; 32 unit
+      tests (path-split table, per-construct accept/reject, CONTAINS trees,
+      version scoping, params). Compiles + clippy-clean + nextest green.
 - [ ] IR→SQL via sea-query (interval joins, typed extraction, magnitude,
       unnesting; LATEST/ALL_VERSIONS)
 - [ ] Execute + `RESULT_SET` assembly; QUERY endpoints live
@@ -59,4 +68,39 @@ caching / perf tuning (P20).
 
 ## Decisions made this phase
 
-- (record IR shape + envelope decisions here)
+- **IR shape (`ehrbase::aql::ir`, packages 2+3).** Sources are a flat `Vec<Source>`
+  addressed by a dense `SourceId(index)`; `Source ∈ {Ehr, Rm, Version}`. The FROM
+  containment is a separate `ContainsTree` (`Operand{source, contained: Option<Contained>}`
+  + `And`/`Or`, `Contained{link: Contains|NotContains, tree}`) referencing sources
+  by id — so cross-VO joins and anti-joins are structural, decided by the SQL
+  package. Data paths are a `LeafPath` split into `anchor: Vec<StructureStep>`
+  (node-row hops) + `fragment: Vec<FragmentStep>` (JSONB tail) + candidate
+  `TypeSet` + `Coercion` + `multi_valued`. WHERE is a typed `Expr` tree; SELECT is
+  `Vec<SelectColumn>`; every identified path is a `PathTarget ∈ {Data, Version, Ehr}`.
+  **No SQL strings anywhere in the IR** (design §Typed IR).
+- **Deviation from the design sketch — `VersionScope`.** The sketch listed a
+  distinct `AtTime(param)` variant; AQL only expresses version-at-time as a
+  standard predicate on version metadata, so all version-selection predicates
+  lower uniformly to `VersionScope::Predicate(VersionMetaPredicate)` and the
+  at-time case is recognised via `VersionScope::is_at_time()` (documented in
+  `ir.rs`). `Latest`/`All` are their own variants (ADR-008 `ALL_VERSIONS` from
+  day one). VERSION scope propagates down the contained subtree to the VO
+  sources.
+- **`Coercion` kept to the design's 5 variants.** `Magnitude` covers both
+  DV_ORDERED value objects (→ `ext.openehr_magnitude`) and numeric primitives
+  (direct cast); the analyzer records the leaf `TypeSet` and the SQL package
+  picks the exact extraction. A mixed/unknown candidate set is `Raw` (guarded
+  runtime dispatch — never a silent wrong-type compare). `.../value` under a
+  temporal DV parent is typed `Temporal` (its `value` is an ISO-8601 String).
+- **Path-split determinism.** Relies on the codec invariant that structure-typed
+  children are always pruned from a node's fragment, so structure hops are a
+  strict prefix. Structure classification uses the generated
+  `model::is_structure_root` (lockstep with `codec::STRUCTURE_TYPES`).
+- **Source scope rule.** An RM FROM class is accepted iff ≥1 concrete descendant
+  is a structure root (addressable in the node store); this cleanly rejects
+  demographic/EXTRACT/DV sources as `UnsupportedSourceClass`.
+- **Envelope errors.** `AqlError = Feature(AqlFeatureError) | Analysis(AnalysisError)`;
+  no Sql/Exec variants yet (next package). Every rejection cites its QUERY spec
+  section. `CurrentDateTimeInOrderBy` is defined but structurally unreachable
+  from the current AST (ORDER BY admits only `identifiedPath`, so `now()` there
+  is a parse-time error) — kept as a guard.
