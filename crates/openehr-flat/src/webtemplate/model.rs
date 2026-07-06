@@ -81,6 +81,12 @@ pub struct WebTemplateNode {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<WebTemplateNode>,
 
+    /// AOM 1.4 `C_ATTRIBUTE.existence` constraints on this node's mandatory RM
+    /// attributes — captured for the validation walk, **not** part of the Better
+    /// web-template JSON (F-07-04), so `#[serde(skip)]`.
+    #[serde(skip)]
+    pub existence: Vec<WebTemplateExistence>,
+
     // ── build-time scratch (never serialized) ────────────────────────────────
     /// Full `parent/segment` id chain, used to scope dedup and cardinality ids.
     #[serde(skip)]
@@ -115,6 +121,7 @@ impl WebTemplateNode {
             depends_on: None,
             cardinalities: Vec::new(),
             children: Vec::new(),
+            existence: Vec::new(),
             full_id: String::new(),
             alt_json_id: None,
             name_code: None,
@@ -266,6 +273,22 @@ pub struct WebTemplateRange {
     pub max_op: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max: Option<serde_json::Value>,
+}
+
+/// An AOM 1.4 `C_ATTRIBUTE.existence` constraint on a single RM attribute
+/// (whether the attribute *field* is present at all — distinct from `cardinality`
+/// = container membership and `occurrences` = per-object-block count; AOM 1.4
+/// `master04-constraint_model_package.adoc` §existence). Captured for the
+/// validation walk only; not part of the Better web-template JSON.
+///
+/// `path` is the absolute archetype path of the constrained attribute
+/// (`{node aqlPath}/{rm_attribute_name}`); `min`/`max` are the existence bounds
+/// (`max == -1` unbounded). A mandatory attribute has `min >= 1`.
+#[derive(Debug, Clone)]
+pub struct WebTemplateExistence {
+    pub min: i32,
+    pub max: i32,
+    pub path: String,
 }
 
 /// A container cardinality: `{min, max, ids}`. `path` is build-time scratch used

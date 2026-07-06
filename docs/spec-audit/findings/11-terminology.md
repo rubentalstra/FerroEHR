@@ -82,7 +82,7 @@ Counts: **critical 0 · major 4 · minor 3 · info 2**.
   (`is_valid_external_code`). Note these are `CODE_PHRASE` slots without a
   `terminology_id: "openehr"` guard — resolve them against the external code
   sets directly, not `is_valid_code`.
-- [ ] fixed
+- [x] fixed
 
 ### F-11-03: Composition validator omits `ISM_TRANSITION.Transition_valid`
 - **Severity:** major
@@ -96,7 +96,7 @@ Counts: **critical 0 · major 4 · minor 3 · info 2**.
   same object and the bundle exposing `is_valid_instruction_transition`.
 - **Fix:** add `("transition", Group::InstructionTransition)` to the
   `ISM_TRANSITION` slot list and a corresponding `Group` variant.
-- [ ] fixed
+- [x] fixed
 
 ### F-11-04: Composition validator omits `TERM_MAPPING.Purpose_valid`
 - **Severity:** major
@@ -112,7 +112,7 @@ Counts: **critical 0 · major 4 · minor 3 · info 2**.
 - **Fix:** when walking a `DV_TEXT`, iterate `mappings[]` and validate each
   `purpose.defining_code` against `term_mapping_purpose` (guarded by
   `terminology_id == "openehr"`).
-- [ ] fixed
+- [x] fixed
 
 ### F-11-05: Validator omits `DV_ORDERED.normal_status` and `PARTY_RELATED.relationship`
 - **Severity:** minor
@@ -128,7 +128,7 @@ Counts: **critical 0 · major 4 · minor 3 · info 2**.
 - **Fix:** add a `DV_ORDERED`-family `normal_status` slot (against the
   `normal_statuses` code set) and a `PARTY_RELATED` `relationship` slot (against
   `subject_relationship`).
-- [ ] fixed
+- [x] fixed
 
 ### F-11-06: `is_valid_normal_status` uses a linear scan instead of an index
 - **Severity:** minor

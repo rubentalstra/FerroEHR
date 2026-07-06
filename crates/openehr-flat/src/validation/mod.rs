@@ -226,6 +226,51 @@ impl Validator {
         }
 
         self.check_cardinalities(instance, wt);
+        self.check_existence(instance, wt);
+    }
+
+    /// AOM 1.4 `C_ATTRIBUTE.existence` check (F-07-04): for each mandatory plain
+    /// RM attribute constrained on this node, verify the attribute *field* is
+    /// present on the matched instance. Existence is distinct from occurrences
+    /// (archetype-node-identified children) and cardinality (container
+    /// membership) — it governs whether the attribute field is there at all — so
+    /// this fills the gap for plain structural attributes the occurrence check
+    /// deliberately skips. Only the lower bound (mandatory presence) is enforced;
+    /// the upper bound is governed by RM single-valuedness / cardinality.
+    fn check_existence(&mut self, instance: &Value, wt: &WebTemplateNode) {
+        for ex in &wt.existence {
+            if ex.min < 1 {
+                continue;
+            }
+            let Some(rel) = ex.path.strip_prefix(&wt.aql_path) else {
+                continue;
+            };
+            let segments = parse_segments(rel);
+            let Some((last, intermediate)) = segments.split_last() else {
+                continue;
+            };
+            // Navigate the intermediate segments to the container node(s).
+            let mut containers: Vec<&Value> = vec![instance];
+            for seg in intermediate {
+                containers = containers
+                    .iter()
+                    .flat_map(|c| get_attr(c, &seg.attr))
+                    .filter(|n| seg.pred.matches(n))
+                    .collect();
+            }
+            for container in &containers {
+                if attr_absent(container, &last.attr) {
+                    self.push(
+                        ex.path.clone(),
+                        format!(
+                            "mandatory attribute '{}' is missing (existence {}..)",
+                            last.attr, ex.min
+                        ),
+                        ValidationKind::Required,
+                    );
+                }
+            }
+        }
     }
 
     /// Resolve a group of `WebTemplate` children sharing an aql path (a single
@@ -495,6 +540,17 @@ fn get_attr<'a>(node: &'a Value, attr: &str) -> Vec<&'a Value> {
         Some(Value::Array(a)) => a.iter().filter(|v| v.is_object()).collect(),
         Some(v @ Value::Object(_)) => vec![v],
         _ => Vec::new(),
+    }
+}
+
+/// Whether an RM attribute field is absent (missing, JSON `null`, or an empty
+/// array) on a node — the negation of "the attribute is present" for the
+/// existence check.
+fn attr_absent(node: &Value, attr: &str) -> bool {
+    match node.get(attr) {
+        None | Some(Value::Null) => true,
+        Some(Value::Array(a)) => a.is_empty(),
+        Some(_) => false,
     }
 }
 

@@ -144,7 +144,7 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/flat/context.rs:336-345` (participation `mode` built with `code_phrase("openehr", "0")`), `:434-439` (`apply_entry_defaults` ISM `current_state` built with `code_phrase("openehr", "0")`). Contrast `crates/openehr-flat/src/flat/from_flat.rs:415-421` and `graph.rs:83-86` which correctly use `openehr::524 "initial"` for ISM `current_state`.
 - **Problem:** `openehr::0` is not a valid openEHR terminology code. Any composition rebuilt from a FLAT/STRUCTURED body that carries `ctx/participation_mode` or `ctx/action_ism_transition_current_state` will contain an invalid `defining_code`, which composition validation (P15) and terminology binding will reject — and it is internally inconsistent with the `524` used elsewhere for the same ISM field.
 - **Fix:** In `context.rs`, for participation `mode` use a valid openEHR "participation mode" group code (default e.g. `openehr::193` "not specified", or leave `mode` absent since it is optional on `PARTICIPATION`), and for ISM `current_state` use `openehr::524 "initial"` to match `from_flat.rs`/`graph.rs`. Factor the ISM default into `graph::fill_structural_mandatory` so there is one source of truth.
-- [ ] fixed
+- [x] fixed
 
 ### F-10-08: DV_MULTIMEDIA is lossy and diverges from the SM object form
 - **Severity:** minor

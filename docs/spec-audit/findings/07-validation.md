@@ -67,7 +67,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/openehr-flat/src/validation/terminology.rs:113-127` (`slots_for` wires only `COMPOSITION.category`, `EVENT_CONTEXT.setting`, `ISM_TRANSITION.current_state`, `PARTICIPATION.function`/`.mode`, `EVENT.math_function`, plus a generic `null_flavour`). The bundle already exposes `is_valid_country`, `is_valid_language`, `is_valid_character_set`, `is_valid_instruction_transition`, `is_valid_audit_change_type`, `is_valid_attestation_reason`, `is_valid_subject_relationship`, `is_valid_term_mapping_purpose`, `is_valid_normal_status`, `is_valid_media_type` (`crates/openehr-term/src/bundle.rs:325-441`) — none are called.
 - **Problem:** Confirms phase-15 F2. Ten+ RM terminology-bound invariants are silently unenforced despite the validators existing. `territory`/`language` are especially load-bearing (every COMPOSITION carries them).
 - **Fix:** Extend `slots_for` / the terminology pass: handle the ISO code-set slots (`language`, `territory`, `encoding`) which use `code_set` not a group id (they are not `terminology_id == "openehr"` — the current `check_openehr_code` early-returns for non-`openehr` terminology, so these need a separate code-set branch keyed on `terminology_id` = `ISO_639-1`/`ISO_3166-1`/`IANA_character-sets`), and wire the remaining openEHR-group slots (`ISM_TRANSITION.transition`, `AUDIT_DETAILS.change_type`, `ATTESTATION.reason`, `PARTY_RELATED.relationship`, `TERM_MAPPING.purpose`, `DV_ORDERED.normal_status`, `DV_MULTIMEDIA.media_type`).
-- [ ] fixed
+- [x] fixed
 
 ### F-07-04: AOM `C_ATTRIBUTE.existence` constraints are neither modeled nor validated
 - **Severity:** major
@@ -75,7 +75,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/openehr-flat/src/webtemplate/model.rs` `WebTemplateNode`/`WebTemplateCardinality` carry `min`/`max` (occurrences) and cardinalities but **no existence field** (grep for `existence` in `crates/openehr-flat/src` is empty); the validator (`mod.rs`) has no existence check.
 - **Problem:** A `C_ATTRIBUTE` with `existence {1..1}` on a single-valued RM attribute (the attribute field must be present) is not enforced. Occurrences on the child node partially overlaps this for archetype-node-identified children, but plain RM attributes constrained only by existence (e.g. a mandatory `value` on an ELEMENT the template requires present) are not checked. Default existence when unstated is `{1..1}` (`master05-cadl.adoc:210`), so the omission is not conservative. **Related:** the AOM 1.4 **VCOC** validity rule (`master05-cadl.adoc:324` — `(Σ occurrences.lower)..(Σ occurrences.upper)` must lie inside the container `cardinality` interval) is an archetype-internal check, not an instance check, so it belongs to OPT ingestion rather than here; noted for completeness.
 - **Fix:** Capture `existence` on WebTemplate nodes during OPT ingestion (from `C_ATTRIBUTE.existence` in `openehr_its::opt14`; default `{1..1}`) and add an existence check to the walk (attribute present ⇒ within existence bounds; absent + existence min ≥ 1 ⇒ `Required`). Distinguish it from occurrences per `master04-constraint_model_package.adoc:33` (existence = "will the field be there at all"; cardinality = container membership; occurrences = per-object-block count).
-- [ ] fixed
+- [x] fixed
 
 ### F-07-05: Extra / unmatched instance content is not rejected (open-world walk) — spec-underdetermined in AOM 1.4
 - **Severity:** minor

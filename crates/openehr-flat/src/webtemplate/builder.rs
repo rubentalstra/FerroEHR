@@ -27,8 +27,8 @@ use openehr_its::opt14::{
 
 use super::inputs::{self, Labels};
 use super::model::{
-    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateInput,
-    WebTemplateInputType, WebTemplateNode,
+    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateExistence,
+    WebTemplateInput, WebTemplateInputType, WebTemplateNode,
 };
 
 const CURRENT_VERSION: &str = "2.3";
@@ -333,6 +333,12 @@ fn build_children(ctx: &Ctx, co: &CObject, node: &mut WebTemplateNode, arch_id: 
     }
 
     node.cardinalities = cardinalities(co, &node.aql_path);
+    // Existence is captured only for structural (attribute-recursing) nodes; a
+    // DATA_VALUE leaf's constraints (`magnitude`, `is_integral`, `value`, …) are
+    // handled by `inputs`/leaf checks, not attribute navigation (F-07-04).
+    if recurse_attrs {
+        node.existence = existence_constraints(co, &node.aql_path);
+    }
     node.children = children;
     post_process(node);
 }
@@ -422,7 +428,9 @@ fn post_process_observation(node: &mut WebTemplateNode) {
 fn compact(mut node: WebTemplateNode, depth: usize) -> Option<WebTemplateNode> {
     // Medium: hoist ALWAYS/SINGLE-compactable wrapper children into this node.
     let children = std::mem::take(&mut node.children);
-    node.children = get_compacted(children, &mut node.cardinalities);
+    let mut existence = std::mem::take(&mut node.existence);
+    node.children = get_compacted(children, &mut node.cardinalities, &mut existence);
+    node.existence = existence;
     // Recurse into the (post-hoist) children.
     let children = std::mem::take(&mut node.children);
     node.children = children
@@ -435,16 +443,26 @@ fn compact(mut node: WebTemplateNode, depth: usize) -> Option<WebTemplateNode> {
 fn get_compacted(
     children: Vec<WebTemplateNode>,
     parent_cardinalities: &mut Vec<WebTemplateCardinality>,
+    parent_existence: &mut Vec<WebTemplateExistence>,
 ) -> Vec<WebTemplateNode> {
     let originals: Vec<(String, i32)> = children
         .iter()
         .map(|c| (c.rm_type.clone(), c.max))
         .collect();
     let mut out = Vec::new();
-    for child in children {
+    for mut child in children {
         if is_compactable(&child, &originals) {
             parent_cardinalities.append(&mut child.cardinalities.clone());
-            out.extend(get_compacted(child.children, parent_cardinalities));
+            // A hoisted wrapper's existence constraints (on its own attributes,
+            // e.g. HISTORY.events) reference absolute archetype paths, so they
+            // stay valid when re-homed on the parent — mirror the cardinality
+            // propagation so the walk still enforces them (F-07-04).
+            parent_existence.append(&mut std::mem::take(&mut child.existence));
+            out.extend(get_compacted(
+                child.children,
+                parent_cardinalities,
+                parent_existence,
+            ));
         } else {
             out.push(child);
         }
@@ -639,6 +657,56 @@ fn cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
                 max,
                 ids: None,
                 path: format!("{node_path}/{}", m.rm_attribute_name),
+            });
+        }
+    }
+    out
+}
+
+// ── existence (AOM 1.4 C_ATTRIBUTE.existence) ─────────────────────────────────
+
+/// Capture the AOM 1.4 `C_ATTRIBUTE.existence` constraints for the mandatory,
+/// plain (non-archetype-node-identified) single-valued RM attributes of `co`,
+/// keyed by their absolute archetype path (F-07-04).
+///
+/// Scope: only `C_SINGLE_ATTRIBUTE`s with an existence lower bound `>= 1` whose
+/// constraint children carry **no** `node_id`. Archetype-node-identified children
+/// are governed by *occurrences* (checked in the walk), and container membership
+/// by *cardinality* — existence covers exactly the remaining case: a mandatory
+/// plain RM attribute field (e.g. an ELEMENT `value`, a `HISTORY.events`,
+/// `COMPOSITION.language`) that must be present. `name` is excluded (a Better
+/// `SKIP_PATH`, matched by the archetype-node predicate instead).
+///
+/// PORT NOTE: AOM 1.4 (`master04-constraint_model_package.adoc` §existence) makes
+/// existence "always required" with an unstated default of `{1..1}`; the OPT XML
+/// always serialises it, and we honour the declared value (biasing toward
+/// confident violations — an unstated/`{0..1}` existence is not enforced).
+fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExistence> {
+    let mut out = Vec::new();
+    for attr in inputs::attributes(co) {
+        let openehr_its::opt14::CAttribute::CSingleAttribute(s) = attr else {
+            continue;
+        };
+        let (min, max) = occurrences(&s.existence);
+        let min = min.unwrap_or(0);
+        // Require at least one non-primitive (object-valued) constraint child:
+        // this targets real structural attributes (`value`, `language`, `data`,
+        // `events`, `items`, …) and excludes function/primitive constraints
+        // (`is_integral`, `lower_included`, …) that never appear as navigable
+        // instance attributes.
+        let object_valued = s
+            .children
+            .iter()
+            .any(|c| !matches!(c, CObject::CPrimitiveObject(_)));
+        if min >= 1
+            && s.rm_attribute_name != "name"
+            && object_valued
+            && s.children.iter().all(|c| object_node_id(c).is_empty())
+        {
+            out.push(WebTemplateExistence {
+                min,
+                max,
+                path: format!("{node_path}/{}", s.rm_attribute_name),
             });
         }
     }

@@ -334,12 +334,18 @@ fn participations_from_ctx(flat: &Map<String, Value>) -> Vec<Value> {
             party_identified(flat, name, id, "PERSON"),
         );
         if let Some(m) = mode {
+            // PORT NOTE (F-10-07): `ctx/participation_mode` carries a free-text
+            // mode value with no code, but `PARTICIPATION.mode` is a
+            // `DV_CODED_TEXT` coded from the openEHR `participation_mode` group.
+            // We default the code to the group's `193` "not specified" (a valid
+            // member) rather than the fabricated, invalid `openehr::0` — so the
+            // rebuilt composition passes terminology validation.
             p.insert(
                 "mode".into(),
                 json!({
                     "_type": "DV_CODED_TEXT",
                     "value": m,
-                    "defining_code": code_phrase("openehr", "0"),
+                    "defining_code": code_phrase("openehr", "193"),
                 }),
             );
         }
@@ -432,9 +438,14 @@ fn walk_entry_defaults(node: &mut Value, ctx: &EntryDefaults<'_>) {
         }
         Some("ACTION") => {
             if let Some(s) = ctx.ism_state {
+                // PORT NOTE (F-10-07): `ISM_TRANSITION.current_state` is coded
+                // from the openEHR `instruction_states` group; default the code
+                // to `524` "initial" (matching `graph::fill_structural_mandatory`
+                // and `from_flat`, the one source of truth) rather than the
+                // invalid, fabricated `openehr::0`.
                 m.insert(
                     "ism_transition".to_owned(),
-                    json!({"_type": "ISM_TRANSITION", "current_state": {"_type": "DV_CODED_TEXT", "value": s, "defining_code": code_phrase("openehr", "0")}}),
+                    json!({"_type": "ISM_TRANSITION", "current_state": {"_type": "DV_CODED_TEXT", "value": s, "defining_code": code_phrase("openehr", "524")}}),
                 );
             }
         }
