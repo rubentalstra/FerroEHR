@@ -147,3 +147,19 @@ Total: **180 findings**.
 
 - 2026-07-06: audit executed (13 parallel area audits); 180 findings; this
   document + findings committed on `claude/spec-audit-full`.
+- 2026-07-06: area 14 added (ADR/documentation fact-check) — 17 findings,
+  16 fixed same day (ADR status/amendment banners; living docs realigned;
+  PROGRESS.md reconciled — actual current phase is P16).
+- 2026-07-06: **Wave 1 complete** — all 8 criticals fixed:
+  W1-A/B/D (service: commit_audit, preceding_version_uid, numeric
+  change_type, lifecycle_state incl. 523|deleted|, deleted-read 204, delete
+  preconditions, contribution + templateless validation), W1-C (409 on
+  duplicate template/stored-query), W1-E (XML archetype_node_id attribute
+  closure + codegen guard).
+- 2026-07-06: Wave 2 progress — **W2-A done** (typed `ServiceResponse`/
+  `ResourceMeta` envelope; ETag/Location per operation; Prefer
+  minimal/representation; bare EHR_STATUS version GET), **W2-D done**
+  (explicit `_type` dispatch for polymorphic slots), **W2-E done** (AQL
+  lexer/parser conformance, tests 21→48). W2-L (RM/BASE spec functions) and
+  W2-F/G/J (item tags, stored-query matching, EHR_ACCESS, duplicate-subject
+  409, at-time ops) in flight.
