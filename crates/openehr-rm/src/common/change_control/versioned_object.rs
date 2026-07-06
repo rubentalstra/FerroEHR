@@ -10,7 +10,7 @@ use crate::ehr::versioned_ehr_status::VersionedEhrStatus;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ObjectRef;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Version control abstraction, defining semantics for versioning one complex object.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -26,7 +26,7 @@ pub struct VersionedObjectData {
 
 /// Version control abstraction, defining semantics for versioning one complex object.
 /// Polymorphic slot of `VERSIONED_OBJECT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum VersionedObject {
     VersionedComposition(VersionedComposition),
@@ -35,4 +35,54 @@ pub enum VersionedObject {
     VersionedFolder(VersionedFolder),
     VersionedParty(VersionedParty),
     VersionedObject(VersionedObjectData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for VersionedObject {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("VERSIONED_COMPOSITION") => {
+                ::core::result::Result::Ok(Self::VersionedComposition(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("VERSIONED_EHR_ACCESS") => {
+                ::core::result::Result::Ok(Self::VersionedEhrAccess(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("VERSIONED_EHR_STATUS") => {
+                ::core::result::Result::Ok(Self::VersionedEhrStatus(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("VERSIONED_FOLDER") => {
+                ::core::result::Result::Ok(Self::VersionedFolder(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("VERSIONED_OBJECT") => {
+                ::core::result::Result::Ok(Self::VersionedObject(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("VERSIONED_PARTY") => {
+                ::core::result::Result::Ok(Self::VersionedParty(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::VersionedObject(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "VERSIONED_OBJECT: unexpected `_type` {__other:?} (expected one of: VERSIONED_COMPOSITION, VERSIONED_EHR_ACCESS, VERSIONED_EHR_STATUS, VERSIONED_FOLDER, VERSIONED_OBJECT, VERSIONED_PARTY)"
+                )))
+            }
+        }
+    }
 }

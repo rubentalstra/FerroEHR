@@ -2,14 +2,56 @@
 
 use crate::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use crate::am24::aom2::archetype::template_overlay::TemplateOverlay;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// The `ARCHETYPE` class defines the core formal model of the root object of any archetype or template. It includes only basic identification information, and otherwise provides the structural connections from the Archetype to its constituent parts, i.e. definition (a `C_COMPLEX_OBJECT`), terminology (`ARCHEYTPE_TERMINOLOGY`) and so on.
 /// It is the parent class of all concrete types of archetype.
 /// Closed subtype set of `ARCHETYPE` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Archetype {
     AuthoredArchetype(Box<AuthoredArchetype>),
     TemplateOverlay(Box<TemplateOverlay>),
+}
+
+impl<'de> ::serde::Deserialize<'de> for Archetype {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("AUTHORED_ARCHETYPE") => {
+                ::core::result::Result::Ok(Self::AuthoredArchetype(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("OPERATIONAL_TEMPLATE") => {
+                ::core::result::Result::Ok(Self::AuthoredArchetype(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TEMPLATE") => {
+                ::core::result::Result::Ok(Self::AuthoredArchetype(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TEMPLATE_OVERLAY") => {
+                ::core::result::Result::Ok(Self::TemplateOverlay(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "ARCHETYPE: missing required `_type` on polymorphic slot (expected one of: AUTHORED_ARCHETYPE, OPERATIONAL_TEMPLATE, TEMPLATE, TEMPLATE_OVERLAY)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "ARCHETYPE: unexpected `_type` {__other:?} (expected one of: AUTHORED_ARCHETYPE, OPERATIONAL_TEMPLATE, TEMPLATE, TEMPLATE_OVERLAY)"
+                )))
+            }
+        }
+    }
 }

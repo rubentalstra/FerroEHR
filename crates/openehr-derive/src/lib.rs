@@ -8,9 +8,14 @@
 //!   when empty. (This matches serde's `skip_serializing_if` conventions, done
 //!   here so the generated struct itself carries no serde attributes.)
 //! - **Deserialize**: accepts input with or without `_type`; if present, it
-//!   must equal the class name (mismatch is an error — this is what lets a
-//!   `#[serde(untagged)]` enum of these types dispatch on the tag). Unknown
-//!   fields are ignored (openEHR models evolve additively).
+//!   must equal the class name (mismatch is an error). This tag check is what
+//!   lets the abstract-slot enums (emitted by `openehr-codegen`) dispatch on
+//!   `_type` — see their hand-rolled `Deserialize`, which *requires* `_type` on
+//!   an abstract polymorphic slot and rejects a `_type`-less value rather than
+//!   guessing structurally (audit F-04-01/03). Unknown wire keys are ignored;
+//!   this deliberate tolerance (a superset of the ITS-JSON schema's
+//!   `additionalProperties: false`) is documented as a `PORT NOTE` on the shadow
+//!   struct below (F-04-02).
 //!
 //! Usage (emitted by `openehr-codegen`):
 //! ```ignore
@@ -110,10 +115,17 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     }
     let (ser_impl_g, _, ser_where_g) = ser_generics.split_for_impl();
 
-    // Deserialize impl generics: prepend `'de` + a `Deserialize<'de>` bound each.
+    // Deserialize impl generics: prepend `'de` + a `DeserializeOwned` bound each.
+    // openEHR RM types are pure owned data (no borrowed fields), and the
+    // abstract-slot enums dispatch on `_type` by buffering the value into an owned
+    // `serde_json::Value` and re-deserializing with `serde_json::from_value`, which
+    // requires the payload — hence any generic parameter — to be `DeserializeOwned`
+    // (`for<'a> Deserialize<'a>`). Bounding the parameters here keeps a generic
+    // container (`History<T>` ⊇ `Vec<Event<T>>`) composable with those enums.
     let mut de_generics = input.generics.clone();
     for tp in de_generics.type_params_mut() {
-        tp.bounds.push(syn::parse_quote!(::serde::Deserialize<'de>));
+        tp.bounds
+            .push(syn::parse_quote!(::serde::de::DeserializeOwned));
     }
     de_generics.params.insert(0, syn::parse_quote!('de));
     let (de_impl_g, _, de_where_g) = de_generics.split_for_impl();
@@ -150,7 +162,7 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let de_bounds: Vec<String> = input
         .generics
         .type_params()
-        .map(|tp| format!("{}: ::serde::Deserialize<'de>", tp.ident))
+        .map(|tp| format!("{}: ::serde::de::DeserializeOwned", tp.ident))
         .collect();
     let shadow_bound_attr = if de_bounds.is_empty() {
         quote! {}
@@ -236,6 +248,24 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         const _: () = {
             #(#default_fns)*
 
+            // PORT NOTE (F-04-02): unknown wire keys are deliberately *ignored*
+            // (no `#[serde(deny_unknown_fields)]`), a documented superset of the
+            // ITS-JSON schema's `additionalProperties: false`. Two reasons make
+            // strict rejection the wrong default at the deserialize layer:
+            //  1. RM-version skew — the generated types are RM 1.2.0 but the
+            //     vendored ITS-JSON schema + SDK corpus are RM 1.1.0-era, so a
+            //     conformant-for-its-version payload can legitimately carry keys
+            //     this pinned model does not place identically.
+            //  2. The vendored SDK corpus itself ships fixtures with stray keys
+            //     (e.g. `feeder_system_audit` on an INSTRUCTION), and the
+            //     openehr-its corpus-read fidelity gate requires them to load.
+            // The strict wire-shape contract (`_type` present + no unknown keys)
+            // is available separately via `openehr_its::json::validate_canonical`
+            // (the ITS-JSON schema), to be run at the ingestion edge where strict
+            // 400/422 rejection is desired (F-04-05). The *polymorphic-slot*
+            // `_type` requirement — the one that caused silent type corruption —
+            // is enforced unconditionally by the enums' hand-rolled `_type`
+            // dispatch (F-04-01/03), independent of this leniency.
             #[derive(::serde::Deserialize)]
             #[allow(non_camel_case_types, non_snake_case)]
             #shadow_bound_attr

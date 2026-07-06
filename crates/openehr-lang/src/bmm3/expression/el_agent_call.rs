@@ -2,13 +2,45 @@
 
 use crate::bmm3::expression::el_function_call::ElFunctionCall;
 use crate::bmm3::statement::bmm_procedure_call::BmmProcedureCall;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// A call made to a 'closed' agent, i.e. one with no remaining open arguments.
 /// Closed subtype set of `EL_AGENT_CALL` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElAgentCall {
     BmmProcedureCall(BmmProcedureCall),
     ElFunctionCall(ElFunctionCall),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ElAgentCall {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => {
+                ::core::result::Result::Ok(Self::BmmProcedureCall(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_FUNCTION_CALL") => {
+                ::core::result::Result::Ok(Self::ElFunctionCall(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "EL_AGENT_CALL: missing required `_type` on polymorphic slot (expected one of: BMM_PROCEDURE_CALL, EL_FUNCTION_CALL)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "EL_AGENT_CALL: unexpected `_type` {__other:?} (expected one of: BMM_PROCEDURE_CALL, EL_FUNCTION_CALL)"
+                )))
+            }
+        }
+    }
 }

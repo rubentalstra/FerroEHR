@@ -4,7 +4,7 @@
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm3::core::model::bmm_model::BmmModel;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Core properties of BMM_SCHEMA.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -38,10 +38,45 @@ pub struct BmmSchemaCoreData {
 
 /// Core properties of BMM_SCHEMA.
 /// Polymorphic slot of `BMM_SCHEMA_CORE` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmSchemaCore {
     BmmModel(BmmModel),
     PBmmSchema(PBmmSchema),
     BmmSchemaCore(BmmSchemaCoreData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for BmmSchemaCore {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("BMM_MODEL") => {
+                ::core::result::Result::Ok(Self::BmmModel(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_SCHEMA_CORE") => {
+                ::core::result::Result::Ok(Self::BmmSchemaCore(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SCHEMA") => {
+                ::core::result::Result::Ok(Self::PBmmSchema(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmSchemaCore(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "BMM_SCHEMA_CORE: unexpected `_type` {__other:?} (expected one of: BMM_MODEL, BMM_SCHEMA_CORE, P_BMM_SCHEMA)"
+                )))
+            }
+        }
+    }
 }

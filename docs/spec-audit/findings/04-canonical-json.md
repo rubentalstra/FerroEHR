@@ -74,7 +74,23 @@ the emitter/derive as the fix site.
   `_type`-less abstract payloads are rejected before decomposition. Option (a)
   is the spec-faithful mechanism (it mirrors the schema's `if _type == … then
   $ref` construction) and should be the emitter change.
-- [ ] fixed
+- **Resolution (W2-D):** Implemented option (a). The `emit_enum` path in
+  `crates/openehr-codegen/src/emit.rs` now emits a hand-rolled `Deserialize` for
+  every abstract/polymorphic slot enum, dispatching on `_type` (via a
+  `serde_json::Value` buffer + `serde_json::from_value`) using the same
+  descendant→direct-variant map the XML runtime uses for `xsi:type`
+  (`Model::xsi_dispatch`). It faithfully mirrors the schema's two shapes: an
+  **abstract** slot (`self_data == false`: `DATA_VALUE`, `UID`, `VERSION`, …)
+  *requires* `_type` and rejects a `_type`-less value; a **concrete
+  polymorphic** slot (`self_data == true`: `DV_TEXT`) makes `_type` optional and
+  defaults a `_type`-less value to the base type (matching the schema's `if not
+  required _type then <base>` arm — this is why `name` DV_TEXT fields without
+  `_type` still round-trip). Deep descendants route through the intermediate
+  variant, which recurses. `Serialize` keeps `#[serde(untagged)]` (output
+  byte-identical). Verified: corpus round-trip gates green + new tests in
+  `crates/openehr-rm/tests/type_dispatch.rs` (`_type`-less abstract → error;
+  wrong `_type` → error naming it; deep-descendant routing).
+- [x] fixed
 
 ### F-04-02: Unknown fields are silently dropped on deserialize (lossy), diverging from the schema's `additionalProperties: false`
 
@@ -101,7 +117,21 @@ the emitter/derive as the fix site.
   F-04-01/F-04-05 fix), or (b) if additive tolerance is deliberately desired,
   document that it is a deliberate superset of the schema and that unknown keys
   are dropped. Do not leave it as an undocumented silent drop.
-- [ ] fixed
+- **Resolution (W2-D):** Chose option (b) — documented tolerance — recorded as a
+  `PORT NOTE` on the shadow struct in `crates/openehr-derive/src/lib.rs` (plus
+  the crate-level doc). A blanket `#[serde(deny_unknown_fields)]` was
+  implemented and tested first, but rejected because it broke the mandated
+  corpus-read gate: the vendored SDK corpus itself ships fixtures with stray
+  keys (`feeder_system_audit` placed directly on an `INSTRUCTION`/`ADMIN_ENTRY`,
+  which is non-conformant), and the RM 1.2.0 types read an RM 1.1.0-era corpus
+  (documented version skew). The PORT NOTE records that unknown keys are
+  deliberately ignored as a superset of `additionalProperties: false`, and that
+  the strict wire-shape contract remains available via `validate_canonical`
+  (F-04-05) at the ingestion edge. The *polymorphic-slot `_type`* requirement —
+  the one that caused silent type corruption — is now enforced unconditionally
+  (F-04-01), independent of this key-leniency. Test:
+  `unknown_keys_are_tolerated_on_deserialize` in `openehr-rm/tests/type_dispatch.rs`.
+- [x] fixed
 
 ### F-04-03: Untagged-enum deserialization yields opaque "did not match any variant" errors for malformed abstract-slot payloads
 
@@ -122,7 +152,13 @@ the emitter/derive as the fix site.
   `Deserialize` that reads `_type` first and dispatches to the one matching
   variant preserves that variant's precise error. (Resolving F-04-01 this way
   resolves F-04-03 for free.)
-- [ ] fixed
+- **Resolution (W2-D):** Resolved with F-04-01. The dispatcher deserializes the
+  one matching variant via `serde_json::from_value`, whose error is mapped
+  through `serde::de::Error::custom`, so the real inner error survives. Proven
+  by `malformed_variant_surfaces_the_real_inner_error` in
+  `openehr-rm/tests/type_dispatch.rs`: a `units`-less `DV_QUANTITY` now yields an
+  error that names `units` and is *not* the opaque "did not match any variant".
+- [x] fixed
 
 ### F-04-04: `DV_COUNT.magnitude` is `i64`; openEHR `Integer` is 32-bit
 

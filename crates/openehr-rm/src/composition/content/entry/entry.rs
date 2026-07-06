@@ -5,13 +5,13 @@ use crate::composition::content::entry::admin_entry::AdminEntry;
 use crate::composition::content::entry::evaluation::Evaluation;
 use crate::composition::content::entry::instruction::Instruction;
 use crate::composition::content::entry::observation::Observation;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// The abstract parent of all `ENTRY` subtypes. An `ENTRY` is the root of a logical item of  hard  clinical information created in the  clinical statement  context, within a clinical session. There can be numerous such contexts in a clinical session. Observations and other Entry types only ever document information captured/created in the event documented by the enclosing Composition.
 ///
 /// An `ENTRY` is also the minimal unit of information any query should return, since a whole `ENTRY` (including subparts) records spatial structure, timing information, and contextual information, as well as the subject and generator of the information.
 /// Closed subtype set of `ENTRY` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Entry {
     Action(Action),
@@ -19,4 +19,49 @@ pub enum Entry {
     Evaluation(Evaluation),
     Instruction(Instruction),
     Observation(Observation),
+}
+
+impl<'de> ::serde::Deserialize<'de> for Entry {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("ACTION") => ::core::result::Result::Ok(Self::Action(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("ADMIN_ENTRY") => {
+                ::core::result::Result::Ok(Self::AdminEntry(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EVALUATION") => {
+                ::core::result::Result::Ok(Self::Evaluation(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("INSTRUCTION") => {
+                ::core::result::Result::Ok(Self::Instruction(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("OBSERVATION") => {
+                ::core::result::Result::Ok(Self::Observation(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "ENTRY: missing required `_type` on polymorphic slot (expected one of: ACTION, ADMIN_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "ENTRY: unexpected `_type` {__other:?} (expected one of: ACTION, ADMIN_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION)"
+                )))
+            }
+        }
+    }
 }

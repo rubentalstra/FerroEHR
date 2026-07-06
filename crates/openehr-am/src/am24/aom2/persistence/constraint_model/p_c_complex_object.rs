@@ -5,7 +5,7 @@ use crate::am24::aom2::persistence::constraint_model::p_c_archetype_root::PCArch
 use crate::am24::aom2::persistence::constraint_model::p_c_attribute::PCAttribute;
 use crate::am24::aom2::persistence::constraint_model::p_c_attribute_tuple::PCAttributeTuple;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Constraint on complex objects, i.e. any object that consists of other object constraints.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -31,9 +31,39 @@ pub struct PCComplexObjectData {
 
 /// Constraint on complex objects, i.e. any object that consists of other object constraints.
 /// Polymorphic slot of `P_C_COMPLEX_OBJECT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PCComplexObject {
     PCArchetypeRoot(PCArchetypeRoot),
     PCComplexObject(PCComplexObjectData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for PCComplexObject {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("P_C_ARCHETYPE_ROOT") => {
+                ::core::result::Result::Ok(Self::PCArchetypeRoot(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_C_COMPLEX_OBJECT") => {
+                ::core::result::Result::Ok(Self::PCComplexObject(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::PCComplexObject(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "P_C_COMPLEX_OBJECT: unexpected `_type` {__other:?} (expected one of: P_C_ARCHETYPE_ROOT, P_C_COMPLEX_OBJECT)"
+                )))
+            }
+        }
+    }
 }

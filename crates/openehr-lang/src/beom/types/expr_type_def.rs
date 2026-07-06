@@ -11,11 +11,11 @@ use crate::beom::types::type_def_string::TypeDefString;
 use crate::beom::types::type_def_terminology_code::TypeDefTerminologyCode;
 use crate::beom::types::type_def_time::TypeDefTime;
 use crate::beom::types::type_def_uri::TypeDefUri;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Ancestor class for type definitions known in the openEHR Expression formalism.
 /// Closed subtype set of `EXPR_TYPE_DEF` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExprTypeDef {
     TypeDefBoolean(TypeDefBoolean),
@@ -29,4 +29,81 @@ pub enum ExprTypeDef {
     TypeDefTerminologyCode(TypeDefTerminologyCode),
     TypeDefTime(TypeDefTime),
     TypeDefUri(TypeDefUri),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ExprTypeDef {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("TYPE_DEF_BOOLEAN") => {
+                ::core::result::Result::Ok(Self::TypeDefBoolean(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_DATE") => {
+                ::core::result::Result::Ok(Self::TypeDefDate(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_DATE_TIME") => {
+                ::core::result::Result::Ok(Self::TypeDefDateTime(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_DURATION") => {
+                ::core::result::Result::Ok(Self::TypeDefDuration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_INTEGER") => {
+                ::core::result::Result::Ok(Self::TypeDefInteger(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_OBJECT_REF") => {
+                ::core::result::Result::Ok(Self::TypeDefObjectRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_REAL") => {
+                ::core::result::Result::Ok(Self::TypeDefReal(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_STRING") => {
+                ::core::result::Result::Ok(Self::TypeDefString(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_TERMINOLOGY_CODE") => {
+                ::core::result::Result::Ok(Self::TypeDefTerminologyCode(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_TIME") => {
+                ::core::result::Result::Ok(Self::TypeDefTime(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TYPE_DEF_URI") => {
+                ::core::result::Result::Ok(Self::TypeDefUri(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "EXPR_TYPE_DEF: missing required `_type` on polymorphic slot (expected one of: TYPE_DEF_BOOLEAN, TYPE_DEF_DATE, TYPE_DEF_DATE_TIME, TYPE_DEF_DURATION, TYPE_DEF_INTEGER, TYPE_DEF_OBJECT_REF, TYPE_DEF_REAL, TYPE_DEF_STRING, TYPE_DEF_TERMINOLOGY_CODE, TYPE_DEF_TIME, TYPE_DEF_URI)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "EXPR_TYPE_DEF: unexpected `_type` {__other:?} (expected one of: TYPE_DEF_BOOLEAN, TYPE_DEF_DATE, TYPE_DEF_DATE_TIME, TYPE_DEF_DURATION, TYPE_DEF_INTEGER, TYPE_DEF_OBJECT_REF, TYPE_DEF_REAL, TYPE_DEF_STRING, TYPE_DEF_TERMINOLOGY_CODE, TYPE_DEF_TIME, TYPE_DEF_URI)"
+                )))
+            }
+        }
+    }
 }

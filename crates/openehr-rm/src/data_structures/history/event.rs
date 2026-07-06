@@ -2,13 +2,48 @@
 
 use crate::data_structures::history::interval_event::IntervalEvent;
 use crate::data_structures::history::point_event::PointEvent;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Defines the abstract notion of a single event in a series. This class is generic, allowing types to be generated which are locked to particular spatial types, such as `EVENT<ITEM_LIST>`. Subtypes express point or intveral data.
 /// Closed subtype set of `EVENT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Event<T> {
     IntervalEvent(IntervalEvent<T>),
     PointEvent(PointEvent<T>),
+}
+
+impl<'de, T> ::serde::Deserialize<'de> for Event<T>
+where
+    T: ::serde::de::DeserializeOwned,
+{
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("INTERVAL_EVENT") => {
+                ::core::result::Result::Ok(Self::IntervalEvent(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("POINT_EVENT") => {
+                ::core::result::Result::Ok(Self::PointEvent(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "EVENT: missing required `_type` on polymorphic slot (expected one of: INTERVAL_EVENT, POINT_EVENT)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "EVENT: unexpected `_type` {__other:?} (expected one of: INTERVAL_EVENT, POINT_EVENT)"
+                )))
+            }
+        }
+    }
 }

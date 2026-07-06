@@ -5,7 +5,7 @@ use crate::common::generic::party_related::PartyRelated;
 use crate::data_types::basic::dv_identifier::DvIdentifier;
 use openehr_base::prelude::PartyRef;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Proxy data for an identified party other than the subject of the record, minimally consisting of human-readable identifier(s), such as name, formal (and possibly computable) identifiers such as NHS number, and an optional link to external data. There must be at least one of name, identifier or external_ref present.
 ///
@@ -30,9 +30,39 @@ pub struct PartyIdentifiedData {
 ///
 /// Should not be used to include patient identifying information.
 /// Polymorphic slot of `PARTY_IDENTIFIED` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PartyIdentified {
     PartyRelated(PartyRelated),
     PartyIdentified(PartyIdentifiedData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for PartyIdentified {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("PARTY_IDENTIFIED") => {
+                ::core::result::Result::Ok(Self::PartyIdentified(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("PARTY_RELATED") => {
+                ::core::result::Result::Ok(Self::PartyRelated(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::PartyIdentified(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "PARTY_IDENTIFIED: unexpected `_type` {__other:?} (expected one of: PARTY_IDENTIFIED, PARTY_RELATED)"
+                )))
+            }
+        }
+    }
 }

@@ -6,7 +6,7 @@ use crate::bmm3::core::entity::bmm_procedure_type::BmmProcedureType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Meta-type for routine objects.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -25,10 +25,45 @@ pub struct BmmRoutineTypeData {
 
 /// Meta-type for routine objects.
 /// Polymorphic slot of `BMM_ROUTINE_TYPE` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmRoutineType {
     BmmFunctionType(BmmFunctionType),
     BmmProcedureType(BmmProcedureType),
     BmmRoutineType(BmmRoutineTypeData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for BmmRoutineType {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => {
+                ::core::result::Result::Ok(Self::BmmFunctionType(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => {
+                ::core::result::Result::Ok(Self::BmmProcedureType(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => {
+                ::core::result::Result::Ok(Self::BmmRoutineType(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmRoutineType(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "BMM_ROUTINE_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_ROUTINE_TYPE)"
+                )))
+            }
+        }
+    }
 }

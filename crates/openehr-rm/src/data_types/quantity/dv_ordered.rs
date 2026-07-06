@@ -9,13 +9,13 @@ use crate::data_types::quantity::dv_ordinal::DvOrdinal;
 use crate::data_types::quantity::dv_proportion::DvProportion;
 use crate::data_types::quantity::dv_quantity::DvQuantity;
 use crate::data_types::quantity::dv_scale::DvScale;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract class defining the concept of ordered values, which includes ordinals as well as true quantities. It defines the functions  `<` and `_is_strictly_comparable_to()_`, the latter of which must evaluate to `True` for instances being compared with the  `<` function, or used as limits in the `DV_INTERVAL<T>` class.
 ///
 /// Data value types which are to be used as limits in the `DV_INTERVAL<T>` class must inherit from this class, and implement the function `_is_strictly_comparable_to()_` to ensure that instances compare meaningfully. For example, instances of `DV_QUANTITY` can only be compared if they measure the same kind of physical quantity.
 /// Closed subtype set of `DV_ORDERED` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvOrdered {
     DvCount(DvCount),
@@ -27,4 +27,63 @@ pub enum DvOrdered {
     DvQuantity(DvQuantity),
     DvScale(DvScale),
     DvTime(DvTime),
+}
+
+impl<'de> ::serde::Deserialize<'de> for DvOrdered {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("DV_COUNT") => ::core::result::Result::Ok(Self::DvCount(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("DV_DATE") => ::core::result::Result::Ok(Self::DvDate(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("DV_DATE_TIME") => {
+                ::core::result::Result::Ok(Self::DvDateTime(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_DURATION") => {
+                ::core::result::Result::Ok(Self::DvDuration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_ORDINAL") => {
+                ::core::result::Result::Ok(Self::DvOrdinal(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_PROPORTION") => {
+                ::core::result::Result::Ok(Self::DvProportion(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_QUANTITY") => {
+                ::core::result::Result::Ok(Self::DvQuantity(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_SCALE") => ::core::result::Result::Ok(Self::DvScale(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("DV_TIME") => ::core::result::Result::Ok(Self::DvTime(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "DV_ORDERED: missing required `_type` on polymorphic slot (expected one of: DV_COUNT, DV_DATE, DV_DATE_TIME, DV_DURATION, DV_ORDINAL, DV_PROPORTION, DV_QUANTITY, DV_SCALE, DV_TIME)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "DV_ORDERED: unexpected `_type` {__other:?} (expected one of: DV_COUNT, DV_DATE, DV_DATE_TIME, DV_DURATION, DV_ORDINAL, DV_PROPORTION, DV_QUANTITY, DV_SCALE, DV_TIME)"
+                )))
+            }
+        }
+    }
 }

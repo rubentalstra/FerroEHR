@@ -2,13 +2,45 @@
 
 use crate::data_types::encapsulated::dv_multimedia::DvMultimedia;
 use crate::data_types::encapsulated::dv_parsable::DvParsable;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract class defining the common meta-data of all types of encapsulated data.
 /// Closed subtype set of `DV_ENCAPSULATED` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvEncapsulated {
     DvMultimedia(DvMultimedia),
     DvParsable(DvParsable),
+}
+
+impl<'de> ::serde::Deserialize<'de> for DvEncapsulated {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("DV_MULTIMEDIA") => {
+                ::core::result::Result::Ok(Self::DvMultimedia(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_PARSABLE") => {
+                ::core::result::Result::Ok(Self::DvParsable(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "DV_ENCAPSULATED: missing required `_type` on polymorphic slot (expected one of: DV_MULTIMEDIA, DV_PARSABLE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "DV_ENCAPSULATED: unexpected `_type` {__other:?} (expected one of: DV_MULTIMEDIA, DV_PARSABLE)"
+                )))
+            }
+        }
+    }
 }

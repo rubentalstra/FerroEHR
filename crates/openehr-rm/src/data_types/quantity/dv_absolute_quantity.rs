@@ -3,14 +3,47 @@
 use crate::data_types::quantity::date_time::dv_date::DvDate;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::date_time::dv_time::DvTime;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract class defining the concept of quantified entities whose values are absolute with respect to an origin. Dates and Times are the main example.
 /// Closed subtype set of `DV_ABSOLUTE_QUANTITY` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvAbsoluteQuantity {
     DvDate(DvDate),
     DvDateTime(DvDateTime),
     DvTime(DvTime),
+}
+
+impl<'de> ::serde::Deserialize<'de> for DvAbsoluteQuantity {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("DV_DATE") => ::core::result::Result::Ok(Self::DvDate(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("DV_DATE_TIME") => {
+                ::core::result::Result::Ok(Self::DvDateTime(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_TIME") => ::core::result::Result::Ok(Self::DvTime(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "DV_ABSOLUTE_QUANTITY: missing required `_type` on polymorphic slot (expected one of: DV_DATE, DV_DATE_TIME, DV_TIME)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "DV_ABSOLUTE_QUANTITY: unexpected `_type` {__other:?} (expected one of: DV_DATE, DV_DATE_TIME, DV_TIME)"
+                )))
+            }
+        }
+    }
 }

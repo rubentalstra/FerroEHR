@@ -4,15 +4,62 @@ use crate::bmm_persistence::p_bmm_container_type::PBmmContainerType;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::bmm_persistence::p_bmm_open_type::PBmmOpenType;
 use crate::bmm_persistence::p_bmm_simple_type::PBmmSimpleType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Persistent form of `BMM_TYPE`.
 /// Closed subtype set of `P_BMM_TYPE` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PBmmType {
     PBmmContainerType(PBmmContainerType),
     PBmmGenericType(PBmmGenericType),
     PBmmOpenType(PBmmOpenType),
     PBmmSimpleType(PBmmSimpleType),
+}
+
+impl<'de> ::serde::Deserialize<'de> for PBmmType {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("P_BMM_CONTAINER_TYPE") => {
+                ::core::result::Result::Ok(Self::PBmmContainerType(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_GENERIC_TYPE") => {
+                ::core::result::Result::Ok(Self::PBmmGenericType(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_TYPE") => {
+                ::core::result::Result::Ok(Self::PBmmContainerType(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_OPEN_TYPE") => {
+                ::core::result::Result::Ok(Self::PBmmOpenType(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SIMPLE_TYPE") => {
+                ::core::result::Result::Ok(Self::PBmmSimpleType(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "P_BMM_TYPE: missing required `_type` on polymorphic slot (expected one of: P_BMM_CONTAINER_TYPE, P_BMM_GENERIC_TYPE, P_BMM_INDEXED_CONTAINER_TYPE, P_BMM_OPEN_TYPE, P_BMM_SIMPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "P_BMM_TYPE: unexpected `_type` {__other:?} (expected one of: P_BMM_CONTAINER_TYPE, P_BMM_GENERIC_TYPE, P_BMM_INDEXED_CONTAINER_TYPE, P_BMM_OPEN_TYPE, P_BMM_SIMPLE_TYPE)"
+                )))
+            }
+        }
+    }
 }

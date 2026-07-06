@@ -3,7 +3,7 @@
 
 use crate::data_types::quantity::dv_proportion::DvProportion;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Class of enumeration constants defining types of proportion for the `DV_PROPORTION` class.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -12,9 +12,39 @@ pub struct ProportionKindData {}
 
 /// Class of enumeration constants defining types of proportion for the `DV_PROPORTION` class.
 /// Polymorphic slot of `PROPORTION_KIND` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ProportionKind {
     DvProportion(DvProportion),
     ProportionKind(ProportionKindData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ProportionKind {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("DV_PROPORTION") => {
+                ::core::result::Result::Ok(Self::DvProportion(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("PROPORTION_KIND") => {
+                ::core::result::Result::Ok(Self::ProportionKind(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::ProportionKind(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "PROPORTION_KIND: unexpected `_type` {__other:?} (expected one of: DV_PROPORTION, PROPORTION_KIND)"
+                )))
+            }
+        }
+    }
 }
