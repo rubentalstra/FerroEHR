@@ -506,6 +506,121 @@ async fn contribution_commits_a_composition_atomically() {
 }
 
 #[tokio::test]
+async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combos() {
+    // F-06-06 / W2-C: an inbound `250|amendment|` is stored and echoed verbatim
+    // (never narrowed to `modification` — RM change_control §"Contributions":
+    // a correction is committed with change type 250|amendment|), and
+    // spec-invalid combinations (creation on an existing object; an
+    // out-of-group code) are rejected as 422.
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("contribamend").await);
+
+    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
+    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+
+    let created = svc
+        .contribution_create(
+            params(json!({ "ehr_id": ehr_id })),
+            json!({
+                "versions": [{
+                    "data": composition("v1"),
+                    "commit_audit": { "change_type": change_type("249", "creation") }
+                }]
+            }),
+        )
+        .await
+        .expect("creation contribution");
+    let ovid_v1 = created.body["versions"][0]["id"]["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    // Amendment (a correction) of the committed composition.
+    let amended = svc
+        .contribution_create(
+            params(json!({ "ehr_id": ehr_id })),
+            json!({
+                "versions": [{
+                    "data": composition("v2 corrected"),
+                    "preceding_version_uid": ovid_v1,
+                    "commit_audit": { "change_type": change_type("250", "amendment") }
+                }]
+            }),
+        )
+        .await
+        .expect("amendment contribution");
+    let ovid_v2 = amended.body["versions"][0]["id"]["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    // With no contribution-level audit given, the aggregate change type is the
+    // members' shared code (RM change_control §"Contributions": "any code:
+    // when all member versions have the same change type…").
+    assert_eq!(
+        amended.body["audit"]["change_type"]["defining_code"]["code_string"],
+        "250"
+    );
+    assert_eq!(amended.body["audit"]["change_type"]["value"], "amendment");
+
+    // The stored ORIGINAL_VERSION echoes the client's change type verbatim
+    // (code 250 + rubric "amendment"), not a rewritten "modification".
+    let (vo_id, _) = ovid_v2.split_once("::").unwrap();
+    let version = svc
+        .versioned_composition_version_get_by_id(params(json!({
+            "ehr_id": ehr_id,
+            "versioned_object_uid": vo_id,
+            "version_uid": ovid_v2
+        })))
+        .await
+        .expect("amended version");
+    assert_eq!(
+        version.body["commit_audit"]["change_type"]["defining_code"]["code_string"],
+        "250"
+    );
+    assert_eq!(
+        version.body["commit_audit"]["change_type"]["value"],
+        "amendment"
+    );
+
+    // Invalid combo: 249|creation| on an existing object (preceding uid set).
+    let bad_creation = svc
+        .contribution_create(
+            params(json!({ "ehr_id": ehr_id })),
+            json!({
+                "versions": [{
+                    "data": composition("v3"),
+                    "preceding_version_uid": ovid_v2,
+                    "commit_audit": { "change_type": change_type("249", "creation") }
+                }]
+            }),
+        )
+        .await;
+    assert!(
+        matches!(bad_creation, Err(ApiError::Unprocessable(_))),
+        "creation on an existing object must 422, got {bad_creation:?}"
+    );
+
+    // Invalid code: not a member of the audit_change_type group
+    // (AUDIT_DETAILS.Change_type_valid).
+    let bad_code = svc
+        .contribution_create(
+            params(json!({ "ehr_id": ehr_id })),
+            json!({
+                "versions": [{
+                    "data": composition("v3"),
+                    "preceding_version_uid": ovid_v2,
+                    "commit_audit": { "change_type": change_type("999", "bogus") }
+                }]
+            }),
+        )
+        .await;
+    assert!(
+        matches!(bad_code, Err(ApiError::Unprocessable(_))),
+        "an out-of-group change_type must 422, got {bad_code:?}"
+    );
+}
+
+#[tokio::test]
 async fn templateless_composition_still_gets_rm_and_terminology_validation() {
     // F-07-02: a COMPOSITION without a declared template_id must still fail on
     // RM-invariant / RM-terminology violations (here: an invalid category code),

@@ -192,7 +192,31 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   from a 3-way `Action`; keep `Action` only for the storage branch
   (create/modify/delete node handling). Allow the update endpoints to pass a
   caller-specified change type where the API supports it.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-C — `contribution.rs::classify` resolves each
+  VERSION's `commit_audit.change_type` through the single code⇄rubric home
+  (`codes.rs`; `normalize_change_type`'s pass-unknown-verbatim behaviour
+  replaced by a validating `change_type_code` → out-of-group tokens are now
+  rejected 422, `AUDIT_DETAILS.Change_type_valid`) and **preserves the code
+  verbatim** in the stored audit: `250|amendment|`, `252|synthesis|`,
+  `253|unknown|`, `816`, `817` are all content-carrying commits against an
+  existing object, never rewritten to `modification`. `Action` survives only
+  as the storage branch. Spec-invalid combos rejected per RM `change_control`
+  §"Contributions": `249|creation|` with a `preceding_version_uid` (creation
+  commits a *new* VERSIONED_OBJECT); any non-`249` code without one (a first
+  version is `249`); `523|deleted|` carrying data ("data attribute is set to
+  Void") or missing `preceding_version_uid`; `666|attestation|` rejected as
+  not-a-version-commit (Stage-1 — no ATTESTATION storage, F-06-10). The
+  contribution-level audit, when the client supplies none, now follows the
+  spec's aggregate guidance (all-same → that code, mixture → `251`) instead of
+  a hardcoded `creation`; a supplied one is validated + preserved. Unit tests
+  (`classify_*`, `contribution_aggregate_change_type`) + PG e2e
+  (`contribution_preserves_the_client_change_type_and_rejects_invalid_combos`)
+  cite the clauses. PORT NOTE on the remaining "where the API supports it"
+  half: the ITS-REST single-object update operations (PUT composition /
+  ehr_status / directory) define **no** audit/change_type channel (no request
+  body audit, no `openEHR-AUDIT_DETAILS` param in the 1.0.3 contract), so
+  their `modification` default stands and an amendment is recorded via the
+  CONTRIBUTION endpoint — which now supports it end to end.)*
 
 ### F-06-07: EHR_ACCESS not created; `EHR.ehr_access` omitted from the EHR response
 - **Severity:** major

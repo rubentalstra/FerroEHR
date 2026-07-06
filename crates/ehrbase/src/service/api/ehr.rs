@@ -34,6 +34,7 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::service::EhrbaseService;
 use crate::service::ehr::default_ehr_status;
+use crate::service::version_id;
 
 /// Wrap a JSON array of item-tag objects as a plain (header-free) response.
 fn tags_response(tags: Vec<Value>) -> ServiceResponse {
@@ -94,7 +95,7 @@ impl EhrService for EhrbaseService {
         params: EhrStatusGetByVersionIdParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = parse_version_uid(&params.version_uid)?;
+        let (vo_id, version) = version_id::parse_version_uid(&params.version_uid)?;
         // F-01-03: the bare EHR_STATUS at that version, not an ORIGINAL_VERSION.
         Ok(self.status_by_version(ehr_id, vo_id, version).await?)
     }
@@ -137,7 +138,7 @@ impl EhrService for EhrbaseService {
         params: VersionedEhrStatusVersionGetByIdParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = parse_version_uid(&params.version_uid)?;
+        let (vo_id, version) = version_id::parse_version_uid(&params.version_uid)?;
         Ok(ServiceResponse::plain(
             self.status_version(ehr_id, vo_id, version).await?,
         ))
@@ -168,7 +169,7 @@ impl EhrService for EhrbaseService {
         params: CompositionGetParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = parse_object_id(&params.uid_based_id)?;
+        let (vo_id, version) = version_id::parse_uid_based_id(&params.uid_based_id)?;
         match (version, params.version_at_time.as_deref()) {
             (Some(v), _) => Ok(self.read_composition(ehr_id, vo_id, Some(v)).await?),
             (None, Some(at)) => Ok(self
@@ -184,8 +185,8 @@ impl EhrService for EhrbaseService {
         body: Value,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
-        let expected = expected_from_if_match(&params.if_match);
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
+        let expected = version_id::expected_from_if_match(&params.if_match);
         Ok(self
             .update_composition(ehr_id, vo_id, body, expected)
             .await?)
@@ -198,7 +199,7 @@ impl EhrService for EhrbaseService {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
         // composition_delete.yaml: the uid_based_id MUST be an OBJECT_VERSION_ID
         // (the preceding_version_uid to delete); a bare HIER_OBJECT_ID → 400.
-        let (vo_id, expected) = parse_version_uid(&params.uid_based_id)?;
+        let (vo_id, expected) = version_id::parse_version_uid(&params.uid_based_id)?;
         Ok(self.delete_composition(ehr_id, vo_id, expected).await?)
     }
 
@@ -207,7 +208,7 @@ impl EhrService for EhrbaseService {
         params: VersionedCompositionGetParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.versioned_object_uid)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.versioned_object_uid)?;
         Ok(ServiceResponse::plain(
             self.versioned_composition(ehr_id, vo_id).await?,
         ))
@@ -221,7 +222,7 @@ impl EhrService for EhrbaseService {
         // an ORIGINAL_VERSION with `200_VERSION_of_COMPOSITION_at_time`
         // ETag/Location meta.
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.versioned_object_uid)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.versioned_object_uid)?;
         let at = params
             .version_at_time
             .as_deref()
@@ -235,7 +236,7 @@ impl EhrService for EhrbaseService {
         params: VersionedCompositionVersionGetByIdParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = parse_version_uid(&params.version_uid)?;
+        let (vo_id, version) = version_id::parse_version_uid(&params.version_uid)?;
         Ok(ServiceResponse::plain(
             self.composition_version(ehr_id, vo_id, version).await?,
         ))
@@ -246,7 +247,7 @@ impl EhrService for EhrbaseService {
         params: VersionedCompositionRevisionHistoryParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.versioned_object_uid)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.versioned_object_uid)?;
         Ok(ServiceResponse::plain(
             self.revision_history(ehr_id, vo_id).await?,
         ))
@@ -283,7 +284,7 @@ impl EhrService for EhrbaseService {
         body: Value,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let expected = expected_from_if_match(&params.if_match);
+        let expected = version_id::expected_from_if_match(&params.if_match);
         Ok(self.update_directory(ehr_id, body, expected).await?)
     }
 
@@ -292,7 +293,7 @@ impl EhrService for EhrbaseService {
         params: DirectoryDeleteParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let expected = expected_from_if_match(&params.if_match);
+        let expected = version_id::expected_from_if_match(&params.if_match);
         Ok(self.delete_directory(ehr_id, expected).await?)
     }
 
@@ -301,7 +302,7 @@ impl EhrService for EhrbaseService {
         params: DirectoryGetByVersionIdParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = parse_version_uid(&params.version_uid)?;
+        let (vo_id, version) = version_id::parse_version_uid(&params.version_uid)?;
         Ok(self.directory_version(ehr_id, vo_id, version).await?)
     }
 
@@ -350,7 +351,7 @@ impl EhrService for EhrbaseService {
         params: CompositionTagsGetParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
         Ok(tags_response(self.target_tags(ehr_id, vo_id).await?))
     }
 
@@ -360,7 +361,7 @@ impl EhrService for EhrbaseService {
         body: Vec<Value>,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
         Ok(tags_response(
             self.replace_tags(ehr_id, vo_id, "COMPOSITION", body)
                 .await?,
@@ -372,7 +373,7 @@ impl EhrService for EhrbaseService {
         params: CompositionTagsDeleteParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
         self.delete_tag(ehr_id, vo_id, &params.key).await?;
         Ok(ServiceResponse::plain(Value::Null))
     }
@@ -382,7 +383,7 @@ impl EhrService for EhrbaseService {
         params: EhrStatusTagsGetParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
         Ok(tags_response(self.target_tags(ehr_id, vo_id).await?))
     }
 
@@ -392,7 +393,7 @@ impl EhrService for EhrbaseService {
         body: Vec<Value>,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
         Ok(tags_response(
             self.replace_tags(ehr_id, vo_id, "EHR_STATUS", body).await?,
         ))
@@ -403,7 +404,7 @@ impl EhrService for EhrbaseService {
         params: EhrStatusTagsDeleteParams,
     ) -> Result<ServiceResponse, ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
         self.delete_tag(ehr_id, vo_id, &params.key).await?;
         Ok(ServiceResponse::plain(Value::Null))
     }
@@ -422,7 +423,7 @@ impl EhrService for EhrbaseService {
         uid_based_id: String,
     ) -> Result<Option<ResourceMeta>, ApiError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
-        let (vo_id, _) = parse_object_id(&uid_based_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
         Ok(self.composition_current_meta(ehr_id, vo_id).await?)
     }
 
@@ -442,39 +443,4 @@ fn parse_ehr_id(raw: &str) -> Result<Uuid, ApiError> {
 fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, ApiError> {
     raw.parse::<jiff::Timestamp>()
         .map_err(|_| ApiError::BadRequest(format!("invalid version_at_time: {raw}")))
-}
-
-/// Parse a `uid_based_id`/`versioned_object_uid`: a bare `HIER_OBJECT_ID`
-/// (`{uuid}`) or an `OBJECT_VERSION_ID` (`{uuid}::{system}::{version}`) → the
-/// object id plus an optional version.
-fn parse_object_id(raw: &str) -> Result<(Uuid, Option<i32>), ApiError> {
-    let head = raw.split("::").next().unwrap_or(raw);
-    let vo_id = Uuid::parse_str(head)
-        .map_err(|_| ApiError::BadRequest(format!("invalid object id: {raw}")))?;
-    let version = if raw.contains("::") {
-        raw.rsplit("::").next().and_then(|v| v.parse::<i32>().ok())
-    } else {
-        None
-    };
-    Ok((vo_id, version))
-}
-
-/// Parse a `version_uid` (`OBJECT_VERSION_ID`), which must carry a version.
-fn parse_version_uid(raw: &str) -> Result<(Uuid, i32), ApiError> {
-    match parse_object_id(raw)? {
-        (vo_id, Some(version)) => Ok((vo_id, version)),
-        (_, None) => Err(ApiError::BadRequest(format!(
-            "expected an OBJECT_VERSION_ID (uuid::system::version), got {raw}"
-        ))),
-    }
-}
-
-/// The expected version from an `If-Match` header (the version tail of an
-/// `OBJECT_VERSION_ID`, or a bare integer); `None` if unparseable.
-fn expected_from_if_match(if_match: &str) -> Option<i32> {
-    let token = if_match.trim().trim_matches('"');
-    token
-        .rsplit("::")
-        .next()
-        .and_then(|v| v.parse::<i32>().ok())
 }

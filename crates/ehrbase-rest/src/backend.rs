@@ -9,21 +9,29 @@
 //! until then the default [`StubBackend`] answers every operation with
 //! `NotImplemented`.
 //!
-//! `Backend` is the union of the four generated ITS-REST server traits
-//! (demographic / definition / query / admin) plus [`EhrService`] — the EHR
-//! group's application seam (W2-A). The generated `EhrApi` trait exchanges a
-//! bare `serde_json::Value` and so cannot carry the spec-mandated
-//! `ETag`/`Location` headers or drive `Prefer`; [`EhrService`] supersedes it for
-//! the whole EHR group, returning a [`ServiceResponse`] (RM payload + typed
-//! [`ResourceMeta`]) from which the HTTP edge derives those headers. The
-//! generated `EhrApi` is no longer part of the seam.
+//! `Backend` is the union of the seams the server actually dispatches to:
+//! the generated `DefinitionApi` (templates + stored queries), [`EhrService`]
+//! — the EHR group's application seam (W2-A) — and [`WebTemplateService`],
+//! the single service-owned `WebTemplate` resolution the FLAT/STRUCTURED and
+//! `wt+json` surfaces consume (W2-K/F-13-02). The generated `EhrApi` trait
+//! exchanges a bare `serde_json::Value` and so cannot carry the spec-mandated
+//! `ETag`/`Location` headers or drive `Prefer`; [`EhrService`] supersedes it
+//! for the whole EHR group, returning a [`ServiceResponse`] (RM payload +
+//! typed [`ResourceMeta`]) from which the HTTP edge derives those headers.
+//!
+//! The generated `DemographicApi` / `QueryApi` / `AdminApi` groups have **no
+//! implemented operations yet** (demographic: a future RM phase; query/AQL:
+//! P16; admin: later), so they are not part of the seam — their routes answer
+//! through the generic not-implemented dispatcher (F-13-03). Each trait joins
+//! `Backend` in the phase that first implements it.
+
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde_json::Value;
 
-use openehr_its::rest::generated::admin::AdminApi;
+use openehr_flat::WebTemplate;
 use openehr_its::rest::generated::definition::DefinitionApi;
-use openehr_its::rest::generated::demographic::DemographicApi;
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
     CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
@@ -38,10 +46,32 @@ use openehr_its::rest::generated::ehr::{
     VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
     VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
 };
-use openehr_its::rest::generated::query::QueryApi;
 use openehr_its::rest::runtime::ApiError;
 
 use crate::response::{ResourceMeta, ServiceResponse};
+
+/// The single `WebTemplate` resolution seam (W2-K / finding F-13-02).
+///
+/// A stored OPT 1.4 template has exactly **one** built [`WebTemplate`]
+/// representation, owned and cached by the service (one `moka` cache keyed by
+/// template id). Every consumer — composition validation, the FLAT/STRUCTURED
+/// (simSDT/structSDT) converters, and the Better `wt+json` template GET — goes
+/// through this method, so the `WebTemplate` a composition is validated against
+/// is byte-identical to the one its FLAT round-trip uses. The REST layer holds
+/// no cache of its own and never re-fetches/re-parses OPT XML.
+///
+/// An unknown template id resolves as `Unprocessable` (→ ITS-REST `422`): on a
+/// composition commit an unknown referenced template is a *semantic* error
+/// (`422_COMPOSITION.yaml` — "the underlying template is not known"; CNF
+/// `create_composition-event_bad_opt`).
+#[async_trait]
+pub trait WebTemplateService: Send + Sync {
+    /// Resolve the (service-cached) [`WebTemplate`] for a stored operational
+    /// template.
+    async fn web_template(&self, _template_id: &str) -> Result<Arc<WebTemplate>, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+}
 
 /// The EHR group's application seam (W2-A) — the whole EHR / `EHR_STATUS` /
 /// COMPOSITION / DIRECTORY / CONTRIBUTION surface, returning a typed
@@ -399,31 +429,19 @@ pub trait EhrService: Send + Sync {
     }
 }
 
-/// The full server backend: everything the ITS-REST surface can dispatch to.
+/// The full server backend: everything the ITS-REST surface dispatches to.
 /// Implemented once, on the application's service (or on [`StubBackend`]).
+/// Groups with no implemented operations (demographic / query / admin) are
+/// deliberately absent — their routes answer 501 without touching the backend
+/// (F-13-03); each generated trait joins this union in the phase that first
+/// implements it.
 pub trait Backend:
-    EhrService
-    + DemographicApi
-    + DefinitionApi
-    + QueryApi
-    + AdminApi
-    + Send
-    + Sync
-    + std::fmt::Debug
-    + 'static
+    EhrService + DefinitionApi + WebTemplateService + Send + Sync + std::fmt::Debug + 'static
 {
 }
 
 impl<T> Backend for T where
-    T: EhrService
-        + DemographicApi
-        + DefinitionApi
-        + QueryApi
-        + AdminApi
-        + Send
-        + Sync
-        + std::fmt::Debug
-        + 'static
+    T: EhrService + DefinitionApi + WebTemplateService + Send + Sync + std::fmt::Debug + 'static
 {
 }
 
@@ -437,7 +455,5 @@ impl<T> Backend for T where
 pub struct StubBackend;
 
 impl EhrService for StubBackend {}
-impl DemographicApi for StubBackend {}
 impl DefinitionApi for StubBackend {}
-impl QueryApi for StubBackend {}
-impl AdminApi for StubBackend {}
+impl WebTemplateService for StubBackend {}

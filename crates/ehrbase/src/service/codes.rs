@@ -20,7 +20,12 @@ const AUDIT_CHANGE_TYPE: &str = "audit_change_type";
 /// The `version_lifecycle_state` openEHR terminology group id.
 const VERSION_LIFECYCLE_STATE: &str = "version_lifecycle_state";
 
-/// `audit_change_type` group codes used by the service write paths.
+/// `audit_change_type` group codes used by the service write paths. The full
+/// group (`TERM/computable/XML/en/openehr_terminology.xml`) is `249 creation`,
+/// `250 amendment`, `251 modification`, `252 synthesis`, `523 deleted`,
+/// `666 attestation`, `816 restoration`, `817 format conversion`,
+/// `253 unknown`; membership checks go through [`change_type_code`], so only
+/// the codes the service handles by name get a constant here.
 pub(super) mod change_type {
     /// `249|creation|` — first version of a versioned object.
     pub(crate) const CREATION: &str = "249";
@@ -28,6 +33,9 @@ pub(super) mod change_type {
     pub(crate) const MODIFICATION: &str = "251";
     /// `523|deleted|` — a logical deletion.
     pub(crate) const DELETED: &str = "523";
+    /// `666|attestation|` — attaches an `ATTESTATION` to an existing version
+    /// (not a version commit; rejected on the contribution surface — F-06-10).
+    pub(crate) const ATTESTATION: &str = "666";
 }
 
 /// `version_lifecycle_state` group codes.
@@ -38,19 +46,20 @@ pub(super) mod lifecycle {
     pub(crate) const DELETED: &str = "523";
 }
 
-/// Normalise an inbound audit `change_type` token — either a numeric group code
-/// (`"249"`) or a rubric (`"creation"`) — to its canonical numeric group code,
-/// validated against `audit_change_type`. Unknown tokens are returned verbatim
-/// (the terminology pass surfaces the invalidity elsewhere).
-pub(super) fn normalize_change_type(token: &str) -> String {
+/// Resolve an inbound audit `change_type` token — either a numeric group code
+/// (`"249"`) or a rubric (`"creation"`) — to its canonical numeric group code.
+/// `None` when the token is not a member of the `audit_change_type` group
+/// (RM `AUDIT_DETAILS.Change_type_valid` — callers must reject, never store,
+/// an out-of-group change type; finding F-06-06).
+pub(super) fn change_type_code(token: &str) -> Option<String> {
     let t = openehr();
     if t.is_valid_audit_change_type(token) {
-        return token.to_owned();
+        return Some(token.to_owned());
     }
     t.concepts_in_group(AUDIT_CHANGE_TYPE)
         .iter()
         .find(|c| c.rubric.eq_ignore_ascii_case(token))
-        .map_or_else(|| token.to_owned(), |c| c.id.clone())
+        .map(|c| c.id.clone())
 }
 
 /// The rubric (English display text) for an `audit_change_type` code; falls back
@@ -105,11 +114,18 @@ mod tests {
     }
 
     #[test]
-    fn normalize_accepts_code_or_rubric() {
-        assert_eq!(normalize_change_type("249"), "249");
-        assert_eq!(normalize_change_type("creation"), "249");
-        assert_eq!(normalize_change_type("Deleted"), "523");
-        // amendment / synthesis round-trip too (group has 9 codes).
-        assert_eq!(normalize_change_type("amendment"), "250");
+    fn change_type_code_accepts_code_or_rubric_and_rejects_non_members() {
+        assert_eq!(change_type_code("249").as_deref(), Some("249"));
+        assert_eq!(change_type_code("creation").as_deref(), Some("249"));
+        assert_eq!(change_type_code("Deleted").as_deref(), Some("523"));
+        // The full group round-trips (9 codes — verified against the bundle).
+        assert_eq!(change_type_code("amendment").as_deref(), Some("250"));
+        assert_eq!(change_type_code("synthesis").as_deref(), Some("252"));
+        assert_eq!(change_type_code("unknown").as_deref(), Some("253"));
+        assert_eq!(change_type_code("666").as_deref(), Some("666"));
+        // Out-of-group tokens are rejected, not passed through
+        // (AUDIT_DETAILS.Change_type_valid; F-06-06).
+        assert_eq!(change_type_code("not-a-change-type"), None);
+        assert_eq!(change_type_code("532"), None); // lifecycle code, wrong group
     }
 }

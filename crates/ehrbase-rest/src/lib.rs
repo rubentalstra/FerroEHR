@@ -27,7 +27,7 @@ mod state;
 mod status;
 
 pub use auth::{AuthMethod, Authenticator, Principal};
-pub use backend::{Backend, EhrService, StubBackend};
+pub use backend::{Backend, EhrService, StubBackend, WebTemplateService};
 pub use config::RestConfig;
 pub use error::RestError;
 pub use response::{ResourceMeta, ServiceResponse};

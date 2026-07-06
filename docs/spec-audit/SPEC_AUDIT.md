@@ -112,12 +112,22 @@ Total: **180 findings**.
       Last-Modified + `Prefer` handling across all groups — F-01-01/02/03,
       F-02-02/03, F-03-01/04, F-09-04. Backend seam returns typed results, not
       bare `Value`.
-- [ ] W2-B **`ObjectVersionId`/UID value types in BASE `*_impl.rs`** —
+- [x] W2-B **`ObjectVersionId`/UID value types in BASE `*_impl.rs`** —
       F-12-03 + F-13-01: one parser/accessor set; delete the 5 hand-rolled
-      copies.
-- [ ] W2-C **Lifecycle state machine** — F-06-04: real `lifecycle_state`
+      copies. (BASE accessors/strict `FromStr` landed with W2-L; 2026-07-06 the
+      app followed — all four hand-rolled `::` decoders deleted, one strict
+      `ehrbase::service::version_id` module over
+      `openehr_base::ObjectVersionId`; divergent splits resolved to the BASE
+      3-part lexical form, branch ids rejected with a trunk-only error.)
+- [x] W2-C **Lifecycle state machine** — F-06-04: real `lifecycle_state`
       column/enum (complete/incomplete/deleted/abandoned/inactive), change-kind
-      fidelity (amendment vs modification) — F-06-06.
+      fidelity (amendment vs modification) — F-06-06. (F-06-04 landed with
+      Wave 1; 2026-07-06 F-06-06: full `audit_change_type` fidelity — client
+      codes validated against the group and preserved verbatim
+      (250/252/253/816/817 never narrowed to `modification`), spec-invalid
+      combos → 422 (creation-on-existing, non-creation first version,
+      deleted-with-data, attestation), contribution audit follows the spec
+      aggregate rule; `service/codes.rs` is the single code⇄rubric home.)
 - [ ] W2-D **Explicit `_type` dispatcher** in `openehr-derive` for abstract
       slots — F-04-01/02/03.
 - [ ] W2-E **AQL front-end fixes** — F-08-01/02/03 + corpus-harness expansion.
@@ -139,9 +149,13 @@ Total: **180 findings**.
       → F-01-10 also closed; DB-level subject uniqueness (`ehr_subject_uq`) →
       409; both `*_version_get_at_time` ops on the envelope seam with
       `200_VERSION_at_time` headers → F-02-13 also closed.)
-- [ ] W2-K **WebTemplate single-source resolution** — F-13-02 (one cache,
+- [x] W2-K **WebTemplate single-source resolution** — F-13-02 (one cache,
       service-owned); WebTemplate required-fields vs ITS-REST schema —
-      F-10-03/04.
+      F-10-03/04. (F-10-03/04 landed with the openehr-flat bundle; 2026-07-06
+      F-13-02: new `WebTemplateService` seam on `Backend`, the service-owned
+      moka cache is the only cache; `AppState.web_templates` + the REST
+      OPT-XML re-fetch/re-parse path deleted — FLAT/STRUCTURED/`wt+json` now
+      share the exact WebTemplate composition validation uses.)
 - [ ] W2-L **RM spec functions layer** — F-12-01/02/04/05 (paths, magnitude,
       comparison, EVENT invariants) — feeds P16 AQL.
 
@@ -159,13 +173,26 @@ Total: **180 findings**.
       numeric parse already fixed by W2-E). The `openehr-query` AQL *grammar*
       parser stays distinct from RM-instance navigation — unifying the two is
       P16 work (per F-12-02 note).
-- [ ] W3-B Generic NotImplemented dispatcher (~500 LoC gone) — F-13-03.
+- [x] W3-B Generic NotImplemented dispatcher (~500 LoC gone) — F-13-03.
+      (2026-07-06 — demographic/query/admin dispatch files deleted (546 LoC),
+      one generic `not_implemented` dispatcher over the generated `ROUTES`
+      tables; `Backend` slimmed to `EhrService + DefinitionApi +
+      WebTemplateService` (each generated trait rejoins in the phase that
+      implements it — query at P16); 501 wire body proven identical by an
+      http.rs body-equality test per group.)
 - [x] W3-C `ehrbase-quirks` feature actually gates Better-isms — F-13-25.
       (2026-07-06 — `|unit_system`/`|unit_display_name` emit + read-back gated
       behind `#[cfg(feature = "ehrbase-quirks")]`; `ehrbase-compat` enables the
       feature. Decision recorded: the RM 1.2.0 fields are genuine but their FLAT
       suffix form is a Better extra, so gating is correct.)
-- [ ] W3-D opt14 ↔ am14 constraint-model consolidation or ADR — F-09-02.
+- [x] W3-D opt14 ↔ am14 constraint-model consolidation or ADR — F-09-02.
+      (2026-07-06 — verdict: **not reconcilable**, keep both deliberately;
+      **ADR-009** records the field-by-field divergence; drift-guard sentinel
+      `openehr-its/tests/opt14_am14_divergence.rs` added. Also fixed the opt14
+      minors: F-09-03 (T_CONSTRAINT generated — default_value overlays
+      preserved), F-09-05 (IndexMap document order + 91-file parse→ToXml→
+      re-parse round-trip gate), F-09-06/07 (PORT NOTEs). F-09-04/08 remain
+      app-crate work.)
 - [x] W3-E FLAT context fabricated codes (`openehr::0`) — F-10-07 (done earlier);
       hardcoded `rm_version 1.0.4` — F-10-09 (2026-07-06 — single
       `flat::defaults::RM_VERSION = "1.2.0"` constant tied to the RM pin).
@@ -232,3 +259,46 @@ Total: **180 findings**.
   duplicate `path_parsers()` build collapsed; F-13-52 stale doc corrected.
   `openehr-rm`/`openehr-flat`/`openehr-query` build + clippy + fmt clean, 279
   tests pass, workspace builds green.
+- 2026-07-06: **W3-D done** (F-09-02 + opt14 minors F-09-03/05/06/07). Verdict
+  from the field-by-field comparison: the XSD-shaped `opt14` and BMM-shaped
+  `am14` constraint models are **not reconcilable** (disjoint domain-type sets,
+  typed vs `Any` assumed values, `DV_ORDINAL` vs `ORDINAL` lists, `IntervalOf*`
+  vs `Interval<T>`, OPT-only envelope types) — consolidation would be the lossy
+  shortcut; both are kept deliberately per **ADR-009** (rationale duplicated in
+  the `emit_opt.rs` header PORT NOTE) with a new drift-guard sentinel
+  (`openehr-its/tests/opt14_am14_divergence.rs`: exhaustive matches over both
+  models + pinned asymmetry inventory). Emitter changes (never hand-edits):
+  `T_CONSTRAINT` generated (`Option<TConstraint>` with typed `default_value`
+  overlays; `T_VIEW` stays the one documented opaque type; `rm_type_name`
+  joined the lenient defaults for differential overlay children);
+  `StringDictionaryItem` groups moved `BTreeMap` → order-preserving `IndexMap`
+  (new `OrderedDict` target in `emit_xml.rs`; RM `Hash` path byte-identical);
+  public `opt14::to_xml` added; PORT NOTEs for the verbatim `*_KIND` codes
+  (F-09-06) and the `0..1` multiplicity fallback (F-09-07). New corpus gates:
+  parse→`ToXml`→re-parse structural round-trip over all 91 `.opt` files,
+  dictionary-order preservation on a non-alphabetical fixture, T_CONSTRAINT
+  default-value assertion. `openehr-its` 21/21 + `openehr-flat` 76/76 green,
+  regeneration idempotent, `emit-xml` output unchanged, clippy + fmt clean.
+  F-09-04/08 left open (app-crate scope, W2-A stream).
+- 2026-07-06: **W2-B, W2-C, W2-K, W3-B done** (F-13-01/02/03, F-06-06).
+  App-side OBJECT_VERSION_ID handling consolidated onto the BASE value types:
+  the four hand-rolled `::` splitters deleted, one strict
+  `ehrbase::service::version_id` decoder over
+  `openehr_base::ObjectVersionId::from_str` (malformed `::` shapes now
+  rejected instead of mis-split; branch ids → explicit trunk-only error,
+  PORT NOTE F-06-09). Change-kind fidelity: `contribution.rs::classify`
+  validates every inbound `change_type` against the full `audit_change_type`
+  group and preserves it verbatim (amendment/synthesis/unknown/restoration/
+  format-conversion), rejecting spec-invalid combos per RM change_control
+  §Contributions (creation-on-existing, non-creation first version,
+  deleted-with-data, attestation) — `codes.rs` is the one code⇄rubric home
+  and the contribution audit defaults to the spec aggregate rule. WebTemplate
+  resolution single-sourced: new `WebTemplateService` on the `Backend` seam;
+  the REST layer's second cache + DEFINITION-API re-fetch/re-parse deleted —
+  FLAT/STRUCTURED/`wt+json` consume the service cache validation uses. The
+  ~546 LoC of demographic/query/admin 501 dispatch arms collapsed to one
+  generic `not_implemented` dispatcher (Backend slimmed to
+  `EhrService + DefinitionApi + WebTemplateService`); 501 body equality
+  pinned by test. ehrbase 53/53 (PG18 e2e incl. new amendment round-trip +
+  invalid-combo tests), ehrbase-rest 72/72, workspace build + clippy + fmt
+  clean.

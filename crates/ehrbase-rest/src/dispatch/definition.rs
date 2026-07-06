@@ -71,11 +71,13 @@ async fn run(
             let p = params::build::<DefinitionTemplateAdl14GetParams>(&parts.path, q, h)?;
             let template_id = p.template_id.clone();
             // The service returns the stored OPT XML as a JSON string. For a Better
-            // `wt+json` Accept, build the WebTemplate (cached per template id) from
-            // that OPT; otherwise serve the OPT XML verbatim (the canonical artifact).
+            // `wt+json` Accept, serve the service-owned WebTemplate (the one cache,
+            // shared with validation + FLAT — W2-K/F-13-02); otherwise serve the
+            // OPT XML verbatim (the canonical artifact). The get runs first so an
+            // unknown template stays a 404 on this GET surface.
             match state.backend().definition_template_adl1_4_get(p).await? {
-                serde_json::Value::String(xml) if negotiate::wants_web_template(h) => {
-                    web_template_response(&state, &template_id, &xml).await
+                serde_json::Value::String(_) if negotiate::wants_web_template(h) => {
+                    web_template_response(&state, &template_id).await
                 }
                 serde_json::Value::String(xml) => Ok(negotiate::xml_body(StatusCode::OK, xml)),
                 other => Ok(negotiate::respond(h, StatusCode::OK, &other)),
@@ -198,30 +200,18 @@ async fn run(
     }
 }
 
-/// Build (or reuse the cached) Better `WebTemplate` for `template_id` from the
-/// stored OPT 1.4 `xml`, and serve it as `application/openehr.wt+json`.
+/// Serve the service-owned Better `WebTemplate` for `template_id` as
+/// `application/openehr.wt+json` (single resolution seam:
+/// [`crate::backend::WebTemplateService`] — W2-K/F-13-02).
 ///
 /// Serving `wt+json` on the spec `adl1.4/{id}` GET endpoint is a deliberate
 /// EHRbase-compatible extension (openEHR ITS-REST returns only the OPT itself).
-async fn web_template_response(
-    state: &AppState,
-    template_id: &str,
-    xml: &str,
-) -> Result<Response, RestError> {
+async fn web_template_response(state: &AppState, template_id: &str) -> Result<Response, RestError> {
     let built = state
-        .web_templates()
-        .get_or_build(template_id, || {
-            let opt = openehr_its::opt14::from_xml(xml)
-                .map_err(|e| openehr_flat::FlatError::OptParse(e.to_string()))?;
-            openehr_flat::build_web_template(&opt)
-        })
+        .backend()
+        .web_template(template_id)
         .await
-        .map_err(|e| {
-            RestError(openehr_its::rest::runtime::ApiError::Internal(format!(
-                "WebTemplate build failed: {e}"
-            )))
-        })?;
-
+        .map_err(RestError)?;
     let json = serde_json::to_string(&*built).map_err(|e| {
         RestError(openehr_its::rest::runtime::ApiError::Internal(format!(
             "WebTemplate JSON serialization failed: {e}"

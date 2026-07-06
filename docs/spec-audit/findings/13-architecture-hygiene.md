@@ -68,7 +68,21 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
   `from_if_match(&str)` constructor (the single decoder, tolerant of quotes and
   bare-integer If-Match). Every call site (`api/ehr.rs`, `ehr.rs`,
   `contribution.rs`) parses/formats through it. Deletes 4 of the 5 functions.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-B — all four hand-rolled decoders deleted
+  (`api/ehr.rs::parse_object_id`/`parse_version_uid`/`expected_from_if_match`,
+  `ehr.rs::parse_expected_version`, the inline `split("::")`/`nth(1)` in
+  `contribution.rs::parse_preceding`). The one decoder is
+  `crates/ehrbase/src/service/version_id.rs`, built **on the BASE value type**
+  (`openehr_base::prelude::ObjectVersionId::from_str` — the strict three-part
+  lexical parse of `object_version_id_impl.rs`); the module adds only the
+  storage typing (object_id must be the UUID `vo_id`; trunk `i32`) and the
+  If-Match extraction. Divergences resolved to the BASE-spec-correct parse: a
+  `::`-carrying id must now be a *valid* 3-part `OBJECT_VERSION_ID` (`uuid::sys`
+  and `a::b::c::3` are rejected instead of mis-split), and well-formed branch
+  ids (`2.1.4`) are rejected with an explicit trunk-only error (PORT NOTE,
+  F-06-09). The encoder stays the single `EhrbaseService::object_version_id`.
+  `stored_query.rs`'s `split_once("::")` is the *qualified query name* grammar
+  (`reverse_domain::semantic_id`), not an OBJECT_VERSION_ID — untouched.)*
 
 ### F-13-02: Two `WebTemplate` caches and two resolution paths; REST FLAT glue inverts layering
 - **Severity:** major
@@ -95,7 +109,21 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
   and `dispatch/flat.rs::web_template_for`; the REST layer calls the service,
   which owns the one cache. When P17 stands up `ehrbase-compat`, the FLAT glue
   moves there and still calls the same service method.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-K — one service-owned cache. New
+  `WebTemplateService` seam trait (`ehrbase-rest/src/backend.rs`:
+  `web_template(template_id) -> Arc<WebTemplate>`, part of `Backend`),
+  implemented by `EhrbaseService` as a delegation to the existing
+  `service/template.rs::web_template_for` (the one moka cache, shared with
+  composition validation; unknown template → 422 per `422_COMPOSITION.yaml`).
+  Deleted: `AppState.web_templates` + accessor, and
+  `dispatch/flat.rs::web_template_for` including the layering-inverted
+  `definition_template_adl1_4_get` XML re-fetch + `opt14::from_xml` re-parse;
+  `dispatch/definition.rs`'s `wt+json` branch also serves through the seam
+  (the DEFINITION GET still runs first so an unknown template stays a 404 on
+  that surface). FLAT/STRUCTURED and `wt+json` now use the same WebTemplate
+  instance validation uses. FLAT HTTP e2e (`flat_http.rs`) mocks the seam and
+  stays green; moving the FLAT glue into `ehrbase-compat` remains P17
+  (F-13-12).)*
 
 ### F-13-03: Full dispatch arms hand-written for entirely-unimplemented API groups
 - **Severity:** major
@@ -112,7 +140,23 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
   `ApiError::NotImplemented(op)` for any op. Only hand-write per-op arms for a
   group once it has real handlers. `demographic`, `admin`, and (until P16)
   `query` collapse to one line each in `api_router()`.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W3-B — `dispatch/demographic.rs` (393 LoC),
+  `dispatch/query.rs` (106 LoC), and `dispatch/admin.rs` (47 LoC) deleted; the
+  three groups mount on one generic `not_implemented` dispatcher in
+  `dispatch/mod.rs` (~10 LoC), still driven by the generated `ROUTES` tables
+  (routing/auth/admin-scope behaviour unchanged). The dead backend surface
+  went with it: `Backend` is now `EhrService + DefinitionApi +
+  WebTemplateService` — the empty `DemographicApi`/`QueryApi`/`AdminApi` impls
+  on `EhrbaseService`, `StubBackend`, and the two test mocks are gone; each
+  generated trait rejoins the seam in the phase that implements it (query at
+  P16). Net ≈ −580 LoC. Wire behaviour verified by
+  `http.rs::unimplemented_groups_answer_501_with_the_standard_error_body`
+  (representative ops per group → `501` + the identical
+  `{"error":"Not Implemented","message":"not implemented"}` body) plus the
+  pre-existing per-group 501 smoke tests. One deliberate edge change: a
+  malformed request to an unimplemented op (bad params/body) now answers `501`
+  instead of a params-derived `400` — the operation is unimplemented
+  regardless of payload.)*
 
 ### F-13-04: Dead dependency wiring hidden behind a `cargo-machete` ignore list
 - **Severity:** major

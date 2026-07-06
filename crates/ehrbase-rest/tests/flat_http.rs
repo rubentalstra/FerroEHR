@@ -25,12 +25,9 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use ehrbase_rest::auth::config::AuthConfig;
-use ehrbase_rest::{EhrService, RestConfig, ServiceResponse};
-use openehr_its::rest::generated::admin::AdminApi;
+use ehrbase_rest::{EhrService, RestConfig, ServiceResponse, WebTemplateService};
 use openehr_its::rest::generated::definition::{DefinitionApi, DefinitionTemplateAdl14GetParams};
-use openehr_its::rest::generated::demographic::DemographicApi;
 use openehr_its::rest::generated::ehr::{CompositionCreateParams, CompositionGetParams};
-use openehr_its::rest::generated::query::QueryApi;
 use openehr_its::rest::runtime::ApiError;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
@@ -96,9 +93,17 @@ impl DefinitionApi for MockBackend {
     }
 }
 
-impl DemographicApi for MockBackend {}
-impl QueryApi for MockBackend {}
-impl AdminApi for MockBackend {}
+// The single WebTemplate resolution seam (W2-K): the mock serves the Demo
+// Vitals WebTemplate the way the service would (built once, shared).
+#[async_trait]
+impl WebTemplateService for MockBackend {
+    async fn web_template(
+        &self,
+        _template_id: &str,
+    ) -> Result<Arc<openehr_flat::WebTemplate>, ApiError> {
+        Ok(Arc::new(web_template()))
+    }
+}
 
 fn config() -> RestConfig {
     RestConfig {

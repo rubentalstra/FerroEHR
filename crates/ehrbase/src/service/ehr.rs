@@ -193,7 +193,7 @@ impl EhrbaseService {
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        let expected = parse_expected_version(if_match);
+        let expected = super::version_id::expected_from_if_match(if_match);
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");
@@ -442,19 +442,6 @@ pub(super) fn committer() -> Value {
     }
 }
 
-/// Extract the expected version number from an `If-Match` header value: either a
-/// bare integer or the `version_tree_id` tail of an `OBJECT_VERSION_ID`
-/// (`uuid::system::N`). Returns `None` when it cannot be parsed (no precondition
-/// enforced).
-fn parse_expected_version(if_match: &str) -> Option<i32> {
-    let token = if_match.trim().trim_matches('"');
-    token
-        .rsplit("::")
-        .next()
-        .and_then(|v| v.parse::<i32>().ok())
-        .or_else(|| token.parse::<i32>().ok())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -465,12 +452,5 @@ mod tests {
         let rows = crate::storage::decompose(default_ehr_status()).expect("decompose");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].rm_type, "EHR_STATUS");
-    }
-
-    #[test]
-    fn expected_version_parsing() {
-        assert_eq!(parse_expected_version("\"abc::sys::3\""), Some(3));
-        assert_eq!(parse_expected_version("2"), Some(2));
-        assert_eq!(parse_expected_version("garbage"), None);
     }
 }

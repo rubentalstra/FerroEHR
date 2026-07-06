@@ -1,22 +1,33 @@
-//! The generated ITS-REST server traits, implemented on [`EhrbaseService`].
+//! The `ehrbase-rest` backend seams, implemented on [`EhrbaseService`].
 //!
-//! [`ehr`] holds the real EHR / `EHR_STATUS` logic (it overrides only the methods
-//! it implements; the rest inherit the generated `NotImplemented` defaults). The
-//! other four groups are not yet implemented, so their `impl`s are empty and
-//! inherit the defaults wholesale (demographic, definition/templates P13, query
-//! P16, admin later).
+//! [`ehr`] implements the [`ehrbase_rest::EhrService`] envelope seam (the whole
+//! EHR / `EHR_STATUS` / COMPOSITION / DIRECTORY / CONTRIBUTION surface);
+//! [`definition`] implements the generated `DefinitionApi` (templates + stored
+//! queries). [`ehrbase_rest::WebTemplateService`] exposes the service-owned
+//! `WebTemplate` cache to the REST layer (one resolution for validation, FLAT
+//! / STRUCTURED, and `wt+json` — W2-K/F-13-02).
+//!
+//! The unimplemented API groups (demographic: a future RM phase; query/AQL:
+//! P16; admin: later) are not part of the [`ehrbase_rest::Backend`] seam at
+//! all — their routes answer 501 through the REST layer's generic
+//! not-implemented dispatcher (F-13-03), so no empty trait impls live here.
 
 mod definition;
 mod ehr;
 
-use openehr_its::rest::generated::admin::AdminApi;
-use openehr_its::rest::generated::demographic::DemographicApi;
-use openehr_its::rest::generated::query::QueryApi;
+use std::sync::Arc;
+
+use async_trait::async_trait;
+
+use ehrbase_rest::WebTemplateService;
+use openehr_flat::WebTemplate;
+use openehr_its::rest::runtime::ApiError;
 
 use super::EhrbaseService;
 
-// Not yet implemented — empty impls inherit the generated `NotImplemented`
-// defaults (demographic: RM phase; query/AQL: P16; admin: later).
-impl DemographicApi for EhrbaseService {}
-impl QueryApi for EhrbaseService {}
-impl AdminApi for EhrbaseService {}
+#[async_trait]
+impl WebTemplateService for EhrbaseService {
+    async fn web_template(&self, template_id: &str) -> Result<Arc<WebTemplate>, ApiError> {
+        Ok(self.web_template_for(template_id).await?)
+    }
+}

@@ -16,15 +16,12 @@ use serde_json::{Value, json};
 use tower::ServiceExt;
 
 use ehrbase_rest::auth::config::AuthConfig;
-use ehrbase_rest::{EhrService, ResourceMeta, RestConfig, ServiceResponse};
-use openehr_its::rest::generated::admin::AdminApi;
+use ehrbase_rest::{EhrService, ResourceMeta, RestConfig, ServiceResponse, WebTemplateService};
 use openehr_its::rest::generated::definition::DefinitionApi;
-use openehr_its::rest::generated::demographic::DemographicApi;
 use openehr_its::rest::generated::ehr::{
     CompositionDeleteParams, CompositionGetParams, EhrCreateParams, EhrStatusUpdateParams,
     VersionedEhrStatusVersionGetAtTimeParams,
 };
-use openehr_its::rest::generated::query::QueryApi;
 use openehr_its::rest::runtime::ApiError;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
@@ -110,10 +107,8 @@ impl EhrService for MockBackend {
     }
 }
 
-impl DemographicApi for MockBackend {}
 impl DefinitionApi for MockBackend {}
-impl QueryApi for MockBackend {}
-impl AdminApi for MockBackend {}
+impl WebTemplateService for MockBackend {}
 
 fn config() -> RestConfig {
     RestConfig {

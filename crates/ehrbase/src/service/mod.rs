@@ -30,6 +30,7 @@ mod ehr;
 mod item_tag;
 mod stored_query;
 mod template;
+mod version_id;
 mod versioned;
 mod vobject;
 
