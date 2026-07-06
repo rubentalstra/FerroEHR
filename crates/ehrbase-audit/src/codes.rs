@@ -28,9 +28,9 @@ pub const RFC_3881: &str = "RFC-3881";
 // the binding doc groups it under the data-op "Patient Record" family with
 // originalText="query", which we follow (docs/enterprise/atna-audit.md §3).
 
-/// DICOM EventID `csd-code` for "Patient Record".
+/// DICOM `EventID` `csd-code` for "Patient Record".
 pub const EVENT_PATIENT_RECORD_CODE: &str = "110110";
-/// DICOM EventID `csd-code` for "Application Activity".
+/// DICOM `EventID` `csd-code` for "Application Activity".
 pub const EVENT_APPLICATION_ACTIVITY_CODE: &str = "110100";
 
 // ── RoleIDCode (DICOM PS3.15 §A.5.2, `DCM`) ──────────────────────────────────

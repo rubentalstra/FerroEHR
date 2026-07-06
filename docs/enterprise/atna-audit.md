@@ -1,6 +1,16 @@
 # ATNA Audit Trail — Rust-native design
 
-- **Status:** implementing (pulled forward from Stage 2 by owner decision, 2026-07-06)
+- **Status:** implemented (2026-07-06) — `crates/ehrbase-audit` (DICOM
+  AuditMessage + RFC 5424/5425/5426 syslog + bounded-mpsc sender), the
+  `ehrbase-rest` audit tower layer, and the `ehrbase` binary wiring (sender boot,
+  graceful-shutdown drain, `ehr.subject_id` resolver). All §6/§8.5 tests green
+  (insta golden vector + per-action snapshots, total-coverage table guard, UDP
+  e2e over the axum app, TLS framing round-trip, fail-open/fail-closed).
+  **Deferred:** DEFINITION *template* provisioning and the DEMOGRAPHIC API are
+  classified `UNAUDITED` (out of §2 scope / unimplemented); revisit if they enter
+  scope. Query execution uses the "Patient Record" (110110) EventID family with
+  `originalText="query"` per §3 (DICOM 110112 "Query" noted as an alternative).
+- **Status (historical):** implementing (pulled forward from Stage 2, 2026-07-06)
 - **Stage:** Stage 1 (owner-prioritized; originally Stage 2 — see `PORT_MASTER_PLAN.md` §11)
 - **Date:** 2026-07-05 · **Amended:** 2026-07-06 (§8 implementation binding)
 - **Owner:** —

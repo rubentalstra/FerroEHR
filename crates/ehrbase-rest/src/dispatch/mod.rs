@@ -120,12 +120,17 @@ fn mount(
                       RawQuery(query): RawQuery,
                       headers: HeaderMap,
                       State(state): State<AppState>,
-                      body: Bytes| {
-                    dispatch(
+                      body: Bytes| async move {
+                    let mut resp = dispatch(
                         state,
                         op,
                         RequestParts::new(&raw_path, query, headers, body),
                     )
+                    .await;
+                    // The single, generic ATNA hook: tag the response with the
+                    // matched operation id for the audit layer (§8.2 step 1).
+                    resp.extensions_mut().insert(crate::audit::AuditOpId(op));
+                    resp
                 },
             );
         }

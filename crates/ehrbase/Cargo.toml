@@ -36,6 +36,7 @@ openehr-flat = { path = "../openehr-flat" }
 openehr-query = { path = "../openehr-query" }
 ehrbase-rest = { path = "../ehrbase-rest" }
 ehrbase-compat = { path = "../ehrbase-compat" }
+ehrbase-audit = { path = "../ehrbase-audit" }
 
 [dev-dependencies]
 figment = { workspace = true, features = ["test"] }

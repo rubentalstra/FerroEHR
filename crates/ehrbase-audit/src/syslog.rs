@@ -87,7 +87,7 @@ pub enum Transport {
     /// RFC 5426 UDP (a connected datagram socket).
     Udp(UdpTransport),
     /// RFC 5425 TLS (a lazily (re)connected octet-counted stream).
-    Tls(TlsTransport),
+    Tls(Box<TlsTransport>),
 }
 
 impl Transport {
@@ -101,7 +101,9 @@ impl Transport {
             crate::config::Transport::Udp => Ok(Transport::Udp(
                 UdpTransport::connect(&config.repository_host, config.repository_port).await?,
             )),
-            crate::config::Transport::Tls => Ok(Transport::Tls(TlsTransport::from_config(config)?)),
+            crate::config::Transport::Tls => {
+                Ok(Transport::Tls(Box::new(TlsTransport::from_config(config)?)))
+            }
         }
     }
 
@@ -219,10 +221,12 @@ impl TlsTransport {
     /// next send reconnects).
     pub async fn send(&mut self, framed: &[u8]) -> io::Result<()> {
         self.ensure_connected().await?;
-        let stream = self
-            .stream
-            .as_mut()
-            .expect("stream is Some after ensure_connected");
+        let Some(stream) = self.stream.as_mut() else {
+            return Err(io::Error::new(
+                io::ErrorKind::NotConnected,
+                "TLS stream unavailable after connect",
+            ));
+        };
         if let Err(e) = write_all_flush(stream, framed).await {
             // Drop the broken stream so the next attempt reconnects.
             self.stream = None;

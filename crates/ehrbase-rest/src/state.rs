@@ -12,6 +12,8 @@
 
 use std::sync::Arc;
 
+use ehrbase_audit::AuditSender;
+
 use crate::backend::{Backend, StubBackend};
 use crate::config::RestConfig;
 
@@ -26,6 +28,8 @@ pub struct AppState {
 struct Inner {
     config: RestConfig,
     backend: Arc<dyn Backend>,
+    /// The ATNA audit sender, when auditing is wired in (the binary supplies it).
+    audit: Option<AuditSender>,
 }
 
 impl AppState {
@@ -40,8 +44,22 @@ impl AppState {
     /// application injects its DB-backed service here).
     #[must_use]
     pub fn with_backend(config: RestConfig, backend: Arc<dyn Backend>) -> Self {
+        Self::with_backend_and_audit(config, backend, None)
+    }
+
+    /// Construct state with a concrete backend and an optional ATNA audit sender.
+    #[must_use]
+    pub fn with_backend_and_audit(
+        config: RestConfig,
+        backend: Arc<dyn Backend>,
+        audit: Option<AuditSender>,
+    ) -> Self {
         Self {
-            inner: Arc::new(Inner { config, backend }),
+            inner: Arc::new(Inner {
+                config,
+                backend,
+                audit,
+            }),
         }
     }
 
@@ -54,5 +72,10 @@ impl AppState {
     /// The service backend the HTTP dispatcher calls into.
     pub(crate) fn backend(&self) -> &dyn Backend {
         &*self.inner.backend
+    }
+
+    /// The ATNA audit sender, if auditing is enabled/wired.
+    pub(crate) fn audit(&self) -> Option<AuditSender> {
+        self.inner.audit.clone()
     }
 }

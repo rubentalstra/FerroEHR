@@ -219,15 +219,16 @@ fn build_objects(
     }
 
     if object_class.has_object_uri()
-        && let Some(id) = &event.object_id {
-            objects.push(ParticipantObject {
-                id: id.clone(),
-                type_code: OBJECT_TYPE_SYSTEM,
-                type_code_role: None,
-                data_life_cycle: Some(event.action.data_life_cycle()),
-                id_type_code: codes::OBJ_ID_URI,
-            });
-        }
+        && let Some(id) = &event.object_id
+    {
+        objects.push(ParticipantObject {
+            id: id.clone(),
+            type_code: OBJECT_TYPE_SYSTEM,
+            type_code_role: None,
+            data_life_cycle: Some(event.action.data_life_cycle()),
+            id_type_code: codes::OBJ_ID_URI,
+        });
+    }
 
     objects
 }

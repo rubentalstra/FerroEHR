@@ -85,7 +85,9 @@ impl AuditSender {
     /// Enqueue an event (non-blocking). Never awaits, never blocks the request.
     pub fn emit(&self, event: AuditEvent) -> EmitOutcome {
         metrics::counter!(METRIC_EMITTED).increment(1);
-        if let Ok(()) = self.inner.tx.try_send(event) { EmitOutcome::Enqueued } else {
+        if let Ok(()) = self.inner.tx.try_send(event) {
+            EmitOutcome::Enqueued
+        } else {
             metrics::counter!(METRIC_DROPPED).increment(1);
             tracing::warn!(
                 "ATNA audit record dropped (queue full or drain stopped); fail_mode={:?}",

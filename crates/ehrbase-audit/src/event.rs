@@ -100,7 +100,7 @@ impl EventOutcome {
 /// and the participant-object rendering (binding doc §3 field mapping).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ObjectClass {
-    /// EHR / EHR_STATUS → "Patient Record"; a Patient-Number participant.
+    /// EHR / `EHR_STATUS` → "Patient Record"; a Patient-Number participant.
     Ehr,
     /// Composition → "composition"; Patient-Number + object-URI participants.
     Composition,
@@ -115,7 +115,7 @@ pub enum ObjectClass {
 }
 
 impl ObjectClass {
-    /// The DICOM EventID `(csd-code, originalText)` for this class (§3).
+    /// The DICOM `EventID` `(csd-code, originalText)` for this class (§3).
     #[must_use]
     pub const fn event_id(self) -> (&'static str, &'static str) {
         use crate::codes::{EVENT_APPLICATION_ACTIVITY_CODE, EVENT_PATIENT_RECORD_CODE};
@@ -160,12 +160,12 @@ impl ObjectClass {
     }
 }
 
-/// A fully-resolved audit event, ready to be rendered into a DICOM AuditMessage.
+/// A fully-resolved audit event, ready to be rendered into a DICOM `AuditMessage`.
 #[derive(Debug, Clone)]
 pub struct AuditEvent {
     /// The CRUD/execute class.
     pub action: EventActionCode,
-    /// The resource class (drives EventID + participant objects).
+    /// The resource class (drives `EventID` + participant objects).
     pub object: ObjectClass,
     /// The response outcome.
     pub outcome: EventOutcome,

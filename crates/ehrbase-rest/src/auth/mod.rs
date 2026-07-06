@@ -200,13 +200,21 @@ pub async fn middleware(
     match auth.authenticate(req.headers()).await {
         Ok(principal) => {
             if let Err(e) = auth.authorize_admin(&path, &principal) {
-                return RestError(e.to_api_error()).into_response();
+                // Attribute the 403 to the authenticated caller for the audit layer.
+                let mut resp = RestError(e.to_api_error()).into_response();
+                resp.extensions_mut().insert(principal);
+                return resp;
             }
             req.extensions_mut().insert(principal.clone());
             // Publish the principal for the service layer (committer attribution).
-            REQUEST_PRINCIPAL
+            let for_audit = principal.clone();
+            let mut resp = REQUEST_PRINCIPAL
                 .scope(Some(principal), next.run(req))
-                .await
+                .await;
+            // Republish onto the response so the outer ATNA audit layer — which
+            // cannot observe request-extension mutations — can attribute events.
+            resp.extensions_mut().insert(for_audit);
+            resp
         }
         Err(e) => {
             let api = e.to_api_error();

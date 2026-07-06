@@ -40,8 +40,14 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         .unwrap_or(&cfg.base_path)
         .to_owned();
 
-    // The generated ITS-REST surface, gated by authentication.
+    // The generated ITS-REST surface, gated by authentication. The ATNA audit
+    // layer wraps auth (outermost) so it observes auth rejections too (§8.2);
+    // installed only when a sender is wired in.
     let api = dispatch::api_router().layer(from_fn_with_state(authenticator, auth::middleware));
+    let api = match state.audit() {
+        Some(sender) => api.layer(from_fn_with_state(sender, crate::audit::middleware)),
+        None => api,
+    };
 
     let mut app = Router::new()
         .nest(&cfg.base_path, api)

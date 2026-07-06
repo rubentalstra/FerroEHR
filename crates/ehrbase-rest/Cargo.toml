@@ -15,6 +15,8 @@ openehr-rm = { path = "../openehr-rm" }
 openehr-its = { path = "../openehr-its" }
 # WebTemplate (Better wt+json) builder + cache for the ADL1.4 template endpoint.
 openehr-flat = { path = "../openehr-flat" }
+# IHE ATNA audit trail (DICOM AuditMessage over syslog) — the audit tower layer.
+ehrbase-audit = { path = "../ehrbase-audit" }
 
 # Web framework & HTTP core.
 axum = { workspace = true }
