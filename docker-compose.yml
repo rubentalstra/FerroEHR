@@ -22,7 +22,7 @@ services:
       EHRBASE_DB_PASSWORD: ${EHRBASE_DB_PASSWORD:-ehrbase}
       EHRBASE_DB_NAME: ${EHRBASE_DB_NAME:-ehrbase}
     volumes:
-      - ehrbase-pgdata:/var/lib/postgresql/data
+      - ehrbase-pgdata:/var/lib/postgresql
     ports:
       - "${EHRBASE_DB_PORT:-5432}:5432"
     healthcheck:

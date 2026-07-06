@@ -85,6 +85,11 @@ The image README says exactly this.
 Two services: `ehrbase-postgres` (the DB image, volume, healthcheck
 `pg_isready`) and `ehrbase` (the app image, `depends_on:
 condition: service_healthy`, healthcheck = the new subcommand, port 8080).
+**PG 18 volume convention:** the data volume mounts at `/var/lib/postgresql`
+(the parent), NOT the pre-18 `/var/lib/postgresql/data` — the 18+ official
+image stores data in a major-version subdirectory to support
+`pg_upgrade --link` (docker-library/postgres#1259) and refuses to start with
+the old mount point.
 `docs/` gets a short "Run with Docker" section in the README. Local dev builds
 use `docker compose build` against the same Dockerfiles CI publishes — one
 definition, no drift.
