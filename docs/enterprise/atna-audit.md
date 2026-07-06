@@ -1,8 +1,8 @@
 # ATNA Audit Trail — Rust-native design
 
-- **Status:** design (not yet implemented)
-- **Stage:** Stage 2 (enterprise capability restoration; see `PORT_MASTER_PLAN.md` §11)
-- **Date:** 2026-07-05
+- **Status:** implementing (pulled forward from Stage 2 by owner decision, 2026-07-06)
+- **Stage:** Stage 1 (owner-prioritized; originally Stage 2 — see `PORT_MASTER_PLAN.md` §11)
+- **Date:** 2026-07-05 · **Amended:** 2026-07-06 (§8 implementation binding)
 - **Owner:** —
 - **Reference (prior art, not a port target):** EHRbase Enterprise Features → ATNA
   (`https://docs.ehrbase.org/docs/EHRbase/Enterprise-Features/ATNA`). EHRbase
@@ -165,3 +165,85 @@ per ADR-008). openEHR audit = *what the record says about its own authorship*;
 ATNA audit = *security surveillance of API access*. Both coexist: a composition
 create writes a `CONTRIBUTION` + `AUDIT_DETAILS` row (openEHR) **and** emits an
 ATNA `AuditMessage` (security). This document covers only the latter.
+
+## 8. Implementation binding (2026-07-06 — the decisions that govern the build)
+
+Sections 1–7 are the behavioural spec; this section pins the design to the
+codebase as it stands (post spec-audit: typed `ServiceResponse`/`ResourceMeta`
+envelope, `auth::Principal` request extension, generated `ROUTES` dispatch
+tables, promoted `ehr.subject_id`).
+
+### 8.1 Crate layout
+
+New workspace crate **`ehrbase-audit`** (application layer, hand-written,
+`thiserror`), no dependency on any `ehrbase-*` crate (pure leaf: `quick-xml`,
+`tokio`, `tokio-rustls`, `jiff`, `serde` for config):
+
+```
+crates/ehrbase-audit/src/
+├── message.rs    # DICOM AuditMessage model (PS3.15 §A.5) + quick-xml serializer
+├── codes.rs      # DCM / RFC-3881 code constants (EventID, RoleID, TypeCodes)
+├── event.rs      # AuditEvent — the transport-agnostic input the server hands us
+├── table.rs      # operation_id → (action, EventID, participant-object rule)
+├── syslog.rs     # RFC 5424 SYSLOG-MSG assembly (+ RFC 5426 UDP / RFC 5425 TLS framing)
+├── sender.rs     # bounded mpsc + background drain task; fail-open/closed; metrics
+└── config.rs     # AuditConfig (figment-compatible serde struct)
+```
+
+`ehrbase-rest` gains one tower layer (`audit.rs`) + wiring; `ehrbase` (binary)
+boots the sender from config. Dependency arrows stay downward:
+`ehrbase-rest → ehrbase-audit` and `ehrbase → ehrbase-audit`.
+
+### 8.2 The emitter path (request → AuditMessage)
+
+1. The **dispatcher** already knows the generated operation id for every
+   request — it inserts an `AuditOpId(&'static str)` extension (single line in
+   the generic dispatch path; no per-handler code).
+2. The **audit layer** (outermost, after auth) captures: client IP
+   (`X-Forwarded-For` first hop, else peer addr), the `Principal` extension
+   (Basic username / OAuth `sub`; absent → `UNKNOWN`), request time.
+3. On response it reads: HTTP status → `EventOutcomeIndicator`
+   (2xx→0, 4xx→4, 5xx→8; 403/401→4), the `AuditOpId`, and an optional
+   **`AuditObject` response extension** — populated by the dispatch layer from
+   the `ResourceMeta` it already holds (ehr_id, version uid → object URIs).
+   No handler-specific audit code: the envelope already carries the metadata.
+4. It builds a transport-agnostic `AuditEvent` and `try_send`s it to the
+   bounded channel. **Zero DB work and zero blocking on the request path.**
+5. The **drain task** (owns the socket) optionally enriches: when
+   `audit.resolve_subject = true` and the event has an `ehr_id`, one indexed
+   lookup of the promoted `ehr.subject_id` fills the Patient-Number
+   participant object (this runs in the background task, never in-request;
+   enrichment failure → `value_if_missing`). It then renders the
+   `AuditMessage` XML, frames it (RFC 5424; octet-counting for TLS per
+   RFC 5425), and sends.
+
+### 8.3 The audit table
+
+`table.rs` is **data-driven and total-coverage-guarded**: a static table keyed
+by the generated operation ids (§2 mapping), plus a unit test that walks every
+operation id in `openehr-its::rest::generated::ROUTES` and asserts each is
+either mapped or in the explicit `UNAUDITED` allowlist (status/health/swagger
+and other non-clinical surface). New generated operations then fail the build
+until classified — the same guard pattern as the codegen drift checks.
+
+### 8.4 Failure + lifecycle semantics
+
+- Channel full or transport down: `fail_mode=open` (default) → drop + `tracing`
+  warn + a `metrics` counter (`atna_audit_dropped_total`); `fail_mode=closed`
+  → the audit layer returns **503** for auditable operations (spec-honest:
+  the deployment demanded auditing it cannot deliver).
+- Graceful shutdown: the sender drains the channel (bounded flush timeout)
+  before the server exits — wired into the existing axum-server shutdown path.
+- TLS: `tokio-rustls` client; ARR CA configurable (`audit.tls_ca_path`),
+  client-cert mutual TLS (`audit.tls_identity_*`) supported — IHE expects
+  mutually-authenticated nodes.
+
+### 8.5 Test plan (binding)
+
+Per §6, plus: the total-coverage table guard (§8.3); an in-process UDP
+listener e2e over the real axum app (testcontainers not required) asserting
+one framed record per audited request with correct action/outcome/user/object
+for: EHR create (C), composition get (R), composition update (U), composition
+delete (D), AQL execute (E), a 401 (outcome 4, principal UNKNOWN), and a
+suppressed login event; TLS framing round-trip against an in-process rustls
+listener with a test CA.
