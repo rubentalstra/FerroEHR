@@ -38,6 +38,8 @@ A hand edit is silently overwritten on the next `emit` and fails the CI
   `lib.rs`/file header, never per-hand-edit.
 - Vendored inputs: BMM at `openehr-codegen/vendor/bmm/`, XSD/OAS/JSON schemas at
   `openehr-its/schemas/` + `openehr-its/vendor/rest-oas/` (each with `PROVENANCE.md`).
+  The spec *text* at `docs/specs/openehr/` is read-only reference for humans/agents
+  (spec-adherence.md) — never a codegen input, never hand-edited.
 - Hand-written spec crates (NOT generated): `openehr-term` bundle/assets,
   `openehr-its` runtime (`xml/runtime.rs`, `rest/runtime.rs`), `openehr-query`
   (AQL parser), `openehr-flat`. These follow `rust-style.md`.

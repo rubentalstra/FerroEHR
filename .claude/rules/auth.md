@@ -29,6 +29,10 @@ authentication; we do the same in **Stage 1** (ADR-006). Fine-grained
   (`PORT_MASTER_PLAN §11`); leave a `// TODO(port): Stage 2 RBAC` seam, not an
   implementation.
 
+The CNF security suites (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`,
+incl. the Keycloak OAuth2 setup) are the conformance reference for the
+401/403 behaviour and the Basic + bearer flows.
+
 Errors map through `openehr-its::rest::runtime::ApiError`. Build compiling +
 tested (auth middleware needs unit + integration tests: 401/403 paths, valid/
 invalid tokens, Basic + bearer).

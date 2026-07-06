@@ -4,6 +4,20 @@ paths: ["crates/openehr-its/**", "crates/openehr-flat/**"]
 
 # Serialization rules — canonical JSON, canonical XML, FLAT/STRUCTURED
 
+## Spec sources (the oracle)
+
+The vendored normative text is the authority for every wire shape
+(spec-adherence.md; use `/spec-lookup`):
+`docs/specs/openehr/ITS-JSON/components/` (canonical-JSON schemas, same pin as
+the fidelity gate), `docs/specs/openehr/ITS-XML/` + the XSDs at
+`crates/openehr-its/schemas/xml/` (canonical XML),
+`docs/specs/openehr/SM/docs/serial_data_formats/` +
+`SM/docs/simplified_im_b/` (SDT — the FLAT/STRUCTURED semantics), and the CNF
+content test cases (`docs/specs/openehr/CNF/docs/platform_test_schedule/`
+`master15`-`master17.x` + the canonical JSON/XML fixtures under
+`CNF/tests/platform/robot/_resources/`) which define the exact shapes a
+conformant server must emit/accept.
+
 ## The `_type` mechanism (ADR-004 supersedes ADR-002 — do not improvise)
 
 Canonical-JSON `_type` self-tagging is now handled by the

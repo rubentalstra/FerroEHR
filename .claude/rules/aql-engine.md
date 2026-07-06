@@ -38,6 +38,17 @@ Versioning semantics: `LATEST_VERSION` = the current partial index;
 perf tuning of the SQL that isn't needed for correctness is a
 `// PERF(port):` for P20 (Optimization).
 
+## Spec sources (the oracle)
+
+AQL semantics (grammar, operators, functions, `RESULT_SET`) are answered from
+the vendored spec text at `docs/specs/openehr/QUERY/docs/AQL/` — never from
+EHRbase behaviour. The conformance expectations are
+`docs/specs/openehr/CNF/docs/platform_test_schedule/master05-func_tc_definition_query.adoc`
++ `master11-func_tc_querying.adoc` and the QUERY Robot suites under
+`docs/specs/openehr/CNF/tests/platform/robot/` — the accept/reject envelope,
+status codes, and result shapes must satisfy those test cases. Use
+`/spec-lookup` and cite the section (spec-adherence.md).
+
 ## Boundary
 
 `openehr-query` produces a parsed, semantically-analysable AST; everything after

@@ -35,7 +35,12 @@ is a separate step the caller takes after seeing the plan.
      (ADR-004/005). **EHRbase application** (`ehrbase-*`) → build idiomatic modern
      Rust on the generated `openehr-*` crates (ADR-006), consulting EHRbase Java
      as the behavioural reference — not a per-file port. Build compiling + tested.
+   - **Which spec sections govern it** — for any spec-facing task, name the
+     `docs/specs/openehr/...` files (and CNF test-schedule chapters) the
+     implementation must be read against, per `spec-adherence.md` /
+     `/spec-lookup`. Doing the work starts by reading those.
    - **What "done" looks like** for this task specifically, distinct from
-     the phase's overall exit criteria.
+     the phase's overall exit criteria — including which CNF test cases or
+     corpus gates prove it.
 4. **Do not tick the checkbox or commit** — that happens after the work is
    actually done (steps 4-5 of the loop), not as part of planning it.

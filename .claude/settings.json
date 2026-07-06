@@ -3,6 +3,15 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/protect_vendored_specs.sh\""
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {

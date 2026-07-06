@@ -9,6 +9,21 @@ The server is `axum` 0.8 **implementing the generated ITS-REST contract** from
 DTOs — it provides `impl {Group}Api for AppState` and mounts the generated
 router.
 
+## Spec sources (the oracle)
+
+Endpoint semantics (methods, status codes, headers, `Prefer`/`If-Match`
+handling, error bodies) come from the vendored spec text — never from memory
+or another server: `docs/specs/openehr/ITS-REST/` (the REST spec + API
+definitions behind the generated contract) and
+`docs/specs/openehr/SM/docs/openehr_platform/` (the abstract service model the
+REST API realizes). The CNF chapters
+`docs/specs/openehr/CNF/docs/platform_test_schedule/master06`-`master12`
+(EHR / COMPOSITION / CONTRIBUTION / DIRECTORY / demographic / querying /
+admin) + the Robot suites under `CNF/tests/platform/robot/<API_GROUP>/` give
+the exact request/response pairs a conformant server must produce — when the
+prose feels ambiguous, the CNF test case wins. Cite sections
+(spec-adherence.md; `/spec-lookup`).
+
 ## Rules
 
 - **Implement the generated server traits.** One `impl` per API group

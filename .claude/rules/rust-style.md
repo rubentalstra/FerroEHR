@@ -28,6 +28,9 @@ change the emitter and regenerate (`cargo run -p openehr-codegen -- emit`/
   `Cargo.toml [workspace.dependencies]` (`dep.workspace = true`).
 - **Every crate you touch compiles + is clippy-clean + tested before you move
   on** (ADR-006 retired the "phases need not compile" gate for the app layer).
+- **Read the vendored spec first for any spec-facing behaviour** — the
+  normative text + CNF schedule live at `docs/specs/openehr/` (use
+  `/spec-lookup`; full rule in `spec-adherence.md`).
 - **The specs are the authority; design the bespoke logic ourselves** (AQL
   engine, versioning, validation, node codec — ADR-008), verified by the CNF
   conformance suite + corpus tests. Consult prior art (upstream EHRbase, other
