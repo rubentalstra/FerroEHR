@@ -13,6 +13,7 @@ mod admin;
 mod definition;
 mod demographic;
 mod ehr;
+mod flat;
 mod query;
 
 use std::future::Future;

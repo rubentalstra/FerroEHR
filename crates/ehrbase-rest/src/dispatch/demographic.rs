@@ -49,7 +49,8 @@ async fn run(
     match op {
         "agent_create" => {
             let p = params::build::<AgentCreateParams>(&parts.path, q, h)?;
-            // TODO(port): P12 — typed XML demographic bodies.
+            // PORT NOTE: the demographic API is a future RM phase (the backend
+            // 501s these); typed XML request bodies land when it is implemented.
             let body = negotiate::json_value(h, &parts.body)?;
             Ok(negotiate::respond(
                 h,
@@ -81,7 +82,8 @@ async fn run(
         }
         "group_create" => {
             let p = params::build::<GroupCreateParams>(&parts.path, q, h)?;
-            // TODO(port): P12 — typed XML demographic bodies.
+            // PORT NOTE: the demographic API is a future RM phase (the backend
+            // 501s these); typed XML request bodies land when it is implemented.
             let body = negotiate::json_value(h, &parts.body)?;
             Ok(negotiate::respond(
                 h,
@@ -113,7 +115,8 @@ async fn run(
         }
         "organisation_create" => {
             let p = params::build::<OrganisationCreateParams>(&parts.path, q, h)?;
-            // TODO(port): P12 — typed XML demographic bodies.
+            // PORT NOTE: the demographic API is a future RM phase (the backend
+            // 501s these); typed XML request bodies land when it is implemented.
             let body = negotiate::json_value(h, &parts.body)?;
             Ok(negotiate::respond(
                 h,
@@ -145,7 +148,8 @@ async fn run(
         }
         "person_create" => {
             let p = params::build::<PersonCreateParams>(&parts.path, q, h)?;
-            // TODO(port): P12 — typed XML demographic bodies.
+            // PORT NOTE: the demographic API is a future RM phase (the backend
+            // 501s these); typed XML request bodies land when it is implemented.
             let body = negotiate::json_value(h, &parts.body)?;
             Ok(negotiate::respond(
                 h,
@@ -177,7 +181,8 @@ async fn run(
         }
         "role_create" => {
             let p = params::build::<RoleCreateParams>(&parts.path, q, h)?;
-            // TODO(port): P12 — typed XML demographic bodies.
+            // PORT NOTE: the demographic API is a future RM phase (the backend
+            // 501s these); typed XML request bodies land when it is implemented.
             let body = negotiate::json_value(h, &parts.body)?;
             Ok(negotiate::respond(
                 h,
@@ -244,7 +249,8 @@ async fn run(
         }
         "contribution_create" => {
             let p = params::build::<ContributionCreateParams>(&parts.path, q, h)?;
-            // TODO(port): P12 — typed XML demographic bodies.
+            // PORT NOTE: the demographic API is a future RM phase (the backend
+            // 501s these); typed XML request bodies land when it is implemented.
             let body = negotiate::json_value(h, &parts.body)?;
             Ok(negotiate::respond(
                 h,

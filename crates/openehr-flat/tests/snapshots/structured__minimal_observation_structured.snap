@@ -1,0 +1,44 @@
+---
+source: crates/openehr-flat/tests/structured.rs
+expression: structured
+---
+{
+  "ctx": {
+    "language": "en",
+    "territory": "UY",
+    "composer_name": "Dr. House",
+    "composer_id": "1f31861a-b5fd-4052-b00b-32893371fcd4",
+    "id_namespace": "DEMOGRAPHIC",
+    "time": "2019-01-28T21:22:19,501+00:00",
+    "setting": {
+      "|code": "229",
+      "|value": "primary nursing care",
+      "|terminology": "openehr"
+    },
+    "participation_name": [
+      "Martha Stewart"
+    ],
+    "participation_function": [
+      "legal guardian"
+    ],
+    "participation_mode": [
+      "not specified"
+    ]
+  },
+  "minimal": {
+    "minimal": [
+      {
+        "text": [
+          "original value"
+        ]
+      }
+    ],
+    "category": [
+      {
+        "|value": "event",
+        "|code": "433",
+        "|terminology": "openehr"
+      }
+    ]
+  }
+}

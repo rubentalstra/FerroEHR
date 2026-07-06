@@ -58,6 +58,26 @@ const STRING_DICT_ITEM: &str = "StringDictionaryItem";
 /// enough (structure preserved down to these two roots).
 const OPAQUE_TYPES: &[&str] = &["T_CONSTRAINT", "T_VIEW"];
 
+/// A default expression for an XSD-mandatory field that real-world OPT exports
+/// (Ocean/tooling) nevertheless omit — so `from_xml` fills it instead of
+/// erroring. `node_id`/`purpose` fall back to empty; `occurrences`/`existence`
+/// (both `IntervalOfInteger`) to the conservative `0..1` (present, optional
+/// single) so a missing multiplicity never over-constrains. The expression is
+/// emitted in the `opt14` impl context (prelude `crate::opt14`).
+fn lenient_default(field_name: &str) -> Option<String> {
+    match field_name {
+        "node_id" | "purpose" => Some("String::new()".to_owned()),
+        "occurrences" | "existence" => Some(
+            "crate::opt14::Intervalofinteger { \
+             lower_included: Some(true), upper_included: Some(true), \
+             lower_unbounded: false, upper_unbounded: false, \
+             lower: Some(0), upper: Some(1) }"
+                .to_owned(),
+        ),
+        _ => None,
+    }
+}
+
 /// How a referenced XSD type name resolves for a generated field.
 enum Resolved {
     /// A Rust primitive (`String`/`bool`/`i32`/`i64`/`f64`).
@@ -266,8 +286,17 @@ impl<'a> OptModel<'a> {
                     inner
                 };
                 // A mandatory scalar bool absent on the wire (openEHR `Interval`
-                // boundedness flags default false) → fall back to `false`.
-                let default = (is_bool && !e.optional && !e.multiple).then(|| "false".to_string());
+                // boundedness flags default false) → fall back to `false`. Some
+                // XSD-mandatory fields are omitted by real-world OPT exports
+                // (Ocean/tool laxity) — default them leniently so those templates
+                // still parse (a wire adapter must ingest imperfect real OPTs).
+                let default = if is_bool && !e.optional && !e.multiple {
+                    Some("false".to_string())
+                } else if !e.optional && !e.multiple {
+                    lenient_default(&e.name)
+                } else {
+                    None
+                };
                 xml_field = XmlField {
                     wire_name: e.name.clone(),
                     rust_name,

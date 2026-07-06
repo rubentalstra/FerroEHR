@@ -76,9 +76,12 @@ reader/writer) and the entry points. Regenerate with
 - Target Better's `web-template` semantics
   (`github.com/better-care/web-template` + `web-template-tests`) as the
   primary oracle, since SDT (the standard successor) is still development.
-- EHRbase-specific quirks (e.g. Better's `|unit` vs SDT's `|units`) live
-  behind the `ehrbase-quirks` feature flag on this crate — never hard-code a
-  quirk into the default path.
+- DV_QUANTITY uses `|unit` (**singular**) in both Better and EHRbase — there is
+  no live `|unit`/`|units` divergence (verified against Better `web-template` +
+  EHRbase docs + the corpus, 2026-07). Genuine Better-specific extras are
+  `|unit_system` / `|unit_display_name`; any such EHRbase/Better-only extension
+  lives behind the `ehrbase-quirks` feature flag — never hard-code a quirk into
+  the default path.
 - MIME types: `application/openehr.wt+json`,
   `application/openehr.wt.flat+json`,
   `application/openehr.wt.structured+json`.

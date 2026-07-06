@@ -164,30 +164,75 @@ async fn run(
         }
         "composition_create" => {
             let p = params::build::<CompositionCreateParams>(&parts.path, q, h)?;
-            let body = negotiate::rm_value::<Composition>(h, &parts.body)?;
+            // A FLAT/STRUCTURED (wt.flat/structured+json) body is rebuilt into a
+            // canonical composition.
+            let body = if negotiate::is_flat_body(h) {
+                super::flat::composition_from_flat(&state, q, h, &parts.body).await?
+            } else if negotiate::is_structured_body(h) {
+                super::flat::composition_from_structured(&state, q, h, &parts.body).await?
+            } else {
+                negotiate::rm_value::<Composition>(h, &parts.body)?
+            };
+            let created = state.backend().composition_create(p, body).await?;
+            if negotiate::wants_flat(h) {
+                return super::flat::composition_flat_response(
+                    &state,
+                    StatusCode::CREATED,
+                    &created,
+                )
+                .await;
+            }
+            if negotiate::wants_structured(h) {
+                return super::flat::composition_structured_response(
+                    &state,
+                    StatusCode::CREATED,
+                    &created,
+                )
+                .await;
+            }
             Ok(negotiate::respond_rm::<Composition>(
                 h,
                 StatusCode::CREATED,
-                &state.backend().composition_create(p, body).await?,
+                &created,
                 "composition",
             ))
         }
         "composition_get" => {
             let p = params::build::<CompositionGetParams>(&parts.path, q, h)?;
+            let comp = state.backend().composition_get(p).await?;
+            if negotiate::wants_flat(h) {
+                return super::flat::composition_flat_response(&state, ok, &comp).await;
+            }
+            if negotiate::wants_structured(h) {
+                return super::flat::composition_structured_response(&state, ok, &comp).await;
+            }
             Ok(negotiate::respond_rm::<Composition>(
                 h,
                 ok,
-                &state.backend().composition_get(p).await?,
+                &comp,
                 "composition",
             ))
         }
         "composition_update" => {
             let p = params::build::<CompositionUpdateParams>(&parts.path, q, h)?;
-            let body = negotiate::rm_value::<Composition>(h, &parts.body)?;
+            let body = if negotiate::is_flat_body(h) {
+                super::flat::composition_from_flat(&state, q, h, &parts.body).await?
+            } else if negotiate::is_structured_body(h) {
+                super::flat::composition_from_structured(&state, q, h, &parts.body).await?
+            } else {
+                negotiate::rm_value::<Composition>(h, &parts.body)?
+            };
+            let updated = state.backend().composition_update(p, body).await?;
+            if negotiate::wants_flat(h) {
+                return super::flat::composition_flat_response(&state, ok, &updated).await;
+            }
+            if negotiate::wants_structured(h) {
+                return super::flat::composition_structured_response(&state, ok, &updated).await;
+            }
             Ok(negotiate::respond_rm::<Composition>(
                 h,
                 ok,
-                &state.backend().composition_update(p, body).await?,
+                &updated,
                 "composition",
             ))
         }
@@ -282,8 +327,11 @@ async fn run(
         }
         "contribution_create" => {
             let p = params::build::<ContributionCreateParams>(&parts.path, q, h)?;
-            // A CONTRIBUTION's wire DTO differs from the RM type; JSON only for now.
-            // TODO(port): P12 — typed XML contribution bodies.
+            // PORT NOTE: a CONTRIBUTION commit is a wrapper DTO (a version set +
+            // audit), not a single canonical RM value with a defined canonical-XML
+            // shape — so it is accepted as JSON only (matches the scope boundary for
+            // VERSION-family/wrapper payloads; typed CONTRIBUTION XML would need a
+            // dedicated wrapper codec, not warranted for this rare path).
             let body = negotiate::json_value(h, &parts.body)?;
             Ok(negotiate::respond(
                 h,
