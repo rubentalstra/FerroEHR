@@ -1,0 +1,11 @@
+title: Input1
+required:
+  - type
+type: object
+properties:
+  type:
+    type: string
+  suffix:
+    type: string
+example:
+  type: INTEGER

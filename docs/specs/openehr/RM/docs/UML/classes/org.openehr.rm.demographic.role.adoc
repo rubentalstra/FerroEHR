@@ -1,0 +1,32 @@
+=== ROLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ROLE*
+
+h|*Description*
+2+a|Generic description of a role performed by an Actor. The role corresponds to a competency of the Party. Roles are used to define the responsibilities undertaken by a Party for a purpose. Roles should have credentials qualifying the performer to perform the role.
+
+h|*Inherit*
+2+|`<<_party_class,PARTY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*time_validity*: `link:/releases/RM/{rm_release}/data_types.html#_dv_interval_class[DV_INTERVAL^]<link:/releases/RM/{rm_release}/data_types.html#_dv_date_class[DV_DATE^]>`
+a|Valid time interval for this role.
+
+h|*1..1*
+|*performer*: `link:/releases/BASE/{base_release}/base_types.html#_party_ref_class[PARTY_REF^]`
+a|Reference to Version container of Actor playing the role.
+
+h|*0..1*
+|*capabilities*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_capability_class,CAPABILITY>>>`
+a|The capabilities of this role.
+
+h|*Invariants*
+2+a|__Capabilities_valid__: `capabilities /= Void implies not capabilities.empty`
+|===

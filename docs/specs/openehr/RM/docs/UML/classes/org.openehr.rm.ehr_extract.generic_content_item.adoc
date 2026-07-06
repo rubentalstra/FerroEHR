@@ -1,0 +1,66 @@
+=== GENERIC_CONTENT_ITEM Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*GENERIC_CONTENT_ITEM*
+
+h|*Description*
+2+a|Single item in generic extract, designed for 13606 and CDA data.
+
+h|*Inherit*
+2+|`<<_extract_content_item_class,EXTRACT_CONTENT_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*item_type*: `link:/releases/RM/{rm_release}/data_types.html#_dv_coded_text_class[DV_CODED_TEXT^]`
+a|Identifier of model or schema used to create the content.
+
+h|*0..1*
+|*item_type_version*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Version of model or schema used to create the content item.
+
+h|*0..1*
+|*author*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference to a demographic entity elsewhere in this Extract representing the author of the item version. The reference should be a UID corresponding to the UID of a `GENERIC_CONTENT_ITEM` containing the demographic information.
+
+h|*0..1*
+|*creation_time*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^]`
+a|Time of creation of this item version on the original system. This may be an earlier commit time, or it may be the time at which the item was created during the Extract generation process.
+
+h|*0..1*
+|*authoriser*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference to a demographic entity elsewhere in this Extract representing an authoriser of the item version, if relevant. The reference should be a UID corresponding to the UID of a `GENERIC_CONTENT_ITEM` containing the demographic information.
+
+h|*0..1*
+|*authorisation_time*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^]`
+a|Time of authorisation of this item version on the original system where relevant.
+
+h|*0..1*
+|*item_status*: `link:/releases/RM/{rm_release}/data_types.html#_dv_coded_text_class[DV_CODED_TEXT^]`
+a|Coded lifecycle status of the item.
+
+h|*0..1*
+|*version_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Version id of this item in original system.
+
+h|*0..1*
+|*version_set_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Version set id of this item in original system, where applicable.
+
+h|*0..1*
+|*system_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of EMR or other system from which the item was created / extracted. Typically in the form of a domain name.
+
+h|*0..1*
+|*other_details*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Other details about the content item.
+
+h|*0..1 +
+(redefined)*
+|*item*: `link:/releases/RM/{rm_release}/common.html#_locatable_class[LOCATABLE^]`
+a|Content object.
+|===

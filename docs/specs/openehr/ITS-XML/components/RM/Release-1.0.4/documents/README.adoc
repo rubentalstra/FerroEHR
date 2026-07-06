@@ -1,0 +1,7 @@
+# Validating documents
+
+openEHR https://specifications.openehr.org/releases/RM/Release-1.0.4/ehr.html[EHR] XML schema to validate ITEMs, SECTION, ENTRY, COMPOSITION, VERSION documents (data instances).
+
+### Acknowledgements
+Authored by https://www.oceanhealthsystems.com[Ocean Health Systems] - 2008.12.22
+Revised by https://www.openehr.org[openEHR Foundation] - 2019.01.08

@@ -1,0 +1,33 @@
+=== S_LINK Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_LINK*
+
+h|*Description*
+2+a|Simplified RM form of `LINK` RM class.
+
+h|*Inherit*
+2+|`link:/releases/SM/{sm_release}/S_TYPE.html#_s_type_class[S_TYPE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*meaning*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `LINK._meaning.value_`.
+
+TODO: what if original was coded?
+
+h|*1..1*
+|*type*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `LINK._type.value_`.
+
+TODO: what if original was coded?
+
+h|*1..1*
+|*target*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `LINK._target_`.
+|===

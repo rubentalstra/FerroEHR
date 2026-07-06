@@ -1,0 +1,21 @@
+=== GENERIC_ENTRY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*GENERIC_ENTRY*
+
+h|*Description*
+2+a|This class is used to create intermediate representations of data from sources not otherwise conforming to openEHR classes, such as HL7 messages, relational databases and so on.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/composition.html#_content_item_class[CONTENT_ITEM^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*data*: `link:/releases/RM/{rm_release}/data_structures.html#_item_class[ITEM^]`
+a|The data from the source message or record. May be recorded in any structural openEHR representation.
+|===

@@ -1,0 +1,14 @@
+=== EXTERNAL_ENVIRONMENT_ACCESS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EXTERNAL_ENVIRONMENT_ACCESS (abstract)__*
+
+h|*Description*
+2+a|A mixin class providing access to services in the external environment.
+
+h|*Inherit*
+2+|`<<_terminology_service_class,TERMINOLOGY_SERVICE>>`, `<<_measurement_service_class,MEASUREMENT_SERVICE>>`
+
+|===

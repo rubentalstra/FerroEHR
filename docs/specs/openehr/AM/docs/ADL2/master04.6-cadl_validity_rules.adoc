@@ -1,0 +1,62 @@
+== Syntax Validity Rules
+
+Various coded syntax rules have been defined for the cADL syntax, for use by parser and compiler authors. These can be found on at the GitHub location https://github.com/openEHR/adl-resources/blob/master/messages/ADL/adl_syntax_errors.txt.
+
+The state of this file at the issue of this document is as follows.
+
+[source, odin]
+--------
+syntax_errors = <
+    ["SUNK"] = <"Syntax error (unknown cause)">
+    ["SARID"] = <"Syntax error in artefact identification clause; expecting archetype id (format = model_issuer-package-class.concept.version)">
+     
+    ["SASID"] = <"Syntax error in 'specialise' clause; expecting parent archetype id (model_issuer-ref_model-model_class.concept.version)">
+     
+    ["SACO"] = <"Syntax error in 'concept' clause; expecting TERM_CODE reference">
+    ["SALA"] = <"Syntax error in language section">
+    ["SALAN"] = <"Syntax error no language section found">
+    ["SADS"] = <"Syntax error in description section">
+    ["SADF"] = <"Syntax error in definition section">
+    ["SAIV"] = <"Syntax error in invariant section">
+    ["SAON"] = <"Syntax error in terminology section">
+    ["SAAN"] = <"Syntax error in annotations section">
+     
+    ["SDSF"] = <"Syntax error: differential syntax not allowed in top-level archetype">
+    ["SDINV"] = <"Syntax error: invalid ODIN section; error: $1">
+    ["SCCOG"] = <"Syntax error: expecting a new node definition, primitive node definition, 'use' path, or 'archetype' reference">
+    ["SUAID"] = <"Syntax error: expecting [archetype_id] in use_archetype statement">
+    ["SUAIDI"] = <"Syntax error: invalid archetype id $1">
+    ["SOCCF"] = <"Syntax error: expecting an 'occurrences expression', e.g. 'occurrences matches {n..m}'">
+    ["SUNPA"] = <"Syntax error: expecting absolute path in use_node statement">
+    ["SCOAT"] = <"Syntax error: expecting attribute definition(s)">
+    ["SUAS"] = <"Syntax error: error after 'use_archetype' keyword; expecting Object node definition">
+    ["SCAS"] = <"Syntax error: expecting a 'any' node, 'leaf' node, or new node definition">
+    ["SINVS"] = <"Syntax error: illegal invariant expression at identifier $1">
+    ["SEXPT"] = <"Syntax error: expecting absolute path after exists keyword">
+    ["SEXLSG"] = <"Syntax error: existence single value must be 0 or 1">
+    ["SEXLU1"] = <"Syntax error: existence upper limit must be 0 or 1 when lower limit is 0">
+    ["SEXLU2"] = <"Syntax error: existence upper limit must be 1 when lower limit is 1">
+    ["SEXLMG"] = <"Syntax error: existence must be one of 0..0, 0..1, or 1..1">
+     
+    ["SCIAV"] = <"Syntax error: invalid assumed value; must be an integer">
+    ["SCRAV"] = <"Syntax error: invalid assumed value; must be a real number">
+    ["SCDAV"] = <"Syntax error: invalid assumed value; must be an ISO8601 date">
+    ["SCTAV"] = <"Syntax error: invalid assumed value; must be an ISO8601 time">
+    ["SCDTAV"] = <"Syntax error: invalid assumed value; must be an ISO8601 date/time">
+    ["SCDUAV"] = <"Syntax error: invalid assumed value; must be an ISO8601 duration">
+    ["SCSAV"] = <"Syntax error: invalid assumed value; must be a string">
+    ["SCBAV"] = <"Syntax error: invalid assumed value; must be a 'True' or 'False'">
+    ["SCOAV"] = <"Syntax error: invalid assumed value; must be an ordinal integer value">
+     
+    ["SCDPT"] = <"Syntax error: invalid date constraint pattern '$1'; allowed patterns: $2">
+    ["SCTPT"] = <"Syntax error: invalid time constraint pattern '$1'; allowed patterns: $2">
+    ["SCDTPT"] = <"Syntax error: invalid date/time constraint pattern '$1'; allowed patterns: $2">
+    ["SCDUPT"] = <"Syntax error: invalid duration constraint pattern '$1'; legal pattern: P[Y|y][M|m][W|w][D|d][T[H|h][M|m][S|s]] or P[W|w] [/duration_interval]">
+     
+    ["SCSRE"] = <"Syntax error: regular expression compile error '$1' is not a valid regular expression">
+    ["STCCP"] = <"Syntax error: invalid term code constraint pattern '$1': $2">
+    ["STCDC"] = <"Syntax error: duplicate code(s) found in code list">
+    ["STCAC"] = <"Syntax error: assumed value code $1 not found in code list">
+    ["STCNT"] = <"Syntax error: terminology not specified">
+>
+--------

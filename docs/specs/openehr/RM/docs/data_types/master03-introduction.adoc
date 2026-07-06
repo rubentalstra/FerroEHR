@@ -1,0 +1,29 @@
+= Introduction
+
+== Overview
+
+This specification describes a set of types suitable for use in scientific, clinical and related information
+structures. In order for such types to exist, a set of primitive types is assumed, namely `Integer`,
+`Real`, `Boolean`, `Character`, `Octet`, `String`, `List<T>`, `Set<T>`, and `Array<T>`. These have
+standard definitions in the OMG object model used in UML, OCL, and are available in almost all
+type systems. The exact assumptions are described in the openEHR Support Information Model. A
+number of symbolic definitions (similar to constants in programming) are also described in the Support
+IM.
+
+The data types described here are named with the class prefix `DV_`, and inherit from the class
+`DATA_VALUE`. They have two distinct uses in reference models. Firstly, they may be used as 'data
+values' in reference model structures wherever the `DATA_VALUE` class appears, for example, in the
+EHR Reference Model via the `ELEMENT`.`_value_` attribute. Additionally, specific subtypes of the data
+types described here can also be used as attribute types in other classes in reference models, such as
+date/times, coded terms and so on. The difference is that in the former case, only subtypes of
+`DATA_VALUE` may be used, whilst in the latter case, other types may be used as well, from the
+assumed set of basic types.
+
+== Package Structure
+
+The package structure of the openEHR data types is illustrated below.
+
+[.text-center]
+.rm.data_types packages
+image::{uml_diagrams_uri}/RM-data_types-packages.svg[id=rm_data_types_packages, align="center"]
+

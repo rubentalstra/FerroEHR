@@ -14,6 +14,9 @@ openehr-base = { path = "../openehr-base" }
 openehr-derive.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+# Hand-written terminology loader (bundle.rs): read-only XML DOM + error type.
+roxmltree.workspace = true
+thiserror.workspace = true
 
 [lints]
 workspace = true

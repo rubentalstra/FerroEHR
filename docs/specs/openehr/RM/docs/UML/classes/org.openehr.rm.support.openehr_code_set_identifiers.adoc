@@ -1,0 +1,52 @@
+=== OPENEHR_CODE_SET_IDENTIFIERS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*OPENEHR_CODE_SET_IDENTIFIERS*
+
+h|*Description*
+2+a|List of identifiers for code sets in the openEHR terminology.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*Code_set_id_character_sets*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"character sets"`
+a|
+
+h|*1..1*
+|*Code_set_id_compression_algorithms*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"compression algorithms"`
+a|
+
+h|*1..1*
+|*Code_set_id_countries*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"countries"`
+a|
+
+h|*1..1*
+|*Code_set_integrity_check_algorithms*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"integrity check algorithms"`
+a|
+
+h|*1..1*
+|*Code_set_id_languages*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"languages"`
+a|
+
+h|*1..1*
+|*Code_set_id_media_types*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"media types"`
+a|
+
+h|*1..1*
+|*Code_set_id_normal_statuses*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"normal statuses"`
+a|
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*valid_code_set_id* ( +
+an_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Validity function to test if an identifier is in the set defined by this class.
+|===

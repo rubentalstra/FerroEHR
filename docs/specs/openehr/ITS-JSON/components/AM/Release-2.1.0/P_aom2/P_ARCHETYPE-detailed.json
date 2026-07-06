@@ -1,0 +1,52 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/P_ARCHETYPE-detailed.json",
+    "title": "P_ARCHETYPE",
+    "description": "Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.\n\nAn archetype is a modelled as a particular kind of AUTHORED_RESOURCE, and as such, includes descriptive meta-data, language information and revision history. The ARCHETYPE class adds identifying information, a definition - expressed in terms of constraints on instances of an object model, and an ontology.",
+    "$comments": "Defined in P_aom2 IM, abstract",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "P_AUTHORED_ARCHETYPE",
+                "P_TEMPLATE",
+                "P_OPERATIONAL_TEMPLATE"
+            ]
+        },
+        "parent_archetype_id": {
+            "description": "Identifier of the specialisation parent of this archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "archetype_id": {
+            "description": "Identifier of this archetype.",
+            "$ref": "all-detailed.json#/definitions/P_ARCHETYPE_HRID"
+        },
+        "is_differential": {
+            "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "definition": {
+            "description": "Root node of the definition of this archetype.",
+            "$ref": "all-detailed.json#/definitions/P_C_COMPLEX_OBJECT"
+        },
+        "terminology": {
+            "description": "The terminology of the archetype.",
+            "$ref": "all-detailed.json#/definitions/P_ARCHETYPE_TERMINOLOGY"
+        },
+        "rules": {
+            "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+            "type": "array"
+        }
+    },
+    "required": [
+        "_type",
+        "archetype_id",
+        "is_differential",
+        "definition",
+        "terminology"
+    ],
+    "$abstract": true,
+    "$children": [
+        "all-detailed.json#/definitions/P_AUTHORED_ARCHETYPE"
+    ]
+}

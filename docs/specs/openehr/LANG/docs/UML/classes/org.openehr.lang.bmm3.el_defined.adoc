@@ -1,0 +1,16 @@
+=== EL_DEFINED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_DEFINED*
+
+h|*Description*
+2+a|A predicate taking one external variable reference argument, that returns true if the reference is resolvable, i.e. the external value is obtainable.
+
+NOTE: probably to be removed.
+
+h|*Inherit*
+2+|`<<_el_predicate_class,EL_PREDICATE>>`
+
+|===

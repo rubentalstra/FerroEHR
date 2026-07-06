@@ -1,0 +1,34 @@
+=== CODE_SET_ACCESS Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*CODE_SET_ACCESS*
+
+h|*Description*
+2+a|Defines an object providing proxy access to a code_set.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*id* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|External identifier of this code set.
+
+h|*0..1*
+|*all_codes* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/data_types.html#_code_phrase_class[CODE_PHRASE^]>`
+a|Return all codes known in this code set.
+
+h|*1..1*
+|*has_lang* ( +
+a_lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if code set knows about 'a_lang' .
+
+h|*1..1*
+|*has_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if code set knows about  'a_code'.
+|===

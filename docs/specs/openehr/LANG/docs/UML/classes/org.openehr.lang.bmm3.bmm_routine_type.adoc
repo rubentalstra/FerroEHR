@@ -1,0 +1,29 @@
+=== BMM_ROUTINE_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_ROUTINE_TYPE*
+
+h|*Description*
+2+a|Meta-type for routine objects.
+
+h|*Inherit*
+2+|`<<_bmm_signature_class,BMM_SIGNATURE>>`
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*base_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"Routine"`
+a|Base name (built-in).
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*argument_types*: `<<_bmm_tuple_type_class,BMM_TUPLE_TYPE>>`
+a|Type of arguments in the signature, if any; represented as a type-tuple (list of arbitrary types).
+|===

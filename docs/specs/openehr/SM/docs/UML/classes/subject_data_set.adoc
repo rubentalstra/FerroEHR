@@ -1,0 +1,45 @@
+=== SUBJECT_DATA_SET Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*SUBJECT_DATA_SET*
+
+h|*Description*
+2+a|Data set relating to a subject as used within an application.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Unique identifier of this data set with respect to other data sets in use for the same subject. Usually derived from some application semantic label, such as a guideline id or similar.
+
+h|*1..1*
+|*subject_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of data subject, i.e. the entity for which these data 'are about'.
+
+h|*0..1*
+|*creating_app_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of creating / registering application.
+
+h|*0..1*
+|*using_app_ids*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Optional list of identifiers of applications using this data set. May be used to track applications, and dump the data set when empty.
+
+h|*1..1*
+|*variables*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_subject_variable_class,SUBJECT_VARIABLE>>>`
+a|Set of variable definitions in this data set keyed by *local name* within the data set, which may differ from the `SUBJECT_VARIABLE._name_`, which is the canonical name in the service. For example, a variable whose canonical name is "date_of_birth" may be known within a data set as "dob".
+
+h|*0..1*
+|*last_result*: `<<_data_set_result_class,DATA_SET_RESULT>>`
+a|Most recently obtained data set result.
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value* (): `<<_data_set_result_class,DATA_SET_RESULT>>`
+a|Iterate over all `_variables_` and generate a `DATA_SET_RESULT`.
+|===

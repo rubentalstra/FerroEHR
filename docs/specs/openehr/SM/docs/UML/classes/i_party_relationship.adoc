@@ -1,0 +1,91 @@
+=== I_PARTY_RELATIONSHIP Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_PARTY_RELATIONSHIP*
+
+h|*Description*
+2+a|Interface for `PARTY_RELATIONSHIP` operations.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_party_relationship* ( +
+a_versioned_party_rel_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if Party relationship exists in service.
+
+h|*1..1*
+|*get_party_relationship* ( +
+a_versioned_party_rel_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/RM/{rm_release}/demographic.html#_party_relationship_class[PARTY_RELATIONSHIP^]`
+a|Get the current Version of a Party relationship.
+
+
+
+
+.Errors
+* `versioned_object_does_not_exist`
+
+h|*1..1*
+|*get_party_relationship_at_time* ( +
+a_versioned_party_rel_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_time: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^][1]` +
+): `link:/releases/RM/{rm_release}/demographic.html#_party_relationship_class[PARTY_RELATIONSHIP^]`
+a|Get the Version of a Party relationship current at `_a_time_`.
+
+
+
+
+.Errors
+* `versioned_object_does_not_exist`
+
+h|*1..1*
+|*update_party_relationship* ( +
+a_versioned_party_rel_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_version: `<<_uv_party_relationship_class,UV_PARTY_RELATIONSHIP>>[1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]` +
+ +
+__Pre_party_definitions_valid__: `definitions_valid (a_version)` +
+__Pre_has_relationship__: `has_party_relationship (a_versioned_party_rel_id)`
+a|Update a `PARTY_RELATIONSHIP` with a new Version. Causes server-side creation of a new `ORIGINAL_VERSION` and `CONTRIBUTION`.
+
+
+
+
+.Errors
+* `versioned_object_does_not_exist`
+* `object_version_does_not_exist`
+* `definition_unknown`
+* `content_invalid`
+
+h|*0..1*
+|*delete_party_relationship* ( +
+a_versioned_party_rel_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+) +
+ +
+__Pre_has_relationship__: `has_party_relationship (a_versioned_party_rel_id)` +
+__Post_relationship_deleted__: `not has_party_relationship (a_versioned_party_rel_id)`
+a|Delete an existing Party relationship.
+
+
+
+
+.Errors
+* `versioned_object_does_not_exist`
+
+h|*1..1*
+|*get_party_relationship_at_version* ( +
+a_party_rel_version_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/RM/{rm_release}/demographic.html#_party_relationship_class[PARTY_RELATIONSHIP^]`
+a|Get a particular Party relationship Version.
+
+
+
+
+.Errors
+* `object_version_does_not_exist`
+|===

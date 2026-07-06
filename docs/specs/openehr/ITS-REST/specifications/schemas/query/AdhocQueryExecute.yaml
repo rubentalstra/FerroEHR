@@ -1,0 +1,13 @@
+title: AdhocQueryExecute
+required:
+  - q
+type: object
+properties:
+  q:
+    $ref: ./AQL.yaml
+  offset:
+    $ref: ./Offset.yaml
+  fetch:
+    $ref: ./Fetch.yaml
+  query_parameters:
+    $ref: ./QueryParameters.yaml

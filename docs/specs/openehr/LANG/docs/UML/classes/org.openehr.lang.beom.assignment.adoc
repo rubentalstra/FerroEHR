@@ -1,0 +1,25 @@
+=== ASSIGNMENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ASSIGNMENT*
+
+h|*Description*
+2+a|Meta-type representing the assignment statement, which associates a named variable with an expression, and produces no value.
+
+h|*Inherit*
+2+|`<<_statement_class,STATEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*target*: `<<_variable_declaration_class,VARIABLE_DECLARATION>>`
+a|The target variable on the notional left-hand side of this assignment.
+
+h|*1..1*
+|*source*: `<<_expr_value_class,EXPR_VALUE>>`
+a|Source right hand side) of the assignment.
+|===

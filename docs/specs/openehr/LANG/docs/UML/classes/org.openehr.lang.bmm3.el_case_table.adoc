@@ -1,0 +1,30 @@
+=== EL_CASE_TABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_CASE_TABLE<T>*
+
+h|*Description*
+2+a|Compound expression consisting of a list of value-range / expression pairs, and an  `_else_` member that as a whole, represents a case statement flavour of decision table.
+
+Evaluated by iterating through `_items_` and for each one, comparing `_input_` to the item `_value_range_`. If the `_input_` is in the range, the evaluation result of the table is that item's `_result_` evaluation result. 
+
+If no member of `_items_` has a True-returning `_condition_`, the evaluation result is the result of evaluating the `_else_` expression.
+
+h|*Inherit*
+2+|`<<_el_decision_table_class,EL_DECISION_TABLE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_el_case_class,EL_CASE>><T>>`
+a|Members of the chain, equivalent to branches in an if/then/else chain and cases in a case statement.
+
+h|*1..1*
+|*test_value*: `<<_el_value_generator_class,EL_VALUE_GENERATOR>>`
+a|Expressing generating the input value for the case table.
+|===

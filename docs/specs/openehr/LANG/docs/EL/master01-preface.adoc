@@ -1,0 +1,47 @@
+= Preface
+
+== Purpose
+
+This document specifies an abstract openEHR Expression Language (openEHR EL) that provides a syntax counterpart to the `expression` package in the {openehr_bmm}[openEHR Basic Meta-Model (BMM)^]. This may be used within BMM models, to specify archetype rules, {openehr_task_planning}[Task Planning^] expressions, in newer versions of {openehr_cds_releases}[GDL^], and in decision language expressions.
+
+The intended audience includes:
+
+* Standards bodies producing health informatics standards;
+* Academic groups using openEHR;
+* Solution vendors.
+
+== Related Documents
+
+Prerequisite documents for reading this document include:
+
+* The {openehr_overview}[openEHR Architecture Overview^];
+* The {openehr_bmm}[openEHR Basic Meta-Model (BMM)^]
+
+Releated documents include:
+
+* The {openehr_am_aom2}[Archetype Object Model 2 (AOM2)^], Assertions section;
+* The {openehr_task_planning}[Task Planning specification^];
+* The {openehr_cds_gdl}[Guideline Definition Language (GDL)^].
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_expression_language}[{openehr_expression_language}^].
+
+The expression language described in this specification is a more powerful language than the original {openehr_basic_expression_language}[Basic Expression Language (BEL)^], and is based on the {openehr_bmm}#_expressions[openEHR BMM expression model^]. It is a major evolution on BEL syntax, and does not use the BEL meta-model.
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_lang_forum}[openEHR languages specifications forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+Conformance of a data or software artifact to an openEHR specification is determined by a formal test of that artifact against the relevant {openehr_its_component}[openEHR Implementation Technology Specification(s) (ITSs)^], such as an IDL interface or an XML-schema. Since ITSs are formal derivations from underlying models, ITS conformance indicates model conformance.
+

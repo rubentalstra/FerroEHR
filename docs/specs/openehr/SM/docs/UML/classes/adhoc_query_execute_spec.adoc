@@ -1,0 +1,27 @@
+=== ADHOC_QUERY_EXECUTE_SPEC Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ADHOC_QUERY_EXECUTE_SPEC*
+
+h|*Description*
+2+a|Class representing query execution specification for ad hoc queries, including query text and parameters (where applicable).
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*source*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|AQL text of query.
+
+h|*0..1*
+|*formalism*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^] +
+{default{nbsp}={nbsp}"aql"}`
+a|
+
+h|*1..1*
+|*query_parameters*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^], link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Parameters to substitute in query in the form of a set of tagged String values; each tag must match a parameter name in the query.
+|===

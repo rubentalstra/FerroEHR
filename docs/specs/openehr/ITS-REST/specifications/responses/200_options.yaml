@@ -1,0 +1,9 @@
+description: |
+  `200 OK` is returned when options and conformance statement was retrieved successfully.
+headers:
+  Allow:
+    $ref: ../headers/Allow.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/others/Options.yaml

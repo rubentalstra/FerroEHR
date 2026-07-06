@@ -1,0 +1,11 @@
+=== I_MESSAGE_SERVICE Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_MESSAGE_SERVICE*
+
+h|*Description*
+2+a|Generic message service.
+
+|===

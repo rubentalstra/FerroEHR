@@ -1,0 +1,13 @@
+title: PARTY_RELATED
+type: object
+allOf:
+  - $ref: ../common/PartyIdentified.yaml
+required:
+  - relationship
+properties:
+  _type:
+    type: string
+    default: PARTY_RELATED
+  relationship:
+    $ref: ../data_types/DvCodedText.yaml
+x-discriminator-value: PARTY_RELATED

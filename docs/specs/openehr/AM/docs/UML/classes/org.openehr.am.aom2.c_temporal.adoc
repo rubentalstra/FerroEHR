@@ -1,0 +1,61 @@
+=== C_TEMPORAL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__C_TEMPORAL<T> (abstract)__*
+
+h|*Description*
+2+a|Purpose Abstract parent of `C_ORDERED` types whose base type is an ISO date/time type.
+
+h|*Inherit*
+2+|`<<_c_ordered_class,C_ORDERED>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*pattern_constraint*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*valid_pattern_constraint* ( +
+a_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `_a_pattern_` is a valid constraint. Define in concrete descendants.
+
+h|*1..1 +
+(abstract)*
+|*valid_pattern_constraint_replacement* ( +
+a_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+an_other_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if `_a_pattern_` can be replaced by `_an_other_pattern_` in a specialised constraint. Define in concrete subtypes.
+
+h|*1..1 +
+(redefined)*
+|*any_allowed* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = precursor and pattern_constraint.is_empty`
+a|True if any value (i.e. instance) of the reference model type would be allowed. Redefined in descendants.
+
+h|*1..1 +
+(redefined)*
+|*c_value_conforms_to* ( +
+other: `<<_c_ordered_class,C_ORDERED>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `precursor()` or else `_other.pattern_constraint_` is empty, or else `_pattern_constraint_` is a valid (narrower) replacement for `_other.pattern_constraint_`.
+
+h|*1..1 +
+(redefined)*
+|*c_value_congruent_to* ( +
+other: `<<_c_ordered_class,C_ORDERED>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `precursor (other)` and `_pattern_constraint_ ~ _other.pattern_constraint_`, i.e. either both `Void` or else both non-`Void` and identical.
+|===

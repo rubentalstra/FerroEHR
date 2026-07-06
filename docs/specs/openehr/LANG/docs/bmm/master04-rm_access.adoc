@@ -1,0 +1,16 @@
+= RM Access Package
+
+== Overview
+
+The `rm_access` package provides an interface for the application to load and access BMM schemas, and is shown below.
+
+[.text-center]
+.bmm.rm_access Package
+image::{uml_diagrams_uri}/LANG-bmm.rm_access.svg[id=rm_access_package, align="center"]
+
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}reference_model_access.adoc[]
+include::{uml_export_dir}/classes/{pkg}schema_descriptor.adoc[]
+

@@ -1,0 +1,19 @@
+title: RESULT_SET_COLUMN
+description: |
+  An AQL column specification (e.g. a pair of column `name` and associated AQL `path`).
+required:
+  - name
+type: object
+properties:
+  name:
+    type: string
+    description: |
+      Name of the column. 
+      When column alias is not present in the AQL, a `0`-based column index is used prefixed by a hash sign (i.e. `#0`, `#1`...)
+  path:
+    type: string
+    description: |
+      Path from the given AQL of the specified column.
+example:
+  name: '#0'
+  path: '/ehr_id/value'

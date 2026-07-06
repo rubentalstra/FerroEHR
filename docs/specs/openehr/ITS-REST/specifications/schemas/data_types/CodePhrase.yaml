@@ -1,0 +1,16 @@
+title: CODE_PHRASE
+type: object
+required:
+  - terminology_id
+  - code_string
+properties:
+  terminology_id:
+    $ref: ../base_types/TerminologyId.yaml
+  code_string:
+    type: string
+  preferred_term:
+    type: string
+example:
+  terminology_id:
+    value: local
+  code_string: 'at0001'

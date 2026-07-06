@@ -1,0 +1,79 @@
+=== SUBJECT_VARIABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*SUBJECT_VARIABLE*
+
+h|*Description*
+2+a|A single subject variable whose data may take various forms, including atomic, list and time series.
+
+Variables are considered either _global_, having just a `_name_`, or _qualified_, in which case `_namespace_` is also set. A name-spaced variable is one whose meaning is relative to the context of the name-space, typically a specific guideline.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*namespace*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional namespace qualifying `_name_`. Used to distinguish variables that may have the same name but have local meanings within specific contexts, e.g. specific guidelines.
+
+For example, a variable `_has_heart_failure_` is likely to have definitions specific to particular guidelines, such as CHA~2~DS~2~-VASc and (say) a guideline for CHF diagnosis. The use of namespaces in both cases would have the effect of defining variables such as `cha2ds2vasc::_has_heart_failure_` and `chf_diagnosis::_has_heart_failure_`, each of which may have a different retrieval definition.
+
+If not set, the variable is understood to be in a 'global' namespace, and to have the same meaning for all users, as is likely to be the case for a variable such as `_is_type1_diabetic_`.
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Canonical name by which this item is known in the service. Typically required to be a legal variable name in a programming language.
+
+h|*1..1*
+|*type_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Formal type name from defining model.
+
+h|*0..1*
+|*currency*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_duration_class[Iso8601_duration^]`
+a|Required currency of this data item. If not set, most recent available is valid.
+
+h|*0..1*
+|*ask_user*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|If set true, the service should attempt to obtain the data item from a live user.
+
+TODO: can only work if access method defined.
+
+h|*1..1*
+|*is_manual*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this variable is obtained by manual notification, typically from a worker observing the subject in a point of care situation.
+
+h|*0..1*
+|*history*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_variable_sample_class,VARIABLE_SAMPLE>>>`
+a|Samples constituting the retrieve history of this variable.
+
+h|*1..1*
+|*frame_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of retrieve frame from which to extract this variable.
+
+h|*0..1*
+|*last_frame*: `<<_data_frame_sample_class,DATA_FRAME_SAMPLE>>`
+a|Most recent retrieve frame from which to extract variable value.
+
+h|*1..1*
+|*frame_path*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Path within `_last_frame_` result.
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*canonical_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Return canonical name, formed from `_namespace_` (if present) and `_name_`. In the first case, the result will be `namespace::name`, in the latter, just `name`.
+
+h|*1..1*
+|*value* (): `<<_variable_sample_class,VARIABLE_SAMPLE>>`
+a|Extract the value from the source retrieve frame, reprocessing if necessary to obtain intended type (single, list, time_series).
+
+h|*1..1*
+|*is_global* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post_result__: `Result = (namespace = Void)`
+a|True if `_namespace_` is set.
+|===

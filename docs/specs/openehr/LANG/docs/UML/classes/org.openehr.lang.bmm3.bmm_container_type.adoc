@@ -1,0 +1,76 @@
+=== BMM_CONTAINER_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_CONTAINER_TYPE*
+
+h|*Description*
+2+a|Meta-type that specifies linear containers with a generic parameter corresponding to the type of contained item, and whose container type is a generic type such as `List<T>`, `Set<T>` etc.
+
+h|*Inherit*
+2+|`<<_bmm_type_class,BMM_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*container_class*: `<<_bmm_generic_class_class,BMM_GENERIC_CLASS>>`
+a|The type of the container. This converts to the `_root_type_` in `BMM_GENERIC_TYPE`.
+
+h|*1..1*
+|*item_type*: `<<_bmm_unitary_type_class,BMM_UNITARY_TYPE>>`
+a|The container item type.
+
+h|*0..1*
+|*is_ordered*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}true}`
+a|True indicates that order of the items in the container attribute is considered significant and must be preserved, e.g. across sessions, serialisation, deserialisation etc. Otherwise known as 'list' semantics.
+
+h|*0..1*
+|*is_unique*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True indicates that only unique instances of items in the container are allowed. Otherwise known as 'set' semantics.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*type_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Return full type name, e.g. `List<ELEMENT>`.
+
+h|*1..1 +
+(effected)*
+|*is_abstract* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post_is_abstract__: `Result = container_type.is_abstract`
+a|True if the container class is abstract.
+
+h|*1..1 +
+(effected)*
+|*flattened_type_list* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>` +
+ +
+__Post_result__: `Result = item_type.flattened_type_list`
+a|Flattened list of type names of `_item_type_`, i.e. `_item_type.flattened_type_list_()`.
+
+h|*1..1 +
+(effected)*
+|*unitary_type* (): `<<_bmm_unitary_type_class,BMM_UNITARY_TYPE>>`
+a|Return `_item_type_`.
+
+h|*1..1 +
+(effected)*
+|*is_primitive* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post_validity__: `Result = base_class.is_primitive` +
+__Post_result__: `Result = item_type.is_primitive`
+a|True if `_item_type_` is primitive.
+
+h|*1..1 +
+(effected)*
+|*effective_type* (): `<<_bmm_effective_type_class,BMM_EFFECTIVE_TYPE>>`
+a|Return `_item_type.effective_type_()`.
+|===

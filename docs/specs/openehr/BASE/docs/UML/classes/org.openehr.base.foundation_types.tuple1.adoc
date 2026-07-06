@@ -1,0 +1,14 @@
+=== TUPLE1 Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*TUPLE1<A>*
+
+h|*Description*
+2+a|A Tuple type used, among other things, for representing a single typed argument within a Routine signature.
+
+h|*Inherit*
+2+|`<<_tuple_class,TUPLE>>`
+
+|===

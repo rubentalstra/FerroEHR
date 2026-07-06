@@ -1,0 +1,10 @@
+name: subject_namespace
+in: query
+description: |
+  The EHR subject id namespace.
+required: true
+style: form
+explode: true
+schema:
+  type: string
+  example: 'examples'

@@ -1,0 +1,16 @@
+=== S_DV_COUNT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_DV_COUNT*
+
+h|*Description*
+2+a|Simplified RM form of `DV_COUNT` RM class.
+
+TODO: define
+
+h|*Inherit*
+2+|`<<_s_data_value_class,S_DATA_VALUE>>`
+
+|===

@@ -1,0 +1,13 @@
+title: Validation
+type: object
+properties:
+  precision:
+    $ref: ./Precision.yaml
+  range:
+    $ref: ./Range.yaml
+example:
+  precision:
+    minOp: '>='
+    min: 1
+    maxOp: <=
+    max: 1

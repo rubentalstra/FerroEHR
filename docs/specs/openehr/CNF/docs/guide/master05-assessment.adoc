@@ -1,0 +1,25 @@
+= Conformance Assessment
+
+== Test Environment
+
+An operational test environment requires at a minimum a _test application_ with the appropriate protocol client(s) in order to exercise the SUT. A system log viewer and a data viewer may be provided as part of the product in order to facilitate human interaction with the system, but these are not obligatory. A typical the conformance test environment is of the following form:
+
+[.text-center]
+.System Under Test - REST
+image::{diagrams_uri}/conformance_sut_rest.svg[id=conformance_sut_rest, align="center"]
+
+== Tooling
+
+TBD
+
+=== Test Execution Report
+
+TBD
+
+=== Conformance Statement
+
+TBD
+
+=== Conformance Certification
+
+TBD

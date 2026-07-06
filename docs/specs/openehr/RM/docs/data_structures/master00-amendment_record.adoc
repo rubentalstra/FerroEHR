@@ -1,0 +1,261 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*RM Release 1.1.0*
+
+|[[latest_issue]]1.7.4
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]: Convert citations to bibtex form.
+|T Beale
+|[[latest_issue_date]]15 Dec 2019
+
+|
+|{spec_tickets}/SPECRM-77[SPECRM-77^]. Add `ELEMENT._null_reason_`.
+|I McNicoll, +
+ H Leslie, +
+ S Ljosland Bakke, +
+ T Schuler, +
+ T Beale
+|15 Oct 2019
+
+|
+|{spec_tickets}/SPECPUB-3[SPECPUB-3^]. Correct UML conversion error in `EVENT._data_`, which is of generic parameter type `T`.
+|S Arikan, +
+ T Beale
+|21 Feb 2019
+
+4+^h|*RM Release 1.0.4*
+
+|1.7.3
+|{spec_tickets}/SPECRM-83[SPECRM-83^]. Improve documentation of `INTERVAL_EVENT` and `POINT_EVENT` (addresses {spec_tickets}/SPECPR-197[SPECPR-197^]).
+|P Pazos, +
+ T Beale
+|27 Dec 2018
+
+4+^h|*RM Release 1.0.3*
+
+|1.7.2
+|{spec_tickets}/SPECRM-42[SPECRM-42^]. Clarify definition of `HISTORY._summary_` (addresses {spec_tickets}/SPECPR-81[SPECPR-81^]).
+|I McNicoll, +
+ G Grieve
+|15 Nov 2015
+
+4+^h|*Release 1.0.2*
+
+|1.7.1
+|{spec_tickets}/SPEC-271[SPEC-271^]. Correct minor inconsistencies in `ITEM_TABLE` specification and example.
+|R Chen
+|05 Nov 2008
+
+|
+|{spec_tickets}/SPEC-257[SPEC-257^]: Correct minor typos and clarify text.
+|C Ma, +
+ R Chen, +
+ T Cook
+|
+
+|
+|{spec_tickets}/SPEC-255[SPEC-255^]. Correct minor error in `INTERVAL_EVENT._width_` documentation.
+|A Patterson
+|
+
+|
+|{spec_tickets}/SPEC-283[SPEC-283^]. Correct spelling of `ELEMENT._null_flavor_` attribute to `_null_flavour_`.
+|H Frankel
+|
+
+4+^h|*Release 1.0.1*
+
+|1.7 
+|{spec_tickets}/SPEC-200[SPEC-200^]. Correct Release 1.0 typographical errors. Minor cosmetic changes to diagrams. Correct return types of `ITEM_TABLE` functions to `CLUSTER` rather than `List<ELEMENT>`.
+|D Lloyd, +
+ T Beale
+|26 Sep 2006
+
+|
+|{spec_tickets}/SPEC-207[SPEC-207^]: Change `ITEM_TABLE` columns to rows.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-219[SPEC-219^]: Use constants instead of literals to refer to terminology in RM.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-220[SPEC-220^]: Tighten semantics of `HISTORY._period_` and `EVENT._time_`.
+|A Patterson
+|
+
+4+^h|*Release 1.0*
+
+|1.6
+|{spec_tickets}/SPEC-14[SPEC-14^]. Adjust History. Major simplifcation to package; make Events absolute in time.
+|S Heard +
+ T Beale
+|16 Dec 2005
+
+|
+|{spec_tickets}/SPEC-155[SPEC-155^]: Summary data.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-183[SPEC-183^]. Remove root node from `ITEM_TREE`.
+|G Grieve
+|
+
+|
+|{spec_tickets}/SPEC-185[SPEC-185^]. Improved `EVENT` model.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-155[SPEC-155^]: Summary data.
+|S Heard +
+ G Grieve
+|
+
+|
+|{spec_tickets}/SPEC-192[SPEC-192^]: Add display-as-absolute facility to delta Events in History (added explanation only).
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-193[SPEC-193^]: Simplify `INTERVAL_EVENT` for archetyping and paths. Revert to one math function per `INTERVAL_EVENT`.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-196[SPEC-196^]: Rename `HISTORY._items_` to events.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-192[SPEC-192^]. Support change, increase and decrease Events in History.
+|S Heard +
+ D Lloyd
+|
+
+4+^h|*Release 0.96*
+
+4+^h|*Release 0.95*
+
+|1.5.1 
+|{spec_tickets}/SPEC-48[SPEC-48^]. Pre-release review of documents. Fixed `HISTORY` UML diagram - remove superfluous `T:XXX` (no semantic change). Converted parameter types to UML box form.
+|D Lloyd 
+|22 Feb 2005
+
+|1.5 
+|{spec_tickets}/SPEC-101[SPEC-101^]. Improve modelling of Structure classes.
+|DSTC
+|10 Dec 2004
+
+|
+|{spec_tickets}/SPEC-100[SPEC-100^]. Correct inheritance error in `ITEM_STRUCTURE` package.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-24[SPEC-24^]. Revert meaning to `STRING` and rename as `archetype_node_id_`.
+|S Heard, +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-118[SPEC-118^]. Make package names lower case.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-123[SPEC-123^]. `EVENT` should inherit from `LOCATABLE`.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-124[SPEC-124^]. Fix path syntax in data structures IM document.
+|T Beale
+|
+
+4+^h|*Release 0.9*
+
+|1.4 
+|{spec_tickets}/SPEC-19[SPEC-19^]. Add `HISTORY` and `STRUCTURE` supertype.
+|T Beale
+|09 Mar 2004
+
+|
+|{spec_tickets}/SPEC-28[SPEC-28^]. Change name of `STRUCTURE` class to avoid clashes.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-89[SPEC-89^]. Remove `ITEM._displayed_`.
+|DSTC
+|
+
+|
+|{spec_tickets}/SPEC-91[SPEC-91^]. Correct anomalies in use of `CODE_PHRASE` and `DV_CODED_TEXT`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-67[SPEC-67^]. Change `EVENT` class to enable math function interval A measurements. Renamed `EVENT._duration_` and `SINGLE_EVENT._duration_` to `_width_`.
+|S Heard
+|
+
+|
+|*Formally validated using ISE Eiffel 5.4*.
+|T Beale
+|
+
+|1.3.3 
+|{spec_tickets}/SPEC-41[SPEC-41^]. Visually differentiate primitive types in openEHR documents.
+|D Lloyd 
+|04 Sep 2003
+
+|1.3.2 
+|{spec_tickets}/SPEC-13[SPEC-13^] Rename key classes - rename `COMPOUND` to `CLUSTER` to conform with CEN 13606.
+|D Kalra, +
+ T Beale
+|20 Jun 2003
+
+|1.3.1 
+|Improved heading layout, package naming. Made `HISTORY._is_periodic_` a function.
+|T Beale, +
+ Z Tun
+|18 Mar 2003
+
+|1.3 
+|*Formally validated using ISE Eiffel 5.2. No changes*. 
+|T Beale 
+|20 Feb 2003
+
+|1.2.1 
+|Minor corrections to terminology_id invariants. 
+|Z Tun 
+|08 Jan 2003
+
+|1.2 
+|Defined packages properly and moved `HISTORY` classes from EHR RM. No change to semantics.
+|T Beale 
+|18 Dec 2002
+
+|1.1.1 
+|Minor corrections: `SINGLE_S` `_new_` function. 
+|T Beale 
+|10 Nov 2002
+
+|1.1 
+|Minor adjustments due to change in `DV_CODED_TEXT`. 
+|T Beale 
+|01 Nov 2002
+
+|1.0 
+|Taken from Common RM. 
+|T Beale 
+|11 Oct 2002
+
+|===

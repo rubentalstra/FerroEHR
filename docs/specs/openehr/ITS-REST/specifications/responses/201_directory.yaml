@@ -1,0 +1,12 @@
+description: |
+  `201 Created` is returned when the FOLDER was created. 
+  Content body is only returned when `Prefer` header has `return=representation`, otherwise only headers are returned.
+headers:
+  ETag:
+    $ref: ../headers/ETag_FOLDER.yaml
+  Location:
+    $ref: ../headers/Location_directory.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/Folder.yaml

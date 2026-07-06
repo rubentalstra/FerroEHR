@@ -1,0 +1,5 @@
+:spec_title: Resource Model
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: openehr, resources
+:description: openEHR Resource Model specification

@@ -1,0 +1,22 @@
+=== OPENEHR_CONTENT_ITEM Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*OPENEHR_CONTENT_ITEM*
+
+h|*Description*
+2+a|Form of `EHR EXTRACT_ITEM` containing openEHR serialised `VERSIONED_OBJECTs`.
+
+h|*Inherit*
+2+|`<<_extract_content_item_class,EXTRACT_CONTENT_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*item*: `<<_x_versioned_object_class,X_VERSIONED_OBJECT>>`
+a|Content object.
+|===

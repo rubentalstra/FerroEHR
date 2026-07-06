@@ -1,0 +1,30 @@
+=== EXPORT_SPEC Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXPORT_SPEC*
+
+h|*Description*
+2+a|Specifies the details for an export operation.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*logical_format*: `<<_export_format_enumeration,EXPORT_FORMAT>>`
+a|Logical format to use, i.e. flavour of XML, JSON etc.
+
+h|*0..1*
+|*compression_format*: `<<_compression_format_enumeration,COMPRESSION_FORMAT>>`
+a|Compression format to use during dump.
+
+h|*0..1*
+|*encoding*: `<<_encoding_format_enumeration,ENCODING_FORMAT>>`
+a|Encoding to use.
+
+h|*1..1*
+|*segment_split_size*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Size in kb of segment size on file system to split export into.
+|===

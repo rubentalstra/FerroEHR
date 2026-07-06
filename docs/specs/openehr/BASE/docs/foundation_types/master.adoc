@@ -1,0 +1,76 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+=== Contributors
+
+This specification has benefited from formal and informal input from the openEHR and wider health informatics community.
+
+=== Trademarks
+
+* 'openEHR' is a registered trademark of the openEHR Foundation
+
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+
+ifdef::package_qualifiers[]
+:pkg: org.openehr.base.foundation_types.
+endif::[]
+
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-primitive_types.adoc[leveloffset=+1]
+include::master04-structure_types.adoc[leveloffset=+1]
+include::master05-interval.adoc[leveloffset=+1]
+include::master06-time_types.adoc[leveloffset=+1]
+include::master07-terminology.adoc[leveloffset=+1]
+include::master08-functional.adoc[leveloffset=+1]
+include::master09-type_cross_ref.adoc[leveloffset=+1]
+
+
+//
+// --------------------------------------------- Amendment Record -----------------------------------------------
+//
+:sectnums!:
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:sectnums!:
+//== References
+//
+//bibliography::[]

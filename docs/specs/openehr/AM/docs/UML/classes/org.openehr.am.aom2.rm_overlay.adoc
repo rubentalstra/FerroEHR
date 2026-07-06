@@ -1,0 +1,18 @@
+=== RM_OVERLAY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*RM_OVERLAY*
+
+h|*Description*
+2+a|Container object for archetype statements relating to RM attributes, which may be directly on objects constrained within the archetype, or at deeper non-constrained RM paths from an object or the root.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*rm_visibility*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_rm_attribute_visibility_class,RM_ATTRIBUTE_VISIBILITY>>>`
+a|Optional structure in which visibility and aliasing of reference model elements can be specified. Key is path to an RM attribute, which is typically formed from a path to an archetyped node concatenated with a further pure RM attribute path; may also refer to a non-archetyped attribute.
+|===

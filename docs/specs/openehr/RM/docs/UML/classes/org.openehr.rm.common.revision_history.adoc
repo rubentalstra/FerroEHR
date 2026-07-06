@@ -1,0 +1,34 @@
+=== REVISION_HISTORY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*REVISION_HISTORY*
+
+h|*Description*
+2+a|Purpose Defines the notion of a revision history of audit items, each associated with the version for which that audit was committed. The list is in most-recent-first order.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_revision_history_item_class,REVISION_HISTORY_ITEM>>>`
+a|The items in this history in most-recent-last order.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*most_recent_version* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]` +
+ +
+__Post__: `Result.is_equal (items.last.version_id.value)`
+a|The version id of the most recent item, as a String.
+
+h|*1..1*
+|*most_recent_version_time_committed* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]` +
+ +
+__Post__: `Result.is_equal (items.last.audits.first. time_committed.value)`
+a|The commit date/time of the most recent item, as a String.
+|===

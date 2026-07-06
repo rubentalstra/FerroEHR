@@ -1,0 +1,39 @@
+=== RESULT_SET Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*RESULT_SET*
+
+h|*Description*
+2+a|Structured query execution result. The `_columns_` attribute contains a definition of columns, while the result data is represented by the `_rows_` attribute.
+
+Ideally the Result set has sufficient meta-data to be processible independently of the original query.
+
+h|*Inherit*
+2+|`link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*columns*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_result_set_column_class,RESULT_SET_COLUMN>>>`
+a|Column definition structure.
+
+h|*1..1*
+|*id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Unique identifier of this result set.
+
+h|*1..1*
+|*creation_time*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^]`
+a|Time of creation of this Result set by execution engine.
+
+h|*0..1*
+|*query*: `<<_result_query_descriptor_class,RESULT_QUERY_DESCRIPTOR>>`
+a|
+
+h|*0..1*
+|*rows*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_result_set_row_class,RESULT_SET_ROW>>>`
+a|Rox data.
+|===

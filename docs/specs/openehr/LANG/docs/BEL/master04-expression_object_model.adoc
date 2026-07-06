@@ -1,0 +1,100 @@
+= The Basic Expression Object Model
+
+== Overview
+
+The `beom` package defines the Basic Expression Object Model (BEOM), a model of 'statements' and 'expressions' that can be used in various contexts in openEHR, including inside archetypes and in GDL guidelines. If the Expression Language or other syntax-based artefact is used, the model described here defines the parser output in the form of an expression tree. Other openEHR models designed for a particular purpose may reuse the `beom` package and further specialise some of its types specifically intended for extension.
+
+The BEOM package structure is shown below.
+
+[.text-center]
+.base.expression Package
+image::{uml_diagrams_uri}/LANG-beom-packages.svg[id=expression_packages, align="center"]
+
+== Core Package
+
+The main `beom` packages `core` and `extension` are illustrated below.
+
+[.text-center]
+.lang.beom.core Package
+image::{uml_diagrams_uri}/LANG-beom.core.svg[id=expression_package, align="center"]
+
+A group of statements to be used together is formally defined as one or more `STATEMENTs` in a `STATEMENT_SET`. There are three types of statements corresponding to the classes `ASSERTION`, `VARIABLE_DECLARATION` and `ASSIGNMENT`. Assertions consist of an expression tree structure that evaluates to a `Boolean` value. The root of the tree is a descendant of the class `EXPR_ITEM` that represents a Boolean-returning operator or value. An Assertion has an optional tag, enabling it to be named. 
+
+A `VARIABLE_DECLARATION` enables a named variable to be declared with a type, which must be one of the descendants of `EXPR_DEF_TYPE`.
+
+The `ASSIGNMENT` class defines the usual operation of assigning a value (the `_source_` i.e. the notional right-hand side) to a variable, (the `_target_`, i.e. left-hand side). The source of an assignment can be any Expression or an `EXTERNAL_QUERY`, which are sub-types of `EXPR_VALUE`.
+
+=== Expressions
+
+Expressions are fully described statement values that may be evaluated internally (as compared to an external query) and are defined by the `EXPR_XXX` classes. The Expression classes model a typical evaluation tree each of whose nodes is either a leaf or an operator node. The semantics of Expressions are described in the <<language-expressions, Expressions>> sub-section in the Language section.
+
+In this model, function calls are treated as leaf nodes rather than tree nodes, which would be more typical of a functional language meta-model. The leaf node approach used here treats function calls as black boxes requiring an evaluation method, enabling the main expression tree to be evaluated by use of a standard set of operators whose semantics can be safely built in.
+
+Operator semantics are defined by the class `OPERATOR_DEF`, which includes the two attributes `_name_` and `_symbols_` which define the name of the operator and its allowable symbols respectively.
+
+=== Other Statement Elements
+
+==== External Query
+
+An `EXTERNAL_QUERY` is a type of expression representing a call to an external service which obtains a value for it. This enables information items from the exterior computational environment to be treated as abstract typed values within expressions.
+
+=== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}statement_set.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}statement.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}assertion.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}variable_declaration.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}assignment.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_value.adoc[leveloffset=+1]
+
+include::{uml_export_dir}/classes/{pkg}external_query.adoc[leveloffset=+1]
+
+include::{uml_export_dir}/classes/{pkg}expression.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_operator.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_unary_operator.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_binary_operator.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_for_all.adoc[leveloffset=+1]
+
+include::{uml_export_dir}/classes/{pkg}expr_leaf.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_literal.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_variable_ref.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_value_ref.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}expr_function_call.adoc[leveloffset=+1]
+
+== Operators
+
+Operators used in BEL are represented in the `OPERATOR_KIND` enumeration, which is shown below.
+
+[.text-center]
+.BEL operators
+image::{uml_diagrams_uri}/LANG-beom-operators.svg[id=operators, align="center"]
+
+=== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}operator_kind.adoc[leveloffset=+1]
+
+== Typing
+
+The `beom.types` package is shown below.
+
+[.text-center]
+.lang.beom.types Package
+image::{uml_diagrams_uri}/LANG-beom.types.svg[id=expressions_types_package, align="center"]
+
+The type system of the Expression formalism is defined via the type `EXPR_TYPE_DEF` and its descendants. All types have a `_type_name_` and a `_type_anchor_`, which is a variable of the coresponding primtive type from within the openEHR `base_types` package, i.e. `Integer`, `Real`, `String`, etc. The type anchor can be used for testing assignments within the implementation. A special type `TYPE_DEF_OBJECT` is included to enable a value reference (descendant of `EXPR_VALUE_REF`) to refer to a complex object, to which some expression operators can be applied, including equality and existence. The types system is extensible, as described below.
+
+=== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}expr_type_def.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_boolean.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_integer.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_real.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_date.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_date_time.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_time.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_duration.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_string.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_uri.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_terminology_code.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}type_def_object_ref.adoc[leveloffset=+1]
+

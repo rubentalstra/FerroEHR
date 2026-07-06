@@ -1,0 +1,67 @@
+= Model Overview
+
+The model described here is a pure object-oriented model that can be used with archetype parsers and software that manipulates archetypes and templates in memory. It is typically the output of a parser of any serialised form of archetypes.
+
+== Used BASE Component Packages
+
+The AOM is dependent on various packages from the openEHR BASE component. The first of these is the `base.foundation_types` package, which defines the various 'leaf' types assumed by the AOM as well as other utility types and basic data structures, such as the `Interval<T>` type. These types are documented in the {openehr_foundation_types}[openEHR Foundation Types specification^] and reproduced below for convenience.
+
+[.text-center]
+.`base.foundation_types` - 'leaf' types
+image::{openehr_base_uml_diagrams}/BASE-foundation_types-leaf_types.svg[id=base_types_leaf_types, align="center"]
+
+[.text-center]
+.`base.foundation_types.interval` Package
+image::{openehr_base_uml_diagrams}/BASE-foundation_types.interval.svg[id=base_types_structure_types, align="center"]
+
+NOTE: the above types do not constitute a formal part of this specification. Any implementation of the AOM will typically have to use concrete versions of these types found within languages and/or libraries.
+
+In addition, various definitions from the `base.base_types.definitions` package are reused, which are shown below.
+
+[.text-center]
+.`base.base_types.definitions` Package
+image::{openehr_base_uml_diagrams}/BASE-base_types.definitions.svg[id=base_types_definitions, align="center"]
+
+The enumeration type `VALIDITY_KIND` is provided in order to define standard values representing `mandatory`, `optional`, or `prohibited` in any model. It is used in this model in classes such as `C_DATE` , `C_TIME` and `C_DATE_TIME`. The `VERSION_STATUS` enumeration type serves a similar function within various AOM types.
+
+Other classes used from the BASE Component include the `base.resource` package, which includes the class `AUTHORED_RESOURCE` and subordinate classes. These are shown by inclusion in the AOM Archetype package diagram below.
+
+Finally, classes from the BASE Component `base.expressions` package is used by the rules part of the AOM. This is documented in the relevant section below.
+
+== AOM2 Package Structure
+
+The Archetype Object Model is defined by the package `am.aom2` and subordinate packages, as illustrated in <<aom2_package_overview>>.
+
+[.text-center]
+.Package Overview
+image::{uml_diagrams_uri}/AM-aom2-packages.svg[id=aom2_package_overview, align="center"]
+
+== Definition and Utility Classes
+
+=== Overview
+
+Various definitional constants are used in the AOM. These are defined in the `aom2.definitions` package from the AM component and are shown below.
+
+[.text-center]
+.Definition Package
+image::{uml_diagrams_uri}/AM-aom2.definitions.svg[id=definition_package, align="center"]
+
+=== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}adl_code_definitions.adoc[]
+
+==== Utility Algorithms
+
+Useful utility algorithms from the above class, referenced elsewhere in this specification are shown below. 
+
+[source,eiffel]
+--------
+    codes_conformant (a_child_code, a_parent_code: String): Boolean
+            -- True if `a_child_code' conforms to `a_parent_code' in the sense of specialisation, i.e.
+            -- is `a_child_code' the same as or more specialised than `a_parent_code'
+        do
+            Result := is_valid_code (a_child_code) and then a_child_code.starts_with (a_parent_code) and then
+                (a_child_code.count = a_parent_code.count or else
+                a_child_code.item (a_parent_code.count + 1) = Specialisation_separator)
+        end
+--------

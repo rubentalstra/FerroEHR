@@ -1,0 +1,32 @@
+# Note: This type codegen is failing around collision on property names _type vs type.
+# see: https://github.com/OpenAPITools/openapi-generator/issues/9444
+# see: https://github.com/OpenAPITools/openapi-generator/issues/8291
+# TODO: fix this as soon as redoc and/or openapi generator is able to coop with such names and distinguish the discriminator for real property
+title: OBJECT_REF
+type: object
+required:
+  - namespace
+  - type
+  - id
+properties:
+#  _type:
+#    type: string
+#    default: OBJECT_REF
+  namespace:
+    type: string
+  type:
+    type: string
+  id:
+    $ref: ../base_types/UObjectId.yaml
+#x-discriminator-value: OBJECT_REF
+#x-cg-discriminator:
+#  propertyName: _type
+#  mapping:
+#    OBJECT_REF: '#/components/schemas/ObjectRef'
+#    PARTY_REF: '#/components/schemas/PartyRef'
+example:
+  id:
+    _type: OBJECT_VERSION_ID
+    value: 'fb458d9c-1323-42bc-b7f8-787f3660a0b5::openEHRSys.example.com::1'
+  namespace: local
+  type: COMPOSITION

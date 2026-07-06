@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/ADL_CODE_DEFINITIONS.json",
+    "title": "ADL_CODE_DEFINITIONS",
+    "description": "Definitions relating to the internal code system of archetypes.",
+    "$comments": "Defined in Aom2 IM",
+    "properties": {
+        "_type": {
+            "enum": [
+                "ADL_CODE_DEFINITIONS",
+                "C_ATTRIBUTE",
+                "C_COMPLEX_OBJECT_PROXY",
+                "ARCHETYPE_SLOT",
+                "C_COMPLEX_OBJECT",
+                "C_BOOLEAN",
+                "C_STRING",
+                "C_TERMINOLOGY_CODE",
+                "C_INTEGER",
+                "C_REAL",
+                "C_TIME",
+                "C_DATE",
+                "C_DATE_TIME",
+                "C_DURATION",
+                "C_ARCHETYPE_ROOT"
+            ]
+        }
+    }
+}

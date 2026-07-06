@@ -1,0 +1,14 @@
+=== X_VERSIONED_FOLDER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*X_VERSIONED_FOLDER*
+
+h|*Description*
+2+a|Form of `X_VERSIONED_OBJECT` for `FOLDER` EHR object.
+
+h|*Inherit*
+2+|`<<_x_versioned_object_class,X_VERSIONED_OBJECT>>`
+
+|===

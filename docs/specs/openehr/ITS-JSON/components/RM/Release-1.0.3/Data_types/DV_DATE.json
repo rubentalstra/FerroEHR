@@ -1,0 +1,41 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_DATE.json",
+    "definitions": {
+        "DV_DATE": {
+            "type": "object",
+            "required": [
+                "value"
+            ],
+            "properties": {
+                "normal_status": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "normal_range": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_INTERVAL.json#/definitions/DV_INTERVAL"
+                },
+                "other_reference_ranges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/REFERENCE_RANGE.json#/definitions/REFERENCE_RANGE"
+                    },
+                    "minItems": 1
+                },
+                "magnitude_status": {
+                    "type": "string"
+                },
+                "accuracy": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_DURATION.json#/definitions/DV_DURATION"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "DV_DATE"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

@@ -1,0 +1,17 @@
+title: DV_DATE
+type: object
+allOf:
+  - $ref: ../data_types/DvTemporal.yaml
+required:
+  - value
+properties:
+  _type:
+    type: string
+    default: DV_DATE
+  value:
+    type: string
+    format: date
+x-discriminator-value: DV_DATE
+example:
+  _type: DV_DATE
+  value: '2017-08-15'

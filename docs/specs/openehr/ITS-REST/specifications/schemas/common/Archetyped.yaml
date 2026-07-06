@@ -1,0 +1,20 @@
+title: ARCHETYPED
+type: object
+required:
+  - archetype_id
+  - rm_version
+properties:
+  archetype_id:
+    $ref: ../base_types/ArchetypeId.yaml
+  template_id:
+    $ref: ../base_types/TemplateId.yaml
+  rm_version:
+    type: string
+additionalProperties: false
+example:
+  archetype_id:
+    value: openEHR-EHR-COMPOSITION.encounter.v1
+  template_id:
+    value: Example.v1::c7ec861c-c413-39ff-9965-a198ebf44747
+  rm_version: 1.0.2
+

@@ -1,0 +1,22 @@
+=== COMPRESSION_FORMAT Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*COMPRESSION_FORMAT*
+
+h|*Description*
+2+a|Type of compression to use when exporting.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|zip
+a|
+
+h|
+|7z
+a|
+|===

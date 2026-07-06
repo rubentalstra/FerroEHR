@@ -1,0 +1,51 @@
+openapi: 3.0.3
+info:
+  title: APIs Overview
+  version: latest
+  x-status: STABLE
+  x-spec: overview
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: 'https://specifications.openehr.org/'
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: 'https://creativecommons.org/licenses/by-nd/3.0/'
+  description:
+    $ref: ./docs/overview/Intro.md
+security: []
+servers:
+  - url: 'https://{baseUrl}/v1'
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+paths:
+  '/':
+    options:
+      $ref: ./operations/options.yaml
+tags:
+  - name: Glossary_and_conventions
+    x-displayName: Glossary and conventions
+    description:
+      $ref: ./docs/overview/Glossary_and_conventions.md
+  - name: Requests_and_responses
+    x-displayName: Requests and responses
+    description:
+      $ref: ./docs/overview/Requests_and_responses.md
+  - name: Resources
+    description:
+      $ref: ./docs/overview/Resources.md
+  - name: Options
+    description: Retrieving system options and conformance information.
+x-tagGroups:
+  - name: Docs
+    tags:
+      - Glossary_and_conventions
+      - Requests_and_responses
+      - Resources
+  - name: Endpoints
+    tags:
+      - Options
+

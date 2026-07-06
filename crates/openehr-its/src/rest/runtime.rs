@@ -6,6 +6,18 @@
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 
+/// A single semantic-validation violation, keyed by the RM path of the
+/// offending node. Carried by [`ApiError::ValidationFailed`] so the REST layer
+/// can render the ITS-REST error body (`schemas/others/Error.yaml`:
+/// `{ message, validationErrors[] }`).
+#[derive(Debug, Clone)]
+pub struct ValidationError {
+    /// The RM path (archetype `aqlPath` or RM instance path) of the violation.
+    pub path: String,
+    /// A human-readable description of the violation.
+    pub message: String,
+}
+
 /// The error a REST handler may return; carries the HTTP status the openEHR
 /// ITS-REST contract prescribes.
 #[derive(Debug, thiserror::Error)]
@@ -24,6 +36,11 @@ pub enum ApiError {
     PreconditionFailed(String),
     #[error("unprocessable entity: {0}")]
     Unprocessable(String),
+    /// A well-formed payload that failed semantic (template/RM/terminology)
+    /// validation: an ITS-REST `422 Unprocessable Entity` with a structured
+    /// list of per-path violations (ITS-REST `422_COMPOSITION.yaml`).
+    #[error("{} validation error(s)", .0.len())]
+    ValidationFailed(Vec<ValidationError>),
     #[error("unsupported media type: {0}")]
     UnsupportedMediaType(String),
     #[error("not acceptable: {0}")]
@@ -45,7 +62,9 @@ impl ApiError {
             ApiError::NotFound(_) => StatusCode::NOT_FOUND,
             ApiError::Conflict(_) => StatusCode::CONFLICT,
             ApiError::PreconditionFailed(_) => StatusCode::PRECONDITION_FAILED,
-            ApiError::Unprocessable(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            ApiError::Unprocessable(_) | ApiError::ValidationFailed(_) => {
+                StatusCode::UNPROCESSABLE_ENTITY
+            }
             ApiError::UnsupportedMediaType(_) => StatusCode::UNSUPPORTED_MEDIA_TYPE,
             ApiError::NotAcceptable(_) => StatusCode::NOT_ACCEPTABLE,
             ApiError::NotImplemented => StatusCode::NOT_IMPLEMENTED,

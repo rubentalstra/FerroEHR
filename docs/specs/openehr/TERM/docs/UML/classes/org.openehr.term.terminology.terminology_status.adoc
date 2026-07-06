@@ -1,0 +1,26 @@
+=== TERMINOLOGY_STATUS Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*TERMINOLOGY_STATUS*
+
+h|*Description*
+2+a|Enumeration of possible lifecycle states of any part of the terminomlogy.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|trial
+a|Terminology element is in Trial state.
+
+h|
+|active
+a|Terminology element is in Active state, i.e. published and in use.
+
+h|
+|retired
+a|Terminology element has been Retired, i.e. deprecated.
+|===

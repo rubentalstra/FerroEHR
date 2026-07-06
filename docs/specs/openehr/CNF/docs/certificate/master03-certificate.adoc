@@ -1,0 +1,84 @@
+:sectnums!:
+= Conformance Certificate
+
+== System Under Test (SUT)
+
+[cols="1h,3"]
+|===
+|Solution        |BestEHR release 2.4 +
+                  details ...
+|Vendor          |ACME EHR systems LLC, Maxperformancia
+|Assessor        |openEHR Foundation
+|Infrastructure  |openEHR CNF-test WS 1.5.0 on AWS ... +
+                  System under test on AWS ...
+|Date            |12 April 2017
+|===
+
+== Scope of Test
+
+[cols="1h,3"]
+|===
+|Functional      |CORE, Extras
+|Sec & Priv      |xxx
+|Ext Data Fmt    |XML, JSON
+|===
+
+== Detailed Test Report
+
+[cols="2,3,3,4,4,2,2",options="header"]
+|===
+
+   |SUT Component   |openEHR Component  |Capability (profile)   |Conformance point              |Test Case                  |REST   |protobuf 
+
+.4+|CDR          .4+|EHR persistence    |EHR Operations         |I_EHR_SERVICE.create_ehr()     |EHR. +
+                                                                                                 create_ehr-main            |pass   |pass
+
+                                     .3+|Versioning             |I_EHR_COMPOSITION. +
+                                                                 get_versioned_composition()    |EHR_COMPOSITION. +
+                                                                                                 get_versioned_composition  |pass   |pass
+                                                                                                 
+                                                             .2+|I_EHR_CONTRIBUTION. +
+                                                                 commit_contribution()          |I_EHR_CONTRIBUTION. +
+                                                                                                 commit_contribution- +
+                                                                                                 valid_composition          |pass   |FAIL
+                                                                                                
+                                                                                                |I_EHR_CONTRIBUTION. +
+                                                                                                 commit_contribution- +
+                                                                                                 valid_invalid_compositions |FAIL   |FAIL
+7.+| ...
+   |etc             |                   |                       |                               |                           |       |
+|===
+
+
+== Profile Report
+
+[cols="1,1,2,1,1",options="header"]
+|===
+
+|SUT +          
+ Component          |openEHR +
+                     Component      |Capability                          |Required +
+                                                                        in profile |Result
+
+ .3+|K-base      .3+|Definitions    |ADL 1.4 archetype provisioning      |   Y       |pass   
+                                    |ADL 1.4 OPT provisioning            |   Y       |pass    
+                                    |Query provisioning                  |   Y       |pass    
+
+ .6+|CDR         .6+|EHR persistence|EHR Operations                      |   Y       |pass    
+                                    |EHR Status                          |   Y       |pass    
+                                    |Composition Operations              |   Y       |pass    
+                                    |Directory Operations                |   Y       |pass    
+                                    |Change Sets                         |   Y       |pass    
+                                    |Versioning                          |   Y       |pass    
+
+ .3+|Konsole     .3+|Admin          |Activity Report                     |   OPT     |FAIL    
+                                    |Physical Delete                     |   N       |pass    
+                                    |EHR Archive                         |   OPT     |pass    
+ 5.+| ...
+    |etc            |               |                                    |           |    
+
+
+|===
+
+
+

@@ -1,0 +1,481 @@
+== Examples
+
+The examples below provide a basis for understanding most of the semantics discussed in the subsequent sections.
+
+=== Redefinition for Refinement
+
+The example shown below is from an older version of the openEHR 'Problem' archetype and illustrates the use of redefinition and extension. The first text is the definition section of the top-level 'Problem' archetype, and shows one `ELEMENT` node in expanded form, with the remaining nodes in an elided form.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    -- openEHR-EHR-EVALUATION.problem.v1 --
+
+    EVALUATION[at0000] ∈ {                                              -- Problem
+        data ∈ {
+            ITEM_TREE[at0001] ∈ {
+                items cardinality ∈ {0..*; ordered} ∈ {
+                    ELEMENT[at0002] occurrences ∈ {1} ∈ {
+                        value ∈ {
+                            DV_TEXT[at9000]                             -- *** NODE A
+                        }
+                    }
+                    ELEMENT[at0004] occurrences ∈ {0..1} ∈ {...}       -- Date of initial onset
+                    ELEMENT[at0005] occurrences ∈ {0..1} ∈ {...}       -- Age at initial onset
+                    ELEMENT[at0006] occurrences ∈ {0..1} ∈ {...}       -- Severity
+                    ELEMENT[at0007] occurrences ∈ {0..1} ∈ {...}       -- Clinical description
+                    ELEMENT[at0009] occurrences ∈ {0..1} ∈ {...}      -- Date clinically received
+                    CLUSTER[at0010] occurrences ∈ {0..1} ∈ {...}      -- Location
+                    CLUSTER[at0013] occurrences ∈ {0..1} ∈ {...}      -- Aetiology
+                    -- etc
+                }
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    -- openEHR-EHR-EVALUATION.problem.v1 --
+
+    EVALUATION[id1] ∈ {                                              -- Problem
+        data ∈ {
+            ITEM_TREE[id2] ∈ {
+                items cardinality ∈ {0..*; ordered} ∈ {
+                    ELEMENT[id3] occurrences ∈ {1} ∈ {
+                        value ∈ {
+                            DV_TEXT[id4]                             -- *** NODE A
+                        }
+                    }
+                    ELEMENT[id5] occurrences ∈ {0..1} ∈ {...}       -- Date of initial onset
+                    ELEMENT[id6] occurrences ∈ {0..1} ∈ {...}       -- Age at initial onset
+                    ELEMENT[id7] occurrences ∈ {0..1} ∈ {...}       -- Severity
+                    ELEMENT[id8] occurrences ∈ {0..1} ∈ {...}       -- Clinical description
+                    ELEMENT[id10] occurrences ∈ {0..1} ∈ {...}      -- Date clinically received
+                    CLUSTER[id11] occurrences ∈ {0..1} ∈ {...}      -- Location
+                    CLUSTER[id14] occurrences ∈ {0..1} ∈ {...}      -- Aetiology
+                    -- etc
+                }
+            }
+        }
+    }
+--------
+====
+
+The second text below is from the 'problem-diagnosis' archetype, i.e. a 'diagnosis' specialisation of the general notion of 'problem'. In this situation, the node `[at0001]` (`[id2]`), with occurrences of 1, i.e. mandatory non-multiple, has its meaning narrowed to `[at0001.1]` (`[id2.1]`) 'diagnosis' (diagnosed problems are seen as a subset of all problems in medicine), while new sibling nodes are added to the items attribute to define details particular to recording a diagnosis. The extension nodes are identified by the codes `[at0.32]` , `[at0.35]` and `[at0.37]` (`[id0.32]` , `[id0.35]` and `[id0.37]`), with the latter two shown in elided form.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    -- openEHR-EHR-EVALUATION.problem-diagnosis.v1 --   -- specialises openEHR-EHR-EVALUATION.problem.v1
+
+    EVALUATION[at0000.1] ∈ {                               -- Recording of diagnosis
+        /data[at0001.1]/items[at0002]/value ∈ {            -- redefine at0001 to at0001.1 (in terminology section)
+            DV_CODED_TEXT[at9000] ∈ {                      -- << This node redefines 'NODE A' above
+                defining_code ∈ {[ac0.1]}
+            }
+        }
+        /data[at0001.1]/items cardinality ∈ {0..*; ordered} ∈ {
+            before [at0004]
+            ELEMENT[at0.32] occurrences ∈ {0..1} ∈ {    -- Status    ++ This node added
+                value ∈ {
+                    DV_CODED_TEXT[at9000.33] ∈ {
+                        defining_code ∈ {
+                            [local::at0.33, at0.34]      -- provisional
+                        }
+                    }
+                }
+            }
+            after [at0031]
+            CLUSTER[at0.35] occurrences ∈ {0..1} ∈ {...}  -- Diag. criteria  ++ This node added
+            CLUSTER[at0.37] occurrences ∈ {0..1} ∈ {...}  -- Clin. staging   ++ This node added
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    -- openEHR-EHR-EVALUATION.problem-diagnosis.v1 --   -- specialises openEHR-EHR-EVALUATION.problem.v1
+
+    EVALUATION[id1.1] ∈ {                               -- Recording of diagnosis
+        /data[id2.1]/items[id3]/value ∈ {               -- redefine id2 to id2.1 (in terminology section)
+            DV_CODED_TEXT[id4] ∈ {                      -- << This node redefines 'NODE A' above
+                defining_code ∈ {[ac0.1]}
+            }
+        }
+        /data[id2.1]/items cardinality ∈ {0..*; ordered} ∈ {
+            before [id5]
+            ELEMENT[id0.32] occurrences ∈ {0..1} ∈ {    -- Status    ++ This node added
+                value ∈ {
+                    DV_CODED_TEXT[id0.33] ∈ {
+                        defining_code ∈ {
+                            [local::at0.33, at0.34]      -- provisional
+                        }
+                    }
+                }
+            }
+            after [id31]
+            CLUSTER[id0.35] occurrences ∈ {0..1} ∈ {...}  -- Diag. criteria  ++ This node added
+            CLUSTER[id0.37] occurrences ∈ {0..1} ∈ {...}  -- Clin. staging   ++ This node added
+        }
+    }
+--------
+====
+
+
+[[redefinition_for_specialisation]]
+=== Redefinition for Specialisation
+
+The example shown below illustrates redefinition in a specialised archetype. The first text is taken from the definition section of the 'laboratory result' `OBSERVATION` archetype (available at {openehr_CKM}[openEHR CKM^]), and contains an `ELEMENT` node whose identifier is `[at0078]` (`[id79]`) , defined as 'panel item' in the archetype terminology (sibling nodes are not shown here). The intention is that the `[at0078]` (`[id79]`) node be specialised into particular 'panel items' or analytes according to particular types of test result. Accordingly, the `[at0078]` (`[id79]`) node has occurrences of `0..*` and its value is not constrained with respect to the reference model, meaning that the type of the `_value_` attribute can be any descendant of `DATA_VALUE` .
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ------ openEHR-EHR-OBSERVATION.laboratory.v1 ------
+    OBSERVATION[at0000] ∈ {                                                       -- Laboratory Result
+        data ∈ {
+            HISTORY[at0001] ∈ {
+                events ∈ {
+                    EVENT[at0002] ∈ {                                             -- Any event
+                        data ∈ {
+                            ITEM_TREE[at0003] ∈ {
+                                items cardinality ∈ {0..*; unordered} ∈ {
+                                    CLUSTER[at0004] occurrences ∈ {1} ∈ {...}      -- Specimen
+                                    ELEMENT[at0007] occurrences ∈ {0..1} ∈ {...}   -- Diagnostic services
+                                    CLUSTER[at0010] occurrences ∈ {0..*} ∈ {...}  -- level 1
+                                    ELEMENT[at0078] occurrences ∈ {0..*}          -- panel item
+                                    ELEMENT[at0016] occurrences ∈ {0..1} ∈ {...}  -- Overall Comment
+                                    CLUSTER[at0017] occurrences ∈ {0..1} ∈ {...}  -- Quality
+                                    ELEMENT[at0036] occurrences ∈ {0..1} ∈ {...}  -- Multimedia rep.
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ------ openEHR-EHR-OBSERVATION.laboratory.v1 ------
+    OBSERVATION[id1] ∈ {                                                       -- Laboratory Result
+        data ∈ {
+            HISTORY[id2] ∈ {
+                events ∈ {
+                    EVENT[id3] ∈ {                                             -- Any event
+                        data ∈ {
+                            ITEM_TREE[id4] ∈ {
+                                items cardinality ∈ {0..*; unordered} ∈ {
+                                    CLUSTER[id5] occurrences ∈ {1} ∈ {...}      -- Specimen
+                                    ELEMENT[id8] occurrences ∈ {0..1} ∈ {...}   -- Diagnostic services
+                                    CLUSTER[id11] occurrences ∈ {0..*} ∈ {...}  -- level 1
+                                    ELEMENT[id79] occurrences ∈ {0..*}          -- panel item
+                                    ELEMENT[id17] occurrences ∈ {0..1} ∈ {...}  -- Overall Comment
+                                    CLUSTER[id18] occurrences ∈ {0..1} ∈ {...}  -- Quality
+                                    ELEMENT[id37] occurrences ∈ {0..1} ∈ {...}  -- Multimedia rep.
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+--------
+====
+
+The second text, below, is a specialised version of the laboratory result archetype, defining 'thyroid function test result'.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ------ openEHR-EHR-OBSERVATION.laboratory-thyroid.v1 ------
+    OBSERVATION[at0000.1] -- Thyroid function tests
+        /data[at0001]/events[at0002]/data[at0003]/items ∈ {
+            ELEMENT[at0078.1] occurrences ∈ {0..1} ∈ {        -- TSH
+                value ∈ {
+                    DV_QUANTITY[at9001.7] ∈ {
+                        property ∈ {[at9000]}
+                        magnitude ∈ {|0.0..100.0|}
+                        units ∈ {"mIU/l"}
+                    }
+                }
+            }
+            ELEMENT[at0078.2] occurrences ∈ {0..1} ∈ {...}    -- Free Triiodothyronine (Free T3)
+            ELEMENT[at0078.3] occurrences ∈ {0..1} ∈ {...}    -- Total Triiodothyronine (Total T3)
+            ELEMENT[at0078.4] occurrences ∈ {0..1} ∈ {...}    -- Free thyroxine (Free T4)
+            ELEMENT[at0078.5] occurrences ∈ {0..1} ∈ {...}    -- Total Thyroxine (Total T4)
+            ELEMENT[at0078.6] occurrences ∈ {0..1} ∈ {...}    -- T4 loaded uptake
+            ELEMENT[at0078.7] occurrences ∈ {0..1} ∈ {...}    -- Free Triiodothyronine index (Free T3 index)
+            ELEMENT[at0078.8] occurrences ∈ {0..1} ∈ {...}    -- Free thyroxine index (FTI)
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ------ openEHR-EHR-OBSERVATION.laboratory-thyroid.v1 ------
+    OBSERVATION[id1.1] -- Thyroid function tests
+        /data[id2]/events[id3]/data[id4]/items ∈ {
+            ELEMENT[id79.1] occurrences ∈ {0..1} ∈ {        -- TSH
+                value ∈ {
+                    DV_QUANTITY[id0.7] ∈ {
+                        property ∈ {[at15]}
+                        magnitude ∈ {|0.0..100.0|}
+                        units ∈ {"mIU/l"}
+                    }
+                }
+            }
+            ELEMENT[id79.2] occurrences ∈ {0..1} ∈ {...}    -- Free Triiodothyronine (Free T3)
+            ELEMENT[id79.3] occurrences ∈ {0..1} ∈ {...}    -- Total Triiodothyronine (Total T3)
+            ELEMENT[id79.4] occurrences ∈ {0..1} ∈ {...}    -- Free thyroxine (Free T4)
+            ELEMENT[id79.5] occurrences ∈ {0..1} ∈ {...}    -- Total Thyroxine (Total T4)
+            ELEMENT[id79.6] occurrences ∈ {0..1} ∈ {...}    -- T4 loaded uptake
+            ELEMENT[id79.7] occurrences ∈ {0..1} ∈ {...}    -- Free Triiodothyronine index (Free T3 index)
+            ELEMENT[id79.8] occurrences ∈ {0..1} ∈ {...}    -- Free thyroxine index (FTI)
+        }
+    }
+--------
+====
+
+The redefinitions include:
+
+* a redefinition of the top-level object node identifier `[at0000]` (`[id1]`), with the specialised node identifier `[at0000.1]` (`[id1.1]`);
+* eight nodes redefining the `[at0078]` (`[id79]`) node are shown, with overridden node identifiers `[at0078.1]` - `[at0078.8]` (`[id79.1]` - `[id79.8]`);
+* reduced occurrences (`0..1` in each case);
+* redefinition of the `_value_` attribute of each `ELEMENT` type to `DV_QUANTITY`, shown in expanded form for node `[at0078.1]` (`[id79.1]`).
+
+Note that the original `ELEMENT[at0078]` (`ELEMENT[id79]`) node with `occurrences` of `0..*` remains a valid constraint node: the fact of specialisation does not remove it. If the intention is that the specialised nodes constitute an _exhaustive_ redefinition of the original node, the latter can be effectively removed, as described in <<_exhaustive_and_non_exhaustive_redefinition>>.
+
+This archetype is typical of a class of specialisations that use only redefinition, due to the fact that all objects in the redefined part of the specialised version are semantically specific kinds of a general object, in this case, 'panel item'.
+
+==== Specialisation with Cloning
+
+In the previous example, each of the nodes with identifiers of the form `at0078.N` (`id79.N`) would be effectively copied to the flat output, since the node being redefined `at0078` (`id79`) has no sub-structure, i.e. it is a 'matches any' node. However, the general case is that the node in the parent has its own structure, typically some boilerplate nodes that would be used by any specialisation. In that case, an archetype containing nodes that specialise a node with existing structure cause a 'clone and overlay' operation. That is, to generate the flat output of the specialised archetype, the parent node is first cloned from the flat parent to the new flat output, and then the specialised node is overlaid on the cloned structure. The following example shows a parent archetype that defines a 'laboratory result' structure as a `CLUSTER` containing a number of `ELEMENT` objects, defining things like Result value, Reference range guidance and so on. The `at0001` (`id2`) Result value node is intended to be specialised.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    CLUSTER[at0000] ∈ {                                         -- Laboratory test panel
+        items ∈ {
+            CLUSTER[at0002] ∈ {                                 -- Laboratory Result
+                items ∈ {
+                    ELEMENT[at0001] occurrences ∈ {0..1}        -- Result Value
+                    ELEMENT[at0003] ∈ {                         -- Result Comment
+                        value ∈ {
+                            DV_TEXT[at9000]
+                        }
+                    }
+                    ELEMENT[at0004] occurrences ∈ {0..1} ∈ {   -- Ref. Range Guidance
+                        value ∈ {
+                            DV_TEXT[at9001]
+                        }
+                    }
+                    ELEMENT[at0005] occurrences ∈ {0..1} ∈ {   -- Result Value Status
+                        value ∈ {
+                            DV_CODED_TEXT[at9002] ∈ {
+                                defining_code ∈ {[ac1]}
+                            }
+                        }
+                    }
+                    ELEMENT[at0006] occurrences ∈ {0..1} ∈ {   -- D/T Result Val Status
+                        value ∈ {
+                            DV_DATE_TIME[at9003]
+                        }
+                    }
+                }
+            }
+            allow_archetype CLUSTER[at0013] ∈ {                -- Other Detail
+                include
+                    archetype_id/value ∈ {/.*/}
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    CLUSTER[id1] ∈ {                                         -- Laboratory test panel
+        items ∈ {
+            CLUSTER[id3] ∈ {                                 -- Laboratory Result
+                items ∈ {
+                    ELEMENT[id2] occurrences ∈ {0..1}        -- Result Value
+                    ELEMENT[id4] ∈ {                         -- Result Comment
+                        value ∈ {
+                            DV_TEXT[id15]
+                        }
+                    }
+                    ELEMENT[id5] occurrences ∈ {0..1} ∈ {   -- Ref. Range Guidance
+                        value ∈ {
+                            DV_TEXT[id16]
+                        }
+                    }
+                    ELEMENT[id6] occurrences ∈ {0..1} ∈ {   -- Result Value Status
+                        value ∈ {
+                            DV_CODED_TEXT[id17] ∈ {
+                                defining_code ∈ {[ac1]}
+                            }
+                        }
+                    }
+                    ELEMENT[id7] occurrences ∈ {0..1} ∈ {   -- D/T Result Val Status
+                        value ∈ {
+                            DV_DATE_TIME[id18]
+                        }
+                    }
+                }
+            }
+            allow_archetype CLUSTER[id14] ∈ {                -- Other Detail
+                include
+                    archetype_id/value ∈ {/.*/}
+            }
+        }
+    }
+--------
+====
+
+Specialised child archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    CLUSTER[at0000.1] ∈ {    -- Lipid studies panel
+        /items ∈ {
+            CLUSTER[at0002.1] ∈ {    -- LDL Cholesterol Result
+                items ∈ {
+                    ELEMENT[at0001.1] ∈ {    -- LDL Cholesterol
+                        value ∈ {
+                            DV_QUANTITY[at9000.1] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+            CLUSTER[at0002.2] ∈ {    -- HDL Cholesterol Result
+                items ∈ {
+                    ELEMENT[at0001.2] ∈ {    -- HDL Cholesterol
+                        value ∈ {
+                            DV_QUANTITY[at9000.2] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+            CLUSTER[at0002.3] ∈ {...}    -- Ratio Result
+            CLUSTER[at0002.4] ∈ {...}    -- Triglyceride Result
+            CLUSTER[at0002.5] ∈ {        -- Total Result
+                items ∈ {
+                    ELEMENT[at0001.5] ∈ {    -- Total cholesterol
+                        value ∈ {
+                            DV_QUANTITY[at9000.5] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mosmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+            CLUSTER[at0005.6]     -- ! - Laboratory Result
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    CLUSTER[id1.1] ∈ {    -- Lipid studies panel
+        /items ∈ {
+            CLUSTER[id3.1] ∈ {    -- LDL Cholesterol Result
+                items ∈ {
+                    ELEMENT[id2.1] ∈ {    -- LDL Cholesterol
+                        value ∈ {
+                            DV_QUANTITY[id0.1] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+            CLUSTER[id3.2] ∈ {    -- HDL Cholesterol Result
+                items ∈ {
+                    ELEMENT[id2.2] ∈ {    -- HDL Cholesterol
+                        value ∈ {
+                            DV_QUANTITY[id0.2] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+            CLUSTER[id3.3] ∈ {...}    -- Ratio Result
+            CLUSTER[id3.4] ∈ {...}    -- Triglyceride Result
+            CLUSTER[id3.5] ∈ {        -- Total Result
+                items ∈ {
+                    ELEMENT[id2.5] ∈ {    -- Total cholesterol
+                        value ∈ {
+                            DV_QUANTITY[id0.5] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mosmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+            CLUSTER[id3.6]     -- ! - Laboratory Result
+        }
+    }
+--------
+====
+
+The flattened result consists of a number of repetitions of the entire `CLUSTER[at0002]` (`CLUSTER[id3]`) structure from the parent, corresponding to the specialisations in the child. The ADL source form is too large to show here, but the {openehr_awb}[ADL Workbench^] provides a visualisation in <<specialisation_with_cloning>>. In this figure we can see that the `CLUSTER` / `ELEMENT` overlays from the child archetype have been overlaid on clones of the `CLUSTER[id3]` structure from the parent, preserving the `at0003` , `at0004` (`id4` , `id5`) etc nodes. Elements shown in light blue are inherited; where they appear under the nodes `[at0002.1]`, `[at0002.2]` (`[id3.1]`, `[id3.2]`) etc, they are cloned from the corresponding nodes under `[at0002]` (`[id3]`).
+
+[.text-center]
+.Specialisation with Cloning
+image::{images_uri}/specialisation_with_cloning.png[id=specialisation_with_cloning, align="center", width="75%"]
+
+It can also be seen that the original `[at0002]` (`[id3]`) sub-tree remains. This can be removed if required, as described in <<_exhaustive_and_non_exhaustive_redefinition>>.
+

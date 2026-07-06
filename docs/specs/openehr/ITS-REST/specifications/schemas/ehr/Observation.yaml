@@ -1,0 +1,15 @@
+title: OBSERVATION
+type: object
+allOf:
+  - $ref: ../ehr/CareEntry.yaml
+required:
+  - data
+properties:
+  _type:
+    type: string
+    default: OBSERVATION
+  data:
+    $ref: ../data_structures/History.yaml
+  state:
+    $ref: ../data_structures/History.yaml
+x-discriminator-value: OBSERVATION

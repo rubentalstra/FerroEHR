@@ -1,0 +1,14 @@
+=== EL_ATTACHED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_ATTACHED*
+
+h|*Description*
+2+a|A predicate on any object reference (including function call) that returns True if the reference is attached, i.e. non-Void.
+
+h|*Inherit*
+2+|`<<_el_predicate_class,EL_PREDICATE>>`
+
+|===

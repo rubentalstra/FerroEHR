@@ -1,0 +1,17 @@
+[appendix]
+= Using Archetypes with Diverse Reference Models
+
+== Overview
+
+The archetype model described in this document can be used with any reference model which is expressed in UML or a similar object-oriented formalism. It can also be used with E/R models. The following section describes is use a number of reference models used in clinical computing.
+
+== Clinical Computing Use
+
+[.tbc]
+*To Be Continued*:
+
+* data types
+* class naming
+* domain archetype semantics versus LCD semantics of exchange models
+* mapping from `C_DOMAIN_TYPE` subtypes into various RMs
+

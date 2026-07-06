@@ -1,0 +1,105 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+|[[latest_issue]]1.10.0
+|{spec_tickets}/SPECBASE-6[SPECBASE-6^]: Specify language attributes of `RESOURCE_DESCRIPTION_ITEM` and `TRANSLATION_DETAILS` as being coded by a subset of RFC 5646 language tag standard.
+|T Beale, +
+S Iancu
+|[[latest_issue_date]]09 Jan 2025
+
+|
+|Documentation fixes and typos (including {spec_tickets}/SPECPR-451[SPECPR-451^]).
+|M Zawahra, +
+S Iancu
+|09 Jan 2025
+
+|1.9.0
+|{spec_tickets}/SPECBASE-39[SPECBASE-39^]: Change `RESOURCE_DESCRIPTION._lifecycle_state_` type to `String`.
+|I McNicoll
+|05 Nov 2024
+
+|
+|{spec_tickets}/SPECBASE-40[SPECBASE-40^]: Add `_title_` attribute to `RESOURCE_DESCRIPTION`.
+|I McNicoll
+|
+
+4+^h|*BASE Release 1.2.0*
+
+|1.8.3
+|{spec_tickets}/SPECBASE-23[SPECBASE-23^]: Add `_other_contributors_` to `TRANSLATION_DETAILS`.
+|S Garde
+|[22 Feb 2021
+
+|
+|{spec_tickets}/SPECPUB-6[SPECPUB-6^]: Correct spelling error in `TRANSLATION_DETAILS._accreditation_`.
+|S Garde
+|13 Nov 2019
+
+4+^h|*BASE Release 1.1.0*
+
+|1.8.2
+|{spec_tickets}/SPECPUB-6[SPECPUB-6^]: Type error in RM-spec: `RESOURCE_DESCRIPTION_ITEM`. (Fixes {spec_tickets}/SPECPR-139[SPECPR-139^]).
+|B Verhees
+|03 Nov 2018
+
+|1.8.1
+|{spec_tickets}/SPECPUB-6[SPECPUB-6^]: Correct UML package nesting and paths in documents; insert `base` parent package; rename `expressions` package to `expression`.
+|T Beale
+|27 Nov 2017
+
+|1.8.0
+|{spec_tickets}/SPECBASE-13[SPECBASE-13^]: Separate out from openEHR Common IM 2.1.2 / RM Release 1.0.3.
+|openEHR SEC
+|15 Feb 2016
+
+|
+|Re-engineer `AUTHORED_RESOURCE` classes according to AOM2 requirements. Remove `_revision_history_` property.
+|T Beale, +
+ S Garde, +
+ I McNicoll, +
+ H Leslie, +
+ S Ljosland-Bakke, +
+ D Bosca
+|
+
+4+^h|*Release 1.0.1*
+
+|1.6.0
+|{spec_tickets}/SPECRM-209[SPECRM-209^]: Minor changes to correctly define `AUTHORED_RESOURCE._current_revision_`. Add minimal definition for `List<T>` class.
+|Y S Lim
+|08 Apr 2007
+
+|
+|{spec_tickets}/SPEC-203[SPEC-203^]: Release 1.0 explanatory text improvements.
+|A Patterson +
+ G Grieve
+|
+
+4+^h|*Release 0.95*
+
+|
+|{spec_tickets}/SPEC-118[SPEC-118^]. Make package names lower-case.
+|T Beale
+|
+
+4+^h|*Release 0.9*
+
+|1.0
+|{spec_tickets}/SPEC-95[SPEC-95^]. Remove property attribute from `Quantity` package.  Add simple measurement interface.
+|DSTC
+|09 Mar 2004
+
+|
+|Formally validated using ISE Eiffel 5.4.
+|T Beale
+|
+
+|0.9
+|Initial Writing. Taken from Data types and Common Reference Models. Formally validated using ISE Eiffel 5.2.
+|T Beale 
+|25 Feb 2003
+
+|===

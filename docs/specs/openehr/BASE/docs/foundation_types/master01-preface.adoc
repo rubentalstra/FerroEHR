@@ -1,0 +1,46 @@
+= Preface
+
+== Purpose
+
+This document describes the openEHR Foundation Types, a collection of built-in and library types whose semantics are assumed by all other openEHR specifications.
+
+The intended audience includes:
+
+* Standards bodies producing health informatics standards;
+* Research groups using openEHR, {iso_13606}[ISO 13606^], archetypes and related technologies;
+* The open source healthcare community;
+* Solution vendors.
+
+== Related Documents
+
+Prerequisite documents for reading this document include:
+
+* The {openehr_overview}[openEHR Architecture Overview^].
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_base_development_foundation_types}[{openehr_base_development_foundation_types}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_technical_list}[technical mailing list^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Previous Versions
+
+This specification is based on the types originally defined in the {openehr_rm_103_support}[openEHR Support Information Model from Release 1.0.3 of the Reference Model^]. Some changes have been made as follows.
+
+=== Interval types
+
+The additional types `Point_interval` and `Proper_interval` have been added, to support the common need for a point value and a proper interval to be specified as substitutable types. The types `Multiplicity_interval` and `Cardinality` have been added, from the {openehr_am_aom2}[AOM2 specification^].
+
+=== Functional meta-types
+
+A collection of meta-types representing routines, procedures and functions has been added, to support specifications that need to use these concepts. 

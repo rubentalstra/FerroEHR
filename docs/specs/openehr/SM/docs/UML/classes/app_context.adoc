@@ -1,0 +1,173 @@
+=== APP_CONTEXT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*APP_CONTEXT*
+
+h|*Description*
+2+a|Class representing application context data items that may be set for a `COMPOSITION` commit.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*language*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|ISO639-1 language code to be used for Composition language (e.g. "en", "de", …).
+
+Equivalent of RM `COMPOSITION._language_`.
+
+_To RM_: match term text from https://github.com/openEHR/terminology/blob/master/openEHR_RM/openehr_external_terminologies.xml#L263[openEHR `languages` vocabulary^]; create `CODE_PHRASE` with `_terminology_id_ = "openEHR"`.
+
+_From RM_: `COMPOSITION._language.code_string_`.
+
+h|*1..1*
+|*territory*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|ISO3166-1 country code to be used for composition territory (e.g. "GB", "DE", …).
+
+Equivalent of RM `COMPOSITION._territory_`.
+
+_To RM_: match term text from https://github.com/openEHR/terminology/blob/master/openEHR_RM/openehr_external_terminologies.xml#L2[openEHR country vocabulary^]; create `CODE_PHRASE` with `_terminology_id_ = "openEHR"`.
+
+_From RM_: `COMPOSITION._territory.code_string_`.
+
+h|*1..1*
+|*composer_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of the person who composed the Composition.
+
+ISO3166-1 country code to be used for composition territory (e.g. "GB", "DE", …).
+
+Equivalent of RM `COMPOSITION._composer.name_` when `_composer_` is a `PARTY_IDENTIFIED`.
+
+_To RM_: xxx.
+
+_From RM_: if `COMPOSITION._composer_` is an instance of `PARTY_IDENTIFIED`, extract `_composer.name_`.
+
+h|*0..1*
+|*composer_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Equivalent of `COMPOSITION._composer.external_ref.id_` if `PARTY_PROXY._external_ref_` set.
+
+h|*1..1*
+|*time*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Default value to be used for:
+
+* `COMPOSITION_context.start time_`;
+* `OBSERVATION._history.origin_`;
+* `OBSERVATION._history.events[i].time_`.
+
+If not specified current time will be used.
+
+Converted from `DV_DATE_TIME._value_`.
+
+h|*0..1*
+|*end_time*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Equivalent of `COMPOSITION._context.end_time_`.
+
+TODO: check: this is just a copy of /context/end_time?
+
+From RM: copy of `DV_DATE_TIME._value_`.
+
+h|*0..1*
+|*category*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Value of Composition `_category_` : "event" or "persistent".
+
+_To RM_: match term text from https://github.com/openEHR/terminology/blob/master/openEHR_RM/en/openehr_terminology.xml#L35[`category` vocabulary]; create `DV_CODED_TEXT` with `_terminology_id_ = "openEHR"`.
+
+_From RM_: `COMPOSITION._setting.defining_code.code_string_`.
+
+TODO: check: this is just a copy of /category; needed here?
+
+h|*0..1*
+|*setting*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Equivalent to `COMPOSITION._setting_`.
+
+_To RM_: obtain code definition from https://github.com/openEHR/terminology/blob/master/openEHR_RM/en/openehr_terminology.xml#L307[openEHR `setting` vocabulary]; create `DV_CODED_TEXT`.
+
+_From RM_: `COMPOSITION._setting.defining_code.code_string_`.
+
+TODO: check: this is just a copy of /context/setting; needed here?
+
+TODO: There are 2 new codes in EhrScape ?not in openEHR terminology:
+
+* 435: laboratory
+* 436: imaging
+
+h|*0..1*
+|*history_origin*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Default value for `HISTORY._origin_` within `OBSERVATION._data_` and _state_` in the commit.
+
+h|*0..1*
+|*id_namespace*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Default namespace for identifier references derived from `OBJECT_REF` instances.
+
+h|*0..1*
+|*id_scheme*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Default `_scheme_` for all identifiers derived from `GENERIC_ID` instances.
+
+h|*0..1*
+|*provider_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Equivalent of `ENTRY._provider.name_`. where `ENTRY._provider_` is a `PARTY_IDENTIFIED`.
+
+Default for all `ENTRY` objects.
+
+h|*0..1*
+|*provider_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Equivalent of `ENTRY._provider.external_ref.id_`.
+
+Default for all `ENTRY` objects.
+
+h|*0..1*
+|*participation_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Equivalent of `COMPOSITION._context.participations[i].performer.name_` if `PARTICIPATION._performer_` of type `PARTY_IDENTIFIED`.
+
+h|*0..1*
+|*participation_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Equivalent of `COMPOSITION._context.participations[i].performer.external_ref.id_` if `PARTICIPATION._performer.external_ref_` set.
+
+h|*0..1*
+|*participation_function*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Equivalent of `COMPOSITION._context.participations[i].function_`.
+
+h|*0..1*
+|*participation_mode*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Equivalent of `COMPOSITION._context.participations[i].mode_`.
+
+h|*0..1*
+|*participation_identifiers*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Equivalent of `COMPOSITION._context.participations[i].performer.identifiers_` if `PARTICIPATION._performer_` of type `PARTY_IDENTIFIED`.
+
+h|*0..1*
+|*action_time*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Default value for all `ACTION._time_` instances.
+
+TODO: is this default really needed - having 2 ACTIONs in same commit probably uncommon. Easier to just include in compressed S_ACTION.
+
+h|*0..1*
+|*action_ism_transition_current_state*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Default value for `ACTION._ism_transition.current_state_`.
+
+TODO: is this default really needed - having 2 ACTIONs in same commit probably uncommon. Easier to just include in compressed S_ACTION.
+
+h|*0..1*
+|*instruction_narrative*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Default for all `INSTRUCTION._narrative_` occurrences in commit.
+
+h|*0..1*
+|*healthcare_facility*: `link:/releases/SM/{sm_release}/rm.html#_s_party_identified_class[S_PARTY_IDENTIFIED^]`
+a|Equivalent of `COMPOSITION._context.health_care_facility_`.
+
+h|*0..1*
+|*activity_timing*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Default for all `INSTRUCTION._activities[i].timing_` occurrences in commit.
+
+TODO: really needed, since multiple INSTRUCTIONs in commit with same timing would be unlilkely.
+
+h|*0..1*
+|*location*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Equivalent of `COMPOSITION._context.location_`.
+
+h|*0..1*
+|*workflow_id*: `link:/releases/SM/{sm_release}/base.html#_s_object_ref_class[S_OBJECT_REF^]`
+a|Default value for `ENTRY._workflow_id_`.
+|===

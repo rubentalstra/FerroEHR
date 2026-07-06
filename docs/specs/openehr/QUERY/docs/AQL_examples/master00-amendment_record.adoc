@@ -1,0 +1,26 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*Release 1.1.0*
+
+|[[latest_issue]]1.1.0
+|{spec_tickets}/SPECQUERY-8[SPECQUERY-8^] Improve readability and clean up text (non-semantic).
+|S Iancu
+|[[latest_issue_date]]01 Dec 2020
+
+|
+|{spec_tickets}/SPECQUERY-12[SPECQUERY-12^] Improve terminology support by adding a new TERMINOLOGY function.
+|L Marco-Ruiz, +
+ H Frankel +
+ S Iancu
+|24 Nov 2020
+
+|
+|{spec_tickets}/SPECQUERY-31[SPECQUERY-31^] Move AQL examples to a new separate specification.
+|openEHR SEC
+|09 Nov 2020
+
+|===

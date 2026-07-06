@@ -1,0 +1,5 @@
+:spec_title: Archetype Technology Overview
+:copyright_year: 2014
+:spec_status: STABLE
+:keywords: archetype, identification, governance, openehr
+:description: openEHR Archetype Technology Overview

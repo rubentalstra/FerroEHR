@@ -1,0 +1,94 @@
+=== OPERATOR_KIND Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*OPERATOR_KIND*
+
+h|*Description*
+2+a|Enumeration representing operators.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|eq
+a|Equality (equals) operator.
+
+h|
+|ne
+a|Inequality (not-equals) operator.
+
+h|
+|lt
+a|Less than operator.
+
+h|
+|le
+a|Less than or equals operator.
+
+h|
+|gt
+a|Greater than operator.
+
+h|
+|ge
+a|Greater than or equals operator.
+
+h|
+|matches
+a|Matches operator.
+
+h|
+|not
+a|Logical negation (not) operator.
+
+h|
+|and
+a|Logical conjunction (and) operator.
+
+h|
+|or
+a|Logical inclusive disjunction (or) operator.
+
+h|
+|xor
+a|Logical exclusive disjunction (exclusive or) operator.
+
+h|
+|implies
+a|Logical implication (implies)  operator.
+
+h|
+|for_all
+a|Universal quantification operator.
+
+h|
+|exists
+a|Existential quantification operator.
+
+h|
+|plus
+a|Arithemetic addition (plus) operator.
+
+h|
+|minus
+a|Arithemetic subtraction (minus) operator.
+
+h|
+|multiply
+a|Arithemetic multiplication (times) operator.
+
+h|
+|divide
+a|Arithemetic division (divided-by) operator.
+
+h|
+|modulo
+a|Arithemetic modulo operator.
+
+h|
+|exponent
+a|Arithemetic exponent (to the power of) operator.
+|===

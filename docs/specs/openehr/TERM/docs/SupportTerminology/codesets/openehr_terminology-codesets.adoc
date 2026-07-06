@@ -1,0 +1,67 @@
+=== Compression Algorithms
+[cols="6,8,1"]
+|===
+3+h| *Code Set details*
+
+|Name: *compression algorithms* +
+    Id: __compression_algorithms__, External_id: __openehr_compression_algorithms__ +
+    Ref: {compression_algorithms_ref} +
+    Status: __active__
+2+| {compression_algorithms_description} +
+    +
+    Used in: `{compression_algorithms_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *compress*      a|         | active
+| *deflate*      a|         | active
+| *gzip*      a|         | active
+| *zlib*      a|         | active
+| *other*      a|         | active
+|===
+
+=== Integrity Check Algorithms
+[cols="6,8,1"]
+|===
+3+h| *Code Set details*
+
+|Name: *integrity check algorithms* +
+    Id: __integrity_check_algorithms__, External_id: __openehr_integrity_check_algorithms__ +
+    Ref: {integrity_check_algorithms_ref} +
+    Status: __active__
+2+| {integrity_check_algorithms_description} +
+    +
+    Used in: `{integrity_check_algorithms_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *SHA-1*      a|         | active
+| *SHA-224*      a|         | active
+| *SHA-256*      a|         | active
+| *SHA-384*      a|         | active
+| *SHA-512*      a|         | active
+| *SHA-512/224*      a|         | active
+| *SHA-512/256*      a|         | active
+|===
+
+=== Normal Statuses
+[cols="6,8,1"]
+|===
+3+h| *Code Set details*
+
+|Name: *normal statuses* +
+    Id: __normal_statuses__, External_id: __openehr_normal_statuses__ +
+    Ref: {normal_statuses_ref} +
+    Status: __active__
+2+| {normal_statuses_description} +
+    +
+    Used in: `{normal_statuses_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *HHH*      a|         | active
+| *HH*      a|         | active
+| *H*      a|         | active
+| *N*      a|         | active
+| *L*      a|         | active
+| *LL*      a|         | active
+| *LLL*      a|         | active
+|===
+

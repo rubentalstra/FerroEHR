@@ -1,0 +1,11 @@
+=== MESSAGE_CONTENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__MESSAGE_CONTENT (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of message payload types.
+
+|===

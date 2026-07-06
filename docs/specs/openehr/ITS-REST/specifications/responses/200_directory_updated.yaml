@@ -1,0 +1,11 @@
+description: |
+  `200 OK` is returned when directory was successfully updated and the updated resource is returned in the body when `Prefer` header value is `return=representation`.
+headers:
+  ETag:
+    $ref: ../headers/ETag_FOLDER.yaml
+  Location:
+    $ref: ../headers/Location_directory.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/Folder.yaml

@@ -1,0 +1,13 @@
+title: LINK
+type: object
+required:
+  - meaning
+  - type
+  - target
+properties:
+  meaning:
+    $ref: ../data_types/UDvText.yaml
+  type:
+    $ref: ../data_types/UDvText.yaml
+  target:
+    $ref: ../data_types/DvEhrUri.yaml

@@ -1,0 +1,45 @@
+=== S_ACTION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_ACTION*
+
+h|*Description*
+2+a|Simplified RM form of `ACTION` RM class.
+
+h|*Inherit*
+2+|`<<_s_care_entry_class,S_CARE_ENTRY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*time*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_DATE_TIME`.
+
+h|*1..1*
+|*description*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_item_class,S_ITEM>>>`
+a|Converted to `S_CLUSTER` from `ITEM_STRUCTURE`.
+
+h|*1..1*
+|*current_state*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `_ism_transition.current_state_: DV_CODED_TEXT` to `String`.
+
+h|*0..1*
+|*careflow_step*: `<<_s_dv_coded_text_class,S_DV_CODED_TEXT>>`
+a|Converted from `_ism_transition.careflow_step_`.
+
+h|*0..1*
+|*transition*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `_ism_transition.transition_: DV_CODED_TEXT` to `String`.
+
+h|*0..1*
+|*instruction_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `_instruction_details.instruction_id_`.
+
+h|*0..1*
+|*activity_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `_instruction_details.activity_id_`.
+|===

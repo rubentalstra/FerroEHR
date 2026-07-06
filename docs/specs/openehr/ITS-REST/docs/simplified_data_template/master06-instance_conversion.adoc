@@ -1,0 +1,3 @@
+= Instance Conversion
+
+This section describes how an instance of a given Simplified Template can be converted to its canonical form at execution time, so as to enable committing to the persistence layer.

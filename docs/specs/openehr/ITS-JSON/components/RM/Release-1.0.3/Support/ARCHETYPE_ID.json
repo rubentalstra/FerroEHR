@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Support/ARCHETYPE_ID.json",
+    "definitions": {
+        "ARCHETYPE_ID": {
+            "type": "object",
+            "required": [
+                "value"
+            ],
+            "properties": {
+                "value": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "ARCHETYPE_ID"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

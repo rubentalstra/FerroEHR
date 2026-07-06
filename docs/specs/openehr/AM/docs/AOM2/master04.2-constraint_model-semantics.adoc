@@ -1,0 +1,258 @@
+== Semantics
+
+The effect of the model is to create archetype definition structures that are a hierarchical alternation of object and attribute constraints. This structure can be seen by inspecting an ADL archetype, or by viewing an archetype in an AOM-based tool such as the openEHR {openehr_awb}[ADL workbench^], and is a direct consequence of the object-oriented principle that classes consist of properties, which in turn have types that are classes. (To be completely correct, types do not always correspond to classes in an object model, but it does not make any difference here). The repeated object/attribute hierarchical structure of an archetype provides the basis for using paths to reference any node in an archetype. Archetype paths follow a syntax that is a directly convertible in and out of the W3C Xpath syntax.
+
+=== All Node Types
+
+Some properties are defined for all node types, described in the following sections.
+
+==== Path Functions
+
+The path feature computes the path to the current node from the root of the archetype, while the has_path function indicates whether a given path can be found in an archetype.
+
+==== Conformance Functions
+
+All node types include two functions that formalise the notion of conformance of a specialised archetype to a parent archetype. Both functions take an argument which must be a corresponding node in a parent archetype, not necessarily the immediate parent. A 'corresponding' node is one found at the same or a congruent path. A congruent path is one in which one or more at-codes have been redefined in the specialised archetype.
+
+The `_c_conforms_to_` function returns True if the node on which it is called is a valid specialisation of the 'other' node. The `_c_congruent_to_` function returns True if the node on which it is called is the same as the other node, with the possible exception of a redefined at-code. The latter may happen due to the need to restrict the domain meaning of node to a meaning narrower than that of the same node in the parent. The formal semantics of both functions are given in the class definitions, <<_class_definitions_>>.
+
+==== Any_allowed
+
+The `_any_allowed_` function defined on some node types indicates that any value permitted by the reference model for the attribute or type in question is allowed by the archetype; its use permits the logical idea of a completely "open" constraint to be simply expressed, avoiding the need for any further substructure.
+
+=== Attribute Nodes
+
+Constraints on reference model attributes, including computed attributes (represented by functions with no arguments in most programming languages), are represented by instances of `C_ATTRIBUTE`. The expressible constraints include:
+
+* `_is_multiple_`: a flag that indicates whether the `C_ATTRIBUTE` is constraining a multiply-valued (i.e. container) RM attribute or a single-valued one;
+* `_existence_`: whether the corresponding instance (defined by the `_rm_attribute_name_` attribute) must exist;
+* child objects: representing allowable values of the object value(s) of the attribute.
+
+In the case of single-valued attributes (such as Person.date_of_birth) the children represent one or more alternative object constraints for the attribute value.
+
+For multiply-valued attributes (such as `Person`.`_contacts_`: `List<Contact>`), a cardinality constraint on the container can be defined. The constraint on child objects is essentially the same except that more than one of the alternatives can co-exist in the data. <<c_attributes>> illustrates the two possibilities.
+
+The appearance of both `_existence_` and `_cardinality_` constraints in `C_ATTRIBUTE` deserves some explanation, especially as the meanings of these notions are often confused in object-oriented literature. An existence constraint indicates whether an object will be found in a given attribute field, while a cardinality constraint indicates what the valid membership of a container object is. `_Cardinality_` is only required for container objects such as `List<T>` , `Set<T>` and so on, whereas `_existence_` is always possible. If both are used, the meaning is as follows: the existence constraint says whether the container object will be there (at all), while the cardinality constraint says how many items must be in the container, and whether it acts logically as a list, set or bag. Both existence and cardinality are optional in the model, since they are only needed to override the settings from the reference model.
+
+[.text-center]
+.C_ATTRIBUTE variants
+image::{diagrams_uri}/c_attributes.png[id=c_attributes, align="center", width="70%"]
+
+=== Object Node Types
+
+The following sections apply to all object nodes in an archetype, i.e. instances of any descendant of `C_OBJECT`.
+
+==== Rm_type_name and Reference Model Type Matching
+
+Every object node has an `_rm_type_name_` attribute that states the RM type to be matched by that node in the archetype. The value of `_rm_type_name_` is understood as a constraint on the dynamic type of data _instances_ of the stated Reference Model type. It is either a class name from the RM, or a generic type constructed from RM class names, as described in the {openehr_am_adl2}#_reference_model_type_matching[Reference model type matching^] section of the ADL2 specification.
+
+The RM type stated in an archetype object node is understood to be a _static_ type constraint. Accordingly, it will match an instance of any RM _subtype_ of the stated type, as long as the inheritance relationship is stated in the RM definition. This holds both for sub-classes, and subtypes of generic types, in a covariant fashion. The following matching will thus succeed:
+
+* `_rm_type_name_` = `"PARTY"` matches `PERSON`, where `PERSON` inherits from `PARTY` in the relevant RM;
+* `_rm_type_name_` = `"Interval<Ordered>"` matches a dynamic type of data items of `Interval<Quantity>`, `SimpleInterval<Ordered>` and `SimpleInterval<Quantity>` where `Quantity` inherits from `Ordered` and `SimpleInterval` inherits from `Interval` in the relevant RM.
+
+There are some special rules that apply to primitive type matching that enable 'logical' primitive type names in archetypes to match multiple 'concrete' variants that occur in some reference models and programming type systems. These are described in detail below.
+
+==== Node_id and Paths
+
+The `_node_id_` attribute in the class `C_OBJECT`, inherited by all subtypes, is of key importance in the archetype constraint model. It has two functions:
+
+* it allows archetype object constraint nodes to be individually identified, and in particular, guarantees sibling node unique identification;
+* it provides a code to which a human-understanding terminology definition can be attached, as well as potentially a terminology binding.
+
+The existence of `_node_ids_` in an archetype allows archetype paths to be created, which refer to each node. Every node in the archetype needs a `_node_id_` , but only `_node_ids_` for nodes under container attributes must have a terminology definition. For nodes under single-valued attributes, the terminology definition is optional (and typically not supplied), since the meaning is given by the reference model attribute definition.
+
+Note that instances of `C_PRIMITIVE_OBJECT` have a constant `_node_id_` (see below) and thus do not require node identifiers to be supplied in syntax or serial forms that are converted to AOM structural form.
+
+==== Sibling Ordering
+
+Within a specialised archetype, redefined or added object nodes may be defined under a container attribute. Since specialised archetypes are in differential form, i.e. only redefined or added nodes are expressed, not nodes inherited unchanged, the relative ordering of siblings can't be stated simply by the ordering of such items within the relevant list within the differential form of the archetype. An explicit ordering indicator is required if indeed order is specific. The `C_OBJECT._sibling_order_` attribute provides this capability. It can only be set on a `C_OBJECT` descendant within a multiply-valued attribute, i.e. an instance of `C_ATTRIBUTE` for which the `_cardinality_` is ordered.
+
+==== Node Deprecation
+
+It is possible to mark an instance of any defined node type as deprecated, meaning that by preference it should not be used, and that there is an alternative solution for recording the same information. Rules or recommendations for how deprecation should be handled are outside the scope of the archetype proper, and should be provided by the governance framework under which the archetype is managed.
+
+=== Reference Objects
+
+Two subtypes of `C_OBJECT`, namely `ARCHETYPE_SLOT` and `C_COMPLEX_OBJECT_PROXY` are used to express constraints in the form of references to other constraints, rather than directly.
+
+An `ARCHETYPE_SLOT` defines a 'slot' specifying other archetypes that can be plugged in at that point, in terms of constraints on archetype identifiers. These are expressed as instances of the `ARCHETYPE_ID_CONSTRAINT` class, a specialised version of the ELOM `EL_CONSTRAINT_EXPRESSION` class.
+
+The type `C_COMPLEX_OBJECT_PROXY` represents a reference to another part of the current archetype that expresses exactly the same constraints needed at the  point where the proxy appears.
+
+=== Defined Object Nodes (C_DEFINED_OBJECT)
+
+The `C_DEFINED_OBJECT` subtype corresponds to the category of `C_OBJECTs` that are defined in an archetype by value, i.e. by inline definition. Four properties characterise `C_DEFINED_OBJECTs` as follows.
+
+==== Valid_value
+
+The `_valid_value_` function tests a reference model object for conformance to the archetype. It is designed for recursive implementation in which a call to the function at the top of the archetype definition would cause a cascade of calls down the tree. This function is the key function of an 'archetype-enabled kernel' component that can perform runtime data validation based on an archetype definition.
+
+==== Prototype_value
+
+This function is used to generate a reasonable default value of the reference object being constrained by a given node. This allows archetype-based software to build a 'prototype' object from an archetype which can serve as the initial version of the object being constrained, assuming it is being created new by user activity (e.g. via a GUI application). Implementation of this function will usually involve use of reflection libraries or similar.
+
+==== Default_value
+
+This attribute allows a user-specified default value to be defined within an archetype. The `_default_value_` object must be of the same type as defined by the `_prototype_value_` function, pass the `_valid_value_` test. Where defined, the `_prototype_value_` function would return this value instead of a synthesised value.
+
+=== Complex Objects (C_COMPLEX_OBJECT)
+
+Along with `C_ATTRIBUTE`, `C_COMPLEX_OBJECT` is the key structuring type of the `constraint_model` package, and consists of attributes of type `C_ATTRIBUTE`, which are constraints on the attributes (i.e. any property, including relationships) of the reference model type. Accordingly, each `C_ATTRIBUTE` records the name of the constrained attribute (in `_rm_attr_name_`) , the existence and cardinality expressed by the constraint (depending on whether the attribute it constrains is a multiple or single relationship), and the constraint on the object to which this `C_ATTRIBUTE` refers via its `_children_` attribute (according to its reference model) in the form of further `C_OBJECTs`.
+
+=== Primitive Types (C_PRIMITIVE_OBJECT descendants)
+
+Constraints on primitive types are defined by the descendants of `C_PRIMITIVE_OBJECT`, i.e. `C_STRING` , `C_INTEGER` and so on. The primitive constraint types are represented in such a way as to accommodate both 'tuple' constraints and logically unary constraints, using a tuple array (`C_PRIMITIVE_TUPLE._members_`) whose members are each a primitive constraint corresponding to each primitive type in the tuple. Tuple constraints are second order constraints, described below, enabling co-varying constraints to be stated. In the unary case, the constraint is the first member of a tuple array.
+
+`C_PRIMITIVE_OBJECT` instances represented in {openehr_am_adl2}[ADL 'short' form^] are created with a fixed at-code (id-code) `ADL_CODE_DEFINITIONS._primitive_node_id_` as the value of `_node_id_` (see <<ADL_CODE_DEFINITIONS Class>>). For regularly structured `C_PRIMITIVE_OBJECT` instances, a normal node identifier is required.
+
+The primitive constraint for each primitive type may itself be complex. Its formal type is the type of the `_constraint_` accessor in each `C_PRIMITIVE_OBJECT` descendant. The use of constrainer types for each assumed primitive RM type is summarised in the following table.
+
+[[primitive-types,Primitive Types]]
+[width="100%",cols="1,1,2,3",options="header",]
+|===========
+|RM Primitive type    |AOM type                |AOM Primitive constrainer type |Constraint description
+|`Boolean`            |`C_BOOLEAN`             |`List <Boolean>`               |One or two Boolean values, enabling the logical constraints 
+                                                                                'true', 'false' and 'true or false' to be expressed.
+|`String`             |`C_STRING`              |`List <String>`                |A list of possible string values, which may include regular expressions, 
+                                                                                which are delimited by '/' characters.
+|`Terminology_code`   |`C_TERMINOLOGY_CODE`    |Terminology constraint - +
+                                                `[acN]` or `[atN]`             |A string containing either a single at-code or a single ac-code. In the 
+                                                                                latter case, the constraint refers to either a locally defined value set 
+                                                                                or (via a binding) an external value set.
+|Descendants of +
+ `Ordered`            |`C_ORDERED`             |`List <Interval<T:Ordered>>`  |A single value (which is a point interval), a list of values 
+                                                                                (list of point intervals), a list of intervals, which may be mixed proper 
+                                                                                and point intervals.
+|`Integer`            |`C_INTEGER`             |`List <Interval<Integer>>`     |As for Ordered type, with T = `Integer`
+|`Real`               |`C_REAL`                |`List <Interval<Real>>`        |As for Ordered type, with T = `Real`
+|Descendants of + 
+`Temporal`            |`C_TEMPORAL`            |`List <Interval<T:Temporal>>` +
+                                                OR +
+                                                `String` (ADL pattern)         |As for ordered types, with T being an sub-type type of `Temporal`, an 
+                                                                                ancestor of the assumed Date/time primitive types., with the addition of a 
+                                                                                second type constraint -                                                                                                                             {openehr_am_adl2}#_constraints_on_dates_times_and_durations[a pattern based on ISO 8601 syntax^].
+
+|`Date`               |`C_DATE`                |`List <Interval<Date>>` +
+                                                OR +
+                                                `String` (ADL pattern)           |As for Temporal types with T = `Date`
+|`Time`               |`C_TIME`                |`List <Interval<Time>>` +
+                                                OR +
+                                                `String` (ADL pattern)           |As for Temporal types with T = `Time`
+|`Date_time`          |`C_DATE_TIME`           |`List <Interval<Date_time>>` +
+                                                OR +
+                                                 `String` (ADL pattern)          |As for Temporal types with T = `Date_time`
+|`Duration`           |`C_DURATION`            |`List <Interval<Duration>>` +
+                                                OR +
+                                                `String` (ADL pattern)           |As for Temporal types with T = `Duration`
+                                                
+|`List<T>`            |`C_PRIMITIVE_OBJECT` +
+                       descendant appropriate +
+                       to RM type               |`List<T>` or `List<Interval<T>>` +
+                                                for Ordered types                |Members of List value match any value in constraint list
+
+|`Interval<T:Ordered>`|`C_PRIMITIVE_ORDERED` +
+                       descendant appropriate +
+                       to RM type              |`List<Interval<T>>`              |Interval value matches any (Interval) value in constraint list
+                                                
+|===========
+
+The RM primitive types listed above are assumed to exist (possibly with different names) within any RM used as the basis for creating archetypes. Where any do not exist - e.g. if there are no date/time types in a particular RM - no archetype constraints can be defined for such nodes. Where the types have different names, name mapping can be performed as described in <<RM Primitive Type Equivalences>> below.
+
+This facility can be used to effect the following mappings from `C_PRIMITIVE_OBJECT` descendants (`C_STRING`, `C_INTEGER` etc) to the types found in any particular RM.
+
+* `String` variants: in addition to matching `String`, `C_STRING` should match `StringN` and `String_N` instances, to accommodate RM types such as `String8`, `String_32` etc;
+* `Integer` variants: in addition to matching `Integer`, `C_INTEGER` should match `IntegerN` and `Integer_N`, to accommodate RM types such as `Integer_16`, `Integer64` etc;
+* `Real` variants: in addition to matching `Real`, `C_REAL` should match `RealN` and `Real_N` and `Double`, to accommodate RM types such as `Real_32`, `Real64` and `Double`;
+* `Date_time` variants: typical names for `Date_time` such as `DateTime`, `TimeStamp` etc should be mapped to `C_DATE`.
+
+==== Assumed_value
+
+The `_assumed_value_` attribute is useful for archetypes containing any optional constraint. and provides an ability to define a value that can be assumed for a data item for which no data is found at execution time. If populated, it can contain a single at-code that must be in the local value set referred to by the ac-code in the `_constraint_` attribute.
+
+For example, an archetype for the concept 'blood pressure measurement' might contain an optional protocol section containing a data point for patient position, with choices 'lying', 'sitting' and 'standing'. Since the section is optional, data could be created according to the archetype which does not contain the protocol section. However, a blood pressure cannot be taken without the patient in some position, so clearly there is an implied value for patient position. Amongst clinicians, basic assumptions are nearly always made for such things: in general practice, the position could always safely be assumed to be 'sitting' if not otherwise stated; in the hospital setting, 'lying' would be the normal assumption. The `_assumed_value_` feature of archetypes allows such assumptions to be explicitly stated so that all users/systems know what value to assume when optional items are not included in the data.
+
+Note that the notion of assumed values is distinct from that of 'default values'. The latter notion is that of a default 'pre-filled' value that is provided (normally in a local context by a template) for a data item that is to be filled in by the user, but which is typically the same in many cases. Default values are thus simply an efficiency mechanism for users. As a result, default values do appear in data, while assumed values don't.
+
+=== Terminology Constraints
+
+==== Formal Definition
+
+The `C_TERMINOLOGY_CODE` type entails some complexity and merits further explanation. This is the only constrainer type whose constraint semantics are not self-contained, but located in the archetype terminology and/or in external terminologies.
+
+A `C_TERMINOLOGY_CODE` instance in an archetype is structurally simple: it can only be one of the following constraints:
+
+* a single ac-code, referring to either a value-set defined in the archetype terminology or bound to an external value set or ref set;
+** in this case, an additional at-code may be included as an assumed value; the at-code must come from the locally defined value set;
+* a single at-code, representing a single possible value.
+
+NOTE: The second case in theory could be done using an ac-code referring to a value set containing a single value, but there seems little value in this extra verbiage, and little cost in providing the single-member value set short cut.
+
+[#constraint_strengths]
+==== Constraint Strengths
+
+Uniquely in the AOM, a Terminology code constraint may not be required, and may instead be considered informal. This is achieved via the attribute `_constraint_status_` which indicates either that the constraint is `required (0)` (i.e. the data item must formally conform to the constraint), or three levels of informal constraint, namely `extensible (1) | preferred (2) | example (3)`. This particular model of constraint 'strength' follows the {hl7_fhir_binding_strengths}[HL7 FHIR 'binding strengths' model^]. The convenience function `_constraint_required_()` can be used to determine if the constraint is formal, i.e. if `_constraint_status_` has the value `required (0)` or else is not set.
+
+The informal constraint feature in `C_TERMINOLOGY_CODE` is provided to address the common real-world mismatch between local terminology use and more centrally defined archetypes. The enumeration values of 0 - 3 are designed such that the `required` constraint status (value = 0) is considered the default. Additionally, the `_constraint_status_` attribute is optional, and will not be present in archetypes authored with tools not including this feature. Accordingly, the `_constraint_required_()` function returns `True` if `_constraint_status_` is Void. This means that in all archetypes containing `C_TERMINOLOGY_CODE` nodes with no `_constraint_status_`, such nodes are considered to express a formally required constraint.
+
+For the non-required settings of `_constraint_status_`, a data instance value may be a non-matching terminology code, including from another terminology. It might also be a plain text (i.e. not coded), in which case it will not be matched by a `C_TERMINOLOGY_CODE` archetype node, but an archetype node corresponding to the relevant RM type. In openEHR, this would usually be `DV_TEXT`. To allow for coded text or text matching therefore, at least 2 sibling archetype nodes are required, with one containing the appropriately configured `C_TERMINOLOGY_CODE`, and another representing a text-only constraint.
+
+With respect to redefinition in specialised archetypes, the constraint strength may be redefined to be stronger, i.e. the enumeration value must be lower. Thus, a term constraint with strength of `preferred (2)` can be redefined to a strength of `required (0)`.
+
+==== Terminology Code Resolution
+
+When an archetype is deployed in the form of an operational template, the internally defined value sets, and any bindings are processed in stages in order to obtain the final terminology codes from which the user should choose. The `C_TERMINOLOGY_CODE` class provides a number of functions to formalise this as follows.
+
+* `_value_set_expanded_: List<String>`: this function converts an ac-code to its corresponding set of at-codes, as defined in the `value_sets` section of the archetype.
+* `_value_set_substituted_: List<URI>`: where bindings exist to he value set at-codes, this function converts each code to its corresponding binding target, i.e. a URI.
+* `_value_set_resolved_: List<TERMINOLOGY_CODE>`: this function converts the list of URIs to final terms, including with textual rubrics, i.e. a list of `TERMINOLOGY_CODEs`.
+
+These functions would normally be implemented as 'lambdas' or 'agents', in order to obtain access to the target terminologies.
+
+NOTE: Since an archetype might not contain external terminology bindings for all (or even any) of its terminological constraints, a 'resolved' archetype will usually contain at-codes in its cADL definition. These at-codes would be treated as real coded terms in any implementation that was creating data, and as a consequence, archetype at-codes could occur in real data, as described in the Terminology Integration section of the ADL specification.
+
+[#date_time_constraints]
+=== Date/Time Constraints
+
+The openEHR architecture assumes that primitive types representing 'date', 'time' and 'date_time' exist within every development environment, however such types or classes may be named. Within openEHR, these primitive types are named `Iso8601_date` etc., and are defined in the {openehr_base_latest_foundation_types}[openEHR Foundation Types Specification^].
+
+As described in the {openehr_am_adl2}#_constraints_on_dates_times_and_durations[openEHR ADL2 specification^], these types are constrained using either value intervals or patterns. Both kinds of constraint are formally represented by the classes <<_c_date_class,`C_DATE`>>, <<_c_time_class,`C_TIME`>> and <<_c_date_time_class,`C_DATE_TIME`>>. (A fourth time-related type, 'Duration' is constrained somewhat differently by the AOM class `C_DURATION`).
+
+ADL2 value range constraints, such as the date range `|2004-05-20..2005-05-19|` are represented in the relevant constrainer meta-class (in this case `C_DATE`) by an attribute of the form `constraint: List<Interval<Iso8601_date>>`. Similarly, an ADL2 date/time range constraint such as `|<2005-05-19T23:59:59|` is represented by `C_DATE_TIME.constraint` of type `List<Interval<Iso8601_date_time>>`. The `List<>` structure allows such constraints to include more than one disjoint range.
+
+The other means of expressing constraints in ADL2 is via patterns based on the {iso_8601}[ISO 8601^] extended syntax form (i.e. the form that uses '-' and ':' characters in dates and times, respectively). These allow partial dates and times to be stated. Thus, the time constraint `hh:??:XX` means: any time consisting of hours, optional minutes, and no seconds. A full table of such constraint patterns is provided in the {openehr_am_adl2}#_patterns[ADL2 specification^].
+
+Pattern constraints are represented within the AOM classes `C_DATE` etc. via the attribute `pattern_constraint: String`, inherited from the abstract class `C_TEMPORAL`. Validity may be checked using features defined on the class <<_c_temporal_definitions_class,`C_TEMPORAL_DEFINITIONS`>>, such as `valid_date_constraint_patterns`, and also `valid_date_constraint_replacements`, for checking redefinitions within specialised archetypes.
+
+Date/time pattern constraints are computationally represented via functions like `month_validity(): VALIDITY_KIND`, defined on <<_c_date_class,`C_DATE`>>, <<_c_time_class,`C_TIME`>> and <<_c_date_time_class,`C_DATE_TIME`>>, where `VALIDITY_KIND` is an enumeration type defined in the {openehr_base_latest_base_types}[openEHR Base Types^]. The lexical elements of the patterns are mapped to the values of `VALIDITY_KIND` as follows:
+
+* `yyyy` , `mm`, `dd` -> `VALIDITY_KIND.mandatory`
+* `hh` , `mm`, `ss` -> `VALIDITY_KIND.mandatory`
+* `??` -> `VALIDITY_KIND.optional`
+* `XX` -> `VALIDITY_KIND.prohibited`
+
+Accordingly, the '??' within the date constrainer pattern `yyyy-??-XX` maps to the result `optional` of the function `C_DATE.month_validity()`.
+
+[#duration_constraints]
+=== Duration Constraints
+
+Duration constraints follow the same general approach as Date/time constraints, such that the <<_c_duration_class,`C_DURATION`>> meta-class provides a range constraint attribute `constraint: List<Interval<Iso8601_duration>>` as well as the inherited attribute `pattern_constraint: String` to represent pattern constraints. These are described in {openehr_am_adl2}#_duration_constraints[openEHR ADL2 specification^].
+
+However, the pattern constraints are of a simpler form, and do not use the `??` or `XX` lexical elements. The pattern interpretation functions defined on <<_c_duration_class,`C_DURATION`>> are therefore of the form `years_allowed: (): Boolean`, `months_allowed: (): Boolean`. Validity of duration pattern constraints may be checked using relevant functions defined on <<_c_temporal_definitions_class,`C_TEMPORAL_DEFINITIONS`>>.
+
+=== Constraints on Enumeration Types
+
+Enumeration types in the reference model are assumed to have semantics expected in UML, and mainstream programming languages, i.e. to be a distinct type based on a primitive type, normally Integer or String. Each such type consists of a set of values from the domain of its underlying type, thus, a set of Integer, String or other primitive values. Each of these values is assumed to be named in the manner of a symbolic constant. Although strictly speaking UML doesn't require an enumerated type to be based on an underlying primitive type, programming languages do, hence the assumption here that values from the domain of such a type are involved.
+
+A constraint on an enumerated type therefore consists of an AOM instance of a `C_PRIMITIVE` descendant, almost always `C_INTEGER` or `C_STRING` . The flag `_is_enumerated_type_constraint_` defined on `C_PRIMITIVE` indicates that a given `C_PRIMITIVE` is a constrainer for an enumerated type.
+
+Since `C_PRIMITIVEs` don't have type names in ADL, the type name is inferred by any parser or compiler tool that deserialises an archetype from ADL, and stored in the `_rm_type_` attribute inherited from `C_OBJECT` . An example is shown below of a type enumeration.
+
+[.text-center]
+.Enumerated Constraint
+image::{diagrams_uri}/enumerated_type_constraint.png[id=enumerated_constraint, align="center", width="70%"]
+
+A parser that deserialises from an object dump format such as ODIN, JSON or XML will not need to do this.
+
+The form of the constraint itself is simply a series of Integer, String or other primitive values, or an equivalent range or ranges. In the above example, the ADL equivalent of the pk_percent, pk_fraction constraint on a field of type `PROPORTION_KIND` is in fact just __\{2, 3}__, and it is visualised by lookup to show the relevant symbolic names.
+

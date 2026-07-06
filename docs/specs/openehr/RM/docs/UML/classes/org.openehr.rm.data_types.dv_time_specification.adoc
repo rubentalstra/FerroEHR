@@ -1,0 +1,40 @@
+=== DV_TIME_SPECIFICATION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__DV_TIME_SPECIFICATION (abstract)__*
+
+h|*Description*
+2+a|This is an abstract class of which all timing specifications are specialisations. Specifies points in time, possibly linked to the calendar, or a real world repeating event, such as  breakfast.
+
+h|*Inherit*
+2+|`<<_data_value_class,DATA_VALUE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value*: `<<_dv_parsable_class,DV_PARSABLE>>`
+a|The specification, in the HL7v3 syntax for `PIVL` or `EIVL` types.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*calendar_alignment* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Indicates what prototypical point in the calendar the specification is aligned to, e.g.  5th of the month . Empty if not aligned. Extracted from the  value' attribute.
+
+h|*1..1 +
+(abstract)*
+|*event_alignment* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Indicates what real-world event the specification is aligned to if any. Extracted from the  value' attribute.
+
+h|*1..1 +
+(abstract)*
+|*institution_specified* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Indicates if the specification is aligned with institution schedules, e.g. a hospital nursing changeover or meal serving times. Extracted from the  value' attribute.
+|===

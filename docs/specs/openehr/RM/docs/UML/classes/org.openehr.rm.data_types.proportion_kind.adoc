@@ -1,0 +1,44 @@
+=== PROPORTION_KIND Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*PROPORTION_KIND*
+
+h|*Description*
+2+a|Class of enumeration constants defining types of proportion for the `DV_PROPORTION` class.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|*pk_ratio*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}0`
+a|Ratio type. Numerator and denominator may be any value.
+
+h|
+|*pk_unitary*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}1`
+a|Denominator must be 1.
+
+h|
+|*pk_percent*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}2`
+a|Denominator is 100, numerator is understood as a percentage value.
+
+h|
+|*pk_fraction*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}3`
+a|Numerator and denominator are integral, and the presentation method uses a slash, e.g.  1/2 .
+
+h|
+|*pk_integer_fraction*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}4`
+a|Numerator and denominator are integral, and the presentation method uses a slash, e.g.  1/2 ; if the numerator is greater than the denominator, e.g. n=3, d=2, the presentation is  1 1/2 .
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*valid_proportion_kind* ( +
+nq: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if n is one of the defined types.
+|===

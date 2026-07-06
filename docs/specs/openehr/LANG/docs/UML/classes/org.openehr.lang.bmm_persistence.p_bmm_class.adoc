@@ -1,0 +1,89 @@
+=== P_BMM_CLASS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*P_BMM_CLASS*
+
+h|*Description*
+2+a|Definition of persistent form of `BMM_CLASS` for serialisation to ODIN, JSON, XML etc.
+
+h|*Inherit*
+2+|`<<_p_bmm_model_element_class,P_BMM_MODEL_ELEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of the class. Persisted attribute.
+
+h|*0..1*
+|*ancestors*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of immediate inheritance parents. If there are generic ancestors, use `_ancestor_defs_` instead. Persisted attribute.
+
+h|*0..1*
+|*constants*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_p_bmm_constant_class,P_BMM_CONSTANT>>>`
+a|Constants defined in this class, keyed by name. Persistent attribute.
+
+h|*0..1*
+|*properties*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_p_bmm_property_class,P_BMM_PROPERTY>>>`
+a|List of attributes defined in this class. Persistent attribute.
+
+h|*0..1*
+|*functions*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_p_bmm_function_class,P_BMM_FUNCTION>>>`
+a|List of functions (routines) defined in this class, keyed by name. Persistent attribute.
+
+h|*0..1*
+|*invariants*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Invariants defined on this class, as a Hash of assertion expressions keyed by tag. Persisted attribute.
+
+h|*0..1*
+|*is_abstract*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this is an abstract type. Persisted attribute.
+
+h|*0..1*
+|*is_override*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this class definition overrides one found in an included schema.
+
+h|*0..1*
+|*generic_parameter_defs*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_p_bmm_generic_parameter_class,P_BMM_GENERIC_PARAMETER>>>`
+a|List of generic parameter definitions. Persisted attribute.
+
+h|*1..1*
+|*source_schema_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference to original source schema defining this class. Set during `BMM_SCHEMA` materialise. Useful for GUI tools to enable user to edit the schema file containing a given class (i.e. taking into account that a class may be in any of the schemas in a schema inclusion hierarchy).
+
+h|*0..1*
+|*bmm_class*: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_class_class[BMM_CLASS^]`
+a|`BMM_CLASS` object built by `_create_bmm_class_definition_` and `_populate_bmm_class_definition_`.
+
+h|*1..1*
+|*uid*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Unique id generated for later comparison during merging, in order to detect if two classes are the same. Assigned in post-load processing.
+
+h|*0..1*
+|*ancestor_defs*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_p_bmm_generic_type_class,P_BMM_GENERIC_TYPE>>>`
+a|List of structured inheritance ancestors, used only in the case of generic inheritance. Persisted attribute.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_generic* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result := generic_parameter_defs /= Void`
+a|True if this class is a generic class.
+
+h|*1..1*
+|*create_bmm_class* (): `void`
+a|Create `_bmm_class_definition_`.
+
+h|*1..1*
+|*populate_bmm_class* ( +
+a_bmm_schema: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_model_class[BMM_MODEL^][1]` +
+): `void`
+a|Add remaining model elements from Current to `_bmm_class_definition_`.
+|===

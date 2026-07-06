@@ -1,0 +1,9 @@
+name: version_at_time
+in: query
+description: |
+  A given time in the extended ISO 8601 format.
+style: form
+explode: true
+schema:
+  type: string
+  example: '2015-01-20T19:30:22.765+01:00'

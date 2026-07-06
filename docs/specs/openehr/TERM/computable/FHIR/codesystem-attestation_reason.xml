@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-attestation_reason"/>
+  <version value="3.1.0"/>
+  <name value="attestation_reason"/>
+  <title value="Attestation Reason"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="2"/>
+  <concept>
+    <code value="240"/>
+    <display value="signed"/>
+    <designation>
+      <language value="es"/>
+      <value value="firmado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="署名"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="assinado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已签署"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="648"/>
+    <display value="witnessed"/>
+    <designation>
+      <language value="es"/>
+      <value value="testigo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="証言"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="testemunhado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已见证"/>
+    </designation>
+  </concept>
+</CodeSystem>

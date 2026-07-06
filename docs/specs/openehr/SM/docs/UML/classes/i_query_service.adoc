@@ -1,0 +1,60 @@
+=== I_QUERY_SERVICE Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_QUERY_SERVICE*
+
+h|*Description*
+2+a|Query execution service interface.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*execute_stored_query* ( +
+exec_spec: `<<_stored_query_execute_spec_class,STORED_QUERY_EXECUTE_SPEC>>[1]`, +
+row_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+rows_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+ehr_ids: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]>[0..1]` +
+): `<<_result_set_class,RESULT_SET>>`
+a|Execute a query stored in the definition service, using its qualified query name. Return a Result set.
+
+
+.Parameters +
+[horizontal]
+`_exec_spec_`:: Execution specification: which query and optional version to execute, with provided parameters.
+
+`_row_offset_`:: Optional parameter specifying offset in query response rows to return, used for large result sets. A zero or negative value means offset of zero.
+
+`_rows_to_fetch_`:: Optional parameter specifying number of query response rows to fetch, used for large result sets. A zero or negative value means 'all'.
+
+`_ehr_ids_`:: Specific set of EHRs on which to execute the query. If none supplied, a full population query will be performed on all EHRs whose status has the `_is_queryable_` flag set to `True`.
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*0..1*
+|*execute_ad_hoc_query* ( +
+exec_spec: `<<_adhoc_query_execute_spec_class,ADHOC_QUERY_EXECUTE_SPEC>>[1]`, +
+row_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+rows_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+ehr_ids: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]>[0..1]` +
+): `<<_result_set_class,RESULT_SET>>`
+a|Execute an ad hoc query, supplying the query text.
+
+
+.Parameters +
+[horizontal]
+`_exec_spec_`:: Execution specification: query text to execute, with provided parameters.
+
+`_row_offset_`:: Optional parameter specifying offset in query response rows to return, used for large result sets. A zero or negative value means offset of zero.
+
+`_rows_to_fetch_`:: Optional parameter specifying number of query response rows to fetch, used for large result sets. A zero or negative value means 'all'.
+
+`_ehr_ids_`:: Specific set of EHRs on which to execute the query. If none supplied, a full population query will be performed on all EHRs whose status has the `_is_queryable_` flag set to `True`.
+
+.Errors
+* `ehr_id_does_not_exist`
+|===

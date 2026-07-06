@@ -19,6 +19,11 @@ precedent for later transcription work.
 
 ## Steps
 
+Note: an ADR that decides spec-facing behaviour must cite the governing
+vendored spec sections (`docs/specs/openehr/...`, CNF test-case ids) in its
+Context — including where the spec is silent (that silence is usually *why*
+an ADR is needed).
+
 1. **Find the next ADR number.** Glob `docs/ADRs/ADR-*.md`, take the highest
    numeric prefix, and use the next one, zero-padded to three digits
    (`ADR-000-template.md` is not a real decision — the first real one is

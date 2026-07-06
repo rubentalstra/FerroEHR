@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-participation_mode"/>
+  <version value="3.1.0"/>
+  <name value="participation_mode"/>
+  <title value="Participation Mode"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="32"/>
+  <concept>
+    <code value="193"/>
+    <display value="not specified"/>
+    <designation>
+      <language value="es"/>
+      <value value="no especificado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="指定なし"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="não especificado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="未明确说明"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="216"/>
+    <display value="face-to-face communication"/>
+    <designation>
+      <language value="es"/>
+      <value value="comunicación cara a cara"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="対面コミュニケーション"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="comunicação cara-a-cara"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="面对面沟通"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="223"/>
+    <display value="interpreted face-to-face communication"/>
+    <designation>
+      <language value="es"/>
+      <value value="comunicación cara a cara interpretada"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="通訳された対面コミュニケーション"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="comunicação interpretada cara-a-cara"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="配备口译的面对面沟通"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="217"/>
+    <display value="signing (face-to-face)"/>
+    <designation>
+      <language value="es"/>
+      <value value="firma (cara a cara)"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="身振り(対面での)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="assinatura (cara-a-cara)"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="签名 (面对面)"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="195"/>
+    <display value="live audiovisual; videoconference; videophone"/>
+    <designation>
+      <language value="es"/>
+      <value value="audiovisuales en vivo; video conferencia; video llamada"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="生のオーディオビジュアル; ビデオカンファレンス; テレビ電話"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="audiovisual ao vivo; videoconferência; videofone"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="现场视听、视频会议、视频电话"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="198"/>
+    <display value="videoconferencing"/>
+    <designation>
+      <language value="es"/>
+      <value value="video conferencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="ビデオカンファレンス"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="videoconferência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="视频会议"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="197"/>
+    <display value="videophone"/>
+    <designation>
+      <language value="es"/>
+      <value value="video llamada"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="テレビ電話"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="videofone"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="可视电话"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="218"/>
+    <display value="signing over video"/>
+    <designation>
+      <language value="es"/>
+      <value value="firma sobre video"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="テレビを通じた身振り"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="assinatura por vídeo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="视频签名"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="224"/>
+    <display value="interpreted video communication"/>
+    <designation>
+      <language value="es"/>
+      <value value="comunicación por video interpretada"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="通訳されたビデオコミュニケーション"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="comunicação interpretada por vídeo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="配备口译的视频沟通"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="194"/>
+    <display value="asynchronous audiovisual; recorded video"/>
+    <designation>
+      <language value="es"/>
+      <value value="audiovisual asíncrona; video grabado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="非同期のオーディオビジュアル; 録画されたビデオ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="audiovisual assíncrono; vídeo gravado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="异步视听、录制的视频"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="196"/>
+    <display value="recorded video"/>
+    <designation>
+      <language value="es"/>
+      <value value="video grabado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="録画されたビデオ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="vídeo gravado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="录制的视频"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="202"/>
+    <display value="live audio-only; telephone; internet phone; teleconference"/>
+    <designation>
+      <language value="es"/>
+      <value value="sólo audio en vivo; teléfono; teléfono de internet; tele-conferencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="生の音声; 電話; インターネット電話; 電話会議"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="apenas áudio em directo; telefone; telefone por internet; teleconferência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="纯现场音频、电话、互联网电话、电话会议"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="204"/>
+    <display value="telephone"/>
+    <designation>
+      <language value="es"/>
+      <value value="teléfono"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電話"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="telefone"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电话"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="203"/>
+    <display value="teleconference"/>
+    <designation>
+      <language value="es"/>
+      <value value="tele-conferencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電話会議"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="teleconferência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电话会议"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="205"/>
+    <display value="internet telephone"/>
+    <designation>
+      <language value="es"/>
+      <value value="teléfono de internet"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="インターネット電話"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="telefone por internet"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="互联网电话"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="222"/>
+    <display value="interpreted audio-only"/>
+    <designation>
+      <language value="es"/>
+      <value value="sólo audio interpretado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="通訳された音声"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="áudio interpretado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="配备口译的纯音频"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="199"/>
+    <display value="asynchronous audio-only; dictated; voice mail"/>
+    <designation>
+      <language value="es"/>
+      <value value="sólo audio asíncrono; dictado; correo de voz"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="非同期の音声; 口述; ボイスメール"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="áudio assíncrono; ditado; correio de voz"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="异步纯音频、口述、语音邮件"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="200"/>
+    <display value="dictated"/>
+    <designation>
+      <language value="es"/>
+      <value value="dictado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="口述"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="ditado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="口述"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="201"/>
+    <display value="voice-mail"/>
+    <designation>
+      <language value="es"/>
+      <value value="correo de voz"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="ボイスメール"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="correio de voz"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="语音邮件"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="212"/>
+    <display value="live text-only; internet chat; SMS chat; interactive written note"/>
+    <designation>
+      <language value="es"/>
+      <value value="sólo texto en vivo; charla de texto por internet; charla por SMS; nota escrita interactiva"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="生の文字通信; インターネットチャット SMSチャット; 相互に書き込めるノート"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="apenas texto em directo; chat na Internet; chat por SMS; nota escrita interactiva"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="纯实时文本、互联网聊天、短信聊天、交互式书面笔记"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="213"/>
+    <display value="internet chat"/>
+    <designation>
+      <language value="es"/>
+      <value value="charla (texto) por internet"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="インターネットチャット"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="chat por internet"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="互联网聊天"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="214"/>
+    <display value="SMS chat"/>
+    <designation>
+      <language value="es"/>
+      <value value="charla por SMS"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="SMSチャット"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="chat por SMS"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="短信聊天"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="215"/>
+    <display value="interactive written note"/>
+    <designation>
+      <language value="es"/>
+      <value value="nota escrita interactiva"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="相互に書き込めるノート"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="nota escrita interactiva"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="交互式书面笔记"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="206"/>
+    <display value="asynchronous text; email; fax; letter; handwritten note; SMS message"/>
+    <designation>
+      <language value="es"/>
+      <value value="texto asíncrono; correo electrónico; fax; carta; nota manuscrita; mensaje SMS"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="非同期の文字通信; email; fax; 手紙; 手書きのノート; SMSメッセージ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="texto assíncrono; correio electrónico; fax; carta; nota manuscrita; mensagem SMS"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="异步文本、电子邮件、传真、信件、手写笔记、短信"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="211"/>
+    <display value="handwritten note"/>
+    <designation>
+      <language value="es"/>
+      <value value="nota manuscrita"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="手書きのノート"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="nota manuscrita"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="手写笔记"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="210"/>
+    <display value="printed/typed letter"/>
+    <designation>
+      <language value="es"/>
+      <value value="carta impresa/escrita"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="印刷された（タイプされた）手紙"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="carta impressa/datilografada"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="打印/打字形成的信件"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="207"/>
+    <display value="email"/>
+    <designation>
+      <language value="es"/>
+      <value value="correo electrónico"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="email"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="email"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电子邮件"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="208"/>
+    <display value="facsimile/telefax"/>
+    <designation>
+      <language value="es"/>
+      <value value="facsímil/telefax"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="FAX/telefax"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="fax/telefax"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="传真/电传"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="221"/>
+    <display value="translated text"/>
+    <designation>
+      <language value="es"/>
+      <value value="texto traducido"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="翻訳された文書"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="texto traduzido"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="经过翻译的文本"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="209"/>
+    <display value="SMS message"/>
+    <designation>
+      <language value="es"/>
+      <value value="mensajería SMS"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="SMSメッセージ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="mensagem SMS"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="短信"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="219"/>
+    <display value="physically present"/>
+    <designation>
+      <language value="es"/>
+      <value value="físicamente presente"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="出席"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="fisicamente presente"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="亲自到场"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="220"/>
+    <display value="physically remote"/>
+    <designation>
+      <language value="es"/>
+      <value value="físicamente remoto"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="遠隔での参加"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="fisicamente remoto"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="亲自远程"/>
+    </designation>
+  </concept>
+</CodeSystem>

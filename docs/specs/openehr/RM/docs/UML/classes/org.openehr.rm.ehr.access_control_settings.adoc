@@ -1,0 +1,11 @@
+=== ACCESS_CONTROL_SETTINGS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__ACCESS_CONTROL_SETTINGS (abstract)__*
+
+h|*Description*
+2+a|Access Control Settings for the EHR and components. Intended to support multiple access control schemes. Currently implementation dependent.
+
+|===

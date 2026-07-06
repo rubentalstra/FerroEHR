@@ -1,0 +1,43 @@
+= Resource Package
+
+NOTE: the version of the Resource package described below is used only in ADL 1.4 archetypes, i.e. via the {openehr_am_aom14}[AOM 1.4 archetype model]. A newer version of this package is defined in the {openehr_resource}[openEHR Resource Specfication] in the BASE component, and is used in ADL 2 archetypes (via the {openehr_am_aom2}[AOM 2 archetype model]) and in the {openehr_task_planning}[Task Planning specification]. The newer specification is almost completely backwards compatible, enabling for example easy upgrading of ADL1.4 archetype meta-data to the ADL2 form. It also specifies more comprehensive meta-data as well as annotations. The new specification should be used for all relevant needs in the future, with the older form here retained only while needed by AOM 1.4 based archetypes and tools.
+
+== Overview
+
+The `common.resource` package defines the structure and semantics of the general notion of an online resource which has been created by a human author, and consequently for which natural language is a factor. The package is illustrated below.
+
+[.text-center]
+.common.resource Package
+image::{uml_diagrams_uri}/RM-common.resource.svg[id=resource_package, align="center"]
+
+=== Natural Languages and Translation
+
+Authored resources contain natural language elements, and are therefore created in some original language, recorded in the `_orginal_language_` attribute of the `AUTHORED_RESOURCE` class. Information about translations is included in the translations attribute, which allows for one or more sets of translation details to be recorded. A resource is translated by doing the following:
+
+* translating every language-dependent element to the new language;
+* adding a new `TRANSLATION_DETAILS` instance to translations, containing details about the translator, organisation, quality assurance and so on.
+* any further translations to language-specific elements in a instances of descendent type of `AUTHORED_RESOURCE`.
+
+The languages_available function provides a complete list of languages in the resource.
+
+=== Meta-data
+
+What is normally considered the 'meta-data' of a resource, i.e. its author, date of creation, purpose, and other descriptive items, is described by the `RESOURCE_DESCRIPTION` and `RESOURCE_DESCRIPTION_ITEM` classes. The parts of this that are in natural language, and therefore may require translated versions, are represented in instances of the `RESOURCE_DESCRIPTION_ITEM` class. Thus, if a `RESOURCE_DESCRIPTION` has more than one `RESOURCE_DESCRIPTION_ITEM`, each of these should carry exactly the same information in a different natural language.
+
+The `AUTHORED_RESOURCE`.`_description_` attribute is optional, allowing for resources with no meta-data at all, e.g. resources in a partial state of construction. The translations attribute may still be required, since there may be other parts of the resource object (specified by a class into which `AUTHORED_RESOURCE` is inherited) that are language-dependent.
+
+=== Revision History
+
+When the resource is considered to be in a state where changes to it should be controlled, the is_controlled attribute is set to True, and all subsequent changes should have an audit trail recorded. Usually controlled resources would be managed in a versioned repository (e.g. implemented by CVS, Subversion or similar systems), and audit information will be stored somewhere in the repository (e.g. in version control files). The revision_history attribute defined in the `AUTHROED_RESOURCE` class is intended to act as a documentary copy of the revision history as known inside the repository, for the benefit of users of the resource. Given that resources in different places may well be managed in different kinds of repositories, having a copy of the revision history in a standardised form within the resource enables it to be used interoperably by authoring and other tools.
+
+Every change to a resource committed to the relevant repository causes a new addition to the revision_history.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}authored_resource.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}translation_details.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}resource_description.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}resource_description_item.adoc[]

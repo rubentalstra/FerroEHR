@@ -1,0 +1,18 @@
+=== RESULT_SET_ROW Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*RESULT_SET_ROW*
+
+h|*Description*
+2+a|Structure representing a single row of output from an executed query.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*values*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]>`
+a|List of items corresponding to the columns of the owning Result set.
+|===

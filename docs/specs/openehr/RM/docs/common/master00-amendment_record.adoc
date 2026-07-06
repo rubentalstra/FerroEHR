@@ -1,0 +1,536 @@
+= Amendment Record
+
+[cols="1a,6,2,2a", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+
+|[[latest_issue]]2.1.5
+|{spec_tickets}/SPECRM-87[SPECRM-87^]: Support tags: added <<tags, Tags Package>> (Addresses {spec_tickets}/SPECPR-265[SPECPR-265^]).
+|S Iancu, +
+B Næss, +
+M Polajnar
+|[[latest_issue_date]]17 Nov 2022
+
+|
+|{spec_tickets}/SPECRM-107[SPECRM-107^]: Add `inactive` and `abandoned` states to Version lifecycle (fixes {spec_tickets}/SPECPR-383[SPECPR-383^]).
+|J Holslag, + 
+ Jelte Zeilstra, +
+ Bas Janssen
+|06 Oct 2022
+
+|
+|{spec_tickets}/SPECRM-103[SPECRM-103^]: Documentation fixes and typos: +
+ Fix `PARTY_RELATED` typo (fixes {spec_tickets}/SPECPR-385[SPECPR-385^]).
+|P Bos
+|28 Feb 2022
+
+4+^h|*RM Release 1.1.0*
+
+|2.1.4
+|{spec_tickets}/SPECRM-97[SPECRM-97^]: Define data validity rules for Versions with `_lifecycle_state_ = incomplete`.
+|M Polajnar, +
+ S Iancu, +
+ P Bos
+|23 Sep 2020
+
+|
+|{spec_tickets}/SPECRM-93[SPECRM-93^]: Adjust advice on merging persistent compositions in section 6.4.2. (Addresses {spec_tickets}/SPECPR-355[SPECPR-355^]).
+|I McNicoll
+|23 Mar 2020
+
+|
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]: Convert citations to bibtex form.
+|T Beale
+|15 Dec 2019
+
+|
+|{spec_tickets}/SPECRM-92[SPECRM-92^]. Correct numerous minor typographical and formatting errors.
+|J Mewes
+|09 Nov 2019
+
+|
+|{spec_tickets}/SPECRM-74[SPECRM-74^]. Add `_other_details_` meta-data field to `FEEDER_AUDIT_DETAILS` (addresses {spec_tickets}/SPECPR-271[SPECPR-271^]).
+|B Haarbrandt
+|10 Oct 2019
+
+|
+|{spec_tickets}/SPECRM-88[SPECRM-88^]. Improve documentation relating to use of `_uid_` in versioning and `LOCATABLE` descendants in `change_control` package (addresses {spec_tickets}/SPECPR-322[SPECPR-322^]).
+|P Pazos, +
+ M Polajnar, +
+ T Beale
+|29 Sep 2019
+
+|
+|{spec_tickets}/SPECRM-56[SPECRM-56^]. Add archetypable details meta-data to `FOLDER` (addresses {spec_tickets}/SPECPR-85[SPECPR-85^]).
+|B Næss, +
+ S Iancu, +
+ P Pazos, +
+ I McNicoll, +
+ T Beale
+|16 Mar 2019
+
+|
+|{spec_tickets}/SPECRM-85[SPECRM-85^]. Correct typographical errors in Version classes; correct param in `VERSIONED_OBJECT._has_version_at_time()_` back to `_a_time_: DV_DATE_TIME` (fixes {spec_tickets}/SPECPR-311[SPECPR-311^]).
+|P Pazos, +
+ T Beale
+|16 Mar 2019
+
+4+^h|*RM Release 1.0.4*
+
+|2.1.3
+|{spec_tickets}/SPECRM-79[SPECRM-79^]. Correct UML diagram of `VERSIONED_OBJECT._owner_id_` type. 
+|S Iancu
+|26 Nov 2018
+
+|
+|{spec_tickets}/SPECRM-80[SPECRM-80^]. Improve description of `_system_id_` field in `EHR`, `AUDIT_DETAILS` and `FEEDER_AUDIT_DETAILS`.
+|H Frankel, +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPECRM-70[SPECRM-70^]. Update text in Common IM to latest openPGP specification (fixes {spec_tickets}/SPECPR-216[SPECPR-216^]); +
+ {spec_tickets}/SPECRM-60[SPECRM-60^]. Add Version lifecycle state machine to RM; +
+ {spec_tickets}/SPECRM-66[SPECRM-66^]. Improve description in specification of `AUDIT_DETAILS._change_type_` and `_description_` fields. Add informative text in Section 6.2.5 Contributions.
+|P Pazos
+|
+
+|
+|{spec_tickets}/SPECPUB-3[SPECPUB-3^]. Re-instate inheritance from `VERSIONED_FOLDER` to `VERSIONED_OBJECT<T>` from Release 1.0.2 (lost in original UML conversion).
+|T Beale
+|25 May 2016
+
+|
+|{spec_tickets}/SPECRM-50[SPECRM-50^]: Change order of type parameters in `Hash<V,K>` type to `Hash<K,V>`; affects classes in `resource` package.
+|D Boscá
+|13 Apr 2016
+
+|
+|{spec_tickets}/SPECRM-48[SPECRM-48^]: Correct guidance on signing in Common IM - remove statement about server-side signing. ({spec_tickets}/SPECPR-131[SPECPR-131^]).
+|B Lah
+|23 Feb 2016
+
+|
+|{spec_tickets}/SPECRM-46[SPECRM-46^]: Fix RM Release 1.0.3 typos and minor documentary errors. ({spec_tickets}/SPECPR-159[SPECPR-159^], {spec_tickets}/SPECPR-155[SPECPR-155^], {spec_tickets}/SPECPR-156[SPECPR-156^]).
+|K Atalag, +
+ S Iancu
+|
+
+4+^h|*RM Release 1.0.3*
+
+|2.1.2
+|{spec_tickets}/SPECRM-21[SPECRM-21^]: Make `PARTICIPATION._mode_` optional. Section 4.3.5 updated.
+|S Heard
+|12 Oct 2015
+
+|
+|{spec_tickets}/SPECRM-28[SPECRM-28^]: Improve documentation of `VERSION._uid_` to make clear that the first part of the id is the owning `VERSIONED_OBJECT._uid_` ({spec_tickets}/SPECPR-90[SPECPR-90^]).
+|P Pazos
+|
+
+|
+|{spec_tickets}/SPECRM-34[SPECRM-34^]: Add constraint to `VERSIONED_OBJECT._uid_` to prevent extension. ({spec_tickets}/SPECPR-1[SPECPR-1^]).
+|A Patterson, +
+ H Frankel
+|
+
+4+^h|*Release 1.0.2*
+
+|2.1.1
+|{spec_tickets}/SPECRM-249[SPECRM-249^]: Paths and locators minor errors in Architecture Overview and Common IM. Correct ordering of elements in identifier tuple. Sections 6.3.3, 6.4.1, and 6.4.2.
+|C Ma, +
+ T Beale, +
+ R Chen
+|20 Dec 2008
+
+|
+|{spec_tickets}/SPECRM-257[SPECRM-257^]: Correct minor typos and clarify text. Complete `ATTESTATION` class purpose.  Correct UML of resource_description package - make `RESOURCE_DESCRIPTION` 1.*, `AUTHORED_RESOURCE` abstract.
+|C Ma, +
+ R Chen, +
+ T Cook
+|
+
+4+^h|*Release 1.0.1*
+
+|2.1.0
+|{spec_tickets}/SPEC-209[SPEC-209^]: Minor changes to correctly define `AUTHORED_RESOURCE._current_revision_`. Functions added to `REVISION_HISTORY`; `AUTHORED_RESOURCE._current_revision_` postcondition added.
+|Y S Lim
+|08 Apr 2007
+
+|
+|{spec_tickets}/SPEC-206[SPEC-206^]: Change `LOCATABLE._item_at_path_` to return `ANY`.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-200[SPEC-200^]: Correct Release 1.0 typographical errors. Add missed invariant in `VERSION` to restrict `_contribution.type_` to "CONTRIBUTION". Fix pre- and post-conditions in `LOCATABLE` functions.
+|T Beale
+|
+
+|
+|Fix errors in timezone max/min values and invariants.
+|T Cook
+|
+
+|
+|{spec_tickets}/SPEC-203[SPEC-203^]: Release 1.0 explanatory text improvements. Move Explanatory material on configuration management and versioning to Architecture Overview.
+|T Beale +
+ E Sundvall
+|
+
+|
+|{spec_tickets}/SPEC-202[SPEC-202^]: Correct minor errors in `VERSION._preceding_version_id_`. Rename `_preceding_version_id_` to `_preceding_version_uid_`. Add `_preceding_version_uid_` invariant to `VERSION<T>`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-197[SPEC-197^]: Change `LOCATABLE._uid_` to `HIER_OBJECT_ID`.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-214[SPEC-214^]: Changes to `VERSION` preparatory to EHR Extract upgrade. Added `_lifecycle_state_` to `VERSION<T>`, extra functions on `VERSIONED_OBJECT<T>`. Corrected and added commit functions to `VERSIONED_OBJECT`. Added `ATTESTATION._attested_view_` (conforms to CEN EN13606-1).
+|H Frankel +
+ S Heard +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-212[SPEC-212^]: Allow `VERSION._data_` to be optional to enable logical deletion.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-130[SPEC-130^]: Correct security details in `LOCATABLE` and `ARCHETYPED` classes. Remove `ARCHETYPED._access_control_`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-219[SPEC-219^]: Use constants instead of literals to refer to terminology in RM.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-231[SPEC-231^]: Change `RESOURCE_DESCRIPTION`.`_details_` from `List` to `Hash`.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-235[SPEC-235^]: Make attestation-only commit require a Contribution.
+|A Patterson
+|
+
+|
+|{spec_tickets}/SPEC-239[SPEC-239^]: Add common parent type of `OBJECT_VERSION_ID` and `HIER_OBJECT_ID`.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-243[SPEC-243^]: Add `template_id` to `ARCHETYPED` class.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-244[SPEC-244^]: Separate `LOCATABLE` path functions into `PATHABLE` class.
+|T Beale +
+ H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-166[SPEC-166^]: Add viewable form of document to `COMPOSITION`.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-246[SPEC-246^]: Correct openEHR terminology rubrics.
+|B Verhees +
+ M Forss
+|
+
+4+^h|*Release 1.0*
+
+|2.0 
+|{spec_tickets}/SPEC-147[SPEC-147^]: Make `DIRECTORY` re-usable. Add new `directory` package.
+|R Chen
+|02 Feb 2006
+
+
+|
+|{spec_tickets}/SPEC-162[SPEC-162^]. Allow party identifiers when no demographic data.
+|S Heard +
+ H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-167[SPEC-167^]. Add `AUTHORED_RESOURCE` class.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-179[SPEC-179^]. Move `AUDIT_DETAILS` to `generic` package; add `REVISION_HISTORY`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-182[SPEC-182^]: Rationalise `VERSION._lifecycle_state_` and `ATTESTATION._status_`.
+|C Ma +
+ D Kalra
+|
+
+|
+|{spec_tickets}/SPEC-65[SPEC-65^]. Add `REVISION_HISTORY` to `change_control` package.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-187[SPEC-187^]: Correct modelling errors in `DIRECTORY` class and rename.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-163[SPEC-163^]: Add identifiers to `FEEDER_AUDIT` for originating and gateway systems.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-165[SPEC-165^]. Clarify use of `_system_id_` in `FEEDER_AUDIT` and `AUDIT_DETAILS`.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-190[SPEC-190^]. Rename `VERSION_REPOSITORY` to `VERSIONED_OBJECT`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-161[SPEC-161^]. Support distributed versioning. Additions to change_control package. Rename `REVISION_HISTORY_ITEM._revision_` to `_version_id_`, and change type to `OBJECT_VERSION_ID`.
+|H Frankel, +
+ T Beale
+|
+
+4+^h|*Release 0.96*
+
+|1.6.2 
+|{spec_tickets}/SPEC-159[SPEC-159^]. Improve explanation of use of `ATTESTATION` in change_control package.  
+|T Beale 
+|10 Jun 2005
+
+4+^h|*Release 0.95*
+
+|1.6.1 
+|{spec_tickets}/SPEC-48[SPEC-48^]. Pre-release review of documents. Fixed UML in Fig 8 informal model of version control.
+|D Lloyd 
+|22 Feb 2005
+
+
+|1.6 
+|{spec_tickets}/SPEC-108[SPEC-108^]. Minor changes to `change_control` package.  
+|T Beale
+|10 Dec 2004
+
+
+|
+|{spec_tickets}/SPEC-24[SPEC-24^]. Revert `_meaning_` to `STRING` and rename as `archetype_node_id`.
+|S Heard +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-97[SPEC-97^]. Correct errors in version diagrams in Common model.
+|Ken Thompson
+|
+
+|
+|{spec_tickets}/SPEC-99[SPEC-99^]. `PARTICIPATION._function_` type in diagram not in sync with spec.
+|R Shackel (DSTC)
+|
+
+|
+|{spec_tickets}/SPEC-116[SPEC-116^]. Add `PARTICIPATION._function_` vocabulary and invariant.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-118[SPEC-118^]. Make package names lower case.  Improve presentation of `identification` section; move some text to Data Types IM document, `basic` package.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-111[SPEC-111^]. Move `identification` Package to `support`.
+|DSTC
+|
+
+4+^h|*Release 0.9*
+
+|1.5 
+|{spec_tickets}/SPEC-80[SPEC-80^]. Remove `ARCHETYPED._concept_` - not needed in data +
+ {spec_tickets}/SPEC-81[SPEC-81^]. `LINK` should be unidirectional. +
+ {spec_tickets}/SPEC-83[SPEC-83^]. `PARTY_RELATED._party_` should be optional. +
+ {spec_tickets}/SPEC-85[SPEC-85^]. `LOCATABLE._synthesised_` not needed. Add vocabulary for `FEEDER_AUDIT._change_type_`. +
+ {spec_tickets}/SPEC-86[SPEC-86^]. `LOCATABLE._presentation_` not needed.
+|DSTC
+|09 Mar 2004
+
+
+|
+|{spec_tickets}/SPEC-91[SPEC-91^]. Correct anomalies in use of `CODE_PHRASE` and `DV_CODED_TEXT`. +
+ Changed `PARTICIPATION._mode_`, changed `ATTESTATION._status_`, `PARTY_RELATED._relationship_`, `VERSION_AUDIT._change_type_`, `FEEDER_AUDIT._change_type_` to to `DV_CODED_TEXT`.
+|T Beale, +
+ S Heard
+|
+
+|
+|{spec_tickets}/SPEC-94[SPEC-94^]. Add `_lifecycle_` state attribute to `VERSION`; correct `DV_STATE`.
+|DSTC
+|
+
+|
+|*Formally validated using ISE Eiffel 5.4.*
+|
+|
+
+|1.4.12 
+|{spec_tickets}/SPEC-71[SPEC-71^]. Allow version ids to be optional in `TERMINOLOGY_ID`.
+|T Beale
+|25 Feb 2004
+
+
+|
+|{spec_tickets}/SPEC-44[SPEC-44^]. Add reverse ref from `VERSION_REPOSITORY<T>` to owner object.
+|D Lloyd
+|
+
+|
+|{spec_tickets}/SPEC-63[SPEC-63^]. `ATTESTATION` should have a `_status_` attribute.
+|D Kalra
+|
+
+|
+|{spec_tickets}/SPEC-46[SPEC-46^]. Rename `COORDINATED_TERM` and `DV_CODED_TEXT._definition_`.
+|T Beale
+|
+|1.4.11 
+|{spec_tickets}/SPEC-56[SPEC-56^]. References in `common.VERSION` classes should be `OBJECT_REFs`.
+|T Beale 
+|02 Nov 2003
+
+
+|1.4.10 
+|{spec_tickets}/SPEC-45[SPEC-45^]. Remove `VERSION_REPOSITORY._status_`. 
+|D Lloyd, T Beale
+|21 Oct 2003
+
+|1.4.9 
+|{spec_tickets}/SPEC-25[SPEC-25^]. Allow `ATTESTATIONs` to attest parts of `COMPOSITIONs`.  Change made due to CEN TC/251 joint WGM, Rome, Feb 2003. +
+ {spec_tickets}/SPEC-43[SPEC-43^]. Move External package to Common RM and rename to Identification (incorporates {spec_tickets}/SPEC-36[SPEC-36^] - Add `HIER_OBJECT_ID` class, make `OBJECT_ID` class abstract.)
+|D Kalra, +
+ D Lloyd, +
+ T Beale
+|09 Oct 2003
+
+|1.4.8 
+|{spec_tickets}/SPEC-41[SPEC-41^]. Visually differentiate primitive types in openEHR documents.
+|D Lloyd 
+|04 Oct 2003
+
+|1.4.7 
+|{spec_tickets}/SPEC-13[SPEC-13^]. Rename key classes according to CEN ENV13606.
+|S Heard, +
+ D Kalra, +
+ T Beale
+|15 Sep 2003
+
+|1.4.6 
+|{spec_tickets}/SPEC-12[SPEC-12^]. Add presentation attribute to `LOCATABLE`. +
+ {spec_tickets}/SPEC-27[SPEC-27^]. Move feeder_audit to `LOCATABLE` to be compatible with CEN 13606 revision. Add new class `FEEDER_AUDIT`.
+|D Kalra 
+|20 Jun 2003
+
+|1.4.5 
+|{spec_tickets}/SPEC-20[SPEC-20^]. Move `VERSION._charset_` to `DV_TEXT`, `_territory_` to `TRANSACTION`. Remove `VERSION._language_`.
+|A Goodchild 
+|10 Jun 2003
+
+|1.4.4 
+|{spec_tickets}/SPEC-7[SPEC-7^]. Add `PARTY_RELATED` class to `generic` package. +
+ {spec_tickets}/SPEC-17[SPEC-17^]. Renamed `VERSION._parent_version_id_` to `_preceding_version_id_`.
+|S Heard, +
+ D Kalra
+|11 Apr 2003
+
+|1.4.3 
+|Major alterations due to {spec_tickets}/SPEC-3[SPEC-3^], {spec_tickets}/SPEC-4[SPEC-4^]. `ARCHETYPED` class no longer inherits from `LOCATABLE`, now related by association. Redesign of Change Control package. Document structure improved. (Formally validated)
+|T Beale, +
+ Z Tun
+|18 Mar 2003
+
+|1.4.2 
+|Moved External package to Support RM. Corrected `CONTRIBUTION`.  description to `DV_TEXT`. Made `PARTICIPATION`.`_time_` optional. (Formally validated).
+|T Beale 
+|25 Feb 2003
+
+|1.4.1 
+|Formally validated using ISE Eiffel 5.2. Corrected types of `VERSIONABLE._language_`, `_charset_`, `_territory_`. Added `ARCHETYPED`.`_uid_`: `OBJECT_ID`. Renamed `ARCHETYPE_ID._rm_source_` to `_rm_originator_`, and `_rm_level_` to `_rm_concept_`; added `_archetype_originator_`. Rewrote archetype id section. Changed `PARTICIPATION._mode`_ to `COORDINATED_TERM` & fixed invariant.
+|T Beale, +
+ D Kalra
+|18 Feb 2003
+
+|1.4 
+|Changes post CEN WG meeting Rome Feb 2003. Changed `ARCHETYPED._meaning_` from `STRING` to `DV_TEXT`. Added `CONTRIBUTION`.  name invariant. Removed `AUTHORED_VA` and `ACQUIRED_VA` audit types, moved feeder audit to the EHR RM. `VERSIONABLE._code_set_` renamed to `_charset_`. Fixed pre/post condition of `OBJECT_ID._context_id_`, added `OBJECT_ID._has_context_id_`. Changed `TERMINOLOGY_ID` string syntax.
+|T Beale, +
+ D Kalra, +
+ D Lloyd
+|8 Feb 2003
+
+|1.3.5 
+|Removed segment from archetype_id; corrected inconsistencies in diagrams and class texts.
+|Z Tun, +
+ T Beale
+|3 Jan 2003
+
+|1.3.4 
+|Removed inheritance from `VERSIONABLE` to `ARCHETYPED`. 
+|T Beale 
+|3 Jan 2003
+
+|1.3.3 
+|Minor corrections: `OBJECT_ID`; changed syntax of `TERMINOLOGY_ID`. Corrected Fig 6.
+|T Beale 
+|17 Nov 2002
+
+|1.3.2 
+|Added Generic Package; added `PARTICIPATION` and changed and moved `ATTESTATION` class.
+|T Beale 
+|8 Nov 2002
+
+|1.3.1 
+|Removed `EXTERNAL_ID._iso_oid_`. Remodelled `EXTERNAL_ID` into new classes - `OBJECT_REF` and `OBJECT_ID`. Remodelled all change control classes.
+|T Beale, +
+ D Lloyd, +
+ M Darlison, +
+ A Goodchild
+|22 Oct 2002
+
+|1.3 
+|Moved ARCHETYPE_ID.iso_oid to `EXTERNAL_ID`. `DV_LINK` no longer a data type; renamed to `LINK`.
+|T Beale 
+|22 Oct 2002
+
+|1.2 
+|Removed Structure package to own document. Improved CM diagrams.
+|T Beale 
+|11 Oct 2002
+
+|1.1 
+|Removed HCA_ID. Included Spatial package from EHR RM.  Renamed `SPATIAL` to `STRUCTURE`.
+|T Beale 
+|16 Sep 2002
+
+|1.0 
+|Taken from EHR RM. 
+|T Beale 
+|26 Aug 2002
+
+|===
+

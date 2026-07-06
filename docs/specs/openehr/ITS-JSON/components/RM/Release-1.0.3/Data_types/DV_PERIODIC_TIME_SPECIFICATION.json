@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_PERIODIC_TIME_SPECIFICATION.json",
+    "definitions": {
+        "DV_PERIODIC_TIME_SPECIFICATION": {
+            "type": "object",
+            "required": [
+                "value"
+            ],
+            "properties": {
+                "value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_PARSABLE.json#/definitions/DV_PARSABLE"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "DV_PERIODIC_TIME_SPECIFICATION"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

@@ -1,0 +1,14 @@
+=== C_REFERENCE_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__C_REFERENCE_OBJECT (abstract)__*
+
+h|*Description*
+2+a|Abstract parent type of C_OBJECT subtypes that are defined by reference.
+
+h|*Inherit*
+2+|`<<_c_object_class,C_OBJECT>>`
+
+|===

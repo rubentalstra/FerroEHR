@@ -1,0 +1,11 @@
+title: DV_ORDINAL
+type: object
+allOf:
+  - $ref: ../data_types/DvOrdinal.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_ORDINAL]
+x-discriminator-value: DV_ORDINAL

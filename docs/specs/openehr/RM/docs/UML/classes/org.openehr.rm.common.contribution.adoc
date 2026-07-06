@@ -1,0 +1,26 @@
+=== CONTRIBUTION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*CONTRIBUTION*
+
+h|*Description*
+2+a|Documents a Contribution (change set) of one or more versions added to a change-controlled repository.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*uid*: `link:/releases/BASE/{base_release}/base_types.html#_hier_object_id_class[HIER_OBJECT_ID^]`
+a|Unique identifier for this Contribution.
+
+h|*1..1*
+|*versions*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_object_ref_class[OBJECT_REF^]>`
+a|Set of references to Versions causing changes to this EHR. Each contribution contains a list of versions, which may include paths pointing to any number of versionable items, i.e. items of types such as `COMPOSITION` and `FOLDER`.
+
+h|*1..1*
+|*audit*: `<<_audit_details_class,AUDIT_DETAILS>>`
+a|Audit trail corresponding to the committal of this Contribution.
+|===

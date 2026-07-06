@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-integrity_check_algorithms"/>
+  <version value="3.1.0"/>
+  <name value="integrity_check_algorithms"/>
+  <title value="Integrity Check Algorithms"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="7"/>
+  <concept>
+    <code value="SHA-1"/>
+    <display value="SHA-1"/>
+  </concept>
+  <concept>
+    <code value="SHA-224"/>
+    <display value="SHA-224"/>
+  </concept>
+  <concept>
+    <code value="SHA-256"/>
+    <display value="SHA-256"/>
+  </concept>
+  <concept>
+    <code value="SHA-384"/>
+    <display value="SHA-384"/>
+  </concept>
+  <concept>
+    <code value="SHA-512"/>
+    <display value="SHA-512"/>
+  </concept>
+  <concept>
+    <code value="SHA-512/224"/>
+    <display value="SHA-512/224"/>
+  </concept>
+  <concept>
+    <code value="SHA-512/256"/>
+    <display value="SHA-512/256"/>
+  </concept>
+</CodeSystem>

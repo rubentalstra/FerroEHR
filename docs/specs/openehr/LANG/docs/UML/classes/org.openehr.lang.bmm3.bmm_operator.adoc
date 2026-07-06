@@ -1,0 +1,26 @@
+=== BMM_OPERATOR Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_OPERATOR*
+
+h|*Description*
+2+a|Definition of a symbolic operator associated with a function.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*position*: `<<_bmm_operator_position_enumeration,BMM_OPERATOR_POSITION>>`
+a|Position of operator in syntactic representation.
+
+h|*1..1*
+|*symbols*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of `String` symbols that may be used to represent this operator in a textual representation of a BMM model.
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Formal name of the operator, e.g. 'minus' etc.
+|===

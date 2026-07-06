@@ -1,0 +1,22 @@
+=== BMM_UNITARY_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_UNITARY_TYPE (abstract)__*
+
+h|*Description*
+2+a|Parent of meta-types that may be used as the type of any instantiated object that is not a container object.
+
+h|*Inherit*
+2+|`<<_bmm_type_class,BMM_TYPE>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*unitary_type* (): `<<_bmm_unitary_type_class,BMM_UNITARY_TYPE>>`
+a|Result = self.
+|===

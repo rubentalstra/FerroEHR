@@ -1,0 +1,62 @@
+= SIM-B Structures
+
+== Data Structures Package
+
+The following UML diagram shows the SIM `rm.data_structures` package defining `S_XXX` types corresponding to the RM `rm.data_structures` package types.
+
+[.text-center]
+.`sm.simplified_im_b.rm.data_structures` package
+image::{uml_diagrams_uri}/SM-simplified_im_b.rm.data_structures.svg[id=sm_simplified_im_b_rm_data_structures, align="center"]
+
+=== Class Definitions
+
+include::{uml_export_dir}/classes/s_event.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_point_event.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_interval_event.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_item.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_cluster.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_element.adoc[leveloffset=+1]
+
+== Common Package
+
+The following UML diagram shows the SIM `rm.common` package defining `S_XXX` types corresponding to the RM `rm.common` package types.
+
+[.text-center]
+.`sm.simplified_im_b.rm.common` package
+image::{uml_diagrams_uri}/SM-simplified_im_b.rm.common.svg[id=sm_simplified_im_b_rm_common, align="center"]
+
+=== Class Definitions
+
+include::{uml_export_dir}/classes/s_locatable.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_archetyped.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_link.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_feeder_audit.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_feeder_audit_details.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_party_proxy.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_party_identified.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_participation.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_participation_identified.adoc[leveloffset=+1]
+
+== Composition Package
+
+The following UML diagram shows the top-level SIM `rm.composition` package defining `S_COMPOSITION`, `S_SECTION` and the `S_ENTRY` types.
+
+[.text-center]
+.`sm.simplified_im_b.rm.composition` package
+image::{uml_diagrams_uri}/SM-simplified_im_b.rm.composition.svg[id=sm_simplified_im_b_rm_composition, align="center"]
+
+=== Class Definitions
+
+include::{uml_export_dir}/classes/s_composition.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_event_context.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_content_item.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_section.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_entry.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_admin_entry.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_care_entry.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_observation.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_evaluation.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_instruction.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_activity.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_action.adoc[leveloffset=+1]
+

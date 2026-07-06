@@ -1,0 +1,104 @@
+=== I_DEFINITION_QUERY Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_DEFINITION_QUERY*
+
+h|*Description*
+2+a|Interface for storying queries and query sets.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_query* ( +
+a_query_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if the query identified by `_a_query_name_` is registered.
+
+.Parameters +
+[horizontal]
+`_a_query_name_`:: Qualified name of query.
+
+h|*1..1*
+|*valid_query* ( +
+a_query_text: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_type: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if the provided query text is a valid instance of the formalism.
+
+.Parameters +
+[horizontal]
+`_a_type_`:: Name and optionally version of the query formalism (i.e. language).
+
+h|*1..1*
+|*store_query* ( +
+a_query_text: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_type: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_query_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][0..1]` +
+): `<<_query_descriptor_class,QUERY_DESCRIPTOR>>` +
+ +
+__Pre_valid_query__: `is_valid_query(a_query_text)`
+a|Register a query under a qualified name. If no name is provided, one is created in the service. Return a Query descriptor containing the query name and unique identifier.
+
+.Parameters +
+[horizontal]
+`_a_type_`:: Name and optionally version of the query formalism (i.e. language).
+
+h|*1..1*
+|*store_query_set* ( +
+a_query_set_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][0..1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]`
+a|Register a query set.
+
+TODO: determine details.
+
+h|*0..1*
+|*list_queries* ( +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_query_descriptor_class,QUERY_DESCRIPTOR>>>`
+a|List all registered queries.
+
+h|*0..1*
+|*list_matching_queries* ( +
+id_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+artefact_id_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_query_descriptor_class,QUERY_DESCRIPTOR>>>`
+a|List all registered queries matching an identifier pattern (regex) and an artefact identifier pattern (regex) for artefacts referenced in the query. Either pattern may be the regex for 'match any'.
+
+
+.Parameters +
+[horizontal]
+`_id_pattern_`:: PERL regular expression on query identifier.
+
+`_artefact_id_pattern_`:: PERL regular expression on archetype / template identifiers.
+
+.Errors
+* `invalid_id_pattern`
+
+h|*0..1*
+|*delete_query* ( +
+a_query_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+) +
+ +
+__Pre_has_query__: `has_query(a_query_name)` +
+__Post_query_deleted__: `not has_query (a_query_name)`
+a|Delete query with name `_a_query_name_`.
+
+
+.Parameters +
+[horizontal]
+`_a_query_name_`:: Qualified query name.
+
+.Errors
+* `invalid_query`
+
+h|*1..1*
+|*queries_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Return total count of queries.
+|===

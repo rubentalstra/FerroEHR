@@ -1,0 +1,13 @@
+=== BMM_VISIBILITY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_VISIBILITY (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of visibility representation.
+
+TODO: define schemes; probably need to support C++/Java scheme as well as better type-based schemes.
+
+|===

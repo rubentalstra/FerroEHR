@@ -1,0 +1,11 @@
+title: DV_QUANTITY
+type: object
+allOf:
+  - $ref: ../data_types/DvQuantity.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_QUANTITY]
+x-discriminator-value: DV_QUANTITY

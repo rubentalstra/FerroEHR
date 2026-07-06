@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/EXPR_LEAF-detailed.json",
+    "title": "EXPR_LEAF",
+    "description": "Expression tree leaf item representing one of:\n\n* a manifest constant of any primitive type;\n* a path referring to a value in the archetype;\n* a constraint;\n* a variable reference.\n",
+    "$comments": "Defined in Archetype IM, inherits from EXPR_ITEM",
+    "type": "object",
+    "properties": {
+        "type": {
+            "description": "Type name of this item in the mathematical sense. For leaf nodes, must be the name of a primitive type, or else a reference model type. The type for any relational or boolean operator will be \u201cBoolean\u201d, while the type for any arithmetic operator, will be \u201cReal\u201d or \u201cInteger\u201d.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        },
+        "reference_type": {
+            "description": "Type of reference: \u201cconstant\u201d, \u201cattribute\u201d, \u201cfunction\u201d, \u201cconstraint\u201d. The first three are used to indicate the referencing mechanism for an operand. The last is used to indicate a constraint operand, as happens in the case of the right-hand operand of the \u2018matches\u2019 operator.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        },
+        "item": {
+            "description": "The value referred to; a manifest constant, an attribute path (in the form of a String), or for the right-hand side of a \u2018matches\u2019 node, a constraint, often a C_PRIMITIVE_OBJECT.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+        }
+    },
+    "required": [
+        "type",
+        "reference_type",
+        "item"
+    ],
+    "$inherits": [
+        "all-detailed.json#/definitions/EXPR_ITEM"
+    ]
+}

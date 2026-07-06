@@ -1,0 +1,38 @@
+=== TERMINOLOGY_GROUP Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*TERMINOLOGY_GROUP*
+
+h|*Description*
+2+a|A single vocabulary, in a particular language, within a Terminology.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of this vocabulary.
+
+h|*0..1*
+|*concepts*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_terminology_concept_class,TERMINOLOGY_CONCEPT>>>`
+a|List of concepts (i.e. coded terms) in this vocabulary.
+
+h|*1..1*
+|*openehr_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier used for terminology group in the openEHR Reference Model. The value is inferred from the `_name_` attribute.
+
+Valid values take the form of an xs:NCName value, i.e. cannot contain:
+
+* symbol characters `:, @, $, %, &, /, +, ,, ;`;
+* whitespace characters or different parentheses. 
+
+An NCName cannot begin with a number, dot or minus character although these can appear later in the value.
+
+h|*0..1*
+|*status*: `<<_terminology_status_enumeration,TERMINOLOGY_STATUS>> +
+{default{nbsp}={nbsp}}`
+a|Status of this vocabulary.
+|===

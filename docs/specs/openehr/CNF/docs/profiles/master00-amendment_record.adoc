@@ -1,0 +1,14 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*CNF Release 1.0.0 (unreleased)*
+ 
+|[[latest_issue]]0.5.0
+|{spec_tickets}/SPECCNF-1[SPECCNF-1^]: Initial Writing; extracted from Platform Test Schedule.
+|T Beale
+|[[latest_issue_date]]07 Jan 2022
+
+|===

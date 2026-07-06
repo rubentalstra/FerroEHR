@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/P_aom2/P_C_ORDERED_of_Integer.json",
+    "title": "P_C_ORDERED<Integer>",
+    "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_ORDERED",
+    "type": "object",
+    "properties": {
+        "rm_type_name": {
+            "description": "Reference model type that this node corresponds to. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "occurrences": {
+            "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "node_id": {
+            "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "is_deprecated": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "is_frozen": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "default_value": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Any"
+        },
+        "assumed_value": {
+            "description": "Value to be assumed if none sent in data.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Any"
+        },
+        "is_enumerated_type_constraint": {
+            "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "constraint": {
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Interval"
+            },
+            "minItems": 1
+        }
+    },
+    "required": [
+        "rm_type_name",
+        "node_id",
+        "default_value",
+        "constraint"
+    ]
+}

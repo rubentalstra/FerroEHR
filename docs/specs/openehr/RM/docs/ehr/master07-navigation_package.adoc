@@ -1,0 +1,32 @@
+= Navigation Package
+
+== Overview
+
+The `navigation` Package defines a hierachical heading structure, in which all individual headings are considered to belong to a "tree of headings". Each heading is an instance of the class `SECTION`, visible in the lower left side of <<rm_composition>>.
+
+Sections provide both a logical structure for the author to arrange Entries, and a navigational structure for readers of the record, whether they be human or machine. Sections are archetyped in trees with each tree containing a root Section, one or more sub-sections, and any number of Entries at each node. Section trees that are separately archetyped, such as the SOAP headings, or the heading structure for a physical examination, can be combined at runtime by type to form one large heading structure, as shown in the figure below.
+
+[.text-center]
+.Section View of a General Practice Contact Composition
+image::{diagrams_uri}/ehr_with_sections.svg[id=ehr_with_sections, align="center", width=50%]
+
+In terms of understanding of clinical data, Section structures are not essential in a Composition - they can always be removed or ignored (typically in machine processing such as querying) without losing the meaning of the Entries in the Composition. While Sections are often used to group Entries according to status, e.g. 'family history', 'problems', 'observations', it is the Entries themselves that indicate the definitive category of information contained therein. This principle is explained in more detail in <<Entry and its Subtypes>>.
+
+Despite the above, Section structures do not have to be regarded as ad hoc or unreliable structures. On the contrary, as they are archetyped, their structures can be relied upon in the same way as any other structure in the record can be relied on to conform to its archetype. Accordingly, solid assumptions can be made about Sections, based on their archetypes, for the purposes of querying. In fact, the main benefit of Sections is that they may provide significant performance benefits to querying, whether by interactive application or by automated systems.
+
+One potentially confusing aspect of any Section structure is that while the root Section in a tree is logically a Section, it does not appear in a display or printed form as a visible section. This is due to the fact that humans don’t usually write down top-level headings for anything, since there is always a containing structure acting as a top-level organising context (such as the piece of paper one is writing on). For example, consider the way a clinician writes down the problem/SOAP headings on paper. She writes the name of the first problem, then under that, the S/O/A/P headings, then repeats the process for further problems. But she doesn’t write down a heading above the level of the problems, even though there must be one from a data structure point of view.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}section.adoc[]
+
+== Section Instance Structures
+
+=== Problem/SOAP Headings
+
+An example of an section tree representing the problem/SOAP heading structure is shown below.
+
+[.text-center]
+."problem/SOAP" Section Structure
+image::{diagrams_uri}/Composition_with_sections.svg[id=SOAP_section_structure, align="center"]
+

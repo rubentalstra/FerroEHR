@@ -1,0 +1,18 @@
+=== EXTRACT_MANIFEST Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXTRACT_MANIFEST*
+
+h|*Description*
+2+a|Specification of the candidate entities and optionally top-level items (e.g. Compositions) to be included in the Extract.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*entities*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_extract_entity_manifest_class,EXTRACT_ENTITY_MANIFEST>>>`
+a|List of entity manifests uids of items included in the Extract; for openEHR data, these are uids identifying the version containers.
+|===

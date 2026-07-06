@@ -1,0 +1,14 @@
+=== PERSON Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*PERSON*
+
+h|*Description*
+2+a|Generic description of persons. Provides a dedicated type to which Person archetypes can be targeted.
+
+h|*Inherit*
+2+|`<<_actor_class,ACTOR>>`
+
+|===

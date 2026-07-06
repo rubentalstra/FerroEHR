@@ -1,0 +1,5 @@
+:spec_title: Data Types Information Model
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: EHR, clinical, data types, openehr
+:description: openEHR Data Types Information Model specification

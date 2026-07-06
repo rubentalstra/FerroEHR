@@ -1,0 +1,24 @@
+=== BMM_CONSTANT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_CONSTANT*
+
+h|*Description*
+2+a|An immutable, static value-returning element scoped to a class. The `_value_` is the result of the evaluation of the `_generator_`, which may be as simple as a literal value, or may be any expression, including a function call.
+
+h|*Inherit*
+2+|`<<_bmm_static_class,BMM_STATIC>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*generator*: `<<_bmm_literal_value_class,BMM_LITERAL_VALUE>>`
+a|Literal value of the constant.
+
+h|*Invariants*
+2+a|__Inv_not_nullable__: `is_nullable = False`
+|===

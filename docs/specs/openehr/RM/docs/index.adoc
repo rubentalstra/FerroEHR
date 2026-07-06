@@ -1,0 +1,85 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/basic_style_settings.adoc[]
+
+:keywords: reference model, openehr
+:description: openEHR Reference Model Component
+
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+image::openehr_block_diagram.svg["openEHR components",align="center",width="60%"]
+
+:numbered!:
+= Reference Model (RM) Component - {rm_release}
+
+// Use the following version for 'latest'
+ifeval::["{rm_release}" == "latest"]
+[.title-para]
+{component_prs}[Open Issues^] | {component_roadmap}[Roadmap^] | {component_history}[Previous Releases^] 
+endif::[]
+
+// Use the following version for a named release
+ifeval::["{rm_release}" != "latest"]
+:rm_prs_fixed: {component_prs_fixed}{rm_release}/issues
+:rm_crs_done: {component_crs_done}{rm_release}/changes
+[.title-para]
+{rm_prs_fixed}[Issues Fixed^] | {rm_crs_done}[Changes Implemented^] | {component_roadmap}[Roadmap^] | {component_history}[Change History^]
+
+endif::[]
+
+== Specifications
+
+[cols="1,5", options="header"]
+|===
+h|Specification h|Description
+
+|link:/releases/RM/{rm_release}/ehr.html[EHR IM]
+|The information model of the openEHR EHR.
+
+|link:/releases/RM/{rm_release}/demographic.html[Demographic IM]
+|The openEHR demographics information model.
+
+|link:/releases/RM/{rm_release}/common.html[Common IM]
+|Information model containing common concepts, including the archetype-enabling `LOCATABLE` class, party references, audits and attestations, change control, and authored resources.
+
+|link:/releases/RM/{rm_release}/data_structures.html[Data Structures IM]
+|Information model of data structures, incuding a powerful model of time-series data.
+
+|link:/releases/RM/{rm_release}/data_types.html[Data Types IM]
+|Information model of data types, including quantities, date/times, plain and coded text, time specification, multimedia and URIs.
+
+|link:/releases/RM/{rm_release}/support.html[Support IM]
+|Support model defining identifiers, assumed types, and terminology interface specification used in the rest of the IMs.
+
+|link:/releases/RM/{rm_release}/integration.html[Integration IM]
+|Information model for representing legacy data is a free-form Entry type for implementing integration solutions.
+
+|link:/releases/RM/{rm_release}/ehr_extract.html[EHR Extract IM]
+|The information model of the EHR Extract, which is a serilialisation of content from an EHR.
+
+|===
+
+== Computable Expressions
+
+[cols="2,5", options="header"]
+|===
+|Resource |Description
+
+|link:/releases/RM/{rm_release}/UML/openEHR_UML-RM.mdzip[openEHR_UML-RM.mdzip]
+|UML file for MagicDraw 19 for RM model. Contains UML 2.5 standard XMI file.
+
+|link:/releases/BASE/{base_release}/UML/openEHR_UML-Base.mdzip[openEHR_UML-Base.mdzip]
+|UML file for MagicDraw 19 for BASE model (included by RM). Contains UML 2.5 standard XMI file.
+
+|===
+
+== Class Index
+
+include::UML/class_index.adoc[leveloffset=+1]

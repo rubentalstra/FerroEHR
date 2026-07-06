@@ -1,0 +1,5 @@
+= specifications-SM - openEHR Service Model specifications
+
+This repository contains the document and model sources (Asciidoctor and MagicDraw) for the openEHR Service Model (SM) specifications.
+The published form may be accessed from the openEHR website https://www.openehr.org/releases/SM[SM specifications index page].
+ 

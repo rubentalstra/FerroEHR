@@ -1,0 +1,434 @@
+= Requirements
+
+== Overview
+
+This section describes the requirements that the openEHR Extract Information Model (IM) is
+designed to meet. Requirements are expressed in terms of a description of the assumed operational
+environments (which acts as a design constraint), a set of use cases, functional and security requirements.
+The family of use cases describe coarse-grained information import to and export from health
+information systems, using openEHR standardised information structures as the _lingua franca_. The
+Extract IM is neutral with respect to the communication technology used between systems: the information
+structures can equally be used in a web services environment or in a messaging environment,
+including secure email. The concrete method of communication is therefore not a factor in the scenarios
+described here.
+
+== Operational Environment
+
+=== openEHR Environments
+
+The assumed operational openEHR environment for openEHR Extracts is shown in the following figure. In
+this figure, a Request for "information from the records of one or more 'subjects'" is created by a
+Requesting system. A _subject_ record may be a patient EHR, a Person record in a demographic system,
+or any other logically meaningful top-level entity. Responding system(s) reply in the form of one or
+more Extracts. The Request/Response interaction is enabled by a transport mechanism and possibly
+other services. This be be in the form of comprehensive middleware, web services, or simple point-topoint
+protocols such as SMTP (email) transport.
+
+[.text-center]
+.Operational openEHR Environment for Extracts
+image::{diagrams_uri}/operational_environment.png[id=operational_environment, align="center", width=80%]
+
+Information in Responding systems is assumed to be in the following form.
+
+* Each such system contains one or more Subject records (e.g. EHRs); there may be records for the same Subject in more than one system.
+* Each Subject record consists of one or more Version containers, each of which contains the version history of a particular piece of content. For an EHR, distinct containers are used for persistent Compositions (e.g. "medications list", "problem list") and event Compositions (Compositions created due to patient encounters and other events in the clinical care process).
+* Each Version within a Version container corresponds to one version of the content managed by that container, in other words the state of a particular content item at some point in time when it was committed by a user.
+* Groups of Versions, each one from a different Version container within a Responding system correspond to Contributions, i.e. the openEHR notion of a "change-set". Any particular Contribution corresponds to the set of Versions committed at one time, by a particular user to a particular system.
+
+The above relationships reveal a hierarchy of potential 1:N relationships in the information accessible
+to the requesting system, with Contributions forming an alternative view of the content. At each level
+of the hierarchy, a system of identifiers is needed, e.g. to distinguish Subjects, to distinguish Versions
+and so on. In some specific circumstances, some of these may be reduced to 1:1 relationships, e.g.
+there may be no versioning, removing the need for specific identifiers for versions of an item.
+
+=== Non-openEHR Environments
+
+The openEHR Extract defined in this specification can be used in non-openEHR environments, where
+the aim is to define messages whose content is expressed as templated archetypes. In general, not
+much can be assumed about the internal data architecture of such systems. For the purposes of this
+specification, the existence of two levels of information is assumed:
+
+* 'record' or equivalently 'patient' - i.e. a division of information on the basis of subject of care;
+* 'document' (Composition in openEHR), which is the coarsest grain item making up a record.
+
+Regarding versioning in non-openEHR systems, it is assumed that some systems may support basic
+concepts including:
+
+* document version;
+* document version set - an identifier of a group of versions of the same logical item;
+* document type / schema type - an identifier of some kind of model, schema or content type of a given document;
+* document type version - the version of document type.
+
+A typical environment in which Extracts can be used to send legacy information in archetyped form is
+one in which cross-enterprise communications are required, including discharge summaries and referrals.
+The content of such messages may be defined in terms of archetypes, and then templated in order
+to define the total content of the message.
+
+=== Location of Information
+
+In more advanced environments, there may be a health information location service which obviates
+the need for any knowledge on the part of the requestor about which systems contain information on a
+particular Subject of interest (e.g. a certain patient); in simpler environments, the requesting system
+may need to explicitly identify the target systems of the request. The diagram below illustrates a direct request
+and a request mediated by a location service.
+
+[.text-center]
+.Health Information Reference Environment
+image::{diagrams_uri}/reference_environment.png[id=reference_environment, align="center", width=60%]
+
+This specification assumes that the EHR Request and Extract is between the Requesting system and
+each Responding system, even if the list of relevant Responding systems has been generated by a
+location service. In other words, this Extract specification does not encompass the idea of a compendium
+of Extracts from multiple Responding systems.
+
+=== Granularity of Extract Data
+
+In <<operational_environment>> the lowest level of information shown in a Responding system is simply marked 'content'.
+This corresponds to top-level information structures such as Compositions, Folder trees, Parties
+etc in openEHR. Each such content item potentially contains a whole hierarchy of information items,
+only some of which is generally of interest to the Requestor. The typical database idea of a "query
+result" is usually expected to return only such fine-grained pieces. However, the Extract specification
+here only allows for a granularity of Compositions ('documents' etc), rather than fine-grained query
+responses which are dealt with by other means. This is because the primary use case of an Extract is
+to make parts of an EHR available somewhere else, rather than to intelligently query the record in situ
+and return the result.
+
+=== Time
+
+Versioned health record systems are 'bitemporal' systems, because they include two notions of time.
+Times mentioned in the data relate to real world events or states, such as the time of diagnosis of diabetes,
+or the date of discharge of a patient from a hospital. Real world time is distinquished from _system
+time_, which is the time of events in the information system itself, such as committal of
+Contributions. Both real world time and system time may need to be specified in a Request.
+
+== Use Cases
+
+The following sections describe typical use cases that the Request/Extract model must satisfy.
+
+=== Single Patient, Ad Hoc Request
+
+A key clinical use case is the need to obtain some or all of a patient's EHR from a remote system or
+systems. The request is most likely to be made due to the patient having been referred to another provider
+(including discharge to tertiary care), but other reasons such as falling ill while travelling will
+also figure.
+
+The request might be made to an identified system, such as the system of the referring provider, or it
+may be made to all systems containing data on the given patient, if a health information location service
+is available.
+
+The contents of the request may be specified in different ways, either by the clinician and/or the software,
+as follows:
+
+* get this patient's entire EHR from an identified source for the first time;
+* get all changes to this patient's EHR from specified (e.g. referring or GP) system since the
+last time this was done by me;
+* get persistent Compositions such as "current medications", "problem list" and "allergies and
+interactions";
+* get Compositions matching a specific query, such as "blood sugar level measurements during
+the last six months".
+
+The meaning of time is content-dependent. For Observations in an openEHR EHR, the sample times
+might be specified; for an Evaluation that documents a diagnosis, times for date of onset, date of last
+episode, date of resolution could all be specified.
+
+=== Multiple Patient, Batch Send
+
+A very common requirement for pathology laboratories is to be able to send result data for tests done
+for a number of patients, on a periodic batch basis, to a known receiver such as a hospital, clinic or
+state health system. The batch send is usually seen as a "standing request" by the receiver, and may be
+on a periodic basis (e.g. send all the results available every hour), an "as-available" basis, or according
+to some other scheme.
+Such data are currently often sent as HL7v2, Edifact or other similar messages.
+
+[.tbd]
+*To Be Determined*: patient per message? Send trigger?
+
+[.tbd]
+*To Be Determined*: Extract may be sent unsolicited - i.e. no Request
+
+=== Previous Versions and Revision Histories
+
+In some circumstances, a request may be made for versions other than the latest of certain content.
+This might happen due to a study or medico-legal investigation that needs to establish what information
+was visible in certain systems at an earlier time. For example there may be a need to determine if
+the problem list, list of known allergies, and patient preferences were all compatible with the medications
+list at some earlier time.
+
+As part of querying for previous versions, the revision histories of Versioned containers might be
+requested, in order to allow a user or software agent to determine which Versions are of interest.
+
+=== Systematic Update and Persisted Requests
+
+In larger healthcare delivery environments such as state and regional health services, patients are routinely
+treated by multiple providers, some or all of which are part of a large distributed clinical computing
+environment. They may visit various clinics, specialists and hospitals, each of which has its
+own patient record for each patient. However, there is usually a need for centralised aggregation of
+patient data within the overall health authority, with updating required on a routine basis.
+
+In such situations, the general requirement is for a request for update, typically for more than one
+patient, to be made once, and for it to be acted upon repeatedly until further notice. Specific requirements
+may include:
+
+* periodic updates of changes since last update, with a specified period;
+* event-driven updates, whereby an update occurs when a certain event occurs in the server,
+e.g. "any change to the EHR", "any change to medications or allergies" and so on.
+
+For these situations, the request can be persisted in the server. Even for one-off ad hoc requests, the
+requestor may require the request to be persisted in the server, so that it can be referred to simply by
+an identifier for later invocations.
+
+=== Sharing of non-EHR openEHR Data
+
+There will be a need to be able to request information from openEHR systems and services other than
+the EHR, such as demographics and workflow, as they are developed. One likely purpose for such
+requests is for import from openEHR systems into non-openEHR systems, for example from an
+openEHR demographics service to an existing hospital Patient Master index.
+
+It should be possible to use the same general form of request as used for an EHR. However, instead of
+specifying Extracts of patient records (EHRs), the data shared in these other cases will be whichever
+top-level business objects are relevant for that kind of service, e.g. `PARTYs` for the demographic service
+and so on.
+
+=== Provision of data from non-openEHR Systems
+
+One of the major uses of an openEHR system is as a shared EHR system, aggregating data from various
+existing systems in a standardised form. Data from such systems may be provided in different
+ways, including various messaging forms (HL7, Edifact), various kinds of EMR document ({iso_13606}[ISO 13606^], {hl7_cda}[HL7 CDA^]), and other formats that may or may not be standardised.
+
+The developers of some such systems may decide to provide an openEHR-compatible export gateway,
+capable of serialising various data into openEHR structures, particularly the Composition /
+`GENERIC_ENTRY` form (see openEHR Integration IM) which is highly flexible and can accommodate
+most existing data formats. Types of non-openEHR systems that may supply openEHR Extracts in
+this fashion include pathology systems and departmental hospital systems, such as radiology, (RIS),
+histopathology and so on.
+
+Extract Requests might be specified in openEHR form (i.e. according to this document) or in some
+other form, such as web service calls or messages; either way, the logical request is the same, i.e.
+which patients, which content, which versions, and the update basis. The responses must be some
+subset of the openEHR Extract presented in this document.
+
+=== Patient Access to Health Data
+
+Direct access by patients to their own health data outside of clinical encounters is a common aspiration
+of e-health programmes around the world. It seems clear that there will be various modes by
+which such access will occur, including:
+
+* patient carrying USB stick or other portable device containing some or all of health record;
+* access from home PC via secure web service to EHR, in a manner similar to online banking;
+* access to EHR data in the form of encrypted email attachments on home PC either sent
+unsolicited (e.g. a scan cc:d to patient by imaging lab) or by request of the patient;
+* access to EHR in the waiting rooms of doctors' surgeries, clinics etc via kiosks or normal
+PCs.
+
+Both the USB stick and email scenarios involve asynchronous access of EHR information, and can be
+addressed by the EHR Extract.
+
+In the case of a portable device, the most obvious need is for the device to act as a synchronising
+transport between a home PC containing a copy of patient / family EHRs, and the EHR systems at
+various clinics that the patient visits. To achieve this, when changes are made at either place (in the
+home record or in the record held at a clinic), it should be possible to copy just the required changes to
+the device. In openEHR terms, this corresponds to copying Contributions made since the last synchronisation.
+
+The email attachment scenario is more likely to involve Extracts containing either information
+requested by the patient in a similar manner as for the ad hoc clinical requests described above (e.g.
+most recent test result) or laboratory information in the form of an openEHR Extract, destined for
+integration into an openEHR EHR. In the latter case, the information is likely to be in the form of
+Compositions containing `GENERIC_ENTRIEs`, built according to legacy archetypes, although it could
+equally be in "pure" openEHR form (i.e. Compositions containing proper openEHR Observations).
+
+=== Move of Entire Record
+
+A patient's entire EHR may be moved permanently to another system for various reasons, due to the
+patient moving, a permanent transfer of care, or re-organisation of data centres in which EHRs are
+managed. This is known as change of custodianship of the record, and is distinct from situations in
+which copying and synchronisation take place.
+
+The record is deleted (possibly after archival) from active use at the sending system. In these situations,
+the usual need is for an interoperable form of the complete EHR (including all previous versions)
+to be exported from the existing system and sent to the destination system, since in general the
+two systems will not have the same implementation platform, versioning model and so on. In some
+cases, the implementations may be identical, allowing a copy and delete operation in native representation
+could be used.
+
+=== System Synchronisation
+
+==== Mirroring
+
+Two openEHR systems containing the same kind of data (i.e. EHR, demographic etc) may contain
+records that are intended to be logical "mirrors" (i.e. clones) of each other. In some cases, an entire
+system may be a clone of another, i.e. a "mirror system". Mirrored records are purely read-only, and
+in all cases, the mirror record or system is a slave of its source, and no local updates occur. Synchronisation
+is therefore always in one direction only.
+
+To maintain the information in mirrored records, an efficient update mechanism is required. The
+openEHR Contribution provides the necessary semantic unit because it is the unit of change to any
+record in a system, it can also be used as the unit of update to the same record in a mirroring system.
+
+==== The Virtual EHR
+
+If changes are allowed to multiple systems that also systematically synchronise, a "virtual EHR"
+exists. This term indicates that the totality of changes taken together form a complete EHR, even if
+any particular instant in any given system, not all such changes are visible. The virtual EHR is the
+usual situation in any large-scale distributed e-health environment. Synchronisation might be on an
+ad hoc or systematic basis, and may or may not be bidirectional. The difference between a synchronisation
+request and any other kind of request is that the request is specified not in terms of a user query
+but in terms of bringing the record up to date, regardless of what changes that might require.
+
+Due to the way version identification is defined in openEHR (see Common IM, change_control
+package), the virtual EHR is directly supported, and synchronisation is possible simply by copying
+Versions from one place to another and adding them to the relevant Versioned container at the
+receiver end. In a large health computing environment, cloning and mirroring might be used systematically
+to achieve a truly de-centralised system.
+
+The defining condition of this use case is that one or more (possibly all) records in a system are maintained
+as perfect copies of the same records in other systems, with possible delays, depending on
+when and how updating occurs.
+
+=== Communication between non-openEHR EMR/EHR systems
+
+Since the openEHR Extract represents a generic, open standardised specification for representing
+clinical information, there is no reason why it cannot be used for systems that not otherwise implement
+openEHR. In this case, the Extract content is most likely to consist of Compositions and
+Generic_entries, and may or may not contain versioning information, depending on whether versioning
+is supported in the generating systems.
+
+== Technical Requirements
+
+=== Specification of Content
+
+Content is specifiable in terms of matching criteria. This can take two forms: lists of specific top-level
+content items, or queries that specify top-level items in terms of matching subparts.
+
+[.tbd]
+To Be Continued:
+
+Queries are expressed in the Archetype Query Language.
+
+[.tbd]
+To Be Continued:
+
+=== Specification of Versions
+
+The openEHR Extract supports detailed access to the versioned view of data. Which versions of the
+content should be returned can be specified in a number of ways:
+
+* as a version time of the source EHR at which all content should be taken
+* in more specific terms, such as:
+** time window of committal;
+** with or without revision history, or revision history only;
+** all, some, latest versions of each content item;
+* in terms of identified Contributions, Contributions since a certain time etc.
+
+[.tbd]
+To Be Continued:
+
+=== Completeness of Data
+
+Information transferred in an EHR Extract needs to be self-standing in the clinical sense, i.e. it can be
+understood by the requestor without assuming any other means of access to the responding system. In
+general, this means that for references of any kind in the transferred EHR data, the Extract needs to
+either contain the reference target, or else it must be reasonable to assume that the requestor has independent
+access, or else doesn't need it.
+
+==== References to Other Parts of the Same EHR
+
+In openEHR, there are two kinds of cross reference within an EHR: `LINKs` (defined in `LOCATABLE`),
+and hyperlinks (`DV_TEXT`.`_hyperlink_`). Both of these use a `DV_EHR_URI` instance to represent the link
+target. The contents of the URI are defined in the Architecture Overview.
+
+[.tbd]
+*To Be Continued*: Are EHR ids always included in URIs?
+
+In some cases, referenced items within the same EHR will need to travel with the originally requested
+item, in order for the latter to make sense. For example, a discharge summary or referral might refer
+(via `LINKs`) to other Compositions in the EHR, such as Medication list, Problem list, and lab reports.
+On the other hand, there may be links within the requested item to objects that are not required to be
+sent in an Extract.
+
+Which links should be followed when building an Extract can be specified in terms of:
+
+* link depth to follow, i.e. how many jumps to continue from the original item; a value of 0
+means "don't follow any links".
+
+In addition, for `LINK` instances, the following can be specified:
+
+* link type to follow, i.e. only follow links whose type attribute matches the specification.
+
+==== References to Other EHRs
+
+References to items in other EHRs may occur within an EHR, e.g. to the EHR of a parent, other relation,
+organ donor etc. There is no requirement for such links to be followed when constructing EHR
+Extracts.
+
+==== References to Resources Outside the EHR
+
+Computable references can also be made to external items from within an openEHR EHR. Instances
+of the data type DV_URI occurring either on their own or in a `DV_TEXT` hyperlink are typically used to
+refer to resources such as online guidelines and references. Instances of `DV_MULTIMEDIA` can contain
+`DV_URI` instances that refer to multimedia resources usually within the same provider enterprise, e.g.
+radiology images stored in a PACS. Since URIs are by definition globally unique, they remain semantically
+valid no matter where the data containing them moves. However, there is no guarantee that
+they can always be resolved, as in the case of a URI referring to a PACS image in one provider environment
+when transferred to another. This is unlikely to be a problem since images are usually represented
+in the EHR as a small (e.g. 200kb) JPG or similar, and it is almost never the intention to have
+original image sets (which may be hundreds of Mb) travel with an EHR. Requests to access original
+images would be made separately to a request for EHR Extracts.
+
+==== References to Demographic Entities
+
+Two kinds of demographic entities are referred to throughout an openEHR EHR. Individual providers
+and provider institutions are referenced from `PARTY_PROXY` objects in the record, via the
+external_ref attribute, which contains references to objects within a demographic repository, such as
+an openEHR demographic repository, a hospital MPI or a regional or national identity service. The
+`PARTY_IDENTIFIED` subtype of `PARTY_PROXY` can in addition carry human readable names and
+other computational identifiers for the provider in question.
+
+The second kind of demographic reference, found in the `PARTY_SELF` subtype of `PARTY_PROXY`, is
+to the EHR subject (i.e. patient), and may or may not be present in the EHR, depending on the level of
+security in place. Where it is present, it is to a record in a demographic or identity system.
+
+For the contents of an EHR Extract to make sense to the receiver, referenced demographic items may
+have to be included in the Extract, if the receiver has no access to a demographic system containing
+the entities. Whether patient demographics are included is a separate matter, since the requestor system
+already knows who the patient is, and may or may not need them. The requestor should therefore
+be able to specify whether the Extract includes referenced demographic entities other than the subject,
+and independently, whether subject demographics should be included.
+
+==== Archetypes and Terminology
+
+Another kind of "reference" is terminology codes, stored in instances of the data type `DV_TEXT` (via
+the mapping attribute) and `DV_CODED_TEXT`.`_defining_code_`. In openEHR systems, all coded terms
+(i.e. instances of `DV_CODED_TEXT`) carry the text value of the code, in the language of the locale of
+the EHR. For normal use, this is typically sufficient. However, for the purposes of decision support or
+other applications requiring inferencing, the terminology itself needs to be available. This specification
+assumes that where the requestor requires inferencing or other terminology capabilities, independent
+access to the complete terminology will be obtained.
+
+The same assumption is made with respect to archetypes whose identifiers are mentioned in the EHR
+data or meta-data: archetypes are not themselves included in Extracts, and have to be resolved separately.
+
+=== Security and Privacy
+
+Security becomes one of the most important requirements for the EHR Extract for the obvious reason
+of its exposure in potentially uncontrolled environments outside the (supposedly) secure boundaries
+of requesting or responding systems. The general requirement is that the contents of an Extract are
+based on:
+
+* the access control rules defined in the `EHR_ACCESS` object at source;
+* any other access rules defined in policy services or other places;
+* authentication of the requesting user.
+
+Digital signing should be used based on the (preferably certified) public key of the requestor. Notarisation
+might also be used to provide non-repudiable proof of sending and/or receiving Extracts,
+although this is outside the scope of this specification.
+
+=== Update Basis
+
+In addition to specifying the content a basis for update also needs to be specified. The simplest possible
+case is that of an ad hoc one-off query.
+More complex cases are periodic update and event-driven update.
+
+==== Persistent Request
+
+[.tbd]
+To Be Continued:

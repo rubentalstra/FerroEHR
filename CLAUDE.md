@@ -8,8 +8,8 @@ Single workspace. **Crate naming:** `openehr-*` = the openEHR **specification** 
 
 - `crates/openehr-base`, `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang` — **generated** spec crates (`openehr-codegen -- emit`). `openehr-its` — canonical JSON + **generated** XML (`emit-xml`) + **generated** ITS-REST contract (`emit-rest`) + hand-written runtimes. `openehr-query` — hand-written AQL lexer/parser/AST. `openehr-flat` — FLAT/STRUCTURED (hand-written). `openehr-codegen` (BMM/XSD/OAS→Rust generator) + `openehr-derive` (proc-macro) are the hand-written tooling.
 - `crates/ehrbase-rest`, `ehrbase-compat`, `ehrbase` — the application (built idiomatically; `ehrbase` is the binary).
-- `docs/` — plans (the roadmap), ADRs, VERSIONS, architecture, postgres-features, research, enterprise.
-- `.claude/` — rules, skills, hooks (no agents/worktrees — all work is done in-session).
+- `docs/` — plans (the roadmap), ADRs, VERSIONS, architecture, postgres-features, research, enterprise. **`docs/specs/openehr/` — the vendored openEHR spec text + CNF test schedule (the conformance oracle; see its README + `/spec-lookup`).**
+- `.claude/` — rules, skills, hooks, agents. Agent defs (`spec-researcher`, `spec-conformance-reviewer`, `implementer`) are the delegation targets for the Model-orchestration section below; the orchestrator keeps the critical path in-session.
 
 ## Code generation (ADR-004) — READ THIS FIRST
 
@@ -28,7 +28,7 @@ Single workspace. **Crate naming:** `openehr-*` = the openEHR **specification** 
 
 1. Read `docs/plans/current-phase.md`.
 2. Pick the next unchecked task in the referenced phase file.
-3. Do the work **in this session** — no subagent or worktree delegation (build in the open so it can be watched and corrected). For the openEHR **spec** layer, change the generator and regenerate (never hand-write spec classes — see Code generation above). For the **application** (`ehrbase-*`), build **idiomatic modern Rust of our own design on the generated `openehr-*` crates** (ADR-006/008), with the openEHR specs as the authority (EHRbase/other CDRs as prior art via their upstream repos when useful). Build compiling, tested increments.
+3. Do the work. **First read the governing spec sections** under `docs/specs/openehr/` for anything spec-facing (`/spec-lookup`; hard rule below). The orchestrator keeps the critical path in-session (build in the open so it can be watched and corrected) and may fan bounded implementation/research out per the Model-orchestration section, handing each agent the relevant spec paths. For the openEHR **spec** layer, change the generator and regenerate (never hand-write spec classes — see Code generation above). For the **application** (`ehrbase-*`), build **idiomatic modern Rust of our own design on the generated `openehr-*` crates** (ADR-006/008), with the openEHR specs as the authority (EHRbase/other CDRs as prior art via their upstream repos when useful). Build compiling, tested increments.
 4. Tick the task `- [ ]` to `- [x]` and add a one-line note.
 5. Commit as `phase-NN: <task>` on a `claude/phase-NN-*` branch.
 6. When the phase's exit criteria are all met, run `/phase-done`, update `docs/PROGRESS.md`, and advance `current-phase.md`.
@@ -56,7 +56,7 @@ How to apply (these are defaults, not limits — override when the output doesn'
 - **Delegate to Opus-4.8 subagents:** bulk/parallelizable implementation on a clear spec (wiring handlers, DTO/trait impls against the generated ITS-REST contract, migrations, sqlx/sea-query query building, test scaffolding), file-heavy investigation, and codebase analysis — anything that would otherwise burn the orchestrator's context. Fan out several concurrently in one message.
 - **Fable-5 subagents:** use when a delegated task still needs top intelligence/taste (a tricky algorithm port, an API-shape decision) but you want it off the main context.
 - **sonnet-5:** cheap mechanical passes where correctness is easy to verify (mechanical refactors, boilerplate). **Never use Haiku for substantive work.**
-- **Reviews:** an Opus-4.8 (or Fable-5) reviewer subagent, read-only, as an independent perspective before committing a subsystem — especially spec/wire conformance and the AQL engine.
+- **Reviews:** the `spec-conformance-reviewer` agent (read-only, Opus), as an independent perspective before committing a subsystem — especially spec/wire conformance and the AQL engine. Spec questions / requirements extraction go to `spec-researcher`; bounded implementation to `implementer` — all defined in `.claude/agents/`, all handed the governing `docs/specs/openehr/...` paths in the prompt.
 - Effort: keep Fable on `high` (xhigh is token-hungry; max/extra is a furnace for worse output). Use `effort: 'low'` for cheap mechanical worker stages, higher tiers only for the hardest verify/judge stages.
 
 Discipline unchanged: subagents still obey the hard rules below (never hand-edit `// @generated`, no test-weakening, `claude/*` branches, no AI attribution) — deviations surface at the conformance/corpus suites, so delegate with a tight spec and verify the result.
@@ -137,6 +137,7 @@ Stage-1 app build, `docs/plans/` phases 09–20) and are built compiling per pha
 
 ## IMPORTANT hard rules
 
+- **The vendored spec text is the oracle.** Before implementing or reviewing any spec-facing behaviour (RM semantics, invariants, REST wire, AQL, canonical JSON/XML, templates, terminology), read the relevant section under `docs/specs/openehr/` (use `/spec-lookup`) and cross-check the CNF platform test schedule (`docs/specs/openehr/CNF/`). Never resolve a spec question from memory or from EHRbase behaviour alone; cite the spec file + section for conformance-relevant decisions.
 - **Never hand-edit a `// @generated` file.** The generated spec crates (`openehr-base`, `openehr-rm`, `openehr-am`) are produced by `openehr-codegen`; edit the emitter or the `*_impl.rs` sibling and regenerate, never the generated file itself.
 - **No PORT STATUS trailer** (that was the retired 1:1-port convention). Generated files carry a `// @generated` header; application code is plain idiomatic Rust.
 - **Use the annotation vocabulary** where relevant: `// TODO(port):` (unfinished), `// PERF(port):` (optimize after conformance), `// PORT NOTE:` (a deliberate spec-gap or design decision, with the reason), `// SAFETY:` (any `unsafe`).

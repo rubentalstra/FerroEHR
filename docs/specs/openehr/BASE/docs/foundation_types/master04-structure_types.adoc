@@ -1,0 +1,35 @@
+= Structure Types
+
+== Overview
+
+The types described in this section are basic data structures assumed to be standard available in implementation technologies. The following types constitute the minimum set of structure types assumed by openEHR of an implementation environment.
+
+[cols="1,4", options="header"]
+|===
+|Type name +
+ in openEHR             |Description
+
+|`Array<T>`             |physical container of items indexed by number
+|`List<T>`              |container of items, implied order, non-unique membership
+|`Set<T>`               |container of items, no order, unique membership
+|`Hash<K:Ordered, V>`   |a table of values of any type V, keyed by values of any `Ordered` descendant K, typically `String` or `Integer`, but may be more complex types, e.g. a coded term type.
+|===
+
+The following UML diagram illustrates the `base.foundation_types.structures` package. As with the primitive types, inheritance and abstract classes are used for convenience of the definitions in openEHR models, but are not assumed to exist in exactly the same way within implementation technologies. Hence, in an implementation, various workarounds or equivalences may be needed to obtain the defined semantics.
+
+[.text-center]
+.`base.foundation_types.structures` package
+image::{uml_diagrams_uri}/BASE-foundation_types.structures.svg[id=foundation_types_structure_types, align="center"]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}container.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}list.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}set.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}array.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}hash.adoc[]
+

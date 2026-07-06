@@ -1,0 +1,47 @@
+=== EXTRACT_UPDATE_SPEC Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXTRACT_UPDATE_SPEC*
+
+h|*Description*
+2+a|Specification of the how the request should be processed by server. The request can be persisted in the server, meaning that a) it can be re-activated by the requesting system simply by indicating Request id, and b) that a changes-only pattern of Extract updates can be set up. To achieve this, the server has to remember what was sent in the previous response.
+
+The update mode may be event-driven and periodic update or a mixture of both. The candidate items to be sent each time are the result of re-evaluating the content and versioning parts of the specification; what is actually sent is determined by the `_send_changes_only_` flag.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*persist_in_server*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|If True, this Request is persisted in the server until further notice.
+
+h|*0..1*
+|*repeat_period*: `link:/releases/RM/{rm_release}/data_types.html#_dv_duration_class[DV_DURATION^]`
+a|Period for resending update Extracts in response to original Request.
+
+h|*0..1*
+|*trigger_events*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/data_types.html#_dv_coded_text_class[DV_CODED_TEXT^]>`
+a|Set of Event names that will cause sending of update Extracts. Event types include:   
+
+* `&#124;any_change&#124;` - any change in content items matched by content specification, e.g. new versions of persistent compositions. If the content list allows matching of any, or a wide range of archetypes, this event type will match any additions to the record.
+* `&#124;correction&#124;` - match error corrections only, including deletions.
+* `&#124;update&#124;` - match updates (i.e. new versions) of included content items.
+
+Coded by openEHR Terminology group 'extract update trigger event type'.
+
+h|*1..1*
+|*update_method*: `link:/releases/RM/{rm_release}/data_types.html#_code_phrase_class[CODE_PHRASE^]`
+a|Indicate mode of update. Can be: send only items that are changed (including logical deletions) or new since last send. For `_persist_in_server_` Requests only.
+
+h|*Invariants*
+2+a|__Overall_validity__: `repeat_period /= Void or trigger_events /= Void`
+
+h|
+2+a|__Trigger_events_validity__: `trigger_events /= Void implies not trigger_events.is_empty`
+
+h|
+2+a|__Send_changes_only_validity__: `send_changes_only implies persist_in_server`
+|===

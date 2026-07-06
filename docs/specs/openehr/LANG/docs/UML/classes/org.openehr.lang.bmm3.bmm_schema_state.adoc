@@ -1,0 +1,30 @@
+=== BMM_SCHEMA_STATE Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*BMM_SCHEMA_STATE*
+
+h|*Description*
+2+a|Enumeration of processing states of a `BMM_SCHEMA` used by creation and validation routines in `BMM_SCHEMA`.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|State_created
+a|Initial state directly after instantiation of schema.
+
+h|
+|State_validated_created
+a|Initial validation pass after instantiation.
+
+h|
+|State_includes_pending
+a|State of schema processing if there are still included schemas to process.
+
+h|
+|State_includes_processed
+a|State when all included schemas have been processed.
+|===

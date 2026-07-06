@@ -1,0 +1,23 @@
+=== DV_BOOLEAN Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DV_BOOLEAN*
+
+h|*Description*
+2+a|Items which are truly boolean data, such as true/false or yes/no answers. For such data, it is important to devise the meanings (usually questions in subjective data)  carefully, so that the only allowed results are in fact true or false. 
+
+Misuse: The DV_BOOLEAN class should not be used as a replacement for naively modelled enumerated types such as male/female etc. Such values should be coded, and in any case the enumeration often has more than two values.
+
+h|*Inherit*
+2+|`<<_data_value_class,DATA_VALUE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Boolean value of this item. Actual values may be language or implementation dependent.
+|===

@@ -1,0 +1,12 @@
+title: Annotations
+type: object
+properties:
+  comment:
+    type: string
+  default:
+    type: string
+example:
+  comment: >-
+    Tags applied to the composition. They can contain various ids, such as
+    episode id, central case id or other types of information forming
+    composition meta-data.

@@ -1,0 +1,9 @@
+title: PARTY_SELF
+type: object
+allOf:
+  - $ref: ../common/PartyProxy.yaml
+properties:
+  _type:
+    type: string
+    default: PARTY_SELF
+x-discriminator-value: PARTY_SELF

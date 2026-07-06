@@ -1,0 +1,157 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+== Acknowledgements
+
+=== Primary Author
+
+* Thomas Beale, Ars Semantica, UK; openEHR International Board.
+
+=== Contributors
+
+This specification and its sibling Archetype Definition Language specification have benefited from formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+
+* Seref Arikan, MEcon, Ocean Informatics UK, Centre for Health Informatics and Multi-professional Education (CHIME), UCL, UK
+* John Arnett, NHS Connecting for Health, UK
+* Koray Atalag PhD, University of Auckland, NZ 
+* Tony Austin PhD, Centre for Health Informatics and Multi-professional Education (CHIME), UCL, UK
+* Silje Ljosland Bakke, RN, Nasjonal IKT HF, Norway
+* Pieter Bos, Software Engineer, Nedap, Netherlands
+* Eric Browne PhD, HealthBase Australia
+* Rong Chen MD, PhD, Cambio Heath Systems, Sweden
+* Joey Coyle MD, PhD, Intermountain Healthcare, New York
+* Borut Fabjan, Program Manager, Better d.o.o., Slovenia
+* Adam Flinton, NHS Connecting for Health, UK
+* Matias Forss MSc, Institute of Technology, Linköping University, Sweden
+* Sebastian Garde, PhD, Ocean Informatics, Germany
+* Andrew Goodchild PhD, Distributed Systems Technology Centre, Australia
+* Peter Gummer MSc, Ocean Informatics
+* Sam Heard MD, Ocean Informatics
+* Mark Kramer, Division Chief Engineer, Health Technology Center, The Mitre Corporation, USA
+* Patrick Langford, NeuronSong LLC
+* Jose Alberto Maldondo PhD, Universitat Politècnica de València, Spain
+* David Moner PhD, Universitat Politècnica de València, Spain
+* Isabel Román Martínez PhD, Universitat de Sevilla, Spain
+* Ian McNicoll MD, MSc, Ocean Informatics UK
+* Claude Nanjo MA African Studies, M Public Health, Cognitive Medical Systems Inc., California
+* Andrew Patterson PhD, LLM, Federation Health Software, Australia
+* Ognian Pishev PhD, Australia, Ocean Informatics 
+* Rahil Qamar Siddiqui PhD, NHS Health & Social Care Information Centre, UK
+* Prof Alan Rector MD, PhD, University of Manchester, UK
+* Harold Solbrig MSc, Mayo Clinic, Rochester, USA
+* Alessandro Torrisi, Code24, Netherlands
+* Zar Zar Tun, Distributed Systems Technology Centre, Australia
+* Bert Verhees, ROSA Software, The Netherlands.
+
+Thanks to Sebastian Garde, Central Qld University, Australia, for German translations.
+
+=== Trademarks
+
+* 'Microsoft' and '.Net' are registered trademarks of the Microsoft Corporation.
+* 'Java' is a registered trademark of Oracle Corporation
+* 'Linux' is a registered trademark of Linus Torvalds.
+* 'openEHR' is a registered trademark of The openEHR Foundation
+* 'SNOMED CT' is a registered trademark of IHTSDO
+
+=== Supporters
+
+The work reported in this paper has been funded by the following organisations:
+
+* the {openehr_industry_partners}[openEHR Industry Partners^];
+* Ars Semantica, UK;
+* UCL (University College London) - Centre for Health Informatics and Multiprofessional Education (CHIME);
+* Ocean Informatics, Australia.
+
+Special thanks to Prof David Ingram, founding Director of CHIME, UCL, who provided a vision and collegial working environment ever since the days of GEHR (1992).
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+
+:sectnums:
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-file_encoding.adoc[leveloffset=+1]
+
+include::master04.1-cadl_overview.adoc[leveloffset=+1]
+include::master04.2-cadl_basics.adoc[leveloffset=+1]
+include::master04.3-cadl_complex_types.adoc[leveloffset=+1]
+include::master04.4-cadl_second_order.adoc[leveloffset=+1]
+include::master04.5-cadl_primitive_types.adoc[leveloffset=+1]
+include::master04.6-cadl_validity_rules.adoc[leveloffset=+1]
+
+include::master05-paths.adoc[leveloffset=+1]
+include::master06-default_values.adoc[leveloffset=+1]
+
+include::master07.01-adl_introduction.adoc[leveloffset=+1]
+include::master07.02-adl_conventions.adoc[leveloffset=+1]
+include::master07.03-adl_artefacts.adoc[leveloffset=+1]
+include::master07.04-adl_basics.adoc[leveloffset=+1]
+include::master07.05-adl_identification.adoc[leveloffset=+1]
+include::master07.06-adl_specialise.adoc[leveloffset=+1]
+include::master07.07-adl_language.adoc[leveloffset=+1]
+include::master07.08-adl_description.adoc[leveloffset=+1]
+include::master07.09-adl_deprecated.adoc[leveloffset=+1]
+include::master07.10-adl_definition.adoc[leveloffset=+1]
+include::master07.11-adl_rules.adoc[leveloffset=+1]
+include::master07.12-adl_rm_overlay.adoc[leveloffset=+1]
+include::master07.13-adl_terminology.adoc[leveloffset=+1]
+include::master07.14-adl_annotations.adoc[leveloffset=+1]
+
+include::master08-terminology_integration.adoc[leveloffset=+1]
+
+include::master09.01-spec_overview.adoc[leveloffset=+1]
+include::master09.02-spec_concepts.adoc[leveloffset=+1]
+include::master09.03-spec_examples.adoc[leveloffset=+1]
+include::master09.04-spec_attrib_redef.adoc[leveloffset=+1]
+include::master09.05-spec_object_redef.adoc[leveloffset=+1]
+include::master09.06-spec_rules.adoc[leveloffset=+1]
+include::master09.07-spec_languages.adoc[leveloffset=+1]
+include::master09.08-spec_description.adoc[leveloffset=+1]
+include::master09.09-spec_terminology.adoc[leveloffset=+1]
+include::master09.10-spec_bindings.adoc[leveloffset=+1]
+
+include::master10-templates.adoc[leveloffset=+1]
+include::masterAppA-other_formalisms.adoc[leveloffset=+1]
+include::masterAppB-syntax_spec.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Amendment Record -----------------------------------------------
+//
+:sectnums!:
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:sectnums!:
+== References
+
+bibliography::[]

@@ -1,0 +1,17 @@
+=== EL_BOOLEAN_EXPRESSION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_BOOLEAN_EXPRESSION*
+
+h|*Description*
+2+a|Boolean-returning expression.
+
+h|*Inherit*
+2+|`<<_el_constrained_class,EL_CONSTRAINED>>`
+
+
+h|*Invariants*
+2+a|__Inv_boolean_expression__: `base_expression.is_boolean()`
+|===

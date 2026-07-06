@@ -1,0 +1,2 @@
+description: |
+  `409 Conflict` is returned when a query with the given `qualified_query_name` and `version` already exists on the server.

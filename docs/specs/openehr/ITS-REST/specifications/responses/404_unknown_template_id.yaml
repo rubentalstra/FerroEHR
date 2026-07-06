@@ -1,0 +1,2 @@
+description: |
+  `404 Not Found` is returned when a template with the specified `template_id` does not exist.

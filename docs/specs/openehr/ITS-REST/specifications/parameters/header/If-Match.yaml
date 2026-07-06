@@ -1,0 +1,12 @@
+name: 'If-Match'
+in: header
+description: |
+  Header to make the request conditional. 
+  Together with `ETag` request tag, it helps to prevent simultaneous updates of a resource from overwriting each other ("mid-air collisions").
+  The format is always an `version_uid` identifier enclosed by double quotes.
+  The operation will be performed only if the existing latest `version_uid` of the resource (i.e. the `preceding_version_uid`) matches this header's value.
+required: true
+style: simple
+schema:
+  type: string
+  example: '"6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::1"'

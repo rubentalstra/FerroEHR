@@ -1,0 +1,42 @@
+= Preface
+
+== Purpose
+
+This document defines the openEHR Data Types. This document describes the architecture of the openEHR EHR Extract Information Model. This model formally defines the concepts of ‘extract request’, ‘extract’, various kinds of content including openEHR and non-openEHR, and a message wrapper. It covers use cases including EHR system communication, other clinical content messaging, and EHR system synchronisation, as well as providing an equivalent of the {iso_13606-1}[ISO 13606-1 EHR Extract^].
+
+The intended audience includes:
+
+* Standards bodies producing health informatics standards;
+* Academic groups using openEHR;
+* The open source healthcare community;
+* Solution vendors;
+* Medical informaticians and clinicians interested in health information.
+* Health data managers.
+
+== Related Documents
+
+Prerequisite documents for reading this document include:
+
+* The {openehr_overview}[openEHR Architecture Overview^];
+* The {openehr_rm_ehr}[openEHR EHR Information Model^].
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_rm_latest_ehr_extract}[{openehr_rm_latest_ehr_extract}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_rm_forum}[openEHR RM specifications forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+Conformance of a data or software artifact to an openEHR specification is determined by a formal test of that artifact against the relevant openEHR Implementation Technology Specification(s) (ITSs), such as an IDL interface or an XML-schema. Since ITSs are formal derivations from underlying models, ITS conformance indicates model conformance.
+

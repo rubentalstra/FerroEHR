@@ -1,0 +1,155 @@
+=== I_EHR_SERVICE Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_EHR_SERVICE*
+
+h|*Description*
+2+a|Primary interface to `EHR_SERVICE` persistent repository.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_ehr* ( +
+ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if a EHR with identifier `_ehr_id_` exists.
+
+.Parameters +
+[horizontal]
+`_ehr_id_`:: EHR identifier.
+
+h|*1..1*
+|*has_ehr_for_subject* ( +
+a_subject_id: `link:/releases/BASE/{base_release}/base_types.html#_party_ref_class[PARTY_REF^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Returns True if there are EHR(s) for `_a_subject_id_`.
+
+
+.Parameters +
+[horizontal]
+`_a_subject_id_`:: Subject identifier.
+
+.Errors
+* `ehr_does_not_exist`
+
+h|*1..1*
+|*create_ehr* ( +
+an_ehr_status: `link:/releases/RM/{rm_release}/ehr.html#_ehr_status_class[EHR_STATUS^][0..1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]` +
+ +
+__Pre_no_subject__: `an_ehr_status.subject = Void` +
+__Post_has_ehr__: `has_ehr (Result)`
+a|Create a new EHR with a system-generated identifier and return the id.
+
+If the `_an_ehr_status_` parameter is provided, it is created as the EHR's `EHR_STATUS`, otherwise a default `EHR_STATUS` is created, in which `_is_modifiable_` and `_is_queryable_` are both True.
+
+A default `_subject_` will be generating containing a `PARTY_SELF` object.
+
+h|*1..1*
+|*create_ehr_with_id* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+an_ehr_status: `link:/releases/RM/{rm_release}/ehr.html#_ehr_status_class[EHR_STATUS^][0..1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]` +
+ +
+__Pre_no_subject__: `an_ehr_status.subject = Void` +
+__Pre_no_duplicate__: `not has_ehr (an_ehr_id)` +
+__Post_has_ehr__: `has_ehr (Result)`
+a|Create a new EHR with a provided EHR id; return the id as a safety check.
+
+If the `_an_ehr_status_` parameter is provided, it is created as the EHR's `EHR_STATUS`, otherwise a default `EHR_STATUS` is created, in which `_is_modifiable_` and `_is_queryable_` are both True.
+
+
+.Parameters +
+[horizontal]
+`_an_ehr_id_`:: EHR identifier (a UUID).
+
+.Errors
+* `ehr_create_fail_duplicate_id`
+
+A default `_subject_` will be generating containing a `PARTY_SELF` object.
+
+h|*1..1*
+|*create_ehr_for_subject* ( +
+a_subject_id: `link:/releases/BASE/{base_release}/base_types.html#_party_ref_class[PARTY_REF^][1]`, +
+an_ehr_status: `link:/releases/RM/{rm_release}/ehr.html#_ehr_status_class[EHR_STATUS^][0..1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]`
+a|Create a new EHR with `EHR_STATUS._subject_` set to point to `_subject_id_`, and return its EHR id.
+
+If the `_an_ehr_status_` parameter is provided, it is created as the EHR's `EHR_STATUS`, otherwise a default `EHR_STATUS` is created, in which `_is_modifiable_` and `_is_queryable_` are both True.
+
+
+.Parameters +
+[horizontal]
+`_a_subject_id_`:: Subject identifier.
+
+.Errors
+* `ehr_for_subject_already_exists`
+
+h|*1..1*
+|*create_ehr_for_subject_with_id* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_subject_id: `link:/releases/BASE/{base_release}/base_types.html#_party_ref_class[PARTY_REF^][1]`, +
+an_ehr_status: `link:/releases/RM/{rm_release}/ehr.html#_ehr_status_class[EHR_STATUS^][0..1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]` +
+ +
+__Pre_no_duplicate__: `not has_ehr (an_ehr_id)`
+a|Create a new EHR with EHR id and provided subject id. Return the EHR id as a safety check.
+
+If the `_an_ehr_status_` parameter is provided, it is created as the EHR's `EHR_STATUS`, otherwise a default `EHR_STATUS` is created, in which `_is_modifiable_` and `_is_queryable_` are both True.
+
+
+.Parameters +
+[horizontal]
+`_an_ehr_id_`:: EHR identifier (a UUID).
+
+`_a_subject_id_`:: Subject identifier.
+
+.Errors
+* `ehr_create_fail_duplicate_id`
+
+h|*1..1*
+|*get_ehr* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `<<_ehr_summary_class,EHR_SUMMARY>>` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|Retrieve a summarised form of the EHR root object and `EHR_STATUS`.
+
+
+.Parameters +
+[horizontal]
+`_an_ehr_id_`:: EHR identifier (a UUID).
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*0..1*
+|*get_ehrs_for_subject* ( +
+a_subject_id: `link:/releases/BASE/{base_release}/base_types.html#_party_ref_class[PARTY_REF^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_ehr_summary_class,EHR_SUMMARY>>>`
+a|Retrieve EHR or EHRs that have `_ehr_status.subject_id_` = supplied subject id.
+
+
+.Parameters +
+[horizontal]
+`_a_subject_id_`:: Subject identifier.
+
+.Errors
+* `esubject_id_does_not_exist`
+
+h|*1..1*
+|*i_ehr* ( +
+ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `<<_i_ehr_interface,I_EHR>>`
+a|Provide access to an `I_EHR` interface instance for access to the parts of an EHR.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+|===

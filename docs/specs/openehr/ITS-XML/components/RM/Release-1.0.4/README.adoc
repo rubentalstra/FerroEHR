@@ -1,0 +1,55 @@
+# RM Types
+
+openEHR https://specifications.openehr.org/releases/RM/Release-1.0.4/[RM] XML schema - openEHR Release-1.0.4.
+
+These are only type schemas, they do not validate directly any XML document or elements.
+
+### Transformation Rules
+
+The following mapping rules were used in order to create the schema from the reference model.
+
+#### Basic type mappings
+The basic types utilise the internal XML simpleTypes in accordance with the assumed types section in the Support IM.  
+Some changes have been made to the reference model to accommodate these standards; see schema for DV_DATE_TIME, DV_DATE, DV_TIME, DV_DURATION.
+
+#### Generic types
+The openEHR reference model makes use of generic types - including DV_INTERVAL<T> (Data types IM) and VERSION<T> (Common IM) for example. 
+As generic types are now available in C# and Java this is warranted for implementation specifications. Generic types are not available in XML Schema.
+
+[width="70%",options="header"]
+|===============================================
+|Reference model type    |XML Schema complexType
+|Interval<Integer>       |IntervalOfInteger (BaseTypes.xsd)
+|Interval<Real>          |IntervalOfReal (BaseTypes.xsd)
+|Interval<Date>          |IntervalOfDate (BaseTypes.xsd)
+|Interval<Time>          |IntervalOfTime (BaseTypes.xsd)
+|Interval<DateTime>      |IntervalOfDateTime (BaseTypes.xsd)
+|Interval<Duration>      |IntervalOfDuration (BaseTypes.xsd)
+|DV_INTERVAL<DV_ORDERED> |DV_INTERVAL (BaseTypes.xsd)
+|VERSION<T>	             |VERSION, ORIGINAL_VERSION (Version.xsd)
+|===============================================
+
+For DV_INTERVAL<DV_ORDERED> only one type is used, namely DV_INTERVAL, with lower and upper of type DV_ORDERED. Software implementations 
+of the relevant generic types (DV_INTERVAL<DV_DATE> etc) are expected to implement further typing sensibly.
+
+For VERSION<T> only one type is used, namely VERSION. The subtype ORIGINAL_VERSION has its data attribute of type LOCATABLE.
+
+#### Multiple Inheritance
+There are a couple of places where multiple inheritance occurs in the openEHR reference model. In all cases, only one inheritance branch corresponds 
+to subtyping in the substitutability (i.e. 'is-a') sense; the other branches are always 'facility'  or 'mix-in' inheritance. In the RM, classes 
+inheriting in this way include rm.data_types.quantity.DV_INTERVAL and the rm.data_types.quantity.date_time classes. The latter inherit only interface, 
+which has no visibility in XML-schema. For the former, the inheritance of Interval<T> by DV_INTERVAL<T> is done in the schema simply by direct 
+inclusion, since the other branch of inheritance (of DATA_VALUE) is the one which must be visible to schema processing.
+
+#### Conditional Rules
+In instance data, LOCATABLE.archetype_details (of type ARCHETYPED) is only included when template_id exists, since the archetype_id attribute from 
+ARCHETYPED is included by default as the value of LOCATABLE.archetype_node_id on archetype root-point LOCATABLE instances (top of a SECTION structure, 
+OBSERVATION structure etc).
+
+#### XML Attributes and Elements
+XML attributes are not used with the exception of the LOCATABLE.archetype_node_id RM attribute, which is, from the point of view of RM classes, 
+true meta-data. Making it an attribute allows archetype paths to be easily mapped to Xpaths.
+
+### Acknowledgements
+Authored by https://www.oceanhealthsystems.com[Ocean Health Systems] - 2008.12.22
+Revised by https://www.openehr.org[openEHR Foundation] - 2019.01.06

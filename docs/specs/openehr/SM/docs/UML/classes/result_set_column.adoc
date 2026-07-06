@@ -1,0 +1,26 @@
+=== RESULT_SET_COLUMN Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*RESULT_SET_COLUMN*
+
+h|*Description*
+2+a|Query column definition.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Column name for caller to use.
+
+h|*0..1*
+|*archetype_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|NOTE: check on whether needed or inside the path.
+
+h|*0..1*
+|*path*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|RM path of data item for this column as specified in query.
+|===

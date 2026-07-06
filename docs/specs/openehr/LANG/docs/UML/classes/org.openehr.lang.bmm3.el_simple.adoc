@@ -1,0 +1,14 @@
+=== EL_SIMPLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EL_SIMPLE (abstract)__*
+
+h|*Description*
+2+a|Simple terminal i.e. logically atomic expression element.
+
+h|*Inherit*
+2+|`<<_el_terminal_class,EL_TERMINAL>>`
+
+|===

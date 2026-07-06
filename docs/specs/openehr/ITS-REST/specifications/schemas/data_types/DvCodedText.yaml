@@ -1,0 +1,19 @@
+title: DV_CODED_TEXT
+type: object
+allOf:
+  - $ref: ../data_types/DvText.yaml
+required:
+  - defining_code
+properties:
+  _type:
+    type: string
+    default: DV_CODED_TEXT
+  defining_code:
+    $ref: ../data_types/CodePhrase.yaml
+x-discriminator-value: DV_CODED_TEXT
+example:
+  value: 'Coded text value'
+  defining_code:
+    terminology_id:
+      value: local
+    code_string: 'at0001'

@@ -1,0 +1,26 @@
+= Serialisation Model
+
+== Overview
+
+This section describes an adjusted version of the AOM that is used for serialising archetypes to formats other than ADL. The classes in this model are nearly 1:1 with AOM classes, but with names prefixed with `P_`, for 'persistent'. Without using this model, an archetype can be serialised to an 'object dump' format such as ODIN, JSON, YAML, XML etc., but the output will be voluminous. The effect of this model is to reduce the size of the output, potentially by a factor of two or more. Human readability is also greatly improved, which is of increasing importance with the direct use of XML and JSON by programmers.
+
+Size reduction and readability is achieved mainly by mapping repetitive structural items to shorter string forms that are more readable, but still machine-processable.
+
+The `am.aom2.persistence` package is shown below, in two parts.
+
+[.text-center]
+.`am.aom2.persistence` Package - Serialisation AOM (upper)
+image::{uml_diagrams_uri}/AM-aom2.persistence-upper.svg[id=P_AOM_upper, align="center"]
+
+[.text-center]
+.`am.aom2.persistence` Package - Serialisation AOM (lower)
+image::{uml_diagrams_uri}/AM-aom2.persistence-lower.svg[id=P_AOM_lower, align="center"]
+
+== Model Transformation Description
+
+The translations from the AOM effected by the `P_` classes are as follows:
+
+* all multiplicities, including existence, cardinality, and occurrences are converted to the standard UML string form such as '0..1', '0..*' etc., rather than the 8 or so lines of output that would occur in direct machine serialisation;
+* codes are converted from structured form (`TERMINOLOGY_CODE` class) to string form;
+* UID identifiers are converted from structured form to string form.
+

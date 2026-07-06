@@ -1,0 +1,29 @@
+=== BMM_OPEN_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_OPEN_TYPE*
+
+h|*Description*
+2+a|Open type reference to a single type parameter, i.e. typically 'T', 'V', 'K' etc. The parameter must be in the type declaration of the owning BMM_CLASS.
+
+h|*Inherit*
+2+|`<<_bmm_type_class,BMM_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*generic_constraint*: `<<_bmm_generic_parameter_class,BMM_GENERIC_PARAMETER>>`
+a|The generic constraint, which will be 'Any' if nothing set in original model.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*conformance_type_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Return generic_constraint.conformance_type_name.
+|===

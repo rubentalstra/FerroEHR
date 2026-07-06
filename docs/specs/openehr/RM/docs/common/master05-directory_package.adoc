@@ -1,0 +1,34 @@
+= Directory Package
+
+== Overview
+
+The directory package is illustrated below. It provides a simple abstraction of a versioned folder structure. The `VERSIONED_FOLDER` class is the binding of `VERSIONED_OBJECT<T>` to the class `FOLDER`, i.e. it is a `VERSIONED_OBJECT<FOLDER>`. This means that _each of its versions is a Folder structure rather than a single Folder_. It provides a means of versioning `FOLDER` structures over time, which is useful in the EHR, Demographics service or anywhere else where Folders are used to group things. A `FOLDER` instance contains more `FOLDERs` and/or items, which are _references_ to other (usually versioned) objects. A `FOLDER` structure is therefore like a directory containing references to objects. Since they are references, multiple references to the same object are possible, allowing the structure to be used to mutiply classify other objects. If it is used with `VERSIONED_COMPOSITIONs` for example, the folders might be used to represent episodes and at the same time problem groups. Any individual Folder may contain meta-data in its `_details_` attribute (type `ITEM_STRUCTURE`), which may be archetyped in the same manner as similar attributes throughout the openEHR RM.
+
+[.text-center]
+.common.directory Package
+image::{uml_diagrams_uri}/RM-common.directory.svg[id=directory_package, align="center"]
+
+`FOLDER` structures inside the `VERSIONED_FOLDER` are archetypable structures, and `FOLDER` archetypes can be created in the same fashion as say `SECTION` archetypes for the EHR.
+
+=== Paths
+
+Directory paths are built using the `_name_` attribute values inherited from `LOCATABLE` into each `FOLDER` object. In real data, these will usually be derived from the value of the `_archetype_node_id_` attribute, plus a uniqueness modifier if required. Example paths (e.g. within the EHR):
+
+----
+    /folders[hospital episodes]/items[1]
+    /folders[patient entered data]/folders[diabetes monitoring]
+    /folders[homeopathy contacts]
+----
+
+Uniqueness modifiers are appended in brackets, and are only needed to differentiate folders at the same node that would otherwise have the same names, e.g.
+
+----
+    [hospital episodes]
+    [hospital episodes(car accident Aug 1998)]
+----
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}versioned_folder.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}folder.adoc[]

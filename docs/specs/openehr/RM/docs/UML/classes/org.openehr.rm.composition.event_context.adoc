@@ -1,0 +1,54 @@
+=== EVENT_CONTEXT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EVENT_CONTEXT*
+
+h|*Description*
+2+a|Documents the context information of a healthcare event involving the subject of care and the health system. The context information recorded here are independent of the attributes recorded in the version audit, which document the  system interaction  context, i.e. the context of a user interacting with the health record system. Healthcare events include patient contacts, and any other business activity, such as pathology investigations which take place on behalf of the patient.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_pathable_class[PATHABLE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*start_time*: `link:/releases/RM/{rm_release}/data_types.html#_dv_date_time_class[DV_DATE_TIME^]`
+a|Start time of the clinical session or other kind of event during which a provider performs a service of any kind for the patient.
+
+h|*0..1*
+|*end_time*: `link:/releases/RM/{rm_release}/data_types.html#_dv_date_time_class[DV_DATE_TIME^]`
+a|Optional end time of the clinical session.
+
+h|*0..1*
+|*location*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The actual location where the session occurred, e.g. 'microbiology lab 2', 'home', 'ward A3'  and so on.
+
+h|*1..1*
+|*setting*: `link:/releases/RM/{rm_release}/data_types.html#_dv_coded_text_class[DV_CODED_TEXT^]`
+a|The setting in which the clinical session took place. Coded using the openEHR Terminology,  setting  group.
+
+h|*0..1*
+|*other_context*: `link:/releases/RM/{rm_release}/data_structures.html#_item_structure_class[ITEM_STRUCTURE^]`
+a|Other optional context which will be archetyped.
+
+h|*0..1*
+|*health_care_facility*: `link:/releases/RM/{rm_release}/common.html#_party_identified_class[PARTY_IDENTIFIED^]`
+a|The health care facility under whose care the event took place. This is the most specific workgroup or delivery unit within a care delivery enterprise that has an official identifier in the health system, and can be used to ensure medico-legal accountability.
+
+h|*0..1*
+|*participations*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/common.html#_participation_class[PARTICIPATION^]>`
+a|Parties involved in the healthcare event. These would normally include the physician(s) and often the patient (but not the latter if the clinical session is a pathology test for example).
+
+h|*Invariants*
+2+a|__Setting_valid__: `Terminology (Terminology_id_openehr).has_code_for_group_id (Group_id_setting, setting.defining_code)`
+
+h|
+2+a|__Participations_validity__: `participations /= Void implies not participations.is_empty`
+
+h|
+2+a|__location_valid__: `location /= Void implies not location.is_empty`
+|===

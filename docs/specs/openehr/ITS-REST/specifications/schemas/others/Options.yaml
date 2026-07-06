@@ -1,0 +1,27 @@
+title: Options
+type: object
+properties:
+  solution:
+    type: string
+  solution_version:
+    type: string
+  vendor:
+    type: string
+  restapi_specs_version:
+    type: string
+  conformance_profile:
+    type: string
+  endpoints:
+    type: array
+    items:
+      type: string
+example:
+  solution: openEHRSys
+  solution_version: v0.9
+  vendor: My-openEHR
+  restapi_specs_version: v1.0.3
+  conformance_profile: STANDARD
+  endpoints:
+    - /ehr
+    - /definition
+    - /query

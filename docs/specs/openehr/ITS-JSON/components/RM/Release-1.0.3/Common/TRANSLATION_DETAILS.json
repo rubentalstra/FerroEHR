@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/TRANSLATION_DETAILS.json",
+    "definitions": {
+        "TRANSLATION_DETAILS": {
+            "type": "object",
+            "required": [
+                "language",
+                "author"
+            ],
+            "properties": {
+                "language": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "author": {
+                    "type": "object"
+                },
+                "accreditation": {
+                    "type": "string"
+                },
+                "other_details": {
+                    "type": "object"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "TRANSLATION_DETAILS"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

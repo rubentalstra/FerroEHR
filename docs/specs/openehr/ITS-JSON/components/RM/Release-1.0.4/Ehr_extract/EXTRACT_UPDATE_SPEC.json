@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Ehr_extract/EXTRACT_UPDATE_SPEC.json",
+    "definitions": {
+        "EXTRACT_UPDATE_SPEC": {
+            "type": "object",
+            "required": [
+                "persist_in_server",
+                "update_method"
+            ],
+            "properties": {
+                "persist_in_server": {
+                    "type": "boolean"
+                },
+                "trigger_events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/DV_CODED_TEXT.json#/definitions/DV_CODED_TEXT"
+                    },
+                    "minItems": 1
+                },
+                "repeat_period": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/DV_DURATION.json#/definitions/DV_DURATION"
+                },
+                "update_method": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/CODE_PHRASE.json#/definitions/CODE_PHRASE"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "EXTRACT_UPDATE_SPEC"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

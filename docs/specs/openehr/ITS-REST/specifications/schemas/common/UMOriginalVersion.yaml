@@ -1,0 +1,11 @@
+title: ORIGINAL_VERSION
+type: object
+allOf:
+  - $ref: ../common/OriginalVersion.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [ORIGINAL_VERSION]
+x-discriminator-value: ORIGINAL_VERSION

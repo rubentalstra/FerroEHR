@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-null_flavours"/>
+  <version value="3.1.0"/>
+  <name value="null_flavours"/>
+  <title value="Null Flavours"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="4"/>
+  <concept>
+    <code value="271"/>
+    <display value="no information"/>
+    <designation>
+      <language value="es"/>
+      <value value="sin información"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="不明"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="sem informação"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="无信息"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="253"/>
+    <display value="unknown"/>
+    <designation>
+      <language value="es"/>
+      <value value="desconocido"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="未知"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="desconhecido"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="未知"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="272"/>
+    <display value="masked"/>
+    <designation>
+      <language value="es"/>
+      <value value="oculto"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="隠蔽された"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="mascarado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已遮蔽"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="273"/>
+    <display value="not applicable"/>
+    <designation>
+      <language value="es"/>
+      <value value="no aplica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="該当なし"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="não aplicável"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="不适用"/>
+    </designation>
+  </concept>
+</CodeSystem>

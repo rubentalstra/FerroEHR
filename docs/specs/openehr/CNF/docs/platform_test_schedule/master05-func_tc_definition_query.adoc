@@ -1,0 +1,135 @@
+[[_func_conf_def_query_component]]
+= Test Suite: DEFINITION Service / I_DEFINITION_QUERY Interface
+
+// some useful variables
+:i_definition_query_link: {openehr_sm_openehr_platform}#_i_definition_query_interface
+
+== Normative Reference
+    
+Items under this validation suite conceptually use these abstract interfaces defined in the {openehr_sm_openehr_platform}#_definition_package[Platform Service Model^]:
+
+* I_DEFINITION_QUERY
+
+These are concretely realised in implementation technology specfic APIs, such as the {openehr_definitions_rest_api}[Definitions REST API^].
+
+This test suite uses artefacts defined by the following specifications:
+
+* {openehr_query_aql}[AQL^]
+
+== Test Environment
+
+The server under test should support:
+
+[.tbd]
+TBD
+
+== Test Data Sets
+
+[.tbd]
+TBD
+
+== Test cases
+
+=== Service Model operation: I_DEFINITION_QUERY.has_query()
+
+Service Model reference: {i_definition_query_link}[`I_DEFINITION_QUERY._has_query()_`^]
+
+==== Test Case I_DEFINITION_QUERY.has_query-xxx
+
+// EhrBase ref:
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_QUERY/has_query/I_DEFINITION_QUERY.has_query-xxx.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_DEFINITION_QUERY.valid_query()
+
+Service Model reference: {i_definition_query_link}[`I_DEFINITION_QUERY._valid_query()_`^]
+
+==== Test Case I_DEFINITION_QUERY.valid_query-valid
+
+// EhrBase ref: A.3.a.
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_QUERY/valid_query/I_DEFINITION_QUERY.valid_query-valid.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_QUERY.valid_query-invalid
+
+// EhrBase ref: A.3.b.
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_QUERY/valid_query/I_DEFINITION_QUERY.valid_query-invalid.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_QUERY.valid_query-bad_formalism
+
+// EhrBase ref: A.3.c.
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_QUERY/valid_query/I_DEFINITION_QUERY.valid_query-bad_formalism.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_DEFINITION_QUERY.list_queries()
+
+Service Model reference: {i_definition_query_link}[`I_DEFINITION_QUERY._list_queries()_`^]
+
+==== Test Case I_DEFINITION_QUERY.list_queries-empty
+
+// EhrBase ref: 
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_QUERY/list_queries/I_DEFINITION_QUERY.list_queries-empty.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_QUERY.list_queries-non_empty
+
+// EhrBase ref: 
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_QUERY/list_queries/I_DEFINITION_QUERY.list_queries-non_empty.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_QUERY.list_queries-select_items
+
+// EhrBase ref: 
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_QUERY/list_queries/I_DEFINITION_QUERY.list_queries-select_items.robot[REST API / Robot^]
+|===
+

@@ -1,0 +1,35 @@
+=== BMM_CONTAINER_PROPERTY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_CONTAINER_PROPERTY*
+
+h|*Description*
+2+a|Subtype of BMM_PROPERTY that represents a container type based on one of the inbuilt types List <>, Set <>, Array <>.
+
+h|*Inherit*
+2+|`<<_bmm_property_class,BMM_PROPERTY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*cardinality*: `link:/releases/BASE/{base_release}/foundation_types.html#_multiplicity_interval_class[Multiplicity_interval^]`
+a|Cardinality of this container.
+
+h|*1..1 +
+(effected)*
+|*type*: `<<_bmm_container_type_class,BMM_CONTAINER_TYPE>>`
+a|Redefined to BMM_CONTAINER_TYPE.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*display_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of this attribute to display in UI.
+|===

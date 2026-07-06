@@ -1,0 +1,21 @@
+=== BMM_FUNCTION_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_FUNCTION_TYPE*
+
+h|*Description*
+2+a|Meta-type for function object signatures.
+
+h|*Inherit*
+2+|`<<_bmm_routine_type_class,BMM_ROUTINE_TYPE>>`
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*base_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"Function"`
+a|Base name (built-in).
+|===

@@ -1,0 +1,18 @@
+operationId: ehr_status_get_at_time
+summary: Get EHR_STATUS at time
+description: |
+  Retrieves a version of the EHR_STATUS associated with the EHR identified by `ehr_id`.
+
+  If `version_at_time` is supplied, retrieves the version extant _at specified time_, otherwise retrieves the _latest_ EHR_STATUS version.
+tags:
+  - EHR_STATUS
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/query/version_at_time.yaml
+responses:
+  '200':
+    $ref: ../responses/200_EHR_STATUS_retrieved.yaml
+  '400':
+    $ref: ../responses/400_invalid_version_at_time.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id_or_no_version_at_time.yaml

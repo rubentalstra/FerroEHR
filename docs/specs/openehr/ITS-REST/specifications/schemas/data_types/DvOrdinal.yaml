@@ -1,0 +1,17 @@
+title: DV_ORDINAL
+type: object
+allOf:
+  - $ref: ../data_types/DvOrdered.yaml
+required:
+  - symbol
+  - value
+properties:
+  _type:
+    type: string
+    default: DV_ORDINAL
+  symbol:
+    $ref: ../data_types/DvCodedText.yaml
+  value:
+    type: integer
+x-discriminator-value: DV_ORDINAL
+

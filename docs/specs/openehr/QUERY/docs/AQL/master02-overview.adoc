@@ -1,0 +1,57 @@
+= Overview
+
+== Existing Query Languages
+
+Currently, mainstream database query languages such as {wikipedia_sql}[Structured Query Language (SQL)^], {xquery}[W3C XQuery^], and {wikipedia_oql}[Object Query Language (OQL)^] have dependencies on particular data schemas and physical representations (e.g. relational tables). Users must know the physical data schema of a particular database in order to write a valid query. A query statement written for one schema will not usually work in other systems, which generally have different data schemas, even for storing the same data. One reason schemas are different between systems relates to differing optimisation requirements and choices. Queries written in these languages therefore are not usually _portable across systems_.
+
+More modern web-oriented languages such as {w3c_sparql}[W3C Sparql^] and {graphql}[GraphQL] are not database- or system-oriented as such, and do not suffer from the problem of portability. However, both the database- and web-oriented languages suffer from another problem, which is being limited to a single level of semantic representation, i.e. they effectively assume an Entity-Attribute-Value (EAV) data meta-model. This prevents their direct use with multi-level models, such as those based on {openehr_am}[openEHR Archetype model^], or its ISO equivalent {iso_13606-2}[ISO 13606-2:2019^].
+
+In order to overcome these limitations, this specification describes a query language designed to support _portable queries based on multi-level models_.
+
+== What is AQL?
+
+Archetype Query Language (AQL) is a declarative query language developed specifically for expressing queries used for searching and retrieving the data found in archetype-based repositories. The examples used in this specification mostly relate to the {openehr_rm}[openEHR Reference Model^] (RM) and the {openehr_CKM}[openEHR clinical archetypes^], but the syntax is independent of information model, application, programming language, system environment, and storage model.
+
+The minimum requirement for data to be queried using AQL (including with archetype structures and terminology) is that it be based on {openehr_am}[archetypes^], which concretely means that it contains fine-grained semantic markings in the form of archetype and terminology codes. This may be native openEHR RM data, or legacy system data to which the relevant semantic markers (i.e. archetype and terminology codes) have been added. Consequently, AQL expresses queries in terms of a combination of archetype semantic elements and RM data structure elements on which the archetypes are based, rather than solely the latter, which is the case for EAV-based query languages such as SQL. This is the key in developing and sharing semantic queries across system and enterprise boundaries.
+
+AQL has the following distinctive features:
+
+. the utilization of <<_openehr_path_syntax,openEHR path syntax>> to locate clinical statements and data values within them using archetypes; this syntax is used to represent the query criteria and returned results, and allows stating query criteria using archetype and node identifiers, data values within the archetypes, and class attributes defined within the Reference Model;
+. returned results may be objects of any granularity from 'top-level' RM objects to primitive data items;
+. the utilization of a <<_containment,`CONTAINS` operator>> to match data hierarchy relationships in order to constrain the source data to which the query is applied;
+. the utilization of ADL-like operator syntaxes, such as `matches`, `exists` and `not`;
+. model-neutral syntax: AQL does not have any dependency on a Reference Model; it is also neutral to system implementation and environment;
+. supports time-based conditions to query historical versions of data.
+
+AQL also has features found in other query languages, including:
+
+. naming returned results;
+. query criteria parameters;
+. arithmetic, comparison and logical operators;
+. functions;
+. preferences on the result retrieval and structuring, such as ordering and paginating results.
+
+== AQL example
+
+Below is an example of an AQL statement. This statement returns all blood pressure values contained in `COMPOSITION` instances defined by the `openEHR-EHR-COMPOSITION.encounter.v1` archetype, which contain `OBSERVATION` instances defined by the `openEHR-EHR-OBSERVATION.blood_pressure.v1` archetype, where the systolic value is greater than or equal to 140 or whose diastolic value is greater than or equal to 90, within a specified EHR (i.e. whose EHR id is the value of the variable `$ehrUid`). The AQL syntax is a synthesis of SQL structural syntax and the <<_openehr_path_syntax,openEHR path syntax>>.
+
+----
+SELECT                                                       -- Select clause
+   o/data[at0001]/.../items[at0004]/value AS systolic,       -- Identified path with alias
+   o/data[at0001]/.../items[at0005]/value AS diastolic,
+   c/context/start_time AS date_time
+FROM                                                         -- From clause
+   EHR[ehr_id/value=$ehrUid]                                 -- RM class expression
+      CONTAINS                                               -- containment
+         COMPOSITION c                                       -- RM class expression
+            [openEHR-EHR-COMPOSITION.encounter.v1]           -- archetype predicate
+         CONTAINS
+            OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE                                                        -- Where clause
+   o/data[at0001]/.../items[at0004]/value/value >= 140 OR    -- value comparison
+   o/data[at0001]/.../items[at0005]/value/value >= 90
+ORDER BY                                                     -- order by datetime, latest first
+   c/context/start_time DESC
+----
+
+More examples can be found in the {openehr_query_aql_examples}[openEHR AQL examples^] document.

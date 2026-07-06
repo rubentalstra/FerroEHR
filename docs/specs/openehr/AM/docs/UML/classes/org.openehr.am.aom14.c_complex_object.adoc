@@ -1,0 +1,35 @@
+=== C_COMPLEX_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_COMPLEX_OBJECT*
+
+h|*Description*
+2+a|Constraint on complex objects, i.e. any object that consists of other object constraints.
+
+h|*Inherit*
+2+|`<<_c_defined_object_class,C_DEFINED_OBJECT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*attributes*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_c_attribute_class,C_ATTRIBUTE>>>`
+a|List of constraints on attributes of the reference model type represented by this object.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*any_allowed* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = attributes.is_empty`
+a|True if any value of the reference model type being constrained is allowed.
+
+h|*Invariants*
+2+a|__Attributes_valid__: `any_allowed xor (attributes /= Void and not attributes.is_empty)`
+|===

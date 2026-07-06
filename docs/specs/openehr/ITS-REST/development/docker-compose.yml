@@ -1,0 +1,21 @@
+version: "3"
+services:
+    php:
+        build:
+            dockerfile: php.Dockerfile
+            context: .
+        volumes:
+            - .:/app
+            - ../docs:/data/docs
+            - ../specifications:/data/specifications
+            - ../computable:/data/computable
+            - ../codegen:/data/codegen
+        environment:
+            - TZ=UTC
+            - TIMEZONE=UTC
+            - IN_DOCKER=docker
+            - PHP_XDEBUG_ENABLED=1
+            - XDEBUG_CONFIG="remote_host=host.docker.internal"
+            - PHP_IDE_CONFIG="serverName=Docker"
+        tty: true
+        user: 1000:1000

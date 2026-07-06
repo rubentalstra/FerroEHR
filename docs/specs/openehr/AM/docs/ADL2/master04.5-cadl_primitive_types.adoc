@@ -1,0 +1,818 @@
+[[cADL_Constraints_Primitive_Types]]
+== Constraints on Primitive Types
+
+ADL assumes the existence of various primitive types, as described in the {openehr_foundation_types}[openEHR Foundation Types^] specification. These include the usual built-in types of any programming language, as well as dates and times, and lists and intervals of primitive types. The following subsections describe how each of these is constrained.
+
+=== General Structure
+
+At the leaf nodes in a cADL text, constraints can be expressed on the following primitive types:
+
+* `Boolean`;
+* `Character`, `String`;
+* `Integer`, `Real`;
+* `Date`, `Time`, `Date_time`, `Duration`;
+* `Terminology_code`;
+* lists and intervals of some of the above.
+
+Since primitive objects constitute the terminal nodes in an archetype, constraints may constrain type, occurrences (rare), and value.
+
+While constraints on complex types follow the rules described so far, constraints on attributes of primitive types in cADL may be expressed in a shorter form, without type names, and omitting one level of braces, as follows:
+
+[source, cadl]
+----
+    some_attr matches {<some_pattern>}
+----
+
+rather than:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+----
+    some_attr matches {
+        PRIMITIVE_TYPE[at9009] matches {<some_pattern>}
+    }
+----
+
+id-coded ADL2::
++
+[source, cadl]
+----
+    some_attr matches {
+        PRIMITIVE_TYPE[id3] matches {<some_pattern>}
+    }
+----
+====
+
+This is possible because the syntax patterns of all primitive type constraints are mutually distinguishable, i.e. the type can always be inferred from the syntax alone. Since all leaf attributes of all object models are of primitive types, or lists or sets of them, cADL archetypes using the brief form for primitive types are significantly less verbose overall, as well as being more directly comprehensible to human readers. Because the brief form omits an at-code (id-code), the at-code (id-code) for primitive object nodes is automatically set to a fixed value, defined in the {openehr_am_aom2}#_overview[AOM specification^] as `Primitive_node_id`.
+
+Although for the majority of primitive type constraints, the shortened form is the most convenient, there is one circumstance in which the regular syntax form is needed, which is when only the type is to be constrained, but not the value. This leads to a constraint of the following form:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+----
+    some_attr matches {
+        PRIMITIVE_TYPE[at9013]
+    }
+----
+
+id-coded ADL2::
++
+[source, cadl]
+----
+    some_attr matches {
+        PRIMITIVE_TYPE[id3]
+    }
+----
+====
+
+This may occur because the attribute `_some_attr_` in the reference model is of a more general type, e.g. `Any`. The constraint may thus be to simply require a `String`, `Terminology_code` or other primitive type. In the regular form a valid at-code (id-code) must be supplied; this may be either a standard at-code, e.g. `at9013` (id-code, e.g. `id9`) or the `Primitive_node_id` value. If the former is used, any specialised archetype that adds a value constraint must use the regular form, as in the following example.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+----
+    -- in parent archetype
+    some_attr matches {
+        String[at9013]
+    }
+
+    -- in specialisation child
+    some_attr matches {
+        String[at9013] matches {"match me"}
+    }
+----
+
+id-coded ADL2::
++
+[source, cadl]
+----
+    -- in parent archetype
+    some_attr matches {
+        String[id3]
+    }
+
+    -- in specialisation child
+    some_attr matches {
+        String[id3] matches {"match me"}
+    }
+----
+====
+
+If the `Primitive_node_id` is used, a specialisation may use the brief form, as in the following.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+----
+    -- in parent archetype
+    some_attr matches {
+        String[at9017]
+    }
+
+    -- in specialisation child
+    some_attr matches {"match me"}
+----
+
+id-coded ADL2::
++
+[source, cadl]
+----
+    -- in parent archetype
+    some_attr matches {
+        String[id9999]
+    }
+
+    -- in specialisation child
+    some_attr matches {"match me"}
+----
+====
+
+=== Assumed Values
+
+In an archetype containing optional data elements, an ability to define 'assumed' values is useful. For example, an archetype for 'blood pressure measurement' might include an optional data element describing the patient position, with choices 'lying', 'sitting' and 'standing'. Since this element is optional, data could be created according to the archetype that does not contain it. However, a blood pressure cannot be taken without the patient in some position, so clearly there is an implied value.
+
+The archetype allows this to be explicitly stated so that all users/systems know what value to assume when optional items are not included in the data. Assumed values are definable on any primitive type, and are expressed after the constraint expression, by a semi-colon (';') followed by a value of the same type as that implied by the preceding part of the constraint. Example constraints containing assumed values are shown in the sections below.
+
+If no assumed value is stated, no reliable assumption can be made by the receiver of the archetyped data about what the values of removed optional parts might be, from inspecting the archetype. However, this usually corresponds to a situation where the assumed value does not even need to be stated - the same value will be assumed by all users of this data, if its value is not transmitted. In most cases, if an element specified as optional in the archetype, data users only care about the value if it is actually present. The 'assumed value' concept is therefore not likely to be needed in most cases.
+
+=== Constraints on Boolean
+
+Boolean runtime values can be constrained to be True, False, or either, as follows:
+
+[source, cadl]
+--------
+    some_flag matches {True}
+    some_flag matches {False}
+    some_flag matches {True, False}
+    some_flag matches {True, False; False}         -- with assumed value
+--------
+
+=== Constraints on Character
+
+Attribute values of type `Character` can be constrained in two ways: using a list of characters, and using a regular expression.
+
+==== List of Characters
+
+The following examples show how a character value may be constrained using a list of fixed character values. Each character is enclosed in single quotes.
+
+[source, cadl]
+--------
+    color_name matches {'r'}
+    color_name matches {'r', 'g', 'b'}
+--------
+
+==== Regular Expression
+
+Character values can also be constrained using a single-character regular expression character class, as per the following examples:
+
+[source, cadl]
+--------
+    color_name matches {/[rgbcmyk]/}
+    color_name matches {/[^\s\t\n]/}
+--------
+
+The only allowed elements of the regular expression syntax in character expressions are the following:
+
+* any item from the Character Classes list above;
+* any item from the Special Character Classes list above;
+* an alternative expression whose parts are any item types, e.g. `'a'|'b'|[m-z]`
+
+=== Constraints on String
+
+The value of an attribute of type `String` is constrained using a list of one or more Strings, each of which may be a fixed String, or a regular expression. In both cases, comparison to the constraint values is case-sensitive.
+
+Although any mixture of fixed Strings and regular expressions may be used, the most common possibilities are a list of fixed Strings and a single regular expression.
+
+==== List of Strings
+
+A String-valued attribute can be constrained by a list of strings (using the ODIN syntax for string lists), including the simple case of a single string. Examples are as follows:
+
+[source, cadl]
+--------
+    species ∈ {"platypus"}
+    species ∈ {"platypus", "kangaroo"}
+    species ∈ {"platypus", "kangaroo", "wombat"}
+--------
+
+The first example constrains the runtime value of the `_species_` attribute of some object to take the value "platypus"; the second constrains it be either "platypus" or "kangaroo", and so on. *In almost all cases, this kind of string constraint should be avoided*, since it usually renders the body of the archetype language-dependent. Exceptions are proper names (e.g. "NHS", "Apgar"), product trade-names (but note even these are typically different in different language locales, even if the different names are not literally translations of each other). The preferred way of constraining string attributes in a language independent way is with value sets of terminology codes. See <<Terminology Constraints>>.
+
+==== Regular Expression
+
+The second way of constraining strings is with regular expressions, a widely used syntax for expressing patterns for matching strings. The regular expression syntax used in cADL is a proper subset of that used in the Perl language (see {perl_regex}[the specification of the regular expression language of Perl^]). It is specified as a constraint using either `//` or `^^` delimiters:
+
+[source, cadl]
+----
+    string_attr matches {/regular expression/}
+    string_attr matches {^regular expression^}
+----
+
+For example, the following two patterns are equivalent:
+
+[source, cadl]
+--------
+    units ∈ {/km\/h|mi\/h/}
+    units ∈ {^km/h|mi/h^}
+--------
+
+The rules for including special characters within strings are described in <<File Encoding and Character Quoting>>.
+
+[.tbd]
+TBD: there is an argument for only allowing a single String value rather than a list, where the value is aways a regex since `{"platypus", "kangaroo", "wombat"}` can be expressed as `{/platypus|kangaroo|wombat/}`. See also AOM spec.
+
+The regular expression patterns supported in cADL are as follows.
+
+[cols="1,3,3",options="header"]
+|==========================================================
+3+^h|Character Class
+
+| `.`       |match any single character.                                    |E.g. `...` matches any 3 characters;
+| `[xyz]`   |match any of the characters in the set `xyz` (case-sensitive). |E.g. `[0-9]` matches any string containing a single decimal digit;
+| `[a-m]`   |match any of the characters in the set of characters formed by the continuous range from `a` to `m` (case-sensitive).  |E.g. `[0-9]` matches any single character string containing a single decimal digit, `[S-Z]` matches any single character in the range `S` - `Z` ;
+| `[^a-m]`  |match any character except those in the set of characters formed by the continuous range from `a` to `m` .     |E.g. `[^0-9]` matches any single character string as long as it does not contain a single decimal digit;
+
+3+^h|Grouping
+
+| `(pattern)`   |parentheses are used to group items; any pattern appearing within parentheses is treated as an atomic item for the purposes of the occurrences operators.  |E.g. `([1-9][0-9])` matches any 2-digit number.
+
+3+^h|Occurrences
+
+| `*`      |match 0 or more of the preceding atomic item.              |E.g. `.\*` matches any string; `[a-z][a-z0-9]*` matches any alphanumeric string starting with a letter;
+| `+`       |match 1 or more occurrences of the preceding atomic item.  |E.g. `a[^\s]+` matches any string starting with 'a', followed by at least one further non-whitespace character;
+| `?`       |match 0 or 1 occurrences of the preceding atomic item.     |E.g. `ab?` matches the strings `"a"` and `"ab"` ;
+| `{m,n}`   |match m to n occurrences of the preceding atomic item.     |E.g. `ab{1,3}` matches the strings `"ab"` and `"abb"` and `"abbb"` ; `[a-z]{1,3}` matches all lower-case alphabetic strings of one to three characters in length;
+| `{m,}`    |match at least m occurrences of the preceding atomic item; |
+| `{,n}`    |match at most n occurrences of the preceding atomic item;  |
+| `{m}`     |match exactly m occurrences of the preceding atomic item;  |
+
+3+^h|Special Character Classes
+
+| `\d` , `\D`   |match a decimal digit character; match a non-digit character;      |
+| `\s` , `\S`   |match a whitespace character; match a non-whitespace character;    |
+
+3+^h|Alternatives
+
+| `pattern1\|pattern2`   |match either pattern1 or pattern2.     |E.g. `lying\|sitting\|standing` matches any of the words `"lying"` , `"sitting"` and `"standing"` .
+|==========================================================
+
+A similar warning as for a list of strings should be noted for the use of regular expressions to constrain strings: they should be limited to non-linguistically dependent patterns, such as proper and scientific names. The use of regular expressions for constraints on normal words will render an archetype linguistically dependent, and potentially unusable by others.
+
+=== Constraints on Ordered Types
+
+Of the primitive types defined in the {openehr_foundation_types}[openEHR Foundation Types^], some inherit (at least notionally) from the abstract type `Ordered`, including `Integer`, `Real`, and the Date/Time types. Constraints on all these types follow a constraint type of `List<Interval<T:Ordered>>`, i.e. a `List` of `Intervals`. Since the `Interval<T>` type in openEHR includes a descendant `Point_interval<T>` that can represent a degenerate interval of the form `{N..N}`, i.e. effectively a single value, this constraint type can represent many patterns of constraint, including:
+
+* single value e.g. `{3}`;
+* list of values e.g. `{3, 4, 5}`;
+* single interval e.g. `{|0..10|}`;
+* list of intervals e.g. `{|0..10|, |60..90|, |>500|}`;
+* any combination of values and intervals, e.g. `{5, |10..100|, 150, |200..400|, 1000}`.
+
+Additional 'pattern' constraints are available on the Date/Time types.
+
+=== Constraints on Integer
+
+The value of an attribute of type `Integer` is constrained using a list of one or more integer values or intervals. The most common possibilities are a list of single integers, and a single interval, but multiple intervals and or single values are possible as well.
+
+==== List of Integers
+
+Lists of integers expressed in the syntax from ODIN can be used as a constraint, e.g.:
+
+[source, cadl]
+--------
+    length matches {1000}       -- fixed value of 1000
+    magnitude matches {0, 5, 8} -- any of 0, 5 or 8
+--------
+
+The first constraint requires the attribute `_length_` to be 1000, while the second limits the value of `_magnitude_` to be 0, 5, or 8 only. A list may contain a single integer only:
+
+[source, cadl]
+--------
+    magnitude matches {0} -- matches 0
+--------
+
+==== Interval of Integer
+
+Integer intervals are expressed using the interval syntax from ODIN (described in the {openehr_odin}[openEHR ODIN specification^]. Examples of 2-sided intervals include:
+
+[source, cadl]
+--------
+    length matches {|1000|}                       -- point interval of 1000 (=fixed value)
+    length matches {|950..1050|}                  -- allow 950 - 1050
+    length matches {|0..1000|}                    -- allow 0 - 1000
+    length matches {|0..<1000|}                   -- allow 0>= x <1000
+    length matches {|>0..<1000|}                  -- allow 0> x <1000
+    length matches {|100+/-5|}                    -- allow 100 +/- 5, i.e. 95 - 105
+--------
+
+Examples of one-sided intervals include:
+
+[source, cadl]
+--------
+    length matches {|<10|}                        -- allow up to 9
+    length matches {|>10|}                        -- allow 11 or more
+    length matches {|<=10|}                       -- allow up to 10
+    length matches {|>=10|}                       -- allow 10 or more
+    length matches {|>=10|;5}                     -- allow 10 or more; assumed value = 5
+--------
+
+==== More Complex Integer Constraints
+
+There may be applications for which the full possibilities of the Integer value constraint need to be exploited. The following provides an example.
+
+[source, cadl]
+--------
+    length matches {5, |10..100|, 150, |200..400|, 1000}
+--------
+
+In such cases, all of the values and ranges should be mutually exclusive.
+
+=== Constraints on Real
+
+Constraints on attributes of type `Real` follow the same syntax as for Integers, in both list and interval forms. The only difference is that the real number values used in the constraints are indicated by the use of the decimal point and at least one succeeding digit, which may be 0. Typical examples are:
+
+[source, cadl]
+--------
+    magnitude ∈ {5.5}                             -- list of one (fixed value)
+    magnitude ∈ {|5.5|}                           -- point interval (=fixed value)
+    magnitude ∈ {|5.5..6.0|}                      -- interval
+    magnitude ∈ {5.5, 6.0, 6.5}                   -- list
+    magnitude ∈ {|0.0..<1000.0|}                  -- allow 0>= x <1000.0
+    magnitude ∈ {|<10.0|}                         -- allow anything less than 10.0
+    magnitude ∈ {|>10.0|}                         -- allow greater than 10.0
+    magnitude ∈ {|<=10.0|}                        -- allow up to 10.0
+    magnitude ∈ {|>=10.0|}                        -- allow 10.0 or more
+    magnitude ∈ {|80.0+/-12.0|}                   -- allow 80 +/- 12
+--------
+
+=== Constraints on Dates, Times and Durations
+
+Attributes of type `Date`, `Time`, `Date_time` and `Duration` (or of differently-named primitive types with the same meaning) may all be constrained in either of two ways:
+
+* in terms of values, using a list of ISO 8601 values or value intervals, in the same manner as for `Integer` and `Real`; and
+* using patterns based on the ISO 8601 value syntax.
+
+The first method allows temporal values to be constrained to actual date, time etc values, while the second allows values to be constrained on the basis of which parts of the date, time etc. are present or missing, regardless of value. The pattern method is described first, since patterns can also be used in lists and intervals.
+
+==== Date, Time and Date/Time
+
+[#date_time_constraint_patterns]
+===== Patterns
+
+Dates, times, and date/times (i.e. timestamps), can be constrained using patterns based on the {iso_8601}[ISO 8601 date/time syntax^], which indicate which parts of the date or time must be supplied. A constraint pattern is formed from the abstract pattern `yyyy-mm-ddThh:mm:ss` (itself formed by translating each field of an ISO 8601 date/time into a letter representing its type), with either `?` (meaning optional) or `X` (not allowed) characters substituted in appropriate places. Timezone may be indicated as being _required_ by the addition of a patterns such as `+hh:mm`, `+hhmm`, and `-hh`. The `Z` (UTC, i.e. equivalent of `+0000`) timezone modifier can always be used when any such pattern is specified (see <<#timezone_constraints,table below>>).
+
+NOTE: there is no way to state that timezone information be _prohibited_.
+
+The syntax of legal patterns is given by Antlr4 lexical rules `DATE_CONSTRAINT_PATTERN`, `TIME_CONSTRAINT_PATTERN` and `DATE_TIME_CONSTRAINT_PATTERN` shown below in the <<_base_lexer,Base Lexer syntax section>>.
+
+All expressions generated by these patterns must also satisfy the validity rules:
+
+* where `??` appears in a field, only `??` or `XX` can appear in fields to the right
+* where `XX` appears in a field, only `XX` can appear in fields to the right
+
+The following table shows the valid patterns that can be used, and the types implied by each pattern.
+
+[cols="2,3,5",options="header"]
+|==================================================================================================
+|Implied Type   |Pattern                |Explanation
+|Date           |yyyy-mm-dd             |full date must be specified
+|Date           |yyyy-mm-??             |optional day; +
+ e.g. day in month forgotten
+|Date           |yyyy-??-??             |optional month, optional day; +
+ i.e. any date allowed; e.g. mental health questionnaires which include well known historical dates
+|Date           |yyyy-mm-XX             |mandatory month, no day
+|Date           |yyyy-??-XX             |optional month, no day
+|               |                       | 
+|Time           |hh:mm:ss               |full time must be specified
+|Time           |hh:mm:XX               |no seconds; +
+ e.g. appointment time
+|Time           |hh:??:XX               |optional minutes, no seconds; +
+ e.g. normal clock times
+|Time           |hh:??:??               |optional minutes, seconds; +
+ i.e. any time allowed
+|               |                       | 
+|Date/Time      |yyyy-mm-ddThh:mm:ss    |full date/time must be specified
+|Date/Time      |yyyy-mm-ddThh:mm:??    |optional seconds; +
+ e.g. appointment date/time
+|Date/Time      |yyyy-mm-ddThh:mm:XX    |no seconds; +
+ e.g. appointment date/time
+|Date/Time      |yyyy-mm-ddThh:??:XX    |no seconds, minutes optional; +
+ e.g. in patient-recollected date/times
+|Date/Time      |yyyy-??-??T??:??:??    |minimum valid date/time constraint
+|==================================================================================================
+
+In the above patterns, the 'yyyy' etc. match strings can be replaced by literal date/time numbers. For example, `yyyy-??-XX` could be transformed into `1995-??-XX` to mean any partial date in 1995.
+
+Any of the time or date/time (but not date) patterns above may be modified to require a timezone by appending one of the following timezone constraint patterns:
+
+[#timezone_constraints]
+[cols="1,4",options="header"]
+|===================================================================================
+|Pattern   |Explanation
+|±hh       |hours-only timezone modifier required, commencing with '+' or '-'; 'Z' also allowed
+|±hh:mm    .2+|full timezone modifier required, commencing with '+' or '-'; 'Z' also allowed
+|±hhmm
+|Z         |'Z' required (indicating GMT)
+|===================================================================================
+
+It is assumed that any time or date/time datum that includes timezone is correctly constructed to include the effect of summer time.
+
+The absence of a timezone constraint indicates that a timezone modifier is optional.
+
+An assumed value can be used with any of the above using the semi-colon separator, as follows, e.g. `yyyy-??-??; 1970-01-01`. If there is a timezone constraint, the assumed value must include a valid timezone, i.e. `yyyy-mm-dd±hh; 1970-01-01+02`.
+
+===== Intervals
+
+Dates, times and date/times can also be constrained using intervals. Each date, time or date/time in an interval may be a literal value. Examples of such constraints:
+
+[source, cadl]
+--------
+    |09:30:00|                                     -- exactly 9:30 am
+    |< 09:30:00|                                   -- any time before 9:30 am
+    |<= 09:30:00|                                  -- any time at or before 9:30 am
+    |> 09:30:00|                                   -- any time after 9:30 am
+    |> 09:30:00+0200|                              -- any time after 9:30 am in UTC+0200 timezone
+    |>= 09:30:00|                                  -- any time at or after 9:30 am
+    |2004-05-20..2004-06-02|                       -- a date range
+    |2004-05-20T00:00:00..2005-05-19T23:59:59|     -- a date/time range
+    |>= 09:30:00|;09:30:00                         -- any time at or after 9:30 am; assume 9:30 am
+    |2004-05-20T00:00:00Z..2005-05-19T23:59:59Z|   -- a date/time range with UTC timezone
+--------
+
+Within any interval containing two literal date/time values (i.e. not one-sided intervals), if a timezone is used on one, it must be used on both, to ensure comparability. The timezones need not be identical.
+
+==== Duration Constraints
+
+===== Patterns
+
+Patterns based on ISO 8601 can be used to constrain durations in the same way as for Date/time types. The Antlr4 lexical rule for the pattern is `DURATION_CONSTRAINT_PATTERN`, shown below in the <<_base_lexer,Base Lexer syntax section>>.
+
+NOTE: the use of the `W` designator with the other designators is an openEHR deviation from the published ISO 8601 standard (where durations are supposed to take the form of either `PnnW` or `PnnYnnMnnDTnnHnnMnnS`), to support the common healthcare duration of pregnancy as some combination of weeks and days.
+
+The use of this pattern indicates which 'slots' in an ISO duration string may be filled. Where multiple letters are supplied in a given pattern, the meaning is 'or', i.e. any one or more of the slots may be supplied in the data. This syntax allows specifications like the following to be made:
+
+[source, cadl]
+--------
+    Pd            -- a duration containing days only, e.g. P5d
+    Pm            -- a duration containing months only, e.g. P5m
+    PTm           -- a duration containing minutes only, e.g. PT5m
+    Pwd           -- a duration containing weeks and/or days only, e.g. P4w
+    PThm          -- a duration containing hours and/or minutes only, e.g. PT2h30m
+--------
+
+NOTE: the 's' (seconds) slot covers fractional seconds as well as whole seconds.
+
+Pure pattern constraints are used to constrain negative durations as well as positive durations. Accordingly, any of the above constraints may be used for values such as `'-P5d'` etc.
+
+===== Lists and Intervals
+
+Durations can also be constrained by using absolute ISO 8601 duration values, or ranges of the same (including negative values), e.g.:
+
+[source, cadl]
+--------
+    PT1m              -- 1 minute
+    P1dT8h            -- 1 day 8 hrs
+    |PT0m..PT1m30s|   -- Reasonable time offset of first apgar sample
+    |-P5M..P1Y|       -- Possible range of infant gestational ages
+--------
+
+===== Mixed Pattern and Interval
+
+In some cases there is a need to be able to limit the allowed units as well as state a duration interval. This is common in obstetrics, where physicians want to be able to set an interval from say 0-50 weeks and limit the units to only weeks and days. This can be done as follows:
+
+--------
+    PWD/|P0W..P50W|   -- 0-50 weeks, expressed only using weeks and days
+--------
+
+The same type of constraint can be used to constrain values that may be negative (usually allowing for zero):
+
+--------
+    PYMWD/|<=P0Y|     -- negative age, with years/months/weeks/days allowed
+--------
+
+NOTE: a negative sign (or equivalently, the '\<= 0' construction as above) is only used for specifying interval values; the pattern part is understood as allowing values of either sign.
+
+The general form is a pattern followed by a slash ('/') followed by an interval, as follows:
+
+[source, antlr-java]
+--------
+duration_constraint: duration_pattern '/' duration_interval ;
+--------
+
+[[cADL_Terminology_Constraints]]
+=== Terminology Constraints
+
+Terminology constraints deal with a special category of data values known as 'coded terms' or 'terminology'. Coded data values are both textual (e.g. 'diastolic blood pressure') and semantic, i.e. they may have relationships to each other. The idea is that instead of using text, the possible values are represented in structured vocabularies, terminologies or ontologies that define both the possible text (including translations) and also the relationships, if any, between the terms (sometimes known as 'concepts'). In health, typical examples include 'terminology' resources such as {who_icd}[WHO ICDx^] and {snomed_ct}[SNOMED CT^] terminologies and drug databases.
+
+Coded terms are treated as a primitive type in ADL in order to enable the formalism and tools to work with terminology constraints. Unlike other primitive constraints, terminology constraints may be complex, because they can refer to external resources, either directly or via 'bindings' defined elsewhere in the archetype. This section describes just the syntax representations and relationships between these.
+
+The full description, including binding and resolution is provided in <<Terminology Integration>>. This section describes only the syntax for term constraint in the `definition` section of an archetype.
+
+Terminology constraints come in both the usual 'formal' form, as well as a 'soft' form, designed to allow constraints to be treated as various kinds of preferences. These are described below. The allowed specialisations of terminology constraints are described in <<_primitive_object_redefinition>>.
+
+==== Formal Terminology Constraint
+
+Syntactically, there are two types of terminology constraint expressible in 'source form' ADL, i.e. authored archetypes and templates. The first is expressed with an ac-code which refers to a value set which is either defined in the archetype terminology or externally. The second, for convenience, uses a single at-code, in order to express a single term value without requiring a value-set. For the first case, an assumed value in the form of an at-code can also be stated, and has the same sense as the assumed values of other primitive types already described.
+
+The possibilities are illustrated below.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    --
+    -- fragment of openEHR-EHR-EVALUATION.term_constraint_variations.v0.0.1
+    --
+
+    items matches {
+        ELEMENT[at0010] occurrences matches {0..1} matches {
+            name matches {
+                DV_CODED_TEXT[at0007] matches {
+                    defining_code matches {[at0004]}		-- set name to 'Substance'
+                }
+            }
+            value matches {
+                DV_CODED_TEXT[at0054] matches {
+                    defining_code matches {[ac1]}		-- Type of Substance/Agent
+                }
+            }
+        }
+        ELEMENT[at0021] occurrences matches {0..1} matches {	-- Certainty
+            value matches {
+                DV_CODED_TEXT[at0057] matches {
+                    defining_code matches {[ac2; at0022]}
+                }
+            }
+        }
+        ...
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    --
+    -- fragment of openEHR-EHR-EVALUATION.term_constraint_variations.v0.0.1
+    --
+
+    items matches {
+        ELEMENT[id11] occurrences matches {0..1} matches {
+            name matches {
+                DV_CODED_TEXT[id8] matches {
+                    defining_code matches {[at5]}		-- set name to 'Substance'
+                }
+            }
+            value matches {
+                DV_CODED_TEXT[id55] matches {
+                    defining_code matches {[ac1]}		-- Type of Substance/Agent
+                }
+            }
+        }
+        ELEMENT[id22] occurrences matches {0..1} matches {	-- Certainty
+            value matches {
+                DV_CODED_TEXT[id58] matches {
+                    defining_code matches {[ac2; at23]}
+                }
+            }
+        }
+        ...
+    }
+--------
+====
+
+In the above, the constraint at the path `items[at0010]/name[at0007]` (`items[id11]/name[id8]`) is on a `DV_CODED_TEXT._defining_code_` representing the `_name_` of the `ELEMENT`. It is constrained to a single at-code value representing 'Substance' (assume this is the preferred name of the institution that created this archetype). The at-code is defined in the terminology part of the archetype, and may have bindings defined there as well. These are described in later sections.
+
+The second variant uses the code `ac1`, which refers to a value set. This is by definition: all ac-codes in ADL refer only to value sets. This is the most common form of terminology constraint - defining possible codes for a codable value in the model. The code and any bindings are also defined in the `terminology` section.
+
+The last variant shows a second value set constraint, this time with an assumed code, where `at0022` (`at23`) must be in the value set referred to by `ac2`.
+
+==== Soft Terminology Constraint
+
+Uniquely in ADL, terminology constraints may be modified to be informal, also known as specifying a 'constraint strength'. Normally constraints in ADL are formal in the sense that they are intended to strictly apply to the instances they constrain. However, in the terminology value domain, the ability to easily constrain allowed 'values' to particular terms or value-sets is complicated by various factors, including:
+
+* unforeseeable changes in thinking in classification and description in the terminology world;
+* the lack of available fully developed terminological descriptions of the phenomena being represented;
+* practical needs of mapping to specific local or other terminologies.
+
+For these reasons, terminology constraints may be relaxed from the default 'required' status, to three _informal_ constraint statuses, as follows:
+
+* _extensible_: the data instance must conform to the value set _if the intended concept is available within the value-set constraint_; if not, the instance may be any other code;
+* _preferred_: the data instance preferably conforms to the value set, but may use any other code, even if the concept is represented by a code within the constraint;
+* _example_: the constraint value or value-set is provided as an illustrative example only.
+
+Formally, all three of these statuses are the same as a value constraint specifying only the RM type as being a terminology code (e.g. `DV_CODED_TEXT` from openEHR) and nothing more, which is to say, at the archetype level, validity of the data instance is achieved by supplying _any terminology code_. However, higher levels of semantic validation in tooling may be performed that do take into account any informal constraint status that may be set.
+
+Soft terminology constraints are typically intended to be used alongside a constraint allowing a pure text value as well, i.e. to cope with the case where no terminology code of any kind is available at runtime to express the intended value (this happens every so often in healthcare when a novel virus or pathogen is identified, but not yet incorporated into published terminologies). The ability to construct a coded-text + plain-text constraint pattern is entirely dependent on the types available in the Reference Model on which the archetypes in question are based.
+
+The _recommendation_ is that if a terminology constraint is not `required`, a plain text constraint should be supplied alongside if the RM permits, to allow for the case of unavailability of any coded term.
+
+Soft terminology constraints are specified in ADL using keywords prior to the formal constraint. Taking into account the recommendation for coded-text + text, the typical usage is as shown below. If no keyword is supplied, the meaning is `required`, although this may also be stated using the `required` keyword if desired.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    items matches {
+        ELEMENT[at0010] occurrences matches {0..1} matches {
+            name matches {
+                DV_CODED_TEXT[at0007] matches {
+                    defining_code matches {preferred [at0004]}	-- prefer 'Substance', any code ok
+                }
+                DV_TEXT[at0008]                                -- or plain text
+            }
+            value matches {
+                DV_CODED_TEXT[at0054] matches {
+                    defining_code matches {example [ac1]}	-- ac1 provided as example only
+                }
+                DV_TEXT[at0055]                               -- or plain text
+            }
+        }
+        ELEMENT[at0021] occurrences matches {0..1} matches {
+            value matches {
+                DV_CODED_TEXT[at0057] matches {
+                    defining_code matches {extensible [ac2]} -- use ac2 value-set if there is a match
+                }                                            -- or another code from same terminology
+                DV_TEXT[at0058]                                -- or plain text
+            }
+        }
+        ...
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    items matches {
+        ELEMENT[id11] occurrences matches {0..1} matches {
+            name matches {
+                DV_CODED_TEXT[id8] matches {
+                    defining_code matches {preferred [at5]}	-- prefer 'Substance', any code ok
+                }
+                DV_TEXT[id9]                                -- or plain text
+            }
+            value matches {
+                DV_CODED_TEXT[id55] matches {
+                    defining_code matches {example [ac1]}	-- ac1 provided as example only
+                }
+                DV_TEXT[id56]                               -- or plain text
+            }
+        }
+        ELEMENT[id22] occurrences matches {0..1} matches {
+            value matches {
+                DV_CODED_TEXT[id58] matches {
+                    defining_code matches {extensible [ac2]} -- use ac2 value-set if there is a match
+                }                                            -- or another code from same terminology
+                DV_TEXT[id59]                                -- or plain text
+            }
+        }
+        ...
+    }
+--------
+====
+
+==== Operational Binding Constraints
+
+The above sections describe 'source form' constraints, i.e. constraints expressed in terms of internal codes and value-sets. A further constraint possibility exists, for use at the point of operational template generation. As described in <<From Constraints to Concrete Codes in Data>>, the choice may be made that a specific operational template (OPT) should use external codes from the archetype bindings (such as from {snomed_ct}[SNOMED CT^], {who_icd}[ICD10^], etc) as the values of some or all coded nodes, rather than using the internal at-codes.
+
+To express this choice, the OPT's `definition` section contains a modified version of the usual syntax `[at0001]` (`[at2]`) or `[ac1]` in those nodes where an external term from the bindings is to be used. This takes the form `[acN@ttttt]` or `[atNNNN@ttttt]` (`[atN@ttttt]`) where `ttttt` is the namespace identifier of a binding in the `terminology` section of the archetype.
+
+Specifying which codable nodes (including 'all' and 'none' options) should have their values substituted by the external codes is assumed to be part of the OPT generator tool. Different terminology bindings may be specified on different nodes of the same archetype, or none at all, allowing for a mixture of external term substitutions depending on node.
+
+The following example shows the result in an operational template fragment.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    --
+    -- extract of an operational template based on openEHR-EHR-EVALUATION.term_constraint_variations.v0.0.1
+    --
+    value matches {
+        DV_CODED_TEXT[at0054] matches {
+            defining_code matches {[ac1@snomed_ct]}        -- use snomed_ct binding for value from ac1 at runtime
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    --
+    -- extract of an operational template based on openEHR-EHR-EVALUATION.term_constraint_variations.v0.0.1
+    --
+    value matches {
+        DV_CODED_TEXT[id55] matches {
+            defining_code matches {[ac1@snomed_ct]}        -- use snomed_ct binding for value from ac1 at runtime
+        }
+    }
+--------
+====
+
+See <<Terminology Integration>> for fuller picture of how this works.
+
+=== Constraints on Lists of Primitive Types
+
+In some cases, the type in the information model of an attribute to be constrained is a list or set of primitive types, i.e. `List<Integer>`, `Set<String>` etc. Here, the types `List<T>` and `Set<T>` are understood in the standard way in computer science, i.e. as linear containers with respectively, ordering and unique membership.
+
+Any constraint described above for single-valued attributes, which is commensurate with the type of the attribute in question, may be used for this purpose as well. However, for values of type `List<T>`, `Set<T>` etc., the meaning is now that every item in the value list is constrained to be _any one of the values_ specified by the constraint expression. For example:
+
+[source, cadl]
+--------
+    speed_limits cardinality ∈ {0..*; ordered} ∈ {50, 60, 70, 80, 100, 130}
+--------
+
+constrains each value in the list corresponding to the value of the attribute `speed_limits` (of type `List<Integer>` ), to be any one of the values `50`, `60`, `70` etc.
+
+=== Constraints on Intervals of Ordered Primitive Types
+
+A third variation on primitive types is that of Intervals of Ordered primitive types, i.e. where the attribute type is `Interval<Integer>`, `Interval<Duration>` etc. The type `Interval<T:Ordered>` is understood as defined in the {openehr_foundation_types}#_interval[openEHR Foundation Types^], and corresponds to a similar type in most programming language libraries.
+
+Values of these types may be constrained with the same constraint expressions as for atomic values of the same type, with the most usual pattern being one or more Intervals, e.g.:
+
+[source, cadl]
+--------
+    speed_range ∈ {|0..60|, |60..90|, |90..110|, |110..130|, |>130|}
+--------
+
+The meaning of such constraints is interpreted differently for Interval-valued attributes compared to single-valued attributes. Here, each Interval in the constraint is understood as a _possible (Interval) value_ for the constrained attribute, not as providing a range of possible values. The example above thus allows 5 different Interval values for the attribute `speed_range`.
+
+=== Constraints on Enumerated Types
+
+Enumeration types in a reference model are assumed to have the semantics defined in UML and mainstream programming languages, i.e. to be a distinct type based on a primitive type, normally Integer or String. Each such type consists of a set of values from the domain of its underlying type, thus, a set of Integer, String or other primitive values. Each of these values is assumed to be named in the manner of a symbolic constant. Although strictly speaking UML doesn't require an enumerated type to be based on an underlying primitive type, programming languages do, hence the assumption here that values from the domain of such a type are involved.
+
+In ADL, constraints on enumerated types are represented by constraints on the underlying primitive values. The following example shows 2 constraints on an attribute of the type `PROPORTION_KIND` from the openEHR Reference Model.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ITEM_TREE[at0003] ∈ {
+        items ∈ {
+            ELEMENT[at0004] occurrences ∈ {0..1} matches {    -- test enum 1
+                value ∈ {
+                    DV_PROPORTION[at9001] ∈ {
+                        numerator ∈ {|0.0..1.0|; 0.0}
+                        type ∈ {1}                         -- pk_unitary
+                    }
+                }
+            }
+            ELEMENT[at0006] ∈ {                               -- test enum 2
+                value ∈ {
+                    DV_PROPORTION[at9002] ∈ {
+                        numerator ∈ {|0.0..1.0|; 0.0}
+                        type ∈ {2, 3}                      -- pk_percent, pk_fraction
+                    }
+                }
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ITEM_TREE[id4] ∈ {
+        items ∈ {
+            ELEMENT[id5] occurrences ∈ {0..1} matches {    -- test enum 1
+                value ∈ {
+                    DV_PROPORTION[id6] ∈ {
+                        numerator ∈ {|0.0..1.0|; 0.0}
+                        type ∈ {1}                         -- pk_unitary
+                    }
+                }
+            }
+            ELEMENT[id7] ∈ {                               -- test enum 2
+                value ∈ {
+                    DV_PROPORTION[id8] ∈ {
+                        numerator ∈ {|0.0..1.0|; 0.0}
+                        type ∈ {2, 3}                      -- pk_percent, pk_fraction
+                    }
+                }
+            }
+        }
+    }
+--------
+====
+
+`PROPORTION_KIND` is defined as `{pk_ratio = 0; pk_unitary = 1; pk_percent = 2; pk_fraction = 3; pk_integer_fraction = 4}` in its reference model. Modelling tools are relied on to visualise enumeration constraints in a suitable way, by inferring the type based on inspection of the reference model on which the archetype is based.
+

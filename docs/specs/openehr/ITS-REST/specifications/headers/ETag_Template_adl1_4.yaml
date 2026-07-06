@@ -1,0 +1,5 @@
+description: |
+  The `ETag` (i.e. entity tag) response header is an identifier of Template.
+schema:
+  type: string
+  example: '"b4d7f203-b329-4e89-a58a-c605b19e94de"'

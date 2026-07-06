@@ -1,0 +1,13 @@
+title: ADMIN_ENTRY
+type: object
+allOf:
+  - $ref: ../ehr/AbstractEntry.yaml
+required:
+  - data
+properties:
+  _type:
+    type: string
+    default: ADMIN_ENTRY
+  data:
+    $ref: ../data_structures/UItemStructure.yaml
+x-discriminator-value: ADMIN_ENTRY

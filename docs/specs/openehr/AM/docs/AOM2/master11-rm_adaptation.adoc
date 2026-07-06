@@ -1,0 +1,293 @@
+= Reference Model Adaptation
+
+== Overview
+
+So far ADL has been presented as an abstract formal language that defines legal information structures based on a reference model (RM). In real world applications, we need to consider where reference models come from, and the question of harmonising or otherwise integrating archetypes based on different but related RMs.
+
+One of the common problems in most domains is that competing reference models exist, typically defined by standards bodies such as ISO, CEN, ASTM, and/or other open standards bodies such as W3C and OASIS. For a given topic, e.g. 'cancer study trials' or 'Electronic Health Record' there can often be multiple information models that could be used as a basis for archetyping. Due to political pressures, national requirements or preferences and variety of other non-technical factors, it is quite likely that archetypes will be authored within a domain based on multiple competing reference models that are reasonably similar without being easily machine inter-convertible.
+
+Since archetypes are generally authored by domain experts, the entities they represent tend to come from a homogeneous model space, with reference models being a technical detail that may not even be visible to the archetype author. Nevertheless, due to the above-mentioned factors, authors in different localities or jurisdictions may have no choice but to model the same entity, for example 'complete blood count' based on two or more different reference models.
+
+This creates a potential problem of competing libraries of archetypes trying to model the same information entities in slightly different but incompatible ways. This tends to needlessly split groups of domain modellers into disparate communities, when in fact they are modelling the same things.
+
+In order to alleviate some problems caused by this situation, some measures described below, which are outside the AOM proper, can be applied to enable archetypes and RMs treated to be treated more uniformly.
+
+== AOM Profile Configuration
+
+These adaptations can be formalised in a configuration object that is an instance of the class `AOM_PROFILE`, shown below. This is only one way such information can be represented, and alternatives could be used.
+
+[.text-center]
+.`aom2.profile` Package
+image::{uml_diagrams_uri}/AM-aom2.profile.svg[id=aom_profile, align="center"]
+
+=== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}aom_profile.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}aom_type_mapping.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/{pkg}aom_property_mapping.adoc[leveloffset=+1]
+
+=== Configuration File
+
+Instances of the above classes can be expressed in an ODIN format file, as a convenient way of defining configuration for tools. Examples of such files used for the {openehr_awb}[openEHR ADL Workbench^] tool can be found in the {openehr_awb_profiles}[Github project for the tool^].
+
+== Mapping RM Entities to AOM Entities
+
+One adjustment that can be made is to indicate equivalences between RM entities and AOM built-in types. This can be illustrated by a common situation in health, where multiple RMs have concretely different models of the 'coded term' notion. Semantically, these are all the same, and correspond to the AOM built-in type `TERMINOLOGY_CODE`. However, there is nothing that can be stated in an ADL archetype that can indicate this relationship, with the result that ADL tools can't infer that a certain type, e.g. openEHR's `CODE_PHRASE` or ISO 13606's `CODED_TEXT` are equivalents of the `TERMINOLOGY_CODE` type in the AOM.
+
+The mapping is achieved by using the `_aom_rm_type_mappings_` property of the `AOM_PROFILE` type, which enables equivalences between complex classes and properties to be described.
+
+The following example shows parts of two AOM profile files, illustrating two different mappings of RM types for 'coded text' to the AOM `TERMINOLOGY_CODE` class. The following extract is from the openEHR AOM profile file for the ADL Workbench.
+
+[source, odin]
+--------
+--
+-- mappings from AOM built-in types used for openEHR RM types
+--
+aom_rm_type_mappings = <
+	["TERMINOLOGY_CODE"] = <
+		source_class_name = <"TERMINOLOGY_CODE">
+		target_class_name = <"CODE_PHRASE">
+		property_mappings = <
+			["terminology_id"] = <
+				source_property_name = <"terminology_id">
+				target_property_name = <"terminology_id">
+			>
+			["code_string"] = <
+				source_property_name = <"code_string">
+				target_property_name = <"code_string">
+			>
+		>
+	>
+>
+--------
+
+The following extract is from the {hl7_cimi}[HL7 CIMI^] AOM profile file for the ADL Workbench. This defines a mapping from the CIMI RM class `CODED_TEXT` to the AOM class `TERMINOLOGY_CODE`.
+
+[source, odin]
+--------
+--
+-- mappings from AOM built-in types used for CIMI RM types
+--
+
+aom_rm_type_mappings = <
+	["TERMINOLOGY_CODE"] = <
+		source_class_name = <"TERMINOLOGY_CODE">
+		target_class_name = <"CODED_TEXT">
+		property_mappings = <
+			["terminology_id"] = <
+				source_property_name = <"terminology_id">
+				target_property_name = <"terminology_id">
+			>
+			["code_string"] = <
+				source_property_name = <"code_string">
+				target_property_name = <"code">
+			>
+		>
+	>
+>
+--------
+
+The value of creating these mappings is that they inform tooling that constraints on the types `CODE_PHRASE` in openEHR archetypes, and `CODED_TEXT` in CIMI archetypes are to be understood as equivalent to constraints on the primitive AOM type `TERMINOLOGY_CODE`. This can be detected by the tool, and computed with, for example, with specific visualisation. Without this configuration, the archetype constraints are still correct, but the ADL tooling doesn't treat them as different from any other RM complex type.
+
+Using class and property mappings can enable more sophisticated archetype comparison and potentially even harmonisation, as well as more intelligent data comparison.
+
+== RM Primitive Type Equivalences
+
+The primitive constrainer types of the AOM, i.e. descendants of `C_PRIMITIVE_OBJECT` correspond to a small abstract set of primitive types, as shown in the table <<Primitive Types>>. The implied list of RM abstract primitive types is `Boolean`, `Integer`, `Real`, `Date`, `Date_time`, `Time`, `Duration`, `String`, and `Terminology_code`. However, real reference models may be based on typical programming languages, and therefore include types like `Double`, `Integer64`, and even numerous variants on `String`, `Integer` etc, such as `String_8`, `String32` and so on.
+
+In order to prevent a similar explosion of AOM primitive types, the AOM profile enables equivalences between these latter types (which typically differ for each RM) and the abstract set to be stated, using the `_rm_primitive_type_equivalences_` property of `AOM_PROFILE`. An example is shown below.
+
+[source, odin]
+--------
+rm_primitive_type_equivalences = <
+	["Double"] = <"Real">                      -- treat RM type Double as if it where Real
+	["Integer64"] = <"Integer">                -- treat RM type Integer64 as if it were Integer
+	["ISO8601_DATE"] = <"Date">                -- treat RM type ISO8601_Date as if it were Date
+	["ISO8601_DATE_TIME"] = <"Date_time">
+	["ISO8601_TIME"] = <"Time">
+	["ISO8601_DURATION"] = <"Duration">
+>
+--------
+
+The following CADL fragment provides an example.
+
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ELEMENT[at0004] occurrences matches {0..1} matches {	-- Systolic
+        value matches {
+            DV_QUANTITY[at9054] matches {
+                property matches {[at9055]}
+                magnitude matches {|0.0..<1000.0|}  --  parses as AOM C_REAL, but is Double in RM
+                precision matches {0}
+                units matches {"mm[Hg]"}
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ELEMENT[id5] occurrences matches {0..1} matches {	-- Systolic
+        value matches {
+            DV_QUANTITY[id1054] matches {
+                property matches {[at1055]}
+                magnitude matches {|0.0..<1000.0|}  --  parses as AOM C_REAL, but is Double in RM
+                precision matches {0}
+                units matches {"mm[Hg]"}
+            }
+        }
+    }
+--------
+====
+
+== RM Type Substitutions
+
+Occasionally there are type mismatches between the RM type and the AOM type we would like to use, or has been used in an archetype. For example, the RM may have a `String` attribute in some class that represents an ISO 8601 date. It is possible to use the AOM constrainer type `C_DATE` instead of `C_STRING`, to obtain a more meaningful constraint.
+
+Another use is where the archetype has been written with an integer constraint (i.e. a `C_INTEGER`) but the RM has a `Real` or `Double` type in the corresponding place. This can also be accommodated.
+
+These differences can be corrected by using the `_aom_type_substitutions_` configuration table defined in the `AOM_PROFILE` class. The following is an example of using this facility to enable primitive type matching for openEHR archetypes.
+
+[source, odin]
+--------
+--
+-- allowed substitutions from AOM built-in primitive types to openEHR RM types
+--
+
+aom_rm_type_substitutions = <
+	["ISO8601_DATE"] = <"String">
+	["ISO8601_DATE_TIME"] = <"String">
+	["ISO8601_TIME"] = <"String">
+	["ISO8601_DURATION"] = <"String">
+	["INTEGER"] = <"Double">
+>
+--------
+
+The effect of these mappings is that literal values in an archetype that parse as the left-hand side type (`ISO8601_DATE` etc.) will be silently mapped to the right hand RM type (`String` etc). The following example shows a native ISO Duration field that is mapped to an RM String value.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    INTERVAL_EVENT[at1042] occurrences matches {0..1} matches {	-- 24 hour average
+        width matches {
+            DV_DURATION[at9064] matches {
+                value matches {PT24H}  --  parses as AOM ISO8601_DURATION, but is String in RM
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    INTERVAL_EVENT[id1043] occurrences matches {0..1} matches {	-- 24 hour average
+        width matches {
+            DV_DURATION[id1064] matches {
+                value matches {PT24H}  --  parses as AOM ISO8601_DURATION, but is String in RM
+            }
+        }
+    }
+--------
+====
+
+== AOM Lifecycle State Mappings
+
+Another kind of useful mapping adjustment that can help to make tools process archetypes in a more homogeneous way is to do with the AOM life-cycle states, which are standardised in the {openehr_am_id}[openEHR Archetype Identification specification^]. These states denote the state of a whole archetype in its authoring life cycle. Historically however there were no standard names, with the consequence that various archetype tools implement their own local lifecycle state names. To adjust for this the `_aom_lifecycle_mappings_` property in the `AOM_PROFILE` class can be used. These mappings have the effect of replacing the current value of the `_lifecycle_state_` property of the `RESOURCE_DESCRIPTION` instance of a parsed archetype with an openEHR standard state name. A typical example of the `description` section of an archetype with a local lifecycle state name is below.
+
+[source, odin]
+--------
+description
+    original_author = <
+        ["name"] = <"Dr J Joyce">
+        ["organisation"] = <"NT Health Service">
+        ["date"] = <2003-08-03>
+    >
+    lifecycle_state =  <"AuthorDraft"> --  should be 'unmanaged'
+    resource_package_uri =  <".....">
+--------
+
+The following example shows typical mappings of customs lifecycle state names to the openEHR standard state names.
+
+[source, odin]
+--------
+-- allowed substitutions from source RM lifecycle states to AOM lifecycle states
+-- States on the value side (right hand side) must be the AOM states:
+--
+--	"unmanaged"
+--	"in_development"
+--		"draft"
+--		"in_review"
+--		"suspended"
+--	"release_candidate"
+--	"published"
+--	"deprecated"
+--		"obsolete"
+--		"superseded"
+
+--
+
+aom_lifecycle_mappings = <
+	["AuthorDraft"] = <"unmanaged">
+	["Draft"] = <"in_development">
+	["TeamReview"] = <"in_development">
+	["Team Review"] = <"in_development">
+	["ReviewSuspended"] = <"in_development">
+	["Review Suspended"] = <"in_development">
+	["Reassess"] = <"published">
+	["Published"] = <"published">
+	["Rejected"] = <"rejected">
+>
+--------
+
+Normally this kind of change should be written into the archetype, so that it is upgraded to the standard form. Tools should offer this possibility, including in batch/bulk mode.
+
+== Facilities for RM Visualisation
+
+Various meta-attributes may be added to an AOM profile in order to affect the behaviour of archetyping tools and processing. These are not required for correct functioning of tools, but are typically needed to make models comprehensible. Without them, there will be no difference between primitive types such as `Any`, `Integer` etc., business types (e.g. things like `Person`, etc.), and business-level data types (e.g. `CodedText`, `Quantity` etc).
+
+[source, odin]
+--------
+------------------------------------------------------
+-- archetyping
+-- override archetype parent class from included schema
+------------------------------------------------------
+archetype_parent_class = <"CLASS_NAME">
+archetype_data_value_parent_class = <"CLASS_NAME">
+archetype_visualise_descendants_of = <"CLASS_NAME">
+--------
+
+=== archetype_parent_class
+
+The `archetype_parent_class` attribute defines a base class from the Reference Model that provides archetyping capability in RM data structures. It is optional, and there need be no such class in the RM. In the openEHR and ISO 13606 Reference Models, this class exists, (`LOCATABLE`, and `RECORD_COMPONENT` respectively). Defining it here has the effect in tools that the class tree under which archetypes are arranged contains only RM classes inheriting from this class, e.g. `LOCATABLE` classes in the case of openEHR. If nothing is set here, all classes in the RM are assumed as candidates for archetypes.
+
+=== archetype_data_value_parent_class
+
+The `archetype_data_value_parent_class` attribute defines a base class from the Reference Model whose descendants are considered to be 'logical data types' (i.e. of some higher level than the built-in primitive types `String`, `Integer` etc). This attribute is optional, even if the RM does have such a class, and is only used to help tooling to provide more intelligent display, e.g. in statistical reports.
+
+=== archetype_visualise_descendants_of
+
+If `archetype_parent_class` is not set, designate a class whose descendants should be made visible in tree and grid renderings of the archetype definition. For openEHR and CEN this class is normally the same as the `archetype_parent_class`, i.e. `LOCATABLE` and `RECORD_COMPONENT` respectively. It is typically set for CEN, because `archetype_parent_class` may not be stated, due to demographic types not inheriting from it.
+
+The effect of this attribute in visualisation is to generate the most natural tree or grid-based view of an archetype definition, from the semantic viewpoint.
+
+=== archetype_namespace
+
+The attribute `archetype_namespace` defines the package or packages that are considered the archetyping namespace used in archetype multi-axial ids. For example, in openEHR, an archetype is identified by an id of the form:
+
+----
+  openEHR-EHR-OBSERVATION.some_obs.vN
+----
+
+The 'EHR' in the above is an 'RM package closure', i.e. the name of an RM package whose class closure by reachability provides the set of classes that may be archetyped in the 'EHR' namespace. The reason for this is somewhat subtle: consider that if you want archetypes based on classes defined directly within a package P, and you also define these archetypes that re-use other archetypes based on more basic types like openEHR's `CLUSTER` or similar (typically not defined in the head package), then you will inevitably have archetypes based on `CLUSTER` only for use with EHR archetypes e.g. archetypes based on `OBSERVATION`. However, you may well create archetypes based on `CLUSTER` only for use with e.g. top-level archetypes from the demographic package. The archetype_namespace setting is used to define the root id namespaces  for archetypes, allowing low-level archetypes to be designated for use with one or other high-level archetype. E.g. `openEHR-EHR-CLUSTER.bp_position.v1` would be used only with `openEHR-EHR-OBSERVATION.bp_measurement.vX`, or similar, and most likely not with any `openEHR-DEMOGRAPHIC-XXXX.yyyy.vN` archetype. Note that in openEHR, there is nothing to prevent such cross-namespace reuse - it is just a design guideline.
+

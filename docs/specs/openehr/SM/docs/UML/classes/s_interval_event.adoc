@@ -1,0 +1,29 @@
+=== S_INTERVAL_EVENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_INTERVAL_EVENT*
+
+h|*Description*
+2+a|Simplified RM form of `INTERVAL_EVENT` RM class.
+
+h|*Inherit*
+2+|`<<_s_event_class,S_EVENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*width*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_DURATION`.
+
+h|*0..1*
+|*sample_count*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|(unchanged from RM)
+
+h|*1..1*
+|*math_function*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_CODED_TEXT`.
+|===

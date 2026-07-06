@@ -1,0 +1,13 @@
+= The Archetype Package
+
+== Overview
+
+The model of an archetype, illustrated in the following figure, is straightforward at an abstract level, mimicking the structure of an archetype document as defined in the openEHR Archetype Definition Language (ADL) document. An archetype is modelled as a particular kind of `AUTHORED_RESOURCE`, and as such, includes descriptive meta-data, language information and revision history. The `ARCHETYPE` class adds identifying information, a `definition` - expressed in terms of constraints on instances of an object model, and an `ontology`. The archetype `definition`, the 'main' part of an archetype, is an instance of a `C_COMPLEX_OBJECT`, which is to say, the root of the constraint structure of an archetype always takes the form of a constraint on a non-primitive object type. The last section of an archetype, the `ontology`, is represented by its own class, and is what allows the archetypes to be natural language- and terminology-neutral.
+
+[.text-center]
+.am.aom14.archetype Package
+image::{uml_diagrams_uri}/AM-aom14.archetype.svg[id=archetype_package, align="center"]
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}archetype.adoc[]

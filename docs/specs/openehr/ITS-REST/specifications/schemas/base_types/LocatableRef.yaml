@@ -1,0 +1,23 @@
+# Note: This type codegen is failing around collision on property names _type vs type.
+# TODO: fix this as soon as redoc and/or openapi generator is able to coop with such names and distinguish the discriminator for real property
+title: LOCATABLE_REF
+type: object
+#allOf:
+#  - $ref: ../base_types/ObjectRef.yaml
+required:
+  - namespace
+  - type
+  - id
+properties:
+#  _type:
+#    type: string
+#    default: LOCATABLE_REF
+  namespace:
+    type: string
+  type:
+    type: string
+  id:
+    $ref: ../base_types/UUidBasedId.yaml
+  path:
+    type: string
+#x-discriminator-value: LOCATABLE_REF

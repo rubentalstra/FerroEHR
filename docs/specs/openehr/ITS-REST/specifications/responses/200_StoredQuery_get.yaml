@@ -1,0 +1,6 @@
+description: |
+  `200 OK` is returned when the stored AQL is successfully retrieved.
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/query/StoredQuery.yaml

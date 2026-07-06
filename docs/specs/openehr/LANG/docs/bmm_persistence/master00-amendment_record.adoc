@@ -1,0 +1,73 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*LANG Release 1.1.0 (unreleased)*
+
+|[[latest_issue]]2.4.0
+|{spec_tickets}/SPECLANG-16[SPECLANG-16^]: Add support for functions and other missing features in P_BMM: add `P_BMM_FUNCTION` and the `P_BMM_FUNCTION_PARAMETER` family (`P_BMM_SINGLE_FUNCTION_PARAMETER`, `P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN`, `P_BMM_CONTAINER_FUNCTION_PARAMETER`, `P_BMM_GENERIC_FUNCTION_PARAMETER`), `P_BMM_CONSTANT` and `P_BMM_INTERFACE`; add `_functions_`, `_constants_` and `_invariants_` to `P_BMM_CLASS`, `_item_documentations_` to `P_BMM_ENUMERATION`, and `_bmm_version_` and `_includes_` to `P_BMM_SCHEMA`.
+|S Iancu
+|[[latest_issue_date]]31 May 2026
+
+4+^h|*LANG Release 1.0.0*
+
+|2.3.0
+|{spec_tickets}/SPECLANG-2[SPECLANG-2^]. Add Basic Meta-Model (BMM) spec to BASE component.
+|openEHR SEC
+|04 Sep 2019
+
+|
+|Add `P_BMM_INDEXED_CONTAINER_TYPE`, `P_BMM_INDEXED_CONTAINER_PROPERTY` to support indexed containers like `Hash<K, V>`.
+|T Beale 
+|04 Sep 2019
+
+|
+|Add value-set constraint.
+|T Beale
+|26 Mar 2019
+
+|
+|Separate from main BMM specification; +
+ Support generic types as class ancestors; +
+ add new type `P_BMM_BASE_TYPE` as parent of `P_BMM_SIMPLE_TYPE`, `P_BMM_GENERIC_TYPE` and `P_BMM_OPEN_TYPE`; +
+ Remove archetype-related schema meta-data.
+|T Beale
+|27 Apr 2018
+
+|2.2.2
+|Improve and update introductory text in the Overview section.
+|E Sundvall, +
+ T Beale
+|03 Nov 2017
+
+|2.2.1
+|Rename `P_BMM_SIMPLE_TYPE_OPEN` to `P_BMM_OPEN_TYPE`; +
+ Rename `P_BMM_GENERIC_PARAMETER._create_bmm_generic_parameter_definition_` to `_create_bmm_generic_parameter_`; +
+ Remove inheritance from `P_BMM_PACKAGE_CONTAINER` to `P_BMM_MODEL_ELEMENT`; +
+ Make `P_BMM_MODEL_ELEMENT` abstract; +
+ Correct `P_BMM_ENUMERATION._items_names_` cardinality to multiple; +
+ Constrain `P_BMM_GENERIC_PARAMETER._name_` to one character and upper case.
+|C Nanjo, +
+ T Beale
+|02 Mar 2017
+
+|2.2.0
+|Remove class `P_BMM_CLASSIFIER`. +
+ Add missed inheritance from `P_BMM_PROPERTY` to `P_BMM_MODEL_ELEMENT`.
+|T Beale
+|20 Jun 2016
+
+|
+|Add missing inheritance from `P_BMM_SCHEMA` to `BMM_SCHEMA_CORE`. +
+ Correct naming of `_bmm_xxx_definition_`, `_create_bmm_xxx_definition_` in `P_BMM_XXX` classes to `_bmm_xxx_`, `_create_bmm_xxx_` etc.
+|T Beale
+|18 Apr 2016
+
+|2.1.0
+|Initial writing based on ADL Workbench implementation.
+|T Beale
+|08 Feb 2016
+
+|===

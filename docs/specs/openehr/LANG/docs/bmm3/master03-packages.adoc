@@ -1,0 +1,28 @@
+= Package Structure
+
+== Overview
+
+The BMM packages are as follows:
+
+* `org.openehr.lang.bmm`: the BMM
+** `model_access`: the interface to most features including schema load/reload, generally used by an application as a reflection library;
+** `core`: the core BMM classes used for in-memory representation of an object model. This consists of a number of sub-packages:
+*** `model`: meta-types representing models and packages;
+*** `entity`: meta-types representing classes and types including enumeration types, represented in the `range_constrained` sub-package;
+*** `feature`: meta-types representing classes features, i.e. constants, routines, properties;
+*** `literal_value`: meta-types representing literal values;
+*** `expression`: an expression meta-model sufficient for expressing first-order predicate logic expressions, including class invariants and pre- and post-conditions.
+
+Related packages are:
+
+* the `org.openehr.lang.bmm_persistence` package, described in the {openehr_bmm_persistence}[BMM Persistence specification^], which contains the BMM Persistence classes.
+
+These are illustrated below.
+
+[.text-center]
+.Package Overview
+image::{uml_diagrams_uri}/LANG-bmm3-packages.svg[id=package_overview, align="center"]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}bmm_definitions.adoc[]

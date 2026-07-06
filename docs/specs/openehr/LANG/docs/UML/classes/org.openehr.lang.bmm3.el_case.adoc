@@ -1,0 +1,21 @@
+=== EL_CASE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_CASE<T>*
+
+h|*Description*
+2+a|One branch of a Case table, consisting of a value constraint (the match criterion) and a result, of the generic parameter type T.
+
+h|*Inherit*
+2+|`<<_el_decision_branch_class,EL_DECISION_BRANCH>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value_constraint*: `link:/classes/C_OBJECT[C_OBJECT] `
+a|Constraint on
+|===

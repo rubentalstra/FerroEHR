@@ -1,0 +1,7 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/Hash_of_String_ARCHETYPE_TERM.json",
+    "title": "Hash<String, ARCHETYPE_TERM>",
+    "$comments": "Defined in Aom2 IM, inherits from Hash",
+    "type": "object"
+}

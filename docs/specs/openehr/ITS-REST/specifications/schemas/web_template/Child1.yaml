@@ -1,0 +1,92 @@
+title: Child1
+required:
+  - id
+  - name
+  - rmType
+  - min
+  - max
+  - aqlPath
+type: object
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  localizedName:
+    type: string
+  rmType:
+    type: string
+  nodeId:
+    type: string
+  min:
+    type: integer
+    format: int32
+  max:
+    type: integer
+    format: int32
+  localizedNames:
+    $ref: ./LocalizedNames1.yaml
+  localizedDescriptions:
+    $ref: ./LocalizedDescriptions.yaml
+  aqlPath:
+    type: string
+  children:
+    type: array
+    items:
+      $ref: ./Child2.yaml
+    description: ''
+  inputs:
+    type: array
+    items:
+      $ref: ./Input2.yaml
+    description: ''
+  inContext:
+    type: boolean
+  dependsOn:
+    type: array
+    items:
+      type: string
+    description: ''
+  annotations:
+    $ref: ./Annotations1.yaml
+  termBindings:
+    $ref: ./TermBindings.yaml
+  proportionTypes:
+    type: array
+    items:
+      type: string
+    description: ''
+example:
+  id: context_detail
+  name: Context detail
+  localizedName: Context detail
+  rmType: CLUSTER
+  nodeId: openEHR-EHR-CLUSTER.context_detail.v1
+  min: 0
+  max: -1
+  localizedNames:
+    sl: Podrobnosti
+  localizedDescriptions:
+    sl: Dodatni podatki o kontekstu
+  aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]
+  children:
+    - id: tags
+      name: Tags
+      localizedName: Tags
+      rmType: DV_TEXT
+      nodeId: at0008
+      min: 1
+      max: -1
+      localizedNames:
+        sl: Tagi
+      localizedDescriptions:
+        sl: '*'
+      annotations:
+        comment: >-
+          Tags applied to the composition. They can contain various ids, such as
+          episode id, central case id or other types of information forming
+          composition meta-data.
+      aqlPath: >-
+        /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+      inputs:
+        - type: TEXT

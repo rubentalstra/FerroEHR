@@ -1,0 +1,17 @@
+title: DV_SCALE
+type: object
+allOf:
+  - $ref: ../data_types/DvOrdered.yaml
+required:
+  - symbol
+  - value
+properties:
+  _type:
+    type: string
+    default: DV_SCALE
+  symbol:
+    $ref: ../data_types/DvCodedText.yaml
+  value:
+    type: number
+x-discriminator-value: DV_SCALE
+

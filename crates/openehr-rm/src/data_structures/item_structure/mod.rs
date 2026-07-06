@@ -5,3 +5,6 @@ pub mod item_single;
 pub mod item_structure;
 pub mod item_table;
 pub mod item_tree;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod item_table_impl;

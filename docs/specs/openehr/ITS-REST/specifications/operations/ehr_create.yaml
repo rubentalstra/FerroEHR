@@ -1,0 +1,32 @@
+operationId: ehr_create
+summary: Create EHR
+description: |
+  Create a new `EHR` with an auto-generated identifier.
+
+  An EHR_STATUS resource needs to be always created and committed in the new EHR.
+  This resource MAY be also supplied by the client as the request body. 
+  If not supplied, a default EHR_STATUS will be used by the service with following attributes:
+    - `is_queryable`: true
+    - `is_modifiable`: true
+    - `subject`: a PARTY_SELF object
+
+  All other required EHR attributes and resources will be automatically created as needed by the [EHR creation semantics](https://specifications.openehr.org/releases/RM/latest/ehr.html#_ehr_creation_semantics).
+tags:
+  - EHR
+parameters:
+  - $ref: ../parameters/header/Prefer.yaml
+requestBody:
+  description: |
+    An EHR_STATUS resource MAY be also supplied by the client as the request body.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/ehr/EhrStatus.yaml
+  required: false
+responses:
+  '201':
+    $ref: ../responses/201_EHR.yaml
+  '400':
+    $ref: ../responses/400.yaml
+  '409':
+    $ref: ../responses/409_EHR.yaml

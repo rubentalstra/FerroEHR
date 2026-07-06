@@ -1,0 +1,20 @@
+== Specialise Section
+
+This optional section indicates that the archetype is a specialisation of some other archetype, whose identity must be given. Only one specialisation parent is allowed, i.e. an archetype cannot 'multiply-inherit' from other archetypes. An example of declaring specialisation is as follows:
+
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.0.2)
+    openEHR-EHR-OBSERVATION.cbc.v1.0.0
+specialise 
+    openEHR-EHR-OBSERVATION.haematology.v1
+--------
+
+Here the identifier of the new archetype is derived from that of the parent by adding a new section to its domain concept section. See the `ARCHETYPE_ID` definition in the identification package in the {openehr_rm_support}[openEHR Support IM specification^].
+
+Note that both the US and British English versions of the word "specialise" are valid in ADL.
+
+The following syntax validity rule applies in the specialisation section:
+
+[.rule]
+SASID: archetype specialisation parent identifier validity. for specialised artefacts, the identifier of the specialisation parent must conform to the ARCHETYPE_ID identifier syntax defined in the {openehr_rm_support}[openEHR Support IM specification^].

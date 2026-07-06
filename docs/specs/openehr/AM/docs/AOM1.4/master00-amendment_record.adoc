@@ -1,0 +1,176 @@
+= Amendment Record
+
+[cols="1,6a,2,2", options="header"]
+|===
+|Issue|Details|Raiser, Implementer|Completed
+
+4+^h|*AM Release 2.4.0*
+
+|[[latest_issue]]1.4.6
+|{spec_tickets}/SPECPR-378[SPECPR-378^]. Fix typos in AOM 1.4.
+|P Pazos
+|[[latest_issue_date]]07 Mar 2025
+
+4+^h|*AM Release 2.3.0*
+
+|1.4.6
+|{spec_tickets}/SPECAM-84[SPECAM-84^]. Fix typos in AOM, ADL 1.4.
+|R Kavanagh
+|03 Apr 2023
+
+|
+|{spec_tickets}/SPECAM-82[SPECAM-82^]. Upgrade AOM1.4 model to use BASE, and to have regular package structure. Correct a UML error to move the invariant on `C_MULTIPLE_ATTRIBUTE` to `C_SINGLE_ATTRIBUTE`.
+|T Beale
+|14 Feb 2023
+
+|1.4.5
+|{spec_tickets}/SPECAM-69[SPECAM-69^]. Support negative durations. See <<#_c_duration_class>>. (see also {spec_tickets}/SPECRM-96[SPECRM-96^]).
+|P Bos, +
+ S Garde
+|09 Sep 2020
+
+|1.4.4
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]. Convert citations to bibtex form.
+|T Beale
+|15 Dec 2019
+
+4+^h|*AM Release 2.1.0*
+
+|1.4.3
+|{spec_tickets}/SPECAM-42[SPECAM-42^]Adjust references to BASE packages `foundation_types`, `base_types` and resource types.
+|T Beale
+|22 Sep 2017
+
+4+^h|*AM Release 2.0.6*
+
+|1.4.2
+|Add Appendix C, containing UML diagrams for RM dependencies.
+|D Boscá
+|18 May 2016
+
+|
+|{spec_tickets}/SPECBASE-4[SPECBASE-4^]. Change order of type parameters in `Hash<V,K>` type to `Hash<K,V>`.
+|D Boscá
+|13 Apr 2016
+
+4+^h|*Release 1.0.2*
+
+|1.0.2
+|{spec_tickets}/SPEC-257[SPEC-257^]. Correct minor typos and clarify text. Correct reversed definitions of `_is_bag_` and `_is_set_` in `CARDINALITY` class.
+|C Ma, +
+ R Chen, +
+ T Cook
+|20 Nov 2008
+
+|
+|{spec_tickets}/SPEC-251[SPEC-251^]. Allow both pattern and interval constraint on Duration in Archetypes. Add pattern attribute to `C_DURATION` class.
+|S Heard
+|
+
+4+^h|*Release 1.0.1*
+
+|1.0.1
+|{spec_tickets}/SPEC-200[SPEC-200^]. Correct Release 1.0 typographical errors. Table for missed class `ASSERTION_VARIABLE` added. Assumed_value assertions corrected; `_standard_representation_` function corrected. Added missed `_adl_version_` , `_concept_` rename from {spec_tickets}/SPEC-153[SPEC-153^].
+|D Lloyd, +
+ P Pazos, +
+ R Chen, +
+ C Ma
+|20 Mar 2007
+
+|
+|{spec_tickets}/SPEC-216[SPEC-216^]: Allow mixture of W, D etc in ISO8601 Duration (deviation from standard).
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-219[SPEC-219^]: Use constants instead of literals to refer to terminology in RM.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-232[SPEC-232^]. Relax validity invariant on `CONSTRAINT_REF` .
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-233[SPEC-233^]: Define semantics for `_occurrences_` on `ARCHETYPE_INTERNAL_REF` .
+|K Atalag
+|
+
+|
+|{spec_tickets}/SPEC-234[SPEC-234^]: Correct functional semantics of AOM constraint model package.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-245[SPEC-245^]: Allow term bindings to paths in archetypes.
+|S Heard
+|
+
+4+^h|*Release 1.0*
+
+|1.0
+|{spec_tickets}/SPEC-153[SPEC-153^]. Synchronise ADL and AOM attribute naming.
+ {spec_tickets}/SPEC-178[SPEC-178^]. Add Template Object Model to AM. Text changes only.
+ {spec_tickets}/SPEC-167[SPEC-167^]. Add `AUTHORED_RESOURCE` class. Remove `_description_` package to `_resource_` package in Common IM.
+|T Beale
+|10 Nov 2005
+
+4+^h|*Release 0.96*
+
+|0.6
+|{spec_tickets}/SPEC-134[SPEC-134^]. Correct numerous documentation errors in AOM. Including cut and paste error in `TRANSLATION_DETAILS` class in _Archetype_ package. Corrected hyperlinks in Section 2.3.
+|D Lloyd
+|20 Jun 2005
+
+|
+|{spec_tickets}/SPEC-142[SPEC-142^]. Update ADL grammar to support assumed values. Changed `C_PRIMITIVE` and `C_DOMAIN_TYPE` .
+|S Heard, +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-146[SPEC-146^]: Alterations to _am.archetype.description_ from CEN MetaKnow
+|D Kalra
+|
+
+|
+|{spec_tickets}/SPEC-138[SPEC-138^]. Archetype-level assertions.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-157[SPEC-157^]. Fix names of `OPERATOR_KIND` class attributes
+|T Beale
+|
+
+4+^h|*Release 0.95*
+
+|0.5.1
+|Corrected documentation error - return type of `ARCHETYPE_CONSTRAINT` . `_has_path_` + 
+add optionality markers to Primitive types UML diagram. +
+Removed erroneous aggregation marker from `ARCHETYPE_ONTOLOGY` . `_parent_archetype_` and `ARCHETYPE_DESCRIPTION` . `_parent_archetype_` .
+|D Lloyd
+|20 Jan 2005
+
+|0.5
+|{spec_tickets}/SPEC-110[SPEC-110^]. Update ADL document and create AOM document. +
+Includes detailed input and review from:
+
+* DSTC, Australia
+* CHIME, University College London
+* Ocean Informatics
+
+Initial Writing. Taken from ADL document https://github.com/openEHR/specifications/blob/master/source/am/language/language_design/archetype_language_2v0.7.doc[1.2draft B].
+|T Beale +
+ A Goodchild +
+ Z Tun +
+ T Austin +
+ D Kalra +
+ N Lea +
+ D Lloyd +
+ S Heard +
+ T Beale
+|10 Nov 2004
+|===
+

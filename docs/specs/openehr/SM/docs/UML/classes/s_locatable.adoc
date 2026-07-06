@@ -1,0 +1,33 @@
+=== S_LOCATABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__S_LOCATABLE (abstract)__*
+
+h|*Description*
+2+a|Simplified RM form of `LOCATABLE` RM class.
+
+h|*Inherit*
+2+|`link:/releases/SM/{sm_release}/S_TYPE.html#_s_type_class[S_TYPE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `<<_s_dv_text_class,S_DV_TEXT>>`
+a|(unchanged from RM)
+
+h|*0..1*
+|*links*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_link_class,S_LINK>>>`
+a|(unchanged from RM)
+
+h|*0..1*
+|*feeder_audit*: `<<_s_feeder_audit_class,S_FEEDER_AUDIT>>`
+a|(unchanged from RM)
+
+h|*0..1*
+|*archetype_details*: `<<_s_archetyped_class,S_ARCHETYPED>>`
+a|
+|===

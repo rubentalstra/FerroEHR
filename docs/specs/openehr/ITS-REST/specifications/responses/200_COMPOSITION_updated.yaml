@@ -1,0 +1,11 @@
+description: |
+  `200 OK` is returned when the COMPOSITION is successfully updated and the updated resource is returned in the body when `Prefer` header value is `return=representation`.
+headers:
+  ETag:
+    $ref: ../headers/ETag_COMPOSITION.yaml
+  Location:
+    $ref: ../headers/Location_COMPOSITION.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/Composition.yaml

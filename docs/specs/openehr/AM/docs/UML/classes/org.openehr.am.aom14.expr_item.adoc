@@ -1,0 +1,18 @@
+=== EXPR_ITEM Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EXPR_ITEM (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of all expression tree items.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*type*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Type name of this item in the mathematical sense. For leaf nodes, must be the name of a primitive type, or else a reference model type. The type for any relational or boolean operator will be “Boolean”, while the type for any arithmetic operator, will be “Real” or “Integer”.
+|===

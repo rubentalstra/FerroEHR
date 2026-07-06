@@ -1,0 +1,1498 @@
+= cADL - Constraint ADL
+
+== Overview
+
+cADL is a syntax which enables constraints on data defined by object-oriented information models tobe expressed in archetypes or other knowledge definition formalisms. It is most useful for defining the specific allowable constructions of data whose instances conform to very general object models. cADL is used both at "design time", by authors and/or tools, and at runtime, by computational systems which validate data by comparing it to the appropriate sections of cADL in an archetype. The general appearance of cADL is illustrated by the following example:
+
+[source, cadl]
+--------
+    PERSON[at0000] matches {                             -- constraint on a PERSON instance
+        name matches {                                   -- constraint on PERSON.name
+            TEXT matches {/.+/}                          -- any non-empty string
+        }
+        addresses cardinality matches {0..*} matches {   -- constraint on
+            ADDRESS matches {                            -- PERSON.addresses
+                -- etc --
+            }
+        }
+    }
+--------
+
+Some of the textual keywords in this example can be more efficiently rendered using common mathematical logic symbols. In the following example, the `matches` keyword has been replaced by an equivalent symbol:
+
+[source, cadl]
+--------
+    PERSON[at0000] ∈ {                         -- constraint on a PERSON instance
+        name ∈ {                               -- constraint on PERSON.name
+            TEXT ∈ {/..*/}                     -- any non-empty string
+        }
+        addresses cardinality ∈ {1..*} ∈ {    -- constraint on
+            ADDRESS ∈ {                        -- PERSON.addresses
+                -- etc --
+            }
+        }
+    }
+--------
+
+The full set of equivalences appears below. Raw cADL is stored in the text-based form, to remove any difficulties with representation of symbols, to avoid difficulties of authoring cADL text in normal text editors which do not supply such symbols, and to aid reading in English. However, the symbolic form might be more widely used due to the use of tools, and formatting in HTML and other documentary formats, and may be more comfortable for non-English speakers and those with formal mathematical backgrounds. This document uses both conventions. The use of symbols or text is completely a matter of taste, and no meaning whatsoever is lost by completely ignoring one or other format according to one's personal preference.
+
+In the standard cADL documented in this section, literal leaf values (such as the regular expression `/..*/` in the above example) are always constraints on a set of 'standard' widely-accepted primitive types, as described in <<_dadl__data_adl>>.
+
+== Basics
+
+=== Keywords
+
+The following keywords are recognised in cADL:
+
+* `matches`, `~matches`, `is_in`, `~is_in`
+* `occurrences`, `existence`, `cardinality`
+* `ordered`, `unordered`, `unique`
+* `infinity`
+* `use_node, allow_archetype`
+* `include`, `exclude`
+* `before` , `after`
+
+Symbol equivalents for some of the above are given in the following table.
+
+[cols="1,1,4",options="header"]
+|=========================================
+|Textual +
+ Rendering |Symbolic +
+ Rendering |Meaning
+|matches |∈ |Set membership, "p is in P"
+|not, ~ |∼ |Negation, "not p"
+|=========================================
+
+Keywords are shown in blue in this document.
+
+The `matches` or `is_in` operator deserves special mention, since it is a key operator in cADL. This operator can be understood mathematically as set membership. When it occurs between a name and a block delimited by braces, the meaning is: the set of values allowed for the entity referred to by the name (either an object, or parts of an object - attributes) is specified between the braces. What appears between any matching pair of braces can be thought of as a specification for a set of values. Since blocks can be nested, this approach to specifying values can be understood in terms of nested sets, or in terms of a value space for objects of a set of defined types. Thus, in the following example, the `matches` operator links the name of an entity to a linear value space (i.e. a list), consisting of all words ending in "ion".
+
+[source, cadl]
+--------
+aaa matches {/.*ion[^\s\n\t]/}      -- the set of english words ending in 'ion'
+--------
+
+The following example links the name of a type `XXX` with a complex multi-dimensional value space.
+
+[source, cadl]
+--------
+XXX matches {
+    aaa matches {                   --
+        YYY matches {0..3}          --
+    }                               -- the value space of the
+    bbb matches {                   -- and instance of XXX
+        ZZZ matches {>1992-12-01}   --
+    }                               --
+}
+--------
+
+The meaning of the constraint structure above is: in data matching the constraints, there is an instance of type `XXX` whose attribute values recursively match the inner constraints named after those attributes, and so on, to the leaf level.
+
+Occasionally, the matches operator needs to be used in the negative, usually at a leaf block. Any of the following can be used to constrain the value space of the attribute aaa to any number except 5:
+
+[source, cadl]
+--------
+aaa ~matches {5}
+aaa ~is_in {5}
+aaa ∉ {5}
+--------
+
+The choice of whether to use `matches` or `is_in` is a matter of taste and background; those with a mathematical background will probably prefer `is_in`, while those with a data processing background may prefer `matches`.
+
+=== Comments
+
+In a cADL text, comments satisfy the following rule:
+
+[.principle]
+Comments are indicated by the leader characters '--'. Multi-line comments are achieved using the '--' leader on each line where the comment continues.
+
+In this document, comments are shown in brown.
+
+==== Information Model Identifiers
+
+As with dADL, identifiers from the underlying information model are used for all cADL nodes. Identifiers obey the same rules as in dADL: type names commence with an upper case letter, while attribute and function names commence with a lower case letter. In cADL, type names and any property (i.e. attribute or function) name can be used, whereas in dADL, only type names and attribute names appear.
+
+[.principle]
+A *type name* is any identifier with an initial upper case letter, followed by any combination of letters, digits and underscores. A *generic type name* (including nested forms) additionally may include commas, angle brackets and spaces, and must be syntactically correct as per the UML. An *attribute name* is any identifier with an initial lower case letter, followed by any combination of letters, digits and underscores. Any convention that obeys this rule is allowed.
+
+Type identifiers are shown in this document in all uppercase, e.g. `PERSON` , while attribute identifiers are shown in all lowercase, e.g. `home_address` . In both cases, underscores are used to represent word breaks. This convention is used to improve the readability of this document, and other conventions may be used, such as the common programmer's mixed-case convention exemplified by `Person` and `homeAddress`. The convention chosen for any particular cADL document should be based on that used in the underlying information model. Identifiers are shown in blue in this document.
+
+=== Node Identifiers
+
+In cADL, an entity in brackets e.g. `[xxxx]` is used to identify "object nodes", i.e. nodes expressing constraints on instances of some type. Object nodes always commence with a type name. Any string may appear within the brackets, depending on how it is used. However, in this document, all node identifiers are of the form of an archetype term identifier, i.e. `[atNNNN]`, e.g. `[at0042]`. Node identifiers are shown in magenta in this document.
+
+=== Natural Language
+
+cADL is completely independent of all natural languages. The only potential exception is where constraints include literal values from some language, and this is easily and routinely avoided by the use of separate language and terminology definitions, as used in ADL archetypes. However, for the purposes of readability, comments in English have been included in this document to aid the reader. In real cADL documents, comments are generated from the archetype `ontology` in the language of the locale.
+
+== Structure
+
+cADL constraints are written in a block-structured style, similar to block-structured programming languages like C. A typical block resembles the following (the recurring pattern `/.+/` is a regular expression meaning "non-empty string"):
+
+[source, cadl]
+--------
+    PERSON[at0001] ∈ {
+        name ∈ {
+            PERSON_NAME[at0002] ∈ {
+                forenames cardinality ∈ {1..*} ∈ {/.+/}
+                family_name ∈ {/.+/}
+                title ∈ {"Dr", "Miss", "Mrs", "Mr"}
+            }
+        }
+        addresses cardinality ∈ {1..*} ∈ {
+            LOCATION_ADDRESS[at0003] ∈ {
+                street_number existence ∈ {0..1} ∈ {/.+/}
+                street_name ∈ {/.+/}
+                locality ∈ {/.+/}
+                post_code ∈ {/.+/}
+                state ∈ {/.+/}
+                country ∈ {/.+/}
+            }
+        }
+    }
+--------
+
+In the above, an identifier (shown in green in this document) followed by the ∈ operator (equivalent text keyword: `matches` or `is_in` ) followed by an open brace, is the start of a 'block', which continues until the closing matching brace (normally visually indented to match the line at the beginning of the block).
+
+The example above expresses a constraint on an instance of the type `PERSON`; the constraint is expressed by everything inside the `PERSON` block. The two blocks at the next level define constraints on properties of `PERSON`, in this case `_name_` and `_addresses_`. Each of these constraints is expressed in turn by the next level containing constraints on further types, and so on. The general structure is therefore a recursive nesting of constraints on types, followed by constraints on properties (of that type), followed by types (being the types of the attribute under which it appears) until leaf nodes are reached.
+
+We use the term "object" block or node to refer to any block introduced by a type name (in this document, in all upper case), while an "attribute" block or node is any block introduced by an attribute identifier (in all lower case in this document), as illustrated below.
+
+[.text-center]
+.Object and Attribute Blocks in cADL
+image::{diagrams_uri}/object_attribute_blocks.png[id=object_attribute_blocks, align="center"]
+
+=== Complex Objects
+
+It may by now be clear that the identifiers in the above could correspond to entities in an object-oriented information model. A UML model compatible with the example above is shown in the following figure. Note that there can easily be more than one model compatible with a given fragment of cADL syntax, and in particular, there may be more properties and classes in the reference model than are mentioned in the cADL constraints. In other words, a cADL text includes constraints _only for those parts of a model which are useful or meaningful to constrain_.
+
+[.text-center]
+.UML Model of Person
+image::{uml_diagrams_uri}/AM-example-demographics.svg[id=uml_model_of_person, align="center"]
+
+Constraints expressed in cADL cannot be stronger than those from the information model. For example, the `PERSON`.`_family_name_` attribute is mandatory in the model in the above `PERSON` model, so it is not valid to express a constraint allowing the attribute to be optional. In general, a cADL archetype can only further constrain an existing information model. However, it must be remembered that for very generic models consisting of only a few classes and a lot of optionality, this rule is not so much a limitation as a way of adding meaning to information. Thus, for a demographic information model which has only the types `PARTY` and `PERSON`, one can write cADL which defines the concepts of entities such as `COMPANY` , `EMPLOYEE` , `PROFESSIONAL` , and so on, in terms of constraints on the types available in the information model.
+
+This general approach can be used to express constraints for instances of any information model. The following example shows how to express a constraint on the `_value_` property of an `ELEMENT` class to be a `DV_QUANTITY` with a suitable range for expressing blood pressure.
+
+[source, cadl]
+--------
+    ELEMENT[at0010] matches {          -- diastolic blood pressure
+        value matches {
+            QUANTITY matches {
+                magnitude matches {|0..1000|}
+                property matches {"pressure"}
+                units matches {"mm[Hg]"}
+            }
+        }
+    }
+--------
+
+=== Attribute Constraints
+
+In any information model, attributes are either single-valued or multiply-valued, i.e. of a generic container type such as `List<Contact>`.
+
+==== Existence
+
+The only constraint that applies to all attributes is to do with existence. Existence constraints say whether an attribute value must exist, and are indicated by `0..1` or `1` markers at line ends in UML diagrams (and often mistakenly referred to as a "cardinality of 1..1"). It is the absence or presence of the `cardinality` constraint in cADL which indicates that the attribute being constrained is single-valued or a container attribute respectively. Existence constraints are expressed in cADL as follows:
+
+[source, cadl]
+--------
+    QUANTITY matches {
+        units existence matches {0..1} matches {"mm[Hg]"}
+    }
+--------
+
+The meaning of an existence constraint is to indicate whether a value - i.e. an object - is mandatory or optional (i.e. obligatory or not) in runtime data for the attribute in question. The same logic applies whether the attribute is of single or multiple cardinality, i.e. whether it is a container type or not. For container attributes, the existence constraint indicates whether the whole container (usually a list or set) is mandatory or not; a further _cardinality_ constraint (described below) indicates how many members in the container are allowed.
+
+[.principle]
+An *existence constraint* may be used directly after any attribute identifier, and indicates whether the object to which the attribute refers is mandatory or optional in the data.
+
+Existence is shown using the same constraint language as the rest of the archetype definition. Existence constraints can take the values `{0}` , `{0..0}` , `{0..1}` , `{1}` , or `{1..1}` . The first two of these constraints may not seem initially obvious, but can be used to indicate that an attribute must not be present in the particular situation modelled by the archetype. The default existence constraint, if none is shown, is {1..1}.
+
+=== Single-valued Attributes
+
+Repeated blocks of object constraints of the same class (or its subtypes) can have two possible meanings in cADL, depending on whether the cardinality is present or not in the containing attribute block. With no cardinality, the meaning is that each child object constraint of the attribute in question is a possible alternative for the value of the attribute in the data, as shown in the following example:
+
+[source, cadl]
+--------
+ELEMENT[at0004] matches {                   -- speed limit
+    value matches {
+        DV_QUANTITY matches {               -- miles per hour
+            magnitude matches {|0..55|}
+            property matches {"velocity"}
+            units matches {"mph"}                            
+        }
+        DV_QUANTITY matches {               -- km per hour
+            magnitude matches {|0..100|}
+            property matches {"velocity"}
+            units matches {"km/h"}
+        }
+    }
+}
+--------
+
+Here, the cardinality of the value attribute is `1..1` (the default), while the occurrences of both `QUANTITY` constraints is optional, leading to the result that only one `QUANTITY` instance can appear in runtime data, and it can match either of the constraints.
+
+[.principle]
+Two or more object blocks introduced by type names appearing after an attribute which is not a container (i.e. for which there is no cardinality constraint) are taken to be *alternative constraints*, only one of which needs to be matched by the data.
+
+Note that there is a more efficient way to express the above example, using domain type extensions. See <<Customising ADL>>.
+
+=== Container Attributes
+
+==== Cardinality
+
+The cardinality of container attributes may be constrained in cADL with the `_cardinality_` constraint. Cardinality indicates limits on the number of instance members of a container types such as lists and sets. Consider the following example:
+
+[source, cadl]
+--------
+    HISTORY occurrences ∈ {1} ∈ {            
+        periodic ∈ {False}
+        events cardinality ∈ {*} ∈ {     
+            EVENT[at0002] occurrences ∈ {0..1} ∈ {    }           -- 1 min sample
+            EVENT[at0003] occurrences ∈ {0..1} ∈ {    }           -- 2 min sample
+            EVENT[at0004] occurrences ∈ {0..1} ∈ {    }           -- 3 min sample
+        }
+    }
+--------
+
+The keyword `cardinality` implies firstly that the property events must be of a container type, such as `List<T>` , `Set<T>` , `Bag<T>` . The integer range indicates the valid membership of the container; a single `\*` means the range `0..*`, i.e. '0 to many'. The type of the container is not explicitly indicated, since it is usually defined by the information model. However, the semantics of a logical set (unique membership, ordering not significant), a logical list (ordered, non-unique membership) or a bag (unordered, non-unique membership) can be constrained using the additional keywords `ordered` , `unordered` , `unique` and `non-unique` within the cardinality constraint, as per the following examples:
+
+[source, cadl]
+--------
+    events cardinality ∈ {*; ordered} ∈ {                   -- logical list
+    events cardinality ∈ {*; unordered; unique} ∈ {         -- logical set
+    events cardinality ∈ {*; unordered} ∈ {                 -- logical bag
+--------
+
+In theory, none of these constraints can be stronger than the semantics of the corresponding container in the relevant part of the reference model. However, in practice, developers often use lists to facilitate integration, when the actual semantics are intended to be of a set; in such cases, they typically ensure set-like semantics in their own code rather than by using an `Set<T>` type. How such constraints are evaluated in practice may depend somewhat on knowledge of the  software system.
+
+[.principle]
+A *cardinality constraint* may be used after any attribute name (or after its `existence` constraint, if there is one) in order to indicate that the attribute refers to a container type, what number of member items it must have in the data, and optionally, whether it has "list", "set", or "bag" semantics, via the use of the keywords `ordered`, `unordered`, `unique` and `non-unique`.
+
+The numeric part of the cardinality constraint can take the values `{0}`, `{0..0}`, `{0..n}`, `{m..n}`, `{0..\*}`, or `{*}`, or a syntactic equivalent. The first two of these constraints are unlikely to be useful, but there is no reason to prevent them. There is no default cardinality, since if none is shown, the relevant attribute is assumed to be single-valued (in the interests of uniformity in archetypes, this holds even for smarter parsers that can access the reference model and determine that the attribute is in fact a container).
+
+Cardinality and existence constraints can co-occur, in order to indicate various combinations on a container type property, e.g. that it is optional, but if present, is a container that may be empty, as in the following:
+
+[source, cadl]
+--------
+    events existence ∈ {0..1} cardinality ∈ {0..*} ∈ {-- etc --}
+--------
+
+==== Occurrences
+
+A constraint on occurrences is used only with cADL object nodes (not attribute nodes), to indicate how many times in runtime data an instance of a given class conforming to a particular constraint can occur. It only has significance for objects which are children of a container attribute, since by definition, the occurrences of an object which is the value of a single valued attribute can only be `0..1` or `1..1`, and this is already defined by the attribute `existence`. However, it is not illegal. In the example below, three `EVENT` constraints are shown; the first one ("1 minute sample") is shown as mandatory, while the other two are optional.
+
+In the example below, three `EVENT` constraints are shown; the first one ("1 minute sample") is shown as mandatory, while the other two are optional.
+
+[source, cadl]
+--------
+    events cardinality ∈ {*} ∈ {     
+        EVENT[at0002] occurrences ∈ {1..1} ∈ {    }          -- 1 min sample
+        EVENT[at0003] occurrences ∈ {0..1} ∈ {    }          -- 2 min sample
+        EVENT[at0004] occurrences ∈ {0..1} ∈ {    }          -- 3 min sample
+    }
+--------
+
+Another contrived example below expresses a constraint on instances of `GROUP` such that for `GROUPs` representing tribes, clubs and families, there can only be one "head", but there may be many members.
+
+[source, cadl]
+--------
+    GROUP[iat0103] ∈ {
+        kind ∈ {/tribe|family|club/}
+        members cardinality ∈ {*} ∈ {
+            PERSON[at0104] occurrences ∈ {1} ∈ {    
+                title ∈ {"head"}
+                -- etc --
+            }
+            PERSON[at0105] occurrences ∈ {0..*} ∈ {    
+                title ∈ {"member"}
+                -- etc --
+            }
+        }
+    }
+--------
+
+The first `occurrences` constraint indicates that a `PERSON` with the title `"head"` is mandatory in the `GROUP`, while the second indicates that at runtime, instances of `PERSON` with the title `"member"` can number from none to many. Occurrences may take the value of any range including `{0..\*}`, meaning that any number of instances of the given type may appear in data, each conforming to the one constraint block in the archetype. A single positive integer, or the infinity indicator, may also be used on its own, thus: `{2}`, `{*}`. A range of `{0..0}` or `{0}` indicates that no occurrences of this object are allowed in this archetype. The default occurrences, if none is mentioned, is `{1..1}`.
+
+[.principle]
+An occurrences constraint may appear directly after the type name of any object constraint within a container attribute, in order to indicate how many times data objects conforming to the block introduced by the type name may occur in the data.
+
+Where `cardinality` constraints are used (remembering that `occurrences` is always there by default, if not explicitly specified), `cardinality` and `occurrences` must always be compatible. The validity rule is:
+
+[.rule]
+*VCOC*: cardinality/occurrences validity: the interval represented by: (the sum of all occurrences minimum values) .. (the sum of all occurrences maximum values) must be inside the interval of the cardinality.
+
+=== "Any" Constraints
+
+There are two cases where it is useful to state a completely open, or "any", constraint. The "any" constraint is shown by a single asterisk (`*`) in braces. The first is when it is desired to show explicitly that some property can have any value, such as in the following:
+
+[source, cadl]
+--------
+    PERSON[at0001] ∈ {
+        name existence ∈ {0..1} matches {*}
+        -- etc --
+    }
+--------
+
+The "any" constraint on `_name_` means that any value permitted by the underlying information model is also permitted by the archetype; however, it also provides an opportunity to specify an existence constraint which might be narrower than that in the information model. If the existence constraint is the same, an "any" constraint on a property is equivalent to no constraint being stated at all for that property in the cADL.
+
+The second use of "any" as a constraint value is for types, such as in the following:
+
+[source, cadl]
+--------
+    ELEMENT[at0004] ∈ {          -- speed limit
+        value ∈ {
+            QUANTITY matches {*}
+        }
+    }
+--------
+
+The meaning of this constraint is that in the data at runtime, the `_value_` property of `ELEMENT` must be of type `QUANTITY`, but can have any value internally. This is most useful for constraining objects to be of a certain type, without further constraining value, and is especially useful where the information model contains subtyping, and there is a need to restrict data to be of certain subtypes in certain contexts.
+
+=== Object Node Identification and Paths
+
+In many of the examples above, some of the object node type-names are followed by a node identifier, shown in brackets.
+
+[.principle]
+Node identifiers are required for any object node which is intended to be addressable elsewhere in the cADL text, or in the runtime system and which would otherwise
+be ambiguous i.e. has sibling nodes.
+
+In the following example, the `PERSON` type does not require an identifier, since no sibling node exists at the same level, and unambiguous paths can be formed:
+
+[source, cadl]
+--------
+members cardinality ∈ {*} ∈ {
+    PERSON ∈ {
+        title ∈ {"head"}
+    }
+}
+--------
+
+The path to the `_title_` attribute is `_members/title_` However, where there are more than one sibling node, node identifiers must be used to ensure distinct paths:
+
+[source, cadl]
+--------
+members cardinality ∈ {*} ∈ {
+    PERSON[at0104] ∈ {
+        title ∈ {"head"}
+    }
+    PERSON[at0105] matches {
+        title ∈ {"member"}
+    }
+}
+--------
+
+The paths to the respective `_title_` attributes are now:
+
+[source, cadl]
+--------
+members[at0104]/title
+members[at0105]/title
+--------
+
+Logically, all non-unique parent nodes of an identified node must also be identified back to the root node. The primary function of node identifiers is in forming paths, enabling cADL nodes to be unambiguously referred to. The node identifier can also perform a second function, that of giving a design-time meaning to the node, by equating the node identifier to some description. Thus, in the example shown in <<Complex Objects>>, the `ELEMENT` node is identified by the code `[at0010]`, which can be designated elsewhere in an archetype as meaning "diastolic blood pressure".
+
+Node ids are required only where it is necessary to create paths, for example in `use_node` statements. However, the underlying reference model might have stronger requirements. The {openehr_rm_releases}[openEHR Reference Model] for example requires that all node types which inherit from the class `LOCATABLE` have both a `_archetype_node_id_` and a runtime `_name_` attribute. Only data types (such as `QUANTITY`, `CODED_TEXT`) and their constituent types are exempt. 
+
+Paths are used in cADL to refer to cADL nodes, and are expressed in the ADL path syntax, described in detail in <<ADL Paths>>. ADL paths have the same alternating object/attribute structure implied in the general hierarchical structure of cADL, obeying the pattern `TYPE/attribute/TYPE/attribute/...`.
+
+[.principle]
+*Paths* in cADL always refer to object nodes, and can only be constructed through nodes having node ids, or nodes which are the only child object of a single-cardinality attribute.
+
+Unusually for a path syntax, a trailing object identifier can be required, even if the attribute corresponds to a single relationship (as might be expected with the "name" property of an object) because in cADL, it is legal to define multiple alternative object constraints - each identified by a unique node id - for a relationship node which has single cardinality.
+
+Consider the following cADL example:
+
+[source, cadl]
+-------- 
+    HISTORY occurrences ∈ {1} ∈ {            
+        periodic ∈ {False}
+        events cardinality ∈ {*} ∈ {     
+            EVENT[at0002] occurrences ∈ {0..1} ∈ {    }           -- 1 min sample
+            EVENT[at0003] occurrences ∈ {0..1} ∈ {    }           -- 2 min sample
+            EVENT[at0004] occurrences ∈ {0..1} ∈ {    }           -- 3 min sample
+        }
+    }
+--------
+
+The following paths can be constructed:
+
+[source, cadl]
+--------
+    /                       -- the HISTORY (root) object
+    /periodic               -- the HISTORY.periodic attribute
+    /events[at0002]         -- the 1 minute event object
+    /events[at0003]         -- the 2 minute event object
+    /events[at0004]         -- the 3 minute event object
+--------
+
+It is valid to add attribute references to the end of a path, if the underlying information model permits
+it, as in the following example.
+
+[source, cadl]
+--------
+/events/count -- count attribute of the items property
+--------
+
+The examples above are _physical_ paths because they refer to object nodes using codes. Physical paths can be rendered as _logical_ paths using descriptive meanings for node identifiers, if defined. Thus, the following two paths might be equivalent:
+
+--------
+    /events[at0004]                -- the 3 minute event object
+    /events[3 minute event]        -- the 3 minute event object
+--------
+
+None of the paths shown here have any validity outside the cADL block in which they occur, since they do not include an identifier of the enclosing document, normally an archetype. To reference a cADL node in a document from elsewhere (e.g. another archetype of a template) requires that the identifier of the document itself be prefixed to the path, as in the following archetype example:
+
+--------
+    [openehr-ehr-entry.apgar-result.v]/events[at0001]
+--------
+
+This kind of path expression is necessary to form the paths that occur when archetypes are composed to form larger structures.
+
+=== Internal References
+
+It occurs reasonably often that one needs to include a constraint which is a repeat of an earlier complex constraint, but within a different block. This is achieved using an archetype internal reference, according to the following rule:
+
+[.principle]
+An archetype internal reference is introduced with the `use_node` keyword, in a line of the following form:
+
+----
+use_node TYPE object_path
+----
+
+This statement says: use the node of type `TYPE`, found at (the existing) path `object_path`. The following example shows the definitions of the `ADDRESS` nodes for phone, fax and email for a home `CONTACT` being reused for a work `CONTACT`.
+
+[source, cadl]
+--------
+    PERSON ∈ {
+        identities ∈ {            
+            -- etc --
+        }
+        contacts cardinality ∈ {0..*} ∈ {
+            CONTACT[at0002] ∈ {      -- home address
+                purpose ∈ {...}        
+                addresses ∈ {...}
+            }
+            CONTACT[at0003] ∈ {      -- postal address
+                purpose ∈ {...}
+                addresses ∈ {...}
+            }
+            CONTACT[at0004] ∈ {      -- home contact
+                purpose ∈ {...}    
+                addresses cardinality ∈ {0..*} ∈ { 
+                    ADDRESS[at0005] ∈ {                            -- phone
+                        type ∈ {...}
+                        details ∈ {...}
+                    }
+                    ADDRESS[at0006] ∈ {                            -- fax
+                        type ∈ {...}
+                        details ∈ {...}
+                    }
+                    ADDRESS[at0007] ∈ {                            -- email
+                        type ∈ {...}
+                        details ∈ {...}
+                    }
+                }
+            }
+            CONTACT[at0008] ∈ {                                    -- work contact
+                purpose ∈ {...}
+                addresses cardinality ∈ {0..*} ∈ { 
+                    use_node ADDRESS /contacts[at0004]/addresses[at0005]   -- phone
+                    use_node ADDRESS /contacts[at0004]/addresses[at0006]   -- fax 
+                    use_node ADDRESS /contacts[at0004]/addresses[at0007]   -- email
+                }
+            }
+        }
+    }
+--------
+
+The type mentioned in the use_node reference must always be the same type as, or a super-type of the referenced type. In most cases, it will be the same. In some cases, an archetype section might use a subtype of the type required by the reference model (e.g. in the above example, a type such as `POSTAL_ADDRESS`); a use_node reference to such a node can legally mention the parent type (`ADDRESS`, in the example). Whether this possibility has practical utility remains to be seen.
+
+[.rule]
+*VUNT*: `use_node` type: the type mentioned in a use_node must be the same as or a super-type (according to the reference model) of the reference model type of the node referred to.
+
+Like any other object node, a node defined using an internal reference has `occurrences`. Unlike other node types, if no `occurrences` is mentioned, the value of the `occurrences` is set to that of the referenced node (which if not explicitly mentioned will be the default occurrences). However, the `occurrences` can be overridden in the referring node as well, as in the following example which enables the specification for 'phone' to be re-used, but with a different `occurrences` constraint.
+
+[source, cadl]
+--------
+    PERSON[at0000] ∈ {
+        contacts cardinality ∈ {0..*} ∈ {
+            CONTACT[at0004] ∈ {                                   -- home contact
+                addresses cardinality ∈ {0..*} ∈ { 
+                    ADDRESS[at0005] occurrences ∈ {1} ∈ { ...}   -- phone
+                }
+            }
+            CONTACT[at0008] ∈ {                                  -- work contact
+                addresses cardinality ∈ {0..*} ∈ { 
+                    use_node ADDRESS[at0009] occurrences ∈ {0..*} /contacts[at0004]/addresses[at0005]      -- phone
+                }
+            }
+        }
+    }
+--------
+
+=== Archetype Slots
+
+At any point in a cADL definition, a constraint can be defined that allows other archetypes to be used, rather than defining the desired constraints inline. This is known as an archetype 'slot' or 'chaining point', i.e. a connection point whose allowable 'fillers' are constrained by a set of statements, written in the ADL assertion language (described in <<Assertions>>).
+
+An archetype slot is defined in terms of two lists of assertions statements defining which archetypes are allowed and/or which are excluded from filling that slot.
+
+[.principle]
+An *archetype slot* is introduced with the keyword `allow_archetype`, and is expressed using two lists of assertions, introduced with the keywords `include` and `exclude`, respectively.
+
+Since archetype slots are typed, the (possibly abstract) type of the allowed archetypes is already constrained. Otherwise, any assertion about a filler archetype can be made. The assertions do not constrain data in the way that other archetype statements do, instead they constrain archetypes. Two kinds of reference may be used in a slot assertion. The first is a reference to an object-oriented property of the filler archetype itself, where the property names are defined by the `ARCHETYPE` class in the Archetype Object Model. Examples include:
+
+----
+archetype_id
+parent_archetype_id
+short_concept_name
+----
+
+This kind of reference is usually used to constrain the allowable archetypes based on `_archetype_id_` or some other meta-data item (e.g. archetypes written in the same organisation). The second kind of reference is to absolute paths in the `definition` section of the filler archetype (i.e. 'archetype paths' as used throughout this section of the specification). Both kinds of reference take the form of an Xpath-style path, with the distinction that paths referring to `ARCHETYPE` attributes not in the `definition` section do not start with a slash (this allows parsers to easily distinguish the two types of reference).
+
+==== Defining Slots on the basis of Archetype Identifiers and Concepts
+
+A basic kind of assertion is on the identifier of archetypes allowed in the slot. This is achieved with statements like the following in the include and exclude lists:
+
+[source, cadl]
+--------
+archetype_id ∈ {/.*\.SECTION\..*\..*/} -- match any SECTION archetype
+--------
+
+It is possible to limit valid slot-fillers to a single archetype simply by stating a full archetype identifier with no wildcards; this has the effect that the choice of archetype in that slot is predetermined by the archetype and cannot be changed later. In general, however, the intention of archetypes is to provide highly re-usable models of real world content with local constraining left to templates, in which case a 'wide' slot definition is used (i.e. matches many possible archetypes).
+
+The following example shows how the "Objective" `SECTION` in a problem/SOAP headings archetype defines two slots, indicating which `OBSERVATION` and `SECTION` archetypes are allowed and excluded under the `_items_` property.
+
+[source, cadl]
+--------
+    SECTION [at2000] occurrences ∈ {0..1} ∈ {                      -- objective
+        items cardinality ∈ {0..*} ∈ {
+            allow_archetype OBSERVATION occurrences ∈ {0..1} ∈ {
+                include
+                    short_concept_name ∈ {/.+/}
+            }
+            allow_archetype SECTION occurrences ∈ {0..*} ∈ {
+                include
+                    archetype_id/value ∈ {/.*/}
+                exclude
+                    archetype_id/value ∈ {/openEHR-EHR-SECTION\.patient_details\..+/}
+            }
+        }
+    }
+--------
+
+Here, every constraint inside the block starting on an `allow_archetype` line contains constraints that must be met by archetypes in order to fill the slot. In the examples above, the constraints are in the form of regular expressions on archetype identifiers. In cADL, the PERL regular expression syntax is assumed.
+
+==== Using Other Constraints in Slots
+
+Other constraints are possible as well, including that the allowed archetype must contain a certain keyword, or a certain path. The latter allows archetypes to be linked together on the basis of content. For example, under a "genetic relatives" heading in a Family History Organiser archetype, the following slot constraint might be used:
+
+[source, cadl]
+--------    
+    allow_archetype EVALUATION occurrences ∈ {0..*} matches {
+        include
+            short_concept_name ∈ {"risk_family_history"}
+                ∧ ∃ /subject/relationship/defining_code -> ~ /subject/relationship/defining_code/code_list.has([openehr::0]) -- self
+    }
+--------    
+
+This says that the slot allows archetypes on the `EVALUATION` class, which either have as their concept "risk_family_history" or, if there is a constraint on the subject relationship, then it may not include the code `[openehr::0]` (the openEHR term for "self") - i.e. it must be an archetype designed for family members rather than the subject of care herself.
+
+
+=== Placeholder Constraints
+
+Not all constraints can be defined easily within an archetype. One common category of constraint that should be defined externally, and referenced from the archetype is the 'value set' for a coded attribute. The need within the archetype in this case is to limit an attribute value to a particular set of codes, i.e. value set, from a terminology.
+
+The value set could be simply enumerated within the archetype, for example using the `C_CODE_PHRASE` type defined in the openEHR Archetype Profile; this will work perfectly well, but has at least two limitations. Firstly, the intended set of values allowed for the attribute may change over time (e.g. as has happened with 'types of hepatitis' since 1980), requiring the archetype to be updated. With a large repository of archetypes, each containing coded term constraints, this approach is likely to be unsustainable and error-prone. Secondly, the best means of defining the value set is in general not likely to be via enumeration of the individual terms, but in the form of a semantic expression that can be evaluated against the terminology. This is because the value set is typically logically specified in terms of inclusions, exclusions, conjunctions and disjunctions of general categories.
+
+Consider for example the value set logically defined as "any bacterial infection of the lung". The possible values would be codes from a target terminology, corresponding to numerous strains of pneumococcus, staphylococcus and so on, but not including species that are never found in the lung. Rather than enumerate the list of codes corresponding to this value set (which is likely to be quite large), the archetype author is more likely to rely on semantic links within the terminology to express the set; a query such as 'is-a bacteria and has-site lung' might be definable against the terminology (such as {snomed_ct}[SNOMED CT] or the {who_icd}[WHO ICD10] terminology).
+
+In a similar way, other value sets, including for quantitative values, are likely to be specified by queries or formal expressions, and evaluated by an external knowledge service. Examples include "any
+unit of pressure" and "normal range values for serum sodium".
+
+In all such cases, expressing the constraint could be done by including the query or other formal expression within the archetype itself. However, experience shows that this is problematic in various ways. Firstly, there is little if any standardisation in such formal value set expressions or queries for use with knowledge services; two archetype authors could easily create competing syntactical expressions for the same logical constraint. A second problem is that errors might be made in the query expression itself, or the expression may be correct at the time of authoring, but need subsequent adjustment as the relevant knowledge resource grows and changes. The consequence of this is the same as for a value set enumerated inline - it is unlikely to be sustainable for large numbers of archetypes. These problems are not accidental: a query with respect to a terminological, ontological or other knowledge resource is most likely to be authored correctly by maintainers or experts of the knowledge resource, rather than archetype authors; it may well be altered over time due to improvements in the query formalism itself.
+
+The solution adopted in ADL is to store only _identifiers_ of query expressions which when evaluated return a required value set, while query expressions are assumed to be stored in a query repository, or some part of the relevant knowledge service. Rather than store external identifiers inline in a cADL text, the ADL approach is to store a 'placeholder' internal code of the form `[acNNNN]`, e.g. `[ac0012]`. Codes of this form are defined in the archetype ontology section, and can be mapped to query identifiers for one or more knowledge resources. This approach would allow a single 'ac' code to be defined for the value set.
+
+=== Mixed Structures
+
+Three types of structure representing constraints on complex objects have been presented so far:
+
+* _complex object structures_: any node introduced by a type name and followed by {} containing constraints on attributes;
+* _internal references_: any node introduced by the keyword use_node, followed by a type name; such nodes indicate re-use of a complex object constraint that has already been expressed elsewhere in the archetype;
+* _archetype slots_: any node introduced by the keyword allow_archetype, followed by a type name; such nodes indicate a complex object constraint which is expressed in some other archetype.
+
+At any given node, all three types can co-exist, as in the following example:
+
+[source, cadl]
+--------
+    SECTION[at2000] ∈ {                        
+        items cardinality ∈ {0..*; ordered} ∈ {
+            ENTRY[at2001] ∈ {...}
+            allow_archetype ENTRY[at2002] ∈ {...}
+            use_node ENTRY[at2003] /some_path[at0004]
+            ENTRY[at2004] ∈ {...}
+            use_node ENTRY[at2005] /some_path[at1012]
+            use_node ENTRY[at2006] /some_path[at1052]
+            ENTRY[at2007] ∈ {...}
+        }
+    }
+--------
+
+Here we have a constraint on an attribute called `_items_` (of cardinality `0..*`), expressed as a series of possible constraints on objects of type `ENTRY`. The 1st, 4th and 7th are described inline; the 3rd, 5th and 6th are expressed in terms of internal references to other nodes earlier in the archetype, while the 2nd is an archetype slot, whose constraints are expressed in other archetypes matching the include/exclude constraints appearing between the braces of this node. Note also that the `ordered` keyword on the enclosing `_items_` node has been used to indicate that the list order is intended to be significant.
+
+== Constraints on Primitive Types
+
+While constraints on complex types follow the rules described so far, constraints on attributes of
+primitive types in cADL are expressed without type names, and omitting one level of braces, as follows:
+
+[source, cadl]
+--------
+some_attr matches {some_pattern}
+--------
+
+rather than:
+
+[source, cadl]
+--------
+some_attr matches {
+    PRIMITIVE_TYPE matches {
+        some_pattern
+    }
+}
+--------
+
+This is made possible because the syntax patterns of all primitive type constraints are mutually distinguishable, i.e. the type can always be inferred from the syntax alone. Since all leaf attributes of all object models are of primitive types, or lists or sets of them, cADL archetypes using the brief form for primitive types are significantly less verbose overall, as well as being more directly comprehensible to human readers. Currently the cADL grammar *only supports the brief form* used in this specification since no practical reason has been identified for supporting the more verbose version. Theoretically however, there is nothing to prevent it being used in the future, or in some specialist application.
+
+=== Constraints on String
+
+Strings can be constrained in two ways: using a list of fixed strings, and using using a regular expression. All constraints on strings are case-sensitive.
+
+==== List of Strings
+
+A String-valued attribute can be constrained by a list of strings (using the dADL syntax for string lists), including the simple case of a single string. Examples are as follows:
+
+[source, cadl]
+--------
+    species ∈ {"platypus"}
+    species ∈ {"platypus", "kangaroo"}
+    species ∈ {"platypus", "kangaroo", "wombat"}
+--------
+
+The first example constrains the runtime value of the `_species_` attribute of some object to take the value "platypus"; the second constrains it be either "platypus" or "kangaroo", and so on. *In almost all cases, this kind of string constraint should be avoided*, since it usually renders the body of the archetype language-dependent. Exceptions are proper names (e.g. "NHS", "Apgar"), product tradenames (but note even these are typically different in different language locales, even if the different names are not literally translations of each other). The preferred way of constraining string attributes in a language independent way is with local `[ac]` codes. See <<_local_constraint_codes>>.
+
+==== Regular Expression
+
+The second way of constraining strings is with regular expressions, a widely used syntax for expressing patterns for matching strings. The regular expression syntax used in cADL is a proper subset of that used in the Perl language (see {perl_regex}[the specification of the regular expression language of Perl^]). It is specified as a constraint using either `//` or `^^` delimiters:
+
+[source, cadl]
+--------
+    string_attr matches {/regular expression/} 
+    string_attr matches {=~ /regular expression}
+    string_attr matches {!~ /regular expression}
+--------
+
+The first two are identical, indicating that the attribute value must match the supplied regular expression. The last indicates that the value must _not_ match the expression. If the delimiter character is required in the pattern, it must be quoted with the backslash ('\') character, or else alternative delimiters can be used, enabling more comprehensible patterns. A typical example is regular expressions including units. The following two patterns are equivalent:
+
+[source, cadl]
+--------
+    units ∈ {/km\/h|mi\/h/} 
+    units ∈ {^km/h|mi/h^}
+--------
+
+The rules for including special characters within strings are described in <<_file_encoding_and_character_quoting>>.
+
+The regular expression patterns supported in cADL are as follows.
+
+[cols="1,3,3", options="header"]
+|==========================================================
+3+^h|Atomic Items
+
+| `.`       |match any single character.                                    |E.g. `...` matches any 3 characters;
+| `[xyz]`   |match any of the characters in the set `xyz` (case sensitive). |E.g. `[0-9]` matches any string containing a single decimal digit;
+| `[a-m]`   |match any of the characters in the set of characters formed by the continuous range from `a` to `m` (case sensitive).  |E.g. `[0-9]` matches any single character string containing a single decimal digit, `[S-Z]` matches any single character in the range `S` - `Z` ;
+| `[^a-m]`  |match any character except those in the set of characters formed by the continuous range from `a` to `m` .     |E.g. `[^0-9]` matches any single character string as long as it does not contain a single decimal digit;
+
+3+^h|Grouping
+
+| `(pattern)`   |parentheses are used to group items; any pattern appearing within parentheses is treated as an atomic item for the purposes of the occurrences operators.  |E.g. `([1-9][0-9])` matches any 2-digit number.
+
+3+^h|Occurrences
+
+| `*`      |match 0 or more of the preceding atomic item.              |E.g. `.\*` matches any string; `[a-z][a-z0-9]*` matches any alphanumeric string starting with a letter;
+| `+`       |match 1 or more occurrences of the preceding atomic item.  |E.g. `a[^\s]+` matches any string starting with 'a', followed by at least one further non-whitespace character;
+| `?`       |match 0 or 1 occurrences of the preceding atomic item.     |E.g. `ab?` matches the strings `"a"` and `"ab"` ;
+| `{m,n}`   |match m to n occurrences of the preceding atomic item.     |E.g. `ab{1,3}` matches the strings `"ab"` and `"abb"` and `"abbb"` ; `[a-z]{1,3}` matches all lower-case alphabetic strings of one to three characters in length;
+| `{m,}`    |match at least m occurrences of the preceding atomic item; |
+| `{,n}`    |match at most n occurrences of the preceding atomic item;  |
+| `{m}`     |match exactly m occurrences of the preceding atomic item;  |
+
+3+^h|Special Character Classes
+
+| `\d` , `\D`   |match a decimal digit character; match a non-digit character;      |
+| `\s` , `\S`   |match a whitespace character; match a non-whitespace character;    |
+
+3+^h|Alternatives
+
+| `pattern1\|pattern2`   |match either pattern1 or pattern2.     |E.g. `lying\|sitting\|standing` matches any of the words `"lying"` , `"sitting"` and `"standing"` .
+|==========================================================
+
+*A similar warning should be noted for the use of regular expressions to constrain strings*: they should be limited to non-linguistically dependent patterns, such as proper and scientific names. The use of regular expressions for constraints on normal words will render an archetype linguistically dependent, and potentially unusable by others.
+
+=== Constraints on Integer
+
+Integers can be constrained using a list of integer values, and using an integer interval.
+
+==== List of Integers
+
+Lists of integers expressed in the syntax from ODIN can be used as a constraint, e.g.:
+
+[source, cadl]
+--------
+    length matches {1000}       -- fixed value of 1000 
+    magnitude matches {0, 5, 8} -- any of 0, 5 or 8
+--------
+
+The first constraint requires the attribute `_length_` to be 1000, while the second limits the value of `_magnitude_` to be 0, 5, or 8 only. 
+
+==== Interval of Integer
+
+Integer intervals are expressed using the interval syntax from dADL (described in the dADL specification). Examples of 2-sided intervals include:
+
+[source, cadl]
+--------
+    length matches {|1000|}                       -- point interval of 1000 (=fixed value)
+    length matches {|950..1050|}                  -- allow 950 - 1050
+    length matches {|0..1000|}                    -- allow 0 - 1000
+    length matches {|0..<1000|}                   -- allow 0>= x <1000
+    length matches {|0>..<1000|}                  -- allow 0> x <1000
+    length matches {|100+/-5|}                    -- allow 100 +/- 5, i.e. 95 - 105
+    rate matches {|0..infinity|}                  -- allow 0 - infinity, i.e. same as >= 0
+--------
+
+Examples of one-sided intervals include:
+
+[source, cadl]
+--------
+    length matches {|<10|}                        -- allow up to 9
+    length matches {|>10|}                        -- allow 11 or more
+    length matches {|<=10|}                       -- allow up to 10
+    length matches {|>=10|}                       -- allow 10 or more
+--------
+
+=== Constraints on Real
+
+Constraints on Real values follow exactly the same syntax as for Integers, in both list and interval forms. The only difference is that the real number values used in the constraints are indicated by the use of the decimal point and at least one succeeding digit, which may be 0. Typical examples are:
+
+[source, cadl]
+--------
+    magnitude ∈ {5.5}                             -- list of one (fixed value)
+    magnitude ∈ {|5.5|}                           -- point interval (=fixed value)
+    magnitude ∈ {|5.5..6.0|}                      -- interval
+    magnitude ∈ {5.5, 6.0, 6.5}                   -- list
+    magnitude ∈ {|0.0..<1000.0|}                  -- allow 0>= x <1000.0
+    magnitude ∈ {|<10.0|}                         -- allow anything less than 10.0
+    magnitude ∈ {|>10.0|}                         -- allow greater than 10.0
+    magnitude ∈ {|<=10.0|}                        -- allow up to 10.0
+    magnitude ∈ {|>=10.0|}                        -- allow 10.0 or more
+    magnitude ∈ {|80.0+/-12.0|}                   -- allow 80 +/- 12
+--------
+
+=== Constraints on Boolean
+
+Boolean runtime values can be constrained to be True, False, or either, as follows:
+
+[source, cadl]
+--------
+    some_flag matches {True}
+    some_flag matches {False}
+    some_flag matches {True, False}
+--------
+
+=== Constraints on Character
+
+Characters can be constrained in two ways: using a list of characters, and using a regular expression.
+
+==== List of Characters
+
+The following examples show how a character value may be constrained using a list of fixed character values. Each character is enclosed in single quotes.
+
+[source, cadl]
+--------
+    color_name matches {'r'}
+    color_name matches {'r', 'g', 'b'}
+--------
+
+==== Regular Expression
+
+Character values can also be constrained using a single-character regular expression character class, as per the following examples:
+
+[source, cadl]
+--------
+    color_name matches {/[rgbcmyk]/}
+    color_name matches {/[^\s\t\n]/}
+--------
+
+The only allowed elements of the regular expression syntax in character expressions are the following:
+
+* any item from the Character Classes list above;
+* any item from the Special Character Classes list above;
+* an alternative expression whose parts are any item types, e.g. `'a'|'b'|[m-z]`
+
+=== Constraints on Dates, Times and Durations
+
+Dates, times, date/times and durations may all be constrained in three ways: using a list of values, using intervals, and using patterns. The first two ways allow values to be constrained to actual date, time etc values, while the last allows values to be constrained on the basis of which parts of the date, time etc are present or missing, regardless of value. The pattern method is described first, since patterns can also be used in lists and intervals.
+
+[#date_time_constraint_patterns]
+==== Date, Time and Date/Time
+
+===== Patterns
+
+Dates, times, and date/times (i.e. timestamps), can be constrained using patterns based on the {iso_8601}[ISO 8601 date/time syntax^], which indicate which parts of the date or time must be supplied. A constraint pattern is formed from the abstract pattern `yyyy-mm-ddThh:mm:ss` (itself formed by translating each field of an ISO 8601 date/time into a letter representing its type), with either `?` (meaning optional) or `X` (not allowed) characters substituted in appropriate places. Timezone may be indicated as being _required_ by the addition of a patterns such as `+hh:mm`, `+hhmm`, and `-hh`. The `Z` (UTC, i.e. equivalent of `+0000`) timezone modifier can always be used when any such pattern is specified (see <<#timezone_constraints,table below>>).
+
+NOTE: there is no way to state that timezone information be _prohibited_.
+
+The syntax of legal patterns is given by Antlr4 lexical rules `DATE_CONSTRAINT_PATTERN`, `TIME_CONSTRAINT_PATTERN` and `DATE_TIME_CONSTRAINT_PATTERN` shown below in the <<_base_lexer,Base Lexer syntax section>>.
+
+All expressions generated by these patterns must also satisfy the validity rules:
+
+* where `??` appears in a field, only `??` or `XX` can appear in fields to the right
+* where `XX` appears in a field, only `XX` can appear in fields to the right
+
+The following table shows the valid patterns that can be used, and the types implied by each pattern.
+
+[cols="2,3,5",options="header"]
+|==================================================================================================
+|Implied Type   |Pattern                |Explanation
+|Date           |yyyy-mm-dd             |full date must be specified
+|Date           |yyyy-mm-??             |optional day; +
+ e.g. day in month forgotten
+|Date           |yyyy-??-??             |optional month, optional day; +
+ i.e. any date allowed; e.g. mental health questionnaires which include well known historical dates
+|Date           |yyyy-mm-XX             |mandatory month, no day
+|Date           |yyyy-??-XX             |optional month, no day
+|               |                       | 
+|Time           |hh:mm:ss               |full time must be specified
+|Time           |hh:mm:XX               |no seconds; +
+ e.g. appointment time
+|Time           |hh:??:XX               |optional minutes, no seconds; +
+ e.g. normal clock times
+|Time           |hh:??:??               |optional minutes, seconds; +
+ i.e. any time allowed
+|               |                       | 
+|Date/Time      |yyyy-mm-ddThh:mm:ss    |full date/time must be specified
+|Date/Time      |yyyy-mm-ddThh:mm:??    |optional seconds; +
+ e.g. appointment date/time
+|Date/Time      |yyyy-mm-ddThh:mm:XX    |no seconds; +
+ e.g. appointment date/time
+|Date/Time      |yyyy-mm-ddThh:??:XX    |no seconds, minutes optional; +
+ e.g. in patient-recollected date/times
+|Date/Time      |yyyy-??-??T??:??:??    |minimum valid date/time constraint
+|==================================================================================================
+
+In the above patterns, the 'yyyy' etc match strings can be replaced by literal date/time numbers. For example, `yyyy-??-XX` could be transformed into `1995-??-XX` to mean any partial date in 1995.
+
+Any of the time or date/time (but not date) patterns above may be modified to require a timezone by appending one of the following timezone constraint patterns:
+
+[#timezone_constraints]
+[cols="1,4",options="header"]
+|===================================================================================
+|Pattern   |Explanation
+|±hh       |hours-only timezone modifier required, commencing with '+' or '-'; 'Z' also allowed
+|±hh:mm    .2+|full timezone modifier required, commencing with '+' or '-'; 'Z' also allowed
+|±hhmm
+|Z         |'Z' required (indicating GMT)
+|===================================================================================
+
+It is assumed that any time or date/time datum that includes timezone is correctly constructed to include the effect of summer time.
+
+The absence of a timezone constraint indicates that a timezone modifier is optional.
+
+An assumed value can be used with any of the above using the semi-colon separator, as follows, e.g. `yyyy-??-??; 1970-01-01`. If there is a timezone constraint, the assumed value must include a valid timezone, i.e. `yyyy-mm-dd±hh; 1970-01-01+02`.
+
+===== Intervals
+
+Dates, times and date/times can also be constrained using intervals. Each date, time or date/time in an interval may be a literal value. Examples of such constraints:
+
+[source, cadl]
+--------
+    |09:30:00|                                    -- exactly 9:30 am
+    |< 09:30:00|                                  -- any time before 9:30 am
+    |<= 09:30:00|                                 -- any time at or before 9:30 am
+    |> 09:30:00|                                  -- any time after 9:30 am
+    |> 09:30:00+0200|                             -- any time after 9:30 am in UTC+0200 timezone
+    |>= 09:30:00|                                 -- any time at or after 9:30 am
+    |2004-05-20..2004-06-02|                      -- a date range
+    |2004-05-20T00:00:00..2005-05-19T23:59:59|    -- a date/time range
+    |>= 09:30:00|;09:30:00                        -- any time at or after 9:30 am; assume 9:30 am
+    |2004-05-20T00:00:00Z..2005-05-19T23:59:59Z|  -- a date/time range in UTC timezone
+--------
+
+Within any interval containing two literal date/time values (i.e. not one-sided intervals), if a timezone is used on one, it must be used on both, to ensure comparability. The timezones need not be identical.
+
+==== Duration Constraints
+
+===== Patterns
+
+Patterns based on ISO 8601 can be used to constrain durations in the same way as for Date/time types. The Antlr4 lexical rule for the pattern is `DURATION_CONSTRAINT_PATTERN`, shown below in the <<_base_lexer,Base Lexer syntax section>>.
+
+NOTE: allowing the 'W' designator to be used with the other designators corresponds to a deviation from the published {iso_8601}[ISO 8601 standard^] used in openEHR, namely: durations are supposed to take the form of `PnnW` or `PnnYnnMnnDTnnHnnMnnS`, but in openEHR, the 'W' (week) designator can be used with the other designators, since it is very common to state durations of pregnancy as some combination of weeks and days.
+
+The use of this pattern indicates which 'slots' in an ISO duration string may be filled. Where multiple letters are supplied in a given pattern, the meaning is 'or', i.e. any one or more of the slots may be supplied in the data. This syntax allows specifications like the following to be made:
+
+[source, cadl]
+--------
+    Pd            -- a duration containing days only, e.g. P5d
+    Pm            -- a duration containing months only, e.g. P5m
+    PTm           -- a duration containing minutes only, e.g. PT5m
+    Pwd           -- a duration containing weeks and/or days only, e.g. P4w
+    PThm          -- a duration containing hours and/or minutes only, e.g. PT2h30m
+--------
+
+Pure pattern constraints are used to constrain negative durations as well as positive durations. Accordingly, any of the above constraints may be used for values such as `'-P5d'` etc.
+
+===== Lists and Intervals
+
+Durations can also be constrained by using absolute ISO 8601 duration values, or ranges of the same (including negative values), e.g.:
+
+[source, cadl]
+--------
+    PT1m              -- 1 minute
+    P1dT8h            -- 1 day 8 hrs
+    |PT0m..PT1m30s|   -- Reasonable time offset of first apgar sample
+--------
+
+===== Mixed Pattern and Interval
+
+In some cases there is a need to be able to limit the allowed units as well as state a duration interval. This is common in obstetrics, where physicians want to be able to set an interval from say 0-50 weeks and limit the units to only weeks and days. This can be done as follows:
+
+--------
+    PWD/|P0W..P50W|   -- 0-50 weeks, expressed only using weeks and days
+--------
+
+The same type of constraint can be used to constrain values that may be negative (usually allowing for zero as well):
+
+--------
+    PYMWD/|<=P0Y|     -- negative age, with years/months/weeks/days allowed
+--------
+
+NOTE: a negative sign (or equivalently, '\<= 0' construction as above) is only used for specifying interval values; the pattern part is understood as allowing values of either sign.
+
+The general form is a pattern followed by a slash ('/') followed by an interval, as follows:
+
+[source, antlr-java]
+--------
+duration_constraint: duration_pattern '/' duration_interval ;
+--------
+
+=== Constraints on Lists of Primitive types
+
+In many cases, the type in the information model of an attribute to be constrained is a list or set of primitive types, e.g. `List<Integer>`, `Set<String>` etc. As for complex types, this is indicated in cADL using the `cardinality` keyword, as follows:
+
+[source, cadl]
+--------
+    some_attr cardinality ∈ {0..*} ∈ {some_constraint}
+--------
+
+The pattern to match in the final braces will then have the meaning of a list or set of value constraints, rather than a single value constraint. Any constraint described above for single-valued attributes, which is commensurate with the type of the attribute in question, may be used. However, as with complex objects, the meaning is now that every item in the list is constrained to be any one of the values implied by the constraint expression. For example,
+
+[source, cadl]
+--------
+    speed_limits cardinality ∈ {0..*; ordered} ∈ {50, 60, 70, 80, 100, 130}
+--------
+
+constrains each value in the list corresponding to the value of the attribute `speed_limits` (of type `List<Integer>` ), to be any one of the values 50, 60, 70 etc.
+
+=== Assumed Values
+
+When archetypes are defined to have optional parts, an ability to define 'assumed' values is useful. For example, an archetype for the concept 'blood pressure measurement' might include an optional data point describing the patient position, with choices 'lying', 'sitting' and 'standing'. Since the section is optional, data could be created according to the archetype which does not contain the protocol section. However, a blood pressure cannot be taken without the patient in some position, so clearly
+there could be an implied or 'assumed' value.
+
+The archetype allows this to be explicitly stated so that all users/systems know what value to assume when optional items are not included in the data. Assumed values are currently definable on primitive types only, and are expressed after the constraint expression, by a semi-colon (';') followed by a value of the same type as that implied by the preceding part of the constraint. The use of assumed values is illustrated here for a number of primitive types:
+
+[source, cadl]
+--------
+length matches {|0..1000|; 200}             -- allow 0 - 1000, assume 200
+some_flag matches {True, False; True}       -- allow T or F, assume T
+some_date matches {yyyy-mm-dd hh:mm:XX; 1800-01-01T00:00:00}
+--------
+
+If no assumed value is stated, no reliable assumption can be made by the receiver of the archetyped data about what the values of removed optional parts might be, from inspecting the archetype. However, this usually corresponds to a situation where the assumed value does not even need to be stated - the same value will be assumed by all users of this data, if its value is not transmitted. In other cases, it may be that it doesn't matter what the assumed value is. For example, an archetype used to capture 
+physical measurements might include a "protocol" section, which in turn can be used to record the "instrument" used to make a given measurement. In a blood pressure specialisation of this archetype it is fairly likely that physicians recording or receiving the data will not care about what instrument was used.
+
+== Syntax Specification
+
+The grammar for the standard cADL syntax is shown below. The form used in openEHR is the same as this, but with custom additions, described in the {openehr_am_oap}[openEHR Archetype Profile^]. The resulting grammar and lexical analysis specification used in the openEHR reference ADL parser is implemented using lex (.l file) and yacc (.y file) specifications for the Eiffel programming environment. The current release of these files is available at in the https://github.com/openEHR/adl-tools/blob/Release-1.4/components/adl_parser/src/syntax/cadl/parser[ADL Workbench cADL parser source code^]. The .l and .y files can be converted for use in other yacc/lex-based programming environments. The production rules of the .y file are available as an https://github.com/openEHR/adl-tools/blob/Release-1.4/components/adl_parser/src/syntax/cadl/parser/cadl_validator.html[HTML document^].
+
+=== Grammar
+
+The following is an extract of the cADL parser production rules (yacc specification). Note that because of interdependencies with path and assertion production rules, practical implementations may have to include all production rules in one parser.
+
+[source, antlr-java]
+--------
+input:
+    c_complex_object
+    ;
+
+c_complex_object:
+    c_complex_object_head SYM_MATCHES SYM_START_CBLOCK c_complex_object_body SYM_END_CBLOCK
+    ;
+
+c_complex_object_head:
+    c_complex_object_id c_occurrences
+    ;
+    
+c_complex_object_id:
+    type_identifier
+    | type_identifier V_LOCAL_TERM_CODE_REF
+    ;
+
+c_complex_object_body:
+    c_any
+    | c_attributes
+    ;
+
+c_object:
+    c_complex_object
+    | archetype_internal_ref
+    | archetype_slot
+    | constraint_ref
+    | c_primitive_object
+    | V_C_DOMAIN_TYPE
+    ;
+    
+archetype_internal_ref:
+    SYM_USE_NODE type_identifier c_occurrences object_path
+    ;
+
+archetype_slot:
+    c_archetype_slot_head SYM_MATCHES SYM_START_CBLOCK c_includes c_excludes
+    SYM_END_CBLOCK
+    ;
+
+c_archetype_slot_head:
+    c_archetype_slot_id c_occurrences
+    ;
+
+c_archetype_slot_id:
+    SYM_ALLOW_ARCHETYPE type_identifier
+    | SYM_ALLOW_ARCHETYPE type_identifier V_LOCAL_TERM_CODE_REF
+    ;
+
+c_primitive_object:
+    c_primitive
+    ;
+
+c_primitive:
+    c_integer
+    | c_real
+    | c_date
+    | c_time
+    | c_date_time
+    | c_duration
+    | c_string
+    | c_boolean
+    ;
+
+c_any:
+    '*'
+    ;
+
+c_attributes:
+    c_attribute
+    | c_attributes c_attribute
+    ;
+
+c_attribute:
+    c_attr_head SYM_MATCHES SYM_START_CBLOCK c_attr_values SYM_END_CBLOCK
+    ;
+
+c_attr_head:
+    V_ATTRIBUTE_IDENTIFIER c_existence
+    | V_ATTRIBUTE_IDENTIFIER c_existence c_cardinality
+    ;
+
+c_attr_values:
+    c_object
+    | c_attr_values c_object
+    | c_any
+    ;
+
+c_includes:
+    // nothing OK
+    | SYM_INCLUDE assertions
+    ;
+
+c_excludes:
+    // nothing OK
+    | SYM_EXCLUDE assertions
+    ;
+
+c_existence:
+    // nothing OK
+    | SYM_EXISTENCE SYM_MATCHES SYM_START_CBLOCK existence_spec SYM_END_CBLOCK
+    ;
+
+existence_spec:
+    V_INTEGER
+    | V_INTEGER SYM_ELLIPSIS V_INTEGER
+    ;
+
+c_cardinality:
+    SYM_CARDINALITY SYM_MATCHES SYM_START_CBLOCK cardinality_spec
+    SYM_END_CBLOCK
+    ;
+
+cardinality_spec:
+    occurrence_spec
+    | occurrence_spec ';' SYM_ORDERED
+    | occurrence_spec ';' SYM_UNORDERED
+    | occurrence_spec ';' SYM_UNIQUE
+    | occurrence_spec ';' SYM_ORDERED ';' SYM_UNIQUE
+    | occurrence_spec ';' SYM_UNORDERED ';' SYM_UNIQUE
+    | occurrence_spec ';' SYM_UNIQUE ';' SYM_ORDERED
+    | occurrence_spec ';' SYM_UNIQUE ';' SYM_UNORDERED
+    ;
+
+cardinality_limit_value:
+    integer_value
+    | '*'
+    ;
+
+c_occurrences:
+    // nothing OK
+    | SYM_OCCURRENCES SYM_MATCHES SYM_START_CBLOCK occurrence_spec SYM_END_CBLOCK
+    ;
+
+occurrence_spec:
+    cardinality_limit_value
+    | V_INTEGER SYM_ELLIPSIS cardinality_limit_value
+    ;
+
+c_integer_spec:
+    integer_value
+    | integer_list_value
+    | integer_interval_value
+    | occurrence_spec
+    ;
+
+c_integer:
+    c_integer_spec
+    | c_integer_spec ';' integer_value
+    ;
+
+c_real_spec:
+    real_value
+    | real_list_value
+    | real_interval_value
+    ;
+
+c_real:
+    c_real_spec
+    | c_real_spec ';' real_value
+    ;
+
+c_date_constraint:
+    V_ISO8601_DATE_CONSTRAINT_PATTERN
+    | date_value
+    | date_interval_value
+    ;
+
+c_date:
+    c_date_constraint
+    | c_date_constraint ';' date_value
+    ;
+
+c_time_constraint:
+    V_ISO8601_TIME_CONSTRAINT_PATTERN
+    | time_value
+    | time_interval_value
+    ;
+
+c_time:
+    c_time_constraint
+    | c_time_constraint ';' time_value
+    ;
+
+c_date_time_constraint:
+    V_ISO8601_DATE_TIME_CONSTRAINT_PATTERN
+    | date_time_value
+    | date_time_interval_value
+    ;
+
+c_date_time:
+    c_date_time_constraint
+    | c_date_time_constraint ';' date_time_value
+    ;
+c_duration_constraint:
+    duration_pattern
+    | duration_pattern '/' duration_interval_value
+    | duration_value
+    | duration_interval_value
+    ;
+
+duration_pattern:
+    V_ISO8601_DURATION_CONSTRAINT_PATTERN
+    ;
+
+c_duration:
+    c_duration_constraint
+    | c_duration_constraint ';' duration_value
+    ;
+
+c_string_spec:
+    V_STRING
+    | string_list_value
+    | string_list_value ',' SYM_LIST_CONTINUE
+    | V_REGEXP
+    ;
+
+c_string:
+    c_string_spec
+    | c_string_spec ';' string_value
+    ;
+
+c_boolean_spec:
+    SYM_TRUE
+    | SYM_FALSE
+    | SYM_TRUE ',' SYM_FALSE
+    | SYM_FALSE ',' SYM_TRUE
+    ;
+
+c_boolean:
+    c_boolean_spec
+    | c_boolean_spec ';' boolean_value
+    ;
+
+constraint_ref:
+    V_LOCAL_TERM_CODE_REF
+    ;
+
+any_identifier:
+    type_identifier
+    | V_ATTRIBUTE_IDENTIFIER
+    ;
+    
+// for string_value etc, see dADL spec
+// for attribute_path, object_path, call_path, etc, see Path spec
+// for assertions, assertion, see Assertion spec
+    
+--------
+
+=== Symbols
+
+The following shows the lexical specification for the cADL grammar.
+
+--------
+----------/* definitions */ -----------------------------------------------
+ALPHANUM [a-zA-Z0-9]
+IDCHAR [a-zA-Z0-9_]
+NAMECHAR [a-zA-Z0-9._\-]
+NAMECHAR_SPACE [a-zA-Z0-9._\- ]
+NAMECHAR_PAREN [a-zA-Z0-9._\-()]
+UTF8CHAR (([\xC2-\xDF][\x80-\xBF])|(\xE0[\xA0-\xBF][\x80-\xBF])|([\xE1-\xEF][\x80-\xBF][\x80-\xBF])|(\xF0[\x90-\xBF][\x80-\xBF][\x80-\xBF])|([\xF1-\xF7][\x80-\xBF][\x80-\xBF][\x80-\xBF]))
+
+----------/* comments */ -------------------------------------------------
+"--".* -- Ignore comments
+"--".*\n[ \t\r]*
+
+----------/* symbols */ -------------------------------------------------
+"-"             -- -> Minus_code
+"+"             -- -> Plus_code
+"*"             -- -> Star_code
+"/"             -- -> Slash_code
+"^"             -- -> Caret_code
+"="             -- -> Equal_code
+"."             -- -> Dot_code
+";"             -- -> Semicolon_code
+","             -- -> Comma_code
+":"             -- -> Colon_code
+"!"             -- -> Exclamation_code
+"("             -- -> Left_parenthesis_code
+")"             -- -> Right_parenthesis_code
+"$"             -- -> Dollar_code
+"??"            -- -> SYM_DT_UNKNOWN
+"?"             -- -> Question_mark_code
+"|"             -- -> SYM_INTERVAL_DELIM
+"["             -- -> Left_bracket_code
+"]"             -- -> Right_bracket_code
+"{"             -- -> SYM_START_CBLOCK
+"}"             -- -> SYM_END_CBLOCK
+".."            -- -> SYM_ELLIPSIS
+"..."           -- -> SYM_LIST_CONTINUE
+
+----------/* common keywords */ --------------------------------------
+[Mm][Aa][Tt][Cc][Hh][Ee][Ss]                    -- -> SYM_MATCHES
+[Ii][Ss]_[Ii][Nn]                               -- -> SYM_MATCHES
+
+----------/* assertion keywords */ ------------------------------------
+[Tt][Hh][Ee][Nn]                                    -- -> SYM_THEN
+[Ee][Ll][Ss][Ee]                                    -- -> SYM_ELSE
+[Aa][Nn][Dd]                                        -- -> SYM_AND
+[Oo][Rr]                                            -- -> SYM_OR
+[Xx][Oo][Rr]                                        -- -> SYM_XOR
+[Nn][Oo][Tt]                                        -- -> SYM_NOT
+[Ii][Mm][Pp][Ll][Ii][Ee][Ss]                        -- -> SYM_IMPLIES
+[Tt][Rr][Uu][Ee]                                    -- -> SYM_TRUE
+[Ff][Aa][Ll][Ss][Ee]                                -- -> SYM_FALSE
+[Ff][Oo][Rr][_][Aa][Ll][Ll]                         -- -> SYM_FORALL
+[Ee][Xx][Ii][Ss][Tt][Ss]                            -- -> SYM_EXISTS
+
+---------/* cADL keywords */ ---------------------------------------
+[Ee][Xx][Ii][Ss][Tt][Ee][Nn][Cc][Ee]                -- -> SYM_EXISTENCE
+[Oo][Cc][Cc][Uu][Rr][Rr][Ee][Nn][Cc][Ee][Ss]        -- -> SYM_OCCURRENCES
+[Cc][Aa][Rr][Dd][Ii][Nn][Aa][Ll][Ii][Tt][Yy]        -- -> SYM_CARDINALITY
+[Oo][Rr][Dd][Ee][Rr][Ee][Dd]                        -- -> SYM_ORDERED
+[Uu][Nn][Oo][Rr][Dd][Ee][Rr][Ee][Dd]                -- -> SYM_UNORDERED
+[Uu][Nn][Ii][Qq][Uu][Ee]                            -- -> SYM_UNIQUE
+[Ii][Nn][Ff][Ii][Nn][Ii][Tt][Yy]                    -- -> SYM_INFINITY
+[Uu][Ss][Ee][_][Nn][Oo][Dd][Ee]                     -- -> SYM_USE_NODE
+[Uu][Ss][Ee][_][Aa][Rr][Cc][Hh][Ee][Tt][Yy][Pp][Ee] -- -> SYM_USE_ARCHETYPE
+[Aa][Ll][Ll][Oo][Ww][_][Aa][Rr][Cc][Hh][Ee][Tt][Yy][Pp][Ee] -- -> SYM_ALLOW_ARCHETYPE
+[Ii][Nn][Cc][Ll][Uu][Dd][Ee]                        -- -> SYM_INCLUDE
+[Ee][Xx][Cc][Ll][Uu][Dd][Ee]                        -- -> SYM_EXCLUDE
+
+----------/* V_URI */ -----------------------------------------------
+[a-z]+:\/\/[^<>|\\{}^~"\[\] ]*
+
+---------/* V_QUALIFIED_TERM_CODE_REF */ ----------------------------
+-- any qualified code, e.g. [local::at0001], [local::ac0001], [loinc::700-0]
+--
+\[{NAMECHAR_PAREN}+::{NAMECHAR}+\]
+\[{NAMECHAR_PAREN}+::{NAMECHAR_SPACE}+\] -- error
+
+---------/* V_LOCAL_TERM_CODE_REF */ ---------------------------------
+-- any unqualified code, e.g. [at0001], [ac0001], [700-0]
+--
+\[{ALPHANUM}{NAMECHAR}*\]
+
+----------/* V_LOCAL_CODE */ ----------------------------------------
+a[ct][0-9.]+
+
+---------/* V_TERM_CODE_CONSTRAINT of form */ ------------
+-- [terminology_id::code, -- comment
+-- code, -- comment
+-- code] -- comment
+--
+-- Form with assumed value
+-- [terminology_id::code, -- comment
+-- code; -- comment
+-- code] -- an optional assumed value
+--
+\[[a-zA-Z0-9()._\-]+::[ \t\n]*          -- start IN_TERM_CONSTRAINT
+<IN_TERM_CONSTRAINT> {
+[ \t]*[a-zA-Z0-9._\-]+[ \t]*;[ \t\n]*
+
+-- match second last line with ';' termination (assumed value)
+[ \t]*[a-zA-Z0-9._\-]+[ \t]*,[ \t\n]*
+
+-- match any line, with ',' termination
+\-\-[^\n]*\n -- ignore comments
+[ \t]*[a-zA-Z0-9._\-]*[ \t\n]*\]        -- match final line, terminating in ']'
+
+------/* V_ISO8601_EXTENDED_DATE_TIME */ ---
+-- YYYY-MM-DDThh:mm:ss[,sss][Z|+/-nnnn]
+--
+[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9](,[0-9]+)?(Z|[+-][0-9]{4})? |
+[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9](Z|[+-][0-9]{4})? |
+[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9](Z|[+-][0-9]{4})?
+
+----------/* V_ISO8601_EXTENDED_TIME */ --------
+-- hh:mm:ss[,sss][Z|+/-nnnn]
+--
+[0-2][0-9]:[0-6][0-9]:[0-6][0-9](,[0-9]+)?(Z|[+-][0-9]{4})? |
+[0-2][0-9]:[0-6][0-9](Z|[+-][0-9]{4})?
+
+----------/* V_ISO8601_DATE YYYY-MM-DD */ --------------------
+[0-9]{4}-[0-1][0-9]-[0-3][0-9] |
+[0-9]{4}-[0-1][0-9]
+
+----------/* V_ISO8601_DURATION */ -------------------------
+P([0-9]+[yY])?([0-9]+[mM])?([0-9]+[wW])?([0-9]+[dD])?T([0-9]+[hH])?([0-9]+[mM])?([0-9]+[sS])? |
+P([0-9]+[yY])?([0-9]+[mM])?([0-9]+[wW])?([0-9]+[dD])?
+
+----------/* V_ISO8601_DATE_CONSTRAINT_PATTERN */ -----------------
+[yY][yY][yY][yY]-[mM?X][mM?X]-[dD?X][dD?X]
+
+----------/* V_ISO8601_TIME_CONSTRAINT_PATTERN */ ------------------
+[hH][hH]:[mM?X][mM?X]:[sS?X][sS?X]
+
+----------/* V_ISO8601_DATE_TIME_CONSTRAINT_PATTERN */ -------------
+[yY][yY][yY][yY]-[mM?][mM?]-[dD?X][dD?X][ T][hH?X][hH?X]:[mM?X][mM?X]:[sS?X][sS?X]
+
+----------/* V_ISO8601_DURATION_CONSTRAINT_PATTERN */ --------------
+P[yY]?[mM]?[wW]?[dD]?T[hH]?[mM]?[sS]? |
+P[yY]?[mM]?[wW]?[dD]?
+
+----------/* V_TYPE_IDENTIFIER */ ------------------------------------
+[A-Z]{IDCHAR}*
+
+----------/* V_GENERIC_TYPE_IDENTIFIER */ ----------------------------
+[A-Z]{IDCHAR}*<[a-zA-Z0-9,_<>]+>
+
+----------/* V_FEATURE_CALL_IDENTIFIER */ ----------------------------
+[a-z]{IDCHAR}*[ ]*\(\)
+
+----------/* V_ATTRIBUTE_IDENTIFIER */ ----------------------------
+[a-z]{IDCHAR}*
+
+----------/* V_GENERIC_TYPE_IDENTIFIER */ -------------------------------
+[A-Z]{IDCHAR}*<[a-zA-Z0-9,_<>]+>
+
+----------/* V_ATTRIBUTE_IDENTIFIER */ ----------------------------------
+[a-z]{IDCHAR}*
+
+----------/* V_C_DOMAIN_TYPE - sections of dADL syntax */ ---------------
+-- {mini-parser specification}
+-- this is an attempt to match a dADL section inside cADL. It will
+-- probably never work 100% properly since there can be '>' inside "||"
+-- ranges, and also strings containing any character, e.g. units string
+-- contining "{}" chars. The real solution is to use the dADL parser on
+-- the buffer from the current point on and be able to fast-forward the
+-- cursor to the last character matched by the dADL scanner
+-- the following version matches a type name without () and is deprecated
+
+[A-Z]{IDCHAR}*[ \n]*<               -- match a pattern like
+                                    -- 'Type_Identifier whitespace <'
+
+-- the following version is correct ADL 1.4/ADL 1.5
+\([A-Z]{IDCHAR}*\)[ \n]*<           -- match a pattern like
+                                    -- '(Type_Identifier) whitespace <'
+<IN_C_DOMAIN_TYPE> {
+[^}>]*>[ \n]*[^>}A-Z]               -- match up to next > not
+                                    -- followed by a '}' or '>'
+[^}>]*>+[ \n]*[}A-Z]                -- final section - '...>
+                                    -- whitespace } or beginning of
+                                    -- a type identifier'
+[^}>]*[ \n]*}                       -- match up to next '}' not
+}                                   -- preceded by a '>'
+
+----------/* V_REGEXP */ -------------------------------------
+-- {mini-parser specification}
+"{/"                            -- start of regexp
+<IN_REGEXP1>[^/]*\\\/           -- match any segments with quoted slashes
+<IN_REGEXP1>[^/}]*\/            -- match final segment
+\^[^^\n]*\^                     -- regexp formed using '^' delimiters
+
+----------/* V_INTEGER */ -----------------------------------------------
+[0-9]+
+
+----------/* V_REAL */ -----------------------------------------------
+[0-9]+\.[0-9]+
+[0-9]+\.[0-9]+[eE][+-]?[0-9]+
+
+----------/* V_STRING */ -----------------------------------------------
+\"[^\\\n"]*\"
+\"[^\\\n"]*{ -- beginning of a multi-line string
+<IN_STR> {
+\\\\ -- match escaped backslash, i.e. \\ -> \
+\\\" -- match escaped double quote, i.e. \" -> "
+{UTF8CHAR}+ -- match UTF8 chars
+[^\\\n"]+ -- match any other characters
+\\\n[ \t\r]* -- match LF in line
+[^\\\n"]*\" -- match final end of string
+.|\n |
+<<EOF>> -- unclosed String -> ERR_STRING
+
+--------

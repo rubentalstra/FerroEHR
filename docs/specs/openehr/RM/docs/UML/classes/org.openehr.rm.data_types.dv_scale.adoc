@@ -1,0 +1,67 @@
+=== DV_SCALE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DV_SCALE*
+
+h|*Description*
+2+a|A data type that represents scale values, where there is:
+
+a) implied ordering, 
+b) no implication that the distance between each value is constant, and 
+c) the total number of values is finite;
+d) non-integer values are allowed.
+
+Example:
+
+----
+Borg CR 10 Scale
+
+0    No Breathlessness at all
+0.5  Very Very Slight (Just Noticeable)
+1    Very Slight
+2    Slight Breathlessness
+3    Moderate
+... etc
+----
+
+For scores that include only Integers, `DV_SCALE` may also be used, but `DV_ORDINAL` should be supported to accommodate existing data instances of that type.
+
+h|*Inherit*
+2+|`<<_dv_ordered_class,DV_ORDERED>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*symbol*: `<<_dv_coded_text_class,DV_CODED_TEXT>>`
+a|Coded textual representation of this value in the scale range, which may be strings made from symbols or other enumerations of terms such as  `no breathlessness`, `very very slight`, `slight breathlessness`. Codes come from archetypes.
+
+In some cases, a scale may include values that have no code/symbol. In this case, the symbol will be a `DV-CODED_TEXT` including the `_terminology_id_` and a blank String value for `_code_string_`.
+
+h|*1..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^]`
+a|Real number value of Scale item.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*is_strictly_comparable_to* ( +
+other: `<<_dv_scale_class,DV_SCALE>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Test if this Scale value is strictly comparable to `_other_`.
+
+h|*1..1 +
+(effected)*
+|*less_than* __alias__ "<" ( +
+other: `<<_dv_scale_class,DV_SCALE>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_comparable__: `is_strictly_comparable_to (other)`
+a|True if this Scale value is less than `_other_`.
+|===

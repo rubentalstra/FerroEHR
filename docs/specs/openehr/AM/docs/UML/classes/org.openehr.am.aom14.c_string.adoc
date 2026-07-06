@@ -1,0 +1,45 @@
+=== C_STRING Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_STRING*
+
+h|*Description*
+2+a|Constraint on instances of STRING.
+
+h|*Inherit*
+2+|`<<_c_primitive_class,C_PRIMITIVE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*pattern*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Regular expression pattern for proposed instances of String to match.
+
+h|*0..1*
+|*list*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of Strings specifying constraint.
+
+h|*1..1*
+|*list_open*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the list is being used to specify the constraint but is not considered exhaustive.
+
+h|*0..1 +
+(redefined)*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The value to assume if this item is not included in data, due to being part of an optional structure.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*valid_value* ( +
+a_value: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if a_value is valid with respect to constraint expressed in concrete instance of this type.
+|===

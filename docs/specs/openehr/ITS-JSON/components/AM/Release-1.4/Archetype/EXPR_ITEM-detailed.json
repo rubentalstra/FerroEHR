@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/EXPR_ITEM-detailed.json",
+    "title": "EXPR_ITEM",
+    "description": "Abstract parent of all expression tree items.",
+    "$comments": "Defined in Archetype IM, abstract",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "EXPR_LEAF",
+                "EXPR_UNARY_OPERATOR",
+                "EXPR_BINARY_OPERATOR"
+            ]
+        },
+        "type": {
+            "description": "Type name of this item in the mathematical sense. For leaf nodes, must be the name of a primitive type, or else a reference model type. The type for any relational or boolean operator will be \u201cBoolean\u201d, while the type for any arithmetic operator, will be \u201cReal\u201d or \u201cInteger\u201d.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        }
+    },
+    "required": [
+        "_type",
+        "type"
+    ],
+    "$abstract": true,
+    "$children": [
+        "all-detailed.json#/definitions/EXPR_LEAF",
+        "all-detailed.json#/definitions/EXPR_OPERATOR"
+    ]
+}

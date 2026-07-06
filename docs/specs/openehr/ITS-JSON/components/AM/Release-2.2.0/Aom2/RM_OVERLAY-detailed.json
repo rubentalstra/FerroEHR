@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/RM_OVERLAY-detailed.json",
+    "title": "RM_OVERLAY",
+    "description": "Container object for archetype statements relating to RM attributes, which may be directly on objects constrained within the archetype, or at deeper non-constrained RM paths from an object or the root.",
+    "$comments": "Defined in Aom2 IM",
+    "type": "object",
+    "properties": {
+        "rm_visibility": {
+            "description": "Optional structure in which visibility and aliasing of reference model elements can be specified. Key is path to an RM attribute, which is typically formed from a path to an archetyped node concatenated with a further pure RM attribute path; may also refer to a non-archetyped attribute.",
+            "type": "array",
+            "items": {
+                "$ref": "all-detailed.json#/definitions/RM_ATTRIBUTE_VISIBILITY"
+            }
+        }
+    }
+}

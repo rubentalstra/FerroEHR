@@ -1,0 +1,22 @@
+=== TERMINOLOGY_RELATION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__TERMINOLOGY_RELATION (abstract)__*
+
+h|*Description*
+2+a|Class whose instances represent any kind of 1:N relationship between a source term and 1-N target terms.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Code of source term of this relation.
+
+h|*1..1*
+|*members*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of target terms in this relation.
+|===

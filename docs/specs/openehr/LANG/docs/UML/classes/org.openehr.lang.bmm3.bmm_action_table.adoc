@@ -1,0 +1,21 @@
+=== BMM_ACTION_TABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_ACTION_TABLE*
+
+h|*Description*
+2+a|Multi-branch conditional statement structure
+
+h|*Inherit*
+2+|`<<_bmm_statement_class,BMM_STATEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*decision_table*: `<<_bmm_action_decision_table_class,BMM_ACTION_DECISION_TABLE>>`
+a|A specialised decision table whose outputs can only be procedure agents. In execution, the matched agent will be invoked.
+|===

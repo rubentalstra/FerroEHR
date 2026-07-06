@@ -1,0 +1,21 @@
+=== C_ORDINAL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_ORDINAL*
+
+h|*Description*
+2+a|Constrainer class for Ordinal data.
+
+h|*Inherit*
+2+|`<<_c_domain_type_class,C_DOMAIN_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*list*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_ordinal_class,ORDINAL>>>`
+a|Value set of allowed Ordinals in the constraint.
+|===

@@ -1,0 +1,3 @@
+= Identification Package
+
+NOTE: The classes documented in this section are now available in the BASE component {openehr_base_types}#_identification_package[Base Types specification, Definitions package section].

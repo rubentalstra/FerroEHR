@@ -1,0 +1,74 @@
+=== BMM_MODEL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_MODEL*
+
+h|*Description*
+2+a|Model of a BMM schema (along with what is inherited from BMM_SCHEMA_CORE).
+
+h|*Inherit*
+2+|`<<_bmm_schema_core_class,BMM_SCHEMA_CORE>>`, `<<_bmm_package_container_class,BMM_PACKAGE_CONTAINER>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*class_definitions*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_class_class,BMM_CLASS>>>`
+a|All classes in this schema.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*primitive_types* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of keys in `class_definitions' of items marked as primitive types, as defined in input schema.
+
+h|*0..1*
+|*enumeration_types* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of keys in `class_definitions' of items that are enumeration types, as defined in input schema.
+
+h|*1..1*
+|*class_definition* ( +
+a_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_bmm_class_class,BMM_CLASS>>`
+a|Retrieve the class definition corresponding to `a_type_name' (which may contain a generic part).
+
+h|*1..1*
+|*enumeration_definition* ( +
+a_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_bmm_enumeration_class,BMM_ENUMERATION>>`
+a|Retrieve the enumeration definition corresponding to `a_type_name'.
+
+h|*1..1*
+|*property_definition* (): `<<_bmm_property_class,BMM_PROPERTY>>`
+a|Retrieve the property definition for `a_prop_name' in flattened class corresponding to `a_type_name'.
+
+h|*1..1*
+|*ms_conformant_property_type* ( +
+a_bmm_type_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_bmm_property_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_ms_property_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `a_ms_property_type' is a valid 'MS' dynamic type for `a_property' in BMM type `a_bmm_type_name'. 'MS' conformance means 'model-semantic' conformance, which abstracts away container types like List<>, Set<> etc and compares the dynamic type with the relation target type in the UML sense, i.e. regardless of whether there is single or multiple containment.
+
+h|*1..1*
+|*property_definition_at_path* (): `<<_bmm_property_class,BMM_PROPERTY>>`
+a|Retrieve the property definition for `a_property_path' in flattened class corresponding to `a_type_name'.
+
+h|*0..1*
+|*all_ancestor_classes* ( +
+a_class: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Return all ancestor types of `a_class_name' up to root class (usually 'ANY', 'Object' or something similar). Does not include current class. Returns empty list if none.
+
+h|*1..1*
+|*type_conforms_to* ( +
+a_desc_type: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+an_anc_type: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Check conformance of `a_desc_type' to `an_anc_type'; the types may be generic, and may contain open generic parameters like 'T' etc. These are replaced with their appropriate constrainer types, or Any during the conformance testing process.
+|===

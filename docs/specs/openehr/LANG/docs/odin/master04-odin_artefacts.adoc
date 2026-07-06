@@ -1,0 +1,129 @@
+= ODIN Artefacts
+
+An ODIN text may be created in two different physical forms: embedded fragments and documents. For both the following general structure applies:
+
+[source, antlr-java]
+--------
+odin_text           ::=   ( schema_identifier )? main_text ;
+schema_identifier   ::=   `@` schema '=' URI ;
+--------
+
+where 'URI' is an value of the URI primitive type. This is used to indicate the schema, including its version, on which the main ODIN text is based. It is optional because in many cases the schema is known a priori, or can be inferred from context.
+
+The following sections describe various types of ODIN artefact.
+
+== Embedded Fragment
+
+Fragments of ODIN text can appear embedded within other artefacts. A fragment typically includes no object identifiers nor schema identifier since both of these are assumed to be inferred from the surrounding context. A typical fragment has the following appearance:
+
+[source, odin]
+--------
+... other formalism text ...
+... delimiter ...
+
+--
+-- ODIN Embedded Fragment
+--
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+    attr_2 = <
+        attr_22 = <leaf_value>
+    >
+
+... delimiter ...
+... other formalism text ...
+--------
+
+== Document
+
+An ODIN document is considered a standalone artefact whose contents can take various forms, all assumed to correspond to one or more serialised objects.
+
+=== Implicit Object Document
+
+A document containing only an embedded fragment such as shown above is considered to be an 'implicit' object document, and its contents are assumed to consist of values of various object properties. This format is a degenerate form of the 'anonymous' object document but so common and useful it is treated as a legal ODIN form.
+
+Implicit object documents are commonly used to serialise models, such as information model schemas, application configuration files and so on. The usual assumption is that the filename and/or ODIN content will identify the artefact sufficiently for tools to know what its information model is.
+
+=== Anonymous Object Document
+
+Any other kind of ODIN document contains one or more explicit objects. The anonymous object form has one object per document, with no object identifier and consists of an outer '<>' delimiter pair containing an ODIN embedded fragment, i.e.:
+
+[source, odin]
+--------
+--
+-- ODIN Anonymous Object Document
+--
+<
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+    attr_2 = <
+        attr_22 = <leaf_value>
+    >
+>
+--------
+
+This form has no practical benefit over the implicit document form, but is syntactically more correct, and should be supported by parsers.
+
+=== Identified Object Document
+
+The next variant corresponds to serialisations of multiple objects, each of which is identified.
+
+[source, odin]
+--------
+--
+-- ODIN Identified Object Document
+--
+["id_1"] = <
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+>
+
+["id_2"] = <
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+>
+
+...
+
+["id_N"] = <
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+>
+--------
+ 
+
+Identifiers can be values of the String, Integer or any Date/Time primitive types. Strings are most commonly used e.g.:
+
+[source, odin]
+--------
+--
+-- ODIN Identified Object Document
+--
+
+["aaa"] = <
+    ...
+>
+["bbb"] = <
+    ...
+>
+["ccc"] = <
+    ...
+>
+--------
+
+Identified Object Documents are most commonly used for representing serialised in-memory instance networks, i.e. the notion of an 'object dump'.

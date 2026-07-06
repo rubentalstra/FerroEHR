@@ -1,0 +1,56 @@
+title: Child3
+required:
+  - id
+  - localizedName
+  - rmType
+  - nodeId
+  - min
+  - max
+  - localizedNames
+  - localizedDescriptions
+  - aqlPath
+  - inputs
+type: object
+properties:
+  id:
+    type: string
+  localizedName:
+    type: string
+  rmType:
+    type: string
+  nodeId:
+    type: string
+  min:
+    type: integer
+    format: int32
+  max:
+    type: integer
+    format: int32
+  localizedNames:
+    $ref: ./LocalizedNames1.yaml
+  localizedDescriptions:
+    $ref: ./LocalizedDescriptions.yaml
+  aqlPath:
+    type: string
+  inputs:
+    type: array
+    items:
+      $ref: ./Input1.yaml
+    description: ''
+  name:
+    type: string
+example:
+  id: count_value
+  localizedName: Size
+  rmType: DV_COUNT
+  nodeId: ''
+  min: 0
+  max: 1
+  localizedNames:
+    sl: Velikost
+  localizedDescriptions:
+    sl: Velikost naprave
+  aqlPath: >-
+    /content[openEHR-EHR-OBSERVATION.blood_pressure.v1]/protocol[at0011]/items[openEHR-EHR-CLUSTER.device.v1]/items[at0016]/value
+  inputs:
+    - type: INTEGER

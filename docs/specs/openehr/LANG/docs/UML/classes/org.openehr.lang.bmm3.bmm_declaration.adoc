@@ -1,0 +1,29 @@
+=== BMM_DECLARATION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_DECLARATION*
+
+h|*Description*
+2+a|Declaration of a writable variable, associating a name with a type.
+
+h|*Inherit*
+2+|`<<_bmm_simple_statement_class,BMM_SIMPLE_STATEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|
+
+h|*1..1*
+|*result*: `<<_el_writable_variable_class,EL_WRITABLE_VARIABLE>>`
+a|
+
+h|*1..1*
+|*type*: `<<_bmm_type_class,BMM_TYPE>>`
+a|The declared type of the variable.
+|===

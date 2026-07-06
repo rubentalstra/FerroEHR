@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/EXPR_CONSTRAINT-detailed.json",
+    "title": "EXPR_CONSTRAINT",
+    "description": "Expression tree leaf item representing a constraint on a primitive type, expressed in the form of a concrete subtype of C_PRIMITIVE_OBJECT.",
+    "$comments": "Defined in Aom2 IM, inherits from EXPR_LITERAL",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "EXPR_CONSTRAINT",
+                "EXPR_ARCHETYPE_ID_CONSTRAINT"
+            ]
+        },
+        "item": {
+            "description": "The constraint.",
+            "$ref": "all-detailed.json#/definitions/C_PRIMITIVE_OBJECT"
+        }
+    },
+    "required": [
+        "item"
+    ],
+    "$inherits": [
+        null
+    ],
+    "$children": [
+        "all-detailed.json#/definitions/EXPR_ARCHETYPE_ID_CONSTRAINT"
+    ]
+}

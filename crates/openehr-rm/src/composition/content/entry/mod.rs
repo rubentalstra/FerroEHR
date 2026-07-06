@@ -10,3 +10,12 @@ pub mod instruction;
 pub mod instruction_details;
 pub mod ism_transition;
 pub mod observation;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod action_impl;
+pub mod activity_impl;
+pub mod admin_entry_impl;
+pub mod evaluation_impl;
+pub mod instruction_details_impl;
+pub mod instruction_impl;
+pub mod observation_impl;

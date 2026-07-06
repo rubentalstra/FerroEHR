@@ -1,0 +1,31 @@
+=== BMM_FEATURE_GROUP Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_FEATURE_GROUP*
+
+h|*Description*
+2+a|A logical group of features, with a name and set of properties that applies to the group.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]` +
+`{default{nbsp}={nbsp}"feature"}`
+a|Name of this feature group; defaults to 'feature'.
+
+h|*1..1*
+|*properties*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of properties of this group, represented as name/value pairs. These are understood to apply logically to all of the features contained within the group.
+
+h|*0..1*
+|*features*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_feature_class,BMM_FEATURE>>>`
+a|Set of features in this group.
+
+h|*0..1*
+|*visibility*: `<<_bmm_visibility_class,BMM_VISIBILITY>>`
+a|Optional visibility to apply to all features in this group.
+|===

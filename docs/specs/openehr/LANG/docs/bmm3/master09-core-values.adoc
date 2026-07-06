@@ -1,0 +1,48 @@
+= Literal Values
+
+== Overview
+
+With a typical formal model, there is a need for formal representation of literal values. This is needed to support constant declarations, 'default values' (a UML concept), enumeration literals and literal routine calls (see next section). In BMM, all such values have as their meta-type the type `BMM_LITERAL_VALUE<T>` or a descendant. The type hierarchy mostly mimicks parts of the `BMM_TYPE` meta-type hierarchy, allowing for literal values of any of the meta-types in that part of the model. The UML model is shown below.
+
+[.text-center]
+.`base.bmm.core.literal_value` package - Literal Values
+image::{uml_diagrams_uri}/LANG-bmm3.core.literal_value.svg[id=core_literal_value, align="center"]
+
+== General Model
+
+When a BMM model is instantiated in its in-memory form, e.g. in a BMM modelling tool, any literal values in the model such as constant values (e.g. `Real Pi = 3.1415926`), default values (e.g. `Person.name: String = "(unknown)"`) etc are instances of 'two types':
+
+* their declared types withing the model, e.g. `Real`, `String`, `Observation`;
+* the meta-type `BMM_LITERAL_VALUE<T>` (or a matching descendant if there is one), which is instantiated to represent the value object within the model.
+
+The value of any such instance is represented by the `_value_literal_` field within its `BMM_LITERAL_VALUE` object. This is assumed to carry a serialised form of the value expressed in a syntax known to the model processing environment within which the BMM model is being used. This may be a programming language syntax, JSON, or any other serialisable format, and is specified by `BMM_LITERAL_VALUE._syntax_`.
+
+== Container Literals
+
+Literals representing Lists or Sets of values of objects of other types have as their BMM meta-type `BMM_CONTAINER_VALUE<T>`. For example, if the serialised value `["Feyerabend", "Lakatos", "Popper"]` (which happens to be a JSON Array of Strings) were parsed as a `List<String>` instance, its meta-type would be a `BMM_CONTAINER_VALUE` instance whose `_value_literal_` was the same string, assuming JSON were used as the syntax, and whose `_type_` will be `BMM_CONTAINER_TYPE`. Similarly a syntax that supported literal Sets using braces, e.g. `{"Feyerabend", "Lakatos", "Popper"}` may be parsed to a `Set<String>` instance, with the same meta-type as for the List.
+
+In a similar way, a Hash table (aka 'map', 'dictionary' etc) with a formal type of `Hash<K, V>` has as its meta-type `BMM_INDEXED_CONTAINER_VALUE`.
+
+== Literal Tuples
+
+Literal tuples may be expressed in BMM, but are not instances of `BMM_LITERAL_VALUE`; instead they are instances (at the meta level) of `EL_TUPLE`, an expression-related meta-type. This is a consequence of the fact that `Tuple` is considered a BMM built-in meta-type rather than a model-provided type, and also that a Tuple instance may contain items of any meta-type, not just literal values. Tuple instances are used in BMM expressions and described in <<_tuples>>.
+
+== Type Extensions
+
+If it were desired to create a full set of 'native' types for BMM, in the way supplied for UML in the UML Standard Profile, specific descendants would be added to the meta-type classes `BMM_SIMPLE_TYPE` and `BMM_GENERIC_TYPE`, as well as `BMM_LITERAL_VALUE`, which would allow such instances to be directly representable in the internal BMM type system. This would still need to be ultimately mapped to the types actually available in any language in which BMM is implemented.
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}bmm_literal_value.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_container_value.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_indexed_container_value.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_unitary_value.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_primitive_value.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_string_value.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_integer_value.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_boolean_value.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_interval_value.adoc[]

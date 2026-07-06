@@ -1,0 +1,105 @@
+=== C_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__C_OBJECT (abstract)__*
+
+h|*Description*
+2+a|Abstract model of constraint on any kind of object node.
+
+h|*Inherit*
+2+|`<<_archetype_constraint_class,ARCHETYPE_CONSTRAINT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*rm_type_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference model type that this node corresponds to.
+
+h|*0..1*
+|*occurrences*: `link:/releases/BASE/{base_release}/foundation_types.html#_multiplicity_interval_class[Multiplicity_interval^]`
+a|Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
+Only set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.
+
+h|*1..1*
+|*node_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
+
+For `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.
+
+h|*0..1*
+|*alternative_ids*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Additional identifiers of this node. openEHR archetypes can carry original ALD2 id-codes in this attribute and it can also carry human readable codes for future use. Alternative ids must be unique within the archetype.
+
+h|*0..1*
+|*is_deprecated*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this node and by implication all sub-nodes are deprecated for use.
+
+h|*0..1*
+|*sibling_order*: `<<_sibling_order_class,SIBLING_ORDER>>`
+a|Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_ = True`.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*specialisation_depth* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Level of specialisation of this archetype node, based on its `_node_id_`. The value 0 corresponds to non-specialised, 1 to first-level specialisation and so on. The level is the same as the number of ‘.’ characters in the node_id code. If `_node_id_` is not set, the return value is -1, signifying that the specialisation level should be determined from the nearest parent `C_OBJECT` node having a node_id.
+
+h|*1..1*
+|*effective_occurrences* (): `link:/releases/BASE/{base_release}/foundation_types.html#_multiplicity_interval_class[Multiplicity_interval^]`
+a|Compute effective occurrences, where no local occurrences constraint set. If the owning `C_ATTRIBUTE._cardinality_` is set, use its upper value, else use RM multiplicity of the owning attribute.
+
+If local `occurrences` not set, always assume 0 as the lower bound.
+
+h|*1..1 +
+(effected)*
+|*c_conforms_to* ( +
+other: `<<_c_object_class,C_OBJECT>>[1]`, +
+rmcc: `link:/releases/BASE/{base_release}/foundation_types.html#_function_class[FUNCTION^]<link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^],link:/releases/BASE/{base_release}/foundation_types.html#_tuple2_class[TUPLE2^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if constraints represented by this node, ignoring any sub-parts, are narrower or the same as other. 
+Typically used during validation of specialised archetype nodes.
+
+.Parameters +
+[horizontal]
+`_rmcc_`:: Reference Model conformance checker agent (lambda).
+
+h|*1..1 +
+(effected)*
+|*c_congruent_to* ( +
+other: `<<_archetype_constraint_class,ARCHETYPE_CONSTRAINT>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if constraints represented by this node contain no further redefinitions with respect to the node `_other_`, with the exception of `_node_id_` redefinition in `C_OBJECT` nodes. 
+
+Typically used to test if an inherited node locally contains any constraints.
+
+h|*1..1*
+|*occurrences_conforms_to* ( +
+other: `<<_c_object_class,C_OBJECT>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this node `_occurrences_` conforms to `_other.occurrences_`; `other` is assumed to be in a flat archetype.
+
+.Parameters +
+[horizontal]
+`_other_`:: `C_OBJECT` from a flat parent archetype.
+
+h|*1..1*
+|*node_id_conforms_to* ( +
+other: `<<_c_object_class,C_OBJECT>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = codes_conformant (node_id, other.node_id)`
+a|True if this node id conforms to `_other.node_id_`, which includes the ids being identical; `_other_` is assumed to be in a flat archetype.
+
+h|*1..1 +
+(effected)*
+|*is_prohibited* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = occurrences /= Void and then occurrences.is_prohibited`
+a|True if this `C_OBJECT` node is prohibited, i.e. if its `_occurrences_` is `0..0`.
+|===

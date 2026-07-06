@@ -1,0 +1,726 @@
+= BMM Persistence Syntax
+
+== Overview
+
+A BMM schema is normally written in the {openehr_odin}[ODIN syntax], although any other serialisation supporting typed object models may be used, including JSON (with type markers), YAML, XML etc. The ODIN form is described here. The structures are direct ODIN serialisations of the `P_BMM_XXX` classes in the `persistence` package.
+
+== Serialisation Formats
+
+A BMM schema is a serialisation of the `P_BMM_*` object graph, and may be written in any format able to express a typed object model. Three formats are in use:
+
+* *ODIN*: the original and most widely tool-supported format (for example the openEHR ADL Workbench); files use the `.bmm` extension. The remainder of this chapter describes the ODIN form in detail.
+* *JSON*: the primary format produced and consumed by the `bmm-publisher` tooling; files use the `.bmm.json` extension.
+* *YAML*: an alternative, more compact human-readable format also produced by `bmm-publisher`; files use the `.bmm.yaml` extension.
+
+Whatever the format, the same serialisation rules apply:
+
+* *File heading.* A schema file begins with the header (meta) items corresponding to the persisted attributes of `P_BMM_SCHEMA` (`_bmm_version_`, `_rm_publisher_`, `_schema_name_`, `_rm_release_`, `_schema_revision_`, `_schema_lifecycle_state_`, `_schema_description_`, `_schema_author_`), followed by `_includes_`, `_packages_`, and `_class_definitions_`.
+* *Type discriminator.* Wherever a value may be one of several `P_BMM_*` subtypes (for example a property, a function parameter, or a result type), the concrete subtype is always stated explicitly via a `_type` discriminator. Where the type is unambiguous from context (such as a class definition or a package), no discriminator is needed. Each format renders the discriminator in its own idiom: ODIN uses a type marker `(P_BMM_SINGLE_PROPERTY)`, JSON a `"_type": "P_BMM_SINGLE_PROPERTY"` member, and YAML a tag `!P_BMM_SINGLE_PROPERTY`.
+* *Keyed collections.* Maps such as `_class_definitions_`, `_properties_`, `_functions_`, function `_parameters_`, and `_packages_` are keyed by name.
+
+The following shows the same class fragment, an abstract class `OBJECT_ID` with a single mandatory `String` property `_value_`, in each of the three formats.
+
+[source, odin]
+--------
+["OBJECT_ID"] = <
+    name = <"OBJECT_ID">
+    is_abstract = <True>
+    properties = <
+        ["value"] = (P_BMM_SINGLE_PROPERTY) <
+            name = <"value">
+            is_mandatory = <True>
+            type = <"String">
+        >
+    >
+>
+--------
+
+[source, json]
+--------
+"OBJECT_ID": {
+    "name": "OBJECT_ID",
+    "is_abstract": true,
+    "properties": {
+        "value": {
+            "_type": "P_BMM_SINGLE_PROPERTY",
+            "name": "value",
+            "is_mandatory": true,
+            "type": "String"
+        }
+    }
+}
+--------
+
+[source, yaml]
+--------
+OBJECT_ID:
+  name: OBJECT_ID
+  is_abstract: true
+  properties:
+    value: !P_BMM_SINGLE_PROPERTY
+      name: value
+      is_mandatory: true
+      type: String
+--------
+
+== Header Items
+
+The following shows the header items of a BMM schema, which correspond to the 'persistent' attributes of the class `P_BMM_SCHEMA`.
+
+[source, odin]
+--------
+------------------------------------------------------
+-- P_BMM version on which these schemas are based.
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"adltest">
+rm_release = <"1.0.2">
+model_name = <"TEST_PKG">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"1.0.36">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR schema to support test archetypes">
+
+--------
+
+== Inclusions
+
+[source, odin]
+--------
+includes = <
+    ["1"] = <
+        id = <"openehr_basic_types_1.0.2">
+    >
+>
+--------
+
+== Package Definition
+
+The packages definition should be self-explanatory: just name the classes and packages in a recursive fashion.
+
+NOTE: only top-level package ids can be paths (i.e. contain the '.' character)
+
+NOTE: only classes defined in the same schema can be referenced in the package section in that schema.
+
+NOTE: make sure that the ODIN 'keys' are the same as the 'name' attributes in each block.
+
+[source, odin]
+--------
+packages = <
+    ["org.openehr.test_pkg"] = <
+        name = <"org.openehr.test_pkg">
+        classes = <"WHOLE", "SOME_TYPE", "BOOK", "CHAPTER", "ENTRY", "CAR", "CAR_BODY">
+    >
+>
+--------
+
+== Class Definitions
+
+=== Classes for Primitive Types
+
+Definitions for primitive types in a BMM schema are just normal class definitions within a `primitive_types` block. Types that are included here are usually types corresponding to primitives in target programming languages, XML schema or other downstream technologies. These types can be detected as primitive types by tools, but otherwise are processed in the same way as types defined in the main `class_definitions` group.
+
+NOTE: unlike UML, all container types such as `List<T>`, `Hash<V,K>` etc are exlicit in a BMM schema, and consequently, such types are normally defined (including with generic parameters) in a BMM schema.
+
+[source, odin]
+--------
+primitive_types = <
+    ["Any"] = <
+        name = <"Any">
+        is_abstract = <True>
+    >
+    ["Ordered"] = <
+        name = <"Ordered">
+        is_abstract = <True>
+        ancestors = <"Any">
+    >
+>
+--------
+
+=== Non-primitive Classes
+
+The main group of class definitions in a schema occurs within the `_class_definitions_` block. Each definition is a keyed ODIN object block corresponding to a serialised `P_BMM_CLASS` object, where the key is the class name. Since `name` is a BMM meta-model attribute, the class definition always contains its ODIN key. 
+
+The possible class-level meta-properties: 
+
+* `_name_` - class name - any capitalisation can be used, usually one of CamelCase or so-called UPPER_SNAKE_CASE;
+* `_ancestors_` - states classes from which this class inherits, as an ODIN String list;
+* `_is_abstract_` - indicates that the class cannot be instantiated directly;
+* `_properties_` - ODIN block containing definitions consisting of `P_BMM_PROPERTY` descendants, keyed by property name.
+
+=== Simple Classes
+
+Simple classes are those whose type is the same as the class, as opposed to generic classes and enumerated types (see below).
+
+[source, odin]
+--------
+class_definitions = <
+    ["ITEM"] = <
+        name = <"ITEM">
+        ancestors = <"Any">
+        is_abstract = <True>
+        properties = <
+            -- properties here
+        >
+    >
+    -- more classes here
+>
+--------
+
+==== Class properties
+
+Class properties from the original model are expressed using ODIN object blocks keyed by property name. Since there are multiple possible descendants of `P_BMM_PROPERTY`, ODIN type markers must be used to indicate which subtypes is used in each case.
+
+The possible BMM meta-properties of all property types are as follows:
+
+* `_name_` - `String` name of the property in its owning class in the model - use camelCase or snake_case as appropriate;
+* `_is_mandatory_` - `Boolean` flag indicating whether the property is mandatory within its class.
+
+The following shows the class `ELEMENT` with two properties `_null_flavour_` and `_value_` of BMM meta-type `P_BMM_SINGLE_PROPERTY`, i.e. corresponding to a single-valued attribute from the original model. 
+
+[source, odin]
+--------
+    ["ELEMENT"] = <
+        name = <"ELEMENT">
+        ancestors = <"ITEM">
+        properties = <
+            ["null_flavour"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"null_flavour">
+                type = <"DV_CODED_TEXT">
+                is_mandatory = <True>
+            >
+            ["value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"value">
+                type = <"DATA_VALUE">
+            >
+        >
+    >
+--------
+
+==== Container Properties
+
+The following is a `P_BMM_CONTAINER_PROPERTY` definition for the model property `items: List<ITEM>` in the `ELEMENT` class. The type is expressed in the `_type_def_` part which indicates the type of the container, which must be defined elsewhere in the schema, typically in the primitive types. The optional `_cardinality_` meta-property indicates cardinality of the container, and is expressed as a ODIN range. The default is `|0..*|`.
+    
+[source, odin]
+--------
+    ["ELEMENT"] = <
+        name = <"ELEMENT">
+        ancestors = <"ITEM">
+        properties = <
+            ["items"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"items">
+                type_def = <
+                    container_type = <"List">
+                    type = <"ITEM">
+                >
+                cardinality = <|>=1|>
+                is_mandatory = <True>
+            >
+        >
+    >
+--------
+
+Indexed containers such as `Hash<K,V>`, `Dictionary<K,V>` etc are also suuported via the `P_BMM_INDEXED_CONTAINER_PROPERTY`, the use of which is shown here:
+
+[source, odin]
+--------
+    ["CALLBACK_WAIT"] = <
+        name = <"CALLBACK_WAIT">
+        ancestors = <"...">
+        properties = <
+            ["custom_actions"] = (P_BMM_INDEXED_CONTAINER_PROPERTY) <
+                name = <"custom_actions">
+                type_def = <
+                    container_type = <"Hash">
+                    index_type = <"String">
+                    type = <"EVENT_ACTION">
+                >
+                cardinality = <|>=0|>
+            >
+        >
+    >
+--------
+
+The above represents a property `custom_actions: Hash <String, EVENT_ACTION>` in the class `CALLBACK_WAIT`. The meta-element `index_type` is used to state the key type.
+
+==== Functions
+
+NOTE: The `P_BMM` function meta-types were introduced in version 2.4 to capture the operation specifications of the openEHR models (migrated from UML to the `bmm-publisher` tooling in 2026). They are not yet widely adopted by BMM tooling.
+
+Alongside properties, a class definition may declare _functions_ (routines), expressed as ODIN object blocks under the `_functions_` keyword, keyed by function name. A function is a `P_BMM_FUNCTION`, whose formal parameters appear under `_parameters_`, keyed by parameter name, and whose return type, if any, is stated in `_result_`. A function with no `_result_` is a procedure.
+
+Each parameter carries an ODIN type marker indicating its `P_BMM_FUNCTION_PARAMETER` subtype, in direct analogy with the property meta-types:
+
+* `P_BMM_SINGLE_FUNCTION_PARAMETER` - a parameter of simple (class) type, stated in `_type_`;
+* `P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN` - a parameter whose type is an open generic parameter such as `T`;
+* `P_BMM_CONTAINER_FUNCTION_PARAMETER` - a parameter of container type, e.g. `List<ITEM>`, stated in `_type_def_`;
+* `P_BMM_GENERIC_FUNCTION_PARAMETER` - a parameter of generic type, e.g. `Interval<Time>`, stated in `_type_def_`.
+
+The `_result_` is expressed in the same way as a property type, i.e. using a `P_BMM_TYPE` type marker such as `P_BMM_SIMPLE_TYPE`, `P_BMM_CONTAINER_TYPE` or `P_BMM_GENERIC_TYPE`. The optional `_is_nullable_` meta-property indicates that the result may be `Void`.
+
+The following shows the class `BMM_MODEL` with a function `_class_definition_`, taking a single `String` parameter `_a_name_` and returning a `BMM_CLASS`:
+
+[source, odin]
+--------
+    ["BMM_MODEL"] = <
+        name = <"BMM_MODEL">
+        ancestors = <"BMM_PACKAGE_CONTAINER">
+        functions = <
+            ["class_definition"] = <
+                name = <"class_definition">
+                parameters = <
+                    ["a_name"] = (P_BMM_SINGLE_FUNCTION_PARAMETER) <
+                        name = <"a_name">
+                        type = <"String">
+                    >
+                >
+                result = (P_BMM_SIMPLE_TYPE) <
+                    type = <"BMM_CLASS">
+                >
+            >
+        >
+    >
+--------
+
+==== Constants
+
+A class may define named, typed _constants_, expressed as ODIN object blocks under the `_constants_` keyword, keyed by constant name. Each constant is a `P_BMM_CONSTANT` carrying its `_type_` (a simple class name) and its literal `_value_` in serialised form. The following shows the class `OPENEHR_DEFINITIONS` with a single `String` constant:
+
+[source, odin]
+--------
+    ["OPENEHR_DEFINITIONS"] = <
+        name = <"OPENEHR_DEFINITIONS">
+        constants = <
+            ["Local_terminology_id"] = <
+                name = <"Local_terminology_id">
+                type = <"String">
+                value = <"local">
+            >
+        >
+    >
+--------
+
+==== Invariants
+
+Class _invariants_ are expressed under the `_invariants_` keyword as a set of assertion expressions keyed by tag. Each value is the assertion text, written in the relevant expression syntax (typically the openEHR Basic Expression Language, BEL); `P_BMM` itself treats the assertion as an opaque string. The following shows two invariants on the class `LOCATABLE`:
+
+[source, odin]
+--------
+    ["LOCATABLE"] = <
+        name = <"LOCATABLE">
+        invariants = <
+            ["Links_valid"] = <"links /= Void implies not links.is_empty">
+            ["Archetype_node_id_valid"] = <"not archetype_node_id.is_empty">
+        >
+    >
+--------
+
+=== Generic Classes
+
+Generic classes are those that have one or more substitutable generic type parameters. Such classes are therefore _type generators_, since actual types are formed by substitution of concrete types (typically simple classes) for the formal type parameters. The following example shows a generic class `Interval` with `generic_parameter_defs` of `T` which is constrained to conform to the type `Ordered`. This structure defines the type `Interval<T->Ordered>`, with the same meaning as UML and programming languages supporting generic (templated) types.
+
+Generic classes will normally contain one or more properties whose formal type is the generic type parameter, i.e. the `T` in this example, as is the case below where the model properties `_lower_` and `_upper_` are both declared to be of type `T`. This declaration necessitates the use of the BMM meta-type `P_BMM_SINGLE_PROPERTY_OPEN`.
+
+[source, odin]
+--------
+    ["Interval"] = <
+        name = <"Interval">
+        ancestors = <"Any">
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"Ordered">
+            >
+        >
+        properties = <
+            ["lower"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+                name = <"lower">
+                type = <"T">
+            >
+            ["upper"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+                name = <"upper">
+                type = <"T">
+            >
+        >
+    >
+--------
+
+Given the presence of generic classes in a BMM schema, derived generic types can be used as the type of properties in other classes, for which the BMM meta-type `P_BMM_GENERIC_PROPERTY` is used. The folowing example shows first a generic class `DV_INTERVAL` defined in a similar way to `Interval` above, and then a class `SOME_TYPE` containing the property `_qty_interval_attr_` whose model type is `DV_INTERVAL<DV_QUANTITY>`. In the latter type declaration, the `DV_INTERVAL` is the `_root_type_` and `DV_INTERVAL` the `_generic_parameter_`.
+
+[source, odin]
+--------
+    ["DV_INTERVAL"] = <
+        name = <"DV_INTERVAL">
+        ancestors = <"Interval", "DATA_VALUE">
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"DV_ORDERED">
+            >
+        >
+    >
+
+    ["SOME_TYPE"] = <
+        name = <"SOME_TYPE">
+        ancestors = <"Any", ...>
+        properties = <
+            ["qty_interval_attr"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"qty_interval_attr">
+                type_def = <
+                    root_type = <"DV_INTERVAL">
+                    generic_parameters = <"DV_QUANTITY">
+                >
+            >
+        >
+    >
+--------
+
+Type declarations can also be nested types, for example and container followed by a generic type. In the following the `_careProvider_` attribute is declared to be of model type `List<Reference<Party>>`. Any level of type nesting is allowed.
+
+[source, odin]
+--------
+    ["Patient"] = <
+        name = <"Patient">
+        ancestors = <"Any">
+        properties = <
+            ["careProvider"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"careProvider">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"Reference">
+                        generic_parameters = <"Party">
+                    >
+                >
+                cardinality = <|>=0|>
+            >
+        >
+    >
+--------
+
+The following property definition is based on the class `REFERENCE_RANGE`, and in this case, has a generic parameter type that is another generic type: `DV_INTERVAL<DV_QUANTITY>`. To express this, we use `generic_parameter_defs` instead of just `_generic_parameters_` to specify a type structure, rather than just a string type name. Note that `generic_parameter_defs` is a logical list in general, since there can always be more than one generic parameter, i.e. 'T', 'U' etc, even though it is most commonly just one. Accordingly, the usual ODIN keyed hash structure is used with each member being keyed by a generic parameter name, below `["T"]`.                                           
+
+[source, odin]
+--------
+    ["REFERENCE_RANGE"] = <
+        name = <"REFERENCE_RANGE">
+        ancestors = <"Any">
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"DV_ORDERED">
+            >
+        >
+        properties = <
+            ["range"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"range">
+                type = <"DV_INTERVAL">
+                is_mandatory = <True>
+            >
+        >
+    >
+
+    ["RANGE_OF_INTERVAL_OF_QUANTITY"] = <
+        name = <"RANGE_OF_INTERVAL_OF_QUANTITY">
+        ancestors = <"Any", ...>
+        properties = <
+            ["range"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"range">
+                type_def = <
+                    root_type = <"REFERENCE_RANGE">
+                    generic_parameter_defs = <
+                        ["T"] = (P_BMM_GENERIC_TYPE) <
+                            root_type = <"DV_INTERVAL">
+                            generic_parameters = <"DV_QUANTITY">
+                        >
+                    >
+                >
+            >
+        >
+--------
+
+The following example just does the same as the one above, but shows an (unrealistic) but legal case of multiple, mixed, nested generic parameters corresponding to the model property definition `_range_: REFERENCE_RANGE<DV_INTERVAL<DV_QUANTITY>, Integer, List<DV_QUANTITY>, List<DV_INTERVAL<DV_QUANTITY>>>`. The rules for expressing types is clearly illustrated:
+
+* use 'type' for simple string type refs; use `_type_def_` for structure types;
+* within `P_BMM_GENERIC_TYPE`, use `_generic_parameters_` for a list of string types;
+* use `_generic_parameter_defs_` for a list of complex type references.
+
+[source, odin]
+--------
+    ["CRAZY_TYPE"] = <
+        name = <"CRAZY_TYPE">
+        ancestors = <"Any">
+        properties = <
+            ["range"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"range">
+                type_def = <
+                    root_type = <"REFERENCE_RANGE">
+                    generic_parameter_defs = <
+                        ["T"] = (P_BMM_GENERIC_TYPE) <
+                            root_type = <"DV_INTERVAL">
+                            generic_parameters = <"DV_QUANTITY">
+                        >
+                        ["U"] = (P_BMM_SIMPLE_TYPE) <
+                            type = <"Integer">
+                        >
+                        ["V"] = (P_BMM_CONTAINER_TYPE) <
+                            type = <"DV_QUANTITY">
+                            container_type = <"List">
+                        >
+                        ["W"] = (P_BMM_CONTAINER_TYPE) <
+                            type_def = (P_BMM_GENERIC_TYPE) <
+                                root_type = <"DV_INTERVAL">
+                                generic_parameters = <"DV_QUANTITY">
+                            >
+                            container_type = <"List">
+                        >
+                    >
+                >
+            >
+        >
+    >
+--------
+
+=== Enumerated Types
+
+In a BMM schema, enumerated types are treated as constrained forms of standard types with open ranges, currently only `Integer` and `String`. They are accordingly represented using class definitions of the meta-types `P_BMM_ENUMERATION_INTEGER` and `P_BMM_ENUMERATION_STRING` respectively. In either case, just names (`_items_names_` meta-property) or both names and values (`_item_values_` meta-property) can be specified.
+
+The following example shows two variants of am enumerated type based on the `Integer` primitive type.
+
+[source, odin]
+--------
+    ["PROPORTION_KIND"] = (P_BMM_ENUMERATION_INTEGER) <
+        name = <"PROPORTION_KIND">
+        ancestors = <"Integer">
+        item_names = <"pk_ratio", "pk_unitary", "pk_percent", "pk_fraction", "pk_integer_fraction">
+    >
+
+    ["PROPORTION_KIND_2"] = (P_BMM_ENUMERATION_INTEGER) <
+        name = <"PROPORTION_KIND_2">
+        ancestors = <"Integer">
+        item_names = <"pk_ratio", "pk_unitary", "pk_percent", "pk_fraction", "pk_integer_fraction">
+        item_values = <0, 1001, 1002, 1003>
+    >
+--------
+
+The following example shows two similar examples based on `String`.
+
+[source, odin]
+--------
+    ["MAGNITUDE_STATUS"] = (P_BMM_ENUMERATION_STRING) <
+        name = <"MAGNITUDE_STATUS">
+        ancestors = <"String", ...>
+        item_names = <"le", "ge", "eq", "approx_eq">
+        item_values = <"<=", ">=", "=", "~">
+    >
+
+    ["NAME_PART"] = (P_BMM_ENUMERATION_STRING) <
+        name = <"NAME_PART">
+        ancestors = <"String", ...>
+        item_names = <"FIRST", "MIDDLE", "LAST">
+    >
+--------
+
+=== Value-set Constraints
+
+Value-sets are related to enumerated types, but rather than specifying the possible instance values for a type in an explicit enumeration type, a standard type can be marked as having values that conform to an external value set, such as a terminology. The following shows an attribute declared to be of a simple type `CODE_PHRASE` in the normal way.
+
+[source, odin]
+--------
+    ["encoding"] = (P_BMM_SINGLE_PROPERTY) <
+        name = <"encoding">
+        type = <"CODE_PHRASE">
+    >
+--------
+
+With a value-set constraint added, it now looks as follows:
+
+[source, odin]
+--------
+    ["encoding"] = (P_BMM_SINGLE_PROPERTY) <
+        name = <"encoding">
+        type_ref = <
+            type = <"CODE_PHRASE">
+            value_constraint = <"openEHR::languages">
+        >
+    >
+--------
+
+The use of the `value_constraint` attribute forces the use of the `type_ref` structural form of the type definition within a `P_BMM_SINGLE_PROPERTY` instance, rather than the simple `String` form above.
+
+Within a container type, the structure is slightly different, owing to another level of instance nesting. The following exmaple shows a container class declaration in original form and then with a value constraint.
+
+[source, odin]
+--------
+    -- original form
+    ["language"] = (P_BMM_CONTAINER_PROPERTY) <
+        name = <"language">
+        type_def = <
+            container_type = <"List">
+            type = <"Coding">
+        >
+    >
+
+    -- with value constraint
+    ["language"] = (P_BMM_CONTAINER_PROPERTY) <
+        name = <"language">
+        type_def = <
+            container_type = <"List">
+            type_def = (P_BMM_SIMPLE_TYPE) <
+                type = <"Coding">
+                value_constraint = <"hl7::Languages">
+            >
+        >
+    >
+--------
+
+== Inheritance
+
+In the case of inheritance from simple classes, the `ancestors` list of Strings may be used to simply name the types (which are the same as class names), as seen in the above examples. In the case of generic inheritance, the ancestors are generic types, which may be open, partially closed or fully closed. The following example shows a class model containing generic inheritance in UML (using the closest approximation available in UML), followed by the equivalent P_BMM schema. In the latter, a structured `ancestor_defs` section is used instead of the `ancestors` String list, in the same way as for the `P_BMM_GENERIC_PROPERTY` examples above.
+
+[.text-center]
+.Generic inheritance example model
+image::{uml_diagrams_uri}/LANG-bmm-inheritance-example.svg[id=inheritance_example, align="center"]
+
+[source, odin]
+--------
+    ["GENERIC_PARENT"] = <
+        name = <"GENERIC_PARENT">
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"SUPPLIER">
+            >
+            ["U"] = <
+                name = <"U">
+                conforms_to_type = <"SUPPLIER">
+            >
+        >
+        properties = <
+            ["property_a"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+                name = <"property_a">
+                type = <"T">
+            >
+            ["property_b"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+                name = <"property_b">
+                type = <"U">
+            >
+        >
+    >
+
+    ["SUPPLIER"] = <
+        name = <"SUPPLIER">
+        is_abstract = <True>
+        properties = <
+            ["abstract_prop"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"abstract_prop">
+                type = <"String">
+            >
+        >
+    >
+
+    ["SUPPLIER_A"] = <
+        name = <"SUPPLIER_A">
+        ancestors = <"SUPPLIER">
+        properties = <
+            ["magnitude"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"magnitude">
+                type = <"Double">
+                is_mandatory = <True>
+            >
+            ["units"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"units">
+                type = <"String">
+                is_mandatory = <True>
+            >
+        >
+    >
+
+    ["SUPPLIER_B"] = <
+        name = <"SUPPLIER_B">
+        ancestors = <"SUPPLIER">
+        properties = <
+            ["property"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"property">
+                type = <"CODE_PHRASE">
+                is_mandatory = <True>
+            >
+            ["precision"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"precision">
+                type = <"Integer">
+            >
+        >
+    >
+
+    ["GENERIC_CHILD_OPEN_T"] = <
+        name = <"GENERIC_CHILD_OPEN_T">
+        ancestor_defs = <
+            ["GENERIC_PARENT<T,SUPPLIER_B>"] = (P_BMM_GENERIC_TYPE) <
+                root_type = <"GENERIC_PARENT">
+                generic_parameters = <"T", "SUPPLIER_B">
+            >
+        >
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"SUPPLIER">
+            >
+        >
+        properties = <
+            ["gen_child_open_t_prop"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"gen_child_open_t_prop">
+                type = <"String">
+            >
+        >
+    >
+
+    ["GENERIC_CHILD_OPEN_U"] = <
+        name = <"GENERIC_CHILD_OPEN_U">
+        ancestor_defs = <
+            ["GENERIC_PARENT<SUPPLIER_A,U>"] = (P_BMM_GENERIC_TYPE) <
+                root_type = <"GENERIC_PARENT">
+                generic_parameters = <"SUPPLIER_A", "U">
+            >
+        >
+        generic_parameter_defs = <
+            ["U"] = <
+                name = <"U">
+                conforms_to_type = <"SUPPLIER">
+            >
+        >
+        properties = <
+            ["gen_child_open_u_prop"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"gen_child_open_u_prop">
+                type = <"String">
+            >
+        >
+    >
+
+    ["GENERIC_CHILD_CLOSED"] = <
+        name = <"GENERIC_CHILD_CLOSED">
+        ancestor_defs = <
+            ["GENERIC_PARENT<SUPPLIER_A,SUPPLIER_B>"] = (P_BMM_GENERIC_TYPE) <
+                root_type = <"GENERIC_PARENT">
+                generic_parameters = <"SUPPLIER_A", "SUPPLIER_B">
+            >
+        >
+        properties = <
+            ["gen_child_closed_prop"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"gen_child_closed_prop">
+                type = <"String">
+            >
+        >
+    >
+
+>
+
+--------

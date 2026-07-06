@@ -1,0 +1,180 @@
+== Rules Section
+
+The `rules` section in an ADL archetype contains _statements_ representing assertions and computational expressions that relate to the entire archetype. Assertions in the `rules` section represent constraints that are not possible within the block structure of the `definition` section. Any constraint that references more than one property is in this category, as are constraints or expressions containing mathematical or logical formulae. Archetype rules are a subset of the openEHR Basic Expression Language (BEL), described in the {openehr_basic_expression_language}[openEHR BEL specification^].
+
+=== Assertions
+
+Semantically, an assertion is a first order predicate logic statement which can be evaluated to a Boolean result at runtime. Objects and properties are referred to using paths within an assertion.
+
+A reference to an object in data, including a leaf value, is expressed using an archetype path. All such paths are absolute (i.e. contain a leading '/') and are understood to be with respect to the root of the current archetype.
+
+Types of assertions used in archetypes include:
+
+* _arithmetic identities_: constraints involving more than one node in an archetype, such as an assertion stating that the sum of the five 0-2 value scores in an Apgar test (heart-rate, breathing, muscle tone, reflex, colour) is equal to the Apgar total, recorded in a sixth node;
+* _mathematical formulae_: constraints involving a mathematical formulae that relate various items together, e.g. the pulse pressure and mean arterial pressure formulae used in cardiology;
+* _value-dependent existence_: in some cases optional archetype nodes are intended to be mandatory (or occasionally non-existent) if some other element within the same archetype has a specific value, for example a sub-tree that records details of 'tobacco use' may be considered mandatory if an earlier Boolean node representing 'tobacco user?' has a positive value.
+
+Each of these is described below.
+
+==== Arithmetic Identities
+
+Assertions can be stated that make explicit intended arithmetic identities among value nodes in an archetype. For example, in an archetype representing {wikipedia}Apgar_score[Apgar Score], five values should sum to equal the total. This can be expressed as the following assertions:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+--------
+rules
+	$respiratory_effort: Integer := /data[at0002]/events[at0003]/data[at0001]/items[at0009]/value[at9001]/value
+    $heart_rate: Integer := /data[at0002]/events[at0003]/data[at0001]/items[at0005]/value[at9002]/value
+    $muscle_tone: Integer := /data[at0002]/events[at0003]/data[at0001]/items[at0013]/value[at9003]/value
+    $reflex_irritability: Integer := /data[at0002]/events[at0003]/data[at0001]/items[at0017]/value[at9004]/value
+    $skin_colour: Integer := /data[at0002]/events[at0003]/data[at0001]/items[at0021]/value[at9005]/value
+    $apgar_score: Integer := /data[at0002]/events[at0003]/data[at0001]/items[at0025]/value[at9006]/magnitude
+
+    Apgar_total: $apgar_score = $respiratory_effort + $heart_rate + $muscle_tone + $reflex_irritability + $skin_colour
+--------
+
+id-coded ADL2::
++
+--------
+rules
+    $respiratory_effort: Integer := /data[id3]/events[id4]/data[id2]/items[id10]/value[id39]/value
+    $heart_rate: Integer := /data[id3]/events[id4]/data[id2]/items[id6]/value[id40]/value
+    $muscle_tone: Integer := /data[id3]/events[id4]/data[id2]/items[id14]/value[id41]/value
+    $reflex_irritability: Integer := /data[id3]/events[id4]/data[id2]/items[id18]/value[id42]/value
+    $skin_colour: Integer := /data[id3]/events[id4]/data[id2]/items[id22]/value[id43]/value
+    $apgar_score: Integer := /data[id3]/events[id4]/data[id2]/items[id26]/value[id44]/magnitude
+
+    Apgar_total: $apgar_score = $respiratory_effort + $heart_rate + $muscle_tone + $reflex_irritability + $skin_colour
+--------
+====
+
+==== Mathematical Formulae
+
+The following ADL example shows a `rules` section containing the Blood Pressure MAP and Pulse pressure formulae expressed using references to the relevant input and output values in the archetype.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+--------
+rules
+    $pulse_pressure: Real := /data[at0001]/events[at0006]/data[at0003]/items[at1007]/value/magnitude
+    $mean_arterial_pressure: Real := /data[at0001]/events[at0006]/data[at0003]/items[at1006]/value/magnitude
+    $systolic_value: Real := /data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude
+    $diastolic_value: Real := /data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude
+
+    MAP_valid: $mean_arterial_pressure = $diastolic_value + 0.33 * ($systolic_value - $diastolic_value)
+
+    pulse_pressure: $pulse_pressure = $systolic_value - $diastolic_value
+--------
+
+id-coded ADL2::
++
+--------
+rules
+    $pulse_pressure: Real := /data[id2]/events[id7]/data[id4]/items[id1008]/value/magnitude
+    $mean_arterial_pressure: Real := /data[id2]/events[id7]/data[id4]/items[id1007]/value/magnitude
+    $systolic_value: Real := /data[id2]/events[id7]/data[id4]/items[id5]/value/magnitude
+    $diastolic_value: Real := /data[id2]/events[id7]/data[id4]/items[id6]/value/magnitude
+
+    MAP_valid: $mean_arterial_pressure = $diastolic_value + 0.33 * ($systolic_value - $diastolic_value)
+
+    pulse_pressure: $pulse_pressure = $systolic_value - $diastolic_value
+--------
+====
+
+These assertions can be visualised in tools, e.g. as follows in the {openehr_awb}[ADL Workbench].
+
+[.text-center]
+.ADL assertion examples
+image::{images_uri}/assertions_bp_map_pp.png[id=assertions_bp_map_pp.png, align="center", width="70%"]
+
+More complex assertions make use of _variable sub-paths_ and the `for_all` operator to check multiple values in a repeated structure, as in this example.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+--------
+    -- ensure that each mean arterial pressure value in a series of blood pressures
+    -- has the correct value.
+    for_all $event : /data[at0001]/events
+        $event/data[at0003]/items[at1006]/value/magnitude =
+            $event/data[at0003]/items[at0005]/value/magnitude + 0.33 *
+                ($event/data[at0003]/items[at0004]/value/magnitude - $event/data[at0003]/items[at0005]/value/magnitude)
+--------
+
+id-coded ADL2::
++
+--------
+    -- ensure that each mean arterial pressure value in a series of blood pressures
+    -- has the correct value.
+    for_all $event : /data[id2]/events
+        $event/data[id4]/items[id1007]/value/magnitude =
+            $event/data[id4]/items[id6]/value/magnitude + 0.33 *
+                ($event/data[id4]/items[id5]/value/magnitude - $event/data[id4]/items[id6]/value/magnitude)
+--------
+====
+
+NOTE: the evolution toward separation of data context paths and expressions will enable this kind of expression to be made more readable in future.
+
+==== Value-dependent Existence
+
+One specific type of logical expression that is commonly required in archetypes is used to state the mandation (or otherwise) of certain data points as conditional on another specific data point. An example is an archetype that documents Tobacco use. This will normally contain a data point representing substance 'use status', which may have values such as 'never used', 'occasional user', 'frequent user', etc.; and another set of data points quantifying the use. Clearly, if the 'use status' is 'never', the latter set of data is not needed; conversely, if 'use status' is any other value, the quantifying data items are needed. To make them mandatory if the 'use status' is any value other than 'never used', rules like the following can be used.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+--------
+rules
+    $substance_use_status: Boolean := /data[at0001]/items[at0002]/value[at90001]
+    $substance_use_data: Object_ref := /data[at0001]/items[at0007|details of use|]
+
+    Substance_use: $substance_use_status /= [at0016|never used|] implies
+        exists /data[at0001]/items[at0007|details of use|]
+--------
+
+id-coded ADL2::
++
+--------
+rules
+    $substance_use_status: Boolean := /data[id2]/items[id3]/value[id18]
+    $substance_use_data: Object_ref := /data[id2]/items[id8|details of use|]
+
+    Substance_use: $substance_use_status /= [at17|never used|] implies
+        exists /data[id2]/items[id8|details of use|]
+--------
+====
+
+=== Computational Statements
+
+The `rules` section may also include computational statements that can be used to compute values for specific fields, generally based on some published algorithm, rather than just asserting a relationship between various fields. The following shows a set of statements similar to the example above, but with the field bound to `$mean_arterial_pressure` now having its value set, not just tested. The assignment operator (`:=`) is used to achieve this.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+--------
+rules
+    $mean_arterial_pressure: Real := /data[at0001]/events[at0006]/data[at0003]/items[at1006]/value/magnitude
+    $systolic_value: Real := /data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude
+    $diastolic_value: Real := /data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude
+
+    $mean_arterial_pressure := $diastolic_value + 0.33 * ($systolic_value - $diastolic_value)
+--------
+
+id-coded ADL2::
++
+--------
+rules
+    $mean_arterial_pressure: Real := /data[id2]/events[id7]/data[id4]/items[id1007]/value/magnitude
+    $systolic_value: Real := /data[id2]/events[id7]/data[id4]/items[id5]/value/magnitude
+    $diastolic_value: Real := /data[id2]/events[id7]/data[id4]/items[id6]/value/magnitude
+
+    $mean_arterial_pressure := $diastolic_value + 0.33 * ($systolic_value - $diastolic_value)
+--------
+====

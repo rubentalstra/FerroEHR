@@ -1,0 +1,60 @@
+= Conformance Framework
+
+The purpose of the openEHR Conformance Specifications is to provide a framework and methodology for performing conformance testing of openEHR-based systems and products to the intended specifications. The approach described here is not openEHR-specific, and may be applied to other components deployed as part of an overall platform solution.
+
+== Specifications
+
+The openEHR Conformance Specifications are designed around the same separation of technology-independent and technology-specific levels of expression as the primary openEHR specifications (i.e. into abstract and ITS). Here, 'technology' refers to the combination of technologies relevant to platform service implementation, i.e. APIs (REST, Apache Kafka, etc) and data representation (JSON, XSD, etc).
+
+The primary platform conformance specifications are based on the openEHR Platform Service Model, i.e. the abstract semantic definition of API functions for various components (CDR, etc). Technology-specific artefacts are derived from these for particular combinations of implementation technology such as REST API + JSON data representation. These are ideally directly executable, via the use of modern test frameworks such as {cucumber_test}[Cucumber^], {robot_test}[Robot^] and {spock_test}[Spock^]. 
+
+The following diagram illustrates the openEHR Conformance Specifications.
+
+[.text-center]
+.Conformance-related specifications
+image::{diagrams_uri}/conformance_framework-artefacts.svg[id=conformance_framework-artefacts, align="center"]
+
+The Conformance specifications are shown in the top box, and consist of the following:
+
+* Guides:
+** Conformance Guide - this document;
+** RFI / RFP / RFQ Guides - guides on creating 'Request for X' documents based on conformance criteria, for contracting purposes (future).
+* Conformance specifications for a specific platform (technology-independent):
+** Platform X Conformance Test Framework - a technology-independent test framework for a specific platform;
+** {openehr_cnf_platform_test_schedule}[Platform Conformance Test Schedule^] - test cases including test run logic based on platform Service Model.
+* Test execution artefacts for a specific platform (technology-dependent):
+** Executable test case runners (automated test framework scripts) for implemention of Platform X in technology Y (e.g. REST + JSON);
+** Other artefacts for establishing an executable testing environment.
+* Result-related artefacts:
+** Test Execution Report - system xxx / REST APIs - The results of a test run of a Test Schedule on some SUT - specific API + data rep'n
+** Conformance Statement - system xxx / REST APIs - Statement of conformance of a product or system to specifications
+** {openehr_cnf_certificate}[Conformance Certificate^] - system xxx - Certified statement of conformance issued by some recognised testing  authority based on test execution.
+
+The orange (dashed) arrows indicate generation of results from test execution activities.
+
+== From Specifications to Runnable Tests
+
+In the diagram above, the blue arrows indicate derivation from more general artefacts to more specific ones. These relationships indicate how usable (ideally, directly executable) test runner definitions can be derived from the specifications. The logic of the 'square' formed by these relationships is shown below for an abstract API call `I_EHR.create_ehr()` defined in the {openehr_sm_openehr_platform}#_i_ehr_service_interface[openEHR Platform Service Model^], in the following diagram.
+
+[.text-center]
+.Test items
+image::{diagrams_uri}/conformance_framework-chain.svg[id=conformance_framework-chain, align="center"]
+
+The numeric order indicates the following logical progression:
+
+* (1) abstract API call `I_EHR.create_ehr()` - defines semantics of the call, independent of particular implementation details e.g. related to HTTP or web-sockets;
+* (2) representation of the call in (1) in an API technology (here: REST) - `I_EHR.create_ehr()` becomes `POST {baseUrl}/v1/ehr` in the HTTP protocol used for REST;
+* (3) abstract test cases for testing `I_EHR.create_ehr()` - again, independent of specific technology;
+* (4) concrete expression of the test cases from (3) as executable scripts for use with an implementation of (3).
+
+Elements (1) and (3) may be understood as the specification of semantics of a call, and how to logically test it, respectively. Elements (2) and (4) may be understood as concretisation of both the definition and the test specification into a particular technology.
+
+This approach involves more work than simple provision of API and test specifications in a fixed technology, but has a number of advantages:
+
+* the logic (i.e. semantics) of APIs is defined once, and clearly separated from the details of each implementation technology, such as the common questions of REST, including which HTTP verb to use, how to represent calls as URIs, which return codes to use to represent logical errors and success;
+* the majority of the logic of testing an API only has to be represented once, in the technology-indepdendent form, enabling quick derivation of specific test runners for the API in a target technology;
+* adding new API + data representation technologies is incremental work, and does not require any re-determination of the basic logic or testing logic of the API;
+* without the abstract level of expression of API defintiions and tests, only the concrete specifications are available - from these it is often difficult to easily determine the intended logic of a call, since the semantics have already been translated into the particulars of e.g. HTTP or other protocol usage. 
+
+
+

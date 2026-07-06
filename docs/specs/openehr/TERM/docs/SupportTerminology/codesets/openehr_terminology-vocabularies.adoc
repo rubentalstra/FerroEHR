@@ -1,0 +1,555 @@
+=== Attestation Reason
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *attestation reason* +
+    Id: __attestation_reason__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-attestation_reason[CodeSystem^], https://specifications.openehr.org/fhir/valueset-attestation_reason[ValueSet^]`
+
+2+| {attestation_reason_description} +
+    +
+    Used in: `{attestation_reason_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *240*      a| signed       | active
+| *648*      a| witnessed       | active
+|===
+
+=== Audit Change Type
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *audit change type* +
+    Id: __audit_change_type__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-audit_change_type[CodeSystem^], https://specifications.openehr.org/fhir/valueset-audit_change_type[ValueSet^]`
+
+2+| {audit_change_type_description} +
+    +
+    Used in: `{audit_change_type_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *249*      a| creation       | active
+| *250*      a| amendment       | active
+| *251*      a| modification       | active
+| *252*      a| synthesis       | active
+| *523*      a| deleted       | active
+| *666*      a| attestation       | active
+| *816*      a| restoration       | active
+| *817*      a| format conversion       | active
+| *253*      a| unknown       | active
+|===
+
+=== Composition Category
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *composition category* +
+    Id: __composition_category__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-composition_category[CodeSystem^], https://specifications.openehr.org/fhir/valueset-composition_category[ValueSet^]`
+
+2+| {composition_category_description} +
+    +
+    Used in: `{composition_category_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *431*      a| persistent       | active
+| *451*      a| episodic       | active
+| *433*      a| event       | active
+| *815*      a| report       | active
+|===
+
+=== Property
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *property* +
+    Id: __property__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-property[CodeSystem^], https://specifications.openehr.org/fhir/valueset-property[ValueSet^]`
+
+2+| {property_description} +
+    +
+    Used in: `{property_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *339*      a| Acceleration       | active
+| *342*      a| Acceleration, angular       | active
+| *381*      a| Amount (Eq)       | active
+| *384*      a| Amount (mole)       | active
+| *497*      a| Angle, plane       | active
+| *500*      a| Angle, solid       | active
+| *335*      a| Area       | active
+| *119*      a| Concentration       | active
+| *350*      a| Density       | active
+| *362*      a| Diffusion coefficient       | active
+| *501*      a| Electric capacitance       | active
+| *498*      a| Electric charge       | active
+| *502*      a| Electric conductance       | active
+| *334*      a| Electric current       | active
+| *377*      a| Electric field strength       | active
+| *655*      a| Electric potential time       | active
+| *121*      a| Energy       | active
+| *366*      a| Energy density       | active
+| *508*      a| Energy dose       | active
+| *365*      a| Energy per area       | active
+| *364*      a| Energy, linear       | active
+| *347*      a| Flow rate, mass       | active
+| *352*      a| Flow rate, mass/force       | active
+| *351*      a| Flow rate, mass/volume       | active
+| *126*      a| Flow rate, volume       | active
+| *348*      a| Flux, mass       | active
+| *355*      a| Force       | active
+| *358*      a| Force per mass       | active
+| *357*      a| Force, body       | active
+| *382*      a| Frequency       | active
+| *586*      a| Glomerular filtration rate       | active
+| *373*      a| Heat transfer coefficient       | active
+| *505*      a| Illuminance       | active
+| *379*      a| Inductance       | active
+| *122*      a| Length       | active
+| *499*      a| Light intensity       | active
+| *123*      a| Loudness       | active
+| *504*      a| Luminous flux       | active
+| *378*      a| Magnetic flux       | active
+| *503*      a| Magnetic flux density       | active
+| *124*      a| Mass       | active
+| *385*      a| Mass (IU)       | active
+| *445*      a| Mass (Units)       | active
+| *349*      a| Mass per area       | active
+| *344*      a| Moment inertia, area       | active
+| *345*      a| Moment inertia, mass       | active
+| *340*      a| Momentum       | active
+| *346*      a| Momentum flow rate       | active
+| *343*      a| Momentum, angular       | active
+| *363*      a| Power       | active
+| *369*      a| Power density       | active
+| *368*      a| Power flux       | active
+| *367*      a| Power, linear       | active
+| *125*      a| Pressure       | active
+| *507*      a| Proportion       | active
+| *380*      a| Qualified real       | active
+| *506*      a| Radioactivity       | active
+| *375*      a| Resistance       | active
+| *370*      a| Specific energy       | active
+| *371*      a| Specific heat, gas constant       | active
+| *337*      a| Specific surface       | active
+| *336*      a| Specific volume       | active
+| *354*      a| Specific weight       | active
+| *356*      a| Surface tension       | active
+| *127*      a| Temperature       | active
+| *372*      a| Thermal conductivity       | active
+| *128*      a| Time       | active
+| *359*      a| Torque       | active
+| *338*      a| Velocity       | active
+| *341*      a| Velocity, angular       | active
+| *360*      a| Viscosity, dynamic       | active
+| *361*      a| Viscosity, kinematic       | active
+| *374*      a| Electric potential       | active
+| *129*      a| Volume       | active
+| *130*      a| Work       | active
+| *685*      a| Refractive power       | active
+| *118*      a| <not set>       | active
+| *709*      a| Time fraction       | active
+| *708*      a| Rate of change, pressure       | active
+| *754*      a| Rate of change, frequency       | active
+| *755*      a| Arbitrary       | active
+| *756*      a| Medication dose rate       | active
+| *757*      a| Spectral power       | active
+| *758*      a| Spectral power density       | active
+| *759*      a| Pace       | active
+| *760*      a| Enzyme activity       | active
+|===
+
+=== Version Lifecycle State
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *version lifecycle state* +
+    Id: __version_lifecycle_state__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-version_lifecycle_state[CodeSystem^], https://specifications.openehr.org/fhir/valueset-version_lifecycle_state[ValueSet^]`
+
+2+| {version_lifecycle_state_description} +
+    +
+    Used in: `{version_lifecycle_state_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *532*      a| complete       | active
+| *553*      a| incomplete       | active
+| *523*      a| deleted       | active
+| *800*      a| inactive       | active
+| *801*      a| abandoned       | active
+|===
+
+=== Participation Function
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *participation function* +
+    Id: __participation_function__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-participation_function[CodeSystem^], https://specifications.openehr.org/fhir/valueset-participation_function[ValueSet^]`
+
+2+| {participation_function_description} +
+    +
+    Used in: `{participation_function_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *253*      a| unknown       | active
+|===
+
+=== Null Flavours
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *null flavours* +
+    Id: __null_flavours__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-null_flavours[CodeSystem^], https://specifications.openehr.org/fhir/valueset-null_flavours[ValueSet^]`
+
+2+| {null_flavours_description} +
+    +
+    Used in: `{null_flavours_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *271*      a| no information       | active
+| *253*      a| unknown       | active
+| *272*      a| masked       | active
+| *273*      a| not applicable       | active
+|===
+
+=== Participation Mode
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *participation mode* +
+    Id: __participation_mode__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-participation_mode[CodeSystem^], https://specifications.openehr.org/fhir/valueset-participation_mode[ValueSet^]`
+
+2+| {participation_mode_description} +
+    +
+    Used in: `{participation_mode_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *193*      a| not specified       | active
+| *216*      a| face-to-face communication       | active
+| *223*      a| interpreted face-to-face communication       | active
+| *217*      a| signing (face-to-face)       | active
+| *195*      a| live audiovisual; videoconference; videophone       | active
+| *198*      a| videoconferencing       | active
+| *197*      a| videophone       | active
+| *218*      a| signing over video       | active
+| *224*      a| interpreted video communication       | active
+| *194*      a| asynchronous audiovisual; recorded video       | active
+| *196*      a| recorded video       | active
+| *202*      a| live audio-only; telephone; internet phone; teleconference       | active
+| *204*      a| telephone       | active
+| *203*      a| teleconference       | active
+| *205*      a| internet telephone       | active
+| *222*      a| interpreted audio-only       | active
+| *199*      a| asynchronous audio-only; dictated; voice mail       | active
+| *200*      a| dictated       | active
+| *201*      a| voice-mail       | active
+| *212*      a| live text-only; internet chat; SMS chat; interactive written note       | active
+| *213*      a| internet chat       | active
+| *214*      a| SMS chat       | active
+| *215*      a| interactive written note       | active
+| *206*      a| asynchronous text; email; fax; letter; handwritten note; SMS message       | active
+| *211*      a| handwritten note       | active
+| *210*      a| printed/typed letter       | active
+| *207*      a| email       | active
+| *208*      a| facsimile/telefax       | active
+| *221*      a| translated text       | active
+| *209*      a| SMS message       | active
+| *219*      a| physically present       | active
+| *220*      a| physically remote       | active
+|===
+
+=== Instruction States
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *instruction states* +
+    Id: __instruction_states__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-instruction_states[CodeSystem^], https://specifications.openehr.org/fhir/valueset-instruction_states[ValueSet^]`
+
+2+| {instruction_states_description} +
+    +
+    Used in: `{instruction_states_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *524*      a| initial       | active
+| *526*      a| planned       | active
+| *527*      a| postponed       | active
+| *528*      a| cancelled       | active
+| *529*      a| scheduled       | active
+| *245*      a| active       | active
+| *530*      a| suspended       | active
+| *531*      a| aborted       | active
+| *532*      a| completed       | active
+| *533*      a| expired       | active
+|===
+
+=== Instruction Transitions
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *instruction transitions* +
+    Id: __instruction_transitions__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-instruction_transitions[CodeSystem^], https://specifications.openehr.org/fhir/valueset-instruction_transitions[ValueSet^]`
+
+2+| {instruction_transitions_description} +
+    +
+    Used in: `{instruction_transitions_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *535*      a| initiate       | active
+| *536*      a| plan step       | active
+| *537*      a| postpone       | active
+| *538*      a| restore       | active
+| *166*      a| cancel       | active
+| *542*      a| postponed step       | active
+| *539*      a| schedule       | active
+| *534*      a| scheduled step       | active
+| *540*      a| start       | active
+| *541*      a| do       | active
+| *543*      a| active step       | active
+| *544*      a| suspend       | active
+| *545*      a| suspended step       | active
+| *546*      a| resume       | active
+| *547*      a| abort       | active
+| *548*      a| finish       | active
+| *549*      a| time out       | active
+| *550*      a| notify aborted       | active
+| *551*      a| notify completed       | active
+| *552*      a| notify cancelled       | active
+|===
+
+=== Subject Relationship
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *subject relationship* +
+    Id: __subject_relationship__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-subject_relationship[CodeSystem^], https://specifications.openehr.org/fhir/valueset-subject_relationship[ValueSet^]`
+
+2+| {subject_relationship_description} +
+    +
+    Used in: `{subject_relationship_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *0*      a| self       | active
+| *3*      a| foetus       | active
+| *10*      a| mother       | active
+| *9*      a| father       | active
+| *6*      a| donor       | active
+| *253*      a| unknown       | active
+| *261*      a| adopted daughter       | active
+| *260*      a| adopted son       | active
+| *259*      a| adoptive father       | active
+| *258*      a| adoptive mother       | active
+| *256*      a| biological father       | active
+| *255*      a| biological mother       | active
+| *23*      a| brother       | active
+| *28*      a| child       | active
+| *265*      a| cohabitee       | active
+| *257*      a| cousin       | active
+| *29*      a| daughter       | active
+| *264*      a| guardian       | active
+| *39*      a| maternal aunt       | active
+| *8*      a| maternal grandfather       | active
+| *7*      a| maternal grandmother       | active
+| *38*      a| maternal uncle       | active
+| *189*      a| neonate       | active
+| *254*      a| parent       | active
+| *22*      a| partner/spouse       | active
+| *41*      a| paternal aunt       | active
+| *36*      a| paternal grandfather       | active
+| *37*      a| paternal grandmother       | active
+| *40*      a| paternal uncle       | active
+| *27*      a| sibling       | active
+| *24*      a| sister       | active
+| *31*      a| son       | active
+| *263*      a| step father       | active
+| *262*      a| step mother       | active
+| *25*      a| step or half brother       | active
+| *26*      a| step or half sister       | active
+|===
+
+=== Term Mapping Purpose
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *term mapping purpose* +
+    Id: __term_mapping_purpose__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-term_mapping_purpose[CodeSystem^], https://specifications.openehr.org/fhir/valueset-term_mapping_purpose[ValueSet^]`
+
+2+| {term_mapping_purpose_description} +
+    +
+    Used in: `{term_mapping_purpose_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *669*      a| public health       | active
+| *670*      a| reimbursement       | active
+| *671*      a| research study       | active
+|===
+
+=== Event Math Function
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *event math function* +
+    Id: __event_math_function__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-event_math_function[CodeSystem^], https://specifications.openehr.org/fhir/valueset-event_math_function[ValueSet^]`
+
+2+| {event_math_function_description} +
+    +
+    Used in: `{event_math_function_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *145*      a| minimum       | active
+| *144*      a| maximum       | active
+| *267*      a| mode       | active
+| *268*      a| median       | active
+| *146*      a| mean       | active
+| *147*      a| change       | active
+| *148*      a| total       | active
+| *149*      a| variation       | active
+| *521*      a| decrease       | active
+| *522*      a| increase       | active
+| *640*      a| actual       | active
+|===
+
+=== Setting
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *setting* +
+    Id: __setting__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-setting[CodeSystem^], https://specifications.openehr.org/fhir/valueset-setting[ValueSet^]`
+
+2+| {setting_description} +
+    +
+    Used in: `{setting_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *225*      a| home       | active
+| *227*      a| emergency care       | active
+| *228*      a| primary medical care       | active
+| *229*      a| primary nursing care       | active
+| *230*      a| primary allied health care       | active
+| *231*      a| midwifery care       | active
+| *232*      a| secondary medical care       | active
+| *233*      a| secondary nursing care       | active
+| *234*      a| secondary allied health care       | active
+| *235*      a| complementary health care       | active
+| *236*      a| dental care       | active
+| *237*      a| nursing home care       | active
+| *802*      a| mental healthcare       | active
+| *238*      a| other care       | active
+|===
+
+=== Extract Content Type
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *extract content type* +
+    Id: __extract_content_type__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-extract_content_type[CodeSystem^], https://specifications.openehr.org/fhir/valueset-extract_content_type[ValueSet^]`
+
+2+| {extract_content_type_description} +
+    +
+    Used in: `{extract_content_type_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *803*      a| openEHR EHR       | active
+| *804*      a| openEHR Demographic       | active
+| *805*      a| openEHR synchronisation       | active
+| *806*      a| openEHR generic       | active
+| *807*      a| generic EMR       | active
+| *808*      a| other       | active
+|===
+
+=== Extract Action Type
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *extract action type* +
+    Id: __extract_action_type__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-extract_action_type[CodeSystem^], https://specifications.openehr.org/fhir/valueset-extract_action_type[ValueSet^]`
+
+2+| {extract_action_type_description} +
+    +
+    Used in: `{extract_action_type_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *809*      a| cancel       | active
+| *810*      a| resend       | active
+| *811*      a| send new       | active
+|===
+
+=== Extract Update Trigger Event Type
+[cols="6,8,1"]
+|===
+3+h| *Vocabulary details*
+
+|Name: *extract update trigger event type* +
+    Id: __extract_update_trigger_event_type__ +
+    Status: __active__ +
+    Languages:  __en, es, ja, pt, zh__ +
+    FHIR Terminology: `https://specifications.openehr.org/fhir/codesystem-extract_update_trigger_event_type[CodeSystem^], https://specifications.openehr.org/fhir/valueset-extract_update_trigger_event_type[ValueSet^]`
+
+2+| {extract_update_trigger_event_type_description} +
+    +
+    Used in: `{extract_update_trigger_event_type_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *812*      a| any change       | active
+| *813*      a| correction       | active
+| *814*      a| update       | active
+|===
+

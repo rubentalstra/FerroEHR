@@ -1,0 +1,24 @@
+=== S_FEEDER_AUDIT_DETAILS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_FEEDER_AUDIT_DETAILS*
+
+h|*Description*
+2+a|Simplified RM form of `FEEDER_AUDIT_DETAILS` RM class.
+
+TODO: removes 4 attributes from original RM form - lossy copy?
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*system_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `FEEDER_AUDIT_DETAILS._system_id_`.
+
+h|*1..1*
+|*version_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `FEEDER_AUDIT_DETAILS._version_id_`.
+|===

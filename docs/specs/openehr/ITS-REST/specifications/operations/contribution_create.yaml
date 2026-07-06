@@ -1,0 +1,29 @@
+operationId: contribution_create
+summary: Create CONTRIBUTION
+description: |
+  We will use the relaxed CONTRIBUTION with the following optional attributes:
+    - `uid`: when provided, it will be accepted in case is not in-use, otherwise error will be returned
+    - `audit.time_committed`: server will always set it
+    - `audit.system_id`: when provided, it will be validated
+tags:
+  - CONTRIBUTION
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/header/Prefer.yaml
+requestBody:
+  description: |
+    The CONTRIBUTION.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/common/NewContribution.yaml
+  required: true
+responses:
+  '201':
+    $ref: ../responses/201_CONTRIBUTION.yaml
+  '400':
+    $ref: ../responses/400_CONTRIBUTION.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id.yaml
+  '409':
+    $ref: ../responses/409.yaml

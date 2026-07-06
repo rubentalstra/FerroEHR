@@ -1,0 +1,31 @@
+= Preface
+
+== Purpose
+
+This document describes the Serial data formats, a set of serialisations for {openehr_rm}[openEHR RM^] data, intended to be used to generate simplified Data Templates.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_sm_development_serial_data_formats}[{openehr_sm_development_serial_data_formats}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_technical_list}[technical mailing list^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+[.tbd]
+TBD: xxxx
+
+== Tooling
+
+[.tbd]
+TBD: xxxx

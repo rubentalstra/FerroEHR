@@ -1,0 +1,22 @@
+=== EXPR_TYPE_DEF Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EXPR_TYPE_DEF (abstract)__*
+
+h|*Description*
+2+a|Ancestor class for type definitions known in the openEHR Expression formalism.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*type_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Natural language type name of this type as used in abstract rules syntax variable declarations.
+
+h|*1..1*
+|*type_anchor*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Attribute of the openEHR primitive type (or Any) corresponding to this type definition meta-type.
+|===

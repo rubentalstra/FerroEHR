@@ -1,0 +1,6 @@
+title: QueryType
+description: |
+  Query formalism type.
+type: string
+default: "AQL"
+example: "AQL"

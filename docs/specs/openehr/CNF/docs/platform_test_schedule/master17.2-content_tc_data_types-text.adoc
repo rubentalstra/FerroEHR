@@ -1,0 +1,110 @@
+== Data Types - text Package
+
+=== DV_TEXT
+
+{openehr_rm_data_types}#_text_package[Specification / UML reference^].
+
+Internally DV_TEXT can be constrained by a C_STRING. This type also allows an instance of the subclass DV_CODED_TEXT at runtime.
+
+==== Test Case CONT-DV_TEXT-validate_open
+
+In ADL this would mean the C_OBJECT for DV_TEXT matches {\*}, but different Archetype Editors might model this differently, for instance LinkEHR does a DV_TEXT.value matches {'.*'} which is using the C_STRING pattern that matches anything.
+
+[cols="1,1,1,1,2", options="header"]
+|===
+| value      | C_STRING.pattern  | C_STRING.list | expected | constraints violated 
+
+| NULL       | NULL              | NULL          | rejected | RM/Schema mandatory  
+| ABC        | NULL              | NULL          | accepted |                      
+| XYZ        | NULL              | NULL          | accepted |                      
+|===
+
+==== Test Case CONT-DV_TEXT-validate_open
+
+NOTE: if the type is DV_CODED_TEXT at runtime, the value attribte still needs to comply with the C_STRING constraint.
+
+[cols="1,1,1,1,2", options="header"]
+|===
+| value      | C_STRING.pattern  | C_STRING.list | expected | constraints violated 
+
+| NULL       | XYZ               | NULL          | rejected | RM/Schema mandatory  
+| ABC        | XYZ               | NULL          | rejected | C_STRING.pattern     
+| XYZ        | XYZ               | NULL          | accepted |                      
+|===
+
+==== Test Case CONT-DV_TEXT-validate_list
+
+NOTE: if the type is DV_CODED_TEXT at runtime, the value attribte still needs to comply with the C_STRING constraint.
+
+[cols="1,1,1,1,2", options="header"]
+|===
+| value      | C_STRING.pattern  | C_STRING.list | expected | constraints violated 
+
+| NULL       | NULL              | [XYZ, OPQ]    | rejected | RM/Schema mandatory  
+| ABC        | NULL              | [XYZ, OPQ]    | rejected | C_STRING.list        
+| XYZ        | NULL              | [XYZ, OPQ]    | accepted |                      
+|===
+
+
+=== DV_CODED_TEXT
+
+Internally the DV_CODED_TEXT can be constrained by a C_CODE_PHRASE. Note that in the cases for DV_TEXT we already tested when the type is constrained by a C_STRING (when the declared type is DV_TEXT but the runtime type is DV_CODED_TEXT).
+
+==== Test Case CONT-DV_CODED_TEXT-validate_open
+
+In ADL this would mean the C_OBJECT for DV_CODED_TEXT matches `{*}`.
+
+[cols="1,1,1,1,1,2", options="header"]
+|===
+| code_string | terminology_id | C_CODE_PHRASE. +
+                                 code_list               | C_CODE_PHRASE. +
+                                                           terminology_id               | expected | constraints violated 
+
+| NULL        | NULL           | NULL                    | NULL                         | rejected | RM/Schema mandatory both code_String and terminology_id 
+| ABC         | NULL           | NULL                    | NULL                         | rejected | RM/Schema mandatory terminology_id 
+| NULL        | local          | NULL                    | NULL                         | rejected | RM/Schema mandatory code_string 
+| ABC         | local          | NULL                    | NULL                         | accepted | 
+| 82272006    | SNOMED-CT      | NULL                    | NULL                         | accepted | 
+|===
+
+
+==== Test Case CONT-DV_CODED_TEXT-validate_local_codes
+
+NOTE: having C_CODE_PHRASE.terminology_id = local and C_CODE_PHRASE.code_list = EMPTY, would be possible at the archetype level, but would be invalid at the template level, so that case is not considered here since it should be validated when the template is uploaded to the SUT.
+
+[cols="1,1,1,1,1,2", options="header"]
+|===
+| code_string | terminology_id | C_CODE_PHRASE. +
+                                 code_list               | C_CODE_PHRASE. +
+                                                           terminology_id               | expected | constraints violated 
+
+| NULL        | NULL           | [ABC, OPQ]              | local                        | rejected | RM/Schema mandatory both code_String and terminology_id 
+| ABC         | NULL           | [ABC, OPQ]              | local                        | rejected | RM/Schema mandatory terminology_id 
+| NULL        | local          | [ABC, OPQ]              | local                        | rejected | RM/Schema mandatory code_string 
+| ABC         | local          | [ABC, OPQ]              | local                        | accepted | 
+| 82272006    | SNOMED-CT      | [ABC, OPQ]              | local                        | rejected | C_CODE_PHRASE.terminology_id 
+|===
+
+
+==== Test Case CONT-DV_CODED_TEXT-validate_ext_term
+
+In this case the DV_CODED_TEXT is constrained by a CONSTRAINT_REF. For the CONSTRAINT_REF to be valid in the template, there shoudld be a constraint_binding entry in the template ontology for the acNNNN code of the CONSTRAINT_REF. Without that, the SUT doesn't know which terminology_id can be used in that DV_CODED_TEXT. Note that multiple bindings are possible, so there could be more than one terminology_id for the coded text. The cases where there are no constraint_bindings are not tested here, that should be part of the OPT validation.
+
+NOTE: the COSNTRAINT_REF in ADL is transformed by the Template Designer into a C_CODE_REFERENCE in OPT, which is a C_CODE_PHRASE subclass with an extra referenceSetUri attribute.
+
+[cols="1,1,1,1,1,2", options="header"]
+|===
+| code_string | terminology_id | CONSTRAINT_REF. +
+                                reference                 | constraint_bindings | expected | constraints violated 
+
+| NULL        | NULL           | ac0001                   | [SNOMED_CT]         | rejected | RM/Schema mandatory both code_String and terminology_id 
+| ABC         | NULL           | ac0001                   | [SNOMED_CT]         | rejected | RM/Schema mandatory terminology_id 
+| NULL        | local          | ac0001                   | [SNOMED_CT]         | rejected | RM/Schema mandatory code_string 
+| ABC         | local          | ac0001                   | [SNOMED_CT]         | rejected | constraint_binding: terminology_id not found 
+| 82272006    | SNOMED-CT      | ac0001                   | [SNOMED_CT]         | accepted | 
+|===
+
+
+=== DV_PARAGRAPH
+
+NOTE: this DB is not used or supported by modeling tools, see {openehr_forums_site}/t/is-dv-paragraph-used/2187

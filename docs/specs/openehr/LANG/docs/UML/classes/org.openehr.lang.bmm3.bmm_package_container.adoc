@@ -1,0 +1,48 @@
+=== BMM_PACKAGE_CONTAINER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_PACKAGE_CONTAINER (abstract)__*
+
+h|*Description*
+2+a|A BMM model component that contains packages and classes.
+
+h|*Inherit*
+2+|`<<_bmm_model_element_class,BMM_MODEL_ELEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*packages*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_package_class,BMM_PACKAGE>>>`
+a|Child packages; keys all in upper case for guaranteed matching.
+
+h|*1..1 +
+(redefined)*
+|*scope*: `<<_bmm_package_container_class,BMM_PACKAGE_CONTAINER>>`
+a|Model element within which a referenceable element is known.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*package_at_path* ( +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_bmm_package_class,BMM_PACKAGE>>`
+a|Package at the path `_a_path_`.
+
+h|*1..1*
+|*do_recursive_packages* ( +
+action: `<<_el_procedure_agent_class,EL_PROCEDURE_AGENT>>[1]` +
+): `void`
+a|Recursively execute `_action_`, which is a procedure taking a `BMM_PACKAGE` argument, on all members of packages.
+
+h|*1..1*
+|*has_package_path* ( +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if there is a package at the path `_a_path_`; paths are delimited with delimiter `\{BMM_DEFINITIONS} _Package_name_delimiter_`.
+|===

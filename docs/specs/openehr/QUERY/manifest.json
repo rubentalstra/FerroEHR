@@ -1,0 +1,84 @@
+{
+    "id": "QUERY",
+    "title": "Query Languages",
+    "description": "Query Languages Component",
+    "keywords": "query languages, openehr, AQL",
+    "specifications": [
+        {
+            "id": "AQL",
+            "title": "Archetype Query Language (AQL)",
+            "title_short": "AQL",
+            "description": "openEHR Archetype Query Language (AQL)",
+            "summary": "Query language based on archetype paths and pattern matching.",
+            "micro_summary": "Archetype Query Language",
+            "copyright_year": "2008",
+            "spec_status": "STABLE",
+            "keywords": "query, AQL, archetype, Xpath, openehr"
+        },
+        {
+            "id": "AQL_examples",
+            "title": "Archetype Query Language Examples",
+            "title_short": "AQL Examples",
+            "description": "openEHR Archetype Query Language (AQL) examples.",
+            "summary": "Examples of AQL use.",
+            "micro_summary": "AQL Examples",
+            "copyright_year": "2020",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "query, AQL, example, openehr"
+        }
+    ],
+    "expressions": [
+        {
+            "id": "AqlLexer.g4",
+            "type": "file",
+            "title": "ANTLR4 lexer",
+            "link": "AQL/grammar/AqlLexer.g4",
+            "description": "ANTLR4 lexer grammar for AQL."
+        },
+        {
+            "id": "AqlParser.g4",
+            "type": "file",
+            "title": "ANTLR4 parser",
+            "link": "AQL/grammar/AqlParser.g4",
+            "description": "ANTLR4 parser grammar for AQL."
+        }
+    ],
+    "jira": {
+        "open_issues": "11109",
+        "roadmap": "SPECQUERY"
+    },
+    "releases": [
+        {
+            "id": "1.2.0",
+            "date": "",
+            "jira": {
+                "crs": "SPECQUERY/versions/12534",
+                "prs": "SPECPR/versions/11566"
+            }
+        },
+        {
+            "id": "1.1.0",
+            "date": "2021-05-14",
+            "jira": {
+                "crs": "SPECQUERY/versions/11262",
+                "prs": "SPECPR/versions/11565"
+            }
+        },
+        {
+            "id": "1.0.1",
+            "date": "2020-07-26",
+            "jira": {
+                "crs": "SPECQUERY/versions/11261",
+                "prs": "SPECPR/versions/12530"
+            }
+        },
+        {
+            "id": "1.0.0",
+            "date": "2017-11-15",
+            "jira": {
+                "crs": "SPECQUERY/versions/11260",
+                "prs": "SPECPR/versions/11564"
+            }
+        }
+    ]
+}

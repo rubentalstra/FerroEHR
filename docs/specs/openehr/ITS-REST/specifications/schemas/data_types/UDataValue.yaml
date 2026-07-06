@@ -1,0 +1,40 @@
+title: DATA_VALUE
+oneOf:
+  - $ref: ../data_types/UMDvBoolean.yaml
+  - $ref: ../data_types/UMDvCodedText.yaml
+  - $ref: ../data_types/UMDvCount.yaml
+  - $ref: ../data_types/UMDvDate.yaml
+  - $ref: ../data_types/UMDvDateTime.yaml
+  - $ref: ../data_types/UMDvDuration.yaml
+  - $ref: ../data_types/UMDvEhrUri.yaml
+  - $ref: ../data_types/UMDvIdentifier.yaml
+  - $ref: ../data_types/UMDvMultimedia.yaml
+  - $ref: ../data_types/UMDvOrdinal.yaml
+  - $ref: ../data_types/UMDvParsable.yaml
+  - $ref: ../data_types/UMDvProportion.yaml
+  - $ref: ../data_types/UMDvQuantity.yaml
+  - $ref: ../data_types/UMDvScale.yaml
+  - $ref: ../data_types/UMDvState.yaml
+  - $ref: ../data_types/UMDvText.yaml
+  - $ref: ../data_types/UMDvUri.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    DV_BOOLEAN: ../data_types/UMDvBoolean.yaml
+    DV_CODED_TEXT: ../data_types/UMDvCodedText.yaml
+    DV_COUNT: ../data_types/UMDvCount.yaml
+    DV_DATE: ../data_types/UMDvDate.yaml
+    DV_DATE_TIME: ../data_types/UMDvDateTime.yaml
+    DV_DURATION: ../data_types/UMDvDuration.yaml
+    DV_EHR_URI: ../data_types/UMDvEhrUri.yaml
+    DV_IDENTIFIER: ../data_types/UMDvIdentifier.yaml
+    DV_MULTIMEDIA: ../data_types/UMDvMultimedia.yaml
+    DV_ORDINAL: ../data_types/UMDvOrdinal.yaml
+    DV_PARSABLE: ../data_types/UMDvParsable.yaml
+    DV_PROPORTION: ../data_types/UMDvProportion.yaml
+    DV_QUANTITY: ../data_types/UMDvQuantity.yaml
+    DV_SCALE: ../data_types/UMDvScale.yaml
+    DV_STATE: ../data_types/UMDvState.yaml
+    DV_TEXT: ../data_types/UMDvText.yaml
+    DV_TIME: ../data_types/UMDvTime.yaml
+    DV_URI: ../data_types/UMDvUri.yaml

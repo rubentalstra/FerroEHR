@@ -1,0 +1,49 @@
+= Preface
+
+== Purpose
+
+This document describes the openEHR Support Terminology and code sets, which define the vocabulary and codes needed for the openEHR Reference, Archetype and Service models. The openEHR terminology is not considered to be in the same space as externally defined terminologies such as {snomed_ct}[SNOMED CT^], {who_icd}[ICDx^] etc, since it is not an ontology of real facts, but of informational classifiers needed by the openEHR models. The code sets are generally a means of interfacing external codes such as ISO language identifiers, with openEHR. The audience of this document includes:
+
+* Standards bodies producing health informatics standards;
+* Software development organisations developing EHR systems;
+* Academic groups studying the EHR;
+* The open source healthcare community.
+
+== Related Documents
+
+Prerequisite documents for reading this document include:
+
+* The {openehr_overview}[openEHR Architecture Overview^].
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_term_development_terminology}[{openehr_term_development_terminology}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_term_forum}[openEHR Terminology specifications forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Requests for new Terminology Codes
+
+Requests for codes may be made by raising a new issue on the {component_prs}[specifications Problem Report tracker^]; the 'Component' field must be set to 'TERM - openEHR Terminology'.
+
+== Creating and Maintaining Translations
+
+A new translation is created by creating a new translated form of the English-language (or another convenient language, e.g. Spanish, to create Portuguese etc) {openehr_terminology_resources}/tree/master/computable/XML/en/openehr_terminology.xml[terminology file^].
+
+This may be done by the Git workflow of:
+
+* fork the {openehr_terminology_resources}[`specifications-TERM` repository^];
+* create the new file `openehr_terminology.xml` in a directory `/computable/XML/xx`, where `xx` is a ISO 639-1 two-character language code;
+* when translation is complete, create a Pull Request.
+* raise a new issue on the {component_prs}[specifications Problem Report tracker^] with 'Component' field must be set to 'TERM - openEHR Terminology'.
+
+Translations are maintained when new codes are added by means of notifications to editor or the GitHub authors of current translations.

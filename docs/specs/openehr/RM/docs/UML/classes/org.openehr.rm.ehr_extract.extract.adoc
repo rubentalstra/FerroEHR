@@ -1,0 +1,48 @@
+=== EXTRACT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXTRACT*
+
+h|*Description*
+2+a|Generic model of an Extract of some information from a repository.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_locatable_class[LOCATABLE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*chapters*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_extract_chapter_class,EXTRACT_CHAPTER>>>`
+a|The content extracted and serialised from the source repository for this Extract.
+
+h|*0..1*
+|*specification*: `<<_extract_spec_class,EXTRACT_SPEC>>`
+a|The specification that this Extract actually conforms to; might not be identical with the specification of the corresponding request.
+
+h|*0..1*
+|*request_id*: `link:/releases/BASE/{base_release}/base_types.html#_hier_object_id_class[HIER_OBJECT_ID^]`
+a|Reference to causing Request, if any.
+
+h|*1..1*
+|*time_created*: `link:/releases/RM/{rm_release}/data_types.html#_dv_date_time_class[DV_DATE_TIME^]`
+a|Creation time of this Extract
+
+h|*1..1*
+|*system_id*: `link:/releases/BASE/{base_release}/base_types.html#_hier_object_id_class[HIER_OBJECT_ID^]`
+a|Identifier of creating system.
+
+h|*1..1*
+|*sequence_nr*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Number of this Extract response in sequence of responses to Extract request identified by `_request_id_`. If this is the sole response, or there was no request, value is 1.
+
+h|*0..1*
+|*participations*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_extract_participation_class,EXTRACT_PARTICIPATION>>>`
+a|Participations relevant to the creation of this Extract.
+
+h|*Invariants*
+2+a|__Sequence_nr_valid__: `sequence_nr >= 1`
+|===

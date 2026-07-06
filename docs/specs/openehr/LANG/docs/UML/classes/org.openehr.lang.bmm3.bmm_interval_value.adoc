@@ -1,0 +1,14 @@
+=== BMM_INTERVAL_VALUE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_INTERVAL_VALUE*
+
+h|*Description*
+2+a|Meta-type for literal intervals of type `Interval<Ordered>`.
+
+h|*Inherit*
+2+|`<<_bmm_literal_value_class,BMM_LITERAL_VALUE>>`
+
+|===

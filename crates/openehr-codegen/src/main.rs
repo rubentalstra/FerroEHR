@@ -388,8 +388,12 @@ fn write_crate(
     files: &[emit::GenFile],
 ) -> Result<(), Box<dyn std::error::Error>> {
     let src = crates_root().join(crate_name).join("src");
+    // Preserve hand-written code (ADR-003/004): delete only previously-`@generated`
+    // files, never the hand-written `*_impl.rs` / spec-behaviour modules beside
+    // them. (A stale generated file no longer emitted this run is `@generated` →
+    // removed; a hand-written sibling is kept.)
     if src.exists() {
-        std::fs::remove_dir_all(&src)?;
+        remove_generated_files(&src)?;
     }
     std::fs::create_dir_all(&src)?;
     let mut written = Vec::with_capacity(files.len());
@@ -401,8 +405,109 @@ fn write_crate(
         std::fs::write(&full, &f.body)?;
         written.push(full);
     }
+    // Weave hand-written modules into the generated tree: any hand-written `.rs`
+    // beside a generated `mod.rs` (or at the crate root beside `lib.rs`) is
+    // declared `pub mod <name>;` so ADR-003 `*_impl.rs` files compile without the
+    // generator owning them. Deterministic (sorted scan) → drift-check-stable.
+    declare_hand_written_modules(&src, &mut written)?;
     rustfmt(&written)?;
     println!("emitted {} files into {}", files.len(), src.display());
+    Ok(())
+}
+
+/// Whether a file's first line marks it as generated (`// @generated …`).
+fn is_generated_file(path: &Path) -> bool {
+    std::fs::read_to_string(path)
+        .is_ok_and(|s| s.lines().next().is_some_and(|l| l.contains("@generated")))
+}
+
+/// Recursively delete every `@generated` file under `dir` (leaving hand-written
+/// files + their directories in place), then prune directories left empty.
+fn remove_generated_files(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    for entry in std::fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            remove_generated_files(&path)?;
+            if std::fs::read_dir(&path)?.next().is_none() {
+                std::fs::remove_dir(&path)?;
+            }
+        } else if is_generated_file(&path) {
+            std::fs::remove_file(&path)?;
+        }
+    }
+    Ok(())
+}
+
+/// For each directory under `src` that has a generated `mod.rs` (or the root, via
+/// `lib.rs`), append `pub mod <name>;` for every hand-written `.rs` sibling not
+/// already declared. Modified module files are added to `written` for rustfmt.
+fn declare_hand_written_modules(
+    src: &Path,
+    written: &mut Vec<PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // (dir, module-anchor file) pairs: the root anchors on lib.rs, each subdir on
+    // its mod.rs. Collect all dirs first (sorted) for deterministic output.
+    let mut dirs = vec![src.to_path_buf()];
+    collect_dirs(src, &mut dirs)?;
+    dirs.sort();
+    for dir in dirs {
+        let anchor = if dir == src {
+            dir.join("lib.rs")
+        } else {
+            dir.join("mod.rs")
+        };
+        if !anchor.exists() {
+            continue; // no generated module file here → nothing to extend
+        }
+        let mut hand_written: Vec<String> = Vec::new();
+        for entry in std::fs::read_dir(&dir)? {
+            let p = entry?.path();
+            let Some(stem) = p.file_stem().and_then(|s| s.to_str()) else {
+                continue;
+            };
+            if p.extension().and_then(|e| e.to_str()) == Some("rs")
+                && !matches!(stem, "mod" | "lib" | "prelude")
+                && !is_generated_file(&p)
+            {
+                hand_written.push(stem.to_owned());
+            }
+        }
+        if hand_written.is_empty() {
+            continue;
+        }
+        hand_written.sort();
+        let mut body = std::fs::read_to_string(&anchor)?;
+        let mut appended = false;
+        for m in hand_written {
+            let decl = format!("pub mod {m};");
+            if !body.contains(&decl) {
+                if !appended {
+                    body.push_str(
+                        "\n// hand-written modules (ADR-003 spec behaviour), auto-declared:\n",
+                    );
+                    appended = true;
+                }
+                body.push_str(&decl);
+                body.push('\n');
+            }
+        }
+        if appended {
+            std::fs::write(&anchor, &body)?;
+            written.push(anchor);
+        }
+    }
+    Ok(())
+}
+
+/// Recursively collect subdirectories of `dir` into `out`.
+fn collect_dirs(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    for entry in std::fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            out.push(path.clone());
+            collect_dirs(&path, out)?;
+        }
+    }
     Ok(())
 }
 

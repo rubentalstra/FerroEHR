@@ -4,3 +4,6 @@ pub mod data_value;
 pub mod dv_boolean;
 pub mod dv_identifier;
 pub mod dv_state;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod dv_identifier_impl;

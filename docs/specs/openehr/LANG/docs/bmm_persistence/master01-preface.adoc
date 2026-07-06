@@ -1,0 +1,37 @@
+= Preface
+
+== Purpose
+
+This document describes a persistence model for the Basic Meta-Model (BMM) known as `P_BMM`, that may be used as a basis for serialisation of BMM models. It may be considered as an approximate replacement for the UML XMI for data-only models. It is human-readable and writable, and supports generic types (open and closed), container types, and multiple inheritance.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_bmm_persistence}[{openehr_bmm_persistence}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_lang_forum}[openEHR languages specifications forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+Conformance of a data or software artifact to an openEHR specification is determined by a formal test of that artifact against the relevant {openehr_its_component}[openEHR Implementation Technology Specification(s) (ITSs)^], such as an IDL interface or an XML-schema. Since ITSs are formal derivations from underlying models, ITS conformance indicates model conformance.
+
+== Versions
+
+The `P_BMM` model carries its own version number, independent of any single openEHR component release. The current version is *2.4*, which formalises the capture of the full feature set of a class: _functions_ (routines) with their parameters, _constants_, and class _invariants_, in addition to the _properties_ already supported in earlier versions. The complete change history is recorded in the amendment record.
+
+NOTE: These features, and in particular `P_BMM` functions, exist primarily to capture the operation specifications of the openEHR models. Those specifications were originally maintained in UML and, as of 2026, are migrated to and generated from the BMM tooling (`bmm-publisher`). They are a recent addition and are not yet widely adopted by BMM tooling; a tool that materialises only the structural (attribute) features of a model may safely ignore the `_functions_`, `_constants_` and `_invariants_` of a class.
+
+== Tooling
+
+The {openehr_awb}[openEHR ADL Workbench (AWB)^] fully implements this specification, and provide a convenient way of illustrating BMM semantics. The screenshots used in this specification are all from the ADL Workbench. The tool is written in the Eiffel language, and is available as {openehr_awb_github}[open source on Github^]. The BMM libraries can be found in the {eomf_bmm}[EOMF Github repository^].
+
+A modelling tool known as Archie implements BMM in Java, and {openehr_archie_github}[can be found in the openEHR Github area^].

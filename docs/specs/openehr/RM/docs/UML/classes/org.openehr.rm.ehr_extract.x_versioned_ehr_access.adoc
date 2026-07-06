@@ -1,0 +1,14 @@
+=== X_VERSIONED_EHR_ACCESS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*X_VERSIONED_EHR_ACCESS*
+
+h|*Description*
+2+a|Form of `X_VERSIONED_OBJECT` for `EHR_ACCESS` EHR object.
+
+h|*Inherit*
+2+|`<<_x_versioned_object_class,X_VERSIONED_OBJECT>>`
+
+|===

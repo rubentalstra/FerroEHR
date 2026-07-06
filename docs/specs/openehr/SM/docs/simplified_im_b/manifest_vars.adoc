@@ -1,0 +1,5 @@
+:spec_title: openEHR Simplified Information Model 'B'
+:copyright_year: 2019
+:spec_status: DEVELOPMENT
+:keywords: SIM-B, information model, openEHR
+:description: openEHR Simplified Information Model 'B'

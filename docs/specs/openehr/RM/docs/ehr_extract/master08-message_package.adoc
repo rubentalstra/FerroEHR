@@ -1,0 +1,41 @@
+= The Message package
+
+== Requirements
+
+In the first two EHR extract scenarios described in Requirements on page 8, extracts may be received
+in response to a request, or they may be unsolicited. Most transfers of care (e.g. discharge summaries
+and referrals) and pathology test results will generate unsolicited extracts, whereas solicited requests
+will usually occur due to the patient presenting him or herself in another part of the health system
+without an explicit transfer of care.
+
+== Design
+
+The message package provides the basic abstractions for the sending and receiving of any point to
+point message containing a payload, of abstract type `MESSAGE`. The `message` Package is illustrated in
+the UML diagram below.
+
+[.text-center]
+.rm.message Package
+image::{uml_diagrams_uri}/RM-ehr_extract.message.svg[id=rm__extract_message, align="center"]
+
+A new message is required for each transmission, even if the payload was created once and is retransmitted
+multiple times.
+
+=== Integrity and Security
+
+The `MESSAGE` object may include a digital hash (i.e. digest or digital finderprint) of the serialised content,
+made for example using the SHA-1 or MD5 algorithms. The purpose of the digest is to provide
+an integrity check on the data. This protects against non-malicious changes to the data (e.g. due to
+software bugs, incorrect transaction management). Often this will be acceptable within secure, closed
+environments, such as a private hospital or community health network.
+
+Protection against malicious modification can be provided by encryption.
+
+[.tbd]
+*To Be Determined*: normalised serialised expression
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}addressed_message.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}message.adoc[]

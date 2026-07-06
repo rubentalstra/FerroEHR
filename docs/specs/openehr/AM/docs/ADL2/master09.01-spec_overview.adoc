@@ -1,0 +1,28 @@
+= Specialisation
+
+== Overview
+
+Archetypes can be specialised in a similar way to classes in object-oriented programming languages. Common to both situations is the use of a differential style of declaration, i.e. the contents of a specialised artefact are expressed as differences with respect to the parent artefact - previously defined elements from the parent that are not changed are not repeated in the descendant. Two extra constructs are included in the ADL syntax to support redefinition in specialised archetypes or templates.
+
+The basic test that must be satisfied by a specialised archetype is as follows:
+
+* All possible data instance arrangements that conform to the specialised archetype must also conform to all of its parents, recursively to the ultimate parent.
+
+This condition ensures that data created by a specialised archetype that is not itself shared by two systems can be processed by the use of a more general parent that is shared.
+
+The semantics that allow this are similar to the {wikipedia_cov_contra}[covariant redefinition^] notion used in some object-oriented programming languages, and can be summarised as follows.
+
+* A non-specialised (i.e. top-level) archetype defines an instance space that is a subset of the space defined by the class in the reference information model on which the archetype is based.
+* A specialised archetype can specialise only one parent archetype, i.e. single inheritance.
+* A specialised archetype specifies an instance space defined by the following elements:
+** unchanged object and attribute constraints inherited from the parent archetype;
+** and one or more redefinitions, additions and removals.
+* All elements defined in a parent archetype are either inherited unchanged or redefined in a specialised child.
+* Specialised archetypes are expressed differentially with respect to the parent, i.e. they do not mention purely inherited elements, only redefinitions and extensions.
+* Extensions always define an additional subset of the instance space defined by the reference model element being extended (i.e. to which the 'new' objects belong). The extension capability allows archetypes to remain extensible without having to know in advance how or if they will be extended.
+
+To understand specialisation properly, the object-oriented notion of flattening is required. This term refers to the operation of overlaying the (differential) definition of a specialised archetype on its 'flat parent', which is a flattened archetype obtained by a previous invocation of this process. The first invocation creates a flat archetype from overlaying a specialised archetype on a 'top-level' non-specialised archetype.
+
+The contents of the definition of any specialised archetype are therefore understood as differences with respect to the _flat parent_, not the differential parent. This is exactly how object-oriented programming languages work.
+
+The following sections describe the details of specialisation. The term 'object' is used synonymously with 'object constraint' since all elements in ADL are constraints unless otherwise indicated.

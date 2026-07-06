@@ -1,0 +1,99 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser, Implementer|Completed
+
+4+^h|*AM Release 2.3.0*
+
+|[[latest_issue]]0.7.9
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]: Convert citations to bibtex form.
+|T Beale
+|[[latest_issue_date]]15 Dec 2019
+
+|0.7.8
+|{spec_tickets}/SPECAM-58[SPECAM-58^]. Correct errors and improve examples - S Garde review Nov 2018. Change `_instance_uid_` to `_build_uid_`.
+|S Garde
+|18 Nov 2018
+
+4+^h|*AM Release 2.2.0*
+
+4+^h|*AM Release 2.1.0*
+
+|0.7.7
+|{spec_tickets}/SPECAM-52[SPECAM-52^]Improve explanation of version number progression in section 4.2; correct version identifier grammar (addresses {spec_tickets}/SPECPR-254[SPECPR-254^]).
+|E Sundvall
+|13 Feb 2018
+
+|
+|Correct formatting, re-instate Archetype model diagram at start of section 3.
+|T Beale
+|28 Jan 2018
+
+|0.7.6
+|{spec_tickets}/SPECAM-41[SPECAM-41^]. Correct 'unstable' to 'alpha'; correct version-related typo; update versioning incrementing rules.
+|S Garde
+|18 Jun 2017
+
+4+^h|*AM Release 2.0.6*
+
+|0.7.5 
+|Replace `'-unstable'` with `'-alpha'` to be compatible with typical tools.
+|I McNicoll
+|01 Feb 2015
+
+|0.7.4 
+|Replace `'+uNNN'` with `'-unstable'`; simplify the number after `'rc'` to an integer build count.
+|S Garde, +
+ I McNicoll, +
+ H Leslie
+|29 Sep 2014
+
+|0.7.3 
+|Remove `_build_count_`, replace with `_build_uid_`. 
+|I McNicoll +
+ T Beale |28 May 2014
+
+|0.7.2 
+|Change `ARCHEYTPE_HRID._commit_number_` to `_instance_uid_`. Build_count reset to 1 on each version change. Adjust diagrams and explanations. 
+|S Garde +
+ I McNicoll +
+ T Beale |21 May 2014
+
+|0.7.1 
+|Simplify development state in lifecycle; merge 'initial' and rename 'draft'. 
+|S Garde +
+ I McNicoll |09 May 2014
+
+|0.7.0 
+|Rewrite referencing section; update 'problem description; further grammar improvements. 
+|T Beale 
+|20 Jun 2013
+
+|0.6.5 
+|Remove errors and ambiguities to do with explanation of human readable identifier; improve nomenclature; rewrite grammar. 
+|T Beale 
+|15 Jun 2013
+
+|0.6.0 
+|Major update based on CKM clinical group analysis, and feedback from the CIMI and openEHR communities. 
+|S Garde +
+ H Leslie +
+ I McNicoll +
+ T Beale 
+|21 Apr 2013
+
+|0.2.0 
+|Refinements to do with template identification. +
+ Review from Medical Centrum Alkmaar (Netherlands).
+|T Beale +
+ M van der Meer
+|01 Feb 2010
+
+|0.1.0 
+|Initial Writing. 
+|T Beale 
+|09 Jul 2009
+
+|===
+

@@ -1,0 +1,22 @@
+title: DV_PROPORTION
+type: object
+allOf:
+  - $ref: ../data_types/DvAmount.yaml
+required:
+  - numerator
+  - denominator
+  - semantic_type
+properties:
+  _type:
+    type: string
+    default: DV_PROPORTION
+  numerator:
+    type: number
+  denominator:
+    type: number
+  semantic_type:
+    type: integer
+  precision:
+    type: integer
+x-discriminator-value: DV_PROPORTION
+

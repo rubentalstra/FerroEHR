@@ -1,0 +1,76 @@
+=== DV_COUNT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DV_COUNT*
+
+h|*Description*
+2+a|Countable quantities. Used for countable types such as pregnancies and steps (taken by a physiotherapy patient), number of cigarettes smoked in a day. 
+
+Misuse: Not to be used for amounts of physical entities (which all have units).
+
+h|*Inherit*
+2+|`<<_dv_amount_class,DV_AMOUNT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*magnitude*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer64_class[Integer64^]`
+a|
+
+h|*0..1 +
+(redefined)*
+|*normal_range*: `<<_dv_interval_class,DV_INTERVAL>><<<_dv_count_class,DV_COUNT>>>`
+a|Optional normal range.
+
+h|*0..1 +
+(redefined)*
+|*other_reference_ranges*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_reference_range_class,REFERENCE_RANGE>><<<_dv_count_class,DV_COUNT>>>>`
+a|Optional tagged other reference ranges for this value in its particular measurement context.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*add* __alias__ "+" ( +
+other: `<<_dv_count_class,DV_COUNT>>[1]` +
+): `<<_dv_count_class,DV_COUNT>>`
+a|Sum of this `DV_COUNT` and `_other_`.
+
+h|*1..1 +
+(redefined)*
+|*subtract* __alias__ "-" ( +
+other: `<<_dv_count_class,DV_COUNT>>[1]` +
+): `<<_dv_count_class,DV_COUNT>>`
+a|Difference of this `DV_COUNT` and `_other_`.
+
+h|*1..1 +
+(redefined)*
+|*multiply* __alias__ "&#42;" ( +
+factor: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^][1]` +
+): `<<_dv_count_class,DV_COUNT>>`
+a|Product of this `DV_COUNT` and `_factor_`.
+
+h|*1..1 +
+(redefined)*
+|*less_than* __alias__ "<" ( +
+other: `<<_dv_count_class,DV_COUNT>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_comparable__: `is_strictly_comparable_to (other)` +
+ +
+__Post_result__: `Result = magnitude < other.magnitude`
+a|True if this Quantified object is less than `_other_`, based on comparison of `_magnitude_`.
+
+h|*1..1 +
+(effected)*
+|*is_strictly_comparable_to* ( +
+other: `<<_dv_ordered_class,DV_ORDERED>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True.
+|===

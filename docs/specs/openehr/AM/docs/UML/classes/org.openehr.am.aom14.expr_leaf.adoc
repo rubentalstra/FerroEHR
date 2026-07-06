@@ -1,0 +1,30 @@
+=== EXPR_LEAF Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXPR_LEAF*
+
+h|*Description*
+2+a|Expression tree leaf item representing one of:
+
+* a manifest constant of any primitive type;
+* a path referring to a value in the archetype;
+* a constraint;
+* a variable reference.
+
+h|*Inherit*
+2+|`<<_expr_item_class,EXPR_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*reference_type*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Type of reference: “constant”, “attribute”, “function”, “constraint”. The first three are used to indicate the referencing mechanism for an operand. The last is used to indicate a constraint operand, as happens in the case of the right-hand operand of the ‘matches’ operator.
+
+h|*1..1*
+|*item*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|The value referred to; a manifest constant, an attribute path (in the form of a String), or for the right-hand side of a ‘matches’ node, a constraint, often a C_PRIMITIVE_OBJECT.
+|===

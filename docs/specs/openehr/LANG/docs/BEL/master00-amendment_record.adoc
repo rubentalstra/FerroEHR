@@ -1,0 +1,40 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*LANG Release 1.1.0 (unreleased)*
+
+|[[latest_issue]]1.2.0
+|{spec_tickets}/SPECLANG-9[SPECLANG-9^]. Import old Expression Language as 'Basic Expression Language'; +
+ Add `OPERATOR_KIND` enumeration.
+|SEC
+|[[latest_issue_date]]14 May 2022
+
+4+^h|*Pre-LANG (Expression Language)*
+
+|1.1.5
+|{spec_tickets}/SPECBASE-33[SPECBASE-33^]. Retrospectively release interim form of Expression Language.
+|T Beale, +
+ P Bos, +
+ D Bosca
+|05 Apr 2022
+
+|1.1.0
+|{spec_tickets}/SPECPUB-6[SPECPUB-6^]. Correct UML package nesting and paths in documents; insert `base` parent package; rename `expressions` package to `expression`.
+|T Beale
+|27 Nov 2017
+
+|1.0.1
+|Correct type of `OP_DEF_EXISTS._evaluation_agent_` to `FUNCTION<<Any>, Boolean>`.
+|C Nanjo
+|31 May 2016
+
+|1.0.0
+|Initial writing. Taken from AOM2 2.0.6.
+|T Beale, +
+ openEHR SEC
+|15 Feb 2016
+
+|===

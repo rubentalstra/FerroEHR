@@ -1,0 +1,5 @@
+:spec_title: Simplified Data Template (SDT)
+:copyright_year: 2019
+:spec_status: DEVELOPMENT
+:keywords: JSON, REST, web template, commit, simplified data, TDS, SDT, ncSDT, simSDT, structSDT
+:description: openEHR Simplified Data Template (SDT)

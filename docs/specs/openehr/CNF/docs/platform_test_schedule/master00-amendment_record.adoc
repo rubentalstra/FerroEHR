@@ -1,0 +1,62 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*CNF Release 1.0.0 (unreleased)*
+
+|[[latest_issue]]0.8.6
+|Improved headings based on openEHR Service Model; simplified test categories.
+|P Pazos
+|[[latest_issue_date]]24 Mar 2022
+ 
+|0.8.5
+|Improve identifiers, structure; +
+ add content tests from EhrBase
+|T Beale, +
+ P Pazos
+|21 Feb 2022
+ 
+|0.8.0
+|Rewrite main schedule based on EhrBase (Github commit https://github.com/ehrbase/ehrbase/commit/674e8b2506a77bf1adc365eb73e718e2126f2c8e[674e8b2^])
+|P Pazos; +
+ W Wagner; +
+ T Beale
+|23 Nov 2021
+
+|0.7.1
+|Updates and new diagrams for SUT section; Adjust some test sets.
+|T Beale
+|17 Mar 2017
+
+|0.7.0
+|Major rework based on openEHR Patform SM.
+|openEHR SEC
+|18 Oct 2017
+
+|0.6.2
+|Updates to REST API at 25 Aug 2017. Added glossary. Improved SUT diagram.
+|T Beale, +
+ S Iancu
+|26 Aug 2017
+
+|0.6.1
+|Major rework from SEC call 9 Aug 2017.
+|C Chevalley, +
+ H Frankel, +
+ S Iancu, +
+ B Lah, +
+ B Naess, +
+ T Beale
+|11 Aug 2017
+
+|0.5.0
+|{spec_tickets}/SPECCNF-1[SPECCNF-1^]: Initial Writing.
+|B Naess, +
+ I McNicoll, +
+ P Pazos, +
+ T Beale
+|01 Jun 2017
+
+|===

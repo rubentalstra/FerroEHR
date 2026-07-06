@@ -1,0 +1,26 @@
+=== EXPR_LEAF Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EXPR_LEAF (abstract)__*
+
+h|*Description*
+2+a|Meta-type representing one of:
+
+* a manifest constant of any primitive type;
+* a path referring to a value in the archetype;
+* a constraint;
+* a variable reference.
+
+h|*Inherit*
+2+|`<<_expression_class,EXPRESSION>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*item*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|The reference item from which the value of this node can be computed.
+|===

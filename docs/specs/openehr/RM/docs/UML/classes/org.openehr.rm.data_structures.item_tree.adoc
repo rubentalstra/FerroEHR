@@ -1,0 +1,42 @@
+=== ITEM_TREE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ITEM_TREE*
+
+h|*Description*
+2+a|Logical tree data structure. The tree may be empty. Used for representing data which are logically a tree such as audiology results, microbiology results, biochemistry results.
+
+h|*Inherit*
+2+|`<<_item_structure_class,ITEM_STRUCTURE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_item_class,ITEM>>>`
+a|The items comprising the `ITEM_TREE`. Can include 0 or more `CLUSTERs` and/or 0 or more individual `ELEMENTs`.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_element_path* ( +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if path  a_path' is a valid leaf path.
+
+h|*1..1*
+|*element_at_path* ( +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_element_class,ELEMENT>>`
+a|Return the leaf element at the path  a_path'.
+
+h|*1..1 +
+(redefined)*
+|*as_hierarchy* (): `<<_cluster_class,CLUSTER>>`
+a|Generate a CEN EN13606-compatible hierarchy, which is the same as the tree's physical representation.
+|===

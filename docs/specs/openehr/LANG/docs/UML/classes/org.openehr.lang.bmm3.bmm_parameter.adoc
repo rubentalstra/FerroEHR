@@ -1,0 +1,21 @@
+=== BMM_PARAMETER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_PARAMETER*
+
+h|*Description*
+2+a|A routine parameter variable (read-only).
+
+h|*Inherit*
+2+|`<<_bmm_readonly_variable_class,BMM_READONLY_VARIABLE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*direction*: `<<_bmm_parameter_direction_enumeration,BMM_PARAMETER_DIRECTION>>`
+a|Optional read/write direction of the parameter. If none-supplied, the parameter is treated as `in`, i.e. readable.
+|===

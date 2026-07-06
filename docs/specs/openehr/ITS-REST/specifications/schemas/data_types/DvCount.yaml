@@ -1,0 +1,14 @@
+title: DV_COUNT
+type: object
+allOf:
+  - $ref: ../data_types/DvAmount.yaml
+required:
+  - magnitude
+properties:
+  _type:
+    type: string
+    default: DV_COUNT
+  magnitude:
+    type: integer
+x-discriminator-value: DV_COUNT
+

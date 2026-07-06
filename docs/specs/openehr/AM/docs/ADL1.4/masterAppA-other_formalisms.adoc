@@ -1,0 +1,93 @@
+[appendix]
+= Relationship of ADL to Other Formalisms
+
+== Overview
+
+Whenever a new formalism is defined, it is reasonable to ask the question: are there not existing formalisms which would do the same job? Research to date has shown that in fact, no other formalism has been designed for the same use, and none easily express ADL's semantics. During ADL's initial development, it was felt that there was great value in analysing the problem space very carefully, and constructing an abstract syntax exactly matched to the solution, rather than attempting to use some other formalism - undoubtedly designed for a different purpose - to try and express the semantics of archetypes, or worse, to start with an XML-based exchange format, which often leads to the conflation of abstract and concrete representational semantics. Instead, the approach used has paid off, in that the resulting syntax is very simple and powerful, and in fact has allowed mappings to other formalisms to be more correctly defined and understood. The following sections compare ADL to other formalisms and show how it is different.
+
+== Constraint Syntaxes
+
+=== OMG OCL (Object Constraint Language)
+
+The OMG's {omg_ocl}[Object Constraint Language (OCL)^] appears at first glance to be an obvious contender for writing archetypes. However, its designed use is to write constraints on object models, rather than on data, which is what archetypes are about. As a concrete example, OCL can be used to make statements about the actors attribute of a class Company - e.g. that actors must exist and contain the Actor who is the lead of Company. However, if used in the normal way to write constraints on a class model, it cannot describe the notion that for a particular kind of (acting) company, such as 'itinerant jugglers', there must be at least four actors, each of whom have among their capabilities 'advanced juggling', plus an Actor who has skill 'musician'. This is because doing so would constrain all instances of the class Company to conform to the specific configuration of instances corresponding to actors and jugglers, when what is intended is to allow a myriad of possibilities. ADL provides the ability to create numerous archetypes, each describing in detail a concrete configuration of instances of type Company.  OCL's constraint types include function pre- and post-conditions, and class invariants. There is no structural character to the syntax - all statements are essentially first-order predicate logic statements about elements in models expressed in UML, and are related to parts of a model by 'context' statements.  This makes it impossible to use OCL to express an archetype in a structural way which is natural to domain experts. OCL also has some flaws, described in cite:[Beale2003].  However, OCL is in fact relevant to ADL. ADL archetypes include invariants (and one day, might include pre- and post-conditions). Currently these are expressed in a syntax very similar to OCL, with minor differences. The exact definition of the ADL invariant syntax in the future will depend somewhat on the progress of OCL through the OMG standards process.
+
+== Ontology Formalisms
+
+=== OWL (Web Ontology Language)
+
+The {w3c_owl}[W3C Web Ontology Language (OWL)^] is a W3C initiative for defining Web-enabled ontologies which aim to allow the building of the "Semantic Web". OWL has an abstract syntax, developed at the University of Manchester, UK, and an exchange syntax, which is an extension of the XML-based syntax known as RDF (Resource Description Framework). We discuss OWL only in terms of its abstract syntax, since this is a semantic representation of the language unencumbered by XML or RDF details (there are tools which convert between abstract OWL and various exchange syntaxes).
+
+OWL is a general purpose description logic (DL), and is primarily used to describe 'classes' of things in such a way as to support subsumptive inferencing within the ontology, and by extension, on data which are instances of ontology classes. There is no general assumption that the data itself were built based on any particular class model - they might be audio-visual objects in an archive, technical documentation for an aircraft or the Web pages of a company. OWL's class definitions are therefore usually constraint statements on an _implied_ model on which data _appear_ to be based. However, the semantics of an information model can themselves be represented in OWL. Restrictions are the primary way of defining subclasses.
+
+In intention, OWL is aimed at representing some 'reality' and then making inferences about it; for example in a medical ontology, it can infer that a particular patient is at risk of ischemic heart disease due to smoking and high cholesterol, if the knowledge that 'ischemic heart disease has-risk-factor smoking' and 'ischemic heart disease has-risk-factor high cholesterol' are in the ontology, along with a representation of the patient details themselves. OWL's inferencing works by subsumption, which is to say, asserting either that an 'individual' (OWL's equivalent of an object-oriented instance or a type) conforms to a 'class', or that a particular 'class' 'is-a' (subtype of another) 'class'; this approach can also be understood as category-based reasoning or set-containment.
+
+ADL can also be thought of as being aimed at describing a 'reality', and allowing inferences to be made. However, the reality it describes is in terms of constraints on information structures (based on an underlying information model), and the inferencing is between data and the constraints. Some of the differences between ADL and OWL are as follows.
+
+* ADL syntax is predicated on the existence of existing object-oriented reference models, expressed in UML or some similar formalism, and the constraints in an ADL archetype are in relation to types and attributes from such a model. In contrast, OWL is far more general, and requires the explicit expression of a reference model in OWL, before archetype-like constraints can be expressed.
+* Because information structures are in general hierarchical compositions of nodes and elements, and may be quite deep, ADL enables constraints to be expressed in a structural, nested way, mimicking the tree-like nature of the data it constrains. OWL does not provide a native way to do this, and although it is possible to express approximately the same constraints in OWL, it is fairly inconvenient, and would probably only be made easy by machine conversion from a visual format more or less like ADL.
+* As a natural consequence of dealing with heavily nested structures in a natural way, ADL also provides a path syntax, based on {w3c_xpath}[W3C Xpath], enabling any node in an archetype to be referenced by a path or path pattern. OWL does not provide an inbuilt path mechanism; Xpath can presumably be used with the RDF representation, although it is not yet clear how meaningful the paths would be with respect to the named categories within an OWL ontology.
+* ADL also natively takes care of disengaging natural language and terminology issues from constraint statements by having a separate ontology per archetype, which contains 'bindings' and language-specific translations. OWL has no inbuilt syntax for this, requiring such semantics to be represented from first principles.
+* ADL provides a rich set of constraints on primitive types, including dates and times. OWL 1.0 (c 2005) did not provide any equivalents; OWL 1.1 (c 2007) look as though it provides some.
+
+Research to date shows that the semantics of an archetype are likely to be representable inside OWL, assuming expected changes to improve its primitive constraint types occur. To do so would require the following steps:
+
+* express the relevant reference models in OWL (this has been shown to be possible);
+* express the relevant terminologies in OWL (research on this is ongoing);
+* be able to represent concepts (i.e. constraints) independently of natural language (status unknown);
+* convert the cADL part of an archetype to OWL; assuming the problem of primitive type constraints is solved, research to date shows that this should in principle be possible.
+
+To use the archetype on data, the data themselves would have to be converted to OWL, i.e. be expressed as 'individuals'. In conclusion, we can say that mathematical equivalence between OWL and ADL is probably provable. However, it is clear that OWL is far from a convenient formalism to express archetypes, or to use them for modelling or reasoning against data. The ADL approach makes use of existing UML semantics and existing terminologies, and adds a convenient syntax for expressing the required constraints. It also appears fairly clear that even if all of the above conversions were achieved, using OWL-expressed archetypes to validate data (which would require massive amounts of data to be converted to OWL statements) is unlikely to be anywhere near as efficient as doing it with archetypes expressed in ADL or one of its concrete expressions.
+
+Nevertheless, OWL provides a very powerful generic reasoning framework, and offers a great deal of inferencing power of far wider scope than the specific kind of 'reasoning' provided by archetypes. It appears that it could be useful for the following archetype-related purposes:
+
+* providing access to ontological resources while authoring archetypes, including terminologies, pure domain-specific ontologies, etc;
+* providing a semantic 'indexing' mechanism allowing archetype authors to find archetypes relating to specific subjects (which might not be mentioned literally within the archetypes);
+* providing inferencing on archetypes in order to determine if a given archetype is subsumed within another archetype which it does not specialise (in the ADL sense);
+* providing access to archetypes from within a semantic Web environment, such as an ebXML server or similar.
+
+=== KIF (Knowledge Interchange Format)
+
+The Knowledge Interchange Format (KIF) is a knowledge representation language whose goal is to be able to describe formal semantics which would be sharable among software entities, such as information systems in an airline and a travel agency. An example of KIF (taken from cite:[Genesereth_Fikes_Gruber1992]) used to describe the simple concept of 'units' in a class is as follows:
+
+[source, lisp]
+--------
+(defrelation BASIC-UNIT
+    (=> (BASIC-UNIT ?u) ; basic units are distinguished units of measure
+        (unit-of-measure ?u)))
+
+(deffunction UNIT*
+        ; Unit* maps all pairs of units to units
+    (=> (and (unit-of-measure ?u1) (unit-of-measure ?u2))
+        (and (defined (UNIT* ?u1 ?u2)) (unit-of-measure (UNIT* ?u1 ?u2))))
+            
+        ; It is commutative
+    (= (UNIT* ?u1 ?u2) (UNIT* ?u2 ?u1))
+    
+        ; It is associative
+    (= (UNIT* ?u1 (UNIT* ?u2 ?u3))
+        (UNIT* (UNIT* ?u1 ?u2) ?u3))
+)
+
+(deffunction UNIT^
+        ; Unit^ maps all units and reals to units
+    (=> (and (unit-of-measure ?u)
+        (real-number ?r))
+        (and (defined (UNIT^ ?u ?r)) (unit-of-measure (UNIT^ ?u ?r))))
+        
+        ; It has the algebraic properties of exponentiation
+    (= (UNIT^ ?u 1) ?u)
+    (= (unit* (UNIT^ ?u ?r1) (UNIT^ ?u ?r2)) (UNIT^ ?u (+ ?r1 ?r2)))
+    (= (UNIT^ (unit* ?u1 ?u2) ?r)
+    (unit* (UNIT^ ?u1 ?r) (UNIT^ ?u2 ?r)))
+)
+--------
+
+It should be clear from the above that KIF is a definitional language - it defines all the concepts it mentions. However, the most common situation in which we find ourselves is that information models already exist, and may even have been deployed as software. Thus, to use KIF for expressing archetypes, the existing information model and relevant terminologies would have to be converted to KIF statements, before archetypes themselves could be expressed. This is essentially the same process as for expressing archetypes in OWL.
+
+It should also be realised that KIF is intended as a knowledge exchange format, rather than a knowledge representation format, which is to say that it can (in theory) represent the semantics of any other knowledge representation language, such as OWL. This distinction today seems fine, since Web-enabled languages like OWL probably don't need an exchange format other than their XML equivalents to be shared. The relationship and relative strengths and deficiencies is explored by e.g. citenp:[Martin2003].
+
+== XML-based Formalisms
+
+=== XML-schema
+
+Previously, archetypes have been expressed as XML instance documents conforming to W3C XML schemas, for example in the Good Electronic Health Record project (see cite:[GeHR_AUS]). The schemas used in those projects correspond technically to the XML expressions of information model-dependent object models shown in The Archetypes: Technical Overview specification. XML archetypes are accordingly equivalent to serialised instances of the parse tree, i.e. particular ADL archetypes serialised from objects into XML instance.

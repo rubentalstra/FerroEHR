@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValueSet xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/valueset-null_flavours"/>
+  <version value="3.1.0"/>
+  <name value="null_flavours"/>
+  <title value="Null Flavours"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <compose>
+    <lockedDate value="2024-08-22"/>
+    <include>
+      <system value="https://specifications.openehr.org/fhir/codesystem-null_flavours"/>
+      <version value="3.1.0"/>
+    </include>
+  </compose>
+</ValueSet>

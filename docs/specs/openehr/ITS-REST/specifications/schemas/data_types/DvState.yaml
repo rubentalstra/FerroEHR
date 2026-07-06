@@ -1,0 +1,17 @@
+title: DV_STATE
+type: object
+allOf:
+  - $ref: ../data_types/DataValue.yaml
+required:
+  - value
+  - is_terminal
+properties:
+  _type:
+    type: string
+    default: DV_STATE
+  value:
+    $ref: ../data_types/DvCodedText.yaml
+  is_terminal:
+    type: boolean
+x-discriminator-value: DV_STATE
+

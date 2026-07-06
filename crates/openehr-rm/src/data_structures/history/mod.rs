@@ -4,3 +4,6 @@ pub mod event;
 pub mod history;
 pub mod interval_event;
 pub mod point_event;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod history_impl;

@@ -1,0 +1,25 @@
+=== EXPR_FOR_ALL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXPR_FOR_ALL*
+
+h|*Description*
+2+a|Universal quantification operator, usually known as `for_all`, whose operand is a collection of items referenced by an `EXPR_VALUE_REF`. The `_condition_` attribute represents an assertion that is applied to every member of the collection at runtime to determine the result.
+
+h|*Inherit*
+2+|`<<_expr_operator_class,EXPR_OPERATOR>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*condition*: `<<_assertion_class,ASSERTION>>`
+a|Boolean condition that returns True or False when applied to a member of the operand of a `for_all` operator.
+
+h|*1..1*
+|*operand*: `<<_expr_value_ref_class,EXPR_VALUE_REF>>`
+a|Reference to collection / container object to which the `for_all` operator is to be applied.
+|===

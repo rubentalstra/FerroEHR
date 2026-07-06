@@ -1,0 +1,22 @@
+=== BMM_BOOLEAN_VALUE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_BOOLEAN_VALUE*
+
+h|*Description*
+2+a|Meta-type for a literal Boolean value, for which `_type_` is fixed to the `BMM_TYPE` representing `Boolean` and `_value_` is of type `Boolean`.
+
+h|*Inherit*
+2+|`<<_bmm_primitive_value_class,BMM_PRIMITIVE_VALUE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Native Boolean value.
+|===

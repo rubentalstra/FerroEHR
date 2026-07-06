@@ -1,0 +1,24 @@
+=== C_SINGLE_ATTRIBUTE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_SINGLE_ATTRIBUTE*
+
+h|*Description*
+2+a|Concrete model of constraint on a single-valued attribute node. The meaning of the inherited children attribute is that they are alternatives.
+
+h|*Inherit*
+2+|`<<_c_attribute_class,C_ATTRIBUTE>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*alternatives* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_c_object_class,C_OBJECT>>>`
+a|List of alternative constraints for the single child of this attribute within the data.
+
+h|*Invariants*
+2+a|__Members_valid__: `alternatives /= Void and then alternatives.for_all(co: C_OBJECT &#124; co.occurrences.upper \<= 1)`
+|===

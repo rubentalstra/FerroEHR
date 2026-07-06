@@ -1,0 +1,11 @@
+title: DV_IDENTIFIER
+type: object
+allOf:
+  - $ref: ../data_types/DvIdentifier.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_IDENTIFIER]
+x-discriminator-value: DV_IDENTIFIER

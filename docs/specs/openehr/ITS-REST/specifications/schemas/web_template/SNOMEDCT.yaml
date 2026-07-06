@@ -1,0 +1,13 @@
+title: SNOMEDCT
+required:
+  - value
+  - terminologyId
+type: object
+properties:
+  value:
+    type: string
+  terminologyId:
+    type: string
+example:
+  value: '163030003'
+  terminologyId: SNOMED-CT(2003)

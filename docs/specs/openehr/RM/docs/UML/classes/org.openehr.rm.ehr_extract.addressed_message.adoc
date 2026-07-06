@@ -1,0 +1,38 @@
+=== ADDRESSED_MESSAGE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ADDRESSED_MESSAGE*
+
+h|*Description*
+2+a|The concept of a message addressed to nominated recipients.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*sender*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Party sending the message.
+
+h|*1..1*
+|*sender_reference*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identification of message used by sender. This will be the same no matter how many times this message is sent to these recipients.
+
+h|*1..1*
+|*addressees*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Intended recipients, in the form of internet addresses.
+
+h|*0..1*
+|*urgency*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Urgency with which destination should deal with message:
+
+* -1 - low
+* 0 - normal
+* 1 - high
+
+h|*1..1*
+|*message*: `<<_message_class,MESSAGE>>`
+a|The content of the message.
+|===

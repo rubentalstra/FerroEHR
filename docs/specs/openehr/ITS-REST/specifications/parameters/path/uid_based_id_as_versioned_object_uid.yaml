@@ -1,0 +1,9 @@
+name: uid_based_id
+in: path
+description: |
+  An identifier in a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+required: true
+style: simple
+schema:
+  type: string
+  example: '8849182c-82ad-4088-a07f-48ead4180515'

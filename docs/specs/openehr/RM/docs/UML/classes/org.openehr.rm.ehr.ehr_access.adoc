@@ -1,0 +1,38 @@
+=== EHR_ACCESS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EHR_ACCESS*
+
+h|*Description*
+2+a|EHR-wide access control object. All access decisions to data in the EHR must be made in accordance with the policies and rules in this object.
+
+NOTE: It is strongly recommended that the inherited attribute `_uid_` be populated in `EHR_ACCESS` objects, using the UID copied from the `_object_id()_` of the `_uid_` field of the enclosing `VERSION` object. +
+For example, the `ORIGINAL_VERSION.uid` `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2` would be copied to the `_uid_` field of the `EHR_ACCESS` object.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_locatable_class[LOCATABLE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*settings*: `<<_access_control_settings_class,ACCESS_CONTROL_SETTINGS>>`
+a|Access control settings for the EHR. Instance is a subtype of the type `ACCESS_CONTROL_SETTINGS`, allowing for the use of different access control schemes.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*scheme* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The name of the access control scheme in use; corresponds to the concrete instance of the settings attribute.
+
+h|*Invariants*
+2+a|__Scheme_valid__: `not scheme.is_empty`
+
+h|
+2+a|__Is_archetype_root__: `is_archetype_root`
+|===

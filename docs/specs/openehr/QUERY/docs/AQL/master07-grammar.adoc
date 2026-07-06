@@ -1,0 +1,15 @@
+= AQL Syntax Specification
+
+The following ANTLR4 grammar expresses the AQL syntax.
+
+.Parser grammar
+[source, antlr-java]
+--------
+include::grammar/AqlParser.g4[]
+--------
+
+.Lexer grammar
+[source, antlr-java]
+--------
+include::grammar/AqlLexer.g4[]
+--------

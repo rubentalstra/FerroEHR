@@ -1,0 +1,71 @@
+=== TERMINOLOGY_SERVICE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*TERMINOLOGY_SERVICE*
+
+h|*Description*
+2+a|Defines an object providing proxy access to a terminology service.
+
+h|*Inherit*
+2+|`<<_openehr_terminology_group_identifiers_class,OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS>>`, `<<_openehr_code_set_identifiers_class,OPENEHR_CODE_SET_IDENTIFIERS>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*terminology* ( +
+name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_terminology_access_interface,TERMINOLOGY_ACCESS>>`
+a|Return an interface to the terminology named name. Allowable names include:-
+
+* openehr, 
+* centc251,
+* any name from are taken from the US NLM UMLS meta-data list at http://www.nlm.nih.gov/research/umls/metaa1.html
+
+h|*1..1*
+|*code_set* ( +
+name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_code_set_access_interface,CODE_SET_ACCESS>>` +
+ +
+__Pre__: `has_code_set (name)`
+a|Return an interface to the code_set identified by the external identifier name (e.g.  ISO_639-1).
+
+h|*1..1*
+|*code_set_for_id* ( +
+id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_code_set_access_interface,CODE_SET_ACCESS>>` +
+ +
+__Pre__: `valid_code_set_id (id)`
+a|Return an interface to the code_set identified internally in openEHR by id.
+
+h|*1..1*
+|*has_terminology* ( +
+name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if terminology named name known by this service. Allowable names include:-
+
+*  openehr  
+* centc251  
+* any name from are taken from the US NLM UMLS meta-data list at       http://www.nlm.nih.gov/research/umls/metaa1.html
+
+h|*1..1*
+|*has_code_set* ( +
+name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if code_set linked to internal name (e.g. languages ) is available.
+
+h|*0..1*
+|*terminology_identifiers* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of all terminology identifiers known in the terminology service. Values from the US NLM UMLS meta-data list at:- http://www.nlm.nih.gov/research/umls/metaa1.html
+
+h|*1..1*
+|*openehr_code_sets* (): `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of all code set identifiers known in the terminology service.
+
+h|*0..1*
+|*code_set_identifiers* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of all code sets identifiers for which there is an internal openEHR name; returned as a Map of ids keyed by internal name.
+|===

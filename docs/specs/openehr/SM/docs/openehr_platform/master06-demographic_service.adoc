@@ -1,0 +1,21 @@
+= Demographic Service
+
+== Overview
+
+The `platform.interface.demographic` package shown below defines service interface to the `DEMOGRAPHIC_SERVICE` component in the logical platform architecture.
+
+[.text-center]
+.`sm.platform.interface.demographic` package
+image::{uml_diagrams_uri}/SM-platform.interface.demographic.svg[id=platform_interface_demographic, align="center"]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/i_demographic_service.adoc[]
+
+include::{uml_export_dir}/classes/i_party.adoc[]
+
+include::{uml_export_dir}/classes/i_party_relationship.adoc[]
+
+include::{uml_export_dir}/classes/uv_party.adoc[]
+
+include::{uml_export_dir}/classes/uv_party_relationship.adoc[]

@@ -1,0 +1,9 @@
+name: version_uid
+in: path
+description: |
+  VERSION identifier taken from VERSION.uid.value.
+required: true
+style: simple
+schema:
+  type: string
+  example: '6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2'

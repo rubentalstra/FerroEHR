@@ -1,0 +1,29 @@
+=== P_C_PRIMITIVE_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__P_C_PRIMITIVE_OBJECT (abstract)__*
+
+h|*Description*
+2+a|Parent of types representing constraints on primitive types.
+
+h|*Inherit*
+2+|`<<_p_c_defined_object_class,P_C_DEFINED_OBJECT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Value to be assumed if none sent in data.
+
+h|*0..1*
+|*is_enumerated_type_constraint*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.
+
+h|*1..1*
+|*constraint*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Constraint represented by this object; redefine in descendants.
+|===

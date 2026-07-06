@@ -1,0 +1,18 @@
+= Builtins Package
+
+== Overview
+
+The `BASE.base_types.builtins` package includes interface classes that provide common utility functions. It is shown below.
+
+[.text-center]
+.base.base_types.builtins Package
+image::{uml_diagrams_uri}/BASE-base_types.builtins.svg[id=base_builtins, align="center", width=100%]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}env.adoc[]
+include::{uml_export_dir}/classes/{pkg}locale.adoc[]
+include::{uml_export_dir}/classes/{pkg}statistical_evaluator.adoc[]
+include::{uml_export_dir}/classes/{pkg}math.adoc[]
+include::{uml_export_dir}/classes/{pkg}quantity_converter.adoc[]
+

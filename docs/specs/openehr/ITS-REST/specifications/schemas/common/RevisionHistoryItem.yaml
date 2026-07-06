@@ -1,0 +1,31 @@
+title: REVISION_HISTORY_ITEM
+type: object
+description: A REVISION_HISTORY_ITEM resource
+required:
+  - version_id
+  - audits
+properties:
+  version_id:
+    $ref: ../base_types/ObjectVersionId.yaml
+  audits:
+    type: array
+    items:
+      $ref: ../common/AuditDetails.yaml
+example:
+  version_id:
+    value: '8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1'
+  audits:
+    - system_id: 'd60e2348-b083-48ce-93b9-916cef1d3a5a'
+      time_committed:
+        value: '2015-01-20T19:30:22.765+01:00'
+      change_type:
+        value: creation
+        defining_code:
+          terminology_id:
+            value: openehr
+          code_string: '249'
+      description:
+        value: An optional description string
+      committer:
+        _type: PARTY_IDENTIFIED
+        name: A user name

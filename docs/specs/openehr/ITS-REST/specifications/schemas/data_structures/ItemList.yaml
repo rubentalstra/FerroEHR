@@ -1,0 +1,13 @@
+title: ITEM_LIST
+type: object
+allOf:
+  - $ref: ../data_structures/ItemStructure.yaml
+properties:
+  _type:
+    type: string
+    default: ITEM_LIST
+  items:
+    type: array
+    items:
+      $ref: ../data_structures/Element.yaml
+x-discriminator-value: ITEM_LIST

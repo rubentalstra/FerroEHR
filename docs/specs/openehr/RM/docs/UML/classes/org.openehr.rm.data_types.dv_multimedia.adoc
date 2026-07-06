@@ -1,0 +1,91 @@
+=== DV_MULTIMEDIA Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DV_MULTIMEDIA*
+
+h|*Description*
+2+a|A specialisation of `DV_ENCAPSULATED` for audiovisual and bio-signal types. Includes further metadata relating to multimedia types which are not applicable to other subtypes of `DV_ENCAPSULATED`.
+
+h|*Inherit*
+2+|`<<_dv_encapsulated_class,DV_ENCAPSULATED>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*alternate_text*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Text to display in lieu of multimedia display/replay.
+
+h|*0..1*
+|*uri*: `<<_dv_uri_class,DV_URI>>`
+a|URI reference to electronic information stored outside the record as a file, database entry etc, if supplied as a reference.
+
+h|*0..1*
+|*data*: `link:/releases/BASE/{base_release}/foundation_types.html#_array_class[Array^]<link:/releases/BASE/{base_release}/foundation_types.html#_octet_class[Octet^]>`
+a|The actual data found at `_uri_`, if supplied inline.
+
+h|*1..1*
+|*media_type*: `<<_code_phrase_class,CODE_PHRASE>>`
+a|Data media type coded from openEHR code set  media types  (interface for the IANA MIME types code set).
+
+h|*0..1*
+|*compression_algorithm*: `<<_code_phrase_class,CODE_PHRASE>>`
+a|Compression type, a coded value from the openEHR Integrity check code set. Void means no compression.
+
+h|*0..1*
+|*integrity_check*: `link:/releases/BASE/{base_release}/foundation_types.html#_array_class[Array^]<link:/releases/BASE/{base_release}/foundation_types.html#_octet_class[Octet^]>`
+a|Binary cryptographic integrity checksum.
+
+h|*0..1*
+|*integrity_check_algorithm*: `<<_code_phrase_class,CODE_PHRASE>>`
+a|Type of integrity check, a coded value from the openEHR `Integrity check` code set.
+
+h|*0..1*
+|*thumbnail*: `<<_dv_multimedia_class,DV_MULTIMEDIA>>`
+a|The thumbnail for this item, if one exists; mainly for graphics formats.
+
+h|*1..1*
+|*size*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Original size in bytes of unencoded encapsulated data. I.e. encodings such as base64, hexadecimal etc do not change the value of this attribute.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_external* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Computed from the value of the `_uri_` attribute: True if  the data is stored externally to the record, as indicated by `_uri_`. A copy may also be stored internally, in which case `_is_expanded_` is also true.
+
+h|*1..1*
+|*is_inline* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Computed from the value of the data attribute. True if  the  data is stored  in  expanded  form, ie within the EHR itself.
+
+h|*1..1*
+|*is_compressed* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Computed from the value of the `_compression_algorithm_` attribute: True if  the  data is stored in compressed form.
+
+h|*1..1*
+|*has_integrity_check* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Computed from the value of the `_integrity_check_algorithm_` attribute: True if an integrity check has been computed.
+
+h|*Invariants*
+2+a|__Not_empty__: `is_inline or is_external`
+
+h|
+2+a|__Media_type_valid__: `media_type /= Void and then code_set (Code_set_id_media_types).has_code (media_type)`
+
+h|
+2+a|__Compression_algorithm_validity__: `compression_algorithm /= Void implies code_set (Code_set_id_compression_algorithms).has_code (compression_algorithm)`
+
+h|
+2+a|__Integrity_check_validity__: `integrity_check /= Void implies integrity_check_algorithm /= Void`
+
+h|
+2+a|__Integrity_check_algorithm_validity__: `integrity_check_algorithm /= Void implies code_set (Code_set_id_integrity_check_algorithms).has_code (integrity_check_algorithm)`
+
+h|
+2+a|__Size_valid__: `size >= 0`
+|===

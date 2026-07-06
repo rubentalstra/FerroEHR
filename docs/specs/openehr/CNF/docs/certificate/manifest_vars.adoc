@@ -1,0 +1,5 @@
+:spec_title: openEHR Conformance Certificate
+:copyright_year: 2021
+:spec_status: DEVELOPMENT
+:keywords: conformance, certificate
+:description: openEHR Conformance Certificate

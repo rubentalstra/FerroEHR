@@ -17,3 +17,10 @@ pub mod uid;
 pub mod uid_based_id;
 pub mod uuid;
 pub mod version_tree_id;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod internet_id_impl;
+pub mod iso_oid_impl;
+pub mod object_ref_impl;
+pub mod party_ref_impl;
+pub mod version_tree_id_impl;

@@ -1,0 +1,5 @@
+:spec_title: openEHR Platform Conformance Test Schedule
+:copyright_year: 2017
+:spec_status: DEVELOPMENT
+:keywords: conformance, test
+:description: openEHR Platform Conformance Test Schedule

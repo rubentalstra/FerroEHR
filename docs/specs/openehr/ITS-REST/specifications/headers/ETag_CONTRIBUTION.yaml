@@ -1,0 +1,5 @@
+description: |
+  The `ETag` (i.e. entity tag) response header is the `contribution_uid` identifier, enclosed by double quotes.
+schema:
+  type: string
+  example: '"0826851c-c4c2-4d61-92b9-410fb8275ff0"'

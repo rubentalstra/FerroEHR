@@ -1,0 +1,625 @@
+= Test Suite: EHR_SERVICE / I_COMPOSITION Interface
+
+== Normative Reference
+
+Items in this validation suite conceptually use the following abstract interfaces from the {openehr_sm_openehr_platform}#_ehr_package[Abstract Platform Service Model, EHR/COMPOSITION component^].
+
+* `I_EHR_COMPOSITION`
+
+These are concretely realised in implementation technology specfic APIs, such as the {openehr_ehr_rest_api}[EHR REST API^].
+
+This test suite uses artefacts defined by the following information model specifications:
+
+* {openehr_rm_ehr}[EHR IM^]
+* {openehr_rm_common}[Common IM^]
+* {openehr_rm_data_structures}[Data Structures IM^]
+* {openehr_rm_data_types}[Data Types IM^]
+* {openehr_rm_support}[Support IM^]
+* {openehr_rm_common}#_change_control_package[Versioning^]
+
+== Dependencies
+
+This test suite depends on other test suites:
+
+* <<_func_conf_def_adl_component, Functional Conformance: Definitions Component>>, providing OPTs;
+* <<_func_conf_ehr_component, Functional Conformance: EHR Component>>, providing EHRs.
+
+== Test Environment
+
+. The server under test should support at least OPTs, 1.4 or 2, but OPT 1.4 if more frequent since modeling tools supporting this were around for a long time. Could also support ADL, 1.4 or 2.
+. The server should support at least one of the XML or JSON representations of COMPOSITIONs for committing data, and integrate the corresponding schemas (XML or JSON) to validate data syntactically (before validating against an OPT).
+
+== Test Cases
+
+=== Service Model operation: I_EHR_COMPOSITION.has_composition()
+
+Service Model reference: {i_ehr_composition_link}[`I_EHR_COMPOSITION._has_composition()_`^]
+    
+==== Test Case I_EHR_COMPOSITION.has_composition
+
+// EhrBase ref: COMPOSITION/B.1.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Has existing `COMPOSITION`
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR has a `CONTRIBUTION`
+                  . The `CONTRIBUTION` contains a `VERSION` with known uid.
+|Post-conditions| None
+|Flow           | . Invoke the has `COMPOSITION` service for the `ehr_id` and `VERSION.uid`
+                  . The result must be TRUE
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/has_composition/I_EHR_COMPOSITION.has_composition.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.has_composition-bad_composition
+
+// EhrBase ref: COMPOSITION/B.1.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Has `COMPOSITION`, `COMPOSITION` doesn’t exist
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR has no `CONTRIBUTIONs`
+|Post-conditions| None
+|Flow           | . Invoke the has `COMPOSITION` service for `ehr_id`, and a random `VERSION.uid`
+                  . The result must be FALSE
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/has_composition/I_EHR_COMPOSITION.has_composition-bad_composition.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.has_composition-bad_ehr
+
+// EhrBase ref: COMPOSITION/B.1.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Has `COMPOSITION` on non-existent EHR
+|Pre-conditions | . There are no EHRs on the server
+|Post-conditions| None
+|Flow           | . Invoke the has `COMPOSITION` service with a random `ehr_id`
+                  . The service should return an error related to the non existence of the EHR
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/has_composition/I_EHR_COMPOSITION.has_composition-bad_ehr.robot[REST API / Robot^]
+|===
+
+=== Get COMPOSITION latest
+
+*Implementation consideration:*
+
+When a `COMPOSITION` is retrieved from a service, it will comply with a specific format. There could be a variant for each test to retrieve the `COMPOSITION` in any of the supported openEHR formats, and the  syntactic validation of those retrieved formats should be done by using the corresponding schemas (XML, JSON, etc). That would be the minimal validation for conformance testing. Though it would be ideal to have semantic validation of the retrieved `COMPOSITIONs` to ensure conformance, which is achieved by validating against the corresponding OPT in the testing layer.
+
+Service Model reference: {i_ehr_composition_link}[`I_EHR_COMPOSITION._get_composition_latest()_`^]
+
+==== Test Case I_EHR_COMPOSITION.get_composition_latest
+
+// EhrBase ref: COMPOSITION/B.2.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Get existing `COMPOSITION` latest
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR has a `VERSIONED_COMPOSITION` with known uid
+                  . The `VERSIONED_COMPOSITION` has two `VERSIONs`
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` latest service for the `ehr_id` and `VERSIONED_COMPOSITION` uid
+                  . The result must return the `COMPOSITION` contents, and should be the latest version
+                  . The retrieved format should contain all the exact same data as the format used when committing the `COMPOSITION` (content check)
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_latest/I_EHR_COMPOSITION.get_composition_latest.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_latest-bad_composition
+
+// EhrBase ref: COMPOSITION/B.2.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Get `COMPOSITION` latest, `COMPOSITION` doesn’t exist
+|Pre-conditions | . An EHR with known `ehr_id` exists and has no `CONTRIBUTIONs`
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` latest service for ehr_uid, and a random `VERSIONED_COMPOSITION` uid
+                  . The result must be empty, with an error "`the COMPOSITION uid doesn’t exist in the EHR ehr_uid`"
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_latest/I_EHR_COMPOSITION.get_composition_latest-bad_composition.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_latest-bad_ehr
+
+// EhrBase ref: COMPOSITION/B.2.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Get `COMPOSITION` latest on non-existent EHR
+|Pre-conditions | . There are no EHRs on the server
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` latest service with a random ehr_id, and a random `VERSIONED_COMPOSITION` uid
+                  . The service should return an error related to the non existence of the EHR
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_latest/I_EHR_COMPOSITION.get_composition_latest-bad_ehr.robot[REST API / Robot^]
+|===
+
+=== Get COMPOSITION at time
+
+Service Model reference: {i_ehr_composition_link}[`I_EHR_COMPOSITION._get_composition_at_time()_`^]
+
+====  Test Case I_EHR_COMPOSITION.get_composition_at_time
+
+// EhrBase ref: COMPOSITION/B.3.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Get existing `COMPOSITION` at time
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR has one or more `VERSIONED_COMPOSITIONs` with known uids
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at time service for the ehr_id, `VERSIONED_COMPOSITION.uid` and current time
+                  . The result must return the `COMPOSITION` contents of the existing `COMPOSITION` at given time
+                  . The retrieved format should contain all the exact same data as the format used when committing the `COMPOSITION` (content check)
+                  
+                NOTE: When requesting a `COMPOSITION` at time using the current time, the last version of the matching composition, if it exists, should be retrieved.
+                  
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_at_time/I_EHR_COMPOSITION.get_composition_at_time.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_at_time-no_time_arg
+
+// EhrBase ref: COMPOSITION/B.3.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Get existing `COMPOSITION` at time, without a given time
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR has one or more `VERSIONED_COMPOSITIONs` with known uids
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at time service for the `ehr_id`, `VERSIONED_COMPOSITION` uid and no time
+                  . The result must return the `COMPOSITION` contents of the existing `COMPOSITION`, and should be the latest `VERSION` of the `COMPOSITION`
+                  . The retrieved format should contain all the exact same data as the format used when committing the `COMPOSITION` (content check)
+                  
+                NOTE: Test this using `COMPOSITIONs` with one version and multiple versions, to be sure the retrieved one is the latest; +
+                The previous tests for "`get COMPOSITION latest`" could be used to compare results.          
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_at_time/I_EHR_COMPOSITION.get_composition_at_time-no_time_arg.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_at_time-bad_composition
+
+// EhrBase ref: COMPOSITION/B.3.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Get `COMPOSITION` at time, `COMPOSITION` doesn’t exist
+|Pre-conditions | . An EHR with known `ehr_id` exists and has no `CONTRIBUTIONs`
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at time service for `ehr_uid`, and a random `VERSIONED_COMPOSITION.uid` and current time
+                  . The result must be empty, with an error related to "`the COMPOSITION uid doesn’t exist in the EHR ehr_uid`"
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_at_time/I_EHR_COMPOSITION.get_composition_at_time-bad_composition.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_at_time-bad_ehr
+
+// EhrBase ref: COMPOSITION/B.3.d.
+
+[cols="1h,4a"]
+|===
+|Description    | Get `COMPOSITION` at time on non-existent EHR
+|Pre-conditions | . There are no EHRs on the server
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at time service with a random ehr_id, random `VERSIONED_OBJECT.uid` and current time
+                  . The service should return an error indicating non-existence of the EHR
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_at_time/I_EHR_COMPOSITION.get_composition_at_time-bad_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_at_times
+
+// EhrBase ref: COMPOSITION/B.3.e.
+
+[cols="1h,4a"]
+|===
+|Description    | Get existing `COMPOSITION` at time, cover different times
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR should have one `VERSIONED_COMPOSITION` with a know uid
+                  . The `VERSIONED_COMPOSITION` should have two VERSIONs (the EHR has two `CONTRIBUTIONs` for the same `COMPOSITION`)
+                  . `CONTRIBUTIONs` were done at times t0 and t1 with t0 < t1
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at time service for the ehr_id, `VERSIONED_COMPOSITION` uid and a time < t0
+                  . The result must be negative and return an error related to the `COMPOSITION` not existing at that time
+                  . Invoke the get `COMPOSITION` at time service for the ehr_id, `VERSIONED_COMPOSITION` uid and a time > t0 and < t1
+                  . The result must return the `COMPOSITION` contents of the `COMPOSITION` committed in t0
+                  . The retrieved format should contain all the exact same data as the format used when committing the `COMPOSITION` (content check)
+                  . Invoke the get `COMPOSITION` at time service for the ehr_id, `VERSIONED_COMPOSITION` uid and a time > t1
+                  . The result must return the `COMPOSITION` contents of the `COMPOSITION` committed in t1
+                  . The retrieved format should contain all the exact same data as the format used when committing the `COMPOSITION` (content check)
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_at_times/I_EHR_COMPOSITION.get_composition_at_times.robot[REST API / Robot^]
+|===
+
+=== Get COMPOSITION at version
+
+Service Model reference: {i_ehr_composition_link}[`I_EHR_COMPOSITION._get_composition_version()_`^]
+
+==== Test Case I_EHR_COMPOSITION.get_composition_version
+
+// EhrBase ref: COMPOSITION/B.4.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Get existing `COMPOSITION` at version
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR has one `VERSION` with known version id
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at version service for the ehr_id, `VERSION` version id
+                  . The result must return the `COMPOSITION` contents of the existing `VERSION`
+                  . The retrieved format should contain all the exact same data as the format used when committing the `COMPOSITION` (content check)
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_version/I_EHR_COMPOSITION.get_composition_version.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_version-bad_version
+
+// EhrBase ref: COMPOSITION/B.4.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Get `COMPOSITION` at version, `VERSION` doesn’t exist
+|Pre-conditions | . An EHR with known `ehr_id` exists and doesn’t have any commits
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at version service for the `ehr_id`, and a random version id
+                  . The result must be negative and return an error related to the non-existent `COMPOSITION` with the version id
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_version/I_EHR_COMPOSITION.get_composition_version-bad_version.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_version-bad_ehr
+
+// EhrBase ref: COMPOSITION/B.4.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Get `COMPOSITION` at version, EHR doesn’t exist
+|Pre-conditions | . The system doesn’t have any EHRs
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at version service a random `ehr_id` and random version id
+                  . The result must be negative and return an error related to the non-existent EHR.
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_version/I_EHR_COMPOSITION.get_composition_version-bad_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_composition_versions
+
+// EhrBase ref: COMPOSITION/B.4.d.
+
+[cols="1h,4a"]
+|===
+|Description    | Get `COMPOSITION` at version, cover different versions
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR should have one `VERSIONED_COMPOSITION` with a known uid
+                  . The `VERSIONED_COMPOSITION` should have two `VERSIONs` (the EHR has two `CONTRIBUTIONs` for the same `COMPOSITION`)
+                  . Both `VERSIONs` have ids: v1 and v2
+|Post-conditions| None
+|Flow           | . Invoke the get `COMPOSITION` at version service, for the `ehr_id` and `VERSION` version id v1
+                  . The result must be positive and retrieve the `COMPOSITION`, that should match the `COMPOSITION` created with version id v1. (content check).
+                  . Invoke the get `COMPOSITION` at version service, for the `ehr_id` and `VERSION` version id v2
+                  . The result must be positive and retrieve the `COMPOSITION`, that should match the `COMPOSITION` created with version id v2 (content check).
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_composition_versions/I_EHR_COMPOSITION.get_composition_versions.robot[REST API / Robot^]
+|===
+
+=== Get VERSIONED COMPOSITION
+
+Service Model reference: {i_ehr_composition_link}[`I_EHR_COMPOSITION._get_versioned_composition()_`^]
+
+==== Test Case I_EHR_COMPOSITION.get_versioned_composition
+
+// EhrBase ref: COMPOSITION/B.5.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Get existing `VERSIONED_COMPOSITION`
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR has one `VERSIONED_COMPOSITION` with known uid
+|Post-conditions| None
+|Flow           | . Invoke the get `VERSIONED_COMPOSITION` service for the `ehr_id` and `VERSIONED_COMPOSITION` uid
+                  . The result must return a valid `VERSIONED_COMPOSITION` object, referencing the `VERSION` it contains
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_versioned_composition/I_EHR_COMPOSITION.get_versioned_composition.robot[REST API / Robot^]
+|===
+
+NOTE: To consider different cases, try with `VERSIONED_COMPOSITION` that contain just one `VERSION` or many `VERSIONs`
+
+NOTE: For that, the valid test cases for Create `COMPOSITION` could be used to comply with the preconditions of this test flow
+
+==== Test Case I_EHR_COMPOSITION.get_versioned_composition-non_existent
+
+// EhrBase ref: COMPOSITION/B.5.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Get non-existent `VERSIONED_COMPOSITION`
+|Pre-conditions | . An EHR with known `ehr_id` exists
+                  . The EHR doesn’t have any commits
+|Post-conditions| None
+|Flow           | . Invoke the get `VERSIONED_COMPOSITION` service for the `ehr_id` and a random `VERSIONED_COMPOSITION` uid
+                  . The result must be negative and return an error related to the non-existence of the `VERSIONED_COMPOSITION`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_versioned_composition/I_EHR_COMPOSITION.get_versioned_composition-non_existent.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.get_versioned_composition-bad_ehr
+
+// EhrBase ref: COMPOSITION/B.5.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Get `VERSIONED_COMPOSITION`, EHR doesn’t exist
+|Pre-conditions | . The system doesn’t have any EHRs
+|Post-conditions| None
+|Flow           | . Invoke the get `VERSIONED_COMPOSITION` service for a random `ehr_id` and a random `VERSIONED_COMPOSITION` uid
+                  . The result must be negative and return an error related to the non-existence of the EHR
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/get_versioned_composition/I_EHR_COMPOSITION.get_versioned_composition-bad_ehr.robot[REST API / Robot^]
+|===
+
+=== Create COMPOSITION
+
+Service Model reference: {i_ehr_composition_link}[`I_EHR_COMPOSITION._create_composition()_`^]
+
+==== Test Case I_EHR_COMPOSITION.create_composition-event
+
+// EhrBase ref: COMPOSITION/B.6.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Create new event `COMPOSITION`
+|Pre-conditions | . The OPT, associated with the event `COMPOSITION` that will be created, should exist on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| A new event `COMPOSITION` exists in the EHR.
+|Flow           | . Invoke the create `COMPOSITION` service with a valid event `COMPOSITION`, compliant with the existing OPT, and with the known `ehr_id`
+                  . The result should be positive, return information about the new `COMPOSITION` added to the EHR, and the version number should be 1
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/create_composition/I_EHR_COMPOSITION.create_composition-event.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.create_composition-persistent
+
+// EhrBase ref: COMPOSITION/B.6.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Create new persistent `COMPOSITION`
+|Pre-conditions | . The OPT, associated with the persistent `COMPOSITION` that will be created, should exist on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| A new persistent `COMPOSITION` exists in the EHR.
+|Flow           | . Invoke the create `COMPOSITION` service with a valid persistent `COMPOSITION`, compliant with the existing OPT, and the known `ehr_id`
+                  . The result should be positive, and return information about the new `COMPOSITION` added to the EHR, and the version number should be 1
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/create_composition/I_EHR_COMPOSITION.create_composition-persistent.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.create_composition-same_opt_twice
+
+// EhrBase ref: COMPOSITION/B.6.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Create persistent `COMPOSITION` for the same OPT twice
+|Pre-conditions | . The OPT, associated with the persistent `COMPOSITION` that will be created, should exist on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| A new persistent `COMPOSITION` exists in the EHR.
+|Flow           | . Invoke the create `COMPOSITION` service with a valid persistent `COMPOSITION`, compliant with the existing OPT, and with the known `ehr_id`
+                  . The result should be positive, and return information about the new `COMPOSITION` added to the EHR, and the version number should be 1
+                  . Invoke the create `COMPOSITION` service with a valid persistent `COMPOSITION` and the same `ehr_id` as in 1., the `COMPOSITION` should comply with the same persistent OPT as the `COMPOSITION` in 1
+                  . The result should be negative, returning an error related to trying to create a persistent `COMPOSITION` for the same persistent OPT that already has a first version
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/create_composition/I_EHR_COMPOSITION.create_composition-same_opt_twice.robot[REST API / Robot^]
+|===
+
+Notes:
+
+. Current criteria is: only one '`create`' operation is allowed for persistent `COMPOSITIONs`, the next operations over an existing persistent `COMPOSITION` should be '`modifications`'.
+. This is under debate in the openEHR SEC since some implementations permit 'persistent' `COMPOSIITONS` to have more than one instance in the same EHR and some others not. This is due to the lack of information in the openEHR specifications. There is also a discussion to define other types of categories for `COMPOSITIONs` to allow different behaviors. 
+
+https://discourse.openehr.org/t/specrm-89-support-for-episodic-category/51/3[Discourse discussion^]
+
+==== Test Case I_EHR_COMPOSITION.create_composition-invalid_event
+
+// EhrBase ref: COMPOSITION/B.6.d.
+
+[cols="1h,4a"]
+|===
+|Description    | Create new invalid event `COMPOSITION`
+|Pre-conditions | . The OPT, associated with the event `COMPOSITION` that will be created, should exist on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| None
+|Flow           | . Invoke the create `COMPOSITION` service with an invalid event `COMPOSITION` and the known `ehr_id`
+                  . The result should be negative, and return information about the errors in the provided `COMPOSITION`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/create_composition/I_EHR_COMPOSITION.create_composition-invalid_event.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.create_composition-invalid_persistent
+
+// EhrBase ref: COMPOSITION/B.6.e.
+
+[cols="1h,4a"]
+|===
+|Description    | Create new invalid persistent `COMPOSITION`
+|Pre-conditions | . The OPT, associated with the persistent `COMPOSITION` that will be created, should exist on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| None
+|Flow           | . Invoke the create `COMPOSITION` service with an invalid persistent `COMPOSITION` and the known `ehr_id`
+                  . The result should be negative, and return information about the errors in the provided `COMPOSITION`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/create_composition/I_EHR_COMPOSITION.create_composition-invalid_persistent.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.create_composition-event_bad_opt
+
+// EhrBase ref: COMPOSITION/B.6.f.
+
+[cols="1h,4a"]
+|===
+|Description    | Create new event `COMPOSITION`, referenced OPT doesn’t exist
+|Pre-conditions | . The OPT, referenced by the `COMPOSITION` to commit, doesn’t exist on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| None
+|Flow           | . Invoke the create `COMPOSITION` service with a valid event `COMPOSITION` and the known `ehr_id`
+                  .. The `COMPOSITION` should reference an OPT that doesn’t exist on the server
+                  . The result should be negative, and return information about the non-existent OPT
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/create_composition/I_EHR_COMPOSITION.create_composition-event_bad_opt.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.create_composition-event_bad_ehr
+
+// EhrBase ref: COMPOSITION/B.6.g.
+
+[cols="1h,4a"]
+|===
+|Description    | Create new event `COMPOSITION`, EHR doesn’t exist
+|Pre-conditions | . The OPT, referenced by the `COMPOSITION` to commit, exists on the server
+                  . The server doesn’t have any EHRs
+|Post-conditions| None
+|Flow           | . Invoke the create `COMPOSITION` service with a valid event `COMPOSITION` and a random `ehr_id`
+                  . The result should be negative, and return information about the non-existent EHR
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/create_composition/I_EHR_COMPOSITION.create_composition-event_bad_ehr.robot[REST API / Robot^]
+|===
+
+=== Update COMPOSITION
+
+The update `COMPOSITION` service needs the `VERSION.preceding_version_uid` attribute to be set, so the server knows which existing `VERSION` of the `COMPOSITION` will be associated with the newly committed `COMPOSITION`. The Service Model spec is not clear about where that attribute is defined. By taking into account the Reference Model, the `COMPOSITION` doesn’t contain that value but the `VERSION` does. For the `COMPOSITION` update service the `preceding_version_uid` should be a parameter or the definition in the SM should mention this.
+
+Service Model reference: {i_ehr_composition_link}[`I_EHR_COMPOSITION._update_composition()_`^]
+
+==== Test Case I_EHR_COMPOSITION.update_composition-event
+
+// EhrBase ref: COMPOSITION/B.7.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Update an existing event `COMPOSITION`
+|Pre-conditions | . The OPT referenced by the `COMPOSITIONs` to commit exists on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| . A new `VERSIONED_OBJECT` exists on the server
+                  . The `VERSIONED_OBJECT` has two `VERSIONs` of `COMPOSITION`
+                  . One `VERSION.commit_audit.change_type` is `CREATE`, the other one is `MODIFY`
+|Flow           | . Invoke the create `COMPOSITION` service with a valid event `COMPOSITION` and the existing `ehr_id`
+                  .. The `COMPOSITION` reference the existing OPT
+                  . The result should be positive and a new `COMPOSITION` should exist in the EHR
+                  . Invoke the update `COMPOSITION` service with a valid event `COMPOSITION` to the existing `ehr_id` and `preceding_version_uid` should be the version uid from the `COMPOSITION` created in 1
+                  .. This `COMPOSITION` has the same OPT as the `COMPOSITION` created in 1
+                  . The result should be positive and a new version of the existing `COMPOSITION` should exist in the EHR
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/update_composition/I_EHR_COMPOSITION.update_composition-event.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.update_composition-persistent
+
+// EhrBase ref: COMPOSITION/B.7.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Update an existing persistent `COMPOSITION`
+|Pre-conditions | . The OPT referenced by the `COMPOSITIONs` to commit exists on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| . The server should contain one `VERSIONED_OBJECT`
+                  . The `VERSIONED_OBJECT` should have two `VERSIONs` of `COMPOSITION`
+                  . The `COMPOSITIONs` should comply with the existing OPT
+|Flow           | . Invoke the create `COMPOSITION` service with a valid persistent `COMPOSITION` and the existing `ehr_id`
+                  .. The OPT referenced by this `COMPOSITION` exists on the server
+                  . The result should be positive and a new `COMPOSITION` should exist in the EHR
+                  . Invoke the update `COMPOSITION` service with a valid persistent `COMPOSITION`, to the existing `ehr_id`
+                  .. that has the same template as the `COMPOSITION` created in 1.,
+                  .. `preceding_version_uid` should be the `VERSION.uid` from the `COMPOSITION` created in 1
+                  . The result should be positive and a new version of the existing `COMPOSITION` should exist in the EHR
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/update_composition/I_EHR_COMPOSITION.update_composition-persistent.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.update_composition-non_existent
+
+// EhrBase ref: COMPOSITION/B.7.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Update a non-existing `COMPOSITION`
+|Pre-conditions | . The OPT referenced by the `COMPOSITIONs` to commit exists on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| None
+|Flow           | . Invoke the update `COMPOSITION` service with a valid event `COMPOSITION`, the existing `ehr_id` and                                           `preceding_version_uid` should be a random value
+                  .. The `COMPOSITION` should comply with the existing OPT
+                  . The result should be negative and return an error related to the non-existence of the `preceding_version_id`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/update_composition/I_EHR_COMPOSITION.update_composition-non_existent.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.update_composition-wrong_template
+
+// EhrBase ref: COMPOSITION/B.7.d.
+
+[cols="1h,4a"]
+|===
+|Description    | Update an existing `COMPOSITION`, referencing a different template
+|Pre-conditions | . The OPTs, referenced by the `COMPOSITIONs` to commit, exist on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| . The server has a new `VERSIONED_OBJECT`
+                  . The `VERSIONED_OBJECT` has one version of a `COMPOSITION`
+|Flow           | . Invoke the create `COMPOSITION` service with a valid event `COMPOSITION` and the existing `ehr_id`
+                  .. The OPT referenced by this `COMPOSITION` exists on the server
+                  . The result should be positive and a new `COMPOSITION` should exist in the EHR
+                  . Invoke the update `COMPOSITION` service with a valid event `COMPOSITION`, to the existing `ehr_id` and `preceding_version_uid` should be the version uid from the `COMPOSITION` created in 1
+                  .. The `COMPOSITION` references a different template than the one referenced by the `COMPOSITION` created in 1.
+                  .. The OPT referenced by this `COMPOSITION` exists on the server
+                  . The result should be negative and return an error related to the `template_id` mismatch
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/update_composition/I_EHR_COMPOSITION.update_composition-wrong_template.robot[REST API / Robot^]
+|===
+
+=== Delete COMPOSITION
+
+Service Model reference: {i_ehr_composition_link}[`I_EHR_COMPOSITION._delete_composition()_`^]
+
+==== Test Case I_EHR_COMPOSITION.delete_composition-event
+
+// EhrBase ref: COMPOSITION/B.8.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Delete event `COMPOSITION`
+|Pre-conditions | . The OPT referenced by the `COMPOSITIONs` to commit exists on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| . The server has one `VERSIONED_OBJECT`
+                  . The `VERSIONED_OBJECT` contains two versions of `COMPOSITION`
+                  . The second `VERSION.lifecycle_state` value is the code `openehr::523|deleted|`
+|Flow           | . Invoke the create `COMPOSITION` service with a valid event `COMPOSITION` and the existing `ehr_id`
+                  .. The `COMPOSITION` complies with the existing OPT
+                  . The result should be positive and a new `COMPOSITION` should exist in the EHR
+                  . Invoke the delete `COMPOSITION` service with the existing `ehr_id` and `preceding_version_uid` should be the version id of the `COMPOSITION` created in 1
+                  . The result should be positive, and the `COMPOSITION` should be deleted
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/delete_composition/I_EHR_COMPOSITION.delete_composition-event.robot[REST API / Robot^]
+|===
+
+NOTE: The common implementation of the `+delete+` operation is two create a new `VERSION` of the `COMPOSITION` that has `VERSION.commit_audit.change_type = openehr::523|deleted|`, and `VERSION.lifecycle_state = openehr::523|deleted|`. So the `+delete+` operation is not a physical delete but a logical delete. Some implementations might add the option of a physical deleted. This test case considers the `+postcondition+` to be a logical delete, which behaves like an `+update+` operation in which a new `VERSION` of an existing `COMPOSITION` is created.
+
+==== Test Case I_EHR_COMPOSITION.delete_composition-persistent
+
+// EhrBase ref: COMPOSITION/B.8.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Delete persistent `COMPOSITION`
+|Pre-conditions | . The OPT referenced by the `COMPOSITIONs` to commit exists on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| . The server has one `VERSIONED_OBJECT`
+                  . The `VERSIONED_OBJECT` contains two versions of `COMPOSITION`
+                  . The second `VERSION.lifecycle_state` value is the code `openehr::523|deleted|`
+|Flow           | . Invoke the create `COMPOSITION` service with a valid persistent `COMPOSITION` and the existing `ehr_id`
+                  .. The `COMPOSITION` complies with the existing OPT
+                  . The result should be positive and a new `COMPOSITION` should exist in the EHR
+                  . Invoke the delete `COMPOSITION` service with the existing `ehr_id` and `preceding_version_uid` should be the version id of the `COMPOSITION` created in 1
+                  . The result should be positive, and the `COMPOSITION` should be deleted
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/delete_composition/I_EHR_COMPOSITION.delete_composition-persistent.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_COMPOSITION.delete_composition-non_existent
+
+// EhrBase ref: COMPOSITION/B.8.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Delete persistent `COMPOSITION`
+|Pre-conditions | . The OPT referenced by the `COMPOSITIONs` to commit exists on the server
+                  . An EHR with known `ehr_id` should exist
+                  . The EHR should have no commits
+|Post-conditions| None
+|Flow           | . Invoke the delete `COMPOSITION` service with the existing `ehr_id` and a random `preceding_version_uid`
+                  . The result should be negative and return an error related to the non-existent `COMPOSITION`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_COMPOSITION/delete_composition/I_EHR_COMPOSITION.delete_composition-non_existent.robot[REST API / Robot^]
+|===

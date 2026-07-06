@@ -1,0 +1,9 @@
+description: |
+  `200 OK` is returned when the server is able to execute the query.
+headers:
+  ETag:
+    $ref: ../headers/ETag_RESULT_SET.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/query/ResultSet.yaml

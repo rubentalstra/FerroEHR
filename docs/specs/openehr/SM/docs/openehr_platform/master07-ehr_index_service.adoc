@@ -1,0 +1,30 @@
+= EHR Index Service
+
+== Overview
+
+The `platform.interface.ehr_index` package shown below defines service interface to the `EHR_INDEX` component in the logical platform architecture.
+
+[.text-center]
+.`sm.platform.interface.ehr_index` package
+image::{uml_diagrams_uri}/SM-platform.interface.ehr_index.svg[id=platform_interface_ehr_index, align="center"]
+
+The primary function of the EHR Index service is to enable the recording of associations of subject identifiers (i.e. patient or other subject or care identifiers) with EHR identifiers. In a privacy-supporting environment, this enables EHRs to be persisted with only an EHR id; the EHR Index has to be used to obtain the subject identifier, which will usually be used as a key into a demographic or MPI service, ultimately allowing EHR data to be associated with the correct patient demographic information in a user application.
+
+There is no limit on the number of subject identifiers associated with a given EHR id, and vice versa, since in real environments both situations commonly occur. The two cases are as follows:
+
+* _multiple subject identifiers for one EHR id_: indicates that more than one subject of care has data in the same EHR. This is a dangerous error condition, and needs to be detected and rectified.
+* _multiple EHR ids for a given subject identifier_: indicates that multiple EHRs have been created for the same subject, typically as a result of name entry errors, and / or of multiple departments independently creating EHRs rather than locating existing ones for the patient. This is also an error situation, although less dangerous than the inverse situation.
+
+To enable management of these problems, other meta-data can be associated with each EHR id / subject id association, represented by the `RESOURCE_STATUS` type.
+
+A further useful facility that can be provided by this service is to maintain dynamic location information for EHRs. This is enabled by the inclusion of optional `LOCATION_DESC` instances with index records.
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/i_ehr_index.adoc[]
+
+include::{uml_export_dir}/classes/resource_status.adoc[]
+
+include::{uml_export_dir}/classes/resource_instance_type.adoc[]
+
+include::{uml_export_dir}/classes/location_desc.adoc[]

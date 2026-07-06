@@ -1,0 +1,22 @@
+=== VISIBILITY_TYPE Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*VISIBILITY_TYPE*
+
+h|*Description*
+2+a|Enumeration of visibility settings for model elements.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|hide
+a|Indicates to a tool to hide the model element to which this marker is attached.
+
+h|
+|show
+a|Indicates to a tool to show the model element to which this marker is attached.
+|===

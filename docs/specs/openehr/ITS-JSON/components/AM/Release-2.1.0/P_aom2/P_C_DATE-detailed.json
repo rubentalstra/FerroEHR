@@ -1,0 +1,7 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/P_C_DATE-detailed.json",
+    "title": "P_C_DATE",
+    "description": "ISO 8601-compatible constraint on instances of Date in the form either of a set of validity values, or else date ranges based on the C_ORDERED list constraint. There is no validity flag for \u2018year\u2019, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include \u201cYYYY-??-??\u201d (date with optional month and day).",
+    "$comments": "Defined in P_aom2 IM"
+}

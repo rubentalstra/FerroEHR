@@ -1,0 +1,69 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+=== Primary Author
+
+* Thomas Beale, Ars Semantica; openEHR Foundation Management Board.
+
+=== Contributors
+
+This specification benefited from formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+
+* Pieter Bos, Senior Engineer, Nedap, Netherlands
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectanchors:
+:sectnums:
+
+ifdef::package_qualifiers[]
+:pkg: org.openehr.lang.beom.
+endif::[]
+
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-language.adoc[leveloffset=+1]
+include::master04-expression_object_model.adoc[leveloffset=+1]
+include::masterAppA-syntax.adoc[leveloffset=+1]
+
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:sectnums!:
+== References
+bibliography::[]

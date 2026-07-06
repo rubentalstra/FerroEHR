@@ -1,0 +1,12 @@
+== Data Types - time_specification Package
+
+=== DV_GENERAL_TIME_SPECIFICATION
+
+{openehr_rm_data_types}#_time_specification_package[Specification / UML reference^].
+
+TBD: this data type might not be used or supported by modeling tools
+
+=== DV_PERIODIC_TIME_SPECIFICATION
+
+TBD: this data type might not be used or supported by modeling tools
+

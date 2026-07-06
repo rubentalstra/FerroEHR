@@ -1,0 +1,70 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+The work reported in this paper has been funded in part by the following organisations:
+
+* University College London - Centre for Health Informatics and Multi-professional Education (CHIME);
+* Ocean Informatics; 
+
+Special thanks to David Ingram, Emeritus Professor of Health Informatics at UCL, who provided a vision and collegial working environment ever since the days of GEHR (1992).
+
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+
+ifdef::package_qualifiers[]
+:pkg: org.openehr.rm.ehr_extract.
+endif::[]
+
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-requirements.adoc[leveloffset=+1]
+include::master03-design_overview.adoc[leveloffset=+1]
+include::master04-common_package.adoc[leveloffset=+1]
+include::master05-openehr_extract_package.adoc[leveloffset=+1]
+include::master06-generic_extract_package.adoc[leveloffset=+1]
+include::master07-synchronisation_package.adoc[leveloffset=+1]
+include::master08-message_package.adoc[leveloffset=+1]
+include::master09-semantics.adoc[leveloffset=+1]
+
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:sectnums!:
+//== References
+
+//bibliography::[]

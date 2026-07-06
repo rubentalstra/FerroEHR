@@ -1,0 +1,11 @@
+title: OBSERVATION
+type: object
+allOf:
+  - $ref: ../ehr/Observation.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [OBSERVATION]
+x-discriminator-value: OBSERVATION

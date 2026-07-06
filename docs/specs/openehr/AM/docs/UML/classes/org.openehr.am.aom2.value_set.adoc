@@ -1,0 +1,14 @@
+=== VALUE_SET Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*VALUE_SET*
+
+h|*Description*
+2+a|Representation of a flat value set within the archetype terminology.
+
+h|*Inherit*
+2+|`<<_terminology_relation_class,TERMINOLOGY_RELATION>>`
+
+|===

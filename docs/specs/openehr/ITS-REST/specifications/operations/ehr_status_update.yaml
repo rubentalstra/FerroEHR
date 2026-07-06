@@ -1,0 +1,35 @@
+operationId: ehr_status_update
+summary: Update EHR_STATUS
+description: |
+  Updates EHR_STATUS associated with the EHR identified by `ehr_id`.
+
+  The existing latest `version_uid` of EHR_STATUS resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+
+  The response will contain the updated EHR_STATUS resource when the `Prefer` header has a value of `return=representation`.
+tags:
+  - EHR_STATUS
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/header/If-Match.yaml
+  - $ref: ../parameters/header/Prefer.yaml
+requestBody:
+  description: |
+    The new EHR_STATUS.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/ehr/EhrStatus.yaml
+  required: true
+responses:
+  '200':
+    $ref: ../responses/200_EHR_STATUS_updated.yaml
+  '204':
+    $ref: ../responses/204_EHR_STATUS.yaml
+  '400':    
+    $ref: ../responses/400.yaml
+  '404':    
+    $ref: ../responses/404_unknown_ehr_id.yaml
+  '412':    
+    $ref: ../responses/412_EHR_STATUS.yaml
+
+

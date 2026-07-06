@@ -1,0 +1,17 @@
+operationId: ehr_get_by_subject
+summary: Get EHR by subject id
+description: |
+  Retrieve the EHR with the specified `subject_id` and `subject_namespace`.
+  
+  These subject parameters will be matched against EHR's EHR_STATUS.subject.external_ref.id.value and 
+  EHR_STATUS.subject.external_ref.namespace values.
+tags:
+  - EHR
+parameters:
+  - $ref: ../parameters/query/subject_id.yaml
+  - $ref: ../parameters/query/subject_namespace.yaml
+responses:
+  '200':
+    $ref: ../responses/200_EHR.yaml
+  '404':
+    $ref: ../responses/404_EHR_subject.yaml

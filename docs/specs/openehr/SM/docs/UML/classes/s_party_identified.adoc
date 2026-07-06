@@ -1,0 +1,23 @@
+=== S_PARTY_IDENTIFIED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_PARTY_IDENTIFIED*
+
+h|*Description*
+2+a|Simplified RM form of `PARTY_IDENTIFIED` RM class.
+
+TODO: `PARTY_IDENTIFIED._identifiers_` not included.
+
+h|*Inherit*
+2+|`<<_s_party_proxy_class,S_PARTY_PROXY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|(unchanged from RM)
+|===

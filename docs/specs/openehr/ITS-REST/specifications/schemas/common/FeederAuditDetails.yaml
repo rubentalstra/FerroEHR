@@ -1,0 +1,19 @@
+title: FEEDER_AUDIT_DETAILS
+type: object
+required:
+  - system_id
+properties:
+  system_id:
+    type: string
+  location:
+    $ref: ../common/UPartyIdentified.yaml
+  subject:
+    $ref: ../common/UPartyProxy.yaml
+  provider:
+    $ref: ../common/UPartyIdentified.yaml
+  time:
+    $ref: ../data_types/DvDateTime.yaml
+  version_id:
+    type: string
+  other_details:
+    $ref: ../data_structures/UItemStructure.yaml

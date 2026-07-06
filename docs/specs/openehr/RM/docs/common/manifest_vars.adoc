@@ -1,0 +1,5 @@
+:spec_title: Common Information Model
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: common, EHR, reference model, openehr
+:description: openEHR Common Information Model specification

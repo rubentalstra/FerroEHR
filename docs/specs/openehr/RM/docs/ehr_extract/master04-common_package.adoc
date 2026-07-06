@@ -1,0 +1,210 @@
+= Extract.common Package
+
+== Overview
+
+The `rm.extract.common` package defines the semantics common to all kinds of Extract requests
+and Extracts. Requests and Extracts can be implemented as messages, or used as types in a webservice
+environment. In the latter, the Extract request semantics would most likely be replaced by equivalent
+service function definitions.
+
+The Request contains a detailed specification of the repository content required in the Extract. A
+Request is not always needed, and an Extract may be sent unsolicited. Requests can be made persistent
+and/or event-driven, supporting various periodic and continuous update scenarios. Each request
+may specify the data from one or more entities, e.g. EHRs or subjects.
+
+The Extract reply may optionally include a copy of the request. Its main content is in the form of
+_chapters_, under which folders and content items contain the requested content, or as much of it as was
+possible to retrieve. Specific types of content item, including openEHR content, generic EMR content,
+and demographic content are defined in various sub-packages, How the content is arranged
+within folders in each chapter, and across chapters is managed by the use of archetypes and templates
+for the Extract/chapter structure. The following uML diagram illustrates the `rm.extract.common` package.
+
+[.text-center]
+.rm.extract.common Package
+image::{uml_diagrams_uri}/RM-ehr_extract.common.svg[id=rm_ehr_extract_common, align="center"]
+
+The typical instance structure of the `EXTRACT_REQUEST` and `EXTRACT` types is illustrated below.
+
+[.text-center]
+.Abstract Request and Extract structure
+image::{diagrams_uri}/abstract_request_extract.png[id=abstract_request_extract, align="center", width=70%]
+
+== Design
+
+=== Extract Request
+
+The `EXTRACT_REQUEST` class consists of an update_spec specifying rules for update (one-off, periodic,
+event-driven etc), and an `_extract_spec_`, indicating what information from the target repository is
+required. The latter consists of an optional `_version_spec_`, indicating which versions (default is latest)
+and a `_manifest_`, specifying which entities (records or subjects, and optionally which items from those
+entities should be included.
+
+==== Content Criteria Specification
+
+The `extract_spec` part of the Request applies to all content in the Extract. The attributes are as follows:
+
+* _extract_type_: what kind of Extract this is, e.g. `|openehr-ehr|`, `|openehr-demographic|`, `|openehr-synchronisation|`, `|openehr-generic|`, `|generic-emr|`, etc;
+* _include_multimedia_: a flag indicating whether inline binary objects are included or not;
+* _link_depth_: value indicating how many levels of link to follow when constructing the content of the Extract; the default is 0, meaning 'don't follow';
+* _criteria_: specifyies queries defining the required content of each entity record;
+* _other_details_: an archetypable structure including further extract details.
+
+The `_criteria_` attribute defines in the form of generic queries (i.e. queries that apply sensibly to any
+record) which items are to be retrieved from each entity's record. Each query is expressed as a
+`DV_PARSABLE` instance, enabling any formalism to be used. The openEHR archetype query formalisms
+(AQL) could be used for example. Query expressions use variables such as $ehr to mean the current
+EHR from the `_manifest_` list. Queries may be as simple as the following:
+
+[source, sql]
+--------
+SELECT * FROM $ehr              -- get all items in the record
+SELECT /ehr_access FROM $ehr    -- retrieve the EHR_ACCESS object in an EHR
+SELECT /ehr_status FROM $ehr    -- retrieve the EHR_STATUS object in an EHR
+--------
+
+More sophisticated queries can be used to obtain items corresponding to a specific criteria, e.g.:
+
+[source, sql]
+--------
+SELECT ....     -- retrieve last 6 months' worth of blood glucose measurements
+...             -- retrieve ongoing medications list
+......          -- retrieve items relating to active pregnancy
+.....           -- retrieve all GP encounter notes since 12-03-2005
+--------
+
+[.tbd]
+To Be Continued:
+
+==== Update Specification
+
+The update_spec part of the Request specifies how the Request is to be processed by the server. The
+default situation, requiring no update_spec at all, is a one-off request. Other alternatives include:
+
+* repeat Request with a defined period and/or trigger events;
+* persisting the Request in the server so that the requestor can make later repeat requests by referring to a previously stored request by its identifier.
+
+An ad hoc repeat of a request persisted earlier is made using an `EXTRACT_ACTION_REQUEST` with
+action set to |repeat|. This specifies only the identifier of a request previously specified using an
+`EXTRACT_REQUEST`. Since requests are uniquely identified for all time, there can be no error in the
+identification.
+
+==== The Manifest
+
+The `_manifest_` specifies the scope of records to be retrieved in an Extract. In the simplest case, only a single
+entity (e.g. patient) and no specific items will be identified (the content will be determined by the criteria in the
+`EXTRACT_SPEC` object); this will be used in the vast majority of single-patient request scenarios.
+However, some scenarios will be of a batch update nature, including pathology lab result update and
+situations where patient records are requested corresponding to a list of referrals received by a hospital
+since the last such update. In these cases, the request manifest may identify a number of entities
+(i.e. records or patients), each of which will be allocated a separate chapter in the resulting Extract.
+
+The `_item_list_` of each entity manifest identifies individual items using `OBJECT_REF` instances each
+containing the `HIER_OBJECT_ID` identifier of a particular top-level object such as a Composition, or
+Party. This mechanism for identifying contents of an Extract is only expected to be used when a specific
+identifier is known, rather than when items corresponding to filtering criteria are requested. The
+latter are specified using the criteria attribute.
+
+==== Version Specification
+
+An Extract request in its simplest form has no version specification, corresponding to the assumption
+of 'latest available version' for each matched item. However, in some situations there is a need to retrieve
+previous versions, or information about versions. The version specification part of the Extract
+request allows this to be done. The possibilities available are as follows.
+
+* _include_all_versions_: the whole version 'stack' of each item matched by the manifest and
+retrieval criteria should be returned. Note that the result of this will be all available versions
+from the repository in question, which is in general not the same as all versions that have
+ever been created, since versions in the same logical version tree may exist at other
+repositories due to local modifications that have not been propagated to the target repository
+of the Extract Request.
+* _include_revision_history_: this flag indicates whether the revision_history of a
+`VERSIONED_OBJECT` is to be included in the Extract form of the version
+
+=== Extract
+
+==== Content Specification
+The `EXTRACT` consists of a `_request_id_`, an optional `_participations_` list, an optional `_specification_` and a
+set of chapters, containing the retrieved content. The `_participations_` attribute denotes parties that were
+responsible for creating the Extract. The `_specification_` takes the same form as the extract_spec of the
+`EXTRACT_REQUEST`, but in an `EXTRACT` instance, indicates the actual contents of the Extract. This
+will usually differ in from the request specification in that it will list in the manifest section the actual
+entities (and the identifiers they are known by in the receiver system) retrieved, whereas the request
+may not specify any entities (it may rely on query criteria), or it may specify a different set of entities
+than were retrievable in the receiver system.
+
+==== Content
+The content of an Extract is contained within the chapters attribute, in the form of one of more
+instances of the `EXTRACT_CHAPTER` class or its subtype `EXTRACT_ENTITY_CHAPTER`. Within an
+`EXTRACT_CHAPTER` the content attribute contains a folder structure made of `EXTRACT_FOLDER`
+objects which in turn contain the content items. The folder structure is defined by archetypes, and can
+be used to separate the parts of a health record, or group items according to some other scheme e.g.
+episode. A specific kind of chapter, the `EXTRACT_ENTITY_CHAPTER`, is used to carry content associated
+with a single entity, i.e. patient. This means that an Extract may contain data relating to multiple
+entities, i.e. multiple patients.
+
+The `EXTRACT_CONTENT_ITEM` class is subtyped in later sections of this specification to define metadata
+for specific kinds of content.
+
+=== Participations and Demographic Referencing
+
+A key difference between an 'extract' or in fact any kind of message carrying information out of a
+system environment is that the Extract combines in one place information typically found in multiple
+services in the original environment. Two kinds of information routinely included in Extracts are clinical
+(i.e. EHR / EMR or similar) and demographic data regarding participations of the subject and
+other parties in the activities documented in the clinical information.
+
+Within the openEHR EHR model, a 'participation' is defined by the `PARTICIPATION` class in the
+`rm.common.generic` package. Actual participation instances include a performer object (a subtype
+of `PARTY_PROXY`), and optionally an external reference object (type `PARTY_REF`). The latter contains
+a reference to the demographic entity within a demographic service, provider registry or similar.
+Within the Extract, participations occur in two places. In the `EHR_EXTRACT` class, participations are
+used to provide information about parties related to the Extract. These are created new with each
+Extract (i.e. they are not EHR data that is part of the Extract content. Accordingly, a simplified form
+of the `PARTICIPATION` class is used: `EXTRACT_PARTICIPATION`. The only difference is that the
+performer reference is a simple string, allowing it to contain a GUID reference to a demographic
+party included elsewhere in the same Extract.
+
+Participations also occur in the actual content of the EHR, and in this case, they original structures are
+copied faithfully, including any in-line performer information. If there was an `_external_ref_` present,
+pointing to a demographic entity that is also to be included in the Extract, this reference is rewritten to
+point to a local copy of the demographic entity (using a GUID), within the Entity chapter of the
+Extract.
+
+The result of this is that for source data whose original external references are to external demographic
+entities, the logical structure is completely preserved within the Extract, with just the reference
+being rewritten to the GUID values used in the Extract (which may well come from the original
+demographic database or service).
+
+A typical arrangement is to dedicate a single chapter to all demographic entities referenced within the
+Extract, optionally with an internal Folder structure. Some example arrangements are illustrated in
+the EHR and generic Extract sections below.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}extract_request.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_action_request.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_spec.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_manifest.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_entity_manifest.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_version_spec.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_update_spec.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_chapter.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_entity_chapter.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_item.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_folder.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_content_item.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}extract_participation.adoc[]

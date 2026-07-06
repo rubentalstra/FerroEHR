@@ -1,0 +1,14 @@
+=== ORGANISATION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ORGANISATION*
+
+h|*Description*
+2+a|Generic description of organisations. An organisation is a legally constituted body whose existence (in general) outlives the existence of parties considered to be part of it.
+
+h|*Inherit*
+2+|`<<_actor_class,ACTOR>>`
+
+|===

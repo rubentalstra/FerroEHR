@@ -1,0 +1,9 @@
+title: DATE_STRUCTURE
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+properties:
+  _type:
+    type: string
+    default: DATE_STRUCTURE
+x-discriminator-value: DATE_STRUCTURE

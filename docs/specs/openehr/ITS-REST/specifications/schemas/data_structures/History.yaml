@@ -1,0 +1,23 @@
+title: HISTORY
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+required:
+  - origin
+properties:
+  _type:
+    type: string
+    default: HISTORY
+  origin:
+    $ref: ../data_types/DvDateTime.yaml
+  period:
+    $ref: ../data_types/DvDuration.yaml
+  duration:
+    $ref: ../data_types/DvDuration.yaml
+  summary:
+    $ref: ../data_structures/UItemStructure.yaml
+  events:
+    type: array
+    items:
+      $ref: ../data_structures/Event.yaml
+x-discriminator-value: HISTORY

@@ -1,0 +1,11 @@
+title: DV_TEXT
+type: object
+allOf:
+  - $ref: ../data_types/DvText.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_TEXT]
+x-discriminator-value: DV_TEXT

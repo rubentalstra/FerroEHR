@@ -1,0 +1,25 @@
+=== P_C_COMPLEX_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*P_C_COMPLEX_OBJECT*
+
+h|*Description*
+2+a|Constraint on complex objects, i.e. any object that consists of other object constraints.
+
+h|*Inherit*
+2+|`<<_p_c_defined_object_class,P_C_DEFINED_OBJECT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*attributes*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_p_c_attribute_class,P_C_ATTRIBUTE>>>`
+a|List of constraints on attributes of the reference model type represented by this object.
+
+h|*0..1*
+|*attribute_tuples*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_p_c_attribute_tuple_class,P_C_ATTRIBUTE_TUPLE>>>`
+a|List of attribute tuple constraints under this object constraint, if any.
+|===

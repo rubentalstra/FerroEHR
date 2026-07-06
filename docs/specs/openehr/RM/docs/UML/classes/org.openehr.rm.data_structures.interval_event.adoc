@@ -1,0 +1,43 @@
+=== INTERVAL_EVENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*INTERVAL_EVENT<T>*
+
+h|*Description*
+2+a|Defines a single interval event in a series.
+
+h|*Inherit*
+2+|`<<_event_class,EVENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*width*: `link:/releases/RM/{rm_release}/data_types.html#_dv_duration_class[DV_DURATION^]`
+a|Duration of the time interval during which the values recorded under `data` are true and, if set, the values recorded under `state` are true. Void if an instantaneous event.
+
+h|*0..1*
+|*sample_count*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Optional count of original samples to which this event corresponds.
+
+h|*1..1*
+|*math_function*: `link:/releases/RM/{rm_release}/data_types.html#_dv_coded_text_class[DV_CODED_TEXT^]`
+a|Mathematical function of the data of this event, e.g.  maximum, mean etc. Coded using https://github.com/openEHR/terminology/blob/master/openEHR_RM/en/openehr_terminology.xml[openEHR vocabulary `event math function`]. Default value `640&#124;actual&#124;`, meaning 'actual value'.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*interval_start_time* (): `link:/releases/RM/{rm_release}/data_types.html#_dv_date_time_class[DV_DATE_TIME^]`
+a|Start time of the interval of this event.
+
+h|*Invariants*
+2+a|__Math_function_validity__: `terminology (Terminology_id_openehr).has_code_for_group_id (Group_id_event_math_function, math_function.defining_code)`
+
+h|
+2+a|__Interval_start_time_valid__: `interval_start_time = time - width`
+|===

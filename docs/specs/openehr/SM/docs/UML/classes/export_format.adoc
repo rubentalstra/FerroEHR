@@ -1,0 +1,22 @@
+=== EXPORT_FORMAT Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*EXPORT_FORMAT*
+
+h|*Description*
+2+a|
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|openehr_canonical_xml
+a|
+
+h|
+|openehr_canonical_json
+a|
+|===

@@ -38,10 +38,16 @@ Section 15). It applies to every crate, generated (ADR-004), hand-written, or po
 
 ## Oracles
 
-openEHR conformance corpora, EHRbase's `test-data` and
-`serialisation_conformance_test` sets, Better's `web-template-tests`, and
-openEHR reference archetypes are the acceptance authority — prefer them over
-hand-written fixtures when a golden vector already exists.
+The **vendored CNF suite** is the primary acceptance authority
+(ADR-008): `docs/specs/openehr/CNF/docs/platform_test_schedule/` (per-endpoint
++ per-data-type test cases) and the executable Robot suites + fixtures
+(`.opt` templates, canonical JSON/XML payloads) under
+`docs/specs/openehr/CNF/tests/platform/robot/`. Also: openEHR conformance
+corpora, EHRbase's `test-data` and `serialisation_conformance_test` sets,
+Better's `web-template-tests`, and openEHR reference archetypes. Prefer these
+over hand-written fixtures when a golden vector already exists. A test that
+encodes a spec rule cites the spec/CNF section it asserts
+(spec-adherence.md).
 
 ## Where tests live
 
@@ -53,7 +59,6 @@ third location.
 ## Target
 
 openEHR CNF conformance at the REST surface on Linux x86_64 first, then
-broaden. Phases P1-P16 do not need to compile, so most of this rule becomes
-fully active from P17 (make-it-compile) onward — but a spec-transcription
-phase that ships a hand-written unit test (e.g. an invariant check) must
-still follow the never-weaken rule immediately.
+broaden. Every phase ships compiling, clippy-clean, tested increments
+(ADR-006 retired the old "phases need not compile" gate) — this whole rule
+is fully active at all times.

@@ -1,0 +1,14 @@
+=== PARTY_SELF Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*PARTY_SELF*
+
+h|*Description*
+2+a|Party proxy representing the subject of the record. Used to indicate that the party is the owner of the record. May or may not have `_external_ref_` set.
+
+h|*Inherit*
+2+|`<<_party_proxy_class,PARTY_PROXY>>`
+
+|===

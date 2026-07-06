@@ -1,0 +1,12 @@
+description: |
+  `201 Created` is returned when the CONTRIBUTION was created. 
+  Content body is only returned when `Prefer` header has `return=representation`, otherwise only headers are returned.
+headers:
+  ETag:
+    $ref: ../headers/ETag_CONTRIBUTION.yaml
+  Location:
+    $ref: ../headers/Location_CONTRIBUTION.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/common/Contribution.yaml

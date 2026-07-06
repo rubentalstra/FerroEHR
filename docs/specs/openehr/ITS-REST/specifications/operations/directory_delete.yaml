@@ -1,0 +1,20 @@
+operationId: directory_delete
+summary: Delete directory
+description: |
+  Deletes directory FOLDER associated with the EHR identified by `ehr_id`.
+
+  The existing latest `version_uid` of directory FOLDER resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+tags:
+  - DIRECTORY
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/header/If-Match.yaml
+responses:
+  '204':
+    $ref: ../responses/204_because_deleted.yaml
+  '400':
+    $ref: ../responses/400_invalid_ehr_id.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id.yaml
+  '412':
+    $ref: ../responses/412_directory.yaml

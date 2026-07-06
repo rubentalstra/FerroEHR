@@ -1,0 +1,11 @@
+=== P_ARCHETYPE_CONSTRAINT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__P_ARCHETYPE_CONSTRAINT (abstract)__*
+
+h|*Description*
+2+a|Archetype equivalent to LOCATABLE class in openEHR Common reference model. Defines common constraints for any inheritor of LOCATABLE in any reference model.
+
+|===

@@ -1,0 +1,197 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/FEEDER_AUDIT_DETAILS.json",
+    "definitions": {
+        "FEEDER_AUDIT_DETAILS": {
+            "type": "object",
+            "required": [
+                "system_id"
+            ],
+            "properties": {
+                "system_id": {
+                    "type": "string"
+                },
+                "location": {
+                    "allOf": [
+                        {
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "PARTY_RELATED",
+                                        "PARTY_IDENTIFIED"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_RELATED"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_RELATED.json#/definitions/PARTY_RELATED"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_IDENTIFIED"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_IDENTIFIED.json#/definitions/PARTY_IDENTIFIED"
+                            }
+                        },
+                        {
+                            "if": {
+                                "not": {
+                                    "required": [
+                                        "_type"
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_IDENTIFIED.json#/definitions/PARTY_IDENTIFIED"
+                            }
+                        }
+                    ]
+                },
+                "provider": {
+                    "allOf": [
+                        {
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "PARTY_RELATED",
+                                        "PARTY_IDENTIFIED"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_RELATED"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_RELATED.json#/definitions/PARTY_RELATED"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_IDENTIFIED"
+                                    }
+                                },
+                                "required": [
+                                    "_type"
+                                ]
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_IDENTIFIED.json#/definitions/PARTY_IDENTIFIED"
+                            }
+                        },
+                        {
+                            "if": {
+                                "not": {
+                                    "required": [
+                                        "_type"
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_IDENTIFIED.json#/definitions/PARTY_IDENTIFIED"
+                            }
+                        }
+                    ]
+                },
+                "subject": {
+                    "allOf": [
+                        {
+                            "required": [
+                                "_type"
+                            ],
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "PARTY_SELF",
+                                        "PARTY_IDENTIFIED",
+                                        "PARTY_RELATED"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_SELF"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_SELF.json#/definitions/PARTY_SELF"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_IDENTIFIED"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_IDENTIFIED.json#/definitions/PARTY_IDENTIFIED"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "PARTY_RELATED"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Common/PARTY_RELATED.json#/definitions/PARTY_RELATED"
+                            }
+                        }
+                    ]
+                },
+                "time": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.4/Data_types/DV_DATE_TIME.json#/definitions/DV_DATE_TIME"
+                },
+                "version_id": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "FEEDER_AUDIT_DETAILS"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

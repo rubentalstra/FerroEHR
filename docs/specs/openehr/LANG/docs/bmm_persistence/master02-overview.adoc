@@ -1,0 +1,26 @@
+= Overview
+
+== Conceptual Approach
+
+This specification defines a model that may be used as the basis for a serial format for the Basic Meta-Model (BMM). The formalism described here is an adaptation of pure object serialisation approaches used in mainstream programming languages. Instead of directly materialising a BMM instance graph from serial form, the initial materialised form is a graph of `P_BMM_XXX` classes, with a subsequent in-memory model-to-model transform step required to produce a materialised BMM model.
+
+The `P_BMM_*` classes perform two functions. Firstly, they are a modified and simplified version of the `BMM_*` classes that enable for example symbolic referencing via class names, syntactical type names to be used etc, rather than the full explosion of fine-grained objects that would result from a direct serialisation of `BMM_*` classes. This enables an object model represented internally (to a tool, say) in `BMM` form, converted to `P_BMM` form, and then serialised to a `.bmm` file, to be easily readable and editable by human users.
+
+The second is that `.bmm` files function as schemas that support schema inclusion and therefore re-use, in a similar manner to the XML schema languages. Thus, a single logical BMM model can be expressed as a _number_ of `.bmm` schema files which are actually `P_BMM_*` object serialisations of parts of the BMM model. A schema reading component has to resolve the schema inclusions and ultimately `BMM_*` object instantiations to obtain the in-memory form of the model.
+
+We thus talk of the `P_BMM_*` classes as a 'model of a BMM _schema_' and the `BMM_*` classes as a 'model of a BMM _model_', where the latter is understood as the fully computable in-memory object structure with all name references resolved to object references.
+
+A `P_BMM` class definition captures the full feature set of a class: _properties_ (attributes), via the `P_BMM_PROPERTY` family; _functions_ (routines, with their formal parameters and result type), via the `P_BMM_FUNCTION` and `P_BMM_FUNCTION_PARAMETER` families; _constants_, via `P_BMM_CONSTANT`; and class _invariants_. Representing functions and these other features allows a `.bmm` schema to record the full specification of a model (for example, the operation specifications extracted from the openEHR UML models), independently of whether a given tool materialises those features in its in-memory `BMM` form.
+
+In addition to ordinary classes, the model can also represent pure _interfaces_ via `P_BMM_INTERFACE`, i.e. class-like definitions that declare only functions and carry no state.
+
+The `P_BMM` format is not the only serial format possible for BMM, and alternatives, e.g. a more syntactic style reminiscent of OMG IDL, are possible.
+
+The normal use of P_BMM schemas is as follows:
+
+* create one or more `.bmm` schema files, using the `P_BMM_` form of the model. This is easy to understand by using the link:../../example/example.bmm[example schema^] and/or copying other examples;
+* locate these files in a suitable place for use with a tool such as the {openehr_awb}[openEHR ADL Workbench^] and {linkehr}[LinkEHR^].
+
+== Concrete Format
+
+BMM models are normally expressed as schema text files that support inclusion and re-use. The default file format has historically been {openehr_odin}[openEHR ODIN syntax^], and BMM tools to date support this format. However any common format that can express typed object models may be used, including JSON (with type markers), YAML, and XML. The examples shown in this specification are primarily in ODIN, but a tool implementing BMM may choose to serialise in and out of another preferred format.

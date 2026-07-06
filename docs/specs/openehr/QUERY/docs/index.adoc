@@ -1,0 +1,62 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/basic_style_settings.adoc[]
+
+:keywords: query languages
+:description: openEHR Query Component
+
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+image::openehr_block_diagram.svg["openEHR components",align="center",width="60%"]
+
+:numbered!:
+= Query Languages (QUERY) Component - {query_release}
+
+// Use the following version for 'latest'
+ifeval::["{query_release}" == "latest"]
+[.title-para]
+{component_prs}[Open Issues^] | {component_roadmap}[Roadmap^] | {component_history}[Previous Releases^]
+endif::[]
+
+// Use the following version for a named release
+ifeval::["{query_release}" != "latest"]
+:query_prs_fixed: {component_prs_fixed}{query_release}/issues
+:query_crs_done: {component_crs_done}{query_release}/changes
+[.title-para]
+{query_prs_fixed}[Issues Fixed^] | {query_crs_done}[Changes Implemented^] | {component_roadmap}[Roadmap^] | {component_history}[Change History^]
+endif::[]
+
+== Specifications
+
+[cols="2,5", options="header"]
+|===
+|Specification |Description
+
+|link:/releases/QUERY/{query_release}/AQL.html[Archetype Query Language (AQL)]
+|Query language based on archetype paths and pattern matching.
+
+|link:/releases/QUERY/{query_release}/AQL_examples.html[Archetype Query Language Examples]
+|Examples of AQL use.
+
+|===
+
+== Computable Expressions
+
+[cols="2,5", options="header"]
+|===
+|Resource |Description
+
+|link:/releases/QUERY/{query_release}/docs/AQL/grammar/AqlLexer.g4[Antlr4 lexer]
+|ANTLR4 lexer grammar for AQL.
+
+|link:/releases/QUERY/{query_release}/docs/AQL/grammar/AqlParser.g4[Antlr4 parser]
+|ANTLR4 parser grammar for AQL.
+
+|===

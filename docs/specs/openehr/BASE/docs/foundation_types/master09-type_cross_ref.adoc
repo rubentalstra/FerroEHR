@@ -1,0 +1,184 @@
+= Type Cross-Reference
+
+The following table provides a cross-reference from openEHR foundation types to their equivalents in common implementation formalisms. Where there is no equivalent listed, a specific library may still exist, or an implementation may be required of the openEHR specification.
+
+[cols="1,2,2,2,2,2,2", options="header"]
+|===
+| **openEHR Type** | **Description** | **Java** | **.NET** | **TypeScript** | **XML Schema** | **JSON Schema**
+
+| `Octet`
+| 8-bit binary data
+| `byte` or `java.lang.Byte`
+| `System.Byte`
+| `number` (0–255)
+| `xs:byte`
+| `{type: "integer", minimum: 0, maximum: 255}`
+
+| `Character`
+| Single Unicode character
+| `java.lang.Character`
+| `System.Char`
+| `string` (length=1)
+| `xs:string` (length=1)
+| `{type: "string", minLength: 1, maxLength: 1}`
+
+| `Boolean`
+| logical True/False values
+| `java.lang.Boolean`
+| `System.Boolean`
+| `boolean`
+| `xs:boolean`
+| `{type: "boolean"}`
+
+| `Integer`
+| Integer number (32-bit)
+| `java.lang.Integer`
+| `System.Int32`
+| `number`
+| `xs:integer`
+| `{type: "integer"}`
+
+| `Integer64`
+| Integer number (64-bit)
+| `java.lang.Long`
+| `System.Int64`
+| `number`
+| `xs:long`
+| `{type: "integer"}`
+
+| `Real`
+| Floating-point number (32-bit)
+| `java.lang.Float`
+| `System.Single`
+| `number`
+| `xs:float` or `xs:decimal`
+| `{type: "number"}`
+
+| `Double`
+| Floating-point number (64-bit)
+| `java.lang.Double`
+| `System.Double`
+| `number`
+| `xs:double`
+| `{type: "number"}`
+
+| `String`
+| Unicode-enabled strings
+| `java.lang.String`
+| `System.String`
+| `string`
+| `xs:string`
+| `{type: "string"}`
+
+| `Date`
+| ISO 8601 Date
+| `java.time.LocalDate`
+| `System.DateTime`
+| `Date`
+| `xs:date`
+| `{type: "string", format: "date"}`
+
+| `Time`
+| ISO 8601 Time
+| `java.time.LocalTime`
+| `System.DateTime`
+| `Date`
+| `xs:time`
+| `{type: "string", format: "time"}`
+
+| `DateTime`
+| ISO 8601 Date-Time
+| `java.time.LocalDateTime`
+| `System.DateTime`
+| `Date`
+| `xs:dateTime`
+| `{type: "string", format: "date-time"}`
+
+| `Duration`
+| ISO 8601 Duration
+| `java.time.Duration`
+| `System.TimeSpan`
+| `string` (ISO 8601 format)
+| `xs:duration`
+| `{type: "string", format: "duration"}`
+
+| `Uri`
+| Universal Resource Identifier
+| `java.net.URI`
+| `System.Uri`
+| `string`
+| `xs:anyURI`
+| `{type: "string", format: "uri"}`
+
+| `Array<T>`
+| Contiguous Array
+| `Array<T>`
+| `Array<T>`
+| `Array<T>`
+| `xs:sequence`
+| `{type: "array", items: {}}`
+
+| `List<T>`
+| Ordered List
+| `java.util.List<T>`
+| `System.Collections.Generic.List<T>`
+| `Array<T>`
+| `xs:sequence`
+| `{type: "array", items: {}}`
+
+| `Set<T>`
+| Unordered, unique membership container
+| `java.util.Set<T>`
+| `System.Collections.Generic.HashSet<T>`
+| `Set<T>`
+| `xs:all`
+| `{type: "array", uniqueItems: true}`
+
+| `Hash<K:Ordered, V>`
+| Unique-keyed map
+| `java.util.Map<K, V>`
+| `System.Collections.Generic.Dictionary<K, V>`
+| `Record<K, V>`
+| -
+| `{type: "object", additionalProperties: {}}`
+
+| `Interval<T>`
+| Interval of ordered types
+| Custom class needed
+| Custom class needed
+| `{start: T; end: T}`
+| Custom type needed
+| `{type: "object", properties: {"start": {}, "end": {}}}`
+
+| `Iso8601_date`
+| ISO 8601-encoded date type
+| `java.text.SimpleDateFormat`
+| use formatted string
+| use formatted string
+| `xs:date`
+| `{type: "string", format: "date"}`
+
+| `Iso8601_time`
+| ISO 8601-encoded time type
+| `java.text.SimpleDateFormat`
+| use formatted string
+| use formatted string
+| `xs:time`
+| `{type: "string", format: "time"}`
+
+| `Iso8601_date_time`
+| ISO 8601-encoded date/time type
+| `java.text.SimpleDateFormat`
+| use formatted string
+| use formatted string
+| `xs:dateTime`
+| `{type: "string", format: "date-time"}`
+
+| `Iso8601_duration`
+| ISO 8601-encoded duration type
+| `java.text.SimpleDateFormat`
+| use formatted string
+| use formatted string
+| `xs:duration`
+| `{type: "string", format: "duration"}`
+|===

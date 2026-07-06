@@ -1,0 +1,40 @@
+=== P_ARCHETYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__P_ARCHETYPE (abstract)__*
+
+h|*Description*
+2+a|Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.
+
+An archetype is a modelled as a particular kind of AUTHORED_RESOURCE, and as such, includes descriptive meta-data, language information and revision history. The ARCHETYPE class adds identifying information, a definition - expressed in terms of constraints on instances of an object model, and an ontology.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*parent_archetype_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of the specialisation parent of this archetype.
+
+h|*1..1*
+|*archetype_id*: `<<_p_archetype_hrid_class,P_ARCHETYPE_HRID>>`
+a|Identifier of this archetype.
+
+h|*1..1*
+|*is_differential*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.
+
+h|*1..1*
+|*definition*: `<<_p_c_complex_object_class,P_C_COMPLEX_OBJECT>>`
+a|Root node of the definition of this archetype.
+
+h|*1..1*
+|*terminology*: `<<_p_archetype_terminology_class,P_ARCHETYPE_TERMINOLOGY>>`
+a|The terminology of the archetype.
+
+h|*0..1*
+|*rules*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/LANG/{lang_release}/bmm.html#_el_boolean_expression_class[EL_BOOLEAN_EXPRESSION^]>`
+a|Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
+|===

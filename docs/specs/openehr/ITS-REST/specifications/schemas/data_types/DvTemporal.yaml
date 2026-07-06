@@ -1,0 +1,17 @@
+title: DV_TEMPORAL
+type: object
+allOf:
+  - $ref: ../data_types/DvQuantified.yaml
+properties:
+  _type:
+    type: string
+    default: DV_TEMPORAL
+  accuracy:
+    $ref: ../data_types/DvDuration.yaml
+x-discriminator-value: DV_TEMPORAL
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    DV_DATE: '#/components/schemas/DvDate'
+    DV_DATE_TIME: '#/components/schemas/DvDateTime'
+    DV_DTIME: '#/components/schemas/DvTime'

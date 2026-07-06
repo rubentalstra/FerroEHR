@@ -1,0 +1,11 @@
+=== BMM_STATEMENT_ITEM Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_STATEMENT_ITEM (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of statement types representing a locally defined routine body.
+
+|===

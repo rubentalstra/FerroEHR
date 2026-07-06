@@ -1,0 +1,18 @@
+title: ACTIVITY
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+required:
+  - action_archetype_id
+  - description
+properties:
+  _type:
+    type: string
+    default: ACTIVITY
+  timing:
+    $ref: ../data_types/DvParsable.yaml
+  action_archetype_id:
+    type: string
+  description:
+    $ref: ../data_structures/UItemStructure.yaml
+x-discriminator-value: ACTIVITY

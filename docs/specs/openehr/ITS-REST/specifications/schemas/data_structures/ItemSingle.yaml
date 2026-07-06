@@ -1,0 +1,13 @@
+title: ITEM_SINGLE
+type: object
+allOf:
+  - $ref: ../data_structures/ItemStructure.yaml
+required:
+  - item
+properties:
+  _type:
+    type: string
+    default: ITEM_SINGLE
+  item:
+    $ref: ../data_structures/Element.yaml
+x-discriminator-value: ITEM_SINGLE

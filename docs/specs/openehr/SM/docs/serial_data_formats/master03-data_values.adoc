@@ -1,0 +1,331 @@
+= Data Values
+
+== JSON Primitives
+
+The following JSON primitive types are a subset of the openEHR Foundation Types, and are represented in SDF in their native JSON form.
+
+[cols="1,2,3", options="header"]
+|===
+|Formal type|Definition|Example
+
+|`Boolean`
+|`"true" \| "false"`
+|
+
+|`Integer`
+|<<JSON Syntax Elements,JSON integer>>
+|5 +
+ 124000 +
+
+|`Real`
+|<<JSON Syntax Elements,JSON number>>
+|5.0 +
+ 6.023e23 +
+
+|`String`
+|<<JSON Syntax Elements,JSON string>>
+|"mild anaemia" +
+ "a line of text\n"
+
+|===
+
+== openEHR Primitives Represented as JSON String
+
+The following are openEHR primitive types represented as JSON Strings which may be parsed to instantiate the appropriate data type.
+
+[cols="1,4,3", options="header"]
+|===
+|Formal type|Definition|Example
+
+|`Character`
+|<<JSON Syntax Elements,JSON character>>
+a|
+----
+"k"
+"\t"
+----
+
+|`Iso8601_date`
+|{iso_8601}[ISO 8601 date string^], including partial forms; see {openehr_foundation_types}#_time_definitions_class[`TIME_DEFINITIONS.__valid_iso8601_date__()`^].
+a|
+----
+"2020-04-01"
+"2020-04"
+"2020"
+----
+
+|`Iso8601_time`
+|{iso_8601}[ISO 8601 time string^], including partial forms; see {openehr_foundation_types}#_time_definitions_class[`TIME_DEFINITIONS.__valid_iso8601_time__()`^].
+a|
+----
+"13:45:00"
+"13:45"
+"13"
+"13:45:00.722+03:00"
+"13:45+03:00"
+----
+
+|`Iso8601_date_time`
+|{iso_8601}[ISO 8601 date/time string^], including partial forms; see link:{openehr_foundation_types}#_time_definitions_class[`TIME_DEFINITIONS.__valid_iso8601_date_time__()`^].
+a|
+----
+"P2Y4M10D"
+"P1DT3H"
+"PT2h5m0s"
+----
+
+|`Iso8601_duration`
+|{iso_8601}[ISO 8601 duration string^]; see {openehr_foundation_types}#_time_definitions_class[`TIME_DEFINITIONS.__valid_iso8601_duration__()`^].
+a|
+----
+"P2Y4M10D"
+"P1DT3H"
+"PT2h5m0s"
+----
+
+|`Uri`
+|{rfc3986}[RFC 3986 string^]
+a|
+----
+"https://www.openEHR.org"
+"http://snomed.info"
+----
+
+|`Terminology_code`
+|openEHR ODIN link:{openehr_odin}#_syntax_specification[TERM_CODE_REF^], defined as `"[<terminology_id>::<code>]" \| "[<terminology_id>(<version_id>)::<code>]"`
+a|
+----
+"[icd10AM::F60.1]"
+"[snomed_ct(2020_06_01)::3415004]"
+----
+
+|`Terminology_term`
+|openEHR ODIN {openehr_odin}#_syntax_specification[XXXX^], defined as `"[<terminology_id>::<code>\|<text>\|]" \| "[<terminology_id>(<version_id>)::<code>\|<text>\|]"`
+a|
+----
+"[icd10AM::F60.1\|Schizoid personality disorder\|]"
+"[snomed_ct(2020_06_01)::3415004\|cyanosis\|]"
+----
+
+|===
+
+[.tbd]
+TBD: S.I.: there is no support for version_id in Terminology_code / Terminology_term, or value in Terminology_term.
+
+=== EhrScape Variants
+
+EhrScape variants exist for the following types.
+
+[cols="1,4", options="header"]
+|===
+|Formal type|EhrScape Format
+
+|`Terminology_code`
+a|
+[source,json]
+----
+{
+    "\|code": "238",
+    "\|terminology": "openehr"
+}
+----
+
+|`Terminology_term`
+a|
+[source,json]
+----
+{
+    "\|code": "238",
+    "\|value": "other care",
+    "\|terminology": "openehr"
+}
+----
+
+|===
+
+== openEHR Intervals Represented as JSON String
+
+Data instances of type `Interval<T: Ordered>`, where the concrete descendants of `Ordered` are shown in the {openehr_foundation_types}#_openehr_leaf_types[openEHR Foundation Types^] are represented in SDF templates as JSON Strings containing {openehr_odin}#_intervals_of_ordered_primitive_types[openEHR ODIN intervals^], for example `"|08:02 .. 09:10|"`.
+
+The interval syntax is summarised as follows:
+
+----
+    |N .. M|        -- the two-sided range N >= x <= M;
+    |> N .. M|      -- the two-sided range N > x <= M;
+    |N .. <M|       -- the two-sided range N <= x <M;
+    |> N .. <M|     -- the two-sided range N > x <M;
+    |< N|           -- the one-sided range x < N;
+    |> N|           -- the one-sided range x > N;
+    |>= N|          -- the one-sided range x >= N;
+    |<= N|          -- the one-sided range x <= N;
+    |N +/-M|        -- interval of N ±M;
+    |N±M|           -- interval of N ±M.
+----
+
+Examples of this syntax include:
+
+----
+    |0 .. 5|              -- integer interval
+    |0.0 .. 1000.0|       -- real interval
+    |0.0 .. <1000.0|      -- real interval 0.0 <= x < 1000.0
+    |08:02 .. 09:10|      -- interval of time
+    |>= 1939-02-01|       -- open-ended interval of dates
+    |5.0 ±0.5|            -- 4.5 ±5.5
+    |5.0 +/-0.5|          -- 4.5 ±5.5
+    |>= 0|                -- >= 0
+----
+
+== Lists of Primitive Type and Intervals
+
+Lists are represented in the standard JSON manner, with the elements represented as described above. The following shows various examples.
+
+----
+    ["cyan", "magenta", "yellow", "black"]
+    [1, 1, 2, 3, 5]
+    ["[icd10AM::F60.1]", "[icd10AM::F64.2]"]
+----
+
+== openeHR Reference Model DATA_VALUE Types
+
+All openEHR RM `DATA_VALUE` types can be represented in SDF form. Many have the same representation as the Foundation types on which they are based and are assumed to be instantiated to the correct RM type by virtue of parsing within a model-available context. These are shown in the following table.
+
+[cols="1,2", options="header"]
+|===
+|Formal type|Definition
+
+|`DV_BOOLEAN`
+|See `Boolean`
+
+|`CODE_PHRASE`
+|See `Terminology_code`
+
+|`DV_TEXT`
+|See `String`
+
+|`DV_CODED_TEXT`
+|See `Terminology_term`
+
+|`DV_COUNT`
+|See `Integer`
+
+|`DV_DATE`
+|See `Iso8601_date`
+
+|`DV_DATE_TIME`
+|See `Iso8601_date_time`
+
+|`DV_TIME`
+|See `Iso8601_time`
+
+|`DV_DURATION`
+|See `Iso8601_duration`
+
+|`DV_EHR_URI`
+|See `Uri`
+
+|===
+
+The `DATA_VALUE` types that have specific SDF syntax forms are shown in the following table.
+
+[cols="1,2,2", options="header"]
+|===
+|Formal type|Definition|Example
+
+|`DV_ORDINAL`
+|`"<ordinal_value>\|<terminology_code>"` \| +
+ `"<ordinal_value>\|<terminology_term>"`
+|`"1\|[snomed_ct::313267000\|Stroke\|]"`
+
+|`DV_SCALE`
+|`"<scale_value>\|<terminology_code>"` \| +
+ `"<scale_value>\|<terminology_term>"`
+|`"1.5\|[snomed_ct::127840596\|minor difficulty\|]"`
+
+|`DV_QUANTITY`
+|`"<value>,<unit>"`
+|`"78.500,kg"`
+
+|`DV_PROPORTION`
+|`"<numerator>/<denominator>;<proportion_kind>"` where is `<proportion_kind>` is `RATIO \| UNITARY \| PERCENT \| FRACTION \| INTEGER_FRACTION`
+|`"25.3/100;PERCENT"`
+
+|`DV_MULTIMEDIA`
+|Standard JSON structure with compressed items internally
+a|
+[source,json]
+----
+{
+    "integrityCheckAlgorithm": "[openehr_integrity_check_algorithms::SHA-1]",
+    "mediaType": "IANA_media-types::text/plain",
+    "compressionAlgorithm": "[openehr_compression_algorithms::other]",
+    "uri": "file://test.ethercis.com/dir/file.jpg"
+}
+----
+
+|`DV_PARSABLE`
+|CHECK
+|CHECK
+
+|`DV_IDENTIFIER`
+|Standard JSON
+a|
+[source,json]
+----
+{
+    "id": "id1",
+    "issuer": "issuer1",
+    "assigner": "assigner1",
+    "type": "PERSON"
+}
+----
+
+|`DV_INTERVAL<T:DV_ORDERED>`
+|CHECK
+|CHECK
+
+|===
+
+=== EhrScape Variants
+
+EhrScape variants exist for the following `DV_` types.
+
+[cols="1,4", options="header"]
+|===
+|Formal type|EhrScape Format
+
+|`DV_PARSABLE`
+a|
+[source,json]
+----
+{
+    "\|value": "Hello world!",
+    "\|formalism": "text/plain"
+}
+----
+
+|`DV_MULTIMEDIA`
+a|
+[source,json]
+----
+{
+    "\|integrityCheckAlgorithm": "[openehr_integrity_check_algorithms::SHA-1]",
+    "\|mediaType": "IANA_media-types::text/plain",
+    "\|compressionAlgorithm": "[openehr_compression_algorithms::other]",
+    "\|uri": "file://test.ethercis.com/dir/file.jpg"
+}
+----
+
+|`DV_IDENTIFIER`
+a|
+[source,json]
+----
+{
+    "\|id": "id1",
+    "\|issuer": "issuer1",
+    "\|assigner": "assigner1",
+    "\|type": "PERSON"
+}
+----
+
+|===
+

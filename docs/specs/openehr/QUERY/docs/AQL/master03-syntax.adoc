@@ -1,0 +1,1153 @@
+= AQL Syntax Description
+
+== Overview
+
+AQL has the following clauses:
+
+* The `SELECT` clause specifies the data elements to be returned.
+* The `FROM` clause specifies the result source and the corresponding containment criteria.
+* The `WHERE` clause specifies data value criteria within the result source.
+* The `ORDER BY` clause indicates the data items used to order the returned result set.
+* The `LIMIT` clause indicates which portion of the result set will be returned.
+
+In AQL, <<_openehr_path_syntax,openEHR path syntax>> is used to locate any node or data values defined within archetypes. In the `SELECT` clause, the openEHR path syntax can be used to indicate expected objects or data values to be returned (similarly to how SQL 'projections' work). The `FROM` clause uses <<_containment,containment>> mechanisms indicating the scope of the query data source. `WHERE` clause uses archetype path to set query criteria on archetypes or any node within the archetypes. The following sections introduce the AQL syntax in detail.
+
+== Reserved words and characters
+
+Keywords in AQL are not case-sensitive, so `SELECT`, `Select`, `select`, `SeLeCt`, etc. are processed in the same way. AQL has the following reserved keywords and characters:
+
+* `SELECT`, `AS`, `FROM`, `CONTAINS`, `WHERE`
+* `ORDER BY`, `LIMIT`, `OFFSET`
+* `DISTINCT`
+* operators: `AND`, `OR`, `NOT`, `LIKE`, `matches`, `exists`, `<`, `>`, `=`, `!`
+* functions: `COUNT`, `MIN`, `MAX`, `SUM`, `AVG`, `LENGTH`, `CONTAINS`, `POSITION`, `SUBSTRING`, `CONCAT`, `CONCAT_WS`, `ABS`, `MOD`, `CEIL`, `FLOOR`, `ROUND`, `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_DATE_TIME`, `NOW`, `CURRENT_TIMEZONE`, `TERMINOLOGY`
+* literals: `true`, `false`, `NULL`
+* `"` and `'`: double and single quote characters are used to delimit string values
+* `|`: bar characters are used to delimit intervals
+* `[]`: brackets are used to delimit coded terms or predicate expressions
+* `{}`: curly braces are used with `matches` delimiting matches criteria
+* `()`: parentheses are used with function calls or to separate logic or group expressions and enforce precedence
+* `$`: dollar sign used to prefix parameters
+* `:`, `?`, `&`, `%`, `#`, `@`, `*`: characters that mainly used as part of a terminology or openEHR URI
+* `/`, `.`: used by openEHR path syntax
+
+NOTE: `TOP` modifier is deprecated in favour of the `LIMIT` clause combined with `ORDER BY` (see <<LIMIT, below>>).
+
+== openEHR path syntax
+
+The openEHR path syntax has been described in detail (see {openehr_path_syntax}[Paths and Locators^] section in the {openehr_overview}[Architecture Overview specification^]). AQL utilises the openEHR path syntax to reference both coarse-grained and fine-grained archetype nodes (objects and data values, respectively), and openEHR class instances and attributes, when referencing something that is not defined in an archetype but is part of the openEHR Reference Model.
+
+There are two types of openEHR paths used in AQL queries: an _archetype path_, referring to a node within an archetype, and a _RM class attribute path_, pointing to an attribute of an openEHR Reference Model class. These paths uses also _predicate expressions_ (see <<_predicates>>) enclosed by brackets (`[]`), to define criteria for coarse-grained and fine-grained data.
+
+
+A set of openEHR path examples are shown below:
+
+.Examples of archetype path syntax
+[width="100%",cols="1,1,1,1,1",options="header",]
+|===
+|Archetype RM type |Archetype node name |Archetype ID                               |Path syntax  | Referenced RM Type
+
+|`OBSERVATION`     |Apgar score         |openEHR-EHR-OBSERVATION.apgar.v1           |`/`  | `OBSERVATION`
+|`OBSERVATION`     |Heart rate          |openEHR-EHR-OBSERVATION.pulse.v1           |`/data[at0002]/events[at0003]/data[at0001]/items[at0004]`  | `ELEMENT`
+|`OBSERVATION`     |Systolic            |openEHR-EHR-OBSERVATION.blood_pressure.v2  |`/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value`  | `DV_QUANTITY`
+|===
+
+.Examples of RM class attribute path syntax using attributes from the `COMPOSITION` class
+[width="100%",cols="2,1",options="header",]
+|===
+|openEHR RM attribute name          |Path syntax
+
+|`COMPOSITION.category`             |`/category`
+|`COMPOSITION.context.start_time`   |`/context/start_time`
+|`COMPOSITION.uid.value`            |`/uid/value`
+|===
+
+== Variables
+
+AQL variables are used to refer a specific openEHR class defined within an AQL `FROM` clause. Consider the following example:
+
+--------
+SELECT
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude,
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude
+FROM
+   EHR [ehr_id/value='1234']
+      CONTAINS COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+         CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= 140 OR
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude >= 90
+--------
+
+This example defines only one AQL variable: `o`, which represents `OBSERVATIONs` that conform to (i.e. created using) the `openEHR-EHR-OBSERVATION.blood_pressure.v1` archetype. This combination of a variable reference and a class represents a _class expression_ (see <<_class_expressions>>).
+
+The combination of a variable reference and a subordinate <<_openehr_path_syntax,path>> forms one kind of _identified path_ (see <<Identified Paths>>), used to specify a fine-grained data element within a larger object matched by the `FROM` clause.
+
+[[_variable_syntax]]
+=== Syntax
+
+AQL variables have the following features:
+
+* AQL variables are defined in the AQL `FROM` clause.
+* A variable name must be unique within an AQL statement.
+* Not all classes defined within the `FROM` clause need a variable name. It is required only when other AQL clauses need to refer to the class identified in the `FROM` clause. The example above doesn't define a variable name for the `EHR` or `COMPOSITION` classes, only for the `OBSERVATION` class (variable `o`), to allow the latter to be referred to in the `WHERE` and `SELECT` clauses, as the root object of specific paths.
+
+A variable name is formed of an initial letter followed by any number of alphanumerics and underscores, as long as it does not clash with an <<_reserved_words_and_characters,AQL reserved word>>. Variable names are not case-sensitive. Digits are not recommended at the beginning of a variable name although there is no formal restriction.
+
+== Parameters
+
+AQL syntax supports parameterisation. AQL parameters are used to indicate criteria, which will be substituted with values at run time. Supporting parameterisation is one of the mechanisms used to realise sharing AQL statements within a system or across system boundaries.
+
+The parameters can be class specific (such as the parameter of EHR identifier or EHR creation date/time), archetype specific (such as an archetype identifier, or archetype constraints), or template specific (such as a template identifier or template constraints).
+
+[[parameter_syntax]]
+=== Syntax
+
+A parameter always starts with a dollar sign `$` followed by the parameter name, e.g. `$ehrUid`. The parameter name can consist of letters, digits and underscores. It cannot have spaces, and it cannot be an <<_reserved_words_and_characters,AQL reserved word>>.
+
+A parameter can be used for any criteria values within an AQL statement, e.g.:
+
+* within a predicate: `[$archetypeId]`, `[at0003, $nameValue]`, `[ehr_id/value=$ehrUid]`
+* withing a `WHERE` criteria: `o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/value > $systolicCriteria`
+
+NOTE: In the `WHERE` criteria, when the value of the parameter is not a number or boolean value, it should be substituted with the corresponding quotes added to the value, for instance `o/../.. = $textVariable`, when substituted should look like this `o/../.. = "value"` (single or double quotes could be used). So substituted values follow the same rules as each type when the value is specified as a literal in the AQL expression: strings, dates, times and datetimes should be quoted, numbers and booleans are not quoted.
+
+=== Parameters use case
+
+Parameters are needed when the same AQL query statement is used with different criteria values. This AQL example is to return all abnormal blood pressure values for a single specific EHR, indicated by `$ehrUid` parameter:
+--------
+SELECT
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude,
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude
+FROM
+   EHR [ehr_id/value=$ehrUid]
+      CONTAINS COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+         CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= 140 OR
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude >= 90
+--------
+This parameter will be substituted by a specific `EHR.ehr_id` value at run time. Consequently, this query can be reused for all `EHRs` within a system.
+
+=== Parameter Resolution
+
+AQL query parameters can be resolved at application level, or EHR system level. It depends on what the query parameters are used for and the design/implementation of the system or components. Query parameters would be normally resolved outside of a query engine.
+
+If a query needs to be reusable across different EHR systems, any query parameters normally need to be registered in these EHR systems so that they can be resolved with real values from each environment. A typical example of this type of query parameter is `$ehrUid`. If the query is only used within an application, then the query parameters would be resolved by the application, such as the parameter of healthcare facility identifier or template identifier.
+
+There are no specific guidelines on how to resolve query parameters. Generally speaking, a parameter name is used as a key (or a key is associated with a parameter name), and the key needs to be unique within the boundary where the parameters are resolved. The EHR system or application needs to have the API functions to get the real value with a given parameter name or key.
+
+
+== Predicates
+
+AQL uses predicates (see {openehr_path_syntax_predicates}[Predicate Expressions^]) to define criteria for coarse-grained and fine-grained data. Predicate expressions are always enclosed by brackets (`[]`).
+
+There are three types of predicates used by AQL: the _standard predicate_, the _archetype predicate_, and the _node predicate_.
+
+=== Standard predicate
+
+Standard predicates always have a left-hand operand, an operator and a right-hand operand, e.g. `[ehr_id/value='123456']`.
+
+* The left-hand operand is normally an openEHR path, such as `ehr_id/value`, `name/value`.
+* The right-hand operand is normally a criterion value or a parameter, such as `'123456'`, `$ehrUid`. It can also be another openEHR path.
+* The operator can be one of the following:
++
+----
+>, >=, =, <, <=, !=
+----
+
+=== Archetype predicate
+
+An archetype predicate is a shortcut of a standard predicate, i.e. the predicate does not have the left-hand operand and operator. It only has an archetype id, e.g. `[openEHR-EHR-COMPOSITION.encounter.v1]`. The archetype predicate is a specific type of query criterion indicating which archetype instances are relevant to this query. It is used to scope the data source from which the query result data is to be retrieved. Therefore, an archetype predicate is only used within an AQL `FROM` clause, for example,
+
+--------
+FROM EHR [ehr_id/value='1234']
+   CONTAINS COMPOSITION c [openEHR-EHR-COMPOSITION.encounter.v1]
+      CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+--------
+
+These predicates could also be written as standard predicates:
+
+--------
+FROM EHR e
+   CONTAINS COMPOSITION c
+      CONTAINS OBSERVATION o
+WHERE
+   e/ehr_id/value = '1234' AND
+   c/archetype_node_id = 'openEHR-EHR-COMPOSITION.encounter.v1' AND
+   o/archetype_node_id = 'openEHR-EHR-OBSERVATION.blood_pressure.v1'
+--------
+
+This equivalence could be used by implementers of AQL to transform predicates into their standard form, as a canonical representation of the query, which can simplified its processing, validation, evaluation and transformation into specific database query languages.
+
+=== Node predicate
+
+A node predicate is also a shortcut of a standard predicate. It has the following forms:
+
+* Containing an `archetype_node_id` (i.e. an at-code) only, e.g.:
++
+--------
+[at0002]
+--------
++
+The corresponding standard predicate would be:
++
+--------
+[archetype_node_id=at0002]
+--------
+
+* Containing an `archetype_node_id` and a `name/value` criterion, e.g.:
++
+--------
+[at0002 and name/value=$nameValue]
+[at0002 and name/value='real name value']
+--------
++
+The corresponding standard predicates would be:
++
+--------
+[archetype_node_id=at0002 and name/value=$nameValue]
+[archetype_node_id=at0002 and name/value='real name value']
+--------
+
+* Containing an `archetype_node_id` and a shortcut of a `name/value` criterion, e.g.:
++
+--------
+[at0002, $nameValue]
+[at0002, 'real name value']
+--------
++
+The corresponding standard predicates would be:
++
+--------
+[archetype_node_id=at0002 and name/value=$nameValue]
+[archetype_node_id=at0002 and name/value='real name value']
+--------
+
+* Containing an `archetype_node_id` and a shortcut of a `name` term code criterion (the `name` attribute is coded text rather than free text), consisting of a _terminology_id_, a _code_string_ and an optional (informational) _value_, formatted as `terminology_id::code_string|value|`, e.g.:
++
+--------
+[at0002, at0003]
+[at0002, snomed_ct(3.1)::313267000]
+[at0003, icd10AM::F60.1|Schizoid personality disorder|]
+--------
++
+The corresponding standard predicates would be:
++
+--------
+[archetype_node_id=at0002 and name/defining_code/code_string='at0003' and name/defining_code/terminology_id/value='local']
+[archetype_node_id=at0002 and name/defining_code/code_string='313267000' and name/defining_code/terminology_id/value='snomed_ct(3.1)']
+[archetype_node_id=at0003 and name/defining_code/code_string='F60.1' and name/defining_code/terminology_id/value='icd10AM']
+--------
+
+* The above four forms are the most common node predicates. A more advanced form is to include a general criterion instead of the `name/value` criterion within the predicate. The general criterion consists of left-hand operand, operator, and right-hand operand, e.g.:
++
+--------
+[at0002 and value/defining_code/terminology_id/value=$terminologyId]
+--------
+
+A node predicate defines criteria on fine-grained data.
+
+== Identified Paths
+
+In AQL, an _identified path_ is the association of a <<_variables,variable>> reference (the identifier), a <<_predicates,predicate>> and/or an <<_openehr_path_syntax,openEHR path>>. Except for the `FROM` clause, an identified path may appear in any clause of an AQL statement. For example, it can be used to indicate the data to be returned in a `SELECT` clause, or the data item on which query criteria are applied in a `WHERE` clause.
+
+In the following example, the identified path `o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude` specifies the systolic value of the Observation archetype `openEHR-EHR-OBSERVATION.blood_pressure.v1`:
+--------
+SELECT
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude
+FROM
+   EHR [ehr_id/value='1234']
+      CONTAINS COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+         CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+--------
+
+[[_identified_paths_syntax]]
+=== Syntax
+
+An AQL identified path can take any of the following forms:
+
+* a variable name defined in the `FROM` clause followed by an openEHR path, which specifies a data item at that path within the object, as follows:
++
+----
+o/data[at0001]/.../data[at0003]/items[at0004]/value/value
+----
+
+* a variable name followed by a predicate, which specifies an object that satisfies the predicate, as follows:
++
+----
+o[name/value=$nameValue]
+----
+
+* a variable name followed by a predicate and an openEHR path, which specifies a data item at a path within an object satisfying the predicate, as follows:
++
+----
+o[name/value=$nameValue]/data[at0001]/.../data[at0003]/items[at0004]/value/value
+----
+
+== Operators
+
+An AQL operator is a reserved word or a symbol, used primarily in `WHERE` clause to perform comparison or logical operation(s).
+
+=== Comparison operators
+
+The table below shows the supported AQL comparison operators, meaning and example.
+
+[width="100%",cols="1,2,5",options="header",]
+|===
+|Operator   |Meaning                    |Example
+
+|=          |Equal                      |`name/value = $nameValue`
+|>          |Greater than               |`o/data[at0001]/.../data[at0003]/items[at0004]/value/value >140`
+|>=         |Greater than or equal to   |`o/data[at0001]/..../data[at0003]/items[at0004]/value/value >=140`
+|<          |Smaller than               |`o/data[at0001]/.../data[at0003]/items[at0004]/value/value <160`
+|\<=        |Smaller than or equal to   |`o/data[at0001]/.../data[at0003]/items[at0004]/value/value <=160`
+|!=         |Not equal to               |`c/archetype_details/template_id/value != ''`
+|LIKE       |Simple pattern matching    |`o/data[at0001]/.../name/value LIKE 'left *'`
+|matches    |Advanced matcher           |`o/data[at0002]/.../name/defining_code/code_string matches {'18919-1', '18961-3', '19000-9'}`
+|===
+
+==== LIKE
+
+The `LIKE` binary operator is used to compare a value of type string (or dates and times) against a simple pattern.
+The left-hand operand is an AQL identified path to a data element that is either a String or has a String representation, while the right-hand operand is a String value, representing the pattern to be matched.
+It returns `true` if the value matches the supplied pattern.
+
+Below is an example using a simple pattern matching:
+--------
+SELECT
+   e/ehr_id/value, c/context/start_time
+FROM
+   EHR e
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.administrative_encounter.v1]
+         CONTAINS ADMIN_ENTRY admission[openEHR-EHR-ADMIN_ENTRY.admission.v1]
+WHERE
+   c/context/start_time LIKE '2019-0?-*'
+--------
+
+The `?` wildcard in the pattern matches any single character, while the `\*` wildcard matches any sequence of zero or more characters.
+If the pattern does not contain any of these wildcards, then `LIKE` acts like the `=` (equal) operator.
+The `LIKE` operator always tries to match the entire string value, therefore if the intention is to match a sequence anywhere within the string, the pattern must start and end with the `*` wildcard, e.g. `"\*test*"`.
+
+To match a literal `?` or `*`, the respective character in a pattern must be escaped by using the backslash `\` character, e.g. `"test \?"`.
+
+==== matches
+
+The `matches` binary operator is used in the `WHERE` clause. The left-hand operand is an AQL identified path. The right-hand operand is enclosed within curly braces (`{}`), and may take the following forms:
+
+. *cADL list constraint*: a comma-separated value list, which is one of the cADL constraint forms used in the {openehr_am}[Archetype Definition Language (ADL)^]. Below is an example using a string value list:
++
+--------
+SELECT
+   o/data[at0002]/events[at0003]/data/items[at0015]/items[at0018]/name
+FROM
+   EHR [uid=$ehrUid]
+      CONTAINS Composition c
+         CONTAINS Observation o[openEHR-EHR-OBSERVATION.microbiology.v1]
+WHERE
+   o/data[at0002]/events[at0003]/data/items[at0015]/items[at0018]/items[at0019]/items[at0021]/name/defining_code/code_string matches {'18919-1', '18961-3', '19000-9'}
+--------
++
+Value list items may be of type string, date/time, integer, or real. Quotes are required for strings and date/times.
++
+A value list is only used in AQL `WHERE` clause when the criteria is to match one item of the list. The relationships among these value list items are "OR".
++
+Some examples of value list:
++
+--------
+matches {'string item 1', 'string item 2', 'string item3'}  // A string list, equivalent to
+                                                            // matches 'string item 1' or ..
+                                                            // matches 'string item 2' or ..
+                                                            // matches 'string item3'
+matches {'2006-01-01', '2007-01-01', '2008-01-01'}          // a date value list
+matches {1, 2, 3}                                           // an integer list
+matches {1.1, 2.5, 3.8}                                     // a real value list
+--------
+
++
+[[_matches_terminology_uri]]
+. *URI*: this can be a terminology URI, an openEHR EHR URI, or other URI. An example with a terminology URI is shown below:
++
+--------
+SELECT
+   e/ehr_status/subject/external_ref/id/value, diagnosis/data/items[at0002.1]/value
+FROM
+   EHR e
+      CONTAINS Composition c[openEHR-EHR-COMPOSITION.problem_list.v1]
+         CONTAINS Evaluation diagnosis[openEHR-EHR-EVALUATION.problem-diagnosis.v1]
+WHERE
+   c/name/value='Current Problems' AND
+   diagnosis/data/items[at0002.1]/value/defining_code matches { terminology://snomed-ct/hierarchy?rootConceptId=50043002 }
+--------
++
+URI data is enclosed within curly braces after `matches` operator. A URI is expressed in {rfc3986}[IETF RFC 3986] format. URIs are not case-sensitive.
++
+A terminology URI consists of the following components:
++
+.. _terminology_: the URI schemes value;
+.. _terminology service_: the URI authority value, such as SNOMED-CT;
+.. _terminology function name_: the URI path, e.g. "hierarchy" is the function name in the example shown below;
+.. _argument values_ required by the terminology functions - URI queries;
++
+This is an example of a terminology URI:
++
+--------
+    terminology://snomed-CT/hierarchy?rootConceptId=50043002
+    \_________/   \_______/ \_______/ \___________/ \______/
+        |             |         |           |__________|
+     scheme       authority   path          | queries  |
+        |             |         |           |          |
+    terminology  terminology function    argument   argument
+       uri         service                 name      value
+--------
+
+. *results of function calls*: a `TERMINOLOGY()` function (see <<_terminology, below>>) is used to invoke operations of an external terminology server and return the results back to the `matches` operator for further use. An example is shown below:
++
+--------
+SELECT
+   c/context/start_time, p/data/items[at0002]/value
+FROM
+   EHR e[ehr_id/value='1234']
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.problem_list.v1]
+         CONTAINS EVALUATION p[openEHR-EHR-EVALUATION.problem-diagnosis.v1]
+WHERE
+   c/name/value='Current Problems' AND
+   p/data/items[at0002]/value/defining_code/code_string matches TERMINOLOGY('expand', 'hl7.org/fhir/4.0', 'http://snomed.info/sct?fhir_vs=isa/50697003')
+--------
+
+=== Logical operators
+
+==== AND
+
+`AND` is a binary operator used to combine two Boolean expressions. It represents a _logical 'and'_ (conjunction) and evaluates to `true` when both operands evaluate to `true`, and it evaluates to `false` otherwise.
+
+==== OR
+
+`OR` is a binary operator used to combine two Boolean expressions. It represents a _logical 'or'_ (disjunction) and evaluates to `true` when any of the operands evaluate to `true`, and it evaluates to `false` otherwise.
+
+==== NOT
+
+`NOT` is a unary operator used to negate a Boolean expression operand. It represents a _logical 'not'_ (negation) and returns a Boolean result: `true` means the operand is `false`.
+
+When used in the `WHERE` clause, a `NOT` expression is a kind of <<_identified_expression,identified expression>>. The example below uses `NOT` operator followed by a Boolean identified expression:
+
+--------
+SELECT
+   e/ehr_id/value
+FROM
+   EHR e
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.administrative_encounter.v1]
+         CONTAINS ADMIN_ENTRY admission[openEHR-EHR-ADMIN_ENTRY.admission.v1]
+WHERE
+   NOT (EXISTS c/content[openEHR-EHR-ADMIN_ENTRY.discharge.v1] AND
+   e/ehr_status/subject/external_ref/namespace = 'CEC')
+--------
+
+The above example is equivalent to the two expressions shown in the following `WHERE` clause:
+
+--------
+SELECT
+   e/ehr_id/value
+FROM
+   EHR e
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.administrative_encounter.v1]
+         CONTAINS ADMIN_ENTRY admission[openEHR-EHR-ADMIN_ENTRY.admission.v1]
+WHERE
+   NOT EXISTS c/content[openEHR-EHR-ADMIN_ENTRY.discharge.v1] OR
+   e/ehr_status/subject/external_ref/namespace != 'CEC'
+--------
+
+The `NOT` operand in combination with `CONTAINS` can be used also in the `FROM` clause to express an exclusion constraint, e.g.
+
+--------
+SELECT
+   e/ehr_id/value
+FROM
+   EHR e
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.administrative_encounter.v1]
+         NOT CONTAINS ADMIN_ENTRY admission[openEHR-EHR-ADMIN_ENTRY.admission.v1]
+WHERE
+   e/ehr_status/subject/external_ref/namespace != 'CEC'
+--------
+
+==== EXISTS
+
+`EXISTS` is a unary operator, whose operand is an <<_identified_paths, identified path>>. It returns a Boolean result: `true` means the data associated with the specified path exists, `false` otherwise. An `EXISTS` expression is a kind of <<_identified_expression,identified expression>> that can be used only in `WHERE` clause.
+
+In the AQL example below, `EXISTS` is used in negated form to filter out `COMPOSITIONs` (and therefore EHRs) that do not contain a discharge `ADMIN_ENTRY` instance:
+
+--------
+SELECT
+   e/ehr_id/value
+FROM
+   EHR e
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.administrative_encounter.v1]
+         CONTAINS ADMIN_ENTRY admission[openEHR-EHR-ADMIN_ENTRY.admission.v1]
+WHERE
+   NOT EXISTS c/content[openEHR-EHR-ADMIN_ENTRY.discharge.v1]
+--------
+
+== Functions
+
+AQL provides _built-in functions_ to perform operations on data. Functions are similar to operators as they manipulate data and return a single result, but the difference is in the format and number of their arguments.
+
+In general, a function syntax is `function(expression, expression, ...)`, accepting zero, one or more _expression_ arguments, consisting of <<_literals, literals>>, <<_parameters, parameters>>, <<_variables, variables>>, <<_identified_paths, identified paths>> or other functions.
+Functions are used primarily in the `SELECT` and `WHERE` clauses.
+
+There are two types of functions: _single-row_ functions, returning a single result for every row of the result set, and _aggregate_ functions, returning a single result based on a group of rows of the result set rather than on a single row.
+
+Most of AQL built-in functions are mapped to function definitions in the {openehr_foundation_types}[openEHR Foundation Types^] and in the {openehr_base_types}[openEHR Base Types^], while others are borrowed from SQL languages.
+
+NOTE: The followings are a set of core built-in functions defined by AQL specifications. Various other functions may exist however in various AQL implementations.
+
+=== Aggregate functions
+
+Aggregate functions calculate a single result value from a set of _input values_, allowing the query to return summarized information about a data item or a result set.
+Input values are selected by an _expression_ in a form of an <<_identified_paths, identified path>> applied to data items filtered by `FROM` and `WHERE` clauses.
+Unless specified otherwise, these functions ignore `NULL` input values.
+
+The table below shows the built-in AQL aggregate functions:
+
+[width="100%",cols="1,5",options="header",]
+|===
+|Function   |Description
+
+|COUNT()    |Returns the count of the number of rows returned or of the input values
+|MIN()      |Returns the minimum of the non-null input values
+|MAX()      |Returns the maximum of the non-null input values
+|SUM()      |Returns the sum of the non-null input values
+|AVG()      |Returns the average (arithmetic mean) of all the non-null input values
+|===
+
+The example below uses `MIN()`, `MAX()` and `AVG()` functions to determine edge and mean values for systolic blood pressure:
+--------
+SELECT
+    MAX(o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude) AS maxValue,
+    MIN(o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude) AS minValue,
+    AVG(o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude) AS meanValue
+FROM
+    EHR e CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1]
+        CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.blood_pressure.v1]
+--------
+
+==== COUNT
+
+The `COUNT` function returns the number of values of given _expression_ argument. The syntax is `COUNT([DISTINCT] expression|*)`.
+
+The `DISTINCT` keyword can be used to calculate the number of only distinct values of _expression_.
+The `COUNT(*)` is used to calculate the number of all rows of the result set, including duplicates and `NULL` values.
+
+If there are no matching rows, then this function returns `0`.
+Input values type can be anything, while the return type is always an Integer.
+
+==== MIN
+
+The `MIN` function returns the minimum value of given _expression_ argument. The syntax is `MIN(expression)`.
+
+If there are no matching rows, then this function returns `NULL`.
+Input values type should be either String, Date, Time, Integer or Real, and it will also determine the return type.
+
+==== MAX
+
+The `MAX` function returns the maximum value of given _expression_ argument. The syntax is `MAX(expression)`.
+
+If there are no matching rows, then this function returns `NULL`.
+Input values type should be either String, Date, Time, Integer or Real, and it will also determine the return type.
+
+==== SUM
+
+The `SUM` function returns the sum value of given _expression_ argument. The syntax is `SUM(expression)`.
+
+If there are no matching rows, then this function returns `NULL`.
+Input values type should be either Integer or Real, and it will also determine the return type.
+
+==== AVG
+
+The `AVG` function returns the average value of given _expression_ argument. The syntax is `AVG(expression)`.
+
+If there are no matching rows, then this function returns `NULL`.
+Input values type should be either Integer or Real, and it will also determine the return type.
+
+=== String functions
+
+AQL provides single-row functions for examining and manipulating string values.
+
+The table below shows the built-in AQL string functions:
+
+[width="100%",cols="1,5",options="header",]
+|===
+|Function       |Description
+
+|LENGTH()       |Returns the length of a string
+|CONTAINS()     |Validates if a string contains other string
+|POSITION()     |Returns the position of the first occurrence of substring in a string
+|SUBSTRING()    |Extracts the substring as specified
+|CONCAT()       |Returns the string that results from concatenating the arguments
+|CONCAT_WS()    |Returns the string that results from concatenating the arguments with separator
+|===
+
+==== LENGTH
+
+The `LENGTH` function returns the number of characters of a given _expression_ argument.
+The syntax is `LENGTH(expression)`, where the argument is of type String. The result type is Integer.
+
+==== CONTAINS
+
+The `CONTAINS` function with syntax `CONTAINS(expression, substring)` returns `true` if the _expression_ argument contains the _substring_ argument.
+The arguments are of type String, while the result type is Boolean.
+
+==== POSITION
+
+The `POSITION` function with syntax `POSITION(substring, expression)` returns the position (index) of the first occurrence of _substring_ argument in the value of the _expression_ argument, or `0` (zero) if is not present.
+The position of the first character (start) of a string is considered position `1`.
+The arguments are of type String, while the result type is Integer.
+
+==== SUBSTRING
+
+The `SUBSTRING` function with syntax `SUBSTRING(expression, position, length)` extracts the substring from _expression_ argument, starting at the _position_-th character, and optionally stopping after a given _length_ characters.
+The first argument is of type String, while _position_ and _length_ arguments are Integers. The result type is String.
+The position of the first character (start) of a string is considered position `1`.
+
+The _length_ argument is optional, and when not provided this function will extract the substring from the given position until the end of the given _expression_ argument.
+
+==== CONCAT
+
+The `CONCAT` function with syntax `CONCAT(expr1, expr2, ...)` returns the string that results from concatenating all the arguments. It may have one or more _expression_ arguments, all of type String.
+
+==== CONCAT_WS
+
+The `CONCAT_WS` function with syntax `CONCAT_WS(separator, expr1, expr2, ...)` returns the string that results from concatenating all the string _expression_ arguments with `separator` string, i.e. the separator is added between the strings to be concatenated.
+
+=== Numeric functions
+
+Numeric single-row functions are providing various mathematical functions for numeric type arguments.
+
+The table below shows the built-in AQL numeric functions:
+
+[width="100%",cols="1,5",options="header",]
+|===
+|Function   |Description
+
+|ABS()      |Returns the absolute value
+|MOD()      |Returns the remainder
+|CEIL()     |Returns the nearest integer greater than or equal to argument
+|FLOOR()    |Returns the nearest integer less than or equal to argument
+|ROUND()    |Rounds the argument
+|===
+
+==== ABS
+
+The `ABS` function returns the absolute value of given _expression_ argument.
+The syntax is `ABS(expression)`, where the argument is of type Real or Integer. The result type is derived from the argument type.
+
+==== MOD
+
+The `MOD` function with the syntax `MOD(x, y)` returns the remainder of `x` divided by `y`.
+The `x` and `y` _expression_ arguments are of type Real or Integer, while the result type is derived from the arguments.
+
+==== CEIL
+
+The `CEIL` function returns the Integer greater than or equal to _expression_ argument.
+The syntax is `CEIL(expression)`, where the argument is of type Real or Integer.
+
+==== FLOOR
+
+The `FLOOR` function returns the Integer less than or equal to _expression_ argument.
+The syntax is `FLOOR(expression)`, where the argument is of type Real or Integer.
+
+==== ROUND
+
+The `ROUND` function with the syntax `ROUND(expression, decimal)` returns the rounded _expression_ argument to _decimal_ places.
+The _expression_ argument is of type Real or Integer, and the result type of the function is derived from it.
+The _decimal_ argument is of type Integer, and defaults to value `0` if not specified.
+
+=== Date and time functions
+
+AQL provides single-row functions for examining and manipulating date, time or datetime values.
+
+The table below shows the built-in AQL date and time functions:
+
+[width="100%",cols="1,5",options="header",]
+|===
+|Function               |Description
+
+|CURRENT_DATE()         |Returns the current date
+|CURRENT_TIME()         |Returns the current time
+|CURRENT_DATE_TIME()    |Returns the current datetime
+|NOW()                  |An alias for CURRENT_DATE_TIME()
+|CURRENT_TIMEZONE()     |Returns the current timezone
+|===
+
+==== CURRENT_DATE
+
+The function with syntax `CURRENT_DATE()` accepts no arguments and returns the current date as String value with the format 'YYYY-MM-DD'.
+
+==== CURRENT_TIME
+
+The function with syntax `CURRENT_TIME()` accepts no arguments and returns the current time as String value with the format 'hh:mm:ss'.
+
+==== CURRENT_DATE_TIME or NOW
+
+The function with syntax `CURRENT_DATE_TIME()`, or `NOW()`, accepts no arguments and returns the current datetime as String value with the format 'YYYY-MM-DDThh:mm:ss.sss±hh:mm'.
+
+==== CURRENT_TIMEZONE
+
+The function with syntax `CURRENT_TIMEZONE()` accepts no arguments and returns the current timezone as String value with the format '±hh:mm'.
+
+=== Other functions
+
+==== TERMINOLOGY
+
+Often the `matches` operator may need to perform a request to a terminology server, in order to execute some _operations_ over a value set or code system (a synonym of _terminology_).
+Several operations may be possible: the expansion of a ValueSet (or Reference Set), checking that a concept belongs to a value set or code system, testing if one concept subsumes another one, or the mapping of concepts across different terminologies.
+While matching value by a pure terminology concept specified as <<_matches_terminology_uri,a terminology URI>> is possible, the invocation of external terminology servers from AQL requires a special function, to perform all these operations.
+
+The `TERMINOLOGY` function is used to invoke operations of an external terminology server and return the results for further processing by AQL.
+The syntax is `TERMINOLOGY(operation, service_api, params_uri)`, having all arguments of type String, while the return type depends on the invoked `operation` and `service_api` and is considered to be of `Any` type.
+
+The `operation` argument specifies the action to perform over the specified value set or code system. It is not restricted to any particular value as different terminology servers may use different ways of specifying the operation and its parameters. The specified operation can be properly dereferenced by the implementation of the `service_api`.
+Some examples of typical operations are:
+
+* *expand*: Expand a value set; this will retrieve all the codes contained in a value set as an explicit set.
+* *validate*: Validate a code in a value set; this will check if a given code belongs to a value set. Recall that the value set may comprise all the codes in a code system (terminology).
+* *lookup*: Look-up a code; this will retrieve all the information concerning one particular code. Examples are retrieving the preferred form to display, synonyms, etc.
+* *map*: Map a code (translate between value sets); this will convert (find an equivalent code) from one Value Set to another one based on a predefined mapping available in the external terminology service. Translation precision may not be limited to full equivalence and different kinds of mappings may be possible (wider meaning, equivalent, narrower meaning, etc).
+* *subsumes*: Subsumption testing; this will determine if a particular terminology concept is a subtype (is-a) of another one. For example, test in SNOMED-CT if `"Myasthenia Gravis | 91637004"` is a subtype of `"autoimmune disease | 85828009"` (i.e. test if `85828009` subsumes `91637004`).
+
+The `service_api` argument represents an identifier of a type of terminology service. This is not the service endpoint as such, neither a service name, but an identifier for the kind/flavour of terminology syntax that is being sent. It provides the information to send requests related to the ValueSet, `operation` and parameters to the right terminology service. In addition, it is closely related to the strategy to parse the terminology service response in a format acceptable by the query processor.
+Some examples of typical values for `service_api` are:
+
+[width="100%",cols="2,4",options="header",]
+|===
+|Service_api     |Description
+
+|hl7.org/fhir/4.0              |FHIR Terminology Service v4.0
+|hl7.org/fhir/3.0              |FHIR Terminology Service v3.0
+|hl7.org/fhir/1.0              |FHIR Terminology Service v1.0
+|ots.oceanhealthsystems.com    |Ocean Terminology Service
+|bts.better.care               |Better Terminology Service
+|apelon.dts.org/4.7.1          |Apelon Terminology Service, version 4.7.1
+|example.terminology-service.api/v1        |An example of a fictive terminology service
+|===
+
+The `params_uri` argument consists of URI path and query sections in compliance with {rfc3986}[IETF RFC 3986]. Most common operations use this to identify the value set on which to perform the `operation`. A value set may be a full code system such as the full set of codes in SNOMED-CT or LOINC. The value set URI may include the version and edition sections (e.g. Australian, US, etc). When the release and version identifiers are not provided, it is up to the external terminology server to decide which default version will be used.
+Some examples of typical URI parameters are:
+
+[width="100%",cols="2,4",options="header",]
+|===
+|URI parameters     |Description
+
+|http://terminology.hl7.org/ValueSet/v3-FamilyMember       |
+|https://vsac.nlm.nih.gov/valueset/2.16.840.1.113762.1.4.1010.2       |
+|http://snomed.info/sct/32506021000036107/version/20200331?fhir_vs=refset/1200161000168100       |implicit VS defined for Australian Refset for Vaccination Reason
+|http://snomed.info/sct     |
+|http://www.omim.org        |
+|http://fhir.de/CodeSystem/dimdi/icd-10-gm      |
+|===
+
+The `TERMINOLOGY` function can be used in the following ways in the `WHERE` clause:
+
+* as a right-hand operand of `matches` operator, to directly match function results, e.g.
++
+--------
+WHERE e/value/defining_code/code_string matches TERMINOLOGY('expand', 'hl7.org/fhir/4.0', 'http://snomed.info/sct?fhir_vs=isa/50697003')
+--------
+
+* embedded between curly braces (`{}`) of the right-hand operand of `matches`, for merging explicit codes with the function results (in which case the AQL interpreter is responsible for generating a valid list of codes during semantic analysis), e.g.
++
+--------
+WHERE e/value/defining_code/code_string matches {'http://snomed.info/id/442031002', TERMINOLOGY('expand', 'hl7.org/fhir/4.0', 'http://snomed.info/sct?fhir_vs=isa/50697003')}
+--------
+
+* as a Boolean value expression, when an assertion is being tested, e.g.
++
+--------
+WHERE
+    TERMINOLOGY('validate', 'hl7.org/fhir/r4', 'system=http://snomed.info/sct&code=122298005&url=http://snomed.info/sct?fhir_vs&display=Astrovirus RNA assay') = true
+--------
+
+More examples can be found in the {openehr_query_aql_examples}#_terminology[openEHR AQL examples^] document.
+
+== Expressions
+
+AQL expressions provide a formal way of evaluating, transforming or comparing values. An expression is a combination of one or more <<_literals, literals>>, <<_operators, operators>>, <<_variables, variables>>, <<_predicates, predicates>>, <<_parameters, parameters>> or <<_functions, functions>> that evaluates to a value.
+
+=== Class expressions
+
+_Class expressions_ are used in the `FROM` clause for two purposes:
+
+. indicating the constraints on RM classes so as to scope the data source for the query. For instance, `EHR e[ehr_id/value='123456']` indicates that the required data must be from a specific `EHR` with `ehr_id` value `'123456'`; while `COMPOSITION c[openEHR-EHR-COMPOSITION.report.v1]` indicates the required data must be from or must be associated with a Composition instance with archetype id - `openEHR-EHR-COMPOSITION.report.v1`.
+. defining an RM class variable that may be used by other clauses to indicate the required data or data items on which query criteria are applied. The example below uses the class expression to define a variable `e` which is used by the `SELECT` clause indicating all relevant `ehr_id` values are retrieved, and a variable `c` used by the `WHERE` clause indicating that the query criteria is set on the Composition `template_id` value.
++
+--------
+SELECT
+   e/ehr_id/value
+FROM
+   EHR e
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.referral.v1]
+WHERE
+   c/archetype_details/template_id/value = $templateId
+--------
+
+Class expressions syntax include three parts. A class expression must have part one and at least one of part two or part three.
+
+. part one (mandatory): RM class name, such as `EHR`, `COMPOSITION`, `OBSERVATION` etc.
+. part two (optional): AQL variable name
+. part three (optional): a standard predicate or an archetype predicate.
+
+Two examples of a class expression are shown below:
+
+--------
+// EHR class, class identifier/variable, and a standard predicate
+EHR e[ehr_id/value=$ehrUid]
+--------
+
+--------
+// COMPOSITION class, class identifier/variable, and an archetype predicate
+COMPOSITION c[openEHR-EHR-COMPOSITION.report.v1]
+--------
+
+=== Identified expression
+
+An _identified expression_ specifies matching criteria in the `WHERE` clause and comes in two forms.
+
+The first form is an expression formed by a unary operator, such as `NOT` or `EXISTS`, described in <<_logical_operators>>.
+
+The second is a binary operator expression, formed as follows:
+
+. _left-hand operand_: an <<_identified_paths, identified path>> or a <<_functions, function>> having an identified path as an argument;
+. _operator_: a <<_comparison_operators, comparison operator>>;
+. _right-hand operand_: one of:
+** a value criterion, normally of a <<_literals, literal>> or a <<_functions, function>>; OR
+** a replaceable <<_parameters, parameter>> (identified with the `'$'` symbol); OR
+** a pattern or condition, in case the operator `matches` or `LIKE` is used; OR
+** an identified path.
+
+The following examples illustrate the binary form.
+
+* The left-hand operand is an identified path; the right-hand operand is a primitive value:
++
+--------
+o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/value >= 140
+
+c/archetype_details/template_id/value = 'health_encounter'
+--------
+
+* The left-hand operand is an identified path and right-hand operand is a parameter:
++
+--------
+c/archetype_details/template_id/value = $templateParameter
+--------
+
+* The left-hand operand is an identified path; the right-hand operand is a pattern:
++
+--------
+c/archetype_details/template_id/value LIKE '*encounter*'
+--------
+
+* Both left-hand operand and right-hand operand are identified paths:
++
+--------
+o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/value >
+o1/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/value
+--------
+
+== Literals
+
+A _literal value_, sometimes known as _constant_ in certain SQL implementations, is a fixed value that is supplied directly in the AQL statement, not derived from an <<_identified_paths, identified path>>, a <<_variables, variable>>, or a <<_name_alias, column alias name>>. It can be used in the `SELECT` clause as a column expression, or in `WHERE` class as part of an identified expression.
+
+The type of a literal value can be any of the AQL <<_built_in_types, built-in types>>, where strings, dates, times and datetimes should be quoted, while numbers and booleans are not quoted.
+
+Another supported literal value is the `NULL` keyword, indicating that the data item is either missing or is unknown.
+
+== Built-in Types
+
+=== Integer data
+
+Integers are represented as numeric literals, such as `1`, `2`, `365` or `-1`. Commas or periods for breaking long numbers are not allowed. Hexadecimal representation is not supported.
+
+=== Real data
+
+Real numbers are the decimal literals that include a decimal point, such as `3.1415926` or `-1.0`. Commas or periods for breaking long numbers are not allowed.
+
+=== Boolean data
+
+Boolean values are indicated using the case-insensitive literals `true` or `false`.
+
+=== String data
+
+All string literals are enclosed in double or single quotes, such as `'encounter'` or `"encounter"`. Line breaks are not supported.
+
+=== Dates and Times
+
+These types are treated as string literals and should comply with the rules for string quoting. The format of the date, time and datetime types should comply with the {iso_8601}[ISO 8601 Date and Time] format specification, which allow the _basic_ or _extended_ formats to be used. The ISO 8601 semantics assumed by openEHR is defined in the classes of the {openehr_foundation_time_types}[base.foundation_types.time package^]. It is strongly recommended using the _extended_ format for dates, times and datetimes. Complete or partial values are allowed.
+
+NOTE: The underlying types of date/time strings are inferred by the AQL processor from the context (metadata associated with the path to which the date/time value is compared with, or by interpretation of the ISO 8601 format), enabling them to be processed as date/time quantities rather than literal strings by AQL engines.
+
+Examples are as below:
+
+--------
+// complete datetime in ISO 8601 extended format: AQL grammar identifies this value as a datetime value.
+WHERE composition/context/start_time <= '1986-01-01T12:00:00.000+09:30'
+--------
+--------
+// complete date in ISO 8601 extended format: AQL grammar identifies this value as a date value.
+WHERE composition/context/start_time <= '1986-01-01'
+--------
+--------
+// a complete date in ISO 8601 basic format: AQL grammar identifies it as a string value.
+WHERE composition/context/start_time > '19860101'
+--------
+--------
+// ISO 8601 time extended format: AQL grammar identifies it as a string value.
+WHERE composition/context/start_time < '12:00:00+09:30'
+--------
+
+== Query structure
+
+=== Overview
+
+AQL structure was briefly introduced in <<_aql_example>>. This section describes the syntax in more formal detail. An AQL query may include the following clauses which must occur in the order shown. 
+
+* `SELECT` (mandatory)
+* `FROM` (mandatory)
+* `WHERE` (optional)
+* `ORDER BY` (optional)
+* `LIMIT` (optional)
+
+An AQL statement must at least contain the `SELECT` and `FROM` clauses.
+
+=== FROM
+
+The `FROM` clause is used to specify the subset of all the data available in a repository,
+that will be available for the rest of the clauses to filter and return specific data (`WHERE`, `SELECT`, etc).
+The data available should be defined by an information model, known here as the _Reference Model (RM)_, that supports the use of archetype- and template-based constraint models, as described in the {openehr_overview}[openEHR Architecture Overview^] and the {openehr_am_overview}[Archetype Technology Overview^].
+
+All the classes referenced by the `FROM` clause should be defined by the RM. For instance,
+if the Reference Model is the {openehr_rm}[openEHR Reference Model^], the `FROM` clause should only include classes like
+`EHR`, `COMPOSITION`, `OBSERVATION`, `EVALUATION`, and so on.
+
+NOTE: The AQL specification is not bound to a specific Reference Model, but to use a
+given RM, it should comply with some requirements: it should be an Object Oriented
+Model and should follow the dual-model approach.
+
+Then, the expressions in the `WHERE` clause will filter data, but only from the subset
+defined by the `FROM` clause. In the `SELECT` clause, a final projection is applied,
+selecting only the matched data that should be retrieved in the query result. In addition
+to the filtering done in the `WHERE` clause, the <<_class_expressions, class expressions>> could hold predicates
+that also allow filtering data.
+
+In summary:
+
+. `FROM`: Defines the subset of data over which the query will be executed;
+. `WHERE`: Filters data from the defined subset, leaving only the data that we need;
+. predicates in _class expressions_: further filters for data in the subset;
+. `SELECT`: picks the exact data that we need to return from the query, taken from the matched data in the previous two points.
+
+[[_from_syntax]]
+==== Syntax
+
+A simple `FROM` clause consists of three parts: keyword `FROM`, _class expression_ and/or _containment constraints_, e.g.
+
+--------
+FROM
+   EHR e [ehr_id/value=$ehrUid]
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.report.v1]
+--------
+
+==== Containment
+
+Since archetypes are in hierarchical structure, AQL has a containment constraint which specifies the hierarchical relationships between parent and child data items. The `FROM` clause utilises this hierarchical constraint along with <<_class_expressions, class expression>> to determine the data source to which the AQL query is applied.
+
+The syntax of containment constraint expression is very simple: using `CONTAINS` operator between two class expressions. Left-hand operand class expression is the parent object of the right-hand operand class expression, e.g.
+
+--------
+EHR e CONTAINS COMPOSITION c [openEHR-EHR-COMPOSITION.referral.v1]
+--------
+
+Logical operators `AND` and `OR` and parentheses `()` are used when multiple containment constrains are required, e.g.
+
+--------
+EHR e
+   CONTAINS COMPOSITION c [openEHR-EHR-COMPOSITION.referral.v1] AND COMPOSITION c1 [openEHR-EHR-COMPOSITION.report.v1]
+--------
+
+--------
+EHR e
+   CONTAINS COMPOSITION c [openEHR-EHR-COMPOSITION.referral.v1]
+      CONTAINS (OBSERVATION o [openEHR-EHR-OBSERVATION.laboratory-hba1c.v1] OR OBSERVATION o1 [openEHR-EHR-OBSERVATION.laboratory-glucose.v1])
+--------
+
+The logical operator `NOT` can be used in combination with `CONTAINS` to express an exclusion constraint,  i.e. the absence of any containment relationship between a parent and potential child items. The following example matches referral COMPOSITIONs that do not contain laboratory test result OBSERVATIONs:
+
+--------
+EHR e
+    CONTAINS COMPOSITION c [openEHR-EHR-COMPOSITION.referral.v1]
+        NOT CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.laboratory_test_result.v1]
+--------
+
+=== WHERE
+
+An AQL `WHERE` clause is used to represent further criteria applied to the data items within the objects declared in the `FROM` clause. A `WHERE` clause expresses the query criteria that cannot be represented in other AQL clauses, such as criteria on archetype id, composition committal date/time, and the criteria on in which order the returned results should be listed.
+
+[[_where_syntax]]
+==== Syntax
+
+The `WHERE` clause syntax has the following parts (in order): keyword `WHERE` and one or more <<_identified_expression, identified expressions>>. Logical operators `AND`, `OR`, `NOT` and parenthesis `()` can be used to combine multiple identified expressions. Examples:
+
+--------
+WHERE
+   c/name/value=$nameValue AND c/archetype_details/template_id/value=$templateId
+--------
+--------
+WHERE
+   (c/name/value = $nameValue OR c/archetype_details/template_id/value = $templateId) AND
+   o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/value >= 140
+--------
+
+=== SELECT
+
+A `SELECT` clause specifies what data is to be retrieved by the AQL query. The data can be any types from RM or any built-in data types (see <<_built_in_types>>).
+
+[[_select_syntax]]
+==== Syntax
+The syntax always starts with the keyword `SELECT`, optionally followed by `DISTINCT`, optionally followed by `TOP` (deprecated - see <<TOP, below>>), followed by one or more _column expressions_.
+
+A column expression is formed by an <<_identified_paths,identified path>>, a <<_functions,function>>, a <<_literals, literal>> value or plain <<_variables,variable>> name defined in the `FROM` clause.
+Where a variable name is specified, the full object of the type associated with the variable is retrieved, such as a `COMPOSITION`, `OBSERVATION` etc.
+Where a function is specified, the call has to be done using the specified arguments, and the results are returned.
+Where an identified path is specified, the data item(s) having that archetype path are returned.
+
+Each column expression may have a <<_name_alias,name alias>> renaming the associated data.
+When the `SELECT` clause contains multiple column expressions, they are separated using a comma.
+
+Some examples are shown below.
+
+.Example 1: Retrieve all Compositions' name value, context start time and composer name from a specific EHR.
+--------
+SELECT
+   c/name/value AS Name, c/context/start_time AS date_time, c/composer/name AS Composer
+FROM
+   EHR e[ehr_id/value=$ehrUid] 
+       CONTAINS COMPOSITION c
+--------
+
+.Example 2: Retrieve all Composition objects of a specific EHR.
+--------
+SELECT c
+FROM EHR e[ehr_id/value=$ehrUid] 
+    CONTAINS COMPOSITION c
+--------
+
+.Example 3: Use of literals and function as column expressions.
+--------
+SELECT
+    true AS dangerousBP, "alert" as indication, count(*) as counter
+FROM
+    EHR [ehr_id/value=$ehrUid]
+        CONTAINS COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+            CONTAINS OBSERVATION obs [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE
+    obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude>= 160 OR
+    obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude>= 110
+--------
+
+==== DISTINCT
+
+The `DISTINCT` modifier specify whether duplicate rows should be filtered out from result set.
+
+By default, an AQL query returns all data items selected by the `FROM` and `WHERE` clauses as rows in the result set. A row is considered to be duplicated in the result set if there is at least one other row with the same value for each corresponding column expression. `DISTINCT` specifies removal of all such duplicate rows from the result set.
+
+Below is an example using `DISTINCT` modifier to filter out duplicate rows:
+--------
+SELECT DISTINCT
+   c/name/value AS Name, c/composer/name AS Composer
+FROM
+   EHR e[ehr_id/value=$ehrUid]
+      CONTAINS COMPOSITION c
+--------
+
+==== TOP
+
+[.deprecated]
+*Deprecated*: Starting with Release 1.1.0, the use of `TOP` modifier is deprecated in favour of the `LIMIT` clause combined with `ORDER BY` (see <<LIMIT, below>>).
+The `TOP` will be removed in a future major release of AQL specification.
+It is not allowed to use `TOP` while also using `LIMIT` clause in the same query.
+
+The `TOP` syntax was borrowed from SQL language for representing the number of result sets that should be returned by the AQL query. It uses `BACKWARD` and `FORWARD` to indicate the direction where to start to get the number of results to be returned.
+
+It starts with keyword `TOP`, followed by an integer number and/or the direction (i.e. `BACKWARD`, `FORWARD`), e.g.
+
+--------
+SELECT
+   TOP 10 c/name/value AS Name, c/context/start_time AS date_time, c/composer/name AS Composer
+FROM
+   EHR e[ehr_id/value=$ehrUid]
+      CONTAINS COMPOSITION c
+--------
+
+[[_name_alias]]
+==== Name alias
+
+As in SQL, `AQL` supports the use of a name alias for the retrieved data. This is done with the keyword `AS`, followed by the name which conforms to the syntax rule of AQL variable.
+
+=== ORDER BY
+
+The `ORDER BY` clause is used to sort the returned results.
+
+NOTE: If no `ORDER BY` clause is specified, then the query result doesn't have any default ordering criteria defined by this specification. Ordering could be defined by each implementation or be random. In terms of compliance to this specification, default ordering in results is undefined.
+
+[[_order_by_syntax]]
+==== Syntax
+The syntax starts with keyword `ORDER BY` followed by one or more _sorting expressions_.
+A sorting expression consists of an identified path, optionally followed by one of the `DESC`, `DESCENDING`, `ASC`, or `ASCENDING` keyword, indicating the sorting type (descending or ascending), e.g.
+
+--------
+ORDER BY c/name/value DESC
+--------
+
+Sorting rows assumes that data identified by the path (from the sorting expression) are comparable. It implies the use of a specific operators like _equal_, _less-than_ and _greater-than_ (all available to primitives and `Ordered` types) on data identified by path.
+
+When sorting type is not specified, `ASC` (ascending) is assumed by default.
+
+Multiple sorting expressions are separated using a comma. If two rows are equal according to the leftmost expression, they are compared according to the next sorting expression.
+
+=== LIMIT
+
+The `LIMIT` clause is used to constrain the result set generated by the rest of the query.
+It is often used together with an `OFFSET` subclause.
+
+The `OFFSET` specifies the number of rows to skip before it starts to return rows from the query.
+The `LIMIT` specifies the number of rows to return after the `OFFSET` clause has been processed.
+Note that when using `LIMIT`, deterministic behavior requires that the `ORDER BY` clause is also used to constrain the result in a unique order.
+
+NOTE: As of Release 1.1.0, the use of the `LIMIT` clause in combination with the `ORDER BY` clause is recommended instead of the deprecated `TOP` alternative.
+It is not allowed to use `LIMIT` while also using `TOP` clause in the same query.
+
+Where `DISTINCT` modifier is used (see <<_distinct>>), the `LIMIT` and `OFFSET` applies to remaining rows, after duplicates were filtered out from result set.
+
+[[_limit_syntax]]
+==== Syntax
+
+The syntax was borrowed from SQL language, similar to PostgreSQL and MySQL implementation.
+It consists of two parts: keyword `LIMIT` followed by number, optionally followed by `OFFSET` followed by a number:
+--------
+LIMIT row_count [OFFSET offset]
+--------
+Both `row_count` and `offset` are integer numbers, `row_count` minimal value is 1, while minimal value for `offset` is 0.
+
+If a `LIMIT row_count` is given, no more than that many rows will be returned (but possibly fewer, if the query itself yields fewer rows).
+The `OFFSET offset` is optional, and when not specified then `offset` = 0 is assumed.
+
+The `LIMIT row_count OFFSET offset` is used to get results in a paginated way. For instance, when `offset` = 0 and `row_count` = 10, the result will have at most 10 rows, starting with first row. The offset of the first row is 0 (not 1). Then with `offset` = 10 and `row_count` = 10, the result will contain next 10 rows at most (i.e. rows 11-20 respectively). So increasing `offset` by `row_count`, allows to get all the results in a paginated way.
+
+The following example will return 10 rows, representing the second page of result set, ordered by event start time:
+--------
+SELECT
+   c/name/value AS Name, c/context/start_time AS date_time, c/composer/name AS Composer
+FROM
+   EHR e[ehr_id/value=$ehrUid]
+      CONTAINS COMPOSITION c
+ORDER BY c/context/start_time
+LIMIT 10 OFFSET 10
+--------

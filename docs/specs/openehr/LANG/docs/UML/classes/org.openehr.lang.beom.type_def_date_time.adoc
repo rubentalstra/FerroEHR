@@ -1,0 +1,28 @@
+=== TYPE_DEF_DATE_TIME Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*TYPE_DEF_DATE_TIME*
+
+h|*Description*
+2+a|Rules meta-type representing the primitive type Date_time.
+
+h|*Inherit*
+2+|`<<_expr_type_def_class,EXPR_TYPE_DEF>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*type_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]` +
+`{default{nbsp}={nbsp}"Date_time"}`
+a|
+
+h|*1..1 +
+(redefined)*
+|*type_anchor*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^]`
+a|
+|===

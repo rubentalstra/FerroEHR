@@ -1,0 +1,81 @@
+=== ARCHETYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__ARCHETYPE (abstract)__*
+
+h|*Description*
+2+a|The `ARCHETYPE` class defines the core formal model of the root object of any archetype or template. It includes only basic identification information, and otherwise provides the structural connections from the Archetype to its constituent parts, i.e. definition (a `C_COMPLEX_OBJECT`), terminology (`ARCHEYTPE_TERMINOLOGY`) and so on. 
+It is the parent class of all concrete types of archetype.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*parent_archetype_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Archetype reference of the specialisation parent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or may be a full archetype identifier.
+
+h|*1..1*
+|*archetype_id*: `<<_archetype_hrid_class,ARCHETYPE_HRID>>`
+a|Identifier of this archetype.
+
+h|*1..1*
+|*is_differential*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.
+
+h|*1..1*
+|*definition*: `<<_c_complex_object_class,C_COMPLEX_OBJECT>>`
+a|Root node of the definition of this archetype.
+
+h|*1..1*
+|*terminology*: `<<_archetype_terminology_class,ARCHETYPE_TERMINOLOGY>>`
+a|The terminology of the archetype.
+
+h|*0..1*
+|*rules*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/LANG/{lang_release}/beom.html#_statement_set_class[STATEMENT_SET^]>`
+a|Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
+
+h|*0..1*
+|*rm_overlay*: `<<_rm_overlay_class,RM_OVERLAY>>`
+a|
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*concept_code* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]` +
+ +
+__post-condition__: `Result.is_equal (definition.node_id)`
+a|The concept code of the root object of the archetype, also standing for the concept of the archetype as a whole.
+
+h|*1..1*
+|*physical_paths* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of language-independent paths extracted from archetype. Paths obey Xpath-like syntax and are formed from alternations of `C_OBJECT._node_id_` and `C_ATTRIBUTE._rm_attribute_name_` values.
+
+h|*1..1*
+|*logical_paths* ( +
+lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of language-dependent paths extracted from archetype. Paths obey the same syntax as physical_paths, but with node_ids replaced by their meanings from the terminology.
+
+h|*1..1*
+|*specialisation_depth* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]` +
+ +
+__post-condition__: `Result = terminology.specialisation_depth`
+a|Specialisation depth of this archetype; larger than 0 if this archetype has a parent. Derived from terminology.specialisation_depth.
+
+h|*1..1*
+|*is_specialised* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__post-condition__: `Result implies parent_archetype_hrid /= Void`
+a|True if this archetype is a specialisation of another.
+
+h|*Invariants*
+2+a|__Invariant_concept_valid__: `terminology.has_term_code (concept_code)`
+
+h|
+2+a|__Invariant_specialisation_validity__: `is_specialised implies specialisation_depth > 0`
+|===

@@ -1,0 +1,23 @@
+title: DV_QUANTITY
+type: object
+allOf:
+  - $ref: ../data_types/DvAmount.yaml
+required:
+  - magnitude
+  - units
+properties:
+  _type:
+    type: string
+    default: DV_QUANTITY
+  magnitude:
+    type: number
+  precision:
+    type: integer
+  units:
+    type: string
+  units_system:
+    type: string
+  units_display_name:
+    type: string
+x-discriminator-value: DV_QUANTITY
+

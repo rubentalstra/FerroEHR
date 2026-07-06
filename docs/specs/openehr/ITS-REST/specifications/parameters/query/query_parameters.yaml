@@ -1,0 +1,8 @@
+name: query_parameters
+in: query
+description: |
+  Query parameters (can appear multiple times).
+style: form
+explode: true
+schema:
+  $ref: ../../schemas/query/QueryParameters.yaml

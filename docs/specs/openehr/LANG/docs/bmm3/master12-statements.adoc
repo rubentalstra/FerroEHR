@@ -1,0 +1,150 @@
+= Statements
+
+== Overview
+
+BMM provides meta-model elements for defining the _body_ of a routine, consisting of _statements_. This facility is not needed for achieving the original purpose of BMM, i.e. a computable in-memory representation of a model at the interface level (classes, types and signatures), rather it provides a basis for representing program logic, such as function definitions. 
+
+BMM statements are formalised using the classes `BMM_STATEMENT_ITEM`, `BMM_STATEMENT_BLOCK` and `BMM_STATEMENT` and various descendant types, as shown in the UML view below.
+
+[.text-center]
+.Features for routine definition
+image::{uml_diagrams_uri}/LANG-bmm3.statement.svg[id=LANG-statement, align="center"]
+
+The use of the three-class hierarchy pattern allows a Routine `_body_` to be a simple statement or a _block_, containing statements and/or more blocks. The class `BMM_STATEMENT` is abstract, allowing specific statement meta-models to be developed whose 'statement' meta-types inherit from this class. A number of common types are included by default, and are described below.
+
+This facility is primarily provided to support the definition of higher-level languages by embedding them in the outer BMM meta-model.
+
+== Variable Declaration
+
+Writable variables are declared using a variable declaration (`BMM_DECLARATION`). This may be understood as the creation of an instance of the relevant meta-type, i.e. of `EL_WRITABLE_VARIABLE`, that will represent the variable for all subsequent uses in the program text.
+
+== Assignment
+
+A BMM assignment is the same concept as found in most frame-based programming languages, and provides a meta-model entity to represent a writable target (variable or property) being assigned to from a source, which is any expression of the same evaluation type. Type checking is thus based on a comparison of `_definition.type_` of the target and `_eval_type_()` of the source.
+
+The following example shows a simple assignment in the definition of the function `_position_`.
+
+[source,typescript]
+----
+class Simple_bank_account
+
+feature -- Definitions
+
+    overdraft_limit: Decimal = 250;
+
+feature -- State
+
+    balance: Decimal;
+
+feature -- Interface
+
+    position: Decimal {
+        Result := balance + overdraft_limit
+    }
+
+invariant
+    Solvent: position >= 0.0
+----
+
+The BMM meta-model for this statement is shown below.
+
+[.text-center]
+.Assignment to function Result
+image::{diagrams_uri}/bmm_assignment.svg[id=bmm_assignment, align="center"]
+
+== Procedure Call
+
+A procedure call is represented in BMM by the meta-type `BMM_PROCEDURE_CALL`, which refers to an instance of `EL_PROCEDURE_AGENT`, the same way that a function call is represented in terms of an `EL_FUNCTION_AGENT`. The effect of a procedure call is to cause an external action to be performed, such as display something on the screen, write to a database etc.
+
+In the following example, the procedure `_put_()` is called from the `_deposit_()` and `_withdraw_()` functions in the class `Account_access`.
+
+[source,typescript]
+----
+class Simple_bank_account
+
+feature -- Modification
+
+    put (val: Decimal)
+        precondition
+            valid_amount: val + overdraft_limit >= 0.0
+    {
+        balance := balance + val
+    }
+
+class Account_access
+
+feature -- Command
+
+    deposit (v: Decimal; ac: Simple_bank_account)
+        pre_condition
+            valid_amount: v > 0.0
+    {
+        ac.put (v);
+    }
+
+    withdraw (v: Decimal; ac: Simple_bank_account)
+        pre_condition
+            valid_amount: ac.overdraft_limit - v >= 0.0
+    {
+        ac.put (-v);
+    }
+
+----
+
+The BMM meta-model instance structure for the call is shown below.
+
+[.text-center]
+.Procedure call
+image::{diagrams_uri}/bmm_procedure_call.svg[id=bmm_procedure_call, align="center"]
+
+== Action Tables
+
+The BMM `statement` package includes the meta-classes `BMM_ACTION_TABLE` and `BMM_CONDITIONAL_ACTION`, which together provide a way of representing a decision table whose outputs are statements (rather than values, as in the case of the related Expression meta-classes `EL_DECISION_TABLE` and `EL_CONDITIONAL_EXPRESSION`). An action table corresponds closely to the standard constructs 'if/then/elseif' and the case statement.
+
+The following example shows the logic of a BMM Action table meta-type, within a procedure that generates appropriate alerts or alarms based on patient vital signs, using the standard if/then/else constrol structure.
+
+[source,typescript]
+----
+    check_vital_signs
+        if systolic_pressure.in_range ([critical_high])
+            raise_alarm ([emergency])
+
+        elseif systolic_pressure.in_range ([high]) and oxygen_sat.in_range([low])
+            call_staff
+        end
+    end
+----
+
+In a functional style syntax that directly mirrors the Action table meta-model, this may be written as:
+
+[source,typescript]
+----
+    check_vital_signs
+        ============================================================================
+        systolic_pressure.in_range ([critical_high]):     raise_alarm ([emergency]),
+        ----------------------------------------------------------------------------
+        systolic_pressure.in_range ([high]) and 
+        oxygen_sat.in_range([low]):                       call_staff
+        ============================================================================
+    end
+----
+
+== Assertions
+
+The BMM `statement` model includes a statement meta-type to represent the notion of an _assertion_ as a statement, typically expressed in syntax such as `assert (<boolean expression>)`. This kind of statement is understood as an executable instruction to check that the condition is true, and if not, to generate an exception of the appropriate type, assuming exceptions are available.
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}bmm_statement_item.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_statement_block.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_statement.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_simple_statement.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_declaration.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_assignment.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_procedure_call.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_assertion.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_action_table.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_action_decision_table.adoc[]
+

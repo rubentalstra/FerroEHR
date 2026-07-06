@@ -1,0 +1,14 @@
+=== VERSIONED_PARTY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*VERSIONED_PARTY*
+
+h|*Description*
+2+a|Static type formed by binding generic parameter of `VERSIONED_OBJECT<T>` to `PARTY`.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_versioned_object_class[VERSIONED_OBJECT^]`
+
+|===

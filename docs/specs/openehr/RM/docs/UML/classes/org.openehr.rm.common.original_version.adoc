@@ -1,0 +1,58 @@
+=== ORIGINAL_VERSION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ORIGINAL_VERSION<T>*
+
+h|*Description*
+2+a|A Version containing locally created content and optional attestations.
+
+h|*Inherit*
+2+|`<<_version_class,VERSION>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*uid*: `link:/releases/BASE/{base_release}/base_types.html#_object_version_id_class[OBJECT_VERSION_ID^]`
+a|Stored version of inheritance precursor.
+
+h|*0..1*
+|*preceding_version_uid*: `link:/releases/BASE/{base_release}/base_types.html#_object_version_id_class[OBJECT_VERSION_ID^]`
+a|Stored version of inheritance precursor.
+
+h|*0..1*
+|*other_input_version_uids*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_object_version_id_class[OBJECT_VERSION_ID^]>`
+a|Identifiers of other versions whose content was merged into this version, if any.
+
+h|*1..1*
+|*lifecycle_state*: `link:/releases/RM/{rm_release}/data_types.html#_dv_coded_text_class[DV_CODED_TEXT^]`
+a|Lifecycle state of the content item in this version; coded by openEHR vocabulary `version lifecycle state`.
+
+h|*0..1*
+|*attestations*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_attestation_class,ATTESTATION>>>`
+a|Set of attestations relating to this version.
+
+h|*0..1*
+|*data*: `T`
+a|Data content of this Version.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_merged* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this Version was created from more than just the preceding (checked out) version.
+
+h|*Invariants*
+2+a|__Attestations_valid__: `attestations /= Void implies not attestations.is_empty`
+
+h|
+2+a|__Is_merged_validity__: `other_input_version_ids = Void xor is_merged`
+
+h|
+2+a|__Other_input_version_uids_valid__: `other_input_version_uids /= Void implies not other_input_version_uids.is_empty`
+|===

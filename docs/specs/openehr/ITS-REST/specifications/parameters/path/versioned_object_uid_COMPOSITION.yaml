@@ -1,0 +1,9 @@
+name: versioned_object_uid
+in: path
+description: |
+  VERSIONED_COMPOSITION identifier taken from VERSIONED_COMPOSITION.uid.value.
+required: true
+style: simple
+schema:
+  type: string
+  example: '8849182c-82ad-4088-a07f-48ead4180515'

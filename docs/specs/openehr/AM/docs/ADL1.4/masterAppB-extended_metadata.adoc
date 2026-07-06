@@ -1,0 +1,77 @@
+[appendix]
+= Extended Meta-data Guide
+
+This section documents the use of the `description/other_details` meta-data subsection of an ADL 1.4 archetype. The meta-data items described here correspond to requirements discovered since the publication of the ADL and AOM 1.4 standards, and are designed to enable forward compatibility with ADL/AOM 2.
+
+They are divided into two groups. The first set consists of standardised items whose naming and rules should be followed, and which are intended to be implemented by any ADL 1.4 => ADL 2 conversion tool. The second set consists of items that have been used publicly by at least one organisation and should be considered either candidates for standardisation, or else as item names reserved from other use (i.e. to avoid future clashes).
+
+Note that since the syntax structure of the `other_details` subsection is a `Hash <String, String>`, all values are just strings. However, some internal syntax rules are imposed or suggested to enable smart parsing to generate more complex structures. An example is the use of the typical string for a person or organisation of the form "name <URN>", which enables email addresses, website URLs etc to be easily extracted.
+
+== Standardised Items
+
+The standard items are defined as follows:
+
+[cols="2,4,3",options="header"]
+|==================================================================================================
+|Item	                    |String syntax                                                         | Description
+
+|revision                   |{openehr_am_id}#_version_numbering[extended version string]           |Full version identifier to compensate for only major version numbering in ADL 1.4 identifiers.
+|build_uid                  |Guid string                                                           |Changed every save. See AOM2 spec, {openehr_am_aom2}#_machine_identifiers[Machine Identifiers section]
+|original_namespace         |reverse domain name	                                               |See AOM2 spec, {openehr_am_aom2}#_governance_meta_data[Governance Meta-data section].
+|original_publisher         |org name with optional trailing `<>` section containing a domain name or email address|See AOM2 spec, {openehr_am_aom2}#_governance_meta_data[Governance Meta-data section]
+|custodian_organisation	    |org name with optional trailing `<>` section containing a domain name or email address|See AOM2 spec, {openehr_am_aom2}#_governance_meta_data[Governance Meta-data section]
+|custodian_namespace        |reverse domain name	                                               |See AOM2 spec, {openehr_am_aom2}#_governance_meta_data[Governance Meta-data section]
+|licence                    |free string with optional trailing `<>` section containing a URL      |Licence under which this archetype is shared.
+|references                 |string with one LF (`\n`) terminated line for each reference. If a URL is supplied, in a reference it is _not_ `<>` delimited. Intervening LFs and leading and trailing whitespace may be added for clarity, to be stripped on conversion to ADL2.|Online or publication references relevant to the archetype.
+|ip_acknowledgements        |string with one LF (`\n`) terminated line for each reference. URLs may be interpolated in `<>` delimited or non-delimited form. Intervening LFs and leading and trailing whitespace may be added for clarity, to be stripped on conversion to ADL2.|Copyright and trademark notices.
+|==================================================================================================
+
+The following provides an example:
+
+[source, odin]
+--------
+other_details = <
+    ["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+    ["original_namespace"] = <"au.gov.nehta">
+    ["original_publisher"] = <"NEHTA CTI Team, National E-Health Transition Authority <clinicalinfo@nehta.gov.au>">
+    ["custodian_organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+    ["custodian_namespace"] = <"org.openehr">
+    ["build_uid"] = <"3076af96-e1dd-4f9b-abf2-23913fcf52b1">
+    ["revision"] = <"0.0.1-alpha">
+    ["references"] = <"
+        O'Brien E, Asmar R, Beilin L, et al. European Society of Hypertension recommendations for conventional, ambulatory and home blood pressure measurement. Journal of Hypertension. 2003; 21(5):821-848. Available from: http://www.ncbi.nlm.nih.gov/pubmed/12714851
+        Perloff D, Grim C, Flack J, Frohlich ED, Hill M, McDonald M, Morgenstern BZ. Human blood pressure determination by sphygmomanometry. Circulation. 1993; 88(5):2460. Available from: http://circ.ahajournals.org/cgi/reprint/88/5/2460
+    ">
+    ["ip_acknowledgements"] = <"
+        Content from LOINC® is copyright © 1995 Regenstrief Institute, Inc. and the LOINC Committee, and available at no cost under the license at http://loinc.org/terms-of-use.
+        Content from SNOMED CT® is copyright © 2007 IHTSDO <ihtsdo.org>.
+    ">
+>
+--------
+
+== Other Items
+
+The 'other' category is documented below.
+
+[cols="2,4,3",options="header"]
+|==================================================================================================
+|Item	                    |String syntax                                                         | Description
+
+|MD5-CAM-1.0.1              |MD5 32-bit hex number string                                          |Used by CKM and openEHR template tools.
+|current_contact            |person name with optional trailing `<>` section containing email address |CKM does nothing with this, except display.
+|review_date                |ISO 8601 compliant date string                                        |Indicate the next time the archetype should be reviewed. Used by CKM in display only.
+|responsible_organisation   |org name with optional trailing `<>` section containing a domain name |The name of the responsible organisation may be different to the custodian organisation. Used by CKM in display only.
+	
+|==================================================================================================
+
+The following provides an example:
+
+[source, odin]
+--------
+other_details = <
+    ["review_date"] = <"2014-06-10">
+    ["current_contact"] = <"Ian McNicoll, freshEHR Clinical Informatics Ltd <ian.mcnicoll@freshehr.com>">
+    ["responsible_organisation"] = <"Nehta">
+    ["MD5-CAM-1.0.1"] = <"C5016B71B55DBDCBCAA8531CC1A982E3">
+>
+--------
