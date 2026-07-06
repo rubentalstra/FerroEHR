@@ -7,7 +7,6 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
-[![EHRbase Logo](ehrbase.png)](ehrbase.png)
 
 > [!IMPORTANT]
 > **This is a hard fork of [`ehrbase/ehrbase`](https://github.com/ehrbase/ehrbase) — a from-scratch, pure-Rust reimplementation.**
