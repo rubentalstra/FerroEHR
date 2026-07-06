@@ -37,7 +37,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
   `ISO_639-1::en` lexes as `[Identifier("ISO_639"), Minus, TermCode("1::en")]`.
   In a predicate/matches context this then fails to parse (`SELECT o FROM OBSERVATION o[at0001, SNOMED-CT::1234|x|]` → parse error at `SNOMED`). The lexer's own doc comment (line 168) cites `'ISO_639-1::en'` as a valid `TERM_CODE`, and hyphenated terminology ids (SNOMED-CT, ICD10-AM) are extremely common. There is no standalone `:` token, so the trailing `::` also becomes an unrecoverable lex error in some inputs.
 - **Fix:** add `-` to both `TERM_CODE` character classes (and the parenthesised version part): `[a-zA-Z0-9._-]+(\([a-zA-Z0-9._-]+\))?::[a-zA-Z0-9._-]+(\|[^|\[\]]+\|)?`. Add a lexer test for `SNOMED-CT::1234` and `ISO_639-1::en`.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-02: `VERSION` standard-predicate form not parsed
 - **Severity:** major
@@ -45,7 +45,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/parser.rs:341-344` (`version_predicate = select!{ LatestVersion => Latest, AllVersions => All }`).
 - **Problem:** only the `LATEST_VERSION` and `ALL_VERSIONS` keyword alternatives are handled; the third alternative, `standardPredicate` (`objectPath COMPARISON pathPredicateOperand`), is missing. So a version predicate such as `VERSION v[commit_audit/time_committed > '2020-01-01']` or `VERSION v[uid/value=$vid]` fails to parse (confirmed: parse error at `commit_audit`). The AST already declares the target variant `VersionPredicate::Standard(Box<StandardPredicate>)` (`ast.rs:329-330`), so this is purely an unwired parser branch. ADR-008 makes `ALL_VERSIONS`/version querying a first-class capability, so this gap matters.
 - **Fix:** add the `standard` predicate parser (already built inside `path_parsers`) as a third alternative in `version_predicate`, mapping to `VersionPredicate::Standard`. Wire `path_parsers` output through so the `standard` parser is available at this call site.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-03: Integer-literal overflow silently coerced to `0` (`unwrap_or_default`)
 - **Severity:** major
@@ -53,7 +53,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/parser.rs:69-72` (`Token::Integer(s) => Primitive::Integer(s.parse().unwrap_or_default())`, likewise `Real`/`SciInteger`/`SciReal`); also `:314` (`TOP`) and `:476` (`LIMIT`/`OFFSET`).
 - **Problem:** `s.parse::<i64>().unwrap_or_default()` returns `0` when the literal does not fit `i64`, silently corrupting the query rather than reporting an error. Confirmed: `… WHERE c/x = 99999999999999999999999` parses to `Primitive(Integer(0))`. A comparison against `0` instead of the intended value is a silent, hard-to-diagnose wrong result. (`Real` overflow becomes `inf` via `f64::parse`, also silent.) `Primitive::Integer` is `i64`, which additionally can't represent AQL integers wider than 64 bits at all.
 - **Fix:** make lexeme→value conversion fallible and surface a parse error on overflow (or widen to `i128`/store the raw lexeme). At minimum, do not use `unwrap_or_default()` for a value that changes query semantics — return an error instead of `0`.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-04: AQL line comments (`--` COMMENT channel) not stripped
 - **Severity:** minor
@@ -61,7 +61,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/lexer.rs:43` (`#[logos(skip r"[ \t\r\n\f]+")]` — whitespace only) and `:152-154` (`--` → `DoubleDash`).
 - **Problem:** the grammar defines `--`-introduced line comments on a hidden channel; they should be skipped. The lexer has no comment rule, so `--` is always emitted as `DoubleDash`, and any real comment breaks the token stream. Confirmed: `SELECT c -- comment\nFROM COMPOSITION c` → parse error at `DoubleDash`. (Note the grammar's `SYM_DOUBLE_DASH?` before EOF is nearly unreachable in ANTLR because `COMMENT` also matches a bare `--\n`/`--<EOF>`; the practical requirement is that `--` starts a comment.)
 - **Fix:** add a `logos` skip/callback for `-- …` to end-of-line (and bare `--` at EOL/EOF) matching the `COMMENT` rule; keep `DoubleDash` only for the (rare) inline terminator case if needed, or drop it.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-05: Reserved function-name words lex as identifiers (over-permissive)
 - **Severity:** minor
@@ -69,7 +69,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/lexer.rs:214-215` (everything not a dedicated keyword falls through to `Identifier`); the function-id group is intentionally not tokenized (module note lines 8-14).
 - **Problem:** in ANTLR these names lex as `*_FUNCTION_ID` tokens and thus cannot be used as variable/attribute identifiers; here they lex as `Identifier`, so `SELECT length FROM EHR length` parses (confirmed: no error), treating `length` as a class variable — which the grammar/spec forbid. This is a permissiveness divergence (accepts queries the spec rejects). Design trade-off is documented, but it does change the reserved-word envelope.
 - **Fix:** either add these as case-insensitive keyword tokens that the `functionCall` `name` parser accepts (matching the grammar), or accept the divergence with a `// PORT NOTE:` explicitly recording that single-row function names are not reserved as identifiers. Prefer the former for conformance.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-06: `DATE`/`TIME`/`DATETIME` literals collapsed to `Primitive::String` — no typed AST variant
 - **Severity:** minor
@@ -77,7 +77,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/lexer.rs:15-19` (PORT NOTE: temporals lexed as `String`); `ast.rs:437-450` (`Primitive` has `String/Integer/Real/Boolean/Null` only — no `Date/Time/DateTime`).
 - **Problem:** the grammar produces distinct temporal tokens and `primitive` has distinct temporal alternatives; the spec states the *grammar* classifies extended-ISO literals as date/time (vs. basic-format strings). The implementation lexes all quoted values as `String` and the AST has no temporal variant, so the syntactic distinction the grammar makes is not preserved anywhere — even as a deferred-typing placeholder. Downstream (typing from path context per the §Dates and Times NOTE) is still workable, but the parser cannot record "the grammar would have tagged this DATE".
 - **Fix:** acceptable as a deferral, but add `Primitive::{Date,Time,DateTime}` (or a `Temporal(raw)` variant) and either lex the ISO forms or re-classify quoted values at parse time, so the semantic pass has the grammar's distinction available. At minimum document that all temporal literals are indistinguishable from strings in this AST.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-07: Archetype-HRID `-rc`/`-alpha` version suffixes and namespace hyphens not lexed
 - **Severity:** minor
@@ -85,7 +85,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/lexer.rs:171-175` (`ArchetypeHrid` regex, version tail `\.v[0-9]+(\.[0-9]+)*`, namespace prefix `[a-zA-Z][a-zA-Z0-9_.]*::`).
 - **Problem:** the version tail regex stops at digits/dots, so `…v1.0.0-rc.2` or `…v2-alpha` won't lex as a single `ArchetypeHrid` (the `-rc`/`-alpha` becomes `Minus`/`Identifier`). The namespace prefix class omits `-`, so a hyphenated namespace won't be captured. Both are grammar-legal.
 - **Fix:** extend the version tail to `(\.[0-9]+)*((-rc|-alpha)(\.[0-9]+)?)?` and add `-` to the namespace class, matching `VERSION_ID` and `LABEL`.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-08: Recursive unary minus in `numericPrimitive` not accepted
 - **Severity:** minor
@@ -93,7 +93,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/parser.rs:75-79` (`negative = just(Token::Minus).ignore_then(unsigned)` — a single leading minus over an unsigned literal only).
 - **Problem:** the grammar allows `SYM_MINUS numericPrimitive` recursively (e.g. `- - 5`); the implementation accepts exactly one minus. Confirmed: `… = - - 5` → parse error at the second `Minus`. Edge case, but a strict grammar-coverage gap.
 - **Fix:** make the minus rule recursive (`just(Minus).repeated().foldr(unsigned, negate)`), or explicitly document the single-minus restriction with a `// PORT NOTE:`.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-09: String literals not unescaped — AST holds raw escaped text
 - **Severity:** minor
@@ -101,7 +101,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/parser.rs:58-65` (`unquote` strips only the surrounding quotes) and `ast.rs:438-441` (String doc: "unescaping … deferred; raw slice sans surrounding quotes").
 - **Problem:** escape sequences are left verbatim in the AST string, so `'a\nb'` yields the four characters `a \ n b`, and a `\'`-escaped quote inside a single-quoted string is retained as `\'`. This is a documented deferral, but any consumer comparing string values (predicate matching, `LIKE` operands, `terminology()` args) sees un-normalised text.
 - **Fix:** unescape per `ESCAPE_SEQ`/`OCTAL_ESC`/`UTF8CHAR` when building `Primitive::String`/name/like/terminology operands (or explicitly define the boundary that unescaping happens in the semantic pass, and ensure that pass exists before the IR consumes strings).
-- [ ] fixed
+- [x] fixed
 
 ### F-08-10: `PathPredicate::Standard` is unreachable; standard predicates classified as node predicates
 - **Severity:** minor
@@ -109,7 +109,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/parser.rs:153-180` — `node` includes `standard` as one of its atoms (`node_atom … .or(standard …)`), and the `predicate` definition tries `archetype`, then `node`, then `standard`. Because `node` already matches the bare `objectPath COMPARISON operand` form, the trailing `PathPredicate::Standard` alternative (`:178`) is never reached.
 - **Problem:** a plain standard predicate such as `[ehr_id/value='123']` is parsed as `PathPredicate::Node(NodePredicate::Standard(..))` rather than `PathPredicate::Standard(..)`. Information is preserved (same path/op/operand), but the grammar's three-way classification is flattened and the `PathPredicate::Standard` AST variant is dead code. Downstream code that pattern-matches on `PathPredicate::Standard` (expecting the grammar's split) will silently never fire.
 - **Fix:** either reorder so a bare standard comparison (no `AND`/`OR`, no code) is classified as `PathPredicate::Standard` (matching the grammar), or remove `PathPredicate::Standard` and document that standard predicates are represented as `Node(NodePredicate::Standard)`. Pick one and make the AST honest.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-11: `SCI_INTEGER` mapped to `Primitive::Real` (integer-ness lost)
 - **Severity:** minor
@@ -117,7 +117,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/parser.rs:71-72` (`Token::SciInteger(s) => Primitive::Real(...)`).
 - **Problem:** `1e10` (a `SCI_INTEGER` in the grammar) becomes `Primitive::Real`, losing the integer classification the grammar assigns. Minor because scientific notation denotes a magnitude either way, but it is a strict-fidelity divergence with no `SciInteger` AST variant.
 - **Fix:** either add distinct handling (parse `SciInteger` to `Primitive::Integer` when it is integral) or record a `// PORT NOTE:` that scientific literals are always `Real`.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-12: Grammar/spec mismatches faithfully inherited (informational)
 - **Severity:** info
@@ -126,7 +126,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Problem:** two spec-vs-grammar tensions where the implementation correctly follows the *grammar* (the oracle), worth recording so they are not "fixed" wrongly later:
   (a) The prose lists `CONTAINS` as a string function, but in the lexer `CONTAINS` is tokenized before `STRING_FUNCTION_ID`, so `contains(...)` can never be a string-function call — the implementation likewise lexes `contains` as the `Contains` keyword, matching ANTLR. (b) `master03-syntax.adoc` TERMINOLOGY Example 5 uses a nested `CONCAT(...)` as a `TERMINOLOGY` argument, but `terminologyFunction : TERMINOLOGY '(' STRING ',' STRING ',' STRING ')'` allows only three `STRING`s; the implementation correctly rejects the nested-function arg. Both are grammar limits, not implementation bugs.
 - **Fix:** none required; keep as documented `// PORT NOTE:` if these ever surface as apparent "failures" against spec prose examples.
-- [ ] fixed
+- [x] fixed
 
 ### F-08-13: UTF BOM not skipped
 - **Severity:** info
@@ -134,7 +134,7 @@ Severity counts: **critical 0 · major 3 · minor 8 · info 4**.
 - **Code:** `crates/openehr-query/src/lexer.rs:42-43` (skips only `[ \t\r\n\f]+`).
 - **Problem:** a leading UTF-8/16/32 BOM is not skipped and would cause a lex error on the first token. Very low impact (callers normally strip BOMs), but a strict grammar-coverage omission.
 - **Fix:** add a `logos` skip for `\u{FEFF}` (and the byte BOM if inputs are ever non-UTF-8-normalised).
-- [ ] fixed
+- [x] fixed
 
 ### F-08-14: Semantic-only constraints not enforced (informational, likely out of scope)
 - **Severity:** info
