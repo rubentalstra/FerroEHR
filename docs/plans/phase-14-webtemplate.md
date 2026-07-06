@@ -64,14 +64,36 @@ bindings, inputs); `moka` cache keyed by template id; WebTemplate JSON export
   pairs (SDK + Better + service corpora); insta flat goldens; per-type key
   assertions; 4 HTTP endpoint tests (mock backend) incl. a full HTTP round-trip.
 
-### PR-B scope boundaries (recorded as `TODO(port)`)
+### Completeness (after PR-C + the leftover-closure pass)
 
-- `to_flat`/`from_flat` cover the core leaf + structural set; `INSTRUCTION.activities`
-  /`ACTIVITY`, `ACTION.ism_transition` synthesis, archetyped `other_context`,
-  feeder-audit / links / term-mappings / reference-range metadata, and STRUCTURED
-  (structSDT) are deferred (P17). Reverse output is schema-valid RM for 24/37 of
-  the corpus today (the remainder need the above ENTRY/multi-entry synthesis);
-  the FLAT→RM→FLAT round-trip is stable for all 37.
+- **STRUCTURED (structSDT) done** (PR-C): the pure `flat ⇄ structured` nesting
+  transform composed with FLAT; `wt.structured+json` wired. STRUCTURED round-trip
+  37/37 stable; RM-validation **37/37**.
+- **FLAT reverse output is schema-valid RM 37/37** (PR-C closed the earlier 24/37
+  gap: `INSTRUCTION`/`ACTIVITY`/`INTERVAL_EVENT`/`ISM_TRANSITION` structural
+  completion synthesized from the WebTemplate in `flat/graph.rs`; DV_MULTIMEDIA/
+  DV_PARSABLE mappers). Full `ctx/` coverage both directions.
+- **WebTemplate `termBindings` (node + coded-value) + `compactMultipleCodedTexts`
+  done** (Better parity). **opt14 tolerates real-world OPT laxity** (omitted
+  mandatory node_id/occurrences/purpose default leniently) → 151/154 build.
+
+### Deferred follow-ups (scoped, phase-blocked — tracked, NOT stubs)
+
+Accepted as scoped follow-ups (2026-07-06); each depends on infrastructure not
+yet built or is a niche trade-off — none is a shortcut in shipped code:
+
+- **WebTemplate required-RM-attribute synthesis** (structural RM attributes an OPT
+  omits) → needs the **BMM RM model** (P16 `emit-rm-model`). Note in
+  `webtemplate/builder.rs`.
+- **Coded-label rubric lookup** for non-`local` terminologies → needs an
+  **openehr-term bundle loader** (not built). Note in `webtemplate/inputs.rs`.
+- **WebTemplate `defaultValue`** (from `CPrimitive.assumed_value`) +
+  **`otherTerminologies`** — small/niche, doable without new infra.
+- **3 Better edge fixtures** (Apgar_1 / Request_for_Pancreas / test_statuses)
+  carry incomplete embedded RM values the strict (correct) RM deserializer
+  rejects; the 91-file real corpus all parses. Making opt14's embedded-RM slots
+  lenient `Value` (→154/154) trades away typing there; deferred deliberately —
+  the shared RM parser was NOT weakened.
 
 ## Decisions made this phase
 
