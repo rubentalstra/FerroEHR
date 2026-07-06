@@ -57,7 +57,7 @@ on 2026-07-03 (the versions available as clean `*.bmm.json`).
 | TERM (Terminology) | 3.1.0 | STABLE | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
 | ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL) | STABLE | canonical XML in `openehr-its` (hand-written, `quick-xml`); namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
 | ITS-REST (REST API) | 1.0.3 | STABLE | ADMIN API is dev-branch only |
-| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/` |
+| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
 | ITS-BMM (BMM meta-model, JSON) | per-component (see above) | STABLE per-schema | **the codegen input**; vendored `*.bmm.json` at `crates/openehr-codegen/vendor/bmm/` with provenance |
 
 **Spec text vendored in-repo:** the normative documentation for every
@@ -68,10 +68,11 @@ these same versions (exact commits in each component's `PROVENANCE.md` and in
 the script). It is the read/conformance oracle; codegen still consumes only
 `crates/openehr-codegen/vendor/**` and `crates/openehr-its/schemas/**`.
 
-**Parity note:** these are the *latest* spec versions; stock EHRbase/`archie`
-emits an RM 1.1.0-era wire format. Track this divergence as a Stage-1 REST
-parity consideration — the fidelity gate (EHRbase canonical-JSON corpus
-round-trip) is where it will surface.
+**RM-version divergence note:** these are the *latest* spec versions; stock
+EHRbase/`archie` emits an RM 1.1.0-era wire format. Track this divergence as a
+Stage-1 consideration — the fidelity gate (canonical-JSON corpus round-trip) is
+where it surfaces. (Per **ADR-008** the acceptance instrument is the openEHR CNF
+conformance schedule, **not** an EHRbase parity harness; EHRbase is prior art.)
 
 See `docs/ADRs/ADR-004-spec-driven-codegen.md` for how generation works and
 `PORT_MASTER_PLAN.md` Section 7 for the component scope.
@@ -89,10 +90,11 @@ plan was authored against. Both are recorded so provenance is unambiguous:
 
 `PORT_MASTER_PLAN.md` Section 3 was written against v2.31.0. By the time this
 fork's Phase 0 reorganization ran, upstream had advanced to v2.33.0, and that
-is the tree actually `git mv`'d into the Cargo workspace. Treat v2.33.0 as the
-operative behavioural baseline for parity testing; the plan's narrative
-references to v2.31.0 describe the reasoning at authoring time, not a
-different import.
+is the tree actually `git mv`'d into the Cargo workspace. (Per **ADR-008** the
+in-tree EHRbase Java was later removed and behaviour-parity was retired for
+openEHR CNF conformance; EHRbase v2.33.0 remains the *prior-art* reference, not
+a parity oracle.) The plan's narrative references to v2.31.0 describe the
+reasoning at authoring time, not a different import.
 
 `reference/v1` is a read-only git reference pinned at v0.32.0, the last tag
 before the v1→v2 architectural break. It is consulted only during the Stage 2

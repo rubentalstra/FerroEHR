@@ -1,6 +1,11 @@
 # ADR-005: Spec-driven code generation of the ITS surfaces (XML + REST)
 
-- **Status:** accepted
+- **Status:** accepted (current). The XML/REST codegen decisions stand; the
+  "wire parity with stock EHRbase" / P18 acceptance framing in the Context and
+  Consequences was superseded by **ADR-008** (openEHR CNF conformance + the
+  fidelity round-trip gates, which are now green — the "not yet wired" caveats
+  are historical). `ehrbase-rest` implements the generated traits with our own
+  idiomatic logic (ADR-006/008), not "ported EHRbase Java logic".
 - **Date:** 2026-07-04
 - **Extends:** ADR-004 (spec-driven codegen of the RM/BASE/AM crates from BMM).
 - **Supersedes (in part):** the "ITS-XML is hand-written, the schema is a

@@ -1,7 +1,24 @@
 # ADR-002: Canonical-JSON `_type` via self-tagging TypeTag fields and untagged closed enums
 
-- **Status:** accepted
+- **Status:** **superseded by ADR-004** (mechanism) and **ADR-008** (acceptance
+  framing). The requirement — `_type` self-tagging + untagged closed enums on the
+  wire — stands; the `TypeTag` field mechanism does not.
 - **Date:** 2026-07-02
+
+> ## ⚠️ AMENDMENT (2026-07-04/05, ADR-004 + ADR-008): TypeTag → `#[derive(OpenEhrType)]`; parity retired
+>
+> The spec crates are now **generated** from BMM (ADR-004), so the hand-authored
+> `TypeTag<Self>` first-field ZST described below **no longer exists** (`grep -r
+> TypeTag crates/` is empty). Canonical `_type` (de)serialization is supplied by
+> `#[derive(OpenEhrType)]` (`openehr-derive`) on the generated types — a manual
+> `Serialize` that emits `_type` first and a tolerant `Deserialize` that validates
+> it, exactly the behaviour this ADR specified. Untagged closed enums dispatched
+> on the payload's own `_type` (Decision §2) remain correct and are what the
+> emitter produces. Also: `openehr-foundation` was folded into `openehr-base`
+> (so `openehr_foundation::serde_support` is now in `openehr-base`), the schema
+> path is `crates/openehr-its/schemas/json/openehr_rm_1.1.0_all.json`, and the
+> "behavioural parity with EHRbase (P18)" acceptance bar was retired by ADR-008
+> for openEHR CNF conformance + the fidelity round-trip gates.
 
 ## Context
 

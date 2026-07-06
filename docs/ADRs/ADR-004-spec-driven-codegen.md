@@ -1,6 +1,10 @@
 # ADR-004: Spec-driven code generation of the openEHR crates from BMM
 
-- **Status:** accepted
+- **Status:** accepted (current). The codegen decisions stand; the
+  EHRbase-*parity* framing in the Context/Consequences below (Stage-1 REST
+  parity, "the actual EHRbase port") was superseded by **ADR-008** — the
+  acceptance target is openEHR CNF conformance, and the fidelity gates the
+  Consequences call "currently broken" are now green.
 - **Date:** 2026-07-03
 - **Supersedes (in part):** ADR-001 (spec-transcription shapes) and ADR-002
   (canonical-JSON self-tagging) as *hand-authoring conventions* — their intent
