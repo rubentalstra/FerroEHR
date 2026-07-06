@@ -102,7 +102,9 @@ async fn run(
         }
         "definition_template_adl2_upload" => {
             let p = params::build::<DefinitionTemplateAdl2UploadParams>(&parts.path, q, h)?;
-            // TODO(port): P12 — parse OPT XML into the template model.
+            // PORT NOTE: ADL2/OPT2 ingestion is deferred (optional for CNF, untested;
+            // its upload wire is ADL2 *text* needing a cADL parser — a later phase).
+            // The backend 501s adl2_upload, so the body is passed through untyped.
             let body = negotiate::lenient_value(&parts.body)?;
             Ok(negotiate::respond(
                 h,

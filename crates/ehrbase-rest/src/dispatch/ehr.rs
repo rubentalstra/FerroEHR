@@ -327,8 +327,11 @@ async fn run(
         }
         "contribution_create" => {
             let p = params::build::<ContributionCreateParams>(&parts.path, q, h)?;
-            // A CONTRIBUTION's wire DTO differs from the RM type; JSON only for now.
-            // TODO(port): P12 — typed XML contribution bodies.
+            // PORT NOTE: a CONTRIBUTION commit is a wrapper DTO (a version set +
+            // audit), not a single canonical RM value with a defined canonical-XML
+            // shape — so it is accepted as JSON only (matches the scope boundary for
+            // VERSION-family/wrapper payloads; typed CONTRIBUTION XML would need a
+            // dedicated wrapper codec, not warranted for this rare path).
             let body = negotiate::json_value(h, &parts.body)?;
             Ok(negotiate::respond(
                 h,
