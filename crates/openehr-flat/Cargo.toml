@@ -21,6 +21,7 @@ indexmap = { workspace = true }
 moka = { workspace = true }
 thiserror = { workspace = true }
 jiff = { workspace = true }
+regex = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true }
