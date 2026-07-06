@@ -100,6 +100,15 @@ fn form_urlencoded_pairs(query: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+/// Look up a single (percent-decoded) query-string parameter by key.
+pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
+    let query = query?;
+    form_urlencoded_pairs(query)
+        .into_iter()
+        .find(|(k, _)| k == key)
+        .map(|(_, v)| v)
+}
+
 fn percent_decode(s: &str) -> String {
     let bytes = s.replace('+', " ");
     let bytes = bytes.as_bytes();

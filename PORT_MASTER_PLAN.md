@@ -319,7 +319,7 @@ This is the pure-Rust spec build. Full detail is in `docs/research/02-openehr-sp
 
 ### 7.4 FLAT / STRUCTURED / Web Template (vendor formats)
 
-These are Better/Marand conventions being retro-standardized as SDT (development). Target Better's `web-template` semantics (`github.com/better-care/web-template` + `web-template-tests`), and accept EHRbase quirks (Better's `|unit` vs SDT's `|units`). MIME types: `application/openehr.wt+json`, `application/openehr.wt.flat+json`, `application/openehr.wt.structured+json`.
+These are Better/Marand conventions being retro-standardized as SDT (development). Target Better's `web-template` semantics (`github.com/better-care/web-template` + `web-template-tests`). Note: DV_QUANTITY uses `|unit` (**singular**) in both Better and EHRbase — the earlier "`|unit` vs `|units`" note was inaccurate; genuine Better extras are `|unit_system`/`|unit_display_name`, behind the `ehrbase-quirks` flag. WebTemplate/FLAT/STRUCTURED are a **Better/EHRbase interop layer, NOT CNF-conformance-gated** (CNF tests only OPT provisioning + canonical XML/JSON). MIME types: `application/openehr.wt+json`, `application/openehr.wt.flat+json`, `application/openehr.wt.structured+json`.
 
 ---
 

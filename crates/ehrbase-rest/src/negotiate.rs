@@ -37,6 +37,89 @@ pub(crate) enum Format {
 
 const APPLICATION_JSON: &str = "application/json";
 const APPLICATION_XML: &str = "application/xml";
+/// Better `web-template` JSON media type (interop format, `openehr-flat`).
+const APPLICATION_WT_JSON: &str = "application/openehr.wt+json";
+/// Better `web-template` FLAT (simSDT) JSON media type (`openehr-flat`).
+const APPLICATION_WT_FLAT_JSON: &str = "application/openehr.wt.flat+json";
+/// Better `web-template` STRUCTURED (structSDT) JSON media type (`openehr-flat`).
+const APPLICATION_WT_STRUCTURED_JSON: &str = "application/openehr.wt.structured+json";
+
+/// Whether the client explicitly asks for the Better `web-template` JSON format
+/// on `Accept` (`application/openehr.wt+json`).
+pub(crate) fn wants_web_template(headers: &HeaderMap) -> bool {
+    header_str(headers, header::ACCEPT).is_some_and(|accept| {
+        accept
+            .split(',')
+            .any(|r| r.trim().starts_with(APPLICATION_WT_JSON))
+    })
+}
+
+/// Whether the client asks for the FLAT (simSDT) format on `Accept`
+/// (`application/openehr.wt.flat+json`).
+pub(crate) fn wants_flat(headers: &HeaderMap) -> bool {
+    header_str(headers, header::ACCEPT).is_some_and(|accept| {
+        accept
+            .split(',')
+            .any(|r| r.trim().starts_with(APPLICATION_WT_FLAT_JSON))
+    })
+}
+
+/// Whether the request body is a FLAT (simSDT) composition
+/// (`Content-Type: application/openehr.wt.flat+json`).
+pub(crate) fn is_flat_body(headers: &HeaderMap) -> bool {
+    header_str(headers, header::CONTENT_TYPE)
+        .is_some_and(|ct| ct.trim().starts_with(APPLICATION_WT_FLAT_JSON))
+}
+
+/// Whether the client asks for the STRUCTURED (structSDT) format on `Accept`
+/// (`application/openehr.wt.structured+json`).
+pub(crate) fn wants_structured(headers: &HeaderMap) -> bool {
+    header_str(headers, header::ACCEPT).is_some_and(|accept| {
+        accept
+            .split(',')
+            .any(|r| r.trim().starts_with(APPLICATION_WT_STRUCTURED_JSON))
+    })
+}
+
+/// Whether the request body is a STRUCTURED (structSDT) composition
+/// (`Content-Type: application/openehr.wt.structured+json`).
+pub(crate) fn is_structured_body(headers: &HeaderMap) -> bool {
+    header_str(headers, header::CONTENT_TYPE)
+        .is_some_and(|ct| ct.trim().starts_with(APPLICATION_WT_STRUCTURED_JSON))
+}
+
+/// Serve a pre-serialized STRUCTURED (structSDT) composition as
+/// `application/openehr.wt.structured+json`.
+pub(crate) fn structured_json_body(status: StatusCode, json: String) -> Response {
+    let mut resp = (status, json).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_WT_STRUCTURED_JSON),
+    );
+    resp
+}
+
+/// Serve a pre-serialized `WebTemplate` JSON document as
+/// `application/openehr.wt+json`.
+pub(crate) fn wt_json_body(status: StatusCode, json: String) -> Response {
+    let mut resp = (status, json).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_WT_JSON),
+    );
+    resp
+}
+
+/// Serve a pre-serialized FLAT (simSDT) composition as
+/// `application/openehr.wt.flat+json`.
+pub(crate) fn flat_json_body(status: StatusCode, json: String) -> Response {
+    let mut resp = (status, json).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_WT_FLAT_JSON),
+    );
+    resp
+}
 
 fn is_json(media: &str) -> bool {
     let m = media.trim();
@@ -111,8 +194,9 @@ pub(crate) fn text_body(body: &Bytes) -> Result<String, ApiError> {
 /// Decode a body the contract types as `Value` but which may arrive as another
 /// text format (e.g. an ADL/OPT XML template upload): parsed as JSON when it is
 /// JSON, otherwise wrapped as a JSON string so the (untyped) handler still
-/// receives the bytes.
-// TODO(port): P12 — parse OPT 1.4 XML template uploads into the template model.
+/// receives the bytes. The DEFINITION service then parses the OPT 1.4 XML into
+/// `openehr_its::opt14` (P13 template ingestion), so no template-model parsing
+/// belongs here — this is only the transport decode.
 pub(crate) fn lenient_value(body: &Bytes) -> Result<serde_json::Value, ApiError> {
     if let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) {
         return Ok(v);
@@ -323,6 +407,23 @@ mod tests {
             response_format(&headers(&[("accept", "text/xml")])),
             Format::Xml
         );
+    }
+
+    #[test]
+    fn detects_web_template_accept() {
+        assert!(wants_web_template(&headers(&[(
+            "accept",
+            "application/openehr.wt+json"
+        )])));
+        assert!(wants_web_template(&headers(&[(
+            "accept",
+            "application/xml, application/openehr.wt+json"
+        )])));
+        assert!(!wants_web_template(&headers(&[(
+            "accept",
+            "application/xml"
+        )])));
+        assert!(!wants_web_template(&HeaderMap::new()));
     }
 
     #[test]

@@ -8,6 +8,8 @@
 
 use std::sync::Arc;
 
+use openehr_flat::cache::WebTemplateCache;
+
 use crate::backend::{Backend, StubBackend};
 use crate::config::RestConfig;
 
@@ -22,6 +24,7 @@ pub struct AppState {
 struct Inner {
     config: RestConfig,
     backend: Arc<dyn Backend>,
+    web_templates: WebTemplateCache,
 }
 
 impl AppState {
@@ -37,7 +40,11 @@ impl AppState {
     #[must_use]
     pub fn with_backend(config: RestConfig, backend: Arc<dyn Backend>) -> Self {
         Self {
-            inner: Arc::new(Inner { config, backend }),
+            inner: Arc::new(Inner {
+                config,
+                backend,
+                web_templates: WebTemplateCache::default(),
+            }),
         }
     }
 
@@ -50,5 +57,10 @@ impl AppState {
     /// The service backend the HTTP dispatcher calls into.
     pub(crate) fn backend(&self) -> &dyn Backend {
         &*self.inner.backend
+    }
+
+    /// The built-`WebTemplate` cache (Better `wt+json`), keyed by template id.
+    pub(crate) fn web_templates(&self) -> &WebTemplateCache {
+        &self.inner.web_templates
     }
 }

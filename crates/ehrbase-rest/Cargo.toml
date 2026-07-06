@@ -13,6 +13,8 @@ publish = false
 # openEHR generated foundation: the domain model + the ITS-REST contract.
 openehr-rm = { path = "../openehr-rm" }
 openehr-its = { path = "../openehr-its" }
+# WebTemplate (Better wt+json) builder + cache for the ADL1.4 template endpoint.
+openehr-flat = { path = "../openehr-flat" }
 
 # Web framework & HTTP core.
 axum = { workspace = true }

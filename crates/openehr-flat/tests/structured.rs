@@ -1,0 +1,328 @@
+//! STRUCTURED (structSDT) `RM ⇄ STRUCTURED` converter tests.
+//!
+//! STRUCTURED composes the pure nesting transform
+//! ([`openehr_flat::flat_to_structured`] / [`openehr_flat::structured_to_flat`])
+//! with the FLAT converter, so the same `(composition, OPT)` corpus pairs used
+//! by `flat.rs` drive these gates:
+//!
+//! * **STRUCTURED → RM → STRUCTURED stable** — `to_structured` (s0) →
+//!   `from_structured` (rm1) → `to_structured` (s1); assert `s0 == s1`, and
+//!   count how many `rm1` deserialise as an `openehr-rm` `Composition`.
+//! * **flat ⇄ structured exact inverses** — `flat_to_structured` and
+//!   `structured_to_flat` round-trip the vendored flat maps exactly at the
+//!   structured level.
+//! * **cross-format consistency** — `to_structured` and `to_flat` on the same
+//!   composition carry identical leaf values (index-normalised).
+//! * **insta goldens** — deterministic structured snapshots.
+#![allow(clippy::doc_markdown)]
+
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
+
+use openehr_flat::{
+    WebTemplate, build_web_template, flat_to_structured, from_structured, structured_to_flat,
+    to_flat, to_structured,
+};
+use openehr_its::opt14;
+use serde_json::Value;
+
+fn manifest_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+}
+
+fn composition_dir() -> PathBuf {
+    manifest_dir().join("../openehr-its/tests/vendor/openehr_sdk/composition/canonical_json")
+}
+
+fn opt_dirs() -> Vec<PathBuf> {
+    vec![
+        manifest_dir().join("tests/fixtures/sdk"),
+        manifest_dir().join("tests/fixtures/better"),
+        manifest_dir().join("../ehrbase/tests/resources/service"),
+    ]
+}
+
+fn opt_files(dir: &Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return out;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            out.extend(opt_files(&path));
+        } else if path.extension().is_some_and(|e| e == "opt") {
+            out.push(path);
+        }
+    }
+    out
+}
+
+fn web_templates() -> BTreeMap<String, WebTemplate> {
+    let mut out = BTreeMap::new();
+    for dir in opt_dirs() {
+        for path in opt_files(&dir) {
+            let Ok(xml) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let Ok(opt) = opt14::from_xml(&xml) else {
+                continue;
+            };
+            if let Ok(wt) = build_web_template(&opt) {
+                out.entry(wt.template_id.clone()).or_insert(wt);
+            }
+        }
+    }
+    out
+}
+
+fn compositions() -> Vec<(String, String, Value)> {
+    let mut out = Vec::new();
+    let Ok(entries) = std::fs::read_dir(composition_dir()) else {
+        return out;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().is_none_or(|e| e != "json") {
+            continue;
+        }
+        let Ok(text) = std::fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
+        if value.get("_type").and_then(Value::as_str) != Some("COMPOSITION") {
+            continue;
+        }
+        let Some(tid) = value
+            .pointer("/archetype_details/template_id/value")
+            .and_then(Value::as_str)
+        else {
+            continue;
+        };
+        let Some(name) = path.file_name().map(|n| n.to_string_lossy().into_owned()) else {
+            continue;
+        };
+        out.push((name, tid.to_owned(), value));
+    }
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    out
+}
+
+fn to_map(m: &indexmap::IndexMap<String, Value>) -> serde_json::Map<String, Value> {
+    m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+}
+
+/// Drop every `:index` from a flat key, leaving path + `|suffix`.
+fn strip_indices(key: &str) -> String {
+    let mut out = String::with_capacity(key.len());
+    let mut skipping = false;
+    for c in key.chars() {
+        match c {
+            ':' => skipping = true,
+            '/' | '|' => {
+                skipping = false;
+                out.push(c);
+            }
+            c if skipping && c.is_ascii_digit() => {}
+            c => {
+                skipping = false;
+                out.push(c);
+            }
+        }
+    }
+    out
+}
+
+/// A flat map keyed by index-stripped key (a value-set comparable across index
+/// conventions). Collisions (a genuinely repeating leaf) keep the last value —
+/// acceptable for the cross-format value check.
+fn index_normalised(map: &serde_json::Map<String, Value>) -> BTreeMap<String, Value> {
+    map.iter()
+        .map(|(k, v)| (strip_indices(k), v.clone()))
+        .collect()
+}
+
+// ── STRUCTURED round-trip + RM validation ─────────────────────────────────────
+
+#[test]
+fn structured_roundtrip_and_rm_validation() {
+    let wts = web_templates();
+    let comps = compositions();
+    assert!(!wts.is_empty(), "no web templates built");
+    assert!(!comps.is_empty(), "no canonical compositions found");
+
+    let mut paired = 0usize;
+    let mut stable = 0usize;
+    let mut valid_rm = 0usize;
+    let mut failures: Vec<String> = Vec::new();
+    let mut invalid_rm: Vec<String> = Vec::new();
+
+    for (name, tid, comp) in &comps {
+        let Some(wt) = wts.get(tid) else { continue };
+        paired += 1;
+
+        let s0 = match to_structured(comp, wt) {
+            Ok(s) => s,
+            Err(e) => {
+                failures.push(format!("{name}: to_structured: {e}"));
+                continue;
+            }
+        };
+        let rm1 = match from_structured(&s0, wt) {
+            Ok(v) => v,
+            Err(e) => {
+                failures.push(format!("{name}: from_structured: {e}"));
+                continue;
+            }
+        };
+        let s1 = match to_structured(&rm1, wt) {
+            Ok(s) => s,
+            Err(e) => {
+                failures.push(format!("{name}: to_structured(rm1): {e}"));
+                continue;
+            }
+        };
+
+        if s0 == s1 {
+            stable += 1;
+        } else {
+            failures.push(format!("{name} ({tid}): STRUCTURED not stable"));
+        }
+
+        if let Ok(s) = serde_json::to_string(&rm1) {
+            match openehr_its::json::from_canonical_json::<openehr_rm::prelude::Composition>(&s) {
+                Ok(_) => valid_rm += 1,
+                Err(e) => invalid_rm.push(format!("{name}: {e}")),
+            }
+        }
+    }
+
+    eprintln!(
+        "STRUCTURED round-trip: {paired} paired | stable = {stable} | rm valid-RM = {valid_rm}"
+    );
+    for f in &invalid_rm {
+        eprintln!("  invalid-RM {f}");
+    }
+    for f in &failures {
+        eprintln!("  {f}");
+    }
+
+    assert!(paired >= 15, "expected ≥15 paired fixtures, got {paired}");
+    assert!(
+        stable == paired,
+        "{}/{paired} STRUCTURED pairs were not round-trip stable",
+        paired - stable
+    );
+    assert!(
+        valid_rm == paired,
+        "{}/{paired} STRUCTURED `from_structured` outputs did not deserialise as openehr-rm: {invalid_rm:?}",
+        paired - valid_rm
+    );
+}
+
+// ── flat ⇄ structured exact inverses ──────────────────────────────────────────
+
+#[test]
+fn flat_structured_exact_inverses() {
+    let wts = web_templates();
+    let comps = compositions();
+    let mut paired = 0usize;
+    let mut structured_exact = 0usize;
+    let mut flat_exact = 0usize;
+
+    for (_name, tid, comp) in &comps {
+        let Some(wt) = wts.get(tid) else { continue };
+        let Ok(flat) = to_flat(comp, wt) else {
+            continue;
+        };
+        paired += 1;
+        let f = to_map(&flat);
+
+        let s = flat_to_structured(&f);
+        // structured → flat → structured is exact by construction.
+        let s2 = flat_to_structured(&structured_to_flat(&s));
+        if s == s2 {
+            structured_exact += 1;
+        }
+        // flat → structured → flat is exact up to single-occurrence `:0` drop.
+        if structured_to_flat(&s) == f {
+            flat_exact += 1;
+        }
+    }
+
+    eprintln!(
+        "flat⇄structured: {paired} paired | structured-exact = {structured_exact} | flat-exact = {flat_exact}"
+    );
+    assert!(paired >= 15);
+    assert!(
+        structured_exact == paired,
+        "structured round-trip (structured→flat→structured) not exact for {}/{paired}",
+        paired - structured_exact
+    );
+}
+
+// ── cross-format value consistency ────────────────────────────────────────────
+
+#[test]
+fn structured_and_flat_carry_identical_leaves() {
+    let wts = web_templates();
+    let comps = compositions();
+    let mut checked = 0usize;
+
+    for (name, tid, comp) in &comps {
+        let Some(wt) = wts.get(tid) else { continue };
+        let Ok(flat) = to_flat(comp, wt) else {
+            continue;
+        };
+        let Ok(structured) = to_structured(comp, wt) else {
+            continue;
+        };
+        let via_structured = structured_to_flat(&structured);
+        let a = index_normalised(&to_map(&flat));
+        let b = index_normalised(&via_structured);
+        assert_eq!(
+            a, b,
+            "{name} ({tid}): to_flat and to_structured carry different leaf values"
+        );
+        checked += 1;
+    }
+    assert!(
+        checked >= 15,
+        "expected ≥15 checked fixtures, got {checked}"
+    );
+}
+
+// ── insta goldens ─────────────────────────────────────────────────────────────
+
+fn golden_structured(comp_file: &str, template_id: &str, snap: &str) {
+    let wts = web_templates();
+    let wt = wts
+        .get(template_id)
+        .unwrap_or_else(|| panic!("no web template for {template_id:?}"));
+    let text = std::fs::read_to_string(composition_dir().join(comp_file))
+        .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
+    let comp: Value =
+        serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"));
+    let structured = to_structured(&comp, wt).unwrap_or_else(|e| panic!("to_structured: {e}"));
+    insta::assert_json_snapshot!(snap, structured);
+}
+
+#[test]
+fn golden_demo_vitals_structured() {
+    golden_structured(
+        "demo_vitals_352.json",
+        "Demo Vitals",
+        "demo_vitals_structured",
+    );
+}
+
+#[test]
+fn golden_minimal_observation_structured() {
+    golden_structured(
+        "minimal_observation.json",
+        "minimal_observation.en.v1",
+        "minimal_observation_structured",
+    );
+}
