@@ -99,7 +99,7 @@ exporter renders exposition format.
 | `webtemplate_cache_events_total` | counter | `event` (hit/miss/eviction) | moka stats via the WebTemplateService seam |
 | `atna_audit_sent_total` / `atna_audit_dropped_total` / `atna_audit_queue_depth` | counter/gauge | `transport` | already emitted (ehrbase-audit) |
 | `process_start_time_seconds`, `ehrbase_build_info{version,git_sha,rm_version}` | gauge | — | telemetry init |
-| tokio runtime gauges (workers, queue depths) | gauge | — | runtime sampler *(verify `Handle::metrics()` stability at our tokio pin; else defer to P20)* |
+| `tokio_workers`, `tokio_global_queue_depth`, `tokio_alive_tasks` | gauge | — | runtime sampler (`tokio::runtime::Handle::metrics()` — use the stable subset the pinned tokio exposes; anything unstable-gated is simply omitted, not deferred) |
 
 **Cardinality budget (hard rule):** allowed label values are closed sets —
 route *templates* only, status *classes* only, enumerated outcomes only. No
@@ -237,20 +237,36 @@ crates/ehrbase-rest/src/management/
   in-process mock OTLP gRPC server (accept + decode one batch). The full
   LGTM stack stays a manual compose, not CI.
 
-## 7. Rollout
+## 7. Rollout — single stage, end to end (owner directive 2026-07-06)
 
-1. **Now:** telemetry init + JSON logs + reload handle; HTTP metrics layer +
-   Prometheus endpoint; health registry + probes; info/env/loggers; compose
-   LGTM overlay + dashboard + alert pack; the tests above.
-2. **P20:** OTLP metrics push if a deployment wants it; tokio runtime sampler
-   *(verify API first)*; per-query DB span refinement; dashboard/alert tuning
-   under load; trace-driven optimization of the AQL hot path.
+Everything in this document ships in **one implementation pass** — there is no
+deferred phase-two:
+
+- telemetry init + JSON logs + runtime log-filter reload;
+- HTTP metrics layer + Prometheus endpoint + the **full metric catalog**
+  (§1.2, incl. the tokio runtime sampler on the stable metrics subset and the
+  DB pool/acquire instrumentation);
+- **OTLP traces AND OTLP metrics push** both implemented (metrics push stays
+  config-opt-in at runtime, but the code path is built and tested now);
+- per-request root spans + service-layer spans + per-transaction/per-AQL DB
+  spans with semconv attributes;
+- health registry + liveness/readiness probes + all management endpoints
+  (info/prometheus/metrics/env/loggers) with the access-level layer and
+  separate-port mode;
+- compose LGTM overlay + provisioned Grafana dashboard + alert pack;
+- the complete §6 test suite (unit + integration + trace-shape + OTLP smoke +
+  cardinality guard).
+
+Only genuinely load-dependent *tuning* (bucket ladders revisited under a perf
+run, alert thresholds calibrated against production traffic) happens later —
+tuning of shipped code, never missing capability.
 
 ## 8. Decisions (binding)
 
 1. `tracing` is the only instrumentation API; the OTel layer is installed
    only when an endpoint is configured (zero overhead otherwise).
-2. Prometheus **pull** is the metrics default; OTLP metrics push is opt-in.
+2. Prometheus **pull** is the metrics default; OTLP metrics push is built and
+   tested in the same pass (runtime-opt-in by config, never "later work").
 3. Own HTTP-metrics tower layer (no `axum-prometheus` dependency).
 4. **PHI never enters telemetry** — closed-set labels, denylisted span/log
    fields; correlation to identified data only via request/trace ids joined
