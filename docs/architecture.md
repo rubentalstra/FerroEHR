@@ -128,9 +128,10 @@ Dependencies point downward only: app (`ehrbase-*`) → spec (`openehr-*`).
 
 - **Stage 1** (`docs/plans/`): foundation done (00–08); the application is
   built as compiling, tested increments — **P09** persistence infra ✅ →
-  **P10** storage foundation → **P11** REST+auth → **P12** service (+ smoke
-  conformance) → **P13** templates → **P14** WebTemplate → **P15** validation
-  → **P16** AQL engine → **P17** FLAT/EhrScape → **P18** integration →
+  **P10** storage foundation ✅ → **P11** REST+auth ✅ → **P12** service ✅ →
+  **P13** templates ✅ → **P14** WebTemplate/FLAT/STRUCTURED ✅ →
+  **P15** validation ✅ → **P16** AQL engine (current) →
+  **P17** FLAT/EhrScape → **P18** integration →
   **P19** openEHR conformance → **P20** optimization → **P99**
   cleanup/release.
 - **Stage 2**: enterprise capabilities — RBAC/attribute authz, plugin system,
@@ -141,8 +142,8 @@ Dependencies point downward only: app (`ehrbase-*`) → spec (`openehr-*`).
 
 - **Fidelity gates** (spec/serialization): canonical JSON read + lossless
   round-trip + ITS-JSON schema validation; XML round-trips.
-- **Conformance suite** (`scripts/conformance.sh`, smoke from P12, full at
-  P19): the openEHR **CNF Platform Conformance Test Schedule** (REST+JSON)
+- **Conformance suite** (`scripts/conformance.sh` — **planned P19**, not yet in
+  the tree): the openEHR **CNF Platform Conformance Test Schedule** (REST+JSON)
   plus corpus suites — the acceptance instrument (ADR-008).
 - **Drift check** (`scripts/check-codegen-drift.sh` + CI): the generated layer
   is always in sync with the vendored specs.

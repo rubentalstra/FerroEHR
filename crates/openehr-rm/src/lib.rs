@@ -25,4 +25,5 @@ pub mod prelude;
 pub mod support;
 
 // hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod paths;
 pub mod validate;

@@ -13,6 +13,7 @@ publish = false
 openehr-derive.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+thiserror.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
@@ -20,10 +21,6 @@ serde_json.workspace = true
 
 [lints]
 workspace = true
-
-[package.metadata.cargo-machete]
-# serde_json is emitted by the generator only for schema Any fields; this crate currently has none.
-ignored = ["serde_json"]
 
 [lib]
 # Generated doc comments are verbatim openEHR spec prose (indented examples,

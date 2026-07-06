@@ -43,19 +43,26 @@ fn out_of_grammar_reason(q: &str) -> Option<&'static str> {
     None
 }
 
-/// Extract the contents of `AsciiDoc` `----` listing blocks that contain SELECT.
-fn select_blocks(doc: &str) -> Vec<String> {
+/// Extract the contents of **every** `AsciiDoc` `----` listing block.
+///
+/// Previously only SELECT-containing blocks were kept, which silently dropped
+/// any bare `WHERE`/operator/function/`matches` fragment example — so the
+/// `WHERE`/predicate/function surface went unexercised (audit hygiene note on
+/// `08-aql-parser.md`). We now take all blocks and classify each in
+/// [`official_aql_corpus_parses`]: a block that already contains a full
+/// `SELECT` is parsed as-is; a bare fragment is wrapped in a minimal
+/// `SELECT … FROM EHR e WHERE <fragment>` shell before parsing.
+fn listing_blocks(doc: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut in_block = false;
     let mut buf = String::new();
     for line in doc.lines() {
         if line.trim() == "----" {
             if in_block {
-                if buf.to_uppercase().contains("SELECT") {
+                if !buf.trim().is_empty() {
                     out.push(std::mem::take(&mut buf));
-                } else {
-                    buf.clear();
                 }
+                buf.clear();
                 in_block = false;
             } else {
                 in_block = true;
@@ -66,6 +73,13 @@ fn select_blocks(doc: &str) -> Vec<String> {
         }
     }
     out
+}
+
+/// Wrap a bare AQL fragment (a `WHERE`-style boolean/predicate expression that
+/// is not itself a complete `SELECT`) in a minimal query shell so it can be
+/// parse-tested.
+fn wrap_fragment(fragment: &str) -> String {
+    format!("SELECT e/ehr_id/value FROM EHR e WHERE {}", fragment.trim())
 }
 
 #[test]
@@ -85,21 +99,27 @@ fn official_aql_corpus_parses() {
 
     for path in files {
         let doc = fs::read_to_string(&path).unwrap();
-        for q in select_blocks(&doc) {
+        for block in listing_blocks(&doc) {
             total += 1;
-            if let Some(reason) = out_of_grammar_reason(&q) {
+            if let Some(reason) = out_of_grammar_reason(&block) {
                 excluded.push(reason);
                 continue;
             }
-            match openehr_query::parser::parse_str(&q) {
+            // Full queries parse as-is; bare fragments get a SELECT/FROM shell.
+            let query = if block.to_uppercase().contains("SELECT") {
+                block.clone()
+            } else {
+                wrap_fragment(&block)
+            };
+            match openehr_query::parser::parse_str(&query) {
                 Ok(_) => parsed += 1,
-                Err(e) => failures.push((q.clone(), e)),
+                Err(e) => failures.push((query, e)),
             }
         }
     }
 
     println!(
-        "AQL corpus: {total} SELECT blocks — {parsed} parsed, {} out-of-grammar excluded, {} failed",
+        "AQL corpus: {total} listing blocks — {parsed} parsed, {} out-of-grammar excluded, {} failed",
         excluded.len(),
         failures.len()
     );

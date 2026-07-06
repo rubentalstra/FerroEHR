@@ -1,8 +1,17 @@
 # ADR-003 — Policies for spec-underdetermined behaviour (temporal arithmetic, modulo, URI, iteration)
 
-- Status: accepted
+- Status: accepted (still governs the hand-written `*_impl.rs` behaviour layer —
+  ADR-004 confirms this). Only the crate name below is stale.
 - Date: 2026-07-02
 - Phase: P5 (docs/plans/phase-05-serialization-xml.md, spec-completion pass over P1–P3 crates)
+
+> ## ⚠️ AMENDMENT (2026-07-03, ADR-004): `openehr-foundation` folded into `openehr-base`
+>
+> These behaviour policies still stand and govern the hand-written `*_impl.rs`
+> sibling files (ADR-004 kept ADR-003 in force). One naming update: the
+> `openehr-foundation` crate referenced below (as a crate the policies span and
+> as gaining the `url` dependency) was folded into `openehr-base` by ADR-004 —
+> read `openehr-foundation` as `openehr-base`.
 
 ## Context
 

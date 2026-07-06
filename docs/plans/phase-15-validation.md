@@ -1,6 +1,6 @@
 # Phase 15 — Composition validation
 
-- Status: not-started (Stage-1 app build, step 7 of 13)
+- Status: done (merged to `develop` as #19, `0906f1937` — RM invariants + terminology + WebTemplate → ITS-REST 422) (Stage-1 app build, step 7 of 13)
 - Consumes: `openehr-rm`, `openehr-term`, P14 (WebTemplate)
 - Compile required: yes (compiling, tested increment)
 - Decisions: ADR-003 (spec-gap policies), ADR-006

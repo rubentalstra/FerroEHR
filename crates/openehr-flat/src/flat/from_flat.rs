@@ -14,17 +14,16 @@
 //! an `openehr-rm` `Composition`. `ctx/…` keys rebuild the composition context
 //! (see [`context`](super::context)).
 
+use openehr_rm::paths::PathSegment;
 use serde_json::{Map, Value, json};
 
+use super::defaults::{DEFAULT_TIME, RM_VERSION};
 use super::mappers::{self};
 use super::sub::{Entry, FlatView, parse_key};
-use super::{aql, context, graph};
+use super::{context, graph};
 use crate::FlatError;
+use crate::path;
 use crate::webtemplate::{WebTemplate, WebTemplateNode};
-
-/// The default time filled into mandatory `start_time`/`origin`/`time` fields
-/// (never surfaced in FLAT, so it does not affect the round-trip).
-const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
 
 /// Map a (possibly abstract/generic) web-template rm type to the concrete RM
 /// type to instantiate. `EVENT` is abstract → default `POINT_EVENT`.
@@ -36,11 +35,16 @@ fn concrete_type(rm_type: &str) -> &str {
 }
 
 /// RM attributes that are arrays (needed to re-materialise compacted structure).
+///
+// TODO(port): (F-10-11) this multi-valued-attribute set is hard-coded and covers
+// only the common COMPOSITION/HISTORY/ITEM/ENTRY path. Any other genuinely
+// multi-valued attribute reachable in a template (`credentials`,
+// `other_participations`, nested cluster/section variants) would be rebuilt as a
+// single object. Drive multiplicity from the generated BMM RM attribute model
+// (ADR-008/P16) — the same model AQL path analysis mandates — instead of this
+// list.
 fn is_multiple(attr: &str) -> bool {
-    matches!(
-        attr,
-        "content" | "items" | "events" | "activities" | "actions"
-    )
+    matches!(attr, "content" | "items" | "events" | "activities")
 }
 
 /// Convert a FLAT map to a canonical-JSON composition, driven by `wt`.
@@ -150,7 +154,7 @@ fn build(node: &WebTemplateNode, entries: &[Entry]) -> Value {
         }
         groups.sort_by_key(|(i, _)| i.unwrap_or(0));
 
-        let rel = aql::relative(&node.aql_path, &child.aql_path);
+        let rel = path::relative(&node.aql_path, &child.aql_path);
         for (_, sub) in groups {
             let child_val = build(child, &sub);
             place(&mut obj, &rel, child_val, child, &ctx_time);
@@ -168,7 +172,7 @@ fn build(node: &WebTemplateNode, entries: &[Entry]) -> Value {
 /// re-materialising the compacted RM structural nodes it passes through.
 fn place(
     parent: &mut Map<String, Value>,
-    rel: &[aql::AqlSeg],
+    rel: &[PathSegment],
     child_value: Value,
     child: &WebTemplateNode,
     time: &Value,
@@ -176,13 +180,13 @@ fn place(
     if rel.is_empty() {
         return;
     }
-    let id_idx = rel.iter().rposition(|s| is_multiple(&s.attr));
+    let id_idx = rel.iter().rposition(|s| is_multiple(&s.attribute));
     place_rec(parent, rel, 0, id_idx, child_value, child, time);
 }
 
 fn place_rec(
     cur: &mut Map<String, Value>,
-    rel: &[aql::AqlSeg],
+    rel: &[PathSegment],
     i: usize,
     id_idx: Option<usize>,
     child_value: Value,
@@ -190,19 +194,20 @@ fn place_rec(
     time: &Value,
 ) {
     let seg = &rel[i];
+    let node_id = seg.predicate.archetype_node_id.as_deref();
     let last = i + 1 == rel.len();
 
     if Some(i) == id_idx {
         // The child's own (repeating) array level.
         let arr = cur
-            .entry(seg.attr.clone())
+            .entry(seg.attribute.clone())
             .or_insert_with(|| json!([]))
             .as_array_mut();
         let Some(arr) = arr else { return };
         if last {
             // The child value is itself the array element (a container child).
             let mut el = child_value;
-            set_node_id(&mut el, seg.node_id.as_deref());
+            set_node_id(&mut el, node_id);
             arr.push(el);
         } else {
             // Wrap: the remaining path (e.g. `/value`) lives inside a new element.
@@ -215,16 +220,16 @@ fn place_rec(
         return;
     }
 
-    if is_multiple(&seg.attr) {
+    if is_multiple(&seg.attribute) {
         // A structural (single-occurrence) array level: find-or-create by node id.
         let arr = cur
-            .entry(seg.attr.clone())
+            .entry(seg.attribute.clone())
             .or_insert_with(|| json!([]))
             .as_array_mut();
         let Some(arr) = arr else { return };
-        let pos = arr.iter().position(|e| {
-            e.get("archetype_node_id").and_then(Value::as_str) == seg.node_id.as_deref()
-        });
+        let pos = arr
+            .iter()
+            .position(|e| e.get("archetype_node_id").and_then(Value::as_str) == node_id);
         let idx = if let Some(p) = pos {
             p
         } else {
@@ -239,16 +244,16 @@ fn place_rec(
 
     // A single-valued (object) attribute.
     if last {
-        cur.insert(seg.attr.clone(), child_value);
+        cur.insert(seg.attribute.clone(), child_value);
         return;
     }
-    if !cur.contains_key(&seg.attr) {
+    if !cur.contains_key(&seg.attribute) {
         cur.insert(
-            seg.attr.clone(),
+            seg.attribute.clone(),
             new_struct(seg, rel.get(i + 1), None, time),
         );
     }
-    if let Some(Value::Object(m)) = cur.get_mut(&seg.attr) {
+    if let Some(Value::Object(m)) = cur.get_mut(&seg.attribute) {
         place_rec(m, rel, i + 1, id_idx, child_value, child, time);
     }
 }
@@ -256,20 +261,18 @@ fn place_rec(
 /// Create a compacted structural RM node for `seg` (its `_type` inferred from
 /// the attribute it sits under and the next step), with mandatory fields filled.
 fn new_struct(
-    seg: &aql::AqlSeg,
-    next: Option<&aql::AqlSeg>,
+    seg: &PathSegment,
+    next: Option<&PathSegment>,
     name: Option<&str>,
     time: &Value,
 ) -> Value {
-    let rm_type = infer_type(&seg.attr, next.map(|s| s.attr.as_str()));
+    let rm_type = infer_type(&seg.attribute, next.map(|s| s.attribute.as_str()));
+    let node_id = seg.predicate.archetype_node_id.as_deref();
     let mut o = Map::new();
     o.insert("_type".into(), json!(rm_type));
-    let display = name
-        .map(str::to_owned)
-        .or_else(|| seg.node_id.clone())
-        .unwrap_or_else(|| rm_type.to_owned());
+    let display = name.or(node_id).unwrap_or(rm_type).to_owned();
     o.insert("name".into(), json!({"_type": "DV_TEXT", "value": display}));
-    if let Some(nid) = &seg.node_id {
+    if let Some(nid) = node_id {
         o.insert("archetype_node_id".into(), json!(nid));
     }
     match rm_type {
@@ -374,7 +377,7 @@ fn finish_identity(
                         json!({"_type": "TEMPLATE_ID", "value": template_id}),
                     );
                 }
-                a.insert("rm_version".into(), json!("1.0.4"));
+                a.insert("rm_version".into(), json!(RM_VERSION));
                 Value::Object(a)
             });
     }
@@ -452,7 +455,7 @@ fn ensure_template_id(comp: &mut Map<String, Value>, root: &WebTemplateNode, tem
         .or_insert_with(|| {
             json!({"_type": "ARCHETYPED",
                    "archetype_id": {"_type": "ARCHETYPE_ID", "value": root.node_id},
-                   "rm_version": "1.0.4"})
+                   "rm_version": RM_VERSION})
         });
     if let Value::Object(ad) = ad {
         ad.entry("template_id".to_owned())

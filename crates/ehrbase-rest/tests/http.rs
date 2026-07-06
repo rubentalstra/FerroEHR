@@ -303,6 +303,38 @@ async fn demographic_group_is_mounted() {
 }
 
 #[tokio::test]
+async fn unimplemented_groups_answer_501_with_the_standard_error_body() {
+    // F-13-03: the demographic / query / admin groups route through the generic
+    // not-implemented dispatcher; the wire behaviour must be identical to the
+    // old per-operation arms forwarding to a `NotImplemented` backend — 501 +
+    // the standard `{ error, message }` JSON body.
+    let cases = [
+        ("GET", format!("{BASE}/demographic/agent/abc"), "openid"),
+        ("POST", format!("{BASE}/demographic/agent"), "openid"),
+        ("GET", format!("{BASE}/query/aql?q=SELECT%20c"), "openid"),
+        ("DELETE", format!("{BASE}/admin/ehr/abc"), "ehrbase:admin"),
+    ];
+    for (method, uri, scope) in cases {
+        let req = Request::builder()
+            .method(method)
+            .uri(&uri)
+            .header(header::AUTHORIZATION, bearer(scope))
+            .body(Body::empty())
+            .unwrap();
+        let (status, headers, body) = send(app(true), req).await;
+        assert_eq!(status, StatusCode::NOT_IMPLEMENTED, "{method} {uri}");
+        assert_eq!(
+            headers.get(header::CONTENT_TYPE).unwrap(),
+            "application/json",
+            "{method} {uri}"
+        );
+        let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert_eq!(v["error"], "Not Implemented", "{method} {uri}");
+        assert_eq!(v["message"], "not implemented", "{method} {uri}");
+    }
+}
+
+#[tokio::test]
 async fn definition_group_is_mounted_with_dotted_route() {
     // Exercises the dotted path segment (`adl1.4`) and dotted operation id.
     let req = Request::builder()

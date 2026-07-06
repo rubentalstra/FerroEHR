@@ -1,6 +1,6 @@
 # Phase 13 — Template ingestion (ADL / AOM / OPT 1.4 XML)
 
-- Status: not-started (Stage-1 app build, step 5 of 13)
+- Status: done (merged to `develop` as #17, `9f11963f0`) (Stage-1 app build, step 5 of 13)
 - Consumes: `openehr-am` (generated AOM types), `openehr-lang` (ODIN)
 - Compile required: yes (compiling, tested increment)
 - Decisions: ADR-006

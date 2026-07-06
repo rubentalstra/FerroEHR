@@ -5,6 +5,8 @@
 //! the PORT NOTE on why this is an explicit invariant.
 
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
+use crate::data_types::quantity::dv_ordered::DvOrdered;
+use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::validate::{
     InvariantViolation, Validate, is_valid_iso_date_time, push_magnitude_status_valid,
 };
@@ -17,6 +19,14 @@ impl Validate for DvDateTime {
             ));
         }
         push_magnitude_status_valid(out, "DV_DATE_TIME", self.magnitude_status.as_deref());
+        // Inherited DV_ORDERED Normal_range_and_status_consistency.
+        push_normal_range_consistency(
+            out,
+            "DV_DATE_TIME",
+            self.normal_status.as_ref(),
+            self.normal_range.as_deref(),
+            &DvOrdered::DvDateTime(self.clone()),
+        );
     }
 }
 

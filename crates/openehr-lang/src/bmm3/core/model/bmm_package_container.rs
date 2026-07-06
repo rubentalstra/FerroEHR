@@ -4,7 +4,7 @@
 use crate::bmm3::core::model::bmm_model::BmmModel;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstraction of a BMM model component that contains packages and classes.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -19,10 +19,45 @@ pub struct BmmPackageContainerData {
 
 /// Abstraction of a BMM model component that contains packages and classes.
 /// Polymorphic slot of `BMM_PACKAGE_CONTAINER` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmPackageContainer {
     BmmModel(BmmModel),
     BmmPackage(BmmPackage),
     BmmPackageContainer(BmmPackageContainerData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for BmmPackageContainer {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("BMM_MODEL") => {
+                ::core::result::Result::Ok(Self::BmmModel(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_PACKAGE") => {
+                ::core::result::Result::Ok(Self::BmmPackage(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_PACKAGE_CONTAINER") => {
+                ::core::result::Result::Ok(Self::BmmPackageContainer(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmPackageContainer(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "BMM_PACKAGE_CONTAINER: unexpected `_type` {__other:?} (expected one of: BMM_MODEL, BMM_PACKAGE, BMM_PACKAGE_CONTAINER)"
+                )))
+            }
+        }
+    }
 }

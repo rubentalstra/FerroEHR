@@ -3,14 +3,51 @@
 use crate::beom::core::assertion::Assertion;
 use crate::beom::core::assignment::Assignment;
 use crate::beom::core::variable_declaration::VariableDeclaration;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Meta-type for the notion of statement, which is a non-value-returning entity.
 /// Closed subtype set of `STATEMENT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Statement {
     Assertion(Assertion),
     Assignment(Assignment),
     VariableDeclaration(VariableDeclaration),
+}
+
+impl<'de> ::serde::Deserialize<'de> for Statement {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("ASSERTION") => {
+                ::core::result::Result::Ok(Self::Assertion(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("ASSIGNMENT") => {
+                ::core::result::Result::Ok(Self::Assignment(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("VARIABLE_DECLARATION") => {
+                ::core::result::Result::Ok(Self::VariableDeclaration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "STATEMENT: missing required `_type` on polymorphic slot (expected one of: ASSERTION, ASSIGNMENT, VARIABLE_DECLARATION)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "STATEMENT: unexpected `_type` {__other:?} (expected one of: ASSERTION, ASSIGNMENT, VARIABLE_DECLARATION)"
+                )))
+            }
+        }
+    }
 }

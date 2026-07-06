@@ -2,13 +2,48 @@
 
 use crate::bmm3::expression::el_case_table::ElCaseTable;
 use crate::bmm3::expression::el_condition_chain::ElConditionChain;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Meta-type for decision tables. Generic on the meta-type of the `_result_` attribute of the branches, to allow specialised forms of if/else and case structures to be created.
 /// Closed subtype set of `EL_DECISION_TABLE` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElDecisionTable<T> {
     ElCaseTable(ElCaseTable<T>),
     ElConditionChain(ElConditionChain<T>),
+}
+
+impl<'de, T> ::serde::Deserialize<'de> for ElDecisionTable<T>
+where
+    T: ::serde::de::DeserializeOwned,
+{
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("EL_CASE_TABLE") => {
+                ::core::result::Result::Ok(Self::ElCaseTable(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_CONDITION_CHAIN") => {
+                ::core::result::Result::Ok(Self::ElConditionChain(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "EL_DECISION_TABLE: missing required `_type` on polymorphic slot (expected one of: EL_CASE_TABLE, EL_CONDITION_CHAIN)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "EL_DECISION_TABLE: unexpected `_type` {__other:?} (expected one of: EL_CASE_TABLE, EL_CONDITION_CHAIN)"
+                )))
+            }
+        }
+    }
 }

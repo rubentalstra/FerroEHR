@@ -68,11 +68,11 @@ Database: **PostgreSQL 18** (target 18.4+): AIO, `uuidv7()`, skip scan, temporal
 
 **The authoritative, fully-pinned dependency set lives in the root `Cargo.toml` `[workspace.dependencies]`.** Versions below are current as of 2026-07; do not hand-roll anything a crate here already provides (auth, HTTP status codes, OpenAPI/Swagger, etc.). Add a crate to a member with `dep.workspace = true`. Items marked *(verify)* had their major/minor unconfirmed at authoring; check crates.io before first use.
 
-Web & HTTP core: `axum` 0.8, `axum-extra` 0.10, `axum-server` 0.7 (graceful shutdown + TLS), `tower` 0.5, `tower-http` 0.6 (trace, cors, compression, timeout, limit, request-id, sensitive-headers, catch-panic, normalize-path), `hyper` 1, `hyper-util` 0.1, `http` 1 (status codes/headers), `http-body` 1, `http-body-util` 0.1, `mime` 0.3, `mime_guess` 2, `headers` 0.4, `bytes` 1.
+Web & HTTP core: `axum` 0.8, `axum-extra` 0.12, `axum-server` 0.8 (graceful shutdown + TLS), `tower` 0.5, `tower-http` 0.7 (trace, cors, compression, timeout, limit, request-id, sensitive-headers, catch-panic, normalize-path), `hyper` 1, `hyper-util` 0.1, `http` 1 (status codes/headers), `http-body` 1, `http-body-util` 0.1, `mime` 0.3, `mime_guess` 2, `headers` 0.4, `bytes` 1.
 
 Async runtime: `tokio` 1, `tokio-util` 0.7, `tokio-stream` 0.1, `futures` 0.3, `async-trait` 0.1, `pin-project-lite` 0.2.
 
-Auth & authz (never hand-roll): `jsonwebtoken` 9 (JWT), `oauth2` 5 *(verify)*, `openidconnect` 4 (OIDC/Keycloak) *(verify)*, `argon2` 0.5 + `password-hash` 0.5 (password hashing), `tower-sessions` 0.14 *(verify)*, `axum-login` 0.17 *(verify)*, `secrecy` 0.10, `zeroize` 1. RBAC/ABAC for the Stage 2 restoration: `casbin` 2 *(verify)* or `cedar-policy` 4 *(verify)* (decide at S2).
+Auth & authz (never hand-roll): `jsonwebtoken` 10 (JWT), `oauth2` 5 *(verify)*, `openidconnect` 4 (OIDC/Keycloak) *(verify)*, `argon2` 0.5 + `password-hash` 0.5 (password hashing), `tower-sessions` 0.15 *(verify)*, `axum-login` 0.18 *(verify)*, `secrecy` 0.10, `zeroize` 1. RBAC/ABAC for the Stage 2 restoration: `casbin` 2 *(verify)* or `cedar-policy` 4 *(verify)* (decide at S2).
 
 TLS/crypto: `rustls` 0.23, `tokio-rustls` 0.26, `rustls-pemfile` 2, `webpki-roots` 0.26, `rand` 0.9, `getrandom` 0.3, `sha2` 0.10, `hmac` 0.12, `blake3` 1.
 
@@ -80,21 +80,21 @@ OpenAPI/Swagger: `utoipa` 5, `utoipa-axum` 5, `utoipa-swagger-ui` 9 (serves Swag
 
 Database & persistence: `sqlx` 0.9 (postgres, macros, migrate, uuid, json, rust_decimal, chrono; TLS via `tls-rustls-aws-lc-rs`); `sea-query` 1.0 + `sea-query-sqlx` (the sea-query 1.0↔sqlx 0.9 binder — `sea-query-binder` is stuck on sea-query 0.32; dynamic SQL for the AQL→SQL engine — **not** sea-orm, ADR-006); `jiff-sqlx` for jiff↔Postgres on plain sqlx queries (sqlx has no `jiff` feature; the binder's with-jiff is unimplemented upstream); `deadpool-postgres` + `tokio-postgres` for an optional pipelined hot-read path. Migrations: squashed `0001_baseline.sql` per schema, equality-gated against the EHRbase Flyway chain (ADR-007); new ones via `sqlx migrate add --sequential`.
 
-Serialization & formats: `serde` 1, `serde_json` 1 (`preserve_order`), `serde_with` 3, `serde_path_to_error` 0.1, `quick-xml` 0.37 *(verify)* (with `serialize`), `base64` 0.22, `rust_decimal` 1 (+`rust_decimal_macros`) as the BigDecimal replacement for DV_QUANTITY, `ordered-float` 4, canonical JSON via `serde_jcs` 0.1 *(verify)* or a ~150-LoC hand-roll. C14N (canonical XML): `xmllint --c14n` fallback for now.
+Serialization & formats: `serde` 1, `serde_json` 1 (`preserve_order`), `serde_with` 3, `serde_path_to_error` 0.1, `quick-xml` 0.41 (with `serialize`), `base64` 0.22, `rust_decimal` 1 (+`rust_decimal_macros`) as the BigDecimal replacement for DV_QUANTITY, `ordered-float` 4, canonical JSON via `serde_jcs` 0.2 or a ~150-LoC hand-roll. C14N (canonical XML): `xmllint --c14n` fallback for now.
 
-Parsers (native ADL/cADL/ODIN/AQL): `logos` 0.15 (lexer), `chumsky` 0.10 (usable stable; 1.0 still alpha, repo now on Codeberg) or `winnow` 0.7, `regex` 1, `fancy-regex` 0.14 *(verify)* for cADL backreferences; diagnostics via `miette` 7 and/or `ariadne` 0.5 *(verify)*.
+Parsers (native ADL/cADL/ODIN/AQL): `logos` 0.16 (lexer), `chumsky` 0.13 (stable; 1.0 still alpha, repo now on Codeberg) or `winnow` 0.7, `regex` 1, `fancy-regex` 0.18 *(verify)* for cADL backreferences; diagnostics via `miette` 7 and/or `ariadne` 0.6 *(verify)*.
 
-IDs / time / validation: `uuid` 1 (v4+v7, serde, fast-rng), `jiff` 0.2 (1.0 not yet released as of 2026-07), `garde` 0.22 *(verify)* + a custom RM-invariant framework, `url` 2.
+IDs / time / validation: `uuid` 1 (v4+v7, serde, fast-rng), `jiff` 0.2 (1.0 not yet released as of 2026-07), `garde` 0.23 *(verify)* + a custom RM-invariant framework, `url` 2.
 
-Observability (opentelemetry set is lockstep — keep equal): `tracing` 0.1, `tracing-subscriber` 0.3, `tracing-opentelemetry` 0.33, `opentelemetry` 0.31, `opentelemetry_sdk` 0.31, `opentelemetry-otlp` 0.31, `opentelemetry-semantic-conventions` 0.31, `metrics` 0.24, `metrics-exporter-prometheus` 0.16 *(verify)*, `axum-prometheus` 0.8 *(verify)*.
+Observability (opentelemetry set is lockstep — keep equal): `tracing` 0.1, `tracing-subscriber` 0.3, `tracing-opentelemetry` 0.33, `opentelemetry` 0.31, `opentelemetry_sdk` 0.31, `opentelemetry-otlp` 0.31, `opentelemetry-semantic-conventions` 0.31, `metrics` 0.24, `metrics-exporter-prometheus` 0.18 *(verify)*, `axum-prometheus` 0.10 *(verify)*.
 
-Caching / rate limiting / resilience: `moka` 0.12 (Caffeine equivalent for the template/WebTemplate cache), `quick_cache` 0.6, `tower_governor` 0.4 *(verify)* + `governor` 0.6 *(verify)*, `backon` 1 (retry; the `backoff` crate is deprecated).
+Caching / rate limiting / resilience: `moka` 0.12 (Caffeine equivalent for the template/WebTemplate cache), `quick_cache` 0.6, `tower_governor` 0.8 *(verify)* + `governor` 0.10 *(verify)*, `backon` 1 (retry; the `backoff` crate is deprecated).
 
 Errors & utilities: `thiserror` 2 (libs), `anyhow` 1 (bins only), `config` 0.14 or `figment` 0.10, `dotenvy` 0.15, `clap` 4, `parking_lot` 0.12, `dashmap` 6, `arc-swap` 1, `indexmap` 2, `smallvec` 1, `itertools` 0.14, `bitflags` 2. Use `std::sync::LazyLock` (edition 2024) instead of `once_cell` for statics.
 
-HTTP client & external integration: `reqwest` 0.12 (rustls, json) for the terminology/FHIR client and conformance runner; `jsonschema` 0.26 *(verify)* to validate against the openEHR ITS-JSON schemas.
+HTTP client & external integration: `reqwest` 0.13 (rustls, json) for the terminology/FHIR client and conformance runner; `jsonschema` 0.46 *(verify)* to validate against the openEHR ITS-JSON schemas.
 
-Testing & benches (dev-deps): `cargo-nextest`, `insta` 1 (snapshots — the key tool for canonical JSON/XML parity), `proptest` 1, `rstest` 0.23 *(verify)*, `wiremock` 0.6, `mockall` 0.13 *(verify)*, `fake` 3 *(verify)*, `assert_cmd` 2, `assert_fs` 1, `testcontainers` 0.24 *(verify)* + `testcontainers-modules` 0.12 *(verify)* (real PG 18), `criterion` 0.5 + `divan` 0.1.
+Testing & benches (dev-deps): `cargo-nextest`, `insta` 1 (snapshots — the key tool for canonical JSON/XML parity), `proptest` 1, `rstest` 0.26 *(verify)*, `wiremock` 0.6, `mockall` 0.15 *(verify)*, `fake` 5 *(verify)*, `assert_cmd` 2, `assert_fs` 1, `testcontainers` 0.27 *(verify)* + `testcontainers-modules` 0.12 *(verify)* (real PG 18), `criterion` 0.5 + `divan` 0.1.
 
 Dev tooling (CI, not deps): `cargo-nextest`, `cargo-audit`, `cargo-deny`, `cargo-machete`, `cargo-hakari`, `cargo-llvm-cov`, `sccache`; `mold` linker on Linux.
 
@@ -109,7 +109,8 @@ cargo clippy --workspace --all-targets
 cargo fmt --all
 cargo audit && cargo deny check
 # conformance runner (Stage 1 acceptance, ADR-008): the openEHR CNF schedule vs our server
-scripts/conformance.sh         # built out from P12 (smoke) to P19 (full schedule)
+# NOTE: scripts/conformance.sh does not exist yet — it is P19 work (phase-19).
+# Present scripts: check-codegen-drift.sh, install-hooks.sh, vendor-spec-docs.sh.
 ```
 
 Note (ADR-006 superseded the old "phases need not compile" gate): the spec + ITS
@@ -124,8 +125,11 @@ Compile status: the **generated** spec crates `openehr-base`, `openehr-rm`,
 `openehr-codegen`, `openehr-derive` (hand-written tooling), `openehr-term`
 (hand-written), `openehr-query` (AQL parser), and `openehr-its` (canonical
 JSON/XML + generated ITS-REST contract; all fidelity gates green) all compile +
-clippy-clean. The `ehrbase-*` application crates are the remaining work (the
-Stage-1 app build, `docs/plans/` phases 09–20) and are built compiling per phase.
+clippy-clean. The `ehrbase-*` application crates are built compiling per phase:
+the Stage-1 app build P09–P15 is **done** (persistence, greenfield storage,
+REST+auth, service layer, templates, WebTemplate/FLAT/STRUCTURED, validation);
+the remaining work is P16–P20 (+P99) — AQL engine, FLAT/EhrScape wiring,
+integration, conformance, optimization, cutover.
 
 ## Conventions
 

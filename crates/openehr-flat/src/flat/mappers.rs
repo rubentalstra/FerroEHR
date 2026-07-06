@@ -68,6 +68,13 @@ pub(crate) fn leaf_to_flat(dv: &Value, slot_rm_type: &str, base: &str, out: &mut
             } else {
                 put(out, base, "", dv.get("value"));
             }
+            // PORT NOTE: the SM transformation table
+            // (`SM/.../simplified_im_b/master07-transformation_rules.adoc`, RM Data
+            // types) marks `DV_TEXT._formatting_` as **skip** (along with
+            // `_language_`/`_encoding_`, which we do drop). We deliberately keep
+            // `|formatting` for RM→FLAT→RM round-trip fidelity, matching Better
+            // (F-10-06). `formatting` is optional, so its presence never breaks
+            // canonical validity.
             put(out, base, "formatting", dv.get("formatting"));
         }
         "DV_CODED_TEXT" | "DV_STATE" => {
@@ -90,8 +97,20 @@ pub(crate) fn leaf_to_flat(dv: &Value, slot_rm_type: &str, base: &str, out: &mut
             put(out, base, "magnitude", dv.get("magnitude"));
             put(out, base, "unit", dv.get("units"));
             put(out, base, "precision", dv.get("precision"));
-            put(out, base, "unit_system", dv.get("units_system"));
-            put(out, base, "unit_display_name", dv.get("units_display_name"));
+            // PORT NOTE: `DV_QUANTITY.units_system` / `units_display_name` are
+            // genuine RM 1.2.0 fields (openehr-rm dv_quantity.rs:59,65) with a
+            // canonical-JSON/XML home, but the FLAT `|unit_system` /
+            // `|unit_display_name` *suffix* representation is a Better vendor
+            // extra beyond the common EhrScape suffix set — no normative SDT
+            // concrete format exists (SM serial_data_formats is unfinished,
+            // F-10-01/05). Per serialization.md these Better-only extras live
+            // behind `ehrbase-quirks` and must never be hard-coded onto the
+            // default (spec/ITS-REST-common) FLAT path (F-13-25).
+            #[cfg(feature = "ehrbase-quirks")]
+            {
+                put(out, base, "unit_system", dv.get("units_system"));
+                put(out, base, "unit_display_name", dv.get("units_display_name"));
+            }
             put(out, base, "magnitude_status", dv.get("magnitude_status"));
         }
         "DV_COUNT" => {
@@ -331,9 +350,20 @@ fn quantity_from_flat(view: &FlatView) -> Option<Value> {
     for (suffix, field) in [
         ("unit", "units"),
         ("precision", "precision"),
+        ("magnitude_status", "magnitude_status"),
+    ] {
+        if let Some(v) = view.suffix(suffix) {
+            o.insert(field.into(), v.clone());
+        }
+    }
+    // PORT NOTE: Better-only `|unit_system` / `|unit_display_name` extras — gated
+    // per serialization.md so the default FLAT path stays spec-common (F-13-25;
+    // see `leaf_to_flat`). The underlying RM 1.2.0 fields remain first-class in
+    // canonical JSON/XML regardless.
+    #[cfg(feature = "ehrbase-quirks")]
+    for (suffix, field) in [
         ("unit_system", "units_system"),
         ("unit_display_name", "units_display_name"),
-        ("magnitude_status", "magnitude_status"),
     ] {
         if let Some(v) = view.suffix(suffix) {
             o.insert(field.into(), v.clone());

@@ -1,6 +1,6 @@
 # Phase 14 — WebTemplate builder + FLAT (simSDT)
 
-- Status: in-progress (PR-A: WebTemplate builder + wt+json endpoint; PR-B: FLAT `RM ⇄ FLAT` converters + endpoints)
+- Status: done (merged to `develop` as #18, `3c913dda4` — WebTemplate + wt+json endpoint, FLAT `RM ⇄ FLAT` converters, STRUCTURED)
 - Consumes: `openehr-am` (OPT model, P13), `openehr-term`
 - Compile required: yes (compiling, tested increment)
 - Decisions: ADR-006

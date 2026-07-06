@@ -309,9 +309,15 @@ mod tests {
 
     #[tokio::test]
     async fn tampered_signature_rejected() {
+        // Tamper with a char in the *middle* of the base64url signature, not
+        // the last one: the final char of a 43-char HS256 signature encodes
+        // only 4 meaningful bits, so an 'A'↔'B' flip there lands in the
+        // ignored trailing bits ~1/16 of the time (decodes to the identical
+        // signature → flaky false-accept).
         let mut t = token(&base_claims());
-        t.pop();
-        t.push(if t.ends_with('A') { 'B' } else { 'A' });
+        let flip = t.len() - 10;
+        let tampered = if t.as_bytes()[flip] == b'A' { 'B' } else { 'A' };
+        t.replace_range(flip..=flip, &tampered.to_string());
         let err = validator(&[]).validate(&t).await.expect_err("reject");
         assert!(matches!(err, AuthError::InvalidToken(_)));
     }

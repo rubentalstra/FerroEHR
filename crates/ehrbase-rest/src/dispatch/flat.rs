@@ -3,28 +3,28 @@
 //! Both are Better/EHRbase interop formats (`openehr-flat`), served as
 //! `application/openehr.wt.flat+json` and `application/openehr.wt.structured+json`.
 //! STRUCTURED is the pure nesting of the FLAT map (`openehr_flat::to_structured`
-//! / `from_structured`); the template-id resolution and `WebTemplate` caching are
-//! shared with FLAT. For FLAT specifically:
+//! / `from_structured`); the template-id resolution is shared with FLAT.
+//!
+//! `WebTemplate` resolution is **not** this layer's concern: the service owns
+//! the one cache and exposes it through the
+//! [`WebTemplateService`](crate::backend::WebTemplateService) seam
+//! (W2-K / finding F-13-02) — the same `WebTemplate` composition validation
+//! uses. For FLAT specifically:
 //!
 //! * **input** (`Content-Type` FLAT on create/update): the flat map is rebuilt
 //!   into a canonical-JSON `COMPOSITION` via `openehr_flat::from_flat`, driven
 //!   by the target template's `WebTemplate`. The template id — which a flat body
 //!   does not carry — comes from the `template_id`/`templateId` query parameter
-//!   or the `openEHR-TEMPLATE_ID` header (EHRbase-compatible), and the OPT 1.4 is
-//!   fetched from the DEFINITION store and cached as a `WebTemplate`.
+//!   or the `openEHR-TEMPLATE_ID` header (EHRbase-compatible).
 //! * **output** (`Accept` FLAT on get/create/update): the stored canonical
 //!   composition is converted via `openehr_flat::to_flat` (its template id is
 //!   read from `archetype_details/template_id`).
-
-use std::sync::Arc;
 
 use axum::response::Response;
 use bytes::Bytes;
 use http::{HeaderMap, StatusCode};
 use serde_json::{Map, Value};
 
-use openehr_flat::WebTemplate;
-use openehr_its::rest::generated::definition::DefinitionTemplateAdl14GetParams;
 use openehr_its::rest::runtime::ApiError;
 
 use crate::error::RestError;
@@ -56,34 +56,6 @@ pub(super) fn request_template_id(query: Option<&str>, headers: &HeaderMap) -> O
         })
 }
 
-/// Fetch the OPT 1.4 for `template_id` from the DEFINITION store and build (or
-/// reuse the cached) Better [`WebTemplate`].
-async fn web_template_for(
-    state: &AppState,
-    template_id: &str,
-) -> Result<Arc<WebTemplate>, RestError> {
-    let fetched = state
-        .backend()
-        .definition_template_adl1_4_get(DefinitionTemplateAdl14GetParams {
-            template_id: template_id.to_owned(),
-            accept: None,
-        })
-        .await
-        .map_err(RestError)?;
-    let Value::String(xml) = fetched else {
-        return Err(internal("stored template is not OPT 1.4 XML"));
-    };
-    state
-        .web_templates()
-        .get_or_build(template_id, || {
-            let opt = openehr_its::opt14::from_xml(&xml)
-                .map_err(|e| openehr_flat::FlatError::OptParse(e.to_string()))?;
-            openehr_flat::build_web_template(&opt)
-        })
-        .await
-        .map_err(|e| internal(format!("WebTemplate build failed: {e}")))
-}
-
 /// Parse a FLAT request body into a canonical-JSON `COMPOSITION`.
 pub(super) async fn composition_from_flat(
     state: &AppState,
@@ -99,7 +71,11 @@ pub(super) async fn composition_from_flat(
     })?;
     let flat: Map<String, Value> =
         serde_json::from_slice(body).map_err(|e| bad_request(format!("invalid FLAT JSON: {e}")))?;
-    let wt = web_template_for(state, &template_id).await?;
+    let wt = state
+        .backend()
+        .web_template(&template_id)
+        .await
+        .map_err(RestError)?;
     openehr_flat::from_flat(&flat, &wt).map_err(|e| flat_err(&e))
 }
 
@@ -115,7 +91,11 @@ pub(super) async fn composition_flat_response(
         .and_then(Value::as_str)
         .ok_or_else(|| internal("composition has no archetype_details/template_id"))?
         .to_owned();
-    let wt = web_template_for(state, &template_id).await?;
+    let wt = state
+        .backend()
+        .web_template(&template_id)
+        .await
+        .map_err(RestError)?;
     let flat = openehr_flat::to_flat(comp, &wt).map_err(|e| flat_err(&e))?;
     let json =
         serde_json::to_string(&flat).map_err(|e| internal(format!("FLAT serialization: {e}")))?;
@@ -139,7 +119,11 @@ pub(super) async fn composition_from_structured(
     })?;
     let structured: Value = serde_json::from_slice(body)
         .map_err(|e| bad_request(format!("invalid STRUCTURED JSON: {e}")))?;
-    let wt = web_template_for(state, &template_id).await?;
+    let wt = state
+        .backend()
+        .web_template(&template_id)
+        .await
+        .map_err(RestError)?;
     openehr_flat::from_structured(&structured, &wt).map_err(|e| flat_err(&e))
 }
 
@@ -155,7 +139,11 @@ pub(super) async fn composition_structured_response(
         .and_then(Value::as_str)
         .ok_or_else(|| internal("composition has no archetype_details/template_id"))?
         .to_owned();
-    let wt = web_template_for(state, &template_id).await?;
+    let wt = state
+        .backend()
+        .web_template(&template_id)
+        .await
+        .map_err(RestError)?;
     let structured = openehr_flat::to_structured(comp, &wt).map_err(|e| flat_err(&e))?;
     let json = serde_json::to_string(&structured)
         .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;

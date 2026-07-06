@@ -5,10 +5,12 @@
 //! and is threaded through axum as router state. It carries the configuration
 //! and the service [`Backend`](crate::Backend) the dispatcher calls into (the
 //! DB-backed service is injected by the `ehrbase` crate; default `StubBackend`).
+//!
+//! The REST layer holds **no caches of its own** — in particular, `WebTemplate`
+//! resolution is a single service-owned concern reached through
+//! [`crate::backend::WebTemplateService`] (W2-K / finding F-13-02).
 
 use std::sync::Arc;
-
-use openehr_flat::cache::WebTemplateCache;
 
 use crate::backend::{Backend, StubBackend};
 use crate::config::RestConfig;
@@ -24,7 +26,6 @@ pub struct AppState {
 struct Inner {
     config: RestConfig,
     backend: Arc<dyn Backend>,
-    web_templates: WebTemplateCache,
 }
 
 impl AppState {
@@ -40,11 +41,7 @@ impl AppState {
     #[must_use]
     pub fn with_backend(config: RestConfig, backend: Arc<dyn Backend>) -> Self {
         Self {
-            inner: Arc::new(Inner {
-                config,
-                backend,
-                web_templates: WebTemplateCache::default(),
-            }),
+            inner: Arc::new(Inner { config, backend }),
         }
     }
 
@@ -57,10 +54,5 @@ impl AppState {
     /// The service backend the HTTP dispatcher calls into.
     pub(crate) fn backend(&self) -> &dyn Backend {
         &*self.inner.backend
-    }
-
-    /// The built-`WebTemplate` cache (Better `wt+json`), keyed by template id.
-    pub(crate) fn web_templates(&self) -> &WebTemplateCache {
-        &self.inner.web_templates
     }
 }

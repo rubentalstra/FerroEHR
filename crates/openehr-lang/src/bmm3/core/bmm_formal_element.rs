@@ -8,11 +8,11 @@ use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
 use crate::bmm3::core::feature::bmm_result::BmmResult;
 use crate::bmm3::core::feature::bmm_self::BmmSelf;
 use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// A formal element having a name, type and a type-based signature.
 /// Closed subtype set of `BMM_FORMAL_ELEMENT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmFormalElement {
     BmmConstant(BmmConstant),
@@ -23,4 +23,64 @@ pub enum BmmFormalElement {
     BmmResult(BmmResult),
     BmmSelf(BmmSelf),
     BmmSingleton(BmmSingleton),
+}
+
+impl<'de> ::serde::Deserialize<'de> for BmmFormalElement {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("BMM_CONSTANT") => {
+                ::core::result::Result::Ok(Self::BmmConstant(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_FUNCTION") => {
+                ::core::result::Result::Ok(Self::BmmFunction(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_LOCAL") => {
+                ::core::result::Result::Ok(Self::BmmLocal(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_PARAMETER") => {
+                ::core::result::Result::Ok(Self::BmmParameter(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_PROCEDURE") => {
+                ::core::result::Result::Ok(Self::BmmProcedure(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_RESULT") => {
+                ::core::result::Result::Ok(Self::BmmResult(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("BMM_SINGLETON") => {
+                ::core::result::Result::Ok(Self::BmmSingleton(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "BMM_FORMAL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "BMM_FORMAL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON)"
+                )))
+            }
+        }
+    }
 }

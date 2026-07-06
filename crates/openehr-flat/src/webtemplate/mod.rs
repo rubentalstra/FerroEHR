@@ -12,6 +12,6 @@ mod model;
 pub use builder::build_web_template;
 pub use model::{
     WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateCodedValue,
-    WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
-    WebTemplateValidation,
+    WebTemplateExistence, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
+    WebTemplateRange, WebTemplateValidation,
 };

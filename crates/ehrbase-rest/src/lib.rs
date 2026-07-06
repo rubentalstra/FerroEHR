@@ -21,14 +21,16 @@ mod error;
 mod negotiate;
 mod openapi;
 mod params;
+pub mod response;
 mod router;
 mod state;
 mod status;
 
 pub use auth::{AuthMethod, Authenticator, Principal};
-pub use backend::{Backend, StubBackend};
+pub use backend::{Backend, EhrService, StubBackend, WebTemplateService};
 pub use config::RestConfig;
 pub use error::RestError;
+pub use response::{ResourceMeta, ServiceResponse};
 pub use router::router;
 pub use state::AppState;
 

@@ -8,7 +8,7 @@ use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeratio
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Definition of a class in an object model. A class is type that may be open or closed in terms of other types mentioned within.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -39,11 +39,61 @@ pub struct BmmClassData {
 
 /// Definition of a class in an object model. A class is type that may be open or closed in terms of other types mentioned within.
 /// Polymorphic slot of `BMM_CLASS` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmClass {
     BmmEnumeration(BmmEnumeration),
     BmmGenericClass(BmmGenericClass),
     BmmSimpleClass(BmmSimpleClass),
     BmmClass(BmmClassData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for BmmClass {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("BMM_CLASS") => {
+                ::core::result::Result::Ok(Self::BmmClass(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_ENUMERATION") => {
+                ::core::result::Result::Ok(Self::BmmEnumeration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => {
+                ::core::result::Result::Ok(Self::BmmEnumeration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => {
+                ::core::result::Result::Ok(Self::BmmEnumeration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_GENERIC_CLASS") => {
+                ::core::result::Result::Ok(Self::BmmGenericClass(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => {
+                ::core::result::Result::Ok(Self::BmmSimpleClass(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmClass(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "BMM_CLASS: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)"
+                )))
+            }
+        }
+    }
 }

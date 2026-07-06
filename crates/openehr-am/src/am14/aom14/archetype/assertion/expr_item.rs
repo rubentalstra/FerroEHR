@@ -3,14 +3,51 @@
 use crate::am14::aom14::archetype::assertion::expr_binary_operator::ExprBinaryOperator;
 use crate::am14::aom14::archetype::assertion::expr_leaf::ExprLeaf;
 use crate::am14::aom14::archetype::assertion::expr_unary_operator::ExprUnaryOperator;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract parent of all expression tree items.
 /// Closed subtype set of `EXPR_ITEM` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExprItem {
     ExprBinaryOperator(Box<ExprBinaryOperator>),
     ExprLeaf(ExprLeaf),
     ExprUnaryOperator(Box<ExprUnaryOperator>),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ExprItem {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("EXPR_BINARY_OPERATOR") => {
+                ::core::result::Result::Ok(Self::ExprBinaryOperator(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EXPR_LEAF") => {
+                ::core::result::Result::Ok(Self::ExprLeaf(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EXPR_UNARY_OPERATOR") => {
+                ::core::result::Result::Ok(Self::ExprUnaryOperator(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "EXPR_ITEM: missing required `_type` on polymorphic slot (expected one of: EXPR_BINARY_OPERATOR, EXPR_LEAF, EXPR_UNARY_OPERATOR)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "EXPR_ITEM: unexpected `_type` {__other:?} (expected one of: EXPR_BINARY_OPERATOR, EXPR_LEAF, EXPR_UNARY_OPERATOR)"
+                )))
+            }
+        }
+    }
 }

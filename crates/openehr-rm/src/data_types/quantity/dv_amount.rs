@@ -4,15 +4,55 @@ use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::data_types::quantity::dv_count::DvCount;
 use crate::data_types::quantity::dv_proportion::DvProportion;
 use crate::data_types::quantity::dv_quantity::DvQuantity;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract class defining the concept of relative quantified  'amounts'. For relative quantities, the  `+` and  `-` operators are defined (unlike descendants of `DV_ABSOLUTE_QUANTITY`, such as the date/time types).
 /// Closed subtype set of `DV_AMOUNT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvAmount {
     DvCount(DvCount),
     DvDuration(DvDuration),
     DvProportion(DvProportion),
     DvQuantity(DvQuantity),
+}
+
+impl<'de> ::serde::Deserialize<'de> for DvAmount {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("DV_COUNT") => ::core::result::Result::Ok(Self::DvCount(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("DV_DURATION") => {
+                ::core::result::Result::Ok(Self::DvDuration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_PROPORTION") => {
+                ::core::result::Result::Ok(Self::DvProportion(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("DV_QUANTITY") => {
+                ::core::result::Result::Ok(Self::DvQuantity(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "DV_AMOUNT: missing required `_type` on polymorphic slot (expected one of: DV_COUNT, DV_DURATION, DV_PROPORTION, DV_QUANTITY)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "DV_AMOUNT: unexpected `_type` {__other:?} (expected one of: DV_COUNT, DV_DURATION, DV_PROPORTION, DV_QUANTITY)"
+                )))
+            }
+        }
+    }
 }

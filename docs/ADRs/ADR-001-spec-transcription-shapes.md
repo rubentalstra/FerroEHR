@@ -1,8 +1,22 @@
 # ADR-001 — Rust shapes for openEHR spec transcription (MI, covariance, generics)
 
-- Status: accepted
+- Status: **superseded in part by ADR-004** (as hand-authoring *conventions* —
+  the spec crates are generated, not hand-transcribed). The MI/covariance/generic
+  *outcomes* still describe what the emitter produces.
 - Date: 2026-07-02
 - Phase: P1 (docs/plans/phase-01-foundation-identification.md)
+
+> ## ⚠️ AMENDMENT (2026-07-03, ADR-004): generation replaced hand-transcription
+>
+> ADR-004 supersedes this ADR **as hand-authoring conventions**: the openEHR spec
+> crates (`openehr-base`, `openehr-rm`, `openehr-am`) are now **generated** from
+> the vendored BMM meta-model — no one hand-transcribes RM classes copying these
+> shapes. The MI/covariance/constrained-generic/closed-enum mappings below still
+> describe the *emitter's* choices (ADR-004 §3), so the decisions read true; the
+> "P3 transcribers copy shapes mechanically" framing does not. Note also: the
+> `crates/openehr-foundation/…` worked-example paths are stale — that crate was
+> folded into `openehr-base`; and the `TYPE_NAME` const / deferred-serde plan was
+> replaced by `#[derive(OpenEhrType)]` (see ADR-002's amendment).
 
 ## Context
 

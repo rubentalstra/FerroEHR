@@ -3,14 +3,51 @@
 use crate::am14::aom14::archetype::constraint_model::archetype_internal_ref::ArchetypeInternalRef;
 use crate::am14::aom14::archetype::constraint_model::archetype_slot::ArchetypeSlot;
 use crate::am14::aom14::archetype::constraint_model::constraint_ref::ConstraintRef;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract parent type of C_OBJECT subtypes that are defined by reference.
 /// Closed subtype set of `C_REFERENCE_OBJECT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CReferenceObject {
     ArchetypeInternalRef(ArchetypeInternalRef),
     ArchetypeSlot(ArchetypeSlot),
     ConstraintRef(ConstraintRef),
+}
+
+impl<'de> ::serde::Deserialize<'de> for CReferenceObject {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("ARCHETYPE_INTERNAL_REF") => {
+                ::core::result::Result::Ok(Self::ArchetypeInternalRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("ARCHETYPE_SLOT") => {
+                ::core::result::Result::Ok(Self::ArchetypeSlot(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("CONSTRAINT_REF") => {
+                ::core::result::Result::Ok(Self::ConstraintRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "C_REFERENCE_OBJECT: missing required `_type` on polymorphic slot (expected one of: ARCHETYPE_INTERNAL_REF, ARCHETYPE_SLOT, CONSTRAINT_REF)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "C_REFERENCE_OBJECT: unexpected `_type` {__other:?} (expected one of: ARCHETYPE_INTERNAL_REF, ARCHETYPE_SLOT, CONSTRAINT_REF)"
+                )))
+            }
+        }
+    }
 }
