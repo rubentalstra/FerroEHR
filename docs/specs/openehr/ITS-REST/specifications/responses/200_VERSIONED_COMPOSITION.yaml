@@ -1,0 +1,6 @@
+description: |
+  `200 OK` is returned when the requested VERSIONED_COMPOSITION is successfully retrieved.
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/VersionedComposition.yaml

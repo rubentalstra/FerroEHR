@@ -1,0 +1,79 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/FEEDER_AUDIT.json",
+    "definitions": {
+        "FEEDER_AUDIT": {
+            "type": "object",
+            "required": [
+                "originating_system_audit"
+            ],
+            "properties": {
+                "originating_system_item_ids": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_IDENTIFIER.json#/definitions/DV_IDENTIFIER"
+                    }
+                },
+                "feeder_system_item_ids": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_IDENTIFIER.json#/definitions/DV_IDENTIFIER"
+                    }
+                },
+                "original_content": {
+                    "allOf": [
+                        {
+                            "required": [
+                                "_type"
+                            ],
+                            "properties": {
+                                "_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "DV_PARSABLE",
+                                        "DV_MULTIMEDIA"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "DV_PARSABLE"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_PARSABLE.json#/definitions/DV_PARSABLE"
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "_type": {
+                                        "const": "DV_MULTIMEDIA"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/DV_MULTIMEDIA.json#/definitions/DV_MULTIMEDIA"
+                            }
+                        }
+                    ]
+                },
+                "originating_system_audit": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/FEEDER_AUDIT_DETAILS.json#/definitions/FEEDER_AUDIT_DETAILS"
+                },
+                "feeder_system_audit": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/FEEDER_AUDIT_DETAILS.json#/definitions/FEEDER_AUDIT_DETAILS"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "FEEDER_AUDIT"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

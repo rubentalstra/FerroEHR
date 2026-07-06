@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: Query API
+  version: latest
+  x-status: STABLE
+  x-spec: query
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: 'https://specifications.openehr.org/'
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: 'https://creativecommons.org/licenses/by-nd/3.0/'
+  description:
+    $ref: ./docs/query/Intro.md
+security: []
+servers:
+  - url: 'https://{baseUrl}/v1'
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+paths:
+  '/query/aql':
+    get:
+      $ref: ./operations/query_execute_adhoc_query.yaml
+    post:
+      $ref: ./operations/query_execute_adhoc_query_body.yaml
+  '/query/{qualified_query_name}':
+    get:
+      $ref: ./operations/query_execute_stored_query.yaml
+    post:
+      $ref: ./operations/query_execute_stored_query_body.yaml
+  '/query/{qualified_query_name}/{version}':
+    get:
+      $ref: ./operations/query_execute_stored_query_version.yaml
+    post:
+      $ref: ./operations/query_execute_stored_query_version_body.yaml
+tags:
+  - name: Query_types
+    x-displayName: Query types
+    description:
+      $ref: ./docs/query/Query_types.md
+  - name: Qualified_query_name
+    x-displayName: Qualified query name
+    description:
+      $ref: ./docs/query/Qualified_query_name.md
+  - name: Request
+    x-displayName: Request details
+    description:
+      $ref: ./docs/query/Request.md
+  - name: Response
+    x-displayName: Response details
+    description:
+      $ref: ./docs/query/Response.md
+  - name: Query
+    x-displayName: Query Execute
+    description: |
+      Execution of [AQL queries](https://specifications.openehr.org/releases/QUERY/latest/AQL.html).
+      Actions upon resources of this group are also formally described in the [I_QUERY_SERVICE](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_query_service_interface) Abstract Service Model interface.
+  - name: Query_schema
+    x-displayName: Query Execute
+    x-traitTag: true
+    description:
+      $ref: ./tags/Query_schema.md
+  - name: RESULT_SET_schema
+    x-displayName: RESULT_SET
+    description:
+      $ref: ./tags/RESULT_SET_schema.md
+x-tagGroups:
+  - name: Docs
+    tags:
+      - Query_types
+      - Qualified_query_name
+      - Request
+      - Response
+  - name: Resource endpoints
+    tags:
+      - Query
+  - name: Resource Schema
+    tags:
+      - Query_schema
+      - RESULT_SET_schema

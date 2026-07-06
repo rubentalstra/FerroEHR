@@ -1,0 +1,32 @@
+= Preface
+
+== Purpose
+
+This document specifies the openEHR Platform Conformance test schedule, which may be used to determine the conformance of openEHR platform products to openEHR plaform-related specifications. The audience of this document includes:
+
+* Software development organisations developing healthcare information systems;
+* Customer (i.e. procuring) organisations.
+
+== Related Documents
+
+Useful references for reading this document include:
+
+* The {openehr_overview}[openEHR Architecture Overview^];
+* The {openehr_cnf_guide}[openEHR Conformance Guide^]
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_cnf_development_platform_test_schedule}[{openehr_cnf_development_platform_test_schedule}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_cnf_forum}[openEHR Conformance forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+

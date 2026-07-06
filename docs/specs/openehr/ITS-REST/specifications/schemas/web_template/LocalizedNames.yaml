@@ -1,0 +1,9 @@
+title: LocalizedNames
+required:
+  - en
+type: object
+properties:
+  en:
+    type: string
+example:
+  en: Vital Signs

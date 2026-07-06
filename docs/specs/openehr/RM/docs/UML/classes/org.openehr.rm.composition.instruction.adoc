@@ -1,0 +1,38 @@
+=== INSTRUCTION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*INSTRUCTION*
+
+h|*Description*
+2+a|Used to specify actions in the future. Enables simple and complex specifications to be expressed, including in a fully-computable workflow form. Used for any actionable statement such as medication and therapeutic orders, monitoring, recall and review. Enough details must be provided for the specification to be directly executed by an actor, either human or machine. 
+
+Not to be used for plan items which are only specified in general terms.
+
+h|*Inherit*
+2+|`<<_care_entry_class,CARE_ENTRY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*narrative*: `link:/releases/RM/{rm_release}/data_types.html#_dv_text_class[DV_TEXT^]`
+a|Mandatory human-readable version of what the Instruction is about.
+
+h|*0..1*
+|*expiry_time*: `link:/releases/RM/{rm_release}/data_types.html#_dv_date_time_class[DV_DATE_TIME^]`
+a|Optional expiry date/time to assist determination of when an Instruction can be assumed to have expired. This helps prevent false listing of Instructions as Active when they clearly must have been terminated in some way or other.
+
+h|*0..1*
+|*wf_definition*: `link:/releases/RM/{rm_release}/data_types.html#_dv_parsable_class[DV_PARSABLE^]`
+a|Optional workflow engine executable expression of the Instruction.
+
+h|*0..1*
+|*activities*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_activity_class,ACTIVITY>>>`
+a|List of all activities in Instruction.
+
+h|*Invariants*
+2+a|__Activities_valid__: `activities /= Void implies not activities.is_empty`
+|===

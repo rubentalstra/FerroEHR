@@ -1,0 +1,38 @@
+=== I_ADMIN_ARCHIVE Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_ADMIN_ARCHIVE*
+
+h|*Description*
+2+a|Interface for Archive-related functions.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*archive_ehrs* ( +
+ehr_ids: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]>[0..1]` +
+)
+a|Move selected EHRs to archival storage.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*0..1*
+|*archive_parties* ( +
+party_ids: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]>[0..1]` +
+)
+a|Move selected Parties and relationships to archival storage.
+
+
+
+
+.Errors
+* `party_id_does_not_exist`
+|===

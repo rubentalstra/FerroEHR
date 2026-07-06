@@ -1,0 +1,29 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+|[[latest_issue]]1.0
+|{spec_tickets}/SPECRM-18[SPECRM-18^]: Change `GENERIC_ENTRY` data attribute type from `ITEM_TREE` to the abstract `ITEM` class.
+|D Bosca, +
+ H Frankel
+|[[latest_issue_date]]23 May 2022
+
+4+^h|*RM Release 1.1.0*
+4+^h|*RM Release 1.0.4*
+4+^h|*Release 1.0.1*
+
+|0.6
+|{spec_tickets}/SPEC-203[SPEC-203^]: Release 1.0 explanatory text improvements.  Added section on openEHR Extract. Added integration architecture diagram.
+|T Beale
+|22 Jul 2006
+
+4+^h|*Release 1.0*
+
+|0.5
+|Initial writing.
+|T Beale
+|15 Sep 2005
+
+|===

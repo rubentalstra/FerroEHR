@@ -1,0 +1,49 @@
+=== BMM_GENERIC_PARAMETER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_GENERIC_PARAMETER*
+
+h|*Description*
+2+a|Definition of a generic parameter in a class definition of a generic type.
+
+h|*Inherit*
+2+|`<<_bmm_type_element_class,BMM_TYPE_ELEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of the parameter, e.g. 'T' etc. The name is limited to 1 character and upper-case.
+
+h|*0..1*
+|*conforms_to_type*: `<<_bmm_class_class,BMM_CLASS>>`
+a|Optional conformance constraint that must be another valid class name.
+
+h|*0..1*
+|*inheritance_precursor*: `<<_bmm_generic_parameter_class,BMM_GENERIC_PARAMETER>>`
+a|If set, is the corresponding generic parameter definition in an ancestor class.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*flattened_conforms_to_type* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Get any ultimate type conformance constraint on this generic parameter due to inheritance.
+
+h|*1..1*
+|*effective_conforms_to_type* (): `<<_bmm_class_class,BMM_CLASS>>`
+a|Generate ultimate conformance type, which is either from `conforms_to_type' or if not set, 'Any'.
+
+h|*1..1 +
+(redefined)*
+|*type_signature* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Signature form of the open type, including constrainer type if there is one, e.g. 'T:Ordered'.
+
+h|*Invariants*
+2+a|__Inv_generic_name__: `name.count = 1 and name.is_upper`
+|===

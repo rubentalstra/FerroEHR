@@ -1,0 +1,36 @@
+operationId: composition_update
+summary: Update COMPOSITION
+description: |
+  Updates COMPOSITION identified by `uid_based_id` and associated with the EHR identified by `ehr_id`.
+  
+  The `uid_based_id` can take only a form of an HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+
+  If the request body already contains a COMPOSITION.uid.value, it must match the `uid_based_id` in the URL. 
+
+  The existing latest `version_uid` of COMPOSITION resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+tags:
+  - COMPOSITION
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/path/uid_based_id_as_versioned_object_uid.yaml
+  - $ref: ../parameters/header/If-Match.yaml
+  - $ref: ../parameters/header/Prefer.yaml
+requestBody:
+  description: |
+    The new COMPOSITION.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/ehr/Composition.yaml
+  required: true
+responses:
+  '200':
+    $ref: ../responses/200_COMPOSITION_updated.yaml
+  '400':
+    $ref: ../responses/400_COMPOSITION.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id_or_uid_based_id.yaml
+  '412':
+    $ref: ../responses/412_COMPOSITION.yaml
+  '422':
+    $ref: ../responses/422_COMPOSITION.yaml

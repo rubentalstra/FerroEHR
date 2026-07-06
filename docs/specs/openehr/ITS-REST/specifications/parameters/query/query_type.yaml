@@ -1,0 +1,10 @@
+name: query_type
+in: query
+description: |
+  Parameter indicating the query language/type.
+style: form
+explode: true
+schema:
+  type: string
+  default: "AQL"
+  example: "AQL"

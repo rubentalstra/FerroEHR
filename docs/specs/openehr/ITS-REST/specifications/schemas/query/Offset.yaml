@@ -1,0 +1,7 @@
+title: Offset
+description: |
+  The row number in result-set to start result-set from (`0`-based), default is `0`.
+type: integer
+format: int32
+default: 0
+example: 10

@@ -1,0 +1,32 @@
+=== UID_BASED_ID Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__UID_BASED_ID (abstract)__*
+
+h|*Description*
+2+a|Abstract model of UID-based identifiers consisting of a root part and an optional extension; lexical form: `root '::' extension`.
+
+h|*Inherit*
+2+|`<<_object_id_class,OBJECT_ID>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*root* (): `<<_uid_class,UID>>`
+a|The identifier of the conceptual namespace in which the object exists, within the identification scheme. Returns the part to the left of the first '::' separator, if any, or else the whole string.
+
+h|*1..1*
+|*extension* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional local identifier of the object within the context of the root identifier. Returns the part to the right of the first '::' separator if any, or else any empty String.
+
+h|*1..1*
+|*has_extension* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if not `_extension_.is_empty()`.
+
+h|*Invariants*
+2+a|__Has_extension_valid__: `extension.is_empty xor has_extension`
+|===

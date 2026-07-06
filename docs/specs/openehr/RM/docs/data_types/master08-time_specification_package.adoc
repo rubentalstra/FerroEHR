@@ -1,0 +1,124 @@
+= Time_specification Package
+
+== Overview
+Time specification is about potentiality rather than actuality, and needs its own types. The openEHR
+`data_types.time_specification` package provides such types, based on the HL7 types of the
+same names, and is illustrated below.
+
+[.text-center]
+.rm.data_types.time_specification package
+image::{uml_diagrams_uri}/RM-data_types.time_specification.svg[id=rm_data_types_time_specification, align="center"]
+
+=== Requirements
+One of the difficulties with time is expressing future times, since potential occurrences, durations,
+repetitions cannot be expressed in the same way as actual time. Complicating the problem is the fact
+that humans tend to use very customary (i.e. calendar-anchored) ways of specifying time, such as
+"every second Tuesday", or "the first Sunday of the month". In clinical medicine, future time is most
+commonly used to express when medications or other therapies are intended to take place. They are
+often anchored to the calendar, and can easily include repetitions.
+
+As with other time types, there are both simple and complex cases to consider. One of the most common
+examples of time in the future is the timing for drug administrations, e.g. "once every four
+hours". This could be represented as a simple periodic specification, consisting of a start point in
+time, a period, and a number of repetitions. The specification for taking blood sugar levels during a
+glucose test could be represented as a simple aperiodic series, e.g. ".5hr, 1hr, 2hr". However, even
+common specifications for prescriptions e.g. "three times a day for seven days" start to become quite
+complex, for example, because "three times a day" might not mean literally 8 hours apart.
+
+Some of the factors to consider in timing specifications are:
+
+* period of repetition
+* duration of activity being specified
+* possible alignment to the calendar, e.g. "every 5th of the month"
+* possible alignment to real world events e.g. "after meals"
+* fuzziness
+
+Because time is inherently "messy" (months do not all have the same number of days, leap years
+change the number of days in some years etc), and because the relationship we have with time can
+also be arbitrary (e.g. anchored to mealtimes etc), specifying linguistically obvious specifications formally
+is quite challenging.
+
+=== Design
+
+The HL7 version 3 data types for time specification appear to allow for all of the required possibilities.
+The syntax is based on the {iso_8601}[ISO 8601 standard^]. It provides types which express:
+
+* Periodic intervals (HL7v3 - `PIVL<T:TS>`) - allows period, duration, and calendar linking to
+be specified.
+* Event-linked periodic intervals (HL7v3 - `EIVL<T:TS>`) - allows PIVLs to be linked to realworld
+events like meals.
+* General timing specification (HL7v3 - GTS) - allows any time specification to be expressed,
+using a syntax which is equivalet to a series of `IVL<TS>` (i.e. intervals of `DATE_TIME`).
+
+The HL7 syntax for time specification is encapsulated in equivalent openEHR types described here.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}dv_time_specification.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_periodic_time_specification.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_general_time_specification.adoc[]
+
+== Syntaxes
+
+=== Phase-linked Time Specification Syntax
+
+The syntactic form of phase-linked periodic time specifications (derived from the `PIVL<T>` spec
+HL7v3 ballot) is as follows.
+
+----
+"[" interval "]" "/" "(" difference ")" [ "@" alignment ] [ "IST" ]
+----
+
+Examples include:
+
+----
+* [200004181100;200004181110]/(7d)@DW = every Tuesday from 11:00 to 11:10 AM.
+* [200004181100;200004181110]/(1mo)@DM" = every 18th of the month 11:00 to 11:10 AM.
+----
+
+A parse specification is as follows:
+
+[source, ebnf]
+--------
+phase_linked_time_spec = pure_phase_linked_time_spec [ "IST" ] ;
+pure_phase_linked_time_spec = phase [ "@" alignment ] ;
+phase = interval "/" "(" difference ")" ;
+alignment = "DW" | etc ;                  (* terms from "HL7::CalendarCycle" domain *)
+difference =  ;                           (* ISO 8601 for time difference *)
+interval = "[" interval_spec "]" ;
+interval_spec = ";" | ";" date_time | date_time ";" date_time | date_time ";" ;
+date_time = (* ISO 8601 for date/time string yyyymmdd[hh[mm[ss]]] *) ;
+--------
+
+=== Event-linked Periodic Time Specification Syntax
+Examples of event-linked periodic time specifications include:
+
+* "PC+[1h;1h]" = one hour after meal
+* "HS-[50min;1h]" = one hour before bedtime for 10 minutes
+
+The following parse specification defines the syntax for event-related periodic time specifications.
+
+[source, ebnf]
+--------
+event_linked_time_spec = event | event offset ;
+event = "AC" | "ACD" | etc ;             (* HL7 domain "HL7::TimingEvent" *)
+offset = ( "+" | "-" ) dur_interval ;
+dur_interval = ;                         (* ISO 8601 for duration interval *)
+--------
+
+=== General Time Specification Syntax
+The class is the same structurally as the `DV_TIME_SPECIFICATION` parent. The syntax is the HL7
+GTS syntax, defined by the following parse specification:
+
+[source, ebnf]
+--------
+general_time_spec = symbol | union | exclusion ;
+union = intersection  [";" union ] ;
+exclusion = exclusion "\" intersection ;
+intersection = factor intersection | factor ;
+hull = factor [ ".." hull ] ;
+factor = interval | phase_linked_time_spec | event_linked_time_spec | "(" general_time_spec ")" ;
+--------
+

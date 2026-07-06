@@ -1,0 +1,59 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_REAL-detailed.json",
+    "title": "C_REAL",
+    "description": "Constraint on instances of Real.",
+    "$comments": "Defined in Archetype IM, inherits from C_PRIMITIVE",
+    "type": "object",
+    "properties": {
+        "assumed_value": {
+            "description": "The value to assume if this item is not included in data, due to being part of an optional structure.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Real"
+        },
+        "list": {
+            "description": "Set of Reals specifying constraint.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Real"
+            }
+        },
+        "range": {
+            "description": "Range of Real specifying constraint.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Interval_of_Real"
+        }
+    },
+    "$inherits": [
+        "all-detailed.json#/definitions/C_PRIMITIVE"
+    ],
+    "$functions": {
+        "default_value": {
+            "description": "Generate a default value from this constraint object.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+            }
+        },
+        "has_assumed_value": {
+            "description": "True if there is an assumed value.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "valid_value": {
+            "description": "True if a_value is valid with respect to constraint expressed in concrete instance of this type.",
+            "parameters": {
+                "a_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+                }
+            },
+            "required_parameters": [
+                "a_value"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "$invariants": {
+        "Assumed_value_valid": "has_assumed_value implies valid_value(assumed_value)"
+    }
+}

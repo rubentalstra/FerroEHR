@@ -1,0 +1,11 @@
+title: DV_MULTIMEDIA
+type: object
+allOf:
+  - $ref: ../data_types/DvMultimedia.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_MULTIMEDIA]
+x-discriminator-value: DV_MULTIMEDIA

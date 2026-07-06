@@ -1,0 +1,17 @@
+title: OBJECT_ID
+oneOf:
+  - $ref: ../base_types/UMArchetypeId.yaml
+  - $ref: ../base_types/UMTemplateId.yaml
+  - $ref: ../base_types/UMTerminologyId.yaml
+  - $ref: ../base_types/UMGenericId.yaml
+  - $ref: ../base_types/UMHierObjectId.yaml
+  - $ref: ../base_types/UMObjectVersionId.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    ARCHETYPE_ID: ../base_types/UMArchetypeId.yaml
+    TEMPLATE_ID: ../base_types/UMTemplateId.yaml
+    TERMINOLOGY_ID: ../base_types/UMTerminologyId.yaml
+    GENERIC_ID: ../base_types/UMGenericId.yaml
+    HIER_OBJECT_ID: ../base_types/UMHierObjectId.yaml
+    OBJECT_VERSION_ID: ../base_types/UMObjectVersionId.yaml

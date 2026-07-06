@@ -1,0 +1,74 @@
+=== DV_QUANTIFIED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__DV_QUANTIFIED (abstract)__*
+
+h|*Description*
+2+a|Abstract class defining the concept of true quantified values, i.e. values which are not only ordered, but which have a precise magnitude.
+
+h|*Inherit*
+2+|`<<_dv_ordered_class,DV_ORDERED>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*magnitude_status*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional status of magnitude with values: 
+
+* `"="`   :   magnitude is a point value 
+* `"<"`   :   value is < magnitude 
+* `">"`   :   value is > magnitude 
+* `"\<="` : value is \<= magnitude 
+* `">="` : value is >= magnitude 
+* `"~"`   :   value is approximately magnitude 
+
+If not present, assumed meaning is  `"="` .
+
+h|*0..1*
+|*accuracy*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Accuracy of measurement. Exact form of expression determined in descendants.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*valid_magnitude_status* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = s in \{"=", "<", ">", "\<=", ">=", "~"}`
+a|Test whether a string value is one of the valid values for the magnitude_status attribute.
+
+h|*1..1 +
+(abstract)*
+|*magnitude* (): `link:/releases/BASE/{base_release}/foundation_types.html#_ordered_numeric_class[Ordered_Numeric^]`
+a|
+
+h|*1..1*
+|*accuracy_unknown* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if accuracy is not known, e.g. due to not being recorded or discernable.
+
+h|*1..1 +
+(abstract)*
+|*is_equal* ( +
+other: `<<_dv_quantified_class,DV_QUANTIFIED>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if this `DV_QUANTIFIED` is considered equal to `_other_`.
+
+h|*1..1 +
+(effected)*
+|*less_than* __alias__ "<" ( +
+other: `<<_dv_quantified_class,DV_QUANTIFIED>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_comparable__: `is_strictly_comparable_to (other)` +
+ +
+__Post_result__: `Result = magnitude < other.magnitude`
+a|True if this Quantified object is less than `_other_`, based on comparison of `_magnitude_`.
+
+h|*Invariants*
+2+a|__Magnitude_status_valid__: `magnitude_status /= Void implies valid_magnitude_status (magnitude_status)`
+|===

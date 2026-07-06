@@ -1,0 +1,27 @@
+=== SECTION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*SECTION*
+
+h|*Description*
+2+a|Represents a heading in a heading structure, or  section tree.  Created according to archetyped structures for typical headings such as SOAP,  physical examination, but also pathology result heading structures.  Should not be used instead of `ENTRY` hierarchical structures.
+
+h|*Inherit*
+2+|`<<_content_item_class,CONTENT_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_content_item_class,CONTENT_ITEM>>>`
+a|Ordered list of content items under this section, which may include:
+
+* more `SECTIONs`;
+* `ENTRYs`.
+
+h|*Invariants*
+2+a|__Items_valid__: `items /= Void implies not items.is_empty`
+|===

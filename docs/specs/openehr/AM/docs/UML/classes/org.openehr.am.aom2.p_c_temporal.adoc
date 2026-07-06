@@ -1,0 +1,21 @@
+=== P_C_TEMPORAL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__P_C_TEMPORAL<T> (abstract)__*
+
+h|*Description*
+2+a|Purpose Abstract parent of C_ORDERED types whose base type is an ISO date/time type.
+
+h|*Inherit*
+2+|`<<_p_c_ordered_class,P_C_ORDERED>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*pattern_constraint*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.
+|===

@@ -1,0 +1,11 @@
+title: PARTY_IDENTIFIED
+type: object
+allOf:
+  - $ref: ../common/PartyIdentified.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [PARTY_IDENTIFIED]
+x-discriminator-value: PARTY_IDENTIFIED

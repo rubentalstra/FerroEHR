@@ -1,0 +1,25 @@
+=== P_C_DEFINED_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__P_C_DEFINED_OBJECT (abstract)__*
+
+h|*Description*
+2+a|Abstract parent type of C_OBJECT subtypes that are defined by value, i.e. whose definitions are actually in the archetype rather than being by reference.
+
+h|*Inherit*
+2+|`<<_p_c_object_class,P_C_OBJECT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*is_frozen*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|
+
+h|*1..1*
+|*default_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|
+|===

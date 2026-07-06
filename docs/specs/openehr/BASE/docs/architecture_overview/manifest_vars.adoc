@@ -1,0 +1,5 @@
+:spec_title: Architecture Overview
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: EHR, openehr, architecture
+:description: openEHR Architecture Overview

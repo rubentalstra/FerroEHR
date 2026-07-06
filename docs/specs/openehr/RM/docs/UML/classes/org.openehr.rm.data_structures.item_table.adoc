@@ -1,0 +1,98 @@
+=== ITEM_TABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ITEM_TABLE*
+
+h|*Description*
+2+a|Logical relational database style table data structure, in which columns are named and ordered with respect to each other. Implemented using Cluster-per-row encoding. Each row Cluster must have an identical number of Elements, each of which in turn must have identical names and value types in the corresponding positions in each row. 
+
+Some columns may be designated  key' columns, containing key data for each row, in the manner of relational tables. This allows row-naming, where each row represents a body site, a blood antigen etc. All values in a column have the same data type. 
+
+Used for representing any data which is logically a table of values, such as blood pressure, most protocols, many blood tests etc. 
+
+Misuse: Not to be used for time-based data, which should be represented with the temporal class `HISTORY`. The table may be empty.
+
+h|*Inherit*
+2+|`<<_item_structure_class,ITEM_STRUCTURE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*rows*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_cluster_class,CLUSTER>>>`
+a|Physical representation of the table as a list of `CLUSTERs`, each containing the data of one row of the table.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*row_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Number of rows in the table.
+
+h|*1..1*
+|*column_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Return number of columns in the table.
+
+h|*0..1*
+|*row_names* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/data_types.html#_dv_text_class[DV_TEXT^]>`
+a|Return set of row names.
+
+h|*0..1*
+|*column_names* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/data_types.html#_dv_text_class[DV_TEXT^]>`
+a|Return set of column names.
+
+h|*1..1*
+|*ith_row* ( +
+i: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][1]` +
+): `<<_cluster_class,CLUSTER>>`
+a|Return i-th row.
+
+h|*1..1*
+|*has_row_with_name* ( +
+a_key: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return `True` if there is a column with name = `_a_key_`.
+
+h|*1..1*
+|*has_column_with_name* ( +
+a_key: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return `True` if there is a column with name = `_a_key_`.
+
+h|*1..1*
+|*named_row* ( +
+a_key: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_cluster_class,CLUSTER>>`
+a|Return row with name = `_a_key_`.
+
+h|*1..1*
+|*has_row_with_key* ( +
+keys: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return `True` if there is a row with key `_keys_`.
+
+h|*1..1*
+|*row_with_key* ( +
+keys: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>` +
+): `<<_cluster_class,CLUSTER>>`
+a|Return rows with particular keys.
+
+h|*1..1*
+|*element_at_cell_ij* ( +
+i: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][1]`, +
+j: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][1]` +
+): `<<_element_class,ELEMENT>>`
+a|Return cell at a particular location.
+
+h|*1..1 +
+(redefined)*
+|*as_hierarchy* (): `<<_cluster_class,CLUSTER>>`
+a|Generate a CEN EN13606-compatible hierarchy consisting of a single `CLUSTER` containing the `CLUSTERs` representing the columns of this table.
+
+h|*Invariants*
+2+a|__Valid_structure__: `rows.for_all (items.for_all (instance_of ("ELEMENT")))`
+|===

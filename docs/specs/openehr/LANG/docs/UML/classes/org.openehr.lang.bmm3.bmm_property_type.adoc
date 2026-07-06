@@ -1,0 +1,14 @@
+=== BMM_PROPERTY_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_PROPERTY_TYPE*
+
+h|*Description*
+2+a|Meta-type for property and variable signatures.
+
+h|*Inherit*
+2+|`<<_bmm_signature_class,BMM_SIGNATURE>>`
+
+|===

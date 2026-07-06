@@ -1,0 +1,17 @@
+= Overview
+
+The Simplified Information Model (SIM) is a version of the canonical Reference Model and Base Model (RM, BASE components respectively) that contains structurally simpler representations of many class attributes, enabling easier construction of string-oriented serialisations such as JSON, compared to the full canonical structures. The SIM is defined as a set of classes named after a sub-set of RM classes, with `S_` prepended; for example, in the SIM, the RM class `ELEMENT` becomes `S_ELEMENT`. 
+
+Various kinds of simpilifications are used in the SIM classes, including:
+
+* String representation of some fields that are structured in the RM, e.g `CODE_PHRASE._terminology_id_` is of type `TERMINOLOGY_ID` but in the SIM, it is a `String`;
+* replacing fully expressed `DV_CODED_TEXT` or `CODE_PHRASE` fields that represent codes from openEHR or other fixed (e.g. IANA media type) vocabularies which are determinable from the openEHR RM, with Strings;
+* compressing fields of some sub-part objects into a parent object in the simplified version, reducing the need for long paths, e.g. `S_PARTY_PROXY` includes fields from `PARTY_PROXY._external_ref_`, of type `PARTY_REF`.
+
+The cost of doing the above is that some work has to be done to convert an `S_XXX` instance into an `XXX` canonical instance, in some cases, requiring the use of a formal representation of the RM. In openEHR, this is available in the form of a BMM model, as described in the {openehr_lang_latest_bmm}[openEHR Basic-Meta Model specification^]. Additionally, some fields in data have to be parsed with various micro-parsers, e.g. for Date/Time.
+
+The subset of RM classes for which SIM classes are defined is limited to the class `COMPOSITION` and classes reachable from it, or approximately 45 classes. Almost all simplifications are defined in near-leaf classes such as the `S_DATA_VALUE` descendants, `PARTICIPATION` and so on; classes such as `S_ENTRY` and `S_COMPOSITION` are largely structured the same way as in the canonical RM, except that sub-parts are of type `S_XXX` rather than `XXX`, where the latter is an original RM type. The exception to this is replacement of coded fields whose vocabulary is defined in the RM.
+
+TODO: describe transformation rules representation. This could be formalised into the BMM as a new kind of structure, which would allow formal representation in BMM of transformation rules. At the moment, a few example rules are shown below interspersed within class definitions. In the final form, these rules would be removed to a separate section / source file in either BMM, or some formal language.
+
+The specific transformations between SIM and RM instances are expressed in the tables in the Transformation Rules sub-sections below.

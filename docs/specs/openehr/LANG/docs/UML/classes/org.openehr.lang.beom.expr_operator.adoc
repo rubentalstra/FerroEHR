@@ -1,0 +1,32 @@
+=== EXPR_OPERATOR Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EXPR_OPERATOR (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of operator types.
+
+h|*Inherit*
+2+|`<<_expression_class,EXPRESSION>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*precedence_overridden*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree. If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.
+
+h|*1..1*
+|*operator*: `<<_operator_kind_enumeration,OPERATOR_KIND>>`
+a|Operator definition.
+
+h|*0..1*
+|*symbol*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The symbol actually used in the rule, or intended to be used for serialisation. Must be a member of `operator_def.symbols`.
+
+h|*Invariants*
+2+a|__Symbol_validity__: `symbol /= Void implies operator_def.symbols.has (symbol)`
+|===

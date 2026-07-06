@@ -1,0 +1,78 @@
+= Time Types
+
+== Overview
+
+The primitive Date/Time types used in openEHR are represented by classes defined in the package `base.foundation_types.time`. These are concrete types based on the {iso_8601_official}[ISO 8601 (2019) date/time standard^] semantics, which supports partial dates, times, and complex durations, all of which are needed in the biomedical and clinical domains. These classes have a `String` physical representation.  and are assumed to exist in close to the form specified here, because they are specified in other openEHR specifications.
+
+The `time` package is shown below.
+
+[.text-center]
+.`base.foundation_types.time` package
+image::{uml_diagrams_uri}/BASE-foundation_types.time.svg[id=foundation_types_time_types, align="center"]
+
+== Primitive Time Types
+
+The set of ISO 8601 based types define dates and times with a `String` representation (as per ISO 8601), and the ISO 8601 'partial' and 'extended' semantics. They are defined as descendents of the native types described above, and add the necessary elements required for ISO 8601.
+
+NOTE: class names of the form `Iso8601_xxx` have been used here to clearly identify these classes where used elsewhere in the openEHR specifications. In real implementations, other class names may be used as convenient, just as for the other primitive types.
+
+NOTE: For reasons of readability in data, it is strongly recommended that the 'extended' form of date and time strings be used when writing and displaying data, rather than the compact form. An extended date has the form `yyyy-mm-dd` rather than `yyyymmdd`, and an extended time has the form `hh:mm:ss` rather than `hhmmss`. Nevertheless, both forms should be supported so that openEHR-based systems that use 'straight-through' processing on legacy data that may be in the compact form remain conformant to the specifications.
+
+ISO 8601 semantics not included in these types include:
+
+* 'expanded' dates, which have year numbers of greater than 4 digits, and may be negative; in openEHR, only 4-digit year numbers are assumed;
+* the `YYYY-"W"WW-D` method of expressing dates (since this is imprecise and difficult to compute with due to variable week starting dates, and not required in health);
+* partial date/times with fractional minutes or hours, e.g. `hh,hhh` or `mm,mm`; in openEHR, only fractional seconds are supported;
+* the interval syntax. Intervals of date/times are supported in openEHR, but their syntax form is defined by ADL, and is standardised across all comparable types, not just dates and times.
+
+Deviations from the published standard include the following.
+
+* Durations are supposed to take the form of `PnnW` or `PnnYnnMnnDTnnHnnMnnS`, but in openEHR, the W (week) designator can be used in combination with the other designators, since it is very common to state durations of pregnancy as some combination of weeks and days.
+* Durations in openEHR may take a negative sign, indicating a duration prior to an origin. This supports healthcare needs such as 'adjusted age' (e.g. '-P3M', an age of 'minus 3 months') for very premature newborns.
+* Partial variants of `Iso8601_date_time` can include missing hours, days and months, whereas {iso_8601}[ISO 8601:2019^] (section 4.3.3 c) only allows missing seconds and minutes. The reasons for this deviation are:
+** the same deviation is used in HL7v2 and HL7v3 TS (timestamp) type, i.e. there are data in existing clinical systems matching this specification;
+** in a typed object model, this deviation is more sensible anyway; the ISO 8601 rule is most likely a limitation of the purely syntactic means of expression. In real systems where a timestamp/date-time is specified in a screen form, it makes sense to allow it to be as partial as possible, rather than artificially restricted to only missing seconds and minutes.
+* The time `24:00:00` (or `240000`) is not allowed anywhere, whereas in ISO 8601:2019 it appears to be legal at least for pure times. This deviation is also appears to be used in HL7v2 and HL7v3 (where midnight is defined as the time `00:00:00`), and is preferable to the documented standard, since a date/time with time of `24:00:00` is really the next day, i.e. the date part is then incorrect.
+
+Negation for ISO 8601 durations is also supported by {w3c_xml_schema}[W3C XML-schema^] and various programming languages. See {iso_8601}[Wikipedia^] and the {iso_8601_official}[official ISO 8601 standard^] for details. Note that in the date, time and date/time formats shown below, 'Z' and 'T' are literals.  In the duration class shown below, 'P', 'Y', 'M', 'W', 'D', 'H', 'S' and 'T' are literals.
+
+== Derived Interval / Time Types
+
+A number of useful types may be generated from the Date/time classes and the Interval classes. These are shown in blue on the following diagram.
+
+[.text-center]
+.Useful time interval types
+image::{uml_diagrams_uri}/BASE-foundation_types.time-intervals.svg[id=foundation_types_time_intervals, align="center"]
+
+== Computational Functions
+
+A number of computational functions are defined in the interfaces of the concrete data/time types, of two kinds:
+
+* _definite_: computed according to the usual numeric rules for arithmetic, in which all values are treated as _definite_, i.e. exact and invariant;
+* _nominal_: computed using commonly accepted rules of 'everyday' calendrical time, in which 'year' and 'month' are understood to be variable periods.
+
+Most of the functions defined on the date/time types are of the definite kind. The exception is functions involving `Iso8601_duration` values, which take both definite and nominal forms. The definite forms are named using the standard names `_add_()`, `_subtract_()` etc, while the nominal versions have names of the form `_xxx_nominal_()`, e.g. `_add_nominal_()` etc.
+
+An example of an operation having both forms is addition for the type `Iso8601_date`. The definite operation is called `_add_()` and treats the `Iso8601_duration` argument as an exact amount, based on constant values for length of year and month, defined by `Time_definitions._Average_days_in_month_` and `Time_definitions._Average_days_in_year_`.
+
+The nominal form of the operation is `_add_nominal_()`, and is computed according to 'everyday' rules, i.e. in which the phrase 'a year from now' means the same date next year (with occasional slight adjustment), and 'in a month' means the same date next month (or possibly a day or earlier due to next month being shorter). In a similar way, the addition of a period of one day (`'P1D'`), although itself a regular quantity is computed differently to the definite form: in the definite form, addition of `P1D` results in the addition of exactly 24h of time to the date, which may result in a time that is different by one hour due to a change of summer time during the interval, while the nominal addition results in the same time on the next of previous day, even though occasionally this will represent 23 or 25 hours' difference.
+
+The definite functions have standard operators such as `'\+'`, `'-'`, etc. associated with them, while the nominal functions have the operators `'++'`, `'--'`, etc.
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}time_definitions.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}temporal.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}iso8601_type.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}iso8601_date.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}iso8601_time.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}iso8601_date_time.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}iso8601_duration.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}iso8601_timezone.adoc[]

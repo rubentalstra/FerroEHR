@@ -1,0 +1,218 @@
+= Assertions
+
+== Overview
+
+This section describes the assertion sub-language of archetypes. Assertions are used in archetype "slot" clauses in the cADL `definition` section, and in the `invariant` section. The following simple assertion in an invariant clause says that the speed in kilometres of some node is related to the speed-in-miles by a factor of 1.6:
+
+[source, expr]
+--------
+    validity: /speed[at0002]/kilometres/magnitude = /speed[at0004]/miles/magnitude * 1.6
+--------
+
+The archetype assertion language is a small language of its own. Formally it is a first-order predicate logic with equality and comparison operators (=, >, etc). It is very nearly a subset of the OMG’s emerging OCL (Object Constraint Language) syntax, and is very similar to the assertion syntax which has been used in the Object Z cite:[Object_Z] and the Eiffel cite:[Eiffel] languages and tools for over a decade. (See citenp:[Sowa2000], citenp:[Hein2002], citenp:[Kilov1994] for an explanation of predicate logic in information modelling.)
+
+== Keywords
+
+The syntax of the invariant section is a subset of first-order predicate logic. In it, the following keywords can be used:
+
+* `exists` , `for_all` ,
+* `and` , `or` , `xor` , `not` , `implies`
+* `true` , `false`
+
+Symbol equivalents for some of the above are given in the following table.
+
+[cols="1,1,3",options="header"]
+|=================================================================
+|Textual +
+ Rendering |Symbolic +
+ Rendering |Meaning
+|matches, is_in     |∈   |Set membership, "p is in P"
+|exists             |∃    |Existential quantifier, "there exists ..."
+|for_all            |∀    |Universal quantifier, "for all x..."
+|implies            |®    |Material implication, "p implies q", or "if p then q"
+|and                |∧   |Logical conjunction, "p and q"
+|or                 |∨   |Logical disjunction, "p or q"
+|xor                |∨   |Exclusive or, "only one of p or q"
+|not, ~             |∼, ¬ |Negation, "not p"
+|=================================================================
+
+The `not` operator can be applied as a prefix operator to all other operators except `for_all`; either textual rendering `not` or `~` can be used.
+
+== Operators
+
+Assertion expressions can include arithmetic, relational and boolean operators, plus the existential and universal quantifiers.
+
+=== Arithmetic Operators
+
+The supported arithmetic operators are as follows:
+
+* addition: `+`
+* subtraction: `-`
+* multiplication: `*`
+* division: `/`
+* exponent: `^`
+* modulo division: `%` -- remainder after integer division
+
+=== Equality Operators
+
+The supported equality operators are as follows:
+
+* equality: `=`
+* inequality: `<>`
+
+The semantics of these operators are of value comparison.
+
+=== Relational Operators
+
+The supported relational operators are as follows:
+
+* less than: `<`
+* less than or equal: `\<=`
+* greater than: `>`
+* greater than or equal: `>=`
+
+The semantics of these operators are of value comparison on entities of Comparable types (see openEHR Support IM, Assumed Types section). All generate a Boolean result.
+
+=== Boolean Operators
+
+The supported boolean operators are as follows:
+
+* not: `not`
+* and: `and`
+* xor: `xor`
+* implies: `implies`
+* set membership: `matches`, `is_in`
+
+The boolean operators also have symbolic equivalents shown earlier.
+
+=== Quantifiers
+
+The two standard logical quantifier operators are supported:
+
+* existential quantifier: `exists`
+* universal quantifier: `for_all`
+
+These operators also have the usual symbolic equivalents shown earlier.
+
+== Operands
+
+Operands in an assertion expression can be any of the following:
+
+_manifest constant_:: any constant of any primitive type, expressed according to the dADL syntax for values;
+_variable reference_:: any name starting with `$`, e.g. `$body_weight`;
+_object reference_:: a path referring to an object node, i.e. any path ending in a node identifier;
+_property reference_:: a path referring to a property, i.e. any path ending in `.property_name`.
+
+If an assertion is used in an archetype slot definition, its paths refer to the archetype filling the slot, not the one containing the slot.
+
+== Precedence and Parentheses
+
+[.tbd]
+To be continued.
+
+== Future
+
+=== Variables
+
+[.tbd]
+*TBD*: : main problem of variables is that they must have names, which are language-dependent; imagine if there were a mixture of variables added by authors in different languages. The only solution is to name them with terms.
+
+[.tbd]
+*TBD*: : Variables have to be treated as term coordinations, and should be coded e.g. using ccNNNN codes (“cc” = coordinated code). Then they can be given meanings in any language.
+
+==== Predefined Variables
+
+A number of predefined variables can be referenced in ADL assertion expressions, without prior definition, including:
+
+* `$current_date: Date`; returns the date whenever the archetype is evaluated
+* `$current_time: Time`; returns time whenever the archetype is evaluated
+* `$current_date_time: Date_Time`; returns date/time whenever the archetype is evaluated
+
+[.tbd]
+To Be Continued: these should be coded as well, using openEHR codes
+
+==== Archetype-defined Variables
+
+Variables can also be defined inside an archetype, as part of the assertion statements in an invariant. The syntax of variable definition is as follows:
+
+----
+ let $var_name = reference
+----
+
+Here, a reference can be any of the operand types listed above. 'Let' statements can come anywhere in an `invariant` block, but for readability, should generally come first.
+The following example illustrates the use of variables in an invariant block:
+
+----
+invariant
+    let $sys_bp = /data[at9001]/events[at9002]/data[at1000]/items[at1100]
+    let $dia_bp = /data[at9001]/events[at9002]/data[at1000]/items[at1200]
+    $sys_bp >= $dia_bp
+----
+
+== Syntax Specification
+
+The assertion grammar is part of the cADL grammar. This grammar is implemented and tested using lex (.l file) and yacc (.y file) specifications for in the Eiffel programming environment. The 1.4 release of these files is available in the https://github.com/openEHR/adl-tools/tree/Release-1.4/components/adl_parser/src/syntax/cadl/parser[cADL grammar files^]. The .l and .y files can be converted for use in another yacc/lex-based programming environment.
+
+=== Grammar
+
+The following provides the assertion parser production rules (yacc specification). Note that because of interdependencies with path and assertion production rules, practical implementations may have to include all production rules in one parser.
+
+[source, antlr-java]
+--------
+assertions:
+    assertion
+    | assertions assertion
+    ;
+
+assertion:
+    any_identifier ':' boolean_expression
+    | boolean_expression
+    ;
+
+boolean_expression:
+    boolean_leaf
+    | boolean_node
+    ;
+
+boolean_node:
+    SYM_EXISTS absolute_path
+    | relative_path SYM_MATCHES SYM_START_CBLOCK c_primitive SYM_END_CBLOCK
+    | SYM_NOT boolean_leaf
+    | arithmetic_expression '=' arithmetic_expression
+    | arithmetic_expression SYM_NE arithmetic_expression
+    | arithmetic_expression SYM_LT arithmetic_expression
+    | arithmetic_expression SYM_GT arithmetic_expression
+    | arithmetic_expression SYM_LE arithmetic_expression
+    | arithmetic_expression SYM_GE arithmetic_expression
+    | boolean_expression SYM_AND boolean_expression
+    | boolean_expression SYM_OR boolean_expression
+    | boolean_expression SYM_XOR boolean_expression
+    | boolean_expression SYM_IMPLIES boolean_expression
+    ;
+
+boolean_leaf:
+    '(' boolean_expression ')'
+    | SYM_TRUE
+    | SYM_FALSE
+    ;
+
+arithmetic_expression:
+    arithmetic_leaf
+    | arithmetic_node
+    ;
+
+arithmetic_node:
+    arithmetic_expression '+' arithmetic_leaf
+    | arithmetic_expression '-' arithmetic_leaf
+    | arithmetic_expression '*' arithmetic_leaf
+    | arithmetic_expression '/' arithmetic_leaf
+    | arithmetic_expression '^' arithmetic_leaf
+    ;
+
+arithmetic_leaf:
+    '(' arithmetic_expression ')'
+    | integer_value
+    | real_value
+    | absolute_path
+    ;
+--------

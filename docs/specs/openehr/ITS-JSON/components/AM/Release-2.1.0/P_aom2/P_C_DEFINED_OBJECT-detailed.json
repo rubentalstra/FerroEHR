@@ -1,0 +1,61 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/P_C_DEFINED_OBJECT-detailed.json",
+    "title": "P_C_DEFINED_OBJECT",
+    "description": "Abstract parent type of C_OBJECT subtypes that are defined by value, i.e. whose definitions are actually in the archetype rather than being by reference. ",
+    "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_OBJECT",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "P_C_COMPLEX_OBJECT",
+                "P_C_BOOLEAN",
+                "P_C_STRING",
+                "P_C_TERMINOLOGY_CODE",
+                "P_C_ARCHETYPE_ROOT"
+            ]
+        },
+        "rm_type_name": {
+            "description": "Reference model type that this node corresponds to. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "occurrences": {
+            "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "node_id": {
+            "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "is_deprecated": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "is_frozen": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+        },
+        "default_value": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+        }
+    },
+    "required": [
+        "_type",
+        "rm_type_name",
+        "node_id",
+        "default_value"
+    ],
+    "$abstract": true,
+    "$inherits": [
+        "all-detailed.json#/definitions/P_C_OBJECT"
+    ],
+    "$children": [
+        "all-detailed.json#/definitions/P_C_PRIMITIVE_OBJECT",
+        "all-detailed.json#/definitions/P_C_COMPLEX_OBJECT"
+    ],
+    "$functions": {
+        "specialisation_depth": {
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+            }
+        }
+    }
+}

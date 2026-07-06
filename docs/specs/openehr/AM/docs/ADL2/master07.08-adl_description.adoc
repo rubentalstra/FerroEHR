@@ -1,0 +1,59 @@
+== Description Section
+
+The `description` section of an archetype contains descriptive information, or what some people think of as document "meta-data", i.e. items that can be used in repository indexes and for searching. The ODIN syntax is used for the description, as in the following example.
+
+[source, adl]
+--------
+description
+    original_author = <
+        ["name"] = <"Dr J Joyce">
+        ["organisation"] = <"NT Health Service">
+        ["date"] = <2003-08-03>
+    >
+    lifecycle_state =  <"initial">
+    resource_package_uri =  <"http://www.aihw.org.au/data_sets/diabetic_archetypes.html">
+
+    details = <
+        ["en"] = <
+            language = <[iso_639-1::en]>
+            purpose =  <"archetype for diabetic patient review">
+            use = <"used for all hospital or clinic-based diabetic reviews, 
+                including first time. Optional sections are removed according to the particular review">
+            misuse = <"not appropriate for pre-diagnosis use">
+            original_resource_uri = <"http://www.healthdata.org.au/data_sets/diabetic_review_data_set_1.html">
+            other_details = <...>
+        >
+        ["de"] = <
+            language = <[iso_639-1::de]>
+            purpose =  <"Archetyp für die Untersuchung von Patienten mit Diabetes">
+            use = <"wird benutzt für alle Diabetes-Untersuchungen im
+                    Krankenhaus, inklusive der ersten Vorstellung. Optionale
+                    Abschnitte werden in Abhängigkeit von der speziellen
+                    Vorstellung entfernt.">
+            misuse = <"nicht geeignet für Benutzung vor Diagnosestellung">
+            original_resource_uri = <"http://www.healthdata.org.au/data_sets/diabetic_review_data_set_1.html">
+            other_details = <...>
+        >
+    >
+--------
+
+A number of details are worth noting here. Firstly, the free hierarchical structuring capability of ODIN is exploited for expressing the 'deep' structure of the `details` section and its subsections. Secondly, the ODIN qualified list form is used to allow multiple translations of the `purpose` and `use` to be shown. Lastly, empty items such as `misuse` (structured if there is data) are shown with just one level of empty brackets. The above example shows meta-data based on the {openehr_am_aom2}[openEHR Archetype Object Model (AOM)^].
+
+The `description` section is technically optional according to the AOM, but in any realistic use of ADL for archetypes, it will be required. A minimal description section satisfying to the AOM is as follows:
+
+[source, adl]
+--------
+description
+    original_author = <
+        ["name"] = <"Dr J Joyce">
+        ["organisation"] = <"NT Health Service">
+        ["date"] = <2003-08-03>
+    >
+    lifecycle_state = <"initial">
+    details = <
+        ["en"] = <
+            language = <[iso_639-1::en]>
+            purpose = <"archetype for diabetic patient review">
+        >
+    >
+--------

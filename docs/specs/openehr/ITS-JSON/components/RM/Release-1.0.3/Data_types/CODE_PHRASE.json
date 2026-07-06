@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/CODE_PHRASE.json",
+    "definitions": {
+        "CODE_PHRASE": {
+            "type": "object",
+            "required": [
+                "terminology_id",
+                "code_string"
+            ],
+            "properties": {
+                "terminology_id": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Support/TERMINOLOGY_ID.json#/definitions/TERMINOLOGY_ID"
+                },
+                "code_string": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "CODE_PHRASE"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

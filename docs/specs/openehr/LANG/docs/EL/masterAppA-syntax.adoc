@@ -1,0 +1,18 @@
+[appendix]
+= Syntax Specification
+
+Antlr4 files may be found for EL at in the {openehr_openehr_antlr}[openEHR Antlr4 Git repository^].
+
+The Antlr4 grammar for the EL syntax is shown below.
+ 
+[source, antlr-java]
+--------
+include::{openehr_openehr_antlr_include}/ElParser.g4[]
+--------
+
+The Antlr4 lexer for the EL syntax is shown below.
+ 
+[source, antlr-java]
+--------
+include::{openehr_openehr_antlr_include}/ElLexer.g4[]
+--------

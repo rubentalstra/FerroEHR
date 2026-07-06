@@ -1,0 +1,20 @@
+operationId: directory_get_at_time
+summary: Get folder in directory version at time
+description: |
+  Retrieves the version of the directory FOLDER associated with the EHR identified by `ehr_id`. 
+  If `version_at_time` is supplied, retrieves the version extant _at specified time_, otherwise retrieves the _latest_ directory FOLDER version. 
+  
+  If `path` is supplied, retrieves from the directory only the sub-FOLDER that is associated with that path.
+tags:
+  - DIRECTORY
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/query/version_at_time.yaml
+  - $ref: ../parameters/query/path.yaml
+responses:
+  '200':
+    $ref: ../responses/200_FOLDER_retrieved.yaml
+  '204':
+    $ref: ../responses/204_because_deleted_at_time.yaml
+  '404':
+    $ref: ../responses/404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml

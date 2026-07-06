@@ -1,0 +1,21 @@
+title: ISM_TRANSITION
+type: object
+allOf:
+  - $ref: ../common/Pathable.yaml
+required:
+  - current_state
+properties:
+  _type:
+    type: string
+    default: ISM_TRANSITION
+  current_state:
+    $ref: ../data_types/DvCodedText.yaml
+  transition:
+    $ref: ../data_types/DvCodedText.yaml
+  careflow_step:
+    $ref: ../data_types/DvCodedText.yaml
+  reason:
+    type: array
+    items:
+      $ref: ../data_types/UDvText.yaml
+x-discriminator-value: ISM_TRANSITION

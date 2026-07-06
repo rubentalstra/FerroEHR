@@ -1,0 +1,11 @@
+title: TermBindings
+required:
+  - SNOMED-CT
+type: object
+properties:
+  SNOMED-CT:
+    $ref: ./SNOMEDCT.yaml
+example:
+  SNOMED-CT:
+    value: '163030003'
+    terminologyId: SNOMED-CT(2003)

@@ -1,0 +1,35 @@
+=== BMM_FEATURE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_FEATURE (abstract)__*
+
+h|*Description*
+2+a|A module-scoped formal element.
+
+h|*Inherit*
+2+|`<<_bmm_formal_element_class,BMM_FORMAL_ELEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*is_synthesised_generic*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True if this feature was synthesised due to generic substitution in an inherited type, or further constraining of a formal generic parameter.
+
+h|*0..1*
+|*feature_extensions*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_feature_extension_class,BMM_FEATURE_EXTENSION>>>`
+a|Extensions to feature-level meta-types.
+
+h|*1..1*
+|*group*: `<<_bmm_feature_group_class,BMM_FEATURE_GROUP>>`
+a|Group containing this feature.
+
+h|*1..1 +
+(redefined)*
+|*scope*: `<<_bmm_class_class,BMM_CLASS>>`
+a|Model element within which an element is declared.
+|===

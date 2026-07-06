@@ -1,0 +1,11 @@
+description: |
+  `200 OK` is returned when the requested EHR_STATUS is successfully retrieved.
+headers:
+  ETag:
+    $ref: ../headers/ETag.yaml
+  Location:
+    $ref: ../headers/Location_EHR_STATUS.yaml  
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/EhrStatus.yaml

@@ -1,0 +1,79 @@
+title: Child2
+required:
+  - id
+  - name
+  - localizedName
+  - rmType
+  - nodeId
+  - min
+  - max
+  - localizedNames
+  - localizedDescriptions
+  - aqlPath
+  - inputs
+type: object
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  localizedName:
+    type: string
+  rmType:
+    type: string
+  nodeId:
+    type: string
+  min:
+    type: integer
+    format: int32
+  max:
+    type: integer
+    format: int32
+  localizedNames:
+    $ref: ./LocalizedNames2.yaml
+  localizedDescriptions:
+    $ref: ./LocalizedDescriptions.yaml
+  annotations:
+    $ref: ./Annotations.yaml
+  aqlPath:
+    type: string
+  inputs:
+    type: array
+    items:
+      $ref: ./Input.yaml
+    description: ''
+  dependsOn:
+    type: array
+    items:
+      type: string
+    description: ''
+  inContext:
+    type: boolean
+  termBindings:
+    $ref: ./TermBindings.yaml
+  children:
+    type: array
+    items:
+      $ref: ./Child3.yaml
+    description: ''
+example:
+  id: tags
+  name: Tags
+  localizedName: Tags
+  rmType: DV_TEXT
+  nodeId: at0008
+  min: 1
+  max: -1
+  localizedNames:
+    sl: Tagi
+  localizedDescriptions:
+    sl: '*'
+  annotations:
+    comment: >-
+      Tags applied to the composition. They can contain various ids, such as
+      episode id, central case id or other types of information forming
+      composition meta-data.
+  aqlPath: >-
+    /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+  inputs:
+    - type: TEXT

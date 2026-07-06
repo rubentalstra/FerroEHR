@@ -1,0 +1,36 @@
+=== SUBJECT_PROXY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*SUBJECT_PROXY*
+
+h|*Description*
+2+a|Proxy object for subject identified by `_subject_id_`. The `_variables_` attribute is the full set of proxy variables being retrieved for this subject.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*subject_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of data subject, i.e. the entity for which the variables 'are about'.
+
+h|*0..1*
+|*variables*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_subject_variable_class,SUBJECT_VARIABLE>>>`
+a|The proxy variables for this subject.
+
+h|*1..1*
+|*create_time*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^]`
+a|Time of creation of this proxy.
+
+h|*1..1*
+|*subject_category*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Category of subject, e.g. patient, other entity.
+
+TODO: currently not controlled.
+
+h|*0..1*
+|*data_sets*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_subject_data_set_class,SUBJECT_DATA_SET>>>`
+a|All data sets for this subject.
+|===

@@ -1,0 +1,2 @@
+description: |
+  `404 Not Found` is returned when an EHR with supplied subject parameters does not exist.

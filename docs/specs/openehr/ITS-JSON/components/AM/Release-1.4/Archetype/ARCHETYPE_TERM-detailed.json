@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/ARCHETYPE_TERM-detailed.json",
+    "title": "ARCHETYPE_TERM",
+    "description": "Representation of any coded entity (term or constraint) in the archetype ontology.",
+    "$comments": "Defined in Archetype IM",
+    "type": "object",
+    "properties": {
+        "code": {
+            "description": "Code of this term. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        },
+        "items": {
+            "description": "Hash of keys (\u201ctext\u201d, \u201cdescription\u201d etc) and corresponding values.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Hash_of_String_String"
+        }
+    },
+    "required": [
+        "code"
+    ],
+    "$functions": {
+        "keys": {
+            "description": "List of all keys used in this term.",
+            "return": {
+                "type": "array",
+                "items": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            }
+        }
+    },
+    "$invariants": {
+        "Code_valid": "not code.is_empty"
+    }
+}

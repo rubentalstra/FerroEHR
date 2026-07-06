@@ -1,0 +1,156 @@
+openapi: 3.0.3
+info:
+  title: EHR API
+  version: latest
+  x-status: STABLE
+  x-spec: ehr
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: 'https://specifications.openehr.org/'
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: 'https://creativecommons.org/licenses/by-nd/3.0/'
+  description:
+    $ref: ./docs/ehr/Intro.md
+servers:
+  - url: 'https://{baseUrl}/v1'
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+security: []
+paths:
+  '/ehr':
+    post:
+      $ref: ./operations/ehr_create.yaml
+    get:
+      $ref: ./operations/ehr_get_by_subject.yaml
+  '/ehr/{ehr_id}':
+    put:
+      $ref: ./operations/ehr_create_with_id.yaml
+    get:
+      $ref: ./operations/ehr_get_by_id.yaml
+  '/ehr/{ehr_id}/ehr_status/{version_uid}':
+    get:
+      $ref: ./operations/ehr_status_get_by_version_id.yaml
+  '/ehr/{ehr_id}/ehr_status':
+    get:
+      $ref: ./operations/ehr_status_get_at_time.yaml
+    put:
+      $ref: ./operations/ehr_status_update.yaml
+  '/ehr/{ehr_id}/versioned_ehr_status':
+    get:
+      $ref: ./operations/versioned_ehr_status_get.yaml
+  '/ehr/{ehr_id}/versioned_ehr_status/revision_history':
+    get:
+      $ref: ./operations/versioned_ehr_status_revision_history.yaml
+  '/ehr/{ehr_id}/versioned_ehr_status/version':
+    get:
+      $ref: ./operations/versioned_ehr_status_version_get_at_time.yaml
+  '/ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}':
+    get:
+      $ref: ./operations/versioned_ehr_status_version_get_by_id.yaml
+  '/ehr/{ehr_id}/composition':
+    post:
+      $ref: ./operations/composition_create.yaml
+  '/ehr/{ehr_id}/composition/{uid_based_id}':
+    get:
+      $ref: ./operations/composition_get.yaml
+    put:
+      $ref: ./operations/composition_update.yaml
+    delete:
+      $ref: ./operations/composition_delete.yaml
+  '/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}':
+    get:
+      $ref: ./operations/versioned_composition_get.yaml
+  '/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history':
+    get:
+      $ref: ./operations/versioned_composition_revision_history.yaml
+  '/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version':
+    get:
+      $ref: ./operations/versioned_composition_version_get_at_time.yaml
+  '/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}':
+    get:
+      $ref: ./operations/versioned_composition_version_get_by_id.yaml
+  '/ehr/{ehr_id}/directory':
+    post:
+      $ref: ./operations/directory_create.yaml
+    put:
+      $ref: ./operations/directory_update.yaml
+    delete:
+      $ref: ./operations/directory_delete.yaml
+    get:
+      $ref: ./operations/directory_get_at_time.yaml
+  '/ehr/{ehr_id}/directory/{version_uid}':
+    get:
+      $ref: ./operations/directory_get_by_version_id.yaml
+  '/ehr/{ehr_id}/contribution':
+    post:
+      $ref: ./operations/contribution_create.yaml
+  '/ehr/{ehr_id}/contribution/{contribution_uid}':
+    get:
+      $ref: ./operations/contribution_get.yaml
+tags:
+  - name: EHR
+    description: |
+      Management of [EHRs](https://specifications.openehr.org/releases/RM/latest/ehr.html#_ehr_class).
+      Actions upon resources of this group are also formally described in the [I_EHR_SERVICE](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_service_interface) Abstract Service Model interface.
+  - name: EHR_STATUS
+    description: |
+      Management of [EHR_STATUS](https://specifications.openehr.org/releases/RM/latest/ehr.html#_ehr_status_class) and [VERSIONED_EHR_STATUS](https://specifications.openehr.org/releases/RM/latest/ehr.html#_versioned_ehr_status_class) resources.
+      Actions upon resources of this group are also formally described in the [I_EHR_STATUS](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_status_interface) Abstract Service Model interface.
+  - name: COMPOSITION
+    description: |
+      Management of [COMPOSITION](https://specifications.openehr.org/releases/RM/latest/ehr.html#_composition_class) and [VERSIONED_COMPOSITION](https://specifications.openehr.org/releases/RM/latest/ehr.html#_versioned_composition_class) resources.
+      Actions upon resources of this group are also formally described in the [I_EHR_COMPOSITION](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_composition_interface) Abstract Service Model interface.
+  - name: DIRECTORY
+    description: |
+      Management of the [directory](https://specifications.openehr.org/releases/RM/latest/ehr.html#_directory) [FOLDER](https://specifications.openehr.org/releases/RM/latest/common.html#_folder_class) resource.
+      Actions upon resources of this group are also formally described in the [I_EHR_DIRECTORY](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_directory_interface) Abstract Service Model interface.
+  - name: CONTRIBUTION
+    description: |
+      Management of [CONTRIBUTION](https://specifications.openehr.org/releases/RM/latest/common.html#_contribution_class) resource.
+      Actions upon resources of this group are also formally described in the [I_EHR_CONTRIBUTION](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_contribution_interface) Abstract Service Model interface.
+  - name: EHR_schema
+    x-displayName: EHR
+    description:
+      $ref: ./tags/EHR_schema.md
+  - name: EHR_STATUS_schema
+    x-displayName: EHR_STATUS
+    description:
+      $ref: ./tags/EHR_STATUS_schema.md
+  - name: COMPOSITION_schema
+    x-displayName: COMPOSITION
+    description:
+      $ref: ./tags/COMPOSITION_schema.md
+  - name: DIRECTORY_schema
+    x-displayName: DIRECTORY
+    description:
+      $ref: ./tags/DIRECTORY_schema.md
+  - name: CONTRIBUTION_schema
+    x-displayName: CONTRIBUTION
+    description:
+      $ref: ./tags/CONTRIBUTION_schema.md
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - EHR
+      - EHR_STATUS
+      - COMPOSITION
+      - DIRECTORY
+      - CONTRIBUTION
+  - name: Resource schemas
+    tags:
+      - EHR_schema
+      - EHR_STATUS_schema
+      - COMPOSITION_schema
+      - DIRECTORY_schema
+      - CONTRIBUTION_schema
+components:
+  schemas:
+    UAbstractItemStructure:
+      $ref: ./schemas/data_structures/UAbstractItemStructure.yaml
+    UAbstractContentItem:
+      $ref: ./schemas/ehr/UAbstractContentItem.yaml

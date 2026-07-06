@@ -1,0 +1,225 @@
+== Decision Tables
+
+In EL, a _decision table_ is a construct that expresses the equivalent logic of a multi-branch construct that returns a single expression as a result. There are two flavours, both familiar to programmers in mainstream languages: the _condition chain_ (i.e. an if/then/else construct) and the _case table_ (i.e. a case statement). The evaluation of both constructs determines which of a number of possible expressions to return as the result, based on the prior evaluation of branch conditions, whose particular form depends on which flavour of construct is used. Both constructs are thus purely functional, i.e. their branches cannot contain statements (i.e. assignments, procedure calls etc), only expressions.
+
+=== Condition Chain (if/then)
+
+The syntax for a condition chain (the if/then equivalent) takes a standard form and a compact form. The standard form is as follows.
+
+[source,kotlin]
+----
+    choice in
+        <condition_1>:  <expression_1>,
+        <condition_2>:  <expression_2>,
+        ...
+        <condition_N>:  <expression_N>,
+        *:              <else expression>
+    ;
+----
+
+In the above, the `'\*'` character is understood as a wildcard, meaning 'all other cases'. A final row containing `'*'` is thus equivalent to a catch-all 'else' branch in the if/then/else chain of a procedural language.
+
+A realistic example is illustrated below, making use of line comments to visually aid the author.
+
+[source,kotlin]
+----
+    molecular_subtype: Terminology_term
+        Result := choice in
+            =========================================================
+            er_positive and 
+            her2_negative and 
+            not ki67.in_range ([high]):    #luminal_A,
+            ---------------------------------------------------------
+            er_positive and 
+            her2_negative and 
+            ki67.in_range ([high]):        #luminal_B_HER2_negative,
+            ---------------------------------------------------------
+            er_positive and 
+            her2_positive:                 #luminal_B_HER2_positive,
+            ---------------------------------------------------------
+            er_negative and 
+            pr_negative and 
+            her2_positive and 
+            ki67.in_range ([high]):        #HER2,
+            ---------------------------------------------------------
+            er_negative and
+            pr_negative and 
+            her2_negative and 
+            ki67.in_range ([high]):        #triple_negative,
+            ---------------------------------------------------------
+            *:                             #none
+            =========================================================
+        ;
+----
+
+For the common degenerate case where there is a single condition, the standard form looks as follows:
+
+[source,kotlin]
+----
+    calculate_score: Integer
+        Result := choice in
+            ============
+            expr1:    2,
+            ------------
+            *:        0
+            ============
+        ;
+----
+
+While perfectly understandable (and legal syntax), the following compact form may be used instead:
+
+[source,kotlin]
+----
+    calculate_score: Integer
+        Result := expr1 ? 2 : 0
+----
+
+The above syntax is adopted from the C language family. It may be used to construct intelligible conditional arithmetic operations such as summing, e.g.:
+
+[source,kotlin]
+----
+    ipi_raw_score: Integer
+        Result := Result.add (
+            =============================================
+            age > 60                             ? 1 : 0,
+            staging ∈ {#stage_III, #stage_IV}    ? 1 : 0,
+            ldh.in_range (#normal)               ? 1 : 0,
+            ecog > 1                             ? 1 : 0,
+            extranodal_sites > 1                 ? 1 : 0
+            =============================================
+        )
+        ;
+----
+
+=== Case Table
+
+The Case Table syntax form (case statement equivalent) is logically no different from the more general condition chain, except that every branch condition expression takes the form `Expr ∈ Constr~i~`, where `Expr` is the same expression left-hand side for all branches, each having a variable right-hand side in the form of a value range constraint. Here the `∈` operator is read as 'is in', i.e. set-membership. The case table construct is designed to enable the value of a single determining expression to be tested against any number of value ranges. This is illustrated in the following example:
+
+[source,kotlin]
+----
+    gfr_range: Real
+    
+    risk_assessment: Real
+        Result := case gfr_range in
+            =================
+            |>20|:      1,
+            |10 - 20|:  0.75,
+            |<10|:      0.5
+            =================
+        ;
+----
+
+This expression returns one of the values 1, 0.75 or 0.5, depending on the evaluated value of `gfr_range`, but it could equally return the value of a more complex expression, including further instances of Case tables, Condition chains, operator expressions etc.
+
+=== Nested Case Table
+
+The following shows the use of nested case tables to achieve the effect of a credit application test, from an example in the {omg_dmn}[DMN^] specification.
+
+[source,kotlin]
+----
+    post_bureau_risk_category: Terminology_term
+        Result := case existing_customer in
+            ========================================
+            True:   case 
+                    appl_risk_score 
+                    in
+                    --------------------------------
+                    |≤120|:     case 
+                                credit_score 
+                                in
+                                --------------------
+                                |<590|:      #HIGH,
+                                |590..610|:  #MEDIUM,
+                                |>610|:      #LOW
+                                --------------------
+                                ;,
+                    |>120|:     case
+                                credit_score
+                                in
+                                --------------------
+                                |<600|:      #HIGH,
+                                |600..625|:  #MEDIUM,
+                                |>625|:      #LOW
+                                --------------------
+                                ;
+                    --------------------------------
+                    ;,
+            False:  case 
+                    appl_risk_score 
+                    in
+                    --------------------------------
+                    |≤100|:     case
+                                credit_score
+                                in
+                                --------------------
+                                |<580|:      #HIGH,
+                                |580..600|:  #MEDIUM,
+                                |>600|:      #LOW
+                                --------------------
+                                ;,
+                    |>100|:     case
+                                credit_score
+                                in
+                                --------------------
+                                |<590|:      #HIGH,
+                                |590..615|:  #MEDIUM,
+                                |>615|:      #LOW
+                                --------------------
+                                ;
+                    --------------------------------
+                    ;
+            ========================================
+            ;
+        ;
+----
+
+=== Multi-dimensional Case Table (experimental)
+
+The credit assessment example above can be recoded as a sparse table.
+
+[source,kotlin]
+----
+post_bureau_risk_category := multicase
+    =======================================================================================
+   {existing_customer,  appl_risk_score,        credit_score} in
+    ---------------------------------------------------------------------------------------
+    True:               |≤120|:                 |<590|:         #HIGH,
+                                                |590..610|:     #MEDIUM,
+                                                |>610|:         #LOW;
+                        -------------------------------------------------------------------
+                        |>120|:                 |<600|:         #HIGH,
+                                                |600..625|:     #MEDIUM,
+                                                |>625|:         #LOW;
+                        ,
+   ----------------------------------------------------------------------------------------
+   False:               |≤100|:                 |<580|:         #HIGH,
+                                                |580..600|:     #MEDIUM,
+                                                |>600|:         #LOW;
+                        -------------------------------------------------------------------
+                        |>100|:                 |<590|:         #HIGH,
+                                                |590..615|:     #MEDIUM,
+                                                |>615|:         #LOW;
+                        ;
+    =======================================================================================
+    ;
+----
+
+=== Two-dimensional Tables (experimental)
+
+Two-dimensional decision tables are common in all sectors. Although they can be reduced to a condition chain, EL provides a more direct syntax that enables them to be expressed in a form visually very close to their logical form.
+
+[source,kotlin]
+----
+item in
+    ==========================================================================
+                   {    isEconomy(p),   isBusiness(p),      isFirstClass(p) },
+    --------------------------------------------------------------------------
+    isChild(p):    {    50,             250,                1000            },
+    --------------------------------------------------------------------------
+    isAdult(p):    {    250 + trip.d,   450 + trip.d,       750 + trip.d    },
+    --------------------------------------------------------------------------
+    isMilitary(p): {    90,             250,                750 - 2 * p.age }
+    ==========================================================================
+;
+----
+

@@ -1,0 +1,21 @@
+operationId: composition_delete
+summary: Delete COMPOSITION
+description: |
+  Deletes the COMPOSITION identified by `uid_based_id` and associated with the EHR identified by `ehr_id`.
+  
+  The `uid_based_id` MUST be in a form of an OBJECT_VERSION_ID identifier taken from the last (most recent) VERSION.uid.value, representing the `preceding_version_uid` to be deleted.
+
+tags:
+  - COMPOSITION
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/path/uid_based_id_as_version_uid.yaml
+responses:
+  '204':
+    $ref: ../responses/204_COMPOSITION_deleted.yaml
+  '400':
+    $ref: ../responses/400_already_deleted.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id_or_uid_based_id.yaml
+  '409':
+    $ref: ../responses/409_COMPOSITION_with_uid_based_id.yaml

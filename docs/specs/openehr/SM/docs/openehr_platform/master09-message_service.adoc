@@ -1,0 +1,17 @@
+= Message Service
+
+== Overview
+
+The `platform.interface.message` package shown below defines service interface to the `MESSAGE` component in the logical platform architecture.
+
+[.text-center]
+.`sm.platform.interface.message` package
+image::{uml_diagrams_uri}/SM-platform.interface.message.svg[id=platform_interface_message, align="center"]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/i_message_service.adoc[]
+
+include::{uml_export_dir}/classes/i_ehr_extract_service.adoc[]
+
+include::{uml_export_dir}/classes/i_tdd_service.adoc[]

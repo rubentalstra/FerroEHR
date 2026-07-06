@@ -1,0 +1,11 @@
+=== ENCODING_FORMAT Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*ENCODING_FORMAT*
+
+h|*Description*
+2+a|
+
+|===

@@ -1,0 +1,311 @@
+<terminology name="openehr" language="zh" version="3.1.0" date="2024-08-22">
+	<codeset issuer="openehr" openehr_id="compression_algorithms" name="压缩算法" external_id="openehr_compression_algorithms">
+		<code value="compress"/>
+		<code value="deflate"/>
+		<code value="gzip"/>
+		<code value="zlib"/>
+		<code value="其他"/>
+	</codeset>
+	<codeset issuer="openehr" openehr_id="integrity_check_algorithms" name="完整性检查算法" external_id="openehr_integrity_check_algorithms">
+		<code value="SHA-1"/>
+		<code value="SHA-224"/>
+		<code value="SHA-256"/>
+		<code value="SHA-384"/>
+		<code value="SHA-512"/>
+		<code value="SHA-512/224"/>
+		<code value="SHA-512/256"/>
+	</codeset>
+	<codeset issuer="openehr" openehr_id="normal_statuses" name="正常状态" external_id="openehr_normal_statuses">
+		<code value="HHH"/>
+		<code value="HH"/>
+		<code value="H"/>
+		<code value="N"/>
+		<code value="L"/>
+		<code value="LL"/>
+		<code value="LLL"/>
+	</codeset>
+	<group openehr_id="attestation_reason" name="证实理由">
+		<concept id="240" rubric="已签署"/>
+		<concept id="648" rubric="已见证"/>
+	</group>
+	<group openehr_id="audit_change_type" name="审计变更类型">
+		<concept id="249" rubric="创建"/>
+		<concept id="250" rubric="修正"/>
+		<concept id="251" rubric="修改"/>
+		<concept id="252" rubric="综合"/>
+		<concept id="523" rubric="删除"/>
+		<concept id="666" rubric="证实"/>
+		<concept id="816" rubric="恢复"/>
+		<concept id="817" rubric="格式转换"/>
+		<concept id="253" rubric="未知"/>
+	</group>
+	<group openehr_id="composition_category" name="组合式文书类别">
+		<concept id="431" rubric="持久类"/>
+		<concept id="451" rubric="偶发类"/>
+		<concept id="433" rubric="事件类"/>
+		<concept id="815" rubric="报告类"/>
+	</group>
+	<group openehr_id="property" name="属性">
+		<concept id="339" rubric="加速度"/>
+		<concept id="342" rubric="加速度, 角"/>
+		<concept id="381" rubric="物质的量 (当量)"/>
+		<concept id="384" rubric="物质的量 (摩尔)"/>
+		<concept id="497" rubric="角度, 平面"/>
+		<concept id="500" rubric="角度, 立体"/>
+		<concept id="335" rubric="面积"/>
+		<concept id="119" rubric="浓度"/>
+		<concept id="350" rubric="密度"/>
+		<concept id="362" rubric="扩散系数"/>
+		<concept id="501" rubric="电容"/>
+		<concept id="498" rubric="电荷"/>
+		<concept id="502" rubric="电导"/>
+		<concept id="334" rubric="电流"/>
+		<concept id="377" rubric="电场强度"/>
+		<concept id="655" rubric="电势时间"/>
+		<concept id="121" rubric="能量"/>
+		<concept id="366" rubric="能量密度"/>
+		<concept id="508" rubric="能量剂量"/>
+		<concept id="365" rubric="能量单位面积"/>
+		<concept id="364" rubric="能量, 线性"/>
+		<concept id="347" rubric="流速, 质量"/>
+		<concept id="352" rubric="流速, 质量/力"/>
+		<concept id="351" rubric="流速, 质量/体积"/>
+		<concept id="126" rubric="流速, 体积"/>
+		<concept id="348" rubric="通量, 质量"/>
+		<concept id="355" rubric="力"/>
+		<concept id="358" rubric="力单位质量"/>
+		<concept id="357" rubric="力, 彻体"/>
+		<concept id="382" rubric="频率"/>
+		<concept id="586" rubric="肾小球滤过率"/>
+		<concept id="373" rubric="传热系数"/>
+		<concept id="505" rubric="照度"/>
+		<concept id="379" rubric="电感"/>
+		<concept id="122" rubric="程度"/>
+		<concept id="499" rubric="光强"/>
+		<concept id="123" rubric="响度"/>
+		<concept id="504" rubric="光通量"/>
+		<concept id="378" rubric="磁通量"/>
+		<concept id="503" rubric="磁通量密度"/>
+		<concept id="124" rubric="质量"/>
+		<concept id="385" rubric="质量 (国际单位)"/>
+		<concept id="445" rubric="质量 (单位)"/>
+		<concept id="349" rubric="质量单位面积"/>
+		<concept id="344" rubric="转动惯量, 面积"/>
+		<concept id="345" rubric="转动惯量, 质量"/>
+		<concept id="340" rubric="动量"/>
+		<concept id="346" rubric="动量 流速"/>
+		<concept id="343" rubric="动量, 角"/>
+		<concept id="363" rubric="功率"/>
+		<concept id="369" rubric="功率密度"/>
+		<concept id="368" rubric="功率通量"/>
+		<concept id="367" rubric="功率, 线性"/>
+		<concept id="125" rubric="压强"/>
+		<concept id="507" rubric="比例"/>
+		<concept id="380" rubric="带有量词限定的实数"/>
+		<concept id="506" rubric="放射性活度"/>
+		<concept id="375" rubric="电阻"/>
+		<concept id="370" rubric="比能"/>
+		<concept id="371" rubric="比热, 气体常数"/>
+		<concept id="337" rubric="比表面积"/>
+		<concept id="336" rubric="比容"/>
+		<concept id="354" rubric="比重"/>
+		<concept id="356" rubric="表面张力"/>
+		<concept id="127" rubric="温度"/>
+		<concept id="372" rubric="热导率"/>
+		<concept id="128" rubric="时间"/>
+		<concept id="359" rubric="扭矩"/>
+		<concept id="338" rubric="速度"/>
+		<concept id="341" rubric="速度, 角"/>
+		<concept id="360" rubric="黏度, 动力"/>
+		<concept id="361" rubric="黏度, 运动"/>
+		<concept id="374" rubric="电势"/>
+		<concept id="129" rubric="体积"/>
+		<concept id="130" rubric="功"/>
+		<concept id="685" rubric="屈光力"/>
+		<concept id="118" rubric="&lt;未设置&gt;"/>
+		<concept id="709" rubric="时间分数"/>
+		<concept id="708" rubric="变化速率, 压强"/>
+		<concept id="754" rubric="变化速率, 频率"/>
+		<concept id="755" rubric="任意"/>
+		<concept id="756" rubric="药物剂量速率"/>
+		<concept id="757" rubric="谱功率"/>
+		<concept id="758" rubric="功率谱密度"/>
+		<concept id="759" rubric="步速"/>
+		<concept id="760" rubric="酶活性"/>
+	</group>
+	<group openehr_id="version_lifecycle_state" name="版本生命周期状态">
+		<concept id="532" rubric="完整"/><!-- warning: the rubric for this concept is 'completed' in the 'instruction states' group (known issue, see SPECPR-51) -->
+		<concept id="553" rubric="不完整"/>
+		<concept id="523" rubric="已删除"/>
+		<concept id="800" rubric="无效"/>
+		<concept id="801" rubric="已废弃"/>
+	</group>
+	<group openehr_id="participation_function" name="参与职能">
+		<concept id="253" rubric="未知"/>
+	</group>
+	<group openehr_id="null_flavours" name="空值种类">
+		<concept id="271" rubric="无信息"/>
+		<concept id="253" rubric="未知"/>
+		<concept id="272" rubric="已遮蔽"/>
+		<concept id="273" rubric="不适用"/>
+	</group>
+	<group openehr_id="participation_mode" name="参与方式">
+		<concept id="193" rubric="未明确说明"/>
+		<concept id="216" rubric="面对面沟通"/>
+		<concept id="223" rubric="配备口译的面对面沟通"/>
+		<concept id="217" rubric="签名 (面对面)"/>
+		<concept id="195" rubric="现场视听、视频会议、视频电话"/>
+		<concept id="198" rubric="视频会议"/>
+		<concept id="197" rubric="可视电话"/>
+		<concept id="218" rubric="视频签名"/>
+		<concept id="224" rubric="配备口译的视频沟通"/>
+		<concept id="194" rubric="异步视听、录制的视频"/>
+		<concept id="196" rubric="录制的视频"/>
+		<concept id="202" rubric="纯现场音频、电话、互联网电话、电话会议"/>
+		<concept id="204" rubric="电话"/>
+		<concept id="203" rubric="电话会议"/>
+		<concept id="205" rubric="互联网电话"/>
+		<concept id="222" rubric="配备口译的纯音频"/>
+		<concept id="199" rubric="异步纯音频、口述、语音邮件"/>
+		<concept id="200" rubric="口述"/>
+		<concept id="201" rubric="语音邮件"/>
+		<concept id="212" rubric="纯实时文本、互联网聊天、短信聊天、交互式书面笔记"/>
+		<concept id="213" rubric="互联网聊天"/>
+		<concept id="214" rubric="短信聊天"/>
+		<concept id="215" rubric="交互式书面笔记"/>
+		<concept id="206" rubric="异步文本、电子邮件、传真、信件、手写笔记、短信"/>
+		<concept id="211" rubric="手写笔记"/>
+		<concept id="210" rubric="打印/打字形成的信件"/>
+		<concept id="207" rubric="电子邮件"/>
+		<concept id="208" rubric="传真/电传"/>
+		<concept id="221" rubric="经过翻译的文本"/>
+		<concept id="209" rubric="短信"/>
+		<concept id="219" rubric="亲自到场"/>
+		<concept id="220" rubric="亲自远程"/>
+	</group>
+	<group openehr_id="instruction_states" name="指令状态">
+		<concept id="524" rubric="初始"/>
+		<concept id="526" rubric="已计划"/>
+		<concept id="527" rubric="已推迟"/>
+		<concept id="528" rubric="已取消"/>
+		<concept id="529" rubric="已排程"/>
+		<concept id="245" rubric="现行有效"/>
+		<concept id="530" rubric="已暂停"/>
+		<concept id="531" rubric="已中止"/>
+		<concept id="532" rubric="已完成"/><!-- warning: the rubric for this concept is 'complete' in the 'version lifecycle state' group (known issue, see SPECPR-51) -->
+		<concept id="533" rubric="已过期"/>
+	</group>
+	<group openehr_id="instruction_transitions" name="指令转换">
+		<concept id="535" rubric="发起"/>
+		<concept id="536" rubric="计划步骤"/>
+		<concept id="537" rubric="推迟"/>
+		<concept id="538" rubric="恢复"/>
+		<concept id="166" rubric="取消"/>
+		<concept id="542" rubric="推迟的步骤"/>
+		<concept id="539" rubric="排程"/>
+		<concept id="534" rubric="排程步骤"/>	
+		<concept id="540" rubric="开始"/>
+		<concept id="541" rubric="执行"/>
+		<concept id="543" rubric="现行步骤"/>
+		<concept id="544" rubric="暂停"/>
+		<concept id="545" rubric="暂停步骤"/>
+		<concept id="546" rubric="中断后继续"/>
+		<concept id="547" rubric="中止"/>
+		<concept id="548" rubric="完成"/>
+		<concept id="549" rubric="超时"/>
+		<concept id="550" rubric="通知已中止"/>
+		<concept id="551" rubric="通知已完成"/>
+		<concept id="552" rubric="通知已取消"/>
+	</group>
+	<group openehr_id="subject_relationship" name="对象主体社会关系">
+		<concept id="0" rubric="本人"/>
+		<concept id="3" rubric="胎儿"/>
+		<concept id="10" rubric="母亲"/>
+		<concept id="9" rubric="父亲"/>
+		<concept id="6" rubric="供体"/>
+		<concept id="253" rubric="未知"/>
+		<concept id="261" rubric="养女"/>
+		<concept id="260" rubric="养子"/>
+		<concept id="259" rubric="养父"/>
+		<concept id="258" rubric="养母"/>
+		<concept id="256" rubric="亲生父亲"/>
+		<concept id="255" rubric="亲生母亲"/>
+		<concept id="23" rubric="兄弟"/>
+		<concept id="28" rubric="孩子"/>
+		<concept id="265" rubric="同居者"/>
+		<concept id="257" rubric="同辈堂表亲戚"/>
+		<concept id="29" rubric="女儿"/>
+		<concept id="264" rubric="监护人"/>
+		<concept id="39" rubric="姨母"/>
+		<concept id="8" rubric="外祖父"/>
+		<concept id="7" rubric="外祖母"/>
+		<concept id="38" rubric="舅父"/>
+		<concept id="189" rubric="新生儿"/>
+		<concept id="254" rubric="父母"/>
+		<concept id="22" rubric="伴侣/配偶"/>
+		<concept id="41" rubric="姑母"/>
+		<concept id="36" rubric="祖父"/>
+		<concept id="37" rubric="祖母"/>
+		<concept id="40" rubric="叔伯"/>
+		<concept id="27" rubric="兄弟姐妹"/>
+		<concept id="24" rubric="姐妹"/>
+		<concept id="31" rubric="儿子"/>
+		<concept id="263" rubric="继父"/>
+		<concept id="262" rubric="继母"/>
+		<concept id="25" rubric="继兄弟或同父异母或同母异父兄弟"/>
+		<concept id="26" rubric="继姐妹或同父异母或同母异父姐妹"/>
+	</group>
+	<group openehr_id="term_mapping_purpose" name="术语映射目的">
+		<concept id="669" rubric="公共卫生"/>
+		<concept id="670" rubric="费用报销"/>
+		<concept id="671" rubric="研究调查"/>
+	</group>
+	<group openehr_id="event_math_function" name="事件匹配函数">
+		<concept id="145" rubric="最小值"/>
+		<concept id="144" rubric="最大值"/>
+		<concept id="267" rubric="众数"/>
+		<concept id="268" rubric="中位数"/>
+		<concept id="146" rubric="均值"/>
+		<concept id="147" rubric="变化"/>
+		<concept id="148" rubric="总计"/>
+		<concept id="149" rubric="变异"/>
+		<concept id="521" rubric="降低"/>
+		<concept id="522" rubric="升高"/>
+		<concept id="640" rubric="实际值"/>
+	</group>
+	<group openehr_id="setting" name="场所">
+		<concept id="225" rubric="住所"/>
+		<concept id="227" rubric="急救医疗服务"/>
+		<concept id="228" rubric="基层医疗服务"/>
+		<concept id="229" rubric="基层护理服务"/>
+		<concept id="230" rubric="基层辅助医疗服务"/>
+		<concept id="231" rubric="助产服务"/>
+		<concept id="232" rubric="二级医疗服务"/>
+		<concept id="233" rubric="二级护理服务"/>
+		<concept id="234" rubric="二级辅助医疗服务"/>
+		<concept id="235" rubric="补充性医疗服务"/>
+		<concept id="236" rubric="牙科服务"/>
+		<concept id="237" rubric="护理院服务"/>
+		<concept id="802" rubric="心理健康服务"/>
+		<concept id="238" rubric="其他照护服务"/>
+	</group>
+	<group openehr_id="extract_content_type" name="摘录内容类型">
+		<concept id="803" rubric="openEHR EHR"/>
+		<concept id="804" rubric="openEHR 人口统计学信息"/>
+		<concept id="805" rubric="openEHR 同步化"/>
+		<concept id="806" rubric="openEHR 通用"/>
+		<concept id="807" rubric="通用 EMR"/>
+		<concept id="808" rubric="其他"/>
+	</group>
+	<group openehr_id="extract_action_type" name="摘录操作类型">
+		<concept id="809" rubric="取消"/>
+		<concept id="810" rubric="重新发送"/>
+		<concept id="811" rubric="发送新的"/>
+	</group>
+	<group openehr_id="extract_update_trigger_event_type" name="摘录更新触发事件类型">
+		<concept id="812" rubric="任何变更"/>
+		<concept id="813" rubric="修正"/>
+		<concept id="814" rubric="更新"/>
+	</group>
+</terminology>
+

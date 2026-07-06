@@ -1,0 +1,101 @@
+= EL Basics
+
+== Syntax style
+
+The syntax style used in EL is inspired by elements of common languages available today, including TypeScript, Kotlin, Java, etc, with divergences to provide a syntax that is more easily readable to non-IT professionals as well as IT professionals.
+
+The lexical style used in EL is a form of so-called 'snake_case' rather than so-called 'CamelCase', in common with other openEHR specifications, but either may be used in real applications. One reason for using snake-case is be to render EL Modules more readable to the non-IT professional. Upper- and lower-case are not formally distinguished, and the use of upper case is a matter of style only, as follows:
+
+* _class names_: upper-case first letter followed by alphanumerics with underscores where spaces would occur in natural language, e.g. `Iso8601_date_time`, `Arrayed_list<T>`;
+* _property, routine and variable names_: lower-case first letter, followed by alphanumerics with underscores, e.g. `_employee_group_`, `_average_pressure_()`;
+* _constants and class (static) functions_: upper-case first letter, followed by alphanumerics with underscores, e.g. `Maximum_speed`.
+
+[.tbd]
+TBD: specify equivalence between snake-case and CamelCase, or a tool-level switch?
+
+== Commenting
+
+Comments are of two styles. For end-of-line commenting, and for creating visual dividing lines, the leader pattern `'--'` is used. Dividing lines are a longer line (more than three characters), e.g `'---------'` or a line of (four or more) `'='` symbols, i.e. `'========'`. The latter is useful for multi-level decision tables.
+
+Comment-only lines start with the bar character (`'|'`). The example below shows both forms.
+
+----
+    |
+    | patient fit to undertake regime
+    |
+    patient_fit:
+        Result := not
+            (platelets.in_range ([very_low]) or  -- platelets can't be too low
+             neutrophils.in_range ([very_low]))
+----
+
+== Typing
+
+EL is fully typed, with type definitions being supplied by one or more models, represented in the form of {openehr_bmm}[openEHR BMM specification^]. *All operators are assumed to be implemented by and to map to functions defined on types*, including operators such as '+' mapping to the function `add()` defined on primitive types such as `Integer`. Accordingly, such operators are defined within the BMM as being operator _aliases_ of their implementing function, which is made possible by the BMM meta-types `BMM_ROUTINE` and descendants. 
+
+An important implementation consequence of this approach is that an expression that is parsed to a classic operator-based AST may be evaluated by progressively searching for operator-aliased functions within the model definition, invoking with the arguments found in the AST structure, and returning Results for the next such computation. Of course, use of built-in native types and functions  (rather than always dispatching via a BMM) to handle primitive type operators is likely to be used in the interests of efficiency. Function-matching can be implemented by matching the inferred signature of the operator and its argument(s) with functions having both a conformant (not necessarily identical) signature, and the same operator.
+
+Such model definitions will therefore include primitive type definitions, either the openEHR {openehr_foundation_types}[Foundation Types^], i.e. primitive types, container types and interval types, or ones that correspond very closely. In the interests of completeness, EL _assumes_ the openEHR Foundation Types, so as to have a minimal basis. 
+
+== EL Foundation Types
+
+The EL syntax for these is described below.
+
+=== Primitive Types
+
+The EL primitive types are shown below.
+
+[cols="1,3",options="header"]
+|=================================================================
+|Name                   |Description
+| `Boolean`             |Boolean value
+|                       |
+| `Integer`             |Integer value
+| `Integer64`           |Large integer value
+| `Real`                |Real value
+| `Double`              |Large real value
+|                       |
+| `Date`                |ISO 8601-format date
+| `Date_time`           |ISO 8601-format date/time
+| `Time`                |ISO 8601-format time
+| `Duration`            |ISO 8601-format duration
+|                       |
+| `String`              |String
+|                       |
+| `Uri`                 |Uri in {rfc3986}[IETF RFC 3986^] format
+| `Terminology_code`    |Terminology code reference
+|=================================================================
+
+Automatic type promotion from `Integer` to `Real` applies to mixed integer / real values and expressions, in the same fashion as most programming languages.
+
+=== Container Types
+
+The same container types as defined in the {openehr_foundation_types}#_structure_types[Foundation Types, `structure` package^] are assumed in EL, under the following names.
+
+[cols="1,3",options="header"]
+|=================================================================
+|Name                   |Description
+| `Container<T>`        |Abstract parent of `List`, `Set` and `Map` types
+| `List<T>`             |Linear list of items of any primitive type, allowing order and repeated membership
+| `Set<T>`              |Set of items of any primitive type; no order, unique membership
+| `Map<K:Ordered, V>`  |Indexed linear container
+|=================================================================
+
+=== Interval Type
+
+The same `Interval` type as defined in the {openehr_foundation_types}#_interval[Foundation Types, `interval` package^] is assumed in EL, under the following names.
+
+[cols="1,2",options="header"]
+|=================================================================
+|Name                           |Description
+
+| `Interval<T:Ordered>`         |Interval of any ordered type
+| `Point_interval<T:Ordered>`   |Sub-type used to efficiently represent closed intervals whose boundaries are the same
+| `Proper_interval<T:Ordered>`  |Sub-type used to efficiently represent intervals whose boundaries are different
+|=================================================================
+
+Automatic type promotion from `Interval<Integer>` to `Interval<Real>` applies to all integer and real values and expressions, in the same fashion as most programming languages.
+
+=== Complex Types
+
+Complex types are imported from a formal model definition, expressed in {openehr_bmm}[openEHR BMM format^], or any formal equivalent. The types in a model definition included in this way become available within the formalism in the same way as the foundation types, and may be used in expressions in the same way.

@@ -1,0 +1,46 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser, Implementer|Completed
+
+4+^h|*AM Release 2.3.0*
+
+|[[latest_issue]]0.9.4
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]: Convert citations to bibtex form.
+|T Beale
+|[[latest_issue_date]]15 Dec 2019
+
+4+^h|*AM Release 2.2.0*
+
+4+^h|*AM Release 2.1.0*
+
+4+^h|*AM Release 2.0.6*
+
+|0.9.3
+|Added diagrams and improved text in Introduction section.
+|T Beale
+|18 Apr 2016
+
+|0.9.2
+|Correct Fowler reference to 1997.
+|T Beale
+|30 Mar 2016
+
+|0.9.1
+|Minor refinements to text in first section; new version of Fig 1 Archetype/Info model relationship.
+|T Beale
+|12 Nov 2015
+
+|0.9.0
+|Addition of sections on business purpose, identifiers and collections.
+|T Beale
+|10 Jun 2015
+
+|0.8.0
+|Initial writing; taken from overview material of ADL, AOM and template specifications.
+|T Beale
+|10 Oct 2014
+
+|===
+

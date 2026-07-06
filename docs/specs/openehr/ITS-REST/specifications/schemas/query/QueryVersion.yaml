@@ -1,0 +1,5 @@
+title: QueryVersion
+description: |
+  The SEMVER version number of the Stored Query.
+type: string
+example: "1.0.1"

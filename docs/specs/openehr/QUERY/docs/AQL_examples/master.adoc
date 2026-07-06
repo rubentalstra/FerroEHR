@@ -1,0 +1,77 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+=== Contributors
+
+This specification benefited from wide formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+
+* Heath Frankel, Ocean Health Systems, Australia
+* Ian McNicoll MD, FreshEHR, UK
+* Luiz Marco-Ruiz, PhD, Norwegian Centre for E-health Research, Norway
+* Sebastian Iancu, Architect, Code24, Netherlands
+* Thomas Beale, Ars Semantica UK, openEHR Foundation Management Board
+
+=== Support
+
+The work reported in this paper has been funded by the following organisations:
+
+* Code24, Netherlands
+
+=== Trademarks
+
+* 'openEHR' is a trademark of the openEHR Foundation
+* 'Java' is a registered trademark of Oracle Corporation
+* 'Microsoft' and '.Net' are trademarks of the Microsoft Corporation
+
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-syntax-operator.adoc[leveloffset=+1]
+include::master03-syntax-function.adoc[leveloffset=+1]
+include::master04-single_subject.adoc[leveloffset=+1]
+include::master05-population.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+
+:sectnums!:
+//== References
+//
+//bibliography::[]

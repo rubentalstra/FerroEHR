@@ -3,3 +3,7 @@
 pub mod cluster;
 pub mod element;
 pub mod item;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod cluster_impl;
+pub mod element_impl;

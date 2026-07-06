@@ -1,0 +1,18 @@
+operationId: versioned_ehr_status_version_get_at_time
+summary: Get versioned EHR_STATUS version at time
+description: |
+  Retrieves a VERSION from the VERSIONED_EHR_STATUS associated with the EHR identified by `ehr_id`.
+
+  If `version_at_time` is supplied, retrieves the VERSION extant _at specified time_, otherwise retrieves the _latest_ VERSION.
+tags:
+  - EHR_STATUS
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/query/version_at_time.yaml
+responses:
+  '200':
+    $ref: ../responses/200_VERSION_at_time.yaml
+  '400':
+    $ref: ../responses/400_invalid_version_at_time.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id_or_no_version_at_time.yaml

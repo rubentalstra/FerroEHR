@@ -1,0 +1,26 @@
+=== DATA_SET_RESULT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DATA_SET_RESULT*
+
+h|*Description*
+2+a|Data set result consisting of full set of variable values extracted from data retrieve frame sources.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Unique name of this data set.
+
+h|*1..1*
+|*subject_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of data subject, i.e. the entity for which these data 'are about'.
+
+h|*0..1*
+|*variables*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_variable_sample_class,VARIABLE_SAMPLE>>>`
+a|Samples of variables included in this data set.
+|===

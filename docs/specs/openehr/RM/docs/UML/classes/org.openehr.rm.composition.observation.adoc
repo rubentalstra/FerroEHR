@@ -1,0 +1,27 @@
+=== OBSERVATION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*OBSERVATION*
+
+h|*Description*
+2+a|Entry subtype for all clinical data in the past or present, i.e. which (by the time it is recorded) has already occurred. `OBSERVATION` data is expressed using the class `HISTORY<T>`, which guarantees that it is situated in time. `OBSERVATION` is used for all notionally objective (i.e. measured in some way) observations of phenomena, and patient-reported phenomena, e.g. pain. 
+
+Not to be used for recording opinion or future statements of any kind, including instructions, intentions, plans etc.
+
+h|*Inherit*
+2+|`<<_care_entry_class,CARE_ENTRY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*data*: `link:/releases/RM/{rm_release}/data_structures.html#_history_class[HISTORY^]<link:/releases/RM/{rm_release}/data_structures.html#_item_structure_class[ITEM_STRUCTURE^]>`
+a|The data of this observation, in the form of a history of values which may be of any complexity.
+
+h|*0..1*
+|*state*: `link:/releases/RM/{rm_release}/data_structures.html#_history_class[HISTORY^]<link:/releases/RM/{rm_release}/data_structures.html#_item_structure_class[ITEM_STRUCTURE^]>`
+a|Optional recording of the state of subject of this observation during the observation process, in the form of a separate history of values which may be of any complexity. State may also be recorded within the History of the data attribute.
+|===

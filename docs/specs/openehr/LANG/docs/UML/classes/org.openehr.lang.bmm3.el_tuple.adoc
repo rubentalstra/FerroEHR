@@ -1,0 +1,34 @@
+=== EL_TUPLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_TUPLE*
+
+h|*Description*
+2+a|Defines an array of optionally named items each of any type.
+
+h|*Inherit*
+2+|`<<_el_expression_class,EL_EXPRESSION>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_el_tuple_item_class,EL_TUPLE_ITEM>>>`
+a|Items in the tuple, potentially with names. Typical use is to represent an argument list to routine call.
+
+h|*1..1*
+|*type*: `<<_bmm_tuple_type_class,BMM_TUPLE_TYPE>>`
+a|Static type inferred from literal value.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*eval_type* (): `<<_bmm_type_class,BMM_TYPE>>`
+a|Return `_type_`.
+|===

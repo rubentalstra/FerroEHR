@@ -1,0 +1,46 @@
+=== C_DATE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_DATE*
+
+h|*Description*
+2+a|ISO 8601-compatible constraint on instances of Date in the form either of a set of validity values, or an actual date range. There is no validity flag for ‘year’, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include “YYYY-??-??” (date with optional month and day).
+
+h|*Inherit*
+2+|`<<_c_primitive_class,C_PRIMITIVE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*day_validity*: `link:/releases/BASE/{base_release}/base_types.html#_validity_kind_enumeration[VALIDITY_KIND^]`
+a|Validity of day in constrained date.
+
+h|*0..1*
+|*month_validity*: `link:/releases/BASE/{base_release}/base_types.html#_validity_kind_enumeration[VALIDITY_KIND^]`
+a|Validity of month in constrained date.
+
+h|*0..1*
+|*range*: `link:/releases/BASE/{base_release}/foundation_types.html#_interval_class[Interval^]<link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^]>`
+a|Interval of Dates specifying constraint.
+
+h|*0..1 +
+(redefined)*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^]`
+a|The value to assume if this item is not included in data, due to being part of an optional structure.
+
+h|*Invariants*
+2+a|__Pattern_validity__: `pattern /= Void implies valid_iso8601_date_constraint_pattern(pattern)`
+
+h|
+2+a|__Month_validity_optional__: `month_validity = \{VALIDITY_KIND}.optional implies (day_validity = \{VALIDITY_KIND}.optional or day_validity = \{VALIDITY_KIND}.disallowed)`
+
+h|
+2+a|__Month_validity_disallowed__: `month_validity = \{VALIDITY_KIND}.disallowed implies day_validity = \{VALIDITY_KIND}.disallowed`
+
+h|
+2+a|__Validity_is_range__: `validity_is_range = (range /= Void)`
+|===

@@ -1,0 +1,27 @@
+= Plug-in Syntaxes
+
+Using the ODIN syntax, any object structure can be serialised. In some cases, the requirement is to express some part of the structure in an abstract syntax, rather than in the more literal serialised object form of ODIN. ODIN provides for this possibility by allowing the value of any object (i.e. what appears between any matching pair of `<>` delimiters) to be expressed in some other syntax, known as a "plug-in" syntax. Plug-in syntaxes are indicated in ODIN in a similar way as typed objects, i.e. by the use of the syntax type in parentheses preceding the `<>` block. For a plug-in section, the `<>` delimiters are modified to `<# #>`, to allow for easier parser design, and easier recognition of such blocks by human readers. The general form is as follows:
+
+--------
+attr_name = (syntax) <#
+...
+#>
+--------
+
+The following example illustrates a cADL plug-in section in an archetype, which it itself an ODIN document:
+
+--------
+definition = (cadl) <#
+    ENTRY[at0000] ∈ { -- blood pressure measurement
+        name ∈ { -- any synonym of BP
+            CODED_TEXT ∈ {
+                code ∈ {
+                    CODE_PHRASE ∈ {[ac0001]}
+                }
+            }
+        }
+    }
+#>
+--------
+
+Clearly, many plug-in syntaxes might one day be used within ODIN data; there is no guarantee that every ODIN parser will support them. The general approach to parsing should be to use plug-in parsers, i.e. to obtain a parser for a plug-in syntax that can be built into the existing parser framework.

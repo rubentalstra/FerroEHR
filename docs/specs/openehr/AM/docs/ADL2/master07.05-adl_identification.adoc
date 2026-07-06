@@ -1,0 +1,124 @@
+== Archetype Identification Section
+
+This section introduces the archetype with the keyword `archetype`, `template`, `template_overlay` or `operational_archetype`, followed by a number of items of meta-data in parentheses, and on the next line, a human-readable archetype identifier. The following shows an identification section with all possible meta-data items.
+
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.0.3; provenance_id=15E82D77-7DB7-4F70-8D8E-EED6FF241B2D; build_uid=E163E472-3E90-409C-9803-0668A7DA48CE; generated; controlled)
+    openEHR-EHR-OBSERVATION.haematology_result.v0.1.9
+--------
+
+=== ADL Version Indicator
+
+An ADL version identifier is mandatory in all archetypes, and is expressed as a string of the form `adl_version=N.M` , or `N.M.P`, where `N.M[.P]` is the ADL release identifier.
+
+=== RM Release Indicator
+
+An RM (Reference Model) Release identifier is mandatory in all archetypes, and is expressed as a string of the form `rm_release=N.M`, or `N.M.P`, where the version number indicates the release of the reference model on which the archetype is based.
+
+=== Machine Identifiers
+
+A unique identifier for the archetype in the form of a GUID can be specified using the syntax below:
+
+[source, adl]
+----
+archetype (adl_version=2.4.0; rm_release=1.0.3; uid=15E82D77-7DB7-4F70-8D8E-EED6FF241B2D)
+----
+
+This identifier is set at initial creation or at any time later, and never subsequently changes. It acts as an identifier for the physical artefact, regardless of what semantics are changed, including changes to the constituent parts of the multi-axial identifier.
+
+A `build_uid` identifier can also be specified, with a GUID value, identifying the current artefact. This identifier changes whenever any change is made to the text of the archetype, and can thus be used to disambiguate subsequent versions.
+
+=== Namespaces
+
+A namespaced archetype has an identification section like the following examples:
+
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.0.2)
+    br.gov.saude::openEHR-EHR-OBSERVATION.haematology_result.v1.0.0
+
+template (adl_version=2.4.0; rm_release=1.0.2)
+    uk.org.primary_care::openEHR-EHR-OBSERVATION.haematology_result.v1.2.15
+
+archetype (adl_version=2.4.0; rm_release=1.0.2)
+    org.openehr::openEHR-EHR-OBSERVATION.haematology_result.v3.22.125-rc.7
+--------
+
+Namespaces are used to distinguish locally created artefacts representing a given concept (such as 'haematology result') from an artefact created elsewhere intended to represent the same concept.
+
+Once a namespace is attached to an archetype, it is considered a part of the identifier, and never changed, even if the archetype moves to a new publishing organisation. This ensures the constant relationship between archetypes and the data created using them.
+
+=== Human Readable Archetype Identifier
+
+The archetype identifier may include a namespace, in the form of a reverse domain name, which denotes the original authoring organisation. The lack of a namespace in the identifier indicates an ad hoc, uncontrolled artefact, not formally associated with any organisation, typical for experimental archetypes, and pre-ADL 1.5 archetypes not yet upgraded to have a namespace. The main part of the identifier is multi-axial concept identifier.
+
+A typical identification section for an ad hoc archetype is as follows:
+
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.0.2)
+    openEHR-EHR-OBSERVATION.haematology_result.v0.1.9
+--------
+
+[.deprecated]
+*Deprecated*: In ADL 1.4 and transitional forms of ADL 1.5, archetype identifiers included only a single version number, and this typically started at 1. Tools that deal with older archetypes should accept these identifiers, and convert the version part to 'v1.0.0' or any other appropriate identifier, obeying the openEHR Artefact Knowledge Identification specification.
+
+The multi-axial archetype identifier identifies archetypes in a global concept space within a given namespace. It is also known as an 'ontological' identifier, since the concept space can be understood as an ontology of informational concepts on which the archetypes are based. The syntax of the identifier is described in the {openehr_am_id}[openEHR Identification Specification^]. The structure of the concept space is essentially two-level, with the first level being a reference model class (e.g. openEHR `OBSERVATION` class) and the second being a domain concept (e.g. 'haematology result').
+
+Because namespaces are usually treated hierarchically, higher level namespaces (e.g. '.org' domains) are assumed to be includable by more local namespaces, with the result that the concept definition space is inherited as well.
+
+=== Specialised Archetype Identification
+
+The archetype identifier of any specialised archetype, including all templates, follows the same rules as for non-specialised archetypes.
+
+[.deprecated]
+*Deprecated*: in previous versions of ADL, the archetype identifier of a specialised archetype had a concept part that consisted of the concept part of the parent followed by '-' and a further specialised concept. For example, `openEHR-EHR-OBSERVATION.haematology-cbc. v1` was a valid child of `openEHR-EHR-OBSERVATION.haematology.v1`. This restriction is no longer the case. The previous style of identifier is still legal, but the '-' no longer has any significance.
+
+=== Version Identifiers
+
+ADL 2 Archetypes contain 3-part version identifiers, with optional qualifiers, following the openEHR Artefact Knowledge Identification specification. Examples below:
+
+[source, adl]
+--------
+    br.ms::openEHR-EHR-OBSERVATION.haematology_result.v1.0.0
+    br.ms::openEHR-EHR-OBSERVATION.haematology_result.v1.2.15-alpha.45
+    br.ms::openEHR-EHR-OBSERVATION.haematology_result.v3.22.125-rc.7
+--------
+
+The version identifier variants are summarised as follows:
+
+* `N.M.P`         - 3-part version id with no qualifier indicates major.minor.path version
+* `N.M.P-alpha.N` - a `-alpha.N` qualifier indicates uncontrolled changes on `N.M.P` , leading to a new version that is yet to be decided
+* `N.M.P-rc.N`    - a `-rc.N` qualifier indicates a release candidate.
+
+=== Validity
+
+The following syntax validity rule applies in the identification section:
+
+[.rule]
+SARID: archetype identifier validity. the identifier of the artefact must conform to the ARCHETYPE_ID identifier syntax defined in the {openehr_base_types}[openEHR BASE/Base Types Specification].
+
+=== Generated Indicator
+
+A flag indicating whether the archetype was generated or authored can be included after the version, as follows:
+
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.0.2; generated)
+    org.openehr::openEHR-EHR-OBSERVATION.haematology.v1.2.0
+--------
+
+This marker is used to support the migration to differential archetype representation introduced in ADL 1.5, to enable proper representation of specialised archetypes. The 'generated' marker can be used on specialised archetypes - i.e. ADL 1.5 style .adls files - generated from flat archetypes - ADL 1.4 .adl files - and also in flat archetypes generated from differential files, by an inheritance-flattening process.
+
+=== Controlled Indicator
+
+A flag indicating whether the archetype is change-controlled or not can be included after the version, as follows:
+
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.0.2; controlled)
+    org.openehr::openEHR-EHR-OBSERVATION.haematology.v1.2.0
+--------
+
+This flag may have the two values `controlled` and `uncontrolled` only, and is an aid to authoring tools, but has no semantic significance. Tools may treat archetypes with an `uncontrolled` flag as not needing version control, whereas archetypes containing the `controlled` flag should be versioned on every change. This enables archetypes to be repeatedly edited in early development without generating large version histories of little or no value.

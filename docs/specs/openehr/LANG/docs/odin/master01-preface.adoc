@@ -1,0 +1,30 @@
+= Preface
+
+== Purpose
+
+This document describes the syntax of the Object Data Instance Notation (ODIN), previously known as the 'dADL' syntax from the openEHR ADL specifications. It is intended for software developers, technically-oriented domain specialists and subject matter experts (SMEs). ODIN is designed as a human-readable and computer-processible data representation syntax, and can be hand-edited using a normal text editor.
+
+== Nomenclature
+
+In this document, the term 'attribute' denotes any stored property of a type defined in an object model, including primitive attributes and any kind of relationship such as an association or aggregation.  Where XML is mentioned, XML 'attributes' are always referred to explicitly as 'XML attributes'.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_odin}[{openehr_odin}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_lang_forum}[openEHR languages specifications forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+Conformance of a data or software artifact to an openEHR specification is determined by a formal test of that artifact against the relevant {openehr_its_component}[openEHR Implementation Technology Specification(s) (ITSs)^], such as an IDL interface or an XML-schema. Since ITSs are formal derivations from underlying models, ITS conformance indicates model conformance.
+

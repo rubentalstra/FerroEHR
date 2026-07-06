@@ -1,0 +1,38 @@
+=== P_BMM_SINGLE_PROPERTY_OPEN Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*P_BMM_SINGLE_PROPERTY_OPEN*
+
+h|*Description*
+2+a|Persistent form of a `BMM_SINGLE_PROPERTY_OPEN`.
+
+h|*Inherit*
+2+|`<<_p_bmm_property_class,P_BMM_PROPERTY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*type_ref*: `<<_p_bmm_open_type_class,P_BMM_OPEN_TYPE>>`
+a|Type definition of this property computed from `_type_` for later use in `_bmm_property_`.
+
+h|*0..1*
+|*type*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Type definition of this property, if a simple String type reference. Really we should use `_type_def_` to be regular in the schema, but that makes the schema more wordy and less clear. So we use this persisted String value, and compute the `_type_def_` on the fly. Persisted attribute.
+
+h|*0..1 +
+(redefined)*
+|*bmm_property*: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_property_class[BMM_PROPERTY^]`
+a|`BMM_PROPERTY` created by `_create_bmm_property_definition_`.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*type_def* (): `<<_p_bmm_open_type_class,P_BMM_OPEN_TYPE>>`
+a|Generate `_type_ref_` from `_type_` and save.
+|===

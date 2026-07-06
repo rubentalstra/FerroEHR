@@ -1,0 +1,11 @@
+title: LocalizedNames2
+required:
+  - sl
+type: object
+properties:
+  sl:
+    type: string
+  en:
+    type: string
+example:
+  sl: Tagi

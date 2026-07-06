@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/C_ATTRIBUTE_TUPLE.json",
+    "title": "C_ATTRIBUTE_TUPLE",
+    "description": "Object representing a constraint on an atttribute tuple, i.e. a group of attributes that are constrained together. Typically used for representing co-varying constraints like {units, range} constraints.",
+    "$comments": "Defined in Aom2 IM, inherits from C_SECOND_ORDER",
+    "type": "object",
+    "properties": {
+        "members": {
+            "description": "List of `C_ATTRIBUTEs` forming the definition of the tuple.",
+            "type": "array",
+            "items": {
+                "$ref": "all.json#/definitions/C_ATTRIBUTE"
+            }
+        },
+        "tuples": {
+            "description": "Tuple definitions.",
+            "type": "array",
+            "items": {
+                "$ref": "all.json#/definitions/C_PRIMITIVE_TUPLE"
+            }
+        }
+    }
+}

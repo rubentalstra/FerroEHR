@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Data_types/DV_STATE.json",
+    "definitions": {
+        "DV_STATE": {
+            "type": "object",
+            "required": [
+                "value",
+                "is_terminal"
+            ],
+            "properties": {
+                "value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Data_types/DV_CODED_TEXT.json#/definitions/DV_CODED_TEXT"
+                },
+                "is_terminal": {
+                    "type": "boolean"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "DV_STATE"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

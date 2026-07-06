@@ -1,0 +1,64 @@
+= Uri Package
+
+== Overview
+
+The `data_types.uri` package includes two types used for referring to information resources. The
+`DV_URI` type allows data values which are references to objects on the world wide web to be created.
+Its specialisation, `DV_EHR_URI`, enables any element in an openEHR record to be identified in the
+same way as other objects on the web. The `DV_EHR_URI` type is convenient, because it is a string,
+like any other URI, and is therefore easily transportable and processable. Because it has its own
+scheme space, 'ehr', instances can be globally unique, as long as EHR identification is globally
+unique. `DV_EHR_URIs` are used to express all runtime paths in the EHR. The `uri` Package is illustrated
+below.
+
+[.text-center]
+.rm.data_types.uri package
+image::{uml_diagrams_uri}/RM-data_types.uri.svg[id=rm_data_types_uri, align="center"]
+
+=== Requirements
+
+This package meets the requirement for a `DATA_VALUE` subtype which represents a W3C Uniform
+Resource Identifier (URI). A common example of where this might be used is to represent a reference
+to a clinical guideline or other justifying document associated with an intervention or treatment plan
+recorded in the EHR.
+
+URIs are a superset of Uniform Resource Locators (URLs) (although the two are often confused,
+even within the W3C), and can be used to specify the location of any information item, regardless of
+its type, location or storage method, as long as a URI "scheme" exists for that type of information.
+
+There is an additional requirement for a kind of URI that can point at an EHR data item, either inside
+the same EHR containing the link, or in another EHR. This is the basis of implementing logical references
+in the EHR and between EHRs.
+
+=== Design
+
+A simple design approach is used whereby a URI is represented as a String, and appropriate functions are defined to extract the various parts according to the syntax of URIs defined by Tim Berners-Lee ({rfc3986}[IETF RFC 3986^]). An EHR specific subtype is defined, whose scheme is 'ehr', and which contains further attributes enabling the instances of the type to record what kind of object they are referring to.
+
+So-called 'plain-text URIs' that contain RFC-3986 forbidden characters such as spaces etc, are allowed on the basis of human readability, but must be RFC-3986 encoded prior to use in e.g. REST APIs or other contexts relying on machine-level conformance.
+
+== Definitions
+
+The following symbolic definitions are used in the classes below.
+
+* `_Ehr_scheme_`: `String` = "ehr"
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}dv_uri.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_ehr_uri.adoc[]
+
+== Syntaxes
+
+=== DV_EHR_URI Syntax
+
+The syntax of a `DV_EHR_URI` is an openEHR path, inside the 'ehr' URI scheme-space, and is one of the forms:
+
+----
+ehr://system_id/ehr_id/top_level_structure_locator/path_inside_top_level_structure
+ehr:/ehr_id
+ehr:/ehr_id/top_level_structure_locator
+ehr:/ehr_id/top_level_structure_locator/path_inside_top_level_structure 
+----
+
+The syntax is described in more detail in the {openehr_overview}#_ehr_uris[openEHR Architecture Overview]. `DV_EHR_URIs` are used as a mechanism for referencing in the EHR, ensuring readability by humans, as well as validity when extracts are transmitted elsewhere: even if the target of a path is not present, the path can be used to locate the missing item on demand.

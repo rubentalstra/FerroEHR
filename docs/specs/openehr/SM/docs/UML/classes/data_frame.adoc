@@ -1,0 +1,37 @@
+=== DATA_FRAME Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DATA_FRAME*
+
+h|*Description*
+2+a|Data retrieval frame, consisting of primary and fallback retrieval methods (i.e. calls, or parameters for standard calls), and most recent result.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*primary_method*: `link:/releases/PROC/{proc_release}/task_planning.html#_system_call_class[SYSTEM_CALL^]`
+a|System call used to perform retrieval of this data frame.
+
+h|*0..1*
+|*fallback_method*: `link:/releases/PROC/{proc_release}/task_planning.html#_system_call_class[SYSTEM_CALL^]`
+a|Alternative method to use if primary retrieve method fails.
+
+h|*1..1*
+|*id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|
+
+h|*1..1*
+|*model_type*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of underlying model / type system, e.g. "openehr", "hl7v2", "hl7-fhir" etc. Currently not standardised.
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*execute* (): `<<_data_frame_sample_class,DATA_FRAME_SAMPLE>>`
+a|Partially specified execute method to obtain a Result set
+|===

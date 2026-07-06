@@ -1,0 +1,43 @@
+title: AUDIT_DETAILS
+type: object
+description: The set of attributes required to document the committal of an information item to a repository.
+required:
+  - system_id
+  - time_committed
+  - change_type
+  - committer
+properties:
+  _type:
+    type: string
+    default: AUDIT_DETAILS
+  system_id:
+    type: string
+  time_committed:
+    $ref: ../data_types/DvDateTime.yaml
+  change_type:
+    $ref: ../data_types/DvCodedText.yaml
+  description:
+    $ref: ../data_types/UDvText.yaml
+  committer:
+    $ref: ../common/UPartyProxy.yaml
+x-discriminator-value: AUDIT_DETAILS
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    AUDIT_DETAILS: '#/components/schemas/AuditDetails'
+    ATTESTATION: '#/components/schemas/Attestation'
+example:
+  system_id: 9624982A-9F42-41A5-9318-AE13D5F5031F
+  committer:
+    _type: PARTY_IDENTIFIED
+    name: A user name
+  time_committed:
+    value: '2017-08-15T10:37:15.422+02:00'
+  change_type:
+    value: creation
+    defining_code:
+      terminology_id:
+        value: openehr
+      code_string: '249'
+  description:
+    value: Description text

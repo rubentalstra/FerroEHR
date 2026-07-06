@@ -1,0 +1,38 @@
+=== TERMINOLOGY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*TERMINOLOGY*
+
+h|*Description*
+2+a|Container for code sets and/or vocabularies that belong to a given logical terminology.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of this terminology.
+
+h|*1..1*
+|*language*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Language of this terminology, as an ISO:639 2-letter code.
+
+h|*0..1*
+|*code_sets*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_code_set_class,CODE_SET>>>`
+a|Code sets in this Terminology.
+
+h|*0..1*
+|*vocabularies*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_terminology_group_class,TERMINOLOGY_GROUP>>>`
+a|Vocabularies of coded terms in this terminology.
+
+h|*0..1*
+|*version*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Version of this instance of the terminology.
+
+h|*0..1*
+|*date*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^]`
+a|Date of issue of this version of the terminology.
+|===

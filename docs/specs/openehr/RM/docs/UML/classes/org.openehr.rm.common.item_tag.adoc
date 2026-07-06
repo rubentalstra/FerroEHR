@@ -1,0 +1,40 @@
+=== ITEM_TAG Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ITEM_TAG*
+
+h|*Description*
+2+a|A tag with optional value that is associated with a target information entity identified by a UID.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*key*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The tag key. May not be empty or contain leading or trailing whitespace.
+
+h|*0..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The value. If set, may not be empty.
+
+h|*1..1*
+|*target*: `link:/releases/BASE/{base_release}/base_types.html#_uid_based_id_class[UID_BASED_ID^]`
+a|Identifier of target, which may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`.
+
+h|*0..1*
+|*target_path*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional archetype (i.e. AQL) or RM path within `_target_`, used to tag a fine-grained element.
+
+h|*1..1*
+|*owner_id*: `link:/releases/BASE/{base_release}/base_types.html#_object_ref_class[OBJECT_REF^]`
+a|Identifier of owner object, such as EHR.
+
+h|*Invariants*
+2+a|__Inv_key_valid__: `not key.is_empty and key.is_justified`
+
+h|
+2+a|__Inv_value_valid__: `value /= Void implies not value.is_empty`
+|===

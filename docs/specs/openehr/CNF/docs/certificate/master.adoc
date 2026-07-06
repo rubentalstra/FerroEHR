@@ -1,0 +1,62 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+This specification was developed and is maintained by the {openehr_sec}[openEHR Specifications Editorial Committee (SEC)^].
+
+=== Principal Authors
+
+* Thomas Beale, Ars Semantica, UK; openEHR International Board
+* Pablo Pazos Gutierrez, CaboLabs, Uruguay
+
+=== Trademarks
+
+* 'openEHR' is a trademark of the openEHR Foundation
+
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-certificate.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+// :sectnums!:
+// == References
+

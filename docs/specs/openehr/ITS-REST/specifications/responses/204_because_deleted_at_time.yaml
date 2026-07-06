@@ -1,0 +1,2 @@
+description: |
+  `204 No Content` is returned when the resource identified by the request parameters (at specified `version_at_time`) time has been deleted.

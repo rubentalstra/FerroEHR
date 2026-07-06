@@ -1,0 +1,151 @@
+=== BMM_MODEL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_MODEL*
+
+h|*Description*
+2+a|Definition of the root of a BMM model (along with what is inherited from `BMM_SCHEMA_CORE`).
+
+h|*Inherit*
+2+|`<<_bmm_package_container_class,BMM_PACKAGE_CONTAINER>>`, `<<_bmm_model_metadata_class,BMM_MODEL_METADATA>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*class_definitions*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_class_class,BMM_CLASS>>>`
+a|All classes in this model, keyed by type name.
+
+h|*0..1*
+|*used_models*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_model_class,BMM_MODEL>>>`
+a|List of other models 'used' (i.e. 'imported' by this model). Classes in the current model may refer to classes in a used model by specifying the other class's `_scope_` meta-attribute.
+
+h|*0..1*
+|*modules*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_module_class,BMM_MODULE>>>`
+a|All classes in this model, keyed by type name.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*model_id* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of this model, lower-case, formed from:
+
+`<rm_publisher>_<model_name>_<rm_release>`
+
+E.g. `"openehr_ehr_1.0.4"`.
+
+h|*1..1*
+|*class_definition* ( +
+a_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_bmm_class_class,BMM_CLASS>>`
+a|Retrieve the class definition corresponding to `_a_type_name_` (which may contain a generic part).
+
+h|*1..1*
+|*type_definition* (): `<<_bmm_class_class,BMM_CLASS>>`
+a|Retrieve the class definition corresponding to `_a_type_name_`. If it contains a generic part, this will be removed if it is a fully open generic name, otherwise it will remain intact, i.e. if it is an effective generic name that identifies a `BMM_GENERIC_CLASS_EFFECTIVE`.
+
+h|*1..1*
+|*has_class_definition* ( +
+a_class_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `_a_class_name_` has a class definition in the model.
+
+h|*1..1*
+|*has_type_definition* ( +
+a_type_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `_a_type_name_` is already concretely known in the system, including if it is generic, which may be open, partially open or closed.
+
+h|*1..1*
+|*enumeration_definition* ( +
+a_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_bmm_enumeration_class,BMM_ENUMERATION>>`
+a|Retrieve the enumeration definition corresponding to `_a_type_name_`.
+
+h|*0..1*
+|*primitive_types* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of keys in `_class_definitions_` of items marked as primitive types.
+
+h|*0..1*
+|*enumeration_types* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of keys in `_class_definitions_` of items that are enumeration types.
+
+h|*1..1*
+|*property_definition* (): `<<_bmm_property_class,BMM_PROPERTY>>`
+a|Retrieve the property definition for `_a_prop_name_` in flattened class corresponding to `_a_type_name_`.
+
+h|*1..1*
+|*ms_conformant_property_type* ( +
+a_bmm_type_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_bmm_property_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_ms_property_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `_a_ms_property_type_` is a valid 'MS' dynamic type for `_a_property_` in BMM type `_a_bmm_type_name_`. 'MS' conformance means 'model-semantic' conformance, which abstracts away container types like `List<>`, `Set<>` etc and compares the dynamic type with the relation target type in the UML sense, i.e. regardless of whether there is single or multiple containment.
+
+h|*1..1*
+|*property_definition_at_path* (): `<<_bmm_property_class,BMM_PROPERTY>>`
+a|Retrieve the property definition for `_a_property_path_` in flattened class corresponding to `_a_type_name_`.
+
+h|*1..1*
+|*class_definition_at_path* ( +
+a_type_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_prop_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_bmm_class_class,BMM_CLASS>>`
+a|Retrieve the class definition for the class that owns the terminal attribute in `a_prop_path` in flattened class corresponding to `a_type_name`.
+
+h|*0..1*
+|*all_ancestor_classes* ( +
+a_class: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Return all ancestor types of `_a_class_name_` up to root class (usually `Any`, `Object` or something similar). Does  not include current class. Returns empty list if none.
+
+h|*1..1*
+|*is_descendant_of* ( +
+a_class_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_parent_class_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `_a_class_name_` is a descendant in the model of `_a_parent_class_name_`.
+
+h|*1..1*
+|*type_conforms_to* ( +
+a_desc_type: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+an_anc_type: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Check conformance of `_a_desc_type_` to `_an_anc_type_`; the types may be generic, and may contain open generic parameters like 'T' etc. These are replaced with their appropriate constrainer types, or Any during the conformance testing process.
+
+Conformance is found if:
+
+* [base class test] types are non-generic, and either type names are identical, or else `_a_desc_type_` has `_an_anc_type_` in its ancestors;
+* both types are generic and pass base class test; number of generic params matches, and each generic parameter type, after 'open parameter' substitution, recursively passes; `_type_name_conforms_to_` test
+* descendant type is generic and ancestor type is not, and they pass base classes test.
+
+h|*1..1*
+|*subtypes* ( +
+a_type: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Generate type substitutions for the supplied type, which may be simple, generic (closed, open or partially open), or a container type. In the generic and container cases, the result is the permutation of the base class type and type substitutions of all generic parameters.
+
+.Parameters +
+[horizontal]
+`_a_type_`:: Name of a type.
+
+h|*1..1*
+|*any_class_definition* (): `<<_bmm_simple_class_class,BMM_SIMPLE_CLASS>>`
+a|`BMM_SIMPLE_CLASS` instance for the `Any` class. This may be defined in the BMM schema, but if not, use `BMM_DEFINITIONS._any_class_`.
+
+h|*1..1*
+|*any_type_definition* (): `<<_bmm_simple_type_class,BMM_SIMPLE_TYPE>>`
+a|`BMM_SIMPLE_TYPE` instance for the `Any` type.
+
+h|*1..1*
+|*boolean_type_definition* (): `<<_bmm_simple_type_class,BMM_SIMPLE_TYPE>>`
+a|`BMM_SIMPLE_TYPE` instance for the `Boolean` type.
+
+h|*Invariants*
+2+a|__Inv_top_level_scope__: `scope = self`
+|===

@@ -1,0 +1,144 @@
+{
+    "id": "TERM",
+    "title": "openEHR Terminology",
+    "description": "openEHR Terminology Component",
+    "keywords": "terminology, code-set, openehr",
+    "specifications": [
+        {
+            "id": "SupportTerminology",
+            "title": "Support Terminology specification",
+            "title_short": "Support Terminology",
+            "description": "openEHR Support Terminology specification",
+            "summary": "Documentary form of the openEHR terminology, which is a set of vocabularies and code sets used by RM, AM and SM.",
+            "micro_summary": "Support Terminology and code-sets needed for RM, AM and SM",
+            "copyright_year": "2008",
+            "spec_status": "STABLE",
+            "keywords": "terminology, code-set, vocabulary, openehr",
+            "notes": [
+                {
+                    "link": "latest/SupportTerminology.html#_creating_and_maintaining_translations",
+                    "text": "Terminology translations"
+                }
+            ]
+        },
+        {
+            "id": "en_openehr_terminology.xml",
+            "title": "openEHR Terminology (en)",
+            "title_short": "openEHR Terminology",
+            "description": "openEHR Terminology (en) specification",
+            "summary": "The openEHR Terminology XML file (in English language).",
+            "micro_summary": "openEHR Terminology XML file (in English language)",
+            "link": "computable/XML/en/openehr_terminology.xml",
+            "copyright_year": "2008",
+            "spec_status": "STABLE",
+            "keywords": "terminology, code-set, vocabulary, openehr"
+        },
+        {
+            "id": "openehr_external_terminologies.xml",
+            "title": "External terminologies",
+            "title_short": "External terminologies",
+            "description": "External terminologies specification",
+            "summary": "The file containing external terminologies (e.g. Countries ISO 3166, Languages ISO 639-1, Media types IANA, etc) used by RM, AM and SM.",
+            "micro_summary": "External Terminologies",
+            "link": "computable/XML/openehr_external_terminologies.xml",
+            "copyright_year": "2008",
+            "spec_status": "STABLE",
+            "keywords": "external-terminology, code-set, ISO, IANA"
+        },
+        {
+            "id": "PropertyUnitData.xml",
+            "title": "PropertyUnitData.xml",
+            "title_short": "PropertyUnitData.xml",
+            "description": "PropertyUnitData.xml specification",
+            "summary": "The file containing UCUM related Properties and Units used by ADL-tools.",
+            "micro_summary": "Properties and Units used by ADL-tools",
+            "link": "computable/XML/PropertyUnitData.xml",
+            "copyright_year": "2023",
+            "spec_status": "STABLE",
+            "keywords": "external-terminology, property-unit, UCUM, adl-tools"
+        }
+    ],
+    "expressions": [
+        {
+            "id": "Terminology-XML",
+            "type": "url",
+            "title": "Terminology XML",
+            "description": "External and openEHR Terminology XML source files (in English and translated in other languages).",
+            "link": "https://github.com/openEHR/specifications-TERM/tree/master/computable/XML"
+        },
+        {
+            "id": "Terminology-XSD",
+            "type": "url",
+            "title": "Terminology XML Schema",
+            "description": "XML Schema files (XSD) for external and openEHR Terminology XML source files.",
+            "link": "https://github.com/openEHR/specifications-TERM/tree/master/computable/XML/schema"
+        },
+        {
+            "id": "openehr-terminology-fhir",
+            "type": "url",
+            "title": "FHIR CodeSystem and ValueSet",
+            "description": "The openEHR Terminology as FHIR CodeSystem and ValueSet files.",
+            "link": "https://github.com/openEHR/specifications-TERM/tree/master/computable/fhir"
+        },
+        {
+            "id": "openEHR_UML-TERM.mdzip",
+            "type": "uml",
+            "title": "TERM UML",
+            "description": "UML file for openEHR TERM classes, as MagicDraw 19. Contains UML 2.5 standard XMI file."
+        }
+    ],
+    "jira": {
+        "open_issues": "11100",
+        "roadmap": "SPECTERM"
+    },
+    "releases": [
+        {
+            "id": "3.1.0",
+            "date": "",
+            "jira": {
+                "crs": "SPECTERM/versions/12574",
+                "prs": "SPECPR/versions/12573"
+            }
+        },
+        {
+            "id": "3.0.0",
+            "date": "2023-06-26",
+            "jira": {
+                "crs": "SPECTERM/versions/12571",
+                "prs": "SPECPR/versions/12572"
+            }
+        },
+        {
+            "id": "2.4.0",
+            "date": "2022-12-27",
+            "jira": {
+                "crs": "SPECTERM/versions/12568",
+                "prs": "SPECPR/versions/12570"
+            }
+        },
+        {
+            "id": "2.3.0",
+            "date": "2019-10-20",
+            "jira": {
+                "crs": "SPECTERM/versions/12567",
+                "prs": "SPECPR/versions/12569"
+            }
+        },
+        {
+            "id": "2.2.0",
+            "date": "2018-08-01",
+            "jira": {
+                "crs": "SPECTERM/versions/12503",
+                "prs": "SPECPR/versions/12515"
+            }
+        },
+        {
+            "id": "2.1.0",
+            "date": "2017-11-08",
+            "jira": {
+                "crs": "SPECTERM/versions/12502",
+                "prs": "SPECPR/versions/12504"
+            }
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+=== I_DATA_BINDING Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_DATA_BINDING*
+
+h|*Description*
+2+a|Internal interface via which Variable bindings are invoked to obtain data.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*bindings*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_env_binding_class,ENV_BINDING>>>`
+a|All bindings registered in this service, one per environment.
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*get_frame* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+frame_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_data_frame_sample_class,DATA_FRAME_SAMPLE>>`
+a|Execute a retrieve on a data frame, for a specific subject.
+
+.Parameters +
+[horizontal]
+`_subject_id_`:: Identifier of subject against which this request should be made. Note that the identifier might not be the primary identifier for a person or patient, but instead an identifier of an information resource against which the query can be made, e.g. an EHR identifier.
+
+TODO: if a true subject id is passed in, this service might need to resolve it through another service in order to execute the relevant query.
+
+`_frame_id_`:: Name of the variable.
+|===

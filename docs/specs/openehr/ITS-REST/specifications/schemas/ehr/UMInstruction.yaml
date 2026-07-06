@@ -1,0 +1,11 @@
+title: INSTRUCTION
+type: object
+allOf:
+  - $ref: ../ehr/Instruction.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [INSTRUCTION]
+x-discriminator-value: INSTRUCTION

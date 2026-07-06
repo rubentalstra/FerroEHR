@@ -1,0 +1,111 @@
+= ADL Paths
+
+== Overview
+
+The notion of paths is integral to ADL, and a common path syntax is used to reference nodes in both dADL and cADL sections of an archetype. The same path syntax works for both, because both dADL and cADL have an alternating object/attribute structure. However, the interpretation of path expressions in dADL and cADL differs slightly; the differences are explained in the dADL and cADL sections of this document. This section describes only the common syntax and semantics.
+
+The general form of the path syntax is as follows (see syntax section below for full specification):
+
+[source, antlr-java]
+--------
+    path: '/'? path_segment ( '/' path_segment )+ ;
+    path_segment: attr_name ( '[' object_id ']' )? ;
+--------
+
+Essentially, ADL paths consist of segments separated by slashes (`'/'`), where each segment is an attribute name with optional object identifier predicate, indicated by brackets ('[]').
+
+[.principle]
+*ADL Paths* are formed from an alternation of segments made up of an attribute name and optional object node identifier predicate, separated by slash (`'/'`) characters. Node identifiers are delimited by brackets (i.e. `[]`).
+
+Similarly to paths used in file systems, ADL paths are either absolute or relative, with the former being indicated by a leading slash.
+
+[.principle]
+Paths are *absolute* or *relative* with respect to the document in which they are mentioned. Absolute paths commence with an initial slash ('/') character.
+
+The ADL path syntax also supports the concept of "movable" path patterns, i.e. paths that can be used to find a section anywhere in a hierarchy that matches the path pattern. Path patterns are indicated with a leading double slash ('//') as in Xpath.
+
+[.principle]
+*Path patterns* are absolute or relative with respect to the document in which they are mentioned. Absolute paths commence with an initial slash ('/') character.
+
+== Relationship with W3C Xpath
+
+The ADL path syntax is semantically a subset of the Xpath query language, with a few syntactic shortcuts to reduce the verbosity of the most common cases. Xpath differentiates between "children" and "attributes" sub-items of an object due to the difference in XML between Elements (true sub-objects) and Attributes (tag-embedded primitive values). In ADL, as with any pure object formalism, there is no such distinction, and all sub-parts of any object are referenced in the manner of Xpath children; in particular, in the Xpath abbreviated syntax, the key `child::` does not need to be used.
+
+ADL does not distinguish attributes from children, and also assumes the node_id attribute. Thus, the following expressions are legal for cADL structures:
+
+[source, cadl]
+----
+    items[1]                            -- the first member of 'items'
+    items[systolic]                     -- the member of 'items' with meaning 'systolic'
+    items[at0001]                       -- the member of 'items' with node id 'at0001'
+----
+
+The Xpath equivalents are:
+
+[source, xpath]
+----
+    items[1]                                -- the first member of 'items'
+    items[meaning() = 'systolic']           -- the member of 'items' for which the meaning()
+                                            -- function evaluates to "systolic"
+    items[@archetype_node_id = 'at0001']    -- the member of 'items' with key 'at0001'
+----
+
+In the above, `meaning()` is a notional function is defined for Xpath in openEHR, which returns the rubric for the node_id of the current node. Such paths are only for display purposes, and paths used for computing always use the 'at' codes, e.g. `items[at0001]`, for which the Xpath equivalent is `items[@node_id = 'at0001']`.
+
+The ADL movable path pattern is a direct analogue of the Xpath syntax abbreviation for the 'descendant' axis.
+
+== Syntax Specification
+
+The path grammar is part of the cADL grammar. This grammar is implemented and tested using lex (.l file) and yacc (.y file) specifications for in the Eiffel programming environment. The 1.4 release of these files is available in the https://github.com/openEHR/adl-tools/tree/Release-1.4/components/adl_parser/src/syntax/cadl/parser[cADL grammar files]. The .l and .y files can be converted for use in another yacc/lex-based programming environment.
+
+=== Grammar
+
+The following provides the assertion parser production rules (yacc specification). Note that because of interdependencies with path and assertion production rules, practical implementations may have to include all production rules in one parser.
+
+[source, antlr-java]
+--------
+input:
+    movable_path
+    | absolute_path
+    | relative_path
+    ;
+
+movable_path:
+    SYM_MOVABLE_LEADER relative_path
+    
+absolute_path:
+    '/' relative_path
+    | absolute_path '/' relative_path
+    ;
+
+relative_path:
+    path_segment
+    | relative_path '/' path_segment
+    ;
+
+path_segment:
+    V_ATTRIBUTE_IDENTIFIER V_LOCAL_TERM_CODE_REF
+    | V_ATTRIBUTE_IDENTIFIER
+    ;
+    
+--------
+
+=== Symbols
+
+The following specifies the symbols and lexical patterns used in the path grammar.
+
+--------
+----------/* symbols */ -------------------------------------------------
+"."     -- -> Dot_code
+"/"     -- -> Slash_code
+"["     -- -> Left_bracket_code
+"]"     -- -> Right_bracket_code
+"//"    -- -> SYM_MOVABLE_LEADER
+
+----------/* term code reference */ -------------------------------------
+\[[a-zA-Z0-9][a-zA-Z0-9._\-]*\] -- -> V_LOCAL_TERM_CODE_REF
+
+----------/* identifiers */ ---------------------------------------------
+[a-z][a-zA-Z0-9_]*              -- -> V_ATTRIBUTE_IDENTIFIER
+
+--------

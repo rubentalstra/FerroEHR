@@ -1,0 +1,110 @@
+=== Iso8601_time Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Iso8601_time*
+
+h|*Description*
+2+a|Represents an ISO 8601 time, including partial and extended forms. Value may be:
+
+* `hh:mm:ss[(,&#124;.)sss][Z&#124;±hh[:mm]]` (extended, preferred) or
+* `hhmmss[(,&#124;.)sss][Z&#124;±hh[mm]]` (compact)
+* or a partial invariant.
+
+See `_valid_iso8601_time()_` for validity.
+
+NOTE: A small deviation to the ISO 8601:2004 standard in this class is that the time `24:00:00` is not allowed, for consistency with `Iso8601_date_time`.
+
+h|*Inherit*
+2+|`<<_iso8601_type_class,Iso8601_type>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*hour* (): `<<_integer_class,Integer>>`
+a|Extract the hour part of the date/time as an Integer.
+
+h|*1..1*
+|*minute* (): `<<_integer_class,Integer>>`
+a|Extract the minute part of the time as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*second* (): `<<_integer_class,Integer>>`
+a|Extract the integral seconds part of the time (i.e. prior to any decimal sign) as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*fractional_second* (): `<<_real_class,Real>>` +
+ +
+__Pre__: `not second_unknown`
+a|Extract the fractional seconds part of the time (i.e. following to any decimal sign) as a Real, or return 0.0 if not present.
+
+h|*1..1*
+|*timezone* (): `<<_iso8601_timezone_class,Iso8601_timezone>>`
+a|Timezone; may be Void.
+
+h|*1..1*
+|*minute_unknown* (): `<<_boolean_class,Boolean>>`
+a|Indicates whether minute is unknown. If so, the time is of the form “hh”.
+
+h|*1..1*
+|*second_unknown* (): `<<_boolean_class,Boolean>>`
+a|Indicates whether second is unknown. If so and month is known, the time is of the form `"hh:mm"` or `"hhmm"`.
+
+h|*1..1*
+|*is_decimal_sign_comma* (): `<<_boolean_class,Boolean>>`
+a|True if this time has a decimal part indicated by `','` (comma) rather than `'.'` (period).
+
+h|*1..1 +
+(effected)*
+|*is_partial* (): `<<_boolean_class,Boolean>>`
+a|True if this time is partial, i.e. if seconds or more is missing.
+
+h|*1..1 +
+(effected)*
+|*is_extended* (): `<<_boolean_class,Boolean>>`
+a|True if this time uses `'-'`, `':'` separators.
+
+h|*1..1*
+|*has_fractional_second* (): `<<_boolean_class,Boolean>>`
+a|True if the `_fractional_second_` part is significant (i.e. even if = 0.0).
+
+h|*1..1*
+|*as_string* (): `<<_string_class,String>>`
+a|Return string value in extended format.
+
+h|*1..1*
+|*add* __alias__ "+" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_time_class,Iso8601_time>>`
+a|Arithmetic addition of a duration to a time.
+
+h|*1..1*
+|*subtract* __alias__ "-" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_time_class,Iso8601_time>>`
+a|Arithmetic subtraction of a duration from a time.
+
+h|*1..1*
+|*diff* __alias__ "-" ( +
+a_time: `<<_iso8601_time_class,Iso8601_time>>[1]` +
+): `<<_iso8601_duration_class,Iso8601_duration>>`
+a|Difference of two times.
+
+h|*Invariants*
+2+a|__Hour_valid__: `valid_hour(hour, minute, second)`
+
+h|
+2+a|__Minute_valid__: `not minute_unknown implies valid_minute (minute)`
+
+h|
+2+a|__Second_valid__: `not second_unknown implies valid_second (second)`
+
+h|
+2+a|__Fractional_second_valid__: `has_fractional_second implies (not second_unknown and valid_fractional_second (fractional_second))`
+
+h|
+2+a|__Partial_validity__: `minute_unknown implies second_unknown`
+|===

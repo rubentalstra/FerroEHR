@@ -1,0 +1,131 @@
+= Customising ADL
+
+== Introduction
+
+Standard ADL has a completely regular way of representing constraints. Type names and attribute names from a reference model are mentioned in an alternating, hierarchical structure that is isomorphic to the aggregation structure of the corresponding classes in the reference model. Constraints at the leaf nodes are represented in a syntactic way that avoids committing to particular modelling details. The overall result enables constraints on most reference model types to be expressed. This section describes how to handle exceptions from the standard semantics. openEHR uses a small number of such exceptions, which are documented in the {openehr_am_oap}[openEHR Archetype Profile (oAP) specification].
+
+A situation in which standard ADL falls short is when the required semantics of constraint are different from those available naturally from the standard approach. Consider a reference model type `QTY`, shown in the following figure, which could be used to represent a person’s age in an archetype.
+
+[.text-center]
+.QTY class
+image::{diagrams_uri}/qty_class.png[id=qty_class, align="center", width=20%]
+
+A typical ADL constraint to enable `QTY` to be used to represent age in clinical data can be expressed in natural language as follows:
+
+----
+    property matches "time"
+    units matches "years" or "months"
+    if units is "years" then magnitude matches 0..200 (for adults)
+    if units is "months" then magnitude matches 3..36 (for infants)
+----
+
+The standard ADL expression for this requires the use of multiple alternatives, as follows:
+
+[source, cadl]
+--------
+age matches {
+    QTY matches {
+        property matches {"time"}
+        units matches {"yr"}
+        magnitude matches {|0.0..200.0|}
+    }
+    QTY matches {
+        property matches {"time"}
+        units matches {"mth"}
+        magnitude matches {|3.0..12.0|}
+    }
+}
+--------
+
+While this is a perfectly legal approach, it is not the most natural expression of the required constraint, since it repeats the constraint of property matching "time". It also makes processing by software slightly more difficult than necessary.
+
+A more convenient possibility is to introduce a new class into the archetype model, representing the concept "constraint on QTY", which we will call `C_QTY`. Such a class fits into the class model of archetypes (see the openEHR AOM) by inheriting from the class `C_DOMAIN_TYPE`. A `C_QTY` class is illustrated below, and corresponds to the way constraints on `QTY` objects are often expressed in user applications, which is to say, a property constraint, and a separate list of units/magnitude pairs.
+
+[.text-center]
+.C_QTY class
+image::{diagrams_uri}/c_qty_class.png[id=c_qty_class, align="center", width=50%]
+
+The question now is how to express a constraint corresponding to this class in an ADL archetype. The solution is logical, and uses standard ADL. Consider that a particular constraint on a `QTY` must be an instance of the `C_QTY` type. An instance of any class can be expressed in ADL using the dADL syntax (ADL’s object serialisation syntax) at the appropriate point in the archetype, as follows:
+
+[source, dadl]
+--------
+value matches {
+    C_QTY <
+        property = <"time">
+        list = <
+            ["1"] = <
+                units = <"yr">
+                magnitude = <|0.0..200.0|>
+                >
+            ["2"] = <
+                units = <"mth">
+                magnitude = <|1.0..36.0|>
+            >
+        >
+    >
+}
+--------
+
+This approach can be used for any custom type which represents a constraint on a reference model type. Since the syntax is generic, only one change is needed to an ADL parser to support dADL sections within the cADL (definition) part of an archetype. The syntax rules are as follows:
+
+* the dADL section occurs inside the `{}` block where its standard ADL equivalent would have occurred (i.e. no other delimiters or special marks are needed);
+* the dADL section must be ‘typed’, i.e. it must start with a type name, which should correspond directly to a reference model type;
+* the dADL instance must obey the semantics of the custom type of which it is an instance, i.e. include the correct attribute names and relationships.
+
+It should be understood of course, that just because a custom constraint type has been defined, it does not need to be used to express constraints on the reference model type it targets. Indeed, any mixture of standard ADL and dADL-expressed custom constraints may be used within the one archetype.
+
+NOTE: that the classes in the above example are a simplified form of classes found in the openEHR reference model, designed purely for the purpose of the example.
+
+=== Custom Syntax
+
+A dADL section is not the only possibility for expressing a custom constraint type. A useful alternative is a custom addition to the ADL syntax. Custom syntax can be smaller, more intuitive to read, and easier to parse than embedded dADL sections. A typical example of the use of custom syntax is to express constraints on the type `CODE_PHRASE` in the openEHR reference model (rm.data_types package). This type models the notion of a ‘coded term’, which is ubiquitous in clinical computing. The standard ADL for a constraint on the `_defining_code_` attribute of a class `CODE_PHRASE` is as follows:
+
+[source, cadl]
+--------
+defining_code matches {
+    CODE_PHRASE matches {
+        terminology_id matches {"local"}
+        code_string matches {"at0039"} -- lying
+    }
+    CODE_PHRASE matches {
+        terminology_id matches {"local"}
+        code_string matches {"at0040"} -- sitting
+    }
+}
+--------
+
+However, as with `QUANTITY`, the most typical constraint required on a `CODE_PHRASE` is factored differently from the standard ADL - the need is almost always to specify the terminology, and then a set of `_code_strings_`. A type `C_CODE_PHRASE` type can be defined as shown in the figure below.
+
+[.text-center]
+.C_CODE_PHRASE class
+image::{diagrams_uri}/c_code_phrase_class.png[id=c_code_phrase_class, align="center", width=50%]
+
+Using the dADL section method, including a C_CODE_PHRASE constraint would require the following section:
+
+[source, cadl]
+--------
+defining_code matches {
+    C_CODE_PHRASE <
+        terminology_id = <
+            value = <"local">
+        >
+        code_list = <
+            ["1"] = <"at0039">
+            ["2"] = <"at0040">
+        >
+    >
+}
+--------
+
+Although this is perfectly legal, a more compact and readable rendition of this same constraint is provided by a custom syntax addition to ADL, which enables the above example to be written as follows:
+
+[source, cadl]
+--------
+defining_code matches {
+    [local::
+    at0039,
+    at0040]
+}
+--------
+
+The above syntax should be understood as an extension to the ADL grammar, and an archetype tool supporting the extension needs to have a modified parser. While these two ADL fragments express exactly the same constraint, the second is shorter and clearer.

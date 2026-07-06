@@ -1,0 +1,13 @@
+operationId: versioned_ehr_status_get
+summary: Get versioned EHR_STATUS
+description: |
+  Retrieves a VERSIONED_EHR_STATUS associated with an EHR identified by `ehr_id`.
+tags:
+  - EHR_STATUS
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+responses:
+  '200':
+    $ref: ../responses/200_VERSIONED_EHR_STATUS.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id.yaml

@@ -1,0 +1,32 @@
+title: UPDATE_AUDIT
+type: object
+description: The set of attributes required to document the committal of an information item to a repository. Used by the server to create an AUDIT_DETAILS object.
+required:
+  - change_type
+  - committer
+properties:
+  _type:
+    type: string
+    default: UPDATE_AUDIT
+  change_type:
+    $ref: ../base_types/TerminologyCode.yaml
+  description:
+    $ref: ../data_types/UDvText.yaml
+  committer:
+    $ref: ../common/UPartyProxy.yaml
+x-discriminator-value: UPDATE_AUDIT
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    UPDATE_AUDIT: '#/components/schemas/UpdateAudit'
+    UPDATE_ATTESTATION: '#/components/schemas/UpdateAttestation'
+example:
+  change_type:
+    value: creation
+    defining_code:
+      terminology_id: openehr
+      code_string: '249'
+  description: Description text
+  committer:
+    _type: PARTY_IDENTIFIED
+    name: A user name

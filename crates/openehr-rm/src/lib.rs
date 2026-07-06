@@ -23,3 +23,6 @@ pub mod ehr_extract;
 pub mod integration;
 pub mod prelude;
 pub mod support;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod validate;

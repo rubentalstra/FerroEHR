@@ -1,0 +1,34 @@
+=== BMM_FUNCTION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_FUNCTION*
+
+h|*Description*
+2+a|A formal element with signature of the form: `name ({arg:TArg}*):TResult`. A function is a computed (rather than data) element, generally assumed to be non-state-changing.
+
+h|*Inherit*
+2+|`<<_bmm_routine_class,BMM_ROUTINE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*operator_definition*: `<<_bmm_operator_class,BMM_OPERATOR>>`
+a|Optional details enabling a function to be represented as an operator in a syntactic representation.
+
+h|*1..1*
+|*result*: `<<_bmm_result_class,BMM_RESULT>>`
+a|Automatically created Result variable, usable in body and post-condition.
+
+h|*Invariants*
+2+a|__Operator_validity__: `operator_def /= Void implies arity in &#124;1..2&#124;`
+
+h|
+2+a|__Inv_signature_has_result__: `signature().result /= Void`
+
+h|
+2+a|__Inv_result_type__: `type = Result.type`
+|===

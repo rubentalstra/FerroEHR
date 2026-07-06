@@ -1,0 +1,14 @@
+=== EXPR_VALUE_REF Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXPR_VALUE_REF*
+
+h|*Description*
+2+a|Path-based reference to a value in a data structure.
+
+h|*Inherit*
+2+|`<<_expr_leaf_class,EXPR_LEAF>>`
+
+|===

@@ -1,0 +1,191 @@
+= Complex Expressions
+
+Complex expressions in EL consist of non-atomic value-returning expressions, in a typed, operator-based syntax common to many programming languages and logics. In EL, the syntactic use of operators is understood as a shorthand for specific functions assumed to be available on types inferred from the context of the operator use. An EL implementation would therefore map such operators to the appropriate methods in a class library.
+
+== Equality Operator
+
+The equality operator `=` in EL is understood as the function `_equal_()` defined on the type `Any`, of which every other class is a descendant. For all primitive value types (types for which use in expressions directly generates values rather than instance references), the semantics are value comparison, while for all other types, the semantics are reference comparison. For non-openEHR models, `'='` will normally map to a similarly-named method, e.g. `_equals_()`.
+
+To obtain value comparison for non-value types, the function `Any._is_equal_()`, which may be redefined in any sub-type, is used.
+
+== Primitive Operators
+
+Primitive operators in EL are the infix or prefix syntax forms of functions available on primitive types. For example, the operator `-` (minus) is defined on the class `Numeric` (an inheritance ancestor of the classes `Integer`, `Real` etc) as the following:
+
+[source,kotlin]
+----
+    |
+    | in class Numeric
+    |
+    subtract (other: Numeric): Numeric
+        alias infix '-'
+    
+    |
+    | redefined in class Integer as
+    |
+    subtract (other: Integer): Integer
+----
+
+This means that where the expression `100 - 5` is encountered in EL, what is really invoked is `{Integer}._subtract_()`, specifically `100._subtract_(5)`.
+
+For convenience, the operators for the `Numeric` and `Boolean` types from the {openehr_foundation_types}[openEHR Foundation Types^] are reproduced below.
+
+[cols="1,1,3",options="header"]
+|=================================================================
+|Operators     |Function                   |Meaning
+                               
+3+^h|Arithmetic Operators - Numeric operands and result; descending precendence order
+
+|`^`           |`exponent()`               |Exponentiation
+|`*`           |`multiply()`               |Multiplication
+|`/`           |`divide()`                 |Division
+|`%`           |`modulus()`                |Modulo (whole number) division
+|`+`           |`add()`                    |Addition
+|`-`           |`subtract()`               |Subtraction
+
+3+^h|Relational Operators - Numeric, Date/time operands and Boolean result; equal precedence
+
+|`=`           |`equal()`                  |Value equality
+|`!=`, `≠`     |`not_equal()`              |Inequality relation
+|`<`           |`less_than()`              |Less than relation
+|`\<=`, `≤`    |`less_than_or_equal()`     |Less than or equal relation
+|`>`           |`greater_than()`           |Greater than relation
+|`>=`, `≥`     |`greater_than_or_equal()`  |Greater than or equal relation
+
+3+^h|Logical Operators - Boolean operands and result; descending precendence order
+
+|`NOT`, `~`    |`not()`                    |Negation, "not p"
+|`AND`, `∧`   |`conjunction()`            |Logical conjunction, "p and q"
+|`OR`, `∨`    |`disjunction()`            |Logical disjunction, "p or q"
+|`XOR`, `⊻`    |`exclusive_disjunction()`  |Exclusive or, "only one of p or q"
+|`IMPLIES`, `⇒`|`implication()`            |Material implication, "p implies q", or "if p then q"
+
+|=================================================================
+
+Expressions using logical operators may thus be written using standard English names or symbols, as in the following.
+
+[source,kotlin]
+--------
+    systolic_bp > 140 AND (is_smoker OR is_hypertensive)
+
+    systolic_bp > 140 ∧ (is_smoker ∨ is_hypertensive)
+--------
+
+In addition, some operators are defined on the other primitive types, including the following.
+
+[cols="1,4,2",options="header"]
+|=================================================================
+|Operator        |Function   	                                                |Meaning
+                               
+3+^h|`String` Operators
+
+|`+`             |`String.append(other: String): String`                        |String concatenation, appending
+
+3+^h|`Iso8601_date` arithmetic operators
+
+|`+`             |`add(d: Iso8601_duration): Iso8601_date`                      |Add a precise duration to a date
+|`++`            |`add_nominal(d: Iso8601_duration): Iso8601_date`              |Add a nominal duration to a date
+|`-`             |`subtract(d: Iso8601_duration): Iso8601_date`                 |Subtract a precise duration from a date
+|`--`            |`subtract_nominal(d: Iso8601_duration): Iso8601_date`         |Subtract a nominal duration from a date
+|`-`             |`diff(d: Date): Iso8601_duration`                             |Difference of two dates
+
+3+^h|`Iso8601_date_time` arithmetic operators
+
+|`+`             |`add(d: Iso8601_duration): Iso8601_date_time`                 |Add a precise duration to a date/time
+|`++`            |`add(d: Iso8601_duration): Iso8601_date_time`                 |Add a nominal duration to a date/time
+|`-`             |`subtract(d: Iso8601_duration): Iso8601_date_time`            |Subtract a precise duration from a date/time
+|`--`            |`subtract_nominal(d: Iso8601_duration): Iso8601_date_time`    |Subtract a nominal duration from a date/time
+|`-`             |`diff(d: Date_time): Iso8601_duration`                        |Difference of two date/times
+
+3+^h|`Iso8601_time` arithmetic operators
+
+|`+`             |`add(d: Iso8601_duration): Iso8601_time`                      |Add a duration to a time
+|`-`             |`subtract(d: Iso8601_duration): Iso8601_time`                 |Subtract a duration from a time
+|`-`             |`diff(d: Time): Iso8601_duration`                             |Difference of two times
+
+3+^h|`Iso8601_duration` arithmetic operators
+
+|`+`             |`add(d: Iso8601_duration): Iso8601_duration`                  |Add a duration to a duration
+|`-`             |`subtract(d: Iso8601_duration):Iso8601_duration`              |Subtract a duration from a duration
+
+|=================================================================
+
+Operator semantics that require further explanation are described below.
+
+=== Logical Negation
+
+All Boolean operators take Boolean operands and generate a Boolean result. The `not` operator can be applied as a prefix operator to all operators returning a Boolean result as well as a parenthesised Boolean expression.
+
+=== Precedence and Parentheses
+
+The precedence of operators follows the order shown in the operator tables above. To change precedence, parentheses can be used in the fashion typical of most programming languages, as shown below. 
+
+[source,kotlin]
+--------
+    systolic_bp > 140 AND (is_smoker OR is_hypertensive)
+--------
+
+== Higher-order Operators
+
+=== Quantification Operators
+
+The two standard quantification operators from predicate logic `there exists` (∃ operator) and `for all` (∀ operator) are defined in EL for the container types found in the {openehr_foundation_types}[openEHR Foundation Types^].
+
+The textual syntax of `there exists` is as follows:
+
+----
+    there_exists v in container_var | <Boolean expression mentioning v> 
+----
+
+Here, the `|` symbol is usually read in English as 'such that'. The symbolic equivalent may also be used:
+
+----
+    ∃ v : container_var | <Boolean expression mentioning v>
+----
+
+The above may also be expressed in EL as its functional equivalent:
+
+[source,kotlin]
+----
+    list_of_reals: List<Real>
+    
+    |
+    | an expression that will return true if list_of_reals
+    | contains a value greater than 140.0
+    |
+    list_of_reals.there_exists (
+        agent (v: Real): Boolean {
+            v > 140.0
+        }
+    )
+---- 
+
+The `for_all` operator has similar textual syntax:
+
+----
+    for_all v in container_var | <Boolean expression mentioning v>
+----
+
+Here, the `|` symbol is normally read in English as as 'it holds that'. The symbolic equivalent may also be used:
+
+----
+    ∀ v : container_var | <Boolean expression mentioning v>
+----
+
+The above may also be expressed in EL as its functional equivalent:
+
+[source,kotlin]
+----
+    list_of_reals: List<Real>
+    
+    |
+    | an expression that will return true if list_of_reals
+    | consists of values all greater than 140.0
+    |
+    list_of_reals.for_all (
+        agent (v: Real): Boolean {
+            v > 140.0
+        }
+    )
+----
+

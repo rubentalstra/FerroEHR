@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/P_aom2/P_ARCHETYPE_TERMINOLOGY.json",
+    "title": "P_ARCHETYPE_TERMINOLOGY",
+    "description": "Local ontology of an archetype.",
+    "$comments": "Defined in P_aom2 IM",
+    "type": "object",
+    "properties": {
+        "is_differential": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "original_language": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "term_definitions": {
+            "description": "Directory of term definitions as a two-level \ntable. The outer hash keys are term codes, \ne.g. \"at0004\", and the inner hash key are term \nattribute names, e.g. \"text\", \"description\" etc.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/all.json#/definitions/Hash_of_String_Hash_of_String_ARCHETYPE_TERM"
+        },
+        "term_bindings": {
+            "description": "Directory of term bindings as a two-level \ntable. The outer hash keys are local term codes, \ne.g. \"at0004\", and the inner hash keys are terminology \ncode phrases, e.g. \"SNOMED(2003)::163034007\" etc.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/all.json#/definitions/Hash_of_String_Hash_of_String_Uri"
+        },
+        "value_sets": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/Aom2/all.json#/definitions/Hash_of_String_VALUE_SET"
+        }
+    },
+    "required": [
+        "is_differential",
+        "original_language",
+        "term_definitions"
+    ]
+}

@@ -1,0 +1,24 @@
+title: DV_QUANTIFIED
+type: object
+allOf:
+  - $ref: ../data_types/DvOrdered.yaml
+properties:
+  _type:
+    type: string
+    default: DV_QUANTIFIED
+  magnitude_status:
+    type: string
+    default: '='
+x-discriminator-value: DV_QUANTIFIED
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    DV_AMOUNT: '#/components/schemas/DvAmount'
+    DV_COUNT: '#/components/schemas/DvCount'
+    DV_DATE: '#/components/schemas/DvDate'
+    DV_DATE_TIME: '#/components/schemas/DvDateTime'
+    DV_DURATION: '#/components/schemas/DvDuration'
+    DV_PROPORTION: '#/components/schemas/DvProportion'
+    DV_QUANTITY: '#/components/schemas/DvQuantity'
+    DV_TEMPORAL: '#/components/schemas/DvTemporal'
+    DV_TIME: '#/components/schemas/DvTime'

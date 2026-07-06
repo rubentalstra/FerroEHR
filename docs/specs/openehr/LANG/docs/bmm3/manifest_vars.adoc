@@ -1,0 +1,5 @@
+:spec_title: Basic Meta-Model (BMM) v3 developments
+:copyright_year: 2018
+:spec_status: PAUSED
+:keywords: reflection, meta-model, UML, BMM
+:description: Basic Meta-Model (BMM) v3 specification

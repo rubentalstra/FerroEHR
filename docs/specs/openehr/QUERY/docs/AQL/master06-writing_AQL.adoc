@@ -1,0 +1,139 @@
+[[_how_to_write_an_aql_query_statement_manually]]
+= Writing AQL manually
+
+This section describes how to write an AQL query statement manually.
+An example is used to illustrate how to write an AQL statement. The query scenario is:
+
+*"Get all abnormal blood pressure values that are recorded in a health encounter for a specific patient."*
+
+NOTE: More examples can be found in the {openehr_query_aql_examples}[openEHR AQL examples^] document.
+
+The process described here may provide some hints for constructing AQL builder tools.
+
+== Step 1. The FROM clause
+
+A `FROM` clause is to scope the data source for the query. Normally the first step is to determine the `FROM` clause, which has EHR class expression and archetype class expressions.
+
+. *EHR class expression*
++
+This determines whether this query is applied to a single EHR or all EHRs. The latter is called a population query. If it is for all EHRs, there is no need to specify `ehr_id/value` in the `FROM` clause. Otherwise, you need to either specify a specific value or use a query parameter for `ehr_id/value` in a `FROM` clause. For this particular scenario, it is for a single EHR. A parameter called `ehrUid` is used for the `ehr_id/value`, giving this AQL query statement:
++
+----
+FROM EHR [ehr_id/value=$ehrUid]
+----
+
+. *Archetype expressions*
++
+.. To write archetype expressions in the `FROM` clause, the archetypes required for the scenario must be determined, since archetypes are used to represent clinical concepts. The easy way to identify archetypes for a scenario is to identify clinical concepts mentioned in the scenario. Each clinical concept is generally associated with one archetype. Two clinical concepts are mentioned in the above scenario: 'blood pressure' and 'health encounter'. From these concepts the two archetypes used in query are identified: an Observation archetype `openEHR-EHR-OBSERVATION.blood_pressure.v1`, and a Composition archetype `openEHR-EHR-COMPOSITION.encounter.v1`.
+.. Determine whether a variable name is needed for each archetype class expression or not. This is useful if the reference to the archetype class expression is required by other AQL clauses. Without using variable names for the archetype expressions, the two archetype expressions are:
++
+--------
+COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+OBSERVATION [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+--------
+
+. *Containment expression*
++
+The openEHR RM is used to identify the hierarchical relationships among the found archetypes so as to define the containment expression. For example, a Composition archetype is the parent of an Observation archetype, so the AQL query looks as follows:
++
+--------
+FROM EHR [ehr_id/value=$ehrUid] CONTAINS COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+    CONTAINS OBSERVATION [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+--------
+
+== Step 2. The WHERE clause
+
+The `WHERE` clause represents all query criteria that cannot be represented in the `FROM` clause. To write a `WHERE` clause expression, the following is needed:
+
+. Determine the criteria. The criteria required by the scenario are abnormal blood pressure values. Different guidelines may have different definitions for abnormal blood pressure values. Here `abnormal blood pressure` is interpreted to mean 1) the 'systolic pressure' value is greater than or equal to `140`; OR 2) the 'diastolic pressure' value is greater than or equal to `90`.
+. State an identified expression for criterion 1), as follows:
+.. state the identified path for the systolic data value. A class variable name is needed as the reference to the blood pressure class expression defined in the `FROM` clause, so a variable name `obs` is added into the `FROM` clause. A path to systolic data value is also required to form the identified path. The path to the systolic data value is `/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/value`.
+.. choose the appropriate operator: `>=` is used for criterion 1.
+.. add the criteria value, here, `140`. The query statement including the identified expression for criterion 1) is shown below:
++
+--------
+FROM
+   EHR [ehr_id/value=$ehrUid] CONTAINS COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+       CONTAINS OBSERVATION obs [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/value >= 140
+--------
+
+. Write an identified expression for criterion 2). Following the previous instruction to write the identified expression for criterion 2) which is shown as:
++
+--------
+obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/value >= 90
+--------
+
+. Find the appropriate boolean operator to join criterion 1) and 2) - OR. The query statement looks like:
++
+--------
+FROM
+   EHR [ehr_id/value=$ehrUid] CONTAINS COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+      CONTAINS OBSERVATION obs [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/value >= 140 OR
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/value >= 90
+--------
+
+== Step 3. The SELECT clause
+
+Writing a `SELECT` clause depends on determining:
+
+. What return data is required. The afore-mentioned scenario requires abnormal blood pressure values as return values, including both systolic pressure and diastolic pressure.
+. Write the appropriate identified path to the required item (variable name is required if the containing object is required). Multiple identified paths are separated using commas. For this particular scenario, two identified paths are found for systolic and diastolic data value by following Step 2. The completed query statement looks as follows:
++
+--------
+SELECT
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude,
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude
+FROM
+   EHR [ehr_id/value=$ehrUid] CONTAINS COMPOSITION [openEHR-EHR-COMPOSITION.encounter.v1]
+      CONTAINS OBSERVATION obs [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= 140 OR
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude >= 90
+--------
+
+== Ordering and pagination
+
+If the query scenario would be:
+
+*"Get the latest 5 abnormal blood pressure values that were recorded in a health encounter for a specific patient."*
+
+then the followings are needed:
+
+. add an extra column with event start_time values and order the results based on that column:
++
+--------
+SELECT
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic,
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude AS diastlic,
+   c/context/start_time AS date_time
+FROM
+   EHR [ehr_id/value=$ehrUid] CONTAINS COMPOSITION c [openEHR-EHR-COMPOSITION.encounter.v1]
+      CONTAINS OBSERVATION obs [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= 140 OR
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude >= 90
+ORDER BY
+   c/context/start_time DESC
+--------
+
+. use `LIMIT` clause to retrieve only the first needed rows, i.e. the latest 5 rows:
++
+--------
+SELECT
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic,
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude AS diastlic,
+   c/context/start_time AS date_time
+FROM
+   EHR [ehr_id/value=$ehrUid] CONTAINS COMPOSITION c [openEHR-EHR-COMPOSITION.encounter.v1]
+      CONTAINS OBSERVATION obs [openEHR-EHR-OBSERVATION.blood_pressure.v1]
+WHERE
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= 140 OR
+   obs/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value/magnitude >= 90
+ORDER BY
+   c/context/start_time DESC
+LIMIT 5
+--------

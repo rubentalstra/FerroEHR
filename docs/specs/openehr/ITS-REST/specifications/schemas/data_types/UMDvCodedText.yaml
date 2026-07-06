@@ -1,0 +1,11 @@
+title: DV_CODED_TEXT
+type: object
+allOf:
+  - $ref: ../data_types/DvCodedText.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_CODED_TEXT]
+x-discriminator-value: DV_CODED_TEXT

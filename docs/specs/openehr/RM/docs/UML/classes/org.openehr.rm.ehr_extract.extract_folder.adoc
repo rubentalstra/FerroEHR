@@ -1,0 +1,21 @@
+=== EXTRACT_FOLDER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXTRACT_FOLDER*
+
+h|*Description*
+2+a|Folder in local Folder structure in an Extract. Empty Folders are allowed.
+
+h|*Inherit*
+2+|`<<_extract_item_class,EXTRACT_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_extract_item_class,EXTRACT_ITEM>>>`
+a|List of Folders and content items in this Folder.
+|===

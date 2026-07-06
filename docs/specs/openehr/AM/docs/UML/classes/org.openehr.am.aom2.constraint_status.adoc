@@ -1,0 +1,36 @@
+=== CONSTRAINT_STATUS Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*CONSTRAINT_STATUS*
+
+h|*Description*
+2+a|Status of `_constraint_`, with values allowing for 'soft' constraints, which are effectively different kinds of suggestions.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|*required*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}0`
+a|Data item is required to formally satisfy `_constraint_`.
+
+Enumeration value = 0.
+
+h|
+|*extensible*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}1`
+a|Data item value should satisfy `_constraint_`, i.e. a term in `_constraint_` is to be used if it covers the data item meaning (including more generally); if not, another code may be used, including from another terminology.
+
+Enumeration value = 1.
+
+h|
+|*preferred*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}2`
+a|Data item value is by preference one of the codes defined by `_constraint_`, but for local reasons may be another code, including from another terminology.
+
+Enumeration value = 2.
+
+h|
+|*example*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]{nbsp}={nbsp}3`
+a|The `_constraint_` code or value-set is considered purely as an example, and the data item may have any value.
+|===

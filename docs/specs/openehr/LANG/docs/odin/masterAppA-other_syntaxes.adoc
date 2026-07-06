@@ -1,0 +1,153 @@
+[appendix]
+= Relationship with other Syntaxes
+
+== XML
+
+A common question about ODIN is why it is needed, when there is already XML? To start with, this question highlights the widespread misconception about XML, namely that because it can be read by a text editor, it is intended for humans. In fact, XML is designed for machine processing, and is textual to guarantee its interoperability, not its readability. Realistic examples of XML (e.g. XML-schema instance, OWL-RDF ontologies) are generally unreadable for humans. ODIN is on the other hand designed as a human-writable and readable formalism that is also machine processable; it may be thought of as an abstract syntax for object-oriented data. ODIN also differs from XML by:
+
+* providing a more comprehensive set of leaf data types, including intervals of numerics and date/time types, and lists of all primitive types;
+* adhering to object-oriented semantics, particularly for container types, which XML schema languages generally do not;
+* not using the confusing XML notion of 'attributes' and 'elements' to represent what are essentially object properties;
+* requiring roughly half the space of the equivalent XML.
+
+This does not prevent ODIN documents being converted to XML and indeed the conversion to XML instance is rather straightforward.
+
+=== Expression of ODIN in XML
+
+The ODIN syntax maps relatively easily to XML instances. It is important to realise that developers using XML often develop different mappings for object-oriented data, due to the fact that XML does not have systematic object-oriented semantics. This is particularly the case where containers such as lists and sets such as 'employees: List<Person>' are mapped to XML; many implementors have to invent additional tags such as 'employee' to make the mapping appear visually correct. The particular mapping chosen here is designed to be a faithful reflection of the semantics of the object-oriented data, and does not try to take into account the visual aesthetics of the XML. The result is that Xpath expressions are the same for ODIN and XML, and also correspond to what one would expect based on an underlying object model.
+
+The main elements of the mapping are as follows.
+
+==== Single Attributes
+
+Single attribute nodes map to tagged nodes of the same name.
+
+==== Container Attributes
+
+Container attribute nodes map to a series of tagged nodes of the same name, each with the XML attribute 'id' set to the ODIN key. For example, the ODIN:
+
+[source, odin]
+--------
+subjects = <
+    ["philosophy:plato"] = <
+        name = <"philosophy">
+    >
+    ["philosophy:kant"] = <
+        name = <"philosophy">
+    >
+>
+--------
+
+maps to the XML:
+
+[source, xml]
+--------
+<subjects id="philosophy:plato">
+    <name> philosophy </name>
+</subjects>
+<subjects id="philosophy:kant">
+    <name> philosophy </name>
+</subjects>
+--------
+
+This guarantees that the path `subjects[@id='philosophy:plato']/name` navigates to the same element in both ODIN and the XML.
+
+==== Nested Container Attributes
+
+Nested container attribute nodes map to a series of tagged nodes of the same name, each with the XML attribute 'id' set to the ODIN key. For example, consider an object structure defined by the signature `countries:Hash<Hash<Hotel,String>,String>` . An instance of this in ODIN looks as follows:
+
+[source, odin]
+--------
+countries = <
+    ["spain"] = <
+        ["hotels"] = <...>
+        ["attractions"] = <...>
+    >
+    ["egypt"] = <
+        ["hotels"] = <...>
+        ["attractions"] = <...>
+    >
+>
+--------
+
+can be mapped to the XML in which the synthesised element tag "_items" and the attribute "key" are used:
+
+[source, xml]
+--------
+<countries key="spain">
+    <_items key="hotels">
+        ...
+    </_items>
+    <_items key="attractions">
+        ...
+    </_items>
+</countries>
+
+<countries key="egypt">
+    <_items id="hotels">
+    ...
+    </_items>
+    <_items key="attractions">
+    ...
+    </_items>
+</countries>
+--------
+
+In this case, the ODIN path `countries["spain"]/["hotels"]` will be transformed to the Xpath `countries[@key="spain"]/_items[@key="hotels"]` in order to navigate to the same element.
+
+==== Type Names
+
+Type names map to XML 'type' attributes e.g. the ODIN:
+
+[source, odin]
+--------
+destinations = <
+    ["seville"] = (TOURIST_DESTINATION) <
+        profile = (DESTINATION_PROFILE) <...>
+        hotels = <
+            ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+        >
+    >
+>
+--------
+
+maps to:
+
+[source, xml]
+--------
+<destinations id="seville" rm:type="TOURIST_DESTINATION">
+	<profile rm:type="DESTINATION_PROFILE">
+		...
+	</profile>
+	<hotels id="gran sevilla" rm:type="HISTORIC_HOTEL">
+		...
+	</hotels>
+</destinations>
+--------
+
+== JSON
+
+The JavaScript Object Notation (JSON) was designed with the aim of representing JavaScript data objects in a programming language independent way, primarily for use with the web and JavaScript. The majority of use was for small fragments, although in more recent years it is starting to be used for more complex data representation tasks, for example with REST web services.
+
+=== Leaf types
+
+ODIN has more terminal types than JSON, including the date/time types, and the Interval types.
+
+Date/time types would typically be mapped to and from Strings containing {iso_8601}[ISO 8601 syntax] dates and times.
+
+The interval is a built-in ODIN type that would need to be explicitly expanded into a JSON structure, with an assumed model of the parts of the Interval. For this purpose, the following model is recommended as a basis for constructing the JSON equivalent:
+
+[source, idl]
+--------
+class Interval <T: Ordered> {
+    T lower;
+    T upper;
+    Boolean lower_included;
+    Boolean upper_included;
+}
+--------
+
+=== Typing
+
+ODIN supports optional type markers, which are not available with JSON. In a conversion situation these would need to be converted to an explicit structure.
+

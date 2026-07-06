@@ -1,0 +1,110 @@
+= ADL - Archetype Definition Language
+
+== Introduction
+
+This section describes whole ADL artefacts. The relationship of the cADL-encoded `definition` section and the ODIN-encoded `terminology` section is discussed in detail.
+
+Some syntax validity rules are defined, but validity in general is defined by the rules stated in the AOM specification, which can be checked by a compiler as soon as an AOM structure is parsed from an ADL document (or other serialisation format).
+
+The general structure of ADL artefacts is as follows (the full definitions are shown in <<Syntax Specification>> below):
+
+[source, antlr-java]
+--------
+adl_artefact: artefact_type meta_data?
+        ARCHETYPE_HRID
+    ('specialize' 
+        ARCHETYPE_REF)?
+    'language'
+        odin_text
+    'description'
+        odin_text
+    'definition'
+        c_complex_object
+    ('rules'
+        el_text)?
+    ('rm_overlay'
+        odin_text)?
+    'terminology'
+        odin_text
+    ('annotations' 
+        odin_text)?
+    ;
+    
+artefact_type: 'archetype' | 'template' | 'template_overlay' | 'operational_template' ;
+
+meta_data: '(' meta_data_item  (';' meta_data_item )* ')' ;
+--------
+
+The syntax for `meta_data_item`, `ARCHETYPE_HRID` and `ARCHETYPE_REF` can be found below in <<_syntax_specification>>.
+
+The 'archetype' artefact type can have any or all of the above sections. The other artefact types are more specific in their form. 
+
+An ADL source template has the following structure.
+
+[source, antlr-java]
+--------
+adl_template: 'template' meta_data?
+        ARCHETYPE_HRID
+    'specialize' 
+        ARCHETYPE_REF
+    'language'
+        odin_text
+    'description'
+        odin_text
+    'definition'
+        c_complex_object
+    ('rules'
+        el_text)?
+    ('rm_overlay'
+        odin_text)?
+    'terminology'
+        odin_text
+    ('annotations' 
+        odin_text)?
+    ;
+--------
+
+An ADL template overlay has the structure shown below.
+
+[source, antlr-java]
+--------
+adl_template_overlay: 'template_overlay'
+        ARCHETYPE_HRID
+    'specialize' 
+        ARCHETYPE_REF
+    'definition'
+        c_complex_object
+    ('rules'
+        el_text)?
+    ('rm_overlay'
+        odin_text)?
+    'terminology'
+        odin_text
+    ;
+--------
+
+The structure of an operational template is as follows.
+
+[source, antlr-java]
+--------
+adl_operational_template: 'operational_template' meta_data?
+        ARCHETYPE_HRID
+    'language'
+        odin_text
+    'description'
+        odin_text
+    'definition'
+        c_complex_object
+    ('rules'
+        el_text)?
+    ('rm_overlay'
+        odin_text)?
+    'terminology'
+        odin_text
+    ('annotations' 
+        odin_text)?
+    'component_terminologies'
+        odin_text
+    ;
+--------
+

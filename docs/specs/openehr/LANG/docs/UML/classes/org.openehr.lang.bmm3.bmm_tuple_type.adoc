@@ -1,0 +1,40 @@
+=== BMM_TUPLE_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_TUPLE_TYPE*
+
+h|*Description*
+2+a|Built-in meta-type representing the type of a tuple, i.e. an array of any number of other types. This includes both container and unitary types, since tuple instances represent concrete objects.
+
+Note that both open and closed generic parameters are allowed, as with any generic type, but open generic parameters are only valid within the scope of a generic class.
+
+h|*Inherit*
+2+|`<<_bmm_builtin_type_class,BMM_BUILTIN_TYPE>>`
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*base_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"Tuple"`
+a|Base name (built-in).
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*item_types*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_type_class,BMM_TYPE>>>`
+a|List of types of the items of the tuple, keyed by purpose in the tuple.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*flattened_type_list* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Return the logical set (i.e. unique types) from the merge of `_flattened_type_list_()` called on each member of `_item_types_`.
+|===

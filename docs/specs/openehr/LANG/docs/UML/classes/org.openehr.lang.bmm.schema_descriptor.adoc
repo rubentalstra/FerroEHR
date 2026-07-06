@@ -1,0 +1,67 @@
+=== SCHEMA_DESCRIPTOR Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*SCHEMA_DESCRIPTOR*
+
+h|*Description*
+2+a|Descriptor for a BMM schema. Contains a meta-data table of attributes obtained from a mini-ODIN parse of the schema file.
+
+h|*Inherit*
+2+|`<<_bmm_definitions_class,BMM_DEFINITIONS>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*p_schema*: `<<_p_bmm_schema_class,P_BMM_SCHEMA>>`
+a|Persistent form of model.
+
+h|*0..1*
+|*schema*: `<<_bmm_model_class,BMM_MODEL>>`
+a|Computable form of model.
+
+h|*1..1*
+|*schema_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Schema id, formed from meta_data model_publisher '_' schema_name '_' model_release, e.g. openehr_rm_1.0.3.
+
+h|*1..1*
+|*meta_data*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Table of \{key, value} pairs of schema meta-data (bmm_version, model_publisher, schema_name, model_release, schema_revision, schema_lifecycle_state, schema_description, schema_path).
+
+h|*0..1*
+|*includes*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Schema_ids of schemas included by this schema.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_top_level* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this is a top-level schema, i.e. not included by some other schema.
+
+h|*1..1*
+|*is_bmm_compatible* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the BMM version found in the schema (or assumed, if none) is compatible with that in this software.
+
+h|*1..1*
+|*load* (): `void`
+a|Load schema into in-memory form.
+
+h|*1..1*
+|*validate* (): `void`
+a|Validate entire schema.
+
+h|*1..1*
+|*validate_includes* ( +
+all_schemas_list: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>` +
+): `void`
+a|Validate includes list for this schema, to see if each mentioned schema exists in read schemas.
+
+h|*1..1*
+|*create_schema* (): `void`
+a|Create `schema`.
+|===

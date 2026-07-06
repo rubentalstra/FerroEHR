@@ -1,0 +1,19 @@
+title: DV_ENCAPSULATED
+type: object
+allOf:
+  - $ref: ../data_types/DataValue.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    default: DV_ENCAPSULATED
+  charset:
+    $ref: ../data_types/CodePhrase.yaml
+  language:
+    $ref: ../data_types/CodePhrase.yaml
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    DV_MULTIMEDIA: '#/components/schemas/DvMultimedia'
+    DV_PARSABLE: '#/components/schemas/DvParsable'

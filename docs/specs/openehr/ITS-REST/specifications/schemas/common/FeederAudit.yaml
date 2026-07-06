@@ -1,0 +1,19 @@
+title: FEEDER_AUDIT
+type: object
+required:
+  - originating_system_audit
+properties:
+  originating_system_item_ids:
+    type: array
+    items:
+      $ref: ../data_types/DvIdentifier.yaml
+  feeder_system_item_ids:
+    type: array
+    items:
+      $ref: ../data_types/DvIdentifier.yaml
+  original_content:
+    $ref: ../data_types/UDvEncapsulated.yaml
+  originating_system_audit:
+    $ref: ../common/FeederAuditDetails.yaml
+  feeder_system_audit:
+    $ref: ../common/FeederAuditDetails.yaml

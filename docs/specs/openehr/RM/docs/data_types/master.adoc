@@ -1,0 +1,108 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+=== Editor
+
+* Thomas Beale, Ars Semantica (UK); openEHR Foundation Management Board.
+
+=== Contributors
+
+This specification benefited from wide formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+
+* Silje Ljosland Bakke, RN, Nasjonal IKT HF, Norway
+* Pieter Bos, Senior Software Engineer, Nedap, Netherlands
+* Rong Chen MD, PhD, Cambio Healthcare Systems, Sweden
+* Matthew Darlinson, PhD, CHIME, UCL, UK
+* Heath Frankel, CTO Ocean Informatics, Australia
+* Peter Gummer, senior developer, Ocean Informatics, Australia
+* Andrew Goodchild, PhD, senior research scientist DSTC, Australia
+* Grahame Grieve, Kestral Systems, Australia
+* Sam Heard MD, Ocean Informatics, Australia
+* Sebastian Iancu, Architect, Code24, Netherlands
+* Dipak Kalra MD, PhD, Professor Health Informatics, CHIME, UCL, UK
+* Bostjan Lah, Architect, Marand, Slovenia
+* Heather Leslie MD, FRACGP, FACHI, GAICD, Atomica Informatics, Australia
+* David Lloyd (ret), CHIME, UCL, UK
+* Kristoffer Lundberg, chief architect, Cambio, Sweden
+* Chunlan Ma PhD, MD, Ocean Informatics, Australia
+* Jan Mewes, KS-plus.org, India/Germany
+* Bjørn Næss, DIPS, Norway
+* Pablo Pazos Gutierrez, CaboLabs, Uruguay
+* Peter Schloeffel MD, Ocean Informatics, Australia
+* Erik Sundvall PhD, Linkoping University, Sweden
+* Bert Verhees, Senior developer, Netherlands
+* Zar zar Tun, DSTC, Australia
+
+=== Support
+
+The work reported in this paper has been funded in part by the following organisations:
+
+* University College London - Centre for Health Informatics and Multi-professional Education (CHIME);
+* Ocean Informatics; 
+* Distributed Systems Technology Centre (DSTC), under the Cooperative Research Centres Program through the Department of the Prime Minister and Cabinet of the Commonwealth Government of Australia.
+
+Special thanks to David Ingram, Emeritus Professor of Health Informatics at UCL, who provided a vision and collegial working environment ever since the days of GEHR (1992).
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+
+ifdef::package_qualifiers[]
+:pkg: org.openehr.rm.data_types.
+endif::[]
+
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-background.adoc[leveloffset=+1]
+include::master03-introduction.adoc[leveloffset=+1]
+include::master04-basic_package.adoc[leveloffset=+1]
+include::master05-text_package.adoc[leveloffset=+1]
+include::master06-quantity_package.adoc[leveloffset=+1]
+include::master07-date_time_package.adoc[leveloffset=+1]
+include::master08-time_specification_package.adoc[leveloffset=+1]
+include::master09-encapsulated_package.adoc[leveloffset=+1]
+include::master10-uri_package.adoc[leveloffset=+1]
+include::master11-implem_strategies.adoc[leveloffset=+1]
+include::masterAppA-comparison_HL7.adoc[leveloffset=+1]
+
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:sectnums!:
+== References
+
+bibliography::[]

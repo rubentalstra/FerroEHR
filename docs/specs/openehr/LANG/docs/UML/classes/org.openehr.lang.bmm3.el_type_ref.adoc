@@ -1,0 +1,40 @@
+=== EL_TYPE_REF Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_TYPE_REF*
+
+h|*Description*
+2+a|Meta-type for reference to a non-abstract type as an object. Assumed to be accessible at run-time. Typically represented syntactically as `TypeName` or `\{TypeName}`.
+
+May be used as a value, or as the qualifier for a function or constant access.
+
+h|*Inherit*
+2+|`<<_el_value_generator_class,EL_VALUE_GENERATOR>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*type*: `<<_bmm_type_class,BMM_TYPE>>`
+a|Type, directly from the name of the reference, e.g. `\{SOME_TYPE}`.
+
+h|*1..1*
+|*is_mutable*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*eval_type* (): `<<_bmm_type_class,BMM_TYPE>>`
+a|Return `_type_`.
+
+h|*Invariants*
+2+a|__Inv_no_context__: `context = Void`
+|===

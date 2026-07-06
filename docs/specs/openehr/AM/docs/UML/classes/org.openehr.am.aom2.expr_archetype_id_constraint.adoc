@@ -1,0 +1,22 @@
+=== EXPR_ARCHETYPE_ID_CONSTRAINT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXPR_ARCHETYPE_ID_CONSTRAINT*
+
+h|*Description*
+2+a|Expression tree leaf item representing a constraint on an archetype identifier.
+
+h|*Inherit*
+2+|`<<_expr_constraint_class,EXPR_CONSTRAINT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*item*: `<<_c_string_class,C_STRING>>`
+a|A C_STRING representing a regular expression for matching Archetype identifiers.
+|===

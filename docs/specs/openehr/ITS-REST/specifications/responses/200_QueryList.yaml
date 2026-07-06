@@ -1,0 +1,6 @@
+description: |
+  `200 OK` is returned when the query resources are successfully retrieved.
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/definition/QueryList.yaml

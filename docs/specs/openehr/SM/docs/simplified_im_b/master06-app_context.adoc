@@ -1,0 +1,12 @@
+== Application Context Model
+
+This section defines an 'application context model' that formalises various defaults and other data settings that enable an openEHR client application to more conveniently create larger data sets (Composition structures) to commit to an openEHR EHR through the {openehr_ehr_rest_api}[openEHR REST API^].
+
+[.text-center]
+.`sm.app_context` package
+image::{uml_diagrams_uri}/SM-simplified_im_b.app_context.svg[id=sm_simplified_im_b_app_context, align="center"]
+
+=== Class Definitions
+
+include::{uml_export_dir}/classes/app_context.adoc[]
+include::{uml_export_dir}/classes/app_composition.adoc[]

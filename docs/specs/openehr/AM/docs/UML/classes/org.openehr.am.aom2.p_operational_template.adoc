@@ -1,0 +1,27 @@
+=== P_OPERATIONAL_TEMPLATE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*P_OPERATIONAL_TEMPLATE*
+
+h|*Description*
+2+a|Root object of an operational template. An operational template is derived from a TEMPLATE definition and the ARCHETYPEs and/or TEMPLATE_OVERLAYs mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.
+
+An operational template is used for generating and validating canonical openEHR data, and also as a source artefact for generating other downstream technical artefacts, including XML schemas, APIs and UI form definitions.
+
+h|*Inherit*
+2+|`<<_p_authored_archetype_class,P_AUTHORED_ARCHETYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*component_terminologies*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_p_archetype_terminology_class,P_ARCHETYPE_TERMINOLOGY>>>`
+a|Compendium of flattened terminologies of archetypes externally referenced from this archetype, keyed by archetype identifier. This will almost always be present in a template.
+
+h|*0..1*
+|*terminology_extracts*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_archetype_term_class,ARCHETYPE_TERM>>>>`
+a|Directory of term definitions as a two-level  table. The outer hash keys are term codes,  e.g. "at4", and the inner hash key are term  attribute names, e.g. "text", "description" etc.
+|===

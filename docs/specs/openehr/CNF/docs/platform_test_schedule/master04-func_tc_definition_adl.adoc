@@ -1,0 +1,404 @@
+= Test Suite: DEFINITION Service / I_DEFINITION_ADL2 and I_DEFINITION_ADL14 Interfaces
+
+// some useful variables
+:i_definition_adl14_link: {openehr_sm_openehr_platform}#_i_definition_adl14_interface
+:i_definition_adl2_link: {openehr_sm_openehr_platform}#_i_definition_adl2_interface
+
+== Normative Reference
+    
+Items under this validation suite conceptually use these abstract interfaces defined in the {openehr_sm_openehr_platform}#_definition_package[openEHR Platform Service Model^]:
+
+* {openehr_sm_openehr_platform}#_i_definition_adl2_interface[I_DEFINITION_ADL2^];
+* {openehr_sm_openehr_platform}#_i_definition_adl14_interface[I_DEFINITION_ADL14^].
+
+These are concretely realised in implementation technology specfic APIs, such as the {openehr_definitions_rest_api}[Definitions REST API^].
+
+This test suite uses artefacts defined by the following specifications:
+
+* {openehr_am_adl14}[ADL 1.4^]
+* {openehr_am_aom14}[AOM 1.4^]
+* {openehr_am_adl2}[ADL 2^]
+* {openehr_am_aom2}[AOM 2^]
+* {openehr_am_id}[Archetype Identification^]
+
+TODO: add ref to dependency diagram in SM/Platform service model.
+
+== Test Environment
+
+The server under test should support:
+
+. OPTs 1.4 or 2, but OPT 1.4 if more frequent since modeling tools supporting this were around for a long time. Could also support ADL, 1.4 or 2;
+. validation of OPTs and archetypes uploaded to it, or even provide a service to do so before uploading (useful while developing);
+. different versions of the same OPTs and archetypes.
+
+The following should be taken into account when testing any given product:
+
+. The server under test should support the full cycle of OPT management, including: validation, loading, versioning, retrieving, delete or deactivation (data for this OPT is loaded but no new data should be accepted for it). For the delete, the internal behavior should be defined: 1. if data was committed referencing an OPT, can it be physically deleted? or should be logically deleted? 2. if there is no
+data, can the OPT be deleted physically? Logical delete might work as the deactivation mentioned above.
+. The test cases are the same for OPT 1.4/2, but tests should be written separately and different datasets should be created for 1.4 and 2.
+. Different implementations might use specific formats for the template IDs, when testing each server, the template IDs should be adapted to prevent failures for wrong format on the template ID. This is due to openEHR not yet defining a format for the template IDs in the specifications.
+
+[[_func_conf_def_adl_component]]
+== OPT 1.4/2 Test cases
+
+=== Service Model operation: I_DEFINITION_ADL14.validate_opt()
+
+Service Model reference: {i_definition_adl14_link}[`I_DEFINITION_ADL14._validate_opt()_`^]
+
+==== Test Data Sets
+
+* minimal valid OPT (each containing each entry type);
+* maximal valid OPT (all types in the RM);
+* invalid OPT (empty file);
+* invalid OPT (empty `template_id`);
+* invalid OPT (removed mandatory elements);
+* invalid OPT (added multiple elements that had an upper bound of 1)
+
+==== Test Case I_DEFINITION_ADL14.validate_opt-valid_opt
+
+// EhrBase ref: C.1.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Validate valid OPTs
+|Pre-conditions | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions| None (validation should not change the state of the system).
+|Flow           | . For each valid OPT in the data set, invoke the OPT validation service
+                  . The result should be positive and the server should return should be related to "`OPT is valid`".
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/validate_opt/I_DEFINITION_ADL14.validate_opt-valid_opt.robot[REST API / Robot^]
+|===
+
+NOTE: some servers might not have a way to just validate the OPT, and validation might be part of the OPT upload functionality. In that case, the validation should upload and validate the OPT, and in the cases of valid OPTs, the OPT should be deleted afterwards, so the system state doesn’t change. For invalid OPTs, the upload should fail.
+
+==== Test Case I_DEFINITION_ADL14.validate_opt-invalid_opt
+
+// EhrBase ref: C.1.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Validate invalid OPTs
+|Pre-conditions | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions| None (validation should not change the state of the system).
+|Flow           | . For each invalid OPT in the data set, invoke the OPT validation service
+                  . The result should be negative related to the "`OPT is invalid`", would be useful if the server also returns where the problems are in the OPT
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/validate_opt/I_DEFINITION_ADL14.validate_opt-invalid_opt.robot[REST API / Robot^]
+|===
+
+*Implementation note:* when a step says "`for each X, invoke service Y`", means that the test should run completely for each X, that is, the pre-conditions and post-conditions apply to the run for X. So if we have:
+
+Test set: a, b, c 
+
+Test case:
+
+* ensure pre-conditions 
+* verify post-conditions 
+* flow 
+  1. for each X in data set, run service Y
+  2. verify result
+
+The run should be:
+
+* ensure pre-conditions
+* invoke Y(a)
+* verify result
+* verify post-conditions
+* ensure pre-conditions
+* invoke Y(b)
+* verify result
+* verify post-conditions
+* ensure pre-conditions
+* invoke Y(c)
+* verify result
+* verify post-conditions
+
+=== Service Model operation: I_DEFINITION_ADL14.upload_opt()
+
+Service Model reference: {i_definition_adl14_link}[`I_DEFINITION_ADL14._upload_opt()_`^]
+
+==== Data set
+
+* minimal valid OPT (each with one type of entry, cover all entries)
+* minimal valid OPT, two versions
+* maximal valid OPT (all types in the RM)
+* invalid OPT (empty file)
+* invalid OPT (empty `template_id`)
+* invalid OPT (removed mandatory elements)
+* invalid OPT (added multiple elements that had an upper bound of 1)
+
+==== Test Case I_DEFINITION_ADL14.upload_opt-valid_opt
+
+// EhrBase ref: C.2.a.
+
+[cols="1h,4a"]
+|===
+|Description    | upload valid OPTs
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| A new OPT with the given `template_id` is loaded into the server.
+
+                  NOTE: the server should be able to retrieve the template by `template_id` or retrieve if an OPT exists or not by `template_id`.
+
+|Flow           | . For each valid OPT in the data set, invoke the OPT upload service
+                  . The result should be positive, the server accepted the OPT and it is stored as it was uploaded
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/upload_opt/I_DEFINITION_ADL14.upload_opt-valid_opt.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.upload_opt-invalid_opt
+
+// EhrBase ref: C.2.b.
+
+[cols="1h,4a"]
+|===
+|Description    | upload invalid OPTs
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| No OPTs should be loaded on the system.
+|Flow           | . For each invalid OPT in the data set, invoke the OPT upload service
+                  . The result should be negative, the server rejected the OPT because it was invalid, and would be useful if the result contains where the errors are in the uploaded OPT.
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/upload_opt/I_DEFINITION_ADL14.upload_opt-invalid_opt.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict
+
+NOTE: since there is no formal versioning mechanism for templates 1.4 (OPT 2 might use the archetype id format for the template id that also includes a version number, but this is not widely used), the OPT upload service needs to handle a version parameter, for instance this is the solution on the {openehr_definitions_rest_api}#definitions-adl-1.4-template[openEHR REST API^]. If the version information is not available when uploading OPTs, then uploading an OPT with the same `template_id` twice will make the second upload fail (conflict).
+
+An alternative solution for the version parameter is to add the version number to the other_details of the OPT, or directly into the `template_id`.
+
+See: {openehr_jira_home}/browse/SPECBASE-30[SPECBASE-30^] and {openehr_jira_home}/browse/SPECITS-42[SPECITS-42^].
+
+// EhrBase ref: C.2.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Upload valid OPT twice with conflict
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| A new OPT with the given `template_id` is loaded into the server, and there will be only one OPT loaded.
+
+NOTE: the server should be able to retrieve the template by `template_id`, or retrieve if an OPT exists or not by `template_id`.
+
+|Flow           | . For each valid OPT in the data set, invoke the OPT upload service
+                  . The result should be positive (the server accepted the OPT)
+                  . Invoke the upload service with the same OPT as in 1.
+                  . The result should be negative (the server rejected the OPT)
+
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/upload_opt/I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict
+
+NOTE: considering the note on the previous flow, for this flow the version parameter is provided, and both service invocations contain a different version value.
+
+// EhrBase ref: C.2.d.
+
+[cols="1h,4a"]
+|===
+|Description    | upload valid OPT twice with conflict
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| Two new OPTs with the given `template_id` and different versions are loaded into the server.
+
+NOTE: the server should be able to retrieve the templates by `template_id` and version, or retrieve if an OPT exists or not by `template_id` and version. Given only the `template_id`, the server will return just the latest version.
+
+|Flow           | . For each valid OPT in the data set, invoke the OPT upload service, including the version parameter = 1
+                  . The result should be positive (the server accepted the OPT)
+                  . Invoke the upload service with the same OPT as in 1., including the version parameter = 2
+                  . The result should be positive (the server accepted the OPT)
+
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/upload_opt/I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_DEFINITION_ADL14.get_opt()
+
+Service Model reference: {i_definition_adl14_link}[`I_DEFINITION_ADL14._get_opt()_`^]
+
+NOTE: the flows of this test case will include flows from the Upload OPT test case, in order to have something to retrieve.
+
+==== Data sets
+
+* minimal valid OPT (covering all entry types)
+* minimal valid OPT, two versions 
+* maximal valid OPT (all types in the RM)
+
+==== Test Case I_DEFINITION_ADL14.get_opt-retrieve_single
+
+// EhrBase ref: C.3.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Retrieve a single OPT
+|Pre-conditions | All valid OPTs should be loaded into the system, only the single versioned ones.
+|Post-conditions| None (retrieve should not change the state of the system).
+|Flow           | . Invoke the retrieve OPT service with existing `template_ids`
+                  . For each `template_id`, the correct OPT will be returned
+
+                NOTE: to check point 2, the retrieved OPT should be exactly the same as the uploaded one.
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/get_opt/I_DEFINITION_ADL14.get_opt-retrieve_single.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.get_opt-retrieve_fail
+
+// EhrBase ref: C.3.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Empty server OPT retrieve fail test
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| None
+|Flow           | . Invoke the retrieve OPT service with a random `template_id`
+                  . The service should return an error related to the non existence of the requested OPT
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/get_opt/I_DEFINITION_ADL14.get_opt-retrieve_fail.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.get_opt-retrieve_latest_version
+
+// EhrBase ref: C.3.c.
+
+[cols="1h,4a"]
+|===
+|Description    | retrieve last version of versioned OPT
+|Pre-conditions | OPTs with more than one version should be loaded.
+|Post-conditions| None
+|Flow           | . Invoke the retrieve OPT service with existing `template_ids`
+                  . For each `template_id`, the correct OPT will be returned, and will be the last version
+
+                NOTE: to be sure the last version was returned, a small modification to the OPT could be done.
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/get_opt/I_DEFINITION_ADL14.get_opt-retrieve_latest_version.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.get_opt-retrieve_specific_version
+
+// EhrBase ref: C.3.d.
+
+[cols="1h,4a"]
+|===
+|Description    | retrieve a specific version (not last) of versioned OPT
+|Pre-conditions | OPTs with more than one version should be loaded.
+|Post-conditions| None
+|Flow           | . Invoke the retrieve OPT service with existing `template_ids` and a version parameter value that is not the last
+                  . For each `template_id`, the correct OPT will be returned, and will be the requested version
+
+                NOTE: to be sure the last version was returned, a small modification to the OPT could be done.
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/get_opt/I_DEFINITION_ADL14.get_opt-retrieve_specific_version.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_DEFINITION_ADL14.get_opts()
+
+Service Model reference: {i_definition_adl14_link}[`I_DEFINITION_ADL14._get_opts()_`^]
+
+==== Data sets
+
+* minimal valid OPT (covering each type of entry);
+* minimal valid OPT, two versions;
+* maximal valid OPT (all types in the RM).
+
+====  Test Case I_DEFINITION_ADL14.get_opts-retrieve_all
+
+// EhrBase ref: C.4.a.
+
+[cols="1h,4a"]
+|===
+|Description    | retrieve all loaded OPTs
+|Pre-conditions | All valid OPTs should be loaded.
+|Post-conditions| None
+|Flow           | . Invoke the retrieve OPTs service
+                  . All the loaded OPTs should be returned, if there are versions of any OPTs, only the last version is retrieved
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/get_opts/I_DEFINITION_ADL14.get_opts-retrieve_all.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts
+
+// EhrBase ref: C.4.b.
+
+[cols="1h,4a"]
+|===
+|Description    | retrieve all loaded OPTs when none is loaded
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| None
+|Flow           | . Invoke the retrieve OPTs service
+                  . The service should return an empty set and should not fail.
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/get_opts/I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_DEFINITION_ADL14.delete_opt()
+
+Service Model reference: {i_definition_adl14_link}[`I_DEFINITION_ADL14._delete_opt()_`^]
+
+NOTE: the OPT delete can only happen if there is no associated data with the OPT, or if there exists a newer revision (minor version of the same OPT) in the server under test. For all these tests, there is not data committed to the server, so the delete can happen.
+
+Implementation recommendations: the delete could be logical, so the OPT exists in the server but is not available, and there could be a service to retrieve deleted OPTs. Those can be undeleted or physically deleted (this can’t be undone), and only users with admin permissions should be able to physically delete OPTs.
+
+==== Data sets
+
+* minimal valid OPT 
+* minimal valid OPT, two versions 
+* maximal valid OPT (all types in the RM)
+
+==== Test Case I_DEFINITION_ADL14.delete_opt-delete_existing
+
+// EhrBase ref: C.5.a.
+
+[cols="1h,4a"]
+|===
+|Description    | delete existing OPTs
+|Pre-conditions | All valid OPTs should be loaded into the system.
+|Post-conditions| None
+|Flow           | . For each existing `template_id`, invoke the delete OPT service
+                  . Verify the OPT is not longer available via the retrieve OPTs service
+
+                NOTE: for step 1, exclude versioned OPT, the result should be the same: the OPT is not available.
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/delete_opt/I_DEFINITION_ADL14.delete_opt-delete_existing.robot[REST API / Robot^]
+|===
+
+
+==== Test Case I_DEFINITION_ADL14.delete_opt-delete_latest_version
+
+// EhrBase ref: C.5.b.
+
+[cols="1h,4a"]
+|===
+|Description    | delete last version of a versioned OPT
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| None
+|Flow           | . Include flow: upload valid OPTs
+                  . Invoke the delete OPT service for all existing `template_ids`
+                  . Include flow: retrieve all loaded OPTs when none is loaded
+
+                NOTE: for step 1, include only versioned OPT.
+
+                NOTE: for versioned OPTs, when no version parameter is present when invoking the delete OPT service, all the versions of the OPT will be deleted.
+
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/delete_opt/I_DEFINITION_ADL14.delete_opt-delete_latest_version.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.delete_opt-delete_specific_version
+
+// EhrBase ref: C.5.c.
+
+[cols="1h,4a"]
+|===
+|Description    | delete specific version of a versioned OPT
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| None
+|Flow           | . Include flow: upload valid OPTs
+                  . Invoke the delete OPT service for an existing `template_id` and version of the OPT, version should not be the last
+                  . Include flow: retrieve all loaded OPTs
+                  . The OPT set retrieved on step 3 should contain the deleted OPT, since the latest version was not deleted
+                  . Include flow: delete existing OPTs
+
+                NOTE: for step 1, include only versioned OPT.
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/delete_opt/I_DEFINITION_ADL14.delete_opt-delete_specific_version.robot[REST API / Robot^]
+|===
+
+==== Test Case I_DEFINITION_ADL14.delete_opt-delete_non_existing
+
+// EhrBase ref: C.5.d.
+
+[cols="1h,4a"]
+|===
+|Description    | delete a non existing OPT
+|Pre-conditions | No OPTs should be loaded on the system.
+|Post-conditions| None
+|Flow           | . Include flow: upload valid OPTs
+                  . Invoke the delete OPT service with a non existing `template_id`
+                  . The server will return an error related to the OPT not existing in the server
+                  . Include flow: delete existing OPTs
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_DEFINITION_ADL14/delete_opt/I_DEFINITION_ADL14.delete_opt-delete_non_existing.robot[REST API / Robot^]
+|===
+

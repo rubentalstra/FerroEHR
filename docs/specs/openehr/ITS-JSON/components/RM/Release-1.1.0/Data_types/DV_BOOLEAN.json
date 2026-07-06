@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Data_types/DV_BOOLEAN.json",
+    "definitions": {
+        "DV_BOOLEAN": {
+            "type": "object",
+            "required": [
+                "value"
+            ],
+            "properties": {
+                "value": {
+                    "type": "boolean"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "DV_BOOLEAN"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

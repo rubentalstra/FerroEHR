@@ -1,0 +1,14 @@
+title: RESULT_SET_ROW
+description: |
+  A set of cells representing a RESULT_SET row, one cell for each column. 
+  Content of a cell is `ANY` (i.e. a `OBJECT` in most programming languages).
+type: array
+items: {}
+example:
+  - "81433066-c417-4813-9b29-79783e7bed23"
+  - "2017-02-16T13:50:11.308+01:00"
+  - 140
+  - "90910cf0-66a0-4382-b1f8-c0f27e81b42d::openEHRSys.example.com::1"
+  - _type: "DV_TEXT"
+    value: "Labs"
+

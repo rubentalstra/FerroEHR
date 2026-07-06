@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_BOOLEAN.json",
+    "title": "C_BOOLEAN",
+    "description": "Constraint on instances of Boolean. Both attributes cannot be set to False, since this would mean that the Boolean value being constrained cannot be True or False.",
+    "$comments": "Defined in Archetype IM, inherits from C_PRIMITIVE",
+    "type": "object",
+    "properties": {
+        "assumed_value": {
+            "description": "The value to assume if this item is not included in data, due to being part of an optional structure.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/Boolean"
+        },
+        "true_valid": {
+            "description": "True if the value True is allowed.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/Boolean"
+        },
+        "false_valid": {
+            "description": "True if the value False is allowed.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/Boolean"
+        }
+    },
+    "required": [
+        "true_valid",
+        "false_valid"
+    ]
+}

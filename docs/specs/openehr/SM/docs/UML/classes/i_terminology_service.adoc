@@ -1,0 +1,92 @@
+=== I_TERMINOLOGY_SERVICE Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_TERMINOLOGY_SERVICE*
+
+h|*Description*
+2+a|Terminology service interface.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*get_terminology_ids* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Get the identifiers of all terminologies as they are known in this terminology server. These may be URIs. These are the identifiers that may be used in subsequent calls to the service.
+
+h|*1..1*
+|*has_terminology* ( +
+terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if this server has a terminology with the identifier `_terminology_id_`.
+
+h|*1..1*
+|*get_terminology_description* ( +
+terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_terminology_description_class,Terminology_description>>` +
+ +
+__Pre_has_terminology__: `has_terminology(terminology_id)`
+a|Get the description object for the terminology with identifier `_terminology_id_`.
+
+h|*1..1*
+|*has_term* ( +
+terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+at_date: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_has_terminology__: `has_terminology(terminology_id)`
+a|Return True if the term with code `_code_` is known in the terminology with identifier `_terminology_id_`. If `_at_date_` is specified, the response indicates that the code was present in the terminology at the date.
+
+h|*1..1*
+|*get_term* ( +
+terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+attributes: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^], link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>[0..1]`, +
+at_date: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^][0..1]` +
+): `<<_terminology_extract_class,Terminology_extract>>` +
+ +
+__Pre_has_terminology__: `has_terminology(terminology_id)` +
+__Pre_has_term__: `has_term (terminology_id, code)`
+a|Retrieve a term definition from a terminology, including particular attributes i.e. `Term_relationships`. If `_at_date_` is specified, the response is the definition of the term as it was on a certain date.
+
+h|*1..1*
+|*subsumes* ( +
+terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+ref_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+candidate_child_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_has_terminology__: `has_terminology(terminology_id)`
+a|Return True if `_candidate_child_code_` is in the strict subsumption of `_ref_code_`.
+
+h|*1..1*
+|*value_set_validate* ( +
+terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+value_set_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+candidate_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+at_date: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_has_terminology__: `has_terminology(terminology_id)`
+a|Return True if `_candidate_code_` is in the value set identified by `_value_set_id_`.
+
+h|*1..1*
+|*has_value_set* ( +
+terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+value_set_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if this terminology service has a value-set identified by `_value_set_code_`.
+
+h|*1..1*
+|*get_value_set* ( +
+terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+value_set_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_terminology_extract_class,Terminology_extract>>` +
+ +
+__Pre_has_terminology__: `has_terminology(terminology_id)` +
+__Pre_has_value_set__: `has_value_set (terminology_id, value_set_code)`
+a|Retrieve a value-set identified by `_value_set_code_`.
+|===

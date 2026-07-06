@@ -1,0 +1,63 @@
+# Copyright (c) 2019 Wladislaw Wagner (Vitasystems GmbH), Pablo Pazos (Hannover Medical School),
+# Nataliya Flusman (Solit Clouds), Nikita Danilin (Solit Clouds)
+#
+# This file is part of Project EHRbase
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+
+*** Settings ***
+Documentation   Composition Integration Tests
+...             I_EHR_COMPOSITION.create_composition-invalid_event
+Metadata        TOP_TEST_SUITE    COMPOSITION
+
+Resource        ../../_resources/keywords/composition_keywords.robot
+
+Suite Setup     Precondition
+Suite Teardown  restart SUT
+
+
+*** Test Cases ***
+Alternative flow 3 create new invalid event COMPOSITION RAW_JSON
+    commit composition   format=CANONICAL_JSON
+    ...                  composition=nested.en.v1__invalid_wrong_structure.json
+    check status_code of commit composition    400
+
+Alternative flow 3 create new invalid event COMPOSITION RAW_XML
+    commit composition   format=CANONICAL_XML
+    ...                  composition=nested.en.v1__invalid_wrong_structure.xml
+    check status_code of commit composition    400
+
+Alternative flow 3 create new invalid event COMPOSITION FLAT
+    [Tags]    future
+    commit composition   format=FLAT
+    ...                  composition=nested.en.v1__invalid_wrong_structure.json
+    check status_code of commit composition    400
+
+Alternative flow 3 create new invalid event COMPOSITION TDD
+    [Tags]    future
+    commit composition   format=TDD
+    ...                  composition=nested.en.v1__invalid_wrong_structure.xml
+    check status_code of commit composition    400
+
+Alternative flow 3 create new invalid event COMPOSITION STRUCTURED
+    [Tags]    future
+    commit composition   format=STRUCTURED
+    ...                  composition=nested.en.v1__invalid_wrong_structure.json
+    check status_code of commit composition    400
+
+*** Keywords ***
+Precondition
+    upload OPT    nested/nested.opt
+    create EHR

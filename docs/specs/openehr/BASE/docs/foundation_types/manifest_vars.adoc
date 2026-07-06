@@ -1,0 +1,5 @@
+:spec_title: Foundation Types
+:copyright_year: 2017
+:spec_status: STABLE
+:keywords: openehr, identifiers, types
+:description: openEHR Foundation Types specification

@@ -1,0 +1,161 @@
+=== C_TEMPORAL_DEFINITIONS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_TEMPORAL_DEFINITIONS*
+
+h|*Description*
+2+a|Definitions related to `C_TEMPORAL` constraints.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*valid_date_constraint_patterns*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of allowed date constraints. Contains the values:
+
+```
+"YYYY-MM-DD"    -- full date required
+"YYYY-MM-??"    -- day optional
+"YYYY-MM-XX"    -- day prohibited
+"YYYY-??-??"    -- any partial or full date
+"YYYY-??-XX"    -- day prohibited
+"YYYY-XX-XX"    -- only prohibited
+```
+
+h|*1..1*
+|*valid_date_constraint_replacements*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>>`
+a|List of allowed date constraint replacements e.g. in specialised archetype. Contains the values:
+
+----
+"YYYY-MM-DD": [],
+
+"YYYY-MM-??": ["YYYY-MM-DD", 
+               "YYYY-MM-XX"],
+
+"YYYY-MM-XX": [],
+
+"YYYY-??-??": ["YYYY-MM-??",
+               "YYYY-MM-DD",
+               "YYYY-MM-XX",
+               "YYYY-??-XX",
+               "YYYY-XX-XX"],
+
+"YYYY-??-XX": ["YYYY-MM-XX", 
+              "YYYY-XX-XX"],
+
+"YYYY-XX-XX": []
+----
+
+In the above, an empty list value indicates no replacements possible.
+
+h|*1..1*
+|*valid_time_constraint_patterns*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of allowed time constraints. Contains the values:
+
+```
+"HH:MM:SS"    -- full time required
+"HH:MM:??"    -- seconds optional
+"HH:MM:XX"    -- minutes required, seconds prohibited
+"HH:??:??"    -- minutes and seconds optional
+"HH:??:XX"    -- minutes optional, seconds prohibited
+```
+
+h|*1..1*
+|*valid_time_constraint_replacements*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>>`
+a|List of allowed time constraint replacements e.g. in specialised archetype. Contains the values:
+
+----
+"HH:MM:SS": [],
+
+"HH:MM:??": ["HH:MM:SS",
+             "HH:MM:XX"],
+
+"HH:MM:XX": [],
+
+"HH-??-??": ["HH:MM:??",
+             "HH:MM:SS",
+             "HH:MM:XX",
+             "HH:??:XX"],
+
+"HH-??-XX": ["HH:MM:XX"]
+----
+
+In the above, an empty list value indicates no replacements possible.
+
+h|*1..1*
+|*valid_date_time_constraint_patterns*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of allowed date/time constraints. Contains the values:
+
+```
+"YYYY-MM-DDTHH:MM:SS"    -- full date/time required
+"YYYY-MM-DDTHH:MM:??"    -- seconds optional
+"YYYY-MM-DDTHH:MM:XX"    -- seconds prohibited
+"YYYY-MM-DDTHH:??:??"    -- minutes and seconds optional
+"YYYY-MM-DDTHH:??:XX"    -- minutes optional, seconds prohibited
+"YYYY-??-??T??:??:??"    -- any date/time ok
+```
+
+h|*1..1*
+|*valid_date_time_constraint_replacements*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>>`
+a|List of allowed date/time constraint replacements e.g. in specialised archetype. Contains the values:
+
+----
+"YYYY-MM-DDTHH:MM:SS": [],
+
+"YYYY-MM-DDTHH:MM:??": ["YYYY-MM-DDTHH:MM:SS",
+                        "YYYY-MM-DDTHH:MM:XX"],
+
+"YYYY-MM-DDTHH:MM:XX": [],
+
+"YYYY-MM-DDTHH:??:??": ["YYYY-MM-DDTHH:??:XX",
+                        "YYYY-MM-DDTHH:MM:SS",
+                        "YYYY-MM-DDTHH:MM:??",
+                        "YYYY-MM-DDTHH:MM:XX"],
+
+"YYYY-MM-DDTHH:??:XX": ["YYYY-MM-DDTHH:MM:XX"],
+
+"YYYY-??-??T??:??:??": ["YYYY-MM-DDTHH:MM:SS",
+                        "YYYY-MM-DDTHH:MM:??",
+                        "YYYY-MM-DDTHH:MM:XX",
+                        "YYYY-MM-DDTHH:??:??",
+                        "YYYY-MM-DDTHH:??:XX"]
+----
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*valid_duration_constraint_replacement* ( +
+a_dur: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+other_dur: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if ISO8601 duration string `_other_dur_` contains every character element in `_a_dur_`. For example: 'PYD' (period with year and days only) conforms to 'PYMD', but doesn't conform to 'PY'.
+
+h|*1..1*
+|*valid_iso8601_date_constraint_pattern* ( +
+s: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if string literal like `"yyyy-MM-dd"` containing `"XX"` or `"??"` in `MM` or `dd` slots in pattern constraint is in `_valid_date_constraint_patterns_`.
+
+h|*1..1*
+|*valid_iso8601_time_constraint_pattern* ( +
+s: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if string literal like `"hh:mm:ss[.ssss]"` containing `"XX"` or `"??"` in `mm` or `ss` slots in pattern constraint is in `_valid_time_constraint_patterns_`.
+
+h|*1..1*
+|*valid_iso8601_date_time_constraint_pattern* ( +
+s: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if string literal in form `"yyyy-MM-dd hh:mm:ss[.ssss]"` containing `"XX"` or `"??"` in variable slots in pattern constraint is in `_valid_date_time_constraint_patterns_`.
+
+h|*1..1*
+|*valid_iso8601_duration_constraint_pattern* ( +
+s: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if string in form `P[Y&#124;y][M&#124;m][W&#124;w][D&#124;d][T[H&#124;h][M&#124;m][S&#124;s]]` (note: allowing 'W' to be mixed in is an openEHR deviation of ISO 8601).
+|===

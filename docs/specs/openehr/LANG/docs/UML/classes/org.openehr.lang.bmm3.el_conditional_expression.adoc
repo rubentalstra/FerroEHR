@@ -1,0 +1,24 @@
+=== EL_CONDITIONAL_EXPRESSION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_CONDITIONAL_EXPRESSION<T>*
+
+h|*Description*
+2+a|Conditional structure used in condition chain expressions. Evaluated by evaluating its `_condition_`, which is a Boolean-returning expression, and if this returns True, the result is the evaluation result of `_expression_`.
+
+h|*Inherit*
+2+|`<<_el_decision_branch_class,EL_DECISION_BRANCH>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*condition*: `<<_el_expression_class,EL_EXPRESSION>>`
+a|Boolean expression defining the condition of this decision branch.
+
+h|*Invariants*
+2+a|__Inv_condition_boolean__: `condition.is_boolean()`
+|===

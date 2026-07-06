@@ -1,0 +1,94 @@
+=== C_ATTRIBUTE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_ATTRIBUTE*
+
+h|*Description*
+2+a|Abstract model of constraint on any kind of attribute in a class model.
+
+h|*Inherit*
+2+|`<<_archetype_constraint_class,ARCHETYPE_CONSTRAINT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*rm_attribute_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference model attribute within the enclosing type represented by a `C_OBJECT`.
+
+h|*0..1*
+|*existence*: `link:/releases/BASE/{base_release}/foundation_types.html#_multiplicity_interval_class[Multiplicity_interval^]`
+a|Constraint settable on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not). Only set if it overrides the underlying reference model or parent archetype in the case of specialised archetypes.
+
+h|*0..1*
+|*children*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_c_object_class,C_OBJECT>>>`
+a|Child `C_OBJECT` nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes.
+
+h|*0..1*
+|*differential_path*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Path to the parent object of this attribute (i.e. doesn’t include the name of this attribute). Used only for attributes in differential form, specialised archetypes. Enables only the re-defined parts of a specialised archetype to be expressed, at the path where they occur.
+
+h|*0..1*
+|*cardinality*: `link:/releases/BASE/{base_release}/foundation_types.html#_cardinality_class[Cardinality^]`
+a|Cardinality constraint of attribute, if a container attribute.
+
+h|*1..1*
+|*is_multiple*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Flag indicating whether this attribute constraint is on a container (i.e. multiply-valued) attribute.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*any_allowed* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result := children.is_empty and not is_prohibited`
+a|True if there is no effective constraint on the children of the RM attribute to which this `C_ATTRIBUTE` refers.
+
+h|*1..1*
+|*is_mandatory* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = existence /= Void and then existence.is_mandatory`
+a|True if this `C_ATTRIBUTE` has an existence constraint of 1..1, i.e. mandation.
+
+h|*1..1*
+|*rm_attribute_path* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Path of this attribute with respect to owning `C_OBJECT`, including differential path where applicable.
+
+h|*1..1*
+|*is_single* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this node logically represents a single-valued attribute. Evaluated as not `_is_multiple_`.
+
+h|*1..1 +
+(effected)*
+|*c_congruent_to* ( +
+other: `<<_archetype_constraint_class,ARCHETYPE_CONSTRAINT>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = existence = Void and ((is_single and other.is_single) or (is_multiple and other.is_multiple and cardinality = Void))`
+a|True if constraints represented by this node contain no further redefinitions with respect to the node other, with the exception of `_node_id_` redefinition in `C_OBJECT` nodes. 
+
+Typically used to test if an inherited node locally contains any constraints.
+
+h|*1..1 +
+(effected)*
+|*c_conforms_to* ( +
+other: `<<_archetype_constraint_class,ARCHETYPE_CONSTRAINT>>[1]`, +
+rmcc: `link:/releases/BASE/{base_release}/foundation_types.html#_function_class[FUNCTION^]<link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^],link:/releases/BASE/{base_release}/foundation_types.html#_tuple2_class[TUPLE2^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = existence_conforms_to (other) and ((is_single and other.is_single) or else (is_multiple and cardinality_conforms_to (other)))`
+a|True if constraints represented by this node, ignoring any sub-parts, are narrower or the same as other. 
+Typically used during validation of specialised archetype nodes.
+
+h|*1..1 +
+(effected)*
+|*is_prohibited* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = existence /= Void and then existence.is_prohibited`
+a|True if this `C_ATTRIBUTE` has an existence constraint of `0..0`, i.e. prohibition.
+|===

@@ -1,0 +1,5 @@
+== Artefact Content
+
+For specialised archetypes, differential form follows the object-oriented convention and only includes overridden or new elements but not unchanged inherited elements. Inherited elements are determined by compiling and 'flattening' a differential archetype with respect to the parent archetypes in its _inheritance lineage_ .
+
+For top-level archetypes the full structure is included in the differential file, but internal references, where they exist, are expanded out in the flat form.

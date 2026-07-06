@@ -1,0 +1,280 @@
+== Attribute Redefinition
+
+A small number of things can be redefined on attributes, including existence and cardinality. A basic rule of redefinition is that a specialised archetype cannot change the multiplicity type of an attribute.
+
+=== Existence Redefinition: Mandation and Exclusion
+
+All attributes mentioned in an archetype have an _existence_ constraint, indicating whether a value is required or not. The constraint is either stated explicitly - typically done for single-valued attributes - or it is the value from the reference model - typical for multiply-valued attributes. In both cases, the existence of an attribute in a parent archetype can be redefined in a specialised archetype using the standard cADL syntax. In the following example, an implicit existence constraint picked up from the reference model of `{0..1}` is redefined in a child archetype to `{1}` , i.e. mandatory.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    OBSERVATION[at0000] ∈ {                -- blood pressure measurement
+        protocol ∈ {                    -- existence not changed from reference model
+            -- etc
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    OBSERVATION[id1] ∈ {                -- blood pressure measurement
+        protocol ∈ {                    -- existence not changed from reference model
+            -- etc
+        }
+    }
+--------
+====
+
+Child archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    OBSERVATION[at0000.1] ∈ {              -- paediatric blood pressure measurement
+        /protocol existence ∈ {1} ∈ {
+            -- etc
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    OBSERVATION[id1.1] ∈ {              -- paediatric blood pressure measurement
+        /protocol existence ∈ {1} ∈ {
+            -- etc
+        }
+    }
+--------
+====
+
+Redefinition of existence to `{0}` by this method denotes exclusion, i.e. removal of the entire attribute (including all sub-structure) from the resulting structure. In an archetype, it is likely to indicate poor design, given that the decision to remove optional attributes is much more likely to be local, and therefore more appropriate in templates rather than archetypes; within a template it would be perfectly normal. The following example shows the protocol attribute in the above `OBSERVATION` archetype being excluded in this way:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+   OBSERVATION[at0000] ∈ {                -- paediatric blood pressure measurement
+        /protocol existence ∈ {0}
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+   OBSERVATION[id1] ∈ {                -- paediatric blood pressure measurement
+        /protocol existence ∈ {0}
+    }
+--------
+====
+
+Note that in the above, the '/' is used to denote '/protocol' as a differential path. Without the slash, the 'protocol' attribute would be considered to be trying to constrain a hitherto unconstrained attribute called 'protocol', rather than redefine a constraint already present in a parent archetype.
+
+=== Multiply-valued (Container) Attributes
+
+The following sub-sections describe specialisation semantics specific to container attributes.
+
+==== Cardinality
+
+The _cardinality_ constraint defines how many object instances can be in the container within the data (not the archetype). In a specialised archetype, cardinality can be redefined to be a narrower range than in the parent, further limiting the valid ranges of items in the data that may occur within the container. This would normally only make sense if refinements were made to the occurrences of the contained items, i.e.:
+
+* narrowing the occurrences range of an object;
+* excluding an object by setting its occurrences to `{0}`;
+* adding new objects, which themselves will have occurrences constraints;
+* setting some object occurrences to mandatory, and the enclosing cardinality lower limit to some non-zero value.
+
+As long as the relationship between the enclosing attribute's cardinality constraint and the occurrences constraints defined on all the contained items (including those inherited unchanged, and therefore not mentioned in the specialised archetype) is respected (see {openehr_am_aom2}#VACMCU[VACMCU, VACMCO validity rules, AOM2 specification^]), any of the above specialisations can occur.
+
+The following provides an example of cardinality redefinition.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ITEM_LIST[at0002] ∈ {                                      -- general check list
+        items cardinality ∈ {0..*} ∈ {                      -- any number of items
+            ELEMENT[at0011] occurrences ∈ {0..*} ∈ {...}      -- generic checklist item
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ITEM_LIST[id3] ∈ {                                      -- general check list
+        items cardinality ∈ {0..*} ∈ {                      -- any number of items
+            ELEMENT[id12] occurrences ∈ {0..*} ∈ {...}      -- generic checklist item
+        }
+    }
+--------
+====
+
+Child archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ITEM_LIST[at0002] ∈ {                                      -- pre-operative check list
+        /items cardinality ∈ {3..10} ∈ {                    -- at least 3 mandatory items
+            ELEMENT[at0011.1] occurrences ∈ {1} ∈ {...}       -- item #1
+            ELEMENT[at0011.2] occurrences ∈ {1} ∈ {...}       -- item #2
+            ELEMENT[at0011.3] occurrences ∈ {1} ∈ {...}       -- item #3
+            ELEMENT[at0011.4] occurrences ∈ {0..1} ∈ {...}    -- item #4
+            ...
+            ELEMENT[at0011.10] occurrences ∈ {0..1} ∈ {...}   -- item #10
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ITEM_LIST[id3] ∈ {                                      -- pre-operative check list
+        /items cardinality ∈ {3..10} ∈ {                    -- at least 3 mandatory items
+            ELEMENT[id12.1] occurrences ∈ {1} ∈ {...}       -- item #1
+            ELEMENT[id12.2] occurrences ∈ {1} ∈ {...}       -- item #2
+            ELEMENT[id12.3] occurrences ∈ {1} ∈ {...}       -- item #3
+            ELEMENT[id12.4] occurrences ∈ {0..1} ∈ {...}    -- item #4
+            ...
+            ELEMENT[id12.10] occurrences ∈ {0..1} ∈ {...}   -- item #10
+        }
+    }
+--------
+====
+
+==== Ordering of Sibling Nodes
+
+Within container attributes, the order of objects may be significant from the point of view of domain users, i.e. the container may be considered as an ordered list. This is easy to achieve in top-level archetype, using the 'ordered' qualifier on a cardinality constraint. However, when particular node(s) are redefined into multiple specialised nodes, or new nodes added by extension, the desired order of the new nodes may be such that they should occur interspersed at particular locations among nodes defined in the parent archetype. The following text is a slightly summarised view of the items attribute from the problem archetype shown in <<redefinition_for_specialisation>>:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    items cardinality ∈ {0..*; ordered} ∈ {
+        ELEMENT[at0001] occurrences ∈ {1} ∈ {...}              -- Problem
+        ELEMENT[at0002] occurrences ∈ {0..1} ∈ {...}           -- Date of initial onset
+        ELEMENT[at0003] occurrences ∈ {0..1} ∈ {...}           -- Age at initial onset
+        ELEMENT[at0004] occurrences ∈ {0..1} ∈ {...}           -- Severity
+        ELEMENT[at0008] occurrences ∈ {0..1} ∈ {...}           -- Clinical description
+        ELEMENT[at0009] occurrences ∈ {0..1} ∈ {...}           -- Date clinically received
+        CLUSTER[at0010] occurrences ∈ {0..*} ∈ {...}           -- Location
+        CLUSTER[at0013] occurrences ∈ {0..1} ∈ {...}           -- Aetiology
+        CLUSTER[at0017] occurrences ∈ {0..1} ∈ {...}           -- Occurrences or exacerb'ns
+        CLUSTER[at0025] occurrences ∈ {0..1} ∈ {...}           -- Related problems
+        ELEMENT[at0029] occurrences ∈ {0..1} ∈ {...}           -- Date of resolution
+        ELEMENT[at0030] occurrences ∈ {0..1} ∈ {...}           -- Age at resolution
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    items cardinality ∈ {0..*; ordered} ∈ {
+        ELEMENT[id2] occurrences ∈ {1} ∈ {...}               -- Problem
+        ELEMENT[id3] occurrences ∈ {0..1} ∈ {...}            -- Date of initial onset
+        ELEMENT[id4] occurrences ∈ {0..1} ∈ {...}            -- Age at initial onset
+        ELEMENT[id5] occurrences ∈ {0..1} ∈ {...}            -- Severity
+        ELEMENT[id9] occurrences ∈ {0..1} ∈ {...}            -- Clinical description
+        ELEMENT[id10] occurrences ∈ {0..1} ∈ {...}           -- Date clinically received
+        CLUSTER[id11] occurrences ∈ {0..*} ∈ {...}           -- Location
+        CLUSTER[id14] occurrences ∈ {0..1} ∈ {...}           -- Aetiology
+        CLUSTER[id18] occurrences ∈ {0..1} ∈ {...}           -- Occurrences or exacerb'ns
+        CLUSTER[id26] occurrences ∈ {0..1} ∈ {...}           -- Related problems
+        ELEMENT[id30] occurrences ∈ {0..1} ∈ {...}           -- Date of resolution
+        ELEMENT[id31] occurrences ∈ {0..1} ∈ {...}           -- Age at resolution
+    }
+--------
+====
+
+To indicate significant ordering in the specialised problem-diagnosis archetype, the keywords ` before` and ` after` can be used, as follows:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    /data[at0002]/items ∈ {
+        before [at0002]
+        ELEMENT[at0001.1] ∈ {...}                             -- Diagnosis
+        ELEMENT[at0.32] occurrences ∈ {0..1} ∈ {...}          -- Status
+        after [at0025]
+        CLUSTER[at0.35] occurrences ∈ {0..1} ∈ {...}          -- Diagnostic criteria
+        CLUSTER[at0.37] occurrences ∈ {0..1} ∈ {...}          -- Clinical Staging
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    /data[id3]/items ∈ {
+        before [id3]
+        ELEMENT[id2.1] ∈ {...}                                -- Diagnosis
+        ELEMENT[id0.32] occurrences ∈ {0..1} ∈ {...}          -- Status
+        after [id26]
+        CLUSTER[id0.35] occurrences ∈ {0..1} ∈ {...}          -- Diagnostic criteria
+        CLUSTER[id0.37] occurrences ∈ {0..1} ∈ {...}          -- Clinical Staging
+    }
+--------
+====
+
+These keywords are followed by a node identifier reference, and act to anchor the location of the node definitions immediately following until the next sibling order marker or the end of the list. The following visual rendition is equivalent, but arguably less readable:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    after [at0025] CLUSTER[at0.35] occurrences ∈ {0..1} ∈ {...}  -- etc
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    after [id26] CLUSTER[id0.35] occurrences ∈ {0..1} ∈ {...}  -- etc
+--------
+====
+
+The rules for specifying ordering are as follows.
+
+* Ordering is only applicable to object nodes defined within a multiply-valued (i.e. container) attribute whose cardinality includes the `ordered` constraint;
+* Any `before` or `after` statement can use as its anchor the node identifier of any sibling node from the same container attribute in the flat form of the parent archetype, or a redefined version of the same, local to the current archetype;
+* If no sibling order markers are used, redefined nodes should appear in the same position as the nodes they replace, while extension nodes appear at the end.
+
+If ordering indicators are used in an archetype that is itself further specialised, the following rules apply:
+
+* If the referenced identifier becomes unavailable due to being redefined in the new archetype, it must be redefined to refer to an available sibling identifier as per the rules above.
+* If this does not occur, a `before` reference will default to the first sibling node identifier currently available conforming to the original identifier, while an `after` reference will default to the _last_ such identifier available in the current flat archetype.
+
+If, due to multiple levels of redefinition, there is more than one candidate to go before (or after) a given node, the compiler should output a warning. The problem would be resolved by the choice of one of the candidates being changed to indicate that it is to be ordered before (after) another of the candidates rather than the originally stated node.
+

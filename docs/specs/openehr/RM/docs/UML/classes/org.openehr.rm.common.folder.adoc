@@ -1,0 +1,32 @@
+=== FOLDER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*FOLDER*
+
+h|*Description*
+2+a|The concept of a named folder.
+
+NOTE: It is strongly recommended that the inherited attribute `_uid_` be populated in _top-level_ (i.e. tree-root) `FOLDER` objects, using the UID copied from the `_object_id()_` of the `_uid_` field of the enclosing `VERSION` object. +
+For example, the `ORIGINAL_VERSION.uid` `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`  would be copied to the `_uid_` field of the top `FOLDER` object.
+
+h|*Inherit*
+2+|`<<_locatable_class,LOCATABLE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_object_ref_class[OBJECT_REF^]>`
+a|The list of references to other (usually) versioned objects logically in this folder.
+
+h|*0..1*
+|*folders*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_folder_class,FOLDER>>>`
+a|Sub-folders of this `FOLDER`.
+
+h|*0..1*
+|*details*: `link:/releases/RM/{rm_release}/data_structures.html#_item_structure_class[ITEM_STRUCTURE^]`
+a|Archetypable meta-data for `FOLDER`.
+|===

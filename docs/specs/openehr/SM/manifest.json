@@ -1,0 +1,79 @@
+{
+    "id": "SM",
+    "title": "Service Model",
+    "description": "openEHR Service Model Component",
+    "keywords": "service model, openehr",
+    "status": "DEVELOPMENT",
+    "specifications": [
+        {
+            "id": "openehr_platform",
+            "title": "openEHR Platform Service Model",
+            "title_short": "Platform Services",
+            "description": "openEHR Platform Abstract Service Model",
+            "summary": "Definition of the openEHR coarse-grained interface EHR service interface.",
+            "micro_summary": "Ehr, Query, Definitions, EhrIndex, Admin, Demographic, Terminology, Message, SystemLog",
+            "copyright_year": "2017",
+            "spec_status": "TRIAL",
+            "keywords": "openehr, service, API"
+        },
+        {
+            "id": "simplified_im_b",
+            "title": "openEHR Simplified Information Model 'B'",
+            "title_short": "SIM B",
+            "description": "openEHR Simplified Information Model 'B'",
+            "summary": "Simplified Information Model 'B' - simplified version of RM for use with JSON Data Templates (JDTs).",
+            "micro_summary": "Simplified Information Model 'B' for use with Simplified Data Template",
+            "copyright_year": "2019",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "SIM-B, information model, openEHR"
+        },
+        {
+            "id": "serial_data_formats",
+            "title": "openEHR Serial Data Formats (SDF)",
+            "title_short": "SDF",
+            "description": "openEHR Serial Data Formats",
+            "summary": "Serial data formats for use in REST and other contexts",
+            "micro_summary": "Serial data formats for use in REST and other contexts",
+            "copyright_year": "2020",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "SDF, serialization, openEHR"
+        }
+    ],
+    "expressions": [
+        {
+            "id": "REST API src",
+            "dependency": {
+                "component": "ITS-REST",
+                "release": "latest"
+            }
+        },
+        {
+            "id": "openEHR_UML-SM.mdzip",
+            "type": "uml",
+            "title": "SM UML",
+            "description": "UML file for MagicDraw 19.0. Contains UML 2.5 standard XMI file."
+        }
+    ],
+    "jira": {
+        "open_issues": "11104",
+        "roadmap": "SPECSM"
+    },
+    "releases": [
+        {
+            "id": "1.1.0",
+            "date": "",
+            "jira": {
+                "crs": "SPECSM/versions/12538",
+                "prs": "SPECPR/versions/11563"
+            }
+        },
+        {
+            "id": "1.0.0",
+            "date": "",
+            "jira": {
+                "crs": "SPECSM/versions/12523",
+                "prs": "SPECPR/versions/11562"
+            }
+        }
+    ]
+}

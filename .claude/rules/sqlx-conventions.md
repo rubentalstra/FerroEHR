@@ -48,7 +48,11 @@ use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
   contribution/commit semantics (one CONTRIBUTION per change set — the spec
   is the authority; ADR-008).
 - Every write emits an `audit_details` + `contribution` row in the same
-  transaction, as EHRbase does.
+  transaction — an openEHR requirement: the versioning / CONTRIBUTION /
+  audit semantics are defined in `docs/specs/openehr/RM/docs/common/`
+  (Change Control: VERSION, VERSIONED_OBJECT, CONTRIBUTION, AUDIT_DETAILS)
+  and `docs/specs/openehr/RM/docs/ehr/`; implement against that text
+  (spec-adherence.md), with EHRbase as prior art only.
 
 ## Testing
 

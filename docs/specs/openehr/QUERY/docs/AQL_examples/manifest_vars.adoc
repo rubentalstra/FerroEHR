@@ -1,0 +1,5 @@
+:spec_title: Archetype Query Language Examples
+:copyright_year: 2020
+:spec_status: DEVELOPMENT
+:keywords: query, AQL, example, openehr
+:description: openEHR Archetype Query Language (AQL) examples.

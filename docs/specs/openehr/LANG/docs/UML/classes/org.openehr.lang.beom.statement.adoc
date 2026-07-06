@@ -1,0 +1,11 @@
+=== STATEMENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__STATEMENT (abstract)__*
+
+h|*Description*
+2+a|Meta-type for the notion of statement, which is a non-value-returning entity.
+
+|===

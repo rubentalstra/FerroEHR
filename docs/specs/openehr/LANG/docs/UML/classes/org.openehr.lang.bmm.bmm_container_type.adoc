@@ -1,0 +1,34 @@
+=== BMM_CONTAINER_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_CONTAINER_TYPE*
+
+h|*Description*
+2+a|Type reference that specifies containers with one generic parameter.
+
+h|*Inherit*
+2+|`<<_bmm_type_class,BMM_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*container_type*: `<<_bmm_class_class,BMM_CLASS>>`
+a|The type of the container. This converts to the root_type in BMM_GENERIC_TYPE.
+
+h|*1..1*
+|*base_type*: `<<_bmm_type_class,BMM_TYPE>>`
+a|The target type; this converts to the first parameter in generic_parameters in BMM_GENERIC_TYPE.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*type_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Return full type name, e.g. 'List<ELEMENT>'.
+|===

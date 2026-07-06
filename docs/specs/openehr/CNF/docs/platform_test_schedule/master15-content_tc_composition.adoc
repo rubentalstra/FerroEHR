@@ -1,0 +1,456 @@
+= Data Validation Conformance
+
+//
+// taken from doc/conformance_testing/COMPOSITION_VALIDATION_STRUCTURE.md
+//
+
+== Overview
+
+The test cases defined here are for creating archetypes expressing specific constraints over data defined by the {openehr_rm}[openEHR RM^]. Different data instances should be generated in order to test the constraints. It’s recommended to have at least one success case, one failure case and all border cases covered. That is, for each archetype constraint specified, at least three data instances should be created.
+
+Since there are many combinations of constraints possible in archetypes and templates, we separate them into different classes and focus on each constraint set class independently from the other sets. The sets are defined by:
+
+. A top-level LOCATABLE class: COMPOSITION, EHR_STATUS, FOLDER, PARTY.
+. Constraint sets on top-level attributes for each class.
+. Internal LOCATABLE class: SECTION, ENTRY, HISTORY, ITEM_STRUCTURE, ITEM, DATA_VALUE.
+. Constraint sets on internal structures and attributes (at any level in the RM hierarchy in the internal LOCATABLE class).
+
+In this section, the following terms are used:
+
+* Archetypable class: any class that extends LOCATABLE.
+* Archetypable field: generic fields on archetypable classes that can be constrained in archetypes.
+
+For testing a 'multiple attribute' cardinality, we use this set of cardinality intervals:
+
+* 0..*
+* 1..*
+* 3..*
+* 0..1
+* 1..1
+* 3..5
+
+=== Implementation notes
+
+The constraint combinations described in the cases below could be implemented in different archetypes, or in a generic archetype then defining the specific constraints at the template level. Which option to use might depend on the modeling tools used to create archetypes and templates.
+
+We suggest to automate the archetype/template test cases generation instead of creating each constraint combination manualy.
+
+When there is no constraint defined for an attribute, it means anything is allowed on that attribute. It is recommended to include data not defined by the archetype, but valid in the RM, when generating the data instances.
+
+== COMPOSITION Test Cases
+
+These cases are defined to verify the constraints defined over archetypable attributes of the top-level class COMPOSITION specified in the {openehr_rm_ehr}#_composition_package[openEHR RM, COMPOSITION package^].
+
+The constraints combinations described below could be tested in two ways:
+
+. Isolation: by not constraining the COMPOSITION.content at all, or adding an open/'`any allowed`' constraint \{*} at the COMPOSITION.content in the archetype/template. This means anything, even nothing, is accepted at the COMPOSITION.content at runtime.
+. Combination: with constraints set for COMPOSITION.content, for any CONTENT_ITEM (SECTION or ENTRY). Below there is a specification of the constraint combinations for each class accepted at COMPOSITION.content
+
+NOTE: we suggest to test with both strategies.
+
+=== Test Case CONT-COMP-content_card_any-context_any
+
+Description: COMPOSITION content cardinality 0..*, no constraint over context
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, success)
+. COMPOSITION with one entry (success)
+. COMPOSITION with 3 entries (success)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,2",options="header",]
+|===
+|content 		|context 						|expected |constraints violated
+
+|no entries 	|no context 					|accepted |
+|one entry	 	|no context 					|accepted |
+|three entries 	|no context 					|accepted |
+|no entries 	|context without other_context 	|accepted |
+|one entry 		|context without other_context 	|accepted |
+|three entries 	|context without other_context 	|accepted |
+|no entries 	|context with other_context 	|accepted |
+|one entry 		|context with other_context 	|accepted |
+|three entries 	|context with other_context 	|accepted |
+|===
+
+=== Test Case CONT-COMP-content_card_1plus-context_any
+
+Description: COMPOSITION content cardinality 1..*, no constraint over context
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, fail)
+. COMPOSITION with one entry (border case, success)
+. COMPOSITION with 3 entries (success)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,2",options="header",]
+|===
+|content    |context |expected |constraints violated
+
+|no entries |no context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |no context |accepted | 
+|three entries |no context |accepted | 
+|no entries |context without other_context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |context without other_context |accepted |
+|three entries |context without other_context |accepted |
+|no entries |context with other_context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |context with other_context |accepted |
+|three entries |context with other_context |accepted |
+|===
+
+=== Test Case CONT-COMP-content_card_3plus-context_any
+
+Description: COMPOSITION content cardinality 3..*, no constraint over context
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, fail)
+. COMPOSITION with one entry (fail)
+. COMPOSITION with 3 entries (border case, success)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,2",options="header",]
+|===
+|content 		|context 						|expected |constraints violated
+
+|no entries 	|no context 					|rejected |COMPOSITION.content: cardinality.lower
+|one entry 		|no context 					|rejected |COMPOSITION.content: cardinality.lower
+|three entries 	|no context 					|accepted |
+|no entries 	|context without other_context 	|rejected |COMPOSITION.content: cardinality.lower
+|one entry 		|context without other_context 	|rejected |COMPOSITION.content: cardinality.lower
+|three entries 	|context without other_context 	|accepted |
+|no entries 	|context with other_context 	|rejected |COMPOSITION.content: cardinality.lower
+|one entry 		|context with other_context 	|rejected |COMPOSITION.content: cardinality.lower
+|three entries 	|context with other_context 	|accepted |
+|===
+
+=== Test Case CONT-COMP-content_card_opt-context_any
+
+Description: COMPOSITION content cardinality 0..1, no constraint over context
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, success)
+. COMPOSITION with one entry (border case, success)
+. COMPOSITION with 3 entries (fail)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,2",options="header",]
+|===
+|content |context |expected |constraints violated
+|no entries |no context |accepted |
+
+|one entry |no context |accepted |
+
+|three entries |no context |rejected |COMPOSITION.content:
+cardinality.upper
+
+|no entries |context without other_context |accepted |
+
+|one entry |context without other_context |accepted |
+
+|three entries |context without other_context |rejected
+|COMPOSITION.content: cardinality.upper
+
+|no entries |context with other_context |accepted |
+
+|one entry |context with other_context |accepted |
+
+|three entries |context with other_context |rejected
+|COMPOSITION.content: cardinality.upper
+|===
+
+=== Test Case CONT-COMP-content_card_mand-context_any
+
+Description: COMPOSITION content cardinality 1..1, no constraint over context
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, fail)
+. COMPOSITION with one entry (border case, success)
+. COMPOSITION with 3 entries (fail)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,2",options="header",]
+|===
+|content |context |expected |constraints violated
+
+|no entries |no context |rejected |COMPOSITION.content: cardinality.lower 
+|one entry |no context |accepted | 
+|three entries |no context |rejected |COMPOSITION.content: cardinality.upper
+|no entries |context without other_context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |context without other_context |accepted |
+|three entries |context without other_context |rejected |COMPOSITION.content: cardinality.upper
+|no entries |context with other_context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |context with other_context |accepted | 
+|three entries |context with other_context |rejected |COMPOSITION.content: cardinality.upper
+|===
+
+=== Test Case CONT-COMP-content_card_3to5-context_any
+
+Description: COMPOSITION content cardinality 3..5, no constraint over context
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (fail)
+. COMPOSITION with one entry (fail)
+. COMPOSITION with 3 entries (border case, success)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,2",options="header",]
+|===
+|content |context |expected |constraints violated
+
+|no entries |no context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |no context |rejected |COMPOSITION.content: cardinality.lower
+|three entries |no context |accepted |
+|no entries |context without other_context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |context without other_context |rejected |COMPOSITION.content: cardinality.lower
+|three entries |context without other_context |accepted |
+|no entries |context with other_context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |context with other_context |rejected |COMPOSITION.content: cardinality.lower
+|three entries |context with other_context |accepted |
+|===
+
+=== Test Case CONT-COMP-content_card_any-context_mand
+
+Description: COMPOSITION content cardinality 0..*, context occurrences 1..1
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, success)
+. COMPOSITION with one entry (success)
+. COMPOSITION with 3 entries (success)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,2",options="header",]
+|===
+|content |context |expected |constraints violated
+|no entries |no context |rejected |COMPOSITION.context occurrences.lower
+|one entry |no context |rejected |COMPOSITION.context occurrences.lower
+|three entries |no context |rejected |COMPOSITION.context occurrences.lower
+|no entries |context without other_context |accepted | 
+|one entry |context without other_context |accepted | 
+|three entries |context without other_context |accepted | 
+|no entries |context with other_context |accepted | 
+|one entry |context with other_context |accepted | 
+|three entries |context with other_context |accepted |
+|===
+
+=== Test Case CONT-COMP-content_card_1plus-context_mand
+
+Description: COMPOSITION content cardinality 1..*, context occurrences 1..1
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, fail)
+. COMPOSITION with one entry (border case, success)
+. COMPOSITION with 3 entries (success)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,2",options="header",]
+|===
+|content |context |expected |constraints violated
+
+|no entries |no context |rejected |COMPOSITION.content: cardinality.lower, COMPOSITION.context occurrences.lower
+|one entry |no context |rejected |COMPOSITION.context occurrences.lower
+|three entries |no context |rejected |COMPOSITION.context occurrences.lower
+|no entries |context without other_context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |context without other_context |accepted |
+|three entries |context without other_context |accepted |
+|no entries |context with other_context |rejected |COMPOSITION.content: cardinality.lower
+|one entry |context with other_context |accepted |
+|three entries |context with other_context |accepted |
+|===
+
+=== Test Case CONT-COMP-content_card_3plus-context_mand
+
+Description: COMPOSITION content cardinality 3..*, context occurrences 1..1
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, fail)
+. COMPOSITION with one entry (fail)
+. COMPOSITION with 3 entries (border case, success)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,3",options="header",]
+|===
+|content        |context                        |expected |constraints violated
+
+|no entries     |no context                     |rejected |COMPOSITION.content: cardinality.lower, COMPOSITION.context occurrences.lower
+|one entry      |no context                     |rejected |COMPOSITION.content: cardinality.lower, COMPOSITION.context occurrences.lower 
+|three entries  |no context                     |rejected |COMPOSITION.context occurrences.lower
+|no entries     |context without other_context  |rejected |COMPOSITION.content: cardinality.lower
+|one entry      |context without other_context  |rejected |COMPOSITION.content: cardinality.lower
+|three entries  |context without other_context  |accepted |
+|no entries     |context with other_context     |rejected |COMPOSITION.content: cardinality.lower
+|one entry      |context with other_context     |rejected |COMPOSITION.content: cardinality.lower
+
+|three entries |context with other_context |accepted |
+|===
+
+=== Test Case CONT-COMP-content_card_opt-context_mand
+
+Description: COMPOSITION content cardinality 0..1, context occurrences 1..1
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, success)
+. COMPOSITION with one entry (border case, success)
+. COMPOSITION with 3 entries (fail)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,3",options="header",]
+|===
+|content        |context                        |expected |constraints violated
+
+|no entries     |no context                     |rejected |COMPOSITION.context occurrences.lower 
+|one entry      |no context                     |rejected |COMPOSITION.context occurrences.lower 
+|three entries  |no context                     |rejected |COMPOSITION.content: cardinality.upper, COMPOSITION.context occurrences.lower 
+|no entries     |context without other_context  |accepted | 
+|one entry      |context without other_context  |accepted | 
+|three entries  |context without other_context  |rejected |COMPOSITION.content: cardinality.upper
+|no entries     |context with other_context     |accepted | 
+|one entry      |context with other_context     |accepted | 
+|three entries  |context with other_context     |rejected |COMPOSITION.content: cardinality.upper
+|===
+
+=== Test Case CONT-COMP-content_card_mand-context_mand
+
+Description: COMPOSITION content cardinality 1..1, context occurrences 1..1
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (border case, fail)
+. COMPOSITION with one entry (border case, success)
+. COMPOSITION with 3 entries (fail)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,3",options="header",]
+|===
+|content        |context                        |expected |constraints violated
+
+|no entries     |no context                     |rejected |COMPOSITION.content: cardinality.lower, COMPOSITION.context occurrences.lower
+|one entry      |no context                     |rejected |COMPOSITION.context occurrences.lower 
+|three entries  |no context                     |rejected |COMPOSITION.content: cardinality.upper, COMPOSITION.context occurrences.lower
+|no entries     |context without other_context  |rejected |COMPOSITION.content: cardinality.lower
+|one entry      |context without other_context  |accepted |
+|three entries  |context without other_context  |rejected |COMPOSITION.content: cardinality.upper
+|no entries     |context with other_context     |rejected |COMPOSITION.content: cardinality.lower
+|one entry      |context with other_context     |accepted |
+|three entries  |context with other_context     |rejected |COMPOSITION.content: cardinality.upper
+|===
+
+=== Test Case CONT-COMP-content_card_3to5-context_mand
+
+Description: COMPOSITION content cardinality 3..5, context occurrences 1..1
+
+COMPOSITION data sets:
+
+. COMPOSITION with no entries (fail)
+. COMPOSITION with one entry (fail)
+. COMPOSITION with 3 entries (border case, success)
+
+Combine those cases with:
+
+. COMPOSITION with no context
+. COMPOSITION with context but no other_context
+. COMPOSITION with context and other_context
+
+All the context structures should be valid.
+
+[cols="1,2,^1,3",options="header",]
+|===
+|content        |context                        |expected |constraints violated
+
+|no entries     |no context                     |rejected |COMPOSITION.content: cardinality.lower, COMPOSITION.context occurrences.lower
+|one entry      |no context                     |rejected |COMPOSITION.content: cardinality.lower, COMPOSITION.context occurrences.lower
+|three entries  |no context                     |rejected |COMPOSITION.context occurrences.lower
+|no entries     |context without other_context  |rejected |COMPOSITION.content: cardinality.lower
+|one entry      |context without other_context  |rejected |COMPOSITION.content: cardinality.lower
+|three entries  |context without other_context  |accepted | 
+|no entries     |context with other_context     |rejected |COMPOSITION.content: cardinality.lower
+|one entry      |context with other_context     |rejected |COMPOSITION.content: cardinality.lower
+|three entries  |context with other_context     |accepted |
+|===
+

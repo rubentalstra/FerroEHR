@@ -1,0 +1,14 @@
+=== S_POINT_EVENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_POINT_EVENT*
+
+h|*Description*
+2+a|Simplified RM form of `POINT_EVENT` RM class.
+
+h|*Inherit*
+2+|`<<_s_event_class,S_EVENT>>`
+
+|===

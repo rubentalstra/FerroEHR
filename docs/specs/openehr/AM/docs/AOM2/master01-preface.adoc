@@ -1,0 +1,107 @@
+= Preface
+
+== Purpose
+
+This document contains the normative description of openEHR Archetype and Template semantics (originally described in citenp:[Beale2000] and citenp:[Beale2002]), in the form of an object model. The model presented here can be used as a basis for building software that represents archetypes and templates, independent of their persistent representation. Equally, it can be used to develop the output side of parsers that process archetypes in a linguistic format, such as the {openehr_am_adl2}[openEHR Archetype Definition Language (ADL)^] , XML and so on.
+
+It is recommended in any case that the ADL specification be read in conjunction with this document, since it contains a detailed explanation of the semantics of archetypes, and many of the examples are more obvious in ADL, regardless of whether ADL is actually used with the object model presented here or not.
+
+The release of AOM described in this specification corresponds to the 2.x version of the archetype formalism.
+
+The intended audience includes:
+
+* Standards bodies producing health informatics standards;
+* Research groups using openEHR, {iso_13606}[ISO 13606], and other EHR or EHR exchange architectures;
+* The open source healthcare community;
+* EHR solution vendors;
+* Medical informaticians and clinicians interested in health information.
+
+== Related Documents
+
+Prerequisite documents for reading this document include:
+
+* The {openehr_overview}[openEHR Architecture Overview^];
+* The {openehr_am_overview}[openEHR Archetypes Technical Overview^].
+* The {openehr_base_types}[openEHR Base Types Specification^].
+
+Related documents include:
+
+* The {openehr_am_adl2}[openEHR Archetype Definition Language 2 Specification^];
+* The {openehr_am_opt2}[openEHR Operational Template Specification^].
+
+== Nomenclature
+
+In this document, the term 'attribute' denotes any stored property of a type defined in an object model, including primitive attributes and any kind of relationship such as an association or aggregation. XML 'attributes' are always referred to explicitly as 'XML attributes'.
+
+We also use the word 'archetype' in a broad sense to designate what are commonly understood to be 'archetypes' (specifications of clinical data groups / data constraints) and 'templates' (data sets based on archetypes, since at a technical level, an ADL/AOM 2 template is in fact just an archetype. Accordingly, statements about 'archetypes' in this specification can be always understood to also apply to templates, unless otherwise indicated.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_am_development_aom2}[{openehr_am_development_aom2}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_adl_forum}[openEHR ADL forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+Conformance of a data or software artifact to an openEHR specification is determined by a formal test of that artifact against the relevant {openehr_its_component}[openEHR Implementation Technology Specification(s) (ITSs)^], such as an IDL interface or an XML-schema. Since ITSs are formal derivations from underlying models, ITS conformance indicates model conformance.
+
+== Tools
+
+Various tools exist for creating and processing archetypes. The {openehr_awb}[ADL Workbench^] is a reference compiler, visualiser and editor. The openEHR ADL/AOM tools can be {modelling_tools}[downloaded from the website^] .
+
+Source projects can be found at the {openehr_git}[openEHR Github project^].
+
+== Changes from Previous Versions
+
+=== Release 2.3 to 2.4 (Document version 2.4.0 - ???)
+
+The changes are as follows.
+
+* ADL2 was initially released with code system using id-codes, at-codes and ac-codes. As this proved to hinder its widespread use in the openEHR community (due to its impact on existing openEHR RM data) a code system matching the one used in ADL 1.4 was introduced as openEHR primary code system.
+* Additional attribute `title` was added to the `RESOURCE_DESCRIPTION` class. It is recommended in ADL 1.4 → ADL 2.4 conversion to populate this new attribute with the "Template ID" (or similar) of ADL 1.4 templates.
+For Ocean .oet this can be copied from `templateName` and for Better Archetype Designer native Json `templateId` attribute should be used.
+* ADL 2.4 requires {openehr_base_release_130}[BASE Release-1.3.0^] or newer to work.
+
+=== Release 1.5 to 2.0 (Document version 2.1.2 - 2.3.0)
+
+The changes in release 2 of the ADL/AOM formalism are designed to make the formalism more computable with respect to terminology, and enable more rigorous validation and flattening operations.
+
+The changes are as follows.
+
+* Introduction of *new internal coding scheme*, consisting of id-codes, at-codes and ac-codes;
+* Replace string archetype identifier with multi-part, *namespaced identifier*;
+* Addition of *explicit value-sets* in terminology section, replacing in-line value sets in the `definition` section;
+* Renaming archetype `ontology` section to `terminology`;
+* Expression of all external *term bindings as URIs* following IHTSDO format;
+* Introduction of *'tuple' constraints* to replace openEHR custom constrainer types for co-varying attributes within Quantity, Ordinal structures;
+* Re-engineering of all primitive constrainer types, i.e. `C_STRING` , `C_DATE` etc.;
+* Removal of the openEHR Archetype Profile specification.
+
+=== Release 1.4 to 1.5 (Document version 2.0 to 2.1.1)
+
+The changes in release 1.5 are made to better facilitate the representation of specialised archetypes. The key semantic capability for specialised archetypes is to be able to support a differential representation, i.e. to express a specialised archetype only in terms of the changed or new elements in its definition, rather than including a copy of unchanged elements. Doing the latter is clearly unsustainable in terms of change management.
+
+The changes are as follows.
+
+* Full *specialisation support*: the addition of an attribute to the `C_ATTRIBUTE` class, allowing the inclusion of a path that enables specialised archetype redefinitions deep within a structure;
+* Addition of *node-level annotations*;
+* Structural simplification of archetype ontology section;
+* The name of the `invariant` section has been changed to `rules`, to better reflect its purpose.
+* A template is now just an archetype.
+
+=== Release 0.6 to 1.4
+
+Changes made from Release 1.3 to 1.4:
+
+* added a new attribute `_adl_version_` : `String` to the `ARCHETYPE` class;
+* changed name of `ARCHETYPE` . `_concept_code_` attribute to `_concept_` .

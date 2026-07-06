@@ -1,0 +1,29 @@
+title: FOLDER
+description: A FOLDER resource
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+properties:
+  _type:
+    type: string
+    default: FOLDER
+  items:
+    type: array
+    items:
+      $ref: ../base_types/ObjectRef.yaml
+  folders:
+    type: array
+    items:
+      $ref: ../ehr/Folder.yaml
+  details:
+    $ref: ../data_structures/UItemStructure.yaml
+x-discriminator-value: FOLDER
+example:
+  archetype_node_id: openEHR-EHR-FOLDER.directory.v1
+  name:
+    value: Directory
+  uid:
+    _type: OBJECT_VERSION_ID
+    value: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+  items: []
+  folders: []

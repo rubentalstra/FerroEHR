@@ -22,3 +22,14 @@ CNF Platform Conformance Test Schedule at P19).
    built from the current tree.
 3. Report failures grouped by API group / test case, with the spec clause
    each failing case asserts. Never weaken a test to pass (testing.md).
+
+## The CNF source of truth (vendored)
+
+The schedule the runner implements is vendored in-repo:
+`docs/specs/openehr/CNF/docs/platform_test_schedule/` (the test-case
+definitions, per API group + per data type) and
+`docs/specs/openehr/CNF/tests/platform/robot/` (the executable upstream Robot
+suites + fixtures: `.opt` templates, canonical JSON/XML payloads). When a
+conformance failure needs diagnosis — or the runner doesn't cover an area
+yet — read the matching test case there and the spec section it cites; fix
+the server, never the expectation.

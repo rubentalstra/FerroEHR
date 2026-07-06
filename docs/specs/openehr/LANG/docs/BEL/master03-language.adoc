@@ -1,0 +1,331 @@
+= The Basic Expression Language
+
+== Overview
+
+This section describes the openEHR Basic Expression Language. In the various contexts where openEHR expressions are used, the syntax provides a foundation for concrete  syntaxes supporting specific value-referencing mechanisms, as well as other types of rules, operands etc. The key features of the language are: variable declarations, assignments and expressions. Most of the semantics are in the expression part, which is based on first-order predicate logic with the addition of arithmetic and relational operators to enable the use of numeric elements. Expressions may contain constants, variable references, value references and functions.
+
+== Syntax style
+
+The syntax style used here is generally so-called 'snake_case' rather than so-called 'CamelCase', in common with other openEHR specifications, but either may be used in real applications.
+
+== Typing
+
+BEL is fully typed. The type system is the same as that used in other openEHR components, and supports the same set of basic types as described in the {openehr_foundation_types}[openEHR Foundation Types Specification^], namely:
+
+* primitive types;
+* container types:
+** `List<T>`, i.e. an ordered list of elements of primitive type T;
+** `Set<T>`, i.e. a set of elements of primitive type T;
+** `Hash<K:Ordered,V>`, i.e. a Hash table or dictionary;
+* an interval type:
+** `Interval<T: Ordered>` where T is any ordered primitive type.
+
+== Literals
+
+=== Primitive Types
+
+The primitive types are shown below, along with typical literal values, which are expressed in the {openehr_odin}#_primitive_types[ODIN syntax^].
+
+[cols="1,2, 3",options="header"]
+|=================================================================
+|Name                   |Literal value                          |Description
+
+| `Boolean`             |`True`, `False`                        |Boolean value
+| `Integer`             |`10`, `-4`, `1024`                     |Integer value
+| `Real`                |`10.0`, `0.345`                        |Real value
+| `Date`                |`2004-08-12`                           |ISO8601-format date
+| `Date_time`           |`2004-08-12T12:00:59+0100`             |ISO8601-format date/time
+| `Time`                |`12:00:59`                             |ISO8601-format time
+| `Duration`            |`P39W`                                 |ISO8601-format duration
+| `String`              |`"this is a string"`                   |String
+| `Uri`                 |`https://en.wikipedia.org/wiki/Everest`|Uri in <<uri_syntax,RFC3986 format>>
+| `Terminology_code`    |`[snomed_ct::389086002]` +
+                         `[snomed_ct::389086002\|Hypoxia\|]`      |Terminology code reference
+|=================================================================
+
+Automatic type promotion from `Integer` to `Real` applies to all integer and real values and expressions, in the same fashion as most programming languages.
+
+[.tbd]
+TBD: do we need `Integer64` and `Real64`?
+
+=== Container Types
+
+The same container types as defined in the {openehr_foundation_types}#_structure_types[Foundation Types specification^] are supported in BEL, as follows.
+
+[cols="1,2, 3",options="header"]
+|=================================================================
+|Name                   |Literal value                  |Description
+
+| `List<T>`             |`[val, val, ...]`              |Linear list of items of any primitive type, allowing order and repeated membership'
+| `Set<T>`              |`{val, val, ...}`              |Set of items of any primitive type; no order, unique membership;
+| `Hash<K:Ordered, V>`  |`< +
+                              ["key1"] = <val1> +
+                              ["key2"] = <val2> +
+                              ... +
+                              ["keyN"] = <valN> +
+                         >`                             |Indexed linear container; +
+                                                         concretely, a table of values of any type V, keyed by values of any Ordered descendant K, typically String or Integer
+|=================================================================
+
+
+The above types each have an assumed interface consisting of functions and procedures that apply to all members of the container, consistent with the semantics of the container. These include the following methods that may be accessed in BEL via the syntactic operators `for_all` and `there_exists` described below.
+
+----
+    for_all (test(v: T): Boolean): Boolean
+            -- True if for every v in container, test (v) is True
+
+    there_exists (test(v: T): Boolean): Boolean
+            -- True if there is any v in container for which test (v) is True            
+----
+
+=== Interval Type
+
+The same `Interval` type as defined in the {openehr_foundation_types}#_interval[Foundation Types specification] is supported in BEL, as follows. Literal interval values take the same form as in {openehr_odin}#_intervals_of_ordered_primitive_types[ODIN].
+
+[cols="1,2, 3",options="header"]
+|=================================================================
+|Name                   |Literal value                  |Description
+
+| `Interval<T>`         |                               |Interval of any ordered primitive
+|                       |`\|N..M\|`                     |the two-sided interval N >= x \<= M
+|                       |`\|>N..M\|`                    |the two-sided interval N > x \<= M
+|                       |`\|N..<M\|`                    |the two-sided interval N >= x < M
+|                       |`\|<N\|`                       |the one-sided interval x < N
+|                       |`\|>N\|`                       |the one-sided interval x > N
+|                       |`\|\<=N\|`                     |the one-sided interval x \<= N
+|                       |`\|>=N\|`                      |the one-sided interval x >= N
+|                       |`\|N +/-M\|`                   |the two-sided interval of N ±M
+|                       |`\|N±M\|`                      |the two-sided interval of N ±M
+|=================================================================
+
+Automatic type promotion from `Interval<Integer>` to `Interval<Real>` applies to all integer and real values and expressions, in the same fashion as most programming languages.
+
+== Statements
+
+A BEL text consists of statements, each of which may be a declaration, an assignment or an assertion.
+
+=== Declarations
+
+Variables are declared with a formal type. Bound variables additionally include an assignment to a path within an assumed data context, which may be understood as performing the binding. Local variable declaratoins may include an assignment to an expression result, in the manner of common programming languages.
+
+--------
+    -- local variable, primitive type
+    $date_of_birth: Date                                            
+    
+    -- local variable, container type
+    $heart_rate_history: List<Real>            
+    
+    -- local variable with assignment
+    $age_in_years: Integer := current_date() - $date_of_birth
+    
+    -- a bound variable
+    $weight: Quantity := /data[id3]/events[id4]/data[id2]/items[id5]/value
+--------
+
+Variables are referenced within assignments and expressions using the same syntax, i.e. `var_name` and `$var_name`.
+
+=== Constants
+
+Constants are defined via the use of the equality operator `=` in a declaration and a literal value, as follows.
+
+--------
+    Mph_to_kmh_factor: Real = 1.6
+    Pounds_to_kg: Real = 0.4536
+    Systolic_normal_range: Interval<Integer> = |105..135|
+--------
+
+=== Assignment
+
+An assignment to a writable variable is expressed using the `:=` operator. An assignment may be made in a declaration in the same way as in many programming languages. The right hand side of an assignment is any value-returning expression. Typical assignments are illustrated below.
+
+--------
+    $speed_kmh: Real                             -- declaration
+    $speed_mph: Real := 35.0                     -- assignment in a declaration (not a constant)
+        
+    $speed_kmh := $speed_mph * Mph_to_kmh_factor  -- assignment
+--------
+
+== Bound Variables, Evaluation and Validity
+
+Variables that are bound to entities in the data context function differently from local variables, since their availability is predicated on the existence of the relevant entities. For example, the variable `$body_weight` may be bound to a call that retrieves a patient heart rate from the EHR, via an appropriate API call. There is no guarantee that the value is available, so `$body_weight` may therefore be undefined in a sense not applicable to local variables. In a programming language, if a variable is not explicitly set, it has either the default value of the type (e.g. `0` for `Integer`) or a random value of the correct type. This behaviour is appropriate for local variables, but for bound variables that cannot be evaluated because the external entity does not exist, we want something like an exception to occur.
+
+The approach used for BEL is to allow bound variables to be used freely, as for local variables, but if a bound variable cannot be evaluated from the data context, an `'undefined value'` exception should be generated, indicating which variable could not be evaluated. To impose more control, the predicate `exists ()` can be used within an expression or assertion to ensure that one or more variables can be populated before proceeding with logic that depends on them, as follows:
+
+----
+    Check_vs_vars: exists $heart_rate and exists $blood_pressure
+----
+
+To assert that a certain part of a larger data structure exists, the following assertion can be used.
+
+--------
+    Smoker_details_recorded: $is_smoker implies exists $smoking_details
+--------
+
+[[language-expressions]]
+== Expressions
+
+Expressions constitute the main part of the Expressions language, and consist of a familiar typed, operator-based syntax common to many programming languages and logics. Formally, an expression is one of the following:
+
+* terminal entities;
+* non-terminal entities;
+** operators;
+** functions.
+
+=== Terminal Entities
+
+Terminal entities in BEL are any of the following:
+
+* literals
+* variable
+* variable with sub-path
+* constant
+* function call
+* raw path
+
+Use of variables, constants and function calls is the same as in common languages, using the following syntax.
+
+----
+    -- expression containing a variable and function call
+    current_date() - $date_of_birth
+    
+    -- expression containing a variable and a constant
+    $speed_mph * Mph_to_kmh_factor
+----
+
+Variables that are bound to paths may be used to generate a reference to a sub-element, using an Xpath-like approach, as follows:
+
+----
+    $event: List<Event> := /data[id2]/events[id3]
+
+    Check_field_vals: $event/data[id4]/items[id7]/value/magnitude =
+        $event/data[id4]/items[id5]/value/magnitude - $event/data[id4]/items[id6]/value/magnitude
+----
+
+In the above, the construction `$event/data[id4]/items[id7]/value/magnitude` references an element in the data context whose location is given by the path to which $event is bound, i.e. `/data[id2]/events[id3]`, concatenated with the subordinate path, giving a resulting path of `/data[id2]/events[id3]/data[id4]/items[id7]/value/magnitude`.
+
+Finally, in the current version of BEL, raw paths may be used directly as variables. This is primarily to allow UI expression building tools that work based on the path map of a data context (e.g. an openEHR archetype) to generate expressions directly using paths rather than introducing variables.
+
+==== Functions
+
+Functions are considered leaf entities in the Expression language, and can be of a built-in type or external (user-defined) type. A simple example is:
+
+----
+    $date_of_birth: Date
+    $age: Duration
+    
+    $age := current_date() - $date_of_birth   
+----
+
+This uses the built-in function `current_date()` to compute a person's age in the standard way. The typing is based on the operator `-` (subtract) in the type `Date` having the following signature, as defined in the {openehr_foundation_types}#_iso8601_date_class[openEHR Foundation Types Specification^]:
+
+----
+    class Date
+        infix '-' alias subtract (Date): Duration
+----
+
+The built-in functions are formally defined in the {openehr_base_types}[openEHR Base Types Specification^]. Some common ones are listed below.
+
+[cols="1,1,1,2",options="header"]
+|=================================================================
+|Name               |Textual Rendering     |Signature          |Meaning
+
+4+^h|Degree 0 functions (no arguments)
+
+|current_date       |`current_date()`       |:Date              |Current date
+|current_time       |`current_time()`       |:Time              |Current time
+|current_date_time  |`current_date_time()`  |:Date_time         |Curent date time
+|current_time_zone  |`current_time_zone()`  |:Time_zone         |Curent time zone
+
+4+^h|Degree N functions (N arguments)
+
+|sum                |`sum (x, y, ....)` |<Real, ...>: Real  |Equivalent to x + y + ...
+|mean               |`mean (x, y, ...)` |<Real, ...>: Real  |The mean (average) value of x, y, ...
+|max                |`max (x, y, ...)`  |<Real, ...>: Real  |The maximum value among x, y, ...
+|min                |`min (x, y, ...)`  |<Real, ...>: Real  |The minimum value among x, y, ...
+
+|=================================================================
+
+Any other functions that are used need to be mapped by the BEL engine to implementations with matching signatures.
+
+[[language-operators]]
+=== Operators
+
+Expressions can include arithmetic, relational and boolean operators, plus the existential and universal quantifiers. The full operator set is shown below, along with textual and symbolic renderings. The latter are just standard Unicode symbols. Expression parsers should ideally support these symbols as operator equivalents in addition to the textual form, since it allows expressions to be expressed in a more compact and less language-independent way.
+
+[cols="1,1,1,3",options="header"]
+|=================================================================
+|Identifier   |Textual +
+               Rendering       |Symbolic +
+                               Rendering  |Meaning
+                               
+4+^h|Arithmetic Operators - Numeric result; descending precendence order
+
+|exp          | ^             |^          |Expontentiation
+|times        | *             |*          |Multiplication
+|divide       | /             |/          |Division
+|mod          | %             |%          |Modulo (whole number) division
+|plus         | +             |+          |Addition
+|minus        | -             |-          |Subtraction
+
+4+^h|Relational Operators - Boolean result; equal precedence
+
+|eq           | =             |=          |Equality relation between numerics
+|ne           | !=            |≠          |Inequality relation between numerics
+|lt           | <             |<          |Less than relation between numerics
+|le           | \<=           |≤          |Less than or equal relation between numerics
+|gt           | >             |>          |Greater than relation between numerics
+|ge           | >=            |≥          |Greater than or equal relation between numerics
+
+4+^h|Logical Operators - Boolean result; descending precendence order
+
+|not          |not, ~         |∼           |Negation, "not p"
+|and          |and             |∧             |Logical conjunction, "p and q"
+|or           |or             |∨             |Logical disjunction, "p or q"
+|xor          |xor             |⊻              |Exclusive or, "only one of p or q"
+|implies      |implies         |⇒              |Material implication, "p implies q", or "if p then q"
+
+|=================================================================
+
+Operator semantics that require further explanation are described below.
+
+==== Logical Negation
+
+All Boolean operators take Boolean operands and generate a Boolean result. The `not` operator can be applied as a prefix operator to all operators returning a Boolean result as well as a parenthesised Boolean expression.
+
+==== Precedence and Parentheses
+
+The precendence of operators follows the order shown in the operator tables above. To change precedence, parentheses can be used in the fashion typical of most programming languages, as shown below.
+
+--------
+    $at_risk := $weight > 120 and ($is_smoker or $is_hypertensive)
+--------
+
+==== Container Operators
+
+The two standard quantification operators from predicate logic `there exists` (∃ operator) and `for all` (∀ operator) are defined in BEL for the container types found in the {openehr_foundation_types}[openEHR Foundation Types^].
+
+The textual syntax of `there exists` is as follows:
+
+----
+    there_exists v : container_var | <Boolean expression mentioning v>
+----
+
+Here, the `|` symbol is usually read in English as 'such that'. The symbolic equivalent may also be used:
+
+----
+    ∃ v : container_var | <Boolean expression mentioning v>
+----
+
+The `for_all` operator has similar textual syntax:
+
+----
+    for_all v : container_var | <Boolean expression mentioning v>
+----
+
+Here, the `|` symbol is normally read in English as as 'it holds that'. The symbolic equivalent may also be used:
+
+----
+    ∀ v : container_var | <Boolean expression mentioning v>
+----
+
+For both operators, the `:` symbol may be replaced by the keyword `in`.

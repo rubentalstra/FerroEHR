@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/TEMPLATE_OVERLAY.json",
+    "title": "TEMPLATE_OVERLAY",
+    "description": "A concrete form of the bare `ARCHETYPE` class, used to represent overlays in a source template. Overlays have no meta-data of their own, and are instead documented by their owning template.",
+    "$comments": "Defined in Aom2 IM, inherits from ARCHETYPE",
+    "type": "object",
+    "properties": {
+        "parent_archetype_id": {
+            "description": "Archetype reference of the specialisation par-ent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or can be deeper.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "archetype_id": {
+            "description": "Identifier of this archetype.",
+            "$ref": "all.json#/definitions/ARCHETYPE_HRID"
+        },
+        "is_differential": {
+            "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "definition": {
+            "description": "Root node of the definition of this archetype.",
+            "$ref": "all.json#/definitions/C_COMPLEX_OBJECT"
+        },
+        "terminology": {
+            "description": "The terminology of the archetype.",
+            "$ref": "all.json#/definitions/ARCHETYPE_TERMINOLOGY"
+        },
+        "rules": {
+            "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+            "type": "array"
+        }
+    },
+    "required": [
+        "archetype_id",
+        "is_differential",
+        "definition",
+        "terminology"
+    ]
+}

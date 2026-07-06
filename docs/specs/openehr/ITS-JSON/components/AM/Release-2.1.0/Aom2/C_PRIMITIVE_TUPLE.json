@@ -1,0 +1,21 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/C_PRIMITIVE_TUPLE.json",
+    "title": "C_PRIMITIVE_TUPLE",
+    "description": "Class representing a single object tuple instance in a tuple constraint. Each such instance is a vector of object constraints, where each member (each `C_PRIMITIVE_OBJECT`) corresponds to one of the `C_ATTRIBUTEs` referred to by the owning `C_ATTRIBUTE_TUPLE`.",
+    "$comments": "Defined in Aom2 IM, inherits from C_SECOND_ORDER",
+    "type": "object",
+    "properties": {
+        "members": {
+            "description": "Object constraint members of this tuple group.",
+            "type": "array",
+            "items": {
+                "$ref": "all.json#/definitions/C_PRIMITIVE_OBJECT"
+            },
+            "minItems": 1
+        }
+    },
+    "required": [
+        "members"
+    ]
+}

@@ -1,0 +1,29 @@
+=== UPDATE_AUDIT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*UPDATE_AUDIT*
+
+h|*Description*
+2+a|The set of attributes required to document the committal of an information item to a repository. Used by the server to create an `AUDIT_DETAILS` object.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*change_type*: `link:/releases/BASE/{base_release}/foundation_types.html#_terminology_code_class[Terminology_code^]`
+a|Type of change. Coded using the openEHR Terminology  audit change type  group.
+
+h|*0..1*
+|*description*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reason for committal.
+
+h|*1..1*
+|*committer*: `link:/releases/RM/{rm_release}/common.html#_party_proxy_class[PARTY_PROXY^]`
+a|Identity and optional reference into identity management service, of user who committed the item.
+
+h|*Invariants*
+2+a|__Change_type_valid__: `terminology (Terminology_id_openehr).has_code_for_group_id (Group_id_audit_change_type, change_type.defining_code)`
+|===

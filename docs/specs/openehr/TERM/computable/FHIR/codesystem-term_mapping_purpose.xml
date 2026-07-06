@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-term_mapping_purpose"/>
+  <version value="3.1.0"/>
+  <name value="term_mapping_purpose"/>
+  <title value="Term Mapping Purpose"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="3"/>
+  <concept>
+    <code value="669"/>
+    <display value="public health"/>
+    <designation>
+      <language value="es"/>
+      <value value="salud pública"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="公衆衛生"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="saúde pública"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="公共卫生"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="670"/>
+    <display value="reimbursement"/>
+    <designation>
+      <language value="es"/>
+      <value value="reembolso"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="償還"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="reembolso"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="费用报销"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="671"/>
+    <display value="research study"/>
+    <designation>
+      <language value="es"/>
+      <value value="investigación"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="研究"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="estudo de investigação"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="研究调查"/>
+    </designation>
+  </concept>
+</CodeSystem>

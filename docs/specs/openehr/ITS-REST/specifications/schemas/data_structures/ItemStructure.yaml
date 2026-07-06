@@ -1,0 +1,15 @@
+title: ITEM_STRUCTURE
+type: object
+allOf:
+  - $ref: ../data_structures/DataStructure.yaml
+properties:
+  _type:
+    type: string
+x-discriminator-value: ITEM_STRUCTURE
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    ITEM_SINGLE: '#/components/schemas/ItemSingle'
+    ITEM_LIST: '#/components/schemas/ItemList'
+    ITEM_TABLE: '#/components/schemas/ItemTable'
+    ITEM_TREE: '#/components/schemas/ItemTree'

@@ -1,0 +1,693 @@
+=== Countries
+[cols="6,8,1"]
+|===
+3+h| *Code Set details*
+
+|Name: *countries* +
+    Id: __countries__, External_id: __ISO_3166-1__ +
+    Ref: {countries_ref} +
+    Status: __active__
+2+| {countries_description} +
+    +
+    Used in: `{countries_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *AF*      a| AFGHANISTAN       | active
+| *AX*      a| ÅLAND ISLANDS       | active
+| *AL*      a| ALBANIA       | active
+| *DZ*      a| ALGERIA       | active
+| *AS*      a| AMERICAN SAMOA       | active
+| *AD*      a| ANDORRA       | active
+| *AO*      a| ANGOLA       | active
+| *AI*      a| ANGUILLA       | active
+| *AQ*      a| ANTARCTICA       | active
+| *AG*      a| ANTIGUA AND BARBUDA       | active
+| *AR*      a| ARGENTINA       | active
+| *AM*      a| ARMENIA       | active
+| *AW*      a| ARUBA       | active
+| *AU*      a| AUSTRALIA       | active
+| *AT*      a| AUSTRIA       | active
+| *AZ*      a| AZERBAIJAN       | active
+| *BS*      a| BAHAMAS       | active
+| *BH*      a| BAHRAIN       | active
+| *BD*      a| BANGLADESH       | active
+| *BB*      a| BARBADOS       | active
+| *BY*      a| BELARUS       | active
+| *BE*      a| BELGIUM       | active
+| *BZ*      a| BELIZE       | active
+| *BJ*      a| BENIN       | active
+| *BM*      a| BERMUDA       | active
+| *BT*      a| BHUTAN       | active
+| *BO*      a| BOLIVIA       | active
+| *BQ*      a| BONAIRE, SINT EUSTATIUS AND SABA       | active
+| *BA*      a| BOSNIA AND HERZEGOVINA       | active
+| *BW*      a| BOTSWANA       | active
+| *BV*      a| BOUVET ISLAND       | active
+| *BR*      a| BRAZIL       | active
+| *IO*      a| BRITISH INDIAN OCEAN TERRITORY       | active
+| *BN*      a| BRUNEI DARUSSALAM       | active
+| *BG*      a| BULGARIA       | active
+| *BF*      a| BURKINA FASO       | active
+| *BI*      a| BURUNDI       | active
+| *KH*      a| CAMBODIA       | active
+| *CM*      a| CAMEROON       | active
+| *CA*      a| CANADA       | active
+| *CV*      a| CAPE VERDE       | active
+| *KY*      a| CAYMAN ISLANDS       | active
+| *CF*      a| CENTRAL AFRICAN REPUBLIC       | active
+| *TD*      a| CHAD       | active
+| *CL*      a| CHILE       | active
+| *CN*      a| CHINA       | active
+| *CX*      a| CHRISTMAS ISLAND       | active
+| *CC*      a| COCOS (KEELING) ISLANDS       | active
+| *CO*      a| COLOMBIA       | active
+| *KM*      a| COMOROS       | active
+| *CG*      a| CONGO       | active
+| *CD*      a| CONGO, THE DEMOCRATIC REPUBLIC OF THE       | active
+| *CK*      a| COOK ISLANDS       | active
+| *CR*      a| COSTA RICA       | active
+| *CI*      a| CÔTE D'IVOIRE       | active
+| *HR*      a| CROATIA       | active
+| *CU*      a| CUBA       | active
+| *CW*      a| CURAÇAO       | active
+| *CY*      a| CYPRUS       | active
+| *CZ*      a| CZECH REPUBLIC       | active
+| *DK*      a| DENMARK       | active
+| *DJ*      a| DJIBOUTI       | active
+| *DM*      a| DOMINICA       | active
+| *DO*      a| DOMINICAN REPUBLIC       | active
+| *EC*      a| ECUADOR       | active
+| *EG*      a| EGYPT       | active
+| *SV*      a| EL SALVADOR       | active
+| *GQ*      a| EQUATORIAL GUINEA       | active
+| *ER*      a| ERITREA       | active
+| *EE*      a| ESTONIA       | active
+| *SZ*      a| ESWATINI       | active
+| *ET*      a| ETHIOPIA       | active
+| *FK*      a| FALKLAND ISLANDS (MALVINAS)       | active
+| *FO*      a| FAROE ISLANDS       | active
+| *FJ*      a| FIJI       | active
+| *FI*      a| FINLAND       | active
+| *FR*      a| FRANCE       | active
+| *GF*      a| FRENCH GUIANA       | active
+| *PF*      a| FRENCH POLYNESIA       | active
+| *TF*      a| FRENCH SOUTHERN TERRITORIES       | active
+| *GA*      a| GABON       | active
+| *GM*      a| GAMBIA       | active
+| *GE*      a| GEORGIA       | active
+| *DE*      a| GERMANY       | active
+| *GH*      a| GHANA       | active
+| *GI*      a| GIBRALTAR       | active
+| *GR*      a| GREECE       | active
+| *GL*      a| GREENLAND       | active
+| *GD*      a| GRENADA       | active
+| *GP*      a| GUADELOUPE       | active
+| *GU*      a| GUAM       | active
+| *GT*      a| GUATEMALA       | active
+| *GG*      a| GUERNSEY       | active
+| *GN*      a| GUINEA       | active
+| *GW*      a| GUINEA-BISSAU       | active
+| *GY*      a| GUYANA       | active
+| *HT*      a| HAITI       | active
+| *HM*      a| HEARD ISLAND AND MCDONALD ISLANDS       | active
+| *VA*      a| HOLY SEE (VATICAN CITY STATE)       | active
+| *HN*      a| HONDURAS       | active
+| *HK*      a| HONG KONG       | active
+| *HU*      a| HUNGARY       | active
+| *IS*      a| ICELAND       | active
+| *IN*      a| INDIA       | active
+| *ID*      a| INDONESIA       | active
+| *IR*      a| IRAN, ISLAMIC REPUBLIC OF       | active
+| *IQ*      a| IRAQ       | active
+| *IE*      a| IRELAND       | active
+| *IM*      a| ISLE OF MAN       | active
+| *IL*      a| ISRAEL       | active
+| *IT*      a| ITALY       | active
+| *JM*      a| JAMAICA       | active
+| *JP*      a| JAPAN       | active
+| *JE*      a| JERSEY       | active
+| *JO*      a| JORDAN       | active
+| *KZ*      a| KAZAKHSTAN       | active
+| *KE*      a| KENYA       | active
+| *KI*      a| KIRIBATI       | active
+| *KP*      a| KOREA, DEMOCRATIC PEOPLE'S REPUBLIC OF       | active
+| *KR*      a| KOREA, REPUBLIC OF       | active
+| *KW*      a| KUWAIT       | active
+| *KG*      a| KYRGYZSTAN       | active
+| *LA*      a| LAO PEOPLE'S DEMOCRATIC REPUBLIC       | active
+| *LV*      a| LATVIA       | active
+| *LB*      a| LEBANON       | active
+| *LS*      a| LESOTHO       | active
+| *LR*      a| LIBERIA       | active
+| *LY*      a| LIBYA       | active
+| *LI*      a| LIECHTENSTEIN       | active
+| *LT*      a| LITHUANIA       | active
+| *LU*      a| LUXEMBOURG       | active
+| *MO*      a| MACAO       | active
+| *MG*      a| MADAGASCAR       | active
+| *MW*      a| MALAWI       | active
+| *MY*      a| MALAYSIA       | active
+| *MV*      a| MALDIVES       | active
+| *ML*      a| MALI       | active
+| *MT*      a| MALTA       | active
+| *MH*      a| MARSHALL ISLANDS       | active
+| *MQ*      a| MARTINIQUE       | active
+| *MR*      a| MAURITANIA       | active
+| *MU*      a| MAURITIUS       | active
+| *YT*      a| MAYOTTE       | active
+| *MX*      a| MEXICO       | active
+| *FM*      a| MICRONESIA, FEDERATED STATES OF       | active
+| *MD*      a| MOLDOVA, REPUBLIC OF       | active
+| *MC*      a| MONACO       | active
+| *MN*      a| MONGOLIA       | active
+| *ME*      a| MONTENEGRO       | active
+| *MS*      a| MONTSERRAT       | active
+| *MA*      a| MOROCCO       | active
+| *MZ*      a| MOZAMBIQUE       | active
+| *MM*      a| MYANMAR       | active
+| *NA*      a| NAMIBIA       | active
+| *NR*      a| NAURU       | active
+| *NP*      a| NEPAL       | active
+| *NL*      a| NETHERLANDS       | active
+| *AN*      a| NETHERLANDS ANTILLES - DEPRECATED       | active
+| *NC*      a| NEW CALEDONIA       | active
+| *NZ*      a| NEW ZEALAND       | active
+| *NI*      a| NICARAGUA       | active
+| *NE*      a| NIGER       | active
+| *NG*      a| NIGERIA       | active
+| *NU*      a| NIUE       | active
+| *NF*      a| NORFOLK ISLAND       | active
+| *MK*      a| NORTH MACEDONIA       | active
+| *MP*      a| NORTHERN MARIANA ISLANDS       | active
+| *NO*      a| NORWAY       | active
+| *OM*      a| OMAN       | active
+| *PK*      a| PAKISTAN       | active
+| *PW*      a| PALAU       | active
+| *PS*      a| PALESTINIAN, STATE OF       | active
+| *PA*      a| PANAMA       | active
+| *PG*      a| PAPUA NEW GUINEA       | active
+| *PY*      a| PARAGUAY       | active
+| *PE*      a| PERU       | active
+| *PH*      a| PHILIPPINES       | active
+| *PN*      a| PITCAIRN       | active
+| *PL*      a| POLAND       | active
+| *PT*      a| PORTUGAL       | active
+| *PR*      a| PUERTO RICO       | active
+| *QA*      a| QATAR       | active
+| *RE*      a| RÉUNION       | active
+| *RO*      a| ROMANIA       | active
+| *RU*      a| RUSSIAN FEDERATION       | active
+| *RW*      a| RWANDA       | active
+| *BL*      a| SAINT BARTHÉLEMY       | active
+| *SH*      a| SAINT HELENA, ASCENSION AND TRISTAN DA CUNHA       | active
+| *KN*      a| SAINT KITTS AND NEVIS       | active
+| *LC*      a| SAINT LUCIA       | active
+| *MF*      a| SAINT MARTIN (FRENCH PART)       | active
+| *PM*      a| SAINT PIERRE AND MIQUELON       | active
+| *VC*      a| SAINT VINCENT AND THE GRENADINES       | active
+| *WS*      a| SAMOA       | active
+| *SM*      a| SAN MARINO       | active
+| *ST*      a| SAO TOME AND PRINCIPE       | active
+| *SA*      a| SAUDI ARABIA       | active
+| *SN*      a| SENEGAL       | active
+| *RS*      a| SERBIA       | active
+| *SC*      a| SEYCHELLES       | active
+| *SL*      a| SIERRA LEONE       | active
+| *SG*      a| SINGAPORE       | active
+| *SX*      a| SINT MAARTEN (DUTCH PART)       | active
+| *SK*      a| SLOVAKIA       | active
+| *SI*      a| SLOVENIA       | active
+| *SB*      a| SOLOMON ISLANDS       | active
+| *SO*      a| SOMALIA       | active
+| *ZA*      a| SOUTH AFRICA       | active
+| *GS*      a| SOUTH GEORGIA AND THE SOUTH SANDWICH ISLANDS       | active
+| *SS*      a| SOUTH SUDAN       | active
+| *ES*      a| SPAIN       | active
+| *LK*      a| SRI LANKA       | active
+| *SD*      a| SUDAN       | active
+| *SR*      a| SURINAME       | active
+| *SJ*      a| SVALBARD AND JAN MAYEN       | active
+| *SE*      a| SWEDEN       | active
+| *CH*      a| SWITZERLAND       | active
+| *SY*      a| SYRIAN ARAB REPUBLIC       | active
+| *TW*      a| TAIWAN, PROVINCE OF CHINA       | active
+| *TJ*      a| TAJIKISTAN       | active
+| *TZ*      a| TANZANIA, UNITED REPUBLIC OF       | active
+| *TH*      a| THAILAND       | active
+| *TL*      a| TIMOR-LESTE       | active
+| *TG*      a| TOGO       | active
+| *TK*      a| TOKELAU       | active
+| *TO*      a| TONGA       | active
+| *TT*      a| TRINIDAD AND TOBAGO       | active
+| *TN*      a| TUNISIA       | active
+| *TR*      a| TÜRKIYE       | active
+| *TM*      a| TURKMENISTAN       | active
+| *TC*      a| TURKS AND CAICOS ISLANDS       | active
+| *TV*      a| TUVALU       | active
+| *UG*      a| UGANDA       | active
+| *UA*      a| UKRAINE       | active
+| *AE*      a| UNITED ARAB EMIRATES       | active
+| *GB*      a| UNITED KINGDOM OF GREAT BRITAIN AND NORTHERN IRELAND       | active
+| *US*      a| UNITED STATES OF AMERICA       | active
+| *UM*      a| UNITED STATES MINOR OUTLYING ISLANDS       | active
+| *UY*      a| URUGUAY       | active
+| *UZ*      a| UZBEKISTAN       | active
+| *VU*      a| VANUATU       | active
+| *VE*      a| VENEZUELA, BOLIVARIAN REPUBLIC OF       | active
+| *VN*      a| VIET NAM       | active
+| *VG*      a| VIRGIN ISLANDS, BRITISH       | active
+| *VI*      a| VIRGIN ISLANDS, U.S.       | active
+| *WF*      a| WALLIS AND FUTUNA       | active
+| *EH*      a| WESTERN SAHARA       | active
+| *YE*      a| YEMEN       | active
+| *ZM*      a| ZAMBIA       | active
+| *ZW*      a| ZIMBABWE       | active
+|===
+
+=== Character Sets
+[cols="6,8,1"]
+|===
+3+h| *Code Set details*
+
+|Name: *character sets* +
+    Id: __character_sets__, External_id: __IANA_character-sets__ +
+    Ref: {character_sets_ref} +
+    Status: __active__
+2+| {character_sets_description} +
+    +
+    Used in: `{character_sets_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *ISO-10646-UTF-1*      a|         | active
+| *ISO_8859-1:1987*      a|         | active
+| *ISO-8859-2*      a|         | active
+| *ISO_8859-3:1988*      a|         | active
+| *ISO-8859-15*      a|         | active
+| *US-ASCII*      a|         | active
+| *UTF-7*      a|         | active
+| *UTF-8*      a|         | active
+| *UTF-16*      a|         | active
+| *UTF-16BE*      a|         | active
+| *UTF-16LE*      a|         | active
+| *UTF-32*      a|         | active
+| *UTF-32BE*      a|         | active
+| *UTF-32LE*      a|         | active
+|===
+
+=== Languages
+[cols="6,8,1"]
+|===
+3+h| *Code Set details*
+
+|Name: *languages* +
+    Id: __languages__, External_id: __ISO_639-1__ +
+    Ref: {languages_ref} +
+    Status: __active__
+2+| {languages_description} +
+    +
+    Used in: `{languages_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *aa*      a| Afar       | active
+| *af*      a| Afrikaans       | active
+| *ak*      a| Akan       | active
+| *sq*      a| Albanian       | active
+| *am*      a| Amharic       | active
+| *ar*      a| Arabic       | active
+| *ar-sa*      a| Arabic (Saudi Arabia)       | active
+| *ar-iq*      a| Arabic (Iraq)       | active
+| *ar-eg*      a| Arabic (Egypt)       | active
+| *ar-ly*      a| Arabic (Libya)       | active
+| *ar-dz*      a| Arabic (Algeria)       | active
+| *ar-ma*      a| Arabic (Morocco)       | active
+| *ar-tn*      a| Arabic (Tunisia)       | active
+| *ar-om*      a| Arabic (Oman)       | active
+| *ar-ye*      a| Arabic (Yemen)       | active
+| *ar-sy*      a| Arabic (Syria)       | active
+| *ar-jo*      a| Arabic (Jordan)       | active
+| *ar-lb*      a| Arabic (Lebanon)       | active
+| *ar-kw*      a| Arabic (Kuwait)       | active
+| *ar-ae*      a| Arabic (U.A.E.)       | active
+| *ar-bh*      a| Arabic (Bahrain)       | active
+| *ar-qa*      a| Arabic (Qatar)       | active
+| *an*      a| Aragonese       | active
+| *hy*      a| Armenian       | active
+| *as*      a| Assamese       | active
+| *av*      a| Avaric, Avar       | active
+| *ay*      a| Aymara       | active
+| *az*      a| Azerbaijani, Azeri       | active
+| *bm*      a| Bambara       | active
+| *ba*      a| Bashkir       | active
+| *eu*      a| Basque       | active
+| *be*      a| Belarusian       | active
+| *bn*      a| Bengali, Bangla       | active
+| *bi*      a| Bislama       | active
+| *bs*      a| Bosnian       | active
+| *br*      a| Breton       | active
+| *bg*      a| Bulgarian       | active
+| *my*      a| Burmese, Myanmar       | active
+| *ca*      a| Catalan, Valencian       | active
+| *ch*      a| Chamorro       | active
+| *ce*      a| Chechen       | active
+| *ny*      a| Chichewa, Chewa, Nyanja       | active
+| *zh*      a| Chinese       | active
+| *zh-tw*      a| Chinese (Taiwan)       | active
+| *zh-cn*      a| Chinese (PRC)       | active
+| *zh-hk*      a| Chinese (Hong Kong SAR)       | active
+| *zh-sg*      a| Chinese (Singapore)       | active
+| *zh-mo*      a| Chinese (Macau)       | active
+| *cv*      a| Chuvash       | active
+| *kw*      a| Cornish       | active
+| *co*      a| Corsican       | active
+| *cr*      a| Cree       | active
+| *hr*      a| Croatian       | active
+| *hr-ba*      a| Croatian (Bosnia and Herzegovina)       | active
+| *cs*      a| Czech       | active
+| *da*      a| Danish       | active
+| *dv*      a| Divehi, Dhivehi, Maldivian       | active
+| *nl*      a| Dutch       | active
+| *nl-be*      a| Dutch (Belgium)       | active
+| *dz*      a| Dzongkha       | active
+| *en*      a| English       | active
+| *en-us*      a| English (United States)       | active
+| *en-gb*      a| English (United Kingdom)       | active
+| *en-au*      a| English (Australia)       | active
+| *en-ca*      a| English (Canada)       | active
+| *en-nz*      a| English (New Zealand)       | active
+| *en-ie*      a| English (Ireland)       | active
+| *en-za*      a| English (South Africa)       | active
+| *en-jm*      a| English (Jamaica)       | active
+| *en-cb*      a| English (Caribbean)       | active
+| *en-bz*      a| English (Belize)       | active
+| *en-tt*      a| English (Trinidad and Tobago)       | active
+| *en-ph*      a| English (Republic of the Philippines)       | active
+| *en-zw*      a| English (Zimbabwe)       | active
+| *eo*      a| Esperanto       | active
+| *et*      a| Estonian       | active
+| *ee*      a| Ewe       | active
+| *fo*      a| Faroese       | active
+| *fj*      a| Fijian       | active
+| *fi*      a| Finnish       | active
+| *fr*      a| French       | active
+| *fr-be*      a| French (Belgium)       | active
+| *fr-ca*      a| French (Canada)       | active
+| *fr-ch*      a| French (Switzerland)       | active
+| *fr-lu*      a| French (Luxembourg)       | active
+| *fr-mc*      a| French (Principality of Monaco)       | active
+| *fy*      a| Frisian, Western Frisian       | active
+| *ff*      a| Fulah, Fulani       | active
+| *gd*      a| Gaelic, Scottish Gaelic       | active
+| *gd-ie*      a| Gaelic (Ireland)       | active
+| *gl*      a| Galician       | active
+| *lg*      a| Ganda       | active
+| *ka*      a| Georgian       | active
+| *de*      a| German       | active
+| *de-ch*      a| German (Switzerland)       | active
+| *de-at*      a| German (Austria)       | active
+| *de-lu*      a| German (Luxembourg)       | active
+| *de-li*      a| German (Liechtenstein)       | active
+| *el*      a| Greek       | active
+| *kl*      a| Kalaallisut, Greenlandic       | active
+| *gn*      a| Guarani       | active
+| *gu*      a| Gujarati       | active
+| *ht*      a| Haitian, Haitian Creole       | active
+| *ha*      a| Hausa       | active
+| *he*      a| Hebrew       | active
+| *hz*      a| Herero       | active
+| *hi*      a| Hindi       | active
+| *ho*      a| Hiri Motu, Pidgin Motu       | active
+| *hu*      a| Hungarian       | active
+| *is*      a| Icelandic       | active
+| *ig*      a| Igbo       | active
+| *id*      a| Indonesian       | active
+| *iu*      a| Inuktitut       | active
+| *ik*      a| Inupiaq       | active
+| *ga*      a| Irish       | active
+| *it*      a| Italian       | active
+| *it-ch*      a| Italian (Switzerland)       | active
+| *ja*      a| Japanese       | active
+| *jv*      a| Javanese       | active
+| *kn*      a| Kannada       | active
+| *kr*      a| Kanuri       | active
+| *ks*      a| Kashmiri       | active
+| *kk*      a| Kazakh       | active
+| *km*      a| Central Khmer, Cambodian       | active
+| *ki*      a| Kikuyu, Gikuyu       | active
+| *rw*      a| Kinyarwanda       | active
+| *ky*      a| Kirghiz, Kyrgyz       | active
+| *kv*      a| Komi       | active
+| *kg*      a| Kongo       | active
+| *ko*      a| Korean       | active
+| *kj*      a| Kuanyama, Kwanyama       | active
+| *ku*      a| Kurdish       | active
+| *lo*      a| Lao       | active
+| *la*      a| Latin       | active
+| *lv*      a| Latvian       | active
+| *li*      a| Limburgan, Limburger, Limburgish       | active
+| *ln*      a| Lingala       | active
+| *lt*      a| Lithuanian       | active
+| *lu*      a| Luba-Katanga, Luba-Shaba       | active
+| *lb*      a| Luxembourgish, Letzeburgesch       | active
+| *mk*      a| Macedonian       | active
+| *mg*      a| Malagasy       | active
+| *ms*      a| Malay       | active
+| *ml*      a| Malayalam       | active
+| *mt*      a| Maltese       | active
+| *gv*      a| Manx       | active
+| *mi*      a| Maori       | active
+| *mr*      a| Marathi       | active
+| *mh*      a| Marshallese       | active
+| *mn*      a| Mongolian       | active
+| *na*      a| Nauru, Nauruan       | active
+| *nv*      a| Navajo, Navaho       | active
+| *nd*      a| North Ndebele       | active
+| *nr*      a| South Ndebele       | active
+| *ng*      a| Ndonga       | active
+| *ne*      a| Nepali       | active
+| *nb*      a| Norwegian Bokmal       | active
+| *nn*      a| Norwegian Nynorsk       | active
+| *ii*      a| Sichuan Yi, Nuosu, Northern Yi, Liangshan Yi       | active
+| *oc*      a| Occitan       | active
+| *oj*      a| Ojibwa, Ojibwe       | active
+| *or*      a| Oriya, Odia       | active
+| *om*      a| Oromo       | active
+| *os*      a| Ossetian, Ossetic       | active
+| *ps*      a| Pashto, Pushto       | active
+| *fa*      a| Persian, Farsi       | active
+| *pl*      a| Polish       | active
+| *pt*      a| Portuguese       | active
+| *pt-br*      a| Portuguese (Brazil)       | active
+| *pt-pt*      a| Portuguese (Portugal) - DEPRECATED       | active
+| *pa*      a| Punjabi, Panjabi       | active
+| *qu*      a| Quechua       | active
+| *qu-bo*      a| Quechua (Bolivia)       | active
+| *qu-ec*      a| Quechua (Ecuador)       | active
+| *qu-pe*      a| Quechua (Peru)       | active
+| *ro*      a| Romanian       | active
+| *ro-mo*      a| Romanian (Moldavia)       | active
+| *rm*      a| Romansh, Rhaeto-Romanic       | active
+| *rn*      a| Rundi, Kirundi       | active
+| *ru*      a| Russian       | active
+| *ru-mo*      a| Russian (Moldavia)       | active
+| *se*      a| Northern Sami       | active
+| *sz*      a| Sami (Lappish) - DEPRECATED       | active
+| *sm*      a| Samoan       | active
+| *sg*      a| Sango       | active
+| *sc*      a| Sardinian       | active
+| *sr*      a| Serbian       | active
+| *sr-ba*      a| Serbian (Bosnia and Herzegovina)       | active
+| *sb*      a| Serbian - DEPRECATED       | active
+| *sn*      a| Shona       | active
+| *sd*      a| Sindhi       | active
+| *si*      a| Sinhala, Sinhalese       | active
+| *sk*      a| Slovak       | active
+| *sl*      a| Slovenian, Slovene       | active
+| *so*      a| Somali       | active
+| *st*      a| Southern Sotho, Sesotho, Sutu       | active
+| *es*      a| Spanish, Castilian       | active
+| *es-mx*      a| Spanish (Mexico)       | active
+| *es-gt*      a| Spanish (Guatemala)       | active
+| *es-cr*      a| Spanish (Costa Rica)       | active
+| *es-pa*      a| Spanish (Panama)       | active
+| *es-do*      a| Spanish (Dominican Republic)       | active
+| *es-ve*      a| Spanish (Venezuela)       | active
+| *es-co*      a| Spanish (Colombia)       | active
+| *es-pe*      a| Spanish (Peru)       | active
+| *es-ar*      a| Spanish (Argentina)       | active
+| *es-ec*      a| Spanish (Ecuador)       | active
+| *es-cl*      a| Spanish (Chile)       | active
+| *es-uy*      a| Spanish (Uruguay)       | active
+| *es-py*      a| Spanish (Paraguay)       | active
+| *es-bo*      a| Spanish (Bolivia)       | active
+| *es-sv*      a| Spanish (El Salvador)       | active
+| *es-hn*      a| Spanish (Honduras)       | active
+| *es-ni*      a| Spanish (Nicaragua)       | active
+| *es-pr*      a| Spanish (Puerto Rico)       | active
+| *su*      a| Sundanese       | active
+| *sx*      a| Sutu - DEPRECATED       | active
+| *sw*      a| Swahili       | active
+| *ss*      a| Swati, Swazi       | active
+| *sv*      a| Swedish       | active
+| *sv-fi*      a| Swedish (Finland)       | active
+| *tl*      a| Tagalog       | active
+| *ty*      a| Tahitian       | active
+| *tg*      a| Tajik       | active
+| *ta*      a| Tamil       | active
+| *tt*      a| Tatar       | active
+| *te*      a| Telugu       | active
+| *th*      a| Thai       | active
+| *bo*      a| Tibetan       | active
+| *ti*      a| Tigrinya       | active
+| *to*      a| Tonga, Tongan       | active
+| *ts*      a| Tsonga       | active
+| *tn*      a| Tswana       | active
+| *tr*      a| Turkish       | active
+| *tk*      a| Turkmen       | active
+| *tw*      a| Twi       | active
+| *ug*      a| Uighur, Uyghur       | active
+| *uk*      a| Ukrainian       | active
+| *ur*      a| Urdu       | active
+| *uz*      a| Uzbek       | active
+| *ve*      a| Venda       | active
+| *vi*      a| Vietnamese       | active
+| *wa*      a| Walloon       | active
+| *cy*      a| Welsh       | active
+| *cy-gb*      a| Welsh (United Kingdom)       | active
+| *cy-ar*      a| Welsh (Argentina)       | active
+| *wo*      a| Wolof       | active
+| *xh*      a| Xhosa       | active
+| *yi*      a| Yiddish       | active
+| *ji*      a| Yiddish - DEPRECATED       | active
+| *yo*      a| Yoruba       | active
+| *za*      a| Zhuang, Chuang       | active
+| *zu*      a| Zulu       | active
+|===
+
+=== Media Types
+[cols="6,8,1"]
+|===
+3+h| *Code Set details*
+
+|Name: *media types* +
+    Id: __media_types__, External_id: __IANA_media-types__ +
+    Ref: {media_types_ref} +
+    Status: __active__
+2+| {media_types_description} +
+    +
+    Used in: `{media_types_links}`
+
+h| *Code*      h| *Description*       h| *Status*
+| *audio/DVI4*      a|         | active
+| *audio/G722*      a|         | active
+| *audio/G723*      a|         | active
+| *audio/G726-16*      a|         | active
+| *audio/G726-24*      a|         | active
+| *audio/G726-32*      a|         | active
+| *audio/G726-40*      a|         | active
+| *audio/G728*      a|         | active
+| *audio/L8*      a|         | active
+| *audio/L16*      a|         | active
+| *audio/LPC*      a|         | active
+| *audio/G729*      a|         | active
+| *audio/G729D*      a|         | active
+| *audio/G729E*      a|         | active
+| *video/BT656*      a|         | active
+| *video/CelB*      a|         | active
+| *video/JPEG*      a|         | active
+| *video/H261*      a|         | active
+| *video/H263*      a|         | active
+| *video/H263-1998*      a|         | active
+| *video/H263-2000*      a|         | active
+| *video/H264*      a|         | active
+| *video/MPV*      a|         | active
+| *video/mp4*      a|         | active
+| *video/ogg*      a|         | active
+| *video/mpeg*      a|         | active
+| *audio/basic*      a|         | active
+| *audio/mpeg*      a|         | active
+| *audio/mpeg3*      a|         | active
+| *audio/mpeg4-generic*      a|         | active
+| *audio/mp4*      a|         | active
+| *audio/L20*      a|         | active
+| *audio/L24*      a|         | active
+| *audio/telephone-event*      a|         | active
+| *audio/ogg*      a|         | active
+| *audio/vorbis*      a|         | active
+| *video/quicktime*      a|         | active
+| *text/calendar*      a|         | active
+| *text/directory*      a|         | active
+| *text/html*      a|         | active
+| *text/plain*      a|         | active
+| *text/richtext*      a|         | active
+| *text/rtf*      a|         | active
+| *text/rfc822-headers*      a|         | active
+| *text/sgml*      a|         | active
+| *text/tab-separated-values*      a|         | active
+| *text/uri-list*      a|         | active
+| *text/xml*      a|         | active
+| *text/xml-external-parsed-entity*      a|         | active
+| *image/avif*      a|         | active
+| *image/bmp*      a|         | active
+| *image/cgm*      a|         | active
+| *image/gif*      a|         | active
+| *image/png*      a|         | active
+| *image/tiff*      a|         | active
+| *image/jpeg*      a|         | active
+| *image/jp2*      a|         | active
+| *image/svg+xml*      a|         | active
+| *image/dicom-rle*      a|         | active
+| *image/jls*      a|         | active
+| *model/mtl*      a|         | active
+| *model/obj*      a|         | active
+| *model/stl*      a|         | active
+| *application/cda+xml*      a|         | active
+| *application/EDIFACT*      a|         | active
+| *application/fhir+json*      a|         | active
+| *application/fhir+xml*      a|         | active
+| *application/hl7v2+xml*      a|         | active
+| *application/gzip*      a|         | active
+| *application/json*      a|         | active
+| *application/msword*      a|         | active
+| *application/pdf*      a|         | active
+| *application/rtf*      a|         | active
+| *application/dicom*      a|         | active
+| *application/dicom+json*      a|         | active
+| *application/dicom+xml*      a|         | active
+| *application/octet-stream*      a|         | active
+| *application/ogg*      a|         | active
+| *application/vnd.oasis.opendocument.base*      a|         | active
+| *application/vnd.oasis.opendocument.chart*      a|         | active
+| *application/vnd.oasis.opendocument.chart-template*      a|         | active
+| *application/vnd.oasis.opendocument.formula*      a|         | active
+| *application/vnd.oasis.opendocument.formula-template*      a|         | active
+| *application/vnd.oasis.opendocument.graphics*      a|         | active
+| *application/vnd.oasis.opendocument.graphics-template*      a|         | active
+| *application/vnd.oasis.opendocument.image*      a|         | active
+| *application/vnd.oasis.opendocument.image-template*      a|         | active
+| *application/vnd.oasis.opendocument.presentation*      a|         | active
+| *application/vnd.oasis.opendocument.presentation-template*      a|         | active
+| *application/vnd.oasis.opendocument.spreadsheet*      a|         | active
+| *application/vnd.oasis.opendocument.spreadsheet-template*      a|         | active
+| *application/vnd.oasis.opendocument.text*      a|         | active
+| *application/vnd.oasis.opendocument.text-master*      a|         | active
+| *application/vnd.oasis.opendocument.text-template*      a|         | active
+| *application/vnd.oasis.opendocument.text-web*      a|         | active
+| *application/vnd.ms-word.document.macroEnabled.12*      a|         | active
+| *application/vnd.openxmlformats-officedocument.wordprocessingml.document*      a|         | active
+| *application/vnd.ms-word.template.macroEnabled.12*      a|         | active
+| *application/vnd.openxmlformats-officedocument.wordprocessingml.template*      a|         | active
+| *application/vnd.ms-powerpoint.slideshow.macroEnabled.12*      a|         | active
+| *application/vnd.openxmlformats-officedocument.presentationml.slideshow*      a|         | active
+| *application/vnd.ms-powerpoint.presentation.macroEnabled.12*      a|         | active
+| *application/vnd.openxmlformats-officedocument.presentationml.presentation*      a|         | active
+| *application/vnd.ms-excel.sheet.binary.macroEnabled.12*      a|         | active
+| *application/vnd.ms-excel.sheet.macroEnabled.12*      a|         | active
+| *application/vnd.openxmlformats-officedocument.spreadsheetml.sheet*      a|         | active
+| *application/vnd.ms-xpsdocument*      a|         | active
+| *application/vnd.ms-excel*      a|         | active
+| *application/vnd.ms-outlook*      a|         | active
+| *application/vnd.ms-powerpoint*      a|         | active
+| *application/vnd.rar*      a|         | active
+| *application/zip*      a|         | active
+|===
+

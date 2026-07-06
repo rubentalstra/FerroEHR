@@ -1,0 +1,73 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/ARCHETYPE_CONSTRAINT-detailed.json",
+    "title": "ARCHETYPE_CONSTRAINT",
+    "description": "Archetype equivalent to LOCATABLE class in openEHR Common reference model. Defines common constraints for any inheritor of LOCATABLE in any reference model. ",
+    "$comments": "Defined in Archetype IM, abstract",
+    "properties": {
+        "_type": {
+            "enum": [
+                "C_PRIMITIVE_OBJECT",
+                "C_COMPLEX_OBJECT",
+                "ARCHETYPE_INTERNAL_REF",
+                "ARCHETYPE_SLOT",
+                "CONSTRAINT_REF",
+                "C_SINGLE_ATTRIBUTE",
+                "C_MULTIPLE_ATTRIBUTE"
+            ]
+        }
+    },
+    "required": [
+        "_type"
+    ],
+    "$abstract": true,
+    "$children": [
+        "all-detailed.json#/definitions/C_OBJECT",
+        "all-detailed.json#/definitions/C_ATTRIBUTE"
+    ],
+    "$functions": {
+        "is_subset_of": {
+            "description": "True if constraints represented by this node, ignoring any sub-parts, are narrower or the same as other. \nTypically used during validation of special-ised archetype nodes.",
+            "parameters": {
+                "other": {
+                    "$ref": "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+                }
+            },
+            "required_parameters": [
+                "other"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "is_valid": {
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "path": {
+            "description": "Path of this node relative to root of archetype.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "has_path": {
+            "description": "True if the relative path a_path exists at this node.",
+            "parameters": {
+                "a_path": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_path"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "$invariants": {
+        "Post": "Result = soc_parent /= Void or parent.soc_parent /= Void",
+        "Path_exists": "path /= Void"
+    }
+}

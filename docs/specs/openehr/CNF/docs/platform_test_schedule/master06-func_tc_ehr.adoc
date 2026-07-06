@@ -1,0 +1,432 @@
+[[_func_conf_ehr_component]]
+= Test Suite: EHR_SERVICE
+
+// some useful variables
+:i_ehr_service_link: {openehr_sm_openehr_platform}#_i_ehr_service_interface
+:i_ehr_link: {openehr_sm_openehr_platform}#_i_ehr_interface
+:i_ehr_composition_link: {openehr_sm_openehr_platform}#_i_ehr_composition_interface
+:i_ehr_status_link: {openehr_sm_openehr_platform}#_i_ehr_status_interface
+:i_ehr_directory_link: {openehr_sm_openehr_platform}#_i_ehr_directory_interface
+:i_ehr_contribution_link: {openehr_sm_openehr_platform}#_i_ehr_contribution_interface
+
+== Normative Reference
+
+Items in this validation suite conceptually use the following abstract interfaces from the {openehr_sm_openehr_platform}#_ehr_package[Abstract Platform Service Model, EHR component^].
+
+* `I_EHR_SERVICE`
+* `I_EHR`
+* `I_EHR_STATUS`
+
+These are concretely realised in implementation technology specfic APIs, such as the {openehr_ehr_rest_api}[EHR REST API^].
+
+This test suite uses artefacts defined by the following information model specifications:
+
+* {openehr_rm_ehr}[EHR IM^]
+* {openehr_rm_common}[Common IM^]
+* {openehr_rm_support}[Support IM^]
+
+== Test Environment
+
+The server under test should support:
+
+. at least the OPT 1.4 format, and optionally {openehr_am_latest_opt2}[OPT 2^].
+. at least the XML representation of COMPOSITIONs for committing data, which may be validated by the {openehr_its_rm_xsd}[openEHR XSDs^].
+
+== Test Data Sets
+
+These are the data set classes:
+
+. VALID:
+.. not providing an `EHR_STATUS` (empty input, the server creates the default structures and data)
+.. providing a valid `EHR_STATUS`
+. INVALID:
+.. providing invalid `EHR_STATUS`
+
+Valid data sets when the `EHR_STATUS` is provided and internal strucrures are valid (data set class 1.a):
+
+[cols="1,2,2,2,2,2", options="header"]
+|===
+|No.  | is_queryable | is_modifiable | subject  | other_details | ehr_id      
+
+| 1   | true         | true          | provided | not provided  | not provided
+| 2   | true         | false         | provided | not provided  | not provided
+| 3   | false        | true          | provided | not provided  | not provided
+| 4   | false        | false         | provided | not provided  | not provided
+| 5   | true         | true          | provided | provided      | not provided
+| 6   | true         | false         | provided | provided      | not provided
+| 7   | false        | true          | provided | provided      | not provided
+| 8   | false        | false         | provided | provided      | not provided
+| 9   | true         | true          | provided | not provided  | provided    
+| 10  | true         | false         | provided | not provided  | provided    
+| 11  | false        | true          | provided | not provided  | provided    
+| 12  | false        | false         | provided | not provided  | provided    
+| 13  | true         | true          | provided | provided      | provided    
+| 14  | true         | false         | provided | provided      | provided    
+| 15  | false        | true          | provided | provided      | provided    
+| 16  | false        | false         | provided | provided      | provided    
+
+|===
+
+Any other data set is invalid, for instance providing `EHR_STATUS` with:
+
+. missing `_is_queryable_`, `_is_modifiable_`
+. empty `_is_queryable, `_is_modifiable_`
+. missing or empty `_subject_id_`
+. invalid `_subject_id_`
+. invalid `_other_details_`
+
+Notes:
+
+. When the `_ehr_id_` is not present, it is expected that it is assigned by the server.
+. The server should set the `EHR._system_id_` value to a known value (defined by the server's configuration).
+. The default values that should be assigned by the server for is_modifiable and is_queryable are 'true', and for the subject it defaults to an instance of `PARTY_SELF`.
+. There are no cases to check if the provided `ehr_id` is valid, since in the {openehr_sm_openehr_platform}[openEHR Platform Service Model^] the parameters are typed to `UUID`, any other format will be an invalid call.
+. The validity of an `EHR_STATUS` can be checked in its JSON form by validating against the {openehr_its_json_releases}/components/RM[JSON schemas^].
+
+== Test Cases
+
+=== Service Model operation: I_EHR_SERVICE.has_ehr()
+
+Service Model reference: {i_ehr_service_link}[`I_EHR_SERVICE._has_ehr()_`^]
+
+==== Test Case I_EHR_SERVICE.has_ehr-existing_ehr_id
+
+// EhrBase ref: EHR/B.2.a.
+
+[cols="1h,4a"]
+|===
+|Description    | Check has EHR with existing EHR
+|Pre-conditions | An EHR should exist in the system with a known `ehr_id`
+|Post-conditions| None
+|Flow           | . Invoke has EHR service with the known `ehr_id`
+                  . The result should be positive, e.g. `"the EHR with <ehr_id> exists"`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/has_ehr/I_EHR_SERVICE.has_ehr-existing_ehr_id.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_SERVICE.has_ehr-existing_subject_id
+
+// EhrBase ref: EHR/B.2.b.
+
+[cols="1h,4a"]
+|===
+|Description    | Check has EHR with existing EHR by `subject_id`
+|Pre-conditions | An EHR should exist in the system with a known subject_id.
+|Post-conditions| None
+|Flow           | . Invoke has EHR service with the known `subject_id`
+                  . The result should be positive, e.g. `"the EHR with <subject_id> exists"`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/has_ehr/I_EHR_SERVICE.has_ehr-existing_subject_id.robot[REST API / Robot^]
+|===
+
+NOTE: `subject_id` refers to the `PARTY_REF` class instance containing the identifier of a patient represented by `PARTY_SELF` in the openEHR Reference Model.
+
+==== Test Case I_EHR_SERVICE.has_ehr-non_existing_ehr_id
+
+// EhrBase ref: EHR/B.2.c.
+
+[cols="1h,4a"]
+|===
+|Description    | Check has EHR with non existing EHR
+|Pre-conditions | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions| None
+|Flow           | . Invoke has EHR service with a random `ehr_id`.
+                  . The result should be negative, e.g. `"the EHR with <ehr_id> does not exist"`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/has_ehr/I_EHR_SERVICE.has_ehr-non_existing_ehr_id.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_SERVICE.has_ehr-non_existing_subject_id
+
+// EhrBase ref: EHR/B.2.d.
+
+[cols="1h,4a"]
+|===
+|Description    | Check has EHR with non existing EHR by `subject_id`
+|Pre-conditions | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions| None
+|Flow           | . Invoke has EHR service with a random `subject_id`
+                  . The result should be negative, e.g. `"the EHR for <subject_id> does not exist"`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/has_ehr/I_EHR_SERVICE.has_ehr-non_existing_subject_id.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_EHR_SERVICE.create_ehr()
+
+Service Model reference: {i_ehr_service_link}[`I_EHR_SERVICE._create_ehr()_`^]
+
+==== Test Case I_EHR_SERVICE.create_ehr-main
+
+// EhrBase ref: EHR/ B.1.a.
+
+[cols="1h,4a"]
+|===
+|Description      | Create new EHR
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | A new EHR will exist in the system and be consistent with the data sets used.
+|Flow             | . Invoke the create EHR service
+                    .. for each item in the VALID data set classes
+                    .. when the `ehr_id` is provided, should be unique for each invocation of the service
+                    . The server should answer with a positive response associated to the successful EHR creation
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/create_ehr/I_EHR_SERVICE.create_ehr-main.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_SERVICE.create_ehr-same_ehr_twice
+
+// EhrBase ref: EHR/ B.1.b.
+
+[cols="1h,4a"]
+|===
+|Description      | Attempt to create same EHR twice
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | A new EHR will exist in the system, the first one created, and be consistent with the data sets used.
+|Flow             | . Invoke the create EHR service
+                    .. for each VALID data set not providing ehr_id
+                    .. for each VALID data set providing ehr_id
+                    . The server should answer with a positive response associated to the successful EHR creation
+                    . Invoke the create EHR service
+                    .. with the same `ehr_id` of the EHR created in 1.1. (should be read from the response)
+                    .. with the same `ehr_id` of the EHR created in 1.2. (should be read from the test data sets)
+                    . The server should answer with a negative response, related to the existence of an EHR with the provided `ehr_id`, because `ehr_id` values should be unique
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/create_ehr/I_EHR_SERVICE.create_ehr-same_ehr_twice.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_SERVICE.create_ehr-two_ehrs_same_patient
+
+// EhrBase ref: EHR/ B.1.c.
+
+[cols="1h,4a"]
+|===
+|Description      | Create two EHRs for the same patient
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | A new EHR will exist in the system.
+|Flow             | . Invoke the create EHR service
+                    .. for each VALID data set with a provided subject and not providing `ehr_id`
+                    . The server should answer with a positive response associated to the successful EHR creation
+                    . Invoke the create EHR service
+                    .. with the same data set used in 1.1
+                    . The server should answer with a negative response, related with the EHR already existing for the provided subject
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/create_ehr/I_EHR_SERVICE.create_ehr-two_ehrs_same_patient.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_EHR_SERVICE.get_ehr()
+
+Service Model reference: {i_ehr_service_link}[`I_EHR_SERVICE._get_ehr()_`^]
+
+==== Test Case I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id
+
+// EhrBase ref: EHR/B.3.a.
+
+[cols="1h,4a"]
+|===
+|Description      | Get existing EHR
+|Pre-conditions   | An EHR should exist in the system with a known `ehr_id`.
+|Post-conditions  | None.
+|Flow             | . Invoke get EHR service with the known `ehr_id`
+                    . The result should be positive and retrieve the EHR
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/get_ehr/I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id
+
+// EhrBase ref: EHR/B.3.b.
+
+[cols="1h,4a"]
+|===
+|Description      | Get existing EHR by `subject_id`
+|Pre-conditions   | An EHR should exist in the system with a known `subject_id`.
+|Post-conditions  | None.
+|Flow             | . Invoke get EHR service with the known `subject_id`
+                    . The result should be positive and retrieve the EHR
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/get_ehr/I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id
+
+// EhrBase ref: EHR/B.3.c.
+
+[cols="1h,4a"]
+|===
+|Description      | Get non existing EHR
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | None.
+|Flow             | . Invoke get EHR service by a random `ehr_id`
+                    . The result should be negative, e.g. `"EHR with <ehr_id> does not exist"`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/get_ehr/I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id
+
+// EhrBase ref: EHR/B.3.d.
+
+[cols="1h,4a"]
+|===
+|Description      | Get non existing EHR by `subject_id`
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | None.
+|Flow             | . Invoke get EHR service by a random `subject_id`
+                    . The result should be negative, e.g. `"EHR for <subject_id> does not exist"`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_SERVICE/get_ehr/I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id.robot[REST API / Robot^]
+|===
+
+== EHR_STATUS Test Cases
+
+=== Service Model operation: I_EHR_STATUS.get_ehr_status()
+
+Service Model reference: {i_ehr_status_link}[`I_EHR_STATUS._get_ehr_status()_`^]
+
+==== Test Case I_EHR_STATUS.get_ehr_status-get_by_ehr_id
+
+// EhrBase ref: EHR/C.1.a.
+
+[cols="1h,4a"]
+|===
+|Description      | Get status of an existing EHR
+|Pre-conditions   | An EHR with known `ehr_id` should exist.
+|Post-conditions  | None.
+|Flow             | . Invoke the get `EHR_STATUS` service by the existing `ehr_id`
+                    . The result should be positive and retrieve a correspondent `EHR_STATUS`.
+                    .. The `EHR_STATUS` internal information should match the rules in which the EHR was created (see test flow Create EHR)
+                    .. Those rules should be verified: a. has or not a `subject_id`, b. has correct value for `is_modifiable`, c. has correct value for `is_queryable`.
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/get_ehr_status/I_EHR_STATUS.get_ehr_status-get_by_ehr_id.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_STATUS.get_ehr_status-bad_ehr
+
+// EhrBase ref: EHR/C.1.b.
+
+[cols="1h,4a"]
+|===
+|Description      | Get status of a non-existing EHR
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | None.
+|Flow             | . Invoke the get `EHR_STATUS` service by a random `ehr_id`
+                    . The result should be negative and the result should include an error e.g. `"EHR with <ehr_id> doesn’t exist"`.
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/get_ehr_status/I_EHR_STATUS.get_ehr_status-bad_ehr.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_EHR_STATUS.set_ehr_queryable()
+
+Service Model reference: {i_ehr_status_link}[`I_EHR_STATUS._set_ehr_queryable()_`^]
+
+==== Test Case I_EHR_STATUS.set_ehr_queryable-existing_ehr
+
+// EhrBase ref: EHR/C.2.a.
+
+[cols="1h,4a"]
+|===
+|Description      | Set EHR queryable of an existing EHR
+|Pre-conditions   | An EHR with known `ehr_id` should exist.
+|Post-conditions  | `EHR_STATUS.is_queryable`, for the EHR with known `ehr_id`, should be `true`.
+|Flow             | . For the existing EHR, invoke the set EHR queryable service
+                    . The result should be positive and the corresponding `EHR_STATUS.is_queryable` should be `true`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/set_ehr_queryable/I_EHR_STATUS.set_ehr_queryable-existing_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_STATUS.set_ehr_queryable-bad_ehr
+
+// EhrBase ref: EHR/C.2.b.
+
+[cols="1h,4a"]
+|===
+|Description      | Set EHR queryable of non existing EHR
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | None
+|Flow             | . Invoke the set EHR queryable service by a random `ehr_id`
+                    . The result should be negative and the result should include an error e.g. `"EHR with <ehr_id> doesn’t exist"`.
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/set_ehr_queryable/I_EHR_STATUS.set_ehr_queryable-bad_ehr.robot[REST API / Robot^]
+|===
+
+
+=== Service Model operation: I_EHR_STATUS.set_ehr_modifiable()
+
+Service Model reference: {i_ehr_status_link}[`I_EHR_STATUS._set_ehr_modifiable()_`^]
+
+==== Test Case I_EHR_STATUS.set_ehr_modifiable-existing_ehr
+
+// EhrBase ref: EHR/C.3.a.
+
+[cols="1h,4a"]
+|===
+|Description      | Set EHR modifiable of an existing EHR
+|Pre-conditions   | An EHR with known `ehr_id` should exist.
+|Post-conditions  | `EHR_STATUS.is_modifiable`, for the EHR with known `ehr_id`, should be `true`.
+|Flow             | . For the existing EHR, invoke the set EHR modifiable service
+                    . The result should be positive and the corresponding `EHR_STATUS.is_modifiable` should be `true`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/set_ehr_modifiable/I_EHR_STATUS.set_ehr_modifiable-existing_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_STATUS.set_ehr_modifiable-bad_ehr
+
+// EhrBase ref: EHR/C.3.b.
+
+[cols="1h,4a"]
+|===
+|Description      | Set EHR modifiable of non-existing EHR
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | None
+|Flow             | . Invoke the set EHR modifiable service by a random `ehr_id`
+                    . The result should be negative and the result should include an error e.g. `"EHR with <ehr_id> doesn’t exist"`.
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/set_ehr_modifiable/I_EHR_STATUS.set_ehr_modifiable-bad_ehr.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_EHR_STATUS.clear_ehr_queryable()
+
+Service Model reference: {i_ehr_status_link}[`I_EHR_STATUS._clear_ehr_queryable()_`^]
+
+==== Test Case I_EHR_STATUS.clear_ehr_queryable-existing_ehr
+
+// EhrBase ref: EHR/C.4.a.
+
+[cols="1h,4a"]
+|===
+|Description      | Clear EHR queryable of an existing EHR
+|Pre-conditions   | An EHR with known `ehr_id` should exist.
+|Post-conditions  | `EHR_STATUS.is_queryable`, for the EHR with known `ehr_id`, should be `false`.
+|Flow             | . For the existing EHR, invoke the clear EHR queryable service
+                    . The result should be positive and the corresponding `EHR_STATUS.is_queryable` should be `false`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/clear_ehr_queryable/I_EHR_STATUS.clear_ehr_queryable-existing_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_STATUS.clear_ehr_queryable-bad_ehr
+
+// EhrBase ref: EHR/C.4.b.
+
+[cols="1h,4a"]
+|===
+|Description      | Clear EHR queryable of non-existing EHR
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | None
+|Flow             | . Invoke the clear EHR queryable service by a random `ehr_id`
+                    . The result should be negative and the result should include an error e.g. `"EHR with <ehr_id> doesn’t exist"`.
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/clear_ehr_queryable/I_EHR_STATUS.clear_ehr_queryable-bad_ehr.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_EHR_STATUS.clear_ehr_modifiable()
+
+Service Model reference: {i_ehr_status_link}[`I_EHR_STATUS._clear_ehr_modifiable()_`^]
+
+==== Test Case I_EHR_STATUS.clear_ehr_modifiable-existing_ehr
+
+// EhrBase ref: EHR/C.5.a.
+
+[cols="1h,4a"]
+|===
+|Description      | Clear EHR modifiable of an existing EHR
+|Pre-conditions   | An EHR with known `ehr_id` should exist.
+|Post-conditions  | `EHR_STATUS.is_modifiable`, for the EHR with known `ehr_id`, should be `false`
+|Flow             | . For the existing EHR, invoke the clear EHR modifiable service
+                    . The result should be positive and the corresponding `EHR_STATUS.is_modifiable` should be `false`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/clear_ehr_modifiable/I_EHR_STATUS.clear_ehr_modifiable-existing_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_STATUS.clear_ehr_modifiable-bad_ehr
+
+// EhrBase ref: EHR/C.5.b.
+
+[cols="1h,4a"]
+|===
+|Description      | Clear EHR modifiable of non existing EHR
+|Pre-conditions   | The server should be empty (no EHRs, no commits, no OPTs).
+|Post-conditions  | None
+|Flow             | . Invoke the clear EHR modifiable service by a random `ehr_id`
+                    . The result should be negative and the result should include an error e.g. `"EHR with <ehr_id> doesn’t exist"`.
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_STATUS/clear_ehr_modifiable/I_EHR_STATUS.clear_ehr_modifiable-bad_ehr.robot[REST API / Robot^]
+|===
+

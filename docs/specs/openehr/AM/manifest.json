@@ -1,0 +1,239 @@
+{
+    "id": "AM",
+    "title": "Archetype Model",
+    "description": "openEHR Archetype Model Component",
+    "keywords": "archetype model, openehr",
+    "specifications": [
+        {
+            "id": "Overview",
+            "title": "Archetype Technology Overview",
+            "title_short": "Archetype Technology",
+            "description": "openEHR Archetype Technology Overview",
+            "summary": "Overview of archetype technology, basic semantics, types of artefact, parsing, compiling etc.",
+            "micro_summary": "Business case for archetyping; overview of archetype specifications",
+            "copyright_year": "2014",
+            "spec_status": "STABLE",
+            "keywords": "archetype, identification, governance, openehr"
+        },
+        {
+            "id": "ADL2",
+            "title": "Archetype Definition Language 2 (ADL2)",
+            "title_short": "ADL 2",
+            "description": "openEHR Archetype Definition Language 2 (ADL2)",
+            "summary": "Archetype Definition Language 2 (ADL2): includes differential specialisation, terminology integration.",
+            "micro_summary": "Archetype Definition Language 2",
+            "copyright_year": "2003",
+            "spec_status": "STABLE",
+            "keywords": "EHR, ADL, AOM, health records, archetypes, constraint language, ISO 13606, openehr",
+            "notes": [
+                {
+                    "link": "https://openehr.atlassian.net/wiki/spaces/ADL/pages/1278434/ADL+2+Specifications",
+                    "text": "ADL2 wiki page"
+                }
+            ]
+        },
+        {
+            "id": "AOM2",
+            "title": "Archetype Object Model 2 (AOM2)",
+            "title_short": "AOM 2",
+            "description": "openEHR Archetype Object Model 2 (AOM2) (ISO 13606-2:2019)",
+            "micro_summary": "ADL 2 Object Model (enhanced AST)",
+            "summary": "Archetype Object Model 2 (AOM2) - full computable model of Archetypes and Templates. Includes uniquely identified formally testable validity conditions (suitable for output by compilers), revised primitive types, improved terminology section, and constraint model extended to represent differential archetypes. (ISO 13606-2:2019)",
+            "classes": [
+                "ARCHETYPE",
+                "AUTHORED_ARCHETYPE",
+                "TEMPLATE",
+                "OPERATIONAL_TEMPLATE",
+                "C_OBJECT",
+                "ARCHETYPE_SLOT",
+                "C_ATTRIBUTE",
+                "C_PRIMITIVE_OBJECT"
+            ],
+            "copyright_year": "2004",
+            "spec_status": "STABLE",
+            "keywords": "EHR, ADL, AOM, health records, archetypes, constraint language, ISO 13606, openehr"
+        },
+        {
+            "id": "OPT2",
+            "title": "Operational Template 2 (OPT2)",
+            "title_short": "OPT 2",
+            "description": "openEHR Operational Template 2 (OPT2)",
+            "summary": "Specification of the Operational Template 2 (OPT2) format.",
+            "micro_summary": "Operational Template 2",
+            "copyright_year": "2015",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "EHR, ADL, AOM, health records, archetypes, constraint language, ISO 13606, openehr",
+            "notes": [
+                {
+                    "link": "https://openehr.atlassian.net/wiki/spaces/ADL/pages/11960325/ADL+2+Operational+Template",
+                    "text": "ADL2 OPT wiki page"
+                }
+            ]
+        },
+        {
+            "id": "Identification",
+            "title": "Archetype Identification",
+            "title_short": "Identification",
+            "description": "openEHR Archetype Identification",
+            "summary": "Formal model of identifiers, versioning and lifecycle for archetypes, templates and terminology subsets.",
+            "micro_summary": "Archetype / template identifiers & versioning rules",
+            "copyright_year": "2009",
+            "spec_status": "STABLE",
+            "keywords": "archetype, identification, governance, openehr",
+            "notes": [
+                {
+                    "link": "https://openehr.atlassian.net/wiki/spaces/ADL/pages/1278445/Knowledge+Artefact+Identification",
+                    "text": "Identification wiki page"
+                }
+            ]
+        },
+        {
+            "id": "ADL1.4",
+            "title": "Archetype Definition Language 1.4 (ADL1.4)",
+            "title_short": "ADL 1.4",
+            "description": "openEHR Archetype Definition Language 1.4 (ADL1.4) (ISO 13606-2:2008)",
+            "summary": "Abstract syntax specification for Archetype Definition Language (ADL), 1.4 edition of language (ISO 13606-2:2008).",
+            "micro_summary": "Archetype Definition Language 1.4",
+            "copyright_year": "2003",
+            "spec_status": "STABLE",
+            "keywords": "EHR, ADL, AOM, health records, archetypes, constraint language, ISO 13606, openehr",
+            "notes": [
+                {
+                    "link": "https://openehr.atlassian.net/wiki/spaces/ADL/pages/1278444/ADL+1.4+Archetype+Conversion",
+                    "text": "ADL 1.4 migration page"
+                }
+            ]
+        },
+        {
+            "id": "AOM1.4",
+            "title": "Archetype Object Model 1.4 (AOM1.4)",
+            "title_short": "AOM 1.4",
+            "description": "openEHR Archetype Object Model 1.4 (AOM1.4)",
+            "micro_summary": "ADL 1.4 Object Model (enhanced AST)",
+            "summary": "Archetype Object Model (AOM) 1.4 - syntax-independent model of archetypes corresponding to ADL 1.4.",
+            "classes": [
+                "ARCHETYPE",
+                "C_OBJECT",
+                "ARCHETYPE_SLOT",
+                "C_ATTRIBUTE",
+                "C_PRIMITIVE"
+            ],
+            "copyright_year": "2004",
+            "spec_status": "STABLE",
+            "keywords": "EHR, ADL, AOM, health records, archetypes, constraint language, ISO 13606, openehr"
+        },
+        {
+            "id": "OPT1.4",
+            "title": "Operational Template 1.4 (OPT)",
+            "title_short": "OPT 1.4",
+            "description": "openEHR Operational Template 1.4 (OPT)",
+            "summary": "Specification of the Operational Template 1.4 (OPT) format.",
+            "micro_summary": "Operational Template 1.4",
+            "copyright_year": "2007",
+            "spec_status": "STABLE",
+            "link": "/releases/ITS-XML/latest/components/AM/Release-1.4/",
+            "keywords": "ADL, AOM, OPT, constraint language, ISO 13606, openehr"
+        },
+        {
+            "id": "archetype_profile",
+            "title": "openEHR Archetype Profile",
+            "title_short": "Archetype Profile",
+            "description": "openEHR Archetype Profile",
+            "summary": "Legacy specification of plug-in semantics for AOM 1.4 (replaced by standard semantics in AOM 2).",
+            "link": "/releases/1.0.2/architecture/am/openehr_archetype_profile.pdf",
+            "copyright_year": "2007",
+            "spec_status": "STABLE",
+            "keywords": "EHR, archetypes, archetype profile, openehr"
+        }
+    ],
+    "expressions": [
+        {
+            "id": "openEHR_UML-AM.mdzip",
+            "type": "uml",
+            "title": "AOM2 UML",
+            "description": "MagicDraw 18.5 UML file for AOM 2. Contains UML 2.5 standard XMI file."
+        },
+        {
+            "id": "openEHR_UML-AM-14.mdzip",
+            "type": "uml",
+            "title": "AOM1.4 UML",
+            "description": "MagicDraw 18.5 UML file for AOM 1.4. Contains UML 2.5 standard XMI file."
+        },
+        {
+            "id": "openEHR_UML-RM.mdzip",
+            "dependency": {
+                "component": "RM",
+                "release": "latest"
+            }
+        },
+        {
+            "id": "openEHR_UML-BASE.mdzip",
+            "dependency": {
+                "component": "BASE",
+                "release": "latest"
+            }
+        }
+    ],
+    "jira": {
+        "open_issues": "11101",
+        "roadmap": "SPECAM"
+    },
+    "releases": [
+        {
+            "id": "3.0.0",
+            "date": "",
+            "jira": {
+                "crs": "SPECAM/versions/12513",
+                "prs": "SPECPR/versions/12553"
+            }
+        },
+        {
+            "id": "2.4.0",
+            "date": "",
+            "jira": {
+                "crs": "SPECAM/versions/12563",
+                "prs": "SPECPR/versions/12562"
+            }
+        },
+        {
+            "id": "2.3.0",
+            "date": "2024-03-20",
+            "jira": {
+                "crs": "SPECAM/versions/12548",
+                "prs": "SPECPR/versions/12552"
+            }
+        },
+        {
+            "id": "2.2.0",
+            "date": "2019-06-18",
+            "jira": {
+                "crs": "SPECAM/versions/12512",
+                "prs": "SPECPR/versions/12549"
+            }
+        },
+        {
+            "id": "2.1.0",
+            "date": "2018-08-24",
+            "jira": {
+                "crs": "SPECAM/versions/11068",
+                "prs": "SPECPR/versions/12000"
+            }
+        },
+        {
+            "id": "2.0.6",
+            "date": "2017-01-07",
+            "jira": {
+                "crs": "SPECAM/versions/10963",
+                "prs": "SPECPR/versions/11073"
+            }
+        },
+        {
+            "id": "1.4",
+            "date": "2008-12-31",
+            "jira": {
+                "crs": "SPECAM/versions/11064",
+                "prs": "SPECPR/versions/11069"
+            }
+        }
+    ]
+}

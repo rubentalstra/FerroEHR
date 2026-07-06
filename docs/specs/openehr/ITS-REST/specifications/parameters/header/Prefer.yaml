@@ -1,0 +1,13 @@
+name: Prefer
+in: header
+description: |
+  Request header to indicate the preference over response details.
+  The response will contain the entire resource when the `Prefer` header has a value of `return=representation`.
+required: false
+style: simple
+schema:
+  type: string
+  enum:
+    - return=representation
+    - return=minimal
+  default: return=minimal

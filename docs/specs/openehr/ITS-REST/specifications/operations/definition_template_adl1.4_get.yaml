@@ -1,0 +1,20 @@
+operationId: definition_template_adl1.4_get
+summary: Get a template
+description: |
+  Retrieves the ADL 1.4 operational template (OPT) identified by `template_id` identifier.
+  
+  Note that this can return either the original (canonical) `XML` based OPT format (if called with the `Accept: application/xml` request header), as well as the simplified `JSON`-based “web template” format (if called with the `Accept: application/openehr.wt+json` request header). For more details see the [data representation specification](overview.html#tag/Resources/Data-representation).
+tags:
+  - ADL1.4
+parameters:
+  - $ref: ../parameters/path/template_id.yaml
+  - $ref: ../parameters/header/Accept_template.yaml
+responses:
+  '200':
+    $ref: ../responses/200_Template_adl1_4_retrieved.yaml
+  '400':
+    $ref: ../responses/400_invalid_template_id.yaml
+  '404':
+    $ref: ../responses/404_unknown_template_id.yaml
+  '406':
+    $ref: ../responses/406.yaml

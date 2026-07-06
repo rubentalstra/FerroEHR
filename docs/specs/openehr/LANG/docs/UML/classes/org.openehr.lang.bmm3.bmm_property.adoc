@@ -1,0 +1,47 @@
+=== BMM_PROPERTY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_PROPERTY (abstract)__*
+
+h|*Description*
+2+a|Meta-type of a writable property definition within a class definition of an object model. The `_is_composition_` attribute indicates whether the property has sub-part or an association semantics with respect to the owning class.
+
+h|*Inherit*
+2+|`<<_bmm_instantiable_feature_class,BMM_INSTANTIABLE_FEATURE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*is_im_runtime*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True if this property is marked with info model `_im_runtime_` property.
+
+h|*0..1*
+|*is_im_infrastructure*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True if this property was marked with info model `_im_infrastructure_` flag.
+
+h|*0..1*
+|*is_composition*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True if this property instance is a compositional sub-part of the owning class instance. Equivalent to 'composition' in UML associations (but missing from UML properties without associations) and also 'cascade-delete' semantics in ER schemas.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*existence* (): `link:/releases/BASE/{base_release}/foundation_types.html#_multiplicity_interval_class[Multiplicity_interval^]`
+a|Interval form of `0..1`, `1..1` etc, derived from `_is_nullable_`.
+
+h|*1..1*
+|*display_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of this property to display in UI.
+
+h|*Invariants*
+2+a|__Inv_signature_no_args__: `signature().arguments = Void`
+|===

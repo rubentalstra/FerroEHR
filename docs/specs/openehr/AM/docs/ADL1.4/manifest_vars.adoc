@@ -1,0 +1,5 @@
+:spec_title: Archetype Definition Language 1.4 (ADL1.4)
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: EHR, ADL, AOM, health records, archetypes, constraint language, ISO 13606, openehr
+:description: openEHR Archetype Definition Language 1.4 (ADL1.4) (ISO 13606-2:2008)

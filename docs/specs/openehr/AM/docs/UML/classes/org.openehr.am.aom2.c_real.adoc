@@ -1,0 +1,34 @@
+=== C_REAL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_REAL*
+
+h|*Description*
+2+a|Constraint on instances of Real.
+
+h|*Inherit*
+2+|`<<_c_ordered_class,C_ORDERED>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*constraint*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_interval_class[Interval^]<link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^]>>`
+a|Formal constraint on `Real`, in the form of one or more `Interval<Real>`.
+
+To represent no constraint, use an empty list.
+
+h|*0..1 +
+(effected)*
+|*default_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^]`
+a|Default value set in a template, and present in an operational template. Generally limited to leaf and near-leaf nodes.
+
+h|*0..1 +
+(effected)*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^]`
+a|Value to be assumed if none sent in data.
+|===

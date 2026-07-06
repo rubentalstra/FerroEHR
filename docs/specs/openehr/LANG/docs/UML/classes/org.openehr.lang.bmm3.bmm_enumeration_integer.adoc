@@ -1,0 +1,22 @@
+=== BMM_ENUMERATION_INTEGER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_ENUMERATION_INTEGER*
+
+h|*Description*
+2+a|Integer-based enumeration meta-type.
+
+h|*Inherit*
+2+|`<<_bmm_enumeration_class,BMM_ENUMERATION>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*item_values*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_integer_value_class,BMM_INTEGER_VALUE>>>`
+a|Optional list of specific values. Must be 1:1 with `_item_names_` list.
+|===

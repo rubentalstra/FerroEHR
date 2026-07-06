@@ -1,0 +1,22 @@
+= Overview
+
+An openEHR Conformance Certificate consists of a rating in the Functional and Content dimensions, and a detailed report. The ratings are as follows:
+
+[cols="1,1,3", options="header"]
+|===
+|Characteristics            |Levels			|Description
+
+.3+|*Functional*            |CORE			|Core functionality required for operational deployment.
+                            |STANDARD       |More comprehensive capabilities useful in a 'standard' EHR operational environment.
+                            |OPTIONS     	|Optional features required in specific circumstances.
+
+.2+|*Non-functional*        |BASIC-SEC      |Basic security features.
+                            |BASIC-PRIV     |Basic privacy features.
+                    
+.2+|*External data format*  |Canonical XML  |openEHR Canonical XML, defined by published XSDs
+                            |Canonical JSON |openEHR Canonical XML, defined by published transform of XML
+
+|===
+
+A generated certificate for a typical system will look as shown in the following section.
+

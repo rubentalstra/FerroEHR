@@ -1,0 +1,25 @@
+=== EXPR_BINARY_OPERATOR Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXPR_BINARY_OPERATOR*
+
+h|*Description*
+2+a|Binary operator expression node.
+
+h|*Inherit*
+2+|`<<_expr_operator_class,EXPR_OPERATOR>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*left_operand*: `<<_expr_item_class,EXPR_ITEM>>`
+a|Left operand node.
+
+h|*1..1*
+|*right_operand*: `<<_expr_item_class,EXPR_ITEM>>`
+a|Right operand node.
+|===

@@ -1,0 +1,2 @@
+description: |
+  `409 Conflict` is returned when a resource with same identifier(s) already exists.

@@ -1,0 +1,30 @@
+=== BMM_LITERAL_VALUE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_LITERAL_VALUE<T> (abstract)__*
+
+h|*Description*
+2+a|Meta-type for literal instance values declared in a model. Instance values may be inline values of primitive types in the usual fashion or complex objects in syntax form, e.g. JSON.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value_literal*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|A serial representation of the value.
+
+h|*0..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|A native representation of the value, possibly derived by deserialising `_value_literal_`.
+
+h|*0..1*
+|*syntax*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional specification of formalism of the `_value_literal_` attribute for complex values. Value may be any of `json &#124; json5 &#124; yawl &#124; xml &#124; odin &#124; rdf` or another value agreed by the user community. If not set, `json` is assumed.
+
+h|*1..1*
+|*type*: `T`
+a|Concrete type of this literal.
+|===

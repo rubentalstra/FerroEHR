@@ -1,0 +1,126 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.1.0/Ehr_extract/EXTRACT_ENTITY_MANIFEST.json",
+    "definitions": {
+        "EXTRACT_ENTITY_MANIFEST": {
+            "type": "object",
+            "required": [
+                "extract_id_key"
+            ],
+            "properties": {
+                "extract_id_key": {
+                    "type": "string"
+                },
+                "ehr_id": {
+                    "type": "string"
+                },
+                "subject_id": {
+                    "type": "string"
+                },
+                "other_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "item_list": {
+                    "type": "array",
+                    "items": {
+                        "allOf": [
+                            {
+                                "properties": {
+                                    "_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "LOCATABLE_REF",
+                                            "PARTY_REF",
+                                            "ACCESS_GROUP_REF",
+                                            "OBJECT_REF"
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "_type": {
+                                            "const": "LOCATABLE_REF"
+                                        }
+                                    },
+                                    "required": [
+                                        "_type"
+                                    ]
+                                },
+                                "then": {
+                                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/LOCATABLE_REF.json#/definitions/LOCATABLE_REF"
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "_type": {
+                                            "const": "PARTY_REF"
+                                        }
+                                    },
+                                    "required": [
+                                        "_type"
+                                    ]
+                                },
+                                "then": {
+                                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/PARTY_REF.json#/definitions/PARTY_REF"
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "_type": {
+                                            "const": "ACCESS_GROUP_REF"
+                                        }
+                                    },
+                                    "required": [
+                                        "_type"
+                                    ]
+                                },
+                                "then": {
+                                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/ACCESS_GROUP_REF.json#/definitions/ACCESS_GROUP_REF"
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "_type": {
+                                            "const": "OBJECT_REF"
+                                        }
+                                    },
+                                    "required": [
+                                        "_type"
+                                    ]
+                                },
+                                "then": {
+                                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/OBJECT_REF.json#/definitions/OBJECT_REF"
+                                }
+                            },
+                            {
+                                "if": {
+                                    "not": {
+                                        "required": [
+                                            "_type"
+                                        ]
+                                    }
+                                },
+                                "then": {
+                                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/OBJECT_REF.json#/definitions/OBJECT_REF"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "EXTRACT_ENTITY_MANIFEST"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

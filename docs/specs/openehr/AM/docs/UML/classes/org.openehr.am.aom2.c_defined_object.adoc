@@ -1,0 +1,49 @@
+=== C_DEFINED_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__C_DEFINED_OBJECT (abstract)__*
+
+h|*Description*
+2+a|Abstract parent type of `C_OBJECT` subtypes that are defined by value, i.e. whose definitions are actually in the archetype rather than being by reference.
+
+h|*Inherit*
+2+|`<<_c_object_class,C_OBJECT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*default_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Default value set in a template, and present in an operational template. Generally limited to leaf and near-leaf nodes.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*any_allowed* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if any value (i.e. instance) of the reference model type would be allowed. Redefined in descendants.
+
+h|*1..1 +
+(abstract)*
+|*valid_value* ( +
+a_value: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `_a_value_` is valid with respect to constraint expressed in concrete instance of this type.
+
+h|*1..1 +
+(abstract)*
+|*prototype_value* (): `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Generate a prototype value from this constraint object.
+
+h|*1..1*
+|*has_default_value* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if there is an assumed value.
+
+h|*Invariants*
+2+a|__Inv_valid_default_value__: `valid_value (default_value)`
+|===

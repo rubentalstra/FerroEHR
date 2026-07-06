@@ -1,0 +1,25 @@
+=== Terminology_term Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Terminology_term*
+
+h|*Description*
+2+a|Leaf type representing a standalone term from a terminology, which consists of the term text and the code, i.e. a concept reference.
+
+h|*Inherit*
+2+|`<<_any_class,Any>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*concept*: `<<_terminology_code_class,Terminology_code>>`
+a|Reference to the terminology concept formally representing this term.
+
+h|*1..1*
+|*text*: `<<_string_class,String>>`
+a|Text of term.
+|===

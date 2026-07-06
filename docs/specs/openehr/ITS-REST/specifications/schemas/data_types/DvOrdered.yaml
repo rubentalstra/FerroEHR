@@ -1,0 +1,32 @@
+title: DV_ORDERED
+type: object
+allOf:
+  - $ref: ../data_types/DataValue.yaml
+properties:
+  _type:
+    type: string
+    default: DV_ORDERED
+  normal_status:
+    $ref: ../data_types/CodePhrase.yaml
+  normal_range:
+    $ref: ../data_types/DvInterval.yaml
+  other_reference_ranges:
+    type: array
+    items:
+      $ref: ../data_types/ReferenceRange.yaml
+x-discriminator-value: DV_ORDERED
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    DV_AMOUNT: '#/components/schemas/DvAmount'
+    DV_COUNT: '#/components/schemas/DvCount'
+    DV_DATE: '#/components/schemas/DvDate'
+    DV_DATE_TIME: '#/components/schemas/DvDateTime'
+    DV_DURATION: '#/components/schemas/DvDuration'
+    DV_ORDINAL: '#/components/schemas/DvOrdinal'
+    DV_PROPORTION: '#/components/schemas/DvProportion'
+    DV_QUANTIFIED: '#/components/schemas/DvQuantified'
+    DV_QUANTITY: '#/components/schemas/DvQuantity'
+    DV_SCALE: '#/components/schemas/DvScale'
+    DV_TEMPORAL: '#/components/schemas/DvTemporal'
+    DV_TIME: '#/components/schemas/DvTime'

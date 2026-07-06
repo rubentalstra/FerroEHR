@@ -1,0 +1,6 @@
+title: TemplateList
+description: |
+  List of uploaded TEMPLATE resources.
+type: array
+items:
+  $ref: ./TemplateMetadata.yaml

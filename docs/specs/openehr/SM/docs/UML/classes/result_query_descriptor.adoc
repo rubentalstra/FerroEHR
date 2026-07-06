@@ -1,0 +1,21 @@
+=== RESULT_QUERY_DESCRIPTOR Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*RESULT_QUERY_DESCRIPTOR*
+
+h|*Description*
+2+a|Execution form of query descriptor, including optional copy of query executed by server.
+
+h|*Inherit*
+2+|`<<_query_descriptor_class,QUERY_DESCRIPTOR>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*executed*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Executed query text with all parameters substituted.
+|===

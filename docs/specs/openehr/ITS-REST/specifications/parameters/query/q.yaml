@@ -1,0 +1,9 @@
+name: q
+in: query
+description: |
+  The AQL query to be executed.
+required: true
+style: form
+explode: true
+schema:
+  $ref: ../../schemas/query/AQL.yaml

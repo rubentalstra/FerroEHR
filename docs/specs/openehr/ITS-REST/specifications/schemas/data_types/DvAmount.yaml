@@ -1,0 +1,20 @@
+title: DV_AMOUNT
+type: object
+allOf:
+  - $ref: ../data_types/DvQuantified.yaml
+properties:
+  _type:
+    type: string
+    default: DV_AMOUNT
+  accuracy_is_percent:
+    type: boolean
+  accuracy:
+    type: number
+x-discriminator-value: DV_AMOUNT
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    DV_COUNT: '#/components/schemas/DvCount'
+    DV_DURATION: '#/components/schemas/DvDuration'
+    DV_PROPORTION: '#/components/schemas/DvProportion'
+    DV_QUANTITY: '#/components/schemas/DvQuantity'

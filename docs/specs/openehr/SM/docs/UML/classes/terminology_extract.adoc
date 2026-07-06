@@ -1,0 +1,49 @@
+=== Terminology_extract Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Terminology_extract*
+
+h|*Description*
+2+a|Root object of a collection of items extracted from a single version or release of one terminology. The sub-parts all assume the same terminology meta-data carried in the root object.
+
+May be used to represent any extract, including:
+
+* a 'flat' value-set (i.e. no relationships);
+* a structured value-set (aka 'ref set');
+* a subsumption hierarchy below a specified concept.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*terminology_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The archetype environment namespace identifier used to identify a terminology. Typically a value like `"snomed_ct"` that is mapped elsewhere to the full URI identifying the terminology.
+
+h|*0..1*
+|*terminology_version*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional string value representing terminology version, typically a date or dotted numeric.
+
+h|*0..1*
+|*terms*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_term_code_class,Term_code>>>`
+a|Set of terms in extract, each of which may be a bare code, or  have displayable text included, via the `Term` subtype.
+
+h|*0..1*
+|*relationships*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_term_relationship_class,Term_relationship>>>`
+a|List of relationships according to specification generating extract.
+
+h|*0..1*
+|*relations*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_terminology_relation_class,Terminology_relation>>>`
+a|Definitions of relations used in this extract, keyed by `_name_`.
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*create_terminology_code* ( +
+code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_terminology_code_class[Terminology_code^]`
+a|Generate the standalone form of a Terminology code.
+|===

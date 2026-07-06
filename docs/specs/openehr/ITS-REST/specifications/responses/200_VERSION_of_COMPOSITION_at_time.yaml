@@ -1,0 +1,11 @@
+description: |
+  `200 OK` is returned when the requested VERSION is successfully retrieved.
+headers:
+  ETag:
+    $ref: ../headers/ETag_VERSION_of_COMPOSITION.yaml
+  Location:
+    $ref: ../headers/Location_VERSIONED_COMPOSITION_VERSION.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/common/UVersion.yaml

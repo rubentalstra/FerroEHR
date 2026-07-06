@@ -1,0 +1,2 @@
+description: |
+  `400 Bad Request` is returned when the server was unable to execute the query due to invalid input, e.g. a required parameter is missing, or at least one of the parameters has an invalid syntax.

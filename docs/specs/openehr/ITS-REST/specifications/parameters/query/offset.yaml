@@ -1,0 +1,8 @@
+name: offset
+in: query
+description: |
+  The row number in result-set to start result-set from (`0`-based), default is `0`.
+style: form
+explode: true
+schema:
+  $ref: ../../schemas/query/Offset.yaml

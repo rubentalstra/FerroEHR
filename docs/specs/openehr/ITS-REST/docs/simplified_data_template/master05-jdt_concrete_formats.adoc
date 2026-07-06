@@ -1,0 +1,8 @@
+= Simple Template Concrete Formats
+
+NOTE: under development; currently just notes.
+
+
+== Sparse JSON
+
+xxxx

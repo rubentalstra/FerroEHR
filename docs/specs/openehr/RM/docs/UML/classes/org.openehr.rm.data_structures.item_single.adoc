@@ -1,0 +1,30 @@
+=== ITEM_SINGLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ITEM_SINGLE*
+
+h|*Description*
+2+a|Logical single value data structure. Used to represent any data which is logically a single value, such as a person's height or weight.
+
+h|*Inherit*
+2+|`<<_item_structure_class,ITEM_STRUCTURE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*item*: `<<_element_class,ELEMENT>>`
+a|
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*as_hierarchy* (): `<<_element_class,ELEMENT>>`
+a|Generate a CEN EN13606-compatible hierarchy consisting of a single `ELEMENT`.
+|===

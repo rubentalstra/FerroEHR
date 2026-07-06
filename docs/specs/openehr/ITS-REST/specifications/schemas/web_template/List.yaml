@@ -1,0 +1,25 @@
+title: List
+required:
+  - value
+  - label
+type: object
+properties:
+  value:
+    type: string
+  label:
+    type: string
+  validation:
+    $ref: ./Validation.yaml
+  localizedLabels:
+    $ref: ./LocalizedLabels.yaml
+  localizedDescriptions:
+    $ref: ./LocalizedDescriptions.yaml
+example:
+  value: °C
+  label: °C
+  validation:
+    precision:
+      minOp: '>='
+      min: 1
+      maxOp: <=
+      max: 1

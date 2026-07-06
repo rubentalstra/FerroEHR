@@ -1,0 +1,641 @@
+= Templates
+
+== Overview
+
+In ADL2, a template is a kind of specialised archetype that uses one feature of ADL in particular to express composition of archetypes: the ability to state 'slot fillers'. This is achieved by redefinition of a slot node, where the latter alters the slot by specifying one or more filler archetypes that match the slot specification.
+
+It is worth emphasising this point, since 'slot-filling' is usually thought of as a compositional relationship (joining archetypes), rather than a specialisation relationship. However, ADL considers a filled or partly filled slot as a kind of slot, i.e. a specialisation of an initially empty slot. The consequence of this is that no special relationship or operation is required to achieve slot-filling in ADL - normal node redefinition is sufficient.
+
+All of the other constraints used in templates typically occur in normal archetypes, with one exception: multiplicity reduction to `{0}` of existences, cardinalities and occurrences. This particular constraint can be used in archetypes, but is generally only useful in templates, since one of the main functions of a template is to select specific data items from archetypes composed in a structure.
+
+ADL provides one other special feature specific to templates: the ability to define 'overlays'. An overlay is just a specialised archetype that is local to the template, rather than being a self-standing archetype. It is used to enable a template to fill a slot not only with an available normal archetype, but with a locally constrained version of an archetype. This feature enables a template to express constraints on a filler archetype without need to create new independent archetype.
+
+== Example
+
+By way of illustrating ADL's template-related ADL features, an example is useful. The following is the openEHR archetype `openEHR-EHR-COMPOSITION.discharge.v1` for the generic concept 'discharge summary' followed by a template representing a full patient clinical information discharge summary, consisting of `COMPOSITION`, `SECTION` and various `ENTRY` archetypes.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.0.3)
+    openEHR-EHR-COMPOSITION.discharge.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"Heather Leslie">
+        ["organisation"] = <"Ocean Informatics">
+        ["email"] = <"heather.leslie@oceaninformatics.com">
+        ["date"] = <"14/11/2007">
+    >
+    details = <
+        ["en"] = <
+            language = <[ISO_639-1::en]>
+            purpose = <"For communication at the time of discharge from an episode of care or an institution.">
+        >
+    >
+
+definition
+    COMPOSITION[at0000] matches {    -- Discharge
+        category matches {
+            DV_CODED_TEXT[at9000] matches {
+                defining_code matches {[at0009]}
+            }
+        }
+        content matches {
+            allow_archetype CONTENT_ITEM[at0001] matches {
+                include
+                    archetype_id/value ∈ {/openEHR-EHR-(SECTION|EVALUATION)/}
+            }
+        }
+        context matches {
+            EVENT_CONTEXT[at0029] matches {
+                other_context matches {
+                    ...
+                }
+            }
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["at0000"] = <
+                text = <"Discharge">
+                description = <"A summarising communication about at the time of discharge from an institution or an episode of care">
+            >
+            ["at0001"] = <
+                text = <"Cinical discharge notes">
+                description = <"*">
+            >
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.0.2)
+    openEHR-EHR-COMPOSITION.discharge.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"Heather Leslie">
+        ["organisation"] = <"Ocean Informatics">
+        ["email"] = <"heather.leslie@oceaninformatics.com">
+        ["date"] = <"14/11/2007">
+    >
+    details = <
+        ["en"] = <
+            language = <[ISO_639-1::en]>
+            purpose = <"For communication at the time of discharge from an episode of care or an institution.">
+        >
+    >
+
+definition
+    COMPOSITION[id1] matches {    -- Discharge
+        category matches {
+            DV_CODED_TEXT[id29] matches {
+                defining_code matches {[at10]}
+            }
+        }
+        content matches {
+            allow_archetype CONTENT_ITEM[id2] matches {
+                include
+                    archetype_id/value ∈ {/openEHR-EHR-(SECTION|EVALUATION)/}
+            }
+        }
+        context matches {
+            EVENT_CONTEXT[id30] matches {
+                other_context matches {
+                    ...
+                }
+            }
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <
+                text = <"Discharge">
+                description = <"A summarising communication about at the time of discharge from an institution or an episode of care">
+            >
+            ["id2"] = <
+                text = <"Cinical discharge notes">
+                description = <"*">
+            >
+        >
+    >
+--------
+====
+
+Below is the template definition. The root artefact is a self-standing template `openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0` that specialises the archetype . The declaration of being a 'template' is primarily to signal to tools the intended use of the artefact - it doesn't have any formal implications. The job of the template is to define the specific clinical information required in a discharge summary (note that not all the usual items are included, in order to reduce the size of the template as shown here - clinical synopsis and medications list are left out).
+
+In the root template, the `definition` section contains a number of `use_archetype` statements that specify archetypes to be used as fillers for the `at0001` (`id2`) slot of the parent archetype. Each of the slot-fillers is a template overlay, rather than being an independent archetype or template. As a result, each overlay includes no descriptive meta-data of its own, and appears within the template artefact, separated by a long comment line. This simple mechanism enables the overlays, which are in all other respects formal archetypes, to be treated as local additions to the template, not visible externally. The template, if saved as a file, contains all its overlays in one file.
+
+Each of the filler archetypes can have its occurrences individually constrained in the normal way.
+
+Each overlay can be seen to be a specialisation of an archetype (it could also have been a template). The overlays also do not include any `languages` or `description` sections, since as parts of the parent template, they inherit these sections from the root template.
+
+Additionally, some overlays contain element removal constraints (`occurrences matches {0}`), used to reduce the data set to the intended final result for the purpose of this template. Clearly other templates could make quite different selections of data items from the same archetypes.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+template (adl_version=2.4.0; rm_release=1.0.3)
+    openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+specialize
+    openEHR-EHR-COMPOSITION.discharge.v1
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"Ian McNicoll">
+        ["organisation"] = <"openEHR Foundation">
+        ["email"] = <"ian.mcnicoll@openehr.org">
+        ["date"] = <"01/04/2011">
+    >
+    copyright = <"copyright (c) 2011 openEHR Foundation">
+    details = <
+        ["en"] = <
+            language = <[ISO_639-1::en]>
+            purpose = <"Templated clinical COMPOSITION for Simple discharge summary">
+        >
+    >
+
+definition
+    COMPOSITION[at0000.1] ∈ {    -- Clinical detail
+        context existence ∈ {0}
+        content ∈ {
+            use_archetype SECTION[at0000.1, openEHR-EHR-SECTION.t_patient_event_info_ds_sf.v1] occurrences ∈ {1}
+            use_archetype EVALUATION[at0000.2, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-1.v1] occurrences ∈ {0..1}
+            use_archetype EVALUATION[at0000.3, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-2.v1]
+            use_archetype EVALUATION[at0000.5, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-4.v1] occurrences ∈ {1..*}
+            use_archetype EVALUATION[at0000.6, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-5.v1] occurrences ∈ {0..1}
+            use_archetype EVALUATION[at0000.8, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-7.v1] occurrences ∈ {0..*}
+            use_archetype EVALUATION[at0000.9, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-8.v1]
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["at0000.1"] = <
+                text = <"Clinical detail">
+                description = <"Clinical detail of Simple discharge summary">
+            >
+            ["at0.1"] = <
+                text = <"Event data">
+                description = <"Event data">
+            >
+            ["at0.2"] = <
+                text = <"Allergies & adverse reactions">
+                description = <"Allergies & adverse reactions">
+            >
+            ["at0.3"] = <
+                text = <"Alerts">
+                description = <"Alerts">
+            >
+            ["at0.5"] = <
+                text = <"Diagnosis">
+                description = <"Diagnosis">
+            >
+            ["at0.6"] = <
+                text = <"Investigations">
+                description = <"Investigations">
+            >
+            ["at0.8"] = <
+                text = <"Procedures">
+                description = <"Procedures">
+            >
+            ["at0.9"] = <
+                text = <"Medical certificate">
+                description = <"Medical certificate">
+            >
+        >
+    >
+-------------------------------------------------------------
+template_overlay
+    openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-1.v1.0.0
+
+specialize
+    openEHR-EHR-EVALUATION.adverse.v1
+
+definition
+    EVALUATION[at0000.1] ∈ {    -- Adverse reaction details for episode of care
+        /data[at0002]/items ∈ {
+            ELEMENT[at0010] occurrences ∈ {0}
+        }
+        /data[at0002]/items[at0019]/items ∈ {
+            ELEMENT[at0032] occurrences ∈ {0}
+            ELEMENT[at0015] occurrences ∈ {0}
+            ELEMENT[at0004] occurrences ∈ {0}
+            ELEMENT[at0020] occurrences ∈ {0}
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["at0000.1"] = <
+                text = <"Adverse reaction details for episode of care">
+                description = <"Adverse reaction details for episode of care">
+            >
+        >
+    >
+-------------- etc ------------------------------------------
+
+-------------------------------------------------------------
+template_overlay
+    openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-8.v1.0.0
+
+specialize
+    openEHR-EHR-EVALUATION.medical_certificate.v1
+
+
+definition
+    EVALUATION[at0000.1] ∈ {    -- Simple Discharge Summary Medical Certificate
+        /data[at0001]/items ∈ {
+            ELEMENT[at0002] occurrences ∈ {0}
+            ELEMENT[at0003] occurrences ∈ {0}
+            ELEMENT[at0004] occurrences ∈ {0}
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["at0000.1"] = <
+                text = <"Simple Discharge Summary Medical Certificate">
+                description = <"Only used for Discharge Summary Document">
+            >
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+template (adl_version=2.4.0; rm_release=1.0.2)
+    openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+specialize
+    openEHR-EHR-COMPOSITION.discharge.v1
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"Ian McNicoll">
+        ["organisation"] = <"openEHR Foundation">
+        ["email"] = <"ian.mcnicoll@openehr.org">
+        ["date"] = <"01/04/2011">
+    >
+    copyright = <"copyright (c) 2011 openEHR Foundation">
+    details = <
+        ["en"] = <
+            language = <[ISO_639-1::en]>
+            purpose = <"Templated clinical COMPOSITION for Simple discharge summary">
+        >
+    >
+
+definition
+    COMPOSITION[id1.1] ∈ {    -- Clinical detail
+        context existence ∈ {0}
+        content ∈ {
+            use_archetype SECTION[id0.1, openEHR-EHR-SECTION.t_patient_event_info_ds_sf.v1] occurrences ∈ {1}
+            use_archetype EVALUATION[id0.2, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-1.v1] occurrences ∈ {0..1}
+            use_archetype EVALUATION[id0.3, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-2.v1]
+            use_archetype EVALUATION[id0.5, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-4.v1] occurrences ∈ {1..*}
+            use_archetype EVALUATION[id0.6, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-5.v1] occurrences ∈ {0..1}
+            use_archetype EVALUATION[id0.8, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-7.v1] occurrences ∈ {0..*}
+            use_archetype EVALUATION[id0.9, openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-8.v1]
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1.1"] = <
+                text = <"Clinical detail">
+                description = <"Clinical detail of Simple discharge summary">
+            >
+            ["id0.1"] = <
+                text = <"Event data">
+                description = <"Event data">
+            >
+            ["id0.2"] = <
+                text = <"Allergies & adverse reactions">
+                description = <"Allergies & adverse reactions">
+            >
+            ["id0.3"] = <
+                text = <"Alerts">
+                description = <"Alerts">
+            >
+            ["id0.5"] = <
+                text = <"Diagnosis">
+                description = <"Diagnosis">
+            >
+            ["id0.6"] = <
+                text = <"Investigations">
+                description = <"Investigations">
+            >
+            ["id0.8"] = <
+                text = <"Procedures">
+                description = <"Procedures">
+            >
+            ["id0.9"] = <
+                text = <"Medical certificate">
+                description = <"Medical certificate">
+            >
+        >
+    >
+-------------------------------------------------------------
+template_overlay
+    openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-1.v1.0.0
+
+specialize
+    openEHR-EHR-EVALUATION.adverse.v1
+
+definition
+    EVALUATION[id1.1] ∈ {    -- Adverse reaction details for episode of care
+        /data[id3]/items ∈ {
+            ELEMENT[id11] occurrences ∈ {0}
+        }
+        /data[id3]/items[id20]/items ∈ {
+            ELEMENT[id33] occurrences ∈ {0}
+            ELEMENT[id16] occurrences ∈ {0}
+            ELEMENT[id5] occurrences ∈ {0}
+            ELEMENT[id21] occurrences ∈ {0}
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1.1"] = <
+                text = <"Adverse reaction details for episode of care">
+                description = <"Adverse reaction details for episode of care">
+            >
+        >
+    >
+-------------- etc ------------------------------------------
+
+-------------------------------------------------------------
+template_overlay
+    openEHR-EHR-EVALUATION.t_clinical_info_ds_sf-8.v1.0.0
+
+specialize
+    openEHR-EHR-EVALUATION.medical_certificate.v1
+
+
+definition
+    EVALUATION[id1.1] ∈ {    -- Simple Discharge Summary Medical Certificate
+        /data[id2]/items ∈ {
+            ELEMENT[id3] occurrences ∈ {0}
+            ELEMENT[id4] occurrences ∈ {0}
+            ELEMENT[id5] occurrences ∈ {0}
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1.1"] = <
+                text = <"Simple Discharge Summary Medical Certificate">
+                description = <"Only used for Discharge Summary Document">
+            >
+        >
+    >
+--------
+====
+
+When the above is flattened, with all overlays, slot fillers and external references being inlined, a single operational template results, as shown below. Note the `component_terminologies` section at the end, which contains the terminology of every constituent overlay and archetype.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+operational_template (adl_version=2.4.0; rm_release=1.0.3; generated)
+	openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+specialize
+	openEHR-EHR-COMPOSITION.discharge.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"01/04/2011">
+	>
+	copyright = <"copyright (c) 2011 openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Templated clinical COMPOSITION for Simple discharge summary">
+		>
+	>
+
+definition
+	COMPOSITION[at0000.1] matches {	-- Clinical detail
+		category matches {
+			DV_CODED_TEXT[at0028] matches {
+				defining_code matches {[at0009]}
+			}
+		}
+		context existence matches {0}
+		content matches {
+			SECTION[at0.1, openEHR-EHR-SECTION.t_patient_event_info_ds_sf.v1.0.0] occurrences matches {1} matches {	-- Event start
+				items matches {
+					ADMIN_ENTRY[at0.1, openEHR-EHR-ADMIN_ENTRY.t_patient_event_info_ds_sf-1.v1.0.0] occurrences matches {1} matches {
+						other_participations existence matches {0}
+                    }
+                    --- etc ---
+                }
+            }
+            --- etc ---
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0000"] = <
+				text = <"Discharge">
+				description = <"A summarising communication about at the time of discharge from an institution or an episode of care">
+			>
+			["at0003"] = <
+				text = <"Report identifier">
+				description = <"Identification information about the report">
+			>
+            ------- etc ---------
+        >
+    >
+	term_bindings = <
+		["openehr"] = <
+			["at0009"] = <http://openehr.org/id/433>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at0005", "at0006", "at0007", "at0008">
+		>
+	>
+
+component_terminologies
+	["openEHR-EHR-SECTION.t_patient_event_info_ds_sf.v1.0.0"] = <
+		term_definitions = <
+			["en"] = <
+				["at0000"] = <
+					text = <"Adhoc heading">
+					description = <"A generic section header.">
+				>
+                ------- etc ---------
+			>
+		>
+	>
+	["openEHR-EHR-ADMIN_ENTRY.t_patient_event_info_ds_sf-1.v1.0.0"] = <
+		term_definitions = <
+			["en"] = <
+				["at0000"] = <
+					text = <"Admission Short Singapore">
+					description = <"Administrative information for the admission of a patient to the care of a hospital/institution">
+				>
+                ------- etc ---------
+			>
+		>
+	>
+
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+operational_template (adl_version=2.4.0; rm_release=1.0.2; generated)
+	openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+specialize
+	openEHR-EHR-COMPOSITION.discharge.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"01/04/2011">
+	>
+	copyright = <"copyright (c) 2011 openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Templated clinical COMPOSITION for Simple discharge summary">
+		>
+	>
+
+definition
+	COMPOSITION[id1.1] matches {	-- Clinical detail
+		category matches {
+			DV_CODED_TEXT[id29] matches {
+				defining_code matches {[at10]}
+			}
+		}
+		context existence matches {0}
+		content matches {
+			SECTION[id0.1, openEHR-EHR-SECTION.t_patient_event_info_ds_sf.v1.0.0] occurrences matches {1} matches {	-- Event start
+				items matches {
+					ADMIN_ENTRY[id0.1, openEHR-EHR-ADMIN_ENTRY.t_patient_event_info_ds_sf-1.v1.0.0] occurrences matches {1} matches {
+						other_participations existence matches {0}
+                    }
+                    --- etc ---
+                }
+            }
+            --- etc ---
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Discharge">
+				description = <"A summarising communication about at the time of discharge from an institution or an episode of care">
+			>
+			["id4"] = <
+				text = <"Report identifier">
+				description = <"Identification information about the report">
+			>
+            ------- etc ---------
+        >
+    >
+	term_bindings = <
+		["openehr"] = <
+			["at10"] = <http://openehr.org/id/433>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at6", "at7", "at8", "at9">
+		>
+	>
+
+component_terminologies
+	["openEHR-EHR-SECTION.t_patient_event_info_ds_sf.v1.0.0"] = <
+		term_definitions = <
+			["en"] = <
+				["id1"] = <
+					text = <"Adhoc heading">
+					description = <"A generic section header.">
+				>
+                ------- etc ---------
+			>
+		>
+	>
+	["openEHR-EHR-ADMIN_ENTRY.t_patient_event_info_ds_sf-1.v1.0.0"] = <
+		term_definitions = <
+			["en"] = <
+				["id1"] = <
+					text = <"Admission Short Singapore">
+					description = <"Administrative information for the admission of a patient to the care of a hospital/institution">
+				>
+                ------- etc ---------
+			>
+		>
+	>
+--------
+====

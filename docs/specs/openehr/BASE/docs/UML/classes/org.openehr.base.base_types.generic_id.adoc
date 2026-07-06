@@ -1,0 +1,21 @@
+=== GENERIC_ID Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*GENERIC_ID*
+
+h|*Description*
+2+a|Generic identifier type for identifiers whose format is otherwise unknown to openEHR. Includes an attribute for naming the identification scheme (which may well be local).
+
+h|*Inherit*
+2+|`<<_object_id_class,OBJECT_ID>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*scheme*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of the scheme to which this identifier conforms. Ideally this name will be recognisable globally but realistically it may be a local ad hoc scheme whose name is not controlled or standardised in any way.
+|===

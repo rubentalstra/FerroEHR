@@ -1,0 +1,34 @@
+title: RESULT_SET
+required:
+  - rows
+type: object
+properties:
+  meta:
+    $ref: ./ResultSetMetadata.yaml
+  name:
+    $ref: ./QueryName.yaml
+  q:
+    $ref: ./AQL.yaml
+  columns:
+    type: array
+    items:
+      $ref: ./ResultSetColumn.yaml
+    description: |
+      A set of AQL column specifications, defined in the given AQL.
+    example:
+      - name: '#0'
+        path: '/ehr_id/value'
+      - name: 'startTime'
+        path: '/context/start_time/value'
+      - name: 'systolic'
+        path: '/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude'
+      - name: 'cid'
+        path: '/uid/value'
+      - name: '#4'
+        path: '/name'
+  rows:
+    type: array
+    items:
+      $ref: ./ResultSetRow.yaml
+    description: |
+      An ordered set of RESULT_SET rows.

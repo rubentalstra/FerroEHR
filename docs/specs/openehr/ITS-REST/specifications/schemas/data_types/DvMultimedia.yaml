@@ -1,0 +1,30 @@
+title: DV_MULTIMEDIA
+type: object
+allOf:
+  - $ref: ../data_types/DvEncapsulated.yaml
+required:
+  - media_type
+  - size
+properties:
+  _type:
+    type: string
+    default: DV_MULTIMEDIA
+  alternate_text:
+    type: string
+  uri:
+    $ref: ../data_types/UDvUri.yaml
+  data:
+    type: string
+  media_type:
+    $ref: ../data_types/CodePhrase.yaml
+  compression_algorithm:
+    $ref: ../data_types/CodePhrase.yaml
+  integrity_check:
+    type: string
+  integrity_check_algorithm:
+    $ref: ../data_types/CodePhrase.yaml
+  thumbnail:
+    $ref: ../data_types/DvMultimedia.yaml
+  size:
+    type: integer
+x-discriminator-value: DV_MULTIMEDIA

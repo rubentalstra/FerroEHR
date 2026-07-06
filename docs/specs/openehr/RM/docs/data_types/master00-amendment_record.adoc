@@ -1,0 +1,550 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser, Implementer|Completed
+
+|[[latest_issue]]
+|{spec_tickets}/SPECRM-101[SPECRM-101^]: Correct error in `_less_than()_` description in various `DV_ORDERED` descendants: `DV_QUANTIFIED`, `DV_COUNT`, `DV_QUANTITY`, and the DV date/time types to indicate that the result is 'this object < other'.
+|B Verhees, +
+ T Beale
+|[[latest_issue_date]]26 Dec 2020
+
+4+^h|*RM Release 1.1.0*
+
+|2.2.0
+|{spec_tickets}/SPECRM-96[SPECRM-96^]: Consistently support negative durations. Improve documentation of negated form of `DV_DURATION`.
+|H Leslie, +
+ S Garde
+|30 Apr 2020
+
+|
+|{spec_tickets}/SPECRM-94[SPECRM-94^]: Correct arithmetic and comparison functions in Data Types.
+|T Beale
+|27 Apr 2020
+
+|
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]: Convert citations to bibtex form.
+|T Beale
+|15 Dec 2019
+
+|
+|{spec_tickets}/SPECRM-92[SPECRM-92^]. Correct numerous minor typographical and formatting errors.
+|J Mewes
+|09 Nov 2019
+
+|
+|{spec_tickets}/SPECRM-64[SPECRM-64^]: Add `CODE_PHRASE._term_` optional field to carry rubric (preferred term) text. (Addresses {spec_tickets}/SPECPR-132[SPECPR-132^], {spec_tickets}/SPECPR-165[SPECPR-165^])
+|H Frankel, +
+ I McNicoll, +
+ SEC
+|08 Oct 2019
+
+|
+|{spec_tickets}/SPECRM-19[SPECRM-19^]: Add support for Real 'ordinal' values with `DV_SCALE` data type (addresses {spec_tickets}/SPECPR-44[SPECPR-44^]); +
+ Remove `_limits()_` function in passing.
+|I McNicoll, +
+ SEC
+|19 Oct 2019
+
+|
+|{spec_tickets}/SPECRM-65[SPECRM-65^]: Add `_units_system_` and `_units_display_name_` attributes to `DV_QUANTITY`. (Addresses {spec_tickets}/SPECPR-251[SPECPR-251^])
+|H Frankel, +
+ I McNicoll, +
+ S Ljosland Bakke, +
+ S Garde, +
+ D Bosca, +
+ B Lah, +
+ B Naess
+|01 Oct 2019
+
+4+^h|*RM Release 1.0.4*
+
+|2.1.3
+|{spec_tickets}/SPECRM-39[SPECRM-39^]: Support newlines and formatting in `DV_TEXT`. (Addresses {spec_tickets}/SPECPR-117[SPECPR-117^])
+|H Frankel
+|21 Dec 2018
+
+|
+|{spec_tickets}/SPECRM-78[SPECRM-78^]: Improve documentation on 'plain text' EHR URIs.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPECRM-72[SPECRM-72^]: Add guidance on date/time formatting, recommending extended ISO8601 format.
+|B Lah
+|
+
+|
+|{spec_tickets}/SPECPUB-3[SPECPUB-3^]: Correct UML conversion error: `DV_MULTIMEDIA._integrity_check_` corrected to multiple bytes. (fixes {spec_tickets}/SPECPR-295[SPECPR-295^]).
+|P Bos
+|
+
+|
+|{spec_tickets}/SPECPUB-3[SPECPUB-3^]: Correct UML coversion errors: revert `DV_MULTIMEDIA._data_` to `Array<Byte>`; revert `_integrity_check_algorithm_` multiplicity to `[0..1]`.
+|K Lundberg
+|
+
+|
+|{spec_tickets}/SPECRM-67[SPECRM-67^]: Improve description of `DV_ENCAPSULATED` encoding variations (see {spec_tickets}/SPECPR-258[SPECPR-258^]).
+|P Pazos
+|23 Apr 2018
+
+|
+|{spec_tickets}/SPECPUB-3[SPECPUB-3^]: Remove invariants except for `_id_` field, as per SPECRM-23 (see {spec_tickets}/SPECPR-202[SPECPR-202^]).
+|S Iancu, +
+ P Pazos
+|18 Apr 2018
+
+4+^h|*RM Release 1.0.3*
+
+|2.1.2
+|{spec_tickets}/SPECRM-32[SPECRM-32^]: Add invariant to `DV_PROPORTION` preventing 0 denominator. ({spec_tickets}/SPECPR-112[SPECPR-112^])
+|P Pazos
+|15 Nov 2015
+
+|
+|{spec_tickets}/SPECRM-33[SPECRM-33^]: Clarify specification of EHR URI scheme. Slight adjustments to `DV_EHR_URI` text.
+|H Frankel, +
+ E Sundvall, +
+ B Lah, +
+ S Iancu
+|
+
+|
+|{spec_tickets}/SPECRM-23[SPECRM-23^]: Make some `DV_IDENTIFIER` features optional. ({spec_tickets}/SPECPR-33[SPECPR-33^]).
+|S Heard
+|
+
+|
+|{spec_tickets}/SPECRM-44[SPECRM-44^]: Remove `DV_ENCAPSULATED._size_` abstract property. ({spec_tickets}/SPECPR-98[SPECPR-98^]).
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPECRM-20[SPECRM-20^]: Correct wrong `DV_DATE._magnitude_` origin to '0001-01-01' ({spec_tickets}/SPECPR-64[SPECPR-64^]).
+|P Gummer
+|
+
+4+^h|*Release 1.0.2*
+
+|2.1.1 
+|{spec_tickets}/SPEC-257[SPEC-257^]: Correct minor typos and clarify text. Replace `DV_EHR_URI` with `DV_URI` in inheritance of class definition of `DV_EHR_URI`. +
+ Clarify the description of the type attribute in `DV_PROPORTION` to indicate how it is controlled by `PROPORTION_KIND`.  Add `_as_string()_` function to `DV_ENCAPSULATED` class in UML diagram of encapsulated package.
+|T Cook +
+ C Ma, +
+ R Chen
+|20 Nov 2008
+
+|
+|{spec_tickets}/SPEC-261[SPEC-261^]: Indicate how accuracy is treated over add/subtract operations in `DV_QUANTIFIED` types. Indicate special values for unknown accuracy.
+|G Geurts, +
+ R Chen
+|
+
+4+^h|*Release 1.0.1*
+
+|2.1.0 
+|{spec_tickets}/SPEC-144[SPEC-144^]: Add new type: `DV_PROPORTION`.
+|S Heard
+|12 Apr 2007
+
+
+|
+|{spec_tickets}/SPEC-198[SPEC-198^]: Change DV_Date/Time/Duration to have value as attribute.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-199[SPEC-199^]: Add normal_range attribute to `DV_ORDERED`.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-200[SPEC-200^]. Correct Release 1.0 typographical errors. Correct `DV_ENCAPSULATED`.`_size_` to abstract in definition table. Correct `DV_STATE`.`_value_` in UML of `basic` package to be `DV_CODED_TEXT`. Correct `DV_ORDINAL`.`_symbol_` type to `DV_CODED_TEXT` in UML diagram for `QUANTITY` package.
+|H Frankel +
+ S Heard +
+ G Grieve +
+ D Lloyd +
+ R Chen
+|
+
+|
+|Add missing inheritance of `Ordered` to `DV_ORDERED`.
+|G Grieve
+|
+
+|
+|{spec_tickets}/SPEC-205[SPEC-205^]: Convert Date/time constants to a class.
+|D Lloyd
+|
+
+|
+|{spec_tickets}/SPEC-211[SPEC-211^]: Add `_magnitude_status_` to `DV_QUANTIFIED`.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-215[SPEC-215^]: Merge `DV_PARTIAL_XX` date/time classes and move ISO 8601 semantics to Support IM. Remove `DV_WORLD_TIME` class.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-216[SPEC-216^]: Allow mixture of W, D etc in ISO8601 Duration (deviation from standard).
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-219[SPEC-219^]: Use constants instead of literals to refer to terminology in RM.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-221[SPEC-221^]. Add normal_status to `DV_ORDERED`. Adjusted invariants.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-227[SPEC-227^]: Remove `DV_QUANTITY_RATIO`.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-230[SPEC-230^]: Change `DV_DATE_TIME`.`_to_quantity_` to seconds
+|C Ma
+|
+
+|
+|{spec_tickets}/SPEC-236[SPEC-236^]: Change use of Character to Octet in `DV_MULTIMEDIA`.
+|G Grieve
+|
+
+|
+|{spec_tickets}/SPEC-237[SPEC-237^]: Correct semantics of Quantity and Date/Time types.
+|T Beale +
+ G Grieve
+|
+
+|
+|{spec_tickets}/SPEC-240[SPEC-240^]: Allow `DV_ORDINAL` values to be negative.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-247[SPEC-247^]: Add `DV_TEMPORAL` class to `quantity` package.
+|H Frankel
+|
+
+4+^h|*Release 1.0*
+
+|2.0.0 
+|{spec_tickets}/SPEC-176[SPEC-176^]. Make `DV_QUANTIFIED`.`_accuracy_` optional.
+|S Heard
+|01 Feb 2006
+
+
+|
+|{spec_tickets}/SPEC-163[SPEC-163^]. Add identifiers to `FEEDER_AUDIT` for originating and gateway systems. Added `_assigner_` attribute to `DV_IDENTIFIER`.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-121[SPEC-121^]. Improve `DV_EHR_URI` model to support Xpath style paths.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-161[SPEC-161^]. Support distributed versioning. Remove functions from `DV_EHR_URI`.
+|T Beale +
+ H Frankel
+|
+
+4+^h|*Release 0.96*
+
+4+^h|*Release 0.95*
+
+|1.9.1 
+|Improve implementation guidance. `DV_ORDINAL`.`_limits_` type corrected to `REFERENCE_RANGE<DV_ORDINAL>`.
+|D Lloyd 
+|22 Feb 2005
+
+|1.9 
+|{spec_tickets}/SPEC-126[SPEC-126^]. Correct details of partial date/time classes.
+|T Beale
+|09 Dec 2004
+
+
+|
+|{spec_tickets}/SPEC-112[SPEC-112^]. Add `DV_PARTIAL_DATE_TIME` class
+|DSTC
+|
+
+|
+|{spec_tickets}/SPEC-113[SPEC-113^]. Add `DATA_VALUE` subtype for identifying realworld entities
+|DSTC
+|
+
+|
+|{spec_tickets}/SPEC-118[SPEC-118^]. Make package names lower case.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-119[SPEC-119^]. Improve Data types documentation.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-102[SPEC-102^]. Make `DV_TEXT`.`_language_` and `_charset_` optional.
+|DSTC
+|
+
+4+^h|*Release 0.9*
+
+|1.8 
+|{spec_tickets}/SPEC-23[SPEC-23^]. `TERM_MAPPING`.`_match_` should be coded/enumerated.
+|G Grieve
+|09 Mar 2004
+
+
+|
+|{spec_tickets}/SPEC-69[SPEC-69^]. Correct date/time types statistical descriptions.
+|A Goodchild
+|
+
+|
+|{spec_tickets}/SPEC-46[SPEC-46^]. Rename `COORDINATED_TERM` to `CODE_PHRASE` and `DV_CODED_TEXT`.`_definition_` to `_defining_code_`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-84[SPEC-84^]. Rename `DV_COUNTABLE` to `DV_COUNT`.
+|DSTC
+|
+
+|
+|{spec_tickets}/SPEC-90[SPEC-90^]. Make `TERM_MAPPING`.`_purpose_` optional.
+|DSTC
+|
+
+|
+|{spec_tickets}/SPEC-91[SPEC-91^]. Correct anomalies in use of `CODE_PHRASE` and `DV_CODED_TEXT`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-94[SPEC-94^]. Add `_lifecycle_` state attribute to `VERSION`; correct `DV_STATE`.
+|DSTC
+|
+
+|
+|{spec_tickets}/SPEC-95[SPEC-95^]. Remove `_property_` attribute from `quantity` package.
+|DSTC, +
+ S Heard
+|
+
+|
+|Formally validated using ISE Eiffel 5.4.
+|T Beale
+|
+
+|1.7.9 
+|{spec_tickets}/SPEC-66[SPEC-66^]. Make `DV_ORDERED`.`_normal_range_` a function. +
+ Correct UML for `DV_QUANTITY`.
+|Z Tun 
+|10 Nov 2003
+
+|1.7.8 
+|{spec_tickets}/SPEC-53[SPEC-53^]. Make `DV_ORDINAL`.`_limits_` a function. +
+ {spec_tickets}/SPEC-54[SPEC-54^]. Move `DV_QUANTIFIED`.`_is_normal_` to `DV_ORDERED` +
+ {spec_tickets}/SPEC-55[SPEC-55^]. Redefine `DV_ORDERED`.`_less_than_` as infix function '<'.
+|T Beale
+|02 Nov 2003
+
+|1.7.7 
+|{spec_tickets}/SPEC-41[SPEC-41^]. Visually differentiate primitive types in openEHR documents. +
+ {spec_tickets}/SPEC-34[SPEC-34^]. State representation of date/time classes to be ISO8601. +
+ {spec_tickets}/SPEC-52[SPEC-52^]. Change `DV_DURATION`.`_sign_` to prefix "-" operation. +
+ {spec_tickets}/SPEC-42[SPEC-42^]. Make `DV_ORDINAL`.`_rubric_` a `DV_CODED_TEXT`; `_type_` attribute not needed.
+|D Lloyd, +
+ DSTC, +
+ T Beale
+|26 Oct 2003
+
+|1.7.6 
+|{spec_tickets}/SPEC-13[SPEC-13^]. Rename key classes, according to CEN ENV 13606. +
+ {spec_tickets}/SPEC-26[SPEC-26^]. Rename `DV_QUANTITY`.`_value_` to `_magnitude_`. +
+ {spec_tickets}/SPEC-31[SPEC-31^]. Change abstract `NUMERIC` to `DOUBLE` in `DV_QUANTITY`.`_value_`.
+|S Heard, +
+ D Kalra, +
+ T Beale, +
+ A Goodchild, +
+ Z Tun
+|01 Oct 2003
+
+|1.7.5 
+|{spec_tickets}/SPEC-22[SPEC-22^]. Code `TERM_MAPPING`.`_purpose_`. 
+|G Grieve 
+|20 Jun 2003
+
+|1.7.4 
+|{spec_tickets}/SPEC-20[SPEC-20^]. Move `VERSION`.`_charset_` to `DV_TEXT`, `_territory_` to `TRANSACTION`. Remove `VERSION`.`_language_`.
+|A Goodchild 
+|10 Jun 2003
+
+|1.7.3 
+|`DV_INTERVAL` now inherits from `INTERVAL` to avoid duplicating semantics. (Formally validated).
+|T Beale 
+|25 Mar 2003
+
+|1.7.2 
+|Minor corrections to diagrams in Text package. Improved heading structure, package naming. Corrected error in `text` package diagram. Replaced `TEXT_FORMAT_PROPERTY` class with string attribute of same form. Made `MULTIMEDIA`.`_media_type_` mandatory.  (Formally validated).
+|T Beale, +
+ Z Tun
+|21 Mar 2003
+
+|1.7.1 
+|Moved definitions and assumed types to Support Reference Model. No semantic changes.
+|T Beale 
+|25 Feb 2003
+
+|1.7 
+|Formally validated using ISE Eiffel 5.2. +
+ {spec_tickets}/SPEC-1[SPEC-1^]. Review of Data Types specification.  Made pluralities of Terminology name definitions (sect 3.2.1) consistent. +
+ Corrected types of `DV_ENCAPSULATED`.`_language_`, `_charset_`, `DV_MULTIMEDIA`.`_integrity_check_algorithm_`, `_compression_algorithm_`, `_media_type_`. +
+ Corrected pluralities of Terminology name definitions (sect 3.2.1). +
+ Corrected invariants of `DV_ENCAPSULATED`, `DV_MULTI_MEDIA`, `DV_QUANTITY`, `DV_CODED_TEXT`, `DV_TEXT`, `DV_INTERVAL`, `TERM_MAPPING`. +
+ Corrected `DV_TEXT`.`_formatting_`; added `TERM_MAPPING` validity function. Made `DV_ORDINAL`.`_limits_` an attribute. Removed `TERM_MAPPING`.`_source_`; moved `COORDINATED_TERM`.`_language_` to `DV_TEXT`; changed type to `COOORDINATED_TERM`. +
+ Corrected time specification classes.
+|Z Tun, +
+ T Beale
+|17 Feb 2003
+
+|1.6.1 
+|Rome CEN TC 251 meeting. Updates to HL7 comparison text. `DV_DATE` now inherits from `DV_CUSTOMARY_QUANTITY`.
+|S Heard, +
+ T Beale
+|27 Jan 2003
+
+|1.6 
+|Sam Heard complete review. Changed constant terminology defs to runtime-evaluated set; removed `DV_PHYSICAL_DATA`.  Added new chapter for generic implementation guidelines, and new section for assumed types. Post-conditions moved to invariants: `DV_TEXT`.`_value_`, `DV_ORDERED`.`_is_simple_`, `DV_PARTIAL_DATE`.`_probable_date_`, possible_dates, `DV_PARTIAL_TIME`.`_probable_time_`, possible_times. Minor updates to HL7 comparison text. Added explanation to HL7 section.
+|S Heard, +
+ T Beale
+|13 Dec 2002
+
+|1.5.9 
+|Minor corrections: `DV_ENCAPSULATED`; `DV_QUANTITY`.`_units_` defined to be String; changed `COORDINATED_TERM` class (but semantically equivalent).
+|T Beale 
+|10 Nov 2002
+
+|1.5.8 
+|Changed name of LINK package to URI. Major update to Text cluster classes and explanation. Updated HL7 data type comparison.
+|T Beale, +
+ D Kalra, +
+ D Lloyd, +
+ M Darlison
+|1 Nov 2002
+
+|1.5.7 
+|`DV_TEXT_LIST` reverted to `TEXT_LIST`. `DV_LINK` no longer a data types; renamed to `LINK` and moved to Common RM. `link` package renamed to `uri`.
+|S Heard, +
+ Z Tun, +
+ T Beale, +
+ D Kalra, +
+ M Darlison
+|18 Oct 2002
+
+|1.5.6 
+|Rewrite of `TIME_SPECIFICATION` parse specs. Adjustments to `DV_ORDINAL`.
+|T Beale 
+|16 Sep 2002
+
+|1.5.5 
+|Timezone not allowed on pure `DV_DATE` in ISO8601. 
+|T Beale, +
+ S Heard
+|2 Sep 2002
+
+|1.5.4 
+|Moved `DV_QUANTIFIED`.`_units_` and property attributes to `DV_QUANTITY`. Introduced `DV_WORLD_TIME`.`_to_quantity_`. Added `_fractional_second_` to `DV_TIME`, `DV_DATE_TIME`, `DV_DURATION`.
+|T Beale, +
+ S Heard
+|29 Aug 2002
+
+|1.5.3 
+|Further corrections - removed derived ‘/’ markers; renamed `TERM_MAPPING`.`_granularity_` to match. Improved explanation of `DV_ORDINAL`. `DV_QUANTIFIED`.`_units_` is now a `DV_PARSABLE`.  `REFERENCE_RANGE`.`_meaning_` is now a `DV_TEXT`.  `DV_ENCAPSULATED`.`_uri_` is now a `DV_URI`. `DV_LINK`.`_type_` is now a `DV_TEXT`. Detailed review by Zar Zar Tun (DSTC).
+|T Beale, +
+ S Heard, +
+ P Schloeffel, +
+ D Lloyd, +
+ Z Tun
+|20 Aug 2002
+
+|1.5.2 
+|Further corrections - removed derived ‘/’ markers; renamed `TERM_MAPPING`.`_granularity_` to match.
+|T Beale, +
+ D Lloyd, +
+ S Heard
+|15 Aug 2002
+
+|1.5.1 
+|Minor corrections. 
+|T Beale, +
+ S Heard
+|15 Aug 2002
+
+|1.5 
+|Rewrite of section describing text types; addition of new attribute `DV_CODED_TEXT`.`_mappings_`. Removal of `TERM_REFERENCE`.`_concept_code_`.
+|T Beale, +
+ S Heard
+|1 Aug 2002
+
+|1.4.3 
+|Minor changes to text. Corrections to `DV_CODED_TEXT` relationships.  Made `DV_INTERVAL`.`_lower_unbounded_` and `DV_INTERVAL`.`_upper_unbounded_` functions.
+|T Beale, +
+ Z Tun
+|16 Jul 2002
+
+|1.4.2 
+|`DV_LINK`.`_meaning_` changed to `DV_TEXT` (typo in table). Added abstract class `DV_WORLD_TIME`.
+|T Beale, +
+ D Lloyd
+|14 Jul 2002
+
+|1.4.1 
+|Changes to `DV_ENCAPSULATED`, `DV_PARSABLE` invariants. 
+|T Beale +
+ Z Tun
+|10 Jul 2002
+
+|1.4 
+|`DV_ENCAPSULATED`. text_equivalent renamed to `DV_ENCAPSULATED`.`_alternate_text_`. Added invariant for `QUANTITY`.`_precision_`.
+|T Beale, +
+ D Lloyd
+|01 Jul 2002
+
+|1.3 
+|Added timezone to `DV_TIME` and `DV_DATE_TIME` and sign to `DV_DURATION`; added linguistic_order to `TERM_RELATION`; added as_display_string and `_as_canonical_string_` to all types.  Added `DV_STATE`.`_is_terminal_`. Renamed `TERM_TEXT` as `CODED_TEXT`.
+|T Beale, +
+ D Lloyd
+|30 Jun 2002
+
+|1.2 
+|Minor corrections to Text package. 
+|T Beale 
+|15 May 2002
+
+|1.1 
+|Numerous small changes, including: term equivalents, relationships and quantity reference ranges.
+|T Beale, +
+ D Lloyd, +
+ D Kalra, +
+ S Heard
+|10 May 2002
+
+|1.0 
+|Separated from the openEHR Reference Model. 
+|T Beale 
+|5 May 2002
+
+|===

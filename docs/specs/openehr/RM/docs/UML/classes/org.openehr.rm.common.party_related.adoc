@@ -1,0 +1,24 @@
+=== PARTY_RELATED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*PARTY_RELATED*
+
+h|*Description*
+2+a|Proxy type for identifying a party and its relationship to the subject of the record. Use where the relationship between the party and the subject of the record must be known.
+
+h|*Inherit*
+2+|`<<_party_identified_class,PARTY_IDENTIFIED>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*relationship*: `link:/releases/RM/{rm_release}/data_types.html#_dv_coded_text_class[DV_CODED_TEXT^]`
+a|Relationship of subject of this ENTRY to the subject of the record. May be coded. If it is the patient, coded as  self.
+
+h|*Invariants*
+2+a|__Relationship_valid__: `terminology (Terminology_id_openehr).has_code_for_group_id (Group_id_subject_relationship, relationship.defining_code)`
+|===

@@ -1,0 +1,7 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/P_C_TIME.json",
+    "title": "P_C_TIME",
+    "description": "ISO 8601-compatible constraint on instances of Time in the form either of a set of validity values, or else date ranges based on the C_ORDERED list constraint. There is no validity flag for \u2018hour\u2019, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include \u201cHH:??:xx\u201d (time with optional minutes and seconds not allowed).",
+    "$comments": "Defined in P_aom2 IM"
+}

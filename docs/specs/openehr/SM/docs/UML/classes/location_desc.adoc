@@ -1,0 +1,11 @@
+=== LOCATION_DESC Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*LOCATION_DESC*
+
+h|*Description*
+2+a|A descriptor containing location information for the EHR with which this descriptor is associated.
+
+|===

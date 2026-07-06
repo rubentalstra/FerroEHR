@@ -1,0 +1,277 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/main.json",
+    "allOf": [
+        {
+            "required": [
+                "_type"
+            ]
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "COMPOSITION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/COMPOSITION.json#/definitions/COMPOSITION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "OBSERVATION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/OBSERVATION.json#/definitions/OBSERVATION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "EVALUATION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/EVALUATION.json#/definitions/EVALUATION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "ACTIVITY"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/ACTIVITY.json#/definitions/ACTIVITY"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "ACTION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/ACTION.json#/definitions/ACTION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "SECTION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/SECTION.json#/definitions/SECTION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "INSTRUCTION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/INSTRUCTION.json#/definitions/INSTRUCTION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "INSTRUCTION_DETAILS"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/INSTRUCTION_DETAILS.json#/definitions/INSTRUCTION_DETAILS"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "ADMIN_ENTRY"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Composition/ADMIN_ENTRY.json#/definitions/ADMIN_ENTRY"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "CLUSTER"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_structures/CLUSTER.json#/definitions/CLUSTER"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "CAPABILITY"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Demographic/CAPABILITY.json#/definitions/CAPABILITY"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "PERSON"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Demographic/PERSON.json#/definitions/PERSON"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "ADDRESS"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Demographic/ADDRESS.json#/definitions/ADDRESS"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "ROLE"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Demographic/ROLE.json#/definitions/ROLE"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "ORGANISATION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Demographic/ORGANISATION.json#/definitions/ORGANISATION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "PARTY_IDENTITY"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Demographic/PARTY_IDENTITY.json#/definitions/PARTY_IDENTITY"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "ITEM_TREE"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_structures/ITEM_TREE.json#/definitions/ITEM_TREE"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "CONTRIBUTION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/CONTRIBUTION.json#/definitions/CONTRIBUTION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "EHR"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Ehr/EHR.json#/definitions/EHR"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "EHR_STATUS"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Ehr/EHR_STATUS.json#/definitions/EHR_STATUS"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "ORIGINAL_VERSION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/ORIGINAL_VERSION.json#/definitions/ORIGINAL_VERSION"
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "_type": {
+                        "const": "IMPORTED_VERSION"
+                    }
+                }
+            },
+            "then": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Common/IMPORTED_VERSION.json#/definitions/IMPORTED_VERSION"
+            }
+        }
+    ],
+    "definitions": {
+    }
+}

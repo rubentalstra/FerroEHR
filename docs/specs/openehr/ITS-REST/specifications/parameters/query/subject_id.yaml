@@ -1,0 +1,10 @@
+name: subject_id
+in: query
+description: |
+  The EHR subject id.
+required: true
+style: form
+explode: true
+schema:
+  type: string
+  example: 'ins01'

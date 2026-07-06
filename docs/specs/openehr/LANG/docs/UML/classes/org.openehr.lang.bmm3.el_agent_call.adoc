@@ -1,0 +1,21 @@
+=== EL_AGENT_CALL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EL_AGENT_CALL (abstract)__*
+
+h|*Description*
+2+a|A call made to a 'closed' agent, i.e. one with no remaining open arguments.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*agent*: `<<_el_agent_class,EL_AGENT>>`
+a|The agent being called.
+
+h|*Invariants*
+2+a|__Inv_valid_call__: `agent.is_callable()`
+|===

@@ -1,0 +1,15 @@
+title: GENERIC_ID
+type: object
+allOf:
+  - $ref: ../base_types/GenericId.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [GENERIC_ID]
+x-discriminator-value: GENERIC_ID
+example:
+  _type: GENERIC_ID
+  value: 'c7ec861c-c413-39ff-9965-a198ebf44747'
+  scheme: 'pid'

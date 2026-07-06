@@ -1,0 +1,58 @@
+= Preface
+
+== Purpose
+
+This document describes the design basis and syntax of the Archetype Definition Language 1.4 (ADL 1.4). It is intended for software developers, technically-oriented domain specialists and subject matter experts (SMEs). ADL is designed as an abstract human-readable and computer-processible syntax. ADL archetypes can be hand-edited using a normal text editor.
+
+The intended audience includes:
+
+* Standards bodies producing health informatics standards;
+* Academic groups using openEHR;
+* The open source healthcare community;
+* Solution vendors;
+* Medical informaticians and clinicians interested in health information.
+
+== Related Documents
+
+Prerequisite documents for reading this document include:
+
+* The {openehr_overview}[openEHR Architecture Overview^];
+* The {openehr_am_overview}[openEHR Archetype Technical Overview^].
+
+Related documents include:
+
+* The {openehr_am_aom14}[openEHR Archetype Object Model (AOM14)^].
+
+== Nomenclature
+
+In this document, the term 'attribute' denotes any stored property of a type defined in an object model, including primitive attributes and any kind of relationship such as an association or aggregation. XML 'attributes' are always referred to explicitly as 'XML attributes'.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_am_development_adl14}[{openehr_am_development_adl14}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+NOTE: this specification is a re-formatted issue of the {openehr_am_adl14_pdf}[original ADL 1.4 Specification from openEHR Release 1.0.2^]. There are slight changes in formatting, citations and other references, corrections to typographical errors and changed syntax colourisation due to the use of more modern language-based syntax colourisers in the publishing tools.
+
+NOTE: for users requiring the most recent form of ADL and archetype technology in general, the {openehr_am}[Archetype Definition Language 2 (ADL2) specifications should be used^]. In particular, the {openehr_am_overview}[Archetype Technology Overview^] should be referred to for the most current description of Archetype Technology.
+
+== Feedback
+
+Feedback may be provided on the {openehr_adl_forum}[openEHR ADL forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+Conformance of a data or software artifact to an openEHR specification is determined by a formal test of that artifact against the relevant {openehr_its_component}[openEHR Implementation Technology Specification(s) (ITSs)^], such as an IDL interface or an XML-schema. Since ITSs are formal derivations from underlying models, ITS conformance indicates model conformance.
+
+== Tools
+
+Various tools exist for creating and processing archetypes. The {openehr_awb}[ADL Workbench^] is a reference compiler, visualiser and editor. The openEHR tools can be {modelling_tools}[downloaded from the website^] .
+
+Source projects can be found at the {openehr_git}[openEHR Github project^].

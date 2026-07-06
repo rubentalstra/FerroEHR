@@ -1,0 +1,167 @@
+=== I_DEFINITION_ADL14 Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_DEFINITION_ADL14*
+
+h|*Description*
+2+a|Interface to ADL 1.4 definitions (i.e. archetypes and OPTs) in an EHR 'system'.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_archetype* ( +
+an_id: `link:/releases/BASE/{base_release}/base_types.html#_archetype_id_class[ARCHETYPE_ID^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if an ADL 1.4 archetype with id an_id exists in the service.
+
+h|*1..1*
+|*valid_archetype* ( +
+an_arch: `link:/releases/AM/{am_release}/AOM2.html#_archetype_class[ARCHETYPE^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Test validity of archetype `_an_arch_`.
+
+h|*0..1*
+|*upload_archetype* ( +
+an_arch: `link:/releases/AM/{am_release}/AOM2.html#_archetype_class[ARCHETYPE^][1]` +
+) +
+ +
+__Post_has_archetype__: `has_archetype (an_arch.identifier)`
+a|Upload a valid ADL 1.4 archetype. If an archetype with the same id already exists, replace it. The archetype must be valid to succeed.
+
+
+
+
+.Errors
+* `invalid_archetype`
+
+h|*1..1*
+|*get_archetype* ( +
+an_id: `link:/releases/BASE/{base_release}/base_types.html#_archetype_id_class[ARCHETYPE_ID^][1]` +
+): `link:/releases/AM/{am_release}/AOM2.html#_archetype_class[ARCHETYPE^]`
+a|Get the ADL 1.4 archetype with id an_id.
+
+
+
+
+.Errors
+* `artefact_does_not_exist`
+
+h|*0..1*
+|*list_archetypes* ( +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_archetype_id_class[ARCHETYPE_ID^]>`
+a|List all ADL 1.4 archetypes known in the service.
+
+h|*0..1*
+|*list_matching_archetypes* ( +
+id_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_archetype_id_class[ARCHETYPE_ID^]>`
+a|List all archetypes whose identifiers match a regex pattern.
+
+
+
+
+.Errors
+* `invalid_id_pattern`
+
+h|*0..1*
+|*delete_archetype* ( +
+an_id: `link:/releases/BASE/{base_release}/base_types.html#_archetype_id_class[ARCHETYPE_ID^][1]` +
+) +
+ +
+__Pre_artefact_exists__: `has_artefact (an_id)` +
+__Post_archetype_removed__: `not has_archetype (an_id)`
+a|Delete a previously uploaded archetype.
+
+
+
+
+.Errors
+* `invalid_archetype`
+
+h|*1..1*
+|*has_opt* ( +
+an_opt_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if ADL 1.4 OPT with id `_an_opt_id_` exists in the service.
+
+h|*1..1*
+|*valid_opt* ( +
+an_opt: `link:/releases/AM/{am_release}/AOM2.html#_archetype_class[ARCHETYPE^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Test validity of OPT `_an_opt_`.
+
+h|*0..1*
+|*upload_opt* ( +
+an_opt: `link:/releases/AM/{am_release}/AOM2.html#_archetype_class[ARCHETYPE^][1]` +
+) +
+ +
+__Pre_valid__: `valid_opt(an_opt)`
+a|Upload an ADL 1.4 Operational Template (OPT).
+
+.Errors:
+* `invalid_template`
+
+h|*1..1*
+|*get_opt* ( +
+an_opt_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/AM/{am_release}/AOM2.html#_archetype_class[ARCHETYPE^]`
+a|Get the ADL 1.4 OPT with id `_an_opt_id_`.
+
+
+
+
+.Errors
+* `artefact_does_not_exist`
+
+h|*0..1*
+|*list_opts* ( +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]>`
+a|List all AD 1.4 OPTs known in the service.
+
+h|*0..1*
+|*list_matching_opts* ( +
+id_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/base_types.html#_archetype_id_class[ARCHETYPE_ID^]>`
+a|List all OPTs whose identifiers match a regex pattern.
+
+
+
+
+.Errors
+* `invalid_id_pattern`
+
+h|*0..1*
+|*delete_opt* ( +
+an_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+) +
+ +
+__Pre_has_opt__: `has_opt (an_id)` +
+__Post_opt_removed__: `not has_opt (an_id)`
+a|Delete a previously uploaded ADL 1.4. OPT.
+
+
+
+
+.Errors
+* `invalid_template`
+
+h|*1..1*
+|*archetypes_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Return total archetypes count.
+
+h|*1..1*
+|*opts_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Return total OPTs count.
+|===

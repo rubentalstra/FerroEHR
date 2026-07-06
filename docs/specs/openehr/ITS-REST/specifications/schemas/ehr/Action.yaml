@@ -1,0 +1,21 @@
+title: ACTION
+type: object
+allOf:
+  - $ref: ../ehr/CareEntry.yaml
+required:
+  - time
+  - ism_transition
+  - description
+properties:
+  _type:
+    type: string
+    default: ACTION
+  time:
+    $ref: ../data_types/DvDateTime.yaml
+  ism_transition:
+    $ref: ../ehr/IsmTransition.yaml
+  instruction_details:
+    $ref: ../ehr/InstructionDetails.yaml
+  description:
+    $ref: ../data_structures/UItemStructure.yaml
+x-discriminator-value: ACTION

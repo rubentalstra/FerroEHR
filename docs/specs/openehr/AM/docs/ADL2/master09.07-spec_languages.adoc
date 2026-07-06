@@ -1,0 +1,13 @@
+== Languages
+
+A specialised archetype or template is only required to have one language in common with its flat precursor, enabling a flat output containing this language. This supports the common situation in which an international standard archetype with numerous translations is used as a basis for further specialisation in a particular country or project. Clearly, the latter has no need of, and quite probably no capability for including all the original translations in the specialisation.
+
+However, if the specialised archetype language is not present at all in the parent flat, it will need to be added to the archetypes in the specialisation lineage first.
+
+The languages present in the flat output will therefore be those languages available in both the flat parent (implying all previous archetypes / templates in the specialisation lineage) and the new specialisation. Any new languages introduced in the latter not available in the flat parent will be discarded.
+
+Locale-specific overrides can be introduced for any linguistic element in an archetype, including the terminology. Such an override has a language code conforming to a subset of the {rfc5646}[IETF RFC 5646 language tag standard^], namely the common 2-part language-region tag exemplified by 'en-GB' (British English), 'pt-BR' (Brazilian Portuguese), and so on. The tags are case-insensitive, but tools that create tags should follow the recommendation from the standard, which is that:
+
+* language tag is lowercase;
+* region tags are uppercase.
+

@@ -1,0 +1,5 @@
+:spec_title: Support Terminology specification
+:copyright_year: 2008
+:spec_status: STABLE
+:keywords: terminology, code-set, vocabulary, openehr
+:description: openEHR Support Terminology specification

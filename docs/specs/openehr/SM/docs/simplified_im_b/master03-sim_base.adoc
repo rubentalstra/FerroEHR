@@ -1,0 +1,27 @@
+== Simplified IM Package
+
+TODO: we may remove the `_to_rm()_` / `_from_from()_` approach and just stick with rules.
+
+The following UML diagram shows the top-level `simplified_im_b` package defining the special interface type `S_TYPE`.
+
+[.text-center]
+.`sm.simplified_im_b` package
+image::{uml_diagrams_uri}/SM-simplified_im_b.svg[id=sm_simplified_im_b, align="center"]
+
+=== Class Definitions
+
+include::{uml_export_dir}/classes/s_type.adoc[leveloffset=+1]
+
+== Base Model Package
+
+The following UML diagram shows the SIM `base` package defining `S_XXX` types corresponding to the Base `base` package types.
+
+[.text-center]
+.`sm.simplified_im_b.base` package
+image::{uml_diagrams_uri}/SM-simplified_im_b.base.svg[id=sm_simplified_im_b_base, align="center"]
+
+=== Class Definitions
+
+include::{uml_export_dir}/classes/s_object_ref.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_object_id.adoc[leveloffset=+1]
+include::{uml_export_dir}/classes/s_generic_id.adoc[leveloffset=+1]

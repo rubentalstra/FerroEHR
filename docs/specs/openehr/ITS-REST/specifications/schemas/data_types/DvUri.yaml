@@ -1,0 +1,18 @@
+title: DV_URI
+type: object
+allOf:
+  - $ref: ../data_types/DataValue.yaml
+required:
+  - value
+properties:
+  _type:
+    type: string
+    default: DV_URI
+  value:
+    type: string
+x-discriminator-value: DV_URI
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    DV_URI: '#/components/schemas/DvUri'
+    DV_EHR_URI: '#/components/schemas/DvEhrUri'

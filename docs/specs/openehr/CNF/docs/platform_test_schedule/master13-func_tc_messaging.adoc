@@ -1,0 +1,139 @@
+[[_func_conf_def_msg_component]]
+= Test Suite: MESSAGE_SERVICE
+
+// Some useful links: 
+:i_message_service_link: {openehr_sm_openehr_platform}#_i_message_service_interface
+:i_ehr_extract_link: {openehr_sm_openehr_platform}#_i_ehr_extract_interface
+:i_tdd_link: {openehr_sm_openehr_platform}#_i_tdd_interface
+
+== Normative Reference
+
+Items in this validation suite conceptually use the following abstract interfaces from the {i_message_service_link}[Abstract Platform Service Model, MESSAGE component^].
+
+* `I_EHR_EXTRACT`
+* `I_TDD`
+
+These are concretely realised in implementation technology specfic APIs, such as the {openehr_message_rest_api}[MESSAGE REST API^].
+
+This test suite uses artefacts defined by the following information model specifications:
+
+* Service Interfaces:
+** {openehr_sm_openehr_platform}#_message_package[Abstract Message Service Model^]
+* Information Models:
+** {openehr_rm_ehr_extract}[EHR Extract IM^]
+** {openehr_rm_ehr}[EHR IM^]
+** {openehr_rm_demographic}[Demographic IM^]
+** {openehr_rm_common}[Common IM^]
+** {openehr_rm_data_structures}[Data Structures IM^]
+** {openehr_rm_data_types}[Data Types IM^]
+** {openehr_rm_support}[Support IM^]
+
+== Dependencies
+
+TBD
+
+== Test Environment
+
+[width="5%",cols="100%",]
+|===
+|TBD
+|===
+
+== Test Data Sets
+
+[width="5%",cols="100%",]
+|===
+|TBD
+|===
+
+== Test Cases
+
+=== Service Model operation: I_EHR_EXTRACT.export_ehr()
+
+Service Model reference: {i_ehr_extract_link}[`I_EHR_EXTRACT._export_ehr()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_EHR_EXTRACT.export_ehr_extract()
+
+Service Model reference: {i_ehr_extract_link}[`I_EHR_EXTRACT._export_ehr_extract()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_EHR_EXTRACT.export_ehr()
+
+Service Model reference: {i_ehr_extract_link}[`I_EHR_EXTRACT._export_ehr()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_EHR_EXTRACT.export_ehrs()
+
+Service Model reference: {i_ehr_extract_link}[`I_EHR_EXTRACT._export_ehrs()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_EHR_EXTRACT.export_ehr_extracts()
+
+Service Model reference: {i_ehr_extract_link}[`I_EHR_EXTRACT._export_ehr_extracts()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_TDD.import_tdd()
+
+Service Model reference: {i_tdd_link}[`I_TDD._import_tdd()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_TDD.import_tdds()
+
+Service Model reference: {i_tdd_link}[`I_TDD._import_tdds()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD

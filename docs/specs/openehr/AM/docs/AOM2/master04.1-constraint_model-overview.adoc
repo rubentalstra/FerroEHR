@@ -1,0 +1,32 @@
+= Constraint Model Package
+
+== Overview
+
+<<constraint_model>> and <<constraint_model_primitive>> illustrate the object model of constraints used in an archetype definition. This model is completely generic, and is designed to express the semantics of constraints on instances of classes which are themselves described in any orthodox object-oriented formalism, such as UML. Accordingly, the major abstractions in this model correspond to major abstractions in object-oriented formalisms, including several variations of the notion of 'object' and the notion of 'attribute'. The notion of 'object' rather than 'class' or 'type' is used because archetypes are about constraints on data (i.e. 'instances', or 'objects') rather than models, which are constructed from 'classes'. In this document, the word 'attribute' refers to any data property of a class, regardless of whether regarded as a 'relationship' (i.e. association, aggregation, or composition) or 'primitive' (i.e. value) attribute in an object model.
+
+[.text-center]
+.`am.aom2.constraint_model` Package
+image::{uml_diagrams_uri}/AM-aom2.constraint_model.svg[id=constraint_model, align="center"]
+
+The definition part of an archetype is an instance of a `C_COMPLEX_OBJECT` and consists of alternate layers of object and attribute constrainer nodes, each containing the next level of nodes. At the leaves are primitive object constrainer nodes constraining primitive types such as `String` , `Integer` etc. There are also nodes that represent internal references to other nodes, constraint reference nodes that refer to a text constraint in the constraint binding part of the archetype terminology, and archetype constraint nodes, which represent constraints on other archetypes allowed to appear at a given point. The full list of concrete node types is as follows:
+
+* `C_COMPLEX_OBJECT` : any interior node representing a constraint on instances of some non-primitive type, e.g. `OBSERVATION`, `SECTION` ;
+* `C_ATTRIBUTE` : a node representing a constraint on an attribute (i.e. UML 'relationship' or 'primitive attribute') in an object type;
+* `C_PRIMITIVE_OBJECT` : a node representing a constraint on a primitive (built-in) object type;
+* `C_COMPLEX_OBJECT_PROXY` : a node that refers to a previously defined `C_COMPLEX_OBJECT` node in the same archetype. The reference is made using a path;
+* `ARCHETYPE_SLOT` : a node whose statements define a constraint that determines which other archetypes can appear at that point in the current archetype. It can be thought of as a keyhole, into which few or many keys might fit, depending on how specific its shape is. Logically it has the same semantics as a `C_COMPLEX_OBJECT`, except that the constraints are expressed in another archetype, not the current one.
+* `C_ARCHETYPE_ROOT` : stands for the root node of an archetype; enables another archetype to be referenced from the present one. Used in both archetypes and templates.
+
+The constraints define which configurations of reference model class instances are considered to conform to the archetype. For example, certain configurations of the classes `PARTY`, `ADDRESS`, `CLUSTER` and `ELEMENT` might be defined by a Person archetype as allowable structures for 'people with identity, contacts, and addresses'. Because the constraints allow optionality, cardinality and other choices, a given archetype usually corresponds to a set of similar configurations of objects.
+
+[.text-center]
+.`am.aom2.constraint_model.primitive` Package
+image::{uml_diagrams_uri}/AM-aom2.constraint_model.primitive.svg[id=constraint_model_primitive, align="center"]
+
+<<constraint_model_primitive_implem>> below shows the detailed temporal constraint definitions, used by the `C_TEMPORAL` class and descendants in the `primitive` package above.
+
+[.text-center]
+.`am.aom2.constraint_model.primitive-implem` Package
+image::{uml_diagrams_uri}/AM-aom2.constraint_model.primitive-implem.svg[id=constraint_model_primitive_implem, align="center"]
+
+The type-name nomenclature `C_XXX` used here is intended to be read as 'constraint on objects of type `XXXX` ', i.e. a `C_COMPLEX_OBJECT` is a 'constraint on a complex object (defined by a complex reference model type)'. These type names are used below in the formal model.

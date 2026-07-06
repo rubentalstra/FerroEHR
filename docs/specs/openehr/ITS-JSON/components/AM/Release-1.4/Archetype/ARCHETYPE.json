@@ -1,0 +1,76 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/ARCHETYPE.json",
+    "title": "ARCHETYPE",
+    "description": "Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.",
+    "$comments": "Defined in Archetype IM, inherits from AUTHORED_RESOURCE",
+    "type": "object",
+    "properties": {
+        "original_language": {
+            "description": "Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/TERMINOLOGY_CODE"
+        },
+        "is_controlled": {
+            "description": "True if this resource is under any kind of change control (even file copying), in which case revision history is created. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/Boolean"
+        },
+        "translations": {
+            "description": "List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Resource/all.json#/definitions/TRANSLATION_DETAILS"
+            }
+        },
+        "description": {
+            "description": "Description and lifecycle information of the resource.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Resource/all.json#/definitions/RESOURCE_DESCRIPTION"
+        },
+        "uid": {
+            "description": "OID identifier of this archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Support/all.json#/definitions/HIER_OBJECT_ID"
+        },
+        "annotations": {
+            "description": "Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Resource/all.json#/definitions/RESOURCE_ANNOTATIONS"
+        },
+        "revision_history": [],
+        "definition": {
+            "description": "Root node of the definition of this archetype.",
+            "$ref": "all.json#/definitions/C_COMPLEX_OBJECT"
+        },
+        "ontology": {
+            "description": "The ontology of the archetype.",
+            "$ref": "all.json#/definitions/ARCHETYPE_ONTOLOGY"
+        },
+        "adl_version": {
+            "description": "ADL version if archetype was read in from an ADL sharable archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+        },
+        "archetype_id": {
+            "description": "Multi-axial identifier of this archetype in archetype space.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Support/all.json#/definitions/ARCHETYPE_ID"
+        },
+        "concept": {
+            "description": "The normative meaning of the archetype as a whole, expressed as a local archetype code, typically \u201cat0000\u201d.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all.json#/definitions/String"
+        },
+        "parent_archetype_id": {
+            "description": "Identifier of the specialisation parent of this archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Support/all.json#/definitions/ARCHETYPE_ID"
+        },
+        "invariants": {
+            "description": "Invariant statements about this object. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+            "type": "array",
+            "items": {
+                "$ref": "all.json#/definitions/ASSERTION"
+            }
+        }
+    },
+    "required": [
+        "original_language",
+        "definition",
+        "ontology",
+        "archetype_id",
+        "concept"
+    ]
+}

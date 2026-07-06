@@ -1,0 +1,31 @@
+operationId: definition_query_version_store.yaml
+summary: Store a query version
+description: |
+  Stores a query, at a specified `version`, on the system.
+tags:
+  - Query
+parameters:
+  - $ref: ../parameters/path/qualified_query_name.yaml
+  - $ref: ../parameters/path/version.yaml
+  - $ref: ../parameters/query/query_type.yaml
+requestBody:
+  content:
+    text/plain:
+      schema:
+        $ref: ../schemas/query/AQL.yaml
+      example: >-
+        SELECT c
+        FROM
+          EHR e
+            CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1]
+              CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1]
+        WHERE
+          obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp
+  required: true
+responses:
+  '200':
+    $ref: ../responses/200_StoredQuery_stored.yaml
+  '400':
+    $ref: ../responses/400_StoredQuery.yaml
+  '409':
+    $ref: ../responses/409_StoredQuery_version.yaml

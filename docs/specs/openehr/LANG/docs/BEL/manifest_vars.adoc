@@ -1,0 +1,5 @@
+:spec_title: Basic Expression Language (BEL)
+:copyright_year: 2016
+:spec_status: STABLE
+:keywords: openehr, expressions, rules
+:description: openEHR Basic Expression Language specification

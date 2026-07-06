@@ -1,0 +1,743 @@
+= ADL - Archetype Definition Language
+
+== Introduction
+
+This section describes ADL archetypes as a whole, adding a small amount of detail to the descriptions of dADL and cADL already given. The important topic of the relationship of the cADL-encoded definition section and the dADL-encoded ontology section is discussed in detail. In this section, only standard ADL (i.e. the cADL and dADL constructs and types described so far) is assumed. Archetypes for use in particular domains can also be built with more efficient syntax and domain-specific types, as described in <<Customising ADL>>, and the succeeding sections.
+
+An ADL archetype follows the structure shown below:
+
+--------
+archetype
+    archetype_id
+[specialize 
+    parent_archetype_id]
+concept
+    coded_concept_name
+language
+    dADL language description section
+[description
+    dADL meta-data description section]
+definition
+    cADL structural section
+invariant
+    assertions
+ontology
+    dADL definitions section
+[revision_history 
+    dADL section]
+--------
+
+== Basics
+
+=== Keywords
+
+ADL has a small number of keywords which are reserved for use in archetype declarations, as follows:
+
+* `archetype`, `specialise` / `specialize`, `concept`,
+* `language` ,
+* `description` , `definition` , `invariant` , `ontology`
+
+All of these words can safely appear as identifiers in the `definition` and `ontology` sections.
+
+=== Node Identification
+
+In the definition section of an ADL archetype, a particular scheme of codes is used for node identifiers as well as for denoting constraints on textual (i.e. language dependent) items. Codes are either local to the archetype, or from an external lexicon. This means that the archetype description is the same in all languages, and is available in any language that the codes have been translated to. All term codes are shown in brackets (`[]`). Codes used as node identifiers and defined within the same archetype are prefixed with `at` and by convention have 4 digits, e.g. `[at0010]`. Codes of any length are acceptable in ADL archetypes. Specialisations of locally coded concepts have the same root, followed by 'dot' extensions, e.g. `[at0010.2]`. From a terminology point of view, these codes have no implied semantics - the 'dot' structuring is used as an optimisation on node identification.
+
+=== Local Constraint Codes
+
+A second kind of local code is used to stand for constraints on textual items in the body of the archetype. Although these could be included in the main archetype body, because they are language- and/or terminology-sensitive, they are defined in the ontology section, and referenced by codes prefixed by `ac`, e.g. `[ac0009]`. As for `at` codes, the convention used in this document is to use 4-digit `ac` codes, even though any number of digits is acceptable. The use of these codes is described in section
+<<_constraint_definitions_section>>.
+
+== Header Sections
+
+=== Archetype Section
+
+This section introduces the archetype and must include an identifier. A typical archetype section is as follows:
+
+[source, adl]
+--------
+archetype (adl_version=1.4)
+    openEHR-EHR-OBSERVATION.haematology.v1
+--------
+
+The multi-axial identifier identifies archetypes in a global space. The syntax of the identifier is described in <<Archetype Identification>> in {openehr_am_arch_sys}[The openEHR Archetype System^].
+
+=== Controlled Indicator
+
+A flag indicating whether the archetype is change-controlled or not can be included after the version, as follows:
+
+[source, adl]
+--------
+archetype (adl_version=1.4; controlled)
+    openEHR-EHR-OBSERVATION.haematology.v1
+--------
+
+This flag may have the two values "controlled" and "uncontrolled" only, and is an aid to software. Archetypes that include the "controlled" flag should have the revision history section included, while those with the "uncontrolled" flag, or no flag at all, may omit the revision history. This enables archetypes to be privately edited in an early development phase without generating large revision histories of little or no value.
+
+=== Specialise Section
+
+This optional section indicates that the archetype is a specialisation of some other archetype, whose identity must be given. Only one specialisation parent is allowed, i.e. an archetype cannot 'multiply-inherit' from other archetypes. An example of declaring specialisation is as follows:
+
+[source, adl]
+--------
+archetype (adl_version=1.4)
+    openEHR-EHR-OBSERVATION.haematology-cbc.v1
+specialise 
+    openEHR-EHR-OBSERVATION.haematology.v1
+--------
+
+Here the identifier of the new archetype is derived from that of the parent by adding a new section to its domain concept section. See the `ARCHETYPE_ID` definition in the identification package in the {openehr_rm_support}[openEHR Support IM specification^].
+
+NOTE: both the US and British English versions of the word "specialise" are valid in ADL.
+
+=== Concept Section
+
+All archetypes represent some real world concept, such as a "patient", a "blood pressure", or an "antenatal examination". The concept is always coded, ensuring that it can be displayed in any language the archetype has been translated to. A typical concept section is as follows:
+
+--------
+concept
+    [at0010] -- haematology result
+--------
+
+In this concept definition, the term definition of `[at0010]` is the proper description corresponding to the "haematology-cbc" section of the archetype id above.
+
+=== Language Section and Language Translation
+
+The `language` section includes data describing the original language in which the archetype was authored (essential for evaluating natural language quality), and the total list of languages available in the archetype. There can be only one `original_language`. The `translations` list must be updated every time a translation of the archetype is undertaken. The following shows a typical example.
+
+[source, adl]
+--------
+language
+    original_language = <[iso_639-1::en]>
+    translations = <
+        ["de"] = <
+            language = <[iso_639-1::de]>
+            author = <
+                ["name"] = <"Frederik Tyler">
+                ["email"] = <"freddy@something.somewhere.co.uk">
+            >
+            accreditation = <"British Medical Translator id 00400595">
+        >
+        ["ru"] = <
+            language = <[iso_639-1::ru]>
+            author = <
+                ["name"] = <"Nina Alexandrovna">
+                ["organisation"] = <"Dostoevsky Media Services">
+                ["email"] = <"nina@translation.dms.ru">
+            >
+            accreditation = <"Russian Translator id 892230-3A">
+        >
+    >
+--------
+
+Archetypes must always be translated completely, or not at all, to be valid. This means that when a new translation is made, every language dependent section of the `description` and `ontology` sections has to be translated into the new language, and an appropriate addition made to the `translations` list in the language section.
+
+NOTE: some non-conforming ADL tools in the past created archetypes without a `language` section, relying on the `ontology` section to provide the `original_language` (there called `primary_language`) and list of languages (`languages_available`). In the interests of backward compatibility, tool builders should consider accepting archetypes of the old form and upgrading them when parsing to the correct form, which should then be used for serialising/saving.
+
+=== Description Section
+
+The `description` section of an archetype contains descriptive information, or what some people think of as document "meta-data", i.e. items that can be used in repository indexes and for searching. The dADL syntax, described in <<dADL - Data ADL>>, is used for the description, as in the following example.
+
+[source, adl]
+--------
+description
+    original_author = <
+        ["name"] = <"Dr J Joyce">
+        ["organisation"] = <"NT Health Service">
+        ["date"] = <2003-08-03>
+    >
+    lifecycle_state =  <"initial">
+    resource_package_uri =  <"http://www.aihw.org.au/data_sets/diabetic_archetypes.html">
+
+    details = <
+        ["en"] = <
+            language = <[iso_639-1::en]>
+            purpose =  <"archetype for diabetic patient review">
+            use = <"used for all hospital or clinic-based diabetic reviews, 
+                including first time. Optional sections are removed according to the particular review">
+            misuse = <"not appropriate for pre-diagnosis use">
+            original_resource_uri = <"http://www.healthdata.org.au/data_sets/diabetic_review_data_set_1.html">
+            other_details = <...>
+        >
+        ["de"] = <
+            language = <[iso_639-1::de]>
+            purpose =  <"Archetyp für die Untersuchung von Patienten mit Diabetes">
+            use = <"wird benutzt für alle Diabetes-Untersuchungen im
+                    Krankenhaus, inklusive der ersten Vorstellung. Optionale
+                    Abschnitte werden in Abhängigkeit von der speziellen
+                    Vorstellung entfernt.">
+            misuse = <"nicht geeignet für Benutzung vor Diagnosestellung">
+            original_resource_uri = <"http://www.healthdata.org.au/data_sets/diabetic_review_data_set_1.html">
+            other_details = <...>
+        >
+    >
+
+    other_details = <...>
+
+--------
+
+A number of details are worth noting here. Firstly, the free hierarchical structuring capability of dADL is exploited for expressing the 'deep' structure of the `details` section and its subsections. Secondly, the dADL qualified list form is used to allow multiple translations of the `purpose` and `use` to be shown. Lastly, empty items such as `misuse` (structured if there is data) are shown with just one level of empty brackets. The above example shows meta-data based on the {openehr_am_aom14}[openEHR Archetype Object Model (AOM)^].
+
+The `description` section is technically optional according to the AOM, but in any realistic use of ADL for archetypes, it will be required. A minimal description section satisfying to the AOM is as follows:
+
+[source, adl]
+--------
+description
+    original_author = <
+        ["name"] = <"Dr J Joyce">
+        ["organisation"] = <"NT Health Service">
+        ["date"] = <2003-08-03>
+    >
+    lifecycle_state = <"initial">
+    details = <
+        ["en"] = <
+            language = <[iso_639-1::en]>
+            purpose = <"archetype for diabetic patient review">
+        >
+    >
+--------
+
+==== Extending meta-data
+
+The `description` section models a specific set of meta-data items, but of course, the meta-data needs over time can never be fully predicted. To enable free extension of the `description` section, the `other_details` is used. Its structure takes the form of a Hash of strings, i.e. `Hash <String, String>`, and can be used to contain other meta-data items not explicitly modelled.
+
+The <<Extended Meta-data Guide>> Appendix describes the known uses of extended meta-data to date.
+
+== Definition Section
+
+The `definition` section contains the main formal definition of the archetype, and is written in <<cADL - Constraint ADL,the Constraint Definition Language>>). A typical `definition` section is as follows:
+
+[source, adl]
+--------
+definition
+    OBSERVATION[at0000] ∈ {                                              -- blood pressure measurement
+        name ∈ {                                                         -- any synonym of BP
+            CODED_TEXT ∈ {
+                defining_code ∈ { 
+                    CODE_PHRASE ∈ {[ac0001]}
+                }
+            }
+        }
+        data ∈ {            
+            HISTORY[at9001] ∈ {                                           -- history
+                events cardinality ∈ {1..*} ∈ { 
+                    EVENT[at9002] occurrences ∈ {0..1} ∈ {               -- baseline
+                        name ∈ {
+                            CODED_TEXT ∈ {
+                                defining_code ∈ {
+                                    CODE_PHRASE ∈ {[ac0002]}
+                                }
+                            }
+                        }
+                        data ∈ {
+                            ITEM_LIST[at1000] ∈ {                           -- systemic arterial BP
+                                items cardinality ∈ {2..*} ∈ {
+                                    ELEMENT[at1100] ∈ {                     -- systolic BP
+                                        name ∈ {                            -- any synonym of 'systolic'
+                                            CODED_TEXT ∈ {
+                                                defining_code ∈ {
+                                                    CODE_PHRASE ∈ {[ac0002]}
+                                                }
+                                            }
+                                        }
+                                        value ∈ {
+                                            QUANTITY ∈ {
+                                                magnitude ∈ {|0..1000|}
+                                                property ∈ {[properties::944]}  -- "pressure"
+                                                units ∈ {[units::387]}          -- "mm[Hg]"
+                                            }
+                                        }
+                                    } 
+                                    ELEMENT[at1200] ∈ {                          -- diastolic BP
+                                        name ∈ {                                 -- any synonym of 'diastolic'
+                                            CODED_TEXT ∈ {
+                                                defining_code ∈ {
+                                                    CODE_PHRASE ∈ {[ac0003]}
+                                                }
+                                            }
+                                        }
+                                        value ∈ {
+                                            QUANTITY ∈ {
+                                                magnitude ∈ {|0..1000|}
+                                                property ∈ {[properties::944]}   -- "pressure"
+                                                units ∈ {[units::387]}           -- "mm[Hg]"
+                                            }
+                                        }
+                                    } 
+                                    ELEMENT[at9000] occurrences ∈ {0..*} ∈ {*}    -- unknown new item
+                                }
+                            ...
+--------
+
+This definition expresses constraints on instances of the types `ENTRY` , `HISTORY` , `EVENT` , `ITEM_LIST` , `ELEMENT` , `QUANTITY` , and `CODED_TEXT` so as to allow them to represent a blood pressure measurement, consisting of a history of measurement events, each consisting of at least systolic and diastolic pressures, as well as any number of other items (expressed by the `[at9000]` "any" node near the bottom).
+
+=== Design-time and Run-time paths
+
+All non-unique sibling nodes in a cADL text that correspond to nodes in data which might be referred to from elsewhere in the archetype (via `use_node`), or might be queried at runtime, require a node identifier. It is preferable to assign a 'design-time meaning', enabling paths and queries to be expressed using logical meanings rather than meaningless identifiers. When data are created according to the `definition` section of an archetype, the archetype node identifiers can be written into the data, providing a reliable way of finding data nodes, regardless of what other runtime names might have been chosen by the user for the node in question. There are two reasons for doing this. Firstly, querying cannot rely on runtime names of nodes (e.g. names like "sys BP", "systolic bp", "sys blood press." entered by a doctor are unreliable for querying); secondly, it allows runtime data retrieved from a persistence mechanism to be re-associated with the cADL structure which was used to create it.
+
+An example which shows the difference between design-time meanings associated with node identifiers and runtime names is the following, from a `SECTION` archetype representing the problem/SOAP headings (a simple heading structure commonly used by clinicians to record patient contacts under top-level headings corresponding to the patient's problem(s), and under each problem heading, the headings "subjective", "objective", "assessment", and "plan").
+
+[source, cadl]
+--------
+    SECTION[at0000] matches {                          -- problem
+        name matches {
+            CODED_TEXT matches {
+                defining_code matches {[ac0001]}       -- any clinical problem type
+            }
+        }
+    }
+--------
+
+In the above, the node identifier `[at0000]` is assigned a meaning such as "clinical problem" in the archetype terminology section. The subsequent lines express a constraint on the runtime _name_ attribute, using the internal code `[ac0001]` . The constraint `[ac0001]` is also defined in the archetype terminology section with a formal statement meaning "any clinical problem type", which could clearly evaluate to thousands of possible values, such as "diabetes", "arthritis" and so on. As a result, in the runtime data, the node identifier corresponding to "clinical problem" and the actual problem type chosen at runtime by a user, e.g. "diabetes", can both be found. This enables querying to find all nodes with meaning "problem", or all nodes describing the problem "diabetes". Internal `[acNNNN]` codes are described in <<_local_constraint_codes>>.
+
+== Invariant Section
+
+The `rules` section in an ADL archetype introduces assertions which relate to the entire archetype, and can be used to make statements which are not possible within the block structure of the `definition` section. Any constraint which relates more than one property to another is in this category, as are most constraints containing mathematical or logical formulae. Rules are expressed in the archetype assertion language, described in <<Assertions>>.
+
+An assertion is a first order predicate logic statement which can be evaluated to a boolean result at runtime. Objects and properties are referred to using paths.
+
+The following simple example says that the speed in kilometres of some node is related to the speed-in-miles by a factor of 1.6:
+
+[source, adl]
+--------
+invariant
+    validity: /speed[at0002]/kilometres/magnitude = /speed[at0004]/miles/magnitude * 1.6
+--------
+
+== Ontology Section
+
+=== Overview
+
+The `ontology` section of an archetype is expressed in dADL, and is where codes representing node identifiers, constraints on coded term values, and bindings to terminologies are defined. Linguistic language translations are added in the form of extra blocks keyed by the relevant language. The following example shows the general layout of this section.
+
+[source, adl]
+--------
+ontology
+    terminologies_available = <"snomed_ct", ...>
+    
+    term_definitions = <
+        ["en"] = <
+            items = <...>
+        >
+        ["de"] = <
+            items = <...>
+        >
+    >
+    constraint_definitions = <
+        ["en"] = <
+            items = <...>
+        >
+        ["de"] = <
+            items = <...>
+        >
+    >
+    term_bindings = <
+        ["snomed_ct"] = <
+            items = <...>
+            ...
+        >
+    >
+    constraint_bindings = <
+        ["snomed_ct"] = <
+            items = <...>
+            ...
+        >
+    >
+--------
+
+The `term_definitions` section is mandatory, and must be defined for each translation carried out. Each of these sections can have its own meta-data, which appears within description sub-sections, such as the one shown above providing translation details.
+
+=== Ontology Header Statements
+
+The `terminologies_available` statement includes the identifiers of all terminologies for which `term_bindings` sections have been written.
+
+NOTE: some ADL tools in the past created archetypes with `primary_language` and `languages_available` statements rather than the `original_languages` and `translations` blocks in the `language` section. In the interests of backward compatibility, tool builders should consider accepting archetypes of the old form and upgrading them when parsing to the correct form, which should then be used for serialising/saving.
+
+=== Term_definitions Section
+
+This section is where all archetype local terms (that is, terms of the form `[atNNNN]`) are defined. The following example shows an extract from the English and German term definitions for the archetype local terms in a problem/SOAP headings archetype. Each term is defined using a structure of name/value pairs, and must at least include the names "text" and "description", which are akin to the usual rubric, and full definition found in terminologies like SNOMED-CT. Each term object is then included in the appropriate language list of term definitions, as shown in the example below.
+
+[source, odin]
+--------
+    term_definitions = <
+        ["en"] = <
+            items = <
+                ["at0000"] = <
+                    text = <"problem">
+                    description = <"The problem experienced by the subject of care to which the contained information relates">
+                >
+                ["at0001"] = <
+                    text = <"problem/SOAP headings"> 
+                    description = <"SOAP heading structure for multiple problems">
+                >
+                ... 
+                ["at4000"] = <
+                    text = <"plan">
+                    description = <"The clinician's professional advice">
+                >
+            >
+        >
+        ["de"] = <
+            items = <
+                ["at0000"] = <
+                    text = <"klinisches Problem">
+                    description = <"Das Problem des Patienten worauf sich diese Informationen beziehen">
+                >
+                ["at0001"] = <
+                    text = <"Problem/SOAP Schema"> 
+                    description = <"SOAP-Schlagwort-Gruppierungsschema fuer mehrfache Probleme">
+                >
+                ["at4000"] = <
+                    text = <"Plan">
+                    description = <"Klinisch-professionelle Beratung des Pflegenden">
+                >
+            >
+        >
+    >
+--------
+
+In some cases, term definitions may have been lifted from existing terminologies (only a safe thing to do if the definitions _exactly_ match the need in the archetype). To indicate where definitions come from, a "provenance" tag can be used, as follows:
+
+[source, odin]
+----
+    ["at4000"] = <
+        text = <"plan">
+        description = <"The clinician's professional advice">
+        provenance = <"ACME_terminology(v3.9a)"> 
+    >
+----
+
+Note that this does not indicate a _binding_ to any term, only the origin of its definition. Bindings are described below.
+
+NOTE: the use of `items` in the above is historical in ADL, and will be changed in ADL2 to the proper form of dADl for nested containers, i.e. removing the "items = <" blocks altogether.
+
+=== Constraint_definitions Section
+
+The constraint_definitions section is of exactly the same form as the `term_definitions` section, and provides the definitions - i.e. the meanings - of the local constraint codes, which are of the form `[acNNNN]`. Each such code refers to some constraint such as "any term which is a subtype of 'hepatitis' in the ICD10AM terminology"; the constraint definitions do not provide the constraints themselves, but define the _meanings_ of such constraints, in a manner comprehensible to human beings, and usable in GUI applications. This may seem a superfluous thing to do, but in fact it is quite important. Firstly, term constraints can only be expressed with respect to particular terminologies - a constraint for "kind of hepatitis" would be expressed in different ways for each terminology which the archetype is bound to. For this reason, the actual constraints are defined in the `constraint_bindings` section. An example of a constraint term definition for the hepatitis constraint is as follows:
+
+[source, odin]
+----
+items = <
+    ["ac1015"] = <
+        text = <"type of hepatitis">
+        description = <"any term which means a kind of viral hepatitis">
+    >
+>
+----
+
+Note that while it often seems tempting to use classification codes, e.g. from the {who_icd}[ICD vocabularies^], these will rarely be much use in terminology or constraint definitions, because it is nearly always _descriptive_, not classificatory terms which are needed.
+
+=== Term_bindings Section
+
+This section is used to describe the equivalences between archetype local terms and terms found in external terminologies. The main purpose for allowing query engine software that wants to search for an instance of some external term to determine what equivalent to use in the archetype. Note that this is distinct from the process of embedding mapped terms in runtime data, which is also possible with the openEHR Reference Model `DV_TEXT` and `DV_CODED_TEXT` types.
+
+==== Global Term Bindings
+
+There are two types of term bindings that can be used, 'global' and path-based. The former is where an external term is bound directly to an archetype local term, and the binding holds globally throughout the archetype. In many cases, archetype terms only appear once in an archetype, but in some archetypes, at-codes are reused throughout the archetype. In such cases, a global binding asserts that the correspondence is true in all locations. A typical global term binding section resembles the following:
+
+[source, odin]
+----
+term_bindings = <
+    ["umls"] = <
+        items =<
+            ["at0000"] = <[umls::C124305]> -- apgar result
+            ["at0002"] = <[umls::0000000]> -- 1-minute event
+            ["at0004"] = <[umls::C234305]> -- cardiac score
+            ["at0005"] = <[umls::C232405]> -- respiratory score
+            ["at0006"] = <[umls::C254305]> -- muscle tone score
+            ["at0007"] = <[umls::C987305]> -- reflex response score
+            ["at0008"] = <[umls::C189305]> -- color score
+            ["at0009"] = <[umls::C187305]> -- apgar score
+            ["at0010"] = <[umls::C325305]> -- 2-minute apgar
+            ["at0011"] = <[umls::C725354]> -- 5-minute apgar
+            ["at0012"] = <[umls::C224305]> -- 10-minute apgar
+        >
+    >
+>
+----
+
+Each entry indicates which term in an external terminology is equivalent to the archetype internal codes. Note that not all internal codes necessarily have equivalents: for this reason, a terminology binding is assumed to be valid even if it does not contain all of the internal codes.
+
+==== Path-based Bindings
+
+The second kind of binding is one between an archetype path and an external code. This occurs commonly for archetypes where a term us re-used at the leaf level. For example, in the binding example below, the at0004 code represents 'temperature' and the codes `at0003`, `at0005`, `at0006` etc correspond to various times such as 'any', 1-hour average, 1-hour maximum and so on. Some terminologies (notably {loinc}[LOINC^], the laboratory terminology in this example) define 'pre-coordinated' codes, such as '1 hour body temperature'; these clearly correspond not to single codes such as at0004 in the archetype, but to whole paths. In such cases, the key in each term binding row is a full path rather than a single term.
+
+[source, odin]
+----
+["LNC205"] = <
+    items = <
+        ["/data[at0002]/events[at0003]/data[at0001]/item[at0004]"] = <[LNC205::8310-5]>
+        ["/data[at0002]/events[at0005]/data[at0001]/item[at0004]"] = <[LNC205::8321-2]>
+        ["/data[at0002]/events[at0006]/data[at0001]/item[at0004]"] = <[LNC205::8311-3]>
+        ["/data[at0002]/events[at0007]/data[at0001]/item[at0004]"] = <[LNC205::8316-2]>
+        ["/data[at0002]/events[at0008]/data[at0001]/item[at0004]"] = <[LNC205::8332-0]>
+        ["/data[at0002]/events[at0009]/data[at0001]/item[at0004]"] = <[LNC205::8312-1]>
+        ["/data[at0002]/events[at0017]/data[at0001]/item[at0004]"] = <[LNC205::8325-3]>
+        ["/data[at0002]/events[at0019]/data[at0001]/item[at0004]"] = <[LNC205::8320-4]>
+    >
+>
+----
+
+=== Constraint_bindings Section
+
+The last of the `ontology` sections formally describes bindings to placeholder constraints (see <<Placeholder Constraints>>) from the main archetype body. They are described separately because they are terminology-dependent, and because there may be more than one for a given logical constraint. A typical example follows:
+
+[source, odin]
+----
+constraint_bindings = <
+    ["snomed_ct"] = <
+        items = <
+            ["ac0001"] = <http://terminology.org?query_id=12345>
+            ["ac0002"] = <http://terminology.org?query_id=678910>
+        >
+    >
+>
+----
+
+In this example, each local constraint code is formally defined to refer to a query defined in a terminology service, in this case, a terminology service that can interrogate the Snomed-CT terminology.
+
+== Revision History Section
+
+The revision history section of an archetype shows the audit history of changes to the archetype, and is expressed in dADL syntax. It is optional, and is included at the end of the archetype, since it does not contain content of direct interest to archetype authors, and will monotonically grow in size. Where archetypes are stored in a version-controlled repository such as CVS or some commercial product, the revision history section would normally be regenerated each time by the authoring software, e.g. via processing of the output of the 'prs' command used with SCCS files, or 'rlog' for RCS files. The following shows a typical example, with entries in most-recent-first order (although technically speaking, the order is irrelevant to ADL).
+
+[source, adl]
+--------
+revision_history 
+    revision_history = <
+        ["1.57"] = <
+            committer = <"Miriam Hanoosh">
+            committer_organisation = <"AIHW.org.au">
+            time_committed = <2004-11-02 09:31:04+1000>
+            revision = <"1.2">
+            reason = <"Added social history section">
+            change_type = <"Modification">
+        >
+        -- etc
+        ["1.1"] = <
+            committer = <"Enrico Barrios">
+            committer_organisation = <"AIHW.org.au">
+            time_committed = <2004-09-24 11:57:00+1000>
+            revision = <"1.1">
+            reason = <"Updated HbA1C test result reference">
+            change_type = <"Modification">
+        >
+        ["1.0"] = <
+            committer = <"Enrico Barrios">
+            committer_organisation = <"AIHW.org.au">
+            time_committed = <2004-09-14 16:05:00+1000>
+            revision = <"1.0">
+            reason = <"Initial Writing">
+            change_type = <"Creation">
+        >
+    >
+--------
+
+== Validity Rules
+
+This section describes the formal (i.e. checkable) semantics of ADL archetypes. It is recommended that parsing tools use the identifiers published here in their error messages, as an aid to archetype designers.
+
+=== Global Archetype Validity
+
+The following validity constraints apply to an archetype as a whole. Note that the term "section" means the same as "attribute" in the following, i.e. a section called "definition" in a dADL text is a serialisation of the value for the attribute of the same name.
+
+[.rule]
+*VARID*: archetype identifier validity. The archetype must have an identifier value for the archetype_id section. The identifier must conform to the published openEHR specification for archetype identifiers.
+
+[.rule]
+*VARCN*: archetype concept validity. The archetype must have an archetype term value in the concept section. The term must exist in the archetype ontology.
+
+[.rule]
+*VARDF*: archetype definition validity. The archetype must have a definition section, expressed as a cADL syntax string, or in an equivalent plug-in syntax.
+
+[.rule]
+*VARON*: archetype ontology validity. The archetype must have an ontology section, expressed as a cADL syntax string, or in an equivalent plug-in syntax.
+
+[.rule]
+*VARDT*: archetype definition typename validity. The topmost typename mentioned in the archetype definition section must match the type mentioned in the type-name slot of the first segment of the archetype id.
+
+=== Coded Term Validity
+
+All node identifiers ('at' codes) used in the definition part of the archetype must be defined in the term_definitions part of the ontology.
+
+[.rule]
+*VATDF*: archetype term validity. Each archetype term used as a node identifier the archetype definition must be defined in the term_definitions part of the ontology. All constraint identifiers ('ac' codes) used in the definition part of the archetype must be defined in the constraint_definitions part of the ontology.
+
+[.rule]
+*VACDF*: node identifier validity. Each constraint code used in the archetype definition part must be defined in the constraint_definitions part of the ontology.
+
+=== Definition Section
+
+The following constraints apply to the definition section of the archetype.
+
+[.rule]
+*VDFAI*: archetype identifier validity in definition. Any archetype identifier mentioned in an archetype slot in the definition section must conform to the published openEHR specification for archetype identifiers.
+
+[.rule]
+*VDFPT*: path validity in definition. Any path mentioned in the definition section must be valid syntactically, and a valid path with respect to the hierarchical structure of the definition section.
+
+== Syntax Specification
+
+The following syntax and lexical specification are used to process an entire ADL file. Their main job is reading the header items, and then cutting it up into dADL, cADL and assertion sections.
+
+The ADL grammar is implemented and tested using lex (.l file) and yacc (.y file) specifications for in the Eiffel programming environment. The 1.4 release of these files is available in the https://github.com/openEHR/adl-tools/tree/Release-1.4/components/adl_parser/src/syntax/adl/parser[ADL grammar files^]. The .l and .y files can be converted for use in another yacc/lex-based programming environment.
+
+=== Grammar
+
+This section describes the ADL grammar.
+
+[source, antlr-java]
+--------
+archetype:
+    arch_identification
+    arch_specialisation
+    arch_concept
+    arch_language
+    arch_description
+    arch_definition
+    arch_invariant
+    arch_ontology
+    ;
+
+arch_identification:
+    arch_head V_ARCHETYPE_ID
+    ;
+
+arch_head:
+    SYM_ARCHETYPE
+    | SYM_ARCHETYPE arch_meta_data
+    ;
+
+arch_meta_data:
+    '(' arch_meta_data_items ')'
+    ;
+
+arch_meta_data_items:
+    arch_meta_data_item
+    | arch_meta_data_items ';' arch_meta_data_item
+    ;
+
+arch_meta_data_item:
+    SYM_ADL_VERSION '=' V_VERSION_STRING
+    | SYM_IS_CONTROLLED
+    ;
+
+arch_specialisation:
+    // empty OK
+    | SYM_SPECIALIZE V_ARCHETYPE_ID
+    ;
+
+arch_concept:
+    SYM_CONCEPT V_LOCAL_TERM_CODE_REF
+    | SYM_CONCEPT error
+    ;
+
+arch_language:
+    // empty OK
+    | SYM_LANGUAGE V_DADL_TEXT
+    ;
+
+arch_description:
+    // empty OK
+    | SYM_DESCRIPTION V_DADL_TEXT
+    ;
+
+arch_definition:
+    SYM_DEFINITION V_CADL_TEXT
+    ;
+
+arch_invariant:
+    // empty OK
+    | SYM_INVARIANT V_ASSERTION_TEXT
+
+arch_ontology:
+    SYM_ONTOLOGY V_DADL_TEXT
+    ;
+
+--------
+
+=== Symbols
+
+The following shows the ADL lexical specification.
+
+--------
+----------/* symbols */ -------------------------------------------------
+"-"     Minus_code
+"+"     Plus_code
+"*"     Star_code
+"/"     Slash_code
+"^"     Caret_code
+"="     Equal_code
+"."     Dot_code
+";"     Semicolon_code
+","     Comma_code
+":"     Colon_code
+"!"     Exclamation_code
+"("     Left_parenthesis_code
+")"     Right_parenthesis_code
+"$"     Dollar_code
+"?"     Question_mark_code
+"["     Left_bracket_code
+"]"     Right_bracket_code
+
+----------/* keywords */ -------------------------------------------------
+^[Aa][Rr][Cc][Hh][Ee][Tt][Yy][Pp][Ee][ \t\r]*\n         SYM_ARCHETYPE
+^[Ss][Pp][Ee][Cc][Ii][Aa][Ll][Ii][SsZz][Ee][ \t\r]*\n   SYM_SPECIALIZE
+^[Cc][Oo][Nn][Cc][Ee][Pp][Tt][ \t\r]*\n                 SYM_CONCEPT
+^[Dd][Ee][Ff][Ii][Nn][Ii][Tt][Ii][Oo][Nn][ \t\r]*\n     SYM_DEFINITION
+
+-- mini-parser to match V_DADL_TEXT
+^[Ll][Aa][Nn][Gg][Uu][Aa][Gg][Ee][ \t\r]*\n             SYM_LANGUAGE
+
+-- mini-parser to match V_DADL_TEXT
+^[Dd][Ee][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn][ \t\r]*\n SYM_DESCRIPTION
+
+-- mini-parser to match V_CADL_TEXT
+^[Ii][Nn][Vv][Aa][Rr][Ii][Aa][Nn][Tt][ \t\r]*\n         SYM_INVARIANT
+
+-- mini-parser to match V_ASSERTION_TEXT
+^[Oo][Nn][Tt][Oo][Ll][Oo][Gg][Yy][ \t\r]*\n SYM_ONTOLOGY
+
+-- mini-parser to match V_DADL_TEXT
+----------/* V_DADL_TEXT */ -------------------------------------
+<IN_DADL_SECTION>{
+    -- the following 2 patterns are a hack, until ADL2 comes into being;
+    -- until then, dADL blocks in an archetype finish when they
+    -- hit EOF, or else the 'description' or 'definition' keywords.
+    -- It's not nice, but it's simple ;-)
+    -- For both these patterns, the lexer has to unread what it
+    -- has just matched, store the dADL text so far, then get out
+    -- of the IN_DADL_SECTION state
+    ^[Dd][Ee][Ff][Ii][Nn][Ii][Tt][Ii][Oo][Nn][ \t\r]*\n
+    ^[Dd][Ee][Sc][Rr][Ii][Pp][Tt][Ii][Oo][Nn][ \t\r]*\n
+    [^\n]+\n            -- any text on line with a LF
+    [^\n]+              -- any text on line with no LF
+    <<EOF>>             -- (escape condition)
+    (.|\n)              -- ignore unmatched chars
+}
+
+----------/* V_CADL_TEXT */ -------------------------------------
+<IN_CADL_SECTION>{
+    ^[ \t]+[^\n]*\n -- non-blank lines
+    \n+ -- blank lines
+    ^[^ \t] -- non-white space at start (escape condition)
+}
+
+----------/* V_ASSERTION_TEXT */ -------------------------------------
+<IN_ASSERTION_SECTION>{
+    ^[ \t]+[^\n]*\n -- non-blank lines
+    ^[^ \t] -- non-white space at start (escape condition)
+}
+
+----------/* V_VERSION_STRING */ -------------------------------------
+[0-9]+\.[0-9]+(\.[0-9]+)*
+
+----------/* V_LOCAL_TERM_CODE_REF */ --------------------------------------
+\[[a-zA-Z0-9][a-zA-Z0-9.-]*\] 
+
+----------/* V_ARCHETYPE_ID */ ---------------------------------------------
+[a-zA-Z][a-zA-Z0-9_]+(-[a-zA-Z][a-zA-Z0-9_]+){2}\.[a-zA-Z][a-zA-Z0-9_]+(-[azA-Z][a-zA-Z0-9_]+)*\.v[1-9][0-9]*
+
+----------/* V_IDENTIFIER */ ----------------------------------------------
+[a-zA-Z][a-zA-Z0-9_]* 
+
+--------

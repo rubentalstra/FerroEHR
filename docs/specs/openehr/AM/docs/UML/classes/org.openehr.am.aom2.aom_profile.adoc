@@ -1,0 +1,53 @@
+=== AOM_PROFILE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*AOM_PROFILE*
+
+h|*Description*
+2+a|Profile of common settings relating to use of reference model(s) and terminology for a given archetype developing organisation.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*profile_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of this profile, usually based on the publisher it pertains to e.g. "openEHR", "CDISC", etc.
+
+h|*0..1*
+|*archetype_parent_class*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|States a class from the Reference Model that provides archetyping capability in RM data structures. This attribute is optional, and there need be no such class in the RM. Defining it here has the effect in tools that the class tree under which archetypes are arranged contains only RM classes inheriting from this class.
+
+h|*0..1*
+|*archetype_data_value_parent_class*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|This attribute defines a base class from the Reference Model whose descendants are considered to be 'logical data types', i.e. of some higher level than the built-in primitive types String, Integer etc. This attribute is optional, even if the RM does have such a class, and is only used to help tooling to provide more intelligent display.
+
+h|*0..1*
+|*aom_rm_type_mappings*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_aom_type_mapping_class,AOM_TYPE_MAPPING>>>`
+a|Mappings from AOM built-in types to actual types in RM: whenever the type name is encountered in an archetype, it is mapped to a specific RM type.
+
+h|*0..1*
+|*archetype_visualise_descendants_of*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|If `_archetype_parent_class_` is not set, designate a class whose descendants should be made visible in tree and grid renderings of the archetype definition.
+
+h|*0..1*
+|*aom_rm_type_substitutions*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Allowed type substitutions: Actual RM type names keyed by AOM built-in types which can substitute for them in an archetype. E.g. `<key = "ISO8601_DATE", value = "String">` means that if RM property `TYPE._some_property_` is of type `String`, an `ISO8601_DATE` is allowed at that position in the archetype.
+
+h|*0..1*
+|*aom_lifecycle_mappings*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of mappings of lifecycle state names used in archetypes to AOM lifecycle state names: 
+
+* key = source lifecycle state; 
+* value = AOM lifecycle state.
+
+h|*0..1*
+|*rm_primitive_type_equivalences*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Equivalences of RM primitive types to in-built set of primitive types. Used to determine which AOM `C_PRIMITIVE_OBJECT` descendant is used for a primitive type. Typical entries:
+
+* `value`	`key`
+* "Real"	"Double"
+* "Integer"	"Integer64"
+|===

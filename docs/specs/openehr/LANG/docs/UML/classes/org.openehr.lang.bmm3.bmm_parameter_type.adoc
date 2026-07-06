@@ -1,0 +1,72 @@
+=== BMM_PARAMETER_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_PARAMETER_TYPE*
+
+h|*Description*
+2+a|Definition of a generic parameter in a class definition of a generic type.
+
+h|*Inherit*
+2+|`<<_bmm_unitary_type_class,BMM_UNITARY_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of the parameter, e.g. 'T' etc. The name is limited to 1 character and upper-case.
+
+h|*0..1*
+|*type_constraint*: `<<_bmm_effective_type_class,BMM_EFFECTIVE_TYPE>>`
+a|Optional conformance constraint that must be the name of a defined type.
+
+h|*0..1*
+|*inheritance_precursor*: `<<_bmm_parameter_type_class,BMM_PARAMETER_TYPE>>`
+a|If set, is the corresponding generic parameter definition in an ancestor class.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*flattened_conforms_to_type* (): `<<_bmm_effective_type_class,BMM_EFFECTIVE_TYPE>>`
+a|Result is either `_conforms_to_type_` or `_inheritance_precursor.flattened_conforms_to_type_`.
+
+h|*1..1 +
+(redefined)*
+|*type_signature* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Signature form of the open type, including constrainer type if there is one, e.g. `T:Ordered`.
+
+h|*1..1 +
+(effected)*
+|*is_primitive* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post_validity__: `Result = base_class.is_primitive`
+a|Result = `False` - generic parameters are understood by definition to be non-primitive.
+
+h|*1..1 +
+(effected)*
+|*is_abstract* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Result = `False` - generic parameters are understood by definition to be non-abstract.
+
+h|*1..1 +
+(effected)*
+|*type_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Return `_name_`.
+
+h|*1..1 +
+(effected)*
+|*flattened_type_list* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Result is either `_flattened_conforms_to_type.flattened_type_list_` or the `Any` type.
+
+h|*1..1 +
+(effected)*
+|*effective_type* (): `<<_bmm_effective_type_class,BMM_EFFECTIVE_TYPE>>`
+a|Generate ultimate conformance type, which is either `_flattened_conforms_to_type_` or if not set, `'Any'`.
+
+h|*Invariants*
+2+a|__Inv_generic_name__: `name.count = 1 and name.is_upper`
+|===

@@ -1,0 +1,138 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser, Implementer|Completed
+
+4+^h|*Release 1.1.0*
+
+|[[latest_issue]]1.1.0
+|{spec_tickets}/SPECQUERY-8[SPECQUERY-8^] Correct numerous minor typographical and formatting errors. Improve the wording and readability.
+|S Iancu
+|[[latest_issue_date]]04 Feb 2021
+
+|
+|{spec_tickets}/SPECQUERY-30[SPECQUERY-30^] Update (rewrite) grammar to ANTLR4 format.
+|S Iancu, +
+ T Beale, +
+ T van Hemert
+|04 Feb 2021
+
+|
+|{spec_tickets}/SPECQUERY-33[SPECQUERY-33^] Add support for `NULL`.
+|S Iancu
+|01 Feb 2021
+
+|
+|{spec_tickets}/SPECQUERY-1[SPECQUERY-1^] Allow name attribute term codes to be used in node predicate ({spec_tickets}/SPECPR-129[SPECPR-129^]).
+|C Ma, +
+ S Iancu
+|01 Feb 2021
+
+|
+|{spec_tickets}/SPECQUERY-27[SPECQUERY-27^] Add support for `DISTINCT`.
+|S Iancu
+|10 Jan 2021
+
+|
+|{spec_tickets}/SPECQUERY-28[SPECQUERY-28^] Add support for built-in functions.
+|S Iancu
+|10 Jan 2021
+
+|
+|{spec_tickets}/SPECQUERY-3[SPECQUERY-3^] Add support for literals (fixed values) in column expression.
+|D Bosca, +
+ S Iancu
+|12 Dec 2020
+
+|
+|{spec_tickets}/SPECQUERY-7[SPECQUERY-7^] Add support for `NOT CONTAINS`.
+|T Beale, +
+ S Iancu
+|12 Dec 2020
+
+|
+|{spec_tickets}/SPECQUERY-12[SPECQUERY-12^] Improve terminology support by adding a new `TERMINOLOGY` function.
+|L Marco-Ruiz, +
+ B Næss, +
+ H Frankel +
+ B Fabjan, +
+ I McNicoll, +
+ S Iancu
+|24 Nov 2020
+
+|
+|{spec_tickets}/SPECQUERY-25[SPECQUERY-25^] Add support for aggregate functions like `COUNT`, `SUM`, etc ({spec_tickets}/SPECPR-358[SPECPR-358^]).
+|S Iancu
+|23 Nov 2020
+
+|
+|{spec_tickets}/SPECQUERY-17[SPECQUERY-17^] Add support for `LIKE` operator ({spec_tickets}/SPECPR-358[SPECPR-358^]).
+|openEHR SEC
+|09 Nov 2020
+
+|
+|{spec_tickets}/SPECQUERY-31[SPECQUERY-31^] Move AQL examples to a new separate specification.
+|openEHR SEC
+|09 Nov 2020
+
+|
+|{spec_tickets}/SPECQUERY-16[SPECQUERY-16^] Add support for `LIMIT` and `OFFSET`; deprecate `TOP` ({spec_tickets}/SPECPR-346[SPECPR-346^]).
+|P Pazos, +
+S Iancu
+|05 Nov 2020
+
+4+^h|*Release 1.0.1*
+
+|1.0.1
+|{spec_tickets}/SPECQUERY-20[SPECQUERY-20^] Clarify major keyword documentation and semantics; remove `TIMEWINDOW`.
+|openEHR SEC
+|15 Jun 2020
+
+|
+|{spec_tickets}/SPECQUERY-23[SPECQUERY-23^] Improve introductory text; update section 2.
+|T Beale
+|15 Apr 2020
+
+|
+|{spec_tickets}/SPECQUERY-19[SPECQUERY-19^] Clarify use of terminology 'identified path'.
+|P Pazos, +
+ T Beale
+|10 Apr 2020
+
+|
+|{spec_tickets}/SPECQUERY-14[SPECQUERY-14^]: Correct typographical errors ({spec_tickets}/SPECPR-320[SPECPR-320^], {spec_tickets}/SPECPR-345[SPECPR-345^], {spec_tickets}/SPECPR-212[SPECPR-212^], {spec_tickets}/SPECPR-332[SPECPR-332^], {spec_tickets}/SPECPR-331[SPECPR-331^]); +
+ {spec_tickets}/SPECQUERY-15[SPECQUERY-15^]: Add clarifications and fix typographical errors ({spec_tickets}/SPECPR-359[SPECPR-359^]); +
+ {spec_tickets}/SPECQUERY-4[SPECQUERY-4^]: Improve documentation of 'matches' operator; +
+ {spec_tickets}/SPECQUERY-2[SPECQUERY-2^]: Clarify the return structure of an AQL query ({spec_tickets}/SPECPR-320[SPECPR-320^]).
+|P Pazos, +
+ B Næss, +
+ S Arikan, +
+ S Iancu, +
+ M Polajnar, +
+ I McNicoll, +
+ T Beale
+|10 Apr 2020
+
+4+^h|*Release 1.0.0*
+
+|1.0.0
+|{spec_tickets}/SPECQUERY-6[SPECQUERY-6^] Publish original AQL wiki page as formal specification; +
+ Various reformatting, adjustment of headings; +
+ Fix missing square brackets on query example. ({spec_tickets}/SPECPR-236[SPECPR-236^])
+|openEHR SEC
+|10 Jan 2017
+
+|
+|Add Antlr grammar for AQL
+|B Lah
+|13 Jan 2012
+
+|
+|Initial Writing, based on {openehr_wiki_root}/display/spec/Archetype+Query+Language+Description[openEHR AQL wiki page].
+|C Ma +
+ H Frankel +
+ T Beale
+|10 Dec 2008
+
+|===

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-audit_change_type"/>
+  <version value="3.1.0"/>
+  <name value="audit_change_type"/>
+  <title value="Audit Change Type"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="9"/>
+  <concept>
+    <code value="249"/>
+    <display value="creation"/>
+    <designation>
+      <language value="es"/>
+      <value value="creación"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="作成"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="criação"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="创建"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="250"/>
+    <display value="amendment"/>
+    <designation>
+      <language value="es"/>
+      <value value="enmienda"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="訂正"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="alteração"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="修正"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="251"/>
+    <display value="modification"/>
+    <designation>
+      <language value="es"/>
+      <value value="modificación"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="変更"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="modificação"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="修改"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="252"/>
+    <display value="synthesis"/>
+    <designation>
+      <language value="es"/>
+      <value value="síntesis"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="統合"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="síntese"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="综合"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="523"/>
+    <display value="deleted"/>
+    <designation>
+      <language value="es"/>
+      <value value="eliminado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="削除"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="eliminado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="删除"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="666"/>
+    <display value="attestation"/>
+    <designation>
+      <language value="es"/>
+      <value value="testimonio"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="認証"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="atestação"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="证实"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="816"/>
+    <display value="restoration"/>
+    <designation>
+      <language value="es"/>
+      <value value="restaurado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="*restoration(en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="restauração"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="恢复"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="817"/>
+    <display value="format conversion"/>
+    <designation>
+      <language value="es"/>
+      <value value="conversión de formato"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="*format conversion(en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="conversão de formatos"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="格式转换"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="253"/>
+    <display value="unknown"/>
+    <designation>
+      <language value="es"/>
+      <value value="desconocido"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="不明"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="desconhecido"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="未知"/>
+    </designation>
+  </concept>
+</CodeSystem>

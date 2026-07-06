@@ -1,0 +1,5 @@
+:spec_title: BMM Persistence Model and Syntax
+:copyright_year: 2016
+:spec_status: STABLE
+:keywords: reflection, meta-model, UML
+:description: BMM Persistence Model and Syntax

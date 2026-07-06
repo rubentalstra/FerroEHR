@@ -1,0 +1,495 @@
+= Amendment Record
+
+[cols="1,6a,2,2", options="header"]
+|===
+|Issue|Details|Raiser, Implementer|Completed
+
+4+^h|*AM Release 2.4.0 (unreleased)*
+
+|[[latest_issue]]2.4.1
+|Fix typos. ({spec_tickets}/SPECPR-387[SPECPR-387^])
+|S Iancu
+|[[latest_issue_date]]07 Mar 2025
+
+|
+|Fix ADL_CODE_DEFINITIONS class to comply with both at-codes and id-codes. (part of {spec_tickets}/SPECAM-90[SPECAM-90^])
+|S Iancu, +
+J Holslag
+|09 Mar 2025
+
+|2.4.0
+|{spec_tickets}/SPECAM-90[SPECAM-90^]. Add support for at-code coding system in addition to id-code coding system. Make the at-code coding system a requirement for openEHR RM compliant implementations.
+|B Lah, +
+I McNicoll, +
+J Holslag, +
+S Iancu, +
+T Beale
+|14 Mar 2024
+
+4+^h|*AM Release 2.3.0*
+
+|2.3.0
+|{spec_tickets}/SPECAM-76[SPECAM-76^]. Correct <<VSONCO>> rule for redefinition of nodes with multiple occurrences; added <<Conformance Semantics: C_ATTRIBUTE, `collective_occurrences()` conformance function>> (addresses problem {spec_tickets}/SPECPR-374[SPECPR-374^]).
+|P Bos, +
+ S Garde, +
+ I McNicoll, +
+ P Pazos, +
+ J Holslag, +
+ T Beale
+|09 Nov 2022
+
+|
+|{spec_tickets}/SPECAM-75[SPECAM-75^]. Improve specification of constraint patterns in `C_TEMPORAL` classes (addresses problem {spec_tickets}/SPECPR-374[SPECPR-374^]). Added <<#date_time_constraints>> and <<#duration_constraints>>.
+|P Pazos, +
+ T Beale
+|12 Dec 2022
+
+|
+|{spec_tickets}/SPECAM-69[SPECAM-69^]. Support negative durations (see <<_c_duration_class>>) (see also {spec_tickets}/SPECRM-96[SPECRM-96^]).
+|P Bos, +
+ S Garde
+|09 Sep 2020
+
+|
+|{spec_tickets}/SPECAM-68[SPECAM-68^]. Add flexible `_constraint_status_` indicator to `C_TERMINOLOGY_CODE`.
+|B Fabjan, +
+ I McNicoll, +
+ S Garde, +
+ P Bos, +
+ T Beale
+|07 Sep 2020
+
+|
+|{spec_tickets}/SPECAM-67[SPECAM-67^]. Adjust package structure to be more regular: + 
+ rename `am.aom2_profile` to `am.aom2.profile`; +
+ rename `am.p_aom2` to `am.aom2.persistence`; +
+ move `am.aom2.primitive` to `am.aom2.constraint_model.primitive`
+|T Beale
+|19 May 2020
+
+|
+|{spec_tickets}/SPECAM-65[SPECAM-65^]: Correct types of `_default_value_` and `_assumed_value_` in `C_PRIMITIVE_OBJECT` descendants. 
+|P Bos, + 
+ I McNicoll, + 
+ T Beale
+|21 Apr 2020
+
+|
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]. Convert citations to bibtex form.
+|T Beale
+|15 Dec 2019
+
+|
+|{spec_tickets}/SPECAM-64[SPECAM-64^]. Improve `C_OBJECT._effective_occurrences_` algorithm.
+|P Bos, +
+ J Zeilstra, +
+ T Beale
+|09 Aug 2019
+
+4+^h|*AM Release 2.2.0*
+
+|2.2.0
+|{spec_tickets}/SPECAM-63[SPECAM-63^]. Add `rm_overlay` top-level section with `rm_visibility` sub-section to state hide/show and RM attribute aliasing.
+|I McNicoll, +
+ S L Bakke, +
+ B Fabjan, +
+ T Beale
+|21 May 2019
+
+|
+|{spec_tickets}/SPECPR-294[SPECPR-294^]. Fix minor typos and name errors in documentation of `ARCHETYPE_HRID`.
+|B Verhees
+|
+
+|
+|{spec_tickets}/SPECAM-61[SPECAM-61^]. Remove `_revision_history_` from ADL2 specification.
+|D Bosca, +
+ P Bos, +
+ T Beale
+|19 May 2019
+
+|
+|{spec_tickets}/SPECAM-60[SPECAM-60^]. Improve documentation for constraints on lists and intervals.
+|B Fabjan, +
+ M Pipan, +
+ T Beale
+|21 Jan 2019
+
+4+^h|*AM Release-2.1.0*
+
+|2.1.0
+|{spec_tickets}/SPECAM-51[SPECAM-51^]. Move RM adaptation attributes from BMM to AOM profile. Add to section 10 the new meta-attributes `archetype_parent_class`, `archetype_data_value_parent_class`, `archetype_visualise_descendants_of`.
+|T Beale
+|10 Apr 2018
+
+|
+|{spec_tickets}/SPECAM-48[SPECAM-48^]. Add VTPL validity rule for templates - consistency of languages for flattening.
+|T Beale
+|24 Jan 2018
+
+|
+|{spec_tickets}/SPECAM-49[SPECAM-49^]. Improve `_c_conforms_to()_` and `_c_congruent_to()_` algorithms; added `_c_value_conforms_to()_` and `_c_value_congruent_to()_` to `C_PRIMITIVE_OBJECT`.
+|T Beale
+|10 Jan 2018
+
+|
+|{spec_tickets}/SPECAM-46[SPECAM-46^]. `_c_conforms_to()_` should have lambda parameter for model checking.
+|P Bos, +
+ T Beale
+|07 Jan 2018
+
+|
+|{spec_tickets}/SPECAM-47[SPECAM-47^]. Allow regularly structured primitive objects. Move `_any_allowed_` function to `C_DEFINED_OBJECT`.
+|J Coyle, +
+ T Beale
+|07 Jan 2018
+
+|
+|{spec_tickets}/SPECPUB-6[SPECPUB-6^]. Correct UML package nesting and paths in documents; rename `aom` package to `aom2`; `aom_profile` to `aom2_profile` and `p_aom` to `p_aom2`.
+|T Beale
+|27 Nov 2017
+
+|
+|{spec_tickets}/SPECAM-45[SPECAM-45^]. Correct specification details to do with `_sibling_order_` anchor node id. (Corrects {spec_tickets}/SPECPR-245[SPECPR-245^])
+|P Bos, +
+ T Beale
+|21 Nov 2017
+
+|
+|{spec_tickets}/SPECAM-43[SPECAM-43^]. Correct `C_TERMINOLOGY_CODE._c_conforms_to_` to handle no parent value-set (Corrects {spec_tickets}/SPECPR-243[SPECPR-243^])
+|P Bos
+|02 Nov 2017
+
+|
+|{spec_tickets}/SPECAM-42[SPECAM-42^]. Adjust references to BASE packages `foundation_types`, `base_types` and `resource` types.
+|T Beale
+|21 Sep 2017
+
+4+^h|*AM Release-2.0.6*
+
+|2.0.6
+|Adjust `C_ATTRIBUTE._any_allowed_` to have the post-condition `Result = children.is_empty and not is_prohibited`.
+|T Beale
+|15 Jun 2016
+
+|
+|Correct ambiguity between ADL and AOM specs concerning duration fractional seconds - remove `C_DURATION._fractional_seconds_allowed_` ({spec_tickets}/SPECPR-188[SPECPR-188^]).
+|B Verhees
+|10 Jun 2016
+
+|
+|Add more precise specification of type matching under the 'Object Node Types' section, including for primitive types. Add `_rm_primitive_type_equivalences_` property to `AOM_PROFILE` to accommodate primitive type matching rules.
+|T Beale
+|08 Jun 2016
+
+|
+|{spec_tickets}/SPECAM-40[SPECAM-40^]. Correct VSONT validity rule to say that `C_COMPLEX_OBJECT` redefinition by `C_PRIMITIVE_OBJECT` is not valid.
+|T Beale
+|02 Jun 2016
+
+|
+|Fix typo in section 6.2.1 to do with id-code redefinition in specialised archetype.
+|C Nanjo
+|30 May 2016
+
+|
+|Rename `ARCHETYPE_TERMINOLOGY._parent_archetype_` to `_owner_archetype_`. (reported in {spec_tickets}/SPECPR-193[SPECPR-193^]).
+|B Verhees
+|18 May 2016
+
+|
+|Remove references to openEHR RM. Add `assumed_types` package to make spec standalone; +
+ Change reference to openEHR language codes to ISO 639 codes.
+|ISO TC215
+|
+
+|
+|Change Rules section to document re-use of new openEHR Expression Language and Model. +
+ Change the types constrained by `C_DATE` etc to `Date` etc, instead of `ISO8601_DATE`. +
+ Update occurrences inferencing rules in section 4.
+|T Beale
+|11 May 2016
+
+|
+|{spec_tickets}/SPECBASE-4[SPECBASE-4^]. Change order of type parameters in `Hash<V,K>` type to `Hash<K,V>`.
+|D Boscá
+|13 Apr 2016
+
+|
+|Correct `ASSERTION._variables_` association to refer to `VARIABLE_DECLARATION`. +
+ Add `RULE_ELEMENT` class table to specification (reported in {spec_tickets}/SPECPR-160[SPECPR-160^]) +
+ Correct `CARDINALITY._is_set_` documentation (reported in {spec_tickets}/SPECPR-147[SPECPR-147^]). +
+ Add missing type of `String` to `ARCHETYPE_TERM._code_`. (reported in {spec_tickets}/SPECPR-162[SPECPR-162^]).
+|B Verhees
+|05 Apr 2016
+
+|2.0.5
+|Make `AUTHORED_RESOURCE`.`_uid_` and `AUTHORED_ARCHETYPE._build_uid_` `UUIDs` rather than any kind of `UID`.
+|T Beale
+|18 Jan 2016
+
+|
+|Add `P_` serialisation model and template sections.
+|T Beale
+|31 Aug 2015
+
+|2.0.0
+|Refactor `ARCHETYPE` and `ARCHETYPE_TERMINOLOGY` models, in order to simplify: remove differential and flat forms of classes. +
+ Split `ARCHETYPE` into two classes, with `AUTHORED_ARCHETYPE` as a new class that inherits from `AUTHORED_RESOURCE` . +
+|T Beale
+|04 Jan 2015
+
+|
+|Remove `VDSSR` , `VSUNC` ; add `VDSSID` , `VARXID` . Replace `+u` (unstable) version modifier with semver.org standard `-alpha`. Remove overview material to new Archetypes: Technical Overview specification.
+|T Beale, +
+ I McNicoll, +
+ S Garde
+|12 Nov 2014
+
+|
+|Remove `ARCHETYPE`.`_provenance_id_` attribute.
+|H Solbrig, +
+ T Beale
+|08 Oct 2014
+
+|
+|Correct spelling of `licence` to international English; rename `ARCHETYPE`.`_urn_` to `_provenance_id_`.
+|S Garde, +
+ I McNicoll
+|29 Sep 2014
+
+|
+|Modified `C_ARCHETYPE_ROOT` to have an id-code in all cases. +
+ Add error `VSONPO` , `VSONPT`: specialised archetype object node prohibited occurrences validity. +
+ Added support for constraints on enumerated types.
+|CIMI, +
+ P Langford, +
+ T Beale
+|18 Jul 2014
+
+|
+|Convert `ARCHETYPE._uid_` to `_urn_`: `URN`. +
+ Rename `ARCHETYPE._commit_number_` to `_build_count_` .
+|I McNicoll, +
+ S Garde, +
+ T Beale
+|04 Jun 2014
+
+|
+|Make `VACMCL` a warning `WACMCL` .
+|D Moner
+|07 Apr 2014
+
+|
+|Renamed `ARCHETYPE_INTERNAL_REF` to `C_OBJECT_PROXY` . +
+ {spec_tickets}/SPECAM-9[SPECAM-9^]. Renamed `ontology` section to `terminology` and simplified. +
+ Remove `CONSTRAINT_REF`, `C_REFERENCE_OBJECT` types; +
+ {spec_tickets}/SPECAM-2[SPECAM-2^]. Introduce new archetype structured identification system; +
+ {spec_tickets}/SPECAM-28[SPECAM-28^]. Add IHTSDO standard terminology URIs to ADL and AOM.
+|T Beale +
+ H Solbrig
+|09 Mar 2014
+
+|
+|Detailed Technical Review.
+|H Solbrig
+|21 Nov 2013
+
+|
+|Remove `C_DOMAIN_TYPE` ; +
+ {spec_tickets}/SPECAM-27[SPECAM-27^]. Merge `C_PRIMITIVE_OBJECT` and `C_PRIMITIVE`; +
+ Add support for tuple constraints, replacing ADL 1.4 special Ordinal and Quantity constrainer types; +
+ Add new primitive type `C_TERMINOLOGY_CODE` . +
+ Added `VSONIF`, removed `VSONCI` (dup of `VSONI`).
+|H Solbrig +
+ T Beale
+|20 Aug 2013
+
+|
+|{spec_tickets}/SPECAM-22[SPECAM-22^]. Limit `_assumed_value_` to `C_PRIMITIVE_OBJECT`.
+|T Beale, +
+ R Chen
+|14 Jan 2013
+
+|
+|{spec_tickets}/SPECAM-32[SPECAM-32^]. Remove `C_SINGLE_ATTRIBUTE` and `C_MULTIPLE_ATTRIBUTE` classes.
+|T Beale, +
+ S Garde, +
+ S Kobayashi, +
+ D Moner, +
+ T Beale
+|15 Dec 2011
+
+|
+|{spec_tickets}/SPECAM-26[SPECAM-26^]. Add `_any_allowed_` function to `ARCHETYPE_SLOT`.
+|T Beale
+|18 Aug 2010
+
+|
+|{spec_tickets}/SPECAM-8[SPECAM-8^]. Add specialisation semantics to ADL and AOM. Add various attributes and functions to `ARCHETYPE_CONSTRAINT` descendant classes.
+
+* move `C_PRIMITIVE`.`_assumed_value_` to attribute slot in UML
+* rename `C_DEFINED_OBJECT`.`_default_value_` function to `prototype_value`
+* correct `_assumed_value_` definition to be like `_prototype_value_`; remove its entry from all of the `C_PRIMITIVE` subtypes
+* convert `BOOLEAN` flag representation of patterns to functions and add a String data member for the pattern value, thus matching the XSDs and ADL
+* add `ARCHETYPE`.`_is_template_` attribute.
+* add `ARCHETYPE`.`_is_component_` attribute.
+* allow computed as well as stored attributes.
+* make `ONTOLOGY`.`_terminologies_available_` computed.
+
+|T Beale
+|10 Dec 2009
+
+|
+|{spec_tickets}/SPECAM-1[SPECAM-1^]. Change Date, Time etc classes in AOM to `ISO8601_DATE` , `ISO8601_TIME` etc from Support IM.
+|T Beale
+|20 Jul 2009
+
+|
+|{spec_tickets}/SPECAM-10[SPECAM-10^]. Convert `Interval<Integer>` to `MULTIPLICITY_INTERVAL` to simplify specification and implementation.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPECAM-5[SPECAM-5^]. Archetype slot regular expressions should cover whole identifier. Added `C_STRING`.`_is_pattern_` .
+|A Flinton
+|
+
+|
+|{spec_tickets}/SPECAM-7[SPECAM-7^]. Make existence, occurrences and cardinality optional in AOM.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPECAM-16[SPECAM-16^]. Add validity rules to `ARCHETYPE_TERMINOLOGY` . +
+{spec_tickets}/SPECAM-11[SPECAM-11^]. `ARCHETYPE_CONSTRAINT` adjustments. +
+{spec_tickets}/SPECAM-17[SPECAM-17^]. Add template object model to AM. +
+
+* Add `_is_exhaustive_` attribute to `ARCHETYPE_SLOT` .
+* Add `_is_template_` attribute to `ARCHETYPE` .
+* Add `_terminology_extracts_` to `ARCHETYPE_TERMINOLOGY` .
+
+|T Beale
+|
+
+4+^h|*Release 1.0.2*
+
+|2.0.2
+|{spec_tickets}/SPEC-257[SPEC-257^]. Correct minor typos and clarify text. Correct reversed definitions of `_is_bag_` and `_is_set_` in `CARDINALITY` class.
+|C Ma, +
+ R Chen, +
+ T Cook
+|20 Nov 2008
+
+|
+|{spec_tickets}/SPEC-251[SPEC-251^]. Allow both pattern and interval constraint on Duration in Archetypes. Add pattern attribute to `C_DURATION` class.
+|S Heard
+|
+
+4+^h|*Release 1.0.1*
+
+|2.0.1
+|{spec_tickets}/SPEC-200[SPEC-200^]. Correct Release 1.0 typographical errors. Table for missed class `ASSERTION_VARIABLE` added. Assumed_value assertions corrected; `_standard_representation_` function corrected. Added missed `_adl_version_` , `_concept_` rename from {spec_tickets}/SPEC-153[SPEC-153^].
+|D Lloyd, +
+ P Pazos, +
+ R Chen, +
+ C Ma
+|20 Mar 2007
+
+|
+|{spec_tickets}/SPEC-216[SPEC-216^]: Allow mixture of W, D etc in ISO8601 Duration (deviation from standard).
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-219[SPEC-219^]: Use constants instead of literals to refer to terminology in RM.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-232[SPEC-232^]. Relax validity invariant on `CONSTRAINT_REF` .
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-233[SPEC-233^]: Define semantics for `_occurrences_` on `ARCHETYPE_INTERNAL_REF` .
+|K Atalag
+|
+
+|
+|{spec_tickets}/SPEC-234[SPEC-234^]: Correct functional semantics of AOM constraint model package.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-245[SPEC-245^]: Allow term bindings to paths in archetypes.
+|S Heard
+|
+
+4+^h|*Release 1.0*
+
+|2.0
+|{spec_tickets}/SPEC-153[SPEC-153^]. Synchronise ADL and AOM attribute naming.
+ {spec_tickets}/SPEC-178[SPEC-178^]. Add Template Object Model to AM. Text changes only.
+ {spec_tickets}/SPEC-167[SPEC-167^]. Add `AUTHORED_RESOURCE` class. Remove `_description_` package to `_resource_` package in Common IM.
+|T Beale
+|10 Nov 2005
+
+4+^h|*Release 0.96*
+
+|0.6
+|{spec_tickets}/SPEC-134[SPEC-134^]. Correct numerous documentation errors in AOM. Including cut and paste error in `TRANSLATION_DETAILS` class in _Archetype_ package. Corrected hyperlinks in Section 2.3.
+|D Lloyd
+|20 Jun 2005
+
+|
+|{spec_tickets}/SPEC-142[SPEC-142^]. Update ADL grammar to support assumed values. Changed `C_PRIMITIVE` and `C_DOMAIN_TYPE` .
+|S Heard, +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-146[SPEC-146^]: Alterations to _am.archetype.description_ from CEN MetaKnow
+|D Kalra
+|
+
+|
+|{spec_tickets}/SPEC-138[SPEC-138^]. Archetype-level assertions.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-157[SPEC-157^]. Fix names of `OPERATOR_KIND` class attributes
+|T Beale
+|
+
+4+^h|*Release 0.95*
+
+|0.5.1
+|Corrected documentation error - return type of `ARCHETYPE_CONSTRAINT` . `_has_path_` + 
+add optionality markers to Primitive types UML diagram. +
+Removed erroneous aggregation marker from `ARCHETYPE_ONTOLOGY` . `_parent_archetype_` and `ARCHETYPE_DESCRIPTION` . `_parent_archetype_` .
+|D Lloyd
+|20 Jan 2005
+
+|0.5
+|{spec_tickets}/SPEC-110[SPEC-110^]. Update ADL document and create AOM document. +
+Includes detailed input and review from:
+
+* DSTC
+* CHIME, Uuniversity College London
+* Ocean Informatics
+
+Initial Writing. Taken from ADL document https://github.com/openEHR/specifications/blob/master/source/am/language/language_design/archetype_language_2v0.7.doc[1.2draft B].
+|T Beale +
+ A Goodchild +
+ Z Tun +
+ T Austin +
+ D Kalra +
+ N Lea +
+ D Lloyd +
+ S Heard +
+ T Beale
+|10 Nov 2004
+|===
+

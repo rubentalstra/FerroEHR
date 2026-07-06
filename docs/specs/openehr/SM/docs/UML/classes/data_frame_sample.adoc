@@ -1,0 +1,14 @@
+=== DATA_FRAME_SAMPLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__DATA_FRAME_SAMPLE<T> (abstract)__*
+
+h|*Description*
+2+a|Abstract class with methods for extracting single variable values from data frames.
+
+h|*Inherit*
+2+|`<<_sample_class,SAMPLE>>`
+
+|===

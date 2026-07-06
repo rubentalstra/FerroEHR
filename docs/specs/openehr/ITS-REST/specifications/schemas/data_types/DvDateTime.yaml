@@ -1,0 +1,17 @@
+title: DV_DATE_TIME
+type: object
+allOf:
+  - $ref: ../data_types/DvTemporal.yaml
+required:
+  - value
+properties:
+  _type:
+    type: string
+    default: DV_DATE_TIME
+  value:
+    type: string
+    format: date-time
+x-discriminator-value: DV_DATE_TIME
+example:
+  _type: DV_DATE_TIME
+  value: '2017-08-15T10:37:15.422+02:00'

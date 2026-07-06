@@ -1,0 +1,42 @@
+[appendix]
+= Reference Model Dependencies
+
+The following shows other components used by the aom14 package.
+
+== RM 1.0.2 support.assumed_types package
+
+[.text-center]
+.Release 1.0.2 RM support.assumed_types package
+image::{openehr_release_102}/UML/diagrams/BASE-base_types.assumed_types.svg[id=rm_support_iassumed_types_package, align="center"]
+
+== RM 1.0.2 support.identification package
+
+[.text-center]
+.Release 1.0.2 RM support.identification package
+image::{openehr_release_102}/UML/diagrams/RM-support.identification.svg[id=rm_support_id_package, align="center"]
+
+== RM 1.0.2 data_types.basic package
+
+[.text-center]
+.Release 1.0.2 RM data_types.basic package
+image::{openehr_release_102}/UML/diagrams/RM-data_types.basic.svg[id=rm_data_types_basic_package, align="center"]
+
+== RM 1.0.2 data_types.text package
+
+[.text-center]
+.Release 1.0.2 RM data_types.text package
+image::{openehr_release_102}/UML/diagrams/RM-data_types.text.svg[id=rm_data_types_text_package, align="center"]
+
+== RM 1.0.2 data_types.quantity package
+
+[.text-center]
+.Release 1.0.2 RM data_types.quantity package
+image::{openehr_release_102}/UML/diagrams/RM-data_types.quantity.svg[id=rm_data_types_quantity_package, align="center"]
+
+== RM 1.0.2 common.resource package
+
+[.text-center]
+.Release 1.0.2 RM common.resource package
+image::{openehr_release_102}/UML/diagrams/RM-common.resource.svg[id=rm_common_resource_package, align="center"]
+
+The full class definitions may be found within {openehr_release_102}/docs/common/common.html#_resource_package[the specification].

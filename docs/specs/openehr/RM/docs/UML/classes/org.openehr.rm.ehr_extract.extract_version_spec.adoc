@@ -1,0 +1,33 @@
+=== EXTRACT_VERSION_SPEC Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXTRACT_VERSION_SPEC*
+
+h|*Description*
+2+a|Specification of what versions should be included in an Extract. By default, only latest versions are included in the Extract, in which case this part of the Extract specification is not needed at all. The attributes `_include_all_versions_` and `_commit_time_interval_` are used to modify this; the former forces all versions to be included; the latter limits the versions to be those latest versions committed in the time interval, or if `_include_all_versions_` is `True`, all versions committed in the time interval.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*include_all_versions*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if all versions of each item in the Extract are included.
+
+h|*0..1*
+|*commit_time_interval*: `link:/releases/RM/{rm_release}/data_types.html#_dv_interval_class[DV_INTERVAL^]<link:/releases/RM/{rm_release}/data_types.html#_dv_date_time_class[DV_DATE_TIME^]>`
+a|Specifies commit time interval of items to source repository to include in Extract. By default, only latest versions whose commit times fall in the range are included. If include_all_versions is True, then the range includes all versions committed within the interval.
+
+h|*1..1*
+|*include_revision_history*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if revision histories of the items in the Extract are included. If included, it is always the full revision history.
+
+h|*1..1*
+|*include_data*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|`True` if the data of items matched by the content spec should be included. This is the default. If `False`, only revision history is included in serialised versions. Turning this option on in openEHR systems causes `X_VERSIONED_OBJECTs` to have `_revision_history_` set, but versions Void. Useful for interrogating a server without having to look at any content data. In other systems it may or may not have a sensible meaning.
+
+h|*Invariants*
+2+a|__Includes_revision_history_valid__: `not include_data implies include_revision_history`
+|===

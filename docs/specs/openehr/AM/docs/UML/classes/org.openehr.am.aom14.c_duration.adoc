@@ -1,0 +1,65 @@
+=== C_DURATION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_DURATION*
+
+h|*Description*
+2+a|ISO 8601-compatible constraint on instances of Duration. In ISO 8601 terms, constraints might are of the form “PWD” (weeks and/or days), “PDTHMS” (days, hours, minutes, seconds) and so on.
+
+Both range and the constraint pattern can be set at the same time, corresponding to the ADL constraint `"PWD/&#124;P0W..P50W&#124;"`.
+
+As for all of openEHR, two ISO 8601 exceptions are allowed: 
+
+* the ‘W’ (week) designator can be mixed in - the allowed patterns are: `P[Y&#124;y][M&#124;m][D&#124;d][T[H&#124;h][M&#124;m][S&#124;s]]` and `P[W&#124;w]`;
+* the values used in an interval constraint may be negated, i.e. a leading minus (`'-'`) sign may be used.
+
+h|*Inherit*
+2+|`<<_c_primitive_class,C_PRIMITIVE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*years_allowed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|
+
+h|*0..1*
+|*months_allowed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if months are allowed in the constrained Duration.
+
+h|*0..1*
+|*weeks_allowed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|
+
+h|*0..1*
+|*days_allowed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if days are allowed in the constrained Duration.
+
+h|*0..1*
+|*hours_allowed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if hours are allowed in the constrained Duration.
+
+h|*0..1*
+|*minutes_allowed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if minutes are allowed in the constrained Duration.
+
+h|*0..1*
+|*seconds_allowed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|
+
+h|*0..1*
+|*fractional_seconds_allowed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if fractional seconds are allowed in the constrained Duration.
+
+h|*0..1*
+|*range*: `link:/releases/BASE/{base_release}/foundation_types.html#_interval_class[Interval^]<link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_duration_class[Iso8601_duration^]>`
+a|Range of Durations specifying constraint.
+
+h|*0..1 +
+(redefined)*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_duration_class[Iso8601_duration^]`
+a|The value to assume if this item is not included in data, due to being part of an optional structure.
+|===

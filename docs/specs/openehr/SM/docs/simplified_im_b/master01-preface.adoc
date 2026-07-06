@@ -1,0 +1,29 @@
+= Preface
+
+== Purpose
+
+This document describes the Simplified Information Model 'B' (SIM-B) format, a simplified form of the {openehr_rm}[openEHR RM^], intended to be used to generate the simplified JSON Data Template (sJDT) format. The SIM-B model is designed to enable easier creation of openEHR content (i.e. Compositions etc).
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_sm_development_simplified_im_b}[{openehr_sm_development_simplified_im_b}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_technical_list}[technical mailing list^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+xxx
+
+== Tooling
+
+xxx

@@ -1,0 +1,33 @@
+=== EL_FUNCTION_AGENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_FUNCTION_AGENT*
+
+h|*Description*
+2+a|An agent whose signature is of a function, i.e. has a result type.
+
+h|*Inherit*
+2+|`<<_el_agent_class,EL_AGENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*definition*: `<<_bmm_function_class,BMM_FUNCTION>>`
+a|Reference to definition of a routine for which this is a direct call instance, if one exists.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*eval_type* (): `<<_bmm_function_type_class,BMM_FUNCTION_TYPE>>` +
+ +
+__Post_result__: `Result = definition.signature`
+a|Eval type is the signature corresponding to the (remaining) open arguments and return type, if any.
+|===

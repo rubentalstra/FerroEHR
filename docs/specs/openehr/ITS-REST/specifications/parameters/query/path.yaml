@@ -1,0 +1,9 @@
+name: path
+in: query
+description: |
+  A path to a sub-folder; consists of slash-separated values of the name attribute of FOLDERs in the directory.
+style: form
+explode: true
+schema:
+  type: string
+  example: 'episodes/a/b/c'

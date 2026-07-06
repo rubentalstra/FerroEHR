@@ -1,0 +1,11 @@
+title: DV_DATE
+type: object
+allOf:
+  - $ref: ../data_types/DvDate.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_DATE]
+x-discriminator-value: DV_DATE

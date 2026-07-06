@@ -1,0 +1,29 @@
+=== S_INSTRUCTION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_INSTRUCTION*
+
+h|*Description*
+2+a|Simplified RM form of `INSTRUCTION` RM class.
+
+h|*Inherit*
+2+|`<<_s_care_entry_class,S_CARE_ENTRY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*narrative*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_TEXT` to `String`.
+
+h|*0..1*
+|*expiry_time*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_DATE_TIME`.
+
+h|*0..1*
+|*activities*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_activity_class,S_ACTIVITY>>>`
+a|(unchanged from RM)
+|===

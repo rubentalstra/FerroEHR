@@ -1,0 +1,82 @@
+:attestation_reason_description: This vocabulary codifies attestation statuses of Compositions \
+   or other elements of the health record. \
+   + \
+   External reference: {hl7_participation_signature}[HL7 ParticipationSignature domain^]
+:attestation_reason_links: {openehr_rm_common}#_attestation_class[ATTESTATION.reason^]
+
+
+:audit_change_type_description: This vocabulary codifies the kinds of changes to data which are recorded in audit trails.
+:audit_change_type_links: {openehr_rm_common}#_audit_details_class[AUDIT_DETAILS.change_type^]
+
+
+:composition_category_description: This vocabulary codifies the values of the `category` attribute in Compositions.
+:composition_category_links: {openehr_rm_ehr}#_composition_class[COMPOSITION.category^]
+
+
+:event_math_function_description: This vocabulary codifies mathematical functions applied to non-instantaneous time series events.
+:event_math_function_links: {openehr_rm_data_structures}#_interval_class[INTERVAL_EVENT.math_function^]
+
+
+:instruction_states_description: This vocabulary codifies the names of the states in the \
+    {openehr_rm_ehr}#_the_standard_instruction_state_machine_ism[standard Instruction state machine^].
+:instruction_states_links: {openehr_rm_ehr}#_ism_transition_class[ISM_TRANSITION.current_state^]
+
+
+:instruction_transitions_description: This vocabulary codifies the names of the transitions in the \
+    {openehr_rm_ehr}#_the_standard_instruction_state_machine_ism[standard Instruction state machine^].
+:instruction_transitions_links: {openehr_rm_ehr}#_ism_transition_class[ISM_TRANSITION.transition^]
+
+
+:null_flavours_description: This vocabulary codifies 'flavours of null' for missing data items.
+:null_flavours_links: {openehr_rm_data_structures}#_element_class[ELEMENT.null_flavour^]
+
+
+:participation_function_description: This vocabulary codifies functions of participation of parties in an interaction.
+:participation_function_links: {openehr_rm_common}#_participation_class[PARTICIPATION.function^]
+
+
+:participation_mode_description: This vocabulary codifies modes of participation of parties in an interaction. \
+    + \
+    External reference: {hl7_participation_mode}[HL7 ParticipationMode domain^]
+:participation_mode_links: {openehr_rm_common}#_participation_class[PARTICIPATION.mode^]
+
+
+:property_description: This vocabulary codifies purposes for physical properties corresponding to formal unit \
+    specifications, and allows comparison of Quantities with different units but which measure the same property. \
+    + \
+    External reference: {ucum}[Regenstrief Institute - Unified Codes for Units of Measure^]
+:property_links: {openehr_rm_data_types}#_dv_quantity_class[DV_QUANTITY^]
+
+
+:setting_description: This vocabulary codifies broad types of settings in which clinical care is delivered. \
+    It is not intended to be a perfect classification of the real world, but instead a practical \
+    coarse-grained categorisation to aid querying.
+:setting_links: {openehr_rm_ehr}#_event_context_class[EVENT_CONTEXT.setting^]
+
+
+:subject_relationship_description: This vocabulary codifies the relationship between the subject of care and \
+    some other party mentioned in the health record.
+:subject_relationship_links: {openehr_rm_common}#_party_related_class[PARTY_RELATED.relationship^]
+
+
+:term_mapping_purpose_description: This vocabulary codifies purposes for term mappings as used in openEHR coded text data.
+:term_mapping_purpose_links: {openehr_rm_data_types}#_term_mapping_class[TERM_MAPPING.purpose^]
+
+
+:version_lifecycle_state_description: This vocabulary codifies lifecycle states of Compositions or other elements of \
+    the health record.
+:version_lifecycle_state_links: {openehr_rm_common}#_original_version_class[ORIGINAL_VERSION.lifecycle_state^], \
+    {openehr_rm_common}#_imported_version_class[IMPORTED_VERSION.lifecycle_state^], \
+    {openehr_rm_common}#_versioned_object_class[VERSIONED_OBJECT.lifecycle_state^]
+
+
+:extract_content_type_description: This vocabulary codifies the type of the content required for an Extract specification.
+:extract_content_type_links: {openehr_rm_ehr_extract}#_extract_spec_class[EXTRACT_SPEC.extract_type^]
+
+
+:extract_action_type_description: This vocabulary codifies the action types of a Request for an Extract specification.
+:extract_action_type_links: {openehr_rm_ehr_extract}#_extract_action_request_class[EXTRACT_ACTION_REQUEST.action^]
+
+
+:extract_update_trigger_event_type_description: This vocabulary codifies the event names of an update Extract specification.
+:extract_update_trigger_event_type_links: {openehr_rm_ehr_extract}#_extract_update_spec_class[ EXTRACT_UPDATE_SPEC.trigger_events^]

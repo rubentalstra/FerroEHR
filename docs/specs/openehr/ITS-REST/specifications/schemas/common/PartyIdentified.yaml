@@ -1,0 +1,30 @@
+title: PARTY_IDENTIFIED
+type: object
+allOf:
+  - $ref: ../common/PartyProxy.yaml
+properties:
+  _type:
+    type: string
+    default: PARTY_IDENTIFIED
+  name:
+    type: string
+  identifiers:
+    type: array
+    items:
+      $ref: ../data_types/DvIdentifier.yaml
+x-discriminator-value: PARTY_IDENTIFIED
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    PARTY_IDENTIFIED: '#/components/schemas/PartyIdentified'
+    PARTY_RELATED: '#/components/schemas/PartyRelated'
+example:
+  _type: PARTY_IDENTIFIED
+  external_ref:
+    id:
+      _type: GENERIC_ID
+      value: 16b74749-e6aa-4945-b760-b42bdc07098a
+      scheme: pid
+    namespace: openEHRSys.example.com
+    type: PERSON
+  name: A name

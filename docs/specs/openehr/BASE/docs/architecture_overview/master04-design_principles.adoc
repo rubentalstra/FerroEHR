@@ -1,0 +1,116 @@
+= Design Principles
+
+The openEHR approach to modelling information, services and domain knowledge is based on a
+number of design principles, described below. The application of these principles leads to a separation
+of the models of the openEHR architecture, and consequently, a high level of componentisation. This
+leads to better maintainability, extensibility, and flexible deployment.
+
+== Ontological Separation
+
+The most basic kind of distinction in any system of models is ontological, i.e. in the levels of abstraction
+of description of the real world. All models carry some kind of semantic content, but not all
+semantics are the same, or even of the same category. For example, some part of the {snomed_ct}[SNOMED CT^]
+terminology describes types of bacterial infection, sites in the body, and symptoms. An information
+model might specify a logical type Quantity. A content model might define the model of information
+collected in an ante-natal examination by a physician. These types of 'information' are qualitatively
+different, and need to be developed and maintained separately within the overall model eco-system.
+The figure below illustrates these distinctions, and indicates what parts are built directly into software 
+and databases.
+
+[.text-center]
+.The Ontological Landscape
+image::{diagrams_uri}/ontological_landscape.png[id=ontological_landscape, align="center", width=80%]
+
+This figure shows a primary separation between 'ontologies of information' i.e. models of information
+content, and 'ontologies of reality' i.e. descriptions and classifications of real phenomena. These
+two categories have to be separated because the type of authors, the representation and the purposes
+are completely different. In health informatics, this separation already exists by and large, due to the
+development of terminologies and classifications.
+
+A secondary ontological separation within the information side is shown between information models
+and domain content models. The former category corresponds to semantics that are _invariant_ across
+the domain (e.g. basic data types like coded terms, data structures like lists, identifiers), while the latter
+corresponds to _variable_ domain level content descriptions - descriptions of information structures
+such as 'microbiology result' rather than descriptions of actual phenomena in the real world (such as
+infection by a microbe). This separation is not generally well understood, and historically, a great deal
+of domain-level semantics has been hard-wired into the software and databases, leading to relatively
+unmaintainable systems.
+
+By clearly separating the three categories - information models, domain content models, and terminologies
+- the openEHR architecture enables each to have a well-defined, limited scope and clear
+interfaces. This limits the dependence of each on the other, leading to more maintainable and adaptable
+systems.
+
+=== Multi-level Modelling and Archetypes
+
+One of the key paradigms on which openEHR is based is known as _multi-level modelling_, originally described in citenp:[Beale2002] as 'two-level modelling'. Under the multi-level approach, there are three levels of models required for a system:
+
+* _reference model (RM)_: a stable reference information model constitutes the first level of modelling;
+* _re-usable content element definitions_: formal definitions of clinical content data points and groups, in the form of {openehr_am}[_archetypes_^];
+* _context-specific data set definitions_: formal definitions of use-case specific data sets used for forms, documents, messages etc, created by combining required elements of relevant archetypes into openEHR {openehr_am_overview}#_templates[__templates__^].
+
+Only the first level (the Reference Model) is implemented in software, significantly reducing the dependency of deployed systems and data on variable content definitions. The only other parts of the model universe implemented in software are highly stable languages/models of representation (shown at the bottom of <<ontological_landscape>>). As a consequence, systems have the possibility of being far smaller and more maintainable than 'single-level' systems, in which all semantics are expressed in one model (typically a UML class model or DB schema). Archetype-based systems are also inherently self-adapting, since they are built to consume archetypes and templates as they are developed into the future.
+
+Archetypes and templates also act as a well-defined semantic gateway to terminologies, classifications and computerised clinical guidelines. The alternative in the past has been to try to make systems function solely with a combination of hard-wired software and terminology. This approach is flawed, since terminologies don’t contain definitions of domain content (e.g. 'microbiology result'), but rather facts about the real world (e.g. kinds of microbes and the effects of infection in humans); in other words, they are ontological artefacts, whereas archetypes are epistemological artefacts.
+
+The use of archetyping in openEHR engenders new relationships between information and models, as shown in the following figure.
+
+[.text-center]
+.Archetype Meta-architecture
+image::{diagrams_uri}/archetype_meta_architecture.svg[id=archetype_meta_architecture, align="center", width=80%]
+
+In this figure, 'data' as we know it in normal information systems (shown on the bottom left) conforms in the usual way to an object model (top left). Systems engineered in the 'classic' way (i.e. all domain semantics are encoded somewhere in the software or database) are limited to this kind of architecture. With the use of multi-level modelling, runtime data now conform semantically to archetypes as well as concretely to the reference model. All archetypes are expressed in a generic {openehr_am_adl2}[Archetype Definition Language (ADL)], which is the basis of {iso_13606-2}[ISO standard 13606-2].
+
+The details of how archetypes and templates work in openEHR are described in the <<_archetypes_and_templates>>.
+
+=== Consequences for Software Engineering
+
+Multi-level modelling significantly changes the dynamics of the systems development process. In the usual IT-intensive process, requirements are gathered via ad hoc discussions with users (typically via the well-known 'use case' methodology), designs and models built from the requirements, implementation proceeds from the design, followed by testing and deployment and ultimately the maintenance part of the lifecycle. This is usually characterised by ongoing high costs of implementation change and/or a widening gap between system capabilities and the requirements at any moment. The approach also suffers from the fact that ad hoc conversations with systems users nearly always fails to reveal underlying content and workflow. Under the multi-level paradigm, the core part of the system is based on the reference and archetype models (includes generic logic for storage, querying, caching etc.), both of which are extremely stable, while domain semantics are mostly delegated to domain specialists who work building archetypes (reusable), templates (local use) and terminology (general use). The process is illustrated in the following figure. Within this process, IT developers concentrate on generic components such as data management and interoperability, while groups of domain experts work outside the software development process, generating definitions that are used by systems at runtime.
+
+[.text-center]
+.Multi-level Modelling and Software Engineering
+image::{diagrams_uri}/multi_level_modelling.svg[id=multi_level_modelling, align="center"]
+
+Clearly applications cannot always be totally generic (although many data capture and viewing applications are); decision support, administrative, scheduling and many other applications still require custom engineering. However, all such applications can now rely on an archetype- and template-driven computing platform. A key result of this approach is that archetypes now constitute a technology-independent, single-source expression of domain semantics, used to drive database schemas, software logic, GUI screen definitions, message schemas and all other technical expressions of the semantics.
+
+== Separation of Responsibilities
+
+A second design paradigm used in openEHR is that of separation of responsibilities within the computing environment. Complex domains are only tractable if the functionality is first partitioned into broad areas of interest, i.e. into a 'system of systems' cite:[Maier2000]. This principle has been understood in computer science for a long time under the rubrics 'low coupling', 'encapsulation' and 'componentisation', and was the driver for the explosion of object-oriented languages, libraries and frameworks.
+
+When applied to larger systems, such as that needed to run a hospital or regional health network, the modern form of the paradigm is Services Oriented Architecture (SOA), whereby the components of the system are coarse-grained services. In this approach, each area of functionality is formally modelled and implemented as a self-standing service with a defined interface.
+
+The following diagram illustrates a healthcare services environment containing services at three _deployment levels_: provider organisation (hospital, clinic, etc); care network (e.g. regional health service, but also non-geographical HMO); and national. These levels may be understood as relating to three perspectives of care (indicated by the larger grey text):
+
+* _healthcare delivery_: what happens at a provider enterprise, such as a clinic or hospital;
+* _continuity of care_: the passage of the patient through multiple clinics and encounters to achieve a care process designed to fulfil a goal;
+* _healthcare system_: the perspective of a national healthcare system, including public health, planning, quality reporting, etc.
+
+Within each of these deployment levels there are semantic categories corresponding to data, information, process (planning and logistics) and analytics. From left to right, the services are also classified according to what kind of entity they are concerned with: single patient, healthcare professional (HCP), provider enterprise, or knowledge. The diagram is only partially populated, and is not intended to be either complete or normative in any sense.
+
+[.text-center]
+.A Health Services Environment
+image::{diagrams_uri}/platform_landscape.svg[id=health_services_environment, align="center"]
+
+E-health services at the care network level are emerging, and in many geographies and health organisations, most of the services shown at this level are available only within provider organisations.
+
+Services that openEHR is concerned with specifying (including adaptation of published _de jure_ or other standards) are shown in colour, with other services and  applications (e.g. Terminology, patient portal) in grey. As can be seen, the scope of openEHR in terms of services is primarily as follows:
+
+* patient-centric services at the data and process levels in any deployment level;
+* enterprise-centric services within a care network or provider organisation;
+* knowledge services relating to models of content and process.
+
+Since there are standards available for some aspects of many services, such as terminology, imaging, messages, EHR Extracts, service-based interoperation, and numerous standards for details such as date/time formats and string encoding, the openEHR specifications sometimes act as a mechanism to adapt and integrate existing standards.
+
+== Separation of Viewpoints
+
+The third computing paradigm used in openEHR is a natural consequence of the separation of responsibilities, namely the separation of viewpoints. When responsibilities are divided up among distinct components, it becomes necessary to define a) the information that each processes, and b) how they will communicate. These two aspects of models constitute the two central 'viewpoints' of the {iso_rm_odp}[ISO RM/ODP model], marked in bold in the following:
+
+[horizontal]
+Enterprise:: concerned with the business activities, i.e. purpose, scope and policies of the specified system.
+Information:: concerned with the semantics of information that needs to be stored and processed in the system.
+Computational:: concerned with the description of the system as a set of objects that interact at interfaces - enabling system distribution.
+Engineering:: concerned with the mechanisms supporting system distribution.
+Technological:: concerned with the detail of the components from which the distributed system is constructed.
+
+The openEHR specifications accordingly include an information viewpoint - the openEHR Reference Model - and a computational viewpoint - the openEHR Service Model. The Engineering viewpoint corresponds to the {openehr_its_component}[openEHR Implementation Technology Specifications (ITS)^], while the Technological viewpoint corresponds to the technologies and components used in an actual deployment. An important aspect of the division into viewpoints is that there is generally not a 1:1 relationship between model specifications in each viewpoint. For example, there might be a concept of 'health mandate' (see {iso_13940}[ISO 13940, Continuity of Care concepts]) in the enterprise viewpoint. In the information viewpoint, this might have become a model containing many classes. In the computational viewpoint, the information structures defined in the information viewpoint are likely to recur in multiple services, and there may or may not be a
+'health mandate' service. The granularity of services defined in the computational viewpoint corresponds most strongly to divisions of function in an enterprise or region, while the granularity of components in the information view points corresponds to the granularity of mental concepts in the problem space, the latter almost always being more fine-grained.

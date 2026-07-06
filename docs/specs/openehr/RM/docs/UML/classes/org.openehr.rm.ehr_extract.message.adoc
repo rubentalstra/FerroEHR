@@ -1,0 +1,30 @@
+=== MESSAGE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*MESSAGE*
+
+h|*Description*
+2+a|A “message” is an authored, possibly signed, piece of content intended for one or more recipients. Since the recipient may or may not be known directly, recipients are specified in the `ADDRESSED_MESSAGE` class.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*audit*: `link:/releases/RM/{rm_release}/common.html#_audit_details_class[AUDIT_DETAILS^]`
+a|Details of who actually created the message and when. This is the person who entered the data or otherwise caused the message to be created, or might be a piece of software.
+
+h|*1..1*
+|*author*: `link:/releases/RM/{rm_release}/common.html#_party_proxy_class[PARTY_PROXY^]`
+a|Party responsible for the message content, who may or may not be technically responsible for its creation (e.g. by data entry etc).
+
+h|*1..1*
+|*content*: `<<_message_content_class,MESSAGE_CONTENT>>`
+a|Content of the message.
+
+h|*0..1*
+|*signature*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional signature by the author of message content in openPGP format. The signature is created as a Hash and optional signing of the serialisation of this message object with this signature field Void.
+|===

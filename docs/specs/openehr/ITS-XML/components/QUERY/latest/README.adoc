@@ -1,0 +1,6 @@
+# Query 
+
+openEHR https://specifications.openehr.org/releases/QUERY/latest/AQL.html[AQL] RESULT_SET XML schema - draft.
+
+### Acknowledgements
+Authored by https://www.dips.com/uk[DIPS] - 2017.08.31

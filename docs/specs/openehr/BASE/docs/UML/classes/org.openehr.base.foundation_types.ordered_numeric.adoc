@@ -1,0 +1,14 @@
+=== Ordered_Numeric Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__Ordered_Numeric (abstract)__*
+
+h|*Description*
+2+a|Abstract notional parent class of ordered, numeric types, which are types with both the `_less_than_()` and arithmetic functions defined.
+
+h|*Inherit*
+2+|`<<_ordered_class,Ordered>>`, `<<_numeric_class,Numeric>>`
+
+|===

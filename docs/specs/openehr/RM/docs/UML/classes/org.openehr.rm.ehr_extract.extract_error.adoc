@@ -1,0 +1,19 @@
+=== EXTRACT_ERROR Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EXTRACT_ERROR*
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*request_id*: `link:/releases/BASE/{base_release}/base_types.html#_object_ref_class[OBJECT_REF^]`
+a|
+
+h|*1..1*
+|*reason*: `link:/releases/RM/{rm_release}/data_types.html#_dv_text_class[DV_TEXT^]`
+a|
+|===

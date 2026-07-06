@@ -1,0 +1,283 @@
+[appendix]
+= Comparison with HL7v3 Types
+
+== Scope
+Some HL7v3 types are not modelled in openEHR. HL7v3 V3DT types which are assumed by
+openEHR to exist in the underlying type system of any implementation technology include:
+
+* Integer (`INT`)
+* Real (`REAL`)
+* Set (`SET`)
+* List (`LIST`)
+* Bag (`BAG`)
+
+HL7v3 types which are not modelled here because they are almost always too volatile for concrete
+modelling, and can be created with archetyped generic information structures are as follows (even in
+HL7 they are really data structures rather than data types):
+
+* Postal address (`AD`)
+* Entity name (`EN`)
+* Person name (`PN`)
+* Organisation name (`ON`)
+* Trivial name (`TN`)
+
+These types are all modelled by archetyped spatial data structures in openEHR (equivalent to subtypes
+of Structure in the CDA specification).
+HL7v3 types which may need to be modelled in the future include:
+
+* Uncertain value probabilistic (`UVP`)
+* Non-parametric probability distribution (`NPPD`)
+* Parametric probability distribution (`PPD`)
+
+Types which are provided by openEHR but not supported directly by HL7 include:
+
+* state variable (`DV_STATE`);
+* ordinal values (`DV_ORDINAL`);
+* explicit partial date and time types (`DV_DATE`, `DV_TIME`);
+* explicit time duration (`DV_DURATION`).
+
+Types in the latter two categories may be implementable with the `TS` (timestamp) type.
+
+== Design Differences
+There are some significant differences in design approach between the openEHR data types and the
+HL7v3 data types, described in the following sections.
+
+=== Naming
+All types in the HL7 specification have two names, one short and one long. For example the type representing
+physical quantities is known both as "PhysicalQuantity" and "PQ". While short names may
+be reasonable for often-used types, someshort names are not obvious, e.g. "EN", "ON", "TN",
+"NPPD" etc. Short names certainly have benefits for drawing tools such as Rational Rose or other
+UML tools, however, it is questionable whether a formal model should include concept names chosen
+on the basis of visual appearance in such tools (one might argue that such tools should provide aliases
+for visual purposes, without changing the actual model). Another problem is that UML does not
+include the concept of class name aliases, nor do most programming languages.
+
+The openEHR model uses one name only for each class.
+
+=== Identification
+The HL7 V3DT includes the types `II`, `UID`, `OID` and `UUID`. The `II` type is claimed to be for identifying
+all kinds of entities, which we here classify as real-world entities ("RWEs") (such as people, vehicle
+registrations, invoices) and informational entities ("IEs") - which in general are snapshots of data
+representing an RWE in a computer system. One problem with RWE identification schemes is that
+some are known (e.g. social security number) to produce fallible identifiers or situations where multiple
+RWEs have the same identifier, or no identifier at all. Conversely, with well-controlled and internationally
+agreed ways of issuing/generating information system identifiers (e.g. GUID, ISO OID) it
+is thought that such identifiers can be made reliable, and indeed correspond 1:1 with their intended
+IEs. However, a problem with IEs is that there are often duplicates and also multiple versions in time,
+each intended to represent the same RWE (such as a particular person, observation or composition).
+
+As far as can be ascertained currently, there is no standard analysis taking into account the existence
+of IEs and RWEs, and recognising the fact that multiple versions and/or duplicates may refer to the
+same RWE.
+
+The approach taken in openEHR with respect to identifiers is currently as follows.
+
+* RWE identifiers such as social security numbers, licence numbers, etc are modelled with the
+type `DV_IDENTIFIER`, which has the attributes:
+** `_issuer_`: `String`
+** `_id_`: `String`
+** `_type_`: `String`
+The attributes listed above are nearly the same as for the HL7 II type, indicating that the two
+types may be compatible.
+* Identification of IEs is done using the type `OBJECT_ID`, which is not a data type, and is documented
+in the Support Information Model. The `OBJECT_ID` type takes into account the
+fact that there may be multiple IEs referring to the same underlying RWE by adding a version
+identifier (assumed to be a timestamp).
+
+=== Archetyping
+
+The openEHR data types are defined on the assumption of archetype-based systems. While they will
+work perfectly well in systems which know nothing about archetyping, some types are not defined
+because archetypable structures built from more basic entities are assumed instead, rather than concretely
+modelled data types. These include 'types' for Address and PersonName which are found in
+HL7v3 and ISO 13606.
+
+=== Treatment of Inbuilt Types
+The HL7v3 data types do not make any assumptions about the existence of types typically built-in to
+most object and relational formalisms, such as the basic types `String`, `Integer`, `Boolean`, `Real`,
+`Double`, and the generic types `Set<T>`, `Bag<T>` and `Array<T>`. Hence, the types `ST`, `INT`, `REAL`,
+`BL`, `SET<T>`, `BAG<T>` and so on are redefined by HL7. The supposed advantage of this approach is
+that the semantics of all types in the HL7 system, right down to atomic data items are self-contained
+in the definition, and do not rely on external semantics. Possible problems with this approach include
+the following.
+
+* The HL7 definitions diverge from the OMG IDL and ISO 11404 definitions of the basic data
+types, which could cause unexpected problems in software development and data processing
+which is done in typical development technologies (object-oriented and relational).
+* The HL7 types `INT` and `REAL` are defined as subtypes of the `QTY` type, a relationship that
+does not exist in any object-oriented formalism for these types (in particular, there is no substitutability
+of a type called Integer or Real for a type called Qty built in to any object language).
+The definitions of `INT` and `REAL` are also different from those found in most object
+formalisms. This might cause some difficulty in implementation.
+* The binary data type `BIN` is represented as a `List<BL>` (where each item can be True, False, null), whereas it would normally be expected to be something like `Array<Octet>` (i.e. an array of bytes) in most software environments. There does not appear to be any utility in defining it as `List<BL>`, since binary data is almost without exception represented and processed as contiguous arrays of machine bytes.
+* The string type `ST` inherits from the encapsulated data type `ED`, which in turn inherits from the binary data type `BIN`. The result of this is that an instance of `ST` contains numerous data attributes relating to multi-media data, and the content is presumably represented as a `List<BL>`. This is a major departure from the standard understanding of a string in computer sciences, which is usually simply an array of characters.
+* The HL7 boolean type `BL` is a three-valued logic type due to the null marker approach (see below), not the usual two-valued type found in the Boolean concept in programming languages. The same is true of `INT` and `REAL:` due to the null marker design, "null" is a possible return value of an integer or real as well as true integer and real values.
+
+In general, where differences exist between same-named types in HL7 and an underlying formalism
+such as a programming language, there is likely to be some confusion in implementation. Further,
+there is likely to be confusion in how to process instances of basic types which contain numerous
+(and sometimes recursive) fields which are not used in the standard specifications of basic types.
+The openEHR approach with respect to inbuilt types is to assume only those types found in the mainstream
+object-oriented programming languages, and in particular, definitive formalisms like OMG
+IDL and XML. While this means there there is in theory less control over these types than in the HL7
+approach, the number of types involved is quite small, and the problem of bindings to the basic types
+of object formalisms is well understood. Additionally, since it is recognised that some data types
+defined by openEHR could clash with types found in some languages and libraries, all data type class
+names are prefaced with "DV_" to avoid naming confusion, and to allow implementations of
+openEHR types to co-exist with existing types in implementation formalisms.
+
+=== Use of Null Markers
+
+All HL7 data types inherit from the `ANY` class (equivalent to the `DATA_VALUE` class in openEHR)
+which contains the attributes:
+
+----
+BL nonNull;
+CS nullFlavor;
+BL isNull;
+----
+
+The purpose of these attributes is to indicate whether a datum is Null, and for what reason. Since
+some data type classes also appear as the attributes of other data types, the Null markers also indicate
+whether any part of a datum is null. Thus, in the class Interval<T> shown below, all attributes have
+the possibility of containing a Null marker.
+
+[source, java]
+--------
+type Interval<T> alias IVL<T> extends Set<T>
+{
+    T low;
+    BL lowClosed;
+    T high;
+    BL highClosed;
+    T.diff width;
+    T center;
+    IVL<T> hull(IVL<T> x);
+    literal ST;
+    promotion IVL<T> (T x);
+    demotion T;
+};
+--------
+
+For example, this allows an interval with missing ends and width to exist as a structured type. The
+consequence of the approach is that the entire model is essentially a model of "partial" data types;
+_any attribute and any function call may return a Null value, as well as the true values of its type_ (in
+fact, in the specification, Null values are defined to be valid values of all data types). This design
+decision was taken in HL7 so that any datum, no matter how unknown, would be structurally representable
+in the same way as completely known data, enabling it to be processed in the same way as all
+other instances of the same type.
+
+However, an important object-oriented design principle has been ignored in this approach. In the
+proper design of classes, properties and class invariants are stated. Invariants are statements which
+describe the correctness conditions of instances of the class; the general rule is that the post-condition
+of a creation routine (constructor) of a class must be that the invariants are satisfied. For example, an
+invariant of the HL7 `IVL<T>` class could be:
+
+----
+(exists(low) and exists(high)) or else
+(exists(low) and exists(width)) or else
+(exists(width) and exists(high))
+----
+
+When an instance of this class is created, this condition should be satisfied, and remain satisfied for
+the life of the instance. To do otherwise is to create instances of data which other software can make
+no assumptions about, and is forced to check every single field, and then determine what to do in an
+ad hoc way. (See citenp:[Meyer_OOSC2] p366, citenp:[Booch1994] p43, citenp:[Kilov1994] p29 for detailed explanations of the invariant concept).
+Possible consequences of the built-in Null marker design approach include:
+
+* since even HL7's basic types `ST`, `INT`, `REAL`, `LIST<>`, `SET<>` include null markers, processing
+of null values will be pervasive at the lowest level;
+* software will be more complex, both implementations of the data types, and of software
+which handle them. This is because the software always has to deal with the possibility of
+calls to routines and attributes returning Null values. Most clinical information systems to
+date have taken the approach that a datum is either represented as an instance of a formal
+type if fully known, or else as narrative text if only partial;
+* data may not be always be safely processable, since some software may not properly handle
+the null values associated with attributes of partially known data items. Essentially, all software
+which processes the data has to be "null-value aware", and make no assumptions at all
+about whether a particular data instance is valid or not.
+
+The HL7 data type model is in contrast with simpler approaches such as used in CEN, GEHR, and
+openEHR, where data types are formal models of types such as Coded_term, Quantity and so on.
+Rather than build the possibility of null markers into every attribute and class in the data types, a single
+null marker is defined in relevant containing classes. This decision is based on the principle that
+data types should be defined independently of their context of use. Hence, where data types are used
+as data values, such as in the value attribute of the class `ELEMENT` from the openEHR EHR reference
+model, the parallel features is_null and null_flavour are also defined. However, where data types
+appear as attributes elsewhere in the model and there is no possibility of them being null, no null
+markers are used. The figure below shows visually the difference between the two approaches.
+
+[.text-center]
+.HL7 and Typical Null value approaches
+image::{diagrams_uri}/HL7_null_value.png[id=HL7_null_value, align="center", width=65%]
+
+The consequences of the standard software-engineering approach include:
+
+* data types can be more easily formally specified, since the semantics of invariants, attributes and operations do not need to include the possibility of null values;
+* software implementations are simpler;
+* data are always guaranteed to be safely processable for decision support and general querying, since no instance of a formal type will be created in the first place if the datum is very unreliable;
+* null markers only appear in models where they are relevent, rather than everywhere data types are used;
+* however, the openEHR data types do not automatically deal with missing or unknown internal attribute values (such as missing high and low values for an interval, partial dates etc).
+
+In order to deal with the last possibility, various approaches are used in openEHR:
+
+* for most data which is not fully known, no data type instance is created, and a null marker is created. Depending on the design of the revelant archetypes, there will usually be the possibility of recording the datum in narrative form;
+* `ENTRYs` in the openEHR EHR reference model include a certainty:Boolean attribute, for recording a level of doubt;
+* for particular data types which are often partial, special features are defined. The main types affected are `DV_DATE`, `DV_TIME`, and `DV_DATE_TIME`; the properties month_unknown, day_unknown, minute_unknown, and second_unknown (based on ISO 8601 semantics) are used to define explicitly the semantics of dates with a missing day, times with missing seconds and so on;
+* Intervals of date/time types include types generated when the parameter type is one of the partial classes, thus, types `DV_INTERVAL<DV_DATE>` (where one or both ends has an unknown part) are possible. This covers the need for intervals in which some date is missing from the end date/times, while not allowing intervals with completely missing items to be created;
+* for expressing uncertainy more precisely, probability distribution data types (based on the types defined in HL7) can be used.
+
+A consequence of the HL7 model is that data instances represented in XML or another structured text
+format will be structurally the same regardless of whether there are Null values or not. A structured
+form for partially known data (which would normally break the invariants of its class) may well be
+useful for representing the data as part of a text field, making it easier to use for whatever processing
+is possible later on.
+
+=== Terminology Approach
+The approach in openEHR is to assume the existence of a Terminology Server which is the sole
+authoritative interface with terminologies of any kind, and is the only entity which can assume
+responsibility for querying, post-coordination or other manipulations of terms. No allowance is made
+for coordination of "modifiers", "qualifiers" or any other terms outside the service. As a consequence,
+there are no coordination facilities in the type `DV_CODED_TEXT`, a departure from earlier versions of
+the specification - any term provided from the terminology service must already be "coordinated",
+either by the terminology service, or by one of the terminologies it accesses. This places the responsibility
+of combining terms firmly in the knowledge part of the system, and prevents unsanctioned,
+unvalidated combinations being created elsewhere.
+
+=== Date/Time Approach
+The HL7 specification uses a single `TS` type to represent all logical dates, times, date/times, and partial
+versions thereof. The openEHR specification defines distinct types for each, since these are the
+types which occur in the real world, and it is easier to specify correctness constraints with this
+approach. It is recognised that a single type may be used by some implementors (depending on what
+is available in the language being used), however, the recommended practice is to wrap any such
+types with the logical types described in this specification. This approach reduces the possibility for
+any errors in transmitted data (since no strange combinations of year, ... , second can occur not explicitly
+described in the type definitions).
+
+=== Time Specification Types
+The HL7 approach for time specification appears to cover all reasonable requirements, but has some
+minor problems, including:
+
+* the types `PIVL` and `EIVL` are declared as being generic types (i.e. `PIVL<T:TS>`,
+`EIVL<T:TS>`), when there appears to be no reason for this;
+* the `PIVL`.`_phase_` attribute is used to represent an interval during which a activity occurs,
+example given is "2 minutes every 8 hours". However, the "2 mins" is almost always part of
+a therapeutic prescription of some kind, not part of the timing specification as such. Therapeutic 
+prescriptions have the form "do X every Y time", where the X describes what to do,
+and how long to do it for (e.g. 40 mins massage, administer a drug slowly over 10 mins). In
+fact, what we are really interested in with a timing specification is the specification of the
+starting points in time of some activity, not a time-based graph of on/off points, whch is
+effectively what the `PIVL` type is now.
+
+=== Type Conversions
+The HL7v3 data types specification allows various type conversions, as follows:
+
+    Three kinds of type conversions are defined: promotion, demotion, and character string literals.
+    Type conversions can be implicit or explicit. Implicit type conversion occurs when a certain
+    type is expected (e.g. as an argument to a statement) but a different type is actually provided.
+
+One notable kind of conversion possible in HL7 is of a value of any type `T` into an instance of
+`Set<T>`, `List<T>`, `Bag<T>` or `IVL<T>` containing the value.
+The openEHR model does not provide for any type conversions other than those automatically available
+between inbuilt basic numeric types such as Integer, Float and Double, and between types
+related by inheritance, as supported by all object-oriented languages.

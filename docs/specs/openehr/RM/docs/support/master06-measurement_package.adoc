@@ -1,0 +1,30 @@
+= Measurement Package
+
+== Overview
+
+The Measurement package defines a minimum of semantics relating to quantitative measurement,
+units, and conversion, enabling the Quantity package of the openEHR Data Types Information Model
+to be correctly expressed. As for the Terminology package, a simple service interface is assumed,
+which provides useful functions to other parts of the reference model. The definitions underlying
+measurement and units come from a variety of sources, including:
+
+* CEN ENV 12435, Medical Informatics - Expression of results of measurements in health sciences (see http://www.centc251.org);
+* the {ucum}[Unified Code for Units of Measure (UCUM)], developed by Gunther Schadow and Clement J. McDonald of The Regenstrief Institute.
+
+These of course rest in turn upon a vast amount of literature and standards, mainly from ISO on the
+subject of scientific measurement.
+
+== Service Interface
+
+A simple measurement data service interface is defined according to the figure below, enabling quantitative
+semantics to be used formally from within the Reference Model. Note that this service as currently
+defined in no way seeks to properly model the semantics of units, conversions etc - it provides
+only the minimum functions required by the openEHR Reference Model.
+
+[.text-center]
+.rm.support.measurement Package
+image::{uml_diagrams_uri}/RM-support.measurement.svg[id=base_measurement, align="center"]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}measurement_service.adoc[]

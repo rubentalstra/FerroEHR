@@ -1,0 +1,2 @@
+description: |
+  `408 Request Timeout` is returned when there is a query execution timeout (i.e. maximum query execution time reached, therefore the server aborted the execution of the query).

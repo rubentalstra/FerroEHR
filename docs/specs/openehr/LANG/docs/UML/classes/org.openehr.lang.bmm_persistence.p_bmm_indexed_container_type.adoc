@@ -1,0 +1,23 @@
+=== P_BMM_INDEXED_CONTAINER_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*P_BMM_INDEXED_CONTAINER_TYPE*
+
+h|*Inherit*
+2+|`<<_p_bmm_container_type_class,P_BMM_CONTAINER_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*index_type*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|
+
+h|*0..1 +
+(redefined)*
+|*bmm_type*: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_indexed_container_type_class[BMM_INDEXED_CONTAINER_TYPE^]`
+a|Result of `_create_bmm_type()_` call.
+|===

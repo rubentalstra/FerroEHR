@@ -1,0 +1,25 @@
+title: EVENT_CONTEXT
+type: object
+allOf:
+  - $ref: ../common/Pathable.yaml
+required:
+  - start_time
+  - setting
+properties:
+  start_time:
+    $ref: ../data_types/DvDateTime.yaml
+  end_time:
+    $ref: ../data_types/DvDateTime.yaml
+  location:
+    type: string
+  setting:
+    $ref: ../data_types/DvCodedText.yaml
+  other_context:
+    $ref: ../data_structures/UItemStructure.yaml
+  health_care_facility:
+    $ref: ../common/UPartyIdentified.yaml
+  participations:
+    type: array
+    items:
+      $ref: ../common/Participation.yaml
+x-discriminator-value: EVENT_CONTEXT

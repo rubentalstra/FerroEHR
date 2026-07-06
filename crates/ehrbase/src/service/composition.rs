@@ -15,6 +15,7 @@ impl EhrbaseService {
         composition: Value,
     ) -> Result<Value, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
+        self.validate_composition_for_commit(&composition).await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::CREATION, "COMPOSITION creation");
@@ -114,6 +115,7 @@ impl EhrbaseService {
         expected: Option<i32>,
     ) -> Result<Value, ServiceError> {
         self.ensure_composition_in_ehr(ehr_id, vo_id).await?;
+        self.validate_composition_for_commit(&composition).await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "COMPOSITION update");
@@ -177,5 +179,56 @@ impl EhrbaseService {
             )));
         }
         Ok(())
+    }
+
+    /// Validate an incoming COMPOSITION against its operational template before
+    /// it is persisted (the single choke point for the JSON dispatch path and
+    /// the FLAT path, both of which reach `create_composition`/`update_composition`).
+    ///
+    /// PORT NOTE: openEHR ITS-REST 1.0.3 —
+    /// `docs/specs/openehr/ITS-REST/specifications/responses/422_COMPOSITION.yaml`:
+    /// a well-formed COMPOSITION that references an unknown template, or that
+    /// the template "is not validating", is `422 Unprocessable Entity` — not
+    /// `400`. Syntactic parse/convert failures are `400`
+    /// (`.../responses/400_COMPOSITION.yaml`) and are caught earlier at the REST
+    /// negotiation edge, before the service sees the value. `EHRbase`'s CNF Robot
+    /// suite asserts `400` for some *structurally* invalid bodies (rejected by a
+    /// JSON/XML schema pass before OPT validation, per
+    /// `docs/specs/openehr/CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`
+    /// `== Test Environment`); lacking that schema pass we surface such cases
+    /// through the validator as `422` ("converts, but does not validate"),
+    /// following the 422 spec text rather than `EHRbase`'s schema-layer split.
+    ///
+    /// PORT NOTE: `ARCHETYPED.template_id` is optional in the openEHR RM
+    /// (`docs/specs/openehr/RM/docs/common/`), so a COMPOSITION that declares no
+    /// `archetype_details/template_id` cannot be template-validated and is
+    /// committed without template-conformance checks (its RM class invariants
+    /// still apply). Only a *declared* template drives a `422` here. This
+    /// narrows the "absent template → 422" reading: the existing storage-
+    /// lifecycle tests commit templateless skeleton COMPOSITIONs, which the RM
+    /// permits and which have no template to validate against.
+    async fn validate_composition_for_commit(
+        &self,
+        composition: &Value,
+    ) -> Result<(), ServiceError> {
+        let Some(template_id) = composition
+            .pointer("/archetype_details/template_id/value")
+            .and_then(Value::as_str)
+        else {
+            return Ok(());
+        };
+        let wt = self.web_template_for(template_id).await?;
+        let messages = openehr_flat::validate_composition(composition, &wt);
+        if messages.is_empty() {
+            return Ok(());
+        }
+        let errors = messages
+            .into_iter()
+            .map(|m| openehr_its::rest::runtime::ValidationError {
+                path: m.path,
+                message: m.message,
+            })
+            .collect();
+        Err(ServiceError::ValidationFailed(errors))
     }
 }

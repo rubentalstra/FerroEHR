@@ -1,0 +1,29 @@
+= Preface
+
+== Purpose
+
+This document describes the syntax of the openEHR Archetype Query Language (AQL).
+
+== Status
+
+This specification is in the {spec_status} state. The latest development version of this document can be found at {openehr_query_latest_aql}[{openehr_query_latest_aql}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Tools
+
+Various tools that can be used to work with archetypes and templates, including extracting 'archetype paths' for use in AQL statements, are listed on the openEHR website {modelling_tools}[modelling tools page^].
+
+== Feedback
+
+Feedback may be provided on the {openehr_technical_list}/aql[openEHR AQL forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Original Source
+
+The text of this specification was originally posted on the {openehr_wiki_root}/spaces/spec/pages/4915203/AQL-+Archetype+Query+Language[openEHR wiki^], and was used by the global openEHR community in that form.

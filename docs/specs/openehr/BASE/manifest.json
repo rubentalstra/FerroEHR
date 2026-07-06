@@ -1,0 +1,128 @@
+{
+    "id": "BASE",
+    "title": "Base Model",
+    "description": "openEHR Base Model Component",
+    "keywords": "base models, base model, openehr",
+    "specifications": [
+        {
+            "id": "architecture_overview",
+            "title": "Architecture Overview",
+            "title_short": "Architecture Overview",
+            "description": "openEHR Architecture Overview",
+            "summary": "\"Read me first\" document for the overall architecture. Provides a summary of the reference, archetype and service models, and describes global semantics.",
+            "micro_summary": "Global description of openEHR design principles and architecture",
+            "copyright_year": "2003",
+            "spec_status": "STABLE",
+            "keywords": "EHR, openehr, architecture"
+        },
+        {
+            "id": "foundation_types",
+            "title": "Foundation Types",
+            "title_short": "Foundation Types",
+            "description": "openEHR Foundation Types specification",
+            "summary": "Specification of assumed, primitive and other foundation types required by all other openEHR specifications.",
+            "micro_summary": "Values, Structures, Interval, Date/times",
+            "copyright_year": "2017",
+            "spec_status": "STABLE",
+            "keywords": "openehr, identifiers, types"
+        },
+        {
+            "id": "base_types",
+            "title": "Base Types",
+            "title_short": "Base Types",
+            "description": "openEHR Base Types specification",
+            "summary": "Specification of basic openEHR and health informatics types used in other openEHR specifications.",
+            "micro_summary": "Definitions, Identifiers",
+            "copyright_year": "2016",
+            "spec_status": "STABLE",
+            "keywords": "openehr, identifiers, types"
+        },
+        {
+            "id": "resource",
+            "title": "Resource Model",
+            "title_short": "Resource Model",
+            "description": "openEHR Resource Model specification",
+            "summary": "The Resource specification defines a formal model of authoring and IP meta-data, language translation and annotations that can be used by classes defining any concrete type of authored resource, such as a document, archetype or template.",
+            "micro_summary": "Authoring resources and translations",
+            "classes": [
+                "AUTHORED_RESOURCE"
+            ],
+            "copyright_year": "2003",
+            "spec_status": "STABLE",
+            "keywords": "openehr, resources"
+        },
+        {
+            "id": "iso_18308_conformance_statement",
+            "title": "ISO 18308 Conformance Statement",
+            "title_short": "ISO 18308 Conformance",
+            "description": "ISO 18308 Conformance Statement",
+            "summary": "Document describing conformance of openEHR architecture to ISO TS 18308, \"Requirements for EHR Architectures\".",
+            "link": "/releases/1.0.2/requirements/iso18308_conformance.pdf",
+            "copyright_year": "2003",
+            "spec_status": "STABLE",
+            "keywords": "EHR, conformance"
+        }
+    ],
+    "expressions": [
+        {
+            "id": "openEHR_UML-BASE.mdzip",
+            "type": "uml",
+            "title": "Base UML",
+            "description": "UML file for openEHR Base classes, as MagicDraw 19. Contains UML 2.5 standard XMI file."
+        }
+    ],
+    "jira": {
+        "open_issues": "11105",
+        "roadmap": "SPECBASE"
+    },
+    "releases": [
+        {
+            "id": "1.3.0",
+            "date": "",
+            "jira": {
+                "crs": "SPECBASE/versions/12300",
+                "prs": "SPECPR/versions/12537"
+            }
+        },
+        {
+            "id": "1.2.0",
+            "date": "2021-04-09",
+            "jira": {
+                "crs": "SPECBASE/versions/12554",
+                "prs": "SPECPR/versions/12555"
+            }
+        },
+        {
+            "id": "1.1.0",
+            "date": "2019-01-22",
+            "jira": {
+                "crs": "SPECBASE/versions/11760",
+                "prs": "SPECPR/versions/11861"
+            }
+        },
+        {
+            "id": "1.0.4",
+            "date": "2018-07-14",
+            "jira": {
+                "crs": "SPECBASE/versions/12551",
+                "prs": "SPECPR/versions/11960"
+            }
+        },
+        {
+            "id": "1.0.3",
+            "date": "2015-12-15",
+            "jira": {
+                "crs": "SPECBASE/versions/11360",
+                "prs": "SPECPR/versions/11860"
+            }
+        },
+        {
+            "id": "1.0.2",
+            "date": "2008-12-31",
+            "jira": {
+                "crs": "SPEC/versions/10030",
+                "prs": "SPECPR/versions/10040"
+            }
+        }
+    ]
+}

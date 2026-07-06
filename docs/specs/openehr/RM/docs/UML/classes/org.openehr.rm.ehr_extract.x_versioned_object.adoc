@@ -1,0 +1,42 @@
+=== X_VERSIONED_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*X_VERSIONED_OBJECT<T>*
+
+h|*Description*
+2+a|Variety of Extract content that consists is a sharable data-oriented version of `VERSIONED_OBJECT<T>`.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*uid*: `link:/releases/BASE/{base_release}/base_types.html#_hier_object_id_class[HIER_OBJECT_ID^]`
+a|Uid of original `VERSIONED_OBJECT`.
+
+h|*1..1*
+|*owner_id*: `link:/releases/BASE/{base_release}/base_types.html#_object_ref_class[OBJECT_REF^]`
+a|Owner_id from original `VERSIONED_OBJECT`, which identifies source EHR.
+
+h|*1..1*
+|*time_created*: `link:/releases/RM/{rm_release}/data_types.html#_dv_date_time_class[DV_DATE_TIME^]`
+a|Creation time of original `VERSIONED_OBJECT`.
+
+h|*1..1*
+|*total_version_count*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Total number of versions in original `VERSIONED_OBJECT` at time of creation of this `X_VERSIONED_OBJECT`.
+
+h|*1..1*
+|*extract_version_count*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|The number of Versions in this extract for this Versioned object, i.e. the count of items in the versions attribute. May be 0 if only revision history is requested.
+
+h|*0..1*
+|*revision_history*: `link:/releases/RM/{rm_release}/common.html#_revision_history_class[REVISION_HISTORY^]`
+a|Optional revision history of the original `VERSIONED_OBJECT`. If included, it is the complete revision history.
+
+h|*0..1*
+|*versions*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/common.html#_original_version_class[ORIGINAL_VERSION^]<T>>`
+a|0 or more Versions from the original `VERSIONED_OBJECT`, according to the Extract specification.
+|===

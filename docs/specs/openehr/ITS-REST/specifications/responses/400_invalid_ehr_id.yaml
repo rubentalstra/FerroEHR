@@ -1,0 +1,2 @@
+description: |
+  `400 Bad Request` is returned when the request has invalid `ehr_id`.

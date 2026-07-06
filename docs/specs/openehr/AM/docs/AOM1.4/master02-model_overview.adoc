@@ -1,0 +1,62 @@
+= The Archetype Object Model
+
+== Design Background
+
+An underpinning principle of openEHR is the use of archetypes and templates, which are formal models of domain content, and are used to control data structure and content during creation, modification and querying. The elements of this architecture are twofold.
+
+* The openEHR Reference Model (RM), defining the structure and semantics of information in terms of information models (IMs). The RM models correspond to the ISO RM/ODP information viewpoint, and define the data of openEHR EHR systems. The information model is designed to be invariant in the long term, to minimise the need for software and schema updates.
+* The openEHR Archetype Model (AM), defining the structure and semantics of archetypes and templates. The AM consists of the archetype language definition language (ADL), the Archetype Object Model (AOM) and the openEHR Archetype profile (oAP).
+
+The purpose of ADL is to provide an abstract syntax for textually expressing archetypes and templates. The AOM defines the object model equivalent, in terms of a UML model. It is a generic model, meaning that it can be used to express archetypes for any reference model in a standard way. ADL and the AOM are brought together in an ADL parser: a tool which can read ADL archetype texts, and whose parse-tree (resulting in-memory object representation) is instances of the AOM. The TOM defines the object model of templates, which are themselves used to put archetypes together into local information structures, usually corresponding to screen forms.
+
+The purpose of the openEHR Archetype Profile is to define which classes and attributes of the openEHR RM can be sensibly archetyped, and to provide custom archetype classes.
+
+== Package Structure
+
+The openEHR Archetype Object Model is defined as the package `am.archetype`, as illustrated below. It is shown in the context of the openEHR `am.archetype` packages.
+
+[.text-center]
+.Package Overview
+image::{uml_diagrams_uri}/AM-aom14-packages.svg[id=package_overview, align="center", width="40%"]
+
+== Model Overview
+
+The model described here is a pure object-oriented model that can be used with archetype parsers and software that manipulates archetypes. It is independent of any particular linguistic expression of an archetype, such as ADL or OWL, and can therefore be used with any kind of parser. 
+
+It is dependent on the {openehr_rm_103_support}[openEHR Release 1.0.3 Support IM^] (`assumed_types` and `identifiers` packages), a small number of the openEHR Data Types ({openehr_rm_103_data_types}[openEHR Release 1.0.3 Data Types IM^]), and the `resource` package from the {openehr_rm_103_common}[openEHR Release 1.0.3 Common IM^]. These dependencies are shown for convenience in the <<Reference Model Dependencies>> appendix.
+
+=== Archetypes as Objects
+
+The following figure illustrates various processes that can be responsible for creating an archetype object structure, including parsing, database retrieval and GUI editing. A parsing process that would typically turn a syntax expression of an archetype (ADL, XML, OWL) into an object one. The input file is converted by a parser into an object parse tree, shown on the right of the figure, whose types are specified in this document. Database retrieval will cause the reconstruction of an archetype in memory from a structured data representation, such as relational data, object data or XML. Direct in-memory editing by a user with a GUI archetype editor application will cause on-the-fly creation and destruction of parts of an archetype during the editing session, which would eventually cause the archetype to be stored in some form when the user decides to commit it.
+
+After initial parsing, the in-memory representation is then validated by the semantic checker of the ADL parser, which can verify numerous things, such as that term codes referenced in the definition section are defined in the ontology section. It can also validate the classes and attributes mentioned in the archetype against a specification for the relevant information model (e.g. in XMI or some equivalent).
+
+[.text-center]
+.Archetype Parsing Process
+image::{diagrams_uri}/archetype_parsing_process.png[id=archetype_parsing_process, align="center", width="70%"]
+
+As shown in the figure, the definition part of the in-memory archetype consists of alternate layers of object and attribute constrainer nodes, each containing the next level of nodes. In this document, the word 'attribute' refers to any data property of a class, regardless of whether regarded as a 'relationship' (i.e. association, aggregation, or composition) or 'primitive' (i.e. value) attribute in an object model. At the leaves are primitive object constrainer nodes constraining primitive types such as `String`, `Integer` etc. There are also nodes that represent internal references to other nodes, constraint reference nodes that refer to a text constraint in the constraint binding part of the archetype ontology, and archetype constraint nodes, which represent constraints on other archetypes allowed to appear at a given point. The full list of concrete node types is as follows:
+
+`C_COMPLEX_OBJECT`:: any interior node representing a constraint on instances of some non-primitive type, e.g. `ENTRY`, `SECTION`;
+`C_ATTRIBUTE`:: a node representing a constraint on an attribute (i.e. UML 'relationship' or 'primitive attribute') in an object type;
+`C_PRIMITIVE_OBJECT`:: a node representing a constraint on a primitive (built-in) object type;
+`ARCHETYPE_INTERNAL_REF`:: a node that refers to a previously defined object node in the same archetype. The reference is made using a path;
+`CONSTRAINT_REF`:: a node that refers to a constraint on (usually) a text or coded term entity, which appears in the ontology section of the archetype, and in ADL, is referred to with an "acNNNN" code. The constraint is expressed in terms of a query on an external entity, usually a terminology or ontology;
+`ARCHETYPE_SLOT`:: a node whose statements define a constraint that determines which other archetypes can appear at that point in the current archetype. It can be thought of like a keyhole, into which few or many keys might fit, depending on how specific its shape is. Logically it has the same semantics as a `C_COMPLEX_OBJECT`, except that the constraints are expressed in another archetype, not the current one.
+
+The typename nomenclature "C_COMPLEX_OBJECT", "C_PRIMITIVE_OBJECT", "C_ATTRIBUTE" used here is intended to be read as "constraint on xxxx", i.e. a "C_COMPLEX_OBJECT" is a "constraint on a complex object (defined by a complex reference model type)". These type-names are used below in the formal model.
+
+=== The Archetype Ontology
+
+There are no linguistic entities at all in the `definition` part of an archetype, with the possible exception of constraints on text items which might have been defined in terms of regular expression patterns or fixed strings. All linguistic entities are defined in the `ontology` part of the archetype, in such a way as to allow them to be translated into other languages in convenient blocks. As described in the openEHR ADL document, there are four major parts in an archetype `ontology` section: term definitions, constraint definitions, term bindings and constraint bindings. The former two define the meanings of various terms and textual constraints which occur in the archetype; they are indexed with unique identifiers which are used within the archetype definition body. The latter two ontology sections describe the mappings of terms used internally to external terminologies. Due to the well-known problems with terminologies (described in some detail in the {openehr_am_adl14}[openEHR ADL 1.4 specification^], and also by e.g. citenp:[Rector1999] and others), mappings may be partial, incomplete, approximate, and occasionally, exact.
+
+=== Archetype Specialisation
+
+Archetypes can be specialised. The formal rules of specialisation are described in the openEHR Archetype Semantics document (forthcoming), but in essence are easy to understand. Briefly, an archetype is considered a specialisation of another archetype if it mentions that archetype as its parent, and only makes changes to its definition such that its constraints are 'narrower' than those of the parent. Any data created via the use of the specialised archetype is thus conformant both to it and its parent. This notion of specialisation corresponds to the idea of 'substitutability', applied to data.
+
+Every archetype has a 'specialisation depth'. Archetypes with no specialisation parent have depth 0, and specialised archetypes add one level to their depth for each step down a hierarchy required to reach them.
+
+=== Archetype Composition
+
+In the interests of re-use and clarity of modelling, archetypes can be composed to form larger structures semantically equivalent to a single large archetype. Composition allows two things to occur: for archetypes to be defined according to natural 'levels' or encapsulations of information, and for the reuse of smaller archetypes by a multitude of others. Archetype slots are the means of composition, and are themselves defined in terms of constraints.
+

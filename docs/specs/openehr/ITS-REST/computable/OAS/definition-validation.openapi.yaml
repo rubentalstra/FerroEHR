@@ -1,0 +1,1731 @@
+openapi: 3.0.3
+info:
+  title: Definition API
+  version: latest
+  x-status: STABLE
+  x-spec: definition
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: https://specifications.openehr.org/
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: https://creativecommons.org/licenses/by-nd/3.0/
+  description: |+
+    <table>
+        <colgroup>
+            <col style="width: 20%;">
+            <col style="width: 80%;">
+        </colgroup>
+        <thead>
+        <tr>
+            <th colspan="2">© 2003 - 2022 The openEHR Foundation</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td colspan="2">
+                The <a href="https://www.openEHR.org" target="_blank" rel="noopener">openEHR Foundation</a> is an independent, non-profit foundation, facilitating the sharing of health records by consumers and clinicians via open specifications, clinical models and open platform implementations.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Licence</strong></td>
+            <td><span class="image"><img src="https://specifications.openehr.org/images/cc-by-nd-88x31.png" alt="image"></span> Creative Commons Attribution-NoDerivs 3.0 Unported.
+                <a href="https://creativecommons.org/licenses/by-nd/3.0/" class="bare">https://creativecommons.org/licenses/by-nd/3.0/</a>
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Support</strong></td>
+            <td>Issues: <a href="https://specifications.openehr.org/components/ITS/open_issues" target="_blank" rel="noopener">Problem Reports</a><br>
+                Web: <a href="https://specifications.openehr.org" target="_blank" rel="noopener">specifications.openEHR.org</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    ### Amendment Record
+
+    <table>
+        <colgroup>
+            <col style="width: 9%;">
+            <col style="width: 55%;">
+            <col style="width: 18%;">
+            <col style="width: 18%;">
+        </colgroup>
+        <thead>
+        <tr>
+            <th>Issue</th>
+            <th>Details</th>
+            <th>Raiser, Implementer</th>
+            <th>Completed</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/latest" target="_blank" rel="noopener">Release-1.0.3</a></th>
+        </tr>
+        <tr>
+            <td>5.1</td>
+            <td><a href="https://specifications.openehr.org/tickets/SPECITS-66" target="_blank" rel="noopener">SPECITS-66</a>:
+                Migrate REST API specs to 'openAPI' format</td>
+            <td>S Iancu</td>
+            <td>19 Dec 2022</td>
+        </tr>
+        <tr>
+            <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/Release-1.0.2" target="_blank" rel="noopener">Release-1.0.2</a></th>
+        </tr>
+        <tr>
+            <td>4.2</td>
+            <td><a href="https://specifications.openehr.org/tickets/SPECITS-59" target="_blank" rel="noopener">SPECITS-59</a>:
+                Specify mimeType used by adl2 template</td>
+            <td>S Iancu</td>
+            <td>26 Mar 2021</td>
+        </tr>
+        <tr>
+            <td>4.1</td>
+            <td><a href="https://specifications.openehr.org/tickets/SPECITS-42" target="_blank" rel="noopener">SPECITS-42</a>:
+                Fix TEMPLATE_ID value format in examples</td>
+            <td>S Iancu</td>
+            <td>21 Mar 2021</td>
+        </tr>
+        <tr>
+            <td>4.1</td>
+            <td><a href="https://specifications.openehr.org/tickets/SPECITS-41" target="_blank" rel="noopener">SPECITS-41</a>:
+                Add double quotes to ETag and If-Match headers</td>
+            <td>S Iancu</td>
+            <td>21 Mar 2021</td>
+        </tr>
+        <tr>
+            <td>4.0</td>
+            <td><a href="https://specifications.openehr.org/tickets/SPECITS-57" target="_blank" rel="noopener">SPECITS-57</a>:
+                Updating request and response examples of GET adl1.4 template in relation with headers about simplified JSON formats</td>
+            <td>E Sundvall, S Iancu</td>
+            <td>13 Mar 2021</td>
+        </tr>
+        <tr>
+            <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/Release-1.0.1" target="_blank" rel="noopener">Release-1.0.1</a></th>
+        </tr>
+        <tr>
+            <td>3.0</td>
+            <td><a href="https://specifications.openehr.org/tickets/SPECITS-32" target="_blank" rel="noopener">SPECITS-32</a>: Fix typos and minor documentary errors (fixes
+                <a href="https://specifications.openehr.org/tickets/SPECPR-252" target="_blank" rel="noopener">SPECPR-253</a>,
+                <a href="https://specifications.openehr.org/tickets/SPECPR-289" target="_blank" rel="noopener">SPECPR-289</a>)</td>
+            <td>J Smolka, P Pazos, E Sundvall, T Beale, S Iancu</td>
+            <td>1 Sep 2019</td>
+        </tr>
+        <tr>
+            <td>2.2</td>
+            <td><a href="https://specifications.openehr.org/tickets/SPECITS-24" target="_blank" rel="noopener">SPECITS-24</a>: Added changelog</td>
+            <td>J Smolka, S Iancu</td>
+            <td>12 May 2019</td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><a href="https://specifications.openehr.org/tickets/SPECITS-25" target="_blank" rel="noopener">SPECITS-25</a>,
+                <a href="https://specifications.openehr.org/tickets/SPECITS-29" target="_blank" rel="noopener">SPECITS-29</a>: Change layout and structure</td>
+            <td>J Smolka, S Iancu</td>
+            <td>12 May 2019</td>
+        </tr>
+        <tr>
+            <td>2.1</td>
+            <td>Update links to new openEHR specifications website</td>
+            <td>S Iancu</td>
+            <td>16 Dec 2018</td>
+        </tr>
+        <tr>
+            <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/Release-1.0.0" target="_blank" rel="noopener">Release-1.0.0</a></th>
+        </tr>
+        </tbody>
+    </table>
+
+
+    # Intro
+
+
+    ## Acknowledgements
+
+    ### Editor
+    - Sebastian Iancu, Architect, Code24, Netherlands
+
+    ### Contributors
+    This specification benefited from wide formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+    - Birger Haarbrandt, MSc, Peter L. Reichertz Institut for Medical Informatics (PLRI), Germany
+    - Bjørn Næss, DIPS, Norway
+    - Bostjan Lah, Senior Architect, Better, Slovenia
+    - Erik Sundvall, Information Architect at Karolinska University Hospital, Sweden
+    - Heath Frankel, Ocean Informatics, Australia
+    - Ian McNicoll MD, FreshEHR, UK
+    - Jake Smolka, Software Engineer, Better, Slovenia
+    - Matija Polajnar, PhD, Software Engineer, Better, Slovenia
+    - Pablo Pazos Gutierrez, Senior engineer, CaboLabs, Uruguay
+    - Rong Chen MD, PhD, Cambio Healthcare Systems, Sweden
+    - Sebastian Iancu, Architect, Code24, Netherlands
+    - Seref Arikan, MEcon, Ocean Informatics UK, Centre for Health Informatics and Multi-professional Education (CHIME) UK
+    - Thomas Beale, Ars Semantica UK, openEHR Foundation Management Board
+
+    ### Trademarks
+    - 'openEHR' is a trademark of the [openEHR Foundation](https://www.openEHR.org)
+    - 'OpenAPI' is a trademark of the [The Linux Foundation](https://www.linuxfoundation.org)
+
+
+    ## Preface
+
+    ### Purpose
+
+    This specification describes service endpoints, resources and operations as well as details of requests and responses that interacts with Definition openEHR API in a RESTful manner.
+
+    ### Related Documents
+
+    Prerequisite documents for reading this document include:
+
+    - The [Operational Template 2](https://specifications.openehr.org/releases/AM/latest/OPT2.html)
+    - The [Archetype Query Language(AQL)](https://specifications.openehr.org/releases/QUERY/latest/AQL.html) 
+
+    Related documents include:
+
+    - The [openEHR Architecture Overview](https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html)
+    - The [Archetype Technology Overview](https://specifications.openehr.org/releases/AM/latest/Overview.html)
+    - The [openEHR Global Class Index](https://specifications.openehr.org/classes)
+    - The [XML-Schemas (XSD)](https://specifications.openehr.org/releases/ITS-XML/latest)
+    - The [JSON-Schemas](https://specifications.openehr.org/releases/ITS-JSON/latest) and [Simplified Data Template (SDT)](simplified_data_template.html)
+    - The [openEHR Platform Abstract Service Model](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html)
+
+    ### Status
+
+    This specification is in the `STABLE` state, and can be downloaded as [OpenAPI specification](https://spec.openapis.org/oas/v3.0.3) file (in YAML format) [for validation](computable/OAS/definition-validation.openapi.yaml), or [for code generators](computable/OAS/definition-codegen.openapi.yaml).
+    Users are encouraged to comment on and/or advise on these paragraphs as well as the main content.
+
+    The development version of this document can be found at <https://specifications.openehr.org/releases/ITS-REST/latest/definition.html>.
+
+    ### Feedback
+
+    Feedback may be provided on the [Implementation Technology Specifications forum](https://discourse.openehr.org/c/specifications/its/41).
+
+    Issues may be raised on the [specifications Problem Report tracker](https://openehr.atlassian.net/browse/SPECPR).
+
+    To see changes made due to previously reported issues, see the [ITS component Change Request tracker](https://specifications.openehr.org/components/ITS/history).
+
+    ### Conformance
+
+    tbd.
+
+security: []
+servers:
+  - url: https://{baseUrl}/v1
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+paths:
+  /definition/template/adl1.4:
+    post:
+      operationId: definition_template_adl1.4_upload
+      summary: Upload a template
+      description: |
+        Upload a new ADL 1.4 operational template (OPT).
+      tags:
+        - ADL1.4
+      parameters:
+        - $ref: '#/components/parameters/Prefer'
+      requestBody:
+        description: ''
+        content:
+          application/xml:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/OperationalTemplate'
+                - type: string
+            example: |-
+              <template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.openehr.org/v1">
+                  <language>
+                      <terminology_id>
+                          <value>ISO_639-1</value>
+                      </terminology_id>
+                      <code_string>en</code_string>
+                  </language>
+                  <description>
+                      <original_author id="Original Author">Not Specified</original_author>
+                      <lifecycle_state>Initial</lifecycle_state>
+                      <other_details id="MetaDataSet:Sample Set ">Template metadata sample set</other_details>
+                      <other_details id="Acknowledgements"></other_details>
+                      <other_details id="Business Process Level"></other_details>
+                      <other_details id="Care setting"></other_details>
+                      <other_details id="Client group"></other_details>
+                      <other_details id="Clinical Record Element"></other_details>
+                      <other_details id="Copyright"></other_details>
+                      <other_details id="Issues"></other_details>
+                      <other_details id="Owner"></other_details>
+                      <other_details id="Sign off"></other_details>
+                      <other_details id="Speciality"></other_details>
+                      <other_details id="User roles"></other_details>
+                      <details>
+                          <language>
+                              <terminology_id>
+                                  <value>ISO_639-1</value>
+                              </terminology_id>
+                              <code_string>en</code_string>
+                          </language>
+                          <purpose>Not Specified</purpose>
+                      </details>
+                  </description>
+                  <uid>
+                      <value>b4d7f203-b329-4e89-a58a-c605b19e94de</value>
+                  </uid>
+                  <template_id>
+                      <value>Vital Signs</value>
+                  </template_id>
+                  <concept>Vital Signs</concept>
+                  <definition>
+                      <rm_type_name>COMPOSITION</rm_type_name>
+                      <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                      </occurrences>
+                      <node_id>at0000</node_id>
+                      ...
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_Template_adl1_4_upload'
+        '400':
+          $ref: '#/components/responses/400_invalid_template_content'
+        '409':
+          $ref: '#/components/responses/409_template_already_exists'
+    get:
+      operationId: definition_template_adl1.4_list
+      summary: List templates
+      description: |
+        List the available ADL 1.4 operational templates (OPT) on the system.
+      tags:
+        - ADL1.4
+      responses:
+        '200':
+          $ref: '#/components/responses/200_TemplateList_adl1_4'
+  /definition/template/adl1.4/{template_id}:
+    get:
+      operationId: definition_template_adl1.4_get
+      summary: Get a template
+      description: |
+        Retrieves the ADL 1.4 operational template (OPT) identified by `template_id` identifier.
+
+        Note that this can return either the original (canonical) `XML` based OPT format (if called with the `Accept: application/xml` request header), as well as the simplified `JSON`-based “web template” format (if called with the `Accept: application/openehr.wt+json` request header). For more details see the [data representation specification](overview.html#tag/Resources/Data-representation).
+      tags:
+        - ADL1.4
+      parameters:
+        - $ref: '#/components/parameters/template_id'
+        - $ref: '#/components/parameters/Accept_template'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Template_adl1_4_retrieved'
+        '400':
+          $ref: '#/components/responses/400_invalid_template_id'
+        '404':
+          $ref: '#/components/responses/404_unknown_template_id'
+        '406':
+          $ref: '#/components/responses/406'
+  /definition/template/adl2:
+    post:
+      operationId: definition_template_adl2_upload
+      summary: Upload a template
+      description: |
+        Upload a new ADL2 operational template.
+      tags:
+        - ADL2
+      parameters:
+        - $ref: '#/components/parameters/at_version'
+        - $ref: '#/components/parameters/Prefer'
+      requestBody:
+        description: ''
+        content:
+          text/plain:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/OperationalTemplateV2'
+                - type: string
+            example: |-
+              operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)
+                  openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+              specialize
+                  openEHR-EHR-COMPOSITION.discharge.v1
+
+              language
+                  original_language = <[ISO_639-1::en]>
+
+              description
+                  lifecycle_state = <"unmanaged">
+                  original_author = <
+                      ["name"] = <"Ian McNicoll">
+                      ["organisation"] = <"openEHR Foundation">
+                      ["email"] = <"ian.mcnicoll@openehr.org">
+              ...
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_Template_adl2_upload'
+        '400':
+          $ref: '#/components/responses/400_invalid_template_content'
+        '409':
+          $ref: '#/components/responses/409_template_already_exists'
+    get:
+      operationId: definition_template_adl2_list
+      summary: List templates
+      description: |
+        List the available ADL2 operational templates on the system.
+      tags:
+        - ADL2
+      responses:
+        '200':
+          $ref: '#/components/responses/200_TemplateList_adl2'
+  /definition/template/adl2/{template_id}:
+    get:
+      operationId: definition_template_adl2_get
+      summary: Get a template
+      description: |
+        Retrieves the latest version of the ADL2 operational template identified by `template_id` identifier.
+      tags:
+        - ADL2
+      parameters:
+        - $ref: '#/components/parameters/template_id'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Template_adl2_retrieved'
+        '400':
+          $ref: '#/components/responses/400_invalid_template_id'
+        '404':
+          $ref: '#/components/responses/404_unknown_template_id'
+  /definition/template/adl2/{template_id}/{version}:
+    get:
+      operationId: definition_template_adl2_version_get
+      summary: Get a template at version
+      description: |
+        Retrieves the ADL2 operational template identified by `template_id` identifier, at specified `version`.
+      tags:
+        - ADL2
+      parameters:
+        - $ref: '#/components/parameters/template_id'
+        - $ref: '#/components/parameters/version'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_Template_adl2_retrieved'
+        '400':
+          $ref: '#/components/responses/400_invalid_template_id'
+        '404':
+          $ref: '#/components/responses/404_unknown_template_id_or_version'
+  /definition/query/{qualified_query_name}:
+    get:
+      operationId: definition_query_list
+      summary: List stored queries
+      description: |
+        Retrieves list of all stored queries on the system matched by `qualified_query_name` as pattern.
+
+        If pattern should given be in the format of `[{namespace}::]{query-name}`, and when is empty, it will be treated as "wildcard" in the search.   
+
+        Examples:
+          - `GET https://openEHRSys.example.com/v1/definition/query/org.openehr` will list all versions of all queries with names starting with `org.openehr`
+          - `GET https://openEHRSys.example.com/v1/definition/query/org.openehr::compositions` will list all versions of the query named `org.openehr::compositions`
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_QueryList'
+    put:
+      operationId: definition_query_store.yaml
+      summary: Store a query
+      description: |
+        Stores a new query, or updates an existing query on the system.
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/query_type'
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              $ref: '#/components/schemas/AQL'
+            example: |-
+              SELECT c FROM
+                EHR e
+                  CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1]
+                    CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1]
+              WHERE
+                obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_StoredQuery_stored'
+        '400':
+          $ref: '#/components/responses/400_StoredQuery'
+  /definition/query/{qualified_query_name}/{version}:
+    put:
+      operationId: definition_query_version_store.yaml
+      summary: Store a query version
+      description: |
+        Stores a query, at a specified `version`, on the system.
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/version'
+        - $ref: '#/components/parameters/query_type'
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              $ref: '#/components/schemas/AQL'
+            example: |-
+              SELECT c FROM
+                EHR e
+                  CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1]
+                    CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1]
+              WHERE
+                obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_StoredQuery_stored'
+        '400':
+          $ref: '#/components/responses/400_StoredQuery'
+        '409':
+          $ref: '#/components/responses/409_StoredQuery_version'
+    get:
+      operationId: definition_query_version_get
+      summary: Get stored query at version
+      description: |
+        Retrieves the definition of a particular stored query (at specified version) and its associated metadata.
+      tags:
+        - Query
+      parameters:
+        - $ref: '#/components/parameters/qualified_query_name'
+        - $ref: '#/components/parameters/version'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_StoredQuery_get'
+        '404':
+          $ref: '#/components/responses/404_Query_version'
+tags:
+  - name: ADL1.4
+    x-displayName: ADL1.4 TEMPLATE
+    description: |
+      Management of [AOM and ADL 1.4](https://specifications.openehr.org/releases/AM/latest) Operational Templates (OPTs). 
+      These templates can be created using [modelling tools](https://www.openehr.org/downloads/modellingtools) such as the Template Designer and the Archetype Designer. 
+
+      Operational templates simplify the creation of openEHR-based input or storage implementations by, for a specific COMPOSITION template (use case), collecting all labels, requirements and constraints from all contained archetypes and sub-templates into a single easily parsed file. 
+      This file can be a basis for UI-generation/creation and for data validation.
+  - name: ADL2
+    x-displayName: ADL2 TEMPLATE
+    description: |
+      Management of [AOM2](https://specifications.openehr.org/releases/AM/latest/AOM2.html#_templates) templates.
+
+      See also [ADL2 Template specifications](https://specifications.openehr.org/releases/AM/latest/ADL2.html#_templates).
+  - name: Query
+    x-displayName: Stored Query
+    x-summary: ''
+    description: |
+      Management of [stored (registered) queries](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_registered_queries) in the system.
+      Actions upon resources of this group are also formally described in the [I_DEFINITION_QUERY](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_definition_query_interface) Abstract Service Model interface.
+
+      Stored queries are identified by their [qualified name and version](query.html#tag/Qualified_query_name).
+      They can be executed using the [query endpoint](query.html#tag/Query/operation/query_execute_stored_query_body).
+  - name: TemplateList_schema
+    x-displayName: Template list
+    description: |
+      This resource represents the list of `Template` meta-information associated with uploaded templates - see also [Service Model - Definition Package](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_definition_package).
+
+      <SchemaDefinition schemaRef="#/components/schemas/TemplateList" />
+  - name: Template_schema
+    x-displayName: Template
+    description: |
+      The following resources are formally specified in the [Archetype Model](https://specifications.openehr.org/releases/AM/latest) as AOM/ADL 1.4 Operational Templates (OPTs) and as [AOM2 templates](https://specifications.openehr.org/releases/AM/latest/AOM2.html#_templates).
+      <div class="mb-5"></div>
+
+      The AOM/ADL 1.4 `OPERATIONAL_TEMPLATE` resource:
+      <SchemaDefinition schemaRef="#/components/schemas/OperationalTemplate" />
+
+      The AOM/ADL 2 `OPERATIONAL_TEMPLATE` resource:
+      <SchemaDefinition schemaRef="#/components/schemas/OperationalTemplateV2" />
+
+      The `WebTemplate` alternative resource:
+      <SchemaDefinition schemaRef="#/components/schemas/WebTemplate" />
+  - name: StoredQuery_schema
+    x-displayName: Stored Query
+    description: |
+      This resource represents the definition of a stored Query and is formally specified in the Service Model as [Registered Queries](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_registered_queries).
+
+      <SchemaDefinition schemaRef="#/components/schemas/StoredQuery" />
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - ADL1.4
+      - ADL2
+      - Query
+  - name: Resource schema
+    tags:
+      - TemplateList_schema
+      - Template_schema
+      - StoredQuery_schema
+components:
+  schemas:
+    TemplateMetadata:
+      title: TemplateMetadata
+      required:
+        - template_id
+        - concept
+        - archetype_id
+        - created_timestamp
+      type: object
+      properties:
+        template_id:
+          type: string
+        version:
+          type: string
+        concept:
+          type: string
+        archetype_id:
+          type: string
+        created_timestamp:
+          type: string
+      description: Uploaded TEMPLATE meta information.
+      example:
+        template_id: openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0
+        version: 1.0.1
+        concept: Vital Signs
+        archetype_id: openEHR-EHR-COMPOSITION.encounter.v1
+        created_timestamp: '2017-08-14T19:24:56.639Z'
+    TemplateList:
+      title: TemplateList
+      type: array
+      items:
+        $ref: '#/components/schemas/TemplateMetadata'
+      description: |
+        List of uploaded TEMPLATE resources.
+    OperationalTemplate:
+      title: OPERATIONAL_TEMPLATE
+      type: object
+      xml:
+        name: response200
+    LocalizedNames:
+      title: LocalizedNames
+      required:
+        - en
+      type: object
+      properties:
+        en:
+          type: string
+      example:
+        en: Vital Signs
+    LocalizedDescriptions:
+      title: LocalizedDescriptions
+      required:
+        - sl
+      type: object
+      properties:
+        sl:
+          type: string
+      example:
+        sl: Generic encounter or progress note composition
+    LocalizedNames1:
+      title: LocalizedNames1
+      required:
+        - sl
+      type: object
+      properties:
+        sl:
+          type: string
+      example:
+        sl: Podrobnosti
+    LocalizedNames2:
+      title: LocalizedNames2
+      required:
+        - sl
+      type: object
+      properties:
+        sl:
+          type: string
+        en:
+          type: string
+      example:
+        sl: Tagi
+    Annotations:
+      title: Annotations
+      type: object
+      properties:
+        comment:
+          type: string
+        default:
+          type: string
+      example:
+        comment: Tags applied to the composition. They can contain various ids, such as episode id, central case id or other types of information forming composition meta-data.
+    Precision:
+      title: Precision
+      required:
+        - minOp
+        - min
+        - maxOp
+        - max
+      type: object
+      properties:
+        minOp:
+          type: string
+        min:
+          type: integer
+          format: int32
+        maxOp:
+          type: string
+        max:
+          type: integer
+          format: int32
+      example:
+        minOp: '>='
+        min: 1
+        maxOp: <=
+        max: 1
+    Range:
+      title: Range
+      required:
+        - minOp
+        - min
+      type: object
+      properties:
+        minOp:
+          type: string
+        min:
+          type: integer
+          format: int32
+        maxOp:
+          type: string
+        max:
+          type: integer
+          format: int32
+      example:
+        minOp: '>='
+        min: 0
+        maxOp: <
+        max: 1000
+    Validation:
+      title: Validation
+      type: object
+      properties:
+        precision:
+          $ref: '#/components/schemas/Precision'
+        range:
+          $ref: '#/components/schemas/Range'
+      example:
+        precision:
+          minOp: '>='
+          min: 1
+          maxOp: <=
+          max: 1
+    LocalizedLabels:
+      title: LocalizedLabels
+      required:
+        - sl
+      type: object
+      properties:
+        sl:
+          type: string
+      example:
+        sl: Gol
+    List:
+      title: List
+      required:
+        - value
+        - label
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        validation:
+          $ref: '#/components/schemas/Validation'
+        localizedLabels:
+          $ref: '#/components/schemas/LocalizedLabels'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+      example:
+        value: °C
+        label: °C
+        validation:
+          precision:
+            minOp: '>='
+            min: 1
+            maxOp: <=
+            max: 1
+    Validation1:
+      title: Validation1
+      required:
+        - range
+      type: object
+      properties:
+        range:
+          $ref: '#/components/schemas/Range'
+        precision:
+          $ref: '#/components/schemas/Precision'
+      example:
+        range:
+          minOp: '>='
+          min: 0
+          maxOp: <
+          max: 1000
+        precision:
+          minOp: '>='
+          min: 0
+          maxOp: <=
+          max: 0
+    Input:
+      title: Input
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        suffix:
+          type: string
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/List'
+          description: ''
+        defaultValue:
+          type: string
+        validation:
+          $ref: '#/components/schemas/Validation1'
+      example:
+        type: TEXT
+    SNOMEDCT:
+      title: SNOMEDCT
+      required:
+        - value
+        - terminologyId
+      type: object
+      properties:
+        value:
+          type: string
+        terminologyId:
+          type: string
+      example:
+        value: '163030003'
+        terminologyId: SNOMED-CT(2003)
+    TermBindings:
+      title: TermBindings
+      required:
+        - SNOMED-CT
+      type: object
+      properties:
+        SNOMED-CT:
+          $ref: '#/components/schemas/SNOMEDCT'
+      example:
+        SNOMED-CT:
+          value: '163030003'
+          terminologyId: SNOMED-CT(2003)
+    Input1:
+      title: Input1
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        suffix:
+          type: string
+      example:
+        type: INTEGER
+    Child3:
+      title: Child3
+      required:
+        - id
+        - localizedName
+        - rmType
+        - nodeId
+        - min
+        - max
+        - localizedNames
+        - localizedDescriptions
+        - aqlPath
+        - inputs
+      type: object
+      properties:
+        id:
+          type: string
+        localizedName:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames1'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        aqlPath:
+          type: string
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Input1'
+          description: ''
+        name:
+          type: string
+      example:
+        id: count_value
+        localizedName: Size
+        rmType: DV_COUNT
+        nodeId: ''
+        min: 0
+        max: 1
+        localizedNames:
+          sl: Velikost
+        localizedDescriptions:
+          sl: Velikost naprave
+        aqlPath: /content[openEHR-EHR-OBSERVATION.blood_pressure.v1]/protocol[at0011]/items[openEHR-EHR-CLUSTER.device.v1]/items[at0016]/value
+        inputs:
+          - type: INTEGER
+    Child2:
+      title: Child2
+      required:
+        - id
+        - name
+        - localizedName
+        - rmType
+        - nodeId
+        - min
+        - max
+        - localizedNames
+        - localizedDescriptions
+        - aqlPath
+        - inputs
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        localizedName:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames2'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        annotations:
+          $ref: '#/components/schemas/Annotations'
+        aqlPath:
+          type: string
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Input'
+          description: ''
+        dependsOn:
+          type: array
+          items:
+            type: string
+          description: ''
+        inContext:
+          type: boolean
+        termBindings:
+          $ref: '#/components/schemas/TermBindings'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child3'
+          description: ''
+      example:
+        id: tags
+        name: Tags
+        localizedName: Tags
+        rmType: DV_TEXT
+        nodeId: at0008
+        min: 1
+        max: -1
+        localizedNames:
+          sl: Tagi
+        localizedDescriptions:
+          sl: '*'
+        annotations:
+          comment: Tags applied to the composition. They can contain various ids, such as episode id, central case id or other types of information forming composition meta-data.
+        aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+        inputs:
+          - type: TEXT
+    List1:
+      title: List1
+      required:
+        - value
+        - label
+        - localizedLabels
+        - localizedDescriptions
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        localizedLabels:
+          $ref: '#/components/schemas/LocalizedLabels'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+      example:
+        value: at0022
+        label: Mouth
+        localizedLabels:
+          sl: Usta
+        localizedDescriptions:
+          sl: '*Temperature is measured within the mouth(en)'
+    Input2:
+      title: Input2
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        suffix:
+          type: string
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/List1'
+          description: ''
+      example:
+        type: DATETIME
+    Annotations1:
+      title: Annotations1
+      type: object
+      properties:
+        comment:
+          type: string
+        view:pass_through:
+          type: string
+      example:
+        comment: 'Perloff D, Grim C, Flack J, Frohlich ED, Hill M, McDonald M, Morgenstern BZ. Human blood pressure determination by sphygmomanometry. Circulation 1993;88;2460-2470. '
+    Child1:
+      title: Child1
+      required:
+        - id
+        - name
+        - rmType
+        - min
+        - max
+        - aqlPath
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        localizedName:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames1'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        aqlPath:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child2'
+          description: ''
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Input2'
+          description: ''
+        inContext:
+          type: boolean
+        dependsOn:
+          type: array
+          items:
+            type: string
+          description: ''
+        annotations:
+          $ref: '#/components/schemas/Annotations1'
+        termBindings:
+          $ref: '#/components/schemas/TermBindings'
+        proportionTypes:
+          type: array
+          items:
+            type: string
+          description: ''
+      example:
+        id: context_detail
+        name: Context detail
+        localizedName: Context detail
+        rmType: CLUSTER
+        nodeId: openEHR-EHR-CLUSTER.context_detail.v1
+        min: 0
+        max: -1
+        localizedNames:
+          sl: Podrobnosti
+        localizedDescriptions:
+          sl: Dodatni podatki o kontekstu
+        aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]
+        children:
+          - id: tags
+            name: Tags
+            localizedName: Tags
+            rmType: DV_TEXT
+            nodeId: at0008
+            min: 1
+            max: -1
+            localizedNames:
+              sl: Tagi
+            localizedDescriptions:
+              sl: '*'
+            annotations:
+              comment: Tags applied to the composition. They can contain various ids, such as episode id, central case id or other types of information forming composition meta-data.
+            aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+            inputs:
+              - type: TEXT
+    List2:
+      title: List2
+      required:
+        - value
+        - label
+        - localizedLabels
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        localizedLabels:
+          $ref: '#/components/schemas/LocalizedLabels'
+      example:
+        value: '433'
+        label: event
+        localizedLabels:
+          sl: ''
+    Input3:
+      title: Input3
+      required:
+        - suffix
+        - type
+      type: object
+      properties:
+        suffix:
+          type: string
+        type:
+          type: string
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/List2'
+          description: ''
+        terminology:
+          type: string
+      example:
+        suffix: code
+        type: CODED_TEXT
+        list:
+          - value: '433'
+            label: event
+            localizedLabels:
+              sl: ''
+        terminology: openehr
+    Child:
+      title: Child
+      required:
+        - id
+        - rmType
+        - min
+        - max
+        - aqlPath
+      type: object
+      properties:
+        id:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        aqlPath:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child1'
+          description: ''
+        name:
+          type: string
+        localizedName:
+          type: string
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames1'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        termBindings:
+          $ref: '#/components/schemas/TermBindings'
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Input3'
+          description: ''
+        inContext:
+          type: boolean
+      example:
+        id: context
+        rmType: EVENT_CONTEXT
+        nodeId: ''
+        min: 1
+        max: 1
+        aqlPath: /context
+        children:
+          - id: context_detail
+            name: Context detail
+            localizedName: Context detail
+            rmType: CLUSTER
+            nodeId: openEHR-EHR-CLUSTER.context_detail.v1
+            min: 0
+            max: -1
+            localizedNames:
+              sl: Podrobnosti
+            localizedDescriptions:
+              sl: Dodatni podatki o kontekstu
+            aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]
+            children:
+              - id: tags
+                name: Tags
+                localizedName: Tags
+                rmType: DV_TEXT
+                nodeId: at0008
+                min: 1
+                max: -1
+                localizedNames:
+                  sl: Tagi
+                localizedDescriptions:
+                  sl: '*'
+                annotations:
+                  comment: Tags applied to the composition. They can contain various ids, such as episode id, central case id or other types of information forming composition meta-data.
+                aqlPath: /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+                inputs:
+                  - type: TEXT
+          - id: start_time
+            name: Start_time
+            rmType: DV_DATE_TIME
+            min: 0
+            max: 1
+            aqlPath: /context/start_time
+            inputs:
+              - type: DATETIME
+            inContext: true
+          - id: setting
+            name: Setting
+            rmType: DV_CODED_TEXT
+            min: 0
+            max: 1
+            aqlPath: /context/setting
+            inputs:
+              - suffix: code
+                type: TEXT
+              - suffix: value
+                type: TEXT
+            inContext: true
+    Tree:
+      title: Tree
+      required:
+        - id
+        - name
+        - localizedName
+        - rmType
+        - nodeId
+        - min
+        - max
+        - localizedNames
+        - localizedDescriptions
+        - aqlPath
+        - children
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        localizedName:
+          type: string
+        rmType:
+          type: string
+        nodeId:
+          type: string
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+        localizedNames:
+          $ref: '#/components/schemas/LocalizedNames'
+        localizedDescriptions:
+          $ref: '#/components/schemas/LocalizedDescriptions'
+        aqlPath:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child'
+    WebTemplate:
+      title: WebTemplate
+      required:
+        - templateId
+        - version
+        - defaultLanguage
+        - languages
+        - tree
+      type: object
+      properties:
+        templateId:
+          type: string
+        version:
+          type: string
+        defaultLanguage:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        tree:
+          $ref: '#/components/schemas/Tree'
+    OperationalTemplateV2:
+      title: OPERATIONAL_TEMPLATE_V2
+      type: object
+    QueryName:
+      title: QueryName
+      type: string
+      description: |
+        The (fully qualified) name of the query (when is registered as a stored query), in a format of `[{namespace}::]{query-name}`. 
+        The `namespace` prefix is optional, and when used it should be in a form of a reverse domain name.
+      example: org.openehr::compositions
+    QueryType:
+      title: QueryType
+      type: string
+      description: |
+        Query formalism type.
+      default: AQL
+      example: AQL
+    QueryVersion:
+      title: QueryVersion
+      type: string
+      description: |
+        The SEMVER version number of the Stored Query.
+      example: 1.0.1
+    AQL:
+      title: AQL
+      type: string
+      description: |
+        The given AQL query.
+      example: SELECT e/ehr_id/value, c/context/start_time/value as startTime, obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic, c/uid/value AS cid, c/name FROM EHR e CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1] CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1] WHERE obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp
+    StoredQuery:
+      title: StoredQuery
+      required:
+        - name
+        - type
+        - version
+        - saved
+        - q
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/QueryName'
+        type:
+          $ref: '#/components/schemas/QueryType'
+        version:
+          $ref: '#/components/schemas/QueryVersion'
+        saved:
+          type: string
+          format: date-time
+        q:
+          $ref: '#/components/schemas/AQL'
+      description: |
+        Stored Query content meta information.
+      example:
+        name: org.openehr::compositions
+        type: aql
+        version: 1.0.1
+        saved: '2017-07-16T19:20:30.450+01:00'
+        q: SELECT c FROM EHR e[ehr_id/value=$ehr_id] CONTAINS COMPOSITION c[$compositionid] WHERE c/name/value = 'Vitals'
+    QueryList:
+      title: QueryList
+      type: array
+      items:
+        $ref: '#/components/schemas/StoredQuery'
+      description: |
+        List of Stored Query resources.
+      example:
+        - name: org.openehr::compositions
+          type: aql
+          version: 1.0.1
+          saved: '2017-07-16T19:20:30.450+01:00'
+          q: |-
+            SELECT c  FROM EHR e[ehr_id/value=$ehr_id] 
+              CONTAINS COMPOSITION c[$compositionid] 
+            WHERE c/name/value = 'Vitals'
+        - name: org.openehr::compositions
+          type: aql
+          version: 1.1.7
+          saved: '2018-06-13T09:37:20.530+01:00'
+          q: |-
+            SELECT c  FROM EHR e[ehr_id/value=$ehr_id] 
+              CONTAINS COMPOSITION c[$uid] 
+            WHERE c/name/value = 'Vitals'
+  responses:
+    '406':
+      description: |
+        `406 Not Acceptable` is returned when the service cannot produce a response matching `Accept` request header, i.e. content type or format is not supported.
+    200_TemplateList_adl1_4:
+      description: |
+        `200 OK` is returned when the template list is successfully retrieved.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateList'
+          example:
+            - template_id: Vital Signs
+              concept: Vital Signs
+              archetype_id: openEHR-EHR-COMPOSITION.encounter.v1
+              created_timestamp: '2017-08-14T19:24:56.639Z'
+    201_Template_adl1_4_upload:
+      description: |
+        `201 Created` is returned when the template has been successfully uploaded.
+
+        Server assigned `template_id` SHOULD be returned as part of the `Location` response header.
+
+        Depending on the header `Prefer` either an empty body or a full representation body is returned.
+
+        An `ETag` response header MAY be present and contain the unique identifier of the template instance.
+      headers:
+        Location:
+          $ref: '#/components/headers/Location_Template_adl1_4'
+        ETag:
+          $ref: '#/components/headers/ETag_Template_adl1_4'
+      content:
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/OperationalTemplate'
+    400_invalid_template_content:
+      description: |
+        `400 Bad Request` is returned when unable to upload a template, because of invalid content.
+    409_template_already_exists:
+      description: |
+        `409 Conflict` is returned when a template with same `template_id` (at given version, if supplied) already exists.
+    200_Template_adl1_4_retrieved:
+      description: |
+        `200 OK` is returned when the template is successfully retrieved.
+      content:
+        application/xml:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/OperationalTemplate'
+              - type: string
+          example: |
+            <template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.openehr.org/v1">
+                <language>
+                    <terminology_id>
+                        <value>ISO_639-1</value>
+                    </terminology_id>
+                    <code_string>en</code_string>
+                </language>
+                <description>
+                    <original_author id="Original Author">Not Specified</original_author>
+                    <lifecycle_state>Initial</lifecycle_state>
+                    <other_details id="MetaDataSet:Sample Set ">Template metadata sample set</other_details>
+                    <other_details id="Acknowledgements"></other_details>
+                    <other_details id="Business Process Level"></other_details>
+                    <other_details id="Care setting"></other_details>
+                    <other_details id="Client group"></other_details>
+                    <other_details id="Clinical Record Element"></other_details>
+                    <other_details id="Copyright"></other_details>
+                    <other_details id="Issues"></other_details>
+                    <other_details id="Owner"></other_details>
+                    <other_details id="Sign off"></other_details>
+                    <other_details id="Speciality"></other_details>
+                    <other_details id="User roles"></other_details>
+                    <details>
+                        <language>
+                            <terminology_id>
+                                <value>ISO_639-1</value>
+                            </terminology_id>
+                            <code_string>en</code_string>
+                        </language>
+                        <purpose>Not Specified</purpose>
+                    </details>
+                </description>
+                <uid>
+                    <value>b4d7f203-b329-4e89-a58a-c605b19e94de</value>
+                </uid>
+                <template_id>
+                    <value>Vital Signs</value>
+                </template_id>
+                <concept>Vital Signs</concept>
+                <definition>
+                    <rm_type_name>COMPOSITION</rm_type_name>
+                    <occurrences>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0000</node_id>
+                    ...
+        application/openehr.wt+json:
+          schema:
+            $ref: '#/components/schemas/WebTemplate'
+    400_invalid_template_id:
+      description: |
+        `400 Bad Request` is returned when the request has invalid `template_id` (i.e. an incorrectly formatted `template_id`).
+    404_unknown_template_id:
+      description: |
+        `404 Not Found` is returned when a template with the specified `template_id` does not exist.
+    200_TemplateList_adl2:
+      description: |
+        `200 OK` is returned when the template list is successfully retrieved.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateList'
+          example:
+            - template_id: openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+              version: 1.0.1
+              concept: Clinical detail
+              archetype_id: openEHR-EHR-COMPOSITION.discharge.v1
+              created_timestamp: '2017-08-14T19:24:56.639Z'
+            - template_id: openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0
+              version: 1.0.1
+              concept: Vital Signs
+              archetype_id: openEHR-EHR-COMPOSITION.encounter.v1
+              created_timestamp: '2017-08-14T19:24:56.639Z'
+    201_Template_adl2_upload:
+      description: |
+        `201 Created` is returned when the template has been successfully uploaded.
+
+        Server assigned `template_id` SHOULD be returned as part of the `Location` response header.
+
+        Depending on the header `Prefer` either an empty body or a full representation body is returned.
+
+        An `ETag` response header MAY be present and contain the unique identifier of the template instance.
+      headers:
+        Location:
+          $ref: '#/components/headers/Location_Template_adl2'
+        ETag:
+          $ref: '#/components/headers/ETag_Template_adl2'
+      content:
+        text/plain:
+          schema:
+            $ref: '#/components/schemas/OperationalTemplateV2'
+    200_Template_adl2_retrieved:
+      description: |
+        `200 OK` is returned when the template is successfully retrieved.
+      content:
+        text/plain:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/OperationalTemplateV2'
+              - type: string
+          example: |-
+            operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)
+                openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+            specialize
+                openEHR-EHR-COMPOSITION.discharge.v1
+
+            language
+                original_language = <[ISO_639-1::en]>
+
+            description
+                lifecycle_state = <"unmanaged">
+                original_author = <
+                    ["name"] = <"Ian McNicoll">
+                    ["organisation"] = <"openEHR Foundation">
+                    ["email"] = <"ian.mcnicoll@openehr.org">
+            ...
+    404_unknown_template_id_or_version:
+      description: |
+        `404 Not Found` is returned when a template with the specified `template_id` at given `version` does not exist.
+    200_QueryList:
+      description: |
+        `200 OK` is returned when the query resources are successfully retrieved.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/QueryList'
+    200_StoredQuery_stored:
+      description: |
+        `200 OK` is returned when the query was successfully stored.
+      headers:
+        Location:
+          $ref: '#/components/headers/Location_Query'
+    400_StoredQuery:
+      description: |
+        `400 Bad Request` is returned when the server was unable to store the query. 
+        This could be due to incorrect request body (could not be parsed, etc), unknown query type, etc.
+    200_StoredQuery_get:
+      description: |
+        `200 OK` is returned when the stored AQL is successfully retrieved.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StoredQuery'
+    404_Query_version:
+      description: |
+        `404 Not Found` is returned when a stored query with `qualified_query_name` and `version` does not exist.
+    409_StoredQuery_version:
+      description: |
+        `409 Conflict` is returned when a query with the given `qualified_query_name` and `version` already exists on the server.
+  parameters:
+    Prefer:
+      name: Prefer
+      in: header
+      description: |
+        Request header to indicate the preference over response details.
+        The response will contain the entire resource when the `Prefer` header has a value of `return=representation`.
+      required: false
+      style: simple
+      schema:
+        type: string
+        enum:
+          - return=representation
+          - return=minimal
+        default: return=minimal
+    template_id:
+      name: template_id
+      in: path
+      description: |
+        Template identifier.
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: Vital Signs
+    Accept_template:
+      name: Accept
+      in: header
+      description: |
+        Header to indicate the expected response format.
+      required: true
+      style: simple
+      schema:
+        enum:
+          - application/json
+          - application/xml
+          - text/plain
+          - application/openehr.wt+json
+        type: string
+        example: application/xml
+    at_version:
+      name: version
+      in: query
+      description: |
+        A SEMVER version number.
+        Query parameter to indicate the desired version associated with the request.
+      style: form
+      explode: true
+      schema:
+        type: string
+        example: 1.0.1
+    version:
+      name: version
+      in: path
+      description: |
+        A SEMVER version number.
+        This can be a an exact version (e.g. `1.7.1`), or a pattern as partial prefix, in a form of `{major}` or `{major}.{minor}` (e.g. `1` or `1.0`), in which case the highest (latest) version matching the prefix will be considered.
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: '1.0'
+    qualified_query_name:
+      name: qualified_query_name
+      in: path
+      description: |
+        The (fully qualified) name of the query to be executed, in a format of `[{namespace}::]{query-name}`.
+      required: true
+      style: simple
+      schema:
+        $ref: '#/components/schemas/QueryName'
+    query_type:
+      name: query_type
+      in: query
+      description: |
+        Parameter indicating the query language/type.
+      style: form
+      explode: true
+      schema:
+        type: string
+        default: AQL
+        example: AQL
+  headers:
+    Location_Template_adl1_4:
+      description: |
+        The `Location` response header indicates the URL of the Template resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/definition/template/adl1.4/Vital%20Signs
+    ETag_Template_adl1_4:
+      description: |
+        The `ETag` (i.e. entity tag) response header is an identifier of Template.
+      schema:
+        type: string
+        example: '"b4d7f203-b329-4e89-a58a-c605b19e94de"'
+    Location_Template_adl2:
+      description: |
+        The `Location` response header indicates the URL of the Template resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0/1.0.1
+    ETag_Template_adl2:
+      description: |
+        The `ETag` (i.e. entity tag) response header is an identifier of Template.
+      schema:
+        type: string
+        example: '"d8d643db-1cee-48ce-b609-12053077758f"'
+    Location_Query:
+      description: |
+        The `Location` response header indicates the URL of the Stored Query resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/definition/query/org.openehr::compositions/1.0.1

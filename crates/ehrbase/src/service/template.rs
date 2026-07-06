@@ -4,12 +4,51 @@
 //! parsed into [`openehr_its::opt14::OperationalTemplate`] to extract the
 //! `template_id` / `concept` / root-archetype metadata for indexing and listing.
 
+use std::sync::Arc;
+
+use openehr_flat::WebTemplate;
 use serde_json::{Value, json};
 use sqlx::Row;
 
 use super::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
+    /// Resolve the (cached) [`WebTemplate`] for a stored operational template,
+    /// building it from the stored OPT 1.4 XML on first use.
+    ///
+    /// A template that is not in the store is reported as **`Unprocessable`**
+    /// (→ ITS-REST `422`), not `NotFound`: on a composition commit an unknown
+    /// referenced template is a *semantic* error, per
+    /// `docs/specs/openehr/ITS-REST/specifications/responses/422_COMPOSITION.yaml`
+    /// ("the underlying template is not known"), and the CNF Robot case
+    /// `I_EHR_COMPOSITION.create_composition-event_bad_opt` asserts `422`.
+    pub(super) async fn web_template_for(
+        &self,
+        template_id: &str,
+    ) -> Result<Arc<WebTemplate>, ServiceError> {
+        let xml = match self.get_template_xml(template_id).await {
+            Ok(xml) => xml,
+            Err(ServiceError::NotFound(_)) => {
+                return Err(ServiceError::Unprocessable(format!(
+                    "operational template not known: {template_id}"
+                )));
+            }
+            Err(e) => return Err(e),
+        };
+        self.web_templates
+            .get_or_build(template_id, || {
+                let opt = openehr_its::opt14::from_xml(&xml)
+                    .map_err(|e| openehr_flat::FlatError::OptParse(e.to_string()))?;
+                openehr_flat::build_web_template(&opt)
+            })
+            .await
+            .map_err(|e| {
+                ServiceError::Unprocessable(format!(
+                    "operational template {template_id} could not be built into a WebTemplate: {e}"
+                ))
+            })
+    }
+
     /// Store (or replace) an OPT 1.4 operational template from its canonical XML,
     /// returning the stored template's metadata descriptor.
     ///

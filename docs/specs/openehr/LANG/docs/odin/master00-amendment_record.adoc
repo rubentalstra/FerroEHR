@@ -1,0 +1,126 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+|[[latest_issue]]1.5.3
+|{spec_tickets}/SPECLANG-10[SPECLANG-10^]: Fix typos in ODIN.
+|R Kavanagh
+|[[latest_issue_date]]03 Apr 2023
+
+4+^h|*LANG Release 1.0.0*
+
+|1.5.2
+|{spec_tickets}/SPECLANG-7[SPECLANG-7^]: Move IDON spec to LANG component.
+|openEHR SEC
+|11 Nov 2018
+
+|
+|{spec_tickets}/SPECLANG-3[SPECLANG-3^]: Add grammar support for plus-or-minus ranges; +
+ {spec_tickets}/SPECLANG-4[SPECLANG-4^]: Update grammar to support documented ODIN keys; + 
+ {spec_tickets}/SPECLANG-5[SPECLANG-5^]: Update grammar to support documented openEHR ISO 8601 variant using '??';
+ make `MONTH` and `DAY` regexes in grammar more accurate; correct xref in section 7.
+|K Allen, +
+ T Beale, +
+ S Garde
+|29 Aug 2018
+
+|
+|{spec_tickets}/SPECLANG-6[SPECLANG-6^]: Correct minor comment errors in section 7 to do with intervals.
+|C Nanjo
+|08 Apr 2016
+
+4+^h|*BASE Release 1.0.3*
+
+|1.5.1
+|Separate from ADL spec and rename to ODIN.
+|T Beale
+|15 Apr 2013
+
+|1.5.0
+|Add fractional seconds to dADL grammar.
+|T Beale
+|15 Aug 2012
+
+4+^h|*Release 1.0.2*
+
+|1.4.1
+|{spec_tickets}/SPEC-268[SPEC-268^]: Correct missing parentheses in dADL type identifiers. dADL grammar rules updated.
+|R Chen
+|12 Dec 2008
+
+4+^h|*Release 1.0.1*
+
+|1.4.0
+|{spec_tickets}/SPEC-213[SPEC-213^]: Include 'T' in dADL Date/time, Time and Duration values.
+|T Beale
+|13 Mar 2007
+
+| 
+|{spec_tickets}/SPEC-216[SPEC-216^]: Allow mixture of W, D etc in ISO 8601 Duration (deviation from standard).
+|S Heard
+| 
+
+
+4+^h|*Release 1.0*
+
+|1.3.0
+|{spec_tickets}/SPEC-143[SPEC-143^]. Add partial date/time values to dADL syntax.
+|S Heard
+|18 Jun 2005
+
+|
+|{spec_tickets}/SPEC-149[SPEC-149^]. Add URIs to dADL and remove `query()` syntax.
+|T Beale
+|
+
+4+^h|*Release 0.95*
+
+|1.2
+|{spec_tickets}/SPEC-110[SPEC-110^]. Added explanatory material; added domain type support; rewrote of most dADL sections.
+|T Beale
+|15 Nov 2004
+
+4+^h|*Release 0.9*
+
+|0.9.9
+|{spec_tickets}/SPEC-75[SPEC-75^]. Added dADL object model.
+|T Beale
+|28 Dec 2003
+
+|0.9.8
+|{spec_tickets}/SPEC-70[SPEC-70^]. Copyright Assigned by Ocean Informatics P/L Australia to The openEHR Foundation.
+|T Beale, +
+ S Heard
+|29 Nov 2003
+
+|0.9.7
+|Added simple value list continuation (",..."). +
+ Changed path syntax so that trailing '/' required for object paths. +
+ Remove ranges with excluded limits. +
+ Added terms and term lists to dADL leaf types.
+|T Beale
+|01 Nov 2003
+
+|0.9.6
+|Additions during HL7 WGM Memphis Sept 2003
+|T Beale
+|09 Sep 2003
+
+|0.9.5
+|Renamed dDL to dADL. Changed path syntax to conform (nearly) to Xpath.
+|T Beale
+|03 Sep 2003
+
+|0.9
+|Rewritten with sections on dDL.
+|T Beale
+|28 July 2003
+
+|0.8
+|Initial Writing
+|T Beale
+|10 July 2003
+
+|===

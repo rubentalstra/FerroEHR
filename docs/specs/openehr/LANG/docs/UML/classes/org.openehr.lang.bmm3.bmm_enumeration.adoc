@@ -1,0 +1,37 @@
+=== BMM_ENUMERATION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_ENUMERATION*
+
+h|*Description*
+2+a|Definition of an enumeration class, understood as a class whose value range is constrained extensionally, i.e. by an explicit enumeration of named singleton instances.
+
+Only one inheritance ancestor is allowed in order to provide the base type to which the range constraint is applied.
+
+The common notion of a set of literals with no explicit defined values is represented as the degenerate subtype `BMM_ENUMERATION_INTEGER`, whose values are 0, 1, ...
+
+h|*Inherit*
+2+|`<<_bmm_simple_class_class,BMM_SIMPLE_CLASS>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*item_names*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|The list of names of the enumeration. If no values are supplied, the integer values 0, 1, 2, ... are assumed.
+
+h|*0..1*
+|*item_values*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_primitive_value_class,BMM_PRIMITIVE_VALUE>>>`
+a|Optional list of specific values. Must be 1:1 with `_item_names_` list.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name_map* (): `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Map of `_item_names_` to `_item_values_` (stringified).
+|===

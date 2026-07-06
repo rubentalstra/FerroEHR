@@ -1,0 +1,7 @@
+description: |
+  `204 No Content` is returned when directory was updated and `Prefer` header is missing or is set to `return=minimal`.
+headers:
+  ETag:
+    $ref: ../headers/ETag_FOLDER.yaml
+  Location:
+    $ref: ../headers/Location_directory.yaml

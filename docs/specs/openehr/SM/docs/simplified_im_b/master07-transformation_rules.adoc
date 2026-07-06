@@ -1,0 +1,338 @@
+= Transformation Rules
+
+This section contains rules defining the formal relationship between the SIM-B and the openEHR RM and other models on which it is based.
+
+== Composition Package
+
+[cols="1,2,1,2,2", options="header"]
+|===
+|RM class|RM Path|SIM class|SIM Path|Constraint +
+                                     conversion +
+                                     rule
+
+|`EVENT_CONTEXT`
+|
+|`S_EVENT_CONTEXT`
+|
+|(default)
+
+.12+|`OBSERVATION`
+|`_data_`
+.12+|`S_OBSERVATION`
+|
+|`_collapse()_`
+
+|`_state_`
+|
+|`_collapse()_`
+
+|`_data.events_`
+|`_data_`
+|(default)
+
+|`_state.events_`
+|`_state_`
+|(default)
+
+|`_data.origin_`
+|`_history_origin_`
+|(default)
+
+|`_data.period_`
+|`_history_period_`
+|(default)
+
+|`_data.duration_`
+|`_history_duration_`
+|(default)
+
+|`_data.summary_`
+|`_history_summary_`
+|(default)
+
+|`_state.origin_`
+|`_state_origin_`
+|(default)
+
+|`_state.period_`
+|`_state_period_`
+|(default)
+
+|`_state.duration_`
+|`_state_duration_`
+|(default)
+
+|`_state.summary_`
+|`_state_summary_`
+|(default)
+
+.2+|`INSTRUCTION`
+|`_narrative_`
+.2+|`S_INSTRUCTION`
+|`_narrative_`
+|create `C_STRING` from `C_TERMINOLOGY_CODE` at `DV_TEXT._value_` or `DV_CODED_TEXT._defining_code_`
+
+|`_expiry_time_`
+|`_expiry_time_`
+|create `C_STRING` from `C_DATE_TIME`
+
+.2+|`ACTIVITY`
+|`_timing_`
+.2+|`S_ACTIVITY`
+|`_timing_`
+|
+
+|`_action_archetype_id_`
+|`_action_archetype_id_`
+|`_copy()_`
+
+.8+|`ACTION`
+|`_time_`
+.8+|`S_ACTION`
+|`_time_`
+|create `C_STRING` from `C_DATE_TIME`
+
+|`_ism_transition_`
+|
+|`_collapse()_`
+
+|`_ism_transition.current_state_`
+|`_current_state_`
+|default
+
+|`_ism_transition.careflow_step_`
+|`_careflow_step_`
+|
+
+|`_ism_transition.transition_`
+|`_transition_`
+|default
+
+|`_instruction_id_`
+|
+|`_collapse()_`
+
+|`_instruction_details.instruction_id_`
+|`_instruction_id_`
+|n/a
+
+|`_instruction_details.activity_id_`
+|`_activity_id_`
+|`_copy()_`
+
+|===
+
+== Common Package
+
+[cols="1,2,1,2,2", options="header"]
+|===
+|RM class|RM Path|SIM class|SIM Path|Constraint +
+                                     conversion +
+                                     rule
+
+|`LINK`
+|`_meaning.value_`
+|`S_LINK`
+|`_meaning_`
+|
+
+|`LINK`
+|`_type.value_`
+|`S_LINK`
+|`_type_`
+|`_copy()_`
+
+|`PARTY_PROXY`
+|`_external_ref.id.value_`
+|`S_PARTY_PROXY`
+|`_id_`
+|`_copy()_`
+
+|`PARTY_PROXY`
+|`_external_ref.namespace_`
+|`S_PARTY_PROXY`
+|`_id_namespace_`
+|`_copy()_`
+
+|`PARTY_PROXY`
+|`_external_ref.id.scheme_`
+|`S_PARTY_PROXY`
+|`_id_scheme_`
+|`if external_ref.id instance_of(GENERIC_ID) then {_xxx()_ }`
+
+|===
+
+== Data Structures Package
+
+[cols="1,2,1,2,2", options="header"]
+|===
+|RM class|RM Path|SIM class|SIM Path|Constraint +
+                                     conversion +
+                                     rule
+
+|`EVENT`
+|`_time_`
+|`S_EVENT`
+|`_time_`
+|create `C_STRING` from `C_DATE_TIME`
+
+|`EVENT`
+|`_data_`
+|
+|
+|`_collapse()_`
+
+|`EVENT`
+|`_state_`
+|
+|
+|`_collapse()_`
+
+|`EVENT`
+|`_data.items_`
+|`S_EVENT`
+|`_data_`
+|
+
+|`EVENT`
+|`_state.items_`
+|`S_EVENT`
+|`_state_`
+|
+
+|`INTERVAL_EVENT`
+|`_width_`
+|`S_INTERVAL_EVENT`
+|`_width_`
+|
+
+|`INTERVAL_EVENT`
+|`_sample_count_`
+|`S_INTERVAL_EVENT`
+|`_sample_count_`
+|
+
+|`INTERVAL_EVENT`
+|`_math_function_`
+|`S_INTERVAL_EVENT`
+|`_math_function_`
+|create `C_STRING` from `C_TERMINOLOGY_CODE` at `_defining_code_`
+
+|`ITEM_TREE`
+|
+|`
+|
+|`_collapse()_`
+
+|`ITEM_TREE`
+|`_items_`
+|`S_CLUSTER`
+|
+|
+
+|===
+
+== RM Data types Package
+
+[cols="1,2,1,2,2", options="header"]
+|===
+|RM class|RM Path|SIM class|SIM Path|Constraint +
+                                     conversion +
+                                     rule
+
+|`DV_TEXT`
+|
+|`S_DV_TEXT`
+|
+|
+
+|`DV_TEXT`
+|`_formatting_`
+|
+|
+|skip
+
+|`DV_TEXT`
+|`_language_`
+|
+|
+|skip
+
+|`DV_TEXT`
+|`_encoding_`
+|
+|
+|skip
+
+|`DV_CODED_TEXT`
+|
+|`S_DV_CODED_TEXT`
+|
+|
+
+|`DV_CODED_TEXT`
+|`_defining_code.code_string_`
+|`S_DV_CODED_TEXT`
+|`_code_`
+|
+
+|`DV_CODED_TEXT`
+|`_defining_code.terminology_id_`
+|`S_DV_CODED_TEXT`
+|`_terminology_`
+|
+
+|`CODE_PHRASE`
+|`_code_string_`
+|`S_CODE_PHRASE`
+|`_code_`
+|
+
+|`CODE_PHRASE`
+|`_terminology_id_`
+|`S_CODE_PHRASE`
+|`_terminology_`
+|
+
+|`DV_CODED_TEXT`
+|
+|`String`
+|
+|`C_TERMINOLOGY` to `C_STRING` on `_defining_code_`
+
+|`DV_TEXT`
+|
+|`String`
+|
+|
+
+|`DV_URI`
+|
+|`String`
+|
+|`C_TERMINOLOGY` to `C_STRING`
+
+|===
+
+== Simplified IM Package
+
+[cols="1,2,1,2,2", options="header"]
+|===
+|RM class|RM Path|SIM class|SIM Path|Constraint +
+                                     conversion +
+                                     rule
+
+|`OBJECT_REF`
+|`_namespace_`
+|`S_OBJECT_REF`
+|`_id_namespace_`
+|
+
+|`OBJECT_REF`
+|`_type_`
+|`S_OBJECT_REF`
+|`_id_type_`
+|
+
+|===
+

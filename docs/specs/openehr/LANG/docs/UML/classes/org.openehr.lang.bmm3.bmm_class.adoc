@@ -1,0 +1,145 @@
+=== BMM_CLASS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_CLASS (abstract)__*
+
+h|*Description*
+2+a|Meta-type corresponding a class definition in an object model. Inheritance is specified by the `_ancestors_` attribute, which contains a list of _types_ rather than classes. Inheritance is thus understood in BMM as a stated relationship between classes. The equivalent relationship between types is conformance.
+
+NOTE: unlike UML, the `_name_` is just the root name, even if the class is generic. Use `_type_name()_` to obtain the qualified type name.
+
+h|*Inherit*
+2+|`<<_bmm_module_class,BMM_MODULE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*ancestors*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_model_type_class,BMM_MODEL_TYPE>>>`
+a|List of immediate inheritance parents.
+
+h|*1..1*
+|*package*: `<<_bmm_package_class,BMM_PACKAGE>>`
+a|Package this class belongs to.
+
+h|*0..1*
+|*properties*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_property_class,BMM_PROPERTY>>>`
+a|Properties defined in this class (subset of `_features_`).
+
+h|*1..1*
+|*source_schema_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference to original source schema defining this class. Useful for UI tools to determine which original schema file to open for a given class for manual editing.
+
+h|*0..1*
+|*immediate_descendants*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_class_class,BMM_CLASS>>>`
+a|List of computed references to base classes of immediate inheritance descendants, derived when members of `_ancestors_` are attached at creation time.
+
+h|*1..1*
+|*is_override*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this definition overrides a class of the same name in an included schema.
+
+h|*0..1*
+|*static_properties*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_static_class,BMM_STATIC>>>`
+a|Static properties defined in this class (subset of `_features_`).
+
+h|*0..1*
+|*functions*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_function_class,BMM_FUNCTION>>>`
+a|Functions defined in this class (subset of `_features_`).
+
+h|*0..1*
+|*procedures*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_procedure_class,BMM_PROCEDURE>>>`
+a|Procedures defined in this class (subset of `_features_`).
+
+h|*0..1*
+|*is_primitive*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True if this class represents a type considered to be primitive in the type system, i.e. any typically built-in or standard library type such as `String`, `Date`, `Hash<K,V>` etc.
+
+h|*0..1*
+|*is_abstract*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True if this class is marked as abstract, i.e. direct instances cannot be created from its direct type.
+
+h|*0..1*
+|*invariants*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_assertion_class,BMM_ASSERTION>>>`
+a|
+
+h|*0..1*
+|*creators*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_procedure_class,BMM_PROCEDURE>>>`
+a|Subset of `_procedures_` that may be used to initialise a new instance of an object, and whose execution will guarantee that class invariants are satisfied.
+
+h|*0..1*
+|*converters*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_procedure_class,BMM_PROCEDURE>>>`
+a|Subset of `_creators_` that create a new instance from a single argument of another type.
+
+h|*0..1 +
+(redefined)*
+|*features*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_feature_class,BMM_FEATURE>>>`
+a|Features of this module.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*type* (): `<<_bmm_model_type_class,BMM_MODEL_TYPE>>`
+a|Generate a type object that represents the type for which this class is the definer.
+
+h|*0..1*
+|*all_ancestors* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of all inheritance parent class names, recursively.
+
+h|*0..1*
+|*all_descendants* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Compute all descendants by following `_immediate_descendants_`.
+
+h|*0..1*
+|*suppliers* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of names of immediate supplier classes, including concrete generic parameters, concrete descendants of abstract statically defined types, and inherited suppliers. (Where generics are unconstrained, no class name is added, since logically it would be `Any` and this can always be assumed anyway). This list includes primitive types.
+
+h|*0..1*
+|*suppliers_non_primitive* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Same as `suppliers` minus primitive types, as defined in input schema.
+
+h|*0..1*
+|*supplier_closure* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of names of all classes in full supplier closure, including concrete generic parameters; (where generics are unconstrained, no class name is added, since logically it would be `Any` and this can always be assumed anyway).  This list includes primitive types.
+
+h|*1..1*
+|*package_path* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Fully qualified package name, of form: `package.package`.
+
+h|*1..1*
+|*class_path* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Fully qualified class name, of form: `package.package.CLASS` with package path in lower-case and class in original case.
+
+h|*1..1*
+|*is_primitive* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this class is designated a primitive type within the overall type system of the schema. Set from schema.
+
+h|*1..1*
+|*is_abstract* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this class is abstract in its model. Value provided from an underlying data property set at creation or construction time.
+
+h|*0..1*
+|*features* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]>`
+a|List of all feature definitions introduced in this class.
+
+h|*0..1*
+|*flat_features* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]>`
+a|Consolidated list of all feature definitions from this class and all inheritance ancestors.
+
+h|*0..1*
+|*flat_properties* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_property_class,BMM_PROPERTY>>>`
+a|List of all properties due to current and ancestor classes, keyed by property name.
+
+h|*Invariants*
+2+a|__Inv_constructors__: `for_all p in creators : procedures.has(p)`
+
+h|
+2+a|__Inv_converters__: `for_all p in converters : creators.has(p) and p.arity() = 1`
+|===

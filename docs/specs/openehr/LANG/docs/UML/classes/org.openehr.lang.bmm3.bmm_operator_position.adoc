@@ -1,0 +1,22 @@
+=== BMM_OPERATOR_POSITION Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*BMM_OPERATOR_POSITION*
+
+h|*Description*
+2+a|Enumeration of possible position of operator in a syntactic representation for operators associated with 1- and 2- degree functions.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|prefix
+a|Prefix operator position: operator comes before operand.
+
+h|
+|infix
+a|Infix operator position: operator comes between left and right operands.
+|===

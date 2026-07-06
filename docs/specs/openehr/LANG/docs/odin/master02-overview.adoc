@@ -1,0 +1,37 @@
+= Overview
+
+The ODIN syntax provides a formal means of expressing instance data based on an underlying object-oriented or relational information model, which is readable both by humans and machines. The general appearance is exemplified by the following:
+
+[source, odin]
+--------
+person = (List<PERSON>) < 
+    [01234] = < 
+        name = < -- person's name 
+            forenames = <"Sherlock"> 
+            family_name = <"Holmes"> 
+            salutation = <"Mr"> 
+        >
+        address = < -- person's address 
+            habitation_number = <"221B">
+            street_name = <"Baker St">
+            city = <"London">
+            country = <"England">
+        >
+    >
+    [01235] = < -- etc >
+>
+--------
+
+In the above the attribute names `person` , `name` , `address` etc, and the type `List<PERSON>` are all assumed to come from an information model. The `[01234]` and `[01235]` tags identify container items.
+
+The basic design principle of ODIN is to be able to represent data in a way that is both machine-processable and human-readable, while making the fewest assumptions possible about the information model to which the data conforms. To this end, type names are optional; often, only attribute names and values are explicitly shown. No syntactical assumptions are made about whether the underlying model is relational, object-oriented or what it actually looks like. More than one information model can be compatible with the same ODIN-expressed data. The UML semantics of composition/aggregation and association are expressible, as are shared objects. Literal leaf values are only of 'standard' widely recognised types, i.e. Integer, Real, Boolean, String, Character and a range of Date/time types. In standard ODIN, all complex types are expressed structurally.
+
+The ODIN syntax as described above has a number of useful characteristics that enable the extensive use of paths to navigate it, and express references. These include:
+
+* each `<>` block corresponds to an object (i.e. an instance of some type in an information model);
+* the name before an '=' is always an attribute name or else a container element key, which attaches to the attribute of the enclosing block;
+* the formal type of leaf values can be inferred purely from syntax;
+* paths can be formed by navigating down a tree branch and concatenating attribute name, container keys (where they are encountered) and '/' characters;
+* every node is reachable by a path;
+* dynamically bound types can be explicitly indicated;
+* shared objects can be referred to by path references.

@@ -1,0 +1,5 @@
+:spec_title: Support Information Model
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: EHR, openehr, identifiers, primitive types, openehr
+:description: openEHR Support Information Model specification

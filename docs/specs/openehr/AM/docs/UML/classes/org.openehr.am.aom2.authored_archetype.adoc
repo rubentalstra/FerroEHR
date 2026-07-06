@@ -1,0 +1,46 @@
+=== AUTHORED_ARCHETYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*AUTHORED_ARCHETYPE*
+
+h|*Description*
+2+a|Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.
+
+h|*Inherit*
+2+|`<<_archetype_class,ARCHETYPE>>`, `link:/releases/BASE/{base_release}/resource.html#_authored_resource_class[AUTHORED_RESOURCE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*adl_version*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|ADL version if archetype was read in from an ADL sharable archetype.
+
+h|*1..1*
+|*build_uid*: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]`
+a|Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.
+
+h|*1..1*
+|*rm_release*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.
+
+h|*1..1*
+|*is_generated*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.
+
+h|*1..1*
+|*other_meta_data*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|
+
+h|*Invariants*
+2+a|__Invariant_adl_version_validity__: `valid_version_id (adl_version)`
+
+h|
+2+a|__Invariant_rm_release__: `valid_version_id (rm_release)`
+
+h|
+2+a|__Description_validity__: `description /= Void`
+|===

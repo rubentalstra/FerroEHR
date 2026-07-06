@@ -1,0 +1,109 @@
+=== DV_QUANTITY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DV_QUANTITY*
+
+h|*Description*
+2+a|Quantitified type representing  scientific  quantities, i.e. quantities expressed as a magnitude and units. Units are expressed in the UCUM syntax (http://unitsofmeasure.org/ucum.html[Unified Code for Units of Measure (UCUM)], by Gunther Schadow and Clement J. McDonald of The Regenstrief Institute)  (case-sensitive form) by default, or another system if `_units_system_` is set. 
+
+Can also be used for time durations, where it is more convenient to treat these as simply a number of seconds rather than days, months, years (in the latter case, `DV_DURATION` may be used).
+
+h|*Inherit*
+2+|`<<_dv_amount_class,DV_AMOUNT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*magnitude*: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^]`
+a|Numeric magnitude of the quantity.
+
+h|*0..1*
+|*precision*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Precision to which the value of the quantity is expressed, in terms of number of decimal places. The value 0 implies an integral quantity.
+The value -1 implies no limit, i.e. any number of decimal places.
+
+h|*1..1*
+|*units*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Quantity units, expressed as a code or syntax string from either UCUM (the default) or the units system specified in `_units_system_`, when set.
+
+In either case, the value is the code or syntax - normally formed of standard ASCII - which is in principal not the same as the display string, although in simple cases such as 'm' (for meters) it will be.
+
+If the `_units_display_name_` field is set, this may be used for display. If not, the implementations must effect the resolution of the `_units_` value to a display form locally, e.g. by lookup of reference tables, request to a terminology service etc.
+
+Example values from UCUM: "kg/m^2", “mm[Hg]", "ms-1", "km/h".
+
+h|*0..1 +
+(redefined)*
+|*normal_range*: `<<_dv_interval_class,DV_INTERVAL>><<<_dv_quantity_class,DV_QUANTITY>>>`
+a|Optional normal range.
+
+h|*0..1 +
+(redefined)*
+|*other_reference_ranges*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_reference_range_class,REFERENCE_RANGE>><<<_dv_quantity_class,DV_QUANTITY>>>>`
+a|Optional tagged other reference ranges for this value in its particular measurement context.
+
+h|*0..1*
+|*units_system*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional field used to specify a units system from which codes in `_units_` are defined. Value is a URI identifying a terminology containing units concepts from the  (https://www.hl7.org/fhir/terminologies-systems.html[HL7 FHIR terminologies list]).
+
+If not set, the UCUM standard (case-sensitive codes) is assumed as the units system.
+
+h|*0..1*
+|*units_display_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional field containing the displayable form of the `_units_` field, e.g. `'°C'`.
+
+If not set, the application environment needs to determine the displayable form.
+
+NOTE: The display name may be language-dependent for various older and non-systematic units. For this reason, it is not recommended to add unit display names to archetypes, only to templates (for localisation purposes).
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*add* __alias__ "+" ( +
+other: `<<_dv_quantity_class,DV_QUANTITY>>[1]` +
+): `<<_dv_quantity_class,DV_QUANTITY>>`
+a|Sum of this `DV_QUANTITY` and `_other_`.
+
+h|*1..1 +
+(redefined)*
+|*subtract* __alias__ "-" ( +
+other: `<<_dv_quantity_class,DV_QUANTITY>>[1]` +
+): `<<_dv_quantity_class,DV_QUANTITY>>`
+a|Difference of this `DV_QUANTITY` and `_other_`.
+
+h|*1..1 +
+(redefined)*
+|*multiply* __alias__ "&#42;" ( +
+factor: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^][1]` +
+): `<<_dv_quantity_class,DV_QUANTITY>>`
+a|Product of this `DV_QUANTITY` and `_factor_`.
+
+h|*1..1 +
+(redefined)*
+|*less_than* __alias__ "<" ( +
+other: `<<_dv_quantity_class,DV_QUANTITY>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_comparable__: `is_strictly_comparable_to (other)` +
+ +
+__Post_result__: `Result = magnitude < other.magnitude`
+a|True if this Quantity object is less than `_other_`, based on comparison of `_magnitude_`. Only valid if `_is_strictly_comparable_to()_` is True.
+
+h|*1..1*
+|*is_integral* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `_precision_` = 0, meaning that the `_magnitude_` is a whole number.
+
+h|*1..1 +
+(effected)*
+|*is_strictly_comparable_to* ( +
+other: `<<_dv_ordered_class,DV_ORDERED>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this quantity and `_other_` have the same `_units_` and also `_units_system_` if it exists.
+|===

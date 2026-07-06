@@ -1,0 +1,23 @@
+title: Precision
+required:
+  - minOp
+  - min
+  - maxOp
+  - max
+type: object
+properties:
+  minOp:
+    type: string
+  min:
+    type: integer
+    format: int32
+  maxOp:
+    type: string
+  max:
+    type: integer
+    format: int32
+example:
+  minOp: '>='
+  min: 1
+  maxOp: <=
+  max: 1

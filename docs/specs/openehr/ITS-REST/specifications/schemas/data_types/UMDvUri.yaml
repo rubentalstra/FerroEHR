@@ -1,0 +1,11 @@
+title: DV_URI
+type: object
+allOf:
+  - $ref: ../data_types/DvUri.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_URI]
+x-discriminator-value: DV_URI

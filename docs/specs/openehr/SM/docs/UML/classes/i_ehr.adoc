@@ -1,0 +1,30 @@
+=== I_EHR Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_EHR*
+
+h|*Description*
+2+a|Interface for single patient EHR-level operations.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*ehr_status*: `<<_i_ehr_status_interface,I_EHR_STATUS>>`
+a|Access to `I_EHR_STATUS` interface.
+
+h|*1..1*
+|*directory*: `<<_i_ehr_directory_interface,I_EHR_DIRECTORY>>`
+a|Access to `I_EHR_DIRECTORY` interface.
+
+h|*1..1*
+|*compositions*: `<<_i_ehr_composition_interface,I_EHR_COMPOSITION>>`
+a|Access to `I_EHR_COMPOSITION` interface.
+
+h|*1..1*
+|*contributions*: `<<_i_ehr_contribution_interface,I_EHR_CONTRIBUTION>>`
+a|Access to `I_EHR_CONTRIBUTION` interface.
+|===

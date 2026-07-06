@@ -1,0 +1,72 @@
+=== DV_TEXT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DV_TEXT*
+
+h|*Description*
+2+a|A text item, which may contain any amount of legal characters arranged as e.g. words, sentences etc (i.e. one `DV_TEXT` may be more than one word). Visual formatting and hyperlinks may be included via markdown.
+
+If the `_formatting_` field is set, the `_value_` field is affected as follows:
+
+* `_formatting_ = "plain"`: plain text, may contain newlines;
+* `_formatting_ = "plain_no_newlines"`: plain text with no newlines;
+* `_formatting_ = "markdown"`: text in markdown format; use of CommonMark strongly recommended.
+
+A `DV_TEXT` can be coded by adding mappings to it.
+
+h|*Inherit*
+2+|`<<_data_value_class,DATA_VALUE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Displayable rendition of the item, regardless of its underlying structure. For `DV_CODED_TEXT`, this is the rubric of the complete term as provided by the terminology service.
+
+h|*0..1*
+|*hyperlink*: `<<_dv_uri_class,DV_URI>>`
+a|DEPRECATED: this field is deprecated; use markdown link/text in the `_value_` attribute, and `"markdown"` as the value of the `_formatting_` field.
+
+Original usage, prior to RM Release 1.0.4: Optional link sitting behind a section of plain text or coded term item.
+
+h|*0..1*
+|*formatting*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|If set, contains one of the following values:
+
+* `"plain"`: use for plain text, possibly containing newlines, but otherwise unformatted (same as Void);
+* `"plain_no_newlines"`: use for text containing no newlines or other formatting;
+* `"markdown"`: use for markdown formatted text, strongly recommended in the format of the CommonMark specification.
+
+DEPRECATED usage: contains a string of the form `"name:value; name:value..."` , e.g. `"font-weight : bold; font-family : Arial; font-size : 12pt;"`. Values taken from W3C CSS2 properties lists for background and font .
+
+h|*0..1*
+|*mappings*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_term_mapping_class,TERM_MAPPING>>>`
+a|Terms from other terminologies most closely matching this term, typically used where the originator (e.g. pathology lab) of information uses a local terminology but also supplies one or more equivalents from well known terminologies (e.g. LOINC).
+
+h|*0..1*
+|*language*: `<<_code_phrase_class,CODE_PHRASE>>`
+a|Optional indicator of the localised language in which the value is written. Coded from openEHR Code Set  languages . Only used when either the text object is in a different language from the enclosing `ENTRY`, or else the text object is being used outside of an `ENTRY` or other enclosing structure which indicates the language.
+
+h|*0..1*
+|*encoding*: `<<_code_phrase_class,CODE_PHRASE>>`
+a|Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
+
+h|*Invariants*
+2+a|__Valid_value__: `not value.is_empty`
+
+h|
+2+a|__Language_valid__: `language /= Void implies code_set (Code_set_id_languages).has_code (language)`
+
+h|
+2+a|__Encoding_valid__: `encoding /= Void implies code_set (Code_set_id_character_sets).has_code (encoding)`
+
+h|
+2+a|__Mappings_valid__: `mappings /= void implies not mappings.is_empty`
+
+h|
+2+a|__Formatting_valid__: `formatting /= void implies not formatting.is_empty`
+|===

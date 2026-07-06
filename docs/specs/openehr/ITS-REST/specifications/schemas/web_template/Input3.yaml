@@ -1,0 +1,26 @@
+title: Input3
+required:
+  - suffix
+  - type
+type: object
+properties:
+  suffix:
+    type: string
+  type:
+    type: string
+  list:
+    type: array
+    items:
+      $ref: ./List2.yaml
+    description: ''
+  terminology:
+    type: string
+example:
+  suffix: code
+  type: CODED_TEXT
+  list:
+    - value: '433'
+      label: event
+      localizedLabels:
+        sl: ''
+  terminology: openehr

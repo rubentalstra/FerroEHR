@@ -1,0 +1,9 @@
+= Overview
+
+The {openehr_cnf_platform_test_schedule}[Platform X Conformance Test Schedule^] describes capabilities of openEHR platform products that can be tested against the published specifiations. These capabilities are grouped into _profiles_ to provide a guide to what constitutes the required functionality for particular category of solution.
+
+A profile may be defined logically as a particular list of platform components and capabilities that may be combined to specify a particular kind of solution. For example, an openEHR Demographics product would treat most or all of the Demographic capabilities as mandatory, along with support for definitions, logging etc.
+
+This specification defines a set of default profiles intended as a guide for determining the minimum capabilities to specify in order to obtain certain basic levels of functionality.
+
+Producers of tender specifications and procuring organsations should create the Profile(s) they require. This should be done by adopting either the CORE or STANDARD base profiles and then adding in the set of options required.

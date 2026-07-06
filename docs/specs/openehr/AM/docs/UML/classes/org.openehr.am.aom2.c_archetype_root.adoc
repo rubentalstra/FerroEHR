@@ -1,0 +1,31 @@
+=== C_ARCHETYPE_ROOT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_ARCHETYPE_ROOT*
+
+h|*Description*
+2+a|A specialisation of `C_COMPLEX_OBJECT` whose node_id attribute is an archetype identifier rather than the normal internal node code (i.e. at-code/id-code).
+
+Used in two situations: the first is to represent an 'external reference' to an archetype from within another archetype or template - this supports re-use. The second use is within a template, where it is used as a slot-filler.
+
+For a new external reference, the `_node_id_` is set in the normal way, i.e. with a new code at the specialisation level of the archetype.
+
+For a slot-filler or a redefined external reference, the `_node_id_` is set to a specialised version of the `_node_id_` of the node being specialised, allowing matching to occur during flattening.
+
+In all uses within source archetypes and templates, the `_children_` attribute is `Void`.
+
+In an operational template, the `_node_id_` is converted to the `_archetype_ref_`, and the structure contains the result of flattening any template overlay structure and the underlying flat archetype.
+
+h|*Inherit*
+2+|`<<_c_complex_object_class,C_COMPLEX_OBJECT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*archetype_ref*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference to archetype is being used to fill a slot or redefine an external reference. Typically an 'interface' archetype id, i.e. identifier with partial version information.
+|===

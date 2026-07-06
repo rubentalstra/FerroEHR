@@ -1,0 +1,34 @@
+=== UPDATE_VERSION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__UPDATE_VERSION<T> (abstract)__*
+
+h|*Description*
+2+a|An object representing an update to an existing `VERSION` within a `VERSIONED_OBJECT`, that can be provided by a client to the platform. The back-end will construct a full `VERSION<T>` object from this and server-side generated data items. If this represents the first version, it will also construct a new `VERSIONED_OBJECT` first.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*preceding_version_uid*: `link:/releases/BASE/{base_release}/base_types.html#_object_version_id_class[OBJECT_VERSION_ID^]`
+a|Current version in service for which this version is an update (i.e. the version that is preceding relative to this version update).
+
+h|*1..1*
+|*lifecycle_state*: `link:/releases/BASE/{base_release}/foundation_types.html#_terminology_code_class[Terminology_code^]`
+a|Lifecycle state of the content item in this version.
+
+h|*0..1*
+|*attestations*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/common.html#_attestation_class[ATTESTATION^]>`
+a|Set of attestations relating to this version.
+
+h|*1..1*
+|*data*: `T`
+a|Data item being provided in this Version update. Must conform in type to the expected type, which is normally constrained using a derivative class like `VU_XX` that binds T to a particular type such as `COMPOSITION` etc.
+
+h|*1..1*
+|*audit*: `<<_update_audit_class,UPDATE_AUDIT>>`
+a|Audit details for this update.
+|===

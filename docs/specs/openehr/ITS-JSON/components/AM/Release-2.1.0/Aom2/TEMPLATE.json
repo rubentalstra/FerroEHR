@@ -1,0 +1,98 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/TEMPLATE.json",
+    "title": "TEMPLATE",
+    "description": "Class representing source template, i.e. a kind of archetype that may include template overlays, and may be restricted by tools to only defining mandations, prohibitions, and restrictions on elements already defined in the flat parent.",
+    "$comments": "Defined in Aom2 IM, inherits from AUTHORED_ARCHETYPE",
+    "type": "object",
+    "properties": {
+        "uid": {
+            "description": "Unique identifier of the family of archetypes having the same interface identifier (same major version).",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/all.json#/definitions/UUID"
+        },
+        "original_language": {
+            "description": "Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Terminology_code"
+        },
+        "description": {
+            "description": "Description and lifecycle information of the resource.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all.json#/definitions/RESOURCE_DESCRIPTION"
+        },
+        "is_controlled": {
+            "description": "True if this resource is under any kind of change control (even file copying), in which case revision history is created. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "annotations": {
+            "description": "Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all.json#/definitions/RESOURCE_ANNOTATIONS"
+        },
+        "translations": {
+            "description": "List of details for each natural translation made of this resource, keyed by language code. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all.json#/definitions/TRANSLATION_DETAILS"
+            }
+        },
+        "parent_archetype_id": {
+            "description": "Archetype reference of the specialisation par-ent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or can be deeper.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "archetype_id": {
+            "description": "Identifier of this archetype.",
+            "$ref": "all.json#/definitions/ARCHETYPE_HRID"
+        },
+        "is_differential": {
+            "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "definition": {
+            "description": "Root node of the definition of this archetype.",
+            "$ref": "all.json#/definitions/C_COMPLEX_OBJECT"
+        },
+        "terminology": {
+            "description": "The terminology of the archetype.",
+            "$ref": "all.json#/definitions/ARCHETYPE_TERMINOLOGY"
+        },
+        "rules": {
+            "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+            "type": "array"
+        },
+        "adl_version": {
+            "description": "ADL version if archetype was read in from an ADL sharable archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "build_uid": {
+            "description": "Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/all.json#/definitions/UUID"
+        },
+        "rm_release": {
+            "description": "Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "is_generated": {
+            "description": "If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "other_meta_data": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Hash_of_String_String"
+        },
+        "overlays": {
+            "description": "Overlay archetypes, i.e. partial archetypes that include full definition and terminology, but logically derive all their meta-data from from the owning template.",
+            "type": "array",
+            "items": {
+                "$ref": "all.json#/definitions/TEMPLATE_OVERLAY"
+            }
+        }
+    },
+    "required": [
+        "original_language",
+        "archetype_id",
+        "is_differential",
+        "definition",
+        "terminology",
+        "build_uid",
+        "rm_release",
+        "is_generated",
+        "other_meta_data"
+    ]
+}

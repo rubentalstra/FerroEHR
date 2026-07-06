@@ -1,0 +1,21 @@
+=== P_BMM_BASE_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__P_BMM_BASE_TYPE (abstract)__*
+
+h|*Description*
+2+a|Persistent form of a proper (non-container) BMM type.
+
+h|*Inherit*
+2+|`<<_p_bmm_type_class,P_BMM_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*value_constraint*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|
+|===

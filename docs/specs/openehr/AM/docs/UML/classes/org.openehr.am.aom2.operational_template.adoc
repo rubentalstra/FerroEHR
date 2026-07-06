@@ -1,0 +1,42 @@
+=== OPERATIONAL_TEMPLATE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*OPERATIONAL_TEMPLATE*
+
+h|*Description*
+2+a|Root object of an operational template. An operational template is derived from a `TEMPLATE` definition and the `ARCHETYPEs` and/or `TEMPLATE_OVERLAYs` mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.
+
+An operational template is used for generating and validating RM-canonical instance data, and also as a source artefact for generating other downstream technical artefacts, including XML schemas, APIs and UI form definitions.
+
+h|*Inherit*
+2+|`<<_authored_archetype_class,AUTHORED_ARCHETYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*component_terminologies*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_archetype_terminology_class,ARCHETYPE_TERMINOLOGY>>>`
+a|Compendium of flattened terminologies of archetypes  referenced from this template, keyed by archetype identifier. This will almost always be present in a template.
+
+h|*0..1*
+|*terminology_extracts*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_archetype_terminology_class,ARCHETYPE_TERMINOLOGY>>>`
+a|Compendium of flattened terminology extracts (i.e. from external terminologies) from archetypes referenced from this template, keyed by archetype identifier.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*component_terminology* ( +
+an_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_archetype_terminology_class,ARCHETYPE_TERMINOLOGY>>` +
+ +
+__Inv_is_specialised__: `is_specialised`
+a|
+
+h|*Invariants*
+2+a|__Specialisation_validity__: `is_specialised`
+|===

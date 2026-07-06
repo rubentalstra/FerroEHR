@@ -1,0 +1,14 @@
+=== DATA_VALUE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__DATA_VALUE (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of all `DV_` data value types.
+
+h|*Inherit*
+2+|`link:/releases/BASE/{base_release}/base_types.html#_openehr_definitions_class[OPENEHR_DEFINITIONS^]`
+
+|===

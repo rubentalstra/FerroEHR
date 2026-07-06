@@ -1,0 +1,98 @@
+=== DV_AMOUNT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__DV_AMOUNT (abstract)__*
+
+h|*Description*
+2+a|Abstract class defining the concept of relative quantified  'amounts'. For relative quantities, the  `+` and  `-` operators are defined (unlike descendants of `DV_ABSOLUTE_QUANTITY`, such as the date/time types).
+
+h|*Inherit*
+2+|`<<_dv_quantified_class,DV_QUANTIFIED>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*accuracy_is_percent*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|If `True`, indicates that when this object was created, `_accuracy_` was recorded as a percent value; if `False`, as an absolute quantity value.
+
+h|*0..1 +
+(redefined)*
+|*accuracy*: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^]`
+a|Accuracy of measurement, expressed either as a half-range percent value (`_accuracy_is_percent_` = `True`) or a half-range quantity. A value of `0` means that accuracy is 100%, i.e. no error.
+
+A value of `_unknown_accuracy_value_` means that accuracy was not recorded.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*valid_percentage* ( +
+number: `link:/releases/BASE/{base_release}/foundation_types.html#_ordered_numeric_class[Ordered_Numeric^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Test whether a number is a valid percentage, i.e. between 0 and 100.
+
+h|*1..1*
+|*add* __alias__ "+" ( +
+other: `<<_dv_amount_class,DV_AMOUNT>>[1]` +
+): `<<_dv_amount_class,DV_AMOUNT>>` +
+ +
+__Pre_comparable__: `is_strictly_comparable_to (other)`
+a|Sum of this amount and another. The value of accuracy in the result is either:
+
+* the sum of the accuracies of the operands, if both present, or;
+* both operand accuracies are unknown_accuracy_value.
+
+If the accuracy value is a percentage in one operand and not in the other, the form in the result is that of the larger operand.
+
+h|*1..1*
+|*subtract* __alias__ "-" ( +
+other: `<<_dv_amount_class,DV_AMOUNT>>[1]` +
+): `<<_dv_amount_class,DV_AMOUNT>>` +
+ +
+__Pre_comparable__: `is_strictly_comparable_to (other)`
+a|Difference of this amount and another. The value of `_accuracy_` in the result is either:
+
+* the sum of the accuracies of the operands, if both present, or;
+* unknown, if either or both operand accuracies are unknown.
+
+If the `_accuracy_` value is a percentage in one operand and not in the other, the form in the result is that of the larger operand.
+
+h|*1..1 +
+(abstract)*
+|*is_equal* ( +
+other: `<<_dv_amount_class,DV_AMOUNT>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if this `DV_AMOUNT` is considered equal to `_other_`.
+
+h|*1..1*
+|*multiply* __alias__ "&#42;" ( +
+factor: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^][1]` +
+): `<<_dv_amount_class,DV_AMOUNT>>`
+a|Product of this Amount and `_factor_`.
+
+h|*1..1*
+|*negative* __alias__ "-" (): `<<_dv_amount_class,DV_AMOUNT>>`
+a|Negated version of current object, such as used for representing a difference, e.g. a weight loss.
+
+h|*1..1 +
+(redefined)*
+|*less_than* __alias__ "<" ( +
+other: `<<_dv_amount_class,DV_AMOUNT>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_comparable__: `is_strictly_comparable_to (other)` +
+ +
+__Post_result__: `Result = magnitude < other.magnitude`
+a|True if this object is less than `_other_`. Based on comparison of `_magnitude_`.
+
+h|*Invariants*
+2+a|__Accuracy_is_percent_validity__: `accuracy = 0 implies not accuracy_is_percent`
+
+h|
+2+a|__Accuracy_validity__: `accuracy_is_percent implies valid_percentage (accuracy)`
+|===

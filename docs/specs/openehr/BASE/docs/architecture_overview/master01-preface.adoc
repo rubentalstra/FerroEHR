@@ -1,0 +1,31 @@
+= Preface
+
+== Purpose
+
+This document provides an overview of the openEHR architecture in terms of a model overview, key global semantics, deployment and integration architectures, relationship to published standards, and finally the approach to building Implementation Technology Specifications (ITSs). Semantics specific to each information, archetype and service model are described in the relevant specification.
+
+The intended audience includes:
+
+* Standards bodies producing health informatics standards;
+* Academic groups using openEHR;
+* The open source healthcare community;
+* Solution vendors.
+
+This document is the key technical overview of openEHR, and should be read before all other technical documents.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_base_development_architecture_overview}[{openehr_base_development_architecture_overview}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_technical_list}[technical mailing list^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+

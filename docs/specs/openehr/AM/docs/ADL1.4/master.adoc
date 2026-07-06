@@ -1,0 +1,89 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+== Acknowledgements
+
+=== Primary Author
+
+* Thomas Beale, Ocean Informatics UK; openEHR Architecture Review Board (ARB)
+
+=== Contributors
+
+Thanks to Sebastian Garde, Central Qld University, Australia, for German translations.
+
+=== Trademarks
+
+* 'Microsoft' and '.Net' are registered trademarks of the Microsoft Corporation.
+* 'Java' is a registered trademark of Oracle Corporation
+* 'Linux' is a registered trademark of Linus Torvalds.
+* 'openEHR' is a registered trademark of The openEHR Foundation
+* 'SNOMED CT' is a registered trademark of IHTSDO
+
+=== Supporters
+
+The work reported in this paper has been funded by the following organisations:
+
+* UCL (University College London) - Centre for Health Informatics and Multiprofessional Education (CHIME);
+* Ocean Informatics.
+
+Special thanks to Prof David Ingram, founding Director of CHIME, UCL, who provided a vision and collegial working environment ever since the days of GEHR (1992).
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+
+:numbered:
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-file_encoding.adoc[leveloffset=+1]
+include::master04-dadl.adoc[leveloffset=+1]
+include::master05-cadl.adoc[leveloffset=+1]
+include::master06-assertions.adoc[leveloffset=+1]
+include::master07-paths.adoc[leveloffset=+1]
+include::master08-adl.adoc[leveloffset=+1]
+include::master09-customising_adl.adoc[leveloffset=+1]
+include::masterAppA-other_formalisms.adoc[leveloffset=+1]
+include::masterAppB-extended_metadata.adoc[leveloffset=+1]
+include::masterAppC-syntax_spec.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Amendment Record -----------------------------------------------
+//
+:sectnums!:
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:numbered!:
+== References
+
+bibliography::[]

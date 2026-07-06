@@ -1,0 +1,5 @@
+description: |
+  The `ETag` (i.e. entity tag) response header is the VERSION identifier (i.e. the `version_uid`) enclosed by double quotes.
+schema:
+  type: string
+  example: '"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2"'

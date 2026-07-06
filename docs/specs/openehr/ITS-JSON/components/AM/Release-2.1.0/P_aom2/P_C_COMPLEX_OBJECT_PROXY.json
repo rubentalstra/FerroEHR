@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/P_C_COMPLEX_OBJECT_PROXY.json",
+    "title": "P_C_COMPLEX_OBJECT_PROXY",
+    "description": "A constraint defined by proxy, using a reference to an object constraint defined elsewhere in the same archetype. Note that since this object refers to another node, there are two objects with available occurrences values. The local occurrences value on a COJMPLEX_OBJECT_PROXY should always be used; when setting this from a seri- alised form, if no occurrences is mentioned, the target occurrences should be used (not the standard default of {1..1}); otherwise the locally specified occurrences should be used as normal. When serialising out, if the occurrences is the same as that of the target, it can be left out. ",
+    "$comments": "Defined in P_aom2 IM, inherits from P_C_OBJECT",
+    "type": "object",
+    "properties": {
+        "rm_type_name": {
+            "description": "Reference model type that this node corresponds to. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "occurrences": {
+            "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "node_id": {
+            "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        },
+        "is_deprecated": {
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/Boolean"
+        },
+        "target_path": {
+            "description": "Reference to an object node using archetype path notation.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all.json#/definitions/String"
+        }
+    },
+    "required": [
+        "rm_type_name",
+        "node_id",
+        "target_path"
+    ]
+}

@@ -1,0 +1,73 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+
+|[[latest_issue]]1.3.0
+| Documentation fixes and typos (including {spec_tickets}/SPECPR-391[SPECPR-391^]).
+|S Iancu, +
+P Pazos
+|[[latest_issue_date]]10 Jan 2025
+
+|
+|{spec_tickets}/SPECBASE-32[SPECBASE-32^]: Improve Types cross-reference table in Foundation types.
+|S Iancu
+|09 Jan 2025
+
+|1.2.2
+|{spec_tickets}/SPECAM-82[SPECAM-82^]: Add legacy `CODE_PHRASE` class to Foundation Types to support AOM 1.4 model.
+|T Beale
+|26 Apr 2023
+
+|1.2.1
+|{spec_tickets}/SPECBASE-37[SPECBASE-37^]: Add stereotypes to represent Enums from common programming languages.
+|T Beale
+|14 May 2022
+
+4+^h|*BASE Release 1.2.0*
+
+|1.2.0
+|{spec_tickets}/SPECBASE-34[SPECBASE-34^]: Allow +14:00 timezone.
+|S Iancu
+|22 Mar 2021
+
+|
+|{spec_tickets}/SPECBASE-25[SPECBASE-25^]: Improve and correct function definitions in Foundation types. Add 'nominal' computation functions to `Iso8601_date` and `Iso8601_date_time`. Add `_negative()_` functions to numeric classes and `Iso8601_duration`.
+|openEHR SEC
+|30 Apr 2020
+
+4+^h|*BASE Release 1.1.0*
+
+|1.1.0
+|{spec_tickets}/SPECRM-72[SPECRM-72^]: Add guidance on date/time formatting, recommending extended ISO 8601 format.
+|B Lah
+|22 Nov 2018
+
+|
+|{spec_tickets}/SPECBASE-15[SPECBASE-15^]. Add foundation types specification to BASE component. +
+ Rename `Aggregate` to `Container` to be more consistent with current languages and also openEHR BMM.
+|T Beale 
+|19 Jul 2018
+
+|
+|{spec_tickets}/SPECPUB-6[SPECPUB-6^]. Correct UML package nesting and paths in documents; insert `base` parent package.
+|T Beale
+|27 Nov 2017
+
+|0.7.6
+|Re-organise heading structure. Remove references to ISO 11404. Rename to 'Foundation types'; +
+ added type cross-reference table.
+|T Beale 
+|17 Aug 2017
+
+|0.7.0
+|Initial Writing. Taken from {openehr_rm_103_support}[openEHR RM Release 1.0.3 Support Model]
+|T Beale 
+|20 May 2016
+
+|===
+
+
+The Amendment history relevant to the original content in this specification can be found {openehr_rm_103_support}#_amendment_record[here] ({openehr_rm_support}#_amendment_record[a fully hyper-linked version ]may be found on the working baseline).

@@ -1,0 +1,39 @@
+= Archetype Formalism Overview
+
+The openEHR Archetype formalism, originally described in citenp:[Beale2002] as 'two-level modelling' is designed to be independent of any specific information model, product, technical format, or industry vertical. It is designed so that instances of the formalism, known as Archetypes, can be computationally processed into desired output forms corresponding to specific technology environments. This is routinely performed in openEHR tooling environments.
+
+The formalism primarily addresses the expression of models of possible data instance structures, rather than higher level concepts such as workflows, clinical guidelines (which are decision graphs) and so on, although its general approach can be applied to any of these, i.e. the use of a model of 'what can be said' and a formalism or mechanism for constraining possibilities to the meaningful subset.
+
+Given the two categories of model described above, the archetype formalism, coupled with orthodox information models (typically object-oriented), results in a way to model information from any domain in three logical layers as follows:
+
+Information model:: known as the ‘Reference Model’ (RM) here, which defines the semantics of data;
+Archetypes:: models defining _possible_ arrangements of data that correspond to logical data points and groups for a _domain topic_; a collection of archetypes constitutes a library of re-usable domain content definition elements;
+Templates:: models of content corresponding to _use-case specific data sets_, constituted from archetype elements.
+
+The separation of archetypes and templates from the information model level can be visualised as follows.
+
+[.text-center]
+.Archetype / Information Model Relationship
+image::{diagrams_uri}/archetype_quadrant.svg[id=archetype_quadrant, align="center", width=60%]
+
+In this scheme, the information model (Reference Model) level is consciously designed to be limited to domain-invariant data elements and structures, such as Quantity, Coded text and various generic containment structures. This enables stable data processing software to be built and deployed independently of the definition of specific domain information entities. As noted earlier, a generic information model enables more or less 'any data' instances, while to achieve 'meaningful data', domain content models (archetypes and templates) are required.
+
+Although in the abstract, Archetypes are easily understood, Templates imply some nuances. A Template is an artefact that enables the content defined in published archetypes to be used for a particular use case or business event. In health this is often a ‘health service event’ such as a particular kind of encounter between a patient and a provider. Archetypes define content on the basis of topic or theme e.g. blood pressure, physical exam, report, independently of particular business events. Templates provide the way of using a particular set of archetypes, choosing a particular (often quite limited) set of nodes from each and then limiting values and/or terminology in a way specific to a particular kind of event, such as ‘diabetic patient admission’, ‘ED discharge’ and so on. Such events in an ICT environment often have a corresponding screen ‘form’ (which may have one or more ‘pages’ or subforms and some workflow logic) associated with them; as a result, an openEHR template is often a direct precursor to a form in the presentation layer of application software. Templates are the technical means of using archetypes in runtime systems.
+
+One other semantic ingredient is crucial: that of *terminology*, with the implication of underlying ontology/ies. The RM/Archetypes/Templates ‘model stack’ defines information as it is created and used - an _epistemological view_, but does not try to describe the _ontological_ semantics of each information element. The latter is the business of ontologies, such as can be found in the {obo}[Open Biomedical Ontology (OBO) Foundry^], and terminologies, such as {snomed_ct}[SNOMED CT^], which define naming over an ontological framework for use in particular contexts.
+
+[.text-center]
+.openEHR Semantic Architecture
+image::{diagrams_uri}/openehr_architecture.png[id=openehr_architecture, align="center", width=70%]
+
+The connection of the information model stack to terminology is made in archetypes and templates, via _terminology bindings_. Through these, it is possible to state within archetypes and templates the relationship between the ‘names’ of elements (ontologically: what the element ‘is-about’) with terminology and ontology entities, as well as the relationship between element values, and value domains on the terminology side.
+
+A final ingredient is required in the semantic mix: *querying*. Under the archetype methodology, information queries are defined solely in terms of archetype elements (via paths), terminology concepts and logical reference model types, without regard to data schemas used in the persistence layer. Archetype-based queries are therefore _portable queries_, and only need to be written once for a given logical information structure.
+
+Together, reference model, archetypes, and templates (with bound terminology) constitute a sophisticated _semantic model space_. However, any model needs to be deployed to be useful. Because templates are defined as abstract artefacts, they enable single-source generation of concrete artefacts such as XML schemas, screen forms and so on. This approach means that a single definition of the data set for ‘diabetic patient encounter’ can be used to generate a message definition XSD and a screen form.
+
+It is the template ‘operational’ form that provides the basis for tool-generation of usable downstream concrete artefacts, which embody all the semantics of the implicated Templates in a form usable by ‘normal’ developers with typical expertise and skills.
+
+Downstream artefacts when finally deployed in operational systems are what enable data to be created and queried. Artefacts created by archetype-based ecosystems enable informations systems of significantly higher quality, semantic power and maintainability to be built, because both the data and querying are model-based, and the models are underpinned by terminology and ontology.
+
+Underlying all of this are of course formalisms and tooling - the language and tools of archetypes. This overview describes the archetype specifications and how they fit together and support tool-building as well as downstream model-based software development.

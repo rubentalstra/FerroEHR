@@ -1,0 +1,14 @@
+=== BMM_STATIC Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_STATIC (abstract)__*
+
+h|*Description*
+2+a|Meta-type for static (i.e. read-only) properties.
+
+h|*Inherit*
+2+|`<<_bmm_instantiable_feature_class,BMM_INSTANTIABLE_FEATURE>>`
+
+|===

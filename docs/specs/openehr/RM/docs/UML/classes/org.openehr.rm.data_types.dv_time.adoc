@@ -1,0 +1,75 @@
+=== DV_TIME Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DV_TIME*
+
+h|*Description*
+2+a|Represents an absolute point in time from an origin usually interpreted as meaning the start of the current day, specified to a fraction of a second. Semantics defined by ISO 8601. 
+
+Used for recording real world times, rather than scientifically measured fine amounts of time. The partial form is used for approximate times of events and substance administrations.
+
+h|*Inherit*
+2+|`<<_dv_temporal_class,DV_TEMPORAL>>`, `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_time_class[Iso8601_time^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|ISO8601 time string
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*magnitude* (): `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^]`
+a|Numeric value of the time as seconds since the start of day, i.e. `00:00:00`.
+
+h|*1..1 +
+(effected)*
+|*add* __alias__ "+" ( +
+a_diff: `<<_dv_duration_class,DV_DURATION>>[1]` +
+): `<<_dv_time_class,DV_TIME>>`
+a|Addition of a Duration to this Time.
+
+h|*1..1 +
+(effected)*
+|*subtract* __alias__ "-" ( +
+a_diff: `<<_dv_duration_class,DV_DURATION>>[1]` +
+): `<<_dv_time_class,DV_TIME>>`
+a|Subtract a Duration from this Time.
+
+h|*1..1 +
+(effected)*
+|*diff* __alias__ "-" ( +
+other: `<<_dv_time_class,DV_TIME>>[1]` +
+): `<<_dv_duration_class,DV_DURATION>>`
+a|Difference between this Time and `_other_`.
+
+h|*1..1 +
+(redefined)*
+|*less_than* __alias__ "<" ( +
+other: `<<_dv_time_class,DV_TIME>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_comparable__: `is_strictly_comparable_to (other)` +
+ +
+__Post_result__: `Result = magnitude < other.magnitude`
+a|True if this time object is less than `_other_`, based on comparison of `_magnitude()_`.
+
+h|*1..1 +
+(effected)*
+|*is_strictly_comparable_to* ( +
+other: `<<_dv_time_class,DV_TIME>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True, for any two Times.
+
+h|*Invariants*
+2+a|__Value_valid__: `valid_iso8601_time (value)`
+|===

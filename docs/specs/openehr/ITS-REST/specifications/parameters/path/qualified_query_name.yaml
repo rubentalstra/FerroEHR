@@ -1,0 +1,8 @@
+name: qualified_query_name
+in: path
+description: |
+  The (fully qualified) name of the query to be executed, in a format of `[{namespace}::]{query-name}`.
+required: true
+style: simple
+schema:
+  $ref: ../../schemas/query/QueryName.yaml

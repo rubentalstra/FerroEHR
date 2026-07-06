@@ -1,0 +1,47 @@
+= Preface
+
+== Purpose
+
+This document specifies the openEHR Basic Expression Model and an abstract syntax, denoted the openEHR Basic Expression Language (BEL). The model defines the semantics of a subset of first order predicate style logic that can be used to express rules, primarily in archetypes.
+
+The intended audience includes:
+
+* Standards bodies producing health informatics standards;
+* Academic groups using openEHR;
+* Solution vendors;
+* Medical informaticians and clinicians interested in health information.
+
+== Related Documents
+
+Prerequisite documents for reading this document include:
+
+* The {openehr_overview}[openEHR Architecture Overview^].
+
+Releated documents include:
+
+* The {openehr_am_aom2}[Archetype Object Model 2 (AOM2)^].
+
+== Status
+
+The contents of this specification were separated out from the {openehr_am_aom2}[AOM2 specification] in order to provide a common model of expressions and rules structures for AOM, GDL and other specifications requiring it.
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_basic_expression_language}[{openehr_lang_latest_basic_expression_language}^].
+
+The expression model and language described in this specification defined an initial openEHR expression language when they were developed. They have been implemented in the open source {openehr_archie_github}[Archie project^] as archetype rules and are used in production systems. In terms of development however, BEL and BEOM have been superseded by the {openehr_bmm}#_expressions[openEHR BMM expression model^] and a newer, more powerful {openehr_expression_language}[Expression Language (EL)^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_lang_forum}[openEHR languages specifications forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+Conformance of a data or software artifact to an openEHR specification is determined by a formal test of that artifact against the relevant {openehr_its_component}[openEHR Implementation Technology Specification(s) (ITSs)^], such as an IDL interface or an XML-schema. Since ITSs are formal derivations from underlying models, ITS conformance indicates model conformance.
+

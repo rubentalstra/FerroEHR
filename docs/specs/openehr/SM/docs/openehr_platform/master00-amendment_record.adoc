@@ -1,0 +1,73 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*SM Release 1.0.0 (unreleased)*
+
+|[[latest_issue]]0.9.8
+|Fixes to specific interfaces due to SEC analysis: +
+ Rename `I_DEFINITION_QUERY.register_xx` to `store_xx` and `_formalism_` parameter to `_a_type_`; document representation of formalism version;
+|S Iancu
+|[[latest_issue_date]]13 Dec 2021
+
+|0.9.7
+|Add Subject Proxy Service.
+|T Beale
+|01 Apr 2021
+
+|0.9.6
+|Adjust naming and definitions of elements in `RESULT_SET` classes to reflect REST API.
+|S Iancu
+|25 Mar 2020
+
+|0.9.5
+|Add missing enumeration `_invalid_artefact_` to `DEFINITION_CALL_STATUS_TYPE` ({spec_tickets}/SPECPR-293[SPECPR-293^]); +
+ Add `_xxx_count()_` calls to `I_DEFINITION_XX` interfaces ({spec_tickets}/SPECPR-288[SPECPR-288^]); +
+ Rename `_row_offset_` and `_rows_to_fetch_` to `_item_offset_` and `_items_to_fetch_` ({spec_tickets}/SPECPR-292[SPECPR-292^]); +
+ Change names of `_list_all_xxx()_` functions in `definitions` interfaces to `_list_xxx()_` ({spec_tickets}/SPECPR-292[SPECPR-292^]); +
+ Added `_valid_xxx()_` calls and preconditions to `_upload_xx()_` calls in  `I_DEFINITION_XX` interfaces ({spec_tickets}/SPECPR-291[SPECPR-291^]); +
+ Remove duplicate operation `I_EHR._list_contributions()_` ({spec_tickets}/SPECPR-304[SPECPR-304^]); +
+ Improve documentation of implicit server-side Contribution and Version creation ({spec_tickets}/SPECPR-305[SPECPR-305^]); +
+ Correct argument types of `I_EHR_COMPOSITION._get_composition_xx()_` functions; rename `_get_composition()_` to `_get_composition_latest()_`.
+|P Pazos 
+|28 Feb 2019
+
+|
+|Add `I_DEFINITIONS_CHECKER` and `DEFINITIONS_CHECKER_STATUS` to support definitions validity pre-conditions.
+|T Beale 
+|16 Jan 2019
+
+|0.9.4
+|Improve documentation text; +
+ Reverse order of Parameter and Errors sections in operations text.
+|T Beale 
+|22 Aug 2018
+
+|0.9.3
+|Improve documentation text; +
+ Add section on call conventions; improve query register calls based on REST API 0.9.0. +
+ Add EHR Index section.
+|T Beale 
+|14 Feb 2018
+
+|0.9.2
+|Improve documentation text; +
+ remove `_auth_tok_` argument from calls.
+|T Beale 
+|22 Oct 2017
+
+|0.9.1
+|Added demographic interface calls; +
+ added more admin interface calls.
+|T Beale 
+|18 Oct 2017
+
+|0.9.0
+|{spec_tickets}/SPECSM-1[SPECSM-1^]: Initial writing.
+|openEHR SEC 
+|15 Sep 2017
+
+|===
+

@@ -1,0 +1,22 @@
+=== BMM_PRIMITIVE_VALUE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_PRIMITIVE_VALUE*
+
+h|*Description*
+2+a|Meta-type for literals whose concrete type is a primitive type.
+
+h|*Inherit*
+2+|`<<_bmm_unitary_value_class,BMM_UNITARY_VALUE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*type*: `<<_bmm_simple_type_class,BMM_SIMPLE_TYPE>>`
+a|Concrete type of this literal.
+|===

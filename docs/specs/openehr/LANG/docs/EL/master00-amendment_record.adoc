@@ -1,0 +1,34 @@
+= Amendment Record
+
+[cols="1,6a,2,2", options="header"]
+|===
+|Issue|Details|Raiser, Implementer|Completed
+
+4+^h|*LANG Release 1.0.0*
+
+|[[latest_issue]]2.0.0
+|{spec_tickets}/SPECLANG-1[SPECLANG-1^]. Add Expression Language specification.
+|T Beale
+|[[latest_issue_date]]10 May 2020
+
+|
+|Add Container selectors.
+|T Beale
+|10 May 2020
+
+|
+|Update to be based on BMM `expression` package.
+|T Beale
+|03 Mar 2020
+
+|
+|Initial writing. Added external model use; +
+ added `defined()` and `check()` predicates; +
+ refined quantifiers; +
+ added various kinds of binding; + 
+ change 'EL Text' to 'EL Module' in most cases.
+|T Beale
+|19 Sep 2018
+
+|===
+

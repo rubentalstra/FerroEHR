@@ -1,0 +1,61 @@
+= Relationship to Standards
+
+The openEHR specifications make use of available standards where relevant, and as far as possible in
+a compatible way. However, for the many standards have never been validated in their published form
+(i.e. the form published is not tested in implementations, and may contain errors), openEHR makes
+adjustments so as to ensure quality and coherence of the openEHR models. In general, "using" a
+standard in openEHR may mean defining a set of classes which map it into the openEHR type system,
+or wrap it or express it in some other compatible way, allowing developers to build completely coherent
+openEHR systems, while retaining compliance or compatibility with standards. The standards relevant
+to openEHR fall into a number of categories as follows.
+
+== Standards by which openEHR can be evaluated
+
+These standards define high-level requirements or compliance criteria which can be used to provide a
+means of normative comparison of openEHR with other related specifications or systems:
+
+* {iso_20514}[ISO 20514 - Electronic health record — Definition, scope, and context^].
+* {iso_18308}[ISO 18308 - Technical Specification for Requirements for an EHR Architecture^].
+
+== Standards which have influenced the design of openEHR specifications
+
+The following standards have influenced the design of the openEHR specifications:
+
+* OMG HDTF Standards - general design
+* {iso_13606}[ISO 13606:2005: Electronic Health Record Communication^]
+* CEN HISA 12967-3: Health Informatics Service Architecture - Computational viewpoint
+
+== Standards which have influenced the design of openEHR archetypes
+
+The following standards are mainly domain-level models of clinical practice or concepts, and are being used to design openEHR archetypes and templates.
+
+* CEN HISA 12967-2: Health Informatics Service Architecture - Information viewpoint
+* CEN ENV 13940: Continuity of Care.
+
+== Standards which are used "inside" openEHR
+
+The following standards are used or referenced at a fine-grained level in openEHR:
+
+* {iso_8601}[ISO 8601: Syntax for expressing dates and times^] (used in openEHR Quantity package)
+* {ucum}[Unified Coding for Units of Measure (UCUM)^] (used by openEHR Quantity data type)
+* HL7v3 GTS: General Timing Specification syntax (used by openEHR Time specification data types).
+* some HL7v3 domain vocabularies are mapped to the openEHR terminology.
+* {rfc4880}[IETF RFC4880^] - openPGP.
+
+== Standards which require a conversion gateway
+
+The following standards are in use and require data conversion for use with openEHR:
+
+* {iso_13606}[ISO 13606:2005 - Electronic Health Record Communication^] - near-direct conversion possible, as openEHR and ISO 13606 are actively maintained to be compatible.
+* {hl7_cda}[HL7v3 CDA: Clinical Document Architecture (CDA) release 2.0^] - fairly close conversion may be possible.
+* HL7v3 messages. Quality of conversion currently unknown due to flux in HL7v3 messaging specifications and diversity of message schemas.
+* HL7v2 messages. Importing of HL7v2 message data is technically not difficult, and is already used in some openEHR systems. Export from openEHR may also be possible.
+
+== Generic Technology Standards
+
+The following standards are used or referenced in openEHR:
+
+* {iso_rm_odp}[ISO RM/ODP^]
+* {omg_uml}[OMG UML 2.0^]
+* {w3c_xml_schema}[W3C XML schema 1.0^]
+* {w3c_xpath}[W3C Xpath 1.0^]

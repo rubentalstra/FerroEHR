@@ -1,0 +1,30 @@
+=== RESOURCE_STATUS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*RESOURCE_STATUS*
+
+h|*Description*
+2+a|Object describing the status of a reference to a resource.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*instance_type*: `<<_resource_instance_type_enumeration,RESOURCE_INSTANCE_TYPE>>`
+a|Type of resource instance.
+
+h|*0..1*
+|*start_valid_time*: `@@`
+a|First time point at which resource can be assumed to be available.
+
+h|*0..1*
+|*end_valid_time*: `@@`
+a|Last time point at which resource can be assumed to be available.
+
+h|*0..1*
+|*notes*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Human-readable notes on the resource.
+|===

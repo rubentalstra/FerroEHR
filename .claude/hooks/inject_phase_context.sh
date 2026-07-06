@@ -14,6 +14,9 @@ cd "$root" || exit 0
 mkdir -p .claude
 git rev-parse HEAD >.claude/.session-start-head 2>/dev/null || true
 
+echo "=== spec oracle ==="
+echo "Vendored openEHR spec text + CNF test schedule: docs/specs/openehr/ (index: its README.md; use /spec-lookup). Implement and review all spec-facing behaviour against that text — never from memory or EHRbase behaviour alone (.claude/rules/spec-adherence.md)."
+echo
 echo "=== current phase (docs/plans/current-phase.md) ==="
 cat docs/plans/current-phase.md 2>/dev/null || echo "(docs/plans/current-phase.md missing — read PORT_MASTER_PLAN.md)"
 echo

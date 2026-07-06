@@ -1,0 +1,25 @@
+title: QueryList
+description: |
+  List of Stored Query resources.
+type: array
+items:
+  $ref: ../query/StoredQuery.yaml
+example:
+  - name: "org.openehr::compositions"
+    type: "aql"
+    version: "1.0.1"
+    saved: '2017-07-16T19:20:30.450+01:00'
+    q: >-
+      SELECT c 
+      FROM EHR e[ehr_id/value=$ehr_id] 
+        CONTAINS COMPOSITION c[$compositionid] 
+      WHERE c/name/value = 'Vitals'
+  - name: org.openehr::compositions
+    type: "aql"
+    version: "1.1.7"
+    saved: "2018-06-13T09:37:20.530+01:00"
+    q: >-
+      SELECT c 
+      FROM EHR e[ehr_id/value=$ehr_id] 
+        CONTAINS COMPOSITION c[$uid] 
+      WHERE c/name/value = 'Vitals'

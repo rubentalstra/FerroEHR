@@ -1,0 +1,13 @@
+title: ITEM_TABLE
+type: object
+allOf:
+  - $ref: ../data_structures/ItemStructure.yaml
+properties:
+  _type:
+    type: string
+    default: ITEM_TABLE
+  items:
+    type: array
+    items:
+      $ref: ../data_structures/Clstr.yaml
+x-discriminator-value: ITEM_TABLE

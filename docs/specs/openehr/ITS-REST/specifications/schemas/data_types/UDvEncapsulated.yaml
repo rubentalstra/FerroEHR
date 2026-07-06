@@ -1,0 +1,9 @@
+title: DV_ENCAPSULATED
+oneOf:
+  - $ref: ../data_types/UMDvMultimedia.yaml
+  - $ref: ../data_types/UMDvParsable.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    DV_MULTIMEDIA: ../data_types/UMDvMultimedia.yaml
+    DV_PARSABLE: ../data_types/UMDvParsable.yaml

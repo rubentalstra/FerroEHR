@@ -1,0 +1,74 @@
+=== DV_ORDERED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__DV_ORDERED (abstract)__*
+
+h|*Description*
+2+a|Abstract class defining the concept of ordered values, which includes ordinals as well as true quantities. It defines the functions  `<` and `_is_strictly_comparable_to()_`, the latter of which must evaluate to `True` for instances being compared with the  `<` function, or used as limits in the `DV_INTERVAL<T>` class. 
+
+Data value types which are to be used as limits in the `DV_INTERVAL<T>` class must inherit from this class, and implement the function `_is_strictly_comparable_to()_` to ensure that instances compare meaningfully. For example, instances of `DV_QUANTITY` can only be compared if they measure the same kind of physical quantity.
+
+h|*Inherit*
+2+|`<<_data_value_class,DATA_VALUE>>`, `link:/releases/BASE/{base_release}/foundation_types.html#_ordered_class[Ordered^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*normal_status*: `<<_code_phrase_class,CODE_PHRASE>>`
+a|Optional normal status indicator of value with respect to normal range for this value. Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.
+
+h|*0..1*
+|*normal_range*: `<<_dv_interval_class,DV_INTERVAL>>`
+a|Optional normal range.
+
+h|*0..1*
+|*other_reference_ranges*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_reference_range_class,REFERENCE_RANGE>><<<_dv_ordered_class,DV_ORDERED>>>>`
+a|Optional tagged other reference ranges for this value in its particular measurement context.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*is_strictly_comparable_to* ( +
+other: `<<_dv_ordered_class,DV_ORDERED>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Test if two instances are strictly comparable. Effected in descendants.
+
+h|*1..1*
+|*is_simple* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this quantity has no reference ranges.
+
+h|*1..1*
+|*is_normal* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre__: `normal_range /= Void or normal_status /= Void` +
+ +
+__Post_range__: `normal_range /= Void implies Result = normal_range.has (self)` +
+__Post_status__: `normal_status /= Void implies normal_status.code_string.is_equal (“N”)`
+a|Value is in the normal range, determined by comparison of the value to `_normal_range_` if present, or by the `_normal_status_` marker if present.
+
+h|*1..1 +
+(abstract)*
+|*less_than* __alias__ "<" ( +
+other: `<<_dv_ordered_class,DV_ORDERED>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this Ordered object is less than `_other_`. Redefined in descendants.
+
+h|*Invariants*
+2+a|__Other_reference_ranges_validity__: `other_reference_ranges /= Void implies not other_reference_ranges.is_empty`
+
+h|
+2+a|__Is_simple_validity__: `(normal_range = Void and other_reference_ranges = Void) implies is_simple`
+
+h|
+2+a|__Normal_status_validity__: `normal_status /= Void implies code_set (Code_set_id_normal_statuses).has_code (normal_status)`
+
+h|
+2+a|__Normal_range_and_status_consistency__: `(normal_range /= Void and normal_status /= Void) implies (normal_status.code_string.is_equal (“N”) xor not normal_range.has (self))`
+|===

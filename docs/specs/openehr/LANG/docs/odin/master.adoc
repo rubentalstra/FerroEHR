@@ -1,0 +1,83 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+=== Primary Author
+
+* Thomas Beale, Ars Semantica; openEHR Foundation Management Board; (previously Ocean Informatics UK).
+
+=== Contributors
+
+This specification has benefited from formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+
+* Kurt W. Allen, Applicadia Inc, Minnesota, USA
+* Rong Chen, MD, PhD, Cambio Healthcare Systems, Sweden
+* Sam Heard, MD, DRCOG, MRCGP, FRACGP, Director at Ocean Informatics, Australia
+* Claude Nanjo, MA African Studies., M Public Health, Cognitive Medical Systems Inc., California, USA
+
+=== Supporters
+
+The work reported in this paper has been funded by the following organisations:
+
+* University College London - Centre for Health Informatics and Multi-professional Education (CHIME);
+* Ocean Informatics.
+
+Special thanks to David Ingram, Emeritus Professor of Health Informatics at UCL who provided a vision and collegial working environment ever since the days of GEHR (1992).
+
+=== Trademarks
+
+* 'openEHR' is a trademark of the openEHR Foundation
+* 'Java' is a registered trademark of Oracle Corporation
+* 'Microsoft' and '.Net' are trademarks of the Microsoft Corporation
+
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-basics.adoc[leveloffset=+1]
+include::master04-odin_artefacts.adoc[leveloffset=+1]
+include::master05-content.adoc[leveloffset=+1]
+include::master06-references.adoc[leveloffset=+1]
+include::master07-leaf_data.adoc[leveloffset=+1]
+include::master08-path_syntax.adoc[leveloffset=+1]
+include::master09-plug_in_syntaxes.adoc[leveloffset=+1]
+include::masterAppA-other_syntaxes.adoc[leveloffset=+1]
+include::masterAppB-syntax_spec.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+
+
+//:sectnums!:
+//== References
+

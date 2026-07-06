@@ -1,0 +1,57 @@
+=== PATHABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__PATHABLE (abstract)__*
+
+h|*Description*
+2+a|The `PATHABLE` class defines the pathing capabilities used by nearly all classes in the openEHR reference model, mostly via inheritance of `LOCATABLE`. The defining characteristics of `PATHABLE` objects are that they can locate child objects using paths, and they know their parent object in a compositional hierarchy. The parent feature is defined as abstract in the model, and may be implemented in any way convenient.
+
+h|*Inherit*
+2+|`link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*parent* (): `<<_pathable_class,PATHABLE>>`
+a|Parent of this node in a compositional hierarchy.
+
+h|*1..1*
+|*item_at_path* ( +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]` +
+ +
+__Pre__: `path_unique (a_path)`
+a|The item at a path (relative to this item); only valid for unique paths, i.e. paths that resolve to a single item.
+
+h|*0..1*
+|*items_at_path* ( +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]>`
+a|List of items corresponding to a non-unique path.
+
+h|*1..1*
+|*path_exists* ( +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre__: `not a_path.is_empty`
+a|True if the path exists in the data with respect to the current item.
+
+h|*1..1*
+|*path_unique* ( +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre__: `path_exists (a_path)`
+a|True if the path corresponds to a single item in the data.
+
+h|*1..1*
+|*path_of_item* ( +
+a_loc: `<<_pathable_class,PATHABLE>>[1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The path to an item relative to the root of this archetyped structure.
+|===

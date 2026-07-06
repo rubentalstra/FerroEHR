@@ -1,0 +1,18 @@
+== Deprecated Sections
+
+=== Concept Section
+
+A 'concept' section was required up until ADL 1.4. In ADL 1.5, the concept section is deprecated, but allowed, enabling ADL 1.4 archetypes to be treated as valid. It will be removed in a future version of ADL, since it is completely redundant.
+
+All archetypes represent some real world concept, such as a "patient", a "blood pressure", or an "ante-natal examination". The concept is always coded, ensuring that it can be displayed in any language the archetype has been translated to. A typical `concept` section is as follows:
+
+----
+concept [at0000] -- haematology result
+----
+
+In this concept definition, the term definition of `[at0000]` is the proper description corresponding to the "haematology-cbc" section of the archetype identifier above.
+
+The following syntax validity rule applies to the concept section, if present, allowing parsers to correctly ignore it:
+
+[.rule]
+SACO: archetype concept validity: if a concept section is present, it must consist of the 'concept' keyword and a single local term.

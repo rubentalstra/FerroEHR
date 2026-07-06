@@ -1,0 +1,1601 @@
+== Object Redefinition
+
+Object redefinition can occur for any object constraint in the parent archetype, and can include redefinition of node identifier, occurrences, reference model type. For certain kinds of object constraints, specific kinds of redefinition are possible.
+
+=== Node Identifiers
+
+In an archetype, node identifiers ('at-codes' / 'id-codes') are mandatory on all object constraint nodes. The identifiers of those object nodes defined as children of a multiply-valued attribute and multiple alternative children of single-valued attributes (see <<Node Identifiers>>) require definitions in the archetype terminology. Definitions are optional on other single child constraints of single-valued attributes. This rule applies in specialised as well as top-level archetypes.
+
+A key question is: when does a node identifier need to be redefined? There are three possible situations:
+
+* when the node is the root node of an archetype, the meaning is always considered to be redefined;
+* it can be redefined for purely semantic purposes on other nodes, e.g. to redefine 'heart rate' to 'fetal heart rate';
+* a node identifier must be redefined if the node is being redefined into multiple child nodes, either under a multiply-valued attribute, or as alternatives under a single-valued attribute.
+
+Redefinition of an object node identifier for purely semantic purposes, unaccompanied by any other kind of constraint change is done as shown in the following example.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    EVALUATION[at0000] ∈ {                                      -- Medical Certificate
+        data ∈ {
+            ITEM_TREE[at0001] ∈ {
+                items ∈ {
+                    ELEMENT[at0004] occurrences ∈ {0..1} ∈ {   -- Description
+                        value ∈ {
+                            DV_TEXT[at9000]
+                        }
+                    }
+                }
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    EVALUATION[id1] ∈ {                                      -- Medical Certificate
+        data ∈ {
+            ITEM_TREE[id2] ∈ {
+                items ∈ {
+                    ELEMENT[id5] occurrences ∈ {0..1} ∈ {   -- Description
+                        value ∈ {
+                            DV_TEXT[id7]
+                        }
+                    }
+                }
+            }
+        }
+    }
+--------
+====
+
+Child archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    EVALUATION[at0000.1] ∈ {                              -- Singapore Medical Certificate
+        /data[at0001]/items ∈ {
+            ELEMENT[at0004.1]                             -- Summary
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    EVALUATION[id1.1] ∈ {                              -- Singapore Medical Certificate
+        /data[id2]/items ∈ {
+            ELEMENT[id5.1]                             -- Summary
+        }
+    }
+--------
+====
+
+Here the `at0004` (`id5`) ('Description') node is refined in meaning to `at0004.1` (`id5.1`) ('Summary'). Since there is no other constraint to be stated, no further `matches` block is required.
+
+An example of the 3rd case above of redefinition is shown in the first archetype in <<redefinition_for_specialisation>>, where the node `[at0078]` (`[id79]`) is redefined into a number of more specialised nodes `[at0078.2]` - `[at0078.9]` (`[id79.2]` - `[id79.9]`), while in the second, the identifier `[at0001]` (`[id2]`) is redefined to a single node `[at0001.1]` (`[id2.1]`).
+
+The syntactic form of the identifier of a redefined node is a copy of the original followed by a dot ('.'), optionally intervening instances of the pattern '0.' and then a further non-zero number, i.e.:
+
+* at-coded archetypes: `atNNNN {.0}* .N`
+* id-coded archetypes: `idN {.0}* .N`
+
+This permits node identifiers from a given level to be redefined not just at the next level, but at multiple levels below.
+
+The following are examples of redefined node identifiers:
+
+* at-coded archetypes:
+** `at0001.1`: redefinition of `at0001` at level 1 specialisation;
+** `at0001.0.1`: redefinition of `at0001` node in level 2 specialisation archetype;
+** `at0001.1.1`: redefinition of `at0001.1` in level 2 specialisation archetype.
+* id-coded archetypes:
+** `id2.1`: redefinition of `id2` at level 1 specialisation;
+** `id2.0.1`: redefinition of `id2` node in level 2 specialisation archetype;
+** `id2.1.1`: redefinition of `id2.1` in level 2 specialisation archetype.
+
+The digits '1' and '2' here should not be confused with levels 1 and 2. The above identifiers based on an `at0005` (`id6`) node might easily be:
+
+* at-coded archetypes:
+** `at0005.7`: redefinition of `at0005` in a level 1 specialisation archetype;
+** `at0005.0.8`: redefinition of `at0005` node in a level 2 specialisation archetype;
+** `at0005.7.8`: redefinition of `at0005.7` in a level 2 specialisation archetype.
+* id-coded archetypes:
+** `id6.7`: redefinition of `id6` in a level 1 specialisation archetype;
+** `id6.0.8`: redefinition of `id6` node in a level 2 specialisation archetype;
+** `id6.7.8`: redefinition of `id6.7` in a level 2 specialisation archetype.
+
+==== Adding Nodes
+
+Added object constraint nodes carry identifiers according to the rule mentioned above. The second example includes the new node identifiers `at0.32` , `at0.35` and `at0.37` (`id0.32` , `id0.35` and `id0.37`), whose codes start with a '0'. indicating that they have no equivalent code in the parent archetype.
+
+The node identifier syntax of an extension node commences with at least one instance of the pattern '0.'. The structure of node identifiers for both kinds of node thus always indicates at what level the identifier was introduced, given by the number of dots.
+
+Examples of added node identifiers:
+
+* at-coded archetypes:
+** `at0.1`  : identifier of extension node introduced at level 1;
+** `at0.0.1`: identifier of extension node introduced at level 2.
+* id-coded archetypes:
+** `id0.1`  : identifier of extension node introduced at level 1;
+** `id0.0.1`: identifier of extension node introduced at level 2.
+
+When a flat form is created, the level at which any given node was introduced or redefined is clear due to the identifier coding system.
+
+=== Occurrences Redefinition
+
+The `occurrences` constraint on an object node indicates how many instances within the data may conform to that constraint (see <<Container Attributes>>). Occurrences may be redefined for various reasons, including:
+
+* mandation of specific specialised objects;
+* exclusion of certain objects from the parent;
+* controlling occurrences of a specialised object to a specific range.
+
+A basic distinction should be understood prior to considering these specific cases, which is a difference between redefinition of occurrences on a single-occurrence node versus a multiple-occurrence node.
+
+A single-occurrence node is one whose effective occurrences has an upper limit of 1, i.e. it can occur either 0..1 or 1 times in data. This is the case for any object node under a single-valued attribute, as well as any object node under a container attribute, that has occurrences set to either 0..1 or 1. The occurrences of such a node can only be redefined in very limited ways, i.e. mandation or exclusion of 0..1.
+
+The situation is different for object nodes with multiple occurrences, i.e. whose effective occurrences upper limit is greater than one. The example provided above in <<Redefinition for Specialisation>> in which node `at0078|panel item|` (`id79|panel item|`) in the parent archetype is specialised into multiple nodes `at0078.1`, `at0078.2` (`id79.1`, `id79.2`) etc, illustrates the standard pattern. When a parent object (the `at0078` (`id79`) node in the parent archetype) has multiple occurrences, it defines a potential _multiplicity_ of data objects that may conform to it. When such a node is redefined into multiple specialised child nodes in a child archetype (each typically having its own occurrences constraint), the latter _specialisation set_ acts as a more precise restatement of the original multiplicity of objects. For this reason, the _collective occurrences_ of the specialised children is used to determine their validity, rather than any individual comparison of the occurrences of one specialised child to that of the parent.
+
+The formal definition of validity for occurrences in both cases is given by the VSONCO rule in the {openehr_am_aom2}#_validity_rules_3[openEHR AOM2 specification^].
+
+==== Mandation
+
+Within container attributes, `occurrences` is usually redefined in order to make a given object mandatory rather than optional. In the following example, the occurrences of the `at0003` (`id4`) node is redefined from `{0..1}` i.e. optional, to `{1}` , i.e. mandatory.
+
+Parent (`openEHR-EHR-EVALUATION.problem.v1.0.3`):
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    EVALUATION[at0000] ∈ { -- Problem
+        data ∈ {
+            ITEM_TREE[at0001] ∈ {
+                items cardinality ∈ {0..*; ordered} ∈ {
+                    ELEMENT[at0002] occurrences ∈ {1} ∈ {...}       -- Problem
+                    ELEMENT[at0003] occurrences ∈ {0..1} ∈ {...}    -- Date of initial onset
+                    -- etc
+                }
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    EVALUATION[id1] ∈ { -- Problem
+        data ∈ {
+            ITEM_TREE[id2] ∈ {
+                items cardinality ∈ {0..*; ordered} ∈ {
+                    ELEMENT[id3] occurrences ∈ {1} ∈ {...}       -- Problem
+                    ELEMENT[id4] occurrences ∈ {0..1} ∈ {...}    -- Date of initial onset
+                    -- etc
+                }
+            }
+        }
+    }
+--------
+====
+
+Child (`openEHR-EHR-EVALUATION.problem-diagnosis.v1`):
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    /data[at0001]/items ∈ {
+        ELEMENT[at0003] occurrences ∈ {1}  -- Date of initial onset
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    /data[id2]/items ∈ {
+        ELEMENT[id4] occurrences ∈ {1}  -- Date of initial onset
+    }
+--------
+====
+
+In the above we can see that if the only change in the redefinition is to occurrences, the remainder of the block from the parent is not repeated in the child.
+
+==== Exclusion
+
+Occurrences is most commonly constrained on child objects of container attributes, but can be set on objects of any attribute to effect exclusion of part of the instance space. This can be useful in archetypes where a number of alternatives for a single-valued attribute have been stated, and the need is to remove some alternatives in a specialised child archetype. For example, an archetype might have the following constraint:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ELEMENT[at0002] ∈ {
+        value ∈ {
+            DV_QUANTITY[at9000] ∈ {...}
+            DV_INTERVAL<DV_QUANTITY>[at9001] ∈ {...}
+            DV_COUNT[at9002] ∈ {...}
+            DV_INTERVAL<DV_COUNT>[at9003] ∈ {...}
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ELEMENT[id3] ∈ {
+        value ∈ {
+            DV_QUANTITY[id4] ∈ {...}
+            DV_INTERVAL<DV_QUANTITY>[id5] ∈ {...}
+            DV_COUNT[id6] ∈ {...}
+            DV_INTERVAL<DV_COUNT>[id7] ∈ {...}
+        }
+    }
+--------
+====
+
+and the intention is to remove the `DV_INTERVAL<*>` alternatives. This is achieved by redefining the enclosing object to remove the relevant types:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ELEMENT[at0002] ∈ {
+        value ∈ {
+            DV_INTERVAL<DV_QUANTITY>[at9000] occurrences ∈ {0}
+            DV_INTERVAL<DV_COUNT>[at9003] occurrences ∈ {0}
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ELEMENT[id3] ∈ {
+        value ∈ {
+            DV_INTERVAL<DV_QUANTITY>[id4] occurrences ∈ {0}
+            DV_INTERVAL<DV_COUNT>[id7] occurrences ∈ {0}
+        }
+    }
+--------
+====
+
+Exclusion by setting occurrences to `{0}` is also common in templates, and is used to remove specific child objects of container attributes, as in the following example:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    /data[at0001]/items ∈ {
+        CLUSTER[at0025] occurrences ∈ {0}     -- remove 'Related problems'
+        ELEMENT[at0030] occurrences ∈ {0}     -- remove 'Age at resolution'
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    /data[id2]/items ∈ {
+        CLUSTER[id26] occurrences ∈ {0}     -- remove 'Related problems'
+        ELEMENT[id31] occurrences ∈ {0}     -- remove 'Age at resolution'
+    }
+--------
+====
+
+If the whole attribute is to be removed, this can be done by redefining existence to `{0}`, as described in <<Existence Redefinition: Mandation and Exclusion>>.
+
+=== Single and Multiple Specialisation - When does Cloning Occur?
+
+In the <<Examples,examples shown above>> there are two types of redefinition occurring. The first shows a single node in the parent archetype redefined by a single node, both identified by `at0003` (`id4`). The second shows a single node in the parent redefined by multiple children. In the first example, the result of flattening is _in-place overlaying_, while in the second, it is _cloning with overlaying_. The consequence of the second type of redefinition is that the original parent node survives in its original form in the child archetype, whereas in the first, it is replaced. The reasoning behind this is that redefinition to multiple children is taken to mean that later redefinition to multiple children may occur in deeper child archetypes, and for this to occur, the original parent needs to be left intact. Conversely, the single-parent / single-child redefinition is taken to mean a logical refinement of an existing node, which should therefore be logically replaced.
+
+The formal rule for whether cloning occurs or not is as follows:
+
+----
+    clone not needed = max effective_occurrences of object node in parent archetype = 1 OR
+        object node in child differential archetype is sole child of its parent, and has max occurrences = 1
+----
+
+The first case corresponds to the situation where the 'effective occurrences' of any child of an attribute can be inferred to be maximum 1, i.e. either the attribute is single-valued, or it is a container with a cardinality constraint with maximum 1. The second is where the object in the child archetype has an explicit occurrences constraint of max 1. In the above, the `_effective_occurrences_` function is defined in the {openehr_am_aom2}#_occurrences_inferencing_rules[AOM2 specification].
+
+=== Exhaustive and Non-Exhaustive Redefinition
+
+In any multiple specialisation situation, there is a question of whether the original node being specialised (e.g. `at0078` (`id79`) and `at0001` (`id2`) in the examples above) remains available for further redefinition in subsequent child archetypes, or do the redefinition children _exhaustively_ define the instance space for the given parent node?
+
+Should these children be considered exhaustive? One point of view says so, since all subsequently discovered varieties of hepatitis (C, D, E, etc) would now become children of 'hepatitis non-A non-B'. However, this is likely to be sub-optimal, since now the category 'hepatitis non-A non-B' probably exists solely because of the order in which the various hepatitis virus tests were perfected. Therefore an alternative argument would say that the categories 'hepatitis C', 'hepatitis D' etc should be defined directly below 'hepatitis', as if 'hepatitis non-A non-B' had never existed. Under this argument, the children would not be declared, even when they are theoretically exhaustive.
+
+This kind of argument comes up time and again, and the need for catch-all categories (archetype nodes) and the possibility of future discoveries cannot be predicted. Even in situations such as a lab result (e.g. cholesterol), where the list of analytes seem to be known and fixed, experience of clinical modellers has shown that there is nevertheless no guarantee of not needing another data point, perhaps for something other than an analyte.
+
+The default situation is that child redefinition nodes do not exhaustively replace the parent unless explicitly stated otherwise. This may be done by excluding the parent node in the normal way, i.e. using `occurrences matches {0}`. *If an exclusion node is included, it must come last* in the set of siblings that specialise the parent node, otherwise a deletion will occur, leaving no node to specialise. The first example would then become:
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    items cardinality ∈ {0..*; unordered} ∈ {
+        CLUSTER[at0003] occurrences ∈ {1} ∈ {...}                          -- Specimen
+        CLUSTER[at0010] occurrences ∈ {0..*} ∈ {...}                      -- level 1
+        ELEMENT[at0078] occurrences ∈ {0..*} ∈ {                          -- panel item
+            value ∈ {*}
+        }
+        ELEMENT[at0016] occurrences ∈ {0..1} ∈ {...}                      -- Overall Comment
+        ELEMENT[at0036] occurrences ∈ {0..1} ∈ {...}                      -- Multimedia rep.
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    items cardinality ∈ {0..*; unordered} ∈ {
+        CLUSTER[id4] occurrences ∈ {1} ∈ {...}                          -- Specimen
+        CLUSTER[id11] occurrences ∈ {0..*} ∈ {...}                      -- level 1
+        ELEMENT[id79] occurrences ∈ {0..*} ∈ {                          -- panel item
+            value ∈ {*}
+        }
+        ELEMENT[id17] occurrences ∈ {0..1} ∈ {...}                      -- Overall Comment
+        ELEMENT[id37] occurrences ∈ {0..1} ∈ {...}                      -- Multimedia rep.
+        }
+    }
+--------
+====
+
+Child archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    /data/events[at0001]/data/items ∈ {
+        ELEMENT[at0078.1] occurrences ∈ {0..1} ∈ {...}                    -- TSH
+        ELEMENT[at0078.2] occurrences ∈ {0..1} ∈ {...}                    -- Free Triiodothyronine
+        ELEMENT[at0078.3] occurrences ∈ {0..1} ∈ {...}                    -- Total Triiodothyronine
+        ELEMENT[at0078.4] occurrences ∈ {0..1} ∈ {...}                    -- Free thyroxine (Free T4)
+        ELEMENT[at0078.5] occurrences ∈ {0..1} ∈ {...}                    -- Total Thyroxine (Total T4)
+        ELEMENT[at0078.6] occurrences ∈ {0..1} ∈ {...}                    -- T4 loaded uptake
+        ELEMENT[at0078.7] occurrences ∈ {0..1} ∈ {...}                    -- Free Triiodothyronine index
+        ELEMENT[at0078.8] occurrences ∈ {0..1} ∈ {...}                    -- Free thyroxine index (FTI)
+        ELEMENT[at0078] occurrences ∈ {0}                                  -- MUST COME LAST!
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    /data/events[id2]/data/items ∈ {
+        ELEMENT[id79.1] occurrences ∈ {0..1} ∈ {...}                    -- TSH
+        ELEMENT[id79.2] occurrences ∈ {0..1} ∈ {...}                    -- Free Triiodothyronine
+        ELEMENT[id79.3] occurrences ∈ {0..1} ∈ {...}                    -- Total Triiodothyronine
+        ELEMENT[id79.4] occurrences ∈ {0..1} ∈ {...}                    -- Free thyroxine (Free T4)
+        ELEMENT[id79.5] occurrences ∈ {0..1} ∈ {...}                    -- Total Thyroxine (Total T4)
+        ELEMENT[id79.6] occurrences ∈ {0..1} ∈ {...}                    -- T4 loaded uptake
+        ELEMENT[id79.7] occurrences ∈ {0..1} ∈ {...}                    -- Free Triiodothyronine index
+        ELEMENT[id79.8] occurrences ∈ {0..1} ∈ {...}                    -- Free thyroxine index (FTI)
+        ELEMENT[id79] occurrences ∈ {0}                                  -- MUST COME LAST!
+    }
+--------
+====
+
+Without the above specification, a deeper child archetype could then redefine both the original `at0078` (`id79`) node (e.g. into `at0078.0.1` , `at0078.0.2` (`id79.0.1` , `id79.0.2`)), and any of the `at0078.x` (`id79.x`) nodes (e.g. `at0078.1.1` , `at0078.1.2` (`id79.1.1` , `id79.1.2`)); with it, only the latter is possible. The `at0078` (`id79`) node can thus be considered to be logically 'frozen', in a similar way to frozen class methods in some programming languages.
+
+=== Reference Model Type Refinement
+
+The type of an object may be redefined to one of its subtypes as defined by the reference model. A typical example of where this occurs in archetypes based on the openEHR reference model is when `ELEMENT._value_` is constrained to `*` in a parent archetype, meaning 'no further constraint on its RM type of `DATA_VALUE`, but is then constrained in a specialised archetype to subtypes of `DATA_VALUE`, e.g. `DV_QUANTITY` or `DV_PROPORTION` (see {openehr_rm_data_types}[openEHR Data Types^]). The following figure contains a simplified extract of the data values part of the openEHR reference model, and is the basis for the examples below.
+
+[.text-center]
+.Example Reference Model type structure
+image::{diagrams_uri}/RM-data_types-overview.svg[id=rm_type_structure, align="center", width=50%]
+
+The most basic form of type refinement is shown in the following example:
+
+Parent archetype:
+
+[source, cadl]
+--------
+    value ∈ {*} -- any subtype of DATA_VALUE, from the ref model
+--------
+
+Specialised archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[at9000] -- now limit to the DV_QUANTITY subtype
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[id8] -- now limit to the DV_QUANTITY subtype
+    }
+--------
+====
+
+The meaning of the above is that instance data constrained by the specialised archetype at the value node must match the `DV_QUANTITY` constraint only - no other subtype of `DATA_VALUE` is allowed.
+
+When a type in an archetype is redefined into one of its subtypes, any existing constraints on the original type in the parent archetype are respected. In the following example, a `DV_AMOUNT` constraint that required _accuracy_ to be present and in the range +/-5% is refined into a `DV_QUANTITY` in which two attributes of the subtype are constrained. The original _accuracy_ attribute is inherited without change.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    value ∈ {
+        DV_AMOUNT[at9000] ∈ {
+            accuracy ∈ {|-0.05..0.05|}
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    value ∈ {
+        DV_AMOUNT[id4] ∈ {
+            accuracy ∈ {|-0.05..0.05|}
+        }
+    }
+--------
+====
+
+Specialised archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[at9000] ∈ {
+            magnitude ∈ {|2.0..10.0|}
+            units ∈ {"mmol/ml"}
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[id4] ∈ {
+            magnitude ∈ {|2.0..10.0|}
+            units ∈ {"mmol/ml"}
+        }
+    }
+--------
+====
+
+In the same manner, an object node can be specialised into more than one subtype, where each such constraint selects a mutually exclusive subset of the instance space. The following example shows a specialisation of the `DV_AMOUNT` constraint above into two sub-typed constraints.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[at9000.1] ∈ {
+            magnitude ∈ {|2.0..10.0|}
+            units ∈ {"mmol/ml"}
+        }
+        DV_PROPORTION[at9000.2] ∈ {
+            numerator ∈ {|2.0..10.0|}
+            type ∈ {1} -- pk_unitary
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[id4.1] ∈ {
+            magnitude ∈ {|2.0..10.0|}
+            units ∈ {"mmol/ml"}
+        }
+        DV_PROPORTION[id4.2] ∈ {
+            numerator ∈ {|2.0..10.0|}
+            type ∈ {1} -- pk_unitary
+        }
+    }
+--------
+====
+
+Here, instance data may only be of type `DV_QUANTITY` or `DV_PROPORTION`, and must satisfy the respective constraints for those types.
+
+A final variant of subtyping is when the intention is to constraint the data to a supertype with exceptions for particular subtypes. In this case, constraints based on subtypes are matched first, with the constraint based on the parent type being used to constrain all other subtypes. The following example constrains data at the _value_ node to be:
+
+* an instance of `DV_QUANTITY` with _magnitude_ within the given range etc;
+* an instance of `DV_PROPORTION` with _numerator_ in the given range etc;
+* an instance of any other subtype of `DV_AMOUNT`, with _accuracy_ in the given range.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[at9000] ∈ {
+            magnitude ∈ {|2.0..10.0|}
+            units ∈ {"mmol/ml"}
+        }
+        DV_PROPORTION[at9001] ∈ {
+            numerator ∈ {|2.0..10.0|}
+            type ∈ {pk_unitary}
+        }
+        DV_AMOUNT[at9002] ∈ {
+            accuracy ∈ {|-0.05..0.05|}
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[id4] ∈ {
+            magnitude ∈ {|2.0..10.0|}
+            units ∈ {"mmol/ml"}
+        }
+        DV_PROPORTION[id5] ∈ {
+            numerator ∈ {|2.0..10.0|}
+            type ∈ {pk_unitary}
+        }
+        DV_AMOUNT[id6] ∈ {
+            accuracy ∈ {|-0.05..0.05|}
+        }
+    }
+--------
+====
+
+A typical use of this kind of refinement in openEHR would be to add an alternative for a `DV_CODED_TEXT` constraint for a specific terminology to an existing `DV_TEXT` constraint in a `_name_` attribute, as follows:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+definition
+    ...
+        name ∈ {
+            DV_CODED_TEXT[at0078] ∈ {
+                defining_code ∈ {[ac1]}
+            }
+            DV_TEXT[at0013] ∈ {
+                value ∈ {/.+/} -- non-empty string
+            }
+        }
+    ...
+
+terminology
+    ...
+    term_bindings = <
+        ["snomed_ct"]    = <
+            ["ac1"] = <http://snomed.info/123456789> -- any SNOMED CT code
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+definition
+    ...
+        name ∈ {
+            DV_CODED_TEXT[id79] ∈ {
+                defining_code ∈ {[ac1]}
+            }
+            DV_TEXT[id14] ∈ {
+                value ∈ {/.+/} -- non-empty string
+            }
+        }
+    ...
+
+terminology
+    ...
+    term_bindings = <
+        ["snomed_ct"]    = <
+            ["ac1"] = <http://snomed.info/123456789> -- any SNOMED CT code
+        >
+    >
+--------
+====
+
+All of the above specialisations based on reference model subtypes can be applied in the same way to identified object constraints.
+
+=== Internal Reference (Proxy Object) Redefinition
+
+An archetype proxy object, or `use_node` constraint is used to refer to an object constraint from a point elsewhere in the archetype. These references can be redefined in two ways, as follows.
+
+* Target redefinition: the target constraint of reference may be itself redefined. The meaning for this is that all internal references now assume the redefined form.
+* Reference redefinition: specialised archetypes can redefine a use_node object into a normal inline concrete constraint that a) replaces the reference, and b) must be completely conformant to the structure which is the target of the original reference.
+
+Note that if the intention is to redefine a structure referred to by `use_node` constraints, but to leave the constraints at the reference source points in form to which the reference points in the parent level, each `use_node` reference needs to be manually redefined as a copy of the target structure originally pointed to.
+
+The second type of redefinition above is the most common, and is shown in the following example.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ENTRY[at0000]∈ {
+        data ∈ {
+            CLUSTER[at0001] ∈ {
+                items ∈ {
+                    -- etc --
+                }
+            }
+            use_node CLUSTER[at0002] /data[at0001]
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ENTRY[id1]∈ {
+        data ∈ {
+            CLUSTER[id2] ∈ {
+                items ∈ {
+                    -- etc --
+                }
+            }
+            use_node CLUSTER[id3] /data[id2]
+        }
+    }
+--------
+====
+
+Child archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ENTRY [at0000.1]∈ {
+        /data[at0002]/items ∈ {
+            ELEMENT [at0.1] ∈ {
+                -- etc --
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ENTRY [id1.1]∈ {
+        /data[id3]/items ∈ {
+            ELEMENT [id0.1] ∈ {
+                -- etc --
+            }
+        }
+    }
+--------
+====
+
+Remembering that the parent archetype is essentially just definition two sibling object structures with the identifiers `at0000` and `at0001` (`id1` and `id2`) (defined by the use_node reference), the child is redefining the `at0001` (`id2`) node (it could have redefined the `at0000` (`id1`) node as well). The result of this in the flattened output is as follows:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    ENTRY [at0000.1] ∈ {
+        data ∈ {
+            CLUSTER[at0001] ∈ {
+                items ∈ {
+                    -- etc --
+                }
+            }
+            CLUSTER[at0002] ∈ {
+                items ∈ {
+                    ELEMENT[at0.1] ∈ {
+                        -- etc --
+                    }
+                }
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    ENTRY [id1.1] ∈ {
+        data ∈ {
+            CLUSTER[id2] ∈ {
+                items ∈ {
+                    -- etc --
+                }
+            }
+            CLUSTER[id3] ∈ {
+                items ∈ {
+                    ELEMENT[id0.1] ∈ {
+                        -- etc --
+                    }
+                }
+            }
+        }
+    }
+--------
+====
+
+There is one subtlety to do with redefinition of occurrences of a use_node target: if it is redefined to have occurrences matches `{0}` (normally only in a template), then the effect of this is the same on any use_node reference definitions, unless they define occurrences locally at the reference point. The chance of this actually occurring appears vanishingly small, since by the time 'exclusion' occurrence redefinition is being done in templates, use_node object definitions are most likely to have been locally overridden anyway.
+
+Lastly, one further type of redefinition appears technically possible, but seems of no utility, and is therefore not part of ADL:
+
+* Reference re-targeting: an internal reference could potentially be redefined into a reference to a different target whose structure conforms to the original target.
+
+=== External Reference Redefinition
+
+External reference nodes can be redefined by another external reference node, in the following ways:
+
+* exclusion - using the occurrences matches `{0}` method;
+* semantic refinement of the node identifier in the normal way;
+* redefinition of the reference to another archetype which is a specialisation of the one from the corresponding reference node in the flat parent.
+
+=== Slot Filling and Redefinition
+
+Slots and slot-filling is a special kind of 'redefinition' in ADL, normally only used in templates. Logically, an archetype slot constraint is understood to consist of a) its definition (what archetypes are allowed to fill it) and b) current filler list. At the point of definition, the current fillers is invariably empty. More specialised descendants can progressively add or replace fillers for a slot. Thus, the appearance of an object node whose identifier is the specialisation of a slot node in the flat parent is always understood as a partial specialisation for it.
+
+In other words, a slot within an archetype can be specialised by any combination of the following:
+
+* one or more slot-fillers;
+* a redefinition of the slot itself, either to narrow the set of archetypes it matches, or to close it to filling in either further specialisations, or at runtime, or to remove it.
+
+Both types of redefinition are generally used by templates rather than published archetypes, since the business of filling slots is mostly related to local use-case specific uses of archetypes rather than part of the initial design.
+
+The following example shows a slot from a `SECTION` archetype for the 'history_medical_surgical' archetype.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    SECTION[at0000] ∈ {    -- Past history
+        items ∈ {
+            allow_archetype EVALUATION[at0001] ∈ { -- Past problems
+                include
+                    archetype_id/value ∈ {
+                        /openEHR-EHR-EVALUATION\.clinical_synopsis\.v1
+                            |openEHR-EHR-EVALUATION\.excluded(-[a-z0-9_]+)*\.v1
+                            |openEHR-EHR-EVALUATION\.injury\.v1
+                            |openEHR-EHR-EVALUATION\.problem(-[a-z0-9_]+)*\.v1/}
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    SECTION[id1] ∈ {    -- Past history
+        items ∈ {
+            allow_archetype EVALUATION[id2] ∈ { -- Past problems
+                include
+                    archetype_id/value ∈ {
+                        /openEHR-EHR-EVALUATION\.clinical_synopsis\.v1
+                            |openEHR-EHR-EVALUATION\.excluded(-[a-z0-9_]+)*\.v1
+                            |openEHR-EHR-EVALUATION\.injury\.v1
+                            |openEHR-EHR-EVALUATION\.problem(-[a-z0-9_]+)*\.v1/}
+            }
+        }
+    }
+--------
+====
+
+This slot specification allows `EVALUATION` archetypes for the concepts 'clinical synopsis', various kinds of 'exclusions' and 'problems', and 'injury' to be used, and no others. The following fragment of ADL shows how the slot is filled in a template, using the keyword `use_archetype`. In this syntax, the node identification is a variation on the normal archetype at-codes (id-codes). Within the template, the identifier of the used archetype is also the identifier of that node. However, the original at-code (if defined) must also be mentioned, to indicate which slot the used archetype is filling. Templates may also be used to fill slots in the same way. Thus, in the following example, two archetypes and a template are designated to fill the `at0001` (`id2`) slot defined in the above fragment of ADL. The slot definition is not mentioned, so it remains unchanged, i.e. 'open'.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    SECTION[at0000] ∈ {    -- Past history
+        /items ∈ {
+            use_archetype EVALUATION[at0001, org.openehr::openEHR-EHR-EVALUATION.problem.v1]
+            use_archetype EVALUATION[at0001, uk.nhs.cfh::openEHR-EHR-EVALUATION.t_ed_diagnosis.v1]
+            use_archetype EVALUATION[at0001, org.openehr::openEHR-EHR-EVALUATION.clin_synopsis.v1]
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    SECTION[id1] ∈ {    -- Past history
+        /items ∈ {
+            use_archetype EVALUATION[id2, org.openehr::openEHR-EHR-EVALUATION.problem.v1]
+            use_archetype EVALUATION[id2, uk.nhs.cfh::openEHR-EHR-EVALUATION.t_ed_diagnosis.v1]
+            use_archetype EVALUATION[id2, org.openehr::openEHR-EHR-EVALUATION.clin_synopsis.v1]
+        }
+    }
+--------
+====
+
+Slots can be recursively filled in the above fashion, according to the possibilities offered by the chosen archetypes or templates. The following ADL fragment shows two levels of slot-filling:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    use_archetype COMPOSITION[openEHR-EHR-COMPOSITION.xxx.v1] ∈ {
+        /content ∈ {
+            use_archetype SECTION[at0000, org.openehr::openEHR-EHR-SECTION.yyy.v1] ∈ {
+                /items ∈ {
+                    use_archetype EVALUATION[at0001, uk.nhs.cfh::openEHR-EHR-EVALUATION.t_xx.v1]
+                    use_archetype EVALUATION[at0001, org.openehr::openEHR-EHR-EVALUATION.xx.v1]
+                    use_archetype EVALUATION[at0002, org.openehr::openEHR-EHR-EVALUATION.xx.v1]
+                }
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    use_archetype COMPOSITION[openEHR-EHR-COMPOSITION.xxx.v1] ∈ {
+        /content ∈ {
+            use_archetype SECTION[id1, org.openehr::openEHR-EHR-SECTION.yyy.v1] ∈ {
+                /items ∈ {
+                    use_archetype EVALUATION[id2, uk.nhs.cfh::openEHR-EHR-EVALUATION.t_xx.v1]
+                    use_archetype EVALUATION[id2, org.openehr::openEHR-EHR-EVALUATION.xx.v1]
+                    use_archetype EVALUATION[id3, org.openehr::openEHR-EHR-EVALUATION.xx.v1]
+                }
+            }
+        }
+    }
+--------
+====
+
+Note that in the above the archetype fillers are specified as published archetypes, but in reality, it is far more likely that template-specific specialisations of these archetypes would be used. The identification and organisation of such archetypes is described in the openEHR Templates document.
+
+In addition to or instead of specifying slot fillers, it is possible in a slot specialisation to narrow the slot definition, or to close it. If fillers are specified, closing the slot as well is typical. The latter is done by including an overridden version of the archetype slot object itself, with the 'closed' constraint set, as in the following example:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    use_archetype SECTION[org.openehr::openEHR-EHR-SECTION.history_medical_surgical.v1] ∈ {
+        /items ∈ {
+            use_archetype EVALUATION[at0001, openEHR-EHR-EVALUATION.problem.v1]
+            allow_archetype EVALUATION[at0001] closed
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    use_archetype SECTION[org.openehr::openEHR-EHR-SECTION.history_medical_surgical.v1] ∈ {
+        /items ∈ {
+            use_archetype EVALUATION[id2, openEHR-EHR-EVALUATION.problem.v1]
+            allow_archetype EVALUATION[id2] closed
+        }
+    }
+--------
+====
+
+Narrowing the slot is done with a replacement ` allow_archetype` statement containing a narrowed set of match criteria.
+
+=== Unconstrained Attributes
+
+The `use_archetype` keyword can be used to specify child object constraints under any attribute in the reference model that is so far unconstrained by the flat parent of an archetype or template. Technically this could occur in any kind of archetype but would normally be in a specialised archetype or template. This is no more than the standard use of an 'external reference' (see <<_external_references>>).
+
+Any reference specified will have no slot, and is instead validity-checked against the appropriate part of the underlying reference model.
+
+The following example from the openEHR reference model is typical.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    COMPOSITION[at0000] matches {               -- Referral document
+        category matches {...}
+        context matches {
+            EVENT_CONTEXT[at0001] matches {
+                participations matches {...}
+                other_context matches {...}
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    COMPOSITION[id1] matches {               -- Referral document
+        category matches {...}
+        context matches {
+            EVENT_CONTEXT[id2] matches {
+                participations matches {...}
+                other_context matches {...}
+            }
+        }
+    }
+--------
+====
+
+The above cADL block partially specifies a `COMPOSITION` object, via constraints (often including slot definitions) on the _category_ and _context_ attributes defined on that class in the reference model. However, the attribute of most interest in a `COMPOSITION` object is usually the _content_ attribute, which is not constrained at all here. The reference model defines it to be of type `List<CONTENT_ITEM>` .
+
+Using an external reference in an unarchetyped part of the RM structure is almost always done in specialised archetypes or templates, but is valid in a top-level archetype.
+
+The following example shows the use of `use_archetype` within a specialised archetype.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    COMPOSITION[at0000.1] matches {        -- Referral document (specialisation)
+        content matches {
+            use_archetype SECTION[at0001, openEHR-EHR-SECTION.history_medical_surgical.v1]
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    COMPOSITION[id1.1] matches {        -- Referral document (specialisation)
+        content matches {
+            use_archetype SECTION[id2, openEHR-EHR-SECTION.history_medical_surgical.v1]
+        }
+    }
+--------
+====
+
+[[_primitive_object_redefinition]]
+== Primitive Object Redefinition
+
+For terminal objects (i.e. elements of the type `C_PRIMITIVE_OBJECT`) redefinition consists of:
+
+* addition of value constraints for nodes which in the parent are constrained solely to a primitive type (described in <<cADL_Constraints_Primitive_Types>>);
+* redefined value ranges or sets using a narrower value range or set;
+* exclusions on the previously defined value ranges or sets which have the effect of narrowing the original range or set.
+
+=== Numeric Primitive Redefinition
+
+The following example shows a redefined real value range.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    value ∈ {
+        DV_QUANTITY[at9000] ∈ {
+            magnitude ∈ {|2.0..10.0|}
+            units ∈ {"mmol/ml"}
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    value ∈ {
+        DV_QUANTITY[id3] ∈ {
+            magnitude ∈ {|2.0..10.0|}
+            units ∈ {"mmol/ml"}
+        }
+    }
+--------
+====
+
+Specialised archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[at9000] ∈ {
+            magnitude ∈ {|4.0..6.5|}
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    .../value ∈ {
+        DV_QUANTITY[id3] ∈ {
+            magnitude ∈ {|4.0..6.5|}
+        }
+    }
+--------
+====
+
+=== Terminology Constraint Redefinition
+
+Redefinition of a terminology constraint follows the golden rule that redefinitions may only narrow constraints, not widen them, to preserve the instance / archetype validity relation up the specialisation lineage. The golden rule holds only for formal constraints, and is modified by the possibility of <<_soft_terminology_constraint,non-binding constraint strengths>>.
+
+==== Constrain Previously Unconstrained Node
+
+The simplest form of terminology constraint specialisation is when a term constraint is used as a redefinition of a previously _unconstrained node_. This might simply be to require that a data item be of the appropriate reference model type, with no further constraint:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    /data[at0001]/events[at0002]/data[at0003]/items[at0021]/value ∈ {  -- cuff size
+        DV_CODED_TEXT[at9000]  -- force a term of some kind
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    /data[id2]/events[id3]/data[id4]/items[id22]/value ∈ {  -- cuff size
+        DV_CODED_TEXT[id14]  -- force a term of some kind
+    }
+--------
+====
+
+Alternatively, it may impose a value set, as follows:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    /data[at0001]/events[at0002]/data[at0003]/items[at0021]/value ∈ {  -- cuff size
+        DV_CODED_TEXT[at9000] matches {[ac0.1]}
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    /data[id2]/events[id3]/data[id4]/items[id22]/value ∈ {  -- cuff size
+        DV_CODED_TEXT[id14] matches {[ac0.1]}
+    }
+--------
+====
+
+==== Terminology Internal Value Set Redefinition
+
+The more typical redefinition case is when the parent node already states a terminology constraint with a value set, and the specialisation child redefines is, as per the following example.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+definition
+    ...
+        ELEMENT[at0006] occurrences ∈ {0..*} ∈ {   -- System
+            name ∈ {
+                DV_CODED_TEXT[at9000] ∈ {
+                    defining_code ∈ {[ac1]}
+                }
+            }
+        }
+    ...
+
+terminology
+    ...
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <
+                "at0007",   -- Cardiovascular system
+                "at0008",   -- Respiratory system
+                "at0009",   -- Gastro-intestinal system
+                "at0010",   -- Reticulo-Endothelial system
+                "at0011",   -- Genito-urinary system
+                "at0012",   -- Endocrine System
+                "at0013",   -- Central nervous system
+                "at0014"    -- Musculoskeletal system
+            >
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+definition
+    ...
+        ELEMENT[id7] occurrences ∈ {0..*} ∈ {   -- System
+            name ∈ {
+                DV_CODED_TEXT[id14] ∈ {
+                    defining_code ∈ {[ac1]}
+                }
+            }
+        }
+    ...
+
+terminology
+    ...
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <
+                "at8",    -- Cardiovascular system
+                "at9",    -- Respiratory system
+                "at10",   -- Gastro-intestinal system
+                "at11",   -- Reticulo-Endothelial system
+                "at12",   -- Genito-urinary system
+                "at13",   -- Endocrine System
+                "at14",   -- Central nervous system
+                "at15"    -- Musculoskeletal system
+            >
+        >
+    >
+--------
+====
+
+Specialised archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+definition
+    .../name[at0013]/defining_code ∈ {[ac1.1]}
+
+terminology
+    ...
+    value_sets = <
+        ["ac1.1"] = <
+            id = <"ac1.1">
+            members = <
+                "at0009",   -- Gastro-intestinal system
+                "at0010",   -- Reticulo-Endothelial system
+                "at0011",   -- Genito-urinary system
+                "at0012",   -- Endocrine System
+                "at0013",   -- Central nervous system
+                "at0014"    -- Musculoskeletal system
+            >
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+definition
+    .../name[id14]/defining_code ∈ {[ac1.1]}
+
+terminology
+    ...
+    value_sets = <
+        ["ac1.1"] = <
+            id = <"ac1.1">
+            members = <
+                "at10",   -- Gastro-intestinal system
+                "at11",   -- Reticulo-Endothelial system
+                "at12",   -- Genito-urinary system
+                "at13",   -- Endocrine System
+                "at15"    -- Musculoskeletal system
+            >
+        >
+    >
+--------
+====
+
+==== Terminology External Subset Redefinition
+
+A terminology external subset constraint is used to set the value set of a coded term to be one defined externally in a terminology, specified in the `term_definitions` sub-section of the `terminology` section, as shown in the following example.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+definition
+    ELEMENT [at0078] ∈ { -- cuff size
+        value ∈ {
+            DV_CODED_TEXT[at9000] ∈ {
+                defining_code ∈ {[ac1]}
+            }
+        }
+    }
+
+terminology
+    term_bindings = <
+        ["snomed_ct"]    = <
+            ["ac1"] = <http://terminology.org/id/12000001>
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+definition
+    ELEMENT [id79] ∈ { -- cuff size
+        value ∈ {
+            DV_CODED_TEXT[id4] ∈ {
+                defining_code ∈ {[ac1]}
+            }
+        }
+    }
+
+terminology
+    term_bindings = <
+        ["snomed_ct"]    = <
+            ["ac1"] = <http://terminology.org/id/12000001>
+        >
+    >
+--------
+====
+
+In a specialisation of the archetype, the value set reference can be redefined in two different ways. The first is by redefinition of the constraint to a narrower one. This is a achieved by redefining the constraint code, and adding a new definition in the terminology of the specialised archetype, as follows.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+definition
+    ELEMENT [at0078] ∈ {               -- cuff size
+        value ∈ {
+            DV_CODED_TEXT[at9000] ∈ {
+                defining_code ∈ {[ac1.1]}
+            }
+        }
+    }
+
+terminology
+    term_bindings = <
+        ["snomed_ct"]    = <
+            ["ac1.1"] = <http://terminology.org/id/12000002>
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+definition
+    ELEMENT [id79] ∈ {               -- cuff size
+        value ∈ {
+            DV_CODED_TEXT[id14] ∈ {
+                defining_code ∈ {[ac1.1]}
+            }
+        }
+    }
+
+terminology
+    term_bindings = <
+        ["snomed_ct"]    = <
+            ["ac1.1"] = <http://terminology.org/id/12000002>
+        >
+    >
+--------
+====
+
+The second kind of redefinition is by an internal value set, as follows.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+terminology
+    ...
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <"at0021",   -- child cuff
+                       "at0022">   -- infant cuff
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+terminology
+    ...
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = "<at22",   -- child cuff
+                      "at23">    -- infant cuff
+        >
+    >
+--------
+====
+
+These redefinitions are assumed to be valid, although they are not directly validatable unless the terminology subset is available to the tooling.
+
+==== Constraint Strength Redefinition
+
+Regardless of any changes to the value constraint, narrowing must also be respected for the constraint strength. Concretely, this means that a redefined terminology constraint may narrow the constraint strength by redefining any strength declared in a parent to any 'higher' strength, where the following order holds, from lowest to highest: `example` -> `preferred` -> `exensible` -> `required`. Thus, the following redefinition from `preferred` to `required` may be made:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    -- parent archetype
+    name matches {
+        DV_CODED_TEXT[at9000] matches {
+            defining_code matches {preferred [ac1]}
+        }
+    }
+
+    -- child archetype
+    name matches {
+        DV_CODED_TEXT[at9000.1] matches {
+            defining_code matches {[ac1]}  -- i.e. required
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    -- parent archetype
+    name matches {
+        DV_CODED_TEXT[id13] matches {
+            defining_code matches {preferred [ac1]}
+        }
+    }
+
+    -- child archetype
+    name matches {
+        DV_CODED_TEXT[id13.1] matches {
+            defining_code matches {[ac1]}  -- i.e. required
+        }
+    }
+--------
+====
+
+A constraint with `required` strength cannot be redefined to any other strength in a specialised archetype.
+
+NOTE: Although the standard form `defining_code matches {[ac1]}` may always be used to represent 'required' strength, it is strongly recommended that the explicit form `defining_code matches {required [ac1]}` be used in specialised archetypes, _where the constraint strength is being redefined_ (i.e. not for redefinition of a nodes where constraint strength is never mentioned).
+
+It must be kept in mind that a constraint strength other than `required` is formally equivalent to _no constraint_ - i.e. it is only a guide for tooling and human authors. The following two fragments are therefore completely equivalent.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    -- non-required constraint strength
+    name matches {
+        DV_CODED_TEXT[at9000] matches {
+            defining_code matches {preferred [ac1]}
+        }
+    }
+
+    -- ... is the same as no constraint, other than RM type
+    name matches {
+        DV_CODED_TEXT[at9000]
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    -- non-required constraint strength
+    name matches {
+        DV_CODED_TEXT[id13] matches {
+            defining_code matches {preferred [ac1]}
+        }
+    }
+
+    -- ... is the same as no constraint, other than RM type
+    name matches {
+        DV_CODED_TEXT[id13]
+    }
+--------
+====
+
+This means that redefinition of a node containing a non-required constraint strength is formally speaking a redefinition of a node with no constraint on terminology code values. _The specialised node may therefore state any value set, regardless of what value set was stated in the parent_. This is true regardless of whether the constraint strength itself is redefined. For example, in the following a `preferred` strength node with value set `ac1` is redefined by another `preferred` node using a non-conforming value set `ac0.4`.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    -- parent archetype
+    name matches {
+        DV_CODED_TEXT[at9000] matches {
+            defining_code matches {preferred [ac1]}
+        }
+    }
+
+    -- child archetype
+    name matches {
+        DV_CODED_TEXT[at9000.1] matches {
+            defining_code matches {preferred [ac0.4]}
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    -- parent archetype
+    name matches {
+        DV_CODED_TEXT[id13] matches {
+            defining_code matches {preferred [ac1]}
+        }
+    }
+
+    -- child archetype
+    name matches {
+        DV_CODED_TEXT[id13.1] matches {
+            defining_code matches {preferred [ac0.4]}
+        }
+    }
+--------
+====
+
+=== Tuple Redefinition
+
+Tuple constraints can be redefined by narrowing, as for other primitive constraints. A typical example is as follows.
+
+Parent archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    DV_QUANTITY[at9000] ∈ {
+        property ∈ {[at9001]}
+        [magnitude, units] ∈ {
+            [{|>=50.0|}, {"mm[Hg]"}],
+            [{|>=68.0|}, {"cm[H20]"}]
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    DV_QUANTITY[id42] ∈ {
+        property ∈ {[at29]}
+        [magnitude, units] ∈ {
+            [{|>=50.0|}, {"mm[Hg]"}],
+            [{|>=68.0|}, {"cm[H20]"}]
+        }
+    }
+--------
+====
+
+Child archetype:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    DV_QUANTITY[at9000] ∈ {
+        property ∈ {[at9001]}
+        [magnitude, units] ∈ {
+            [{|>=50.0|}, {"mm[Hg]"}]
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    DV_QUANTITY[id42] ∈ {
+        property ∈ {[at29]}
+        [magnitude, units] ∈ {
+            [{|>=50.0|}, {"mm[Hg]"}]
+        }
+    }
+--------
+====
+

@@ -1,0 +1,16 @@
+= Glossary of Terms and Acronyms
+
+The following terms and acronyms are used in this document.
+
+[cols="1,4", options="header"]
+|===
+|Term                   |Meaning
+
+|API                    |Application Programmer Interface.
+|CDS                    |Clinical Decision Support.
+|REST                   |{wikipedia}/Representational_state_transfer[Representational state transfer^], 
+                         a type of web service. REST-compliant Web services allow requesting systems to access and manipulate
+                         textual representations of Web resources using a uniform and predefined set of stateless operations.
+|SUT                    |System under test.
+
+|===

@@ -1,0 +1,10 @@
+title: REVISION_HISTORY
+type: object
+description: A REVISION_HISTORY resource
+required:
+  - items
+properties:
+  items:
+    type: array
+    items:
+      $ref: ../common/RevisionHistoryItem.yaml

@@ -1,0 +1,16 @@
+title: DV_PARSABLE
+type: object
+allOf:
+  - $ref: ../data_types/DvEncapsulated.yaml
+required:
+  - value
+  - formalism
+properties:
+  _type:
+    type: string
+    default: DV_PARSABLE
+  value:
+    type: string
+  formalism:
+    type: string
+x-discriminator-value: DV_PARSABLE

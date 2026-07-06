@@ -1,0 +1,67 @@
+=== C_DATE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_DATE*
+
+h|*Description*
+2+a|Constraint on instances representing dates in the form either of a set of validity values, or else date ranges based on the `C_ORDERED` list constraint. 
+
+There is no validity flag for `_year_`, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include `"YYYY-??-??"` (date with optional month and day).
+
+h|*Inherit*
+2+|`<<_c_temporal_class,C_TEMPORAL>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*constraint*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_interval_class[Interval^]<link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^]>>`
+a|Formal constraint on the assumed primitive `Iso8601_date` type, in the form of one or more `Interval<Iso8601_date>`.
+
+For a pattern constraint or no constraint, use an empty list.
+
+h|*0..1 +
+(effected)*
+|*default_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^]`
+a|Default value set in a template, and present in an operational template. Generally limited to leaf and near-leaf nodes.
+
+h|*0..1 +
+(effected)*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_class[Iso8601_date^]`
+a|Value to be assumed if none sent in data.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*month_validity* (): `link:/releases/BASE/{base_release}/base_types.html#_validity_kind_enumeration[VALIDITY_KIND^]`
+a|Validity of month in constrained date.
+
+h|*1..1*
+|*day_validity* (): `link:/releases/BASE/{base_release}/base_types.html#_validity_kind_enumeration[VALIDITY_KIND^]`
+a|Validity of day in constrained date.
+
+h|*1..1 +
+(effected)*
+|*valid_pattern_constraint* ( +
+a_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return `valid_iso8601_date_constraint_pattern (a_pattern)`
+
+h|*1..1 +
+(effected)*
+|*valid_pattern_constraint_replacement* ( +
+a_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+an_other_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return `valid_date_constraint_replacements.has(an_other_pattern.as_upper) and then 
+valid_date_constraint_replacements.item (an_other_pattern.as_upper).has (a_pattern.as_upper)`.
+
+h|*Invariants*
+2+a|__Pattern_validity__: `pattern /= Void implies valid_iso8601_date_constraint_pattern(pattern)`
+|===

@@ -1,0 +1,50 @@
+= File Encoding and Character Quoting
+
+== File Encoding
+
+Because ADL files are inherently likely to contain multiple languages due to internationalised authoring and translation, they must be capable of accommodating characters from any language. ADL files do not explicitly indicate an encoding because they are assumed to be in UTF-8 encoding of unicode.  For ideographic and script-oriented languages, this is a necessity.
+
+There are three places in ADL files where non-ASCII characters can occur:
+
+* in string values, demarcated by double quotes, e.g. "xxxx";
+* in regular expression patterns, demarcated by either `//` or `^^`;
+* in character values, demarcated by single quotes, e.g. 'x'.
+
+URIs (a data type in ODIN) are assumed to be 'percent-encoded' according to {rfc3986}[IETF RFC 3986^], which applies to all characters outside the 'unreserved set'. The unreserved set is:
+
+```
+unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+```
+
+In actual fact, ADL files encoded in latin 1 (ISO-8859-1) or another variant of ISO-8859 - both containing accented characters with unicode codes outside the ASCII 0-127 range - may work perfectly well, for various reasons:
+
+* the contain nothing but ASCII, i.e. unicode code-points 0 - 127; this will be the case in English- language authored archetypes containing no foreign words;
+* some layer of the operating system is smart enough to do an on-the-fly conversion of characters above 127 into UTF-8, even if the archetype tool being used is designed for pure UTF-8 only;
+* the archetype tool (or the string-processing libraries it uses) might support UTF-8 and ISO- 8859 variants.
+
+For situations where binary UTF-8 (and presumably other UTF-* encodings) cannot be supported, ASCII encoding of unicode characters above code-point 127 should only be done using the system supported by many programming languages today, namely `\u` escaped UTF-16. In this system, unicode codepoints are mapped to either:
+
+* `\uHHHH` - 4 hex digits which will be the same (possibly 0-filled on the left) as the unicode code-point number expressed in hexadecimal; this applies to unicode codepoints in the range `U+0000` - `U+FFFF` (the 'base multi-lingual plane', BMP);
+* `\uHHHHHHHH` - 8 hex digits to encode unicode code-points in the range `U+10000` through `U+10FFFF` (non-BMP planes); the algorithm is described in {rfc2781}[IETF RFC 2781^].
+
+It is not expected that the above approach will be commonly needed, and it may not be needed at all; it is preferable to find ways to ensure that native UTF-8 can be supported, since this reduces the burden for ADL parser and tool implementers. The above guidance is therefore provided only to ensure a standard approach is used for ASCII-encoded unicode, if it becomes unavoidable.
+
+Thus, while *the only officially designated encoding for ADL and its constituent syntaxes is UTF-8*, real software systems may be more tolerant. This document therefore specifies that any tool designed to process ADL files need only support UTF-8; supporting other encodings is an optional extra. This could change in the future, if required by the ADL or openEHR user community.
+
+== Special Character Sequences
+
+In strings and characters, characters not in the lower ASCII (0-127) range should be UTF-8 encoded, with the exception of quoted single- and double-quotes, and some non-printing characters, for which the following customary quoted forms are allowed (but not required):
+
+* `\r` - carriage return
+* `\n` - linefeed
+* `\t` - tab
+* `\\` - backslash
+* `\"` - literal double quote
+* `\'` - literal single quote
+
+Any other character combination starting with a backslash is illegal; to get the effect of a literal backslash, the `\\` sequence should always be used.
+
+Typically in a normal string, including multi-line paragraphs as used in ODIN, only `\\` and `\"` are likely to be necessary, since all of the others can be accommodated in their literal forms; the same goes for single characters - only `\\` and `\'` are likely to commonly occur. However, some authors may prefer to use `\n` and `\t` to make intended formatting clearer, or to allow for text editors that do not react properly to such characters. Parsers should therefore support the above list.
+
+In regular expressions (only used in cADL string constraints), there will typically be backslash-escaped characters from the above list as well as other patterns like `\s` (whitespace) and `\d` (decimal digit), according to the {perl_regex}[PERL regular expression specification^]. These should not be treated as anything other than literal strings, since they are processed by a regular expression parser.
+

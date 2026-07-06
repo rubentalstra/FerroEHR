@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-version_lifecycle_state"/>
+  <version value="3.1.0"/>
+  <name value="version_lifecycle_state"/>
+  <title value="Version Lifecycle State"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="5"/>
+  <concept>
+    <code value="532"/>
+    <display value="complete"/>
+    <designation>
+      <language value="es"/>
+      <value value="completo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="完了"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="completo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="完整"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="553"/>
+    <display value="incomplete"/>
+    <designation>
+      <language value="es"/>
+      <value value="incompleto"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="未完"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="incompleto"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="不完整"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="523"/>
+    <display value="deleted"/>
+    <designation>
+      <language value="es"/>
+      <value value="eliminado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="削除済み"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="eliminado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已删除"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="800"/>
+    <display value="inactive"/>
+    <designation>
+      <language value="es"/>
+      <value value="inactivo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="非アクティブ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="inativo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="无效"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="801"/>
+    <display value="abandoned"/>
+    <designation>
+      <language value="es"/>
+      <value value="abandonado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="破棄"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="abandonado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已废弃"/>
+    </designation>
+  </concept>
+</CodeSystem>

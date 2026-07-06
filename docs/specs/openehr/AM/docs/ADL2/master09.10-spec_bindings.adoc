@@ -1,0 +1,3 @@
+== Bindings
+
+Bindings in a specialised archetype can include a binding to an at-code or ac-code defined in the current archetype or any parent archetype. A binding may be defined that overrides one from the flat parent, in which case the binding target - a term (at-code binding) or value set (ac-code binding) should be a proper specialised concept or subset respectively of the binding they replace. Since the binding target is an external code or subset, authoring tools need a connection to an appropriate terminology service to validate the relationship.

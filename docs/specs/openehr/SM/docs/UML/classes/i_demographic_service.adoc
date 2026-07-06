@@ -1,0 +1,71 @@
+=== I_DEMOGRAPHIC_SERVICE Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_DEMOGRAPHIC_SERVICE*
+
+h|*Description*
+2+a|Primary interface to `DEMOGRAPHIC_SERVICE`.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*create_party* ( +
+a_version: `<<_uv_party_class,UV_PARTY>>[1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]` +
+ +
+__Pre_party_definitions_valid__: `definitions_valid (a_version)` +
+__Pre_content_valid__: `valid_content (a_version)`
+a|Create the first version of a new `PARTY` object. Causes server-side creation of a new `VERSIONED_OBJECT`, `ORIGINAL_VERSION` and new `CONTRIBUTION`.
+
+
+
+
+
+.Errors
+* `definition_unknown`
+* `content_invalid`
+
+h|*1..1*
+|*create_party_relationship* ( +
+a_version: `<<_uv_party_relationship_class,UV_PARTY_RELATIONSHIP>>[1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]` +
+ +
+__Pre_content_valid__: `valid_content (a_version)`
+a|Create the first version of a new `PARTY_RELATIONSHIP`. Causes server-side creation of a new `VERSIONED_OBJECT`, `ORIGINAL_VERSION` and new `CONTRIBUTION`.
+
+
+
+
+
+.Errors
+* `definition_unknown`
+* `content_invalid`
+
+h|*1..1*
+|*i_party* ( +
+a_versioned_party_id +
+): `<<_i_party_interface,I_PARTY>>`
+a|Create an `I_PARTY` interface.
+
+
+
+
+.Errors
+* `versioned_object_does_not_exist`
+
+h|*1..1*
+|*i_party_relationship* ( +
+a_versioned_party_rel_id +
+): `<<_i_party_relationship_interface,I_PARTY_RELATIONSHIP>>`
+a|Create an `I_PARTY_RELATIONSHIP` interface.
+
+
+
+
+.Errors
+* `versioned_object_does_not_exist`
+|===

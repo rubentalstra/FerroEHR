@@ -1,0 +1,55 @@
+=== BMM_PROPERTY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_PROPERTY<T>*
+
+h|*Description*
+2+a|Model of a property definition within a class definition of an object model. Generic parameter takes care of variants.
+
+h|*Inherit*
+2+|`<<_bmm_model_element_class,BMM_MODEL_ELEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of this property in the model.
+
+h|*0..1*
+|*is_mandatory*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this property is mandatory in its class.
+
+h|*0..1*
+|*is_computed*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this property is computed rather than stored in objects of this class.
+
+h|*1..1*
+|*type*: `T`
+a|Formal type of this property.
+
+h|*0..1*
+|*is_im_runtime*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True if this property is marked with info model `_im_runtime_` property.
+
+h|*0..1*
+|*is_im_infrastructure*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|True if this property was marked with info model `_im_infrastructure_` flag.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*existence* (): `link:/releases/BASE/{base_release}/foundation_types.html#_multiplicity_interval_class[Multiplicity_interval^]`
+a|Interval form of `0..1`, `1..1` etc, generated from `_is_mandatory_`.
+
+h|*1..1*
+|*display_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of this attribute to display in UI.
+|===

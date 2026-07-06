@@ -1,0 +1,17 @@
+description: |
+  `201 Created` is returned when the template has been successfully uploaded.
+  
+  Server assigned `template_id` SHOULD be returned as part of the `Location` response header.
+  
+  Depending on the header `Prefer` either an empty body or a full representation body is returned.
+  
+  An `ETag` response header MAY be present and contain the unique identifier of the template instance.
+headers:
+  Location:
+    $ref: ../headers/Location_Template_adl1_4.yaml
+  ETag:
+    $ref: ../headers/ETag_Template_adl1_4.yaml
+content:
+  application/xml:
+    schema:
+      $ref: ../schemas/aom/OperationalTemplate.yaml

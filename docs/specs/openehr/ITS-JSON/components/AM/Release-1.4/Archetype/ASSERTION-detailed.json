@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/ASSERTION-detailed.json",
+    "title": "ASSERTION",
+    "description": "Structural model of a typed first order predicate logic assertion, in the form of an expression tree, including optional variable definitions. ",
+    "$comments": "Defined in Archetype IM",
+    "type": "object",
+    "properties": {
+        "tag": {
+            "description": "Expression tag, used for differentiating multiple assertions.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        },
+        "string_expression": {
+            "description": "String form of expression, in case an expression evaluator taking String expressions is used for evaluation. ",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+        },
+        "expression": {
+            "description": "Root of expression tree.",
+            "$ref": "all-detailed.json#/definitions/EXPR_ITEM"
+        },
+        "variables": {
+            "description": "Definitions of variables used in the assertion expression.",
+            "type": "array",
+            "items": {
+                "$ref": "all-detailed.json#/definitions/ASSERTION_VARIABLE"
+            }
+        }
+    },
+    "required": [
+        "expression"
+    ],
+    "$invariants": {
+        "Tag_valid": "tag /= Void implies not tag.is_empty",
+        "Expression_valid": "expression /= Void and then expression.type.is_equal(\u201cBOOLEAN\u201d)"
+    }
+}

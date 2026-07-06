@@ -1,0 +1,32 @@
+=== SIBLING_ORDER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*SIBLING_ORDER*
+
+h|*Description*
+2+a|Defines the order indicator that can be used on a `C_OBJECT` within a container attribute in a specialised archetype to indicate its order with respect to a sibling defined in a higher specialisation level.
+
+Misuse: This type cannot be used on a `C_OBJECT` other than one within a container attribute in a specialised archetype.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_before*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the order relationship is ‘before’, if False, it is ‘after’.
+
+h|*1..1*
+|*sibling_node_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Node identifier of sibling before or after which this node should come.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_after* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the order relationship is `_after_`, computed as the negation of `_is_before_`.
+|===

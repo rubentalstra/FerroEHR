@@ -1,0 +1,33 @@
+== Language Section
+
+The `language` section includes meta-data describing the original language in which the archetype was authored (essential for evaluating natural language quality), and the total list of languages available in the archetype. There can be only one `original_language` . The `translations` list must be updated every time a translation of the archetype is undertaken. The following shows a typical example.
+
+[source, adl]
+--------
+language
+    original_language = <[iso_639-1::en]>
+    translations = <
+        ["de"] = <
+            language = <[iso_639-1::de]>
+            author = <
+                ["name"] = <"Frederik Tyler">
+                ["email"] = <"freddy@something.somewhere.co.uk">
+            >
+            accreditation = <"British Medical Translator id 00400595">
+        >
+        ["ru"] = <
+            language = <[iso_639-1::ru]>
+            author = <
+                ["name"] = <"Nina Alexandrovna">
+                ["organisation"] = <"Dostoevsky Media Services">
+                ["email"] = <"nina@translation.dms.ru">
+            >
+            accreditation = <"Russian Translator id 892230-3A">
+        >
+    >
+--------
+
+Archetypes must always be translated completely, or not at all, to be valid. This means that when a new translation is made, every language dependent section of the `description` and `terminology` sections has to be translated into the new language, and an appropriate addition made to the `translations` list in the language section.
+
+NOTE: some non-conforming ADL tools in the past created archetypes without a language section, relying on the terminology section to provide the original_language (there called primary_language) and list of languages (`languages_available`). In the interests of backward compatibility, tool builders should consider accepting archetypes of the old form and upgrading them when parsing to the correct form, which should then be used for serialising/saving.
+

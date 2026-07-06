@@ -1,0 +1,174 @@
+=== Iso8601_date_time Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Iso8601_date_time*
+
+h|*Description*
+2+a|Represents an ISO 8601 date/time, including partial and extended forms. Value may be:
+
+* `YYYY-MM-DDThh:mm:ss[(,&#124;.)sss][Z &#124; ±hh[:mm]]` (extended, preferred) or
+* `YYYYMMDDThhmmss[(,&#124;.)sss][Z &#124; ±hh[mm]]` (compact)
+* or a partial variant.
+
+See `_valid_iso8601_date_time()_` for validity.
+
+Note that this class includes 2 deviations from ISO 8601:2004:
+
+* for partial date/times, any part of the date/time up to the month may be missing, not just seconds and minutes as in the standard;
+* the time `24:00:00` is not allowed, since it would mean the date was really on the next day.
+
+h|*Inherit*
+2+|`<<_iso8601_type_class,Iso8601_type>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*year* (): `<<_integer_class,Integer>>`
+a|Extract the year part of the date as an Integer.
+
+h|*1..1*
+|*month* (): `<<_integer_class,Integer>>` +
+ +
+__Pre__: `not month_unknown`
+a|Extract the month part of the date/time as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*day* (): `<<_integer_class,Integer>>` +
+ +
+__Pre__: `not day_unknown`
+a|Extract the day part of the date/time as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*hour* (): `<<_integer_class,Integer>>` +
+ +
+__Pre__: `not hour_unknown`
+a|Extract the hour part of the date/time as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*minute* (): `<<_integer_class,Integer>>` +
+ +
+__Pre__: `not minute_unknown`
+a|Extract the minute part of the date/time as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*second* (): `<<_integer_class,Integer>>` +
+ +
+__Pre__: `not second_unknown`
+a|Extract the integral seconds part of the date/time (i.e. prior to any decimal sign) as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*fractional_second* (): `<<_real_class,Real>>`
+a|Extract the fractional seconds part of the date/time (i.e. following to any decimal sign) as a Real, or return 0.0 if not present.
+
+h|*1..1*
+|*timezone* (): `<<_iso8601_timezone_class,Iso8601_timezone>>`
+a|Timezone; may be Void.
+
+h|*1..1*
+|*month_unknown* (): `<<_boolean_class,Boolean>>`
+a|Indicates whether month in year is unknown.
+
+h|*1..1*
+|*day_unknown* (): `<<_boolean_class,Boolean>>`
+a|Indicates whether day in month is unknown.
+
+h|*1..1*
+|*minute_unknown* (): `<<_boolean_class,Boolean>>`
+a|Indicates whether minute in hour is known.
+
+h|*1..1*
+|*second_unknown* (): `<<_boolean_class,Boolean>>`
+a|Indicates whether minute in hour is known.
+
+h|*1..1*
+|*is_decimal_sign_comma* (): `<<_boolean_class,Boolean>>`
+a|True if this time has a decimal part indicated by `','` (comma) rather than `'.'` (period).
+
+h|*1..1 +
+(effected)*
+|*is_partial* (): `<<_boolean_class,Boolean>>`
+a|True if this date time is partial, i.e. if seconds or more is missing.
+
+h|*1..1 +
+(effected)*
+|*is_extended* (): `<<_boolean_class,Boolean>>`
+a|True if this date/time uses `'-'`, `':'` separators.
+
+h|*1..1*
+|*has_fractional_second* (): `<<_boolean_class,Boolean>>`
+a|True if the `_fractional_second_` part is significant (i.e. even if = 0.0).
+
+h|*1..1*
+|*as_string* (): `<<_string_class,String>>`
+a|Return the string value in extended format.
+
+h|*1..1*
+|*add* __alias__ "+" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_date_time_class,Iso8601_date_time>>`
+a|Arithmetic addition of a duration to a date/time.
+
+h|*1..1*
+|*subtract* __alias__ "-" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_date_time_class,Iso8601_date_time>>`
+a|Arithmetic subtraction of a duration from a date/time.
+
+h|*1..1*
+|*diff* __alias__ "-" ( +
+a_date_time: `<<_iso8601_date_time_class,Iso8601_date_time>>[1]` +
+): `<<_iso8601_duration_class,Iso8601_duration>>`
+a|Difference of two date/times.
+
+h|*1..1*
+|*add_nominal* __alias__ "++" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_date_class,Iso8601_date>>`
+a|Addition of nominal duration represented by `_a_diff_`. See `Iso8601_date._add_nominal_()` for semantics.
+
+h|*1..1*
+|*subtract_nominal* __alias__ "--" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_date_class,Iso8601_date>>`
+a|Subtraction of nominal duration represented by `_a_diff_`. See `_add_nominal_()` for semantics.
+
+h|*Invariants*
+2+a|__Year_valid__: `valid_year (year)`
+
+h|
+2+a|__Month_valid__: `valid_month (month)`
+
+h|
+2+a|__Day_valid__: `valid_day(year, month, day)`
+
+h|
+2+a|__Hour_valid__: `valid_hour (hour, minute, second)`
+
+h|
+2+a|__Minute_valid__: `not minute_unknown implies valid_minute(minute)`
+
+h|
+2+a|__Second_valid__: `not second_unknown implies valid_second (second)`
+
+h|
+2+a|__Fractional_second_valid__: `has_fractional_second implies (not second_unknown and valid_fractional_second (fractional_second))`
+
+h|
+2+a|__Partial_validity_year__: `not month_unknown`
+
+h|
+2+a|__Partial_validity_month__: `not month_unknown`
+
+h|
+2+a|__Partial_validity_day__: `not day_unknown`
+
+h|
+2+a|__Partial_validity_hour__: `not hour_unknown`
+
+h|
+2+a|__Partial_validity_minute__: `minute_unknown implies second_unknown`
+|===

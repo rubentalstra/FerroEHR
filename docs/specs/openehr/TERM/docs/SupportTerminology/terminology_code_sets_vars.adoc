@@ -1,0 +1,49 @@
+:countries_description: This code set defined by the {iso_3166_1_codes_alpha_2_codes}[ISO 3166-1 "alpha-2"] \
+   standard consists of two-character names of countries and country subdivisions.
+:countries_links: {openehr_rm_ehr}#_composition_class[COMPOSITION.territory^]
+:countries_ref: {iso_3166_1_codes_alpha_2_codes}[ISO Countries list^]
+
+
+:character_sets_description: This IANA (Internet Naming Authority) code set consists of the names of \
+   recognised character sets.
+:character_sets_links: {openehr_rm_ehr}#_entry_class[ENTRY.encoding^], \
+   {openehr_rm_data_types}#_dv_encapsulated_class[DV_ENCAPSULATED.charset^]
+:character_sets_ref: {iana_character_sets}[IANA Character Sets^]
+
+
+:compression_algorithms_description: This code set consists of the names of algorithms used to compress data.
+:compression_algorithms_links: {openehr_rm_data_types}#_dv_multimedia_class[DV_MULTIMEDIA.compression_algorithm^]
+:compression_algorithms_ref: {hl7_compression_algorithms}[HL7 Compression Algorithms domain^]
+
+
+:integrity_check_algorithms_description: This code set consists of the names of algorithms used to generate hashes \
+   for the purpose of integrity checks on data.
+:integrity_check_algorithms_links: {openehr_rm_data_types}#_dv_multimedia_class[DV_MULTIMEDIA.integrity_check_algorithm^]
+:integrity_check_algorithms_ref: {hl7_integrity_check_algorithms}[HL7 IntegrityCheckAlgorithm domain^]
+
+
+:languages_description: This code set consists of the language tags defined by {rfc5646}[RFC-5646]. \
+   The syntax consists of the {iso_639_1_codes}[ISO 639-1 "alpha-2"] form of names of languages, \
+   often followed by a region subtag from the {iso_3166_1_codes_alpha_2_codes}[ISO 3166-1 "alpha-2"] country list. \
+   These are maintained by the {iana_language_subtag_registry}[IANA Language Subtag Registry]. \
+   + \
+   NOTE: This code set does not cover all languages, whereas ISO 639-2 "alpha-3" covers many more \
+   languages of cultural or indigenous interest, but which nevertheless are unlikely \
+   to be supported by current software or operating systems.
+:languages_links: {openehr_rm_ehr}#_entry_class[ENTRY.language^], \
+   {openehr_rm_ehr}#_composition_class[COMPOSITION.language^], \
+   {openehr_rm_data_types}#_dv_encapsulated_class[DV_ENCAPSULATED.language^]
+:languages_ref: {iso_639_1_codes}[ISO Language codes^]
+
+
+:media_types_description: This IANA (Internet Naming Authority) code set consists of the names of media types.
+:media_types_links: {openehr_rm_data_types}#_dv_multimedia_class_[DV_MULTIMEDIA.media_type^]
+:media_types_ref: {iana_media_types}[IANA Media Types^]
+
+
+:normal_statuses_description: This code set codifies statuses of quantitative values with respect to a normal \
+   range for the measured analyte or phenomenon. \
+   Use generally restricted to laboratory results. Maps to some codes in HL7v2 User-defined table 0078 - Abnormal flags.
+:normal_statuses_links: {openehr_rm_data_types}#_dv_ordered_class[DV_ORDERED.normal_status^]
+:normal_statuses_ref: {hl7_observation_statuses}[HL7 Observation-Interpretation vocabulary^]
+

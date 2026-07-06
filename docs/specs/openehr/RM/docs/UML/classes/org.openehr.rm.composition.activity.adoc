@@ -1,0 +1,39 @@
+=== ACTIVITY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ACTIVITY*
+
+h|*Description*
+2+a|Defines a single activity within an Instruction, such as a medication administration.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_locatable_class[LOCATABLE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*timing*: `link:/releases/RM/{rm_release}/data_types.html#_dv_parsable_class[DV_PARSABLE^]`
+a|Timing of the activity, in the form of a parsable string. If used, the preferred syntax is ISO8601 'R' format, but other formats may be used including HL7 GTS.
+
+May be omitted if:
+
+* timing is represented structurally in the `_description_` attribute (e.g. via archetyped elements), or
+* unavailable, e.g. imported legacy data; in such cases, the `INSTRUCTION._narrative_` should carry text that indicates the timing of its `_activities_`.
+
+h|*1..1*
+|*action_archetype_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Perl-compliant regular expression pattern, enclosed in  '//' delimiters, indicating the valid identifiers of archetypes for Actions corresponding to this Activity specification. 
+
+Defaults to  `/.&#42;/`, meaning any archetype.
+
+h|*1..1*
+|*description*: `link:/releases/RM/{rm_release}/data_structures.html#_item_structure_class[ITEM_STRUCTURE^]`
+a|Description of the activity, in the form of an archetyped structure.
+
+h|*Invariants*
+2+a|__Action_archetype_id_valid__: `not action_archetype_id.is_empty`
+|===

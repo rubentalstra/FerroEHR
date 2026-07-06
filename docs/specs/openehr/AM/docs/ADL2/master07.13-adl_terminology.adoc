@@ -1,0 +1,511 @@
+== Terminology Section
+
+=== Overview
+
+This section describes the syntax of the `terminology` section of an archetype. The following section, <<Terminology Integration>> describes the semantics.
+
+The `terminology` section of an archetype is expressed in ODIN, and is where codes representing node identifiers, constraints on coded term values, and bindings to terminologies are defined. Linguistic language translations are added in the form of extra blocks keyed by the relevant language. The following example shows the general layout of this section.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["at0001"] = <...>
+            ["at0002"] = <...>
+            ["ac1"] = <...>
+        >
+        ["de"] = <
+            ["at0000"] = <...>
+            ["at0001"] = <...>
+            ["ac1"] = <...>
+        >
+    >
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <"at0000", "at0001", "at0002", ...>
+        >
+    >
+    term_bindings = <
+        ["snomed_ct"] = <
+            ["at0003"] = <...>
+            ["ac1"] = <...>
+            ...
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <...>
+            ["at1"] = <...>
+            ["ac1"] = <...>
+        >
+        ["de"] = <
+            ["id1"] = <...>
+            ["at1"] = <...>
+            ["ac1"] = <...>
+        >
+    >
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <"at1", "at2", "at3", ...>
+        >
+    >
+    term_bindings = <
+        ["snomed_ct"] = <
+            ["id4"] = <...>
+            ["ac1"] = <...>
+            ...
+        >
+    >
+--------
+====
+
+
+=== Term_definitions Sub-section
+
+The `term_definitions` section is mandatory, and must contain definitions for all terms requiring them, in all translations in use in the archetype. Terms requiring definitions include:
+
+[tabs,sync-group-id=adl-example]
+====
+for at-coded archetypes::
++
+** all at-codes
+** all ac-codes
+for id-coded archetypes::
++
+** all id-codes of object nodes under a container attribute or which are multiple alternative siblings under a single-valued attribute
+** all at-codes
+** all ac-codes
+====
+
+The following example shows an extract from the English and German term definitions for the archetype local terms in a problem/SOAP headings archetype. Each term is defined using a structure of name/value pairs, and must at least include the names "text" and "description", which correspond to the usual rubric and full definition found in terminologies like {snomed_ct}[SNOMED CT^]. Each term object is then included in the appropriate language list of term definitions, as shown in the example below.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, odin]
+--------
+    term_definitions = <
+        ["en"] = <
+            ["at0000"] = <
+                text = <"problem">
+                description = <"The problem experienced by the subject of care to which the contained information relates">
+            >
+            ["at0001"] = <
+                text = <"problem/SOAP headings">
+                description = <"SOAP heading structure for multiple problems">
+            >
+            ...
+            ["at0002"] = <
+                text = <"plan">
+                description = <"The clinician's professional advice">
+            >
+        >
+        ["de"] = <
+            ["at0000"] = <
+                    text = <"klinisches Problem">
+                    description = <"Das Problem des Patienten worauf sich diese Informationen beziehen">
+            >
+            ["at0001"] = <
+                    text = <"Problem/SOAP Schema">
+                    description = <"SOAP-Schlagwort-Gruppierungsschema fuer mehrfache Probleme">
+            >
+            ["at0002"] = <
+                    text = <"Plan">
+                    description = <"Klinisch-professionelle Beratung des Pflegenden">
+            >
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, odin]
+--------
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <
+                text = <"problem">
+                description = <"The problem experienced by the subject of care to which the contained information relates">
+            >
+            ["id2"] = <
+                text = <"problem/SOAP headings">
+                description = <"SOAP heading structure for multiple problems">
+            >
+            ...
+            ["id3"] = <
+                text = <"plan">
+                description = <"The clinician's professional advice">
+            >
+        >
+        ["de"] = <
+            ["id1"] = <
+                    text = <"klinisches Problem">
+                    description = <"Das Problem des Patienten worauf sich diese Informationen beziehen">
+            >
+            ["id2"] = <
+                    text = <"Problem/SOAP Schema">
+                    description = <"SOAP-Schlagwort-Gruppierungsschema fuer mehrfache Probleme">
+            >
+            ["id3"] = <
+                    text = <"Plan">
+                    description = <"Klinisch-professionelle Beratung des Pflegenden">
+            >
+        >
+    >
+--------
+====
+
+
+In some cases, term definitions may have been lifted from existing terminologies (only a safe thing to do if the definitions _exactly_ match the need in the archetype). To indicate where definitions come from, a "provenance" tag can be used, as follows:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, odin]
+----
+    term_definitions = <
+        ["en"] = <
+            ...
+            ["at0002"] = <
+                text = <"plan">
+                description = <"The clinician's professional advice">
+                provenance = <"ACME_terminology(v3.9a)">
+            >
+            ...
+        >
+    >
+----
+
+id-coded ADL2::
++
+[source, odin]
+----
+    term_definitions = <
+        ["en"] = <
+            ...
+            ["id3"] = <
+                text = <"plan">
+                description = <"The clinician's professional advice">
+                provenance = <"ACME_terminology(v3.9a)">
+            >
+            ...
+        >
+    >
+----
+====
+
+Note that this does not indicate a _binding_ to any term, only the origin of its definition. Bindings are described below.
+
+The `term_definitions` section also includes definitions for archetype-local constraint codes, which are of the form `[acN]` in the `definition` part of an archetype. Each such code refers to a terminology 'value set', i.e. a set of possible terms that could be used as the value of the data item being constrained. These constraints are defined in two parts. First, the `ac` code itself is defined - this names the value set. For example:
+
+[source, odin]
+--------
+    --- within a specialist diagnosis archetype
+    term_definitions = <
+        ["en"] = <
+            ...
+            ["ac1"] = <
+                text = <"type of hepatitis">
+                description = <"any term which means a kind of viral hepatitis">
+            >
+            ...
+        >
+    >
+
+    --- within a blood pressure measurement archetype
+    term_definitions = <
+        ["en"] = <
+            ...
+            ["ac3"] = <
+                text = <"patient position">
+                description = <"patient position for blood pressure measurement">
+            >
+        >
+    >
+--------
+
+=== Value_sets Sub-section
+
+The second part is the value set contents. This can be defined either as an 'internal' value set consisting of at-codes, or else as being a value set defined in an external terminology and referenced via a binding. An internal value set is defined using an entry in the `value_sets` sub-section for the `ac` code, containing a list of at-code member values. Each of those members must have its own definition in the `term_definitions` section. The following shows the structures required.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["ac1"] = <...>
+            ["at1"] = <...>
+            ["at2"] = <...>
+            ["at3"] = <...>
+        >
+    >
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <"at0000", "at0001", "at0002", ...>
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["ac1"] = <...>
+            ["at1"] = <...>
+            ["at2"] = <...>
+            ["at3"] = <...>
+        >
+    >
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <"at1", "at2", "at3", ...>
+        >
+    >
+--------
+====
+
+
+=== Term_bindings Sub-section
+
+A value set and/or its constituent terms may also have 'bindings' to externally defined terms and values sets. Object node at/id-codes may also have bindings, establishing external codings for the names of elements in an archetype. Binding is achieved in the `term_bindings` sub-section. Bindings are grouped under the target terminology they relate to, and each one consists of a key and a target. There are variations of each.
+
+Keys can be any one of:
+
+[tabs,sync-group-id=adl-example]
+====
+for at-coded archetypes::
++
+** an at-code;
+** an object node absolute path terminating in an at-code, e.g. `"/data[at0001]/events[at0002]/data[at0003]/item[at0004]"`;
+** an ac-code.
+for id-coded archetypes::
++
+** for id-coded object nodes:
+*** just the id-code, e.g. `id4`;
+*** an object node  absolute path terminating in an id-code, e.g. `"/data[id2]/events[id3]/data[id1]/item[id4]"`;
+** an at-code;
+** an ac-code.
+====
+
+Binding targets are expressed as URIs that follow the model for {snomed_uris}[terminology URIs published by IHTSDO] or a similar model, in the case of terminologies other than {snomed_ct}[SNOMED CT^]. Because URIs are native types in ADL/ODIN, they do not need quotes.
+
+Bindings may be defined for a given set of terms for more than one terminology, enabling the different bindings to be used in different contexts, e.g. hospital deployment versus aged care.
+
+The following is an extract from a https://github.com/openEHR/adl-archetypes/blob/master/ADL2-reference/features/terminology/term_bindings/openEHR-EHR-OBSERVATION.term_bindings_paths_use_refs.v1.adls[test archetype^] based on the openEHR Apgar archetype, showing the different types of bindings:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, odin]
+--------
+    --
+    -- Derived from openEHR-EHR-OBSERVATION.term_bindings_paths_use_refs.v1.adls
+    --
+    term_definitions = <
+        ["en"] = <
+            ["at0000"] = <
+                text = <"Apgar score">
+                description = <"Clinical score derived from assessment of respiratory effort, heart rate, reflex irritability, muscle_tone tone and skin skin_colour.">
+            >
+            ["at0003"] = <
+                text = <"1 minute">
+                description = <"Apgar score 1 minute after birth.">
+            >
+            ["at0005"] = <
+                text = <"Heart Rate">
+                description = <"Recording of the infant's heart rate.">
+            >
+            ["at0025"] = <
+                text = <"Total">
+                description = <"The sum of the 5 ordinal scores for each component parameter.">
+            >
+            ...
+            ["at0026"] = <
+                text = <"Absent">
+                description = <"No heart beat is seen, felt or heard.">
+            >
+            ...
+        >
+    >
+
+    term_bindings = <
+        ["snomed_ct"] = <
+            ["/data[at0002]/events[at0003]/data[at0001]/items[at0025]"] = <http://snomedct.info/id/169895004> -- Apgar score at 1 minute
+            ["at0025"] = <http://snomedct.info/id/249228009> -- Total Apgar score (observable entity)
+        >
+        ["loinc"] = <
+            ["/data[at002]/events[at0003]"] = <http://loinc.org/id/48334-7>   -- 1-minute Apgar panel
+            ["/data[at002]/events[at0003]/data[at0001]/items[at0005]"] = <http://loinc.org/id/32407-9> -- 1 minute Apgar Heart rate
+            ["at0006"] = <http://loinc.org/id/LA6716-0>  -- No heart rate
+            ...
+        >
+        ["umls"] = <
+            ["at0000"] = <http://umls.nlm.edu/id/C124305> -- apgar result
+            ["at0005"] = <http://umls.nlm.edu/id/C234305> -- cardiac score
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, odin]
+--------
+    --
+    -- Derived from openEHR-EHR-OBSERVATION.term_bindings_paths_use_refs.v1.adls
+    --
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <
+                text = <"Apgar score">
+                description = <"Clinical score derived from assessment of respiratory effort, heart rate, reflex irritability, muscle_tone tone and skin skin_colour.">
+            >
+            ["id4"] = <
+                text = <"1 minute">
+                description = <"Apgar score 1 minute after birth.">
+            >
+            ["id6"] = <
+                text = <"Heart Rate">
+                description = <"Recording of the infant's heart rate.">
+            >
+            ["id26"] = <
+                text = <"Total">
+                description = <"The sum of the 5 ordinal scores for each component parameter.">
+            >
+            ...
+            ["at7"] = <
+                text = <"Absent">
+                description = <"No heart beat is seen, felt or heard.">
+            >
+            ...
+        >
+    >
+
+    term_bindings = <
+        ["snomed_ct"] = <
+            ["/data[id3]/events[id4]/data[id2]/items[id26]"] = <http://snomedct.info/id/169895004> -- Apgar score at 1 minute
+            ["id26"] = <http://snomedct.info/id/249228009> -- Total Apgar score (observable entity)
+        >
+        ["loinc"] = <
+            ["/data[id3]/events[id4]"] = <http://loinc.org/id/48334-7>   -- 1-minute Apgar panel
+            ["/data[id3]/events[id4]/data[id2]/items[id6]"] = <http://loinc.org/id/32407-9> -- 1 minute Apgar Heart rate
+            ["at7"] = <http://loinc.org/id/LA6716-0>  -- No heart rate
+            ...
+        >
+        ["umls"] = <
+            ["id1"] = <http://umls.nlm.edu/id/C124305> -- apgar result
+            ["id6"] = <http://umls.nlm.edu/id/C234305> -- cardiac score
+        >
+    >
+--------
+====
+
+The reason for code and path keys for at-codes (id-codes) is to enable two types of code bindings. A binding to a simple code such as `at0025|Total|` (`id26|Total|`), above, means that the bound term (referred to by the URI `http://snomedct.info/id/249228009`) has a context-independent correlation to the code. However, a 'pre-coordinated' code such as {snomed_ct}[SNOMED CT^] `169895004|Apgar score at 1 minute|` cannot be bound just to `at0025|Total|` (`id26|Total|`), but rather to the node representing the 1-minute total, i.e. at the path `/data[at0002]/events[at0003|1 minute|]/data[at0001]/items[at0025]` (`/data[id3]/events[id4|1 minute|]/data[id2]/items[id26]`). Such paths can be considered as equivalent to a 'post-coordinated' code, and thus the binding establishes a correspondence between an internal post-coordination and an external pre-coordinated code.
+
+In the example shown below, the `at0003` (`id4`) code identifies a 'temperature' node in an archetype, and the codes `at0002`, `at0004`, `at0005` (`id3`, `id5`, `id6`) etc correspond to various times such as 'any', '1-hour average', '1-hour maximum' and so on. Some terminologies (notably {loinc}[LOINC^], the laboratory terminology in this example) define pre-coordinated codes, such as '1 hour body temperature'; these clearly correspond not to single codes such as `at0003` (`id4`) in the archetype, but to whole paths.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, odin]
+--------
+    term_bindings = <
+        ["LNC205"] = <   -- LNC205 is a namespace corresponding to LOINC 205
+            ["/data[at0001]/events[at0002]/data[at0007]/item[at0003]"] = <http://loinc.org/id/8310-5>
+            ["/data[at0001]/events[at0004]/data[at0007]/item[at0003]"] = <http://loinc.org/id/8321-2>
+            ["/data[at0001]/events[at0005]/data[at0007]/item[at0003]"] = <http://loinc.org/id/8311-3>
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, odin]
+--------
+    term_bindings = <
+        ["LNC205"] = <   -- LNC205 is a namespace corresponding to LOINC 205
+            ["/data[id2]/events[id3]/data[id1]/item[id4]"] = <http://loinc.org/id/8310-5>
+            ["/data[id2]/events[id5]/data[id1]/item[id4]"] = <http://loinc.org/id/8321-2>
+            ["/data[id2]/events[id6]/data[id1]/item[id4]"] = <http://loinc.org/id/8311-3>
+        >
+    >
+--------
+====
+
+Bindings to external value sets are also included in the bindings section, also as URIs:
+
+[source, odin]
+--------
+    term_bindings = <
+        ["snomed_ct"]    = <
+            ["ac1"] = <http://snomed.info/id/123456789>
+            ["ac2"] = <http://snomed.info/id/987654321>
+        >
+    >
+--------
+
+In this example, each local constraint code is formally defined to refer to a value set whose identifier is known in the {snomed_ct}[SNOMED CT^] terminology.
+
+The next section describes the semantics of term constraining, value sets and binding in some detail.
+
+=== Deprecated Terminology Section Features
+
+==== At-codes as identifiers
+
+In at-coded ADL2 archetypes at-codes are used as code values as well as node identifiers. In id-coded ADL2 archetypes at-codes are used only as code values, not node identifiers. Id-codes are used for the latter purpose, providing a clearer separation between node 'names' and node 'values', for the kind of nodes whose values are coded terms.
+
+==== Terminologies_available sub-section
+
+In ADL 1.4, a `terminologies_available` header statement was required to identify all terminologies for which `term_bindings` sections have been written. For example:
+
+----
+    terminologies_available = <"snomed_ct", "loinc">
+----
+
+This is no longer required. In archetypes that have it, it is ignored, and should not be included in ADL 2 or later syntax output serialisation.
+
+==== Separated definitions and bindings sub-sections
+
+In ADL 1.4, there were two separate definitions sections, `term_definitions` and `constraint_definitions`, used to defined `at` and `ac` codes respectively. In ADL 2, these are merged into one `term_definitions` section, containing the definitions for `id`, `at` and `ac` codes. Similarly there were bindings sections, `term_bindings ` and `constraint_bindings`. These have been merged into one `term_bindings` section.
+
+==== Term_definitions Structure
+
+The following shows the structure of the terminology section used in ADL 1.4 archetypes. The extra `items` attribute notes are removed by ADL 2 tools, and should be considered deprecated.
+
+[source, odin]
+--------
+    term_definitions = <
+        ["en"] = <
+            items = <
+                ["at0001"] = <...>
+                ["at0002"] = <...>
+            >
+        >
+    >
+--------

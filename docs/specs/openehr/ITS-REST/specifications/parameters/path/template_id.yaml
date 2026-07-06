@@ -1,0 +1,9 @@
+name: template_id
+in: path
+description: |
+  Template identifier.
+required: true
+style: simple
+schema:
+  type: string
+  example: "Vital Signs"

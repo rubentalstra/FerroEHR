@@ -1,0 +1,39 @@
+= Terminology Package
+
+== Overview
+
+All linguistic and terminological entities in an archetype are represented in the `ontology` part of an archetype, whose semantics are given in the `ontology` package, shown below.
+
+[.text-center]
+.aom14.archetype.ontology Package
+image::{uml_diagrams_uri}/AM-aom14.archetype.ontology.svg[id=ontology_package, align="center"]
+
+An archetype ontology consists of the following things.
+
+* A list of terms defined local to the archetype. These are identified by 'atNNNN' codes, and perform the function of archetype node identifiers from which paths are created. There is one such list for each natural language in the archetype. A term 'at0001' defined in English as 'blood group' is an example.
+* A list of external constraint definitions, identified by 'acNNNN' codes, for constraints defined external to the archetype, and referenced using an instance of a `CONSTRAINT_REF`. There is one such list for each natural language in the archetype. A term 'ac0001' corresponding to 'any term which is-a blood group', which can be evaluated against some external terminology service.
+* Optionally, a set of one or more bindings of term definitions to term codes from external terminologies.
+* Optionally, a set of one or more bindings of the external constraint definitions to external resources such as terminologies.
+
+== Semantics
+
+=== Specialisation Depth
+
+Any given archetype occurs at some point in a lineage of archetypes related by specialisation, where the depth is reflected by the `_specialisation_depth_` attribute. An archetype which is not a specialisation of another has a specialisation_depth of 0. Term and constraint codes _introduced_ in the terminology of specialised archetypes (i.e. which did not exist in the terminology of the parent archetype) are defined in a strict way, using '.' (period) markers. For example, an archetype of specialisation depth 2 will use term definition codes like the following:
+
+* `at0.0.1` - a new term introduced in this archetype, which is not a specialisation of any previous term in any of the parent archetypes;
+* `at0001.0.1` - a term which specialises the 'at0001' term from the top parent. An intervening '.0' is required to show that the new term is at depth 2, not depth 1;
+* `at0001.1.1` - a term which specialises the term 'at0001.1' from the immediate parent, which itself specialises the term 'at0001' from the top parent.
+
+This systematic definition of codes enables software to use the structure of the codes to more quickly and accurately make inferences about term definitions up and down specialisation hierarchies. Constraint codes on the other hand do not follow these rules, and exist in a flat code space instead.
+
+=== Term and Constraint Definitions
+
+Local term and constraint definitions are modelled as instances of the class `ARCHETYPE_TERM`, which is a code associated with a list of name/value pairs. For any term or constraint definition, this list must at least include the name/value pairs for the names "text" and "description". It might also include such things as "provenance", which would be used to indicate that a term was sourced from an external terminology. The attribute `_term_attribute_names_` in `ARCHETYPE_ONTOLOGY` provides a list of attribute names used in term and constraint definitions in the archetype, including "text" and "description", as well as any others which are used in various places.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}archetype_ontology.adoc[]
+include::{uml_export_dir}/classes/{pkg}archetype_term.adoc[]
+
+

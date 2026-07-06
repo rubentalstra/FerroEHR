@@ -1,0 +1,25 @@
+=== BMM_PROCEDURE_CALL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_PROCEDURE_CALL*
+
+h|*Description*
+2+a|A call made on a closed procedure agent. The method in BMM via which external actions are achieved from within a program.
+
+h|*Inherit*
+2+|`<<_el_agent_call_class,EL_AGENT_CALL>>`, `<<_bmm_simple_statement_class,BMM_SIMPLE_STATEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*agent*: `<<_el_procedure_agent_class,EL_PROCEDURE_AGENT>>`
+a|The procedure agent being called.
+
+h|*Invariants*
+2+a|__Inv_valid_agent__: `agent.is_callable()`
+|===

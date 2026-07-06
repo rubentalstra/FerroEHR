@@ -1,0 +1,139 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*RM Release 1.1.0*
+
+4+^h|*RM Release 1.0.4*
+
+|[[latest_issue]]2.1.2
+|{spec_tickets}/SPECPUB-3[SPECPUB-3^]. Re-instate inheritance from descendants of `X_VERSIONED_OBJECT<T>` to `X_VERSIONED_OBJECT` from Release 1.0.2 (lost in original UML conversion).
+|T Beale
+|[[latest_issue_date]]25 May 2016
+
+4+^h|*RM Release 1.0.3*
+
+|2.1.1
+|{spec_tickets}/SPECRM-30[SPECRM-30^]. Correct documentation errors in `EHR_EXTRACT` class (remove text about generic parameters).
+|R Chen, +
+ H Frankel, +
+ T Beale
+|10 Oct 2015
+
+|
+|{spec_tickets}/SPECRM-24[SPECRM-24^]. Correct EHR Extract IM typographical errors.
+|P Gummer, +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPECRM-13[SPECRM-13^]. Convert various fields to coded in EHR Extract. +
+ `EXTRACT_SPEC`.`_type_`, `EXTRACT_ACTION_REQUEST`.`_action_` and `EXTRACT_UPDATE_SPEC`.`_trigger_events_` are converted to coded types.
+|H Frankel, +
+ T Beale
+|
+
+|2.1
+|{spec_tickets}/SPECRM-14[SPECRM-14^]: Various EHR Extract model improvements: +
+ Remove `EXTRACT_SPEC`.`_includes_directory_` and `_directory_archetype_`; remove `EXTRACT_ENTITY_CONTENT` class; +
+ make `EXTRACT_FOLDER` classes the main containment structure; move `X_VERSIONED_OBJECT` to `openEHR_extract` package; +
+ change `EXTRACT`.`_request_id_` to a `HIER_OBJECT_ID`; +
+ change `GENERIC_EXTRACT_ITEM._other_details_` to `Hash<String, String>`.
+|H Frankel, +
+ T Beale
+|29 Jun 2011
+
+|
+|{spec_tickets}/SPECRM-6[SPECRM-6^]. Correct modelling inconsistency of every `EXTRACT_CHAPTER` being related to a single Entity.
+|T Beale
+|
+
+4+^h|*Release 1.0.1*
+
+|2.0 
+|{spec_tickets}/SPEC-189[SPEC-189^]. Add `LOCATABLE`.`_parent_`. New invariant in `EHR_EXTRACT`.
+|T Beale
+|20 Feb 2007
+
+|
+|{spec_tickets}/SPECRM-10[SPECRM-10^]: Upgrade `EHR_EXTRACT` to Release-1.0. Major redevelopment. +
+ Added `X_VERSIONED_OBJECT`, `X_VERSIONED_FOLDER`, `X_VERSIONED_COMPOSITION`, `X_VERSIONED_EHR_ACCESS`, `X_VERSIONED_EHR_STATUS`, `X_VERSIONED_PARTY`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-219[SPEC-219^]: Use constants instead of literals to refer to terminology in RM.
+|R Chen
+|
+
+4+^h|*Release 0.95*
+
+|1.3.5
+|{spec_tickets}/SPEC-118[SPEC-118^]. Make package names lower case. 
+|T Beale 
+|10 Dec 2004
+
+4+^h|*Release 0.9*
+
+|1.3.4 
+|{spec_tickets}/SPEC-41[SPEC-41^]. Visually differentiate primitive types in openEHR documents.
+|D Lloyd 
+|04 Oct 2003
+
+|1.3.3 
+|{spec_tickets}/SPEC-13[SPEC-13^]. Change key class names, according to CEN ENV 13606.
+|S Heard, 
+ D Kalra, 
+ D Lloyd, 
+ T Beale
+|15 Sep 2003
+
+|1.3.2 
+|{spec_tickets}/SPEC-3[SPEC-3^], {spec_tickets}/SPEC-4[SPEC-4^] (changes to versioning and LOCATABLE).  `MESSAGE_CONTENT` now inherits from `LOCATABLE`.
+|T Beale,
+ Z Tun
+|18 Mar 2003
+
+|1.3.1 
+|Formally validated using ISE Eiffel 5.2. Revised structure of `MESSAGE` class to align better with CEN 13606-4. Renamed `EHR_EXTRACT`.`_hca_authorising_` to `_originator_`, similar to 13606.
+|T Beale 
+|26 Feb 2003
+
+|1.3 
+|Changes post CEN WG meeting Rome Feb 2003. Added attestations to `X_TRANSACTION` class. Significantly improved documentation of requirements, comparison to CEN 13606-4.
+|T Beale, +
+ S Heard, +
+ D Kalra, +
+ D Lloyd
+|07 Feb 2003
+
+|1.2.2 
+|Minor corrections to diagrams and class definitions. 
+|Z Tun 
+|08 Jan 2003
+
+|1.2.1 
+|Added senders_reference to conform to CEN 13606-4:2000 section 7.4.
+|T Beale 
+|04 Jan 2003
+
+|1.2 
+|Rewritten and restructured as two packages. 
+|T Beale 
+|07 Nov 2002
+
+|1.1 
+|Moved part of `EHR_EXTRACT` into `MESSAGE`. Allow for multilevel archetypable Folder structures.
+|T Beale, +
+ D Kalra, +
+ D Lloyd
+|07 Oct 2002
+
+|1.0 
+|Taken from EHR RM. 
+|T Beale 
+|07 Oct 2002
+
+|===

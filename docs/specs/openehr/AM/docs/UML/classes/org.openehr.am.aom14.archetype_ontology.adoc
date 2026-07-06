@@ -1,0 +1,114 @@
+=== ARCHETYPE_ONTOLOGY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ARCHETYPE_ONTOLOGY*
+
+h|*Description*
+2+a|Local ontology of an archetype.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*term_codes*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of all term codes in the ontology. Most of these correspond to “at” codes in an ADL archetype, which are the node_ids on C_OBJECT descendants. There may be an extra one, if a different term is used as the overall archetype concept from that used as the node_id of the outermost C_OBJECT in the definition part.
+
+h|*1..1*
+|*constraint_codes*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of all term codes in the ontology. These correspond to the “ac” codes in an ADL archetype, or equivalently, the CONSTRAINT_REF.reference values in the archetype definition.
+
+h|*1..1*
+|*parent_archetype*: `<<_archetype_class,ARCHETYPE>>`
+a|Archetype which owns this terminology.
+
+h|*0..1*
+|*terminologies_available*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of terminologies to which term or constraint bindings exist in this terminology.
+
+h|*1..1*
+|*specialisation_depth*: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Specialisation depth of this archetype. Unspecialised archetypes have depth 0, with each additional level of specialisation adding 1 to the specialisation_depth.
+
+h|*1..1*
+|*term_attribute_names*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_language* ( +
+a_lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if terminology ‘a_terminology’ is present in archetype ontology.
+
+h|*1..1*
+|*has_terminology* ( +
+a_terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if terminology `a_terminology' is present in archetype ontology.
+
+h|*1..1*
+|*has_term_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if term_codes has a_code.
+
+h|*1..1*
+|*has_constraint_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if constraint_codes has a_code.
+
+h|*1..1*
+|*term_definition* ( +
+a_lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_archetype_term_class,ARCHETYPE_TERM>>` +
+ +
+__Pre__: `has_language (a_lang)` +
+__Pre2__: `has_term_code (a_code)`
+a|Term definition for a code, in a specified language.
+
+h|*1..1*
+|*constraint_definition* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_archetype_term_class,ARCHETYPE_TERM>>` +
+ +
+__Pre__: `has_language (a_lang)` +
+__Pre_2__: `has_constraint_code (a_code)`
+a|Constraint definition for a code, in a specified language.
+
+h|*1..1*
+|*term_binding* ( +
+a_terminology: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_code_phrase_class[CODE_PHRASE^]` +
+ +
+__Pre__: `has_term_binding (a_terminology_id, a_code)`
+a|Binding of constraint corresponding to a_code in target external terminology a_terminology_id, as a string, which is usually a formal query expression.
+
+h|*1..1*
+|*constraint_binding* ( +
+a_terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Binding of constraint corresponding to a_code in target external terminology a_terminology_id, as a string, which is usually a formal query expression.
+
+h|*Invariants*
+2+a|__Original_language_validity__: `code_set (Code_set_id_languages).has_concept_id (original_language)`
+
+h|
+2+a|__concept_code_validity__: `id_codes.has (concept_code)`
+
+h|
+2+a|__Term_bindings_validity__: `bindings /= void implies not bindings.is_empty`
+
+h|
+2+a|__Parent_archetype_valid__: `parent_archetype.ontology = Current`
+|===

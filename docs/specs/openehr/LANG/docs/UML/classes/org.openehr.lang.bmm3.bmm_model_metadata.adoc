@@ -1,0 +1,22 @@
+=== BMM_MODEL_METADATA Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_MODEL_METADATA*
+
+h|*Description*
+2+a|Core properties of `BMM_MODEL`, may be used in a serial representation as well, such as `P_BMM_SCHEMA`.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*rm_publisher*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Publisher of model expressed in the schema.
+
+h|*1..1*
+|*rm_release*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Release of model expressed in the schema as a 3-part numeric, e.g. "3.1.0" .
+|===
