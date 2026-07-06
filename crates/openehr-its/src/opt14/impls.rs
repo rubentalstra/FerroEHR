@@ -428,12 +428,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeInternalRef {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             target_path: __target_path.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element target_path".into())
             })?,
@@ -606,12 +609,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeSlot {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             includes: __includes,
             excludes: __excludes,
         })
@@ -1079,12 +1085,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::ConstraintRef {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             reference: __reference.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element reference".into())
             })?,
@@ -1194,12 +1203,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CArchetypeRoot {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             attributes: __attributes,
             archetype_id: __archetype_id.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element archetype_id".into())
@@ -1413,12 +1425,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CCodePhrase {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             assumed_value: __assumed_value,
             terminology_id: __terminology_id,
             code_list: __code_list,
@@ -1522,12 +1537,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CCodeReference {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             assumed_value: __assumed_value,
             terminology_id: __terminology_id,
             code_list: __code_list,
@@ -1611,12 +1629,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CComplexObject {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             attributes: __attributes,
         })
     }
@@ -1856,12 +1877,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDefinedObject {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
         })
     }
 }
@@ -2079,12 +2103,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvOrdinal {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             assumed_value: __assumed_value,
             list: __list,
         })
@@ -2179,12 +2206,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvQuantity {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             assumed_value: __assumed_value,
             property: __property,
             list: __list,
@@ -2271,12 +2301,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvState {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             assumed_value: __assumed_value,
             value: __value.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element value".into())
@@ -2435,9 +2468,14 @@ impl crate::xml::runtime::FromXml for crate::opt14::CMultipleAttribute {
             rm_attribute_name: __rm_attribute_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_attribute_name".into())
             })?,
-            existence: __existence.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element existence".into())
-            })?,
+            existence: __existence.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
             children: __children,
             cardinality: __cardinality.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element cardinality".into())
@@ -2688,12 +2726,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::CPrimitiveObject {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             item: __item,
         })
     }
@@ -2917,9 +2958,14 @@ impl crate::xml::runtime::FromXml for crate::opt14::CSingleAttribute {
             rm_attribute_name: __rm_attribute_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_attribute_name".into())
             })?,
-            existence: __existence.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element existence".into())
-            })?,
+            existence: __existence.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
             children: __children,
         })
     }
@@ -4712,9 +4758,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescriptionItem {
             language: __language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element language".into())
             })?,
-            purpose: __purpose.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element purpose".into())
-            })?,
+            purpose: __purpose.unwrap_or(String::new()),
             keywords: __keywords,
             use_: __use_,
             misuse: __misuse,
@@ -5289,12 +5333,15 @@ impl crate::xml::runtime::FromXml for crate::opt14::TComplexObject {
             rm_type_name: __rm_type_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_type_name".into())
             })?,
-            occurrences: __occurrences.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element occurrences".into())
-            })?,
-            node_id: __node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element node_id".into())
-            })?,
+            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(0),
+                upper: Some(1),
+            }),
+            node_id: __node_id.unwrap_or(String::new()),
             attributes: __attributes,
             default_value: __default_value,
         })
