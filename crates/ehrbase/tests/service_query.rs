@@ -1,0 +1,175 @@
+//! End-to-end HTTP tests for the DEFINITION stored-query store surface against a
+//! real `PostgreSQL` 18 (testcontainers), driven through the assembled
+//! `ehrbase-rest` router (auth disabled) with `tower`'s `oneshot`.
+//!
+//! Covers the spec-mandated write semantics fixed in the W1-C audit wave:
+//! - a versioned store returns `200 OK` + a `Location` header
+//!   (`responses/200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`),
+//!   not `204`;
+//! - re-storing an existing `(name, version)` returns `409 Conflict`
+//!   (`responses/409_StoredQuery_version.yaml`), never a silent overwrite;
+//! - the no-version store path upserts (spec: "stores a new query, or updates
+//!   an existing query", `operations/definition_query_store.yaml`, no `409`).
+#![allow(clippy::expect_used, clippy::unwrap_used)]
+
+use axum::Router;
+use axum::body::Body;
+use http::{Request, StatusCode, header};
+use http_body_util::BodyExt;
+use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
+use testcontainers::runners::AsyncRunner;
+use testcontainers::{ContainerAsync, ImageExt};
+use testcontainers_modules::postgres::Postgres;
+use tower::ServiceExt;
+
+use ehrbase::db::{self, DbSettings};
+use ehrbase::service::EhrbaseService;
+use ehrbase_rest::RestConfig;
+
+const BASE: &str = "/ehrbase/rest/openehr/v1";
+const AQL: &str = "SELECT c FROM EHR e CONTAINS COMPOSITION c";
+
+struct Pg {
+    #[allow(dead_code)]
+    container: ContainerAsync<Postgres>,
+    host: String,
+    port: u16,
+}
+
+impl Pg {
+    async fn start() -> Self {
+        let container = Postgres::default()
+            .with_tag("18")
+            .start()
+            .await
+            .expect("start postgres:18 (is Docker running?)");
+        let host = container.get_host().await.expect("host").to_string();
+        let port = container.get_host_port_ipv4(5432).await.expect("port");
+        Self {
+            container,
+            host,
+            port,
+        }
+    }
+
+    async fn migrated_pool(&self, name: &str) -> PgPool {
+        let admin = format!(
+            "postgres://postgres:postgres@{}:{}/postgres",
+            self.host, self.port
+        );
+        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
+        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
+            .execute(&mut conn)
+            .await
+            .expect("create db");
+        let settings = DbSettings::new(format!(
+            "postgres://postgres:postgres@{}:{}/{name}",
+            self.host, self.port
+        ));
+        let pool = db::connect(&settings).await.expect("pool");
+        db::run_migrations(&pool).await.expect("migrate");
+        pool
+    }
+}
+
+/// The router backed by the DB service, with authentication disabled.
+fn app(pool: PgPool) -> Router {
+    let mut config = RestConfig::default();
+    config.auth.enabled = false;
+    ehrbase_rest::build_with(config, std::sync::Arc::new(EhrbaseService::new(pool)))
+        .expect("router builds")
+}
+
+async fn put(app: Router, uri: &str, body: &str) -> (StatusCode, http::HeaderMap, String) {
+    let req = Request::builder()
+        .method("PUT")
+        .uri(uri)
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(Body::from(body.to_owned()))
+        .unwrap();
+    let resp = app.oneshot(req).await.unwrap();
+    let status = resp.status();
+    let headers = resp.headers().clone();
+    let bytes = resp.into_body().collect().await.unwrap().to_bytes();
+    (
+        status,
+        headers,
+        String::from_utf8_lossy(&bytes).into_owned(),
+    )
+}
+
+async fn get(app: Router, uri: &str) -> (StatusCode, String) {
+    let req = Request::builder()
+        .method("GET")
+        .uri(uri)
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.oneshot(req).await.unwrap();
+    let status = resp.status();
+    let bytes = resp.into_body().collect().await.unwrap().to_bytes();
+    (status, String::from_utf8_lossy(&bytes).into_owned())
+}
+
+#[tokio::test]
+async fn versioned_store_returns_200_with_location_and_409_on_duplicate() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("sq_versioned").await;
+    let name = "org.example::test_query";
+    let uri = format!("{BASE}/definition/query/{name}/1.0.0");
+
+    // First store: 200 OK + Location pointing at the stored resource.
+    let (status, headers, _body) = put(app(pool.clone()), &uri, AQL).await;
+    assert_eq!(status, StatusCode::OK, "store success is 200, not 204");
+    let location = headers
+        .get(header::LOCATION)
+        .and_then(|v| v.to_str().ok())
+        .expect("Location header present");
+    assert_eq!(
+        location,
+        format!("{BASE}/definition/query/{name}/1.0.0"),
+        "Location points at the stored query version"
+    );
+
+    // Re-storing the same name+version is a 409 Conflict (immutable version).
+    let (status, _headers, _body) = put(app(pool.clone()), &uri, AQL).await;
+    assert_eq!(
+        status,
+        StatusCode::CONFLICT,
+        "re-storing an existing (name, version) conflicts"
+    );
+
+    // The stored query is retrievable and untouched.
+    let (status, body) = get(app(pool), &format!("{BASE}/definition/query/{name}/1.0.0")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.contains(AQL), "stored AQL retrievable: {body}");
+}
+
+#[tokio::test]
+async fn no_version_store_upserts_and_returns_200() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("sq_noversion").await;
+    let name = "org.example::auto_query";
+    let uri = format!("{BASE}/definition/query/{name}");
+
+    // No-version store: 200 OK (auto-assigned version).
+    let (status, _headers, _body) = put(app(pool.clone()), &uri, AQL).await;
+    assert_eq!(status, StatusCode::OK, "no-version store success is 200");
+
+    // Re-storing the no-version path updates rather than conflicting (spec:
+    // "stores a new query, or updates an existing query").
+    let updated = "SELECT c FROM EHR e CONTAINS COMPOSITION c WHERE c/name/value = 'x'";
+    let (status, _headers, _body) = put(app(pool.clone()), &uri, updated).await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "no-version re-store upserts, no 409"
+    );
+
+    // The latest text is what is retrieved.
+    let (status, body) = get(app(pool), &format!("{BASE}/definition/query/{name}/1.0.0")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains(updated),
+        "no-version store updated text: {body}"
+    );
+}

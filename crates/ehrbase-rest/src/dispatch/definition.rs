@@ -157,7 +157,13 @@ async fn run(
             let p = params::build::<DefinitionQueryStoreYamlParams>(&parts.path, q, h)?;
             let body = negotiate::text_body(&parts.body)?;
             state.backend().definition_query_store_yaml(p, body).await?;
-            Ok(negotiate::empty(StatusCode::NO_CONTENT))
+            // Spec: the store success is `200 OK` (not `204`).
+            // TODO(port): the no-version store auto-assigns the version, but the
+            // generated trait method is bodyless (`()`), so the assigned version
+            // is not available here to build the `Location` header (a coherent
+            // no-version auto-increment + Location design is deferred — see the
+            // finding 03 hygiene note). The versioned store arm below sets it.
+            Ok(negotiate::empty(StatusCode::OK))
         }
         "definition_query_version_get" => {
             let p = params::build::<DefinitionQueryVersionGetParams>(&parts.path, q, h)?;
@@ -169,12 +175,22 @@ async fn run(
         }
         "definition_query_version_store.yaml" => {
             let p = params::build::<DefinitionQueryVersionStoreYamlParams>(&parts.path, q, h)?;
+            // The version is stored verbatim, so it is the effective SEMVER the
+            // `Location` header points at.
+            let name = p.qualified_query_name.clone();
+            let version = p.version.clone();
             let body = negotiate::text_body(&parts.body)?;
             state
                 .backend()
                 .definition_query_version_store_yaml(p, body)
                 .await?;
-            Ok(negotiate::empty(StatusCode::NO_CONTENT))
+            // Spec: `200 OK` with a `Location` header for the stored resource
+            // (`responses/200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`).
+            let location = format!(
+                "{}/definition/query/{name}/{version}",
+                state.config().base_path
+            );
+            Ok(negotiate::empty_with_location(StatusCode::OK, &location))
         }
         other => Err(RestError(openehr_its::rest::runtime::ApiError::Internal(
             format!("unrouted definition operation: {other}"),

@@ -74,9 +74,12 @@ impl DefinitionApi for EhrbaseService {
         params: DefinitionQueryStoreYamlParams,
         body: String,
     ) -> Result<(), ApiError> {
-        Ok(self
-            .store_query(&params.qualified_query_name, None, body)
-            .await?)
+        // The effective version is returned for the caller's `Location` header,
+        // but the generated trait method is bodyless (`()`); the dispatcher
+        // builds `Location` from the resolved name/version it already holds.
+        self.store_query(&params.qualified_query_name, None, body)
+            .await?;
+        Ok(())
     }
 
     async fn definition_query_version_store_yaml(
@@ -84,8 +87,8 @@ impl DefinitionApi for EhrbaseService {
         params: DefinitionQueryVersionStoreYamlParams,
         body: String,
     ) -> Result<(), ApiError> {
-        Ok(self
-            .store_query(&params.qualified_query_name, Some(&params.version), body)
-            .await?)
+        self.store_query(&params.qualified_query_name, Some(&params.version), body)
+            .await?;
+        Ok(())
     }
 }

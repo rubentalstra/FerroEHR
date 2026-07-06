@@ -50,7 +50,10 @@ re-serializing via the generated `ToXml`.
 - **Code:** `crates/ehrbase/src/service/template.rs:73-88` (`store_template` uses `INSERT … ON CONFLICT (template_id) DO UPDATE SET … content = EXCLUDED.content`); `crates/ehrbase/src/service/api/definition.rs:23-34` (upload always yields the stored meta); `crates/ehrbase-rest/src/dispatch/definition.rs:60-70` (always renders `StatusCode::CREATED`).
 - **Problem:** Re-uploading a template with an existing `template_id` succeeds with `201 Created` and **silently replaces the stored OPT content** (the `DO UPDATE` overwrites `content`, `concept`, `root_archetype`, and resets `created_at`). The ITS-REST contract and the CNF `upload_opt-valid_opt_twice_conflict` case both require `409 Conflict` (the ADL2 "twice without conflict" variant is explicitly tagged `future`/`NOT APPLICABLE FOR ADL 1.4`, so for ADL 1.4 the second upload must be rejected). This is a spec/CNF conformance failure and destroys the prior template version on collision.
 - **Fix:** In `store_template`, detect the pre-existing `template_id` (either a plain `INSERT` that surfaces the unique-violation, or a `SELECT … FOR UPDATE` pre-check) and return a distinct `ServiceError::Conflict` mapped to `409` at the REST edge (add the variant if absent). Only insert when new; never `DO UPDATE` the content for adl1.4. The WebTemplate cache (`web_templates`) should be invalidated for that id when a legitimate replacement path is later added (admin), but on the adl1.4 endpoint the second upload must not mutate state.
-- [ ] fixed
+- [x] fixed — `store_template` is now insert-only (`ON CONFLICT (template_id) DO
+  NOTHING`; 0 affected rows → `ServiceError::Conflict` → 409); the stored OPT is
+  never overwritten. Verified by `service_template.rs` (re-upload → 409, original
+  XML untouched).
 
 ### F-09-02: `opt14` duplicates the full AOM 1.4 constraint model already generated as `am14`
 - **Severity:** major

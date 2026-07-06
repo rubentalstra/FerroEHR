@@ -42,6 +42,10 @@ figment = { workspace = true, features = ["test"] }
 testcontainers.workspace = true
 testcontainers-modules.workspace = true
 tokio.workspace = true
+axum.workspace = true
+tower.workspace = true
+http.workspace = true
+http-body-util.workspace = true
 
 [lints]
 workspace = true

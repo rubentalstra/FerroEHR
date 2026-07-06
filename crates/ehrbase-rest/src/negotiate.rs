@@ -335,6 +335,17 @@ pub(crate) fn empty(status: StatusCode) -> Response {
     status.into_response()
 }
 
+/// A bodyless success response carrying a `Location` header — the ITS-REST
+/// shape for a resource store/create whose body is empty (e.g. a stored-query
+/// store: `200 OK` + `Location: …/definition/query/{name}/{version}`).
+pub(crate) fn empty_with_location(status: StatusCode, location: &str) -> Response {
+    let mut resp = status.into_response();
+    if let Ok(value) = HeaderValue::from_str(location) {
+        resp.headers_mut().insert(header::LOCATION, value);
+    }
+    resp
+}
+
 /// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)
 /// verbatim as `application/xml`.
 pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {

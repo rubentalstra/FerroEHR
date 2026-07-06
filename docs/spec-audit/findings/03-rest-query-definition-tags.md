@@ -45,7 +45,13 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
   (critical because the no-version store auto-assigns one).
 - **Fix:** Return `200 OK`; have `store_query` return the effective
   `{name, version}` and set `Location: {base}/definition/query/{name}/{version}`.
-- [ ] fixed
+- [x] fixed (status + versioned Location) — both store arms now return `200 OK`
+  (was `204`); the versioned store arm sets `Location:
+  {base}/definition/query/{name}/{version}` (derived from the request params).
+  The no-version arm's `Location` is left for the auto-increment redesign (see
+  hygiene note): the generated `definition_query_store_yaml` trait method is
+  bodyless (`()`), so the service-assigned version is not reachable at the
+  dispatch edge to build the header (a `// TODO(port):` marks this).
 
 ### F-03-02: Versioned stored-query store never returns `409 Conflict` on an existing version
 - **Severity:** major
@@ -61,7 +67,11 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Fix:** For the versioned store path, detect the existing row and return
   `ServiceError::Conflict` (→ 409); reserve upsert only for the no-version
   auto-versioning path (and there, auto-increment rather than reuse `1.0.0`).
-- [ ] fixed
+- [x] fixed — the versioned store path is now insert-only (`ON CONFLICT … DO
+  NOTHING`; 0 affected rows → `ServiceError::Conflict` → 409), never an
+  overwrite; the no-version path keeps its spec-permitted upsert. Verified by
+  `service_query.rs` (re-store same version → 409). (The `1.0.0` no-version
+  auto-increment remains the deferred hygiene item.)
 
 ### F-03-03: Template upload never returns `409 Conflict` on a duplicate `template_id`
 - **Severity:** major
@@ -75,7 +85,10 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
   effectively immutable in openEHR; overwrite loses the original artifact.
 - **Fix:** Check for an existing `template_id` first and return
   `ServiceError::Conflict` (→ 409) when present; do not upsert.
-- [ ] fixed
+- [x] fixed — `store_template` is now insert-only (`ON CONFLICT (template_id) DO
+  NOTHING`; 0 affected rows → `ServiceError::Conflict` → 409); the existing
+  template is never overwritten. Shared fix with F-09-01; verified by
+  `service_template.rs`.
 
 ### F-03-04: Template upload omits `Location`, ignores `Prefer`, and returns a metadata JSON body instead of the spec's representation
 - **Severity:** major
