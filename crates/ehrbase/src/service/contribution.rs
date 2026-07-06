@@ -23,12 +23,13 @@ enum Action {
 }
 
 impl Action {
-    /// The stored `change_type` code-string for the audit row.
+    /// The numeric `audit_change_type` group code for the audit row.
     fn change_type(self) -> &'static str {
+        use super::codes::change_type;
         match self {
-            Action::Create => "creation",
-            Action::Modify => "modification",
-            Action::Delete => "deleted",
+            Action::Create => change_type::CREATION,
+            Action::Modify => change_type::MODIFICATION,
+            Action::Delete => change_type::DELETED,
         }
     }
 }
@@ -67,6 +68,9 @@ impl EhrbaseService {
                         ServiceError::Unprocessable("creation version needs data".to_owned())
                     })?;
                     let kind = data_kind(&data)?;
+                    // A CONTRIBUTION commit is a full commit route: its versions
+                    // are validated exactly as a direct create/update (F-07-01).
+                    self.validate_for_commit(kind, &data).await?;
                     Change::Create {
                         kind,
                         canonical: data,
@@ -79,6 +83,7 @@ impl EhrbaseService {
                     })?;
                     let (vo_id, expected) = parse_preceding(version)?;
                     let kind = self.require_kind(vo_id).await?;
+                    self.validate_for_commit(kind, &data).await?;
                     Change::Modify {
                         vo_id,
                         kind,
@@ -122,7 +127,10 @@ impl EhrbaseService {
         let change_type = audit
             .and_then(|a| a.get("change_type"))
             .and_then(coded_value)
-            .unwrap_or_else(|| action.change_type().to_owned());
+            .map_or_else(
+                || action.change_type().to_owned(),
+                |c| super::codes::normalize_change_type(&c),
+            );
         let description = audit
             .and_then(|a| a.get("description"))
             .and_then(|d| d.get("value"))
@@ -203,7 +211,12 @@ impl EhrbaseService {
         }))
     }
 
-    /// Build an `AUDIT_DETAILS` from stored audit columns.
+    /// Build an `AUDIT_DETAILS` from stored audit columns. `change_type` is the
+    /// numeric `audit_change_type` group code (`249`/`251`/`523`/…) stored in the
+    /// `audit` row; the emitted `DV_CODED_TEXT` carries the code as
+    /// `defining_code.code_string` (RM `AUDIT_DETAILS.Change_type_valid`) and the
+    /// group rubric — resolved from the `openehr-term` bundle — as `value`
+    /// (findings F-06-02, F-11-01, F-01-06, F-02-06).
     pub(super) fn audit_details(
         system_id: &str,
         change_type: &str,
@@ -217,10 +230,10 @@ impl EhrbaseService {
             "time_committed": { "_type": "DV_DATE_TIME", "value": time_committed.to_string() },
             "change_type": {
                 "_type": "DV_CODED_TEXT",
-                "value": change_type,
+                "value": super::codes::change_type_rubric(change_type),
                 "defining_code": {
                     "_type": "CODE_PHRASE",
-                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": super::codes::OPENEHR },
                     "code_string": change_type
                 }
             },

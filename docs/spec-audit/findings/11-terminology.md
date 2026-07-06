@@ -61,7 +61,7 @@ Counts: **critical 0 · major 4 · minor 3 · info 2**.
   `openehr_term::bundle::openehr().rubric("audit_change_type", code, "en")`).
   Add a round-trip test asserting `code_string` is a member of
   `is_valid_audit_change_type`.
-- [ ] fixed
+- [x] fixed
 
 ### F-11-02: Composition validator omits `DV_TEXT.Language_valid` / `Encoding_valid`
 - **Severity:** major

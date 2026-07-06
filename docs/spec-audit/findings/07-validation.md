@@ -41,7 +41,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/ehrbase/src/service/contribution.rs:43-109` (`create_contribution` → builds `Change::Create`/`Change::Modify` with `canonical: data` and calls `vobject::commit_contribution` directly); contrast `crates/ehrbase/src/service/composition.rs:18,118` which call `validate_composition_for_commit` on the direct path.
 - **Problem:** `create_contribution` never invokes `validate_composition_for_commit` (or any validator). A COMPOSITION (or EHR_STATUS / FOLDER) POSTed inside a CONTRIBUTION is decomposed and persisted with no RM-invariant, terminology, or template-conformance checking. The entire phase-15 subsystem is dead on this path. The phase file lists this as a deferred follow-up ("CONTRIBUTION-path compositions bypass `create_composition`"), but it is a spec-conformance bypass of a required commit route, not a minor edge case.
 - **Fix:** In `create_contribution`, for each `Change::Create`/`Change::Modify` whose `Kind::Composition`, run the same validation as the direct path before `commit_contribution` (share a `validate_for_commit(kind, &data)` helper). Reject the whole contribution atomically with `422` if any version fails. Add an e2e test (valid + invalid composition inside a contribution).
-- [ ] fixed
+- [x] fixed
 
 ### F-07-02: A COMPOSITION with no declared `template_id` skips *all* validation, not just template-conformance
 - **Severity:** major
@@ -49,7 +49,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/ehrbase/src/service/composition.rs:210-233` (`validate_composition_for_commit`): returns `Ok(())` immediately when `/archetype_details/template_id/value` is absent. The RM-invariant and terminology passes live *inside* `openehr_flat::validate_composition(composition, &wt)` (`crates/openehr-flat/src/validation/mod.rs:101-110`), which is only reached when a WebTemplate exists.
 - **Problem:** The PORT NOTE correctly argues a *templateless* composition cannot be template-validated, but the implementation skips the whole validator, so it also skips the two template-independent passes (RM class invariants + RM-mandated terminology). A templateless composition with, e.g., an ELEMENT having both `value` and `null_flavour`, or an invalid `category` code, is accepted.
 - **Fix:** Split the entry point. Always run `rm_invariant_pass` + `terminology_pass` (they need no WebTemplate). Only gate the WebTemplate/archetype-conformance pass on a resolved template. Expose an `openehr_flat::validate_rm_and_terminology(composition)` (no `wt`) and call it unconditionally in `validate_composition_for_commit`.
-- [ ] fixed
+- [x] fixed
 
 ### F-07-03: Terminology pass covers 7 of ~17 RM-mandated coded slots; the bundle validators for the rest are never called
 - **Severity:** major

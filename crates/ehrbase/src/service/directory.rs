@@ -4,7 +4,8 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-use super::vobject::{self, Kind, change_type};
+use super::codes::change_type;
+use super::vobject::{self, Kind};
 use super::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
@@ -45,10 +46,9 @@ impl EhrbaseService {
         }
         .filter(|r| r.ehr_id == ehr_id)
         .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))?;
-        if read.deleted {
-            return Err(ServiceError::NotFound(format!(
-                "directory for EHR {ehr_id} is deleted"
-            )));
+        if read.deleted() {
+            // Deleted → 204 (directory_get_at_time.yaml 204_because_deleted_at_time).
+            return Ok(Value::Null);
         }
         let folder = self.with_uid(read.canonical, vo_id, read.sys_version);
         match path.map(str::trim).filter(|p| !p.is_empty() && *p != "/") {
@@ -129,7 +129,7 @@ impl EhrbaseService {
             .await?
             .filter(|r| r.ehr_id == ehr_id)
             .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))?;
-        if read.deleted {
+        if read.deleted() {
             return Err(ServiceError::NotFound(format!(
                 "directory for EHR {ehr_id} is deleted"
             )));

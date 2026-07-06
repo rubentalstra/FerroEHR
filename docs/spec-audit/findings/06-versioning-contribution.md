@@ -60,7 +60,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   `read_current`, carry `system_id/change_type/description/committer/
   time_committed` on `VersionRead`, and emit `commit_audit` via the existing
   `EhrbaseService::audit_details(...)` helper inside `original_version()`.
-- [ ] fixed
+- [x] fixed
 
 ### F-06-02: `change_type.defining_code.code_string` is the rubric text, not the terminology code
 - **Severity:** critical
@@ -94,7 +94,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   `openehr-term` bundle. Also widen the accepted set to the full group
   (amendment/synthesis/unknown) so inbound `commit_audit.change_type` codes
   round-trip (see F-06-06).
-- [ ] fixed
+- [x] fixed
 
 ### F-06-03: `preceding_version_uid` never emitted — violates `Preceding_version_uid_validity`
 - **Severity:** critical
@@ -117,7 +117,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   `preceding_version_uid` = `OBJECT_VERSION_ID` for `read.sys_version - 1`
   (reuse `object_version_id(vo_id, sys_version - 1)`); leave it absent for
   version 1.
-- [ ] fixed
+- [x] fixed
 
 ### F-06-04: version lifecycle state collapsed to a boolean; `lifecycle_state` always rendered `complete`
 - **Severity:** major
@@ -146,7 +146,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   `original_version()`; accept and validate inbound `lifecycle_state` against the
   `version_lifecycle_state` group on contribution commits. Minimum for
   conformance: render `523|deleted|` when `read.deleted` is true.
-- [ ] fixed
+- [x] fixed
 
 ### F-06-05: `VERSIONED_OBJECT` returned without its mandatory `time_created`
 - **Severity:** major
@@ -164,7 +164,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   / version-1 audit `time_committed`) into `versioned_object()` and emit it as a
   `DV_DATE_TIME`. Note `versioned_object` is currently a pure fn with no DB
   access — it will need the timestamp threaded in from the caller.
-- [ ] fixed
+- [x] fixed
 
 ### F-06-06: change kinds narrowed to creation/modification/deleted — no amendment/synthesis; correction rendered as modification
 - **Severity:** major

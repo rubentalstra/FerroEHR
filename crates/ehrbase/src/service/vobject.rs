@@ -3,12 +3,14 @@
 //! `sqlx` transaction so a version + its nodes + the contribution + the audit
 //! commit atomically.
 
+use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
 use uuid::Uuid;
 
 use crate::storage::{NodeRow, decompose, reassemble};
 
 use super::ServiceError;
+use super::codes::lifecycle;
 
 /// The kind of versioned object (discriminates `vo_version.kind`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -50,17 +52,12 @@ pub(super) async fn object_kind(pool: &PgPool, vo_id: Uuid) -> Result<Option<Kin
     })
 }
 
-/// openEHR audit `change_type` code strings (openEHR Terminology group 249..).
-pub(super) mod change_type {
-    pub(crate) const CREATION: &str = "creation";
-    pub(crate) const MODIFICATION: &str = "modification";
-    pub(crate) const DELETED: &str = "deleted";
-}
-
 /// What an audit row records about a committed change.
 #[derive(Debug, Clone)]
 pub(super) struct AuditInput {
     pub(super) system_id: String,
+    /// The numeric `audit_change_type` group code (`249`/`251`/`523`/…) — never
+    /// a rubric string (RM `AUDIT_DETAILS.Change_type_valid`).
     pub(super) change_type: String,
     pub(super) description: Option<String>,
     /// Canonical `PARTY_PROXY` of the committer.
@@ -86,9 +83,61 @@ pub(super) struct VersionRead {
     pub(super) vo_id: Uuid,
     pub(super) ehr_id: Uuid,
     pub(super) sys_version: i32,
-    pub(super) deleted: bool,
+    /// The version's lifecycle-state numeric code (`version_lifecycle_state`
+    /// group: `532` complete, `523` deleted, …).
+    pub(super) lifecycle_state: String,
     pub(super) contribution_id: Uuid,
+    /// The version's commit `AUDIT_DETAILS` provenance (mandatory
+    /// `VERSION.commit_audit`, 1..1).
+    pub(super) audit: AuditInput,
+    /// When the version was committed (its audit `time_committed`).
+    pub(super) time_committed: jiff::Timestamp,
+    /// The reassembled canonical JSON, or `Value::Null` for a deleted version
+    /// (a logical delete stores no node rows — RM `change_control` §"Logical
+    /// Deletion").
     pub(super) canonical: serde_json::Value,
+}
+
+impl VersionRead {
+    /// Whether this version is logically deleted (`lifecycle_state` `523`).
+    pub(super) fn deleted(&self) -> bool {
+        self.lifecycle_state == lifecycle::DELETED
+    }
+}
+
+/// Build a [`VersionRead`] from a `vo_version`⋈`audit` row, resolving the
+/// canonical body: a deleted version (lifecycle `523`) carries no node rows, so
+/// it is `Value::Null` and reassembly is skipped entirely (this is what stops a
+/// deleted read from erroring on an empty node set — finding F-02-01).
+async fn version_read(
+    pool: &PgPool,
+    vo_id: Uuid,
+    row: &PgRow,
+) -> Result<VersionRead, ServiceError> {
+    let sys_version: i32 = row.try_get("sys_version")?;
+    let lifecycle_state: String = row.try_get("lifecycle_state")?;
+    let canonical = if lifecycle_state == lifecycle::DELETED {
+        serde_json::Value::Null
+    } else {
+        read_nodes(pool, vo_id, sys_version).await?
+    };
+    Ok(VersionRead {
+        vo_id,
+        ehr_id: row.try_get("ehr_id")?,
+        sys_version,
+        lifecycle_state,
+        contribution_id: row.try_get("contribution_id")?,
+        audit: AuditInput {
+            system_id: row.try_get("system_id")?,
+            change_type: row.try_get("change_type")?,
+            description: row.try_get("description")?,
+            committer: row.try_get("committer")?,
+        },
+        time_committed: row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+            .to_jiff(),
+        canonical,
+    })
 }
 
 /// Insert an `audit` row, returning its id.
@@ -211,7 +260,7 @@ async fn apply_change(
                 kind,
                 ehr_id,
                 1,
-                false,
+                lifecycle::COMPLETE,
                 contribution_id,
                 audit_id,
                 template_id.as_deref(),
@@ -240,7 +289,7 @@ async fn apply_change(
                 kind,
                 ehr_id,
                 next,
-                false,
+                lifecycle::COMPLETE,
                 contribution_id,
                 audit_id,
                 template_id.as_deref(),
@@ -266,7 +315,7 @@ async fn apply_change(
                 kind,
                 ehr_id,
                 next,
-                true,
+                lifecycle::DELETED,
                 contribution_id,
                 audit_id,
                 None,
@@ -315,21 +364,21 @@ async fn insert_vo_version(
     kind: Kind,
     ehr_id: Uuid,
     sys_version: i32,
-    deleted: bool,
+    lifecycle_state: &str,
     contribution_id: Uuid,
     audit_id: Uuid,
     template_id: Option<&str>,
 ) -> Result<(), ServiceError> {
     sqlx::query(
         "INSERT INTO vo_version \
-         (vo_id, kind, ehr_id, sys_version, sys_period, deleted, contribution_id, audit_id, template_id) \
+         (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, contribution_id, audit_id, template_id) \
          VALUES ($1, $2, $3, $4, tstzrange(now(), NULL, '[)'), $5, $6, $7, $8)",
     )
     .bind(vo_id)
     .bind(kind.as_str())
     .bind(ehr_id)
     .bind(sys_version)
-    .bind(deleted)
+    .bind(lifecycle_state)
     .bind(contribution_id)
     .bind(audit_id)
     .bind(template_id)
@@ -464,15 +513,18 @@ async fn close_current(tx: &mut PgConnection, vo_id: Uuid) -> Result<(), Service
 }
 
 /// Read the current version of an object by id (any kind). `None` if it never
-/// existed; a `deleted` current version is returned with `deleted = true` so
-/// callers can distinguish 404 (never existed) from 410 (deleted).
+/// existed; a deleted current version is returned with `canonical = Null` and a
+/// `523` lifecycle so callers can distinguish 404 (never existed) from a
+/// deleted read (spec 204 / lifecycle `deleted`).
 pub(super) async fn read_current(
     pool: &PgPool,
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    let Some(meta) = sqlx::query(
-        "SELECT ehr_id, sys_version, deleted, contribution_id FROM vo_version \
-         WHERE vo_id = $1 AND upper_inf(sys_period)",
+    let Some(row) = sqlx::query(
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+         a.system_id, a.change_type, a.description, a.committer, a.time_committed \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.vo_id = $1 AND upper_inf(v.sys_period)",
     )
     .bind(vo_id)
     .fetch_optional(pool)
@@ -480,16 +532,7 @@ pub(super) async fn read_current(
     else {
         return Ok(None);
     };
-    let sys_version: i32 = meta.try_get("sys_version")?;
-    let canonical = read_nodes(pool, vo_id, sys_version).await?;
-    Ok(Some(VersionRead {
-        vo_id,
-        ehr_id: meta.try_get("ehr_id")?,
-        sys_version,
-        deleted: meta.try_get("deleted")?,
-        contribution_id: meta.try_get("contribution_id")?,
-        canonical,
-    }))
+    Ok(Some(version_read(pool, vo_id, &row).await?))
 }
 
 /// Read a specific `sys_version` of an object (for `.../version/{version_uid}`).
@@ -498,9 +541,11 @@ pub(super) async fn read_version(
     vo_id: Uuid,
     sys_version: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    let Some(meta) = sqlx::query(
-        "SELECT ehr_id, deleted, contribution_id FROM vo_version \
-         WHERE vo_id = $1 AND sys_version = $2",
+    let Some(row) = sqlx::query(
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+         a.system_id, a.change_type, a.description, a.committer, a.time_committed \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.vo_id = $1 AND v.sys_version = $2",
     )
     .bind(vo_id)
     .bind(sys_version)
@@ -509,15 +554,7 @@ pub(super) async fn read_version(
     else {
         return Ok(None);
     };
-    let canonical = read_nodes(pool, vo_id, sys_version).await?;
-    Ok(Some(VersionRead {
-        vo_id,
-        ehr_id: meta.try_get("ehr_id")?,
-        sys_version,
-        deleted: meta.try_get("deleted")?,
-        contribution_id: meta.try_get("contribution_id")?,
-        canonical,
-    }))
+    Ok(Some(version_read(pool, vo_id, &row).await?))
 }
 
 /// Read the version of an object that was current at a given instant
@@ -528,9 +565,11 @@ pub(super) async fn version_at(
     vo_id: Uuid,
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    let Some(meta) = sqlx::query(
-        "SELECT ehr_id, sys_version, deleted, contribution_id FROM vo_version \
-         WHERE vo_id = $1 AND sys_period @> $2::timestamptz",
+    let Some(row) = sqlx::query(
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+         a.system_id, a.change_type, a.description, a.committer, a.time_committed \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz",
     )
     .bind(vo_id)
     .bind(at.to_string())
@@ -539,16 +578,7 @@ pub(super) async fn version_at(
     else {
         return Ok(None);
     };
-    let sys_version: i32 = meta.try_get("sys_version")?;
-    let canonical = read_nodes(pool, vo_id, sys_version).await?;
-    Ok(Some(VersionRead {
-        vo_id,
-        ehr_id: meta.try_get("ehr_id")?,
-        sys_version,
-        deleted: meta.try_get("deleted")?,
-        contribution_id: meta.try_get("contribution_id")?,
-        canonical,
-    }))
+    Ok(Some(version_read(pool, vo_id, &row).await?))
 }
 
 /// Reassemble the canonical JSON of one stored version from its `node` rows.

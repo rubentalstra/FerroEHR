@@ -68,7 +68,7 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase/src/service/contribution.rs:218-226` sets `defining_code.code_string = change_type` where `change_type` is the rubric string; `crates/ehrbase/src/service/vobject.rs:54-58` defines `CREATION="creation"`, `MODIFICATION="modification"`, `DELETED="deleted"`.
 - **Problem:** The emitted `defining_code.code_string` is `"creation"`/`"modification"`/`"deleted"` — not a valid openEHR terminology code. The `code_string` MUST be `"249"`/`"251"`/`"523"` (with the rubric in `value`). This corrupts every `AUDIT_DETAILS` in `REVISION_HISTORY` and VERSION responses, and would fail terminology-binding validation of the audit.
 - **Fix:** Change the `change_type` constants (or `audit_details`) to store the numeric code, and set `value` = rubric ("creation") while `code_string` = code ("249"). Best: a small map (`creation→249`, `modification→251`, `deleted→523`) in `vobject::change_type`, and have `audit_details` emit `{ value: rubric, defining_code.code_string: code }`. Verify against `openehr-term`'s `is_valid_audit_change_type` (`crates/openehr-term/src/bundle.rs:700`).
-- [ ] fixed
+- [x] fixed
 
 ### F-01-07: VERSION responses omit the mandatory `commit_audit` (AUDIT_DETAILS)
 - **Severity:** major
@@ -76,7 +76,7 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase/src/service/versioned.rs:80-104` (`original_version`) emits `uid`, `contribution`, `lifecycle_state`, `data` — but no `commit_audit`.
 - **Problem:** Every VERSION returned by `versioned_ehr_status_version_get_by_id` (and, once fixed, `_at_time`) is missing the mandatory `commit_audit`. A conformant client/validator will reject the payload.
 - **Fix:** Include `commit_audit` in `original_version` by loading the version's audit columns (the same data `revision_history` already reads) and emitting `Self::audit_details(...)`. `VersionRead` should carry (or the reader should join) `system_id`/`change_type`/`description`/`committer`/`time_committed` so `original_version` can build the AUDIT_DETAILS. Also populate `preceding_version_uid` when `sys_version > 1` (OriginalVersion optional but expected for modifications).
-- [ ] fixed
+- [x] fixed
 
 ### F-01-08: VERSIONED_EHR_STATUS omits the mandatory `time_created`
 - **Severity:** major
@@ -84,7 +84,7 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase/src/service/versioned.rs:65-76` (`versioned_object`) emits only `uid` + `owner_id`.
 - **Problem:** `GET /ehr/{ehr_id}/versioned_ehr_status` returns a VERSIONED_OBJECT missing the mandatory `time_created` (the commit time of version 1). Fails schema validation.
 - **Fix:** Load version 1's `time_committed` for the object and add `time_created: { _type: DV_DATE_TIME, value: <ts> }`. `versioned_object` is a free function taking only ids; give it the timestamp (or make it a method that queries the first version's audit time).
-- [ ] fixed
+- [x] fixed
 
 ### F-01-09: `If-Match` precondition is bypassable and only compares the version number
 - **Severity:** minor

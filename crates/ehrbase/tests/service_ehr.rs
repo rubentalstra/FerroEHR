@@ -20,6 +20,7 @@ use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
 use openehr_its::rest::generated::definition::DefinitionApi;
 use openehr_its::rest::generated::ehr::EhrApi;
+use openehr_its::rest::runtime::ApiError;
 
 struct Pg {
     #[allow(dead_code)]
@@ -78,6 +79,27 @@ fn composition(name: &str) -> Value {
         "_type": "COMPOSITION",
         "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
         "name": { "_type": "DV_TEXT", "value": name }
+    })
+}
+
+/// A COMPOSITION with **no** `template_id` but a terminology-invalid `category`
+/// code (`openehr::9999` is not in the `composition_category` group) — used to
+/// prove templateless compositions still get RM/terminology validation
+/// (F-07-01/F-07-02).
+fn composition_with_bad_category() -> Value {
+    json!({
+        "_type": "COMPOSITION",
+        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+        "name": { "_type": "DV_TEXT", "value": "Bad category" },
+        "category": {
+            "_type": "DV_CODED_TEXT",
+            "value": "event",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "9999"
+            }
+        }
     })
 }
 
@@ -183,7 +205,13 @@ async fn ehr_composition_lifecycle_end_to_end() {
         .await
         .expect("versioned_composition_get");
     assert_eq!(versioned["_type"], "VERSIONED_OBJECT");
+    // VERSIONED_OBJECT.time_created is mandatory (1..1) — F-06-05/F-01-08.
+    assert!(
+        versioned["time_created"]["value"].is_string(),
+        "VERSIONED_OBJECT.time_created must be present, got {versioned}"
+    );
 
+    let comp_ovid_v2 = uid(&comp_v2).to_owned();
     let original = svc
         .versioned_composition_version_get_by_id(params(json!({
             "ehr_id": ehr_id, "versioned_object_uid": comp_vo_id, "version_uid": comp_ovid_v1
@@ -191,6 +219,32 @@ async fn ehr_composition_lifecycle_end_to_end() {
         .await
         .expect("original version");
     assert_eq!(original["_type"], "ORIGINAL_VERSION");
+    // F-06-01/F-01-07: mandatory commit_audit (AUDIT_DETAILS).
+    assert_eq!(original["commit_audit"]["_type"], "AUDIT_DETAILS");
+    // F-06-02/F-01-06: change_type carries the numeric group code, rubric in value.
+    assert_eq!(
+        original["commit_audit"]["change_type"]["defining_code"]["code_string"],
+        "249"
+    );
+    assert_eq!(original["commit_audit"]["change_type"]["value"], "creation");
+    // F-06-04/F-02-07: a live version → lifecycle_state 532|complete|.
+    assert_eq!(
+        original["lifecycle_state"]["defining_code"]["code_string"],
+        "532"
+    );
+    // F-06-03: version 1 has NO preceding_version_uid.
+    assert!(
+        original.get("preceding_version_uid").is_none(),
+        "v1 must not carry preceding_version_uid"
+    );
+    // F-06-03: version 2 DOES, and it names version 1.
+    let original_v2 = svc
+        .versioned_composition_version_get_by_id(params(json!({
+            "ehr_id": ehr_id, "versioned_object_uid": comp_vo_id, "version_uid": comp_ovid_v2
+        })))
+        .await
+        .expect("original version v2");
+    assert_eq!(original_v2["preceding_version_uid"]["value"], comp_ovid_v1);
     let contribution_uid = original["contribution"]["id"]["value"]
         .as_str()
         .expect("contribution ref")
@@ -207,19 +261,77 @@ async fn ehr_composition_lifecycle_end_to_end() {
     assert_eq!(contribution["audit"]["change_type"]["value"], "creation");
     assert!(!contribution["versions"].as_array().unwrap().is_empty());
 
-    // ── logical delete → gone ────────────────────────────────────────────────
+    // ── logical delete (F-02-01/05, F-06-04) ─────────────────────────────────
+    // A stale preceding_version_uid (v1, but latest is v2) → 409 Conflict.
+    let stale_delete = svc
+        .composition_delete(params(
+            json!({ "ehr_id": ehr_id, "uid_based_id": comp_ovid_v1 }),
+        ))
+        .await;
+    assert!(
+        matches!(stale_delete, Err(ApiError::Conflict(_))),
+        "stale preceding_version_uid must 409, got {stale_delete:?}"
+    );
+    // A bare HIER_OBJECT_ID (no version) → 400.
+    assert!(
+        matches!(
+            svc.composition_delete(params(
+                json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id })
+            ))
+            .await,
+            Err(ApiError::BadRequest(_))
+        ),
+        "delete requires an OBJECT_VERSION_ID"
+    );
+    // The correct latest version_uid deletes.
     svc.composition_delete(params(
-        json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id }),
+        json!({ "ehr_id": ehr_id, "uid_based_id": comp_ovid_v2 }),
     ))
     .await
     .expect("composition_delete");
-    assert!(
-        svc.composition_get(params(
-            json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id })
+    // A deleted read is NOT an error/500 — it yields a null (→ 204) body (F-02-01).
+    let after_delete = svc
+        .composition_get(params(
+            json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id }),
         ))
         .await
-        .is_err(),
-        "deleted composition must not be retrievable"
+        .expect("deleted composition read must not error");
+    assert!(
+        after_delete.is_null(),
+        "deleted composition reads as an empty (204) body, got {after_delete}"
+    );
+    // Re-deleting an already-deleted composition → 400 (400_already_deleted).
+    assert!(
+        matches!(
+            svc.composition_delete(params(
+                json!({ "ehr_id": ehr_id, "uid_based_id": comp_ovid_v2 })
+            ))
+            .await,
+            Err(ApiError::BadRequest(_))
+        ),
+        "re-delete must be 400 already-deleted"
+    );
+    // The deleted VERSION renders lifecycle_state 523|deleted| with no data (F-02-07).
+    let parts: Vec<&str> = comp_ovid_v2.split("::").collect();
+    let deleted_ovid = format!("{}::{}::3", parts[0], parts[1]);
+    let deleted_version = svc
+        .versioned_composition_version_get_by_id(params(json!({
+            "ehr_id": ehr_id, "versioned_object_uid": comp_vo_id, "version_uid": deleted_ovid
+        })))
+        .await
+        .expect("deleted version wrapper");
+    assert_eq!(
+        deleted_version["lifecycle_state"]["defining_code"]["code_string"],
+        "523"
+    );
+    assert_eq!(deleted_version["lifecycle_state"]["value"], "deleted");
+    assert_eq!(
+        deleted_version["commit_audit"]["change_type"]["defining_code"]["code_string"],
+        "523"
+    );
+    assert!(
+        deleted_version.get("data").is_none(),
+        "a deleted version carries no data"
     );
 
     // ── DIRECTORY (FOLDER) create/get/update/delete ──────────────────────────
@@ -325,6 +437,62 @@ async fn contribution_commits_a_composition_atomically() {
         .await
         .expect("get created composition");
     assert_eq!(comp["name"]["value"], "Via contribution");
+}
+
+#[tokio::test]
+async fn templateless_composition_still_gets_rm_and_terminology_validation() {
+    // F-07-02: a COMPOSITION without a declared template_id must still fail on
+    // RM-invariant / RM-terminology violations (here: an invalid category code),
+    // and a valid templateless composition must still commit.
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("templateless").await);
+
+    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
+    let ehr_id = ehr["ehr_id"]["value"].as_str().unwrap().to_owned();
+
+    let bad = svc
+        .composition_create(
+            params(json!({ "ehr_id": ehr_id })),
+            composition_with_bad_category(),
+        )
+        .await;
+    assert!(
+        matches!(bad, Err(ApiError::ValidationFailed(_))),
+        "templateless composition with bad category must 422, got {bad:?}"
+    );
+
+    svc.composition_create(params(json!({ "ehr_id": ehr_id })), composition("valid"))
+        .await
+        .expect("a valid templateless composition still commits");
+}
+
+#[tokio::test]
+async fn contribution_rejects_an_invalid_composition() {
+    // F-07-01: the CONTRIBUTION commit path must run composition validation and
+    // reject the whole contribution atomically.
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("contribinvalid").await);
+
+    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
+    let ehr_id = ehr["ehr_id"]["value"].as_str().unwrap().to_owned();
+
+    let body = json!({
+        "audit": {
+            "change_type": change_type("249", "creation"),
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr. Contribution" }
+        },
+        "versions": [{
+            "data": composition_with_bad_category(),
+            "commit_audit": { "change_type": change_type("249", "creation") }
+        }]
+    });
+    let res = svc
+        .contribution_create(params(json!({ "ehr_id": ehr_id })), body)
+        .await;
+    assert!(
+        matches!(res, Err(ApiError::ValidationFailed(_))),
+        "invalid composition in a contribution must 422, got {res:?}"
+    );
 }
 
 #[tokio::test]

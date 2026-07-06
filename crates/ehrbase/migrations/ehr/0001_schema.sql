@@ -59,7 +59,13 @@ CREATE TABLE vo_version (
     ehr_id          uuid NOT NULL REFERENCES ehr(id) ON DELETE CASCADE,
     sys_version     integer NOT NULL CHECK (sys_version >= 1),
     sys_period      tstzrange NOT NULL,
-    deleted         boolean NOT NULL DEFAULT false,
+    -- ORIGINAL_VERSION.lifecycle_state: the numeric openEHR terminology code
+    -- from the `version_lifecycle_state` group (532 complete, 553 incomplete,
+    -- 523 deleted, 800 inactive, 801 abandoned). A logical delete writes a
+    -- content-less version whose lifecycle_state is 523 (RM change_control
+    -- §"Logical Deletion") — never a physical delete.
+    lifecycle_state text NOT NULL DEFAULT '532'
+                    CHECK (lifecycle_state IN ('532', '553', '523', '800', '801')),
     contribution_id uuid NOT NULL REFERENCES contribution(id),
     audit_id        uuid NOT NULL REFERENCES audit(id),
     template_id     text REFERENCES template_store(template_id),

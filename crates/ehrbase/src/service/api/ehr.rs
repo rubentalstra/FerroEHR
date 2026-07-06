@@ -155,8 +155,10 @@ impl EhrApi for EhrbaseService {
 
     async fn composition_delete(&self, params: CompositionDeleteParams) -> Result<(), ApiError> {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
-        Ok(self.delete_composition(ehr_id, vo_id).await?)
+        // composition_delete.yaml: the uid_based_id MUST be an OBJECT_VERSION_ID
+        // (the preceding_version_uid to delete); a bare HIER_OBJECT_ID → 400.
+        let (vo_id, expected) = parse_version_uid(&params.uid_based_id)?;
+        Ok(self.delete_composition(ehr_id, vo_id, expected).await?)
     }
 
     async fn versioned_composition_get(

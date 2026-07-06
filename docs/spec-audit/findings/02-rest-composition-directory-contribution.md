@@ -81,7 +81,7 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   data. This requires a distinct service return (e.g. an enum
   `Read::Live(Value) | Read::Deleted`) so the dispatch can choose 204 vs 200 —
   a `ServiceError::NotFound` cannot express 204.
-- [ ] fixed
+- [x] fixed
 
 ### F-02-02: No `Location` or `ETag` headers on any create/update/delete response
 - **Severity:** major
@@ -187,7 +187,7 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   `If-Match`; the precondition is the path `uid_based_id`), and include the
   latest `version_uid` in the response headers. Return 400 for an
   already-deleted target.
-- [ ] fixed
+- [x] fixed
 
 ### F-02-06: `AUDIT_DETAILS.change_type.defining_code.code_string` is a word, not the openEHR numeric code
 - **Severity:** major
@@ -216,7 +216,7 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   up in `openehr-term`, or map the three known codes). Normalise inbound
   contribution `change_type` (accept either the code or the rubric) to the code
   before storing.
-- [ ] fixed
+- [x] fixed
 
 ### F-02-07: Deleted VERSION reports `lifecycle_state = 532|complete|` instead of `523|deleted|`
 - **Severity:** major
@@ -233,7 +233,7 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   deleted → `{ value: "deleted", code_string: "523" }`, else
   `{ value: "complete", code_string: "532" }`. (Ties into F-02-01's need to
   carry `deleted` through the read without failing on empty nodes.)
-- [ ] fixed
+- [x] fixed
 
 ### F-02-08: `If-Match` (required) is silently bypassed when unparseable
 - **Severity:** minor

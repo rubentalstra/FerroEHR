@@ -6,7 +6,8 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use super::vobject::{self, AuditInput, Kind, change_type};
+use super::codes::change_type;
+use super::vobject::{self, AuditInput, Kind};
 use super::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
@@ -46,7 +47,7 @@ impl EhrbaseService {
         let ehr_id: Uuid = sqlx::query_scalar(
             "SELECT v.ehr_id FROM vo_version v \
              JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-             WHERE v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) AND NOT v.deleted \
+             WHERE v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) AND v.lifecycle_state <> '523' \
              AND n.data #>> '{subject,external_ref,id,value}' = $1 \
              AND n.data #>> '{subject,external_ref,namespace}' = $2 \
              LIMIT 1",
@@ -156,7 +157,7 @@ impl EhrbaseService {
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        Ok(Self::versioned_object(vo_id, ehr_id))
+        self.versioned_object(vo_id, ehr_id).await
     }
 
     /// The `REVISION_HISTORY` of an EHR's `EHR_STATUS`.

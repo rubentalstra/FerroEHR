@@ -200,6 +200,11 @@ async fn run(
         "composition_get" => {
             let p = params::build::<CompositionGetParams>(&parts.path, q, h)?;
             let comp = state.backend().composition_get(p).await?;
+            // A deleted version resolves to a null body → 204 No Content
+            // (composition_get.yaml 204_because_deleted*; F-02-01).
+            if comp.is_null() {
+                return Ok(negotiate::empty(StatusCode::NO_CONTENT));
+            }
             if negotiate::wants_flat(h) {
                 return super::flat::composition_flat_response(&state, ok, &comp).await;
             }
@@ -284,12 +289,12 @@ async fn run(
         }
         "directory_get_at_time" => {
             let p = params::build::<DirectoryGetAtTimeParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond_rm::<Folder>(
-                h,
-                ok,
-                &state.backend().directory_get_at_time(p).await?,
-                "folder",
-            ))
+            let folder = state.backend().directory_get_at_time(p).await?;
+            // Deleted directory → 204 (directory_get_at_time.yaml 204_because_deleted_at_time).
+            if folder.is_null() {
+                return Ok(negotiate::empty(StatusCode::NO_CONTENT));
+            }
+            Ok(negotiate::respond_rm::<Folder>(h, ok, &folder, "folder"))
         }
         "directory_update" => {
             let p = params::build::<DirectoryUpdateParams>(&parts.path, q, h)?;
@@ -318,12 +323,11 @@ async fn run(
         }
         "directory_get_by_version_id" => {
             let p = params::build::<DirectoryGetByVersionIdParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond_rm::<Folder>(
-                h,
-                ok,
-                &state.backend().directory_get_by_version_id(p).await?,
-                "folder",
-            ))
+            let folder = state.backend().directory_get_by_version_id(p).await?;
+            if folder.is_null() {
+                return Ok(negotiate::empty(StatusCode::NO_CONTENT));
+            }
+            Ok(negotiate::respond_rm::<Folder>(h, ok, &folder, "folder"))
         }
         "contribution_create" => {
             let p = params::build::<ContributionCreateParams>(&parts.path, q, h)?;

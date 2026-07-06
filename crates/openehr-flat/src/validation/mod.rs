@@ -109,6 +109,35 @@ pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<Valida
     v.out
 }
 
+/// Validate only the **template-independent** passes: RM class invariants + the
+/// RM-mandated openEHR terminology. These hold for *every* RM instance whether
+/// or not an operational template is referenced (RM invariants and terminology
+/// bindings are properties of the instance, not of the archetype — spec 07
+/// finding F-07-02). A COMPOSITION committed without a declared `template_id`
+/// cannot be archetype-conformance-checked, but must still pass these.
+#[must_use]
+pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage> {
+    let mut v = Validator::default();
+    v.rm_invariant_pass(composition, "");
+    v.terminology_pass(composition, "", None);
+    v.out
+}
+
+/// Validate only the archetype-conformance pass against a resolved
+/// [`WebTemplate`] (type conformance, occurrences, cardinality, and leaf domain
+/// constraints). Callers run [`validate_rm_and_terminology`] separately for the
+/// template-independent checks, so this is the additional pass a *declared*
+/// template contributes.
+#[must_use]
+pub fn validate_archetype_conformance(
+    composition: &Value,
+    wt: &WebTemplate,
+) -> Vec<ValidationMessage> {
+    let mut v = Validator::default();
+    v.walk(composition, &wt.tree);
+    v.out
+}
+
 #[derive(Default)]
 struct Validator {
     out: Vec<ValidationMessage>,
