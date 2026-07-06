@@ -7,10 +7,9 @@
 //! a bare `Value`. The write/read/versioning machinery lives in the sibling
 //! service modules ([`crate::service::ehr`], [`composition`](crate::service),
 //! [`directory`](crate::service), [`contribution`](crate::service)); this file is
-//! the thin trait adapter that parses params and wraps the result.
-//!
-//! The two `*_version_get_at_time` operations are not overridden here and inherit
-//! the trait's `NotImplemented` default (F-01-05 / F-02-04, a later wave).
+//! the thin trait adapter that parses params and wraps the result. Every
+//! `EhrService` operation is implemented here (the two `*_version_get_at_time`
+//! reads landed with F-01-05 / F-02-04).
 
 use async_trait::async_trait;
 use serde_json::Value;
@@ -27,8 +26,9 @@ use openehr_its::rest::generated::ehr::{
     EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams, EhrStatusTagsGetParams,
     EhrStatusTagsUpdateParams, EhrStatusUpdateParams, EhrTagsGetParams,
     VersionedCompositionGetParams, VersionedCompositionRevisionHistoryParams,
-    VersionedCompositionVersionGetByIdParams, VersionedEhrStatusGetParams,
-    VersionedEhrStatusRevisionHistoryParams, VersionedEhrStatusVersionGetByIdParams,
+    VersionedCompositionVersionGetAtTimeParams, VersionedCompositionVersionGetByIdParams,
+    VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
+    VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
 };
 use openehr_its::rest::runtime::ApiError;
 
@@ -117,6 +117,21 @@ impl EhrService for EhrbaseService {
         ))
     }
 
+    async fn versioned_ehr_status_version_get_at_time(
+        &self,
+        params: VersionedEhrStatusVersionGetAtTimeParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        // F-01-05: the VERSION extant at `version_at_time` (or the latest) —
+        // an ORIGINAL_VERSION with `200_VERSION_at_time` ETag/Location meta.
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let at = params
+            .version_at_time
+            .as_deref()
+            .map(parse_at_time)
+            .transpose()?;
+        Ok(self.status_version_at_time(ehr_id, at).await?)
+    }
+
     async fn versioned_ehr_status_version_get_by_id(
         &self,
         params: VersionedEhrStatusVersionGetByIdParams,
@@ -196,6 +211,23 @@ impl EhrService for EhrbaseService {
         Ok(ServiceResponse::plain(
             self.versioned_composition(ehr_id, vo_id).await?,
         ))
+    }
+
+    async fn versioned_composition_version_get_at_time(
+        &self,
+        params: VersionedCompositionVersionGetAtTimeParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        // F-02-04: the VERSION extant at `version_at_time` (or the latest) —
+        // an ORIGINAL_VERSION with `200_VERSION_of_COMPOSITION_at_time`
+        // ETag/Location meta.
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = parse_object_id(&params.versioned_object_uid)?;
+        let at = params
+            .version_at_time
+            .as_deref()
+            .map(parse_at_time)
+            .transpose()?;
+        Ok(self.composition_version_at_time(ehr_id, vo_id, at).await?)
     }
 
     async fn versioned_composition_version_get_by_id(
@@ -330,7 +362,8 @@ impl EhrService for EhrbaseService {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
         let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
         Ok(tags_response(
-            self.upsert_tags(ehr_id, vo_id, "COMPOSITION", body).await?,
+            self.replace_tags(ehr_id, vo_id, "COMPOSITION", body)
+                .await?,
         ))
     }
 
@@ -361,7 +394,7 @@ impl EhrService for EhrbaseService {
         let ehr_id = parse_ehr_id(&params.ehr_id)?;
         let (vo_id, _) = parse_object_id(&params.uid_based_id)?;
         Ok(tags_response(
-            self.upsert_tags(ehr_id, vo_id, "EHR_STATUS", body).await?,
+            self.replace_tags(ehr_id, vo_id, "EHR_STATUS", body).await?,
         ))
     }
 

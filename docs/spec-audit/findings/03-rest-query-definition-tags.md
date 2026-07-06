@@ -123,7 +123,10 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Fix:** In one transaction, delete all existing tags for
   `(ehr_id, target_vo_id)` (or reconcile via `MERGE … WHEN NOT MATCHED BY
   SOURCE`, PG17) then insert the posted set; an empty body removes all.
-- [ ] fixed
+- [x] fixed — `replace_tags` (renamed from `upsert_tags`) deletes the target's
+  whole tag collection and inserts the posted set in one transaction; an empty
+  list clears all. Verified by `service_ehr.rs`
+  `item_tag_put_replaces_the_whole_collection`.
 
 ### F-03-06: ITEM_TAG response JSON does not match the RM/OAS `ITEM_TAG` shape
 - **Severity:** major
@@ -142,7 +145,10 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Fix:** Emit `target`/`owner_id` as `OBJECT_REF` (owner_id → EHR
   HIER_OBJECT_ID; target → the version_uid/versioned_object_uid with the right
   `type`); drop `id`/`target_type` (fold `target_type` into `target.type`).
-- [ ] fixed
+- [x] fixed — `tag_json` now emits `target`/`owner_id` as OBJECT_REF objects
+  (`target.type` = the stored RM kind; `owner_id` → the EHR) and drops the
+  non-schema `id`/`target_type` fields. Verified by `service_ehr.rs`
+  `item_tag_wire_shape_matches_the_oas_schema`.
 
 ### F-03-07: Stored-query GET does not honour semver prefix/partial version matching
 - **Severity:** major
@@ -159,7 +165,11 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
   highest by numeric segment ordering (the query already orders by
   `string_to_array(semver,'.')::int[]`). Same rule applies to the deferred
   `query_execute_stored_query_version` path at P16.
-- [ ] fixed
+- [x] fixed — `get_stored_query` matches a `{major}`/`{major}.{minor}` prefix
+  on a dot boundary (`left(semver, length($3)+1) = $3 || '.'`) and picks the
+  highest by numeric segment ordering; exact triples stay exact. Verified by
+  `service_ehr.rs` `stored_query_semver_prefix_resolves_to_latest_match`. (The
+  P16 stored-query *execution* path must reuse the same rule.)
 
 ### F-03-08: Stored-query list ignores the name pattern/prefix (exact-name only, no wildcard)
 - **Severity:** major
@@ -176,7 +186,10 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Fix:** Treat `qualified_query_name` as a prefix pattern over the fully
   qualified name (`{rdn}::{semantic}`); empty ⇒ all. Match with a prefix
   predicate rather than equality on both columns.
-- [ ] fixed
+- [x] fixed — `list_stored_queries` matches `qualified_query_name` as a prefix
+  over the full qualified name (empty ⇒ wildcard) and each row now carries its
+  own name (built from `reverse_domain_name`/`semantic_id`). Verified by
+  `service_ehr.rs` `stored_query_list_matches_name_prefix`.
 
 ### F-03-09: Invalid template content is reported as `422`, not the spec's `400`
 - **Severity:** major
@@ -204,7 +217,10 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
   and stored, violating the RM invariants (should be `400`/`422`).
 - **Fix:** Reject empty/whitespace-padded keys and empty-when-present values in
   `upsert_tags` before insert.
-- [ ] fixed
+- [x] fixed (with F-03-05) — `replace_tags` enforces `Inv_key_valid` (non-empty,
+  no leading/trailing whitespace) and `Inv_value_valid` (a set value may not be
+  empty) → 422. Verified by `service_ehr.rs`
+  `item_tag_put_replaces_the_whole_collection`.
 
 ### F-03-11: ITEM_TAG uniqueness keyed on `key` only, not `(key, target_path)`
 - **Severity:** minor

@@ -52,7 +52,12 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase/src/service/ehr.rs:15-37` (`create_ehr`) only guards `ehr.id` uniqueness (`INSERT ... ON CONFLICT DO NOTHING`); it never checks the supplied EHR_STATUS subject against existing EHRs.
 - **Problem:** `POST /ehr` with an EHR_STATUS whose `subject.external_ref` matches an existing EHR returns 201 instead of 409. Fails the CNF test case.
 - **Fix:** In `create_ehr`, when the supplied status carries a `subject.external_ref` (id.value + namespace), run the `ehr_by_subject` lookup (already implemented, `service/ehr.rs:41`) inside the transaction before insert; if a match exists, return `ServiceError::Conflict` (→ 409). Do this only when EHR_STATUS is client-supplied (the default PARTY_SELF has no external_ref, so no conflict).
-- [ ] fixed
+- [x] fixed — subject uniqueness is enforced at the **database**: the baseline
+  migration promotes `subject_id`/`subject_namespace` onto `ehr` with a partial
+  unique index (`ehr_subject_uq`); every EHR_STATUS write syncs the columns
+  (`vobject::sync_ehr_subject`) and a violation maps to 409. `ehr_by_subject`
+  now reads the promoted columns. Verified by `service_ehr.rs`
+  `duplicate_subject_ehr_creation_conflicts` (+ `ehr_get_by_subject_finds_the_ehr`).
 
 ### F-01-05: `versioned_ehr_status_version_get_at_time` unimplemented → 501
 - **Severity:** major
@@ -60,7 +65,13 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase-rest/src/dispatch/ehr.rs:143-153` dispatches to `backend().versioned_ehr_status_version_get_at_time(p)`, but `crates/ehrbase/src/service/api/ehr.rs` never overrides it (the param type isn't even imported), so it inherits the generated `NotImplemented` default → **501**.
 - **Problem:** A required, CNF-scheduled read (latest VERSION, or the VERSION extant at a given time) returns 501. This is the VERSION-returning sibling of `ehr_status_get_at_time` and must return an `ORIGINAL_VERSION` (with `ETag`/`Location`, per F-01-01).
 - **Fix:** Implement `versioned_ehr_status_version_get_at_time` on `EhrbaseService`: resolve the EHR_STATUS `vo_id`, pick the version current at `version_at_time` (or latest), and return `original_version(...)`. Reuse `vobject::version_at` + the loaded `VersionRead`. Validate `version_at_time` format → 400; unknown EHR / no version at time → 404.
-- [ ] fixed
+- [x] fixed — implemented on the `EhrService` envelope seam
+  (`status_version_at_time` → `original_version` + `ResourceMeta`); the dispatch
+  arm sets the `200_VERSION_at_time` `ETag`/`Location`
+  (`…/versioned_ehr_status/version/{version_uid}`); malformed time → 400, no
+  version at time → 404. Verified by `service_ehr.rs`
+  `version_get_at_time_returns_the_original_version` and `headers.rs`
+  `versioned_ehr_status_version_at_time_sets_version_headers`.
 
 ### F-01-06: AUDIT_DETAILS `change_type` uses the rubric string as the terminology code
 - **Severity:** major
@@ -100,7 +111,10 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase/src/service/ehr.rs:82-96` (`ehr_summary`) emits `system_id`, `ehr_id`, `ehr_status`, `time_created` — no `ehr_access`.
 - **Problem:** The RM (the ADR-008 oracle) makes `ehr_access` mandatory; the returned EHR omits it. In practice EHR_ACCESS is widely deprecated, so this is minor, but it is an RM-cardinality divergence worth a decision.
 - **Fix:** Either emit a minimal `ehr_access` OBJECT_REF (referencing an EHR_ACCESS object) or record a `// PORT NOTE:` documenting the deliberate omission with the RM reference and the EHR_ACCESS-deprecation rationale.
-- [ ] fixed
+- [x] fixed (with F-06-07) — a real `EHR_ACCESS` versioned object is created
+  with every EHR and `ehr_summary` emits `ehr_access` as an OBJECT_REF of type
+  `VERSIONED_EHR_ACCESS` (invariant `Ehr_access_valid`). Verified by
+  `service_ehr.rs` `ehr_creation_produces_an_ehr_access`.
 
 ### F-01-11: XML offered for EHR/EHR_STATUS though the OAS declares JSON-only
 - **Severity:** info

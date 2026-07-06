@@ -463,6 +463,24 @@ where
     out
 }
 
+/// Render a `200 OK` read of a JSON-only payload (no canonical-XML shape, e.g.
+/// an `ORIGINAL_VERSION` wrapper) whose spec response declares `ETag`/`Location`
+/// — the `*_version_get_at_time` reads (`200_VERSION_at_time.yaml` /
+/// `200_VERSION_of_COMPOSITION_at_time.yaml`: `ETag` = the `version_uid`,
+/// `Location` = the VERSION resource URL).
+pub(crate) fn read_json(
+    headers: &HeaderMap,
+    base_path: &str,
+    segment: Option<&str>,
+    resp: &ServiceResponse,
+) -> Response {
+    let mut out = respond(headers, StatusCode::OK, &resp.body);
+    if let Some(meta) = &resp.meta {
+        set_resource_headers(&mut out, base_path, segment, meta);
+    }
+    out
+}
+
 /// A `204 No Content` delete outcome carrying the deleted version's
 /// `ETag`/`Location` (`204_COMPOSITION_deleted.yaml`).
 pub(crate) fn deleted_with_headers(

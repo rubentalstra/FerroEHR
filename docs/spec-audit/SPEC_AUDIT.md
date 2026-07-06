@@ -121,16 +121,24 @@ Total: **180 findings**.
 - [ ] W2-D **Explicit `_type` dispatcher** in `openehr-derive` for abstract
       slots — F-04-01/02/03.
 - [ ] W2-E **AQL front-end fixes** — F-08-01/02/03 + corpus-harness expansion.
-- [ ] W2-F **ITEM_TAG conformance** — F-03-05/06: PUT = full replace,
-      OBJECT_REF-shaped response.
-- [ ] W2-G **Stored-query semver/name matching** — F-03-07/08.
+- [x] W2-F **ITEM_TAG conformance** — F-03-05/06: PUT = full replace,
+      OBJECT_REF-shaped response. (`replace_tags` full-collection replace incl.
+      empty-list clear; OAS `ItemTag`-shaped wire form; RM key/value invariants
+      → F-03-10 also closed.)
+- [x] W2-G **Stored-query semver/name matching** — F-03-07/08. (SEMVER-prefix
+      GET resolves to the highest match; LIST matches the qualified name as a
+      prefix pattern, empty = wildcard.)
 - [ ] W2-H **Terminology validation completeness** — F-07-03/04, F-11-02/03/04.
 - [x] W2-I **XML ToXml/FromXml field-set symmetry + C14N gate** — F-05-02/03.
       Emitter reconciles BMM↔XSD field sets (guard + cited allowlist; 44
       previously-dropped fields now appended, no silent drops); C14N byte-parity
       gate wired against CNF canonical fixtures (`xml_c14n.rs`).
-- [ ] W2-J **EHR_ACCESS + duplicate-subject 409** — F-06-07, F-01-04;
-      version-at-time ops implemented (F-01-05, F-02-04).
+- [x] W2-J **EHR_ACCESS + duplicate-subject 409** — F-06-07, F-01-04;
+      version-at-time ops implemented (F-01-05, F-02-04). (Real versioned
+      `EHR_ACCESS` created with the EHR in one CONTRIBUTION + `ehr_access` ref
+      → F-01-10 also closed; DB-level subject uniqueness (`ehr_subject_uq`) →
+      409; both `*_version_get_at_time` ops on the envelope seam with
+      `200_VERSION_at_time` headers → F-02-13 also closed.)
 - [ ] W2-K **WebTemplate single-source resolution** — F-13-02 (one cache,
       service-owned); WebTemplate required-fields vs ITS-REST schema —
       F-10-03/04.

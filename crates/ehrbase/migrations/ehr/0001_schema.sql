@@ -18,10 +18,19 @@
 -- Runs with search_path = ehr, ext.
 
 CREATE TABLE ehr (
-    id           uuid PRIMARY KEY,
-    time_created timestamptz NOT NULL DEFAULT now()
+    id                uuid PRIMARY KEY,
+    time_created      timestamptz NOT NULL DEFAULT now(),
+    -- Promoted copy of the current EHR_STATUS `subject.external_ref`
+    -- (`id.value` + `namespace`), kept in sync by the service on every
+    -- EHR_STATUS write. The partial unique index enforces one EHR per subject
+    -- at the database (ITS-REST `409_EHR.yaml`; CNF master06
+    -- `I_EHR_SERVICE.create_ehr-two_ehrs_same_patient`).
+    subject_id        text,
+    subject_namespace text
 );
 CREATE INDEX ehr_time_created_idx ON ehr (time_created DESC, id);
+CREATE UNIQUE INDEX ehr_subject_uq ON ehr (subject_id, subject_namespace)
+    WHERE subject_id IS NOT NULL;
 
 -- AUDIT_DETAILS of every committed change (queryable via AQL VERSION paths)
 CREATE TABLE audit (
@@ -51,11 +60,14 @@ CREATE TABLE template_store (
     created_at     timestamptz NOT NULL DEFAULT now()
 );
 
--- one row per version of a versioned object (COMPOSITION/EHR_STATUS/FOLDER);
--- the temporal PK makes overlapping validity impossible at the database
+-- one row per version of a versioned object (COMPOSITION/EHR_STATUS/
+-- EHR_ACCESS/FOLDER); the temporal PK makes overlapping validity impossible
+-- at the database. EHR_ACCESS is a versioned object per RM ehr §"EHR
+-- Creation" ("a root EHR object, an EHR Status object, and an EHR Access
+-- object"), versioned "via the normal mechanism" (RM ehr §"EHR Access").
 CREATE TABLE vo_version (
     vo_id           uuid NOT NULL,
-    kind            text NOT NULL CHECK (kind IN ('COMPOSITION', 'EHR_STATUS', 'FOLDER')),
+    kind            text NOT NULL CHECK (kind IN ('COMPOSITION', 'EHR_STATUS', 'EHR_ACCESS', 'FOLDER')),
     ehr_id          uuid NOT NULL REFERENCES ehr(id) ON DELETE CASCADE,
     sys_version     integer NOT NULL CHECK (sys_version >= 1),
     sys_period      tstzrange NOT NULL,

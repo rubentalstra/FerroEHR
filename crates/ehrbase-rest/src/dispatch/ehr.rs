@@ -181,7 +181,14 @@ async fn run(
                 .backend()
                 .versioned_ehr_status_version_get_at_time(p)
                 .await?;
-            Ok(negotiate::respond(h, ok, &resp.body))
+            // 200_VERSION_at_time: ETag(version_uid) + Location of the VERSION
+            // resource (…/versioned_ehr_status/version/{version_uid}).
+            Ok(negotiate::read_json(
+                h,
+                &base,
+                Some("versioned_ehr_status/version"),
+                &resp,
+            ))
         }
         "versioned_ehr_status_version_get_by_id" => {
             let p = params::build::<VersionedEhrStatusVersionGetByIdParams>(&parts.path, q, h)?;
@@ -341,11 +348,14 @@ async fn run(
         }
         "versioned_composition_version_get_at_time" => {
             let p = params::build::<VersionedCompositionVersionGetAtTimeParams>(&parts.path, q, h)?;
+            // 200_VERSION_of_COMPOSITION_at_time: Location is
+            // …/versioned_composition/{versioned_object_uid}/version/{version_uid}.
+            let segment = format!("versioned_composition/{}/version", p.versioned_object_uid);
             let resp = state
                 .backend()
                 .versioned_composition_version_get_at_time(p)
                 .await?;
-            Ok(negotiate::respond(h, ok, &resp.body))
+            Ok(negotiate::read_json(h, &base, Some(&segment), &resp))
         }
         "versioned_composition_version_get_by_id" => {
             let p = params::build::<VersionedCompositionVersionGetByIdParams>(&parts.path, q, h)?;

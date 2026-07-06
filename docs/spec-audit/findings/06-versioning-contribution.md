@@ -211,7 +211,13 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   minimum synthesize a stable `VERSIONED_EHR_ACCESS` `OBJECT_REF`) and include
   `ehr_access` in `ehr_summary`. If EHR_ACCESS is intentionally deferred, record
   a `// PORT NOTE:` citing this section and the invariant.
-- [ ] fixed
+- [x] fixed — a **real** `EHR_ACCESS` versioned object (`Kind::EhrAccess`,
+  `vo_version.kind = 'EHR_ACCESS'`, decomposed/versioned like every other
+  versioned object) is created with the EHR — `EHR_STATUS` + `EHR_ACCESS` are
+  committed under **one** CONTRIBUTION per §"EHR Creation"; `ehr_summary` emits
+  `ehr_access` as an OBJECT_REF of type `VERSIONED_EHR_ACCESS` referencing the
+  version container (`Ehr_access_valid`). Verified by `service_ehr.rs`
+  `ehr_creation_produces_an_ehr_access`.
 
 ### F-06-08: `EHR.ehr_status` OBJECT_REF type is `EHR_STATUS`, not `VERSIONED_EHR_STATUS`
 - **Severity:** minor

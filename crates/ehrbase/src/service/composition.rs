@@ -109,6 +109,30 @@ impl EhrbaseService {
         Ok(self.original_version(&read))
     }
 
+    /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `at`, or the latest
+    /// when `at` is `None` —
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version`
+    /// (`versioned_composition_version_get_at_time.yaml`; finding F-02-04). The
+    /// metadata carries the `version_uid` for
+    /// `200_VERSION_of_COMPOSITION_at_time`'s `ETag`/`Location`. A version that
+    /// is deleted still returns `200` with the deleted-lifecycle
+    /// `ORIGINAL_VERSION` (no `data`).
+    pub(super) async fn composition_version_at_time(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+        at: Option<jiff::Timestamp>,
+    ) -> Result<ServiceResponse, ServiceError> {
+        let read = match at {
+            Some(at) => vobject::version_at(&self.pool, vo_id, at).await?,
+            None => vobject::read_current(&self.pool, vo_id).await?,
+        }
+        .filter(|r| r.ehr_id == ehr_id)
+        .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} version at time")))?;
+        let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
+        Ok(ServiceResponse::new(self.original_version(&read), meta))
+    }
+
     /// Commit a new version of a COMPOSITION. `expected` (from `If-Match`)
     /// enforces optimistic concurrency.
     pub(super) async fn update_composition(
@@ -312,7 +336,7 @@ impl EhrbaseService {
     ) -> Result<(), ServiceError> {
         match kind {
             Kind::Composition => self.validate_composition_for_commit(data).await,
-            Kind::EhrStatus | Kind::Folder => Ok(()),
+            Kind::EhrStatus | Kind::EhrAccess | Kind::Folder => Ok(()),
         }
     }
 }

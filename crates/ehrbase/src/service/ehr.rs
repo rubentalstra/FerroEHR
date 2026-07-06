@@ -8,13 +8,21 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use super::codes::change_type;
-use super::vobject::{self, AuditInput, Kind};
+use super::vobject::{self, AuditInput, Change, Kind};
 use super::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
-    /// Create an EHR (with the given id) and its initial `EHR_STATUS`. Shared by
-    /// `POST /ehr` and `PUT /ehr/{ehr_id}`. The response carries the EHR body and
-    /// its `ehr_id` (the `ETag`/`Location` for `201_EHR`).
+    /// Create an EHR (with the given id), its initial `EHR_STATUS`, and its
+    /// `EHR_ACCESS`, all committed under **one** CONTRIBUTION — RM ehr §"EHR
+    /// Creation": "the result should be a root EHR object, an EHR Status
+    /// object, and an EHR Access object … the EHR Status and EHR Access objects
+    /// would be created and committed in a Contribution". Shared by `POST /ehr`
+    /// and `PUT /ehr/{ehr_id}`. The response carries the EHR body and its
+    /// `ehr_id` (the `ETag`/`Location` for `201_EHR`).
+    ///
+    /// A duplicate subject (`EHR_STATUS.subject.external_ref`) conflicts at the
+    /// database (`ehr_subject_uq`) → 409 (`409_EHR.yaml`; CNF
+    /// `create_ehr-two_ehrs_same_patient`).
     pub(super) async fn create_ehr(
         &self,
         ehr_id: Uuid,
@@ -33,26 +41,46 @@ impl EhrbaseService {
         }
 
         let audit = self.audit(change_type::CREATION, "EHR creation");
-        vobject::create(&mut tx, ehr_id, Kind::EhrStatus, status, None, &audit).await?;
+        vobject::commit_contribution(
+            &mut tx,
+            ehr_id,
+            &audit,
+            vec![
+                (
+                    audit.clone(),
+                    Change::Create {
+                        kind: Kind::EhrStatus,
+                        canonical: status,
+                        template_id: None,
+                    },
+                ),
+                (
+                    audit.clone(),
+                    Change::Create {
+                        kind: Kind::EhrAccess,
+                        canonical: default_ehr_access(),
+                        template_id: None,
+                    },
+                ),
+            ],
+        )
+        .await?;
         tx.commit().await?;
 
         self.ehr_summary(ehr_id).await
     }
 
     /// Find an EHR by the subject its current `EHR_STATUS` names (external ref
-    /// `id.value` + `namespace`), returning the EHR summary.
+    /// `id.value` + `namespace`), returning the EHR summary. Served from the
+    /// promoted `ehr.subject_*` columns the `EHR_STATUS` writes keep in sync
+    /// (unique per subject — `ehr_subject_uq`).
     pub(super) async fn ehr_by_subject(
         &self,
         subject_id: &str,
         namespace: &str,
     ) -> Result<ServiceResponse, ServiceError> {
         let ehr_id: Uuid = sqlx::query_scalar(
-            "SELECT v.ehr_id FROM vo_version v \
-             JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-             WHERE v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) AND v.lifecycle_state <> '523' \
-             AND n.data #>> '{subject,external_ref,id,value}' = $1 \
-             AND n.data #>> '{subject,external_ref,namespace}' = $2 \
-             LIMIT 1",
+            "SELECT id FROM ehr WHERE subject_id = $1 AND subject_namespace = $2",
         )
         .bind(subject_id)
         .bind(namespace)
@@ -83,7 +111,7 @@ impl EhrbaseService {
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
         let status_ovid = self.object_version_id(status_vo, status_version);
 
-        let body = json!({
+        let mut body = json!({
             "_type": "EHR",
             "system_id": { "_type": "HIER_OBJECT_ID", "value": self.system_id },
             "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
@@ -98,6 +126,19 @@ impl EhrbaseService {
                 "value": time_created.to_string()
             }
         });
+        // EHR.ehr_access (1..1): a reference to the VERSIONED_EHR_ACCESS version
+        // container — invariant `Ehr_access_valid:
+        // ehr_access.type.is_equal("VERSIONED_EHR_ACCESS")` (RM ehr, EHR class;
+        // finding F-06-07). Every EHR this service creates has one; tolerate its
+        // absence only for rows inserted outside `create_ehr` (raw fixtures).
+        if let Some((access_vo, _)) = self.current_vo(ehr_id, Kind::EhrAccess).await? {
+            body["ehr_access"] = json!({
+                "_type": "OBJECT_REF",
+                "namespace": "local",
+                "type": "VERSIONED_EHR_ACCESS",
+                "id": { "_type": "HIER_OBJECT_ID", "value": access_vo.to_string() }
+            });
+        }
         // For an EHR the `ETag`/`Location` are keyed by the `ehr_id`
         // (`ETag_EHR.yaml` / `Location_EHR.yaml`).
         let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
@@ -208,6 +249,31 @@ impl EhrbaseService {
             .filter(|r| r.ehr_id == ehr_id)
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
         Ok(self.original_version(&read))
+    }
+
+    /// The `ORIGINAL_VERSION` of an EHR's `EHR_STATUS` extant at `at`, or the
+    /// latest when `at` is `None` — `GET /ehr/{ehr_id}/versioned_ehr_status/version`
+    /// (`versioned_ehr_status_version_get_at_time.yaml`; finding F-01-05). The
+    /// metadata carries the `version_uid` for `200_VERSION_at_time`'s
+    /// `ETag`/`Location`.
+    pub(super) async fn status_version_at_time(
+        &self,
+        ehr_id: Uuid,
+        at: Option<jiff::Timestamp>,
+    ) -> Result<ServiceResponse, ServiceError> {
+        let (vo_id, _) = self
+            .current_vo(ehr_id, Kind::EhrStatus)
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+        let read = match at {
+            Some(at) => vobject::version_at(&self.pool, vo_id, at).await?,
+            None => vobject::read_current(&self.pool, vo_id).await?,
+        }
+        .ok_or_else(|| {
+            ServiceError::NotFound(format!("EHR_STATUS version at time for EHR {ehr_id}"))
+        })?;
+        let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
+        Ok(ServiceResponse::new(self.original_version(&read), meta))
     }
 
     /// The current `EHR_STATUS` version metadata (for a `412` `ETag`/`Location`).
@@ -335,6 +401,18 @@ pub(super) fn default_ehr_status() -> Value {
         "subject": { "_type": "PARTY_SELF" },
         "is_queryable": true,
         "is_modifiable": true
+    })
+}
+
+/// The default `EHR_ACCESS` created with every EHR (RM ehr §"EHR Creation";
+/// finding F-06-07). `EHR_ACCESS` is a LOCATABLE with only the optional
+/// `settings` attribute; with no access-control scheme configured (Stage 1 has
+/// no RBAC — Stage 2), it is committed with none.
+pub(super) fn default_ehr_access() -> Value {
+    json!({
+        "_type": "EHR_ACCESS",
+        "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "EHR Access" }
     })
 }
 

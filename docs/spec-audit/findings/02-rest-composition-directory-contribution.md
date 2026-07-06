@@ -159,7 +159,14 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   `original_version` (honouring F-02-07 for a deleted version) and return it.
   Return `404_unknown_ehr_id_or_versioned_object_uid_or_no_version_at_time` when
   no version is extant at the requested time.
-- [ ] fixed
+- [x] fixed — both implemented on the `EhrService` envelope seam
+  (`status_version_at_time` / `composition_version_at_time` →
+  `original_version` + `ResourceMeta`); dispatch sets the spec's
+  `ETag`/`Location` (`200_VERSION_at_time` /
+  `200_VERSION_of_COMPOSITION_at_time`); no version at time → 404, malformed
+  time → 400; a deleted version returns its deleted-lifecycle
+  `ORIGINAL_VERSION`. Verified by `service_ehr.rs`
+  `version_get_at_time_returns_the_original_version` + `headers.rs`.
 
 ### F-02-05: `composition_delete` ignores `preceding_version_uid` — no 409 on stale, no precondition
 - **Severity:** major
@@ -332,7 +339,8 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
 - **Problem:** The comment misstates what is wired, obscuring the real 501 gap.
 - **Fix:** Rewrite the doc comment to list the genuinely-unimplemented operations
   (the two version-at-time reads) once F-02-04 is addressed, remove it.
-- [ ] fixed
+- [x] fixed — with F-02-04 the two at-time reads are implemented and the module
+  doc now states every `EhrService` operation is implemented.
 
 ## Hygiene notes
 

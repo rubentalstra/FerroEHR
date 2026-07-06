@@ -22,6 +22,7 @@ use openehr_its::rest::generated::definition::DefinitionApi;
 use openehr_its::rest::generated::demographic::DemographicApi;
 use openehr_its::rest::generated::ehr::{
     CompositionDeleteParams, CompositionGetParams, EhrCreateParams, EhrStatusUpdateParams,
+    VersionedEhrStatusVersionGetAtTimeParams,
 };
 use openehr_its::rest::generated::query::QueryApi;
 use openehr_its::rest::runtime::ApiError;
@@ -91,6 +92,21 @@ impl EhrService for MockBackend {
             EHR_ID.to_owned(),
             COMP_OVID.to_owned(),
         )))
+    }
+
+    async fn versioned_ehr_status_version_get_at_time(
+        &self,
+        _params: VersionedEhrStatusVersionGetAtTimeParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        // 200_VERSION_at_time: an ORIGINAL_VERSION with the version_uid meta.
+        let body = json!({
+            "_type": "ORIGINAL_VERSION",
+            "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID }
+        });
+        Ok(ServiceResponse::new(
+            body,
+            ResourceMeta::new(EHR_ID.to_owned(), STATUS_OVID.to_owned()),
+        ))
     }
 }
 
@@ -232,6 +248,27 @@ async fn composition_get_sets_etag_and_location() {
     );
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "COMPOSITION");
+}
+
+#[tokio::test]
+async fn versioned_ehr_status_version_at_time_sets_version_headers() {
+    // F-01-05: 200_VERSION_at_time declares ETag (the version_uid) + Location
+    // (the …/versioned_ehr_status/version/{version_uid} VERSION resource URL).
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/ehr/{EHR_ID}/versioned_ehr_status/version"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(req).await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(etag(&h), Some(format!("\"{STATUS_OVID}\"").as_str()));
+    assert_eq!(
+        location(&h),
+        Some(format!("{BASE}/ehr/{EHR_ID}/versioned_ehr_status/version/{STATUS_OVID}").as_str())
+    );
+    let v: Value = serde_json::from_str(&body).expect("json body");
+    assert_eq!(v["_type"], "ORIGINAL_VERSION");
 }
 
 #[tokio::test]

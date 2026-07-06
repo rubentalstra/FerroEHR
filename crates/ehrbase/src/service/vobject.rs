@@ -17,6 +17,10 @@ use super::codes::lifecycle;
 pub(super) enum Kind {
     Composition,
     EhrStatus,
+    /// The EHR-wide access-control object created with the EHR (RM ehr
+    /// §"EHR Creation") and versioned "via the normal mechanism"
+    /// (RM ehr §"EHR Access").
+    EhrAccess,
     Folder,
 }
 
@@ -25,6 +29,7 @@ impl Kind {
         match self {
             Kind::Composition => "COMPOSITION",
             Kind::EhrStatus => "EHR_STATUS",
+            Kind::EhrAccess => "EHR_ACCESS",
             Kind::Folder => "FOLDER",
         }
     }
@@ -34,6 +39,7 @@ impl Kind {
         match rm_type {
             "COMPOSITION" => Some(Kind::Composition),
             "EHR_STATUS" => Some(Kind::EhrStatus),
+            "EHR_ACCESS" => Some(Kind::EhrAccess),
             "FOLDER" => Some(Kind::Folder),
             _ => None,
         }
@@ -252,6 +258,9 @@ async fn apply_change(
             canonical,
             template_id,
         } => {
+            if kind == Kind::EhrStatus {
+                sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
+            }
             let rows = decompose(canonical)?;
             let vo_id = Uuid::now_v7();
             insert_vo_version(
@@ -280,6 +289,9 @@ async fn apply_change(
             expected,
             template_id,
         } => {
+            if kind == Kind::EhrStatus {
+                sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
+            }
             let rows = decompose(canonical)?;
             let next = next_version(&mut *tx, ehr_id, vo_id, kind, expected).await?;
             close_current(&mut *tx, vo_id).await?;
@@ -328,6 +340,53 @@ async fn apply_change(
             })
         }
     }
+}
+
+/// Keep the EHR's promoted subject columns (`ehr.subject_id` /
+/// `subject_namespace`) in sync with the `EHR_STATUS` being committed
+/// (`subject.external_ref.id.value` + `.namespace`). The partial unique index
+/// `ehr_subject_uq` enforces **one EHR per subject** at the database — the
+/// ITS-REST `409_EHR.yaml` conflict ("an already existing EHR with the same
+/// subject id, namespace pair") and CNF master06
+/// `I_EHR_SERVICE.create_ehr-two_ehrs_same_patient`; a violation maps to
+/// [`ServiceError::Conflict`] (→ 409). A status without an `external_ref`
+/// (e.g. `PARTY_SELF`) clears the columns and never conflicts.
+async fn sync_ehr_subject(
+    tx: &mut PgConnection,
+    ehr_id: Uuid,
+    canonical: &serde_json::Value,
+) -> Result<(), ServiceError> {
+    use serde_json::Value;
+    let subject_id = canonical
+        .pointer("/subject/external_ref/id/value")
+        .and_then(Value::as_str);
+    let namespace = canonical
+        .pointer("/subject/external_ref/namespace")
+        .and_then(Value::as_str);
+    // Only a complete (id, namespace) pair identifies a subject.
+    let (subject_id, namespace) = match (subject_id, namespace) {
+        (Some(id), Some(ns)) => (Some(id), Some(ns)),
+        _ => (None, None),
+    };
+    sqlx::query("UPDATE ehr SET subject_id = $2, subject_namespace = $3 WHERE id = $1")
+        .bind(ehr_id)
+        .bind(subject_id)
+        .bind(namespace)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            if let sqlx::Error::Database(db) = &e
+                && db.constraint() == Some("ehr_subject_uq")
+            {
+                return ServiceError::Conflict(format!(
+                    "an EHR already exists for subject {}@{}",
+                    subject_id.unwrap_or("?"),
+                    namespace.unwrap_or("?"),
+                ));
+            }
+            ServiceError::Database(e)
+        })?;
+    Ok(())
 }
 
 /// Validate an update/delete target (belongs to `ehr_id`, `If-Match` matches)
