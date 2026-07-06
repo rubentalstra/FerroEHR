@@ -24,12 +24,12 @@ use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::ServiceExt;
 
-use ehrbase_rest::RestConfig;
 use ehrbase_rest::auth::config::AuthConfig;
+use ehrbase_rest::{EhrService, RestConfig, ServiceResponse};
 use openehr_its::rest::generated::admin::AdminApi;
 use openehr_its::rest::generated::definition::{DefinitionApi, DefinitionTemplateAdl14GetParams};
 use openehr_its::rest::generated::demographic::DemographicApi;
-use openehr_its::rest::generated::ehr::{CompositionCreateParams, CompositionGetParams, EhrApi};
+use openehr_its::rest::generated::ehr::{CompositionCreateParams, CompositionGetParams};
 use openehr_its::rest::generated::query::QueryApi;
 use openehr_its::rest::runtime::ApiError;
 
@@ -62,22 +62,26 @@ struct MockBackend {
 }
 
 #[async_trait]
-impl EhrApi for MockBackend {
+impl EhrService for MockBackend {
     async fn composition_create(
         &self,
         _params: CompositionCreateParams,
         body: Value,
-    ) -> Result<Value, ApiError> {
+    ) -> Result<ServiceResponse, ApiError> {
         *self.created_body.lock().unwrap() = Some(body.clone());
         *self.stored.lock().unwrap() = Some(body.clone());
-        Ok(body)
+        Ok(ServiceResponse::plain(body))
     }
 
-    async fn composition_get(&self, _params: CompositionGetParams) -> Result<Value, ApiError> {
+    async fn composition_get(
+        &self,
+        _params: CompositionGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
         self.stored
             .lock()
             .unwrap()
             .clone()
+            .map(ServiceResponse::plain)
             .ok_or_else(|| ApiError::NotFound("composition not found".to_owned()))
     }
 }

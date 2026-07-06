@@ -3,22 +3,406 @@
 //! `ehrbase-rest` owns the HTTP surface but not the storage/service logic —
 //! that lives in the `ehrbase` application crate, which depends on this one. To
 //! avoid a dependency cycle, the server depends on the **`Backend`** trait
-//! (the union of the five generated ITS-REST server traits) rather than on a
-//! concrete service; [`AppState`](crate::AppState) holds an `Arc<dyn Backend>`.
-//! `ehrbase` implements the five traits on its DB-backed service and injects it
-//! via [`AppState::with_backend`](crate::AppState::with_backend); until then the
-//! default [`StubBackend`] answers every operation with `NotImplemented`.
+//! rather than on a concrete service; [`AppState`](crate::AppState) holds an
+//! `Arc<dyn Backend>`. `ehrbase` implements the traits on its DB-backed service
+//! and injects it via [`AppState::with_backend`](crate::AppState::with_backend);
+//! until then the default [`StubBackend`] answers every operation with
+//! `NotImplemented`.
+//!
+//! `Backend` is the union of the four generated ITS-REST server traits
+//! (demographic / definition / query / admin) plus [`EhrService`] — the EHR
+//! group's application seam (W2-A). The generated `EhrApi` trait exchanges a
+//! bare `serde_json::Value` and so cannot carry the spec-mandated
+//! `ETag`/`Location` headers or drive `Prefer`; [`EhrService`] supersedes it for
+//! the whole EHR group, returning a [`ServiceResponse`] (RM payload + typed
+//! [`ResourceMeta`]) from which the HTTP edge derives those headers. The
+//! generated `EhrApi` is no longer part of the seam.
+
+use async_trait::async_trait;
+use serde_json::Value;
 
 use openehr_its::rest::generated::admin::AdminApi;
 use openehr_its::rest::generated::definition::DefinitionApi;
 use openehr_its::rest::generated::demographic::DemographicApi;
-use openehr_its::rest::generated::ehr::EhrApi;
+use openehr_its::rest::generated::ehr::{
+    CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
+    CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
+    CompositionUpdateParams, ContributionCreateParams, ContributionGetParams,
+    DirectoryCreateParams, DirectoryDeleteParams, DirectoryGetAtTimeParams,
+    DirectoryGetByVersionIdParams, DirectoryUpdateParams, EhrCreateParams, EhrCreateWithIdParams,
+    EhrGetByIdParams, EhrGetBySubjectParams, EhrStatusGetAtTimeParams,
+    EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams, EhrStatusTagsGetParams,
+    EhrStatusTagsUpdateParams, EhrStatusUpdateParams, EhrTagsGetParams,
+    VersionedCompositionGetParams, VersionedCompositionRevisionHistoryParams,
+    VersionedCompositionVersionGetAtTimeParams, VersionedCompositionVersionGetByIdParams,
+    VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
+    VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
+};
 use openehr_its::rest::generated::query::QueryApi;
+use openehr_its::rest::runtime::ApiError;
+
+use crate::response::{ResourceMeta, ServiceResponse};
+
+/// The EHR group's application seam (W2-A) — the whole EHR / `EHR_STATUS` /
+/// COMPOSITION / DIRECTORY / CONTRIBUTION surface, returning a typed
+/// [`ServiceResponse`] (the canonical-JSON RM payload plus optional
+/// [`ResourceMeta`]) instead of the generated `EhrApi`'s bare `Value`.
+///
+/// The envelope lets the HTTP edge set the `ETag`/`Location` headers ITS-REST
+/// 1.0.3 mandates (`headers/ETag_*.yaml`, `headers/Location_*.yaml`) and honour
+/// `Prefer` (`return=minimal` default vs `return=representation`) — none of
+/// which a bare `Value` can express. Reads whose spec response declares no
+/// headers simply return [`ServiceResponse::plain`]; the dispatch layer decides
+/// per operation which headers to emit.
+///
+/// Every method defaults to `NotImplemented`, so the [`StubBackend`] (and any
+/// partial backend) inherits a `501` until the real service overrides it.
+#[async_trait]
+pub trait EhrService: Send + Sync {
+    // ── EHR ──────────────────────────────────────────────────────────────────
+
+    /// `GET /ehr` — find an EHR by subject. `200_EHR` (no `ETag`/`Location`).
+    async fn ehr_get_by_subject(
+        &self,
+        _params: EhrGetBySubjectParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `POST /ehr` — create an EHR. `201` with `ETag`(`ehr_id`)/`Location`; body
+    /// only on `Prefer: return=representation` (`201_EHR.yaml`).
+    async fn ehr_create(
+        &self,
+        _params: EhrCreateParams,
+        _body: Option<Value>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}` — retrieve an EHR. `200_EHR` (no `ETag`/`Location`).
+    async fn ehr_get_by_id(&self, _params: EhrGetByIdParams) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /ehr/{ehr_id}` — create an EHR with a client id. As `ehr_create`.
+    async fn ehr_create_with_id(
+        &self,
+        _params: EhrCreateWithIdParams,
+        _body: Option<Value>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    // ── EHR_STATUS ───────────────────────────────────────────────────────────
+
+    /// `GET /ehr/{ehr_id}/ehr_status/{version_uid}` — the **bare** `EHR_STATUS` at
+    /// a specific version (not the `ORIGINAL_VERSION` wrapper — F-01-03). `200`
+    /// with `ETag`(`version_uid`)/`Location` (`200_EHR_STATUS_retrieved.yaml`).
+    async fn ehr_status_get_by_version_id(
+        &self,
+        _params: EhrStatusGetByVersionIdParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/ehr_status` — the `EHR_STATUS` (current or at time).
+    /// `200` with `ETag`/`Location` (`200_EHR_STATUS_retrieved.yaml`).
+    async fn ehr_status_get_at_time(
+        &self,
+        _params: EhrStatusGetAtTimeParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /ehr/{ehr_id}/ehr_status` — update `EHR_STATUS`. Default `204` (no
+    /// body); `200` + body on `return=representation`; `ETag`/`Location` on both
+    /// (`204_EHR_STATUS.yaml` / `200_EHR_STATUS_updated.yaml`).
+    async fn ehr_status_update(
+        &self,
+        _params: EhrStatusUpdateParams,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status` — the `VERSIONED_EHR_STATUS`.
+    /// `200_VERSIONED_EHR_STATUS` (no `ETag`/`Location`).
+    async fn versioned_ehr_status_get(
+        &self,
+        _params: VersionedEhrStatusGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`. `200` (plain).
+    async fn versioned_ehr_status_revision_history(
+        &self,
+        _params: VersionedEhrStatusRevisionHistoryParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status/version` — the VERSION extant at a
+    /// time. `200_VERSION_at_time`: `ETag`(`version_uid`)/`Location`.
+    async fn versioned_ehr_status_version_get_at_time(
+        &self,
+        _params: VersionedEhrStatusVersionGetAtTimeParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}` — the
+    /// `ORIGINAL_VERSION`. `200_VERSION` (no `ETag`/`Location`).
+    async fn versioned_ehr_status_version_get_by_id(
+        &self,
+        _params: VersionedEhrStatusVersionGetByIdParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    // ── COMPOSITION ──────────────────────────────────────────────────────────
+
+    /// `POST /ehr/{ehr_id}/composition` — create. `201` + `ETag`/`Location`;
+    /// body per `Prefer` (`201_COMPOSITION.yaml`).
+    async fn composition_create(
+        &self,
+        _params: CompositionCreateParams,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/composition/{uid_based_id}` — retrieve. `200` +
+    /// `ETag`/`Location`, or a deleted read → empty body (→ `204`).
+    async fn composition_get(
+        &self,
+        _params: CompositionGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}` — update. `200` +
+    /// `ETag`/`Location`; body per `Prefer` (`200_COMPOSITION_updated.yaml`).
+    async fn composition_update(
+        &self,
+        _params: CompositionUpdateParams,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}` — logical delete. `204`
+    /// + `ETag`/`Location` of the deleted version (`204_COMPOSITION_deleted.yaml`).
+    async fn composition_delete(
+        &self,
+        _params: CompositionDeleteParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}`.
+    /// `200_VERSIONED_COMPOSITION` (no `ETag`/`Location`).
+    async fn versioned_composition_get(
+        &self,
+        _params: VersionedCompositionGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history`.
+    async fn versioned_composition_revision_history(
+        &self,
+        _params: VersionedCompositionRevisionHistoryParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version` —
+    /// the VERSION extant at a time. `200_VERSION_of_COMPOSITION_at_time`:
+    /// `ETag`/`Location`.
+    async fn versioned_composition_version_get_at_time(
+        &self,
+        _params: VersionedCompositionVersionGetAtTimeParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}`
+    /// — the `ORIGINAL_VERSION`. `200_VERSION` (no `ETag`/`Location`).
+    async fn versioned_composition_version_get_by_id(
+        &self,
+        _params: VersionedCompositionVersionGetByIdParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    // ── DIRECTORY (FOLDER) ─────────────────────────────────────────────────────
+
+    /// `GET /ehr/{ehr_id}/directory` — the directory FOLDER (current or at time),
+    /// or a deleted read → empty body (→ `204`). `200_FOLDER_retrieved` (no
+    /// `ETag`/`Location`).
+    async fn directory_get_at_time(
+        &self,
+        _params: DirectoryGetAtTimeParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /ehr/{ehr_id}/directory` — update. Default `204`; `200` + body on
+    /// `return=representation`; `ETag`/`Location` on both
+    /// (`204_directory_updated.yaml` / `200_directory_updated.yaml`).
+    async fn directory_update(
+        &self,
+        _params: DirectoryUpdateParams,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `POST /ehr/{ehr_id}/directory` — create the directory FOLDER. `201` +
+    /// `ETag`/`Location`; body per `Prefer` (`201_directory.yaml`).
+    async fn directory_create(
+        &self,
+        _params: DirectoryCreateParams,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /ehr/{ehr_id}/directory` — logical delete. `204_because_deleted`
+    /// (no headers).
+    async fn directory_delete(
+        &self,
+        _params: DirectoryDeleteParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/directory/{version_uid}` — a specific version, or a
+    /// deleted read → empty body (→ `204`). `200_FOLDER_retrieved` (no headers).
+    async fn directory_get_by_version_id(
+        &self,
+        _params: DirectoryGetByVersionIdParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    // ── CONTRIBUTION ───────────────────────────────────────────────────────────
+
+    /// `POST /ehr/{ehr_id}/contribution` — commit a CONTRIBUTION. `201` +
+    /// `ETag`(`contribution_uid`)/`Location`; body per `Prefer`
+    /// (`201_CONTRIBUTION.yaml`).
+    async fn contribution_create(
+        &self,
+        _params: ContributionCreateParams,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/contribution/{contribution_uid}`. `200_CONTRIBUTION`
+    /// (no `ETag`/`Location`).
+    async fn contribution_get(
+        &self,
+        _params: ContributionGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    // ── item tags (a JSON array body; no headers) ──────────────────────────────
+
+    /// `GET /ehr/{ehr_id}/tags` — all item tags in the EHR.
+    async fn ehr_tags_get(&self, _params: EhrTagsGetParams) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/composition/{uid_based_id}/tags`.
+    async fn composition_tags_get(
+        &self,
+        _params: CompositionTagsGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags`.
+    async fn composition_tags_update(
+        &self,
+        _params: CompositionTagsUpdateParams,
+        _body: Vec<Value>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}`.
+    async fn composition_tags_delete(
+        &self,
+        _params: CompositionTagsDeleteParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`.
+    async fn ehr_status_tags_get(
+        &self,
+        _params: EhrStatusTagsGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`.
+    async fn ehr_status_tags_update(
+        &self,
+        _params: EhrStatusTagsUpdateParams,
+        _body: Vec<Value>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}`.
+    async fn ehr_status_tags_delete(
+        &self,
+        _params: EhrStatusTagsDeleteParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    // ── conflict-decoration helpers (latest version for 409/412 headers) ────────
+
+    /// The current `EHR_STATUS` version metadata, for the latest `version_uid` the
+    /// spec requires in the `ETag`/`Location` of a `412` precondition failure
+    /// (`412_EHR_STATUS.yaml`). `None` if the EHR/status is unknown.
+    async fn ehr_status_latest_meta(
+        &self,
+        _ehr_id: String,
+    ) -> Result<Option<ResourceMeta>, ApiError> {
+        Ok(None)
+    }
+
+    /// The current COMPOSITION version metadata, for the latest `version_uid` in
+    /// the `ETag`/`Location` of a `409`/`412`
+    /// (`409_COMPOSITION_with_uid_based_id.yaml` / `412_COMPOSITION.yaml`).
+    async fn composition_latest_meta(
+        &self,
+        _ehr_id: String,
+        _uid_based_id: String,
+    ) -> Result<Option<ResourceMeta>, ApiError> {
+        Ok(None)
+    }
+
+    /// The current directory FOLDER version metadata, for the latest
+    /// `version_uid` in the `ETag`/`Location` of a `412` (`412_directory.yaml`).
+    async fn directory_latest_meta(
+        &self,
+        _ehr_id: String,
+    ) -> Result<Option<ResourceMeta>, ApiError> {
+        Ok(None)
+    }
+}
 
 /// The full server backend: everything the ITS-REST surface can dispatch to.
 /// Implemented once, on the application's service (or on [`StubBackend`]).
 pub trait Backend:
-    EhrApi
+    EhrService
     + DemographicApi
     + DefinitionApi
     + QueryApi
@@ -31,7 +415,7 @@ pub trait Backend:
 }
 
 impl<T> Backend for T where
-    T: EhrApi
+    T: EhrService
         + DemographicApi
         + DefinitionApi
         + QueryApi
@@ -47,12 +431,12 @@ impl<T> Backend for T where
 /// [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError::NotImplemented).
 /// Lets the server boot and route before the `ehrbase` service is wired in.
 ///
-/// Each `impl` is empty — the generated traits' default method bodies already
-/// return `NotImplemented`, so no per-operation stubs are needed.
+/// Each `impl` is empty — the traits' default method bodies already return
+/// `NotImplemented`, so no per-operation stubs are needed.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct StubBackend;
 
-impl EhrApi for StubBackend {}
+impl EhrService for StubBackend {}
 impl DemographicApi for StubBackend {}
 impl DefinitionApi for StubBackend {}
 impl QueryApi for StubBackend {}

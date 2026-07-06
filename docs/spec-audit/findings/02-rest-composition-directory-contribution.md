@@ -109,7 +109,7 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   only; extend them to also return the `version_uid` (and for CONTRIBUTION the
   contribution uid), and add a header-setting helper in `negotiate.rs`. On the
   409/412 paths, include the *current* latest `version_uid`.
-- [ ] fixed
+- [x] fixed — W2-A typed response envelope + `Prefer`/ETag/Location wiring in `dispatch::ehr`
 
 ### F-02-03: `Prefer` header ignored — body always returned (default must be `return=minimal`)
 - **Severity:** major
@@ -135,7 +135,7 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   update → 200 no body per `200_*_updated`, or 204 for directory). When
   `return=representation`, return the body as today. Centralise as a
   `respond_prefer(...)` helper alongside F-02-02's header wiring.
-- [ ] fixed
+- [x] fixed — W2-A typed response envelope + `Prefer`/ETag/Location wiring in `dispatch::ehr`
 
 ### F-02-04: `versioned_composition_version_get_at_time` and `versioned_ehr_status_version_get_at_time` return 501
 - **Severity:** major

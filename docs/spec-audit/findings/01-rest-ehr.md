@@ -28,7 +28,7 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase-rest/src/negotiate.rs:293` (`respond_rm`), `:270` (`respond`), `:334` (`empty`), `:349` (`json_response`); backend trait returns bare `Value` with no header channel — `crates/ehrbase-rest/src/dispatch/ehr.rs:57-164`; `crates/ehrbase/src/service/api/ehr.rs` (every method returns `Value`). `grep -niE "etag|location" crates/ehrbase-rest/src` finds none.
 - **Problem:** The response builders never set `ETag` or `Location`. Per spec, `POST/PUT /ehr` MUST return `ETag` (the `ehr_id`, quoted) and `Location` (the EHR URL); every EHR_STATUS GET/PUT (200/204) MUST return `ETag` (the `version_uid`, quoted) and `Location` (the EHR_STATUS URL); `412` MUST return the *latest* `version_uid` in both. Without `ETag` the client cannot obtain the `preceding_version_uid` needed for the `If-Match` on a subsequent update — the whole optimistic-concurrency workflow is broken, and CNF header assertions fail.
 - **Fix:** Give the dispatch layer a way to carry headers out of the service. Cleanest: change the EHR/EHR_STATUS service methods (or a thin response-metadata wrapper) to return the resource plus its `OBJECT_VERSION_ID`/`ehr_id`, and have `dispatch/ehr.rs` set `ETag` (quoted uid) and `Location` (absolute resource URL built from the configured base path) on 201/200/204/412 responses. Add a `respond_rm_with_headers`/builder variant in `negotiate.rs`. The service already computes the `object_version_id` (`service/ehr.rs:209`) — surface it rather than only injecting it into the body `uid`.
-- [ ] fixed
+- [x] fixed — W2-A typed response envelope (`ServiceResponse`/`ResourceMeta` on the `EhrService` seam) + header-aware `negotiate` helpers
 
 ### F-01-02: `Prefer` header ignored — wrong default status and body on create/update
 - **Severity:** major
@@ -36,7 +36,7 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase-rest/src/dispatch/ehr.rs:67-95` (`ehr_create`/`ehr_create_with_id` always `respond_rm` with the full EHR body), `:114-123` (`ehr_status_update` always returns `ok`=200 with body). `EhrCreateParams.prefer` / `EhrStatusUpdateParams.prefer` (`openehr-its/.../generated/ehr.rs:141,210`) are parsed but never read.
 - **Problem:** The default (`return=minimal`) is not honoured. `POST/PUT /ehr` should return a bodyless 201 by default (body only when `return=representation`); `PUT .../ehr_status` should return **204 No Content** by default and 200 + body only for `return=representation`. The impl unconditionally returns 201-with-body and 200-with-body respectively — a wrong default status for the update and a spurious body for create.
 - **Fix:** Read `Prefer` in the dispatch arms. For `ehr_status_update`: return `204` (bodyless, with ETag/Location) unless `Prefer: return=representation`, in which case `200` + body. For `ehr_create`/`ehr_create_with_id`: return `201` with headers only unless `return=representation`. Add a small `negotiate::prefers_representation(headers)` helper.
-- [ ] fixed
+- [x] fixed — W2-A typed response envelope (`ServiceResponse`/`ResourceMeta` on the `EhrService` seam) + header-aware `negotiate` helpers
 
 ### F-01-03: `ehr_status_get_by_version_id` returns an ORIGINAL_VERSION instead of the EHR_STATUS
 - **Severity:** major
@@ -44,7 +44,7 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `crates/ehrbase/src/service/api/ehr.rs:78-85` calls `self.status_version(...)`, which returns `original_version(...)` (`crates/ehrbase/src/service/ehr.rs:175-186` → `service/versioned.rs:80` builds an `ORIGINAL_VERSION`). Dispatched via `respond_rm::<EhrStatus>` (`dispatch/ehr.rs:96-104`).
 - **Problem:** The response payload is an `ORIGINAL_VERSION` (`{_type:"ORIGINAL_VERSION", uid, contribution, lifecycle_state, data}`), but the spec/OAS require an `EHR_STATUS`. Contrast `ehr_status_get_at_time` (`api/ehr.rs:65`) which correctly returns the bare EHR_STATUS via `status_at`. Additionally, on `Accept: application/xml` the `respond_rm::<EhrStatus>` re-type step (`negotiate.rs:308`) will fail to deserialize the ORIGINAL_VERSION into `EhrStatus` and return **500**.
 - **Fix:** Route `ehr_status_get_by_version_id` to a status-by-version reader that returns the EHR_STATUS canonical value with its `uid` set (mirror `status_at` but pinned to a specific `sys_version` via `vobject::read_version`), not `status_version`/`original_version`. Keep `status_version`/`original_version` for the `versioned_ehr_status/version/{version_uid}` (VERSION) endpoint only.
-- [ ] fixed
+- [x] fixed — W2-A typed response envelope (`ServiceResponse`/`ResourceMeta` on the `EhrService` seam) + header-aware `negotiate` helpers
 
 ### F-01-04: Duplicate-subject EHR creation not rejected with 409
 - **Severity:** major

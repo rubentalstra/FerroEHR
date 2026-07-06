@@ -7,6 +7,7 @@
 //! deleted), the object kind from the payload `_type` (create) or the stored
 //! object (modify / delete), all in one transaction.
 
+use ehrbase_rest::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
@@ -45,7 +46,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         body: Value,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
         let versions = body
             .get("versions")
@@ -110,7 +111,10 @@ impl EhrbaseService {
             vobject::commit_contribution(&mut tx, ehr_id, &contribution_audit, changes).await?;
         tx.commit().await?;
 
-        self.get_contribution(ehr_id, contribution_id).await
+        let body = self.get_contribution(ehr_id, contribution_id).await?;
+        // 201_CONTRIBUTION: ETag(contribution_uid) + Location.
+        let meta = ResourceMeta::new(ehr_id.to_string(), contribution_id.to_string());
+        Ok(ServiceResponse::new(body, meta))
     }
 
     /// The stored kind of an existing object, or `NotFound`.

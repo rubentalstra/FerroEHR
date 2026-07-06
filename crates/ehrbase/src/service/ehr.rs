@@ -2,6 +2,7 @@
 //! versioned-object machinery. This is the first fully-implemented vertical of
 //! the P12 service; COMPOSITION / DIRECTORY reuse the same machinery.
 
+use ehrbase_rest::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
@@ -12,12 +13,13 @@ use super::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
     /// Create an EHR (with the given id) and its initial `EHR_STATUS`. Shared by
-    /// `POST /ehr` and `PUT /ehr/{ehr_id}`.
+    /// `POST /ehr` and `PUT /ehr/{ehr_id}`. The response carries the EHR body and
+    /// its `ehr_id` (the `ETag`/`Location` for `201_EHR`).
     pub(super) async fn create_ehr(
         &self,
         ehr_id: Uuid,
         status: Value,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let mut tx = self.pool.begin().await?;
 
         let inserted = sqlx::query("INSERT INTO ehr (id) VALUES ($1) ON CONFLICT DO NOTHING")
@@ -43,7 +45,7 @@ impl EhrbaseService {
         &self,
         subject_id: &str,
         namespace: &str,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let ehr_id: Uuid = sqlx::query_scalar(
             "SELECT v.ehr_id FROM vo_version v \
              JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
@@ -62,8 +64,9 @@ impl EhrbaseService {
         self.ehr_summary(ehr_id).await
     }
 
-    /// Build the canonical EHR object for an existing EHR.
-    pub(super) async fn ehr_summary(&self, ehr_id: Uuid) -> Result<Value, ServiceError> {
+    /// Build the canonical EHR object for an existing EHR, with its `ehr_id`
+    /// metadata (the `ETag`/`Location` for `POST /ehr`).
+    pub(super) async fn ehr_summary(&self, ehr_id: Uuid) -> Result<ServiceResponse, ServiceError> {
         let row = sqlx::query("SELECT time_created FROM ehr WHERE id = $1")
             .bind(ehr_id)
             .fetch_optional(&self.pool)
@@ -80,7 +83,7 @@ impl EhrbaseService {
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
         let status_ovid = self.object_version_id(status_vo, status_version);
 
-        Ok(json!({
+        let body = json!({
             "_type": "EHR",
             "system_id": { "_type": "HIER_OBJECT_ID", "value": self.system_id },
             "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
@@ -94,7 +97,12 @@ impl EhrbaseService {
                 "_type": "DV_DATE_TIME",
                 "value": time_created.to_string()
             }
-        }))
+        });
+        // For an EHR the `ETag`/`Location` are keyed by the `ehr_id`
+        // (`ETag_EHR.yaml` / `Location_EHR.yaml`).
+        let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
+            .with_last_modified(time_created);
+        Ok(ServiceResponse::new(body, meta))
     }
 
     /// The `EHR_STATUS` of an EHR as canonical JSON with its `uid` set — the
@@ -103,7 +111,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         at: Option<jiff::Timestamp>,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
@@ -113,7 +121,23 @@ impl EhrbaseService {
             None => vobject::read_current(&self.pool, vo_id).await?,
         }
         .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        Ok(self.with_uid(read.canonical, vo_id, read.sys_version))
+        Ok(self.version_response(ehr_id, vo_id, read))
+    }
+
+    /// The `EHR_STATUS` at a specific version as canonical JSON with its `uid`
+    /// set — the **bare** resource (not the `ORIGINAL_VERSION` wrapper) that
+    /// `GET /ehr/{ehr_id}/ehr_status/{version_uid}` returns (F-01-03).
+    pub(super) async fn status_by_version(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+        version: i32,
+    ) -> Result<ServiceResponse, ServiceError> {
+        let read = vobject::read_version(&self.pool, vo_id, version)
+            .await?
+            .filter(|r| r.ehr_id == ehr_id)
+            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
+        Ok(self.version_response(ehr_id, vo_id, read))
     }
 
     /// Update an EHR's `EHR_STATUS`, returning the new version. `if_match` is the
@@ -123,7 +147,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         body: Value,
         if_match: &str,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
@@ -132,7 +156,7 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");
-        let committed = vobject::update(
+        vobject::update(
             &mut tx,
             ehr_id,
             vo_id,
@@ -148,7 +172,7 @@ impl EhrbaseService {
         let read = vobject::read_current(&self.pool, vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        Ok(self.with_uid(read.canonical, vo_id, committed.sys_version))
+        Ok(self.version_response(ehr_id, vo_id, read))
     }
 
     /// The `VERSIONED_OBJECT` for an EHR's `EHR_STATUS`.
@@ -186,6 +210,23 @@ impl EhrbaseService {
         Ok(self.original_version(&read))
     }
 
+    /// The current `EHR_STATUS` version metadata (for a `412` `ETag`/`Location`).
+    pub(super) async fn ehr_status_meta(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Option<ResourceMeta>, ServiceError> {
+        self.latest_version_meta(ehr_id, Kind::EhrStatus).await
+    }
+
+    /// The current directory FOLDER version metadata (for a `412`
+    /// `ETag`/`Location`).
+    pub(super) async fn directory_meta(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Option<ResourceMeta>, ServiceError> {
+        self.latest_version_meta(ehr_id, Kind::Folder).await
+    }
+
     /// The current version row (`vo_id`, `sys_version`) of an EHR's object of a
     /// given kind, if any.
     pub(super) async fn current_vo(
@@ -209,6 +250,56 @@ impl EhrbaseService {
 
     pub(super) fn object_version_id(&self, vo_id: Uuid, sys_version: i32) -> String {
         format!("{vo_id}::{}::{sys_version}", self.system_id)
+    }
+
+    /// The [`ResourceMeta`] for a versioned resource: the owning EHR plus the
+    /// resource `OBJECT_VERSION_ID` (the `ETag` value + `Location` tail) and its
+    /// commit time.
+    pub(super) fn version_meta(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+        sys_version: i32,
+        at: jiff::Timestamp,
+    ) -> ResourceMeta {
+        ResourceMeta::new(
+            ehr_id.to_string(),
+            self.object_version_id(vo_id, sys_version),
+        )
+        .with_last_modified(at)
+    }
+
+    /// A [`ServiceResponse`] for a loaded versioned object: its canonical body
+    /// with the `uid` injected, plus the resource metadata for the wire headers.
+    pub(super) fn version_response(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+        read: vobject::VersionRead,
+    ) -> ServiceResponse {
+        let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
+        ServiceResponse::new(self.with_uid(read.canonical, vo_id, read.sys_version), meta)
+    }
+
+    /// The current version metadata of an EHR-owned versioned object of `kind`
+    /// (for the latest `version_uid` a `409`/`412` must echo). `None` if none.
+    pub(super) async fn latest_version_meta(
+        &self,
+        ehr_id: Uuid,
+        kind: Kind,
+    ) -> Result<Option<ResourceMeta>, ServiceError> {
+        let Some((vo_id, _)) = self.current_vo(ehr_id, kind).await? else {
+            return Ok(None);
+        };
+        let Some(read) = vobject::read_current(&self.pool, vo_id).await? else {
+            return Ok(None);
+        };
+        Ok(Some(self.version_meta(
+            ehr_id,
+            vo_id,
+            read.sys_version,
+            read.time_committed,
+        )))
     }
 
     /// Inject the `uid` (`OBJECT_VERSION_ID`) into a versioned object's JSON.

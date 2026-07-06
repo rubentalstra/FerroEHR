@@ -1,6 +1,7 @@
 //! COMPOSITION domain logic, built on the [`vobject`](super::vobject)
 //! versioned-object machinery (the same code path as `EHR_STATUS`).
 
+use ehrbase_rest::{ResourceMeta, ServiceResponse};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -9,12 +10,13 @@ use super::vobject::{self, Kind};
 use super::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
-    /// Create a COMPOSITION in an EHR, returning it with its `uid` set.
+    /// Create a COMPOSITION in an EHR, returning it with its `uid` set and the
+    /// version metadata (the `ETag`/`Location` for `201_COMPOSITION`).
     pub(super) async fn create_composition(
         &self,
         ehr_id: Uuid,
         composition: Value,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
         self.validate_composition_for_commit(&composition).await?;
 
@@ -48,7 +50,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
         version: Option<i32>,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let read = match version {
             Some(v) => vobject::read_version(&self.pool, vo_id, v).await?,
             None => vobject::read_current(&self.pool, vo_id).await?,
@@ -57,27 +59,27 @@ impl EhrbaseService {
         .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
 
         if read.deleted() {
-            return Ok(Value::Null);
+            return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(self.with_uid(read.canonical, vo_id, read.sys_version))
+        Ok(self.version_response(ehr_id, vo_id, read))
     }
 
     /// A COMPOSITION as it was at an instant (time-travel), with its `uid` set.
-    /// A deleted version resolves to `Value::Null` (→ `204`, F-02-01).
+    /// A deleted version resolves to an empty body (→ `204`, F-02-01).
     pub(super) async fn composition_at_time(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
         at: jiff::Timestamp,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::version_at(&self.pool, vo_id, at)
             .await?
             .filter(|r| r.ehr_id == ehr_id)
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
         if read.deleted() {
-            return Ok(Value::Null);
+            return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(self.with_uid(read.canonical, vo_id, read.sys_version))
+        Ok(self.version_response(ehr_id, vo_id, read))
     }
 
     /// The `VERSIONED_OBJECT` for a COMPOSITION (verifies EHR ownership).
@@ -115,7 +117,7 @@ impl EhrbaseService {
         vo_id: Uuid,
         composition: Value,
         expected: Option<i32>,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_composition_in_ehr(ehr_id, vo_id).await?;
         self.validate_composition_for_commit(&composition).await?;
 
@@ -138,6 +140,27 @@ impl EhrbaseService {
             .await
     }
 
+    /// The current COMPOSITION version metadata (the latest `version_uid` a
+    /// `409`/`412` must echo in `ETag`/`Location`), or `None` if unknown/deleted.
+    pub(super) async fn composition_current_meta(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+    ) -> Result<Option<ResourceMeta>, ServiceError> {
+        let Some(read) = vobject::read_current(&self.pool, vo_id)
+            .await?
+            .filter(|r| r.ehr_id == ehr_id)
+        else {
+            return Ok(None);
+        };
+        Ok(Some(self.version_meta(
+            ehr_id,
+            vo_id,
+            read.sys_version,
+            read.time_committed,
+        )))
+    }
+
     /// Logically delete a COMPOSITION (a new `523|deleted|` version).
     ///
     /// `expected` is the version tree id carried by the mandatory
@@ -151,7 +174,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
         expected: i32,
-    ) -> Result<(), ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_current(&self.pool, vo_id)
             .await?
             .filter(|r| r.ehr_id == ehr_id)
@@ -172,7 +195,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::DELETED, "COMPOSITION delete");
         // Pass `expected` to the write too, so a concurrent update between the
         // check above and the commit is caught atomically.
-        vobject::delete(
+        let committed = vobject::delete(
             &mut tx,
             ehr_id,
             vo_id,
@@ -182,7 +205,11 @@ impl EhrbaseService {
         )
         .await?;
         tx.commit().await?;
-        Ok(())
+        // 204_COMPOSITION_deleted: the (now deleted) version_uid in ETag/Location.
+        Ok(ServiceResponse::deleted(ResourceMeta::new(
+            ehr_id.to_string(),
+            self.object_version_id(vo_id, committed.sys_version),
+        )))
     }
 
     pub(super) async fn ensure_ehr_exists(&self, ehr_id: Uuid) -> Result<(), ServiceError> {

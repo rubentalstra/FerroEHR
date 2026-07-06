@@ -1,6 +1,7 @@
 //! DIRECTORY (FOLDER) domain logic — one FOLDER tree per EHR, on the shared
 //! [`vobject`](super::vobject) versioned-object machinery.
 
+use ehrbase_rest::ServiceResponse;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -14,7 +15,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         folder: Value,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
         if self.current_vo(ehr_id, Kind::Folder).await?.is_some() {
             return Err(ServiceError::Conflict(format!(
@@ -38,7 +39,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         at: Option<jiff::Timestamp>,
         path: Option<&str>,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self.directory_vo(ehr_id).await?;
         let read = match at {
             Some(at) => vobject::version_at(&self.pool, vo_id, at).await?,
@@ -48,12 +49,14 @@ impl EhrbaseService {
         .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))?;
         if read.deleted() {
             // Deleted → 204 (directory_get_at_time.yaml 204_because_deleted_at_time).
-            return Ok(Value::Null);
+            return Ok(ServiceResponse::plain(Value::Null));
         }
+        let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
         let folder = self.with_uid(read.canonical, vo_id, read.sys_version);
         match path.map(str::trim).filter(|p| !p.is_empty() && *p != "/") {
-            None => Ok(folder),
+            None => Ok(ServiceResponse::new(folder, meta)),
             Some(path) => select_subfolder(&folder, path)
+                .map(|sub| ServiceResponse::new(sub, meta))
                 .ok_or_else(|| ServiceError::NotFound(format!("folder path {path:?}"))),
         }
     }
@@ -64,12 +67,15 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
         version: i32,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == ehr_id)
             .ok_or_else(|| ServiceError::NotFound(format!("directory {vo_id} v{version}")))?;
-        Ok(self.with_uid(read.canonical, vo_id, read.sys_version))
+        if read.deleted() {
+            return Ok(ServiceResponse::plain(Value::Null));
+        }
+        Ok(self.version_response(ehr_id, vo_id, read))
     }
 
     /// Update the EHR's directory. `expected` (from `If-Match`) enforces
@@ -79,7 +85,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         folder: Value,
         expected: Option<i32>,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self.directory_vo(ehr_id).await?;
 
         let mut tx = self.pool.begin().await?;
@@ -100,19 +106,20 @@ impl EhrbaseService {
         self.directory_at(ehr_id, vo_id).await
     }
 
-    /// Logically delete the EHR's directory.
+    /// Logically delete the EHR's directory. `204_because_deleted` declares no
+    /// `ETag`/`Location`, so the response carries no metadata.
     pub(super) async fn delete_directory(
         &self,
         ehr_id: Uuid,
         expected: Option<i32>,
-    ) -> Result<(), ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self.directory_vo(ehr_id).await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::DELETED, "DIRECTORY delete");
         vobject::delete(&mut tx, ehr_id, vo_id, Kind::Folder, expected, &audit).await?;
         tx.commit().await?;
-        Ok(())
+        Ok(ServiceResponse::plain(Value::Null))
     }
 
     /// The EHR's directory versioned-object id, or `NotFound`.
@@ -122,9 +129,14 @@ impl EhrbaseService {
             .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))
     }
 
-    /// Load the current directory FOLDER (by vo id) with its `uid` set —
-    /// the create/update response.
-    async fn directory_at(&self, ehr_id: Uuid, vo_id: Uuid) -> Result<Value, ServiceError> {
+    /// Load the current directory FOLDER (by vo id) with its `uid` set and the
+    /// version metadata — the create/update response
+    /// (`ETag`/`Location` for `201_directory` / `200_directory_updated`).
+    async fn directory_at(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+    ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_current(&self.pool, vo_id)
             .await?
             .filter(|r| r.ehr_id == ehr_id)
@@ -134,7 +146,7 @@ impl EhrbaseService {
                 "directory for EHR {ehr_id} is deleted"
             )));
         }
-        Ok(self.with_uid(read.canonical, vo_id, read.sys_version))
+        Ok(self.version_response(ehr_id, vo_id, read))
     }
 }
 
