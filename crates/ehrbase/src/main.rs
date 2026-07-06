@@ -10,6 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Context as _;
+use clap::{Parser, Subcommand};
 use ehrbase_audit::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
 use sqlx::PgPool;
 use tracing_subscriber::EnvFilter;
@@ -21,8 +22,58 @@ use ehrbase::service::EhrbaseService;
 /// How long to wait for the audit queue to flush on shutdown.
 const AUDIT_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 
+/// The default endpoint the `healthcheck` subcommand probes: the public,
+/// auth-exempt `/rest/status` route the server serves on its default bind.
+const DEFAULT_HEALTHCHECK_URL: &str = "http://127.0.0.1:8080/ehrbase/rest/status";
+
+/// `EHRbase` server command-line interface.
+#[derive(Debug, Parser)]
+#[command(name = "ehrbase", version, about = "openEHR-conformant CDR server")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Debug, Subcommand)]
+enum Command {
+    /// Probe the running server's status endpoint; exit 0 on a 2xx response,
+    /// 1 otherwise. Used as the container `HEALTHCHECK` (works in a shell-less
+    /// distroless image) and by compose/Kubernetes probes.
+    Healthcheck {
+        /// The status URL to probe.
+        #[arg(long, env = "EHRBASE_HEALTHCHECK_URL", default_value = DEFAULT_HEALTHCHECK_URL)]
+        url: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    match Cli::parse().command {
+        Some(Command::Healthcheck { url }) => healthcheck(&url).await,
+        None => serve().await,
+    }
+}
+
+/// Probe `url` and return `Ok(())` iff the response status is 2xx. An `Err`
+/// makes the process exit non-zero (via `anyhow`'s `Termination`), which is
+/// exactly the 0/1 contract a Docker `HEALTHCHECK` expects.
+async fn healthcheck(url: &str) -> anyhow::Result<()> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .context("building healthcheck HTTP client")?;
+    let status = client
+        .get(url)
+        .send()
+        .await
+        .with_context(|| format!("probing {url}"))?
+        .status();
+    anyhow::ensure!(status.is_success(), "healthcheck: {url} returned {status}");
+    Ok(())
+}
+
+/// Boot the server: tracing, config, pool, migrations, audit, then serve.
+async fn serve() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             EnvFilter::new("info,ehrbase=debug,ehrbase_rest=debug,ehrbase_audit=info")

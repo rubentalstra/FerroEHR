@@ -142,6 +142,33 @@ cargo run -p openehr-codegen -- emit-rest   # ITS-REST contract (openehr-its)
 > emitter (`crates/openehr-codegen/src/emit.rs`) or a sibling `*_impl.rs` and regenerate
 > — never hand-edit a generated file. See [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md).
 
+## Run with Docker
+
+Two images (mirroring EHRbase's app + preconfigured-postgres model): the
+`ehrbase` server and a PostgreSQL 18 image with the role, database, schemas, and
+extensions pre-created. The quickstart [`docker-compose.yml`](docker-compose.yml)
+builds and runs both from the [`docker/`](docker/) Dockerfiles:
+
+```shell
+docker compose up --build          # build + start both services
+
+# The server is on http://localhost:8080; probe the public status endpoint:
+curl http://localhost:8080/ehrbase/rest/status
+
+# Create an EHR (Basic auth; dev default credentials ehrbase / ehrbase):
+curl -u ehrbase:ehrbase -X POST -i \
+  http://localhost:8080/ehrbase/rest/openehr/v1/ehr
+
+docker compose down -v             # stop and remove the data volume
+```
+
+Published images: `ghcr.io/rubentalstra/ehrbase-rs` and
+`ghcr.io/rubentalstra/ehrbase-rs-postgres`. The dev Basic-auth user
+(`ehrbase`/`ehrbase`) comes from [`docker/ehrbase.dev.toml`](docker/ehrbase.dev.toml)
+— **dev only**; configure real credentials (or OIDC) for production. The
+postgres image bakes no migration state; the server runs its sqlx migrations at
+boot (see [`docker/postgres/README.md`](docker/postgres/README.md)).
+
 ## Documentation
 
 - [`docs/plans/`](docs/plans/) + [`docs/PROGRESS.md`](docs/PROGRESS.md) — the roadmap (what's done, what's next).

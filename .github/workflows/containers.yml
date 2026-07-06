@@ -1,0 +1,175 @@
+# .github/workflows/containers.yml
+name: Containers
+
+on:
+  push:
+    branches: [develop]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: containers-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ehrbase-rs
+  POSTGRES_IMAGE: ghcr.io/${{ github.repository_owner }}/ehrbase-rs-postgres
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # ── Detect which images need (re)building ───────────────────────────────────
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      postgres: ${{ steps.filter.outputs.postgres }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            postgres:
+              - 'docker/postgres/**'
+              - '.github/workflows/containers.yml'
+
+  # ── Application image (always built; multi-arch) ────────────────────────────
+  app-image:
+    name: app image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Dockerfile RUST_VERSION matches rust-toolchain.toml
+        shell: bash
+        run: |
+          set -euo pipefail
+          channel=$(grep -E '^channel' rust-toolchain.toml | sed -E 's/.*"(.*)".*/\1/')
+          arg=$(grep -E '^ARG RUST_VERSION=' docker/Dockerfile | head -1 | cut -d= -f2)
+          echo "rust-toolchain channel=$channel  Dockerfile RUST_VERSION=$arg"
+          if [ "$channel" != "$arg" ]; then
+            echo "::error::Toolchain pin drift: rust-toolchain.toml=$channel Dockerfile=$arg"
+            exit 1
+          fi
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.APP_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            REVISION=${{ github.sha }}
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app
+          provenance: true
+          sbom: true
+
+  # ── PostgreSQL image (only on docker/postgres changes or tags; multi-arch) ──
+  postgres-image:
+    name: postgres image
+    runs-on: ubuntu-latest
+    needs: changes
+    if: >-
+      needs.changes.outputs.postgres == 'true' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.POSTGRES_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/postgres
+          file: docker/postgres/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=postgres
+          cache-to: type=gha,mode=max,scope=postgres
+          provenance: true
+          sbom: true
+
+  # ── Smoke test (amd64): compose both up, exercise the API, prove idempotency ─
+  smoke:
+    name: compose smoke (amd64)
+    runs-on: ubuntu-latest
+    needs: app-image
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build app image (amd64, load)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: ehrbase-rs:smoke
+          cache-from: type=gha,scope=app
+
+      - name: Build postgres image (amd64, load)
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/postgres
+          file: docker/postgres/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: ehrbase-rs-postgres:smoke
+
+      - name: Smoke test
+        shell: bash
+        env:
+          EHRBASE_IMAGE: ehrbase-rs:smoke
+          EHRBASE_POSTGRES_IMAGE: ehrbase-rs-postgres:smoke
+        run: bash docker/smoke-test.sh
