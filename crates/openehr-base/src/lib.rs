@@ -17,3 +17,6 @@ pub mod base_types;
 pub mod foundation_types;
 pub mod prelude;
 pub mod resource;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod validate;
