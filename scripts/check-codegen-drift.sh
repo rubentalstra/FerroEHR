@@ -29,10 +29,12 @@ echo "regenerating ITS-REST (DTOs + traits + routes)…"
 cargo run -q -p openehr-codegen -- emit-rest
 echo "regenerating OPT 1.4 model (opt14 types + XML codec)…"
 cargo run -q -p openehr-codegen -- emit-opt
+echo "regenerating the RM attribute/type model (openehr-rm/src/model)…"
+cargo run -q -p openehr-codegen -- emit-rm-model
 
 if ! git diff --quiet -- "${GENERATED[@]}"; then
   echo "::error::Generated code is out of sync with the vendored specs." >&2
-  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-rest && … emit-opt, then commit." >&2
+  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-rest && … emit-opt && … emit-rm-model, then commit." >&2
   git diff --stat -- "${GENERATED[@]}" >&2
   exit 1
 fi

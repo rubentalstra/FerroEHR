@@ -36,8 +36,13 @@ caching / perf tuning (P20).
 
 ## Tasks
 
-- [ ] `emit-rm-model` (or `openehr-lang` API): attribute→types, multiplicity,
+- [x] `emit-rm-model` (or `openehr-lang` API): attribute→types, multiplicity,
       descendant sets, structure classification — generated from BMM
+      — new `openehr-codegen` target emits `openehr-rm::model` (static
+      `RmClass`/`RmAttribute`/`Container` + `class`/`attribute`/`attributes`/
+      `descendants`/`ancestors`/`is_a`/`is_structure_root`) from BASE+RM BMM;
+      `is_structure_root` mirrors `ehrbase::storage::codec::STRUCTURE_TYPES`;
+      wired into `emit`, the drift script, and `/regen-codegen`.
 - [ ] Path analysis + typing against the generated model
 - [ ] Query IR + AST→IR lowering (incl. CONTAINS trees, version addressing)
 - [ ] IR→SQL via sea-query (interval joins, typed extraction, magnitude,

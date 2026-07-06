@@ -12,6 +12,7 @@ mod bmm;
 mod emit;
 mod emit_opt;
 mod emit_rest;
+mod emit_rm_model;
 mod emit_xml;
 mod naming;
 mod oas;
@@ -49,9 +50,10 @@ fn main() {
         "emit-xml" => cmd_emit_xml(),
         "emit-rest" => cmd_emit_rest(),
         "emit-opt" => cmd_emit_opt(),
+        "emit-rm-model" => cmd_emit_rm_model(),
         other => {
             eprintln!(
-                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-rest`, or `emit-opt`"
+                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-rest`, `emit-opt`, or `emit-rm-model`"
             );
             std::process::exit(2);
         }
@@ -260,6 +262,58 @@ fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Emit the static RM attribute/type model (`openehr-rm/src/model/`) — the AQL
+/// planner's spec-pinned oracle (ADR-008 §3, P16). Generated from the same
+/// BASE + RM BMM `emit` consumes. Writes the `model/` subtree in place (does not
+/// touch the generated spec files) and declares `pub mod model;` in `lib.rs` if
+/// absent, so it is correct run standalone; `emit` produces the identical output.
+fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
+    let base = load(BASE_BMM)?;
+    let rm = load(RM_BMM)?;
+    let rm_model = Model::merged(&[&base, &rm]);
+    let files = emit_rm_model::emit_files(&rm_model);
+
+    let src = crates_root().join("openehr-rm").join("src");
+    let mut written = Vec::new();
+    for f in &files {
+        let full = src.join(&f.path);
+        if let Some(parent) = full.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&full, &f.body)?;
+        written.push(full);
+    }
+    // `emit` is the usual authority for lib.rs; ensure the module is declared so
+    // the standalone target is correct + byte-identical to `emit`'s output.
+    let lib = src.join("lib.rs");
+    if lib.exists() {
+        let mut body = std::fs::read_to_string(&lib)?;
+        if !body.contains("pub mod model;") {
+            body.push_str("pub mod model;\n");
+            std::fs::write(&lib, &body)?;
+            written.push(lib);
+        }
+    }
+    rustfmt(&written)?;
+    println!(
+        "emitted {} files into {}",
+        files.len(),
+        src.join("model").display()
+    );
+    Ok(())
+}
+
+/// Append the generated RM-model files to `openehr-rm`'s file set and declare the
+/// module in its `lib.rs` (the authority for the crate layout).
+fn inject_rm_model(files: &mut Vec<emit::GenFile>, mut model_files: Vec<emit::GenFile>) {
+    for f in files.iter_mut() {
+        if f.path == "lib.rs" && !f.body.contains("pub mod model;") {
+            f.body.push_str("pub mod model;\n");
+        }
+    }
+    files.append(&mut model_files);
+}
+
 /// Diagnostic: parse the vendored v1 RM-instance XSDs and print a summary +
 /// a couple of flattened views, to validate the XSD reader (ADR-005).
 fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
@@ -337,12 +391,15 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let base_specs = emit::emittable_specs(&base_model, &base);
     let ext_base = External::default().with(base_specs, "openehr_base::prelude");
 
-    // openehr-rm: single version, depends on openehr-base.
+    // openehr-rm: single version, depends on openehr-base. Also carries the
+    // static RM attribute/type model (ADR-008 §3, P16 — `emit-rm-model`), emitted
+    // here too so a plain `emit` keeps the crate self-consistent (lib.rs declares
+    // `model`, and a later `emit` regenerates it byte-identically to the
+    // standalone `emit-rm-model` target).
     let rm_model = Model::merged(&[&base, &rm]);
-    write_crate(
-        "openehr-rm",
-        &emit::emit_crate(&rm_model, &rm, &ext_base, RM_DOC),
-    )?;
+    let mut rm_files = emit::emit_crate(&rm_model, &rm, &ext_base, RM_DOC);
+    inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm_model));
+    write_crate("openehr-rm", &rm_files)?;
 
     // openehr-lang: the BMM/P_BMM object model (86 classes), fully generated.
     // The generator's own reader lives here in `openehr-codegen`, so there is no
