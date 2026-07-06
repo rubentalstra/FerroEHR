@@ -1,14 +1,22 @@
 # ATNA Audit Trail — Rust-native design
 
-- **Status:** implemented (2026-07-06) — `crates/ehrbase-audit` (DICOM
-  AuditMessage + RFC 5424/5425/5426 syslog + bounded-mpsc sender), the
+- **Status:** implemented, **total coverage** (2026-07-06) — `crates/ehrbase-audit`
+  (DICOM AuditMessage + RFC 5424/5425/5426 syslog + bounded-mpsc sender), the
   `ehrbase-rest` audit tower layer, and the `ehrbase` binary wiring (sender boot,
-  graceful-shutdown drain, `ehr.subject_id` resolver). All §6/§8.5 tests green
-  (insta golden vector + per-action snapshots, total-coverage table guard, UDP
-  e2e over the axum app, TLS framing round-trip, fail-open/fail-closed).
-  **Deferred:** DEFINITION *template* provisioning and the DEMOGRAPHIC API are
-  classified `UNAUDITED` (out of §2 scope / unimplemented); revisit if they enter
-  scope. Query execution uses the "Patient Record" (110110) EventID family with
+  graceful-shutdown drain, `ehr.subject_id` resolver). **Every generated ITS-REST
+  operation is audited** — the §2 table in full, plus DEFINITION template
+  provisioning (`Template` class, Application-Activity EventID family,
+  `originalText="template"`) and the DEMOGRAPHIC API (`Demographic` class,
+  Patient-Record family, `originalText="demographic"`); the coverage guard
+  asserts the `UNAUDITED` allowlist is **empty**. Object ids for operations whose
+  envelope carries no `ResourceMeta` (template id, qualified stored-query name,
+  demographic party uid) are derived generically from the request path. Auth
+  failures (401/403) are always audited; `suppress_login_events` gates only the
+  successful-login record, which is otherwise emitted *alongside* the operation
+  record. All §6/§8.5 tests green (insta golden vector + per-action/class
+  snapshots, total-coverage guard, UDP e2e over the axum app incl.
+  template/demographic records, TLS framing round-trip, fail-open/fail-closed).
+  Query execution uses the "Patient Record" (110110) EventID family with
   `originalText="query"` per §3 (DICOM 110112 "Query" noted as an alternative).
 - **Status (historical):** implementing (pulled forward from Stage 2, 2026-07-06)
 - **Stage:** Stage 1 (owner-prioritized; originally Stage 2 — see `PORT_MASTER_PLAN.md` §11)

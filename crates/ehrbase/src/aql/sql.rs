@@ -1,33 +1,47 @@
 //! IR → SQL lowering (ADR-008, P16; mapping table in `docs/design/aql-engine.md`
 //! §SQL mapping). Turns a typed [`QueryIr`] into one `SELECT` over the greenfield
-//! `node`/`vo_version`/`ehr`/`audit` store, built with `sea-query` +
-//! `sea-query-sqlx` (never string-concatenated whole queries; parameters bind as
-//! `sea_query::Value`s through [`sea_query::Expr::cust_with_values`]).
+//! `node`/`vo_version`/`ehr`/`audit` store, built entirely with `sea-query`'s
+//! **typed** expression API + `sea-query-sqlx` — no string-concatenated SQL
+//! (`.claude/rules/sqlx-conventions.md`). Every table/column reference is an
+//! [`Expr::col`], every literal binds through [`Expr::val`] (parameterized on
+//! build), and the PostgreSQL-specific pieces use the sanctioned typed
+//! escape hatches: [`Func::cust`] for the functions sea-query does not model
+//! (`jsonb_path_query_first` / `to_jsonb` / `upper_inf` / `openehr_magnitude`),
+//! the typed Postgres operators from [`sea_query::extension::postgres::PgExpr`]
+//! (`@>` = `contains`, `||` = `concatenate`), the built-in [`Func`] aggregates
+//! (`count`/`count_distinct`/`min`/`max`/`sum`/`avg`), and
+//! [`sea_query::ExprTrait::cast_as`] for casts. Only the jsonb-scalar-as-text
+//! operator `#>> '{}'` (which sea-query models no typed variant for) uses the
+//! documented [`sea_query::BinOper::Custom`] escape hatch. All runtime functions
+//! resolve unqualified because the pool's `search_path` is `ehr, ext, public`.
 //!
 //! ## Strategy
 //!
-//! The FROM containment tree is lowered to a **cross join of table aliases plus
-//! WHERE conditions** (semantically identical to inner joins; the planner folds
-//! them). Each RM source that roots a versioned object gets a `node` alias +
-//! `vo_version` alias (+ an `audit` alias); content sources contained within it
-//! share that `vo_version` and interval-join into the group's node
-//! (`num BETWEEN a.num AND a.num_cap`, same `(vo_id, sys_version)`). `EHR`
-//! sources join VO roots via `ehr_id`; `VERSION` sources share the contained
-//! VO's `vo_version` alias. `NOT CONTAINS` is a correlated `NOT EXISTS`.
+//! The FROM containment tree becomes a **cross join of table aliases + typed
+//! WHERE conditions** (the planner folds cross-join+filter into joins). Each RM
+//! source that roots a versioned object gets a `node` + `vo_version` (+ `audit`)
+//! alias; content sources contained within it share the `vo_version` and
+//! interval-join (`num BETWEEN a.num AND a.num_cap`, same `(vo_id, sys_version)`).
+//! `EHR` sources join VO roots via `ehr_id`; `VERSION` sources share the
+//! contained VO's `vo_version`; `NOT CONTAINS` is a correlated `NOT EXISTS`.
 //!
 //! **Identified-path extraction** (the design's path split): a leaf whose anchor
-//! is empty reads its `data` fragment directly off the source node alias; a leaf
-//! with structure hops reads through a **correlated scalar subquery** that walks
-//! the anchor chain (interval containment + promoted-column filters per step) and
-//! extracts the fragment with `jsonb_path_query_first` (+ jsonpath item methods /
-//! `ext.openehr_magnitude` per the resolved [`Coercion`]). Subqueries return the
-//! value or `NULL`, so missing paths compare false and never multiply rows —
-//! which keeps `OR`/`NOT`/`EXISTS` correct.
+//! is empty reads its `data` fragment off the source node alias; a leaf with
+//! structure hops reads through a **correlated scalar subquery** walking the
+//! anchor chain (interval containment + promoted-column filters per step),
+//! extracting the fragment with `jsonb_path_query_first` and coercing per the
+//! resolved [`Coercion`]. Subqueries return the value or `NULL`, so missing
+//! paths compare false and never multiply rows — keeping `OR`/`NOT`/`EXISTS`
+//! correct.
 
 use std::collections::HashMap;
 use std::fmt::Write as _;
 
-use sea_query::{Alias, Expr, Order, PostgresQueryBuilder, Query, SelectStatement, Value};
+use sea_query::extension::postgres::PgExpr as _;
+use sea_query::{
+    Alias, BinOper, Expr, ExprTrait as _, Func, Order, PostgresQueryBuilder, Query,
+    SelectStatement, Value,
+};
 use sea_query_sqlx::{SqlxBinder, SqlxValues};
 use uuid::Uuid;
 
@@ -35,10 +49,10 @@ use crate::db::iden::{Audit, Ehr, Node, VoVersion};
 
 use super::error::{AqlError, SqlError};
 use super::ir::{
-    AggFunc, ArchetypeConstraint, Bind, Coercion, Contained, ContainsTree, EhrField,
-    Expr as IrExpr, LeafPath, Link, NameConstraint, NodeConstraint, Operand, OrderKey, ParamValue,
-    Params, PathTarget, QueryIr, RmSource, SelectColumn, SelectValue, Source, StdPredicate,
-    TypeSet, TypedLit, VersionField, VersionScope,
+    AggFunc, ArchetypeConstraint, Bind, Coercion, Contained, ContainsTree, EhrField, EhrPredicate,
+    Expr as IrExpr, LeafPath, LikePattern, Link, NameConstraint, NodeConstraint, Operand, OrderKey,
+    ParamValue, Params, PathTarget, QueryIr, RmSource, SelectColumn, SelectValue, Source,
+    StdPredicate, TypeSet, TypedLit, VersionField, VersionScope,
 };
 use openehr_query::lexer::CompOp;
 
@@ -92,12 +106,24 @@ pub struct PreparedQuery {
     pub columns: Vec<ColumnSpec>,
 }
 
+// `SqlxValues` is not `Debug`; project the bound-value count instead so the
+// struct still satisfies the workspace `missing_debug_implementations` lint.
+impl std::fmt::Debug for PreparedQuery {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PreparedQuery")
+            .field("sql", &self.sql)
+            .field("value_count", &self.values.0.0.len())
+            .field("columns", &self.columns)
+            .finish()
+    }
+}
+
 /// Lower a planned [`QueryIr`] to SQL.
 ///
 /// # Errors
 ///
 /// [`SqlError`] for a planner-accepted construct the SQL generator does not
-/// render yet (e.g. `OR` in CONTAINS), or a REST/AQL paging conflict.
+/// render yet (e.g. `OR` in CONTAINS).
 pub fn build(ir: &QueryIr, params: &Params, ctx: &SqlCtx) -> Result<PreparedQuery, AqlError> {
     let mut b = Builder::new(ir, params, ctx);
     b.build_from(&ir.contains)?;
@@ -132,7 +158,6 @@ struct Builder<'a> {
     ctx: &'a SqlCtx,
     q: SelectStatement,
     node_alias: HashMap<usize, String>,
-    vo_alias: HashMap<usize, String>,
     audit_alias: HashMap<String, String>,
     ehr_alias: HashMap<usize, String>,
     version_vo: HashMap<usize, String>,
@@ -150,7 +175,6 @@ impl<'a> Builder<'a> {
             ctx,
             q: Query::select(),
             node_alias: HashMap::new(),
-            vo_alias: HashMap::new(),
             audit_alias: HashMap::new(),
             ehr_alias: HashMap::new(),
             version_vo: HashMap::new(),
@@ -166,7 +190,6 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    #[allow(clippy::only_used_in_recursion)]
     fn walk(
         &mut self,
         tree: &ContainsTree,
@@ -186,7 +209,6 @@ impl<'a> Builder<'a> {
                 let sid = source.0;
                 match &self.ir.sources[sid] {
                     Source::Version(_) => {
-                        // A VERSION shares its contained VO's version alias.
                         let child = match contained.as_deref() {
                             Some(Contained {
                                 link: Link::Contains,
@@ -209,8 +231,8 @@ impl<'a> Builder<'a> {
                         let alias = format!("e{sid}");
                         self.q.from_as(Ehr::Table, Alias::new(alias.as_str()));
                         self.ehr_alias.insert(sid, alias.clone());
-                        let e = e.clone();
-                        for p in &e.predicates {
+                        let preds = e.predicates.clone();
+                        for p in &preds {
                             self.push_ehr_predicate(&alias, p)?;
                         }
                         if let Some(c) = contained {
@@ -222,8 +244,7 @@ impl<'a> Builder<'a> {
                         let r = r.clone();
                         let group = self.emit_rm(sid, &r, ehr, vo.as_ref())?;
                         if let Some(c) = contained {
-                            let child_ehr = ehr;
-                            self.contained_edge(c, child_ehr, Some(group.clone()))?;
+                            self.contained_edge(c, ehr, Some(group.clone()))?;
                         }
                         Ok(Some(group))
                     }
@@ -232,7 +253,6 @@ impl<'a> Builder<'a> {
         }
     }
 
-    /// Handle a `[NOT] CONTAINS` edge below an already-emitted operand.
     fn contained_edge(
         &mut self,
         c: &Contained,
@@ -263,57 +283,58 @@ impl<'a> Builder<'a> {
         let node = format!("n{sid}");
         self.q.from_as(Node::Table, Alias::new(node.as_str()));
         self.node_alias.insert(sid, node.clone());
-        self.push_type_filter(&node, &r.rm_type);
+        if let Some(cond) = type_cond(&node, &r.rm_type) {
+            self.q.and_where(cond);
+        }
         if let Some(a) = &r.archetype {
-            self.push_archetype(&node, a)?;
+            let cond = self.archetype_cond(&node, a)?;
+            self.q.and_where(cond);
         }
         if let Some(n) = &r.name {
-            self.push_name(&node, n)?;
+            let cond = self.name_cond(&node, n)?;
+            self.q.and_where(cond);
         }
         for sp in &r.standard {
-            self.push_std_predicate(&node, sp)?;
+            let cond = self.std_cond(&node, sp)?;
+            self.q.and_where(cond);
         }
 
         let is_vo_root =
             !r.rm_type.is_empty() && r.rm_type.names().iter().all(|t| is_vo_root_type(t));
 
-        if is_vo_root || vo.is_none() {
-            let voa = format!("v{sid}");
-            self.q.from_as(VoVersion::Table, Alias::new(voa.as_str()));
-            self.where_raw(format!(
-                r#"{n}."vo_id" = {v}."vo_id" AND {n}."sys_version" = {v}."sys_version""#,
-                n = tbl(&node),
-                v = tbl(&voa),
-            ));
-            self.ensure_audit(&voa);
-            self.push_scope(&voa, &r.scope)?;
-            self.vo_alias.insert(sid, voa.clone());
-            self.group_roots.push(node.clone());
-            if let Some(e) = ehr {
-                self.where_raw(format!(
-                    r#"{n}."ehr_id" = {e}."id""#,
-                    n = tbl(&node),
-                    e = tbl(e)
-                ));
-            }
-            Ok(VoGroup { node, vo: voa })
-        } else {
-            let parent = vo.expect("checked");
-            self.where_raw(format!(
-                r#"{n}."vo_id" = {p}."vo_id" AND {n}."sys_version" = {p}."sys_version" AND {n}."num" BETWEEN {p}."num" AND {p}."num_cap""#,
-                n = tbl(&node),
-                p = tbl(&parent.node)
-            ));
-            self.vo_alias.insert(sid, parent.vo.clone());
+        // A VO root (or a top-level source with no enclosing group) opens its own
+        // `vo_version` group; otherwise the source is content sharing the parent
+        // group's version and interval-joining into its node subtree.
+        if let (false, Some(parent)) = (is_vo_root, vo) {
+            self.q
+                .and_where(col(&node, "vo_id").eq(col(&parent.node, "vo_id")));
+            self.q
+                .and_where(col(&node, "sys_version").eq(col(&parent.node, "sys_version")));
+            self.q.and_where(
+                col(&node, "num").between(col(&parent.node, "num"), col(&parent.node, "num_cap")),
+            );
             Ok(VoGroup {
                 node,
                 vo: parent.vo.clone(),
             })
+        } else {
+            let voa = format!("v{sid}");
+            self.q.from_as(VoVersion::Table, Alias::new(voa.as_str()));
+            self.q.and_where(col(&node, "vo_id").eq(col(&voa, "vo_id")));
+            self.q
+                .and_where(col(&node, "sys_version").eq(col(&voa, "sys_version")));
+            self.ensure_audit(&voa);
+            self.push_scope(&voa, &r.scope)?;
+            self.group_roots.push(node.clone());
+            if let Some(e) = ehr {
+                self.q.and_where(col(&node, "ehr_id").eq(col(e, "id")));
+            }
+            Ok(VoGroup { node, vo: voa })
         }
     }
 
     /// `NOT CONTAINS`: a correlated `NOT EXISTS` over the (single) content
-    /// operand contained, interval-anchored inside `parent`'s node subtree.
+    /// operand, interval-anchored inside `parent`'s node subtree.
     fn emit_not_contains(&mut self, parent: &VoGroup, tree: &ContainsTree) -> Result<(), AqlError> {
         let ContainsTree::Operand { source, contained } = tree else {
             return Err(SqlError::Unsupported(
@@ -333,25 +354,28 @@ impl<'a> Builder<'a> {
             )
             .into());
         };
-        let sub = format!("x{}", self.next_ctr());
-        let mut frag = Frag::new();
-        let mut cond = format!(
-            r#"{s}."vo_id" = {p}."vo_id" AND {s}."sys_version" = {p}."sys_version" AND {s}."num" BETWEEN {p}."num" AND {p}."num_cap""#,
-            s = tbl(&sub),
-            p = tbl(&parent.node)
+        let r = r.clone();
+        let sub_alias = format!("x{}", self.next_ctr());
+        let mut sub = Query::select();
+        sub.expr(Expr::val(1));
+        sub.from_as(Node::Table, Alias::new(sub_alias.as_str()));
+        sub.and_where(col(&sub_alias, "vo_id").eq(col(&parent.node, "vo_id")));
+        sub.and_where(col(&sub_alias, "sys_version").eq(col(&parent.node, "sys_version")));
+        sub.and_where(
+            col(&sub_alias, "num").between(col(&parent.node, "num"), col(&parent.node, "num_cap")),
         );
-        cond.push_str(&self.type_filter_sql(&mut frag, &sub, &r.rm_type));
+        if let Some(cond) = type_cond(&sub_alias, &r.rm_type) {
+            sub.and_where(cond);
+        }
         if let Some(a) = &r.archetype {
-            cond.push_str(&self.archetype_sql(&mut frag, &sub, a)?);
+            let cond = self.archetype_cond(&sub_alias, a)?;
+            sub.and_where(cond);
         }
         if let Some(n) = &r.name {
-            cond.push_str(&self.name_sql(&mut frag, &sub, n)?);
+            let cond = self.name_cond(&sub_alias, n)?;
+            sub.and_where(cond);
         }
-        let sql = format!(
-            r#"NOT EXISTS (SELECT 1 FROM "node" AS {s} WHERE {cond})"#,
-            s = tbl(&sub)
-        );
-        self.q.and_where(frag.into_expr(sql));
+        self.q.and_where(Expr::not_exists(sub));
         Ok(())
     }
 
@@ -361,10 +385,7 @@ impl<'a> Builder<'a> {
         };
         let roots = self.group_roots.clone();
         for root in roots {
-            self.where_valued(
-                format!(r#"{n}."ehr_id" = $1::uuid"#, n = tbl(&root)),
-                vec![Value::from(ehr_id)],
-            );
+            self.q.and_where(col(&root, "ehr_id").eq(Expr::val(ehr_id)));
         }
     }
 
@@ -374,11 +395,7 @@ impl<'a> Builder<'a> {
         }
         let alias = format!("a_{voa}");
         self.q.from_as(Audit::Table, Alias::new(alias.as_str()));
-        self.where_raw(format!(
-            r#"{a}."id" = {v}."audit_id""#,
-            a = tbl(&alias),
-            v = tbl(voa)
-        ));
+        self.q.and_where(col(&alias, "id").eq(col(voa, "audit_id")));
         self.audit_alias.insert(voa.to_owned(), alias.clone());
         alias
     }
@@ -388,38 +405,35 @@ impl<'a> Builder<'a> {
     fn push_scope(&mut self, voa: &str, scope: &VersionScope) -> Result<(), AqlError> {
         match scope {
             VersionScope::Latest => {
-                self.where_raw(format!(r#"upper_inf({v}."sys_period")"#, v = tbl(voa)));
+                self.q
+                    .and_where(call("upper_inf", vec![col(voa, "sys_period")]));
             }
             VersionScope::All => {}
             VersionScope::Predicate(p) if p.field == VersionField::TimeCommitted => {
-                // Version-at-time: the version whose validity contains the instant.
+                // Version-at-time: the version whose validity contains the instant
+                // (`sys_period @> $t` — the typed `PgExpr::contains` operator).
                 let value = self.bind_value(&p.value)?;
-                self.where_valued(
-                    format!(r#"{v}."sys_period" @> $1::timestamptz"#, v = tbl(voa)),
-                    vec![value],
+                self.q.and_where(
+                    col(voa, "sys_period").contains(cast(Expr::val(value), "timestamptz")),
                 );
             }
             VersionScope::Predicate(p) => {
                 let aud = self.ensure_audit(voa);
-                let col = version_field_sql(voa, &aud, p.field, &self.ctx.system_id);
-                let value = self.bind_value(&p.value)?;
-                self.where_valued(format!("({col}) {op} $1", op = cmp_op(p.op)), vec![value]);
+                let lhs = version_field_expr(voa, &aud, p.field, &self.ctx.system_id);
+                let rhs = cast(Expr::val(self.bind_value(&p.value)?), "text");
+                self.q.and_where(lhs.binary(binoper(p.op), rhs));
             }
         }
         Ok(())
     }
 
-    fn push_ehr_predicate(
-        &mut self,
-        alias: &str,
-        p: &super::ir::EhrPredicate,
-    ) -> Result<(), AqlError> {
+    fn push_ehr_predicate(&mut self, alias: &str, p: &EhrPredicate) -> Result<(), AqlError> {
         let value = self.bind_value(&p.value)?;
-        let (col, cast) = match p.field {
-            EhrField::EhrId => (format!(r#"{e}."id""#, e = tbl(alias)), "::uuid"),
+        let (lhs, rhs) = match p.field {
+            EhrField::EhrId => (col(alias, "id"), cast(Expr::val(value), "uuid")),
             EhrField::TimeCreated => (
-                format!(r#"{e}."time_created""#, e = tbl(alias)),
-                "::timestamptz",
+                col(alias, "time_created"),
+                cast(Expr::val(value), "timestamptz"),
             ),
             EhrField::SystemId | EhrField::Whole => {
                 return Err(SqlError::Unsupported(
@@ -428,110 +442,51 @@ impl<'a> Builder<'a> {
                 .into());
             }
         };
-        self.where_valued(
-            format!("{col} {op} $1{cast}", op = cmp_op(p.op)),
-            vec![value],
-        );
+        self.q.and_where(lhs.binary(binoper(p.op), rhs));
         Ok(())
     }
 
-    fn push_type_filter(&mut self, node: &str, types: &TypeSet) {
-        let mut frag = Frag::new();
-        let sql = self.type_filter_sql(&mut frag, node, types);
-        if sql.is_empty() {
-            return;
-        }
-        // Strip the leading " AND ".
-        let sql = sql.trim_start_matches(" AND ").to_owned();
-        self.q.and_where(frag.into_expr(sql));
-    }
-
-    fn type_filter_sql(&self, frag: &mut Frag, node: &str, types: &TypeSet) -> String {
-        if types.is_empty() {
-            return String::new();
-        }
-        let placeholders: Vec<String> = types
-            .names()
-            .iter()
-            .map(|t| frag.ph(Value::from(t.clone())))
-            .collect();
-        format!(
-            r#" AND {n}."rm_type" IN ({ph})"#,
-            n = tbl(node),
-            ph = placeholders.join(", ")
-        )
-    }
-
-    fn push_archetype(&mut self, node: &str, a: &ArchetypeConstraint) -> Result<(), AqlError> {
-        let mut frag = Frag::new();
-        let sql = self.archetype_sql(&mut frag, node, a)?;
-        let sql = sql.trim_start_matches(" AND ").to_owned();
-        self.q.and_where(frag.into_expr(sql));
-        Ok(())
-    }
-
-    fn archetype_sql(
-        &self,
-        frag: &mut Frag,
-        node: &str,
-        a: &ArchetypeConstraint,
-    ) -> Result<String, AqlError> {
+    fn archetype_cond(&self, node: &str, a: &ArchetypeConstraint) -> Result<Expr, AqlError> {
         let value = match a {
             ArchetypeConstraint::NodeCode(c) | ArchetypeConstraint::Archetype(c) => c.clone(),
             ArchetypeConstraint::Param(p) => self.param_str(p)?,
         };
-        let ph = frag.ph(Value::from(value));
-        Ok(format!(r#" AND {n}."archetype" = {ph}"#, n = tbl(node)))
+        Ok(col(node, "archetype").eq(Expr::val(value)))
     }
 
-    fn push_name(&mut self, node: &str, n: &NameConstraint) -> Result<(), AqlError> {
-        let mut frag = Frag::new();
-        let sql = self.name_sql(&mut frag, node, n)?;
-        let sql = sql.trim_start_matches(" AND ").to_owned();
-        self.q.and_where(frag.into_expr(sql));
-        Ok(())
-    }
-
-    fn name_sql(
-        &self,
-        frag: &mut Frag,
-        node: &str,
-        n: &NameConstraint,
-    ) -> Result<String, AqlError> {
+    fn name_cond(&self, node: &str, n: &NameConstraint) -> Result<Expr, AqlError> {
         match n {
-            NameConstraint::Value(s) => {
-                let ph = frag.ph(Value::from(s.clone()));
-                Ok(format!(r#" AND {nd}."name" = {ph}"#, nd = tbl(node)))
-            }
-            NameConstraint::Param(p) => {
-                let ph = frag.ph(Value::from(self.param_str(p)?));
-                Ok(format!(r#" AND {nd}."name" = {ph}"#, nd = tbl(node)))
-            }
+            NameConstraint::Value(s) => Ok(col(node, "name").eq(Expr::val(s.clone()))),
+            NameConstraint::Param(p) => Ok(col(node, "name").eq(Expr::val(self.param_str(p)?))),
             NameConstraint::TermCode(c) => {
-                let ph = frag.ph(Value::from(c.clone()));
-                Ok(format!(
-                    r#" AND (jsonb_path_query_first({nd}."data", '$.name.defining_code.code_string') #>> '{{}}') = {ph}"#,
-                    nd = tbl(node)
-                ))
+                let extract = as_text(jsonb_path(
+                    col(node, "data"),
+                    "$.name.defining_code.code_string",
+                ));
+                Ok(extract.eq(Expr::val(c.clone())))
             }
         }
     }
 
-    fn push_std_predicate(&mut self, node: &str, sp: &StdPredicate) -> Result<(), AqlError> {
+    fn std_cond(&self, node: &str, sp: &StdPredicate) -> Result<Expr, AqlError> {
         let jp = jsonpath(&sp.path);
-        let mut frag = Frag::new();
-        let jp_ph = frag.ph(Value::from(jp));
-        let value = self.bind_value(&sp.value)?;
-        let v_ph = frag.ph(value);
-        let sql = format!(
-            r#"(jsonb_path_query_first({n}."data", {jp}::jsonpath) #>> '{{}}') {op} {v}::text"#,
-            n = tbl(node),
-            jp = jp_ph,
-            op = cmp_op(sp.op),
-            v = v_ph
-        );
-        self.q.and_where(frag.into_expr(sql));
-        Ok(())
+        let lhs = as_text(jsonb_path(col(node, "data"), &jp));
+        let rhs = cast(Expr::val(self.bind_value(&sp.value)?), "text");
+        Ok(lhs.binary(binoper(sp.op), rhs))
+    }
+
+    fn node_constraint_conds(&self, node: &str, c: &NodeConstraint) -> Result<Vec<Expr>, AqlError> {
+        let mut conds = Vec::new();
+        if let Some(a) = &c.archetype {
+            conds.push(self.archetype_cond(node, a)?);
+        }
+        if let Some(n) = &c.name {
+            conds.push(self.name_cond(node, n)?);
+        }
+        for sp in &c.standard {
+            conds.push(self.std_cond(node, sp)?);
+        }
+        Ok(conds)
     }
 
     // ── SELECT ──────────────────────────────────────────────────────────────────
@@ -551,13 +506,9 @@ impl<'a> Builder<'a> {
                 self.emit_whole_object(i, name, leaf)
             }
             SelectValue::Path(target) => {
-                let mut frag = Frag::new();
-                let expr = self.value_expr(&mut frag, target, ValueMode::Projection)?;
+                let expr = self.value_expr(target, ValueMode::Projection)?;
                 let sql_col = format!("col{i}");
-                self.q.expr_as(
-                    frag.into_expr(format!("to_jsonb({expr})")),
-                    Alias::new(sql_col.as_str()),
-                );
+                self.q.expr_as(to_jsonb(expr), Alias::new(sql_col.as_str()));
                 Ok(ColumnSpec {
                     name,
                     path: target_path_string(target),
@@ -566,11 +517,9 @@ impl<'a> Builder<'a> {
                 })
             }
             SelectValue::Literal(lit) => {
-                let mut frag = Frag::new();
-                let ph = frag.ph(literal_value(lit));
                 let sql_col = format!("col{i}");
                 self.q.expr_as(
-                    frag.into_expr(format!("to_jsonb({ph})")),
+                    to_jsonb(Expr::val(literal_value(lit))),
                     Alias::new(sql_col.as_str()),
                 );
                 Ok(ColumnSpec {
@@ -585,24 +534,20 @@ impl<'a> Builder<'a> {
                 arg,
                 distinct,
             } => {
-                let mut frag = Frag::new();
                 let inner = match arg {
-                    None => "*".to_owned(),
+                    None => None,
                     Some(target) => {
                         let mode = if matches!(func, AggFunc::Count) {
                             ValueMode::Projection
                         } else {
                             ValueMode::Value(Coercion::Magnitude)
                         };
-                        self.value_expr(&mut frag, target, mode)?
+                        Some(self.value_expr(target, mode)?)
                     }
                 };
-                let agg = aggregate_sql(*func, &inner, *distinct);
+                let agg = aggregate_expr(*func, inner, *distinct);
                 let sql_col = format!("col{i}");
-                self.q.expr_as(
-                    frag.into_expr(format!("to_jsonb({agg})")),
-                    Alias::new(sql_col.as_str()),
-                );
+                self.q.expr_as(to_jsonb(agg), Alias::new(sql_col.as_str()));
                 Ok(ColumnSpec {
                     name,
                     path: None,
@@ -628,10 +573,8 @@ impl<'a> Builder<'a> {
         let mut sql_cols = Vec::with_capacity(4);
         for (suffix, ncol) in cols.iter().zip(node_cols) {
             let sql_col = format!("col{i}_{suffix}");
-            self.q.expr_as(
-                Expr::cust(qcol(&anchor, ncol)),
-                Alias::new(sql_col.as_str()),
-            );
+            self.q
+                .expr_as(col(&anchor, ncol), Alias::new(sql_col.as_str()));
             sql_cols.push(sql_col);
         }
         Ok(ColumnSpec {
@@ -643,49 +586,34 @@ impl<'a> Builder<'a> {
     }
 
     /// Resolve a whole-object leaf to a node alias present in the FROM. Empty
-    /// anchor → the source node itself; otherwise the anchor chain is joined in
-    /// and its final node alias returned.
+    /// anchor → the source node; otherwise the anchor chain is joined in and its
+    /// final node alias returned.
     fn whole_object_alias(&mut self, leaf: &LeafPath) -> Result<String, AqlError> {
-        let src = self
-            .node_alias
-            .get(&leaf.source.0)
-            .cloned()
-            .ok_or_else(|| {
-                SqlError::Unsupported("whole-object select of a non-node source".to_owned())
-            })?;
+        let src = self.source_node(leaf.source.0)?;
         if leaf.anchor.is_empty() {
             return Ok(src);
         }
-        // Join the anchor chain into the main query (interval containment).
         let mut prev = src;
         for step in &leaf.anchor {
             let alias = format!("w{}", self.next_ctr());
             self.q.from_as(Node::Table, Alias::new(alias.as_str()));
-            self.where_raw(format!(
-                r#"{a}."vo_id" = {p}."vo_id" AND {a}."sys_version" = {p}."sys_version" AND {a}."num" BETWEEN {p}."num" AND {p}."num_cap""#,
-                a = tbl(&alias),
-                p = tbl(&prev)
-            ));
-            self.push_type_filter(&alias, &step.node_types);
+            self.q
+                .and_where(col(&alias, "vo_id").eq(col(&prev, "vo_id")));
+            self.q
+                .and_where(col(&alias, "sys_version").eq(col(&prev, "sys_version")));
+            self.q
+                .and_where(col(&alias, "num").between(col(&prev, "num"), col(&prev, "num_cap")));
+            if let Some(cond) = type_cond(&alias, &step.node_types) {
+                self.q.and_where(cond);
+            }
             if let Some(pred) = &step.predicate {
-                self.push_node_constraint(&alias, pred)?;
+                for cond in self.node_constraint_conds(&alias, pred)? {
+                    self.q.and_where(cond);
+                }
             }
             prev = alias;
         }
         Ok(prev)
-    }
-
-    fn push_node_constraint(&mut self, node: &str, c: &NodeConstraint) -> Result<(), AqlError> {
-        if let Some(a) = &c.archetype {
-            self.push_archetype(node, a)?;
-        }
-        if let Some(n) = &c.name {
-            self.push_name(node, n)?;
-        }
-        for sp in &c.standard {
-            self.push_std_predicate(node, sp)?;
-        }
-        Ok(())
     }
 
     // ── WHERE ──────────────────────────────────────────────────────────────────
@@ -694,80 +622,57 @@ impl<'a> Builder<'a> {
         let Some(filter) = self.ir.filter.clone() else {
             return Ok(());
         };
-        let mut frag = Frag::new();
-        let sql = self.where_expr(&mut frag, &filter)?;
-        self.q.and_where(frag.into_expr(sql));
+        let cond = self.where_expr(&filter)?;
+        self.q.and_where(cond);
         Ok(())
     }
 
-    fn where_expr(&mut self, frag: &mut Frag, expr: &IrExpr) -> Result<String, AqlError> {
+    fn where_expr(&mut self, expr: &IrExpr) -> Result<Expr, AqlError> {
         match expr {
-            IrExpr::And(a, b) => {
-                let l = self.where_expr(frag, a)?;
-                let r = self.where_expr(frag, b)?;
-                Ok(format!("({l} AND {r})"))
-            }
-            IrExpr::Or(a, b) => {
-                let l = self.where_expr(frag, a)?;
-                let r = self.where_expr(frag, b)?;
-                Ok(format!("({l} OR {r})"))
-            }
-            IrExpr::Not(a) => {
-                let inner = self.where_expr(frag, a)?;
-                Ok(format!("(NOT ({inner}))"))
-            }
+            IrExpr::And(a, b) => Ok(self.where_expr(a)?.and(self.where_expr(b)?)),
+            IrExpr::Or(a, b) => Ok(self.where_expr(a)?.or(self.where_expr(b)?)),
+            IrExpr::Not(a) => Ok(self.where_expr(a)?.not()),
             IrExpr::Compare {
                 lhs,
                 op,
                 rhs,
                 coercion,
             } => {
-                let l = self.operand_value(frag, lhs, *coercion)?;
-                let r = self.operand_value(frag, rhs, *coercion)?;
-                Ok(format!("({l} {op} {r})", op = cmp_op(*op)))
+                let l = self.operand_value(lhs, *coercion)?;
+                let r = self.operand_value(rhs, *coercion)?;
+                Ok(l.binary(binoper(*op), r))
             }
-            IrExpr::Exists(target) => {
-                let expr = self.value_expr(frag, target, ValueMode::Projection)?;
-                Ok(format!("(({expr}) IS NOT NULL)"))
-            }
+            IrExpr::Exists(target) => Ok(self
+                .value_expr(target, ValueMode::Projection)?
+                .is_not_null()),
             IrExpr::Like { path, pattern } => {
-                let lhs = self.value_expr(frag, path, ValueMode::Value(Coercion::Text))?;
+                let lhs = self.value_expr(path, ValueMode::Value(Coercion::Text))?;
                 let pat = match pattern {
-                    super::ir::LikePattern::Literal(s) => aql_like_to_sql(s),
-                    super::ir::LikePattern::Param(p) => aql_like_to_sql(&self.param_str(p)?),
+                    LikePattern::Literal(s) => aql_like_to_sql(s),
+                    LikePattern::Param(p) => aql_like_to_sql(&self.param_str(p)?),
                 };
-                let ph = frag.ph(Value::from(pat));
-                Ok(format!("(({lhs}) LIKE {ph})"))
+                Ok(lhs.like(pat))
             }
             IrExpr::Matches {
                 path,
                 values,
                 coercion,
             } => {
-                let lhs = self.value_expr(frag, path, ValueMode::Value(*coercion))?;
+                let lhs = self.value_expr(path, ValueMode::Value(*coercion))?;
                 let mut members = Vec::with_capacity(values.len());
                 for b in values {
-                    let v = self.bind_value(b)?;
-                    members.push(coerce_rhs(frag, v, *coercion));
+                    members.push(coerce_rhs(self.bind_value(b)?, *coercion));
                 }
-                Ok(format!("(({lhs}) IN ({}))", members.join(", ")))
+                Ok(lhs.is_in(members))
             }
         }
     }
 
-    fn operand_value(
-        &mut self,
-        frag: &mut Frag,
-        op: &Operand,
-        coercion: Coercion,
-    ) -> Result<String, AqlError> {
+    fn operand_value(&mut self, op: &Operand, coercion: Coercion) -> Result<Expr, AqlError> {
         match op {
-            Operand::Path(t) => self.value_expr(frag, t, ValueMode::Value(coercion)),
-            Operand::Literal(lit) => Ok(coerce_rhs(frag, literal_value(lit), coercion)),
-            Operand::Param(p) => {
-                let v = self.param_value(p)?;
-                Ok(coerce_rhs(frag, v, coercion))
-            }
+            Operand::Path(t) => self.value_expr(t, ValueMode::Value(coercion)),
+            Operand::Literal(lit) => Ok(coerce_rhs(literal_value(lit), coercion)),
+            Operand::Param(p) => Ok(coerce_rhs(self.param_value(p)?, coercion)),
             Operand::Function { .. } => {
                 Err(SqlError::Unsupported("scalar function operand".to_owned()).into())
             }
@@ -779,11 +684,10 @@ impl<'a> Builder<'a> {
     fn build_order_by(&mut self) -> Result<(), AqlError> {
         for key in self.ir.order_by.clone() {
             let OrderKey { path, ascending } = key;
-            let mut frag = Frag::new();
             let coercion = order_coercion(&path);
-            let expr = self.value_expr(&mut frag, &path, ValueMode::Value(coercion))?;
+            let expr = self.value_expr(&path, ValueMode::Value(coercion))?;
             let order = if ascending { Order::Asc } else { Order::Desc };
-            self.q.order_by_expr(frag.into_expr(expr), order);
+            self.q.order_by_expr(expr, order);
         }
         Ok(())
     }
@@ -803,135 +707,75 @@ impl<'a> Builder<'a> {
 
     // ── value expressions (the path split) ──────────────────────────────────────
 
-    fn value_expr(
-        &mut self,
-        frag: &mut Frag,
-        target: &PathTarget,
-        mode: ValueMode,
-    ) -> Result<String, AqlError> {
+    fn value_expr(&mut self, target: &PathTarget, mode: ValueMode) -> Result<Expr, AqlError> {
         match target {
-            PathTarget::Data(leaf) => self.data_leaf_expr(frag, leaf, mode),
+            PathTarget::Data(leaf) => self.data_leaf_expr(leaf, mode),
             PathTarget::Version { source, field } => {
                 let voa = self.version_vo.get(&source.0).cloned().ok_or_else(|| {
                     SqlError::Unsupported("VERSION path without a bound version".to_owned())
                 })?;
                 let aud = self.ensure_audit(&voa);
-                Ok(version_field_sql(&voa, &aud, *field, &self.ctx.system_id))
+                Ok(version_field_expr(&voa, &aud, *field, &self.ctx.system_id))
             }
             PathTarget::Ehr { source, field } => {
                 let alias = self.ehr_alias.get(&source.0).cloned().ok_or_else(|| {
                     SqlError::Unsupported("EHR path without a bound EHR".to_owned())
                 })?;
-                ehr_field_sql(&alias, *field, &self.ctx.system_id)
+                Ok(ehr_field_expr(&alias, *field, &self.ctx.system_id))
             }
         }
     }
 
     /// The design's path split for a data leaf: empty anchor → read the source
-    /// node's `data` inline; non-empty anchor → a correlated scalar subquery
-    /// walking the anchor chain and extracting the fragment.
-    fn data_leaf_expr(
-        &mut self,
-        frag: &mut Frag,
-        leaf: &LeafPath,
-        mode: ValueMode,
-    ) -> Result<String, AqlError> {
-        let src = self
-            .node_alias
-            .get(&leaf.source.0)
-            .cloned()
-            .ok_or_else(|| SqlError::Unsupported("data path on a non-node source".to_owned()))?;
+    /// node's `data` fragment inline; non-empty anchor → a correlated scalar
+    /// subquery walking the anchor chain and extracting the fragment.
+    fn data_leaf_expr(&mut self, leaf: &LeafPath, mode: ValueMode) -> Result<Expr, AqlError> {
+        let src = self.source_node(leaf.source.0)?;
         let jp = fragment_jsonpath(leaf);
 
         if leaf.anchor.is_empty() {
-            let base = self.extract_base(frag, &qcol_expr(&src, "data"), jp.as_deref());
-            return Ok(coerce_value(&base, mode, leaf));
+            let base = extract_base(col(&src, "data"), jp.as_deref());
+            return Ok(coerce_value(base, mode, leaf));
         }
 
-        // Correlated subquery over the anchor chain.
-        let mut aliases = Vec::with_capacity(leaf.anchor.len());
-        let mut from_parts = Vec::with_capacity(leaf.anchor.len());
-        let mut cond = String::new();
-        let mut prev = src.clone();
+        let mut sub = Query::select();
+        let mut prev = src;
+        let mut last = String::new();
         for step in &leaf.anchor {
             let alias = format!("s{}", self.next_ctr());
-            from_parts.push(format!(r#""node" AS {}"#, tbl(&alias)));
-            let _ = write!(
-                cond,
-                r#"{sep}{a}."vo_id" = {p}."vo_id" AND {a}."sys_version" = {p}."sys_version" AND {a}."num" BETWEEN {p}."num" AND {p}."num_cap""#,
-                sep = if cond.is_empty() { "" } else { " AND " },
-                a = tbl(&alias),
-                p = tbl(&prev)
-            );
-            cond.push_str(&self.type_filter_sql(frag, &alias, &step.node_types));
+            sub.from_as(Node::Table, Alias::new(alias.as_str()));
+            sub.and_where(col(&alias, "vo_id").eq(col(&prev, "vo_id")));
+            sub.and_where(col(&alias, "sys_version").eq(col(&prev, "sys_version")));
+            sub.and_where(col(&alias, "num").between(col(&prev, "num"), col(&prev, "num_cap")));
+            if let Some(cond) = type_cond(&alias, &step.node_types) {
+                sub.and_where(cond);
+            }
             if let Some(pred) = &step.predicate {
-                if let Some(a) = &pred.archetype {
-                    cond.push_str(&self.archetype_sql(frag, &alias, a)?);
-                }
-                if let Some(n) = &pred.name {
-                    cond.push_str(&self.name_sql(frag, &alias, n)?);
-                }
-                for sp in &pred.standard {
-                    cond.push_str(&self.std_predicate_sql(frag, &alias, sp)?);
+                for cond in self.node_constraint_conds(&alias, pred)? {
+                    sub.and_where(cond);
                 }
             }
-            prev = alias.clone();
-            aliases.push(alias);
+            prev.clone_from(&alias);
+            last = alias;
         }
-        let last = aliases.last().cloned().unwrap_or(src);
-        let base = self.extract_base(frag, &qcol_expr(&last, "data"), jp.as_deref());
-        let select_expr = coerce_value(&base, mode, leaf);
-        Ok(format!(
-            "(SELECT {select_expr} FROM {from} WHERE {cond} LIMIT 1)",
-            from = from_parts.join(", ")
-        ))
-    }
-
-    /// The jsonb extraction base: `jsonb_path_query_first(<data>, $jp)` when a
-    /// fragment path is present, else the raw `<data>` expression.
-    fn extract_base(&self, frag: &mut Frag, data_expr: &str, jp: Option<&str>) -> String {
-        match jp {
-            Some(jp) => {
-                let ph = frag.ph(Value::from(jp.to_owned()));
-                format!("jsonb_path_query_first({data_expr}, {ph}::jsonpath)")
-            }
-            None => data_expr.to_owned(),
-        }
-    }
-
-    fn std_predicate_sql(
-        &self,
-        frag: &mut Frag,
-        node: &str,
-        sp: &StdPredicate,
-    ) -> Result<String, AqlError> {
-        let jp = jsonpath(&sp.path);
-        let jp_ph = frag.ph(Value::from(jp));
-        let value = self.bind_value(&sp.value)?;
-        let v_ph = frag.ph(value);
-        Ok(format!(
-            r#" AND (jsonb_path_query_first({n}."data", {jp}::jsonpath) #>> '{{}}') {op} {v}::text"#,
-            n = tbl(node),
-            jp = jp_ph,
-            op = cmp_op(sp.op),
-            v = v_ph
-        ))
+        let base = extract_base(col(&last, "data"), jp.as_deref());
+        sub.expr(coerce_value(base, mode, leaf));
+        sub.limit(1);
+        Ok(Expr::from(sub))
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────────
+
+    fn source_node(&self, sid: usize) -> Result<String, AqlError> {
+        self.node_alias.get(&sid).cloned().ok_or_else(|| {
+            SqlError::Unsupported("data path on a non-node source".to_owned()).into()
+        })
+    }
 
     fn next_ctr(&mut self) -> usize {
         let n = self.sub_ctr;
         self.sub_ctr += 1;
         n
-    }
-
-    fn where_raw(&mut self, sql: String) {
-        self.q.and_where(Expr::cust(sql));
-    }
-
-    fn where_valued(&mut self, sql: String, vals: Vec<Value>) {
-        self.q.and_where(Expr::cust_with_values(sql, vals));
     }
 
     fn bind_value(&self, b: &Bind) -> Result<Value, AqlError> {
@@ -974,62 +818,66 @@ enum ValueMode {
     Value(Coercion),
 }
 
-/// A single custom-SQL fragment under construction: an SQL string with local
-/// `$1..$N` placeholders and their bound values (renumbered globally by
-/// `sea-query` at build time).
-struct Frag {
-    vals: Vec<Value>,
-}
-
-impl Frag {
-    fn new() -> Self {
-        Self { vals: Vec::new() }
-    }
-
-    /// Bind `v`, returning its local placeholder (`$N`, 1-based into this frag).
-    fn ph(&mut self, v: Value) -> String {
-        self.vals.push(v);
-        format!("${}", self.vals.len())
-    }
-
-    fn into_expr(self, sql: String) -> Expr {
-        if self.vals.is_empty() {
-            Expr::cust(sql)
-        } else {
-            Expr::cust_with_values(sql, self.vals)
-        }
-    }
-}
-
-// ── free helpers ────────────────────────────────────────────────────────────────
+// ── typed sea-query building blocks ───────────────────────────────────────────
 
 fn is_vo_root_type(t: &str) -> bool {
     matches!(t, "COMPOSITION" | "EHR_STATUS" | "EHR_ACCESS" | "FOLDER")
 }
 
-/// A double-quoted alias reference, e.g. `n0` → `"n0"`.
-fn tbl(alias: &str) -> String {
-    format!("\"{alias}\"")
+/// A typed `"alias"."column"` reference.
+fn col(alias: &str, column: &str) -> Expr {
+    Expr::col((Alias::new(alias), Alias::new(column)))
 }
 
-/// A double-quoted `alias.column`, e.g. (`n0`, `data`) → `"n0"."data"`.
-fn qcol(alias: &str, col: &str) -> String {
-    format!("\"{alias}\".\"{col}\"")
+/// A typed custom-function call `name(args...)`.
+fn call(name: &str, args: Vec<Expr>) -> Expr {
+    let mut f = Func::cust(Alias::new(name));
+    for a in args {
+        f = f.arg(a);
+    }
+    Expr::from(f)
 }
 
-/// The same as [`qcol`] as an owned expression string (readability alias).
-fn qcol_expr(alias: &str, col: &str) -> String {
-    qcol(alias, col)
+/// `to_jsonb(x)` — normalizes any scalar into a canonical-JSON cell.
+fn to_jsonb(e: Expr) -> Expr {
+    call("to_jsonb", vec![e])
 }
 
-fn cmp_op(op: CompOp) -> &'static str {
+/// `jsonb_path_query_first(data, '<jp>'::jsonpath)`.
+fn jsonb_path(data: Expr, jp: &str) -> Expr {
+    call(
+        "jsonb_path_query_first",
+        vec![data, cast(Expr::val(jp.to_owned()), "jsonpath")],
+    )
+}
+
+/// `<jsonb> #>> '{}'` — the scalar's text at the empty path.
+fn as_text(e: Expr) -> Expr {
+    e.binary(BinOper::Custom("#>>"), cast(Expr::val("{}"), "text[]"))
+}
+
+/// A typed cast `<e>::<ty>`.
+fn cast(e: Expr, ty: &str) -> Expr {
+    e.cast_as(Alias::new(ty))
+}
+
+/// The jsonb extraction base: `jsonb_path_query_first(<data>, jp)` when a
+/// fragment path is present, else the raw `<data>` expression.
+fn extract_base(data: Expr, jp: Option<&str>) -> Expr {
+    match jp {
+        Some(jp) => jsonb_path(data, jp),
+        None => data,
+    }
+}
+
+fn binoper(op: CompOp) -> BinOper {
     match op {
-        CompOp::Eq => "=",
-        CompOp::Ne => "<>",
-        CompOp::Lt => "<",
-        CompOp::Le => "<=",
-        CompOp::Gt => ">",
-        CompOp::Ge => ">=",
+        CompOp::Eq => BinOper::Equal,
+        CompOp::Ne => BinOper::NotEqual,
+        CompOp::Lt => BinOper::SmallerThan,
+        CompOp::Le => BinOper::SmallerThanOrEqual,
+        CompOp::Gt => BinOper::GreaterThan,
+        CompOp::Ge => BinOper::GreaterThanOrEqual,
     }
 }
 
@@ -1043,70 +891,97 @@ fn literal_value(lit: &TypedLit) -> Value {
     }
 }
 
-/// Cast a right-hand-side bound value to match the comparison coercion.
-fn coerce_rhs(frag: &mut Frag, value: Value, coercion: Coercion) -> String {
-    let ph = frag.ph(value);
+/// Cast a bound right-hand-side value to match the comparison coercion.
+fn coerce_rhs(value: Value, coercion: Coercion) -> Expr {
     match coercion {
-        Coercion::Magnitude => format!("{ph}::numeric"),
-        Coercion::Boolean => format!("{ph}::boolean"),
-        Coercion::Text | Coercion::Temporal | Coercion::Raw => format!("{ph}::text"),
+        Coercion::Magnitude => cast(Expr::val(value), "numeric"),
+        Coercion::Boolean => cast(Expr::val(value), "boolean"),
+        Coercion::Temporal => cast(Expr::val(value), "timestamptz"),
+        Coercion::Text | Coercion::Raw => cast(Expr::val(value), "text"),
     }
 }
 
 /// Apply the value coercion to a jsonb extraction base.
-fn coerce_value(base: &str, mode: ValueMode, leaf: &LeafPath) -> String {
+fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr {
     match mode {
-        ValueMode::Projection => base.to_owned(),
+        ValueMode::Projection => base,
         ValueMode::Value(Coercion::Magnitude) => {
             if leaf.types.names().iter().any(|t| t.starts_with("DV_")) {
-                format!("ext.openehr_magnitude({base})")
+                call("openehr_magnitude", vec![base])
             } else {
-                format!("({base} #>> '{{}}')::numeric")
+                cast(as_text(base), "numeric")
             }
         }
-        ValueMode::Value(Coercion::Boolean) => format!("({base} #>> '{{}}')::boolean"),
-        ValueMode::Value(Coercion::Text | Coercion::Temporal | Coercion::Raw) => {
-            format!("({base} #>> '{{}}')")
-        }
+        ValueMode::Value(Coercion::Boolean) => cast(as_text(base), "boolean"),
+        // PORT NOTE: temporal comparison casts the ISO-8601 leaf text to
+        // timestamptz — precise for full timestamps; partial-precision temporals
+        // are a documented gap (QUERY §Built-in Types/Dates and Times).
+        ValueMode::Value(Coercion::Temporal) => cast(as_text(base), "timestamptz"),
+        ValueMode::Value(Coercion::Text | Coercion::Raw) => as_text(base),
     }
 }
 
-fn aggregate_sql(func: AggFunc, inner: &str, distinct: bool) -> String {
-    let d = if distinct { "DISTINCT " } else { "" };
-    match func {
-        AggFunc::Count => format!("count({d}{inner})"),
-        AggFunc::Min => format!("min({inner})"),
-        AggFunc::Max => format!("max({inner})"),
-        AggFunc::Sum => format!("sum({inner})"),
-        AggFunc::Avg => format!("avg({inner})"),
+fn aggregate_expr(func: AggFunc, inner: Option<Expr>, distinct: bool) -> Expr {
+    // The built-in `Func` aggregates (not `Func::cust`) render `COUNT/MIN/MAX/
+    // SUM/AVG` and `COUNT(*)`/`COUNT(DISTINCT …)` via the typed API.
+    match (func, inner) {
+        // `COUNT(1)` is identical to `COUNT(*)` in Postgres (the sea-query
+        // documented idiom for a count-all).
+        (AggFunc::Count, None) => Expr::from(Func::count(Expr::val(1))),
+        (AggFunc::Count, Some(e)) if distinct => Expr::from(Func::count_distinct(e)),
+        (AggFunc::Count, Some(e)) => Expr::from(Func::count(e)),
+        (AggFunc::Min, Some(e)) => Expr::from(Func::min(e)),
+        (AggFunc::Max, Some(e)) => Expr::from(Func::max(e)),
+        (AggFunc::Sum, Some(e)) => Expr::from(Func::sum(e)),
+        (AggFunc::Avg, Some(e)) => Expr::from(Func::avg(e)),
+        // MIN/MAX/SUM/AVG always carry an argument (grammar-enforced).
+        (_, None) => Expr::val(Option::<i64>::None),
     }
 }
 
-/// The SQL for a VERSION metadata field, off the `vo_version`/`audit` aliases.
-fn version_field_sql(voa: &str, aud: &str, field: VersionField, system_id: &str) -> String {
+/// The typed SQL for a VERSION metadata field, off the `vo_version`/`audit`
+/// aliases (the `uid` is synthesized as `vo_id::system_id::sys_version` via the
+/// typed `PgExpr::concatenate` `||` operator).
+fn version_field_expr(voa: &str, aud: &str, field: VersionField, system_id: &str) -> Expr {
+    let concat = |parts: Vec<Expr>| -> Expr {
+        parts
+            .into_iter()
+            .reduce(sea_query::extension::postgres::PgExpr::concatenate)
+            .unwrap_or_else(|| Expr::val(""))
+    };
     match field {
-        VersionField::Uid => format!(
-            "({vo}::text || '::' || '{sys}' || '::' || {sv}::text)",
-            vo = qcol(voa, "vo_id"),
-            sys = system_id.replace('\'', "''"),
-            sv = qcol(voa, "sys_version")
-        ),
-        VersionField::TimeCommitted => qcol(aud, "time_committed"),
-        VersionField::SystemId => qcol(aud, "system_id"),
-        VersionField::ChangeType => qcol(aud, "change_type"),
-        VersionField::Committer => qcol(aud, "committer"),
-        VersionField::Description => qcol(aud, "description"),
-        VersionField::ContributionId => format!("{}::text", qcol(voa, "contribution_id")),
-        VersionField::LifecycleState => qcol(voa, "lifecycle_state"),
+        VersionField::Uid => concat(vec![
+            cast(col(voa, "vo_id"), "text"),
+            Expr::val("::"),
+            Expr::val(system_id.to_owned()),
+            Expr::val("::"),
+            cast(col(voa, "sys_version"), "text"),
+        ]),
+        VersionField::TimeCommitted => col(aud, "time_committed"),
+        VersionField::SystemId => col(aud, "system_id"),
+        VersionField::ChangeType => col(aud, "change_type"),
+        VersionField::Committer => col(aud, "committer"),
+        VersionField::Description => col(aud, "description"),
+        VersionField::ContributionId => cast(col(voa, "contribution_id"), "text"),
+        VersionField::LifecycleState => col(voa, "lifecycle_state"),
     }
 }
 
-fn ehr_field_sql(alias: &str, field: EhrField, system_id: &str) -> Result<String, AqlError> {
-    Ok(match field {
-        EhrField::EhrId | EhrField::Whole => format!("{}::text", qcol(alias, "id")),
-        EhrField::TimeCreated => qcol(alias, "time_created"),
-        EhrField::SystemId => format!("'{}'", system_id.replace('\'', "''")),
-    })
+fn ehr_field_expr(alias: &str, field: EhrField, system_id: &str) -> Expr {
+    match field {
+        EhrField::EhrId | EhrField::Whole => cast(col(alias, "id"), "text"),
+        EhrField::TimeCreated => col(alias, "time_created"),
+        EhrField::SystemId => Expr::val(system_id.to_owned()),
+    }
+}
+
+/// A typed `rm_type IN (...)` condition, or `None` for an unresolved type set.
+fn type_cond(node: &str, types: &TypeSet) -> Option<Expr> {
+    if types.is_empty() {
+        return None;
+    }
+    let members: Vec<Expr> = types.names().iter().map(|t| Expr::val(t.clone())).collect();
+    Some(col(node, "rm_type").is_in(members))
 }
 
 /// Build the fragment jsonpath (`$.a.b`) for a leaf, or `None` when the leaf

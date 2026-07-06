@@ -86,6 +86,7 @@ impl EhrService for MockBackend {
 
 impl openehr_its::rest::generated::definition::DefinitionApi for MockBackend {}
 impl ehrbase_rest::WebTemplateService for MockBackend {}
+impl ehrbase_rest::QueryService for MockBackend {}
 
 // ── harness ──────────────────────────────────────────────────────────────────
 
@@ -256,8 +257,19 @@ async fn composition_delete_emits_delete_record() {
 async fn aql_execute_emits_execute_record() {
     let (sock, port) = listener().await;
     let app = app(port, true).await;
-    // The query group is unimplemented (501) → outcome 8; action still E.
-    let rec = drive_expect_record(&app, &sock, req("GET", "/query/aql", true)).await;
+    // A well-formed ad-hoc query (`q` supplied) reaches the QueryService seam,
+    // which the MockBackend leaves unimplemented → 501 → outcome 8; action E,
+    // participant object "Search Criteria" (an ad-hoc query has no object id).
+    let rec = drive_expect_record(
+        &app,
+        &sock,
+        req(
+            "GET",
+            "/query/aql?q=SELECT%20c%20FROM%20COMPOSITION%20c",
+            true,
+        ),
+    )
+    .await;
     assert_eq!(attr(&rec, "EventActionCode"), Some("E"));
     assert_eq!(attr(&rec, "EventOutcomeIndicator"), Some("8"));
     assert!(rec.contains(r#"originalText="Search Criteria""#));

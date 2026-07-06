@@ -121,6 +121,35 @@ The envelope is asserted by `tests/aql_envelope.rs` — one accepted + one
 rejected proof per construct — and must remain a superset of EHRbase's
 documented envelope (ADR-008 §3).
 
+## Status (P16 — construct → accepted / rejected / tested)
+
+Pipeline: `analyze` + `ir` + `lower` (32 unit tests) → `sql` (fully typed
+sea-query) → `exec` (RESULT_SET) → the `QueryService` seam + `/query/*`
+endpoints. e2e in `crates/ehrbase/tests/service_aql.rs` (+ HTTP in
+`service_query.rs`), PG18 testcontainers.
+
+| Construct | State |
+|---|---|
+| SELECT paths / literals / `AS` alias / DISTINCT | tested |
+| Aggregates COUNT / COUNT(*) / COUNT(DISTINCT) / MIN/MAX/SUM/AVG | tested (COUNT/MIN/MAX) |
+| FROM EHR / RM structure classes; CONTAINS chains (2–3 deep) | tested |
+| NOT CONTAINS (anti-join) · AND-CONTAINS | tested · accepted |
+| OR-CONTAINS | rejected (`SqlError::Unsupported`, SQL envelope) |
+| VERSION LATEST_VERSION / ALL_VERSIONS / at-time | tested / tested / accepted |
+| VERSION metadata select (uid, commit_audit/time_committed, …) | tested (uid, time) |
+| WHERE compare (magnitude) / EXISTS / LIKE / MATCHES / AND-OR-NOT | tested / accepted |
+| ORDER BY typed leaf · LIMIT/OFFSET · REST fetch/offset (+conflict 400) | tested |
+| `$parameters` · ehr_id scope · archetype/at-code/name predicates | tested |
+| terminology() · demographic · branch-version · scalar-fn-in-SQL | rejected (typed) |
+
+SQL notes: FROM = typed cross-join + `Expr` conditions (planner folds to joins);
+CONTAINS = nested-set interval self-joins; anchor descent = correlated scalar
+subqueries with promoted-column filters; `PgExpr::contains`/`concatenate` +
+built-in `Func` aggregates; `Func::cust` only for
+`jsonb_path_query_first`/`to_jsonb`/`upper_inf`/`openehr_magnitude`;
+`BinOper::Custom("#>>")` only for jsonb-scalar-as-text. Whole-object cells
+reassemble via the P10 codec (`PERF(port)` single-query aggregation → P20).
+
 ## Testing
 
 - Unit: analyzer path-split table tests; IR lowering per construct.

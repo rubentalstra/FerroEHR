@@ -15,7 +15,15 @@
 //! aggregates, LIMIT/OFFSET + REST fetch/offset, `$parameters`, `ehr_id` scoping,
 //! NOT CONTAINS, VERSION uid/time selection, whole-COMPOSITION reassembly
 //! equality, and LATEST_VERSION vs ALL_VERSIONS over a twice-updated object.
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::doc_markdown)]
+// `float_cmp`: the magnitudes are exact whole numbers seeded by the test and
+// round-tripped losslessly, so exact comparison is intended.
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::doc_markdown,
+    clippy::float_cmp,
+    clippy::too_many_lines
+)]
 
 use std::collections::BTreeMap;
 
@@ -373,14 +381,22 @@ async fn latest_versus_all_versions() {
     let ovid = create_comp(&svc, &ehr_id, "v", 10.0).await;
     let vo_id = ovid.split("::").next().unwrap().to_owned();
 
-    // Update the composition twice → sys_version 2 and 3.
+    // Update the composition twice → sys_version 2 and 3. Each update supplies
+    // the current version_uid as `If-Match` (optimistic concurrency).
+    let mut current = ovid.clone();
     for magnitude in [20.0, 30.0] {
-        svc.composition_update(
-            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })),
-            composition("v", magnitude),
-        )
-        .await
-        .unwrap_or_else(|e| panic!("composition_update {magnitude}: {e:?}"));
+        let resp = svc
+            .composition_update(
+                params(json!({
+                    "ehr_id": ehr_id,
+                    "uid_based_id": vo_id,
+                    "If-Match": current,
+                })),
+                composition("v", magnitude),
+            )
+            .await
+            .unwrap_or_else(|e| panic!("composition_update {magnitude}: {e:?}"));
+        current = resp.meta.expect("update meta").uid;
     }
 
     // LATEST_VERSION (the default) sees one version.

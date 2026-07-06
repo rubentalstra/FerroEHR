@@ -15,15 +15,19 @@
 
 mod analyze;
 pub mod error;
+pub mod exec;
 pub mod ir;
 mod lower;
+pub mod sql;
 
 use std::collections::BTreeSet;
 
 use openehr_query::ast::SelectQuery;
 
-pub use error::{AnalysisError, AqlError, AqlFeatureError};
+pub use error::{AnalysisError, AqlError, AqlFeatureError, ExecError, SqlError};
+pub use exec::{ColumnMeta, QueryResult, execute};
 pub use ir::{ParamValue, Params, QueryIr};
+pub use sql::{SqlCtx, build as build_sql};
 
 use ir::{
     ArchetypeConstraint, Bind, Expr, NameConstraint, NodeConstraint, Operand, PathTarget,

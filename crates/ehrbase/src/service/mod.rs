@@ -22,6 +22,7 @@
 //! engine (P16).
 
 mod api;
+mod aql_query;
 mod codes;
 mod composition;
 mod contribution;

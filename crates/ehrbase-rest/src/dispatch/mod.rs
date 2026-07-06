@@ -9,7 +9,7 @@
 //! `*Params` with [`crate::params`], calls the trait method on [`AppState`],
 //! and renders a negotiated response.
 //!
-//! Groups with **no implemented operations** (demographic, query, admin) are
+//! Groups with **no implemented operations** (demographic, admin) are
 //! mounted on the generic [`not_implemented`] dispatcher instead of
 //! hand-written per-operation arms that could only forward to a 501 backend
 //! (finding F-13-03) — the wire behaviour is the same `501` + standard error
@@ -19,6 +19,7 @@
 mod definition;
 mod ehr;
 mod flat;
+mod query;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -77,7 +78,7 @@ pub(crate) fn api_router() -> Router<AppState> {
         .merge(mount(g::ehr::ROUTES, ehr::dispatch))
         .merge(mount(g::demographic::ROUTES, not_implemented))
         .merge(mount(g::definition::ROUTES, definition::dispatch))
-        .merge(mount(g::query::ROUTES, not_implemented))
+        .merge(mount(g::query::ROUTES, query::dispatch))
         .merge(mount(g::admin::ROUTES, not_implemented))
 }
 
