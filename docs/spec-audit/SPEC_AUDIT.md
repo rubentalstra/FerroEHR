@@ -152,10 +152,15 @@ Total: **180 findings**.
       parser stays distinct from RM-instance navigation — unifying the two is
       P16 work (per F-12-02 note).
 - [ ] W3-B Generic NotImplemented dispatcher (~500 LoC gone) — F-13-03.
-- [ ] W3-C `ehrbase-quirks` feature actually gates Better-isms — F-13-25.
+- [x] W3-C `ehrbase-quirks` feature actually gates Better-isms — F-13-25.
+      (2026-07-06 — `|unit_system`/`|unit_display_name` emit + read-back gated
+      behind `#[cfg(feature = "ehrbase-quirks")]`; `ehrbase-compat` enables the
+      feature. Decision recorded: the RM 1.2.0 fields are genuine but their FLAT
+      suffix form is a Better extra, so gating is correct.)
 - [ ] W3-D opt14 ↔ am14 constraint-model consolidation or ADR — F-09-02.
-- [ ] W3-E FLAT context fabricated codes (`openehr::0`) — F-10-07; hardcoded
-      `rm_version 1.0.4` — F-10-09.
+- [x] W3-E FLAT context fabricated codes (`openehr::0`) — F-10-07 (done earlier);
+      hardcoded `rm_version 1.0.4` — F-10-09 (2026-07-06 — single
+      `flat::defaults::RM_VERSION = "1.2.0"` constant tied to the RM pin).
 - [ ] W3-F Remaining minors per findings files.
 
 ## Progress log
@@ -191,6 +196,21 @@ Total: **180 findings**.
   canonical-XML COMPOSITION fixtures: 4 fixtures byte-identical modulo the cited
   cabolabs verbose-`xsi:type` convention (minimal-subset verified), 0 real
   divergences. F-05-04/05 assessed (do not block; left with notes).
+- 2026-07-06: **openehr-flat conformance + hygiene bundle** — W3-C
+  (F-13-25 quirks gating + decision), W3-E (F-10-09 rm_version → single
+  `RM_VERSION="1.2.0"` constant), and the W2-K F-10 part (F-10-03 root `Tree`
+  required-fields via `serialize_root`; F-10-04 subset-note) landed, plus the
+  F-10 minors: F-10-01/05 (Better-oracle + accepted-form-envelope docs), F-10-06
+  (`|formatting` PORT NOTE), F-10-08/10 (round-trip-boundary doc listing
+  non-surfaced RM attrs), F-10-11 (dropped dead `actions` arm + RM-model TODO),
+  F-10-14 (`DEFAULT_TIME`/setting defaults → one `flat/defaults.rs`), and F-13-22
+  partial (`context.rs` `code_phrase` routed through `graph.rs`). `openehr-flat`
+  76/76 tests green in **both** feature configs, clippy+fmt clean; `ehrbase-compat`
+  + workspace build green. Two golden WebTemplate snapshots gained the two
+  spec-required empty root rubric maps (Tree.required) — spec-mandated additions,
+  nothing weakened. Remaining openehr-flat hygiene (F-13-23/24/26-full/27/28 —
+  larger tree-walk/fill-pass/builder rewrites) deferred with notes; F-10-02
+  skipped (lives in `ehrbase-rest`, another agent's crate).
 - 2026-07-06: **W3-A done** (F-13-20/21, F-13-50/51/52). The two byte-identical
   `openehr-flat` AQL-path parsers + their duplicated predicate-matching and
   RM-navigation are deleted and consolidated onto the single

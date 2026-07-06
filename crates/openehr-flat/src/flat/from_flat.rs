@@ -17,16 +17,13 @@
 use openehr_rm::paths::PathSegment;
 use serde_json::{Map, Value, json};
 
+use super::defaults::{DEFAULT_TIME, RM_VERSION};
 use super::mappers::{self};
 use super::sub::{Entry, FlatView, parse_key};
 use super::{context, graph};
 use crate::FlatError;
 use crate::path;
 use crate::webtemplate::{WebTemplate, WebTemplateNode};
-
-/// The default time filled into mandatory `start_time`/`origin`/`time` fields
-/// (never surfaced in FLAT, so it does not affect the round-trip).
-const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
 
 /// Map a (possibly abstract/generic) web-template rm type to the concrete RM
 /// type to instantiate. `EVENT` is abstract → default `POINT_EVENT`.
@@ -38,11 +35,16 @@ fn concrete_type(rm_type: &str) -> &str {
 }
 
 /// RM attributes that are arrays (needed to re-materialise compacted structure).
+///
+// TODO(port): (F-10-11) this multi-valued-attribute set is hard-coded and covers
+// only the common COMPOSITION/HISTORY/ITEM/ENTRY path. Any other genuinely
+// multi-valued attribute reachable in a template (`credentials`,
+// `other_participations`, nested cluster/section variants) would be rebuilt as a
+// single object. Drive multiplicity from the generated BMM RM attribute model
+// (ADR-008/P16) — the same model AQL path analysis mandates — instead of this
+// list.
 fn is_multiple(attr: &str) -> bool {
-    matches!(
-        attr,
-        "content" | "items" | "events" | "activities" | "actions"
-    )
+    matches!(attr, "content" | "items" | "events" | "activities")
 }
 
 /// Convert a FLAT map to a canonical-JSON composition, driven by `wt`.
@@ -375,7 +377,7 @@ fn finish_identity(
                         json!({"_type": "TEMPLATE_ID", "value": template_id}),
                     );
                 }
-                a.insert("rm_version".into(), json!("1.0.4"));
+                a.insert("rm_version".into(), json!(RM_VERSION));
                 Value::Object(a)
             });
     }
@@ -453,7 +455,7 @@ fn ensure_template_id(comp: &mut Map<String, Value>, root: &WebTemplateNode, tem
         .or_insert_with(|| {
             json!({"_type": "ARCHETYPED",
                    "archetype_id": {"_type": "ARCHETYPE_ID", "value": root.node_id},
-                   "rm_version": "1.0.4"})
+                   "rm_version": RM_VERSION})
         });
     if let Value::Object(ad) = ad {
         ad.entry("template_id".to_owned())

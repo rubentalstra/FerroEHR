@@ -352,7 +352,18 @@ parallel implementations of the same operations internally.
   default path." As shipped, every FLAT output carries the quirk.
 - **Target design:** Gate the two lines behind `#[cfg(feature = "ehrbase-quirks")]`,
   or drop the feature declaration until quirks are wanted.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — both the emit (`leaf_to_flat`) and read-back (`quantity_from_flat`)
+  `|unit_system`/`|unit_display_name` paths are now `#[cfg(feature = "ehrbase-quirks")]`; the
+  default FLAT path is quirk-free. `ehrbase-compat` (the EHRbase/Better compat surface) enables
+  the feature so CI exercises it; core ITS-REST serving stays clean.*
+  **Spec-backing decision:** `DV_QUANTITY.units_system`/`units_display_name` ARE genuine
+  RM 1.2.0 fields (openehr-rm `dv_quantity.rs:59,65`; emitted in canonical JSON + XML per W2-I),
+  but their FLAT `|unit_system`/`|unit_display_name` *suffix representation* is a Better vendor
+  extra beyond the common EhrScape suffix set — no normative SDT concrete format exists
+  (SM serial_data_formats unfinished; F-10-01/05), so serialization.md's classification of them
+  as `ehrbase-quirks` extras stands. Gating (not default-on) is the correct fix; the RM fields
+  keep their first-class canonical-JSON/XML home regardless. No test references these suffixes,
+  so no snapshot changed.)*
 
 ### F-13-26: RM/terminology magic constants hand-inlined instead of sourced from one place
 - **Severity:** major

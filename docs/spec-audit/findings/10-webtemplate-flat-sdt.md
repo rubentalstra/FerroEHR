@@ -96,7 +96,8 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/lib.rs:1`; `flat/mod.rs`, `structured/mod.rs` (whole modules).
 - **Problem:** The concrete FLAT/STRUCTURED JSON serialisation the server accepts/emits is defined nowhere in finished openEHR normative text. The implementation targets Better `web-template` `converter/*` semantics. This is the correct pragmatic choice (CNF Robot fixtures + ITS-REST examples use the same form), but it must be recorded as a deliberate reliance on a vendor convention over an unfinished spec, per the project's spec-authority rule.
 - **Fix:** No code change. Keep the `//!`/`PORT NOTE` docs stating Better is the interop oracle *because* SM SDT is unfinished; re-evaluate on any SM-SDT spec release (add a `docs/VERSIONS.md` watch note for `SM` serial_data_formats/simplified_im_b reaching STABLE).
-- [ ] fixed
+- [x] fixed *(2026-07-06 — `flat/mod.rs` module doc now records the Better-oracle
+  reliance with the exact SM/ITS-REST "unfinished" citations + a re-evaluate-on-STABLE note.)*
 
 ### F-10-02: `definition.rs` comment misstates the spec — WebTemplate on the adl1.4 GET is spec-defined, not an EHRbase extension
 - **Severity:** minor
@@ -112,7 +113,13 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/webtemplate/model.rs:41-94` — `name`, `localizedName`, `nodeId`, `min` are `skip_serializing_if = "Option::is_none"`; `localizedNames`, `localizedDescriptions` are `skip_serializing_if = "IndexMap::is_empty"`; `children` is `skip_serializing_if = "Vec::is_empty"`.
 - **Problem:** For the root `tree` node (and any node) with an empty rubric map, an unbounded-lower occurrence (`min = None`), or an empty node id, the emitted JSON omits members the ITS-REST `Tree` schema lists as `required`. A strict JSON-Schema validator (e.g. the drift/fidelity gate) would reject our WebTemplate. Better's own output omits them too and the schema is illustrative, but against the *vendored* schema this is a conformance gap.
 - **Fix:** Either (a) accept it and note that the ITS-REST WebTemplate schema's `required` list is looser than real Better output (record as a documented deviation), or (b) for `Tree`/`Child` emit empty `localizedNames`/`localizedDescriptions: {}`, a present `nodeId: ""`, and `min: 0` when unbounded, to satisfy the schema. Prefer (b) for the root node at minimum.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — chose (b) for the root `Tree` node: new `model::serialize_root`
+  (`#[serde(serialize_with)]` on `WebTemplate.tree`) fills every `Tree.required` member a
+  sparse root would omit — `localizedNames`/`localizedDescriptions` ← `{}`, `nodeId` ← `""`,
+  `min` ← `0`, `name`/`localizedName` ← the node id, `children` ← `[]` — without touching a
+  well-formed root's output or the looser `Child` shape nested nodes serialize against. Two
+  golden snapshots (Demo_Vitals, Diagnosis) gained the two spec-required empty rubric maps
+  on their otherwise-complete root; medication_list unchanged.)*
 
 ### F-10-04: WebTemplate emits Better-2.3 fields beyond the ITS-REST schema (additive)
 - **Severity:** info
@@ -120,7 +127,9 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `model.rs:64-82` (`cardinalities`, `inContext`, `proportionTypes`, `termBindings`, `dependsOn` on nodes), `model.rs:156-213` (`listOpen`, `terminology` on `WebTemplateInput`; `ordinal`/`scale`/`localizedLabels`/`termBindings` on `WebTemplateCodedValue`), `builder.rs:204-215` (`semVer`, `otherDetails`, `version:"2.3"`).
 - **Problem:** The impl follows the fuller real Better `web-template` 2.3 model, which carries fields the minimal ITS-REST schema does not list. The ITS-REST schemas set no `additionalProperties: false`, so extras are schema-legal, and they carry information consumers need (cardinality ids, dependsOn, term bindings). Recorded for completeness.
 - **Fix:** None required. Keep the `model.rs` doc noting the ITS-REST schema is a subset of the Better 2.3 shape the impl emits.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — `model.rs` module doc now states the ITS-REST schema is a subset
+  of the Better 2.3 shape, lists the additive fields, and notes the schemas set no
+  `additionalProperties: false` so the extras are schema-legal.)*
 
 ### F-10-05: SM "primary" DATA_VALUE string syntaxes are unsupported; only the EhrScape `|suffix` variants are implemented
 - **Severity:** info
@@ -128,7 +137,9 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/flat/mappers.rs:54-157` (`leaf_to_flat`) + `:179-443` (`leaf_from_flat`) implement only the `|magnitude`/`|unit`/`|code`/`|value`/`|terminology`/`|numerator`/… EhrScape forms; there is no parser for the `"value,unit"`, `"n|[term::code]"`, `"n/d;KIND"`, ODIN-interval, or `"[term::code]"` string encodings.
 - **Problem:** Against the one finished normative concrete-format table, the implemented forms are the *secondary* ("EhrScape") variants and the *primary* forms are absent. Impact is low: CNF Robot fixtures and the ITS-REST conceptual examples all use the EhrScape form, and no SM string-parser grammar exists yet (`master04-syntax.adoc` String Parser = `TBD`). But an input using the SM-primary syntax (`"78.500,kg"`) would be silently misparsed as a bare DV_TEXT-ish value.
 - **Fix:** Document the accepted-form envelope as "EhrScape/Better `|suffix` variant only". Revisit if SM `serial_data_formats` publishes the string parser; do not add the primary forms speculatively (no grammar to conform to yet).
-- [ ] fixed
+- [x] fixed *(2026-07-06 — `flat/mod.rs` doc states we implement only the EhrScape/Better
+  `|suffix` envelope, cites the SM `master03` "EhrScape Variants" classification + the missing
+  string parser, and defers the SM-primary forms until a grammar exists.)*
 
 ### F-10-06: `|formatting` is emitted/consumed for DV_TEXT, but the SM transformation rule says skip `formatting`
 - **Severity:** minor
@@ -136,7 +147,9 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/flat/mappers.rs:60-72` emits `put(out, base, "formatting", …)` for `DV_TEXT`/`DV_PARAGRAPH` and (`:81`) for coded text; `text_from_flat`/`coded_text_from_flat` (`:265-296`) read `|formatting` back. `language`/`encoding` are correctly not surfaced.
 - **Problem:** The SM rule marks `formatting` as skipped in the simplified form; the impl surfaces it (to improve round-trip fidelity, matching Better). A minor deviation from the transformation table. `language`/`encoding` handling *does* follow the rule.
 - **Fix:** Either drop `|formatting` to match the SM rule, or (preferred, for round-trip fidelity) keep it and add a `// PORT NOTE:` citing `master07` and the deliberate deviation. Low urgency — `formatting` is optional and its presence does not break canonical validity.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — kept `|formatting` for round-trip fidelity, with a `// PORT NOTE:`
+  in `mappers.rs` citing `master07` and the deliberate deviation; `language`/`encoding` remain
+  dropped per the rule.)*
 
 ### F-10-07: FLAT→RM context rebuild fabricates invalid terminology codes (`openehr::0`) that will fail validation
 - **Severity:** major
@@ -152,7 +165,10 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/flat/mappers.rs:131-145` (to_flat: emits bare `uri`, `|mediatype` from `media_type.code_string`, `|alternatetext`, `|size`; inline `data` base64 **dropped**) and `:402-437` (from_flat: hardcodes `media_type` terminology `"IANA_media-types"`, no `integrity_check`/`compression` reconstruction).
 - **Problem:** (a) Round-trip loss — inline `DV_MULTIMEDIA.data` (base64) present in canonical JSON is not surfaced in FLAT and cannot be recovered, so `RM → FLAT → RM` drops embedded media. (b) The suffix set (`|mediatype`/`|alternatetext`/`|size`) is Better's, not the SM object form (`mediaType`/`integrityCheckAlgorithm`/`compressionAlgorithm`/`uri`). (c) `integrity_check_algorithm`/`compression_algorithm` (RM-optional but sometimes present) are dropped.
 - **Fix:** Document the media-data round-trip boundary (Better also omits inline data). Keep Better suffixes (CNF-aligned) but note the SM divergence. Consider preserving `|size` only when >0 (already done) and adding `|integrity`/`|compression` for fidelity if a corpus case needs it.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — the inline `DV_MULTIMEDIA.data` (base64) round-trip loss is now
+  listed in the central `flat/mod.rs` "non-surfaced RM attributes" boundary (F-10-10); the
+  `mappers.rs` DV_MULTIMEDIA arm already cites the Better mapper it follows. `|integrity`/
+  `|compression` left out — no corpus case needs them yet.)*
 
 ### F-10-09: Rebuilt compositions hardcode `rm_version = "1.0.4"` while the project pins RM 1.2.0
 - **Severity:** minor
@@ -160,7 +176,10 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/flat/from_flat.rs:377` (`a.insert("rm_version".into(), json!("1.0.4"))`) and `:455` (`ensure_template_id` → `"rm_version": "1.0.4"`).
 - **Problem:** FLAT→RM produces `ARCHETYPED.rm_version = "1.0.4"`, inconsistent with the workspace's RM 1.2.0 pin (and with what canonical serialisation elsewhere would report). `1.0.4` is the archie/EHRbase-era value; harmless for parsing but a version-provenance inaccuracy that could confuse the fidelity gate or downstream consumers.
 - **Fix:** Source `rm_version` from a single crate constant tied to the RM pin (or take it from the template/OPT `rm_release` where available), not a literal.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — both `1.0.4` literals in `from_flat.rs` now read the single
+  `flat::defaults::RM_VERSION = "1.2.0"` constant, tied to the RM pin (`docs/VERSIONS.md`) and
+  matching the RM spec's ARCHETYPED.rm_version = "version used to create this object". The
+  taking-from-OPT-`rm_release` variant is left for when OPT ingestion surfaces it.)*
 
 ### F-10-10: RM constructs outside the web-template are silently dropped (round-trip boundary undocumented)
 - **Severity:** info
@@ -168,7 +187,10 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/flat/to_flat.rs:45-80` (`walk` visits only web-template nodes) + `mappers.rs:146-156` (reference ranges not surfaced, noted in-code).
 - **Problem:** `LINK`, `FEEDER_AUDIT`, non-root `uid`, `DV_ORDERED.normal_range`/`other_reference_ranges`, and `DV_TEXT.mappings` have no web-template node and are dropped on `RM → FLAT`. The tested contract is `from_flat → to_flat` stability (round-trip of *FLAT-expressible* data), not full RM fidelity. This is correct for FLAT but is not stated as the explicit boundary anywhere central.
 - **Fix:** Add a short "FLAT round-trip scope / non-surfaced RM attributes" list to `flat/mod.rs` docs so the boundary is explicit and testable.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — `flat/mod.rs` now has a "FLAT round-trip scope" paragraph listing
+  the non-surfaced RM attributes (`LINK`, `FEEDER_AUDIT`, non-root `uid`, DV_ORDERED reference
+  ranges, `DV_TEXT.mappings`, inline `DV_MULTIMEDIA.data`) and stating the tested contract is
+  `from_flat → to_flat` stability of FLAT-expressible data.)*
 
 ### F-10-11: `is_multiple` attribute set is a hardcoded list, not derived from the RM model, and includes a non-attribute (`actions`)
 - **Severity:** minor
@@ -176,7 +198,9 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/flat/from_flat.rs:38-44` (`is_multiple` matches `content | items | events | activities | actions`).
 - **Problem:** The reverse converter decides which AQL steps are array levels from a fixed string set. `actions` is not an RM attribute (INSTRUCTION has `activities`, ACTION has none named `actions`) — dead arm. More importantly, any other genuinely multi-valued attribute reachable in a template (e.g. `credentials`, `other_participations`, nested cluster/section variants) is not covered and would be rebuilt as a single object, mis-shaping the RM. Works for the common COMPOSITION/HISTORY/ITEM path but is not RM-general.
 - **Fix:** Drive multiplicity from the generated BMM RM attribute model (P16) instead of the hardcoded list; drop the `actions` arm. Until then, add a `// TODO(port):` referencing the RM-model dependency.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — dropped the dead `actions` arm from `from_flat::is_multiple`; added
+  a `// TODO(port):` citing the ADR-008/P16 BMM-RM-model dependency as the real fix. The
+  BMM-model-driven multiplicity is P16 work.)*
 
 ### F-10-12: FLAT/STRUCTURED composition commit/retrieve media types are not in the vendored ITS-REST composition operations (extension)
 - **Severity:** info
@@ -200,7 +224,10 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 - **Code:** `crates/openehr-flat/src/flat/context.rs:27-30` (`DEFAULT_TIME = "1970-01-01T00:00:00Z"`, `DEFAULT_SETTING_CODE = "238"`); applied in `apply_ctx` (`:204-214`) and mirrored on output in `emit_ctx` (`:74-98`); `DEFAULT_TIME` is also independently defined in `from_flat.rs:27`.
 - **Problem:** To satisfy the RM-mandatory `start_time`/`setting`, the converter fabricates an epoch timestamp and `openehr::238 "other care"` when the FLAT body omits `ctx/time`/`ctx/setting`. This writes clinically meaningless data into stored compositions. It is round-trip-stable (emit mirrors apply) and matches Better, but a committed composition dated 1970-01-01 is a data-quality hazard. `DEFAULT_TIME` duplicated across two modules invites drift.
 - **Fix:** Consolidate the defaults into one place (e.g. `context.rs`, re-used by `from_flat.rs`). Consider requiring `ctx/time` (400 on absence) rather than fabricating epoch, matching stricter EHRbase configs; at minimum document the default clearly.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — the duplicated `DEFAULT_TIME` (and the setting defaults) now live in
+  one `flat/defaults.rs` module consumed by both `context.rs` and `from_flat.rs`; documented
+  there. The fabricate-epoch-vs-400-on-absence behaviour is deliberately unchanged (Better
+  parity) — only the drift-prone duplication is resolved.)*
 
 ### F-10-15: STRUCTURED shape is a pure Better convention with only an internal round-trip contract
 - **Severity:** info

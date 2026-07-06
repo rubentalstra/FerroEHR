@@ -1039,6 +1039,8 @@ expression: wt
           }
         ]
       }
-    ]
+    ],
+    "localizedNames": {},
+    "localizedDescriptions": {}
   }
 }

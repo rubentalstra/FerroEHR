@@ -21,24 +21,16 @@
 
 use serde_json::{Map, Value, json};
 
+use super::defaults::{
+    DEFAULT_SETTING_CODE, DEFAULT_SETTING_TERM, DEFAULT_SETTING_VALUE, DEFAULT_TIME,
+};
+// One shared `CODE_PHRASE` builder (F-13-22): `graph` owns the canonical RM-node
+// JSON builders; this module reuses it rather than re-inlining the shape.
+use super::graph::code_phrase;
 use super::mappers::FlatMap;
-
-/// Better's context defaults (`ConversionContext.Builder`).
-const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
-const DEFAULT_SETTING_CODE: &str = "238";
-const DEFAULT_SETTING_VALUE: &str = "other care";
-const DEFAULT_SETTING_TERM: &str = "openehr";
 
 fn non_empty_str(v: Option<&Value>) -> Option<&str> {
     v.and_then(Value::as_str).filter(|s| !s.is_empty())
-}
-
-fn code_phrase(terminology: &str, code: &str) -> Value {
-    json!({
-        "_type": "CODE_PHRASE",
-        "terminology_id": {"_type": "TERMINOLOGY_ID", "value": terminology},
-        "code_string": code,
-    })
 }
 
 // ── RM → flat ───────────────────────────────────────────────────────────────
