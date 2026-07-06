@@ -1,0 +1,221 @@
+= Leaf Data
+
+All ODIN data eventually devolve to instances of the primitive types `String` , `Integer` , `Real` , `Double` , `String` , `Character` , various date/time types, lists or intervals of these types, and a few special types. ODIN does not use type or attribute names for instances of primitive types, only manifest values, making it possible to assume as little as possible about type names and structures of the primitive types. In all the following examples, the manifest data values are assumed to appear immediately inside a leaf pair of angle brackets, i.e.
+
+----
+some_attribute = <manifest value>
+----
+
+== Primitive Types
+
+=== Character Data
+
+Characters are shown in a number of ways. In the literal form, a character is shown in single quotes, as follows:
+
+----
+    'a'
+----
+
+Characters outside the low ASCII (0-127) range must be UTF-8 encoded, with a small number of backslash-quoted ASCII characters allowed, as described in the section <<File Encoding>>.
+
+=== String Data
+
+All strings are enclosed in double quotes, as follows:
+
+----
+    "this is a string"
+----
+
+Quotes are encoded using ISO/IEC 10646 codes, e.g. :
+
+----
+    "this is a much longer string, what one might call a &quot;phrase&quot;."
+----
+
+Line extension of strings is done simply by including returns in the string. The exact contents of the string are computed as being the characters between the double quote characters, with the removal of white space leaders up to the left-most character of the first line of the string. This has the effect of allowing the inclusion of multi-line strings in ODIN texts, in their most natural human-readable form, e.g.:
+
+[source, odin]
+--------
+    text = <"And now the STORM-BLAST came, and he
+            Was tyrannous and strong :
+            He struck with his o'ertaking wings,
+            And chased us south along.">
+--------
+
+String data can be used to contain almost any other kind of data, which is intended to be parsed as some other formalism. Characters outside the low ASCII (0-127) range must be UTF-8 encoded, with a small number of backslash-quoted ASCII characters allowed, as described in section <<File Encoding>>.
+
+=== Integer Data
+
+Integers are represented simply as numbers, e.g.:
+
+----
+    25
+    300000
+    29e6
+----
+
+Commas or periods for breaking long numbers are not allowed, since they confuse the use of commas used to denote list items (See <<Lists of Built-in Types>> below).
+
+=== Real Data
+
+Real numbers are assumed whenever a decimal is detected in a number, e.g.:
+
+----
+    25.0
+    3.1415926
+    6.023e23
+----
+
+Commas or periods for breaking long numbers are not allowed. Only periods may be used to separate the decimal part of a number; unfortunately, the European use of the comma for this purpose conflicts with the use of the comma to distinguish list items (See <<Lists of Built-in Types>> below).
+
+=== Boolean Data
+
+Boolean values can be indicated by the following values (case-insensitive):
+
+----
+    True
+    False
+----
+
+=== Dates and Times
+
+==== Complete Date/Times
+
+In ODIN, full and partial dates, times and durations can be expressed. All full dates, times and durations are expressed using a subset of {iso_8601}[ISO 8601]. The openEHR {openehr_foundation_types}#_time_types[Foundation Types specification] provides a full explanation of the ISO 8601 semantics supported in openEHR.
+
+In ODIN, the use of ISO 8601 allows extended form only (i.e. ':' and '-' must be used). The ISO 8601 method of representing partial dates consisting of a single year number, and partial times consisting of hours only are not supported, since they are ambiguous. See below for partial forms.
+
+Durations are expressed using a string which starts with 'P', and is followed by a list of periods, each appended by a single letter designator: 'Y' for years, "M' for months, 'W' for weeks, 'D' for days, 'H' for hours, 'M' for minutes, and 'S' for seconds. The literal 'T' separates the YMWD part from the HMS part, ensuring that months and minutes can be distinguished. Examples of date/time data include:
+
+[source, odin]
+----
+    1919-01-23                 -- birthdate of Django Reinhardt
+    16:35:04,5                 -- rise of Venus in Sydney on 24 Jul 2003
+    2001-05-12T07:35:20+1000   -- timestamp on an email received from Australia
+    P22DT4H15M0S               -- period of 22 days, 4 hours, 15 minutes
+----
+
+==== Partial Date/Times
+
+Two ways of expressing partial (i.e. incomplete) date/times are supported in ODIN. The ISO 8601 incomplete formats are supported in extended form only (i.e. with '-' and ':' separators) for all patterns that are unambiguous on their own. Dates consisting of only the year, and times consisting of only the hour are not supported, since both of these syntactically look like integers. The supported ISO 8601 patterns are as follows:
+
+----
+    yyyy-MM            -- a date with no days
+    hh:mm              -- a time with no seconds
+    yyyy-MM-ddThh:mm   -- a date/time with no seconds
+    yyyy-MM-ddThh      -- a date/time, no minutes or seconds
+----
+
+To deal with the limitations of ISO 8601 partial patterns in a context-free parsing environment, a second form of pattern is supported in ODIN, based on ISO 8601. In this form, '?' characters are substituted for missing digits. Valid partial dates follow the patterns (corresponding to reduced accuracy forms described in ISO 8601-2004, section 4.1.4.3):
+
+----
+    yyyy-MM-??         -- date with unknown day in month
+    yyyy-??-??         -- date with unknown month and day
+----
+
+Valid partial times follow the patterns (corresponding to reduced accuracy forms described in ISO 8601-2004, section 4.2.2.3):
+
+----
+    hh:mm:??           -- time with unknown seconds
+    hh:??:??           -- time with unknown minutes and seconds
+----
+
+Valid date/times follow the patterns (corresponding to reduced accuracy forms described in ISO 8601-2004, section 4.3.3):
+
+----
+    yyyy-MM-ddThh:mm:??     -- date/time with unknown seconds
+    yyyy-MM-ddThh:??:??     -- date/time with unknown minutes and seconds
+----
+
+== Intervals of Ordered Primitive Types
+
+Intervals of any ordered primitive type, i.e., Integer, Real, Date, Time, Date_time and Duration, can be stated using the following uniform syntax, where N, M are instances of any of the ordered types:
+
+----
+    |N..M|        -- the two-sided range N >= x <= M;
+    |>N..M|       -- the two-sided range N > x <= M;
+    |N..<M|       -- the two-sided range N <= x <M;
+    |>N..<M|      -- the two-sided range N > x <M;
+    |<N|          -- the one-sided range x < N;
+    |>N|          -- the one-sided range x > N;
+    |>=N|         -- the one-sided range x >= N;
+    |<=N|         -- the one-sided range x <= N;
+    |N +/-M|      -- interval of N ±M.
+    |N±M|         -- interval of N ±M.
+----
+
+The allowable values for N and M include any value in the range of the relevant type.
+
+NOTE: for the plus/minus form (N ± M format), spaces are not significant either side of the '±' sign or the equivalent '+/-' string.
+
+Examples of this syntax include:
+
+----
+    |0..5|              -- integer interval
+    |0.0..1000.0|       -- real interval
+    |0.0..<1000.0|      -- real interval 0.0 <= x < 1000.0
+    |08:02..09:10|      -- interval of time
+    |>=1939-02-01|      -- open-ended interval of dates
+    |5.0 ±0.5|          -- 4.5 ±5.5
+    |5.0 +/-0.5|        -- 4.5 ±5.5
+    |>=0|               -- >= 0
+----
+
+== Other Built-in Types
+
+=== URIs
+
+URI can be expressed as ODIN data in the usual way found on the web, and follow the standard syntax from {rfc3986}[IETF RFC3986]. Examples of URIs in ODIN:
+
+----
+    http://openEHR.org/home
+    ftp://get.this.file.com?file=cats.doc#section_5
+    http://www.mozilla.org/products/firefox/upgrade/?application=thunderbird
+----
+
+Encoding of special characters in URIs follows the IETF RFC 3986, as described in the section <<File Encoding>>.
+
+=== Coded Terms
+
+Coded terms are ubiquitous in medical and clinical information, and are likely to become so in most other industries, as ontologically-based information systems and the 'semantic web' emerge. The logical structure of a coded term is simple: it consists of an identifier of a terminology (with optional version), and an identifier of a code within that terminology. The ODIN string representation is of the following form:
+
+----
+    [terminology_id::code]
+----
+
+where `terminology_id` is an alphanumeric name, optionally followed by a version in parentheses, and `code` is a string. The allowed characters in each part are described in the grammar.
+
+Examples from clinical data:
+
+----
+    [icd10AM::F60.1]            -- from ICD10AM
+    [snomed_ct::2004950]        -- from snomed-ct
+    [snomed_ct(3.1)::2004950]   -- from snomed-ct v 3.1
+----
+
+== Lists of Built-in Types
+
+Data of any primitive type can occur singly or in lists, which are shown as comma-separated lists of items, all of the same type, such as in the following examples:
+
+----
+    "cyan", "magenta", "yellow", "black"    -- printer's colours
+    1, 1, 2, 3, 5                           -- first 5 fibonacci numbers
+    08:02, 08:35, 09:10                     -- set of train times
+----
+
+No assumption is made in the syntax about whether a list represents a set, a list or some other kind of sequence - such semantics must be taken from an underlying information model.
+
+Lists which happen to have only one datum are indicated by using a comma followed by a list continuation marker of three dots, i.e. "...", e.g.:
+
+----
+    "en", ...       -- languages
+    "icd10", ...    -- terminologies
+    [at0200], ...
+----
+
+White space may be freely used or avoided in lists, i.e. the following two lists are identical:
+
+----
+    1,1,2,3
+    1, 1, 2,3
+----

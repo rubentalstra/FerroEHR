@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-setting"/>
+  <version value="3.1.0"/>
+  <name value="setting"/>
+  <title value="Setting"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="14"/>
+  <concept>
+    <code value="225"/>
+    <display value="home"/>
+    <designation>
+      <language value="es"/>
+      <value value="hogar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="居宅"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados domiciliários"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="住所"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="227"/>
+    <display value="emergency care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención de emergencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="救急治療"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados de emergência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="急救医疗服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="228"/>
+    <display value="primary medical care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención médica primaria"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="プライマリー医療"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados médicos primários"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="基层医疗服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="229"/>
+    <display value="primary nursing care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención primaria de enfermería"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="プライマリー看護"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados de enfermagem primários"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="基层护理服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="230"/>
+    <display value="primary allied health care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención primaria de trabajadores de la salud"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="プライマリーで共同した"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados de saúde primários"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="基层辅助医疗服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="231"/>
+    <display value="midwifery care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención de partera"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="助産師によるケア"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados de obstetrícia"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="助产服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="232"/>
+    <display value="secondary medical care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención médica secundaria"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="二次医療"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados médicos secundários"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="二级医疗服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="233"/>
+    <display value="secondary nursing care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención secundaria de enfermería"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="二次看護"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados de enfermagem secundários"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="二级护理服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="234"/>
+    <display value="secondary allied health care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención secundaria de trabajadores de la salud"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="二次で共同した "/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados de saúde especializada"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="二级辅助医疗服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="235"/>
+    <display value="complementary health care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención complementaria"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="代替医療 "/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados de saúde complementares"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="补充性医疗服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="236"/>
+    <display value="dental care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención dental"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="歯科治療"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados dentários"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="牙科服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="237"/>
+    <display value="nursing home care"/>
+    <designation>
+      <language value="es"/>
+      <value value="atención en casa de salud"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="在宅介護"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados em lares residenciais"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="护理院服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="802"/>
+    <display value="mental healthcare"/>
+    <designation>
+      <language value="es"/>
+      <value value="salud mental"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="メンタルケア"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cuidados de saúde mental"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="心理健康服务"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="238"/>
+    <display value="other care"/>
+    <designation>
+      <language value="es"/>
+      <value value="otros cuidados"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="その他のケア"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="outros cuidados"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="其他照护服务"/>
+    </designation>
+  </concept>
+</CodeSystem>

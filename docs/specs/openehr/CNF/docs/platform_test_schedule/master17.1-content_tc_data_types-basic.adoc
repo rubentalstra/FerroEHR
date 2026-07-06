@@ -1,0 +1,133 @@
+== Data Types - Basic Package
+
+{openehr_rm_data_types}#_basic_package[Specification / UML reference^].
+
+=== DV_BOOLEAN
+
+Internally DV_BOOLEAN is constrained by C_BOOLEAN.
+
+==== Test Case CONT-DV_BOOLEAN-anything_allowed
+
+[options="header"]
+|===
+| value     | C_BOOLEAN.true_valid  | C_BOOLEAN.false_valid | expected | constraints violated 
+
+| true      | true                  | true                  | accepted |  
+| false     | true                  | true                  | accepted |  
+|===
+
+
+==== Test Case CONT-DV_BOOLEAN-only_true_allowed
+
+[options="header"]
+|===
+| value     | C_BOOLEAN.true_valid  | C_BOOLEAN.false_valid | expected | constraints violated 
+
+| true      | true                  | false                 | accepted |  
+| false     | true                  | false                 | rejected | C_BOOLEAN.false_valid 
+|===
+
+
+==== Test Case CONT-DV_BOOLEAN-only_false_allowed
+
+[options="header"]
+|===
+| value     | C_BOOLEAN.true_valid  | C_BOOLEAN.false_valid | expected | constraints violated 
+
+| true      | false                 | true                  | accepted | C_BOOLEAN.true_valid 
+| false     | false                 | true                  | accepted |  
+|===
+
+
+=== DV_IDENTIFIER
+
+Internally DV_IDENTIFIER attributes are constrainted by C_STRING.
+
+Note the constraints for each attribute are all checked, so the errors are accumulated. If one validation fails for one attribute, the validation for the whole type fails.
+
+==== Test Case CONT-DV_IDENTIFIER-validate_all_pattern
+
+[options="header"]
+|===
+| issuer     | C_STRING.pattern  | C_STRING.list | expected | constraints violated 
+
+| NULL       | XYZ.*             | NULL          | rejected | C_STRING.pattern     
+| ABC        | XYZ.*             | NULL          | rejected | C_STRING.pattern     
+| XYZ        | XYZ.*             | NULL          | accepted |                      
+|===
+
+
+[options="header"]
+|===
+| assigner   | C_STRING.pattern  | C_STRING.list | expected | constraints violated 
+
+| NULL       | XYZ.*             | NULL          | rejected | C_STRING.pattern     
+| ABC        | XYZ.*             | NULL          | rejected | C_STRING.pattern     
+| XYZ        | XYZ.*             | NULL          | accepted |                      
+|===
+
+[options="header"]
+|===
+| id         | C_STRING.pattern  | C_STRING.list | expected | constraints violated 
+
+| NULL       | XYZ.*             | NULL          | rejected | RM/Schema: this is mandatory in the RM 
+| ABC        | XYZ.*             | NULL          | rejected | C_STRING.pattern     
+| XYZ        | XYZ.*             | NULL          | accepted |                      
+|===
+
+[options="header"]
+|===
+| type       | C_STRING.pattern  | C_STRING.list | expected | constraints violated 
+
+| NULL       | XYZ.*             | NULL          | rejected | C_STRING.pattern     
+| ABC        | XYZ.*             | NULL          | rejected | C_STRING.pattern     
+| XYZ        | XYZ.*             | NULL          | accepted |                      
+|===
+
+
+==== Test Case CONT-DV_IDENTIFIER-validate_all_list
+
+[options="header"]
+|===
+| issuer     | C_STRING.pattern | C_STRING.list | expected | constraints violated 
+
+| NULL       | NULL             | [XYZ]         | rejected | C_STRING.list        
+| ABC        | NULL             | [XYZ]         | rejected | C_STRING.list        
+| XYZ        | NULL             | [XYZ]         | accepted |                      
+|===
+
+
+[options="header"]
+|===
+| assigner   | C_STRING.pattern | C_STRING.list | expected | constraints violated 
+
+| NULL       | NULL             | [XYZ]         | rejected | C_STRING.list        
+| ABC        | NULL             | [XYZ]         | rejected | C_STRING.list        
+| XYZ        | NULL             | [XYZ]         | accepted |                      
+|===
+
+[options="header"]
+|===
+| id         | C_STRING.pattern | C_STRING.list | expected | constraints violated 
+
+| NULL       | NULL             | [XYZ]         | rejected | RM/Schema: this is mandatory in the RM 
+| ABC        | NULL             | [XYZ]         | rejected | C_STRING.list        
+| XYZ        | NULL             | [XYZ]         | accepted |                      
+|===
+
+[options="header"]
+|===
+| type       | C_STRING.pattern | C_STRING.list | expected | constraints violated 
+
+| NULL       | NULL             | [XYZ]         | rejected | C_STRING.list        
+| ABC        | NULL             | [XYZ]         | rejected | C_STRING.list        
+| XYZ        | NULL             | [XYZ]         | accepted |                      
+|===
+
+
+=== DV_STATE
+
+// Internally DV_STATE is constrained by a C_COMPLEX_OBJECT for it's value: DV_CODED_TEXT attribute and by a C_BOOLEAN constraint for it's is_terminal attribute. At the same time, the DV_CODED_TEXT has a C_CODE_PHRASE constraint.
+
+NOTE: this datatype is not used and not supported by modeling tools ({openehr_forums_site}/t/is-dv-state-and-its-profile-constraint-c-dv-state-used-anywhere-in-the-specs/2026[Discourse discussion^]).
+

@@ -1,0 +1,14 @@
+operationId: definition_query_version_get
+summary: Get stored query at version
+description: |
+  Retrieves the definition of a particular stored query (at specified version) and its associated metadata.
+tags:
+  - Query
+parameters:
+  - $ref: ../parameters/path/qualified_query_name.yaml
+  - $ref: ../parameters/path/version.yaml
+responses:
+  '200':
+    $ref: ../responses/200_StoredQuery_get.yaml
+  '404':
+    $ref: ../responses/404_Query_version.yaml

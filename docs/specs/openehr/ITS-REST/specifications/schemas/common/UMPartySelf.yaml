@@ -1,0 +1,11 @@
+title: PARTY_SELF
+type: object
+allOf:
+  - $ref: ../common/PartySelf.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [PARTY_SELF]
+x-discriminator-value: PARTY_SELF

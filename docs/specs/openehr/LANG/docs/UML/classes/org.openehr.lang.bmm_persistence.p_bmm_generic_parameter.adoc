@@ -1,0 +1,42 @@
+=== P_BMM_GENERIC_PARAMETER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*P_BMM_GENERIC_PARAMETER*
+
+h|*Description*
+2+a|Persistent form of `BMM_GENERIC_PARAMETER`.
+
+h|*Inherit*
+2+|`<<_p_bmm_model_element_class,P_BMM_MODEL_ELEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of the parameter, e.g. 'T' etc. Persisted attribute. Name is limited to 1 character, upper case.
+
+h|*0..1*
+|*conforms_to_type*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional conformance constraint - the name of a type to which a concrete substitution of this generic parameter must conform. Persisted attribute.
+
+h|*0..1*
+|*bmm_generic_parameter*: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_generic_parameter_class[BMM_GENERIC_PARAMETER^]`
+a|`BMM_GENERIC_PARAMETER` created by `_create_bmm_generic_parameter_`.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*create_bmm_generic_parameter* ( +
+a_bmm_schema: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_model_class[BMM_MODEL^][1]` +
+): `void`
+a|Create `_bmm_generic_parameter_`.
+
+h|*Invariants*
+2+a|__Post_name__: `name.count = 1 and name.is_upper`
+|===

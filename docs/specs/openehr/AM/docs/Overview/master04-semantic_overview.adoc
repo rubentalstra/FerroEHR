@@ -1,0 +1,121 @@
+= Semantic Overview
+
+Archetypes are topic- or theme-based models of domain content, expressed in terms of constraints on a reference information model. Since each archetype constitutes an encapsulation of a set of data points pertaining to a topic, it is of a manageable, limited size, and has a clear boundary. For example an ‘Apgar result’ archetype of the openEHR reference model class ` OBSERVATION` contains the data points relevant to Apgar score of a newborn, while a ‘blood pressure measurement’ archetype contains data points relevant to the result and measurement of blood pressure. Archetypes are assembled by templates to form structures used in computational systems, such as document definitions, message definitions and so on.
+
+In the following, unless otherwise qualified, the general term ‘archetype’ includes templates, which are technically just a special kind of archetype.
+
+== Identification and the Virtual Archetype Space
+
+Archetypes can be identified in two ways: with GUIDs, and with Human Readable IDs (HRIDs). The Archetype HRID structure corresponds to the structure of the model space created by the combination of Reference Model and Archetypes, and is shown in the following example.
+
+[.text-center]
+.Typical Archetype HRID
+image::{diagrams_uri}/archetype_id.png[id=archetype_id, align="center", width=70%]
+
+The blue segment `openEHR-EHR-COMPOSITION` indicates the entity in a reference model space, here, the class `COMPOSITION` in the package EHR from the openEHR Reference Model. The green part ‘medication_order’ indicates the domain level entity being modelled - a (record of a) medication order (i.e. part of a typical doctor’s prescription). The combination of the RM class space and semantic subspaces defines the logical model space created by the archetype formalism.
+
+We can understand this model space equivalently as an ontological space, where the models act as ontological descriptions of real data. Philosophically speaking this is somewhat of a sleight-of-hand, since the data are of course technically created from the very models themselves. However, if the models (Reference Model and Archetypes) were defined as representing information from the real world, such as paper or narrative notes and data entry by healthcare professionals (prescriptions, progress notes, lab results etc) then they can be understood as an ontological description of those original informational entities. The sleight-of-hand comes in when we follow the normal course in IT, and use a formally defined model to create data. Data created in this way can be thought of as a higher precision version of original data used to inform the original modelling effort.
+
+Returning to the Archetype HRID, the leading namespace indicates the Custodian Organisation, here the UK NHS. The implication of the namespace within the HRID is that multiple agencies may publish competing ideas of a ‘medication_order’ archetype based on the openEHR `COMPOSITION` class, and there will not be any clash. Although the namespace is prepended to the archetype identifier in the usual way, in fact it should be understood as a discriminator on the domain entity. In other words, the identifiers `uk.gov.nhs::openEHR-EHR-COMPOSITION.medication_order.v1` and `no.regjeringen::openEHR-EHR-COMPOSITION.medication_order.v1` should be understood as UK NHS and Norwegian Health Department ideas of ‘medication_order’, based on the same openEHR Reference Model `COMPOSITION` class.
+
+This is useful as a practical measure, to avoid immediate chaos. In the longer term, it is intended that archetype semantic identifiers for a given domain are located in a common international ontology of information artefact types. For the clinical domain, it could look as shown in <<information_ontology>>, where it is assumed that the {bfo}[Basic Formal Ontology (BFO) 2nd Edition^] and the {iao}[Information Artefact Ontology (IAO)^] upper level ontologies would provide the foundation of clinically specific models.
+
+[.text-center]
+.Example archetype artefact ontology
+image::{diagrams_uri}/information_ontology.png[id=information_ontology, align="center", width=90%]
+
+The situation with ‘medication_order’ is shown under the document/COMPOSITION node: both the NHS and Norwegian variants of ‘medication_order’ as well as a universally accepted form are shown.
+
+Namespacing of archetypes has an important practical consequence: differently namespaced archetypes can co-exist within the same Library workspace (see below for definition). This situation can come about due to archetypes being transferred or forked from an original custodian to another.
+
+An Archetype HRID may legally have no namespace. This means it is uncontrolled and not managed by any organisation.
+
+The last part of the archetype identifier is the version. Logical archetype identifiers include the major version i.e. first number of a 3-part version (e.g. 1.5.0), on the basis that a change in major version number is generally understood in IT to be a breaking change to the artefact. Accordingly, different major versions are considered different artefacts from a computational point of view. The full version can also be used to construct an identifier useful for physical resources, e.g. files or version system references.
+
+Making progress on a universal ontology for a whole domain such as clinical informatics is likely to be complex and slow, due to the fact that two types of ‘custodian’ or ‘publisher’ are involved, namely Reference Model custodians - typically standards bodies - and Archetype custodians - typically domain-related organisations within major jurisdictions, e.g. MoH Information Authorities. If we also assume the involvement of an organisation such as the {obo}[Open Biological and Biomedical Ontologies (OBO)], a multi-year process is clearly implied.
+
+A practical view is to treat a given Reference Model (or, a small number of strongly related RMs) as fixed, and to try to develop an ontology of archetypes under that. This would require agreements across Archetype custodians, and a successful outcome would result in a single definitional space - everyone would agree for example that a ‘systemic arterial blood pressure measurement’ was called just that, and had a short name of (say) ‘bp_measurement’. It would not obviate the need for custodians however, since it is clear that for most domains, there remain real distinctions across geographies and sub-specialties. For example, an internationally agreed ‘pregnancy record’ entity might have real specialisations such as ‘European standard pregnancy record’, ‘Swedish pregnancy record’ and so on, where some European body, and the Swedish Ministry of Health were both custodians.
+
+Some of this kind of harmonisation is occurring within openEHR, due to cooperation of national-level archetype governance organisations with the openEHR Foundation, acting as the governance body for international archetypes, hosted at the {openehr_CKM}[openEHR Clinical Knowledge Manager]. Even this level of harmonisation is slow and cannot therefore be taken as given for the purpose of the Archetype formalism.
+
+Accordingly, the formalism and tooling is designed on the basis of the simplest realistic assumption: that the hierarchy of Reference Model types along with optionally namespaced Archetypes form a self-standing information ontology, in the same manner as shown in <<information_ontology>>, i.e. an IS-A hierarchy formed of RM types followed by Archetypes. The practical value of this is twofold:
+
+* real data can be computationally classified under various points in the ontology - i.e. we can computationally determine if certain data are a ‘bp_measurement’, a ‘UK NHS bp_measurement’ or even just an `OBSERVATION` ;
+* we can use the subsumption operator on the IS-A hierarchy to define useful subsets of the overall space, e.g. `{any-descendant of ‘medical_device’}, {any-descendant-or-self of OBSERVATION}` and so on.
+
+The IS-A hierarchy is available in archetype tools such as the {openehr_awb}[openEHR ADL Workbench], as shown in <<archetypes_is_a_hierarchy>>.
+
+[.text-center]
+.Is-A hierarchy of the openEHR international archetypes
+image::{diagrams_uri}/archetypes_is_a_hierarchy.png[id=archetypes_is_a_hierarchy, align="center", width=70%]
+
+== Collections of Archetypes
+
+Within the virtual archetype space described above, we can identify different groups or collections of archetypes, which relate to how tools work, particularly with respect to how identifiers are resolved. For the foreseeable future, all of the following types of collections can be assumed to occur under specific custodian namespaces, i.e. managers and publishers of archetypes.
+
+An Archetype Library corresponds to a coherent collection of archetypes actually available within a single workspace or repository. All archetypes and templates in the Library would typically be based on the same Reference Model, but this need not be so, e.g. in the case of test archetypes. Apart from the latter case, an Archetype Library consists of archetypes that are normally designed to be used together in validating and creating information. These can include non-namespaced (unmanaged) and differently namespaced archetypes, where mixing occurs due to promotion and/or forking. In the latter case, it is up to the Library maintainers to ensure compatibility of all archetypes in the Library.
+
+One or more Archeype Libraries exist within an Archetype Repository, which is understood as a physical repository in which archetypes are managed, typically with version control, download capability etc. An Archetype Repository does not connote any semantics, rather it provides a unit of access, committal and versioning for tools to work with.
+
+Archetype Libraries, within Archetype Repositories are published by Custodian Organisations, corresponding to the namespace part of a fully-qualified archetype identifier.
+
+At the outermost level, the Universe of Archetypes for a Reference Model corresponds to all existing archetypes for that RM, and is therefore a virtual collection of all Archetype Libraries based on that RM. It will therefore encompass archetypes created by different Custodian Organisations, different RM classes, various semantic entities (what the archetype is-about, e.g. ‘blood pressure measurement’), and finally multiple versions and revisions of all of these.
+
+== Archetype Relationships
+
+Within an Archetype Library, two kinds of relationship can exist between archetypes: specialisation and composition.
+
+=== Archetype Specialisation
+
+An archetype can be specialised in a descendant archetype in a similar way to a sub-class in an object-oriented programming language. Specialised archetypes are, like classes, expressed in a differential form with respect to the flat parent archetype, i.e. the effective archetype resulting from a flattening operation down the specialisation hierarchy. This is a necessary pre-requisite to sustainable management of specialised archetypes. An archetype is a specialisation of another archetype if it mentions that archetype as its parent, and only makes changes to its definition such that its constraints are ‘narrower’ than those of the flat parent. Note that this can include a specialised archetype defining constraints on a part of the reference model not constrained at all by parent archetypes - since this is still ‘narrowing’ or constraining. The chain of archetypes from a specialised archetype back through all its parents to the ultimate parent is known as an archetype lineage. For a non-specialised (i.e. top-level) archetype, the lineage is just itself.
+
+In order for specialised archetypes to be used, the differential form used for authoring has to be flattened through the archetype lineage to create flat-form archetypes, i.e. the standalone equivalent of a given archetype, as if it had been constructed on its own. A flattened archetype is expressed in the same serial and object form as a differential form archetype, although there are some slight differences in the semantics, other than the use of differential paths.
+
+Any data created via the use of an archetype conforms to the flat form of the archetype, and to the flat form of every archetype up the lineage.
+
+=== Archetype Composition
+
+In the interests of re-use, archetypes can be composed to form larger structures semantically equivalent to a single large archetype. Composition allows two things to occur: for archetypes to be defined according to natural ‘levels’ or encapsulations of information, and for the re-use of smaller archetypes by higher-level archetypes. There are two mechanisms for expressing composition: direct reference, and archetype slots which are defined in terms of constraints. The latter enables any subset of Archetypes, e.g. defined via subsumption relations, to be stated as the allowed set for use at a certain point in a compositional parent archetype.
+
+These semantics are described in detail in their syntax form in the ADL specification, and in structural form in the AOM specification.
+
+== Archetype Internals
+
+An archetype is represented computationally as instances of the Archetype Object Model. For persistence purposes it needs to be serialised. The Archetype Definition Language (ADL) is used as a normative authoring and persistence language, in the same way as a programming language syntax is used to represent programming constructs (which are, it should be remembered not syntax, but the structured outputs of language compilers). In particular, it is designed to be terse and intuitively human readable. Any number of other serialisations are available, usually for technical reasons. These include ‘object dump’ ODIN, XML and JSON serialisations, and may include other representations in the future, such as OWL and OMG XMI, according to the technical needs of emerging development technologies. For the purposes of describing and documenting the Archetype formalism, ADL is generally used.
+
+XML-schema based XML is used for many common computing purposes relating to archetypes, and may become the dominant syntax in terms of numbers of users. Nevertheless, XML is not used as the normative syntax for archetypes for a number of reasons.
+
+* There is no single XML schema that is likely to endure. Initially published schemas are replaced by more efficient ones, and may also be replaced by alternative XML syntaxes, e.g. the XML-schema based versions may be replaced or augmented by Schematron.
+* XML has little value as an explanatory syntax for use in standards, as its own underlying syntax obscures the semantics of archetypes or any other specific purpose for which it is used. Changes in acceptable XML expressions of archetypes described above may also render examples in documents such as this obsolete.
+* XML usage is starting to be replaced by JSON in many programming environments.
+
+An XML schema for archetypes is available on the openEHR website.
+
+=== Archetype Definition Language (ADL)
+
+ADL uses three sub-syntaxes: cADL (constraint form of ADL), {openehr_odin}[ODIN (Object Data Instance Notation)], and a version of first-order predicate logic (FOPL). The cADL and FOPL parts express constraints on data which are instances of an underlying information model, which may be expressed in UML, relational form, or in a programming language. ADL itself is a very simple ‘glue’ syntax, which connects blocks of the subordinate syntaxes to form an overall artefact. The cADL syntax is used to express the archetype `definition` , while the ODIN syntax is used to express data which appears in the `language` , `description` , `terminology` , and `revision_history` sections of an ADL archetype. The top-level structure of an ADL archetype is shown in the figure below.
+
+[.text-center]
+.ADL Archetype Structure
+image::{diagrams_uri}/archetype_structure.png[id=archetype_structure, align="center", width=50%]
+
+== Templates
+
+In practical systems, archetypes are assembled into larger usable structures by the use of templates. A template is expressed in the same source form as a specialised archetype, typically making use of the slot-filling mechanism. It is processed against an archetype library to produce an operational template. The latter is like a large flat-form archetype, and is the form used for runtime validation, and also for the generation of all downstream artefacts derived from templates. Semantically, templates perform three functions: aggregating multiple archetypes, removing elements not needed for the use case of the template, and narrowing some existing constraints, in the same way as specialised archetypes. The effect is to re-use needed elements from the archetype library, arranged in a way that corresponds directly to the use case at hand.
+
+This job of a template is as follows:
+
+* *composition*: compose archetypes into larger structures by indicating which archetypes should fill the slots of higher-level archetypes;
+* *element choice*: choose which parts of the chosen archetypes should remain in the final structure, by doing one or more of the following:
+** *removal*: remove archetype nodes (‘data points’) not needed for the purpose of the template;
+** *mandation*: mark archetype nodes (‘data points’) mandatory for the runtime use of the template;
+** nodes may also be left optional, meaning that the corresponding data item is considered optional at runtime;
+* *narrow constraints*: narrow remaining constraints on archetype elements or on the reference model (i.e. on parts of the RM not yet constrained by the archetypes referenced in the template);
+* *set defaults*: set default values if required.
+
+A template may compose any number of archetypes, but choose very few data points from each, thus having the effect of creating a small data set from a very large number of data points defined in the original archetypes.
+
+The archetype semantics used in templates are described in detail in the ADL specification; a detailed description of their use is given in the {openehr_am_adl2}#_templates[ADL2 specification, Templates section].
+
+The {openehr_am_aom2}#_templates[AOM specification] describes in structural form all the semantics of templates. Note that the AOM does not distinguish between archetypes, specialised archetypes or templates other than by use of an artefact type classifier. All other differences in how archetypes and templates work are implemented in tools that may prevent or allow certain operations depending on whether the artefact being worked on is an archetype or template.
+

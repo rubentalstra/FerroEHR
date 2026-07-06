@@ -1,0 +1,107 @@
+= Encapsulated Package
+
+== Overview
+The `data_types.encapsulated` package contains classes representing data values whose internal
+structure is defined outside the EHR model, such as multimedia and parsable data. It is illustrated below.
+
+[.text-center]
+.rm.data_types.encapsulated package
+image::{uml_diagrams_uri}/RM-data_types.encapsulated.svg[id=rm_data_types_encapsulated, align="center"]
+
+=== Requirements
+There is a need to be able to include content in the EHR whose interior structure is not modelled in
+the EHR reference model, but instead documented by sufficient meta-data attributes for specific tools
+to process the data. Types of content in this category are as follows.
+
+* Images, including images which are themselves a compressed version of one image from a
+high-resolution image set stored elsewhere. Such images may be in any of the well-known
+compressed or uncompressed formats, and may have their own thumbnail image attached, to
+facilitate web-viewing.
+* Bio-signal data series, such as a set of values representing a diagnostic part of an ECG trace.
+This might be represented as DICOM content.
+* Content which is textual (or nearly so) which is essentially a parsable language file of some
+kind. This includes all XML instance, HTML, and any other EHR content which happens to
+be represented in syntax form - such as the unit strings used in quantities. The name of the
+formalism should be stored as meta-data.
+* Binary content which is processed by a work processor or other dedicated tool.
+* Digital signatures.
+
+Sufficient meta-data must be included with all of these types to enable a way for the content to be
+processed, typically by indicating either its type (e.g. "jpeg", "word document") or the name of a tool
+which can be used to process it. Important meta-data include:
+
+* size of the content;
+* natural language, if any.
+
+Any encapsulated data item may be a summary, "thumbnail" or otherwise reduced form of an original
+content item found outside the EHR, in some other system or file-system.
+Checksums must be expressible for those items for which a checksum is available, or for which the
+system generates checksums to improve the quality of its internal data transmissions.
+
+=== Design
+The design approach used here is based on the following analysis.
+
+. Any encapsulated data item may be in some particular language, even if it is an image or other graphic form such as a biosignal with axis markings in a particular language;
+. The general structure of encapsulated content data items includes a block of bytes or characters representing the content, and various meta-data as appropriate, including:
+** size
+** character encoding
+** compression type/algorithm
+** name of formalism for parsable content
+. For encapsulated items that have a counterpart in another system, the standard means of portable address is the W3C URI;
+. For items may that have an associated integrity checksum, the checksum is itself a series of bytes, and the type of checksum must also be specified, e.g. "md5".
+
+These observations lead naturally to an abstract `DV_ENCAPSULATED` class, with two subtypes,
+`DV_PARSABLE`, for all content which is syntactic in nature, and `DV_MULTIMEDIA` for everything else.
+Note that it is possible to imagine parsable content items which are large, stored in compressed form,
+and are themselves a summary of another item elsewhere on the web; such items can for practical
+purposes be represented as instances of `DV_MULTIMEDIA`, rather than `DV_PARSABLE`. The vast
+majority of parsable encapsulated data are expected to be short and stored in native textual form, e.g.
+fragments of XML or HTML.
+
+The formal model of the classes `DV_ENCAPSULATED` and `DV_MULTIMEDIA` are closely based on the
+ED type from the HL7v3 data types specification.
+
+=== Examples
+
+The following examples show how to use the classes to represent some common encapsulated data types.
+
+[cols="2,1,3", options="header"]
+|===
+|Data format            |Class              |Attributes
+
+|inline JSON            |`DV_PARSABLE`      |`_value_` = JSON string +
+                                             `_formalism_ = "json"`
+
+|inline JSON, minified +
+ (white space removed)  |`DV_PARSABLE`      |`_value_` = minified JSON string +
+                                             `_formalism_ = "json"`
+ 
+|JSON document          |`DV_MULTIMEDIA`    |`_uri_` = URI at which document is located +
+                                             `_media_type_ = "IANA::application/json"` +
+                                             `_size_` = Integer indicating number of bytes of target.
+
+|inline JPG             |`DV_MULTIMEDIA`    |`_data_` = byte array carrying JPG +
+                                             `_media_type_ = "IANA::image/jpeg"` +
+                                             `_size_` = Integer indicating number of bytes of `_data_`.
+
+|inline JPG, Base64 +
+ encoded                |`DV_MULTIMEDIA`    |`_data_` = byte array carrying Base64 string of JPG +
+                                             `_media_type_ = "IANA::image/jpeg;base64"` +
+                                             `_size_` = Integer indicating number of bytes of `_data_`.
+
+|inline JPG with +
+ SHA-2 hash             |`DV_MULTIMEDIA`    |`_data_` = byte array carrying JPG +
+                                             `_media_type_ = "IANA::image/jpeg"` +
+                                             `_integrity_check_` = byte array containing SHA-2 hash +
+                                             `_integrity_check_algorithm_ = "openehr::SHA-2"` +
+                                             `_size_` = Integer indicating number of bytes of `_data_`.                                             
+
+|===
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}dv_encapsulated.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_multimedia.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_parsable.adoc[]

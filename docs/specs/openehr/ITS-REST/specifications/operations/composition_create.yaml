@@ -1,0 +1,26 @@
+operationId: composition_create
+summary: Create COMPOSITION
+description: |
+  Creates the first version of a new COMPOSITION in the EHR identified by `ehr_id`.
+tags:
+  - COMPOSITION
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/header/Prefer.yaml
+requestBody:
+  description: |
+    The COMPOSITION.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/ehr/Composition.yaml
+  required: true
+responses:
+  '201':
+    $ref: ../responses/201_COMPOSITION.yaml
+  '400':
+    $ref: ../responses/400_COMPOSITION.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id.yaml
+  '422':
+    $ref: ../responses/422_COMPOSITION.yaml

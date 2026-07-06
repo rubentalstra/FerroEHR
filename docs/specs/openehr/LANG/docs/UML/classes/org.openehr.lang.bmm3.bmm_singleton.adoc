@@ -1,0 +1,21 @@
+=== BMM_SINGLETON Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_SINGLETON*
+
+h|*Description*
+2+a|Meta-type for static value properties computed once by a function invocation.
+
+h|*Inherit*
+2+|`<<_bmm_static_class,BMM_STATIC>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*generator*: `<<_bmm_routine_definition_class,BMM_ROUTINE_DEFINITION>>`
+a|Generator of the value of this static property.
+|===

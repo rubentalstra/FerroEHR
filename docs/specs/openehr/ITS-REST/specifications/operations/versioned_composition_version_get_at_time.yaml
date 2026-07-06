@@ -1,0 +1,17 @@
+operationId: versioned_composition_version_get_at_time
+summary: Get versioned COMPOSITION version at time
+description: |
+  Retrieves a VERSION from the VERSIONED_COMPOSITION identified by `versioned_object_uid` and associated with the EHR identified by `ehr_id`.
+
+  If `version_at_time` is supplied, retrieves the VERSION extant _at specified time_, otherwise retrieves the _latest_ VERSION.
+tags:
+  - COMPOSITION
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/path/versioned_object_uid_COMPOSITION.yaml
+  - $ref: ../parameters/query/version_at_time.yaml
+responses:
+  '200':
+    $ref: ../responses/200_VERSION_of_COMPOSITION_at_time.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id_or_versioned_object_uid_or_no_version_at_time.yaml

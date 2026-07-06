@@ -1,0 +1,111 @@
+=== Iso8601_date Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Iso8601_date*
+
+h|*Description*
+2+a|Represents an ISO 8601 date, including partial and extended forms. Value may be:
+
+* `YYYY-MM-DD` (extended, preferred)
+* `YYYYMMDD` (compact)
+* a partial invariant.
+
+See `Time_definitions._valid_iso8601_date()_` for validity.
+
+h|*Inherit*
+2+|`<<_iso8601_type_class,Iso8601_type>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*year* (): `<<_integer_class,Integer>>`
+a|Extract the year part of the date as an Integer.
+
+h|*1..1*
+|*month* (): `<<_integer_class,Integer>>` +
+ +
+__Pre__: `not month_unknown`
+a|Extract the month part of the date as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*day* (): `<<_integer_class,Integer>>` +
+ +
+__Pre__: `not day_unknown`
+a|Extract the day part of the date as an Integer, or return 0 if not present.
+
+h|*1..1*
+|*timezone* (): `<<_iso8601_timezone_class,Iso8601_timezone>>`
+a|Timezone; may be Void.
+
+h|*1..1*
+|*month_unknown* (): `<<_boolean_class,Boolean>>`
+a|Indicates whether month in year is unknown. If so, the date is of the form `"YYYY"`.
+
+h|*1..1*
+|*day_unknown* (): `<<_boolean_class,Boolean>>`
+a|Indicates whether day in month is unknown. If so, and month is known, the date is of the form `"YYYY-MM"` or `"YYYYMM"`.
+
+h|*1..1 +
+(effected)*
+|*is_partial* (): `<<_boolean_class,Boolean>>`
+a|True if this date is partial, i.e. if days or more is missing.
+
+h|*1..1 +
+(effected)*
+|*is_extended* (): `<<_boolean_class,Boolean>>`
+a|True if this date uses `'-'` separators.
+
+h|*1..1*
+|*as_string* (): `<<_string_class,String>>`
+a|Return string value in extended format.
+
+h|*1..1*
+|*add* __alias__ "+" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_date_class,Iso8601_date>>`
+a|Arithmetic addition of a duration to a date.
+
+h|*1..1*
+|*subtract* __alias__ "-" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_date_class,Iso8601_date>>`
+a|Arithmetic subtraction of a duration from a date.
+
+h|*1..1*
+|*diff* __alias__ "-" ( +
+a_date: `<<_iso8601_date_class,Iso8601_date>>[1]` +
+): `<<_iso8601_duration_class,Iso8601_duration>>`
+a|Difference of two dates.
+
+h|*1..1*
+|*add_nominal* __alias__ "++" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_date_class,Iso8601_date>>`
+a|Addition of nominal duration represented by `_a_diff_`. For example, a duration of `'P1Y'` means advance to the same date next year, with the exception of the date 29 February in a leap year, to which the addition of a nominal year will result in 28 February of the following year. Similarly, `'P1M'` is understood here as a nominal month, the addition of which will result in one of:
+
+* the same day in the following month, if it exists, or;
+* one or two days less where the following month is shorter, or;
+* in the case of adding a month to the date 31 Jan, the result will be 28 Feb in a non-leap year (i.e. three less) and 29 Feb in a leap year (i.e. two less).
+
+h|*1..1*
+|*subtract_nominal* __alias__ "--" ( +
+a_diff: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
+): `<<_iso8601_date_class,Iso8601_date>>`
+a|Subtraction of nominal duration represented by `_a_diff_`. See `_add_nominal_()` for semantics.
+
+h|*Invariants*
+2+a|__Year_valid__: `valid_year (year)`
+
+h|
+2+a|__Month_valid__: `not month_unknown implies valid_month (month)`
+
+h|
+2+a|__Day_valid__: `not day_unknown implies valid_day (year, month, day)`
+
+h|
+2+a|__Partial_validity__: `month_unknown implies day_unknown`
+|===

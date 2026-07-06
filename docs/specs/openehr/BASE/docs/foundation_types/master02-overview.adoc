@@ -1,0 +1,57 @@
+= Overview
+
+The openEHR Foundation Types (`org.openehr.base.foundation_types` package) consists of generic low level types assumed by and used throughout the openEHR components and specifications. The types described here are specified in order to establish the names and minimal semantics of typical standard classes, as used by all other openEHR specifications, and to provide a mapping point into implementation technologies. 
+
+The set of types chosen here is based on a common set derived from various published sources, including:
+
+* {iso_8601}[ISO 8601 (2019) date/time standard^];
+* Major interoperability formalisms, including {omg_idl}[OMG IDL], {w3c_xml_schema}[W3C XML-schema^];
+* Major typed programming languages, including Java, C#, C++, etc.
+
+The package structure is illustrated below.
+
+[.text-center]
+.`base.foundation_types` Package
+image::{uml_diagrams_uri}/BASE-foundation_types-packages.svg[id=foundation_types_packages, align="center"]
+
+The `primitive_types`, `structures` and `time` packages describe types assumed by the openEHR specifications to exist in any implementation technology, such as a programming language, schema language or database environment.
+
+The `functional` package includes types enabling functional programming primitives to be expressed in the openEHR modelling environment, i.e. functions-as-objects and 'lambda' expressions.
+
+The types are described in this specification are typically of two kinds: _built-in types_, which are those built in to a type system of the development language, and _library types_, which are assumed to be available in a (class) library defined in the formalism. Thus, the type `Boolean` is always assumed to exist in a formalism, while the type `Array<T>` is assumed to be available in a library. For practical purposes, these two categories do not matter greatly - whether `String` is really a library class (the usual case) or an inbuilt type doesn't make much difference to the programmer. They are shown separately here mainly as an explanatory convenience. The built-in types are indicated in the UML with the `«Value_type»` stereotype.
+
+The assumptions that openEHR makes about existing types are documented below in terms of interface definitions. Each of these definitions contains _only the assumptions required for the given type to be used in the openEHR type system_ - *it is not by any means a complete interface definition*. The name and semantics of any function used here for an assumed type *might not be identical* to those found in some implementation technologies. Any mapping required should be stated in the relevant implementation technology specification (ITS). To give a concrete example, where the assumed `Set<T>` type defined below has an operation `has (item: T): Boolean` which is used throughout the openEHR specifications, Java has the method `contains()` on its `Set<T>` class. In a Java implementation, the `contains()` method should then be used throughout the openEHR classes as expressed in Java, in place of the `has ()` method.
+
+== Operators
+
+Some operations have symbolic or textual operator equivalents defined, in order to support parsing of textual form of expressions. Two categories of operator are supported via two stereotypes that add a list of Strings to an operation, enabling standard operators, and optionally, symbolic operators to be associated with a function. These are as follows.
+
+* `«ops»`: default operator(s) for an operation, assumed to be expressible in normal text, for example `'='` for `_equal_()`;
+* `«sym_ops»`: additional symbolic operators typically defined for mathematical and logical operations, e.g. `'∀'` for `Container._for_all_()`.
+
+The main utility of such operators is to enable function signature-matching from parsed expressions. For example, the expression `a_date_time - P1Y` (subtract a time period of 1 year from a date/time) has the signature `<[Iso8601_duration], ?>`, equivalent to a function of the form `func (dur: Iso8601_duration): ?` defined on the type `Iso8601_date_time` (i.e. the return type is unknown until the function definition can be inferred). The correct function can be found on the latter type by searching for a function with the operator `'-'` and taking a single `Iso8601_duration` argument. In this specification, this turns out to be the `Iso8601_duration._subtract_()` operation.
+
+The operators provided by these means are not intended to prevent other kinds of operators being associated with functions defined on types in the openEHR specifications, rather they provide a minimal set for common operations.
+
+== The Any Class
+
+Within all object-oriented and most other modern programming and modelling environments exists an ultimate ancestor type to which all others conform. In this specification, we assume the type `Any`, which defines a bare minimum of operations, and stands for the real `Any` or `Object` type found in real technologies.
+
+The primary operations specified are those for equality, i.e.:
+
+* `_equal_(other: Any): Boolean`: return `True` if this and `_other_` are equal in value for value types, and for reference types, if they refer to the same object;
+* `_is_equal_(other: Any): Boolean`: return `True` if this and `_other_` are equal in value; typically redefined in descendants.
+
+In these specifications, the `_equal_()` operation is normally rendered using its operator, i.e. the `'='` sign, while `_is_equal_()` is always specified as a function call.
+
+== openEHR Leaf Types
+
+The sections below provide formal definitions of all the foundation types used in openEHR. A subset of these can be understood as terminal or leaf types, typically used as terminal value types in other information models. The following diagram provides an _aide memoire_ for the leaf types.
+
+[.text-center]
+.Leaf Types
+image::{uml_diagrams_uri}/BASE-foundation_types-leaf_types.svg[id=foundation_types_leaf_types, align="center"]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}any.adoc[]

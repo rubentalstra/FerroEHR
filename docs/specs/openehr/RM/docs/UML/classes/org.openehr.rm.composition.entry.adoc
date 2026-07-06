@@ -1,0 +1,80 @@
+=== ENTRY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__ENTRY (abstract)__*
+
+h|*Description*
+2+a|The abstract parent of all `ENTRY` subtypes. An `ENTRY` is the root of a logical item of  hard  clinical information created in the  clinical statement  context, within a clinical session. There can be numerous such contexts in a clinical session. Observations and other Entry types only ever document information captured/created in the event documented by the enclosing Composition.
+
+An `ENTRY` is also the minimal unit of information any query should return, since a whole `ENTRY` (including subparts) records spatial structure, timing information, and contextual information, as well as the subject and generator of the information.
+
+h|*Inherit*
+2+|`<<_content_item_class,CONTENT_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*language*: `link:/releases/RM/{rm_release}/data_types.html#_code_phrase_class[CODE_PHRASE^]`
+a|Mandatory indicator of the localised language in which this Entry is written. Coded from openEHR Code Set  languages .
+
+h|*1..1*
+|*encoding*: `link:/releases/RM/{rm_release}/data_types.html#_code_phrase_class[CODE_PHRASE^]`
+a|Name of character set in which text values in this Entry are encoded. Coded from openEHR Code Set  character sets.
+
+h|*0..1*
+|*other_participations*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/common.html#_participation_class[PARTICIPATION^]>`
+a|Other participations at `ENTRY` level.
+
+h|*0..1*
+|*workflow_id*: `link:/releases/BASE/{base_release}/base_types.html#_object_ref_class[OBJECT_REF^]`
+a|Identifier of externally held workflow engine data for this workflow execution, for this subject of care.
+
+h|*1..1*
+|*subject*: `link:/releases/RM/{rm_release}/common.html#_party_proxy_class[PARTY_PROXY^]`
+a|Id of human subject of this `ENTRY`, e.g.: 
+
+* organ donor 
+* foetus 
+* a family member 
+* another clinically relevant person.
+
+h|*0..1*
+|*provider*: `link:/releases/RM/{rm_release}/common.html#_party_proxy_class[PARTY_PROXY^]`
+a|Optional identification of provider of the information in this `ENTRY`, which might be: 
+
+* the patient 
+* a patient agent, e.g. parent, guardian 
+* the clinician 
+* a device or software 
+
+Generally only used when the recorder needs to make it explicit. Otherwise, Composition composer and other participants are assumed.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*subject_is_self* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post_condition__: `Result implies subject.generating_type = “PARTY_SELF”`
+a|Returns True if this Entry is about the subject of the EHR, in which case the subject attribute is of type PARTY_SELF.
+
+h|*Invariants*
+2+a|__Language_valid__: `code_set (Code_set_id_languages).has_code (language)`
+
+h|
+2+a|__Encoding_valid__: `code_set (Code_set_id_character_sets).has_code (encoding)`
+
+h|
+2+a|__Subject_validity__: `subject_is_self implies subject.generating_type = “PARTY_SELF”`
+
+h|
+2+a|__Other_participations_valid__: `other_participations /= Void implies not other_participations.is_empty`
+
+h|
+2+a|__Is_archetype_root__: `is_archetype_root`
+|===

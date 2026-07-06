@@ -1,0 +1,14 @@
+title: DV_BOOLEAN
+type: object
+allOf:
+  - $ref: ../data_types/DataValue.yaml
+required:
+  - value
+properties:
+  _type:
+    type: string
+    default: DV_BOOLEAN
+  value:
+    type: boolean
+x-discriminator-value: DV_BOOLEAN
+

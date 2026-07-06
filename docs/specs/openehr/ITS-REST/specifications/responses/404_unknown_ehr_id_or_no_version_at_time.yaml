@@ -1,0 +1,2 @@
+description: |
+  `404 Not Found` is returned when an EHR with `ehr_id` does not exist, or when a version of the resource identified by the request parameters (at specified `version_at_time`) does not exist.

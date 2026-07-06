@@ -1,0 +1,29 @@
+=== C_CODED_TEXT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_CODED_TEXT*
+
+h|*Description*
+2+a|Constrainer class for Coded text data.
+
+h|*Inherit*
+2+|`<<_c_domain_type_class,C_DOMAIN_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*terminology*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Terminology identifier.
+
+h|*0..1*
+|*code_list*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Optional list of codes from the terminology. No list means any code from the terminology is allowed.
+
+h|*0..1*
+|*reference*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|
+|===

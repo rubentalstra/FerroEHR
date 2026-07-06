@@ -1,0 +1,6 @@
+title: Fetch
+description: |
+  Number of rows to fetch (the default depends on the implementation).
+type: integer
+format: int32
+example: 10

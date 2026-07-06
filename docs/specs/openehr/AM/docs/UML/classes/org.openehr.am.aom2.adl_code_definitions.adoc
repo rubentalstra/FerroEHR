@@ -1,0 +1,119 @@
+=== ADL_CODE_DEFINITIONS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ADL_CODE_DEFINITIONS*
+
+h|*Description*
+2+a|Definitions relating to the internal code system of archetypes.
+
+NOTE: ADL2 was initially released with code system using id-codes (for nodes), at-codes (for values only) and ac-codes (for value sets). As this proved to hinder its widespread use in the openEHR community (due to its impact on existing openEHR RM data), a code system matching the one used in ADL1.4 was introduced as the openEHR primary code system.
+
+openEHR systems must support at least the at-coded ADL2 archetypes.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*At_code_leader*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"at"`
+a|String leader of ‘identifier’ codes, i.e. codes used to identify at-coded archetype nodes.
+
+h|*1..1*
+|*Id_code_leader*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"id"`
+a|String leader of ‘identifier’ codes, i.e. codes used to identify id-coded archetype nodes.
+
+h|*1..1*
+|*Value_code_leader*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"at"`
+a|String leader of ‘value’ codes, i.e. codes used to identify codes values, including value set members.
+
+h|*1..1*
+|*Value_set_code_leader*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"ac"`
+a|String leader of ‘value set’ codes, i.e. codes used to identify value sets.
+
+h|*1..1*
+|*Specialisation_separator*: `link:/releases/BASE/{base_release}/foundation_types.html#_character_class[Character^]{nbsp}={nbsp}'.'`
+a|Character used to separate numeric parts of codes belonging to different specialisation levels.
+
+h|*1..1*
+|*Code_regex_pattern*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"(0&#124;[1-9][0-9]&#42;)(\.(0&#124;[1-9][0-9]&#42;))&#42;"`
+a|Regex used to define the legal numeric part of any archetype code. Corresponds to the simple pattern of dotted numbers, as used in typical multi-level numbering schemes.
+
+h|*1..1*
+|*Root_code_regex_pattern*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"^(id1&#124;at0000)(\.1)&#42;$"`
+a|Regex pattern of the root code of any archetype. Corresponds to at-codes of the form `at0000`, `at0000.1`, `at0000.1.1` etc, and id-codes of the form `id1`, `id1.1`, `id1.1.1` etc. For at-coded ADL2 numbering starts with zero (i.e. `at0000`) while the id-coded ADL2 numbering starts with one (i.e. `id1`).
+
+h|*1..1*
+|*Primitive_node_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"at9999"`
+a|Code id used for `C_PRIMITIVE_OBJECT` nodes on creation.
+
+NOTE: For id-coded archetypes this is `"id9999"`.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*codes_conformant* ( +
+a_child_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_parent_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if `_a_child_code_` conforms to `_a_parent_code_` in the sense of specialisation, i.e. is `_a_child_code_` the same as or more specialised than `_a_parent_code_`?
+
+h|*1..1*
+|*is_adl_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = is_at_code (a_code) or else is_id_code (a_code) or else is_value_code (a_code) or else is_value_set_code (a_code)`
+a|True if `_a_code_` is any kind of ADL archetype local code.
+
+h|*1..1*
+|*is_at_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = a_code.starts_with (At_code_leader)`
+a|True if `_a_code_` is an ‘at’ code.
+
+h|*1..1*
+|*is_id_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = a_code.starts_with (Id_code_leader)`
+a|True if `_a_code_` is an 'id' code.
+
+h|*1..1*
+|*is_value_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = a_code.starts_with (Value_code_leader)`
+a|True if `_a_code_` is an 'at' code, i.e. a code representing a single terminology item.
+
+h|*1..1*
+|*is_value_set_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `Result = a_code.starts_with (Value_set_code_leader)`
+a|True if `_a_code_` is an 'ac' code, i.e. a code referring to a terminology value set.
+
+h|*1..1*
+|*is_redefined_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|A code has been specialised if there is a non-zero code index anywhere above the last index e.g. 
+
+* `at0.0.1` -> False
+* `at1.0.1` -> True
+
+h|*1..1*
+|*code_exists_at_level* ( +
+a-code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_level: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Is `_a_code_` valid at level `_a_level_` or less, i.e. if we remove its trailing specialised part corresponding to specialisation below `_a_level_`, and then any trailing '.0' pieces, do we end up with a valid code? If so it means that the code corresponds to a real node from `_a_level_` or higher.
+|===

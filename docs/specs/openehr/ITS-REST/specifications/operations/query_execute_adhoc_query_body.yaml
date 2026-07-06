@@ -1,0 +1,21 @@
+operationId: query_execute_adhoc_query_body
+summary: Execute ad-hoc AQL (POST)
+description: |
+  Execute a given ad-hoc AQL query, supplied by `q` attribute, fetching `fetch` numbers of rows from `offset` and passing `query_parameters` to the underlying query engine.
+
+  See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
+tags:
+  - Query
+requestBody:
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/query/AdhocQueryExecute.yaml
+  required: true
+responses:
+  '200':
+    $ref: ../responses/200_Query.yaml
+  '400':
+    $ref: ../responses/400_Query.yaml
+  '408':
+    $ref: ../responses/408_Query.yaml

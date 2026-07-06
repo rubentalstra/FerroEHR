@@ -1,0 +1,14 @@
+title: UID_BASED_ID
+type: object
+allOf:
+  - $ref: ../base_types/ObjectId.yaml
+properties:
+  _type:
+    type: string
+    default: UID_BASED_ID
+x-discriminator-value: UID_BASED_ID
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    HIER_OBJECT_ID: '#/components/schemas/HierObjectId'
+    OBJECT_VERSION_ID: '#/components/schemas/ObjectVersionId'

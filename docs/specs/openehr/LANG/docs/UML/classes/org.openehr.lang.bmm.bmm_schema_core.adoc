@@ -1,0 +1,70 @@
+=== BMM_SCHEMA_CORE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_SCHEMA_CORE*
+
+h|*Description*
+2+a|Core properties of BMM_SCHEMA.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*rm_publisher*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Publisher of model expressed in the schema. Persisted attribute.
+
+h|*1..1*
+|*rm_release*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Release of model expressed in the schema as a 3-part numeric, e.g. "3.1.0". Persisted attribute.
+
+h|*1..1*
+|*schema_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of model expressed in schema; a 'schema' usually contains all of the packages of one 'model' of a publisher. A publisher with more than one model can have multiple schemas. Persisted attribute.
+
+h|*1..1*
+|*schema_revision*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Revision of schema. Persisted attribute.
+
+h|*1..1*
+|*schema_lifecycle_state*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Persisted attribute.
+
+h|*1..1*
+|*schema_author*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Primary author of schema. Persisted attribute.
+
+h|*1..1*
+|*schema_description*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Description of schema. Persisted attribute.
+
+h|*0..1*
+|*schema_contributors*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Contributing authors of schema. Persisted attribute.
+
+h|*0..1*
+|*archetype_parent_class*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of a parent class used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation. If empty, 'Any' is assumed. Persisted attribute.
+
+h|*0..1*
+|*archetype_data_value_parent_class*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of a parent class of logical 'data types' used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation. If empty, 'Any' is assumed. Persisted attribute.
+
+h|*0..1*
+|*archetype_rm_closure_packages*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of top-level package paths that provide the RM 'model' part in archetype identifiers, e.g. the path "org.openehr.ehr" gives "EHR" in "openEHR-EHR". Within this namespace, archetypes can be based on any class reachable from classes defined directly in these packages. Persisted attribute.
+
+h|*0..1*
+|*archetype_visualise_descendants_of*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|If archetype_parent_class is not set, designate a class whose descendants should be made visible in tree and grid renderings of the archetype definition. Persisted attribute.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*schema_id* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Derived name of schema, based on model publisher, model name, model release.
+|===

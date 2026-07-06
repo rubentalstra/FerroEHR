@@ -1,0 +1,2 @@
+description: |
+  `406 Not Acceptable` is returned when the service cannot produce a response matching `Accept` request header, i.e. content type or format is not supported.

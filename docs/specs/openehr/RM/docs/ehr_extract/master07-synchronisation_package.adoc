@@ -1,0 +1,22 @@
+= Synchronisation Extract
+
+== Overview
+
+The UML diagram below illustrates an Extract variant designed for synchronising two openEHR systems. The
+specification only allows for a list of Contributions, or Contributions since a certain Contribution; it
+also allows the actual versions to be included or excluded. If they are excluded, you can get just Contributions
+on their own - i.e. find out what the other system has got.
+
+[.text-center]
+.rm.extract.synchronisation_extract Package
+image::{uml_diagrams_uri}/RM-ehr_extract.sync_extract.svg[id=rm_sync_extract, align="center"]
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}sync_extract_request.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}sync_extract.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}sync_extract_spec.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}x_contribution.adoc[]

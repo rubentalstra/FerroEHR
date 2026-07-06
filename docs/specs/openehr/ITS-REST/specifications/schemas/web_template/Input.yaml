@@ -1,0 +1,20 @@
+title: Input
+required:
+  - type
+type: object
+properties:
+  type:
+    type: string
+  suffix:
+    type: string
+  list:
+    type: array
+    items:
+      $ref: ./List.yaml
+    description: ''
+  defaultValue:
+    type: string
+  validation:
+    $ref: ./Validation1.yaml
+example:
+  type: TEXT

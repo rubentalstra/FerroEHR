@@ -1,0 +1,5 @@
+:spec_title: Expression Language (EL)
+:copyright_year: 2020
+:spec_status: DEVELOPMENT
+:keywords: openehr, expressions, rules
+:description: openEHR Expression Language specification

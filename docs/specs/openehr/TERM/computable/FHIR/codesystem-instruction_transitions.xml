@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-instruction_transitions"/>
+  <version value="3.1.0"/>
+  <name value="instruction_transitions"/>
+  <title value="Instruction Transitions"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="20"/>
+  <concept>
+    <code value="535"/>
+    <display value="initiate"/>
+    <designation>
+      <language value="es"/>
+      <value value="iniciar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="新しく始める"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="iniciar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="发起"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="536"/>
+    <display value="plan step"/>
+    <designation>
+      <language value="es"/>
+      <value value="paso del plan"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="ステップを計画する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="planear etapa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="计划步骤"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="537"/>
+    <display value="postpone"/>
+    <designation>
+      <language value="es"/>
+      <value value="postponer"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="延期する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="adiar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="推迟"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="538"/>
+    <display value="restore"/>
+    <designation>
+      <language value="es"/>
+      <value value="restaurar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="元に戻す"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="restaurar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="恢复"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="166"/>
+    <display value="cancel"/>
+    <designation>
+      <language value="es"/>
+      <value value="cancelar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="キャンセルする"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cancelar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="取消"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="542"/>
+    <display value="postponed step"/>
+    <designation>
+      <language value="es"/>
+      <value value="paso postpuesto"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="延期されたステップ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="etapa adiada"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="推迟的步骤"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="539"/>
+    <display value="schedule"/>
+    <designation>
+      <language value="es"/>
+      <value value="coordinar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="計画する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="agendar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="排程"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="534"/>
+    <display value="scheduled step"/>
+    <designation>
+      <language value="es"/>
+      <value value="paso coordinado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="計画されたステップ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="etapa agendada"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="排程步骤"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="540"/>
+    <display value="start"/>
+    <designation>
+      <language value="es"/>
+      <value value="comienzar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="開始する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="iniciar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="开始"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="541"/>
+    <display value="do"/>
+    <designation>
+      <language value="es"/>
+      <value value="realizar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="実施する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="executar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="执行"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="543"/>
+    <display value="active step"/>
+    <designation>
+      <language value="es"/>
+      <value value="paso activo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="実行中のステップ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="etapa activa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="现行步骤"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="544"/>
+    <display value="suspend"/>
+    <designation>
+      <language value="es"/>
+      <value value="suspender"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="中断する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="suspender"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="暂停"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="545"/>
+    <display value="suspended step"/>
+    <designation>
+      <language value="es"/>
+      <value value="paso suspendido"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="中断されたステップ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="etapa suspensa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="暂停步骤"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="546"/>
+    <display value="resume"/>
+    <designation>
+      <language value="es"/>
+      <value value="reanudar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="再開する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="retomar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="中断后继续"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="547"/>
+    <display value="abort"/>
+    <designation>
+      <language value="es"/>
+      <value value="abortar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="中断する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="abortar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="中止"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="548"/>
+    <display value="finish"/>
+    <designation>
+      <language value="es"/>
+      <value value="terminar"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="完了する"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="terminar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="完成"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="549"/>
+    <display value="time out"/>
+    <designation>
+      <language value="es"/>
+      <value value="se acabó el tiempo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="時間切れ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="tempo esgotado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="超时"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="550"/>
+    <display value="notify aborted"/>
+    <designation>
+      <language value="es"/>
+      <value value="notificar abortado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="中断を知らせる"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="notificação abortada"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="通知已中止"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="551"/>
+    <display value="notify completed"/>
+    <designation>
+      <language value="es"/>
+      <value value="notificar completado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="完了を知らせる"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="notificação concluída"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="通知已完成"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="552"/>
+    <display value="notify cancelled"/>
+    <designation>
+      <language value="es"/>
+      <value value="notificar cancelado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="キャンセルを知らせる"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="notificação cancelada"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="通知已取消"/>
+    </designation>
+  </concept>
+</CodeSystem>

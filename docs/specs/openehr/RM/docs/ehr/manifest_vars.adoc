@@ -1,0 +1,5 @@
+:spec_title: EHR Information Model
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: EHR, EMR, reference model, openehr
+:description: openEHR EHR Information Model specification

@@ -1,0 +1,30 @@
+=== EL_PREDICATE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EL_PREDICATE (abstract)__*
+
+h|*Description*
+2+a|Parent type of predicate of any object reference.
+
+h|*Inherit*
+2+|`<<_el_simple_class,EL_SIMPLE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*operand*: `<<_el_value_generator_class,EL_VALUE_GENERATOR>>`
+a|The target instance of this predicate.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*eval_type* (): `<<_bmm_simple_type_class,BMM_SIMPLE_TYPE>>`
+a|Return `\{BMM_MODEL}._boolean_type_definition_()`.
+|===

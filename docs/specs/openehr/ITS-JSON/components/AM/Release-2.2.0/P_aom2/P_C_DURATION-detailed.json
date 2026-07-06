@@ -1,0 +1,6 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/P_aom2/P_C_DURATION-detailed.json",
+    "title": "P_C_DURATION",
+    "$comments": "Defined in P_aom2 IM"
+}

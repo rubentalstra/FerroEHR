@@ -1,0 +1,41 @@
+=== BMM_GENERIC_CLASS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_GENERIC_CLASS*
+
+h|*Description*
+2+a|Definition of a generic class in an object model.
+
+h|*Inherit*
+2+|`<<_bmm_class_class,BMM_CLASS>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*generic_parameters*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_parameter_type_class,BMM_PARAMETER_TYPE>>>`
+a|List of formal generic parameters, keyed by name. These are defined either directly on this class or by the inclusion of an ancestor class which is generic.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*suppliers* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Add suppliers from generic parameters.
+
+h|*1..1 +
+(effected)*
+|*type* (): `<<_bmm_generic_type_class,BMM_GENERIC_TYPE>>`
+a|Generate a fully open `BMM_GENERIC_TYPE` instance that corresponds to this class definition
+
+h|*1..1*
+|*generic_parameter_conformance_type* ( +
+a_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|For a generic class, type to which generic parameter `a_name` conforms e.g. if this class is `Interval <T:Comparable>` then the Result will be the single type `Comparable`. For an unconstrained type `T`, the Result will be `Any`.
+|===

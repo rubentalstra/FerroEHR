@@ -1,0 +1,32 @@
+=== Math Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*Math*
+
+h|*Description*
+2+a|Mathematical computation.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*ln* ( +
+v: `link:/releases/BASE/{base_release}/foundation_types.html#_numeric_class[Numeric^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_double_class[Double^]`
+a|Compute natural log of v.
+
+h|*1..1*
+|*log* ( +
+v: `link:/releases/BASE/{base_release}/foundation_types.html#_numeric_class[Numeric^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_double_class[Double^]`
+a|Compute base 10 log of v.
+
+h|*1..1*
+|*sin* ( +
+(v: `link:/releases/BASE/{base_release}/foundation_types.html#_numeric_class[Numeric^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_double_class[Double^]`
+a|Compute sin(v).
+|===

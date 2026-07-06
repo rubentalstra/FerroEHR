@@ -1,0 +1,61 @@
+=== RESOURCE_DESCRIPTION_ITEM Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*RESOURCE_DESCRIPTION_ITEM*
+
+h|*Description*
+2+a|Language-specific detail of resource description. When a resource is translated for use in another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to be copied and translated into the new language.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*language*: `link:/releases/RM/{rm_release}/data_types.html#_code_phrase_class[CODE_PHRASE^]`
+a|The localised language in which the items in this description item are written. Coded from openEHR code set `languages`.
+
+h|*1..1*
+|*purpose*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Purpose of the resource.
+
+h|*0..1*
+|*keywords*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Keywords which characterise this resource, used e.g. for indexing and searching.
+
+h|*0..1*
+|*use*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Description of the uses of the resource, i.e. contexts in which it could be used.
+
+h|*0..1*
+|*misuse*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Description of any misuses of the resource, i.e. contexts in which it should not be used.
+
+h|*0..1*
+|*copyright*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional copyright statement for the resource as a knowledge resource.
+
+h|*0..1*
+|*original_resource_uri*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|URIs of original clinical document(s) or description of which resource is a formalisation, in the language of this description item; keyed by meaning.
+
+h|*0..1*
+|*other_details*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Additional language-sensitive resource metadata, as a list of name/value pairs.
+
+h|*Invariants*
+2+a|__Language_valid__: `code_set (Code_set_id_languages).has_code (language)`
+
+h|
+2+a|__Purpose_valid__: `not purpose.is_empty`
+
+h|
+2+a|__Use_valid__: `use /= Void implies not use.is_empty`
+
+h|
+2+a|__misuse_valid__: `misuse /= Void implies not misuse.is_empty`
+
+h|
+2+a|__copyright_valid__: `copyright /= Void implies not copyright.is_empty`
+|===

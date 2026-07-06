@@ -1,0 +1,810 @@
+= Test Suite: EHR_SERVICE / I_CONTRIBUTION Interface
+
+== Normative Reference
+
+Items under this validation suite conceptually use these abstract interfaces from the {i_ehr_contribution_link}[Abstract Platform Service Model, EHR/EHR_CONTRIBUTION component^].
+
+== Dependencies
+
+This test suite depends on other test suites:
+
+* <<_func_conf_def_adl_component, Functional Conformance: Definitions Component>>, providing OPTs;
+* <<_func_conf_ehr_component, Functional Conformance: EHR Component>>, providing EHRs.
+
+== Test Environment
+
+. The server under test should support at least OPTs, 1.4 or 2, but OPT 1.4 if more frequent since modeling tools supporting this were around for a long time. Could also support ADL, 1.4 or 2.
+. The server should support at least one of the XML or JSON representations of `CONTRIBUTIONs` for committing data, and integrate the corresponding schemas (XML or JSON) to validate data syntactically (before validating against an OPT).
+
+== Test Data Sets
+
+=== General CONTRIBUTION Commit Data Sets
+
+. `CONTRIBUTIONs` with single valid `VERSION<COMPOSITION>` (minimal, one for each entry type)
+. `CONTRIBUTIONs` with multiple valid `VERSION<COMPOSITION>` (reuse the minimal ^)
+. `CONTRIBUTION` with single valid `VERSION<COMPOSITION>` with maximal data sets
+. Empty `CONTRIBUTION` (no `VERSIONs`)
+. `CONTRIBUTIONs` with invalid `VERSION<COMPOSITION>`
+.. Invalid data
+.. Wrong `change_type`
+.. Wrong `lifecycle`
+. `CONTRIBUTIONs` with multiple `VERSION<COMPOSITION>`, with mixed valid and invalid ones
+
+NOTE: these cases do not consider which RM type is contained in the `VERSIONs`, it could be `COMPOSITION`, `FOLDER`, `EHR_STATUS`, etc.
+
+=== COMPOSITION CONTRIBUTION Commit Data Sets
+
+Since there are many combinations of data that could be used for testing the Commit `CONTRIBUTION` service, we decided to create three main kinds of `CONTRIBUTIONs` that should be tested:
+
+. Valid
+.. minimal `COMPOSITIONs` with one type of ENTRY (one `ENTRY` each, all `ENTRYs` covered) 
+.. maximal `COMPOSITION` (all data types, all `ENTRY` types, and `SECTIONs`)
+.. a persistent `COMPOSITION` (e.g. problem list, medication list, immunization list, …)
+.. time series `COMPOSITION` (observation with many events, e.g. CPR compressions intervals)
+.. `COMPOSITION` with alternative types (e.g. lab result `DV_COUNT`, `DV_QUANTITY` and `DV_CODED_TEXT`)
+.. `COMPOSITION` with `DV_CODED_TEXT` instance on nodes declared as `DV_TEXT` in the OPT
+.. `COMPOSITION` with empty `ELEMENT.value` and not empty `ELEMENT.null_flavour`
+. Invalid
+.. Invalid `COMPOSITIONs` (e.g. mandatory items not present, wrong types, extra items not declared in OPT, invalid values)
+.. Referenced OPT not loaded (this has to do more with the state of the system than to invalid data)
+. Change type combinations (these are the minimal required, all supported change types can be found in the {openehr_terminology_xml}#L26-L34[ openEHR Terminology^])
+.. `VERSION.commit_audit.change_type = creation`
+.. `VERSION.commit_audit.change_type = modification`
+.. `VERSION.commit_audit.change_type = delete`
+
+NOTE: there could be many combinations of flows to use the different Change Types mentioned above. The minimal required by this specification it that the server is capable of this flow: 1. creation 2. modification (one or many times) 3. deleted
+
+==== Data Set Considerations
+
+*change_type*
+
+Each `VERSION` in a `CONTRIBUTION` has an `AUDIT_DETAILS` which contains a `change_type` attribute. The value on that attribute determines the internal behavior for processing each `VERSION`, and each `VERSION` in the same `CONTRIBUTION` could have a different `change_type`. The most used change types are:
+
+. *creation*: the `VERSION` represents the first version of a `COMPOSITION`.
+. *amendment*: the `VERSION` represents a new version of an existing `COMPOSITION`, with the purpose of adding data.
+. *modification*: the `VERSION` represents a new version of an existing `COMPOSITION`, with the purpose of changing data, maybe to fix an error.
+. *deleted*:the `VERSION` represents a new version of an existing `COMPOSITION`, with the purpose of deleting it.
+
+Internally, amendment and modification might be processed in the exact same way, because the difference is semantic not functional.
+
+{openehr_terminology_xml}#L26[Here is a full list^].
+
+*lifecycle_state*
+
+Each `VERSION` in a `CONTRIBUTION` contains an `lifecycle_state` attribute, which value gives semantics about the contents of the `VERSION`. The values could be:
+
+. *incomplete*: the `COMPOSITION` was committed incomplete and should be completed (reviewed, validated, amended) later.
+. *complete*: the `COMPOSITION` was complete at the moment it was committed.
+. *deleted*: the `COMPOSITION` was committed for deletion.
+
+These codes are defined in the {openehr_terminology_xml}[openEHR Terminology^].
+
+[.image]#lifecycle state machine#
+
+==== Combinations of data sets
+
+These combinations can be tested by doing a single commit. The same combinations with flows of multiple commits could lead to different results.
+
+*One commit (no previous commits were done), single version cases:*
+
+NOTE: All change types but creation should fail on the first commit, since other change types need a previous commit. Last one could fail because the first commit can’t be `change_type = deleted` or because the `lifecycle_state = |complete|` can’t be with `change_type = deleted`.
+
+[[one_commit]]
+[width="100%",cols="^17%,^20%,^25%,^27%,^11%",options="header",]
+|===
+|change_type    |lifecycle_state*   |composition category   |composition validity** |expected
+|creation       |complete           |event                  |valid                  |accepted
+|amendment      |complete           |event                  |valid                  |rejected
+|modification   |complete           |event                  |valid                  |rejected
+|deleted        |complete           |event                  |valid                  |rejected
+|creation       |complete           |persistent             |valid                  |accepted
+|amendment      |complete           |persistent             |valid                  |rejected
+|modification   |complete           |persistent             |valid                  |rejected
+|deleted        |complete           |persistent             |valid                  |rejected
+|creation       |deleted            |event                  |valid                  |rejected
+|amendment      |deleted            |event                  |valid                  |rejected
+|modification   |deleted            |event                  |valid                  |rejected
+|deleted        |deleted            |event                  |valid                  |rejected
+|===
+
+NOTE: the incomplete cases should be equal to the complete, because the flag is just adding semantics about the content, not setting how the content should be processed.
+
+NOTE: the invalid cases will make the accepted cases on the previous table to be rejected because the content in the `COMPOSITION` is not
+valid.
+
+*One commit (no previous commits were done), multiple versions cases:*
+
+NOTE: the tables below represent one `VERSION` in the committed `CONTRIBUTION`.
+
+A. Creating two valid, complete event `COMPOSITIONs` in one commit should be accepted.
++
+[cols="^,^,^,^",options="header",]
+|===
+|change_type+   |lifecycle_state++  |composition category   |composition validity
+|creation       |complete           |event                  |valid
+|creation       |complete           |event                  |valid
+|===
++
+This `CONTRIBUTION` should be accepted.
+
+B. Creating two valid, complete persistent `COMPOSITIONs` in one commit should be accepted.
++
+NOTE: depending on the server implementation, some servers might not accept the second `COMPOSITION` if both `COMPOSITIONs` reference the same persistent OPT. So this test case considers both `COMPOSITIONs` reference different persistent OPTs.
++
+[cols="^,^,^,^",options="header",]
+|===
+|change_type+   |lifecycle_state++      |composition category   |composition validity
+|creation       |complete               |persistent             |valid
+|creation       |complete               |persistent             |valid
+|===
++
+This `CONTRIBUTION` should be accepted.
+
+C. Creating two valid, complete and mixed category `COMPOSITIONs` in one commit should be accepted.
++
+[cols="^,^,^,^",options="header",]
+|===
+|change_type+   |lifecycle_state++  |composition category   |composition validity
+|creation       |complete           |event                  |valid
+|creation       |complete           |persistent             |valid
+|===
++
+This `CONTRIBUTION` should be accepted.
+
+D. If any `COMPOSITION` is invalid in a `CONTRIBUTION`, the whole commit should fail. It doesn’t matter if it is complete or incomplete, event or persistent (just showing some of the combinations below).
++
+[cols="^,^,^,^",options="header",]
+|===
+|change_type+   |lifecycle_state++  |composition category   |composition validity
+|creation       |complete           |event                  |valid
+|creation       |complete           |event                  |invalid
+|===
++
+[cols="^,^,^,^",options="header",]
+|===
+|change_type+   |lifecycle_state++  |composition category   |composition validity
+|creation       |complete           |persistent             |valid
+|creation       |complete           |persistent             |invalid
+|===
++
+[cols="^,^,^,^",options="header",]
+|===
+|change_type+   |lifecycle_state++  |composition category   |composition validity
+|creation       |complete           |event                  |valid
+|creation       |complete           |persistent             |invalid
+|===
++
+[cols="^,^,^,^",options="header",]
+|===
+|change_type+   |lifecycle_state++  |composition category   |composition validity
+|creation       |complete           |event                  |invalid
+|creation       |complete           |persistent             |valid
+|===
++
+These `CONTRIBUTIONs` should be #REJECTED#.
+
+NOTE: (+) for other change types than creation, the first commit will be rejected, so not included in the table those cases but should be tested.
+
+NOTE: (++) the incomplete cases should be equal to the complete, because the flag is just adding semantics about the content, not setting how the content should be processed.
+
+=== EHR_STATUS CONTRIBUTION Commit Data Sets
+
+==== Combinations for data sets
+
+The following accepted and rejected apply under any of these scenarios:
+
+. The server has an EHR with the default `EHR_STATUS` (the EHR was created without providing an `EHR_STATUS`).
+. The server has an EHR created by providing an `EHR_STATUS`.
+. The server has an EHR with modifications already done to its `EHR_STATUS` (consecutive modifications).
+
+*Reject Cases:*
+
+. `CONTRIBUTIONs` with `VERSION`, where `VERSION.commit_audit.change_type` IN [`creation`, `deleted`] should be rejected, because the default `EHR_STATUS` was already created in the EHR, and the `EHR_STATUS` can’t be deleted once created.
+. `CONTRIBUTIONs` with `VERSION`, where `VERSION.lifecycle_state` = `incomplete` should be rejected, because the `incomplete` state doesn’t apply to `EHR_STATUS`. Though there is an open issue related to this: {openehr_jira_home}/browse/SPECPR-368
+. Any other case with an `invalid` `EHR_STATUS` in `VERSION` should also be rejected.
+
+*Accepted Cases:*
+
+. `CONTRIBUTIONs` with `VERSION` where `VERSION.commit_audit.change_type` IN [`modification`, `amendment`] and `valid` `EHR_STATUS`, should be accepted. This inscludes the following combinations for `EHR_STATUS`:
+
+[cols="^,^,^",options="header",]
+|===
+|is_modifiable  |is_queryable   |subject.external_ref
+|true           |true           |HIER_OBJECT_ID
+|true           |true           |GENERIC_ID
+|true           |true           |NULL
+|true           |false          |HIER_OBJECT_ID
+|true           |false          |GENERIC_ID
+|true           |false          |NULL
+|false          |true           |HIER_OBJECT_ID
+|false          |true           |GENERIC_ID
+|false          |true           |NULL
+|false          |true           |HIER_OBJECT_ID
+|false          |true           |GENERIC_ID
+|false          |true           |NULL
+|false          |false          |HIER_OBJECT_ID
+|false          |false          |GENERIC_ID
+|false          |false          |NULL
+|===
+
+NOTE: Since `EHR_STATUS` is `LOCATABLE`, is should have an `archetype_id` assigned. It is recommended to test the combination described above, combined with different values for `EHR_STATUS.archetype_id`.
+
+=== FOLDER CONTRIBUTION Commit Data Sets
+
+All the datasets are specified at the `EHR.directory` level, since that is the current level of operation of the openEHR REST API for `FOLDERs` to create, update or delete.
+
+==== Data Set Combinations
+
+`Valid` payload should include these cases:
+
+. minimal directory
+. directory with items
+. directry with subfolders
+. directory with items and subfolders
+. directory with items and subfolders with items
+
+Sample structure of `FOLDERs` with items:
+
+[.image]#Folders with items#
+
+Table of data combinations:
+
+[[folder_commit]]
+[cols="^,^,^,^",options="header",]
+|===
+|change_type                |lifecycle_state        |payload    |expected
+|creation                   |complete / incomplete  |valid      |accepted
+|amendment / modification   |complete / incomplete  |valid      |accepted
+|deleted                    |deleted                |valid      |accepted
+|===
+
+Any `invalid` payload should be rejected.
+
+== Test Cases
+
+=== Service Model operation: I_EHR_CONTRIBUTION.commit_contribution()
+
+Service Model reference: {i_ehr_contribution_link}[`I_EHR_CONTRIBUTION._commit_contribution()_`^]
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-valid_composition
+
+// EhrBase ref: EHR/CONTRIBUTION/C.1.
+
+[cols="1h,4a"]
+|===
+|Description      | Successfully commit `CONTRIBUTION` of `COMPOSITION`
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . OPTs for each valid cases are loaded on the server
+|Post-conditions  | . The EHR with `ehr_id` should have a new `CONTRIBUTION`
+                    . The ID(s) of the created `VERSION(s)` are correct
+                    .. the version ID matches the `change_type` executed (creation = 1, modification/amendment = 2, 3, …)
+                    .. ID(s) can be used to retrieve a `VERSION<COMPOSITION>`)
+|Flow             | . Invoke commit `CONTRIBUTION` service with the existing `ehr_id` and valid data sets
+                    .. The `COMPOSITIONs` reference existing OPTs on the server
+                    . The result should be positive and retrieve the id of the `CONTRIBUTION` just created
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-valid_composition.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-invalid_composition
+
+// EhrBase ref: EHR/CONTRIBUTION/C.2.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` with invalid `COMPOSITION`
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . OPTs for each valid cases are loaded on the server
+|Post-conditions  | None
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the invalid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITIONs` reference existing OPTs on the server
+                    . The result should be negative and provide info about the errors with the data committed
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-invalid_composition.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-empty
+
+// EhrBase ref: EHR/CONTRIBUTION/C.3.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` with no content.
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+|Post-conditions  | None
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and no data in the `CONTRIBUTION`
+                    . The result should be negative and retrieve an error indicating the empty list of `VERSION<COMPOSITION>` in the `CONTRIBUTION`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-empty.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions
+
+// EhrBase ref: EHR/CONTRIBUTION/C.4.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` with mixed valid and invalid `COMPOSITIONs`.
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . OPTs for each valid cases are loaded on the server
+|Post-conditions  | None
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and multiple `VERSION<COMPOSITION>`
+                    .. Some `VERSIONs` are valid, some aree invalid
+                    .. The `COMPOSITIONs` reference existing OPTs on the server
+                    . The result should be negative and retrieve an error related invalid `VERSION<COMPOSITION>`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions.robot[REST API / Robot^]
+|===
+
+NOTE: the whole commit should behave like a transaction and fail, no `CONTRIBUTIONs` or `VERSIONs` should be created on the server.
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-event_composition
+
+// EhrBase ref: EHR/CONTRIBUTION/C.5.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` with event `COMPOSITION`.
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . OPTs for each valid cases are loaded on the server
+|Post-conditions  | . There should be two `VERSIONs` of the same `COMPOSITION` in the EHR with `ehr_id`
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` has category = event
+                    .. The `COMPOSITION` reference existing an OPT on the server
+                    . The result should be positive, returning the created `CONTRIBUTION` with the ID of the created `VERSION<COMPOSITION>`
+                    . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` should have the same `template_id` as the one used in 1.
+                    .. The `VERSION` change_type = modification and `preceding_version_uid` = version id returned in 2.
+                    . The result should be positive and the returned version id should reflect it’s a new version of an existing `COMPOSITION` created in 1. (has the same `OBJECT_VERSION_ID` with version number = 2)
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-event_composition.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-persistent_composition
+
+// EhrBase ref: EHR/CONTRIBUTION/C.6.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` with persistent `COMPOSITIONs`.
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . OPTs for each valid case are loaded on the server
+|Post-conditions  | . There should be two `VERSIONs` of the same `COMPOSITION` in the EHR with `ehr_id`
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION.category` = persistent
+                    .. The `COMPOSITION` references an existing OPT on the server
+                    . The result should be positive, returning the version id for the created `VERSION`
+                    . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>` 
+                    .. The `COMPOSITION` should have the same `template_id` as the one used in 1.
+                    .. The `VERSION.change_type` = modification
+                    .. The `VERSION.preceding_version_uid` = version id returned in 2.,
+                    . The result should be positive and the returned version id should reflect it is a new version of an existing `COMPOSITION` created in 1. (has the same `OBJECT_VERSION_ID` with version number = 2)
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-persistent_composition.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-delete
+
+// EhrBase ref: EHR/CONTRIBUTION/C.7.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` deleting a `COMPOSITION`.
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . OPTs for each valid case are loaded on the server
+|Post-conditions  | . Two `VERSIONs` of the same `COMPOSITION` should exist in the EHR with ehr_id
+                    . The `VERSIONED_OBJECT` should be logically deleted
+NOTE: the effect of a `VERSIONED_OBJECT` being deleted might vary in different implementations. This needs further specification at the {openehr_sm_openehr_platform}[openEHR Service Model^]
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` references an existing OPT on the server
+                    . The result should be positive, returning the version id for the created `VERSION`
+                    . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` should reference the same `template_id` as the one used in 1.
+                    .. The `VERSION.change_type = deleted`
+                    .. The `VERSION.preceding_version_uid` = version id returned in 2.
+                    . The result should be positive and the returned version id should reflect it is a new version of an existing `COMPOSITION` created in 1. (has the same `OBJECT_VERSION_ID` with version number = 2, which should be deleted)
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-delete.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid
+
+// EhrBase ref: EHR/CONTRIBUTION/C.8.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit two `CONTRIBUTIONa` on same `COMPOSITION` with second containing invalid content.
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . OPTs for each valid case are loaded on the server
+|Post-conditions  | . There will be just one `VERSION` in the EHR with `ehr_id`
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` references an existing OPT on the server
+                    . The result should be positive, returning the version id for the created VERSION
+                    . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` references the same `template_id` as the one used in 1.
+                    .. The `VERSION` has change_type = modification
+                    .. The `VERSION` has preceding_version_uid = version id returned in 2.
+                    .. The `COMPOSITION` is one of the invalid data sets
+                    . The result should be negative, and retrieve some info about the errors found on the data committed
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation
+
+// EhrBase ref: EHR/CONTRIBUTION/C.9.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit two `CONTRIBUTIONa` on same `COMPOSITION` with second having change_type = creation
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . OPTs for each valid case are loaded on the server
+|Post-conditions  | . There will be just one `VERSION` in the EHR with `ehr_id`
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` references an existing OPT on the server
+                    . The result should be positive, returning the version id for the created `VERSION`
+                    . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` references the same `template_id` as the one used in 1.
+                    .. The `VERSION.change_type` = creation
+                    .. The `VERSION.preceding_version_uid` = version id returned in 2.
+                    . The result should be negative, and retrieve some info about the wrong change type (see notes)
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation.robot[REST API / Robot^]
+|===
+
+NOTE: Validity criterion: only one 'create' operation is allowed for persistent `COMPOSITIONs`, the next operations over an existing persistent `COMPOSITION` should be modification.
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt
+
+// EhrBase ref: EHR/CONTRIBUTION/C.10.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` with `COMPOSITION` referencing a non existing OPT
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . There are no OPTs loaded on the server
+|Post-conditions  | None
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and a valid `VERSION<COMPOSITION>`
+                    .. The `COMPOSITION` references a random OPT `template_id`
+                    . The result should be negative and retrieve an error indicating the missing OPT
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status
+
+// EhrBase ref: EHR/CONTRIBUTION/D.1.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` containing minimal `EHR_STATUS`
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR contains a default `EHR_STATUS`
+|Post-conditions  | . The EHR should have a new `CONTRIBUTION`
+                    . The EHR should have a new `VERSION` for the `EHR_STATUS`
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the valid data sets (see section B.3.)
+                    .. For `EHR_STATUS` `CONTRIBUTIONs`, the `change_type` is always `modification` or `amendment`
+                    . The result should be positive and retrieve the id of the `CONTRIBUTION` just created
+                    . Verify expected `CONTRIBUTION` uids and `CONTRIBUTION` count for the EHR with `ehr_id`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status
+
+NOTE: this case is the same as previous but the precondition 2. is different.
+
+// EhrBase ref: EHR/CONTRIBUTION/D.2.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` containing full `EHR_STATUS`
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR contains a full `EHR_STATUS` (all the optional information is set, i.e. `subject.external_ref` etc)
+|Post-conditions  | . The EHR should have a new `CONTRIBUTION`
+                    . The EHR should have a new `VERSION` for the `EHR_STATUS`
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the valid data sets (see above)
+                    .. Use `change_type` = `modification` or `amendment`
+                    . The result should be positive and retrieve the id of the `CONTRIBUTION` just created
+                    . Verify expected `CONTRIBUTION` uids and `CONTRIBUTION` count for the EHR with `ehr_id`
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type
+
+// EhrBase ref: EHR/CONTRIBUTION/D.3.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` containing `EHR_STATUS` with invalid change type
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR has the default `EHR_STATUS`
+|Post-conditions  | None
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the valid data sets (see above)
+                    .. Use `change_type = create` and `delete`
+                    . The result should be negative and retrieve an error indicating the `EHR_STATUS` already existing for the EHR
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-invalid_ehr_status
+
+// EhrBase ref: EHR/CONTRIBUTION/D.4.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` containing invalid `EHR_STATUS`
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR has the default `EHR_STATUS`
+|Post-conditions  | None
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the invalid data sets (see above)
+                    .. Use `change_type` = `modification`
+                    . The result should be negative and retrieve an error indicating the invalid `EHR_STATUS`
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-valid_directory
+
+// EhrBase ref: EHR/CONTRIBUTION/E.1.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` containing valid `FOLDER`
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR doesn’t have a `directory` (root `FOLDER`)
+|Post-conditions  | . The EHR with `ehr_id` should have a new `CONTRIBUTION` and a `directory`
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the valid data sets (see above) and `change_type` = `creation`
+                    . The result should be positive and retrieve the id of the `CONTRIBUTION` just created
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-valid_directory.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory
+
+// EhrBase ref: EHR/CONTRIBUTION/E.2.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` attempting to create an EHR directory that already exists
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR has a `directory` (root `FOLDER`)
+|Post-conditions  | None
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the valid data sets (see above) and change_type = `creation`
+                    . The result should be negative, and retrieve an error indicating the wrong `change_type` because the root `FOLDER` already exists
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory
+
+// EhrBase ref: EHR/CONTRIBUTION/E.3.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` attempting to modify an EHR directory that doesn't exist
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR has no `directory` (root `FOLDER`)
+|Post-conditions  | None
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the valid data sets
+                    .. Use change_type = `modification`
+                    .. Use a random `preceding_version_uid`
+                    . The result should be negative since, and retrieve an error indicating the wrong `change_type`, because it’s trying to modify something that doesn’t exist
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory
+
+// EhrBase ref: EHR/CONTRIBUTION/E.4.
+
+[cols="1h,4a"]
+|===
+|Description      | Commit `CONTRIBUTION` updating an EHR directory
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR has a `directory` (root `FOLDER`)
+|Post-conditions  | . The EHR should have a new `CONTRIBUTION` and a new `VERSION` for the root `FOLDER`
+|Flow             | . Invoke commit `CONTRIBUTION` service with an existing `ehr_id` and the valid data sets with `change_type` = `modification` or `amendment`
+                    . The result should be positive and retrieve the id of the `CONTRIBUTION` just created
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/commit_contribution/I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_EHR_CONTRIBUTION.list_contributions()
+
+Service Model reference: {i_ehr_contribution_link}[`I_EHR_CONTRIBUTION._list_contributions()_`^]
+
+NOTE: `CONTRIBUTIONs` can contain `COMPOSITION`, `EHR_STATUS` or `FOLDER`, or any mix of those. Each flow below applies to a specific type, except when 'ANY' is mentioned, in which case the flow applies to any of those three types.
+
+==== Test Case I_EHR_CONTRIBUTION.list_contributions-post_commit
+
+// EhrBase ref: EHR/CONTRIBUTION/F.1.
+
+[cols="1h,4a"]
+|===
+|Description      | List `CONTRIBUTIONs` following successful commit 
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR as a `CONTRIBUTION` with known uid
+                    . The `CONTRIBUTION` contains a `VERSION<COMPOSITION>`
+|Post-conditions  | . The EHR should have a new `CONTRIBUTION` and a new `VERSION` for the root `FOLDER`
+|Flow             | . Invoke list `CONTRIBUTIONs` service with the existing `ehr_id`
+                    . The result should be positive and retrieve a list of `CONTRIBUTIONs` with one item
+                    . The `CONTRIBUTION` should contain a `VERSION<COMPOSITION>`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/list_contributions/I_EHR_CONTRIBUTION.list_contributions-post_commit.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.list_contributions-empty
+
+// EhrBase ref: EHR/CONTRIBUTION/F.2.
+
+[cols="1h,4a"]
+|===
+|Description      | List `CONTRIBUTIONs` of existing EHR with no CONTRIBUTIONS 
+|Pre-conditions   | . An EHR with known `ehr_id` should exist
+                    . The EHR has no `CONTRIBUTIONs`
+|Post-conditions  | None
+|Flow             | . Invoke get `CONTRIBUTIONs` service by the existing `ehr_id`
+                    . The result should be positive and retrieve an empty list
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/list_contributions/I_EHR_CONTRIBUTION.list_contributions-empty.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr
+
+// EhrBase ref: EHR/CONTRIBUTION/F.3.
+
+[cols="1h,4a"]
+|===
+|Description      | List `CONTRIBUTIONs` of non-existing EHR (ANY)
+|Pre-conditions   | . There are no EHRs on the server
+|Post-conditions  | None
+|Flow             | . Invoke list `CONTRIBUTIONs` service with a random `ehr_id`
+                    . The result should be negative and retrieve an error indicating `"EHR with `ehr_id` doesn’t exist"`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/list_contributions/I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status
+
+// EhrBase ref: EHR/CONTRIBUTION/F.4.
+
+[cols="1h,4a"]
+|===
+|Description      | List `CONTRIBUTIONs` post commit of `CONTRIBUTION` containing `EHR_STATUS`
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR has a `CONTRIBUTION` with known uid
+                    . The `CONTRIBUTION` contains a `VERSION<EHR_STATUS>`
+|Post-conditions  | None
+|Flow             | . Invoke list `CONTRIBUTIONs` service by the existing `ehr_id`
+                    . The result should be positive and retrieve a list of `CONTRIBUTIONs` with one item
+                    . The `CONTRIBUTION` should contain an `EHR_STATUS`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/list_contributions/I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory
+
+// EhrBase ref: EHR/CONTRIBUTION/F.5.
+
+[cols="1h,4a"]
+|===
+|Description      | List `CONTRIBUTIONs` post commit of `CONTRIBUTION` containing a `directory`
+|Pre-conditions   | . An EHR with known `ehr_id` exists
+                    . The EHR has a `CONTRIBUTION` with known uid
+                    . The `CONTRIBUTION` contains a `VERSION<FOLDER>`
+|Post-conditions  | None
+|Flow             | . Invoke get `CONTRIBUTIONs` service by the existing `ehr_id`
+                    . The result should be positive and retrieve a list of `CONTRIBUTIONs` with one item
+                    . The `CONTRIBUTION` should contain a `FOLDER`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/list_contributions/I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_EHR_CONTRIBUTION.has_contribution()
+
+Service Model reference: {i_ehr_contribution_link}[`I_EHR_CONTRIBUTION._has_contribution()_`^]
+
+==== Test Case I_EHR_CONTRIBUTION.has_contribution-existing
+
+// EhrBase ref: EHR/CONTRIBUTION/G.1.
+
+[cols="1h,4a"]
+|===
+|Description      | Test presence of `CONTRIBUTIONs` post commit of `CONTRIBUTION`
+|Pre-conditions   | . An EHR should exist in the system with a known `ehr_id`
+                    . The EHR has a `CONTRIBUTION` with known uid
+|Post-conditions  | None
+|Flow             | . Invoke has `CONTRIBUTION` service with the known `ehr_id` and `CONTRIBUTION` uid
+                    . The result should be `true`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/has_contribution/I_EHR_CONTRIBUTION.has_contribution-existing.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.has_contribution-empty_ehr
+
+// EhrBase ref: EHR/CONTRIBUTION/G.2.
+
+[cols="1h,4a"]
+|===
+|Description      | Test presence of `CONTRIBUTIONs` on empty EHR
+|Pre-conditions   | . An EHR should exists in the system with a known `ehr_id`
+                    . The EHR doesn’t have any `CONTRIBUTIONs`
+|Post-conditions  | None
+|Flow             | . Invoke has `CONTRIBUTION` service with the known `ehr_id` and a random `CONTRIBUTION` uid
+                    . The result should be `false`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/has_contribution/I_EHR_CONTRIBUTION.has_contribution-empty_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.has_contribution-bad_ehr
+
+// EhrBase ref: EHR/CONTRIBUTION/G.3.
+
+[cols="1h,4a"]
+|===
+|Description      | Test presence of `CONTRIBUTIONs` on non-existent EHR
+|Pre-conditions   | . There are no EHRs on the server
+|Post-conditions  | None
+|Flow             | . Invoke has `CONTRIBUTION` service with a random `ehr_id` and a random `CONTRIBUTION` uid
+                    . The result should be negative, and retrieve an error indicating `"the EHR with ehr_id doesn’t exist"`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/has_contribution/I_EHR_CONTRIBUTION.has_contribution-bad_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.has_contribution-bad_contribution
+
+// EhrBase ref: EHR/CONTRIBUTION/G.4.
+
+[cols="1h,4a"]
+|===
+|Description      | Test presence of `CONTRIBUTION` that doesn't exist
+|Pre-conditions   | . An EHR should exist on the server with a known `ehr_id`
+                    . The EHR has `CONTRIBUTIONs`
+|Post-conditions  | None
+|Flow             | . Invoke has `CONTRIBUTION` service with the known `ehr_id` and a random, not existing `CONTRIBUTION` uid
+                    . The result should be `false`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/has_contribution/I_EHR_CONTRIBUTION.has_contribution-bad_contribution.robot[REST API / Robot^]
+|===
+
+=== Service Model operation: I_EHR_CONTRIBUTION.get_contribution()
+
+Service Model reference: {i_ehr_contribution_link}[`I_EHR_CONTRIBUTION._get_contribution()_`^]
+
+==== Test Case I_EHR_CONTRIBUTION.get_contribution-existing
+
+// EhrBase ref: EHR/CONTRIBUTION/H.1.
+
+[cols="1h,4a"]
+|===
+|Description      | Test get `CONTRIBUTION` from EHR with existing `CONTRIBUTION`
+|Pre-conditions   | . An EHR should exist in the system with a known `ehr_id`
+                    . The EHR has a `CONTRIBUTION` with known uid
+|Post-conditions  | None
+|Flow             | . Invoke has `CONTRIBUTION` service with the known `ehr_id` and `CONTRIBUTION` uid
+                    . The result should be the existing `CONTRIBUTION`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/get_contribution/I_EHR_CONTRIBUTION.get_contribution-existing.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.get_contribution-empty_ehr
+
+// EhrBase ref: EHR/CONTRIBUTION/H.2.
+
+[cols="1h,4a"]
+|===
+|Description      | Test get `CONTRIBUTION` from empty EHR
+|Pre-conditions   | . An EHR should exists in the system with a known `ehr_id`
+                    . The EHR doesn’t have any `CONTRIBUTIONs`
+|Post-conditions  | None
+|Flow             | . Invoke has `CONTRIBUTION` service with the known `ehr_id` and a random `CONTRIBUTION` uid
+                    . The result should be negative and retrieve an error indicating the non-existing `CONTRIBUTION`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/get_contribution/I_EHR_CONTRIBUTION.get_contribution-empty_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.get_contribution-bad_ehr
+
+// EhrBase ref: EHR/CONTRIBUTION/H.3.
+
+[cols="1h,4a"]
+|===
+|Description      | Test get `CONTRIBUTION` from non-existing EHR
+|Pre-conditions   | . There are no EHRs on the server
+|Post-conditions  | None
+|Flow             | . Invoke has `CONTRIBUTION` service with a random `ehr_id` and a random `CONTRIBUTION` uid
+                    . The result should be negative, and retrieve an error indicating `"the EHR with ehd_id doesn’t exist"`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/get_contribution/I_EHR_CONTRIBUTION.get_contribution-bad_ehr.robot[REST API / Robot^]
+|===
+
+==== Test Case I_EHR_CONTRIBUTION.get_contribution-bad_contribution
+
+// EhrBase ref: EHR/CONTRIBUTION/H.4.
+
+[cols="1h,4a"]
+|===
+|Description      | Test get `CONTRIBUTION` from EHR with non-existing `CONTRIBUTION`
+|Pre-conditions   | . An EHR should exist on the server with a known `ehr_id`
+                    . The EHR has `CONTRIBUTIONs`
+|Post-conditions  | None
+|Flow             | . Invoke has `CONTRIBUTION` service with the known `ehr_id` and a random, non-existing `CONTRIBUTION` uid
+                    . The result should be negative and retrieve an error indicating the non-existing `CONTRIBUTION`
+|Test runners     |{openehr_cnf_platform_tests_robot}/I_EHR_CONTRIBUTION/get_contribution/I_EHR_CONTRIBUTION.get_contribution-bad_contribution.robot[REST API / Robot^]
+|===
+
+
+
+
+

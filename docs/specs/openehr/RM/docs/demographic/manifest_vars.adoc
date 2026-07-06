@@ -1,0 +1,5 @@
+:spec_title: Demographic Information Model
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: EHR, demographics, reference model, openehr
+:description: openEHR Demographic Information Model specification

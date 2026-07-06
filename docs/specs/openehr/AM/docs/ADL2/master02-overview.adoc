@@ -1,0 +1,156 @@
+= Overview
+
+ADL uses three syntaxes, cADL (constraint form of ADL), ODIN (Object Data Instance Notation), and openEHR Expression Language (EL), to express constraints on data which are instances of an underlying information model, which may be expressed in UML, relational form, or in a programming language.
+
+ADL itself is a very simple 'glue' syntax, which uses two other syntaxes for expressing structured constraints and data, respectively.
+
+The cADL syntax is used to express the archetype `definition` section, while the ODIN syntax is used to express data which appears in the `language`, `description`, and `terminology` sections of an ADL archetype. The top-level structure of an ADL archetype is shown in the figure below.
+
+This main part of this document describes cADL and ADL path syntax, before going on to describe the combined ADL syntax, archetypes, specialisation, terminology integration and templates.
+
+[.text-center]
+.ADL Archetype Structure
+image::{diagrams_uri}/adl_text_overview.svg[id=archetype_structure, align="center", width=50%]
+
+== An Example
+
+The following is an example of a very simple archetype, giving a feel for the syntax. The main point to glean from the following is that the notion of 'guitar' is defined in terms of _constraints_ on a _generic_ model of the concept "INSTRUMENT".
+
+The names mentioned down the left-hand side of the definition section (`INSTRUMENT`, `size` etc) are alternately class and attribute names from an object model.
+
+Each block of braces encloses a specification for some particular set of instances that conform to a specific concept, such as 'guitar' or 'neck', defined in terms of constraints on types from a generic class model. The leaf pairs of braces enclose constraints on primitive types such as `Integer`, `String`, `Boolean` and so on.
+
+====
+[IMPORTANT]::
+
+ADL 2.4 introduces an option to use the **at-code coding system** of ADL1, as an alternative to the **id-code coding system** introduced in ADL2.
+
+- The **at-code coding system** must be used for systems that need to be conformant to the _openEHR Reference Model (RM)_.
+- The **id-code coding system** is recommended for non-openEHR RM information models.
+
+ADL2 syntax examples are provided for both coding systems, as `at-coded ADL2` or `id-coded ADL2`.
+
+Further information on the choice of coding system is provided at <<_node_identifier_and_coding_systems>>.
+====
+
+[tabs,sync-group-id=adl-example]
+.Simple 'Guitar' archetype ADL2 example
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.1.5)
+    adl-test-instrument.guitar.v1.0.4
+
+language
+    original_language = <[iso_639-1::en]>
+
+definition
+    INSTRUMENT[at0000] matches {
+        size matches {|60..120|}                    -- size in cm
+        date_of_manufacture matches {yyyy-mm-??}    -- year & month ok
+        parts matches {
+            PART[at0001] matches {                  -- neck
+                material matches {[ac1]}            -- timber or nickel alloy
+            }
+            PART[at0002] matches {                  -- body
+                material matches {[at3]}            -- timber
+            }
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["at0000"] = <
+                text = <"guitar">;
+                description = <"stringed instrument">
+            >
+            ["at0001"] = <
+                text = <"neck">;
+                description = <"neck of guitar">
+            >
+            ["at0002"] = <
+                text = <"body">;
+                description = <"body of guitar">
+            >
+            ["at0003"] = <
+                text = <"timber">;
+                description = <"straight, seasoned timber">
+            >
+            ["at0004"] = <
+                text = <"nickel alloy">;
+                description = <"frets">
+            >
+        >
+    >
+
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+                members = <"at0003", "at0004">
+            >
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+archetype (adl_version=2.4.0; rm_release=1.1.5)
+    adl-test-instrument.guitar.v1.0.4
+
+language
+    original_language = <[iso_639-1::en]>
+
+definition
+    INSTRUMENT[id1] matches {
+        size matches {|60..120|}                    -- size in cm
+        date_of_manufacture matches {yyyy-mm-??}    -- year & month ok
+        parts matches {
+            PART[id2] matches {                     -- neck
+                material matches {[ac1]}            -- timber or nickel alloy
+            }
+            PART[id3] matches {                     -- body
+                material matches {[at3]}            -- timber
+            }
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <
+                text = <"guitar">;
+                description = <"stringed instrument">
+            >
+            ["id2"] = <
+                text = <"neck">;
+                description = <"neck of guitar">
+            >
+            ["id3"] = <
+                text = <"body">;
+                description = <"body of guitar">
+            >
+            ["at3"] = <
+                text = <"timber">;
+                description = <"straight, seasoned timber">
+            >
+            ["at4"] = <
+                text = <"nickel alloy">;
+                description = <"frets">
+            >
+        >
+    >
+
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+                members = <"at3", "at4">
+            >
+        >
+    >
+--------
+====

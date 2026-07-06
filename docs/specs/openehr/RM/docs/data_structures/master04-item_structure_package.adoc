@@ -1,0 +1,94 @@
+= Item Structure Package
+
+== Overview
+
+The `item_structure` package classes presented here are a formalisation of the need for generic, archetypable
+data structures, and are used by all openEHR reference models.
+
+The subtypes of the `ITEM_STRUCTURE` class explicitly model the logical data structure types which 
+typically occur in health record data, and include `ITEM_SINGLE` (for single values such as a patient
+weight), `ITEM_LIST` (for lists such as parts of an address), `ITEM_TREE` (for hierarchically structured
+data such as a microbiology report) and `ITEM_TABLE` (for tabular data such as visual acuity or reflex
+test results). Each of these classes defines a functional interface, has an optimal physical representation
+using the basic types `CLUSTER` and `ELEMENT` from the `representation` package, and can generate
+a {iso_13606}[ISO 13606^] compliant hierarchical representation of its data. Any system implementing
+these types is guaranteed to create data which represents the logical structures of lists, tables and trees
+identically.
+
+Data values are connected to spatial structures via the `_value_` attribute of the `ELEMENT` class of the `representation` cluster. This class also carries the attribute `_null_flavour_`, whose value indicates how to read the contents of the `_value_` attribute. Values from the openEHR {openehr_terminology_xml}[`null flavours` vocabulary], including `253|unknown|`, `271|no information|`, `272|masked|`, and `273|not applicable|` are used to populate it. Only a small number of generic codes are defined, in order to avoid complex processing for most data instances, for which this simple classification of null is sufficient.
+
+In some circumstances however, additional detail is required in addition to the null flavour code. Examples include reporting and where specific reasons for lack of data have medico-legal ramifications, e.g. 'patient was unconscious', 'patient refused to tell me', 'no reason provided'. For these situations, the optional `_null_reason_` field may be used to record a specific reason.
+
+The openEHR class model for spatial structures is illustrated on the right-hand side of <<data_structures_package>>. It should be noted that these classes (`ITEM_LIST` etc) are not equivalents of similarly named classes (such as `List<T>`) in most data structure libraries - they also include per-node `_name_`,
+`_archetype_node_id_` and leaf node value and null flavour, and path capabilities.
+
+== ISO 13606 Encoding Rules
+
+=== ITEM_SINGLE
+
+An `ITEM_SINGLE` object is encoded in ISO 13606 as a single `ELEMENT` object.
+
+=== ITEM_LIST
+
+An `ITEM_LIST` object is encoded in ISO 13606 as a `CLUSTER` object containing the set of `ELEMENTs`
+from the openEHR list.
+
+=== ITEM_TABLE
+
+The `ITEM_TABLE` encoding rules are as follows:
+
+* Each row is encoded as a Cluster containing a number of `ELEMENTs`, each corresponding to the value of a column in that row.
+* An empty/void column value for a row is represented by an `ELEMENT` containing no value, and with `_null_flavour_` set.
+* The names of the `ELEMENT` in a row are the column names.
+* The names of the containing `CLUSTER` of each row is the stringified number of the row in the overall table.
+
+=== ITEM_TREE
+
+Data of an `ITEM_TREE` instance are simply replicated as is to produce the correct ISO 13606 hierarchical form.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}item_structure.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}item_single.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}item_list.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}item_table.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}item_tree.adoc[]
+
+== Instance Structures
+
+=== ITEM_SINGLE Instance Structure
+
+The figure below illustrates a `ITEM_SINGLE` instance, in both physical and logical forms.
+
+[.text-center]
+.Instance Structure of `ITEM_SINGLE`
+image::{diagrams_uri}/instance_item_single.svg[id=instance_item_single, align="center", width=50%]
+
+=== ITEM_LIST Instance Structure
+
+The following figure illustrates a typical `ITEM_LIST` structure, in this case for a BP protocol.
+
+[.text-center]
+.Instance Structure of `ITEM_LIST`
+image::{diagrams_uri}/instance_item_list.svg[id=instance_item_list, align="center", width=75%]
+
+=== ITEM_TABLE Instance Structure
+
+The next figure illustrates a table of visual acuity test results.
+
+[.text-center]
+.Instance Structure of `ITEM_TABLE`
+image::{diagrams_uri}/instance_item_table.svg[id=instance_item_table, align="center"]
+
+=== ITEM_TREE Instance Structure
+
+The following figure illustrates the logical and concrete forms of an example `ITEM_TREE` instance, representing a biochemistry result.
+
+[.text-center]
+.Instance Structure of `ITEM_TREE`
+image::{diagrams_uri}/instance_item_tree.svg[id=instance_item_tree, align="center"]
+

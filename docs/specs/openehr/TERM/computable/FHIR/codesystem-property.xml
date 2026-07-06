@@ -1,0 +1,1741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-property"/>
+  <version value="3.1.0"/>
+  <name value="property"/>
+  <title value="Property"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="86"/>
+  <concept>
+    <code value="339"/>
+    <display value="Acceleration"/>
+    <designation>
+      <language value="es"/>
+      <value value="Aceleración"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="加速度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Aceleração"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="加速度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="342"/>
+    <display value="Acceleration, angular"/>
+    <designation>
+      <language value="es"/>
+      <value value="Aceleración, angular"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="角加速度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Aceleração, angular"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="加速度, 角"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="381"/>
+    <display value="Amount (Eq)"/>
+    <designation>
+      <language value="es"/>
+      <value value="Cantidad (equivalente)"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="量 (Eq)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Quantidade (Eq)"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="物质的量 (当量)"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="384"/>
+    <display value="Amount (mole)"/>
+    <designation>
+      <language value="es"/>
+      <value value="Cantidad (mol)"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="量 (mole)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Quantidade (mol)"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="物质的量 (摩尔)"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="497"/>
+    <display value="Angle, plane"/>
+    <designation>
+      <language value="es"/>
+      <value value="Ángulo, plano"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="平面角"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Ângulo, plano"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="角度, 平面"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="500"/>
+    <display value="Angle, solid"/>
+    <designation>
+      <language value="es"/>
+      <value value="Ángulo, sólido"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="立体角"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Ângulo, sólido"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="角度, 立体"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="335"/>
+    <display value="Area"/>
+    <designation>
+      <language value="es"/>
+      <value value="Área"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="面積"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Área"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="面积"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="119"/>
+    <display value="Concentration"/>
+    <designation>
+      <language value="es"/>
+      <value value="Concentración"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="濃度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Concentração"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="浓度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="350"/>
+    <display value="Density"/>
+    <designation>
+      <language value="es"/>
+      <value value="Densidad"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="密度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Densidade"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="密度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="362"/>
+    <display value="Diffusion coefficient"/>
+    <designation>
+      <language value="es"/>
+      <value value="Coeficiente de difusión"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="拡散係数"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Coeficiente de difusão"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="扩散系数"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="501"/>
+    <display value="Electric capacitance"/>
+    <designation>
+      <language value="es"/>
+      <value value="Capacidad eléctrica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電気容量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Capacitância elétrica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电容"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="498"/>
+    <display value="Electric charge"/>
+    <designation>
+      <language value="es"/>
+      <value value="Carga eléctrica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電荷"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Carga elétrica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电荷"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="502"/>
+    <display value="Electric conductance"/>
+    <designation>
+      <language value="es"/>
+      <value value="Conductancia eléctrica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電気伝導度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Condutância elétrica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电导"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="334"/>
+    <display value="Electric current"/>
+    <designation>
+      <language value="es"/>
+      <value value="Corriente eléctrica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電流"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Corrente elétrica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电流"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="377"/>
+    <display value="Electric field strength"/>
+    <designation>
+      <language value="es"/>
+      <value value="Intensidad del campo eléctrico"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電界強度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Intensidade do campo elétrico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电场强度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="655"/>
+    <display value="Electric potential time"/>
+    <designation>
+      <language value="es"/>
+      <value value="Potencial eléctrico"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電位時間"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Energia potencial elétrica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电势时间"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="121"/>
+    <display value="Energy"/>
+    <designation>
+      <language value="es"/>
+      <value value="Energía"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="エネルギー"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Energia"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="能量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="366"/>
+    <display value="Energy density"/>
+    <designation>
+      <language value="es"/>
+      <value value="Densidad de energía"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="エネルギー密度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Densidade de energia"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="能量密度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="508"/>
+    <display value="Energy dose"/>
+    <designation>
+      <language value="es"/>
+      <value value="Dosis de energía"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="エネルギー量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Dose de energia"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="能量剂量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="365"/>
+    <display value="Energy per area"/>
+    <designation>
+      <language value="es"/>
+      <value value="Energía por área"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="面積あたりエネルギー"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Energia por área"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="能量单位面积"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="364"/>
+    <display value="Energy, linear"/>
+    <designation>
+      <language value="es"/>
+      <value value="Energía, lineal"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="線エネルギー"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Energia, linear"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="能量, 线性"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="347"/>
+    <display value="Flow rate, mass"/>
+    <designation>
+      <language value="es"/>
+      <value value="Caudal, masa"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量流量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Taxa de fluxo, massa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="流速, 质量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="352"/>
+    <display value="Flow rate, mass/force"/>
+    <designation>
+      <language value="es"/>
+      <value value="Caudal, masa/fuerza"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量/力流量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Taxa de fluxo, massa/força"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="流速, 质量/力"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="351"/>
+    <display value="Flow rate, mass/volume"/>
+    <designation>
+      <language value="es"/>
+      <value value="Caudal, amsa/volumen"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量/体積流量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Taxa de fluxo, massa/volume"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="流速, 质量/体积"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="126"/>
+    <display value="Flow rate, volume"/>
+    <designation>
+      <language value="es"/>
+      <value value="Caudal, volumen"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="体積流量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Taxa de fluxo, volume"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="流速, 体积"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="348"/>
+    <display value="Flux, mass"/>
+    <designation>
+      <language value="es"/>
+      <value value="Flujo, masa"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量流束"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Fluxo, massa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="通量, 质量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="355"/>
+    <display value="Force"/>
+    <designation>
+      <language value="es"/>
+      <value value="Fuerza"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="力"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Força"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="力"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="358"/>
+    <display value="Force per mass"/>
+    <designation>
+      <language value="es"/>
+      <value value="Fuerza por masa"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量あたりの力"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Força por massa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="力单位质量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="357"/>
+    <display value="Force, body"/>
+    <designation>
+      <language value="es"/>
+      <value value="Fuerza, cuerpo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="体積力"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Força, corpo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="力, 彻体"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="382"/>
+    <display value="Frequency"/>
+    <designation>
+      <language value="es"/>
+      <value value="Frecuencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="頻度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Frequência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="频率"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="586"/>
+    <display value="Glomerular filtration rate"/>
+    <designation>
+      <language value="es"/>
+      <value value="Tasa de filtración glomerular"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="糸球体濾過量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Taxa de filtração glomerular"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="肾小球滤过率"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="373"/>
+    <display value="Heat transfer coefficient"/>
+    <designation>
+      <language value="es"/>
+      <value value="Coeficiente de transferencia de calor"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="熱伝導係数"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Coeficiente de transferência de calor"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="传热系数"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="505"/>
+    <display value="Illuminance"/>
+    <designation>
+      <language value="es"/>
+      <value value="Iluminancia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="照度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Iluminância"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="照度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="379"/>
+    <display value="Inductance"/>
+    <designation>
+      <language value="es"/>
+      <value value="Inductancia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="インダクタンス"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Indutância"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电感"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="122"/>
+    <display value="Length"/>
+    <designation>
+      <language value="es"/>
+      <value value="Longitud"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="長さ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Comprimento"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="程度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="499"/>
+    <display value="Light intensity"/>
+    <designation>
+      <language value="es"/>
+      <value value="Intensidad de luz"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="光強度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Intensidade luminosa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="光强"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="123"/>
+    <display value="Loudness"/>
+    <designation>
+      <language value="es"/>
+      <value value="Volumen sonoro"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="音圧"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Intensidade sonora"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="响度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="504"/>
+    <display value="Luminous flux"/>
+    <designation>
+      <language value="es"/>
+      <value value="Flujo luminoso"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="光束"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Fluxo luminoso"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="光通量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="378"/>
+    <display value="Magnetic flux"/>
+    <designation>
+      <language value="es"/>
+      <value value="Flujo magnético"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="磁束"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Fluxo magnético"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="磁通量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="503"/>
+    <display value="Magnetic flux density"/>
+    <designation>
+      <language value="es"/>
+      <value value="Densidad de flujo magnético"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="磁束密度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Densidade de fluxo magnético"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="磁通量密度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="124"/>
+    <display value="Mass"/>
+    <designation>
+      <language value="es"/>
+      <value value="Masa"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Massa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="质量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="385"/>
+    <display value="Mass (IU)"/>
+    <designation>
+      <language value="es"/>
+      <value value="Masa (IU)"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量 (IU)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Massa (UI)"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="质量 (国际单位)"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="445"/>
+    <display value="Mass (Units)"/>
+    <designation>
+      <language value="es"/>
+      <value value="Masa (Unidades)"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量 (Units)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Massa (unidades)"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="质量 (单位)"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="349"/>
+    <display value="Mass per area"/>
+    <designation>
+      <language value="es"/>
+      <value value="Masa por área"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="面積あたり質量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Massa por área"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="质量单位面积"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="344"/>
+    <display value="Moment inertia, area"/>
+    <designation>
+      <language value="es"/>
+      <value value="Momento de inercia, área"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="断面二次モーメント"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Momento de inércia, área"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="转动惯量, 面积"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="345"/>
+    <display value="Moment inertia, mass"/>
+    <designation>
+      <language value="es"/>
+      <value value="Momento de inercia, masa"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="質量慣性モーメント"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Momento de inércia, massa"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="转动惯量, 质量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="340"/>
+    <display value="Momentum"/>
+    <designation>
+      <language value="es"/>
+      <value value="Impulso"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="モーメント"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Momento"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="动量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="346"/>
+    <display value="Momentum flow rate"/>
+    <designation>
+      <language value="es"/>
+      <value value="Impulso, caudal"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="流量モーメント"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Momento, taxa de fluxo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="动量 流速"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="343"/>
+    <display value="Momentum, angular"/>
+    <designation>
+      <language value="es"/>
+      <value value="Impulso, angular"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="角モーメント"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Momento, angular"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="动量, 角"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="363"/>
+    <display value="Power"/>
+    <designation>
+      <language value="es"/>
+      <value value="Potencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電力"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Potência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="功率"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="369"/>
+    <display value="Power density"/>
+    <designation>
+      <language value="es"/>
+      <value value="Densidad de potencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電力密度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Densidade de potência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="功率密度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="368"/>
+    <display value="Power flux"/>
+    <designation>
+      <language value="es"/>
+      <value value="Flujo de potencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電力束"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Fluxo de potência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="功率通量"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="367"/>
+    <display value="Power, linear"/>
+    <designation>
+      <language value="es"/>
+      <value value="Potencia, lineal"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="線形電力"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Potência, linear"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="功率, 线性"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="125"/>
+    <display value="Pressure"/>
+    <designation>
+      <language value="es"/>
+      <value value="Presión"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="圧力"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Pressão"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="压强"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="507"/>
+    <display value="Proportion"/>
+    <designation>
+      <language value="es"/>
+      <value value="Proporción"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="比率"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Proporção"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="比例"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="380"/>
+    <display value="Qualified real"/>
+    <designation>
+      <language value="es"/>
+      <value value="Real calificado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="制限付き実数"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Real qualificado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="带有量词限定的实数"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="506"/>
+    <display value="Radioactivity"/>
+    <designation>
+      <language value="es"/>
+      <value value="Radioactividad"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="放射能"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Radioactividade"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="放射性活度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="375"/>
+    <display value="Resistance"/>
+    <designation>
+      <language value="es"/>
+      <value value="Resistencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="抵抗"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Resistência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电阻"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="370"/>
+    <display value="Specific energy"/>
+    <designation>
+      <language value="es"/>
+      <value value="Energía específica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="比エネルギー"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Energia específica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="比能"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="371"/>
+    <display value="Specific heat, gas constant"/>
+    <designation>
+      <language value="es"/>
+      <value value="Calor específico, constante de gas"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="比熱、気体定数"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Calor específico, gás constante"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="比热, 气体常数"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="337"/>
+    <display value="Specific surface"/>
+    <designation>
+      <language value="es"/>
+      <value value="Superficie específica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="比表面"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Superfície específica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="比表面积"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="336"/>
+    <display value="Specific volume"/>
+    <designation>
+      <language value="es"/>
+      <value value="Volumen específico"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="比容Specific volume"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Volume específico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="比容"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="354"/>
+    <display value="Specific weight"/>
+    <designation>
+      <language value="es"/>
+      <value value="Peso específico"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="比重Specific weight"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Peso específico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="比重"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="356"/>
+    <display value="Surface tension"/>
+    <designation>
+      <language value="es"/>
+      <value value="Tensión superficial"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="表面張力Surface tension"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Tensão superficial"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="表面张力"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="127"/>
+    <display value="Temperature"/>
+    <designation>
+      <language value="es"/>
+      <value value="Temperatura"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="温度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Temperatura"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="温度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="372"/>
+    <display value="Thermal conductivity"/>
+    <designation>
+      <language value="es"/>
+      <value value="Conductividad térmica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="熱伝導度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Condutividade térmica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="热导率"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="128"/>
+    <display value="Time"/>
+    <designation>
+      <language value="es"/>
+      <value value="Tiempo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="時間"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Tempo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="时间"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="359"/>
+    <display value="Torque"/>
+    <designation>
+      <language value="es"/>
+      <value value="Torque"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="トルク"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Torque"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="扭矩"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="338"/>
+    <display value="Velocity"/>
+    <designation>
+      <language value="es"/>
+      <value value="Velocidad"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="速度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Velocidade"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="速度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="341"/>
+    <display value="Velocity, angular"/>
+    <designation>
+      <language value="es"/>
+      <value value="Velocidad, angular"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="角速度"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Velocidade, angular"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="速度, 角"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="360"/>
+    <display value="Viscosity, dynamic"/>
+    <designation>
+      <language value="es"/>
+      <value value="Viscosidad, dinámica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Viscosity, dynamic (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Viscosidade, dinâmica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="黏度, 动力"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="361"/>
+    <display value="Viscosity, kinematic"/>
+    <designation>
+      <language value="es"/>
+      <value value="Viscosity, cinemática"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Viscosity, kinematic (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Viscosidade, cinemática"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="黏度, 运动"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="374"/>
+    <display value="Electric potential"/>
+    <designation>
+      <language value="es"/>
+      <value value="Voltaje, eléctrico"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="電圧"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Potencial eléctrico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="电势"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="129"/>
+    <display value="Volume"/>
+    <designation>
+      <language value="es"/>
+      <value value="Volumen"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="容積"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="volume"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="体积"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="130"/>
+    <display value="Work"/>
+    <designation>
+      <language value="es"/>
+      <value value="Trabajo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="仕事量"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Trabalho"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="功"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="685"/>
+    <display value="Refractive power"/>
+    <designation>
+      <language value="es"/>
+      <value value="Poder refractivo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="屈折力"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Poder de refracção"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="屈光力"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="118"/>
+    <display value="&lt;not set&gt;"/>
+    <designation>
+      <language value="es"/>
+      <value value="&lt;no asignado&gt;"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="&lt;not set&gt; (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Não definido"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="&lt;未设置&gt;"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="709"/>
+    <display value="Time fraction"/>
+    <designation>
+      <language value="es"/>
+      <value value="Fracción de tiempo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Time fraction (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Fracção de tempo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="时间分数"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="708"/>
+    <display value="Rate of change, pressure"/>
+    <designation>
+      <language value="es"/>
+      <value value="Tasa de variación, presión"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Rate of change, pressure (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Taxa de variação, pressão"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="变化速率, 压强"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="754"/>
+    <display value="Rate of change, frequency"/>
+    <designation>
+      <language value="es"/>
+      <value value="Tasa de variación, frecuencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Rate of change, frequency (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Taxa de variação, frequência"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="变化速率, 频率"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="755"/>
+    <display value="Arbitrary"/>
+    <designation>
+      <language value="es"/>
+      <value value="Arbitrario"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Arbitrary (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Arbitrário"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="任意"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="756"/>
+    <display value="Medication dose rate"/>
+    <designation>
+      <language value="es"/>
+      <value value="Dosis de medicación"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Medication dose rate (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Taxa de dose de medicação"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="药物剂量速率"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="757"/>
+    <display value="Spectral power"/>
+    <designation>
+      <language value="es"/>
+      <value value="Potencia espectral"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Spectral power (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Potência espectral"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="谱功率"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="758"/>
+    <display value="Spectral power density"/>
+    <designation>
+      <language value="es"/>
+      <value value="Densidad espectral de potencia"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Spectral power density (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Densidade de potência espectral"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="功率谱密度"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="759"/>
+    <display value="Pace"/>
+    <designation>
+      <language value="es"/>
+      <value value="Ritmo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Pace (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Ritmo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="步速"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="760"/>
+    <display value="Enzyme activity"/>
+    <designation>
+      <language value="es"/>
+      <value value="Actividad enzimática"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="Enzyme activity (en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Actividade enzimática"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="酶活性"/>
+    </designation>
+  </concept>
+</CodeSystem>

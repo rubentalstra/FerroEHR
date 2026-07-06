@@ -1,0 +1,5 @@
+:spec_title: openEHR Serial Data Formats (SDF)
+:copyright_year: 2020
+:spec_status: DEVELOPMENT
+:keywords: SDF, serialization, openEHR
+:description: openEHR Serial Data Formats

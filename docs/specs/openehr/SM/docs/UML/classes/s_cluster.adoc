@@ -1,0 +1,21 @@
+=== S_CLUSTER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_CLUSTER*
+
+h|*Description*
+2+a|Simplified RM form of `CLUSTER` RM class.
+
+h|*Inherit*
+2+|`<<_s_item_class,S_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_item_class,S_ITEM>>>`
+a|(unchanged from RM)
+|===

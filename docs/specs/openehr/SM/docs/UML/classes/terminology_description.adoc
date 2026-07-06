@@ -1,0 +1,30 @@
+=== Terminology_description Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Terminology_description*
+
+h|*Description*
+2+a|Descriptor for a terminology as it is known in a particular terminology service.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*publisher*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Publisher organisation name.
+
+h|*0..1*
+|*available_versions*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of identifiers of available versions of this terminology in this service.
+
+h|*0..1*
+|*attributes*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of meta-model attributes that may be requested within extract requests.
+
+h|*1..1*
+|*uri*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Published and/or standardised identifying URI for the terminology.
+|===

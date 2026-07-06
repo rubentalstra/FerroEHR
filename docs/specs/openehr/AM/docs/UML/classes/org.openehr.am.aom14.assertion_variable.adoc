@@ -1,0 +1,22 @@
+=== ASSERTION_VARIABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ASSERTION_VARIABLE*
+
+h|*Description*
+2+a|Definition of a named variable used in an assertion expression.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of variable.
+
+h|*1..1*
+|*definition*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Formal definition of the variable.
+|===

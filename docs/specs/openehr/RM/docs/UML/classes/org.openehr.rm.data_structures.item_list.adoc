@@ -1,0 +1,57 @@
+=== ITEM_LIST Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ITEM_LIST*
+
+h|*Description*
+2+a|Logical list data structure, where each item has a value and can be referred to by a name and a positional index in the list. The list may be empty. 
+
+`ITEM_LIST` is used to represent any data which is logically a list of values, such as blood pressure, most protocols, many blood tests etc. 
+
+Not to be used for time-based lists, which should be represented with the proper temporal class, i.e. `HISTORY`.
+
+h|*Inherit*
+2+|`<<_item_structure_class,ITEM_STRUCTURE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_element_class,ELEMENT>>>`
+a|Physical representation of the list.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*item_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Count of all items.
+
+h|*0..1*
+|*names* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/data_types.html#_dv_text_class[DV_TEXT^]>`
+a|Retrieve the names of all items.
+
+h|*1..1*
+|*named_item* ( +
+a_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_element_class,ELEMENT>>`
+a|Retrieve the item with name ‘a_name’.
+
+h|*1..1*
+|*ith_item* ( +
+i: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][1]` +
+): `<<_element_class,ELEMENT>>`
+a|Retrieve the i-th item with name.
+
+h|*1..1 +
+(redefined)*
+|*as_hierarchy* (): `<<_cluster_class,CLUSTER>>`
+a|Generate a CEN EN13606-compatible hierarchy consisting of a single `CLUSTER` containing the `ELEMENTs` of this list.
+
+h|*Invariants*
+2+a|__Valid_structure__: `items.forall (i:ITEM &#124; i.type = "ELEMENT")`
+|===

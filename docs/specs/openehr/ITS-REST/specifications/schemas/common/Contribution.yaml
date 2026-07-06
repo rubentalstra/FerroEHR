@@ -1,0 +1,47 @@
+title: CONTRIBUTION
+type: object
+description: A CONTRIBUTION resource
+required:
+  - uid
+  - versions
+  - audit
+properties:
+  uid:
+    $ref: ../base_types/HierObjectId.yaml
+  versions:
+    type: array
+    items:
+      $ref: ../base_types/ObjectRef.yaml
+  audit:
+    $ref: ../common/AuditDetails.yaml
+example:
+  uid:
+    value: 0826851c-c4c2-4d61-92b9-410fb8275ff0
+  versions:
+    - _type: OBJECT_REF
+      id:
+        _type: OBJECT_VERSION_ID
+        value: 'fb458d9c-1323-42bc-b7f8-787f3660a0b5::openEHRSys.example.com::1'
+      namespace: local
+      type: COMPOSITION
+    - _type: OBJECT_REF
+      id:
+        _type: OBJECT_VERSION_ID
+        value: 'abcdefgh-1323-42bc-b7f8-787f3660a0ba::openEHRSys.example.com::1'
+      namespace: local
+      type: FOLDER
+  audit:
+    system_id: 9624982A-9F42-41A5-9318-AE13D5F5031F
+    committer:
+      _type: PARTY_IDENTIFIED
+      name: A user name
+    time_committed:
+      value: '2017-08-15T10:37:15.422+02:00'
+    change_type:
+      value: creation
+      defining_code:
+        terminology_id:
+          value: openehr
+        code_string: '249'
+    description:
+      value: Description text

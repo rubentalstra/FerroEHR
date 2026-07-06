@@ -1,0 +1,17 @@
+description: |
+  `200 OK` is returned when the template list is successfully retrieved.
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/definition/TemplateList.yaml
+    example:
+      - template_id: "openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0"
+        version: "1.0.1"
+        concept: "Clinical detail"
+        archetype_id: "openEHR-EHR-COMPOSITION.discharge.v1"
+        created_timestamp: '2017-08-14T19:24:56.639Z'
+      - template_id: "openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0"
+        version: "1.0.1"
+        concept: "Vital Signs"
+        archetype_id: "openEHR-EHR-COMPOSITION.encounter.v1"
+        created_timestamp: '2017-08-14T19:24:56.639Z'

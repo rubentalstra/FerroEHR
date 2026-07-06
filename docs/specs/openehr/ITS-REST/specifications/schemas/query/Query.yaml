@@ -1,0 +1,14 @@
+title: Query
+required:
+  - offset
+  - fetch
+  - query_parameters
+type: object
+properties:
+  offset:
+    $ref: ./Offset.yaml
+  fetch:
+    $ref: ./Fetch.yaml
+  query_parameters:
+    $ref: ./QueryParameters.yaml
+

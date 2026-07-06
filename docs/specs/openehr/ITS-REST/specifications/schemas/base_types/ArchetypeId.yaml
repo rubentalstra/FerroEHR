@@ -1,0 +1,9 @@
+title: ARCHETYPE_ID
+type: object
+allOf:
+  - $ref: ../base_types/ObjectId.yaml
+properties:
+  _type:
+    type: string
+    default: ARCHETYPE_ID
+x-discriminator-value: ARCHETYPE_ID

@@ -1,0 +1,29 @@
+=== CODE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*CODE*
+
+h|*Description*
+2+a|A single code entity in a code set.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The code string for this code entity, e.g. `"AF"`.
+
+h|*0..1*
+|*description*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional description of this code, e.g. `"AFGHANISTAN"`.
+
+This field may be used to hold translations of the description in a language-specific copy of the English language original code set.
+
+h|*0..1*
+|*status*: `<<_terminology_status_enumeration,TERMINOLOGY_STATUS>> +
+{default{nbsp}={nbsp}}`
+a|Status of this code within the code set.
+|===

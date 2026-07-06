@@ -1,0 +1,42 @@
+=== C_PRIMITIVE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__C_PRIMITIVE (abstract)__*
+
+h|*Description*
+2+a|Parent of types representing constraints on primitive types.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Value to be assumed if none sent in data.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*default_value* (): `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]`
+a|Generate a default value from this constraint object.
+
+h|*1..1 +
+(abstract)*
+|*has_assumed_value* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if there is an assumed value.
+
+h|*1..1 +
+(abstract)*
+|*valid_value* ( +
+a_value: `link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if a_value is valid with respect to constraint expressed in concrete instance of this type.
+
+h|*Invariants*
+2+a|__Assumed_value_valid__: `has_assumed_value implies valid_value(assumed_value)`
+|===

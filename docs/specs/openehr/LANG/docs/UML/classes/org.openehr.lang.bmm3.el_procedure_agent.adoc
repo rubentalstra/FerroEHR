@@ -1,0 +1,33 @@
+=== EL_PROCEDURE_AGENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_PROCEDURE_AGENT*
+
+h|*Description*
+2+a|An agent whose signature is of a procedure, i.e. has no result type.
+
+h|*Inherit*
+2+|`<<_el_agent_class,EL_AGENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*definition*: `<<_bmm_procedure_class,BMM_PROCEDURE>>`
+a|Reference to definition of routine for which this is a call instance.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*eval_type* (): `<<_bmm_procedure_type_class,BMM_PROCEDURE_TYPE>>` +
+ +
+__Post_result__: `Result = definition.signature`
+a|Eval type is the signature corresponding to the (remaining) open arguments and return type, if any.
+|===

@@ -1,0 +1,194 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/ARCHETYPE_ONTOLOGY-detailed.json",
+    "title": "ARCHETYPE_ONTOLOGY",
+    "description": "Local ontology of an archetype.",
+    "$comments": "Defined in Archetype IM",
+    "type": "object",
+    "properties": {
+        "term_codes": {
+            "description": "List of all term codes in the ontology. Most of these correspond to \u201cat\u201d codes in an ADL archetype, which are the node_ids on C_OBJECT descendants. There may be an extra one, if a different term is used as the overall archetype concept from that used as the node_id of the outermost C_OBJECT in the definition part.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+            },
+            "minItems": 1
+        },
+        "constraint_codes": {
+            "description": "List of all term codes in the ontology. These correspond to the \u201cac\u201d codes in an ADL archetype, or equivalently, the CONSTRAINT_REF.reference values in the archetype definition.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+            },
+            "minItems": 1
+        },
+        "parent_archetype": {
+            "description": "Archetype which owns this terminology.",
+            "$ref": "all-detailed.json#/definitions/ARCHETYPE"
+        },
+        "terminologies_available": {
+            "description": "List of terminologies to which term or constraint bindings exist in this terminology.",
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+            }
+        },
+        "specialisation_depth": {
+            "description": "Specialisation depth of this archetype. Unspecialised archetypes have depth 0, with each additional level of specialisation adding 1 to the specialisation_depth.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Integer"
+        },
+        "term_attribute_names": {
+            "type": "array",
+            "items": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+            },
+            "minItems": 1
+        }
+    },
+    "required": [
+        "term_codes",
+        "constraint_codes",
+        "parent_archetype",
+        "specialisation_depth",
+        "term_attribute_names"
+    ],
+    "$functions": {
+        "has_language": {
+            "description": "True if terminology \u2018a_terminology\u2019 is present in archetype ontology.",
+            "parameters": {
+                "a_lang": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_lang"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "has_terminology": {
+            "description": "True if terminology `a_terminology' is present in archetype ontology. ",
+            "parameters": {
+                "a_terminology_id": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_terminology_id"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "has_term_code": {
+            "description": "True if term_codes has a_code.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "has_constraint_code": {
+            "description": "True if constraint_codes has a_code.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "term_definition": {
+            "description": "Term definition for a code, in a specified language. ",
+            "parameters": {
+                "a_lang": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                },
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_lang",
+                "a_code"
+            ],
+            "return": {
+                "$ref": "all-detailed.json#/definitions/ARCHETYPE_TERM"
+            }
+        },
+        "constraint_definition": {
+            "description": "Constraint definition for a code, in a specified language.",
+            "parameters": {
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                },
+                "a_lang": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_code",
+                "a_lang"
+            ],
+            "return": {
+                "$ref": "all-detailed.json#/definitions/ARCHETYPE_TERM"
+            }
+        },
+        "term_binding": {
+            "description": "Binding of constraint corresponding to a_code in target external terminology a_terminology_id, as a string, which is usually a formal query expression.",
+            "parameters": {
+                "a_terminology": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                },
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_terminology",
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Data_types/all-detailed.json#/definitions/CODE_PHRASE"
+            }
+        },
+        "constraint_binding": {
+            "description": "Binding of constraint corresponding to a_code in target external terminology a_terminology_id, as a string, which is usually a formal query expression.",
+            "parameters": {
+                "a_terminology_id": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                },
+                "a_code": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required_parameters": [
+                "a_terminology_id",
+                "a_code"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/String"
+            }
+        }
+    },
+    "$invariants": {
+        "Original_language_validity": "code_set (Code_set_id_languages).has_concept_id (original_language)",
+        "concept_code_validity": "id_codes.has (concept_code)",
+        "Term_bindings_validity": "bindings /= void implies not bindings.is_empty",
+        "Parent_archetype_valid": "parent_archetype.ontology = Current",
+        "Pre": "has_term_binding (a_terminology_id, a_code)",
+        "Pre2": "has_term_code (a_code)",
+        "Pre_2": "has_constraint_code (a_code)"
+    }
+}

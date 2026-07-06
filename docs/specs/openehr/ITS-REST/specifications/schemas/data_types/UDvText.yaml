@@ -1,0 +1,12 @@
+title: DV_TEXT
+oneOf:
+  - $ref: ../data_types/UMDvText.yaml
+  - $ref: ../data_types/UMDvCodedText.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    DV_TEXT: ../data_types/UMDvText.yaml
+    DV_CODED_TEXT: ../data_types/UMDvCodedText.yaml
+example:
+  _type: DV_TEXT
+  value: 'Text value'

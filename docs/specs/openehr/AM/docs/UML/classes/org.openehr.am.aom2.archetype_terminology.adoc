@@ -1,0 +1,137 @@
+=== ARCHETYPE_TERMINOLOGY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ARCHETYPE_TERMINOLOGY*
+
+h|*Description*
+2+a|Local terminology of an archetype. This class defines the semantics of the terminology of an archetype.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*is_differential*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this terminology only contains terms relating to a differential specialisation of the owning artefact, rather than a complete set.
+
+h|*1..1*
+|*original_language*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Original language of the terminology, as set at artefact creation or parsing time; must be a code in the ISO 639-1 2 character language code-set.
+
+h|*1..1*
+|*concept_code*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Term code defining the meaning of the artefact as a whole, and always used as the at-code (at-coded archetypes) or id-code (id-coded archetypes) on the root node of the artefact. Must be defined in the `_term_definitions_` property.
+
+h|*1..1*
+|*term_definitions*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_archetype_term_class,ARCHETYPE_TERM>>>>`
+a|Directory of term definitions as a two-level table. The outer hash keys are language codes, e.g. `"en"`, `"de"`, while the inner hash keys are term codes, e.g. `"at0017"`, `"at0004"` (at-coded archetypes) or `"id17"`, `"at4"` (id-coded archetypes).
+
+h|*0..1*
+|*term_bindings*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_uri_class[Uri^]>>`
+a|Directory of bindings to external terminology codes and value sets, as a two-level table. The outer hash keys are terminology ids, e.g. `"SNOMED_CT"`, and the inner hash keys are constraint codes, e.g. `"at0004"`, `"at4"`, "ac13"` or paths. The indexed `Uri` objects represent references to externally defined resources, either terms, ontology concepts, or terminology subsets / ref-sets.
+
+h|*1..1*
+|*owner_archetype*: `<<_archetype_class,ARCHETYPE>>`
+a|Archetype that owns this terminology.
+
+h|*0..1*
+|*value_sets*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_value_set_class,VALUE_SET>>>`
+a|Archetype-local value sets, each keyed by value-set id, i.e. an ac-code.
+
+h|*0..1*
+|*terminology_extracts*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_archetype_term_class,ARCHETYPE_TERM>>>>`
+a|Directory of extracts of external terminologies, as a two-level table. The outer hash keys are terminology ids, e.g. `"SNOMED_CT"`, while the inner hash keys are term codes or code-phrases from the relevant terminology, e.g. `"10094842"`.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*specialisation_depth* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Specialisation depth of this artefact. Unspecialised artefacts have depth 0, with each additional level of specialisation adding 1 to the specialisation_depth.
+
+h|*1..1*
+|*node_codes* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|For at-coded archetypes: list of all at codes in the terminology., i.e. the 'at' codes in an ADL archetype, which are the `_node_id_` values on `C_OBJECT` descendants. For id-coded archetypes: list of all id codes in the terminology., i.e. the 'id' codes in an ADL archetype, which are the `_node_id_` values on `C_OBJECT` descendants.
+
+h|*0..1*
+|*value_codes* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of all value term codes in the terminology, i.e. the 'at' codes in an ADL archetype, which are used as possible values on terminological constrainer nodes.
+
+h|*0..1*
+|*value_set_codes* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of all value set codes in the terminology defining value sets. These correspond to the 'ac' codes in an ADL archetype.
+
+h|*1..1*
+|*has_language* ( +
+a_lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if language `_a_lang_` is present in archetype terminology.
+
+h|*1..1*
+|*has_terminology* ( +
+a_terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if there are bindings to terminology `_a_terminology_id_` present.
+
+h|*1..1*
+|*has_term_code* ( +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if code `_a_code_` defined in this terminology.
+
+h|*1..1*
+|*term_definition* ( +
+a_lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_archetype_term_class,ARCHETYPE_TERM>>` +
+ +
+__Pre__: `has_term-definition (a_lang, a_code)`
+a|Term definition for a code, in a specified language.
+
+h|*1..1*
+|*term_binding* ( +
+a_terminology: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_uri_class[Uri^]` +
+ +
+__Pre__: `has_term_binding (a_terminology_id, a_code)`
+a|Binding of constraint corresponding to `_a_code_` in target external terminology `_a_terminology_id_`, as a string, which is usually a formal query expression.
+
+h|*1..1*
+|*terminologies_available* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of terminologies to which term or constraint bindings exist in this terminology, computed from bindings.
+
+h|*1..1*
+|*terminology_extract_term* ( +
+a_terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+a_code: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_archetype_term_class,ARCHETYPE_TERM>>` +
+ +
+__Pre__: `has_terminology_extract (a_terminology_id) and has_terminology_extract_code (a_code)`
+a|Return an `ARCHETYPE_TERM` from specified terminology extract, for specified term code.
+
+h|*1..1*
+|*has_terminology_extract* ( +
+a_terminology_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if there is a provided terminology extract present.
+
+h|*1..1*
+|*languages_available* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of languages in which terms in this terminology are available.
+
+h|*Invariants*
+2+a|__Original_language_validity__: `code_set (Code_set_id_languages).has_concept_id (original_language)`
+
+h|
+2+a|__concept_code_validity__: `id_codes.has (concept_code)`
+
+h|
+2+a|__Term_bindings_validity__: `bindings /= void implies not bindings.is_empty`
+
+h|
+2+a|__Parent_archetype_valid__: `parent_archetype.terminology = Current`
+|===

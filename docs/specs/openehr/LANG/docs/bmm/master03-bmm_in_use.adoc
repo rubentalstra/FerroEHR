@@ -1,0 +1,33 @@
+= BMM in Use
+
+BMM schemas as used in the openEHR ADL Workbench (AWB) provide an illustration of their use and visualisation. The following screenshot shows the BMM schema configuration dialog in the AWB, including some meta-data, validation status etc, and also the schema nesting structure.
+
+[.text-center]
+.BMM schema configuration
+image::{images_uri}/awb_schemas_config.png[id=awb_schemas_config, align="center", width="60%"]
+
+The screenshot below shows a number of BMMs loaded into the AWB, including some of the packages and classes for the 'openehr_ehr_extract_1.1.0' model.
+
+[.text-center]
+.BMM schemas loaded
+image::{images_uri}/awb_loaded_bmm_schemas.png[id=awb_loaded_bmm_schemas, align="center", width="40%"]
+
+The following shows a single class in the inheritance-flattened properties view, otherwise known as the 'flat view'. The structure of the class as properties, types, multiplicities, inheritance etc are all provided by the in-memory BMM classes.
+
+[.text-center]
+.BMM class - properties view
+image::{images_uri}/awb_class_properties.png[id=awb_class_properties, align="center", width="50%"]
+
+The following shows a class in a 'closure' view, which is a computed reachability graph of a fully inheritance-flattened class and all properties, including recursive references.
+
+[.text-center]
+.BMM class - closure view
+image::{images_uri}/awb_class_closure.png[id=awb_class_closure, align="center", width="60%"]
+
+One of the main uses of the BMM in the ADL Workbench and other similar tools is to provide a computable form of the information model ('reference model' in openEHR) for use with archetypes. The following shows an archetype for which each node has its RM class shown (in colour), and additionally, the inclusion of non-archetyped attributes from the classes of the archetype nodes.
+
+[.text-center]
+.ADL archetype with BMM class properties
+image::{images_uri}/archetype_rm.png[id=archetype_rm, align="center"]
+
+

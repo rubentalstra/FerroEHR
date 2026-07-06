@@ -1,0 +1,1420 @@
+== Data Types - quantity Package
+
+=== DV_ORDINAL
+
+{openehr_rm_data_types}#_quantity_package[Specification / UML reference^].
+
+DV_ORDINAL is constrained by C_DV_ORDINAL from the {openehr_am_oap}[openEHR AM 1.4 Archetype Profile^], which contains a list of DV_ORDINAL that could be empty.
+
+NOTE: in ADL it is possible to have a C_DV_ORDINAL constraint with an empty list constraint. At the OPT level this case should be invalid, since is like defining a constraint for a DV_CODED_TEXT with terminology_id `local` but no given codes, since all codes in a C_DV_ORDINAL have terminology_id `local`, at least one code in the list is required at the OPT level. This constraint is valid at the archetypel evel. See commend on 2.3.2.
+
+
+==== Test Case CONT-DV_ORDINAL-validate_open
+
+This case is when the ADL has `DV_ORDINAL matches {*}`
+
+[cols="1,1,1,2", options="header"]
+|===
+| symbol         | value | expected | constraints violated 
+
+| NULL           | NULL  | rejected | RM/Schema value and symbol are mandatory 
+| NULL           | 1     | rejected | RM/Schema symbol is mandatory            
+| local::at0005  | NULL  | rejected | RM/Schema value is mandatory             
+| local::at0005  | 1     | accepted |                                          
+| local::at0005  | 666   | accepted |                                          
+|===
+
+
+==== Test Case CONT-DV_ORDINAL-validate_constraint
+
+[options="header"]
+|===
+| symbol         | value | C_DV_ORDINAL.list                    | expected | constraints violated 
+
+| local::at0005  | 1     | 1\|[local::at0005], 2\|[local::at0006] | accepted |                                       
+| local::at0005  | 666   | 1\|[local::at0005], 2\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching value  
+| local::at0666  | 1     | 1\|[local::at0005], 2\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching symbol 
+|===
+
+
+
+=== DV_SCALE
+
+DV_SCALE was introduced to the RM 1.1.0 (https://openehr.atlassian.net/browse/SPECRM-19[Discourse discussion^]), it is analogous to DV_ORDINAL with a Real value. So test cases for DV_SCALE and DV_ORDINAL are similar.
+
+NOTE: if this specification is implemented on a system that supports a RM < 1.1.0, then these tests shouldn't run against the system.
+
+==== Test Case CONT-DV_SCALE-validate_open
+
+This case is when the ADL has `DV_SCALE matches {*}`
+
+[options="header"]
+|===
+| symbol         | value | expected | constraints violated 
+
+| NULL           | NULL  | rejected | RM/Schema value and symbol are mandatory 
+| NULL           | 1.5   | rejected | RM/Schema symbol is mandatory            
+| local::at0005  | NULL  | rejected | RM/Schema value is mandatory             
+| local::at0005  | 1.5   | accepted |                                          
+| local::at0005  | 666   | accepted |                                          
+|===
+
+==== Test Case CONT-DV_SCALE-validate_constraint
+
+NOTE: there is no current C_DV_SCALE constraint in the Archetype Profile, so modeling tools are not yet supporting constraints for this type. This is a [known issue](https://openehr.atlassian.net/browse/SPECPR-381). Though we can assume the constraint type will be analogous to the C_DV_ORDINAL.
+
+[options="header"]
+|===
+| symbol         | value | C_DV_SCALE.list                          | expected | constraints violated                
+
+| local::at0005  | 1.5   | 1.5\|[local::at0005], 2.0\|[local::at0006] | accepted |                                     
+| local::at0005  | 66.6  | 1.5\|[local::at0005], 2.0\|[local::at0006] | rejected | C_DV_SCALE.list: no matching value  
+| local::at0666  | 1.5   | 1.5\|[local::at0005], 2.0\|[local::at0006] | rejected | C_DV_SCALE.list: no matching symbol 
+|===
+
+
+=== DV_COUNT
+
+Internally this type is constrained by a C_INTEGER which could contain a range or a list of values.
+
+==== Test Case CONT-DV_COUNT-validate_open
+
+This case represents the DV_COUNT matching {*}, in this case the C_INTEGER is not present in the OPT.
+
+[options="header"]
+|===
+| magnitude      | expected | constraints violated 
+
+| NULL           | rejected | RM/Schema magnitude is mandatory 
+| 0              | accepted |                      
+| 1              | accepted |                      
+| 15             | accepted |                      
+| 30             | accepted |                      
+|===
+
+==== Test Case CONT-DV_COUNT-validate_range
+
+[options="header"]
+|===
+| magnitude      | C_INTEGER.range | C_INTEGER.list    | expected | constraints violated 
+
+| NULL           | 10..20          | NULL              | rejected | RM/Schema magnitude is mandatory 
+| 0              | 10..20          | NULL              | rejected | C_INTEGER.range 
+| 1              | 10..20          | NULL              | rejected | C_INTEGER.range 
+| 15             | 10..20          | NULL              | accepted |  
+| 30             | 10..20          | NULL              | rejected | C_INTEGER.range 
+|===
+
+==== Test Case CONT-DV_COUNT-validate_list
+
+NOTE: some modeling tools might not support the list constraint.
+
+[options="header"]
+|===
+| magnitude      | C_INTEGER.range | C_INTEGER.list    | expected | constraints violated 
+
+| NULL           | NULL            | [10,15,20]        | rejected | RM/Schema magnitude is mandatory 
+| 0              | NULL            | [10,15,20]        | rejected | C_INTEGER.list 
+| 1              | NULL            | [10,15,20]        | rejected | C_INTEGER.list 
+| 15             | NULL            | [10,15,20]        | accepted |  
+| 30             | NULL            | [10,15,20]        | rejected | C_INTEGER.list 
+|===
+
+
+=== DV_QUANTITY
+
+Internally DV_QUANTITY is constrained by a C_DV_QUANTITY, which allows to specify an optional physical property and a list of C_QUANTITY_ITEM, which can contain a mandatory units and optional interval constraints for magnitude and precision.
+
+==== Test Case CONT-DV_QUANTITY-validate_open
+
+This case represents the DV_QUANTITY matching {*}, in this case the C_DV_QUANTITY is not present in the OPT.
+
+[options="header"]
+|===
+| magnitude | units | expected | constraints violated 
+
+| NULL      | NULL  | rejected | RM/Schema both magnitude and untis are mandatory 
+| NULL      | cm    | rejected | RM/Schema magnitude is mandatory 
+| 1.0       | NULL  | rejected | RM/Schema untis is mandatory 
+| 0.0       | cm    | accepted |                      
+| 1.0       | cm    | accepted |                      
+| 5.7       | cm    | accepted |                      
+| 10.0      | cm    | accepted |                      
+|===
+
+
+==== Test Case CONT-DV_QUANTITY-validate_property
+
+The C_DV_QUANTITY is present in the OPT and has a value for `property`, but doesn't have a list of C_QUANTITY_ITEM.
+
+NOTE: in this case all units for the `property` are allowed, so the validation should look into UCUM for all the possible units of measure or that physical property (the possible values are not un the OPT).
+
+[options="header"]
+|===
+| magnitude | units | C_DV_QUANTITY.property  | C_DV_QUANTITY.list    | expected | constraints violated 
+
+| NULL      | NULL  | openehr::122 (length)   | NULL              | rejected | RM/Schema both magnitude and untis are mandatory 
+| NULL      | cm    | openehr::122 (length)   | NULL              | rejected | RM/Schema magnitude is mandatory 
+| 1.0       | NULL  | openehr::122 (length)   | NULL              | rejected | RM/Schema untis is mandatory 
+| 0.0       | mg    | openehr::122 (length)   | NULL              | rejected | C_DV_QUANTITY.property: `mg` is not a length unit 
+| 0.0       | cm    | openehr::122 (length)   | NULL              | accepted |  
+| 1.0       | cm    | openehr::122 (length)   | NULL              | accepted |  
+| 5.7       | cm    | openehr::122 (length)   | NULL              | accepted |  
+| 10.0      | cm    | openehr::122 (length)   | NULL              | accepted |  
+|===
+
+
+==== Test Case CONT-DV_QUANTITY-validate_property_units
+
+[options="header"]
+|===
+| magnitude | units | C_DV_QUANTITY.property  | C_DV_QUANTITY.list    | expected | constraints violated 
+
+| NULL      | NULL  | openehr::122 (length)   | [cm, m]           | rejected | RM/Schema both magnitude and untis are mandatory 
+| NULL      | cm    | openehr::122 (length)   | [cm, m]           | rejected | RM/Schema magnitude is mandatory 
+| 1.0       | NULL  | openehr::122 (length)   | [cm, m]           | rejected | RM/Schema untis is mandatory 
+| 0.0       | mg    | openehr::122 (length)   | [cm, m]           | rejected | C_DV_QUANTITY.property: `mg` is not a length unit 
+| 0.0       | cm    | openehr::122 (length)   | [cm, m]           | accepted |  
+| 0.0       | km    | openehr::122 (length)   | [cm, m]           | rejected | C_DV_QUANTITY.list: `km` is not allowed 
+| 1.0       | cm    | openehr::122 (length)   | [cm, m]           | accepted |  
+| 5.7       | cm    | openehr::122 (length)   | [cm, m]           | accepted |  
+| 10.0      | cm    | openehr::122 (length)   | [cm, m]           | accepted |  
+|===
+
+
+==== Test Case CONT-DV_QUANTITY-validate_property_units_mag
+
+[options="header"]
+|===
+| magnitude | units | C_DV_QUANTITY.property  | C_DV_QUANTITY.list    | expected | constraints violated 
+
+| NULL      | NULL  | openehr::122 (length)   | [cm 5.0..10.0, m]     | rejected | RM/Schema both magnitude and untis are mandatory 
+| NULL      | cm    | openehr::122 (length)   | [cm 5.0..10.0, m]     | rejected | RM/Schema magnitude is mandatory 
+| 1.0       | NULL  | openehr::122 (length)   | [cm 5.0..10.0, m]     | rejected | RM/Schema untis is mandatory 
+| 0.0       | mg    | openehr::122 (length)   | [cm 5.0..10.0, m]     | rejected | C_DV_QUANTITY.property: `mg` is not a length unit 
+| 0.0       | cm    | openehr::122 (length)   | [cm 5.0..10.0, m]     | rejected | C_DV_QUANTITY.list: magnitude not in range for unit  
+| 0.0       | km    | openehr::122 (length)   | [cm 5.0..10.0, m]     | rejected | C_DV_QUANTITY.list: `km` is not allowed 
+| 1.0       | cm    | openehr::122 (length)   | [cm 5.0..10.0, m]     | rejected | C_DV_QUANTITY.list: magnitude not in range for unit 
+| 5.7       | cm    | openehr::122 (length)   | [cm 5.0..10.0, m]     | accepted |  
+| 10.0      | cm    | openehr::122 (length)   | [cm 5.0..10.0, m]     | accepted |  
+|===
+
+
+=== DV_PROPORTION
+
+The DV_PROPORTION is contrained by a C_COMPLEX_OBJECT, which internally has C_REAL constraints for `numerator` and `denominator`. C_REAL defines two types of constraints: range and list of values. Though current modeling tools only allow range contraints. For the `type` atribute, a C_INTEGER constraint is used, which can hold list and range constraints but modeling tools only use the list.
+
+This type has intrinsic constraints that should be semantically consistent depending on the value of the numerator, denominator, precision and type attributes. For instance, this if type = 2, the denominator value should be 100 and can't be anything else. In te table below we express the valid combinations of attribute values.
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator  | precision | comment 
+
+| 0    | ratio            | any       | any != 0     | any       |         
+| 1    | unitary          | any       | 1            | any       |         
+| 2    | percent          | any       | 100          | any       |         
+| 3    | fraction         | integer   | integer != 0 | 0         | presentation is num/den 
+| 4    | integer fraction | integer   | integer != 0 | 0         | presentation is integral(num/den) decimal(num/den), e.g. for num=3 den=2: 1 1/2 
+|===
+
+NOTE: the difference between fraction and integer fraction is the presentation, the data and constraints are the same.
+
+
+==== Test Case CONT-DV_PROPORTION-validate_open
+
+This test case is used to check the internal rules of the DV_PROPORTION are correctly implemented by the SUT.
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | expected | constraints violated             
+
+| 0    | ratio            | 10        | 500         | 0         | accepted |                                  
+| 0    | ratio            | 10        | 0           | 0         | rejected | valid_denominator (invariant)    
+| 1    | unitary          | 10        | 1           | 0         | accepted |                                  
+| 1    | unitary          | 10        | 0           | 0         | rejected | valid_denominator (invariant)    
+| 1    | unitary          | 10        | 500         | 0         | rejected | unitary_validity (invariant)     
+| 2    | percent          | 10        | 0           | 0         | rejected | valid_denominator (invariant)    
+| 2    | percent          | 10        | 100         | 0         | accepted |                                  
+| 2    | percent          | 10        | 500         | 0         | rejected | percent_validity (invariant)     
+| 3    | fraction         | 10        | 0           | 0         | rejected | valid_denominator (invariant)    
+| 3    | fraction         | 10        | 100         | 0         | accepted |                                  
+| 3    | fraction         | 10        | 500         | 1         | rejected | fraction_validity (invariant)    
+| 3    | fraction         | 10.5      | 500         | 1         | rejected | is_integral_validity (invariant) 
+| 3    | fraction         | 10        | 500.5       | 1         | rejected | is_integral_validity (invariant) 
+| 4    | integer fraction | 10        | 0           | 0         | rejected | valid_denominator (invariant)    
+| 4    | integer fraction | 10        | 100         | 0         | accepted |                                  
+| 4    | integer fraction | 10        | 500         | 1         | rejected | fraction_validity (invariant)    
+| 4    | integer fraction | 10.5      | 500         | 1         | rejected | is_integral_validity (invariant) 
+| 4    | integer fraction | 10        | 500.5       | 1         | rejected | is_integral_validity (invariant) 
+| 666  |                  | 10        | 500         | 0         | rejected | type_validity (invariant)        
+|===
+
+
+==== Test Case CONT-DV_PROPORTION-validate_ratio
+
+The C_INTEGER constraint applies to the `type` attribute.
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_INTEGER.list | expected | constraints violated             
+
+| 0    | ratio            | 10        | 500         | 0         | [0]            | accepted |                                  
+| 1    | unitary          | 10        | 1           | 0         | [0]            | rejected | C_INTEGER.list                   
+| 2    | percent          | 10        | 100         | 0         | [0]            | rejected | C_INTEGER.list                   
+| 3    | fraction         | 10        | 500         | 0         | [0]            | rejected | C_INTEGER.list                   
+| 4    | integer fraction | 10        | 500         | 0         | [0]            | rejected | C_INTEGER.list                   
+|===
+
+NOTE: all the fail cases related with invariants were already contemplated in 3.6.1.
+
+==== Test Case CONT-DV_PROPORTION-validate_unitary
+
+The C_INTEGER constraint applies to the `type` attribute.
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_INTEGER.list | expected | constraints violated             
+
+| 0    | ratio            | 10        | 500         | 0         | [1]            | reejcted | C_INTEGER.list                   
+| 1    | unitary          | 10        | 1           | 0         | [1]            | accepted |                                  
+| 2    | percent          | 10        | 100         | 0         | [1]            | rejected | C_INTEGER.list                   
+| 3    | fraction         | 10        | 500         | 0         | [1]            | rejected | C_INTEGER.list                   
+| 4    | integer fraction | 10        | 500         | 0         | [1]            | rejected | C_INTEGER.list                   
+|===
+
+==== Test Case CONT-DV_PROPORTION-validate_percent
+
+The C_INTEGER constraint applies to the `type` attribute.
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_INTEGER.list | expected | constraints violated             
+
+| 0    | ratio            | 10        | 500         | 0         | [2]            | reejcted | C_INTEGER.list                   
+| 1    | unitary          | 10        | 1           | 0         | [2]            | rejected | C_INTEGER.list                   
+| 2    | percent          | 10        | 100         | 0         | [2]            | accepted |                                  
+| 3    | fraction         | 10        | 500         | 0         | [2]            | rejected | C_INTEGER.list                   
+| 4    | integer fraction | 10        | 500         | 0         | [2]            | rejected | C_INTEGER.list                   
+|===
+
+==== Test Case CONT-DV_PROPORTION-validate_fraction
+
+The C_INTEGER constraint applies to the `type` attribute.
+
+| type | meaning (kind)   | numerator | denominator | precision | C_INTEGER.list | expected | constraints violated             
+[options="header"]
+|===
+
+| 0    | ratio            | 10        | 500         | 0         | [3]            | rejected | C_INTEGER.list                   
+| 1    | unitary          | 10        | 1           | 0         | [3]            | rejected | C_INTEGER.list                   
+| 2    | percent          | 10        | 100         | 0         | [3]            | rejected | C_INTEGER.list                   
+| 3    | fraction         | 10        | 500         | 0         | [3]            | accepted |                                  
+| 4    | integer fraction | 10        | 500         | 0         | [3]            | rejected | C_INTEGER.list                   
+|===
+
+==== Test Case CONT-DV_PROPORTION-validate_integer_fraction
+
+The C_INTEGER constraint applies to the `type` attribute.
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_INTEGER.list | expected | constraints violated             
+
+| 0    | ratio            | 10        | 500         | 0         | [4]            | reejcted | C_INTEGER.list                   
+| 1    | unitary          | 10        | 1           | 0         | [4]            | rejected | C_INTEGER.list                   
+| 2    | percent          | 10        | 100         | 0         | [4]            | rejected | C_INTEGER.list                   
+| 3    | fraction         | 10        | 500         | 0         | [4]            | rejected | C_INTEGER.list                   
+| 4    | integer fraction | 10        | 500         | 0         | [4]            | accepted |                                  
+|===
+
+==== Test Case CONT-DV_PROPORTION-validate_any_fraction
+
+This case is similar to the previous one, it just tests a combination of possible types for the proportion.
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_INTEGER.list | expected | constraints violated             
+
+| 0    | ratio            | 10        | 500         | 0         | [3, 4]         | reejcted | C_INTEGER.list                   
+| 1    | unitary          | 10        | 1           | 0         | [3, 4]         | rejected | C_INTEGER.list                   
+| 2    | percent          | 10        | 100         | 0         | [3, 4]         | rejected | C_INTEGER.list                   
+| 3    | fraction         | 10        | 500         | 0         | [3, 4]         | accepted |                                  
+| 4    | integer fraction | 10        | 500         | 0         | [3, 4]         | accepted |                                  
+|===
+
+==== Test Case CONT-DV_PROPORTION-validate_ratio_range
+
+The C_INTEGER constraint applies to the `type` attribute. The C_REAL constraints apply to numerator and denominator respectively.
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_INTEGER.list | C_REAL.range (num) | C_REAL.range (den) | expected | constraints violated 
+
+| 0    | ratio            | 10        | 500         | 0         | [0]            | 5..20              | 200..600           | accepted |                      
+| 0    | ratio            | 10        | 1           | 0         | [0]            | 5..20              | 200..600           | rejected | C_REAL.range (den)   
+| 0    | ratio            | 30        | 500         | 0         | [0]            | 5..20              | 200..600           | rejected | C_REAL.range (num)   
+| 0    | ratio            | 3         | 1000        | 0         | [0]            | 5..20              | 200..600           | rejected | C_REAL.range (num), C_REAL.range (den) 
+|===
+
+=== DV_INTERVAL<DV_COUNT>
+
+==== Test Case CONT-DV_INTERVAL_DV_COUNT-validate_open
+
+The DV_INTERVAL<DV_COUNT> constraint is {*}.
+
+NOTE: the failure instance for this test case are related with violated interval semantics.
+
+[options="header"]
+|===
+| lower | upper | lower_unbounded | upper_unbounded | lower_included | upper_included | expected | constraints violated 
+
+| NULL  | NULL  | true            | true            | false          | false          | accepted |                      
+| NULL  | 100   | true            | false           | false          | false          | accepted |                      
+| NULL  | 100   | true            | false           | false          | true           | accepted |                      
+| 0     | NULL  | false           | true            | false          | false          | accepted |                      
+| 0     | NULL  | false           | true            | true           | false          | accepted |                      
+| -20   | -5    | false           | false           | false          | false          | accepted |                      
+| 0     | 100   | false           | false           | true           | true           | accepted |                      
+| 10    | 100   | false           | false           | true           | true           | accepted |                      
+| -50   | 50    | false           | false           | true           | true           | accepted |                      
+| NULL  | NULL  | true            | true            | true           | false          | rejected | lower_included_valid (invariant) 
+| 0     | NULL  | false           | true            | false          | true           | rejected | upper_included_valid (invariant) 
+| 200   | 100   | false           | false           | true           | true           | rejected | limits_consistent (invariant) 
+|===
+
+==== Test Case CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper
+
+Lower and upper are DV_COUNT, which are constrainted internally by C_INTEGER. C_INTEGER has range and list constraints.
+
+NOTE: the lower and upper limits are not constrained in terms of existence or occurrences, so both are optional. 
+
+[options="header"]
+|===
+| lower | upper | lower_unbounded | upper_unbounded | lower_included | upper_included | C_INTEGER.range (lower) | C_INTEGER.range (upper) | expected | constraints violated 
+
+| NULL  | NULL  | true            | true            | false          | false          | 0..100                  | 0..100                  | accepted |                      
+| 0     | NULL  | false           | true            | true           | false          | 0..100                  | 0..100                  | accepted |                      
+| NULL  | 100   | true            | false           | false          | true           | 0..100                  | 0..100                  | accepted |                      
+| 0     | 100   | false           | false           | true           | true           | 0..100                  | 0..100                  | accepted |                      
+| -10   | 100   | false           | false           | true           | true           | 0..100                  | 0..100                  | rejected | C_INTEGER.range (lower) 
+| 0     | 200   | false           | false           | true           | true           | 0..100                  | 0..100                  | rejected | C_INTEGER.range (upper) 
+| -10   | 200   | false           | false           | true           | true           | 0..100                  | 0..100                  | rejected | C_INTEGER.range (lower), C_INTEGER.range (upper) 
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list
+
+Lower and upper are DV_COUNT, which are constrainted internally by C_INTEGER. C_INTEGER has range and list constraints.
+
+NOTE: not all modeling tools allow a list constraint for the lower and upper attributes of the DV_INTERVAL.
+
+[options="header"]
+|===
+| lower | upper | lower_unbounded | upper_unbounded | lower_included | upper_included | C_INTEGER.list (lower)  | C_INTEGER.list (upper)  | expected | constraints violated 
+
+| NULL  | NULL  | true            | true            | false          | false          | [0, 5, 10, 100]         | [0, 5, 10, 100]         | accepted |                      
+| 0     | NULL  | false           | true            | true           | false          | [0, 5, 10, 100]         | [0, 5, 10, 100]         | accepted |                      
+| NULL  | 100   | true            | false           | false          | true           | [0, 5, 10, 100]         | [0, 5, 10, 100]         | accepted |                      
+| 0     | 100   | false           | false           | true           | true           | [0, 5, 10, 100]         | [0, 5, 10, 100]         | accepted |                      
+| -10   | 100   | false           | false           | true           | true           | [0, 5, 10, 100]         | [0, 5, 10, 100]         | rejected | C_INTEGER.list (lower) 
+| 0     | 200   | false           | false           | true           | true           | [0, 5, 10, 100]         | [0, 5, 10, 100]         | rejected | C_INTEGER.list (upper) 
+| -10   | 200   | false           | false           | true           | true           | [0, 5, 10, 100]         | [0, 5, 10, 100]         | rejected | C_INTEGER.list (lower), C_INTEGER.list (upper) 
+|===
+
+
+=== DV_INTERVAL<DV_QUANTITY>
+
+==== Test Case CONT-DV_INTERVAL_DV_QUANTITY-validate_open
+
+The DV_INTERVAL<DV_QUANTITY> constraint is {*}.
+
+NOTE: the failure instance for this test case are related with violated interval semantics.
+
+[options="header"]
+|===
+| lower  | upper  | lower_unbounded | upper_unbounded | lower_included | upper_included | expected | constraints violated 
+
+| NULL   | NULL   | true            | true            | false          | false          | accepted |                      
+| NULL   | 100 mg | true            | false           | false          | false          | accepted |                      
+| NULL   | 100 mg | true            | false           | false          | true           | accepted |                      
+| 0 mg   | NULL   | false           | true            | false          | false          | accepted |                      
+| 0 mg   | NULL   | false           | true            | true           | false          | accepted |                      
+| 0 mg   | 100 mg | false           | false           | true           | true           | accepted |                      
+| 10 mg  | 100 mg | false           | false           | true           | true           | accepted |                      
+| NULL   | NULL   | true            | true            | true           | false          | rejected | lower_included_valid (invariant) 
+| 0 mg   | NULL   | false           | true            | false          | true           | rejected | upper_included_valid (invariant) 
+| 200 mg | 100 mg | false           | false           | true           | true           | rejected | limits_consistent (invariant)    
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower
+
+The lower and upper constraints are C_DV_QUANTITY.
+
+NOTE: in all cases the C_DV_QUANTITY.property referes to `temperature` to keep tests as simple as possible and be able to use negative values (for other physical properties negative values don't make sense). All temperatures will be measured in degree Celsius (`Cel` in UCUM).
+
+[options="header"]
+|===
+| lower     | upper   | lower_unbounded | upper_unbounded | lower_included | upper_included | C_DV_QUANTITY.list (lower) | C_DV_QUANTITY.list (upper) | expected | constraints violated  
+
+| NULL      | NULL    | true            | true            | false          | false          | [0..100 Cel]               | [0..100 Cel]               | accepted |                       
+| 0 Cel     | NULL    | false           | true            | true           | false          | [0..100 Cel]               | [0..100 Cel]               | accepted |                       
+| NULL      | 100 Cel | true            | false           | false          | true           | [0..100 Cel]               | [0..100 Cel]               | accepted |                       
+| 0 Cel     | 100 Cel | false           | false           | true           | true           | [0..100 Cel]               | [0..100 Cel]               | accepted |                       
+| -10 Cel   | 100 Cel | false           | false           | true           | true           | [0..100 Cel]               | [0..100 Cel]               | rejected | C_DV_QUANTITY (lower) 
+| 0 Cel     | 200 Cel | false           | false           | true           | true           | [0..100 Cel]               | [0..100 Cel]               | rejected | C_DV_QUANTITY (upper) 
+| -10 Cel   | 200 Cel | false           | false           | true           | true           | [0..100 Cel]               | [0..100 Cel]               | rejected | C_DV_QUANTITY (lower),C_DV_QUANTITY (upper) 
+|===
+
+
+=== DV_INTERVAL<DV_DATE_TIME>
+
+==== Test Case CONT-DV_INTERVAL_DV_DATE_TIME-validate_open
+
+The DV_INTERVAL<DV_DATE_TIME> constraint is {*}.
+
+[options="header"]
+|===
+| lower                        | upper                        | lower_unbounded | upper_unbounded | lower_included | upper_included | expected | constraints violated          
+
+| NULL                         | NULL                         | false           | false           | true           | true           | rejected | RM/Schema: value is mandatory for lower and upper 
+| NULL                         | ""                           | false           | false           | true           | true           | rejected | RM/Schema: value is mandatory for lower. ISO8601: at least year is required for upper. 
+| ""                           | NULL                         | false           | false           | true           | true           | rejected | ISO8601: at least year is required for lower. RM/Schema: value is mandatory for upper.
+| 2021                         | NULL                         | false           | false           | true           | true           | rejected | RM/Schema: value is mandatory for upper. 
+| NULL                         | 2022                         | false           | false           | true           | true           | rejected | RM/Schema: value is mandatory for lower. 
+| 2021                         | 2022                         | false           | false           | true           | true           | accepted | 
+| 2021-00                      | 2022-01                      | false           | false           | true           | true           | rejected | ISO8601: month in 01..12 for lower. 
+| 2021-01                      | 2022-01                      | false           | false           | true           | true           | accepted | 
+| 2021-01-00                   | 2022-01-01                   | false           | false           | true           | true           | rejected | ISO8601: day in 01..31 for lower. 
+| 2021-01-32                   | 2022-01-01                   | false           | false           | true           | true           | rejected | ISO8601: day in 01..31 for lower. 
+| 2021-01-01                   | 2022-01-00                   | false           | false           | true           | true           | rejected | ISO8601: day in 01..31 for upper. 
+| 2021-01-30                   | 2022-01-00                   | false           | false           | true           | true           | rejected | ISO8601: day in 01..31 for upper. 
+| 2021-01-30                   | 2022-01-15                   | false           | false           | true           | true           | accepted | 
+| 2021-10-24T48                | 2022-01-15T10                | false           | false           | true           | true           | rejected | ISO8601: hours in 00..23 for lower. 
+| 2021-10-24T21                | 2022-01-15T73                | false           | false           | true           | true           | rejected | ISO8601: hours in 00..23 for upper. 
+| 2021-10-24T05                | 2022-01-15T10                | false           | false           | true           | true           | accepted | 
+| 2021-10-24T05:95             | 2022-01-15T10:45             | false           | false           | true           | true           | rejected | ISO8601: minutes in 00..59 for lower. 
+| 2021-10-24T05:30             | 2022-01-15T10:61             | false           | false           | true           | true           | rejected | ISO8601: minutes in 00..59 for upper. 
+| 2021-10-24T05:30             | 2022-01-15T10:45             | false           | false           | true           | true           | accepted | 
+| 2021-10-24T05:30:78          | 2022-01-15T10:45:13          | false           | false           | true           | true           | rejected | ISO8601: seconds in 00..59 for lower. 
+| 2021-10-24T05:30:47          | 2022-01-15T10:45:69          | false           | false           | true           | true           | rejected | ISO8601: seconds in 00..59 for upper. 
+| 2021-10-24T05:30:47          | 2022-01-15T10:45:13          | false           | false           | true           | true           | accepted | 
+| 2021-10-24T05:30:47.5        | 2022-01-15T10:45:13.6        | false           | false           | true           | true           | accepted | 
+| 2021-10-24T05:30:47.333      | 2022-01-15T10:45:13.555      | false           | false           | true           | true           | accepted | 
+| 2021-10-24T05:30:47.333333   | 2022-01-15T10:45:13.555555   | false           | false           | true           | true           | accepted | 
+| 2021-10-24T05:30:47Z         | 2022-01-15T10:45:13Z         | false           | false           | true           | true           | accepted | 
+| 2021-10-24T05:30:47-03:00    | 2022-01-15T10:45:13-03:00    | false           | false           | true           | true           | accepted | 
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint
+
+NOTE: the C_DATE_TIME has invariants that define if a higher precision component is optional or prohibited, lower precision components should be optional or prohibited. In other words, if `month` is optional, `day`, `hours`, `minutes`, etc. are optional or prohibited. These invariants should be checked in an archetype editor and template editor, we consider the following tests to follow those rules without checking them, since that is related to archetype/template validation, not with data validation.
+
+NOTE: if different components of each lower/upper date time expression fail the validity constraint for `mandatory`, the only required contraint violated to be reported is the higher precision one, since it implies the lower precision components will also fail. For instance if the hour, second and millisecond are `mandatory`, and the corresponding date time expression doesn't have hour, it is accepted if the reported constraints violated is only the hour_validity, and optionally the SUT can report the minute_validity, second_validity and millisecond_validity constraints as violated too. In the data sets below we show all the constraints violated.
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | month_val. (lower) | day_val. (lower) | month_val. (upper) | day_val. (upper) | hour_val. (lower) | minute_val. (lower) | second_val. (lower) | millisecond_val. (lower) | timezone_val. (lower) | hour_val. (upper) | minute_val. (upper) | second_val. (upper) | millisecond_val. (upper) | timezone_val. (upper) | expected | constraints violated          
+
+| 2021       | 2022       | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | rejected | month_val. (lower), day_val. (lower), month_val. (upper), day_val. (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper), second_val. (lower), second_val. (upper), millisecond_val. (lower), millisecond_val. (upper), timezone_val. (lower), timezone__val. (upper) 
+| 2021       | 2022       | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                 | mandatory             | rejected | month_validity (lower), month_validity (upper), timezone_val. (lower), timezone__val. (upper) 
+| 2021       | 2022       | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                 | optional              | rejected | month_validity (lower), month_validity (upper) 
+| 2021       | 2022       | false           | false           | true           | true           | optional           | optional         | optional           | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                 | mandatory             | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021       | 2022       | false           | false           | true           | true           | optional           | optional         | optional           | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                 | optional              | accepted |  
+| 2021       | 2022       | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited       | prohibited        | prohibited          | prohibited          | prohibited               | mandatory             | prohibited        | prohibited          | prohibited          | prohibited               | mandatory             | rejected | month_validity (lower), month_validity (upper), timezone_val. (lower), timezone__val. (upper) 
+| 2021       | 2022       | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited       | prohibited        | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited               | prohibited            | rejected | month_validity (lower), month_validity (upper) 
+| 2021       | 2022       | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited        | prohibited          | prohibited          | prohibited               | mandatory             | prohibited        | prohibited          | prohibited          | prohibited               | mandatory             | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021       | 2022       | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited        | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited               | prohibited            | accepted | 
+| 2021-10    | 2022-10    | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | rejected | day_validity (lower), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper), second_val. (lower), second_val. (upper), millisecond_val. (lower), millisecond_val. (upper), timezone_val. (lower), timezone__val. (upper)
+| 2021-10    | 2022-10    | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone_val. (upper) 
+| 2021-10    | 2022-10    | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                | optional               | accepted | 
+| 2021-10    | 2022-10    | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited      |  prohibited        | prohibited          | prohibited          | prohibited               | mandatory             | prohibited        | prohibited          | prohibited          | mandatory               | mandatory              | rejected | timezone_val. (lower), timezone_val. (upper) 
+| 2021-10    | 2022-10    | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited      | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | accepted | 
+| 2021-10    | 2022-10    | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | mandatory            | prohibited         | prohibited          | prohibited          | prohibited              | mandatory              | rejected | month_validity (lower), month_validity (upper), timezone_val. (lower), timezone_val. (upper) 
+| 2021-10    | 2022-10    | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | month_validity (lower), month_validity (upper) 
+
+|===
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | month_val. (lower) | day_val. (lower) | month_val. (upper) | day_val. (upper) | hour_val. (lower) | minute_val. (lower) | second_val. (lower) | millisecond_val. (lower) | timezone_val. (lower) | hour_val. (upper) | minute_val. (upper) | second_val. (upper) | millisecond_val. (upper) | timezone_val. (upper) | expected | constraints violated          
+
+| 2021-10-24 | 2022-10-24 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | rejected | hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper), second_val. (lower), second_val. (upper), millisecond_val. (lower), millisecond_val. (upper), timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24 | 2022-10-24 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | mandatory             | mandatory         | optional            | optional            | optional                | mandatory              | rejected | hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper), timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24 | 2022-10-24 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | optional              | mandatory         | optional            | optional            | optional                | optional               | rejected | hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper) 
+| 2021-10-24 | 2022-10-24 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24 | 2022-10-24 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                | optional               | accepted | 
+| 2021-10-24 | 2022-10-24 | false           | false           | true           | true           | optional           | optional         | optional           | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24 | 2022-10-24 | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | day_validity (lower), day_validity (upper) 
+| 2021-10-24 | 2022-10-24 | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper) 
+| 2021-10-24T22 | 2022-10-24T07 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | rejected | minute_val. (lower), minute_val. (upper), second_val. (lower), second_val. (upper), millisecond_val. (lower), millisecond_val. (upper), timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22 | 2022-10-24T07 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | mandatory             | mandatory         | optional            | optional            | optional                | mandatory              | rejected | minute_val. (lower), minute_val. (upper), timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22 | 2022-10-24T07 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | optional              | mandatory         | optional            | optional            | optional                | optional               | rejected | minute_val. (lower), minute_val. (upper) 
+| 2021-10-24T22 | 2022-10-24T07 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24T22 | 2022-10-24T07 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                | optional               | accepted | 
+| 2021-10-24T22 | 2022-10-24T07 | false           | false           | true           | true           | optional           | optional         | optional           | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24T22 | 2022-10-24T07 | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | day_validity (lower), day_validity (upper), hour_val. (lower), hour_val. (upper) 
+| 2021-10-24T22 | 2022-10-24T07 | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper), hour_val. (lower), hour_val. (upper) 
+
+|===
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | month_val. (lower) | day_val. (lower) | month_val. (upper) | day_val. (upper) | hour_val. (lower) | minute_val. (lower) | second_val. (lower) | millisecond_val. (lower) | timezone_val. (lower) | hour_val. (upper) | minute_val. (upper) | second_val. (upper) | millisecond_val. (upper) | timezone_val. (upper) | expected | constraints violated          
+
+| 2021-10-24T22:10 | 2022-10-24T07:47 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | rejected | second_val. (lower), second_val. (upper), millisecond_val. (lower), millisecond_val. (upper), timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22:10 | 2022-10-24T07:47 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | mandatory             | mandatory         | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22:10 | 2022-10-24T07:47 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | optional              | mandatory         | optional            | optional            | optional                | optional               | accepted |  
+| 2021-10-24T22:10 | 2022-10-24T07:47 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24T22:10 | 2022-10-24T07:47 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                | optional               | accepted | 
+| 2021-10-24T22:10 | 2022-10-24T07:47 | false           | false           | true           | true           | optional           | optional         | optional           | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24T22:10 | 2022-10-24T07:47 | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | day_validity (lower), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower),  minute_val. (upper) 
+| 2021-10-24T22:10 | 2022-10-24T07:47 | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper) 
+| 2021-10-24T22:10:45 | 2022-10-24T07:47:13 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | mandatory         | mandatory           | mandatory           | mandatory               | mandatory              | rejected | millisecond_val. (lower), millisecond_val. (upper), timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22:10:45 | 2022-10-24T07:47:13 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | mandatory             | mandatory         | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22:10:45 | 2022-10-24T07:47:13 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | optional              | mandatory         | optional            | optional            | optional                | optional               | accepted |  
+| 2021-10-24T22:10:45 | 2022-10-24T07:47:13 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24T22:10:45 | 2022-10-24T07:47:13 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                | optional               | accepted | 
+| 2021-10-24T22:10:45 | 2022-10-24T07:47:13 | false           | false           | true           | true           | optional           | optional         | optional           | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24T22:10:45 | 2022-10-24T07:47:13 | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | day_validity (lower), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower),  minute_val. (upper), second_val. (lower), second_val. (upper) 
+| 2021-10-24T22:10:45 | 2022-10-24T07:47:13 | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper), second_val. (lower), second_val. (upper) 
+
+|===
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | month_val. (lower) | day_val. (lower) | month_val. (upper) | day_val. (upper) | hour_val. (lower) | minute_val. (lower) | second_val. (lower) | millisecond_val. (lower) | timezone_val. (lower) | hour_val. (upper) | minute_val. (upper) | second_val. (upper) | millisecond_val. (upper) | timezone_val. (upper) | expected | constraints violated          
+
+| 2021-10-24T22:10:45.5 | 2022-10-24T07:47:13.666666 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | rejected | timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22:10:45.5 | 2022-10-24T07:47:13.666666 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | mandatory             | mandatory         | optional            | optional            | optional                 | mandatory              | rejected | timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22:10:45.5 | 2022-10-24T07:47:13.666666 | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | optional              | mandatory         | optional            | optional            | optional                 | optional               | accepted |  
+| 2021-10-24T22:10:45.5 | 2022-10-24T07:47:13.666666 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                 | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24T22:10:45.5 | 2022-10-24T07:47:13.666666 | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                 | optional               | accepted | 
+| 2021-10-24T22:10:45.5 | 2022-10-24T07:47:13.666666 | false           | false           | true           | true           | optional           | optional         | optional           | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                 | mandatory              | rejected | timezone_val. (lower), timezone__val. (upper) 
+| 2021-10-24T22:10:45.5 | 2022-10-24T07:47:13.666666 | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited               | prohibited             | rejected | day_validity (lower), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower),  minute_val. (upper), seoncd_val. (lower), second_val. (upper), millisecond_val. (lower), millisecond_val. (upper) 
+| 2021-10-24T22:10:45.5 | 2022-10-24T07:47:13.666666 | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited               | prohibited             | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper), seoncd_val. (lower), second_val. (upper), millisecond_val. (lower), millisecond_val. (upper) 
+| 2021-10-24T22:10:45Z | 2022-10-24T07:47:13Z | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | mandatory         | mandatory           | mandatory           | mandatory                | mandatory             | rejected | millisecond_val. (lower), millisecond_val. (upper) 
+| 2021-10-24T22:10:45Z | 2022-10-24T07:47:13Z | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | mandatory             | mandatory         | optional            | optional            | optional                | mandatory              | accepted | 
+| 2021-10-24T22:10:45Z | 2022-10-24T07:47:13Z | false           | false           | true           | true           | mandatory          | mandatory        | mandatory          | mandatory        | mandatory         | mandatory           | optional            | optional                 | optional              | mandatory         | optional            | optional            | optional                | optional               | accepted |  
+| 2021-10-24T22:10:45Z | 2022-10-24T07:47:13Z | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | accepted | 
+| 2021-10-24T22:10:45Z | 2022-10-24T07:47:13Z | false           | false           | true           | true           | mandatory          | optional         | mandatory          | optional         | optional          | optional            | optional            | optional                 | optional              | optional          | optional            | optional            | optional                | optional               | accepted | 
+| 2021-10-24T22:10:45Z | 2022-10-24T07:47:13Z | false           | false           | true           | true           | optional           | optional         | optional           | optional         | optional          | optional            | optional            | optional                 | mandatory             | optional          | optional            | optional            | optional                | mandatory              | accepted | 
+| 2021-10-24T22:10:45Z | 2022-10-24T07:47:13Z | false           | false           | true           | true           | mandatory          | prohibited       | mandatory          | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | day_validity (lower), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower),  minute_val. (upper), second_val. (lower), second_val. (upper), timezone_val. (lower), timezone_val. (upper) 
+| 2021-10-24T22:10:45Z | 2022-10-24T07:47:13Z | false           | false           | true           | true           | prohibited         | prohibited       | prohibited         | prohibited       | prohibited         | prohibited          | prohibited          | prohibited               | prohibited            | prohibited        | prohibited          | prohibited          | prohibited              | prohibited             | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper), hour_val. (lower), hour_val. (upper), minute_val. (lower), minute_val. (upper), second_val. (lower), second_val. (upper), timezone_val. (lower), timezone_val. (upper) 
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range
+
+[options="header"]
+|===
+| lower              | upper              | lower_unbounded | upper_unbounded | lower_included | upper_included | C_DATE_TIME.range (lower)       | C_DATE_TIME.range (upper)       | expected | constraints violated                       
+
+| 2021               | 2022               | false           | false           | true           | true           | 2020..2030                      | 2020..2030                      | accepted |                                            
+| 2021               | 2022               | false           | false           | true           | true           | 2000..2010                      | 2020..2030                      | rejected | C_DATE_TIME.range (lower)                  
+| 2021               | 2022               | false           | false           | true           | true           | 2020..2030                      | 2020..2021                      | rejected | C_DATE_TIME.range (upper)                  
+| 2021-10            | 2022-11            | false           | false           | true           | true           | 2020-01..2030-12                | 2020-01..2030-12                | accepted |                                            
+| 2021-10            | 2022-11            | false           | false           | true           | true           | 2000-01..2010-12                | 2020-01..2030-12                | rejected | C_DATE_TIME.range (lower)                  
+| 2021-10            | 2022-11            | false           | false           | true           | true           | 2020-01..2030-12                | 2020-01..2021-12                | rejected | C_DATE_TIME.range (upper)                  
+| 2021-10-24         | 2022-11-02         | false           | false           | true           | true           | 2020-01-01..2030-12-31          | 2020-01-01..2030-12-31          | accepted |                                            
+| 2021-10-24         | 2022-11-02         | false           | false           | true           | true           | 2000-01-01..2010-12-31          | 2020-01-01..2030-12-31          | rejected | C_DATE_TIME.range (lower)                  
+| 2021-10-24         | 2022-11-02         | false           | false           | true           | true           | 2020-01-01..2030-12-31          | 2020-01-01..2021-12-31          | rejected | C_DATE_TIME.range (upper)                  
+| 2021-10-24T10      | 2022-11-02T19      | false           | false           | true           | true           | 2020-01-01T00..2030-12-31T23    | 2020-01-01T00..2030-12-31T23    | accepted |                                            
+| 2021-10-24T10      | 2022-11-02T19      | false           | false           | true           | true           | 2000-01-01T00..2010-12-31T23    | 2020-01-01T00..2030-12-31T23    | rejected | C_DATE_TIME.range (lower)                  
+| 2021-10-24T10      | 2022-11-02T19      | false           | false           | true           | true           | 2020-01-01T00..2030-12-31T23    | 2020-01-01T00..2021-12-31T23    | rejected | C_DATE_TIME.range (upper)                  
+| 2021-10-24T10:00          | 2022-11-02T19:32          | false           | false           | true           | true           | 2020-01-01T00:00..2030-12-31T23:59    | 2020-01-01T00:00..2030-12-31T23:59    | accepted |                                            
+| 2021-10-24T10:00          | 2022-11-02T19:32          | false           | false           | true           | true           | 2000-01-01T00:00..2010-12-31T23:59    | 2020-01-01T00:00..2030-12-31T23:59    | rejected | C_DATE_TIME.range (lower)                  
+| 2021-10-24T10:00          | 2022-11-02T19:32          | false           | false           | true           | true           | 2020-01-01T00:00..2030-12-31T23:59    | 2020-01-01T00:00..2021-12-31T23:59    | rejected | C_DATE_TIME.range (upper)                  
+| 2021-10-24T10:00:10       | 2022-11-02T19:32:40       | false           | false           | true           | true           | 2020-01-01T00:00:00..2030-12-31T23:59:59    | 2020-01-01T00:00..2030-12-31T23:59    | accepted |                                            
+| 2021-10-24T10:00:10       | 2022-11-02T19:32:40       | false           | false           | true           | true           | 2000-01-01T00:00:00..2010-12-31T23:59:59    | 2020-01-01T00:00..2030-12-31T23:59    | rejected | C_DATE_TIME.range (lower)                  
+| 2021-10-24T10:00:10       | 2022-11-02T19:32:40       | false           | false           | true           | true           | 2020-01-01T00:00:00..2030-12-31T23:59:59    | 2020-01-01T00:00..2021-12-31T23:59    | rejected | C_DATE_TIME.range (upper)                  
+| 2021-10-24T10:00:10.5     | 2022-11-02T19:32:40.333   | false           | false           | true           | true           | 2020-01-01T00:00:00.0..2030-12-31T23:59:59.999999 | 2020-01-01T00:00..2030-12-31T23:59    | accepted |                                            
+| 2021-10-24T10:00:10.5     | 2022-11-02T19:32:40.333   | false           | false           | true           | true           | 2000-01-01T00:00:00.0..2010-12-31T23:59:59.999999 | 2020-01-01T00:00..2030-12-31T23:59    | rejected | C_DATE_TIME.range (lower)                  
+| 2021-10-24T10:00:10.5     | 2022-11-02T19:32:40.333   | false           | false           | true           | true           | 2020-01-01T00:00:00.0..2030-12-31T23:59:59.999999 | 2020-01-01T00:00..2021-12-31T23:59    | rejected | C_DATE_TIME.range (upper)                  
+| 2021-10-24T10:00:10Z      | 2022-11-02T19:32:40Z      | false           | false           | true           | true           | 2020-01-01T00:00:00Z..2030-12-31T23:59:59Z   | 2020-01-01T00:00..2030-12-31T23:59    | accepted |                                            
+| 2021-10-24T10:00:10Z      | 2022-11-02T19:32:40Z      | false           | false           | true           | true           | 2000-01-01T00:00:00Z..2010-12-31T23:59:59Z   | 2020-01-01T00:00..2030-12-31T23:59    | rejected | C_DATE_TIME.range (lower)                  
+| 2021-10-24T10:00:10Z      | 2022-11-02T19:32:40Z      | false           | false           | true           | true           | 2020-01-01T00:00:00Z..2030-12-31T23:59:59Z   | 2020-01-01T00:00..2021-12-31T23:59    | rejected | C_DATE_TIME.range (upper)                  
+|===
+
+
+===  DV_INTERVAL<DV_DATE>
+
+==== Test Case CONT-DV_INTERVAL_DV_DATE-validate_open
+
+On this case, the own rules/invariants of the DV_INTERVAL apply to the validation.
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | expected | constraints violated          
+
+| NULL       | NULL       | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 
+| NULL       | 2022       | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 
+| 2021       | NULL       | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 
+| 2021       | 2022       | false           | false           | true           | true           | accepted |  
+| 2021-01    | 2022-08    | false           | false           | true           | true           | accepted |  
+| 2021-01-20 | 2022-08-11 | false           | false           | true           | true           | accepted |  
+| 2021       | 2021-10    | false           | false           | true           | true           | rejected | IMO two dates with different components and common higher order components (year on this case) shouldn't be strictly comparable, see {openehr_forums_site}/t/issues-with-date-time-comparison-for-partial-date-time-expressions/2173 
+| NULL       | NULL       | true            | true            | false          | false          | accepted |  
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint
+
+NOTE: this test case doesn't include all the possible combinations of lower/upper data and constraints for the internal since there could be tens of possible combinations. It would be in the scope of a revision to add more combinations of an exhaustive test case.
+
+NOTE: the C_DATE has invariants that define if a higher precision component is optional or prohibited, lower precision components should be optional or prohibited. In other words, if `month` is optional, `day` should be optional or prohibited. These invariants should be checked in an archetype editor and template editor, we consider the following tests to follow those rules without checking them, since that is related to archetype/template validation, not with data validation.
+
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | month_val. (lower) | day_val. (lower) | month_val. (upper) | day_val. (upper) | expected | constraints violated          
+
+| 2021       | 2022       | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | mandatory        | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper) 
+| 2021       | 2022       | false           | false           | true           |true            | mandatory          | optional         | mandatory          | optional         | rejected | month_validity (lower), month_validity (upper) 
+| 2021       | 2022       | false           | false           | true           |true            | optional           | optional         | optional           | optional         | accepted |                               
+| 2021       | 2022       | false           | false           | true           |true            | mandatory          | prohibited       | mandatory          | prohibited       | rejected | month_validity (lower), month_validity (upper) 
+| 2021       | 2022       | false           | false           | true           |true            | prohibited         | prohibited       | prohibited         | prohibited       | accepted |                               
+| 2021-10    | 2022-10    | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | mandatory        | rejected | day_validity (lower), day_validity (upper)     
+| 2021-10    | 2022-10    | false           | false           | true           |true            | mandatory          | optional         | mandatory          | optional         | accepted |                               
+| 2021-10    | 2022-10    | false           | false           | true           |true            | optional           | optional         | optional           | optional         | accepted |                               
+| 2021-10    | 2022-10    | false           | false           | true           |true            | mandatory          | prohibited       | mandatory          | prohibited       | accepted |                               
+| 2021-10    | 2022-10    | false           | false           | true           |true            | prohibited         | prohibited       | prohibited         | prohibited       | rejected | month_validity (lower), month_validity (upper) 
+| 2021-10-24 | 2022-10-24 | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | mandatory        | accepted |                               
+| 2021-10-24 | 2022-10-24 | false           | false           | true           |true            | mandatory          | optional         | mandatory          | optional         | accepted |                               
+| 2021-10-24 | 2022-10-24 | false           | false           | true           |true            | optional           | optional         | optional           | optional         | accepted |                               
+| 2021-10-24 | 2022-10-24 | false           | false           | true           |true            | mandatory          | prohibited       | mandatory          | prohibited       | rejected | day_validity (lower), day_validity (upper)     
+| 2021-10-24 | 2022-10-24 | false           | false           | true           |true            | prohibited         | prohibited       | prohibited         | prohibited       | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper) 
+| 2021       | 2022       | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | optional         | rejected | month_validity (lower), day_validity (lower), month_validity (upper) 
+| 2021       | 2022       | false           | false           | true           |true            | mandatory          | mandatory        | optional           | optional         | rejected | month_validity (lower), day_validity (lower)                         
+| 2021       | 2022       | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | prohibited       | rejected | month_validity (lower), day_validity (lower), month_validity (upper) 
+| 2021       | 2022       | false           | false           | true           |true            | mandatory          | mandatory        | prohibited         | prohibited       | rejected | month_validity (lower), day_validity (lower)                         
+| 2021       | 2022-10    | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | mandatory        | rejected | month_validity (lower), day_validity (lower), day_validity (upper)   
+| 2021       | 2022-10    | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | optional         | rejected | month_validity (lower), day_validity (lower)                         
+| 2021       | 2022-10    | false           | false           | true           |true            | mandatory          | mandatory        | optional           | optional         | rejected | month_validity (lower), day_validity (lower)                         
+| 2021       | 2022-10    | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | prohibited       | rejected | month_validity (lower), day_validity (lower)                         
+| 2021       | 2022-10    | false           | false           | true           |true            | mandatory          | mandatory        | prohibited         | prohibited       | rejected | month_validity (lower), day_validity (lower), month_validity (upper) 
+| 2021       | 2022-10-24 | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | mandatory        | rejected | month_validity (lower), day_validity (lower)                         
+| 2021       | 2022-10-24 | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | optional         | rejected | month_validity (lower), day_validity (lower)                         
+| 2021       | 2022-10-24 | false           | false           | true           |true            | mandatory          | mandatory        | optional           | optional         | rejected | month_validity (lower), day_validity (lower)                         
+| 2021       | 2022-10-24 | false           | false           | true           |true            | mandatory          | mandatory        | mandatory          | prohibited       | rejected | month_validity (lower), day_validity (lower), day_validity (upper)   
+| 2021       | 2022-10-24 | false           | false           | true           |true            | mandatory          | mandatory        | prohibited         | prohibited       | rejected | month_validity (lower), day_validity (lower), month_validity (upper), day_validity (upper) 
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | C_DATE.range (lower) | C_DATE.range (upper) | expected | constraints violated          
+
+| 2021       | 2022       | false           | false           | true           | true           | 1900..2030           | 1900..2030           | accepted |         
+| 2021       | 2022       | false           | false           | true           | true           | 2022..2030           | 1900..2030           | rejected | C_DATE.range (lower)        
+| 2021       | 2022       | false           | false           | true           | true           | 1900..2030           | 2023..2030           | rejected | C_DATE.range (upper)         
+| 2021       | 2022       | false           | false           | true           | true           | 2022..2030           | 2023..2030           | rejected | C_DATE.range (lower), C_DATE.range (upper)         
+|===
+
+
+
+
+===  DV_INTERVAL<DV_TIME>
+
+==== Test Case CONT-DV_INTERVAL_DV_TIME-validate_open
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | expected | constraints violated          
+
+| NULL       | NULL       | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 
+| NULL       | T11:00:00  | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 
+| T10:00:00  | NULL       | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 
+| T10        | T11        | false           | false           | true           | true           | accepted |  
+| T10:00     | T11:00     | false           | false           | true           | true           | accepted |  
+| T10:00:00  | T11:00:00  | false           | false           | true           | true           | accepted |  
+| T10        | T10:45:00  | false           | false           | true           | true           | rejected | IMO two times with different components and common higher order components (hour on this case) shouldn't be strictly comparable, see {openehr_forums_site}/t/issues-with-date-time-comparison-for-partial-date-time-expressions/2173 
+| NULL       | NULL       | true            | true            | false          | false          | accepted |  
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint
+
+[options="header"]
+|===
+| lower        | upper        | lower_unbounded | upper_unbounded | lower_included | upper_included | minute_val. (lower) | second_val. (lower) | millisecond_val. (lower) | timezone_val. (lower) | minute_val. (upper) | second_val. (upper) | millisecond_val. (upper) | timezone_val. (upper) | expected | constraints violated          
+
+| T10          | T11          | false           | false           | true           | true           | mandatory           | mandatory           | mandatory                | mandatory             | mandatory           | mandatory           | mandatory                | mandatory             | rejected | minute_val. (lower), second_val. (lower), millisecond_val. (lower), timezone_val. (lower), minute_val. (upper), second_val. (upper), millisecond_val. (upper), timezone_val. (upper) 
+| T10:00       | T11:00       | false           | false           | true           | true           | mandatory           | mandatory           | mandatory                | mandatory             | mandatory           | mandatory           | mandatory                | mandatory             | rejected | second_val. (lower), millisecond_val. (lower), timezone_val. (lower), second_val. (upper), millisecond_val. (upper), timezone_val. (upper) 
+| T10:00:00    | T11:00:00    | false           | false           | true           | true           | mandatory           | mandatory           | mandatory                | mandatory             | mandatory           | mandatory           | mandatory                | mandatory             | rejected | millisecond_val. (lower), timezone_val. (lower), millisecond_val. (upper), timezone_val. (upper) 
+| T10:00:00.5  | T11:00:00.5  | false           | false           | true           | true           | mandatory           | mandatory           | mandatory                | mandatory             | mandatory           | mandatory           | mandatory                | mandatory             | rejected | timezone_val. (lower) timezone_val. (upper) 
+| T10:00:00.5Z | T11:00:00.5Z | false           | false           | true           | true           | mandatory           | mandatory           | mandatory                | mandatory             | mandatory           | mandatory           | mandatory                | mandatory             | accepted |  
+|===
+
+TBD: combinations of other values for validity.
+
+
+==== Test Case CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range
+
+[cols="2,2,2,2,2,2,3,3,2,4", options="header"]
+|===
+| lower         | upper         | lower_unbounded | upper_unbounded | lower_included | upper_included | C_TIME.range (lower)      | C_TIME.range (upper)       | expected | constraints violated      
+
+| T10           | T11           | false           | false           | true           | true           | T09..T11                  | T10..T12                   | accepted |                           
+| T10:00        | T11:00        | false           | false           | true           | true           | T09:00..T11:00            | T10:00..T12:00             | accepted |                           
+| T10:00:00     | T11:00:00     | false           | false           | true           | true           | T09:00:00..T11:00:00      | T10:00:00..T12:00:00       | accepted |                           
+| T10:00:00.5   | T11:00:00.5   | false           | false           | true           | true           | T09:00:00.0..T11:00:00.0  | T10:00:00.0..T12:00:00.0   | accepted |                           
+| T10:00:00.5Z  | T11:00:00.5Z  | false           | false           | true           | true           | T09:00:00.0..T11:00:00.0Z | T10:00:00.0Z..T12:00:00.0Z | accepted |                           
+| T10           | T11           | false           | false           | true           | true           | T11..T12                  | T11..T12                   | rejected | C_TIME.range (lower)      
+| T10           | T12           | false           | false           | true           | true           | T10..T11                  | T10..T11                   | rejected | C_TIME.range (upper)      
+| null          | T11           | true            | false           | false          | true           | T09..T11                  | T10..T12                   | rejected | C_TIME.range (lower)      
+| T10           | null          | false           | true            | true           | false          | T09..T11                  | T10..T12                   | accepted | C_TIME.range (upper)      
+|===
+
+
+===  DV_INTERVAL<DV_DURATION>
+
+==== Test Case CONT-DV_INTERVAL_DV_DURATION-validate_open
+
+NOTE: this considers the `lower` value of the interval should have all it's components lower or equals to the corresponding component in the `upper` value. This is to avoid normalization problems. For instance we could have an interval `P1Y6M..P2Y` which is semantically correct. But if we have values outside the normal boundaries of each component, like `P1Y37M..P2Y` there is a need of normalization to know if `P1Y37M` is really lower or equals to `P2Y`, which is the check ofr a valid internal. In some cases this normalization is doable, but in other cases it is not. For instance, some implementations might not know how many days in a month are, since months have a variable number of days. In the previous case, we know each year has 12 months so `P1Y37M` can actually be normalized to `P4Y1M`, but `P61D` can't be strictly compared with, let's say, `P3M`, since months could have 28, 29, 30 or 31 days, so without other information `P61D` could be lower or greater than `P3M`. To simplify this, some implementations might consider the measure of a `month`, in a duration expression, to be exactly 30 days. These considerations should be stated in the SUT Conformance Statement Document. To simplify writing the test cases for any implementation, we consider if `lower` is `P1Y37M`, the valid `upper` values have Y >= 1 and M >= 37, so `P2Y` wouldn't be valid in this context, but `P1Y37M..P1Y38M` or `P1Y37M..P2Y37M` would be valid intervals for the test cases. One extra simplification would be to consider values are inside their normal boundaries (hours < 24, days < 31, etc.) but this won't be encouraged but these test cases. If each component is inside it's constrainsts it is possible to compare expressions that differ in the components like `P1D3H` and `P10D`, since comparison doesn't require normalization and both values form a semantically valid interval.
+
+[cols="1,1,1,1,1,1,1,3,3", options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | expected | constraints violated          | comment 
+
+| NULL       | NULL       | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 | 
+| NULL       | PT2H       | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 | 
+| PT1H       | NULL       | false           | false           | true           | true           | rejected | IMO should fail, see {openehr_forums_site}/t/is-dv-interval-missing-invariants/2210 | 
+| PT1H       | PT2H       | false           | false           | true           | true           | accepted |            | 
+| PT1H       | PT2H       | false           | false           | true           | true           | accepted |            | 
+| P1Y7M3D    | P1Y8M3D    | false           | false           | true           | true           | accepted |            | 
+| P1M5DT3H   | P10M       | false           | false           | true           | true           | accepted |            | See Note 1.
+| P2M        | P1M        | false           | false           | true           | true           | rejected | limits_consistent (invariant) | 
+| P10M       | P1M5DT3H   | false           | false           | true           | true           | rejected | limits_consistent (invariant) | 
+|===
+
+Notes:
+
+. this case has different components in the lower and upper values, this is possible because the values don't exceed their normal boundaries, e.g. `days` 31. Without this condition a normalization of the values would be needed, and in some cases the normalization is not possible without some extra constraints, for instance considering `P1M` is equivalent to `P30D`. 
+
+==== Test Case CONT-DV_INTERVAL_DV_DURATION-validate_constraint
+
+NOTE: in the openEHR specifications only the seconds can have a fraction, but in the ISO8601 standard, the component at the lowest precision can have a fraction, for instance `P0.5Y` is a valid ISO 8601 duration.
+
+[cols="1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2", options="header"]
+|===
+
+| lower            
+| upper      
+| lower_ +
+  unbounded 
+| upper_ +
+  unbounded 
+| lower_ +
+  included 
+| upper_ +
+  included 
+| years_ +
+    allowed +
+    (lower) 
+| months_ +
+  allowed +
+  (lower) 
+| weeks_ +
+    allowed +
+    (lower) 
+| days_ +
+  allowed +
+  (lower) 
+| hours_ +
+    allowed +
+    (lower) 
+| minutes_ +
+  allowed +
+  (lower) 
+| seconds_ +
+    allowed +
+    (lower) 
+| fractional_ +
+    seconds_ +
+    allowed +
+    (lower) 
+| years_ +
+  allowed +
+    (upper) 
+| months_ +
+  allowed +
+  (upper) 
+| weeks_ +
+  allowed +
+  (upper) 
+| days_ +
+  allowed +
+  (upper) 
+| hours_ +
+  allowed +
+  (upper) 
+| minutes_ +
+  allowed +
+  (upper) 
+| seconds_ +
+  allowed +
+  (upper) 
+| fractional_ +
+  seconds_ +
+  allowed +
+  (upper) 
+| expected 
+| constraints +
+  violated               
+| comment 
+
+| P1Y              | P2Y        | false           | false           | true           | true           | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | accepted |                                    |         
+| P3W              | P5W        | false           | false           | true           | true           | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | accepted |                                    |         
+| P1Y              | P2Y        | false           | false           | true           | true           | false                 | true                   | true                  | true                 | true                  | true                    | true                    | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | years_allowed (lower)              |         
+| P1Y              | P2Y        | false           | false           | true           | true           | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | false                 | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | years_allowed (upper)              |         
+| P1Y1M1DT1H1M1.5S | P2Y        | false           | false           | true           | true           | true                  | false                  | true                  | true                 | true                  | true                    | true                    | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | months_allowed (lower)             |         
+| P2W              | P2Y        | false           | false           | true           | true           | true                  | true                   | false                 | true                 | true                  | true                    | true                    | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | weeks_allowed (lower)              |         
+| P1Y1M1DT1H1M1.5S | P2Y        | false           | false           | true           | true           | true                  | true                   | true                  | false                | true                  | true                    | true                    | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | days_allowed (lower)               |         
+| P1Y1M1DT1H1M1.5S | P2Y        | false           | false           | true           | true           | true                  | true                   | true                  | true                 | false                 | true                    | true                    | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | hours_allowed (lower)              |         
+| P1Y1M1DT1H1M1.5S | P2Y        | false           | false           | true           | true           | true                  | true                   | true                  | true                 | true                  | false                   | true                    | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | minutes_allowed (lower)            |         
+| P1Y1M1DT1H1M1.5S | P2Y        | false           | false           | true           | true           | true                  | true                   | true                  | true                 | true                  | true                    | false                   | true                               | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | seconds_allowed (lower)            |         
+| P1Y1M1DT1H1M1.5S | P2Y        | false           | false           | true           | true           | true                  | true                   | true                  | true                 | true                  | true                    | true                    | false                              | true                  | true                   | true                  | true                 | true                  | true                    | true                    | true                               | rejected | fractional_seconds_allowed (lower) |         
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_DURATION-validate_range
+
+[options="header"]
+|===
+| lower      | upper      | lower_unbounded | upper_unbounded | lower_included | upper_included | range.lower (lower) | range.upper (lower) | range.lower (upper) | range.upper (upper) | expected | constraints violated          | comment 
+
+| P1Y        | P2Y        | false           | false           | true           | true           | P1Y                 | P3Y                 | P1Y                 | P3Y                 | accepted |                               |         
+| P1Y        | P2Y        | false           | false           | true           | true           | P2Y                 | P3Y                 | P1Y                 | P3Y                 | rejected | range.lower (lower)           |         
+| P1Y        | P2Y        | false           | false           | true           | true           | P1Y                 | P3Y                 | P3Y                 | P4Y                 | rejected | range.lower (upper)           |         
+| P5Y        | P10Y       | false           | false           | true           | true           | P2Y                 | P3Y                 | P5Y                 | P15Y                | rejected | range.upper (lower)           |         
+| P5Y        | P10Y       | false           | false           | true           | true           | P1Y                 | P9Y                 | P3Y                 | P9Y                 | rejected | range.upper (upper)           |         
+| P5Y4M      | P10Y       | false           | false           | true           | true           | P1Y                 | P9Y                 | P3Y                 | P15Y                | accepted |                               |         
+| P5Y4M      | P10Y       | false           | false           | true           | true           | P6Y                 | P9Y                 | P3Y                 | P15Y                | rejected | range.lower (lower)           |         
+| P5Y4M      | P10Y       | false           | false           | true           | true           | P5Y4M2D             | P9Y                 | P3Y                 | P15Y                | rejected | range.lower (lower)           |         
+| P5Y4M20D   | P10Y       | false           | false           | true           | true           | P1Y                 | P9Y                 | P3Y                 | P15Y                | accepted |                               |         
+| P5Y4M20D   | P10Y       | false           | false           | true           | true           | P5Y6M               | P9Y                 | P3Y                 | P15Y                | rejected | range.lower (lower)           |         
+|===
+
+
+===  DV_INTERVAL<DV_ORDINAL>
+
+NOTE: some modeling tools don't support representing DV_INTERVAL<DV_ORDINAL>.
+
+==== Test Case CONT-DV_INTERVAL_DV_ORDINAL-validate_open
+
+This case is when the ADL has `DV_ORDINAL matches {*}`
+
+[options="header"]
+|===
+| lower.symbol   | lower.value | upper.symbol   | upper.value | lower_unbounded | upper_unbounded | lower_included | upper_included | expected | constraints violated 
+
+| NULL           | NULL        | NULL           | NULL        | false           | false           | true           | true           | rejected | RM/Schema value and symbol are mandatory for lower and upper 
+| NULL           | 1           | NULL           | 5           | false           | false           | true           | true           | rejected | RM/Schema symbol is mandatory for lower and upper            
+| local::at0005  | NULL        | local::at0003  | NULL        | false           | false           | true           | true           | rejected | RM/Schema value is mandatory for lower and upper             
+| local::at0005  | 1           | local::at0002  | 5           | false           | false           | true           | true           | accepted |                                                              
+| local::at0004  | 666         | local::at0003  | 777         | false           | false           | true           | true           | accepted |                                                              
+| local::at0003  | 777         | local::at0004  | 666         | false           | false           | true           | true           | rejected | RM invariante Interval.Limits_comparable                     
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint
+
+[options="header"]
+|===
+| lower.symbol   | lower.value | upper.symbol   | upper.value | lower_unbounded | upper_unbounded | lower_included | upper_included | lower.C_DV_ORDINAL.list                | upper.C_DV_ORDINAL.list                | expected | constraints violated 
+
+| local::at0005  | 1           | local::at0002  | 5           | false           | false           | true           | true           |   1\|[local::at0005], 2\|[local::at0006] |   5\|[local::at0002], 2\|[local::at0006] | accepted |                                                           
+| local::at0004  | 666         | local::at0003  | 777         | false           | false           | true           | true           |   8\|[local::at0004], 2\|[local::at0006] |   9\|[local::at0003], 2\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching value for lower and upper  
+| local::at0666  | 1           | local::at0777  | 2           | false           | false           | true           | true           |   1\|[local::at0005], 2\|[local::at0006] |   1\|[local::at0005], 2\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching symbol for lower and upper 
+| local::at0004  | 666         | local::at0003  | 777         | false           | false           | true           | true           |   8\|[local::at0004], 2\|[local::at0006] | 777\|[local::at0003], 2\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching value for lower            
+| local::at0666  | 1           | local::at0777  | 2           | false           | false           | true           | true           |   1\|[local::at0005], 2\|[local::at0006] |   1\|[local::at0005], 2\|[local::at0777] | rejected | C_DV_ORDINAL.list: no matching symbol for lower           
+| local::at0004  | 666         | local::at0003  | 777         | false           | false           | true           | true           | 666\|[local::at0004], 2\|[local::at0006] |   9\|[local::at0003], 2\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching value for upper            
+| local::at0005  | 1           | local::at0777  | 5           | false           | false           | true           | true           |   1\|[local::at0005], 2\|[local::at0006] |   1\|[local::at0005], 5\|[local::at0999] | rejected | C_DV_ORDINAL.list: no matching symbol for upper           
+|===
+
+
+
+===  DV_INTERVAL<DV_SCALE>
+
+DV_SCALE was introduced to the RM 1.1.0 (https://openehr.atlassian.net/browse/SPECRM-19[Discourse discussion^]), it is analogous to DV_ORDINAL with a Real value. So test cases for DV_SCALE and DV_ORDINAL are similar.
+
+NOTE: if this specification is implemented on a system that supports a RM < 1.1.0, then these tests shouldn't run against the system.
+
+NOTE: some modeling tools don't support representing DV_INTERVAL<DV_SCALE>
+
+==== Test Case CONT-DV_INTERVAL_DV_SCALE-validate_open
+
+This case is when the ADL has `DV_ORDINAL matches {*}`
+
+[options="header"]
+|===
+| lower.symbol   | lower.value | upper.symbol   | upper.value | lower_unbounded | upper_unbounded | lower_included | upper_included | expected | constraints violated 
+
+| NULL           | NULL        | NULL           | NULL        | false           | false           | true           | true           | rejected | RM/Schema value and symbol are mandatory for lower and upper 
+| NULL           | 1.5         | NULL           | 5.3         | false           | false           | true           | true           | rejected | RM/Schema symbol is mandatory for lower and upper            
+| local::at0005  | NULL        | local::at0003  | NULL        | false           | false           | true           | true           | rejected | RM/Schema value is mandatory for lower and upper             
+| local::at0005  | 1.5         | local::at0002  | 5.3         | false           | false           | true           | true           | accepted |                                                              
+| local::at0004  | 666.1       | local::at0003  | 777.1       | false           | false           | true           | true           | accepted |                                                              
+| local::at0003  | 777.1       | local::at0004  | 666.1       | false           | false           | true           | true           | rejected | RM invariante Interval.Limits_comparable                     
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_SCALE-validate_constraint
+
+[options="header"]
+|===
+| lower.symbol   | lower.value | upper.symbol   | upper.value | lower_unbounded | upper_unbounded | lower_included | upper_included | lower.C_DV_ORDINAL.list                    | upper.C_DV_ORDINAL.list                    | expected | constraints violated 
+
+| local::at0005  | 1.5         | local::at0002  | 5.3         | false           | false           | true           | true           |   1.5\|[local::at0005], 2.4\|[local::at0006] |   5.3\|[local::at0002], 2.4\|[local::at0006] | accepted |                                                           
+| local::at0004  | 666.1       | local::at0003  | 777.1       | false           | false           | true           | true           |   8.9\|[local::at0004], 2.4\|[local::at0006] |   9.7\|[local::at0003], 2.4\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching value for lower and upper  
+| local::at0666  | 1.5         | local::at0777  | 2.4         | false           | false           | true           | true           |   1.5\|[local::at0005], 2.4\|[local::at0006] |   1.5\|[local::at0005], 2.4\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching symbol for lower and upper 
+| local::at0004  | 666.1       | local::at0003  | 777.1       | false           | false           | true           | true           |   8.9\|[local::at0004], 2.4\|[local::at0006] | 777.1\|[local::at0003], 2.4\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching value for lower            
+| local::at0666  | 1.5         | local::at0777  | 2.4         | false           | false           | true           | true           |   1.5\|[local::at0005], 2.4\|[local::at0006] |   1.5\|[local::at0005], 2.4\|[local::at0777] | rejected | C_DV_ORDINAL.list: no matching symbol for lower           
+| local::at0004  | 666.1       | local::at0003  | 777.1       | false           | false           | true           | true           | 666.1\|[local::at0004], 2.4\|[local::at0006] |   9.7\|[local::at0003], 2.4\|[local::at0006] | rejected | C_DV_ORDINAL.list: no matching value for upper            
+| local::at0005  | 1.5         | local::at0777  | 5.3         | false           | false           | true           | true           |   1.5\|[local::at0005], 2.4\|[local::at0006] |   1.5\|[local::at0005], 5.3\|[local::at0999] | rejected | C_DV_ORDINAL.list: no matching symbol for upper           
+
+|===
+
+
+
+===  DV_INTERVAL<DV_PROPORTION>
+
+NOTE: some modeling tools don't support representing DV_INTERVAL<DV_PROPORTION>.
+
+==== Test Case CONT-DV_INTERVAL_DV_PROPORTION-validate_open
+
+The test data sets for lower and upper are divided into multiple tables because there are many attributes in the DV_PROPORTION.
+
+===== Data set both valid ratios
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 10        | 500         | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 20        | 500         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated             
+
+| accepted |                                  
+|===
+
+===== Data set different limit types
+
+This data set fails beacause DV_INTERVAL.Limits_consistent need both lower and upper to have the same `type`.
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | unitary          | 10        | 1           | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 10        | 500         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated                      
+| rejected | DV_INTERVAL.Limits_consistent (invariant) 
+|===
+
+===== Data set greater lower
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 10        | 500         | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 5         | 500         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated                      
+
+| rejected | DV_INTERVAL.Limits_consistent (invariant) 
+|===
+
+
+
+==== Test Case CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio
+
+The constraint is on the `type` of each limit of the interval as a C_INTEGER.list = [0], constraining the type as a ratio.
+
+===== Data set valid ratios
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 10        | 500         | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 20        | 500         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated             
+| accepted |                                  
+|===
+
+===== Data set no ratios
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 1    | unitary          | 10        | 1           | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 1    | unitary          | 20        | 1           | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| rejected | C_INTEGER.list for lower and upper 
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary
+
+The constraint is on the `type` of each limit of the interval as a C_INTEGER.list = [1], constraining the type as unitary.
+
+===== Data set valid unitaries
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 1    | unitary          | 10        | 1           | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+|===
+
+[options="header"]
+|===
+| 1    | unitary          | 20        | 1           | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| accepted |                                    
+|===
+
+===== Data set no unitaries
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 10        | 500         | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 20        | 500         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| rejected | C_INTEGER.list for lower and upper 
+|===
+
+
+==== Test Case CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage
+
+The constraint is on the `type` of each limit of the interval as a C_INTEGER.list = [2], constraining the type as percentage.
+
+===== Data set valid percentages
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 2    | percent          | 10        | 100         | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 2    | percent          | 20        | 100         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| accepted |                                    
+|===
+
+===== Data set no percentages
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 10        | 500         | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 20        | 500         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| rejected | C_INTEGER.list for lower and upper 
+|===
+
+
+
+==== Test Case CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction
+
+The constraint is on the `type` of each limit of the interval as a C_INTEGER.list = [3], constraining the type as fraction.
+
+===== Data set valid fractions
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 3    | fraction         | 3         | 4           | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 3    | fraction         | 5         | 4           | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| accepted |                                    
+|===
+
+===== Data set no fractions
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 10        | 500         | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 20        | 500         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| rejected | C_INTEGER.list for lower and upper 
+|===
+
+
+
+==== Test Case CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction
+
+The constraint is on the `type` of each limit of the interval as a C_INTEGER.list = [3], constraining the type as fraction.
+
+===== Data set valid integer fractions
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 4    | integer fraction | 3         | 4           | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 4    | integer fraction | 5         | 4           | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| accepted |                                    
+|===
+
+===== Data set no integer fractions
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 10        | 500         | 0         
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision 
+| 0    | ratio            | 20        | 500         | 0         
+|===
+
+[options="header"]
+|===
+| expected | constraints violated               
+| rejected | C_INTEGER.list for lower and upper 
+|===
+
+
+
+==== Test Case CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range
+
+The constraint is on the `type` of each limit of the interval as a C_INTEGER.list = [0], constraining the type as a ratio. For the limits, the constraints are C_REAL using the range attribute.
+
+===== Data set valid ratios
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_REAL.range (num) | C_REAL.range (den) | 
+| 0    | ratio            | 10        | 500         | 0         | 0..15              | 100..1000          |
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_REAL.range (num) | C_REAL.range (den) | 
+| 0    | ratio            | 20        | 500         | 0         | 0..50              | 100..1000          |
+|===
+
+[options="header"]
+|===
+| expected | constraints violated             
+| accepted |                                  
+|===
+
+
+===== Data set ratios, invalid lower
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_REAL.range (num) | C_REAL.range (den) | 
+
+| 0    | ratio            | 10        | 500         | 0         | 0..5               | 100..1000          |
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_REAL.range (num) | C_REAL.range (den) | 
+| 0    | ratio            | 20        | 500         | 0         | 0..50              | 100..1000          |
+|===
+
+[options="header"]
+|===
+| expected | constraints violated             
+| rejected | C_REAL.range (num) for lower     
+|===
+
+
+===== Data set ratios, invalid upper
+
+DV_INTERVAL.lower
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_REAL.range (num) | C_REAL.range (den) | 
+| 0    | ratio            | 10        | 500         | 0         | 0..15              | 100..1000          |
+|===
+
+DV_INTERVAL.upper
+
+[options="header"]
+|===
+| type | meaning (kind)   | numerator | denominator | precision | C_REAL.range (num) | C_REAL.range (den) | 
+| 0    | ratio            | 20        | 500         | 0         | 0..10              | 100..1000          |
+|===
+
+[options="header"]
+|===
+| expected | constraints violated             
+| rejected | C_REAL.range (num) for upper     
+|===
+

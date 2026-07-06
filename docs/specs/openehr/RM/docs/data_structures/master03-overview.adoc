@@ -1,0 +1,21 @@
+= Overview
+
+The `rm.data_structures` package contains two packages: the `item_structure` package and
+the `history` package. The first describes generic, path-addressable data structures, while the latter
+describes a generic notion of linear history, for recording events in past time. The
+`data_structures package` is illustrated in the UML diagram below.
+
+[.text-center]
+.rm.data_structures Package
+image::{uml_diagrams_uri}/RM-data_structures.svg[id=data_structures_package, align="center"]
+
+The `data_structures package` itself contains a single class, `DATA_STRUCTURE`, which is the
+ancestor of all openEHR data structures. Its only feature is the function as_hierarchy, which is implemented
+by each subtype of `DATA_STRUCTURE`, in order to generate a physical representation of the
+structure in ISO 13606 form. The ISO 13606 form is usually less optimal than the openEHR form, but
+is compatible with the less semantically rich standard, and is guaranteed (in theory) to be comprehensible
+to other systems which support ISO 13606 as an interoperability standard.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}data_structure.adoc[]

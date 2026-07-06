@@ -1,0 +1,165 @@
+=== I_EHR_DIRECTORY Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_EHR_DIRECTORY*
+
+h|*Description*
+2+a|Operations on EHR directory, with implicit Contribution creation.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_directory* ( +
+ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|True if the EHR has a directory structure.
+
+h|*1..1*
+|*has_path* ( +
+ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_path: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|True if path `_a_path_` exists in directory. The `_a_path_` argument consists of slash-separated values of the name attribute of Folders in the directory.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*0..1*
+|*create_directory* ( +
+ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_dir_struct: `<<_uv_folder_class,UV_FOLDER>>[1]` +
+) +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)` +
+__Pre_definitions_valid__: `definitions_valid (a_dir_struct)` +
+__Pre_no_directory__: `not has_directory (ehr_id)` +
+__Pre_content_valid__: `valid_content(a_dir_struct)`
+a|Create a directory in the EHR, based on the provided structure.  Causes server-side creation of a new `VERSIONED_OBJECT`, `ORIGINAL_VERSION` and new `CONTRIBUTION`.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+* `definition_unknown`
+* `content_invalid`
+
+h|*0..1*
+|*get_directory* ( +
+ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/RM/{rm_release}/common.html#_folder_class[FOLDER^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|Get current version of EHR Directory structure, if it exists, else Void.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*0..1*
+|*get_directory_at_time* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_time: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^][0..1]` +
+): `link:/releases/RM/{rm_release}/common.html#_folder_class[FOLDER^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|Get the version of the Directory extant at time `_a_time_`. If no time supplied, get the latest.
+
+
+.Parameters +
+[horizontal]
+`_a_time_`:: Time specifying the extant top version of the Directory.
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*0..1*
+|*update_directory* ( +
+ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_dir_struct: `<<_uv_folder_class,UV_FOLDER>>[1]` +
+) +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)` +
+__Pre_definitions_valid__: `definitions_valid (a_dir_struct)` +
+__Pre_content_valid__: `valid_content(a_dir_struct)` +
+__Pre_has_directory__: `has_directory(ehr_id)`
+a|Create or update a directory from a complete structure. Preceding version must be supplied and correct if EHR directory already exists. Causes server-side creation of a new `ORIGINAL_VERSION` and a new `CONTRIBUTION`.
+
+
+.Parameters +
+[horizontal]
+`_a_dir_struct_`:: Directory structure with which to replace current structure.
+
+.Errors
+* `ehr_id_does_not_exist`
+* `definition_unknown`
+* `content_invalid`
+
+h|*0..1*
+|*delete_directory* ( +
+ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+) +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)` +
+__Pre_has_directory__: `has_directory(ehr_id)`
+a|Logically delete the directory by creating a new version in which the contents are removed.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*1..1*
+|*has_directory_version* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_version_uid: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the directory has a version with specified id.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*0..1*
+|*get_directory_at_version* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_version_uid: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/RM/{rm_release}/common.html#_folder_class[FOLDER^]`
+a|Get a particular version of the EHR Directory.
+
+
+
+
+.Errors
+* `version_does_not_exist`
+
+h|*0..1*
+|*get_versioned_directory* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/RM/{rm_release}/common.html#_versioned_folder_class[VERSIONED_FOLDER^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|Get the `VERSIONED_FOLDER` Directory object for the EHR with `_ehr_id_`.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+|===

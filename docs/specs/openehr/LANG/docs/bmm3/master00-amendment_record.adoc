@@ -1,0 +1,152 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*LANG Release 1.1.0 (unreleased)*
+
+|[[latest_issue]]4.1.0
+|{spec_tickets}/SPECLANG-14[SPECLANG-14^]. Formalise the BMM v2/v3 split: this specification is maintained as a separate document (BMM v3) for the evolved meta-model; the stable v2.x form is moved to the separate BMM specification.
+|S Iancu
+|[[latest_issue_date]]31 May 2026
+
+|4.0.1
+|{spec_tickets}/SPECLANG-8[SPECLANG-8^]. Classify `EL_DECISION_TABLE` under `EL_TERMINAL`; +
+ Add read-only and writable meta-types for variables and properties; +
+ Add routine, function and property signature meta-types.
+|T Beale
+|29 Apr 2022
+
+|4.0.0
+|{spec_tickets}/SPECLANG-8[SPECLANG-8^]. Simplify meta-model of features to single inheritance; +
+ change `BMM_PROCEDURE` to return a special type similar to Haskell, Kotlin. Revert some 3.1.0 changes.
+|T Beale
+|09 Jun 2021
+
+4+^h|*LANG Release 1.0.0*
+
+|3.1.0
+|{spec_tickets}/SPECLANG-2[SPECLANG-2^]. Add Basic Meta-Model (BMM) spec to LANG component.
+|openEHR SEC
+|11 May 2020
+
+|
+|Add `EL_SIMPLE` to distinguish complex expressions from terminals and operator expressions;
+ Adjust `BMM_CONSTANT` to support computed constants; +
+ Add `EL_DECISION_TABLE`, `BMM_ACTION_TABLE` classes and descendants; +
+ Add `BMM_INTERVAL_VALUE`; +
+ Add `BMM_FEATURE_GROUP` and `BMM_VISIBILITY` classes; +
+ Rename `BMM_SCHEMA._bmm_schema_` to `_bmm_model_`; + 
+ Remove unintended inheritance from `BMM_SCHEMA` to `P_BMM_PACKAGE_CONTAINER`; +
+ Improve documentation in <<Model Access Package>>.
+|T Beale
+|12 Oct 2020
+
+|
+|Rename `EL_ASSERTION` to `EL_BOOLEAN_EXPRESSION`; +
+ Extend literal meta-types to directly support container literals; +
+ Add basic statement types to BMM; +
+ Add external routine support; +
+ Added note on multiple inheritance in Class Features section.
+|T Beale
+|25 Jun 2020
+
+|
+|Remove inheritance to `BMM_DEFINITIONS` (assume static access); +
+ Remove `BMM_ENTITY` class and 'Entities' section of document.
+|B Verhees, +
+ T Beale
+|01 Jun 2020
+
+|
+|Rename `BMM_DEFINED_TYPE` to `BMM_EFFECTIVE_TYPE`; +
+ Rename `BMM_ENTITY_TYPE` to `BMM_MODEL_TYPE`; +
+ Significant improvements to meta-type part of model; +
+ Add Expression language meta-model; +
+ Add abstract syntax examples to text; +
+ Add description of default `Any` class and type; +
+ Add `BMM_MODEL._used_models_`; +
+ Add creators and converters; +
+ Add `ROUTINE._body_` hook; +
+ Add `BMM_RESULT`, `EL_SCOPED_REF`, `EL_TYPE_REF`; +
+ Add `BMM_MODULE`.
+|T Beale 
+|22 Apr 2020
+
+|
+|Rename `BMM_MODEL_ELEMENT` to `BMM_DECLARATION`; +
+ Rename `BMM_VALUED` to `BMM_TYPED`; +
+ Rename `BMM_REFERENCEABLE` to `BMM_FEATURE`; +
+ Introduce dual taxonomy for features based on scoped declarations and typing; +
+ Add meta-model for functional entities. Re-structure packages. Modify `BMM_FEATURE._signature_` to new meta-type, `BMM_SIGNATURE`.
+|T Beale 
+|11 Nov 2019
+
+|
+|Improve meta-model of Features: rename `BMM_FORMAL_ELEMENT` to `BMM_REFERENCEABLE`; move `BMM_VALUE_RETURNING._type_` to `BMM_EVALUABLE`; +
+ Add `BMM_INDEXED_CONTAINER_TYPE`, `BMM_INDEXED_CONTAINER_PROPERTY`, to support indexed containers like `Hash<K, V>`.
+|T Beale
+|10 Mar 2019
+
+|
+|Improve meta-model of Enumerated types to include types restricted to a terminology or value set (may be used for terminology constraints); +
+ Improve explanation and diagrams to do with types and classes.
+|T Beale
+|22 Feb 2019
+
+|
+|Add feature elements `BMM_ROUTINE`, `BMM_VALUED` and descendants; +
+ Change `BMM_PROPERTY._is_mandatory_` to `BMM_MUTABLE._is_nullable_` (reversed Boolean sense); +
+ Made `BMM_PACKAGE_CONTAINER` abstract; +
+ Moved `_name_` to `BMM_MODEL_ELEMENT`, replacing `_name_` in `BMM_CLASS`, `BMM_PACKAGE`, `BMM_PROPERTY`, and `_model_name_` in `BMM_MODEL`; +
+ Marked `BMM_PROPERTY._is_computed_` as obsolete (to be phased out); +
+ Add `BMM_PROPERTY._is_composition_` to distinguish part/whole from associations.
+|T Beale
+|15 Sep 2018
+
+|3.0.0
+|{spec_tickets}/SPECLANG-2[SPECLANG-2^]. Add Basic Meta-Model (BMM) spec to LANG component; +
+ Separate `P_BMM` model and syntax to BMM Persistence specification; +
+ refactor / tighten class model: +
+ rename `BMM_GENERIC_PARAMETER` to `BMM_PARAMETER_TYPE`; +
+ remove `BMM_OPEN_TYPE`; remove `BMM_TYPE_ELEMENT`; +
+ add new type `BMM_DEFINED_TYPE` as parent of `BMM_SIMPLE_TYPE` and `BMM_GENERIC_TYPE`; +
+ add new type `BMM_UNITARY_TYPE` as parent of `BMM_DEFINED_TYPE` and `BMM_PARAMETER_TYPE`; +
+ redefine `BMM_CLASS._ancestors_` to be of type `BMM_DEFINED_TYPE`; +
+ redefine `BMM_PARAMETER_TYPE._conforms_to_` to `_type_constraint_` of type `BMM_DEFINED_TYPE`; +
+ correct `BMM_CLASS._immediate_descendants_` to be of type `List<BMM_CLASS>`; +
+ rename `BMM_CLASSIFIER` to `BMM_ENTITY`; +
+ Support generic types as class ancestors; +
+ Remove archetype-related meta-data.
+|T Beale
+|12 May 2018
+
+|2.2.2
+|Improve and update introductory text in the Overview section.
+|E Sundvall, +
+ T Beale
+|03 Nov 2017
+
+|2.2.1
+|Remove `BMM_CLASSIFIER._conformance_type_name_`; +
+ Constrain `BMM_GENERIC_PARAMETER._name_` to one character and upper case.
+|C Nanjo, +
+ T Beale
+|02 Mar 2017
+
+|2.2.0
+|Rename `BMM_CLASSIFIER._as_type_string_` to `_type_name_` and `_as_conformance_type_string_` to `_conformance_type_name_`. +
+ Move and rename `BMM_TYPE._as_display_type_string_` to `BMM_CLASSIFIER._type_signature_`. Add redefinitions in relevant descendant classes. +
+ Rename `BMM_SIMPLE_TYPE_OPEN` to `BMM_OPEN_TYPE`. +
+ Add new class `BMM_TYPE_ELEMENT` in preparation for BMM 3 refactoring. +
+ Rename `BMM_SCHEMA` to `BMM_MODEL`.
+|T Beale
+|20 Jun 2016
+
+|2.1.0
+|Initial writing based on ADL Workbench implementation.
+|T Beale
+|08 Feb 2016
+
+|===

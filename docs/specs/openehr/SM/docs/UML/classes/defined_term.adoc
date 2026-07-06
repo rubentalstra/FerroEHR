@@ -1,0 +1,29 @@
+=== Defined_term Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Defined_term*
+
+h|*Description*
+2+a|Fully defined term within the scope of the terminology of the owning extract.
+
+h|*Inherit*
+2+|`<<_term_code_class,Term_code>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*text*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Text of term.
+
+h|*0..1*
+|*language*: `link:/releases/BASE/{base_release}/foundation_types.html#_terminology_code_class[Terminology_code^]`
+a|Optional code representing the language. Strongly recommended to be an ISO 639 2- or 3- character code, or an IETF RFC 5646 language-region tag (e.g. 'en-GB').
+
+h|*0..1*
+|*is_preferred_term*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this term is the preferred term among alternatives, if supported within the scoping terminology.
+|===

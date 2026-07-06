@@ -1,0 +1,77 @@
+operationId: definition_template_adl1.4_upload
+summary: Upload a template
+description: |
+  Upload a new ADL 1.4 operational template (OPT).
+tags:
+  - ADL1.4
+parameters:
+  - $ref: ../parameters/header/Prefer.yaml
+requestBody:
+  description: ''
+  content:
+    application/xml:
+      schema:
+        oneOf:
+          - $ref: ../schemas/aom/OperationalTemplate.yaml
+          - type: string
+      example: >-
+        <template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://schemas.openehr.org/v1">
+            <language>
+                <terminology_id>
+                    <value>ISO_639-1</value>
+                </terminology_id>
+                <code_string>en</code_string>
+            </language>
+            <description>
+                <original_author id="Original Author">Not Specified</original_author>
+                <lifecycle_state>Initial</lifecycle_state>
+                <other_details id="MetaDataSet:Sample Set ">Template metadata sample set</other_details>
+                <other_details id="Acknowledgements"></other_details>
+                <other_details id="Business Process Level"></other_details>
+                <other_details id="Care setting"></other_details>
+                <other_details id="Client group"></other_details>
+                <other_details id="Clinical Record Element"></other_details>
+                <other_details id="Copyright"></other_details>
+                <other_details id="Issues"></other_details>
+                <other_details id="Owner"></other_details>
+                <other_details id="Sign off"></other_details>
+                <other_details id="Speciality"></other_details>
+                <other_details id="User roles"></other_details>
+                <details>
+                    <language>
+                        <terminology_id>
+                            <value>ISO_639-1</value>
+                        </terminology_id>
+                        <code_string>en</code_string>
+                    </language>
+                    <purpose>Not Specified</purpose>
+                </details>
+            </description>
+            <uid>
+                <value>b4d7f203-b329-4e89-a58a-c605b19e94de</value>
+            </uid>
+            <template_id>
+                <value>Vital Signs</value>
+            </template_id>
+            <concept>Vital Signs</concept>
+            <definition>
+                <rm_type_name>COMPOSITION</rm_type_name>
+                <occurrences>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                </occurrences>
+                <node_id>at0000</node_id>
+                ...
+  required: true
+responses:
+  '201':
+    $ref: ../responses/201_Template_adl1_4_upload.yaml
+  '400':
+    $ref: ../responses/400_invalid_template_content.yaml
+  '409':
+    $ref: ../responses/409_template_already_exists.yaml

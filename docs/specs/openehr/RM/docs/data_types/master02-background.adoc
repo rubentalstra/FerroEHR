@@ -1,0 +1,71 @@
+= Background
+
+== Scope
+
+The data type specification presented here defines the clinical/scientific data types which are used in
+other openEHR models. Harmonisation of data types between information models used by related
+services in a health information infrastructure is essential to reducing the conversion work and potential
+for errors between these services. Accordingly, the openEHR data type specification is intended to
+work not only for the EHR, but also for other models defined by openEHR, such as the openEHR
+demographic and terminological models.
+
+The types described here have been derived from data types used in Good Electronic Health Record cite:[GeHR_Aus2001], the Synapses project 
+cite:[Synapses_Req_A], and various standards {iso_13606-1}[ISO 13606-1^], {iso_13606-3}[ISO 13606-3^] and {hl7v3_data_types}[HL7v3 Data Types^].
+
+== Design Criteria
+
+Over and above the need to satisfy the functional requirements of clinical data, three concerns have
+driven the design of the openEHR data types:
+
+. clarity of expression
+. ease of implementation
+. interoperability with data types from other standards
+
+The first of these has led to models which try to clearly convey the semantics of types required by the
+clinical domain. The use of constraints (pre- and post-conditions and class invariants) and a comprehensible
+class structure ensures formal self-consistency, correct type-substitutability and implementability
+in object-oriented formalisms. Types have been designed so as not to clash with norms of
+object-oriented languages and libraries, in particular, class names and the inbuilt types. Accordingly,
+all types presented here have a logical name commencing with `DV_`, ensuring that there is no clash
+with a type in the implementation formalism, hence the type `DV_DATE` presented here will not be confused
+with the type `DATE` which appears in many programming languages or libraries.
+
+Object-oriented languages which have been considered include IDL, C++, Java, C#, Eiffel, Delphi
+and Python. Each of these languages obeys some variant of the well-known semantics of classes,
+encapsulation, typing and inheritance. The data types described here follow the tenets of object-orientation
+defined in UML most closely, while being careful not to invalidate their implementation in
+any language. The models have all been validated by implementation in the Eiffel language, the closest
+available semantic fit for UML, and currently the most powerful of mainstream object-oriented
+formalisms.
+
+Implementability in XML-schema has also been an important design criterion, and the current data
+types remove many of the problems which the GEHR and CEN data types presented for XMLschema.
+There has been no attempt to support XML-DTD, since it has no type system, and cannot
+reliably be reasoned about in an object-oriented way.
+
+To simplify implementation in all object-oriented formalisms, including IDL, programming languages
+and XML-schema, multiple inheritance has generally been avoided (where it is used, only one
+branch corresponds to substitutability). Generic classes have been used, since they significantly clarify
+the model. Type genericity is available in Java, C#, Eiffel, C++, and some other languages. For
+languages not having it, there is a well-known transformation from models containing generic classes
+to classes for non-generic types systems.
+
+Implementability in relational databases has also been considered, and appears relatively straightforward,
+since only the data view of the types needs to be represented. Many implementations are likely
+to use only a single String or XML string to represent each entire data instance, which significantly
+simplifies things.
+
+== Prior Work
+
+Four other type systems for clinical data, namely the GEHR data types, the HL7 v3 data types, the
+{iso_13606-1}[ISO 13606-1^] data item types, and the {omg_corbamed}[OMG Corbamed^] data types were carefully scrutinised in order to
+ensure a) that all needed types were covered in the openEHR specification, and b) that data conversion
+will be possible. Concepts from all three are cross-referenced throughout this specification where
+possible.
+
+Because the {hl7v3_data_types}[HL7v3 data type specification^] is a widely available and comprehensive specification for
+clinican data types, particular attention has been paid to incorporating its semantics, as well as fixing
+errors or shortcomings. While there are differences both in design approach and in detail, a significant
+debt must be recognised to the authors of this work, from which many ideas in the present specification
+were drawn. A detailed discussion is found in <<Comparison with HL7v3 Types>>.
+

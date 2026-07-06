@@ -1,0 +1,108 @@
+= Test Suite: QUERY_SERVICE
+
+// Some useful links: 
+:i_query_service_link: {openehr_sm_openehr_platform}#_i_query_service_interface
+
+== Normative Reference
+
+Items in this validation suite conceptually use the following abstract interfaces from the {i_query_service_link}[Abstract Platform Service Model, QUERY component^].
+
+* `I_QUERY_SERVICE`
+
+These are concretely realised in implementation technology specfic APIs, such as the {openehr_query_rest_api}[QUERY REST API^].
+
+This test suite uses artefacts defined by the following information model specifications:
+
+* Service Interfaces:
+** {openehr_sm_openehr_platform}#_query_package[Abstract Query Service Model^]
+** {openehr_query_rest_api}[Query REST API^]
+* Language Specifications:
+** {openehr_query_aql}[AQL specification^]
+
+== Dependencies
+
+This test suite depends on other test suites:
+
+* <<_func_conf_def_adl_component, Functional Conformance: Definitions Component>>, providing OPTs.
+
+== Test Environment
+
+[width="5%",cols="100%",]
+|===
+|TBD
+|===
+
+== Test Data Sets
+
+[width="5%",cols="100%",]
+|===
+|TBD
+|===
+
+== Test Cases
+
+=== Service Model operation: I_QUERY_SERVICE.execute_stored_query()
+
+Service Model reference: {i_demographic_service_link}[`I_QUERY_SERVICE._execute_stored_query()_`^]
+
+==== Test Case I_QUERY_SERVICE.smoke_test
+
+// EhrBase ref: 
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_QUERY_SERVICE/smoke_test/I_QUERY_SERVICE.smoke_test.robot[REST API / Robot^]
+|===
+
+==== Test Case I_QUERY_SERVICE.execute_stored_query-empty_db
+
+// EhrBase ref: 
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_QUERY_SERVICE/execute_stored_query/I_QUERY_SERVICE.execute_stored_query-empty_db.robot[REST API / Robot^]
+|===
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_QUERY_SERVICE.execute_ad_hoc_query()
+
+Service Model reference: {i_demographic_service_link}[`I_QUERY_SERVICE._execute_ad_hoc_query()_`^]
+
+==== Test Case I_QUERY_SERVICE.execute_ad_hoc_query-empty_db
+
+// EhrBase ref: A.1.z
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_QUERY_SERVICE/execute_ad_hoc_query/I_QUERY_SERVICE.execute_ad_hoc_query-empty_db.robot[REST API / Robot^]
+|===
+
+==== Test Case I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db
+
+// EhrBase ref: A.1.a
+
+[cols="1h,4a"]
+|===
+|Description    | xx
+|Pre-conditions | xx
+|Post-conditions| xx
+|Flow           | xx
+|Test runners   |{openehr_cnf_platform_tests_robot}/I_QUERY_SERVICE/execute_ad_hoc_query/I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db.robot[REST API / Robot^]
+|===
+

@@ -1,0 +1,124 @@
+= terminology
+
+openEHR reference model terminology, and artefacts for binding or using standard terminologies.
+
+== Reporting issues or requesting new terms
+*Any issues, change requests or problem reports, including requests for new terms should be posted via the https://openehr.atlassian.net/projects/SPECPR[openEHR Specifications JIRA Tracker]*
+
+== 3.1.0 (unreleased)
+
+- Added Chinese translation of the openehr_terminology.xml.
+See https://openehr.atlassian.net/browse/SPECTERM-34
+
+- Added UCUM unit [drp] (drop) to the volume properties in PropertyUnitData.xml.
+See https://openehr.atlassian.net/browse/SPECTERM-33
+
+- Added ml/m2 and l/min/m2 to units in PropertyUnitData.xml.
+See https://openehr.atlassian.net/browse/SPECTERM-28 and (https://openehr.atlassian.net/browse/SPECPR-410 and https://openehr.atlassian.net/browse/SPECPR-412)
+
+- Added J/cm2, hPa, kgf/m² and other fixing other errors in PropertyUnitData.xml.
+See https://openehr.atlassian.net/browse/SPECTERM-27
+
+- Added support for missing DICOM media types.
+See https://openehr.atlassian.net/browse/SPECTERM-26
+
+- Corrected typo for unit "kiloVolt" in PropertyUnitData.xml.
+See https://openehr.atlassian.net/browse/SPECPR-425
+
+== RELEASE-3.0.0
+
+- Improving terminology translations.
+See https://openehr.atlassian.net/browse/SPECTERM-23
+
+- Adding 'format conversion' and 'restoration' new types to the audit_change_type group.
+See https://openehr.atlassian.net/browse/SPECTERM-25
+
+- Adding 'report' to Composition Category to support report Compositions.
+See https://openehr.atlassian.net/browse/SPECTERM-5
+
+- Improving terminology XML file format by adding unique identifiers, version and date attributes; updating XSD.
+See https://openehr.atlassian.net/browse/SPECTERM-17
+
+- Add PropertyUnitData.xml to openEHR terminologies.
+See https://openehr.atlassian.net/browse/SPECTERM-24
+
+== RELEASE-2.4.0
+
+- Added missing SHA-* integrity check algorithms
+See https://openehr.atlassian.net/browse/SPECTERM-22
+
+- Corrected terminology rubric typos inside "property" group
+See https://openehr.atlassian.net/browse/SPECPR-404, https://openehr.atlassian.net/browse/SPECTERM-21
+
+- Added new vocabulary groups for EHR Extract related to Release 1.0.3
+See https://openehr.atlassian.net/browse/SPECPR-370, https://openehr.atlassian.net/browse/SPECTERM-4
+
+- Added "inactive" and "abandoned" to "version lifecycle state" group
+See https://openehr.atlassian.net/browse/SPECPR-383, https://openehr.atlassian.net/browse/SPECTERM-10
+
+- Added "mental healthcare" to "setting" group
+See https://openehr.atlassian.net/browse/SPECPR-382, https://openehr.atlassian.net/browse/SPECTERM-20
+
+- Documented known issue concept id 532 with two different rubrics (complete, completed)
+See https://openehr.atlassian.net/browse/SPECPR-51, https://openehr.atlassian.net/browse/SPECTERM-9
+
+- Corrected code for 'episodic' in composition category vocabulary
+See https://openehr.atlassian.net/browse/SPECPR-367, https://openehr.atlassian.net/browse/SPECTERM-19
+
+- updated external terminology code-sets and cleanup duplicates
+See https://openehr.atlassian.net/browse/SPECPR-95, https://openehr.atlassian.net/browse/SPECPR-403, https://openehr.atlassian.net/browse/SPECTERM-18
+
+- added some missing media types in external terminologies
+See https://openehr.atlassian.net/browse/SPECPR-402, https://openehr.atlassian.net/browse/SPECTERM-14
+
+- added Spanish (es) translations
+See https://openehr.atlassian.net/browse/SPECPR-401, https://openehr.atlassian.net/browse/SPECTERM-12
+
+== RELEASE-2.3.0
+
+- added missing instruction transition term, and pt, jp translations
+See https://openehr.atlassian.net/browse/SPECPR-276
+
+- added 'episodic' term to composition category
+See https://openehr.atlassian.net/browse/SPECPR-335
+
+- fixed language identifier as 'ja' inside computable/XML/ja/openehr_terminology.xml
+
+== RELEASE-2.2.0
+
+- removed 'no' language which does not formally exist.
+See https://openehr.atlassian.net/browse/SPECPR-247
+
+== RELEASE-2.1.0
+
+- Corrects truncated rubrics in 'care-settings' and 'relationship' groups.
+See https://openehr.atlassian.net/browse/SPECPR-244
+
+== RELEASE-2.0.0
+
+This release establishes a more solid baseline for terminology list governance.
+
+Some of the https://openehr.atlassian.net/browse/SPECPR-95?jql=project%20%3D%20SPECPR%20AND%20component%20%3D%20%22openEHR%20Terminology%22[outstanding terminology SPECPRs] have been fixed here, other fixes will be applied in later commits.
+
+The the Git Tag mechanism will be used to formally label Releases e.g. RELEASE-2.0.0, using the semver.org mechanism adopted by the clinical models.
+
+This branch will be RELEASE-2.0.0, reflecting the breaking changes in the file format and content.
+
+**19 Feb 2017**
+
+== Changes from RELEASE-1.0.0
+
+* Added Japanese translation.
+
+
+**17 June 2016-06**
+
+== Changes from RELEASE-1.0.0
+
+Based on java-lib terminology files - https://openehr.atlassian.net/browse/SPECPR-25[SPECPR-25]
+
+* New directory structure
+* Removed mediatypes from openEHR internal terminology, now carried as external terminology
+* Added mediatypes https://openehr.atlassian.net/browse/SPECPR-97[SPECPR-97]
+* Added Khmer language https://openehr.atlassian.net/browse/SPECPR-24[SPECPR-24]
+* Added XML schema for Terminology XML files https://openehr.atlassian.net/browse/SPECPR-3[SPECPR-3]

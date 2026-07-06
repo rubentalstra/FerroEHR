@@ -1,0 +1,9 @@
+title: LocalizedNames1
+required:
+  - sl
+type: object
+properties:
+  sl:
+    type: string
+example:
+  sl: Podrobnosti

@@ -1,0 +1,27 @@
+=== EL_WRITABLE_VARIABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_WRITABLE_VARIABLE*
+
+h|*Description*
+2+a|Meta-type of writable variables, including routine locals and the special variable 'Result'.
+
+h|*Inherit*
+2+|`<<_el_variable_class,EL_VARIABLE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*definition*: `<<_bmm_writable_variable_class,BMM_WRITABLE_VARIABLE>>`
+a|Variable definition to which this reference refers.
+
+h|*1..1 +
+(redefined)*
+|*is_writable*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}true}`
+a|Defined to return True in all cases.
+|===

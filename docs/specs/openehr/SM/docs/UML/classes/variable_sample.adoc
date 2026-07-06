@@ -1,0 +1,22 @@
+=== VARIABLE_SAMPLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*VARIABLE_SAMPLE*
+
+h|*Description*
+2+a|Sample whose result is in the form of a `VARIABLE_VALUE` (descendant) structure.
+
+h|*Inherit*
+2+|`<<_sample_class,SAMPLE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*result*: `<<_variable_value_class,VARIABLE_VALUE>>`
+a|Result of retrieve call execution.
+|===

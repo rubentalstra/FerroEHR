@@ -1,0 +1,3 @@
+= specifications-QUERY - openEHR Query Language Specifications
+
+This repository contains the document and model sources (Asciidoctor and MagicDraw) for the openEHR Query specifications. The published form may be accessed from the openEHR website https://specifications.openehr.org/releases/QUERY/latest/[QUERY component index page].

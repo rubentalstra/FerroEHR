@@ -1,0 +1,5 @@
+:spec_title: Base Types
+:copyright_year: 2016
+:spec_status: STABLE
+:keywords: openehr, identifiers, types
+:description: openEHR Base Types specification

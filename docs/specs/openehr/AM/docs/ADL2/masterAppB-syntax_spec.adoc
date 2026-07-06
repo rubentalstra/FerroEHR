@@ -1,0 +1,58 @@
+[appendix]
+= Syntax Specification
+
+The normative specification of the ADL2 syntax is expressed in Antlr4 as a series of component grammars, shown below. This has been tested with the Antlr 4.9 implementation available from http://www.antlr.org[Antlr.org^]. The source files are available on GitHub - {openehr_adl_antlr}/tree/master/src/main/antlr/adl[adl-antlr repository^]. The ODIN grammar used in parts of an ADL archetype is not shown below, it can be found in the {openehr_odin}[openEHR ODIN specification^].
+
+== ADL Outer Syntax
+
+The following grammar expresses the outer syntax of ADL, i.e. the top-level structure of section keywords and initial identification lines in an ADL text.
+
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/adl2.g4[]
+--------
+
+== cADL Syntax
+
+The following grammar expresses the syntax of cADL composite types, i.e. the language of the `definition` section of an archetype.
+
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/cadl2.g4[]
+--------
+
+== cADL Primitives Syntax
+
+The following grammar defines the syntax of cADL primitives, which are used by cADL composites and also by ADL rules.
+
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/cadl2_primitives.g4[]
+--------
+
+== Rules Syntax
+
+The following expression grammar defines the syntax that may appear in the `rules` section of an archetype and also the assertions in Archetype slots.
+
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/base_expressions.g4[]
+--------
+
+== Value types
+
+The following grammar defines the syntax for the terminal types in ADL, which are derived from ODIN.
+
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/odin_values.g4[]
+--------
+
+== Base Lexer
+
+The following grammar defines lexer patterns of generic lexical tokens.
+
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/base_lexer.g4[]
+--------

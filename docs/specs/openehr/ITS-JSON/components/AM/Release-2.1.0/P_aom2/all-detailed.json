@@ -1,0 +1,1781 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/P_aom2/all-detailed.json",
+    "title": "P_aom2 IM definitions",
+    "$comments": "Part of AM component, Release-2.1.0 version.",
+    "definitions": {
+        "P_ARCHETYPE_CONSTRAINT": {
+            "title": "P_ARCHETYPE_CONSTRAINT",
+            "description": "Archetype equivalent to LOCATABLE class in openEHR Common reference model. Defines common constraints for any inheritor of LOCATABLE in any reference model. ",
+            "$comments": "Defined in P_aom2 IM, abstract",
+            "properties": {
+                "_type": {
+                    "enum": [
+                        "P_C_ATTRIBUTE",
+                        "P_C_COMPLEX_OBJECT_PROXY",
+                        "P_ARCHETYPE_SLOT",
+                        "P_C_COMPLEX_OBJECT",
+                        "P_C_BOOLEAN",
+                        "P_C_STRING",
+                        "P_C_TERMINOLOGY_CODE",
+                        "P_C_ARCHETYPE_ROOT"
+                    ]
+                }
+            },
+            "required": [
+                "_type"
+            ],
+            "$abstract": true,
+            "$children": [
+                "#/definitions/P_C_OBJECT",
+                "#/definitions/P_C_ATTRIBUTE"
+            ]
+        },
+        "P_C_OBJECT": {
+            "title": "P_C_OBJECT",
+            "description": "Abstract model of constraint on any kind of object node. ",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_ARCHETYPE_CONSTRAINT",
+            "type": "object",
+            "properties": {
+                "_type": {
+                    "enum": [
+                        "P_C_COMPLEX_OBJECT_PROXY",
+                        "P_ARCHETYPE_SLOT",
+                        "P_C_COMPLEX_OBJECT",
+                        "P_C_BOOLEAN",
+                        "P_C_STRING",
+                        "P_C_TERMINOLOGY_CODE",
+                        "P_C_ARCHETYPE_ROOT"
+                    ]
+                },
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                }
+            },
+            "required": [
+                "_type",
+                "rm_type_name",
+                "node_id"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_ARCHETYPE_CONSTRAINT"
+            ],
+            "$children": [
+                "#/definitions/P_C_DEFINED_OBJECT",
+                "#/definitions/P_C_COMPLEX_OBJECT_PROXY",
+                "#/definitions/P_ARCHETYPE_SLOT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_ATTRIBUTE": {
+            "title": "P_C_ATTRIBUTE",
+            "description": "Abstract model of constraint on any kind of attribute node.",
+            "$comments": "Defined in P_aom2 IM, inherits from P_ARCHETYPE_CONSTRAINT",
+            "type": "object",
+            "properties": {
+                "rm_attribute_name": {
+                    "description": "Reference model attribute within the enclosing type represented by a C_OBJECT.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "existence": {
+                    "description": "Constraint on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not).",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "children": {
+                    "description": "Child C_OBJECT nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes. ",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/P_C_OBJECT"
+                    }
+                },
+                "differential_path": {
+                    "description": "Within a differential specialised archetype, may be set to represent a deep path within the structure to which this constraint and its child constraints apply.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "cardinality": {
+                    "description": "Cardinality constraint of attribute, if a container attribute.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_multiple": {
+                    "description": "Flag indicating whether this attribute constraint is on a container (i.e. multiply-valued) attribute.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                }
+            },
+            "required": [
+                "rm_attribute_name",
+                "is_multiple"
+            ],
+            "$inherits": [
+                "#/definitions/P_ARCHETYPE_CONSTRAINT"
+            ]
+        },
+        "P_C_DEFINED_OBJECT": {
+            "title": "P_C_DEFINED_OBJECT",
+            "description": "Abstract parent type of C_OBJECT subtypes that are defined by value, i.e. whose definitions are actually in the archetype rather than being by reference. ",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_OBJECT",
+            "type": "object",
+            "properties": {
+                "_type": {
+                    "enum": [
+                        "P_C_COMPLEX_OBJECT",
+                        "P_C_BOOLEAN",
+                        "P_C_STRING",
+                        "P_C_TERMINOLOGY_CODE",
+                        "P_C_ARCHETYPE_ROOT"
+                    ]
+                },
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                }
+            },
+            "required": [
+                "_type",
+                "rm_type_name",
+                "node_id",
+                "default_value"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_OBJECT"
+            ],
+            "$children": [
+                "#/definitions/P_C_PRIMITIVE_OBJECT",
+                "#/definitions/P_C_COMPLEX_OBJECT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_COMPLEX_OBJECT_PROXY": {
+            "title": "P_C_COMPLEX_OBJECT_PROXY",
+            "description": "A constraint defined by proxy, using a reference to an object constraint defined elsewhere in the same archetype. Note that since this object refers to another node, there are two objects with available occurrences values. The local occurrences value on a COJMPLEX_OBJECT_PROXY should always be used; when setting this from a seri- alised form, if no occurrences is mentioned, the target occurrences should be used (not the standard default of {1..1}); otherwise the locally specified occurrences should be used as normal. When serialising out, if the occurrences is the same as that of the target, it can be left out. ",
+            "$comments": "Defined in P_aom2 IM, inherits from P_C_OBJECT",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "target_path": {
+                    "description": "Reference to an object node using archetype path notation.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "target_path"
+            ],
+            "$inherits": [
+                "#/definitions/P_C_OBJECT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_ARCHETYPE_SLOT": {
+            "title": "P_ARCHETYPE_SLOT",
+            "description": "Constraint describing a  slot' where another archetype can occur. ",
+            "$comments": "Defined in P_aom2 IM, inherits from P_C_OBJECT",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "includes": {
+                    "description": "List of constraints defining other archetypes that could be included at this point. ",
+                    "type": "array"
+                },
+                "excludes": {
+                    "description": "List of constraints defining other archetypes that cannot be included at this point. ",
+                    "type": "array"
+                },
+                "is_closed": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "is_closed"
+            ],
+            "$inherits": [
+                "#/definitions/P_C_OBJECT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_PRIMITIVE_OBJECT": {
+            "title": "P_C_PRIMITIVE_OBJECT",
+            "description": "Parent of types representing constraints on primitive types.",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_DEFINED_OBJECT",
+            "type": "object",
+            "properties": {
+                "_type": {
+                    "enum": [
+                        "P_C_BOOLEAN",
+                        "P_C_STRING",
+                        "P_C_TERMINOLOGY_CODE"
+                    ]
+                },
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "description": "Constraint represented by this object; redefine in descendants.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                }
+            },
+            "required": [
+                "_type",
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_DEFINED_OBJECT"
+            ],
+            "$children": [
+                "#/definitions/P_C_BOOLEAN",
+                "#/definitions/P_C_STRING",
+                "#/definitions/P_C_ORDERED",
+                "#/definitions/P_C_TERMINOLOGY_CODE"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_COMPLEX_OBJECT": {
+            "title": "P_C_COMPLEX_OBJECT",
+            "description": "Constraint on complex objects, i.e. any object that consists of other object constraints.",
+            "$comments": "Defined in P_aom2 IM, inherits from P_C_DEFINED_OBJECT",
+            "type": "object",
+            "properties": {
+                "_type": {
+                    "enum": [
+                        "P_C_COMPLEX_OBJECT",
+                        "P_C_ARCHETYPE_ROOT"
+                    ]
+                },
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "attributes": {
+                    "description": "List of constraints on attributes of the reference model type represented by this object.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/P_C_ATTRIBUTE"
+                    }
+                },
+                "attribute_tuples": {
+                    "description": "List of attribute tuple constraints under this object constraint, if any.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/P_C_ATTRIBUTE_TUPLE"
+                    }
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value"
+            ],
+            "$inherits": [
+                "#/definitions/P_C_DEFINED_OBJECT"
+            ],
+            "$children": [
+                "#/definitions/P_C_ARCHETYPE_ROOT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_ATTRIBUTE_TUPLE": {
+            "title": "P_C_ATTRIBUTE_TUPLE",
+            "description": "Object representing a constraint on an atttribute tuple, i.e. a group of attributes that are constrained together. Typically used for representing co-varying constraints like {units, range} constraints.",
+            "$comments": "Defined in P_aom2 IM",
+            "type": "object",
+            "properties": {
+                "members": {
+                    "description": "Member attribute constraint objects.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                    }
+                }
+            }
+        },
+        "P_C_ARCHETYPE_ROOT": {
+            "title": "P_C_ARCHETYPE_ROOT",
+            "$comments": "Defined in P_aom2 IM, inherits from P_C_COMPLEX_OBJECT",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "attributes": {
+                    "description": "List of constraints on attributes of the reference model type represented by this object.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/P_C_ATTRIBUTE"
+                    }
+                },
+                "attribute_tuples": {
+                    "description": "List of attribute tuple constraints under this object constraint, if any.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/P_C_ATTRIBUTE_TUPLE"
+                    }
+                },
+                "archetype_ref": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "archetype_ref"
+            ],
+            "$inherits": [
+                "#/definitions/P_C_COMPLEX_OBJECT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_BOOLEAN": {
+            "title": "P_C_BOOLEAN",
+            "description": "Constraint on instances of Boolean. Both attributes cannot be set to False, since this would mean that the Boolean value being constrained cannot be True or False.",
+            "$comments": "Defined in P_aom2 IM, inherits from P_C_PRIMITIVE_OBJECT",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "assumed_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                    }
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value"
+            ],
+            "$inherits": [
+                "#/definitions/P_C_PRIMITIVE_OBJECT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_STRING": {
+            "title": "P_C_STRING",
+            "description": "Constraint on instances of STRING. ",
+            "$comments": "Defined in P_aom2 IM, inherits from P_C_PRIMITIVE_OBJECT",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "assumed_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "description": "String constraint - a list of literal strings and / or regular expression strings delimited by the \u2018/\u2019 character.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint"
+            ],
+            "$inherits": [
+                "#/definitions/P_C_PRIMITIVE_OBJECT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_INTEGER": {
+            "title": "P_C_INTEGER",
+            "description": "Constraint on instances of Integer.",
+            "$comments": "Defined in P_aom2 IM"
+        },
+        "P_C_REAL": {
+            "title": "P_C_REAL",
+            "description": "Constraint on instances of Real.",
+            "$comments": "Defined in P_aom2 IM"
+        },
+        "P_C_TEMPORAL<Iso8601_date>": {
+            "title": "P_C_TEMPORAL<Iso8601_date>",
+            "description": "ISO 8601-compatible constraint on instances of Date in the form either of a set of \nvalidity values, or an actual date range. There is no validity flag for  year', since it \nmust always be by definition mandatory in order to have a sensible date at all. \nSyntax expressions of instances of this class include  YYYY-??-??  (date with \noptional month and day). \nDate ranges are probably only useful for historical dates. ",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_TEMPORAL",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Interval"
+                    },
+                    "minItems": 1
+                },
+                "pattern_constraint": {
+                    "description": "Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint",
+                "pattern_constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_TEMPORAL"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_TEMPORAL<Iso8601_date_time>": {
+            "title": "P_C_TEMPORAL<Iso8601_date_time>",
+            "description": "ISO 8601-compatible constraint on instances of Date_Time. There is no validity \nflag for  year', since it must always be by definition mandatory in order to have a \nsensible date/time at all. Syntax expressions of instances of this class include \n YYYY-MM-DDT??:??:??  (date/time with optional time) and \n YYYY-MM-DDTHH:MM:xx  (date/time, seconds not allowed).",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_TEMPORAL",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Interval"
+                    },
+                    "minItems": 1
+                },
+                "pattern_constraint": {
+                    "description": "Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint",
+                "pattern_constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_TEMPORAL"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_TEMPORAL<Iso8601_time>": {
+            "title": "P_C_TEMPORAL<Iso8601_time>",
+            "description": "ISO 8601-compatible constraint on instances of Time. There is no validity flag \nfor  hour', since it must always be by definition mandatory in order to have a \nsensible time at all. Syntax expressions of instances of this class include  HH:??:xx  \n(time with optional minutes and seconds not allowed). \n",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_TEMPORAL",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Interval"
+                    },
+                    "minItems": 1
+                },
+                "pattern_constraint": {
+                    "description": "Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint",
+                "pattern_constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_TEMPORAL"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_TEMPORAL<Iso8601_duration>": {
+            "title": "P_C_TEMPORAL<Iso8601_duration>",
+            "description": "ISO 8601-compatible constraint on instances of Duration. In ISO 8601 terms, \nconstraints might are of the form  PWD  (weeks and/or days),  PDTHMS  (days, \nhours, minutes, seconds) and so on. In official ISO 8601:2004, the  W' (week) \ndesignator cannot be mixed in; allowing it is an openEHR-wide exception.",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_TEMPORAL",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Interval"
+                    },
+                    "minItems": 1
+                },
+                "pattern_constraint": {
+                    "description": "Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint",
+                "pattern_constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_TEMPORAL"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_ORDERED": {
+            "title": "P_C_ORDERED",
+            "description": "Abstract parent of primitive constrainer classes based on ORDERED base types, i.e. types like Integer, Real, and the Date/Time types. The model constraint is a List of Intervals, which may include point Intervals, and acts as a efficient and formally tractable representation of any number of point values and/or contiguous intervals of an ordered value domain.\n\nIn its simplest form, the constraint accessor returns just a single point Interval<T> object, representing a single value.\n\nThe next simplest form is a single proper Interval <T> (i.e. normal two-sided or half-open interval). The most complex form is a list of any combination of point and proper intervals.",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_PRIMITIVE_OBJECT",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Interval"
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_PRIMITIVE_OBJECT"
+            ],
+            "$children": [
+                "#/definitions/P_C_TEMPORAL",
+                "#/definitions/P_C_ORDERED_of_Integer",
+                "#/definitions/P_C_ORDERED_of_Real"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_TERMINOLOGY_CODE": {
+            "title": "P_C_TERMINOLOGY_CODE",
+            "description": "Constrainer type for instances of TERMINOLOGY_CODE. The primary expression of the constraint is in the property `tuple_constraint', and comes in 3 variations:\n* a single at-code\n* a single ac-code, representing a value-set that is defined in the archetype terminology\n* a list of at- and/or ac-codes, representing the possibilities of a tuple constraint\nThe last possibility above is enabled by the merge_tuple routine, which enables the constraint of another single-valued C_TERMINOLOGY_CODE to be merged with the current one.",
+            "$comments": "Defined in P_aom2 IM, inherits from P_C_PRIMITIVE_OBJECT",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Terminology_code"
+                },
+                "assumed_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Terminology_code"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint"
+            ],
+            "$inherits": [
+                "#/definitions/P_C_PRIMITIVE_OBJECT"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_TEMPORAL": {
+            "title": "P_C_TEMPORAL",
+            "description": "Purpose Abstract parent of C_ORDERED types whose base type is an ISO date/time type.",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_ORDERED",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Interval"
+                    },
+                    "minItems": 1
+                },
+                "pattern_constraint": {
+                    "description": "Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint",
+                "pattern_constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_ORDERED"
+            ],
+            "$children": [
+                "#/definitions/P_C_TEMPORAL_of_Iso8601_date",
+                "#/definitions/P_C_TEMPORAL_of_Iso8601_date_time",
+                "#/definitions/P_C_TEMPORAL_of_Iso8601_time",
+                "#/definitions/P_C_TEMPORAL_of_Iso8601_duration"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_ORDERED<Integer>": {
+            "title": "P_C_ORDERED<Integer>",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_ORDERED",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Interval"
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_ORDERED"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_ORDERED<Real>": {
+            "title": "P_C_ORDERED<Real>",
+            "$comments": "Defined in P_aom2 IM, abstract, inherits from P_C_ORDERED",
+            "type": "object",
+            "properties": {
+                "rm_type_name": {
+                    "description": "Reference model type that this node corresponds to. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "occurrences": {
+                    "description": "Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "node_id": {
+                    "description": "Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code. \n",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_deprecated": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "is_frozen": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "default_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "assumed_value": {
+                    "description": "Value to be assumed if none sent in data.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Any"
+                },
+                "is_enumerated_type_constraint": {
+                    "description": "True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "constraint": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Interval"
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "rm_type_name",
+                "node_id",
+                "default_value",
+                "constraint"
+            ],
+            "$abstract": true,
+            "$inherits": [
+                "#/definitions/P_C_ORDERED"
+            ],
+            "$functions": {
+                "specialisation_depth": {
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                }
+            }
+        },
+        "P_C_TIME": {
+            "title": "P_C_TIME",
+            "description": "ISO 8601-compatible constraint on instances of Time in the form either of a set of validity values, or else date ranges based on the C_ORDERED list constraint. There is no validity flag for \u2018hour\u2019, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include \u201cHH:??:xx\u201d (time with optional minutes and seconds not allowed).",
+            "$comments": "Defined in P_aom2 IM"
+        },
+        "P_C_DATE": {
+            "title": "P_C_DATE",
+            "description": "ISO 8601-compatible constraint on instances of Date in the form either of a set of validity values, or else date ranges based on the C_ORDERED list constraint. There is no validity flag for \u2018year\u2019, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include \u201cYYYY-??-??\u201d (date with optional month and day).",
+            "$comments": "Defined in P_aom2 IM"
+        },
+        "P_C_DATE_TIME": {
+            "title": "P_C_DATE_TIME",
+            "description": "ISO 8601-compatible constraint on instances of Date_Time. There is no validity flag for \u2018year\u2019, since it must always be by definition mandatory in order to have a sensible date/time at all. Syntax expressions of instances of this class include \u201cYYYY-MM-DDT??:??:??\u201d (date/time with optional time) and \u201cYYYY-MMDDTHH:MM:xx\u201d (date/time, seconds not allowed).",
+            "$comments": "Defined in P_aom2 IM"
+        },
+        "P_C_DURATION": {
+            "title": "P_C_DURATION",
+            "$comments": "Defined in P_aom2 IM"
+        },
+        "P_ARCHETYPE": {
+            "title": "P_ARCHETYPE",
+            "description": "Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.\n\nAn archetype is a modelled as a particular kind of AUTHORED_RESOURCE, and as such, includes descriptive meta-data, language information and revision history. The ARCHETYPE class adds identifying information, a definition - expressed in terms of constraints on instances of an object model, and an ontology.",
+            "$comments": "Defined in P_aom2 IM, abstract",
+            "type": "object",
+            "properties": {
+                "_type": {
+                    "enum": [
+                        "P_AUTHORED_ARCHETYPE",
+                        "P_TEMPLATE",
+                        "P_OPERATIONAL_TEMPLATE"
+                    ]
+                },
+                "parent_archetype_id": {
+                    "description": "Identifier of the specialisation parent of this archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "archetype_id": {
+                    "description": "Identifier of this archetype.",
+                    "$ref": "#/definitions/P_ARCHETYPE_HRID"
+                },
+                "is_differential": {
+                    "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "definition": {
+                    "description": "Root node of the definition of this archetype.",
+                    "$ref": "#/definitions/P_C_COMPLEX_OBJECT"
+                },
+                "terminology": {
+                    "description": "The terminology of the archetype.",
+                    "$ref": "#/definitions/P_ARCHETYPE_TERMINOLOGY"
+                },
+                "rules": {
+                    "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "_type",
+                "archetype_id",
+                "is_differential",
+                "definition",
+                "terminology"
+            ],
+            "$abstract": true,
+            "$children": [
+                "#/definitions/P_AUTHORED_ARCHETYPE"
+            ]
+        },
+        "P_AUTHORED_ARCHETYPE": {
+            "title": "P_AUTHORED_ARCHETYPE",
+            "description": "Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.",
+            "$comments": "Defined in P_aom2 IM, inherits from P_ARCHETYPE, P_AUTHORED_RESOURCE, AUTHORED_RESOURCE",
+            "type": "object",
+            "properties": {
+                "_type": {
+                    "enum": [
+                        "P_AUTHORED_ARCHETYPE",
+                        "P_TEMPLATE",
+                        "P_OPERATIONAL_TEMPLATE"
+                    ]
+                },
+                "uid": {
+                    "description": "Unique identifier of the family of archetypes having the same interface identifier (same major version).",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "original_language": {
+                    "description": "Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "description": {
+                    "description": "Description and lifecycle information of the resource.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/RESOURCE_DESCRIPTION"
+                },
+                "is_controlled": {
+                    "description": "True if this resource is under any kind of change control (even file copying), in which case revision history is created. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "annotations": {
+                    "description": "Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_Hash_of_String_String"
+                },
+                "translations": {
+                    "description": "List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/TRANSLATION_DETAILS"
+                    }
+                },
+                "parent_archetype_id": {
+                    "description": "Identifier of the specialisation parent of this archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "archetype_id": {
+                    "description": "Identifier of this archetype.",
+                    "$ref": "#/definitions/P_ARCHETYPE_HRID"
+                },
+                "is_differential": {
+                    "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "definition": {
+                    "description": "Root node of the definition of this archetype.",
+                    "$ref": "#/definitions/P_C_COMPLEX_OBJECT"
+                },
+                "terminology": {
+                    "description": "The terminology of the archetype.",
+                    "$ref": "#/definitions/P_ARCHETYPE_TERMINOLOGY"
+                },
+                "rules": {
+                    "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+                    "type": "array"
+                },
+                "adl_version": {
+                    "description": "ADL version if archteype was read in from an ADL sharable archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "build_uid": {
+                    "description": "Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/all-detailed.json#/definitions/UID"
+                },
+                "rm_release": {
+                    "description": "Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_generated": {
+                    "description": "If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "other_meta_data": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+                }
+            },
+            "required": [
+                "original_language",
+                "archetype_id",
+                "is_differential",
+                "definition",
+                "terminology",
+                "build_uid",
+                "rm_release",
+                "is_generated",
+                "other_meta_data"
+            ],
+            "$inherits": [
+                "#/definitions/P_ARCHETYPE",
+                "#/definitions/P_AUTHORED_RESOURCE",
+                "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/AUTHORED_RESOURCE"
+            ],
+            "$children": [
+                "#/definitions/P_TEMPLATE",
+                "#/definitions/P_OPERATIONAL_TEMPLATE"
+            ],
+            "$functions": {
+                "current_revision": {
+                    "description": "Most recent revision in revision_history if is_controlled else  (uncontrolled) . ",
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                    }
+                },
+                "languages_available": {
+                    "description": "Total list of languages available in this resource, derived from original_language and translations. ",
+                    "return": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                        },
+                        "minItems": 1
+                    }
+                }
+            },
+            "$invariants": {
+                "Original_language_valid": "code_set (Code_set_id_languages).has_code (original_language.as_string)",
+                "Current_revision_valid": "(current_revision /= Void and not is_controlled) implies current_revision.is_equal (\"(uncontrolled)\")",
+                "Translations_valid": "translations /= Void implies (not translations.is_empty and not translations.has (orginal_language.code_string))",
+                "Description_valid": "translations /= Void implies (description.details.for_all (d &#124;\ntranslations.has_key (d.language.code_string)))",
+                "Languages_available_valid": "languages_available.has (original_language)",
+                "Revision_history_valid": "is_controlled xor revision_history = Void",
+                "Post": "Result = revision_history.most_recent_version"
+            }
+        },
+        "P_TEMPLATE": {
+            "title": "P_TEMPLATE",
+            "description": "Class representing source template, i.e. a kind of archetype that may include template overlays, and may be restricted by tools to only defining mandations, prohibitions, and restrictions on elements already defined in the flat parent.",
+            "$comments": "Defined in P_aom2 IM, inherits from P_AUTHORED_ARCHETYPE",
+            "type": "object",
+            "properties": {
+                "uid": {
+                    "description": "Unique identifier of the family of archetypes having the same interface identifier (same major version).",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "original_language": {
+                    "description": "Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "description": {
+                    "description": "Description and lifecycle information of the resource.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/RESOURCE_DESCRIPTION"
+                },
+                "is_controlled": {
+                    "description": "True if this resource is under any kind of change control (even file copying), in which case revision history is created. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "annotations": {
+                    "description": "Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_Hash_of_String_String"
+                },
+                "translations": {
+                    "description": "List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/TRANSLATION_DETAILS"
+                    }
+                },
+                "parent_archetype_id": {
+                    "description": "Identifier of the specialisation parent of this archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "archetype_id": {
+                    "description": "Identifier of this archetype.",
+                    "$ref": "#/definitions/P_ARCHETYPE_HRID"
+                },
+                "is_differential": {
+                    "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "definition": {
+                    "description": "Root node of the definition of this archetype.",
+                    "$ref": "#/definitions/P_C_COMPLEX_OBJECT"
+                },
+                "terminology": {
+                    "description": "The terminology of the archetype.",
+                    "$ref": "#/definitions/P_ARCHETYPE_TERMINOLOGY"
+                },
+                "rules": {
+                    "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+                    "type": "array"
+                },
+                "adl_version": {
+                    "description": "ADL version if archteype was read in from an ADL sharable archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "build_uid": {
+                    "description": "Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/all-detailed.json#/definitions/UID"
+                },
+                "rm_release": {
+                    "description": "Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_generated": {
+                    "description": "If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "other_meta_data": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+                }
+            },
+            "required": [
+                "original_language",
+                "archetype_id",
+                "is_differential",
+                "definition",
+                "terminology",
+                "build_uid",
+                "rm_release",
+                "is_generated",
+                "other_meta_data"
+            ],
+            "$inherits": [
+                "#/definitions/P_AUTHORED_ARCHETYPE"
+            ],
+            "$functions": {
+                "current_revision": {
+                    "description": "Most recent revision in revision_history if is_controlled else  (uncontrolled) . ",
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                    }
+                },
+                "languages_available": {
+                    "description": "Total list of languages available in this resource, derived from original_language and translations. ",
+                    "return": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                        },
+                        "minItems": 1
+                    }
+                }
+            },
+            "$invariants": {
+                "Original_language_valid": "code_set (Code_set_id_languages).has_code (original_language.as_string)",
+                "Current_revision_valid": "(current_revision /= Void and not is_controlled) implies current_revision.is_equal (\"(uncontrolled)\")",
+                "Translations_valid": "translations /= Void implies (not translations.is_empty and not translations.has (orginal_language.code_string))",
+                "Description_valid": "translations /= Void implies (description.details.for_all (d &#124;\ntranslations.has_key (d.language.code_string)))",
+                "Languages_available_valid": "languages_available.has (original_language)",
+                "Revision_history_valid": "is_controlled xor revision_history = Void",
+                "Post": "Result = revision_history.most_recent_version"
+            }
+        },
+        "P_OPERATIONAL_TEMPLATE": {
+            "title": "P_OPERATIONAL_TEMPLATE",
+            "description": "Root object of an operational template. An operational template is derived from a TEMPLATE definition and the ARCHETYPEs and/or TEMPLATE_OVERLAYs mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.\n\nAn operational template is used for generating and validating canonical openEHR data, and also as a source artefact for generating other downstream technical artefacts, including XML schemas, APIs and UI form definitions.",
+            "$comments": "Defined in P_aom2 IM, inherits from P_AUTHORED_ARCHETYPE",
+            "type": "object",
+            "properties": {
+                "uid": {
+                    "description": "Unique identifier of the family of archetypes having the same interface identifier (same major version).",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "original_language": {
+                    "description": "Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "description": {
+                    "description": "Description and lifecycle information of the resource.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/RESOURCE_DESCRIPTION"
+                },
+                "is_controlled": {
+                    "description": "True if this resource is under any kind of change control (even file copying), in which case revision history is created. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "annotations": {
+                    "description": "Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_Hash_of_String_String"
+                },
+                "translations": {
+                    "description": "List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/TRANSLATION_DETAILS"
+                    }
+                },
+                "parent_archetype_id": {
+                    "description": "Identifier of the specialisation parent of this archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "archetype_id": {
+                    "description": "Identifier of this archetype.",
+                    "$ref": "#/definitions/P_ARCHETYPE_HRID"
+                },
+                "is_differential": {
+                    "description": "Flag indicating whether this archetype is differential or flat in its contents. Top-level source archetypes have this flag set to True.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "definition": {
+                    "description": "Root node of the definition of this archetype.",
+                    "$ref": "#/definitions/P_C_COMPLEX_OBJECT"
+                },
+                "terminology": {
+                    "description": "The terminology of the archetype.",
+                    "$ref": "#/definitions/P_ARCHETYPE_TERMINOLOGY"
+                },
+                "rules": {
+                    "description": "Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.",
+                    "type": "array"
+                },
+                "adl_version": {
+                    "description": "ADL version if archteype was read in from an ADL sharable archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "build_uid": {
+                    "description": "Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/all-detailed.json#/definitions/UID"
+                },
+                "rm_release": {
+                    "description": "Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_generated": {
+                    "description": "If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "other_meta_data": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+                },
+                "component_terminologies": {
+                    "description": "Compendium of flattened terminologies of archetypes externally referenced from this archetype, keyed by archetype identifier. This will almost always be present in a template.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/P_ARCHETYPE_TERMINOLOGY"
+                    }
+                },
+                "terminology_extracts": {
+                    "description": "Directory of term definitions as a two-level  table. The outer hash keys are term codes,  e.g. \"at4\", and the inner hash key are term  attribute names, e.g. \"text\", \"description\" etc.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/all-detailed.json#/definitions/Hash_of_String_Hash_of_String_ARCHETYPE_TERM"
+                }
+            },
+            "required": [
+                "original_language",
+                "archetype_id",
+                "is_differential",
+                "definition",
+                "terminology",
+                "build_uid",
+                "rm_release",
+                "is_generated",
+                "other_meta_data"
+            ],
+            "$inherits": [
+                "#/definitions/P_AUTHORED_ARCHETYPE"
+            ],
+            "$functions": {
+                "current_revision": {
+                    "description": "Most recent revision in revision_history if is_controlled else  (uncontrolled) . ",
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                    }
+                },
+                "languages_available": {
+                    "description": "Total list of languages available in this resource, derived from original_language and translations. ",
+                    "return": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                        },
+                        "minItems": 1
+                    }
+                }
+            },
+            "$invariants": {
+                "Original_language_valid": "code_set (Code_set_id_languages).has_code (original_language.as_string)",
+                "Current_revision_valid": "(current_revision /= Void and not is_controlled) implies current_revision.is_equal (\"(uncontrolled)\")",
+                "Translations_valid": "translations /= Void implies (not translations.is_empty and not translations.has (orginal_language.code_string))",
+                "Description_valid": "translations /= Void implies (description.details.for_all (d &#124;\ntranslations.has_key (d.language.code_string)))",
+                "Languages_available_valid": "languages_available.has (original_language)",
+                "Revision_history_valid": "is_controlled xor revision_history = Void",
+                "Post": "Result = revision_history.most_recent_version"
+            }
+        },
+        "P_ARCHETYPE_HRID": {
+            "title": "P_ARCHETYPE_HRID",
+            "description": "Human_readable identifier (HRID) for an archetype or template.",
+            "$comments": "Defined in P_aom2 IM",
+            "type": "object",
+            "properties": {
+                "namespace": {
+                    "description": "Reverse domain name namespace identifier.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "rm_publisher": {
+                    "description": "Name of the Reference Model publisher.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "rm_package": {
+                    "description": "Name of the package in whose reachability graph the rm_class class is found (there can be more than one possibility in many reference models).",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "rm_class": {
+                    "description": "Name of the root class of this archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "concept_id": {
+                    "description": "The short concept name of the archetype as used in the multi-axial archetype_hrid.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "release_version": {
+                    "description": "The full numeric version of this archetype consisting of 3 parts, e.g. 1.8.2. The archetype_hrid feature includes only the major version.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "version_status": {
+                    "description": "The status of the version, i.e. released, release_candidate etc."
+                },
+                "build_count": {
+                    "description": "The build count since last increment of any version part.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "rm_publisher",
+                "rm_package",
+                "rm_class",
+                "concept_id",
+                "release_version",
+                "version_status",
+                "build_count"
+            ]
+        },
+        "P_AUTHORED_RESOURCE": {
+            "title": "P_AUTHORED_RESOURCE",
+            "description": "Abstract idea of an online resource created by a human author. \n",
+            "$comments": "Defined in P_aom2 IM, abstract",
+            "type": "object",
+            "properties": {
+                "_type": {
+                    "enum": [
+                        "P_AUTHORED_ARCHETYPE",
+                        "P_TEMPLATE",
+                        "P_OPERATIONAL_TEMPLATE"
+                    ]
+                },
+                "original_language": {
+                    "description": "Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "is_controlled": {
+                    "description": "True if this resource is under any kind of change control (even file copying), in which case revision history is created. ",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "translations": {
+                    "description": "List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/TRANSLATION_DETAILS"
+                    }
+                },
+                "description": {
+                    "description": "Description and lifecycle information of the resource.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Resource/all-detailed.json#/definitions/RESOURCE_DESCRIPTION"
+                },
+                "uid": {
+                    "description": "Unique identifier of the family of archetypes having the same interface identifier (same major version).",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "annotations": {
+                    "description": "Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_Hash_of_String_String"
+                }
+            },
+            "required": [
+                "_type",
+                "original_language"
+            ],
+            "$abstract": true,
+            "$children": [
+                "#/definitions/P_AUTHORED_ARCHETYPE"
+            ]
+        },
+        "P_ARCHETYPE_TERMINOLOGY": {
+            "title": "P_ARCHETYPE_TERMINOLOGY",
+            "description": "Local ontology of an archetype.",
+            "$comments": "Defined in P_aom2 IM",
+            "type": "object",
+            "properties": {
+                "is_differential": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                },
+                "original_language": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "term_definitions": {
+                    "description": "Directory of term definitions as a two-level \ntable. The outer hash keys are term codes, \ne.g. \"at0004\", and the inner hash key are term \nattribute names, e.g. \"text\", \"description\" etc.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/all-detailed.json#/definitions/Hash_of_String_Hash_of_String_ARCHETYPE_TERM"
+                },
+                "term_bindings": {
+                    "description": "Directory of term bindings as a two-level \ntable. The outer hash keys are local term codes, \ne.g. \"at0004\", and the inner hash keys are terminology \ncode phrases, e.g. \"SNOMED(2003)::163034007\" etc.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/all-detailed.json#/definitions/Hash_of_String_Hash_of_String_Uri"
+                },
+                "value_sets": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/all-detailed.json#/definitions/Hash_of_String_VALUE_SET"
+                }
+            },
+            "required": [
+                "is_differential",
+                "original_language",
+                "term_definitions"
+            ]
+        }
+    },
+    "$component": "AM",
+    "$version": "Release-2.1.0"
+}

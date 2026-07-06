@@ -1,0 +1,258 @@
+= openEHR Specification Structure
+
+== Overview
+
+This section provides an overview of the specifications of the openEHR platform components (i.e. the components on the left side of <<specification_project>>). Each component contains one or more specifications, which come in three types:
+
+* language specifications, expressed in Antlr and/or other formal grammars;
+* information models, expressed in UML;
+* service models (APIs), expressed in UML. 
+
+The specifications are published as generated documents consisting of text and various formal elements including:
+
+* class texts extracted from UML models;
+* diagrams extracted from UML models;
+* grammar files, typically in Antlr4 syntax;
+* EBNF grammars.
+
+The ITS component consists of concrete artefacts of various forms including:
+
+* API definitions (JSON / Swagger / Apiary etc).
+* XML schemas;
+* JSON schemas;
+* BMM schemas.
+
+== Consolidated Package Structure
+
+From the software engineering point of view, the consolidated structure of UML packages from the formal specifications that contain them is useful, and is illustrated below. The top-level packages include: `base`, `lang`, `rm`, `am`, `proc` and `sm`. All packages defining detailed models appear inside one of these outer packages, which are conceptually defined within the `org.openehr` namespace (also represented in UML as packages). In some implementation technologies (e.g. Java / Maven), the `org.openehr` namespace is formally used.
+
+These packages do not include the specifications for various languages (ADL, AQL, ODIN etc), identification systems, or downstream implementation technology specifications (ITSs), which are included in the corresponding component or else in other components.
+
+[.text-center]
+.Consolidated Package Structure of openEHR
+image::{diagrams_uri}/global_package_structure.svg[id=consolidated_package_structure, align="center", width=35%]
+
+In the following sections, diagrams provide a visual association of the various specifications to the top-level UML packages, where it exists.
+
+== Base Component (BASE)
+
+The correspondence between the openEHR BASE component specifications and the UML packages is illustrated below. On the right-hand side, the BASE specifications are shown, of which two are based on UML models. These packages fall within the top-level `org.openehr.base` UML package, as shown on the left side of the figure.
+
+[.text-center]
+.BASE Component of openEHR
+image::{diagrams_uri}/spec_component-base.svg[id=spec_component_base, align="center", width=75%]
+
+The `base` package defines identifiers, data types, data structures and various common design patterns that can be re-used ubiquitously in the `rm`, `am` and `sm` packages. The `base` packages are shown below.
+
+[.text-center]
+.Structure of `org.openehr.base` package
+image::{uml_diagrams_uri}/BASE-packages.svg[id=base_packages, align="center"]
+
+NOTE: In RM Release 1.0.3 and earlier releases, the contents of the `base` package resided in the RM `support` package.
+
+The following sub-sections describe the BASE component specifications.
+
+=== Foundation Types
+
+The {openehr_foundation_types}[Foundation Types specification^] provides a guide for integrating openEHR models proper into the type systems of implementation technologies. It is specified by the `foundations_types` package. This contains the special package `primitive_types`, which describes inbuilt types _assumed_ by openEHR in external type systems. This provides a basis for determining mappings from openEHR to programming languages. For example such as `String._is_empty_` in openEHR might be mapped to `String._empty()_` in a programming environment.
+
+Other foundation types include basic structures (`Array<T>`, `Hash<K,V>` etc), time types, and various types enabling functional concepts (principally lambda expressions) to be expressed in the openEHR specifications.
+
+=== Base Types
+
+The {openehr_base_types}[Base Types specification^] defines generic openEHR types used in other openEHR components. It is comprised of the `definitions`, `identification`, `terminology` and  `measurement` sub-packages. The semantics defined in these packages allow all other models to use identifiers and to have access to knowledge services like terminology and other reference data.
+
+=== Resource Model
+
+The {openehr_resource}[Resource Model specification^] defines a generic 'authored resource' class that carries meta-data relating to:
+
+* authorship;
+* copyright, licences and other related meta-data;
+* languages and translations;
+* annotations.
+
+The class is used via inheritance to provide types in other models with meta-data to enable instances to be managed as resources with appropriate meta-data.
+
+== Languages Component (LANG)
+
+NOTE: Until BASE Release 1.1.0, the contents of the LANG component resided in the BASE component.
+
+The Languages component contains specifications for a number of generic languages used in openEHR, as follows:
+
+* ODIN: an object data syntax used in openEHR archetypes (in ADL format), in BMM schemas and generally as a data representation where convenient;
+* BMM: the Basic-Meta Model, a formal, human-readable meta-model language in which other models may be expressed for use with tools;
+* EL: Expression Language, a small specification of predicate logic expressions used in other openEHR specifications.
+
+The following diagram shows the relationship of the UML `lang` package in the global UML structure (left side) to the LANG component specifications defined in terms of UML (right side).
+
+[.text-center]
+.LANG Component of openEHR
+image::{diagrams_uri}/spec_component-lang.svg[id=spec_component_lang, align="center", width=80%]
+
+=== Basic Meta-Model (BMM)
+
+The {openehr_bmm}[BMM specification^] defines a generic meta-model, suitable for formally expressing object-oriented models, including those of openEHR (RM etc). It is roughly an equivalent of UML's XMI, but fixes various problems with the latter around generic (template) types, while being significantly less complex and fragile. BMM models can be expressed in the {openehr_odin}[ODIN syntax^] or any other regular object syntax (JSON etc), and conveniently edited by hand. BMM files are used within tools such as the {openehr_awb}[openEHR ADL Workbench^] and some openEHR tooling software.
+
+The BMM is primarily intended to reduce complexity for tools that consume reference model definitions, but is not the only way to implement such tools. Similar tools can be based directly on the openEHR published UML models, as long as typing, template types and qualified attributes are properly handled. Another alternative means of working with models is via software library implementations of the relevant models (openEHR Reference Model etc).
+
+Consequently, understanding or use of BMM specification or models based on it is not necessary in order to implement openEHR systems. However, BMM provides a convenient format for model processing, e.g. to auto-generate code stubs in a new language.
+
+=== Object Data Instance Notation (ODIN)
+
+The {openehr_odin}[ODIN syntax^] is used to implement faithful machine serialisation and deserialisation of in-memory object graphs, and is a rough equivalent of JSON, YAML and some kinds of XML. It provides more leaf types than any of these, and also supports in-built typing (required to properly represent dynamic binding of polymorphic attributes) and Xpath-like paths.
+
+=== Expression Language (EL)
+
+The openEHR expression language (EL) is a formal specification of a subset of first order predicate logic expressions, establishing the formal basis for such expressions in ADL archetypes, GDL guidelines and the Task Planning specification.
+
+== Reference Model Component (RM)
+
+The openEHR RM component is illustrated below. All of its specifications are UML model-based.
+
+[.text-center]
+.RM Component of openEHR
+image::{diagrams_uri}/spec_component-rm.svg[id=spec_component_rm, align="center", width=70%]
+
+The figure below illustrates the `rm` package structure. The packages are in two categories: 
+
+* _domain-related_: `ehr`, `demogaphic`, `ehr_extract`, `composition`, `integration`;
+* _generic_: `common`, `data_structures`, `data_types`, `support`.
+
+The packages in the latter group are generic, and are used by all openEHR models, in all the outer packages. Together, they provide identification, access to knowledge resources, data types and structures, versioning semantics, and support for archetyping. The packages in the first group define the semantics of enterprise level health information types, including the EHR and demographics.
+
+[.text-center]
+.Structure of `org.openehr.rm` package
+image::{openehr_rm_uml_diagrams}/RM-packages.svg[id=rm_packages, align="center"]
+
+Each outer package in the above figure corresponds to one openEHR specification document (with the exception of the EHR and Composition packages, which are both described in the EHR Reference Model document), documenting an "information model" (IM). The package structure will normally be replicated in all ITS expressions, e.g. XML schema, programming languages like Java, C# and Eiffel, and interoperability definitions like WSDL, IDL and .Net.
+
+=== Package Overview
+
+The following sub-sections provide a brief overview of the `rm` sub-packages.
+
+==== Support Information Model
+
+NOTE: this part of the RM has been moved to the BASE component; see above.
+
+==== Data Types Information Model
+
+A set of clearly defined data types underlies all other models, and provides a number of general and
+clinically specific types required for all kinds of health information. The following categories of data
+types are defined in the data types reference model.
+
+[horizontal]
+Basic types:: boolean, state variable.
+Text:: plain text, coded text, paragraphs.
+Quantities:: any ordered type including ordinal values (used for representing symbolic ordered values such as pass:["+", "++", "+++"]), measured quantities with values and units, and so on; includes Date/times - date, time, date-time types, and partial date/time types.
+Encapsulated data:: multimedia, parsable content.
+TIME_specification:: types for specifying times in the future, mainly used in medication orders, e.g. '3 times a day before meals'.
+Uri:: Unique Resource Identifiers.
+
+==== Data Structures Information Model
+
+In most openEHR information models, generic data structures are used for expressing content whose particular structure will be defined by archetypes. The generic structures are as follows.
+
+[horizontal]
+Single:: single items, used to contain any single value, such as a height or weight.
+List:: linear lists of named items, such as many pathology test results.
+Table:: tabular data, including unlimited and limited length tables with named and ordered columns, and potentially named rows.
+Tree:: tree-shaped data, which may be conceptually a list of lists, or other deep structure.
+History:: time-series structures, where each time-point can be an entire data structure of any complexity, described by one of the above structure types. Point and interval samples are supported.
+
+==== Common Information Model
+
+Several concepts that recur in higher level packages are defined in the `common` package. For example, the classes `LOCATABLE` and `ARCHETYPED` provide the link between information and archetype models. The classes `ATTESTATION` and `PARTICIPATION` are generic domain concepts that provide a standard way of documenting involvement of clinical professionals and other agents with the EHR, including signing. 
+
+The `change_control` package defines a formal model of change management and versioning which applies to any service that needs to be able to supply previous states of its information, in particular the demographic and EHR services. The key semantics of versioning in openEHR are described in the <<Versioning>> section.
+
+==== Security Information Model
+
+The Security Information Model defines the semantics of access control and privacy setting for information in the EHR.
+
+==== EHR Information Model
+
+The EHR IM includes the `ehr` and `composition` packages, and defines the containment and context semantics of the key concepts `EHR`, `COMPOSITION`, `SECTION`, and `ENTRY`. These classes are the major coarse-grained components of the EHR, and correspond directly to the classes of the same names in {iso_13606-1}[ISO 13606-1:2005^] and fairly closely to the 'levels' of the same names in the {hl7_cda}[HL7 Clinical Document Architecture (CDA) release 2.0^].
+
+==== EHR Extract Information Model
+
+The EHR Extract IM defines how an EHR extract is built from `COMPOSITIONs`, demographic, and
+access control information from the EHR. A number of Extract variations are supported, including
+"full openEHR", a simplified form for integration with ISO 13606, and an openEHR/openEHR
+synchronisation Extract.
+
+==== Integration Information Model
+
+The Integration model defines the class `GENERIC_ENTRY`, a subtype of `ENTRY` used to represent freeform
+legacy or external data as a tree. This Entry type has its own archetypes, known as "integration
+archetypes", which can be used in concert with clinical archetypes as the basis for a tool-based data
+integration system. See <<Integrating openEHR with other Systems>> for more details.
+
+==== Demographics Information Model
+
+The demographic model defines generic concepts of `PARTY`, `ROLE` and related details such as contact
+addresses. The archetype model defines the semantics of constraint on `PARTYs`, allowing archetypes
+for any type of person, organisation, role and role relationship to be described. This approach provides
+a flexible way of including the arbitrary demographic attributes allowed in the {omg_pids}[OMG HDTF PIDS standard].
+
+== Archetype Model Component (AM)
+
+The openEHR AM component is illustrated below.
+
+[.text-center]
+.AM Component of openEHR
+image::{diagrams_uri}/spec_component-am.svg[id=spec_component_am, align="center"]
+
+The openEHR `am` package contains the models necessary to describe the semantics of archetypes and templates, and their use within openEHR. There are currently two extant major versions of archetype technology in openEHR: 'ADL 1.4', the original version, and 'ADL 2', a more modern version, which is slowly being adopted. Both versions are maintained side by side, to enable implementers to work with the version(s) that suit their needs.
+ 
+In both versions, the Archetype Model consists of ADL, the Archetype Definition Language (expressed in the form of a syntax specification), and the Archetype Object Model (AOM), a structured model of archetypes.
+
+The package structure of the version 2 form of the AM is shown below.
+
+[.text-center]
+.Structure of the ADL 2 version `org.openehr.am` package
+image::{openehr_am_uml_diagrams}/AM-aom2-packages.svg[id=aom_2_packages, align="center"]
+
+The package structure of the version 1.4 form of the AM is shown below.
+
+[.text-center]
+.Structure of the ADL 1.4 `org.openehr.am` package
+image::{openehr_am_uml_diagrams}/AM-aom14-packages.svg[id=aom_14_packages, align="center"]
+
+Another key specification is the Archetype Identification specification, which defines semantics for archetype identifiers, versioning and life-cycle. The formal specifications may be found on the {openehr_am}[Archetype Model index page].
+
+== Service Model (SM)
+
+The openEHR service model includes definitions of basic services in the health information environment, centred around the EHR. It is illustrated in the figure below. The set of services actually included is evolving over time.
+
+[.text-center]
+.Structure of the `org.openehr.sm` package
+image::{openehr_sm_uml_diagrams}/SM-platform-packages.svg[id=service_packages, align="center", width=50%]
+
+=== Definitions Service
+
+The Definitions Service defines the interface to online repositories of archetypes, templates and AQL queries, and can be used both by GUI applications designed for human browsing as well as access by other software services such as the EHR.
+
+=== EHR Service
+
+The EHR Service defines the coarse-grained interface to electronic health record service. The level of granularity is openEHR Contributions and Compositions, i.e. a version-control / change-set interface.
+
+Part of the model defines the semantics of server-side querying, i.e. queries which cause large amounts of data to be processed, generally returning small aggregated answers, such as averages, or sets of ids of patients matching a particular criterion.
+
+=== Query Service
+
+The Query Service defines the interface via which AQL queries which may be stored via the Definitions Service, or ad hoc, can be executed.
+
+=== Terminology Interface
+
+The Terminology Service provides the means for all other services to access any terminology available in the health information environment, including basic classification vocabularies such as {who_icd}[ICDx^] and {who_icpc}[ICPC^], as well as more advanced ontology-based terminologies. Following the concept of
+division of responsibilities in a system-of-systems context, the Terminology Service abstracts the different underlying architectures of each terminology, allowing other services in the environment to access terms in a standard way. The Terminology Service is thus the gateway to all ontology- and terminology-
+based knowledge services in the environment, which along with services for accessing guidelines, drug data and other "reference data" enables inferencing and decision support to be carried out in the environment.
+
+== Global View
+
+The figure below shows the openEHR specifications, i.e. object models, languages and APIs, arranged by component. This view abstracts away the components and top-level UML packages, providing a useful _aide memoire_ picture of the totality of openEHR specifications. Dependencies only exist from higher elements to lower elements. The CNF and ITS components are separated since they are semantically derivative from the primary specifications, but are primary artefacts for downstream software engineering use. The other usable software artefact comes in the form of class libraries directly implementing the formal specifications.
+
+[.text-center]
+.openEHR Components and specifications - global view
+image::{diagrams_uri}/openehr_block_diagram_detailed.svg["openEHR_packages_and_languages",align="center"]
+

@@ -1,0 +1,41 @@
+=== P_C_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__P_C_OBJECT (abstract)__*
+
+h|*Description*
+2+a|Abstract model of constraint on any kind of object node.
+
+h|*Inherit*
+2+|`<<_p_archetype_constraint_class,P_ARCHETYPE_CONSTRAINT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*rm_type_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference model type that this node corresponds to.
+
+h|*0..1*
+|*occurrences*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
+
+h|*1..1*
+|*node_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Semantic id of this node, used to differentiate sibling nodes of the same type. Each node_id must be defined in the archetype ontology as a term code.
+
+h|*0..1*
+|*is_deprecated*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*specialisation_depth* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|
+|===

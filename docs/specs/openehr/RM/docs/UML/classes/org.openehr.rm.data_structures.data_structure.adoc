@@ -1,0 +1,21 @@
+=== DATA_STRUCTURE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__DATA_STRUCTURE (abstract)__*
+
+h|*Description*
+2+a|Abstract parent class of all data structure types. Includes the `_as_hierarchy_` function which can generate the equivalent CEN EN13606 single hierarchy for each subtype's physical representation. For example, the physical representation of an `ITEM_LIST` is `List<ELEMENT>`; its implementation of `_as_hierarchy_` will generate a `CLUSTER` containing the set of `ELEMENT` nodes from the list.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_locatable_class[LOCATABLE^]`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*as_hierarchy* (): `<<_item_class,ITEM>>`
+a|Hierarchical equivalent of the physical representation of each subtype, compatible with CEN EN 13606 structures.
+|===

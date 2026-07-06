@@ -1,0 +1,35 @@
+=== P_BMM_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__P_BMM_TYPE (abstract)__*
+
+h|*Description*
+2+a|Persistent form of `BMM_TYPE`.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*bmm_type*: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_type_class[BMM_TYPE^]`
+a|Result of `_create_bmm_type()_` call.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*create_bmm_type* ( +
+a_schema: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_model_class[BMM_MODEL^][1]`, +
+a_class_def: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_class_class[BMM_CLASS^][1]` +
+): `void`
+a|Create appropriate `BMM_XXX` object; effected in descendants.
+
+h|*1..1 +
+(abstract)*
+|*as_type_string* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Formal name of the type for display.
+|===

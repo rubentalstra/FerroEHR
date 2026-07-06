@@ -1,0 +1,242 @@
+= Quantity Package
+
+== Overview
+The `data_types.quantity` package is illustrated below. Dates and Times are found in the next section.
+
+[.text-center]
+.rm.data_types.quantity package
+image::{uml_diagrams_uri}/RM-data_types.quantity.svg[id=rm_data_types_quantity, align="center"]
+
+=== Requirements
+
+==== Scores and Scales
+
+Medicine is a domain in which symbols representing relative magnitudes are commonly used, without exact values being used. The main purpose is usually to classify patients into groups for which different decisions might be made. Such classifications are typically known as _scores_ or _scales_. For example the characterisation of pain as 'mild', 'medium', 'severe', or the reflex response to tendon percussion as pass:["-", "+/-", "+", "++", "+++", "++++"]. Many scores such as the Apgar Score, Glasgow Coma Scale (GCS), and Barthel Index are globally known and used.
+
+In some cases, there may be no way (or need) to precisely quantify such values because they reflect a subjective experience of the patient or informal judgment by the clinician. However, they are understood as being ordered, e.g. pass: [`++`] is arithmetically greater than pass:[`+`].
+
+Similarly, even though the symbolic values for haemolysed blood in a urinalysis have approximate
+ranges stated for them, as shown below, these 'values' are not usable in the same way as true quantities.
+
+* `"neg"`, `"trace"` (10 cells/&#956;l)
+* `"small"` (<25 cells/&#956;l)
+* `"moderate"` (<80 cells/&#956;l)
+* `"large"` (>200 cells/&#956;l)
+
+A second requirement for score and scale values is that in many cases there is a need to associate numeric values values with the symbols, in order to facilitate ordered comparison, and also to enable longitudinal comparison across results of the same kind (e.g. pain, protein). The majority of scores and scales are limited to Integer values, but some use Real numbers interspersed with Integers e.g. the https://www.researchgate.net/publication/228089364_Proposing_a_standardized_method_for_evaluating_patient_report_of_the_intensity_of_dyspnea_during_exercise_testing_in_COPD[Borg CR 10 scale] for perceived exertion. In both cases, values may be negative, zero or positive.
+
+NOTE: an argument sometimes put forward for recording all ordinals in a more precise way is that comparisons might want to be made between the values quoted by two laboratories for the same symbol (e.g. 'moderate'). There are a number of counter-arguments. Firstly, such comparisons are a poor attempt at normalisation, an activity which is the business of pathologists, not EHR users. Secondly, the symbolic values are often arrived at by the tester making a judgement of colour on a strip, which while an adequate (and cost-effective) approach for classifying, is not a valid means of quantifying a value. Lastly, in most cases, if a quantified point value or range is desired, or available, then it will be used - meaning that the appropriate quantitative data type can be used, rather than an the ordinal type.
+
+==== Countable Things
+
+A common kind of data value in medicine is the dimensionless countable quantity, e.g.
+
+* number of doses: 2;
+* number of previous pregnancies: 1;
+* number of tablets: 3.
+
+Values of this type are always integral. Countable values need to be convertible to real numbers for statistical purposes, for example for a study of average number of pregnancies per couple.
+
+Some countable entities such as tablets are divisible into major fractions, typically halves and occasionally quarters.
+
+==== Dimensioned Quantities
+
+The most common kind of quantity is a measured, dimensioned quantity. Anything which is measurable
+(rather than countable) involves a number of data aspects, namely:
+
+* a magnitude whose value is a real number;
+* the physical property being measured, with the appropriate units;
+* a concept of precision, i.e. to what number of decimal places the value is recorded;
+* a concept of accuracy, i.e. the known or assumed error in the measurement due to instrumentation or human judgement.
+
+Examples of dimensioned quantities include:
+
+* systolic BP: 110 mmHg
+* height: 178 cm
+* rate of asthma attacks: 7 /week
+* weight loss: 2.5 kg
+
+==== Ratios and Proportions
+
+A common quantitative type in science and medicine is the proportion, or ratio, which is used in situations like the following:
+
+* 1:128 (a titer);
+* Na:K concentration ratio (unitary denominator);
+* albumin:creatinine ratio;
+* % e.g. red cell distribution width (RDW) which is the width of a distribution of RBC widths.
+
+In general ratios have real number values, even if many examples appear to be integer ratios. Proportions with unitary denominator and % (denominator = 100) are common.
+
+==== Formulations
+
+A concept superficially similar to proportions and ratios is formulations of materials, such as a solid in a liquid e.g.:
+
+* 250 mg / 500 ml (solute/solvent)
+
+Although a single solute/single solvent formulation appears to have the same form as a ratio, the general form is for any number of substances to be mixed together, usually according to a particular procedure. Formulations are therefore not candidates for direct modelling as fine-grained quantities, but instead are constructed by archetyping a higher-level structure, each leaf element of which contains the required kind of Quantity.
+
+==== Quantity Ranges
+
+Quantity ranges are ubiquitous in science and medicine, and may be defined for any kind of measured
+phenomenon. Examples include:
+
+* healthy weight range, e.g. 48kg - 60kg
+* normal range for urinalysis in pregnancy - protein, e.g. "nil" - "trace"
+
+==== Reference Ranges
+
+A reference range is a quantity range attached to a measured value, and is common for laboratory
+result values. The typical form of a reference range found in a pathology result indicates what is considered
+the 'normal' range for a measured value. Examples of reference ranges:
+
+* normal range for serum Na is 135 - 145 mmol/L.
+* desirable total cholesterol: < 5.5 mmol/L (strictly this probably should be 2.0 - 5.5 mmol/L, but is not usually quoted this way as low cholesterol is not considered a problem.)
+
+Ranges can also be quoted for drug administrations, in which case they are usually thought of as the 'therapeutic' range. For example, the anticonvulsant drug Carbamazepine has a therapeutic range of 20 - 40 &#956;Mol/L. In some cases, there are multiple ranges associated with a drug, for example, Salicylate has a therapeutic range of 1.0 - 2.5 mmol/L and a toxic range > 3.6 mmol/L
+
+Various examples occur in which multiple ranges may be stated, including the following.
+
+* The administration recomendations for drugs which depend on the particular patient state. For example, the therapeutic range of Cyclosporin (an immunosuppresant) is a function of time post-transplant for the affected organ, e.g. kidney: < 6 months: 250 - 350 &#956;g/L, > 6 months: 100 - 200 &#956;g/L.
+* Normal ranges for blood IgG, IgA, IgM which vary significantly with the age in months from birth.
+* Progesterone and pituitary hormones have ranges which are different for different phases of the menstrual cycle and for menopause. This may result in 4 or 5 ranges given for one result. Only one will apply to any particular patient - but the exact phase of the cycle may be unknown - so the ranges may need to be associated with the value with no 'normal' range.
+
+Where there are multiple ranges, the important question is: _which range information is relevant to the actual data being recorded for the patient?_ In theory, only the range corresponding to the particular patient situation should be used, i.e. the range which applies after taking into account sex, age, smoking status, "professional athlete", organ transplanted, etc. In most cases, this is a single "normal" range, or a pair of ranges, typically "therapeutic" and "critical". However, practical factors complicate things. Firstly, data is sometimes supplied from pathology labs along with some or all of the applicable reference ranges, even though only some could possibly apply. This is particularly the case if the laboratory has no other data on the patient, and cannot evaluate which range applies. The requirement for faithfulness of recording might be extended to reference data supplied by laboratories, regardless of how irrelevant or arbitrarily chosen the reference data is, meaning that such data has to be stored in the record anyway. Secondly, there may be circumstances in which physicians want a number of reference ranges, even while knowing that only one range is applicable to the datum. Ranges above and below the relevant one might be useful to a physician wishing to determine how far out of range the datum is.
+
+==== Normal Range and Status in Laboratory data
+
+It is quite common for laboratories to include a normal range with each measured value, and/or a normal 'status', which indicates where the value lies with respect to the normal range. The latter will commonly take the form of markers like "HHH" (critically high), HH (abnormally high), H (borderline high), L, LL, LLL in HL7v2 messaging, although other schemes are undoubtedly used.
+
+=== Design
+
+==== Basic Semantics
+
+In order to make sense of the requirements in a systematic way, a proper typology for quantities is needed. The most basic characteristic of all values typically called 'quantities' is that they are ordered, meaning that the operator "<" (less-than) is defined between any two values in the domain. An ancestor class for all quantities called `DV_ORDERED` is accordingly defined. This type is subtyped into ordinals, scales and true quantities, represented by the classes `DV_ORDINAL`, `DV_SCALE` and `DV_QUANTIFIED` respectively.
+
+`DV_ORDINAL` and `DV_SCALE` are used for scores and scales as described in the requirements above. `DV_ORDINAL` represents data values whose values are Integers, and which have symbolic or text names instead, such as pass:["+", "++", "+++"], or `"mild"`, `"medium"`, `"severe"`. Each symbol can be assigned any Integer value, providing a basis for computable comparison. Typical uses for `DV_ORDINAL` include representing values from the Apgar and Glasgow Coma Scales, e.g. `0｜heart rate absent｜`, `4｜withdraws from pain｜`. `DV_SCALE` is similar to `DV_ORDINAL`, and was introduced to support scales / scores containing Real values as well as Integers.
+
+In contrast to `DV_ORDINAL` and `DV_SCALE`, instances of `DV_QUANTIFIED` and all its subtypes have precise numeric magnitudes. Accordingly, `DV_QUANTIFIED` introduces the properties `_magnitude_` and `_magnitude_status_`. The `_magnitude_` attribute is guaranteed to be available on any `DV_QUANTIFIED`, carrying the effective value, regardless of the particular subtype. The optional `_magnitude_status_` attribute can be used to provide a non-quantified indication of accuracy, and takes the following values:
+
+* `"="` : magnitude is a point value
+* `"<"` : value is < magnitude
+* `">"` : value is > magnitude
+* `"\<="` : value is \<= magnitude
+* `">="` : value is >= magnitude
+* `"~"` : value is approximately magnitude
+
+If not present, the meaning is `"="`.
+
+Logically, an accuracy attribute should also be included in `DV_QUANTIFIED`, but as its modelling is different in the subtypes in a way that does not easily lend itself to a common ancestor, it is only included in the subtypes.
+
+The `DV_QUANTIFIED` class has two subtypes: `DV_AMOUNT` and `DV_ABSOLUTE_QUANTITY`. The former corresponds to relative 'amounts' of something, either a physical property (such as mass) or items (e.g. cigarettes). Mathematically, the `+` and `-` operators (as well as `*` and `/`) are defined in the same way as for the real numbers (or any other mathematical 'field'), with the semantics that adding two relative quantities measuring the same thing (i.e. with the same units) produces another relative quantity of the same kind; while the semantics of subtraction are that one relative quantity subtracted from another generates a third.
+
+The second subtype of `DV_QUANTIFIED`, `DV_ABSOLUTE_QUANTITY`, models quantities whose values are absolute along a line having a defined origin. The main example of absolute quantities are the temporal concepts date, time and date/time. These are distinguished from relative quantities in that the normal addition and subtraction operations don't apply. Instead, the semantics of such operators are based on the idea of the difference between absolute values being a relative amount. For example, two dates can be subtracted, but the result is a duration, not another date. For this reason, the operations `_add_`, `_subtract_` and `_diff_` are defined rather than `+` or `-`. Date/time types, as well as the relative concept duration, are defined in <<_date_time_package>>.
+
+Subtypes of `DV_AMOUNT` are `DV_PROPORTION`, `DV_QUANTITY`, `DV_COUNT`, and `DV_DURATION` (see date_time package). The type `DV_COUNT` has an integer magnitude and is used to record naturally countable things such as number of previous pregnancies, number of steps taken by a recovering stroke victim and so on. There are no units or precision in a `DV_COUNT`. Countable quantities can be used to create instances of `DV_QUANTITY`, such as during a statistical study which average tobacco
+consumption over a time period. Such a computation might cause the creation of `DV_QUANTITY` objects representing values like {magnitude = 5.85, units = '/ week'}
+
+`DV_QUANTITY` is used to represent amounts of measurable things, and has a real number magnitude, precision, units and accuracy. The `_units_` attribute contains the scientific unit in a parsable form defined by default by the {ucum}[Unified Code for Units of Measure (UCUM)^] (case-sensitive form), or by another system or terminology specified in the `_units_system_` attribute. In some cases, such as metric units, the UCUM code and the display form are the same, e.g. 'kg'. However this is not the general case, and many common units have different display and code forms, e.g. degrees Celcius:  '°C' and 'Cel'. In general the unit display name should be looked up if it is not known in context that the code is directly displayable. The `_units_display_name_` attribute may be used if the displayable form of the units is required in the data, and/or terminology lookup is not available or desirable. Unit names may be language dependent, particularly older units.
+
+A valid units string always implies a measured _property_, such as force or pressure. If unit strings are compared in the application environment to determine if they measure the same property (e.g. `"bar"` and `"kPa"` are both units of 'pressure'), which enables the `_is_strictly_comparable_to()_` function defined on `DV_ORDERED` to be properly specified on `DV_QUANTITY`.
+
+NOTE: while these semantics will allow comparison of e.g. two pressures recorded in `mbar and mmHg, or even two accelerations whose units are `"m.s^-2"` and `"m/s^2"`, they provide no guarantee that this is a sensible thing to do in terms of domain semantics: comparing a blood pressure to an atmospheric pressure for example may or may not make any sense. It is not within the scope of the quantity package to express such semantics - this is up to application software which uses Quantities found in specific places in the data.
+
+==== Accuracy and Uncertainty
+
+Theoretically it might be argued that accuracy should not be included in a model for quantified values, because it is an artifact of a measuring process and/or device, not of a quantity itself. For example, a weight of "82 kg &#177;5%" can be represented in two parts. The "82 kg" is represented as a `DV_QUANTITY`, while the "&#177;5%" could be included in the protocol description of the weighing instrument, since this is where the error comes from. For practical purposes however, (in)accuracy in a measured quantity corresponds to a range of possible values. In realistic computing in health, it is quite likely that the accuracy will be required in computations on quantities, especially for statistical population queries in which measurement error must be disambiguated from true correlation.
+
+Accuracy is therefore introduced as the abstract feature accuracy of the `DV_QUANTIFIED` class. It is defined concretely in the two descendants, `DV_AMOUNT`, where it is of type Real, and `DV_ABSOLUTE_QUANTITY`, where it is of a differential type defined by subtypes. A value of 0 in either case indicates 100% accuracy, i.e. no error in measurement. Where accuracy is not recorded in a quantity, it is represented by a special value. In `DV_AMOUNT`, a value of -1 for the accuracy attribute
+is used for this purpose, and the constant unknown_accuracy_value = -1 is provided within the class to give a symbolic name for the special value. In the `DV_ABSOLUTE_QUANTITY` class, `_accuracy_unknown_` is represented by a Void (i.e. null) value for the accuracy attribute. An abstract Boolean feature `_accuracy_unknown_` is defined in the parent class `DV_QUANTIFIED` to provide a logical test of accuracy being absent, and is implemented in the respective  descendants by concrete functions that check for the special values.
+
+In addition, the class `DV_AMOUNT`, provides a feature `_accuracy_is_percent_: Boolean` to indicate if accuracy value is to be understood as a percentage, or an absolute value.
+
+When two compatible quantities are added or subtracted using the + or - operators (`DV_AMOUNT` descendants) or add and substract (`DV_ABSOLUTE_QUANTITY` class), accuracy behaves in the following way:
+
+* if accuracies are present in both quantities, they are added in the result, for both addition and subtraction operations;
+* if either or both quantities has an unknown accuracy, the accuracy of the result is also unknown;
+* if two `DV_AMOUNT` descendants are added or subtracted, and only one has `_accuracy_is_percent_` = True, accuracy is expressed in the result in the form used in the larger of the two quantities.
+
+The related notion of 'uncertainty' is understood as a subjective judgement made by the clinician, indicating that he/she is not certain of a particular statement. It is not the same as accuracy: uncertainty may apply to non-quantified values, such as subjective statements, and it is not an aspect of objective measurement processes, but of human confidence. Where the uncertainty is due to subjective memory e.g. "I think my grandfather was 56 when he died", the uncertainty is simply recorded as another value, along with the main data item being recorded. Uncertainty is therefore not directly modelled in the openEHR data types, but appears instead in particular archetypes.
+
+==== Quantity Ranges
+
+Ranges are modelled by the generic type `DV_INTERVAL<T:DV_ORDERED>` which enables a range of any of the other quantity types (except ratio) to be constructed. This allows any subtype of `DV_ORDERED` to occur as a range as well.
+
+==== Proportions
+
+The `DV_PROPORTION` type is provided for representing true ratios, i.e. relative values, and consists of numerator and denominator Real values, and a magnitude function which is computed as the result of the numerator/denominator division. The type attribute is used to indicate the logical type of the proportion. Supported types include:
+
+* _percent_: denominator is 100; usual presentation is "numerator %"
+* _unitary_: denominator is 1; usual presentation is "numerator"
+* _fraction_: numerator and denominator are both integer values; usual presentation is n/d, e.g. such as ½ or ¾, 1/2, 3/4 etc;
+* _integer_fraction_: numerator and denominator are both integer values; usual presentation is n/d; if numerator > denominator, display as "a b/c", i.e. the integer part followed by the remaining fraction part, e.g. 1½; this is the most likely form for expressing a number of tablets;
+* _ratio_: numerator and denominator can take any value; usual presentation is "numerator: denominator"
+
+Lastly, the `_is_integral_` function indicates that the numerator and denominator are both integer values; this is used for fractions (the fraction and integer_fraction types above) and other commonly occurring ratios where both parts are always integer values.
+
+==== Normal and Reference Ranges
+
+Normal range for any of the quantity types (i.e. any instance of a subtype of `DV_ORDERED`) can be included via the attribute `DV_ORDERED`.`_normal_range_`, of type `REFERENCE_RANGE`. Other reference ranges (e.g. sub-critical, critical etc) can be included via the attribute `DV_ORDERED`.`_other_reference_ranges_`. The separation of normal and other reference range attributes is used because the former constitute the vast majority of ranges quoted for quantitative data.
+
+Normal status can be included via the attribute `DV_ORDERED`.`_normal_status_`, which takes the form of a `DV_ORDINAL`, whose symbol attribute is coded according to the openEHR terminology group "normal status", and takes values "HHH" (critically high), "HH" (abnormally high), "H" (borderline high)", "N" (normal), "L" ... "LLL".
+
+==== Recording Time
+
+Time can be recorded in two ways. Absolute times in the social time domain, such as dates and time of day are recorded using the types in the date_time package. Fine-grained 'time', which is a duration rather than a time, is recorded using a `DV_QUANTITY` with units = 's' or another temporal unit ('h', 'ms', 'ns' etc).
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}dv_ordered.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_interval.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}reference_range.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_ordinal.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_scale.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_quantified.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_amount.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_quantity.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_count.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_proportion.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}proportion_kind.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}dv_absolute_quantity.adoc[]
+
+== Syntaxes
+
+=== Units Syntax
+
+The BNF syntax specification of the units string, adapted from {ucum}[UCUM^] (case-sensitive form) is as follows:  
+
+[source, ebnf]
+--------
+units = '/' exp_units | units '.' exp_units | units '/' exp_units | exp_units ;
+exp_units = unit_group exponent | unit_group ;
+unit_group = PREFIX annot_unit | annot_unit | '(' exp_units ')' | factor ;
+annot_unit = unit_name [ '{' ANNOTATION '}' ] | '{' ANNOTATION '}' ;
+factor = Integer ;
+exponent = [ SIGN ] Integer ;
+
+PREFIX = 'Y' |'Z' | 'E' | 'P' | 'T' | 'G' | 'M' | 'k' | 'h' | 'da' | 'd' | 'c' | 'm' | 'μ' | 'n' | 'p' | 'f' | 'a' | 'z' | 'y' ;
+UNIT_NAME = ? [a-zA-Z_%]+ ?;   (* replace regex with values from unit tables *)
+ANNOTATION = ? [a-zA-Z'.]+ ?;  (* replace regex with values from unit tables *)
+SUFFIX = ? [a-zA-Z0-9'_]+ ?;   (* replace regex with values from unit tables *)
+SIGN = '+' | '-' ;
+Integer = ? [0-9]+ ?;          (* regex *)
+--------
+
+This proposal is comprehensive, covering all useful unit systems, including SI, various imperial, customary mesaures, and some obscure measures, as well as clinically specific additions. Metric prefixes, meaning-changing textual suffixes (e.g. "[Hg]" in "mm[Hg]") and non-meaning-changing annotations (e.g. "kg {total}") are recognised. With this syntax, units can be simply expressed in strings such as:
+
+```
+"kg/m^2", "m.s^-1", "km/h", "mm[Hg]"
+```
+
+and so on.
+

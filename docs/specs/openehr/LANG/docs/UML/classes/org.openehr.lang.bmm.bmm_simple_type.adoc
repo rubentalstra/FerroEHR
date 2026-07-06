@@ -1,0 +1,30 @@
+=== BMM_SIMPLE_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_SIMPLE_TYPE*
+
+h|*Description*
+2+a|Type reference to a single type i.e. not generic or container type.
+
+h|*Inherit*
+2+|`<<_bmm_type_class,BMM_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*base_class*: `<<_bmm_class_class,BMM_CLASS>>`
+a|The target type; this converts to the first parameter in generic_parameters in BMM_GENERIC_TYPE.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*type_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Return base_class.type_name.
+|===

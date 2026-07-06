@@ -1,0 +1,481 @@
+//
+// taken from doc/conformance_testing/COMPOSITION_VALIDATION_STRUCTURE.md
+//
+
+== OBSERVATION Test Cases
+
+In this section there are specifications of constraint combinations for OBSERVATION.
+
+Each data set in this section could be combined with the test data sets for COMPOSITION.content defined in section 2.
+
+OBSERVATION data sets:
+
+. OBSERVATION with no state and no protocol
+. OBSERVATION with no state and protocol
+. OBSERVATION with state and no protocol
+. OBSERVATION with state and protocol
+
+NOTE: since data is mandatory by the RM we can’t have a case for an AOM constraint with no OBSERVATION data. Though any OBSERVATION committed to the SUT without data will return a validation error comming from the RM/Schema, and this should be tested.
+
+The constraints combinations described below could be tested in two ways:
+
+. Isolation: by not constraining OBSERVATION.data, OBSERVATION.state and OBSERVATION.protocol, or using the open/'any allowed' constraint \{*} for those attributes.
+. Combination: with constraints defined at the HISTORY level (for data and state) and ITEM_STRUCTURE (for protocol).
+
+NOTE: we suggest to test with both strategies.
+
+=== Test Case CONT-OBS-state_ex_opt-protocol_ex_opt
+
+Description: OBSERVATION state existence = 0..1, protocol existence = 0..1
+
+[cols="1,1,1,1,4",options="header",]
+|===
+|data       |state      |protocol   |expected |constraints violated
+
+|absent     |absent     |absent     |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|absent     |absent     |present    |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|absent     |present    |absent     |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|absent     |present    |present    |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|present    |absent     |absent     |accepted |
+|present    |absent     |present    |accepted |
+|present    |present    |absent     |accepted |
+|present    |present    |present    |accepted |
+|===
+
+=== Test Case CONT-OBS-state_ex_opt-protocol_ex_mand
+
+Description: OBSERVATION state existence = 0..1, protocol existence = 1..1
+
+[cols="1,1,1,1,4",options="header",]
+|===
+|data       |state      |protocol   |expected |constraints violated
+
+|absent     |absent     |absent     |rejected |OBSERVATION.data existence.lower (RM/schema constraint), OBSERVATION.protocol existence.lower
+|absent     |absent     |present    |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|absent     |present    |absent     |rejected |OBSERVATION.data existence.lower (RM/schema constraint), OBSERVATION.protocol existence.lower
+|absent     |present    |present    |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|present    |absent     |absent     |rejected |OBSERVATION.protocol existence.lower
+|present    |absent     |present    |accepted |
+|present    |present    |absent     |rejected |OBSERVATION.protocol existence.lower
+|present    |present    |present    |accepted |
+|===
+
+=== Test Case CONT-OBS-state_ex_mand-protocol_ex_opt
+
+Description: OBSERVATION state existence = 1..1, protocol existence = 0..1
+
+[cols="1,1,1,^1,4",options="header",]
+|===
+|data |state |protocol |expected |constraints violated
+
+|absent |absent |absent |rejected |OBSERVATION.data existence.lower (RM/schema constraint), OBSERVATION.state existence.lower
+|absent |absent |present |rejected |OBSERVATION.data existence.lower (RM/schema constraint), OBSERVATION.state existence.lower
+|absent |present |absent |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|absent |present |present |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|present |absent |absent |rejected |OBSERVATION.state existence.lower
+|present |absent |present |rejected |OBSERVATION.state existence.lower
+|present |present |absent |accepted |
+|present |present |present |accepted |
+|===
+
+=== Test Case CONT-OBS-state_ex_mand-protocol_ex_mand
+
+Description: OBSERVATION state existence = 1..1, protocol existence = 1..1
+
+[cols="1,1,1,^1,4",options="header",]
+|===
+|data |state |protocol |expected |constraints violated
+
+|absent |absent |absent |rejected |OBSERVATION.data existence.lower (RM/schema constraint), OBSERVATION.protocol existence.lower, OBSERVATION.state existence.lower
+|absent |absent |present |rejected |OBSERVATION.data existence.lower (RM/schema constraint), OBSERVATION.state existence.lower
+|absent |present |absent |rejected |OBSERVATION.data existence.lower (RM/schema constraint), OBSERVATION.protocol existence.lower
+|absent |present |present |rejected |OBSERVATION.data existence.lower (RM/schema constraint)
+|present |absent |absent |rejected |OBSERVATION.protocol existence.lower, OBSERVATION.state existence.lower
+|present |absent |present |rejected |OBSERVATION.state existence.lower 
+|present |present |absent |rejected |OBSERVATION.protocol existence.lower
+|present |present |present |accepted |
+|===
+
+== HISTORY Test Cases
+
+In this section there are specifications of constraint combinations for HISTORY, specified in the {openehr_rm_data_structures}#_overview[openEHR Data Structures IM^].
+
+Each data set in this section could be combined with the test data sets for HISTORY defined in section 3.
+
+HISTORY data sets:
+
+. HISTORY with no events and no summary
+. HISTORY with events and no summary
+. HISTORY with no events and summary
+. HISTORY with events and summary
+
+The constraints combinations described below could be tested in two ways:
+
+. Isolation: by not constraining HISTORY.events and HISTORY.summary, or using the open/'any allowed' constraint \{*} for those attributes.
+. Combination: with constraints defined at the EVENT level (for events) and ITEM_STRUCTURE (for summary).
+
+NOTE: we suggest to test with both strategies.
+
+=== Test Case CONT-HIST-events_card_any-summary_ex_opt
+
+Description: HISTORY events cardinality 0..*, summary existence 0..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events |summary |expected |constraints violated
+
+|no events |absent |accepted |
+|one event |absent |accepted |
+|three events |absent |accepted |
+|no event |present |accepted |
+|one event |present |accepted |
+|three events |present |accepted |
+|===
+
+=== Test Case CONT-HIST-events_card_1plus-summary_ex_opt
+
+Description: HISTORY events cardinality 1..*, summary existence 0..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events |summary |expected |constraints violated
+
+|no events |absent |rejected |HISTORY.events cardinality.lower
+|one event |absent |accepted |
+|three events |absent |accepted |
+|no event |present |rejected |HISTORY.events cardinality.lower
+|one event |present |accepted |
+|three events |present |accepted |
+|===
+
+=== Test Case CONT-HIST-events_card_3plus-summary_ex_opt
+
+Description: HISTORY events cardinality 3..*, summary existence 0..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events |summary |expected |constraints violated
+
+|no events |absent |rejected |HISTORY.events cardinality.lower
+|one event |absent |rejected |HISTORY.events cardinality.lower
+|three events |absent |accepted |
+|no event |present |rejected |HISTORY.events cardinality.lower
+|one event |present |rejected |HISTORY.events cardinality.lower
+|three events |present |accepted |
+|===
+
+=== Test Case CONT-HIST-events_card_opt-summary_ex_opt
+
+Description: HISTORY events cardinality 0..1, summary existence 0..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events |summary |expected |constraints violated
+
+|no events |absent |accepted |
+|one event |absent |accepted |
+|three events |absent |rejected |HISTORY.events cardinality.upper
+|no event |present |accepted |
+|one event |present |accepted |
+|three events |present |rejected |HISTORY.events cardinality.upper
+|===
+
+=== Test Case CONT-HIST-events_card_mand-summary_ex_opt
+
+Description: HISTORY events cardinality 1..1, summary existence 0..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events |summary |expected |constraints violated
+
+|no events |absent |rejected |HISTORY.events cardinality.lower
+|one event |absent |accepted |
+|three events |absent |rejected |HISTORY.events cardinality.upper
+|no event |present |rejected |HISTORY.events cardinality.lower
+|one event |present |accepted |
+|three events |present |rejected |HISTORY.events cardinality.upper
+|===
+
+=== Test Case CONT-HIST-events_card_3to5-summary_ex_opt
+
+Description: HISTORY events cardinality 3..5, summary existence 0..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events         |summary    |expected |constraints violated
+
+|no events      |absent     |rejected |HISTORY.events cardinality.lower
+|one event      |absent     |rejected |HISTORY.events cardinality.lower
+|three events   |absent     |accepted |
+|no event       |present    |rejected |HISTORY.events cardinality.lower
+|one event      |present    |rejected |HISTORY.events cardinality.lower
+|three events   |present    |accepted |
+|===
+
+=== Test Case CONT-HIST-events_card_any-summary_ex_mand
+
+Description: HISTORY events cardinality 0..*, summary existence 1..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events         |summary    |expected |constraints violated
+
+|no events      |absent     |rejected |HISTORY.summary existence.lower
+|one event      |absent     |rejected |HISTORY.summary existence.lower
+|three events   |absent     |rejected |HISTORY.summary existence.lower
+|no event       |present    |accepted |
+|one event      |present    |accepted |
+|three events   |present    |accepted |
+|===
+
+=== Test Case CONT-HIST-events_card_1plus-summary_ex_mand
+
+Description: HISTORY events cardinality 1..*, summary existence 1..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events         |summary    |expected |constraints violated
+
+|no events      |absent     |rejected |HISTORY.events cardinality.lower, HISTORY.summary existence.lower
+|one event      |absent     |rejected |HISTORY.summary existence.lower
+|three events   |absent     |rejected |HISTORY.summary existence.lower
+|no event       |present    |rejected |HISTORY.events cardinality.lower
+|one event      |present    |accepted |
+|three events   |present    |accepted |
+|===
+
+=== Test Case CONT-HIST-events_card_3plus-summary_ex_mand
+
+Description: HISTORY events cardinality 3..*, summary existence 1..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events         |summary    |expected |constraints violated
+
+|no events      |absent     |rejected |HISTORY.events cardinality.lower, HISTORY.summary existence.lower
+|one event      |absent     |rejected |HISTORY.events cardinality.lower, HISTORY.summary existence.lower
+|three events   |absent     |rejected |HISTORY.summary existence.lower
+|no event       |present    |rejected |HISTORY.events cardinality.lower
+|one event      |present    |rejected |HISTORY.events cardinality.lower
+|three events   |present    |accepted |
+|===
+
+=== Test Case CONT-HIST-events_card_opt-summary_ex_mand
+
+Description: HISTORY events cardinality 0..1, summary existence 1..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events         |summary    |expected |constraints violated
+
+|no events      |absent     |rejected |HISTORY.summary existence.lower
+|one event      |absent     |rejected |HISTORY.summary existence.lower
+|three events   |absent     |rejected |HISTORY.events cardinality.upper, HISTORY.summary existence.lower
+|no event       |present    |accepted |
+|one event      |present    |accepted |
+|three events   |present    |rejected |HISTORY.events cardinality.upper
+|===
+
+=== Test Case CONT-HIST-events_card_mand-summary_ex_mand
+
+Description: HISTORY events cardinality 1..1, summary existence 1..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events         |summary    |expected |constraints violated
+
+|no events      |absent     |rejected |HISTORY.events cardinality.lower, HISTORY.summary existence.lower
+|one event      |absent     |rejected |HISTORY.summary existence.lower
+|three events   |absent     |rejected |HISTORY.events cardinality.upper, HISTORY.summary existence.lower
+|no event       |present    |rejected |HISTORY.events cardinality.lower
+|one event      |present    |accepted |
+|three events   |present    |rejected |HISTORY.events cardinality.upper
+|===
+
+=== Test Case CONT-HIST-events_card_3to5-summary_ex_mand
+
+Description: HISTORY events cardinality 3..5, summary existence 1..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|events         |summary    |expected |constraints violated
+
+|no events      |absent     |rejected |HISTORY.events cardinality.lower, HISTORY.summary existence.lower
+|one event      |absent     |rejected |HISTORY.events cardinality.lower, HISTORY.summary existence.lower
+|three events   |absent     |rejected |HISTORY.summary existence.lower
+|no event       |present    |rejected |HISTORY.events cardinality.lower
+|one event      |present    |rejected |HISTORY.events cardinality.lower
+|three events   |present    |accepted |
+|===
+
+== EVENT Test Cases
+
+EVENT data sets:
+
+. EVENT with no state
+. EVENT with state
+
+NOTE: since data is mandatory by the RM we can’t have a case for an AOM constraint with "`no EVENT.data`". Though any EVENT committed to the SUT without data will return a validation error comming from the RM/Schema, and this should be tested.
+
+EVENT type combinations:
+
+. EVENT is POINT_EVENT
+. EVENT is INTERVAL_EVENT
+
+NOTE: testing both EVENT subclasses shouldn’t affect the result of testing combinations with the rest of the constraints defined for EVENT or on container classes. It will affect only the type checking test if the wrong type of EVENT is provided. So instead of combining the expected results with the rest of the constraints, we will define separate test cases.
+
+The constraints combinations described below could be tested in two ways:
+
+. Isolation: by not constraining EVENT.data and EVENT.state, or using the open/'`any allowed`' constraint \{*} for those attributes.
+. Combination: with constraints defined at the ITEM_STRUCTURE level (for data and state).
+
+NOTE: we suggest to test with both strategies.
+
+=== Test Case CONT-EVENT-state_ex_opt
+
+Description: EVENT state existence 0..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|data       |state      |expected |constraints violated
+
+|absent     |absent     |rejected |EVENT.data existence.lower (RM/schema constraint)
+|absent     |present    |rejected |EVENT.data existence.lower (RM/schema constraint)
+|present    |absent     |accepted |
+|present    |present    |accepted |
+|===
+
+=== Test Case CONT-EVENT-state_ex_mand
+
+Description: EVENT state existence 1..1
+
+[cols="1,1,^1,3",options="header",]
+|===
+|data       |state      |expected |constraints violated
+
+|absent     |absent     |rejected |EVENT.data existence.lower (RM/schema constraint), EVENT.state existence.lower
+|absent     |present    |rejected |EVENT.data existence.lower (RM/schema constraint)
+|present    |absent     |rejected |EVENT.state existence.lower
+|present    |present    |accepted |
+|===
+
+=== Test Case CONT-EVENT-type_any
+
+Description: EVENT is any EVENT subtype
+
+In the AOM/TOM the constraint for the EVENT type is using the abstract class EVENT, so it allows any EVENT subclass at this position at runtime.
+
+[cols="1,^1,3",options="header",]
+|===
+|event          |expected |constraints violated
+
+|POINT_EVENT    |accepted |
+|INTERVAL_EVENT |accepted |
+|===
+
+=== Test Case CONT-EVENT-type_point_event
+
+Description: EVENT is POINT_EVENT
+
+[cols="1,^1,3",options="header",]
+|===
+|event          |expected |constraints violated
+
+|POINT_EVENT    |accepted |
+|INTERVAL_EVENT |rejected |Class not allowed
+|===
+
+=== Test Case CONT-EVENT-type_interval_event
+
+Description: EVENT is INTERVAL_EVENT
+
+[cols="1,^1,3",options="header",]
+|===
+|event          |expected |constraints violated
+
+|POINT_EVENT    |rejected |Class not allowed
+|INTERVAL_EVENT |accepted |
+|===
+
+== ITEM_STRUCTURE Test Cases
+
+ITEM_STRUCTURE type combinations:
+
+. ITEM_STRUCTURE is ITEM_TREE
+. ITEM_STRUCTURE is ITEM_LIST
+. ITEM_STRUCTURE is ITEM_TABLE
+. ITEM_STRUCTURE is ITEM_SINGLE
+
+NOTE: testing with any of the ITEM_STRUCTURE subclasses shouldn’t affect the result of testing combinations with the rest of the constraints defined on container classes. It will affect only the type checking test if the wrong type of ITEM_STRUCTURE is provided. So instead of combining the expected results with the rest of the constraints, we will define separate test cases.
+
+=== Test Case CONT-ITEM_STR-type_any
+
+Description: ITEM_STRUCTURE is any ITEM_STRUCTURE subtype
+
+In the AOM/TOM the constraint for the ITEM_STRUCTURE type is using the abstract class ITEM_STRUCTURE, so it allows any ITEM_STRUCTURE subclass at this position at runtime.
+
+[cols="1,^1,3",options="header",]
+|===
+|event          |expected |constraints violated
+
+|ITEM_TREE      |accepted |
+|ITEM_LIST      |accepted |
+|ITEM_TABLE     |accepted |
+|ITEM_SINGLE    |accepted |
+|===
+
+=== Test Case CONT-ITEM_STR-type_item_tree
+
+Description: ITEM_STRUCTURE is ITEM_TREE
+
+[cols="1,^1,3",options="header",]
+|===
+|event          |expected |constraints violated
+
+|ITEM_TREE      |accepted |
+|ITEM_LIST      |rejected |Class not allowed
+|ITEM_TABLE     |rejected |Class not allowed
+|ITEM_SINGLE    |rejected |Class not allowed
+|===
+
+=== Test Case CONT-ITEM_STR-type_item_list
+
+Description: ITEM_STRUCTURE is ITEM_LIST
+
+[cols="1,^1,3",options="header",]
+|===
+|event          |expected |constraints violated
+
+|ITEM_TREE      |rejected |Class not allowed
+|ITEM_LIST      |accepted |
+|ITEM_TABLE     |rejected |Class not allowed
+|ITEM_SINGLE    |rejected |Class not allowed
+|===
+
+=== Test Case CONT-ITEM_STR-type_item_table
+
+Description: ITEM_STRUCTURE is ITEM_TABLE
+
+[cols="1,^1,3",options="header",]
+|===
+|event          |expected |constraints violated
+
+|ITEM_TREE      |rejected |Class not allowed
+|ITEM_LIST      |rejected |Class not allowed
+|ITEM_TABLE     |accepted |
+|ITEM_SINGLE    |rejected |Class not allowed
+|===
+
+=== Test Case CONT-ITEM_STR-type_item_single
+
+Description: ITEM_STRUCTURE is ITEM_SINGLE
+
+[cols="1,^1,3",options="header",]
+|===
+|event          |expected   |constraints violated
+
+|ITEM_TREE      |rejected   |Class not allowed
+|ITEM_LIST      |rejected   |Class not allowed
+|ITEM_TABLE     |rejected   |Class not allowed
+|ITEM_SINGLE    |accepted   |
+|===

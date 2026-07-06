@@ -1,0 +1,84 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+This specification was developed and is maintained by the {openehr_sec}[openEHR Specifications Editorial Committee (SEC)^].
+
+=== Principal Authors
+
+* Thomas Beale, Ars Semantica, UK; openEHR International Board
+* Pablo Pazos Gutierrez, CaboLabs, Uruguay
+* Wladislaw Wagner, vitagroup AG, Germany
+
+=== Trademarks
+
+* 'openEHR' is a trademark of the openEHR Foundation
+
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-glossary.adoc[leveloffset=+1]
+include::master03-overview.adoc[leveloffset=+1]
+
+include::master04-func_tc_definition_adl.adoc[leveloffset=+1]
+include::master05-func_tc_definition_query.adoc[leveloffset=+1]
+include::master06-func_tc_ehr.adoc[leveloffset=+1]
+include::master07-func_tc_ehr_composition.adoc[leveloffset=+1]
+include::master08-func_tc_ehr_contribution.adoc[leveloffset=+1]
+include::master09-func_tc_ehr_directory.adoc[leveloffset=+1]
+include::master10-func_tc_demographic.adoc[leveloffset=+1]
+include::master11-func_tc_querying.adoc[leveloffset=+1]
+include::master12-func_tc_admin.adoc[leveloffset=+1]
+include::master13-func_tc_messaging.adoc[leveloffset=+1]
+
+include::master15-content_tc_composition.adoc[leveloffset=+1]
+include::master16-content_tc_entry.adoc[leveloffset=+1]
+include::master17.1-content_tc_data_types-basic.adoc[leveloffset=+1]
+include::master17.2-content_tc_data_types-text.adoc[leveloffset=+1]
+include::master17.3-content_tc_data_types-quantity.adoc[leveloffset=+1]
+include::master17.4-content_tc_data_types-date_time.adoc[leveloffset=+1]
+include::master17.5-content_tc_data_types-time_specification.adoc[leveloffset=+1]
+include::master17.6-content_tc_data_types-encapsulated.adoc[leveloffset=+1]
+include::master17.7-content_tc_data_types-uri.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+// :sectnums!:
+// == References
+

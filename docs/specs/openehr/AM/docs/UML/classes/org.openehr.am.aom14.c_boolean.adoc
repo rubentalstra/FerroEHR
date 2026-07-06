@@ -1,0 +1,30 @@
+=== C_BOOLEAN Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_BOOLEAN*
+
+h|*Description*
+2+a|Constraint on instances of Boolean. Both attributes cannot be set to False, since this would mean that the Boolean value being constrained cannot be True or False.
+
+h|*Inherit*
+2+|`<<_c_primitive_class,C_PRIMITIVE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*true_valid*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the value True is allowed.
+
+h|*1..1*
+|*false_valid*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if the value False is allowed.
+
+h|*0..1 +
+(redefined)*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|The value to assume if this item is not included in data, due to being part of an optional structure.
+|===

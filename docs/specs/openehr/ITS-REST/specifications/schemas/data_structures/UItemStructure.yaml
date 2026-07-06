@@ -1,0 +1,13 @@
+title: ITEM_STRUCTURE
+oneOf:
+  - $ref: ../data_structures/ItemSingle.yaml
+  - $ref: ../data_structures/ItemList.yaml
+  - $ref: ../data_structures/ItemTable.yaml
+  - $ref: ../data_structures/ItemTree.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    ITEM_SINGLE: ../data_structures/ItemSingle.yaml
+    ITEM_LIST: ../data_structures/ItemList.yaml
+    ITEM_TABLE: ../data_structures/ItemTable.yaml
+    ITEM_TREE: ../data_structures/ItemTree.yaml

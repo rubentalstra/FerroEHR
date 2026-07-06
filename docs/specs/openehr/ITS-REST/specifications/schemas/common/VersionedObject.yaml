@@ -1,0 +1,20 @@
+title: VERSIONED_OBJECT
+type: object
+required:
+  - uid
+  - owner_id
+  - time_created
+properties:
+  _type:
+    type: string
+  uid:
+    $ref: ../base_types/HierObjectId.yaml
+  owner_id:
+    $ref: ../base_types/ObjectRef.yaml
+  time_created:
+    $ref: ../data_types/DvDateTime.yaml
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    VERSIONED_COMPOSITION: '#/components/schemas/VersionedComposition'
+    VERSIONED_EHR_STATUS: '#/components/schemas/VersionedEhrStatus'

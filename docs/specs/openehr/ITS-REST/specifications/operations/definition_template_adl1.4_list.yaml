@@ -1,0 +1,9 @@
+operationId: definition_template_adl1.4_list
+summary: List templates
+description: |
+  List the available ADL 1.4 operational templates (OPT) on the system.
+tags:
+  - ADL1.4
+responses:
+  '200':
+    $ref: ../responses/200_TemplateList_adl1_4.yaml

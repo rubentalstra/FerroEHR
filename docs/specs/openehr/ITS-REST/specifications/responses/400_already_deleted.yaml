@@ -1,0 +1,2 @@
+description: |
+  `400 Bad Request` is returned when the request URL could not be parsed (i.e. invalid format of request parameters) or when the resource identified by the request parameters is already deleted.

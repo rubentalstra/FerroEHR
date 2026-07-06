@@ -1,0 +1,14 @@
+title: PARTICIPATION
+type: object
+required:
+  - function
+  - performer
+properties:
+  function:
+    $ref: ../data_types/UDvText.yaml
+  mode:
+    $ref: ../data_types/DvCodedText.yaml
+  performer:
+    $ref: ../common/UPartyProxy.yaml
+  time:
+    $ref: ../data_types/DvIntervalOfDateTime.yaml

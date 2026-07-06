@@ -1,0 +1,11 @@
+title: DV_BOOLEAN
+type: object
+allOf:
+  - $ref: ../data_types/DvBoolean.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_BOOLEAN]
+x-discriminator-value: DV_BOOLEAN

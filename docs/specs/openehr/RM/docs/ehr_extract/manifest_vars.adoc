@@ -1,0 +1,5 @@
+:spec_title: EHR Extract Information Model
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: EHR, extract, openehr
+:description: openEHR EHR Extract Information Model specification

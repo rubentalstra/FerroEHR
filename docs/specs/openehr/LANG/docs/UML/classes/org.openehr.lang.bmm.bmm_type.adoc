@@ -1,0 +1,25 @@
+=== BMM_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_TYPE (abstract)__*
+
+h|*Description*
+2+a|Abstract idea of specifying a type in some context. This is not the same as 'defining' a class. A type specification is essentially a reference of some kind, that defines the type of an attribute, or function result or argument. It may include generic parameters that might or might not be bound. See subtypes.
+
+h|*Inherit*
+2+|`<<_bmm_type_element_class,BMM_TYPE_ELEMENT>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_type_substitutions* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Determine if there are any type substitutions.
+
+h|*0..1*
+|*type_substitutions* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of type substitutions if any available for this type within the current BMM model.
+|===

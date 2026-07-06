@@ -1,0 +1,73 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_TIME-detailed.json",
+    "title": "C_TIME",
+    "description": "ISO 8601-compatible constraint on instances of Time. There is no validity flag for \u2018hour\u2019, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include \u201cHH:??:xx\u201d (time with optional minutes and seconds not allowed).",
+    "$comments": "Defined in Archetype IM, inherits from C_PRIMITIVE",
+    "type": "object",
+    "properties": {
+        "assumed_value": {
+            "description": "The value to assume if this item is not included in data, due to being part of an optional structure."
+        },
+        "minute_validity": {
+            "description": "Validity of minute in constrained time."
+        },
+        "second_validity": {
+            "description": "Validity of second in constrained time."
+        },
+        "millisecond_validity": {
+            "description": "Validity of millisecond in constrained time."
+        },
+        "timezone_validity": {
+            "description": "Validity of timezone in constrained date."
+        },
+        "range": {
+            "description": "Interval of Times specifying constraint."
+        }
+    },
+    "$inherits": [
+        "all-detailed.json#/definitions/C_PRIMITIVE"
+    ],
+    "$functions": {
+        "default_value": {
+            "description": "Generate a default value from this constraint object.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+            }
+        },
+        "has_assumed_value": {
+            "description": "True if there is an assumed value.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "valid_value": {
+            "description": "True if a_value is valid with respect to constraint expressed in concrete instance of this type.",
+            "parameters": {
+                "a_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+                }
+            },
+            "required_parameters": [
+                "a_value"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "validity_is_range": {
+            "description": "True if validity is in the form of a range; useful for developers to check which kind of constraint has been set.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "$invariants": {
+        "Assumed_value_valid": "has_assumed_value implies valid_value(assumed_value)",
+        "Pattern_validity": "pattern /= Void implies valid_iso8601_time_constraint_pattern (pattern)",
+        "Minute_validity_optional": "minute_validity = {VALIDITY_KIND}.optional implies (second_validity = {VALIDITY_KIND}.optional or second_validity = {VALIDITY_KIND}.disallowed)",
+        "Minute_validity_disallowed": "minute_validity = {VALIDITY_KIND}.disallowed implies second_validity = {VALIDITY_KIND}.disallowed",
+        "Second_validity_optional": "second_validity = {VALIDITY_KIND}.optional implies (millisecond_validity = {VALIDITY_KIND}.optional or millisecond_validity = {VALIDITY_KIND}.disallowed)",
+        "Second_validity_disallowed": "second_validity = {VALIDITY_KIND}.disallowed implies millisecond_validity = {VALIDITY_KIND}.disallowed Validity_is_range: validity_is_range = (range /= Void)"
+    }
+}

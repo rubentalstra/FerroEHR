@@ -1,0 +1,15 @@
+title: PARTY_PROXY
+type: object
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    default: PARTY_PROXY
+  external_ref:
+    $ref: ../base_types/PartyRef.yaml
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    PARTY_SELF: '#/components/schemas/PartySelf'
+    PARTY_IDENTIFIED: '#/components/schemas/PartyIdentified'

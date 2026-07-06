@@ -1,0 +1,6 @@
+description: |
+  `200 OK` is returned when the requested VERSIONED_EHR_STATUS is successfully retrieved.
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/VersionedEhrStatus.yaml

@@ -1,0 +1,242 @@
+= Terminology Package
+
+== Overview
+
+This section describes the terminology package, which contains classes for accessing terminologies
+and code sets, including the openEHR Support Terminology, from within instances of classes
+defined in the reference model. The classes shown here would normally be inherited via the classes
+`EXTERNAL_ENVIRONMENT_ACCESS` and `OPENEHR_DEFINITIONS`, although the exact details of
+how this is done may vary depending on implementation language.
+
+[.text-center]
+.rm.support.terminology Package
+image::{uml_diagrams_uri}/RM-support.terminology.svg[id=base_terminology, align="center"]
+
+== Service Interface
+
+=== Code Sets
+
+A simple terminology service interface is defined according to FIGURE 6, enabling openEHR code
+sets and terminology to be referenced formally from within the Reference Model. Two types of coded
+entities are distinguished in openEHR, and are accessible via the service interface. The first is codes
+from 'code sets', which are the kind of terminology where the code stands for itself, such as the ISO
+639-1 language codes. The identifiers themselves of these code sets do not appear to be standardised,
+but names such as "ISO_639-1" are expected to be used (see below).
+
+In any case, code sets needed within the openEHR models themselves (e.g. for attributes whose value
+is a language code) are not referred to directly by an external name such as "ISO_639-1", but via an
+internal constant, in this case, the constant Code_set_id_languages, whose value is defined to be "languages".
+These constants are defined in the class `OPENEHR_CODE_SET_IDENTIFIERS` in the UML diagram. 
+The mapping between the internal identifiers and external names should be done in configuration
+files. The service function `TERMINOLOGY_SERVICE`.`_code_set_for_id()_` is used to retrieve code sets
+on the basis of a constant. The current mapping and external identifiers assumed in openEHR is
+defined in the openEHR Support Terminology document. This use of indirection is employed to
+ensure that the obsoleting and superseding of code-sets does not directly affect openEHR software.
+
+For code sets not mapped to internally used constants, i.e. code sets not required in the openEHR
+model itself, but otherwise known in the terminology service, the function
+`TERMINOLOGY_SERVICE`.`_code_set()_` can be used to retrieve these code sets by their external identifier.
+
+=== Terminologies
+
+Terminologies, including the openEHR Support Terminology are accessed via the
+`TERMINOLOGY_SERVICE` functions `_terminology()_` and `_terminology_identifiers()_`, where the argument
+includes "openehr", "centc251" (for CEN TC/251codes) and names from the US NLM terminologies
+list (see below). The openEHR Terminology supports groups, and the set of groups required by the
+reference model is defined in the class `OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS`. These
+groups correspond to coded attributes found in the openEHR Reference Model.
+
+=== Terms and Codes in the openEHR Reference Model
+
+True coded attributes in the Reference Model (i.e. attributes of type `DV_CODED_TEXT`), such as
+`FEEDER_AUDIT`.change_type are defined by an invariant in the enclosing class, such as the following:
+
+----
+Change_type_valid: terminology (Terminology_id_openehr).has_code_for_group_id
+    (Group_id_audit_change_type, change_type.defining_code)
+----
+
+This is a formal way of saying that the attribute change_type must have a value such that its
+defining_code (its `CODE_PHRASE`) is in the set of `CODE_PHRASEs` in the openEHR Terminology
+which are in the group whose indentifier is `Group_id_audit_change_type`.
+
+A similar invariant is used for attributes of type `CODE_PHRASE`, which come from a `_code_set_`. The
+following invariant appears in the class `ENTRY` (`rm.composition.content.entry package`):
+
+----
+Language_valid: media_type /= Void and then code_set (Code_set_languages).has_code (language)
+----
+
+== Identifiers
+
+In openEHR, the identifier of a terminology or code set is found in the `_terminology_id_` attribute of the
+class `CODE_PHRASE` (Data Types Information Model, `text` package).
+
+=== Code Set Identifiers
+
+Internal code set identifiers (such as "languages") used in openEHR are defined in the class
+`OPENEHR_CODE_SET_IDENTIFIERS`; assumed external identifiers (such as "ISO_639-1") for code
+sets used by the openEHR Reference Model are defined in the openEHR Support Terminology document.
+
+=== Terminology Identifiers
+
+Valid identifiers that can be used for this attribute for terminologies include but are not limited to the
+following:
+
+* "openehr"
+* "centc251"
+* an identifier value from the first column of the US National Library or Medicine (NLM) UMLS terminology identifiers table below, in either of two forms:
+** as is, e.g. "ICD10AM_2000", "ICPC93";
+** with any trailing section starting with an underscore removed, e.g. "ICD10AM".
+
+Other identification schemes are used in some standards, such as ISO Oids. These are not specified
+for direct use in openEHR for various reasons:
+
+* they are not currently used by the NLM, and no definitive published list of terminology
+identifiers is available;
+* ISO Oids are long identifiers and may significantly increase the size of persisted information
+due to the ubiquity of coded terms;
+* determing the identity of the terminology in data always requires a request to a service containing
+the Oid / name mapping;
+* there is a safety factor in having human readable terminology identifiers in the data.
+
+The use of Oid-based or other terminology identification schemes is not however incompatible with
+openEHR; all that is required is a terminology identifier / name mapping service or table.
+
+The following table is a snapshot of the US National Library of Medicine UMLS terminology identifiers
+list. A definitive list may be found on the {nlm_umls_list}[NLM website^].
+
+[cols="1,4", options="header"]
+|===
+2+|UMLS 2003 Terminology Identifiers
+|Identifier     |Description
+
+|AIR93          |AI/RHEUM,1993
+|ALT2000        |Alternative Billing Concepts, 2000
+|AOD2000        |Alcohol and Other Drug Thesaurus, 2000
+|BI98           |Beth Israel Vocabulary, 1.0
+|BRMP2002       |Portuguese translation of the Medical Subject Headings, 2002
+|BRMS2002       |Spanish translation of the Medical Subject Headings, 2002
+|CCPSS99        |Canonical Clinical Problem Statement System, 1999
+|CCS99          |Clinical Classifications Software, 1999
+|CDT4           |Current Dental Terminology(CDT), 4
+|COSTAR_89-95   |COSTAR, 1989-1995
+|CPM93          |Medical Entities Dictionary, 1993
+|CPT01SP        |Physicians' Current Procedural Terminology, Spanish Translation, 2001
+|CPT2003        |Physicians' Current Procedural Terminology, 2003
+|CSP2002        |CRISP Thesaurus, 2002
+|CST95          |COSTART, 1995
+|DDB00          |Diseases Database, 2000
+|DMD2003        |German translation of the Medical Subject Headings, 2003
+|DMDICD10_1995  |German translation of ICD10, 1995
+|DMDUMD_1996    |German translation of UMDNS, 1996
+|DSM3R_1987     |DSM-III-R, 1987
+|DSM4_1994      |DSM-IV, 1994
+|DUT2001        |Dutch Translation of the Medical Subject Headings, 2001
+|DXP94          |DXplain, 1994
+|FIN2003        |Finnish translations of the Medical Subject Headings, 2003
+|HCDT4          |HCPCS Version of Current Dental Terminology(CDT), 4
+|HCPCS03        |Healthcare Common Procedure Coding System, 2003
+|HCPT03         |HCPCS Version of Current Procedural Terminology(CPT), 2003
+|HHC96          |Home Health Care Classification, 1996
+|HL7_1998-2002  |Health Level Seven Vocabulary, 1998-2002
+|HLREL_1998     |ICPC2E-ICD10 relationships from Dr. Henk Lamberts, 1998
+|HPC99          |Health Product Comparison System, 1999
+|ICD10AE_1998   |ICD10, American English Equivalents, 1998
+|ICD10AMAE_2000 |International Statistical Classification of Diseases and Related Health Problems, Australian Modification, Americanized English Equivalents, 2000
+|ICD10AM_2000   |International Statistical Classification of Diseases and Related Health Problems, 10th Revision, Australian Modification, January 2000 Release
+|ICD10_1998     |ICD10, 1998
+|ICD9CM_2003    |ICD-9-CM, 2003
+|ICPC2AE_1998   |International Classification of Primary Care, Americanized English Equivalents, 2E, 1998
+|ICPC2E_1998    |International Classification of Primary Care 2nd Edition, Electronic, 2E, 1998
+|ICPC2P_2000    |International Classification of Primary Care, Version2-Plus, 2000
+|ICPC93         |International Classification of Primary Care, 1993
+|ICPCBAQ_1993   |ICPC, Basque Translation, 1993
+|ICPCDAN_1993   |ICPC, Danish Translation, 1993
+|ICPCDUT_1993   |ICPC, Dutch Translation, 1993
+|ICPCFIN_1993   |ICPC, Finnish Translation, 1993
+|ICPCFRE_1993   |ICPC, French Translation, 1993
+|ICPCGER_1993   |ICPC, German Translation, 1993
+|ICPCHEB_1993   |ICPC, Hebrew Translation, 1993
+|ICPCHUN_1993   |ICPC, Hungarian Translation, 1993
+|ICPCITA_1993   |ICPC, Italian Translation, 1993
+|ICPCNOR_1993   |ICPC, Norwegian Translation, 1993
+|ICPCPAE_2000   |International Classification of Primary Care ,Version2-Plus, Americanized English Equivalents, 2000
+|ICPCPOR_1993   |ICPC, Portuguese Translation, 1993
+|ICPCSPA_1993   |ICPC, Spanish Translation, 1993
+|ICPCSWE_1993   |ICPC, Swedish Translation, 1993
+|INS2002        |French translation of the Medical Subject Headings, 2002
+|ITA2003        |Italian translation of Medical Subject Headings, 2003
+|JABL99         |Online Congenital Multiple Anomaly/ Mental Retardation Syndromes, 1999
+|LCH90          |Library of Congress Subject Headings, 1990
+|LNC205         |LOINC, 2.05
+|LOINC          |LOINC
+|MCM92          |McMaster University Epidemiology Terms, 1992
+|MDDB99         |MasterDrug DataBase, 1999
+|MDR51          |Medical Dictionary for Regulatory Activities Terminology (MedDRA), 5.1
+|MDRAE51        |Medical Dictionary for Regulatory Activities Terminology (MedDRA), American English Equivalents, 5.1
+|MDREA51        |Medical Dictionary for Regulatory Activities Terminology (MedDRA), American English, with expanded abbreviations, 5.1
+|MDREX51        |Medical Dictionary for Regulatory Activities Terminology (MedDRA), with expanded abbreviations, 5.1
+|MDRPOR51       |Medical Dictionary for Regulatory Activities Terminology (MedDRA), 5.1, Portuguese Edition
+|MDRSPA51       |Medical Dictionary for Regulatory Activities Terminology (MedDRA), 5.1, Spanish Edition
+|MIM93          |Online Mendelian Inheritance in Man, 1993
+|MMSL01         |Multum MediSource Lexicon, 2001
+|MMX01          |Micromedex DRUGDEX, 2001-08
+|MSH2003_2002_10_24 |Medical Subject Headings, 2002_10_24
+|MTH            |UMLS Metathesaurus
+|MTHCH03        |Metathesaurus CPT Hierarchical Terms, 2003
+|MTHHH03        |Metathesaurus HCPCS Hierarchical Terms, 2003
+|MTHICD9_2003   |Metathesaurus additional entry terms for ICD-9-CM, 2003
+|MTHMST2001     |Metathesaurus Version of Minimal Standard Terminology Digestive Endoscopy, 2001
+|MTHMSTFRE_2001 |Metathesaurus Version of Minimal Standard Terminology Digestive Endoscopy, French Translation, 2001
+|MTHMSTITA_2001 |Metathesaurus Version of Minimal Standard Terminology Digestive Endoscopy, Italian Translation, 2001
+|NAN99          |Classification of Nursing Diagnoses, 1999
+|NCBI2001       |NCBI Taxonomy, 2001
+|NCI2001a       |NCI Thesaurus, 2001a
+|NCISEER_1999   |NCISEER ICD Neoplasm Code Mappings, 1999
+|NDDF01         |FirstDataBank National Drug DataFile, 2001-07
+|NEU99          |Neuronames Brain Hierarchy, 1999
+|NIC99          |Nursing Interventions Classification, 1999
+|NOC97          |Nursing Outcomes Classification, 1997
+|OMIM97         |OMIM, Online Mendelian Inheritance in Man, 1997
+|OMS94          |Omaha System, 1994
+|PCDS97         |Patient Care Data Set, 1997
+|PDQ2002        |Physician Data Query, 2002
+|PPAC98         |Pharmacy Practice Activity Classification , 1998
+|PSY2001        |Thesaurus of Psychological Index Terms, 2001
+|QMR96          |Quick Medical Reference (QMR), 1996
+|RAM99          |QMR clinically related terms from Randolph A. Miller, 1999
+|RCD99          |Clinical Terms Version 3 (CTV3) (Read Codes), 1999
+|RCDAE_1999     |Read thesaurus, American English Equivalents, 1999
+|RCDSA_1999     |Read thesaurus Americanized Synthesized Terms, 1999
+|RCDSY_1999     |Read thesaurus, Synthesized Terms, 1999
+|RUS2003        |Russian Translation of MeSH, 2003
+|RXNORM_03AA    |RXNORM Project, META2003AA
+|SNM2           |SNOMED-2, 2
+|SNMI98         |SNOMED International, 1998
+|SNOMED-CT      |SNOMED International Clinical Terms, 2002
+|SPN02          |Standard Product Nomenclature, 2002
+|SRC            |Metathesaurus Source Terminology Names
+|ULT93          |UltraSTAR, 1993
+|UMD2003        |UMDNS: product category thesaurus, 2003
+|UMLS           |UMLS: National Library of Medicine, USA
+|UWDA155        |University of Washington Digital Anatomist, 1.5.5
+|VANDF01        |Veterans Health Administration National Drug File, 2001
+|WHO97          |WHO Adverse Reaction Terminology, 1997
+|WHOFRE_1997    |WHOART, French Translation, 1997
+|WHOGER_1997    |WHOART, German Translation, 1997
+|WHOPOR_1997    |WHOART, Portuguese Translation, 1997
+|WHOSPA_1997    |WHOART, Spanish Translation, 1997
+|===
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}terminology_service.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}terminology_access.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}code_set_access.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}openehr_terminology_group_identifiers.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}openehr_code_set_identifiers.adoc[]

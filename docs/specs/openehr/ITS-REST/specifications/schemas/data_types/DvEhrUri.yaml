@@ -1,0 +1,12 @@
+title: DV_EHR_URI
+type: object
+allOf:
+  - $ref: ../data_types/DvUri.yaml
+properties:
+  _type:
+    type: string
+    default: DV_EHR_URI
+x-discriminator-value: DV_EHR_URI
+example:
+  _type: DV_EHR_URI
+  value: 'ehr://system_id/ehr_id/top_level_structure_locator/path_inside_top_level_structure'

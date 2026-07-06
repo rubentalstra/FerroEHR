@@ -1,0 +1,23 @@
+[appendix]
+= Syntax Specification
+
+The grammar and lexical specification for the standard ODIN syntax is shown below in ANTLR4 form.
+ 
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/odin.g4[]
+--------
+
+The following grammar defines ODIN terminal value syntax, and can be imported by any parser needing the ODIN values.
+
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/odin_values.g4[]
+--------
+
+The following grammar defines lexer patterns of generic lexical tokens.
+
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/base_lexer.g4[]
+--------

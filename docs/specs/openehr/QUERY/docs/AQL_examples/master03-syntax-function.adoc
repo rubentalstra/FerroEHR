@@ -1,0 +1,71 @@
+== Function Syntax Examples
+
+The following sub-sections illustrate various AQL functions with examples.
+
+=== Aggregate functions
+
+.*Example 1:* The `COUNT()` and `MIN()` functions are used to return the number of discharge letters and the date of their oldest event:
+--------
+SELECT
+   count(*) AS counter, min(c/context/start_time) as firstTime
+FROM
+   EHR [ehr_id/value=$ehrUid]
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.administrative_encounter.v1]
+         CONTAINS ADMIN_ENTRY [openEHR-EHR-ADMIN_ENTRY.admission.v1]
+--------
+
+.*Example 2:* The `COUNT()` function is used to return a counter of all distinct test analyte names for a given EHR:
+--------
+SELECT
+    COUNT(DISTINCT a/items[at0001]/value) AS counter
+FROM
+    EHR [ehr_id/value=$ehrUid]
+    CONTAINS COMPOSITION c
+        CONTAINS OBSERVATION [openEHR-EHR-OBSERVATION.laboratory_test_result.v1]
+            CONTAINS CLUSTER a[openEHR-EHR-CLUSTER.laboratory_test_analyte.v1]
+--------
+
+.*Example 3:* Using `MIN()`, `MAX()` and `AVG()` functions to determine edge and mean values for systolic blood pressure:
+--------
+SELECT
+    MAX(o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude) AS maxValue,
+    MIN(o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude) AS minValue,
+    AVG(o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude) AS meanValue
+FROM
+    EHR e CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1]
+        CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.blood_pressure.v1]
+--------
+
+=== TERMINOLOGY
+
+The following are examples of the use of `TERMINOLOGY` function related to FHIR terminology operations.
+
+.*Example 1*: Expand a value set
+--------
+WHERE
+    e/value/defining_code/code_string matches TERMINOLOGY('expand', 'hl7.org/fhir/r4', 'url=http://snomed.info/sct?fhir_vs=isa/50697003')
+--------
+
+.*Example 2*: Validate a code in a value set
+--------
+WHERE
+    TERMINOLOGY('validate', 'hl7.org/fhir/r4', 'system=http://snomed.info/sct&code=122298005&url=http://snomed.info/sct?fhir_vs&display=Astrovirus RNA assay') = true
+--------
+
+.*Example 3*: Look-up a code
+--------
+WHERE
+    e/value/defining_code/code_string matches TERMINOLOGY('lookup', 'hl7.org/fhir/r4', 'system=http://loinc.org&code=1963-8')
+--------
+
+.*Example 4*: Map a code
+--------
+WHERE
+    e/value/defining_code/code_string matches TERMINOLOGY('map', 'hl7.org/fhir/r4', 'system=http://hl7.org/fhir/composition-status&code=preliminary&source=http://hl7.org/fhir/ValueSet/composition-status&target=http://hl7.org/fhir/ValueSet/v3-ActStatus')
+--------
+
+.*Example 5*: Subsumption testing
+--------
+WHERE
+    TERMINOLOGY('subsumes', 'hl7.org/fhir/r4', CONCAT('system=http://snomed.info/sct&codeA=235856003&codeB=', e/value/defining_code/code_string)) = true
+--------

@@ -1,0 +1,25 @@
+=== EL_DECISION_TABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EL_DECISION_TABLE<T> (abstract)__*
+
+h|*Description*
+2+a|Meta-type for decision tables. Generic on the meta-type of the `_result_` attribute of the branches, to allow specialised forms of if/else and case structures to be created.
+
+h|*Inherit*
+2+|`<<_el_terminal_class,EL_TERMINAL>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*items*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_el_decision_branch_class,EL_DECISION_BRANCH>><T>>`
+a|Members of the chain, equivalent to branches in an if/then/else chain and cases in a case statement.
+
+h|*1..1*
+|*else*: `T`
+a|Result expression of conditional, if its `_condition_` evaluates to True.
+|===

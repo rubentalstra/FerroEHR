@@ -1,0 +1,14 @@
+operationId: ehr_get_by_id
+summary: Get EHR by id
+description: |
+  Retrieve the EHR with the specified `ehr_id`.
+tags:
+  - EHR
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+responses:
+  '200':
+    $ref: ../responses/200_EHR.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id.yaml
+

@@ -1,0 +1,7 @@
+description: |
+  `204 No Content` is returned when the `Prefer` header is missing or is set to `return=minimal`.
+headers:
+  ETag:
+    $ref: ../headers/ETag.yaml
+  Location:
+    $ref: ../headers/Location_EHR_STATUS.yaml

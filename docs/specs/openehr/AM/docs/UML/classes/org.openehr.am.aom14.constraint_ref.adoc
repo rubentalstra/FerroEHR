@@ -1,0 +1,24 @@
+=== CONSTRAINT_REF Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*CONSTRAINT_REF*
+
+h|*Description*
+2+a|Reference to a constraint described in the same archetype, but outside the main constraint structure. This is used to refer to constraints expressed in terms of external resources, such as constraints on terminology value sets.
+
+h|*Inherit*
+2+|`<<_c_reference_object_class,C_REFERENCE_OBJECT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*reference*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference to a constraint in the archetype local ontology.
+
+h|*Invariants*
+2+a|__Consistency__: `not any_allowed`
+|===

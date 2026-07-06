@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-compression_algorithms"/>
+  <version value="3.1.0"/>
+  <name value="compression_algorithms"/>
+  <title value="Compression Algorithms"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="5"/>
+  <concept>
+    <code value="compress"/>
+    <display value="compress"/>
+    <designation>
+      <language value="es"/>
+      <value value="compresión"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="圧縮"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="deflate"/>
+    <display value="deflate"/>
+    <designation>
+      <language value="es"/>
+      <value value="deflación"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="展開"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="gzip"/>
+    <display value="gzip"/>
+  </concept>
+  <concept>
+    <code value="zlib"/>
+    <display value="zlib"/>
+  </concept>
+  <concept>
+    <code value="other"/>
+    <display value="other"/>
+    <designation>
+      <language value="es"/>
+      <value value="otro"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="その他"/>
+    </designation>
+  </concept>
+</CodeSystem>

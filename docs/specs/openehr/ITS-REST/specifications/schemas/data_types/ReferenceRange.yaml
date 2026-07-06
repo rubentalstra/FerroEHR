@@ -1,0 +1,10 @@
+title: REFERENCE_RANGE
+type: object
+required:
+  - meaning
+  - range
+properties:
+  meaning:
+    $ref: ../data_types/UDvText.yaml
+  range:
+    $ref: ../data_types/DvInterval.yaml

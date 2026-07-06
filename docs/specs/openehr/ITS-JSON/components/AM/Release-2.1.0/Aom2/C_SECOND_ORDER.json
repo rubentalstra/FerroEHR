@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/C_SECOND_ORDER.json",
+    "title": "C_SECOND_ORDER",
+    "description": "Abstract parent of classes defining second order constraints.",
+    "$comments": "Defined in Aom2 IM, abstract",
+    "type": "object",
+    "properties": {
+        "_type": {
+            "enum": [
+                "C_ATTRIBUTE_TUPLE",
+                "C_PRIMITIVE_TUPLE"
+            ]
+        },
+        "members": {
+            "description": "Members of this second order constrainer. Normally redefined in descendants.",
+            "type": "array",
+            "items": {
+                "$ref": "all.json#/definitions/ARCHETYPE_CONSTRAINT"
+            }
+        }
+    },
+    "required": [
+        "_type"
+    ]
+}

@@ -1,0 +1,24 @@
+operationId: directory_create
+summary: Create directory
+description: |
+  Creates a new directory FOLDER associated with the EHR identified by `ehr_id`.
+tags:
+  - DIRECTORY
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/header/Prefer.yaml
+requestBody:
+  description: |
+    The directory.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/ehr/Folder.yaml
+  required: true
+responses:
+  '201':
+    $ref: ../responses/201_directory.yaml
+  '400':
+    $ref: ../responses/400_FOLDER.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id.yaml

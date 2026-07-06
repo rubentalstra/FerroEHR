@@ -1,0 +1,25 @@
+=== S_ELEMENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_ELEMENT*
+
+h|*Description*
+2+a|Simplified RM form of `ELEMENT` RM class.
+
+h|*Inherit*
+2+|`<<_s_item_class,S_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*value*: `<<_s_data_value_class,S_DATA_VALUE>>`
+a|Contains a converted form of original `DATA_VALUE`.
+
+h|*0..1*
+|*null_flavour*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_CODED_TEXT`.
+|===

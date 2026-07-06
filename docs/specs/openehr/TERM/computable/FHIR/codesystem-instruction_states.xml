@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-instruction_states"/>
+  <version value="3.1.0"/>
+  <name value="instruction_states"/>
+  <title value="Instruction States"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="10"/>
+  <concept>
+    <code value="524"/>
+    <display value="initial"/>
+    <designation>
+      <language value="es"/>
+      <value value="inicial"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="最初"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="inicial"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="初始"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="526"/>
+    <display value="planned"/>
+    <designation>
+      <language value="es"/>
+      <value value="planificado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="予定されている"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="planeado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已计划"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="527"/>
+    <display value="postponed"/>
+    <designation>
+      <language value="es"/>
+      <value value="postpuesto"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="延期された"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="adiado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已推迟"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="528"/>
+    <display value="cancelled"/>
+    <designation>
+      <language value="es"/>
+      <value value="cancelado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="キャンセルされた"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cancelado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已取消"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="529"/>
+    <display value="scheduled"/>
+    <designation>
+      <language value="es"/>
+      <value value="coordinado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="計画された"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="agendado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已排程"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="245"/>
+    <display value="active"/>
+    <designation>
+      <language value="es"/>
+      <value value="activo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="実施中"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="activo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="现行有效"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="530"/>
+    <display value="suspended"/>
+    <designation>
+      <language value="es"/>
+      <value value="suspendido"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="一時停止中"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="suspenso"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已暂停"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="531"/>
+    <display value="aborted"/>
+    <designation>
+      <language value="es"/>
+      <value value="abortado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="中断された"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="abortado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已中止"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="532"/>
+    <display value="completed"/>
+    <designation>
+      <language value="es"/>
+      <value value="completado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="完了"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="concluído"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已完成"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="533"/>
+    <display value="expired"/>
+    <designation>
+      <language value="es"/>
+      <value value="expirado"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="期限切れ"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="expirado"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="已过期"/>
+    </designation>
+  </concept>
+</CodeSystem>

@@ -1,0 +1,13 @@
+title: TERM_MAPPING
+type: object
+required:
+  - match
+  - target
+properties:
+  match:
+    type: string
+    pattern: '/^[><=?]$/'
+  purpose:
+    $ref: ../data_types/DvCodedText.yaml
+  target:
+    $ref: ../data_types/CodePhrase.yaml

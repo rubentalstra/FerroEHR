@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Base_types/TERMINOLOGY_ID.json",
+    "definitions": {
+        "TERMINOLOGY_ID": {
+            "type": "object",
+            "required": [
+                "value"
+            ],
+            "properties": {
+                "value": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "TERMINOLOGY_ID"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

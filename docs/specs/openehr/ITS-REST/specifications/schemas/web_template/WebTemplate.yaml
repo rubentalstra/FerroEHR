@@ -1,0 +1,21 @@
+title: WebTemplate
+required:
+  - templateId
+  - version
+  - defaultLanguage
+  - languages
+  - tree
+type: object
+properties:
+  templateId:
+    type: string
+  version:
+    type: string
+  defaultLanguage:
+    type: string
+  languages:
+    type: array
+    items:
+      type: string
+  tree:
+    $ref: ./Tree.yaml

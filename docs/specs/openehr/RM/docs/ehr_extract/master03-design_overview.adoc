@@ -1,0 +1,85 @@
+= Design Overview
+
+== Abstract Communication Model
+
+The openEHR Extract model uses two design ideas. Firstly, the notion of a Request and an Extract
+(the reply) are distinguished. Extracts may include a copy of the Request to which the Extract is a
+reply, indicating what is actually in the Extract, which may differ from what was requested. Secondly,
+the common semantics of Requests and Extracts are modelled in a generic way, with a number of specialised
+Request and Extract types being based on the common classes. Different concrete types of
+Extract are thus used to satisfy particular groups of requirements, rather than trying to make one kind
+of Extract perform all possible tasks. The figure below illustrates key Extract communication scenarios,
+along with the various concrete Extract types defined by the model.
+
+[.text-center]
+.Use cases for openEHR Extracts
+image::{diagrams_uri}/use_cases.png[id=use_cases, align="center", width=80%]
+
+The EHR Extract is just one concrete type of Extract. The other types include:
+
+* _Generic Extract_: an Extract type designed for use with non-openEHR systems communicating to openEHR systems, and users of the {iso_13606}[ISO 13606 EHR Extract^] specification. The Generic Extract assumes the absolute minimum about what is in a system, while remaining within the openEHR type system;
+* _Synchronisation Extract_: an Extract used for updating mirrored EHRs across systems; uses Contributions as the grouping concept.
+
+Other types of Extract may be defined in the future.
+
+The pattern of requests and replies may be controlled in time. The simplest situation is single request,
+single reply. Other variants include:
+
+* send request, persist in server, and use 'action' requests to obtain an Extract, which may
+have differing content each time;
+* send request indicating a repeat period, at which server automatically sends replies;
+* send request indicating a trigger event on which server should send replies.
+
+== Content Model & Representation
+
+The general situation of any environment from which content needs to be extracted and sent to
+another system is that three categories of data may be needed: the 'key' clinical and administrative
+information, typically EHR content (e.g. patient blood pressure history); demographic information
+(indicating who the patient and professionals are that are mentioned in the clinical information; and
+relevant meta-data. These types of information almost always reside in different parts of the source
+system environment, but need to be combined within the Extract. The model defined in this specification
+allows for content to be flexibly aggregated in an Extract. The model therefore consists of a
+generic Extract containment structure into which specific archetyped content can be plugged, with the
+whole structure being templated. Each such template corresponds to one extract type, i.e. one message
+type. This is visualised in the figure below.
+
+[.text-center]
+.Archetyping of Extracts
+image::{diagrams_uri}/extract_archetyping.png[id=extract_archetyping, align="center", width=60%]
+
+The templates can be used to generate content in at least two ways. The default approach is to use the
+template for a given extract type, say 'referral', to create standard openEHR content according to the
+published openEHR EHR Extract schema (which largely re-uses the main openEHR EHR and demographic
+schemas). In this approach, every Extract message conforms to the standard schema - an
+XML Extract document is 'standard generic openEHR XML' in this case.
+
+An alternative approach converts each template into its own schema, to which all instances of that
+template conform. Different templates, e.g. discharge summaries and referrals define distinct schemas.
+In this method, the XML of any message is specific to its own schema. If changes are required in
+the message content, the schema usually has to be re-generated. The two methods are illustrated in
+the following figure.
+
+[.text-center]
+.Representation options
+image::{diagrams_uri}/representation_options.png[id=representation_options, align="center", width=70%]
+
+Which method is used depends on the requirements of the environment and other factors, such as the
+stability of the template structures. The sections of this document describing specific kinds of extract
+show details of the concrete data representations involved.
+
+== Package Structure
+
+The `rm.extract` package defines the semantics of Extracts from openEHR data sources, including
+EHRs. The UML diagram below illustrates the package structure of the `rm.extract` package.
+
+[.text-center]
+.rm.ehr_extract package
+image::{uml_diagrams_uri}/RM-ehr_extract-packages.svg[id=rm_ehr_extract_packages, align="center"]
+
+The sub-packages are as follows:
+
+* `common`: semantics common to all Extracts;
+* `ehr_extract`: semantics for the EHR Extract type;
+* `generic_extract`: defines semantics of the Generic Extract type;
+* `synchronisation_extract`: defines semantics of the Synchronisation Extract type;
+* `message`: simple model of a message containing an Extract.

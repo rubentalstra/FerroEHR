@@ -1,0 +1,47 @@
+title: ResultSetMetadata
+description: |
+  RESULT_SET metadata.
+type: object
+properties:
+  _href:
+    type: string
+    format: uri
+    description: URL of the executed query (only for GET endpoint).
+  _type:
+    type: string
+    description: The type of the serialized result object.
+  _schema_version:
+    type: string
+    description: The version of the specification defining the serialized object.
+  _created:
+    type: string
+    format: date-time
+    description: Result creation time (in the extended ISO 8601 format).
+  _generator:
+    type: string
+    description: Some identifier of the application that generated the result, useful for debugging.
+  _executed_aql:
+    type: string
+    description: |
+      The actual AQL query that was executed by the server, after replacing the query parameters. 
+      This attribute is not mandatory, but is useful for debugging.
+additionalProperties: true
+example:
+  _href: "https://openEHRSys.example.com/v1/query/org.openehr::compositions"
+  _type: "RESULTSET"
+  _schema_version: "1.0.0"
+  _created: '2017-08-19T00:25:47.568+02:00'
+  _generator: "openEHRSys.ResultSets.Serialization.Json.ResultSetJsonWriter (5.0.0.0)"
+  _executed_aql:
+    SELECT
+      e/ehr_id/value,
+      c/context/start_time/value as startTime,
+      obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic,
+      c/uid/value AS cid,
+      c/name
+    FROM
+      EHR e
+        CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1]
+          CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1]
+    WHERE
+      obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= 50

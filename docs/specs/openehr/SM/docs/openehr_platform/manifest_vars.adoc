@@ -1,0 +1,5 @@
+:spec_title: openEHR Platform Service Model
+:copyright_year: 2017
+:spec_status: TRIAL
+:keywords: openehr, service, API
+:description: openEHR Platform Abstract Service Model

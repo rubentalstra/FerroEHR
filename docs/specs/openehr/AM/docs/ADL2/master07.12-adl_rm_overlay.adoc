@@ -1,0 +1,86 @@
+== RM Overlay Section
+
+Most content in an archetype consists of constraints expressed as an attribute/object structure based on a Reference Model. However, sometimes related meta-data need to be stated with respect to unconstrained RM attributes and paths. Such statements can be made in the `rm_overlay` section of an archetype, which is designed to be extensible. Specific categories of statement or constraint relating to RM attribute paths can be stated within dedicated sub-sections.
+
+=== RM Visibility
+
+One of the basic characteristics of any underlying information model which may be archetyped is that its class attributes are already named, typically in English, if the model is internationally shared or standardised. Archetyping solves effective renaming and language-independence of object nodes, via the mechanism of at-codes (id-codes), but attribute names are by default unchangeable and mono-lingual. Experience in archetype-based modelling has shown that renaming of RM attributes within the context of an archetype is a common need, usually because the attribute name chosen in the original model is not sufficiently specific for the users of a particular archetype. An example is the {openehr_rm_ehr}#\_composition_package[openEHR class `COMPOSITION`^], which has an attribute `__composer__`. For particular archetypes corresponding to specific sub-domains in healthcare, or specific geographies, a preferable name may be `__author__`; additionally, any such name (even the original) may be needed in multiple languages.
+
+In ADL, re-labelling of RM attributes is called _aliasing_, and is achieved by mentioning an RM attribute path in the archetype and associating an alias with it, in the form of an at-code, defined according to the usual rules of specialisation. Aliasing may apply to any valid RM path in the archetype, i.e. any path through RM objects referenced in the archetype. If archetype-specific nodes are referenced in a path, the settings relate to those paths only in the data, but if not, the settings relate to any matching RM path through the data.
+
+A second need, related to the above, is that archetype modellers sometimes need to know what elements are already in an information model, so they don't try to remodel them again as redundant object nodes. In a simple implementation of an archetype authoring tool, attributes not so far archetyped will be all hidden, perhaps with a possibility of showing them all. However, commonly, finer-grained control is needed whereby particular attributes, possibly only on _particular object nodes_ need to be made visible in a modelling tool, in order to indicate they need not be modelled.
+
+For this reason a 'show' marker can be associated with the path of an non-constrained RM attribute, causing it to be made visible in a modelling tool. Taking into account archetype and template specialisation, it should also be possible to add a 'hide' marker, in order to hide an attribute marked as 'show' in a specialisation parent. It has also been found by experience that sometimes a constrained RM attribute from a parent archetype needs to be hidden in a specialisation child. Thus, the general case is that 'hide' and 'show' markers can be associated with any RM attribute path (constrained or unconstrained) in the archetype.
+
+Since both of these needs relate to the visibility of RM attributes in an archetype, and are specified in terms of RM attribute paths, an `rm_overlay` sub-section called `rm_visibility` is used to specify them. The following example illustrates the use of this section to force visibility and aliasing of one attribute, and hiding of another attribute within an archetype.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, odin]
+--------
+rm_overlay
+    rm_visibility = <
+        ["/path/to[at0003]/archetype/node[at0212]/path/to/rm/attribute"] = <
+            visibility = <"show">
+            alias = <[local::at0011]>
+        >
+        ["/path/to[at0004]/archetype/node[at0063]/path/to/rm/attribute"] = <
+            visibility = <"hide">
+        >
+    >
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["at0011"] = <
+                text = <"name in English">
+                description = <"description in English">
+            >
+            ...
+        >
+        ["de"] = <
+            ["at0011"] = <
+                text = <"name in German">
+                description = <"description in German">
+            >
+            ...
+        >
+    >
+--------
+
+id-coded ADL2::
++
+[source, odin]
+--------
+rm_overlay
+    rm_visibility = <
+        ["/path/to[id4]/archetype/node[id213]/path/to/rm/attribute"] = <
+            visibility = <"show">
+            alias = <[local::at12]>
+        >
+        ["/path/to[id5]/archetype/node[id64]/path/to/rm/attribute"] = <
+            visibility = <"hide">
+        >
+    >
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["at12"] = <
+                text = <"name in English">
+                description = <"description in English">
+            >
+            ...
+        >
+        ["de"] = <
+            ["at12"] = <
+                text = <"name in German">
+                description = <"description in German">
+            >
+            ...
+        >
+    >
+--------
+====

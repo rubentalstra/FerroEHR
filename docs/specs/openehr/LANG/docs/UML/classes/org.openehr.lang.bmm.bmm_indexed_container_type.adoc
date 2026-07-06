@@ -1,0 +1,21 @@
+=== BMM_INDEXED_CONTAINER_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_INDEXED_CONTAINER_TYPE*
+
+h|*Description*
+2+a|Type reference that specifies an indexed container such as `Hash<K,V>`, i.e. a container whose members are accessed via a key (index) type.
+
+h|*Inherit*
+2+|`<<_bmm_container_type_class,BMM_CONTAINER_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*index_type*: `<<_bmm_simple_type_class,BMM_SIMPLE_TYPE>>`
+a|The key (index) type of the container, e.g. `String` in `Hash<String,EVENT_ACTION>`.
+|===

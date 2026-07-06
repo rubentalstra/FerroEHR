@@ -1,0 +1,23 @@
+=== VARIABLE_VALUE_TIME_SERIES Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*VARIABLE_VALUE_TIME_SERIES*
+
+h|*Description*
+2+a|Variable value in the form of a time-series.
+
+h|*Inherit*
+2+|`<<_variable_value_class,VARIABLE_VALUE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^],link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]>`
+a|Single value, copied or referenced from the Result set of the latest sample of the relevant source Data retrieve frame.
+
+May require transformation to obtain the right Map structure.
+|===

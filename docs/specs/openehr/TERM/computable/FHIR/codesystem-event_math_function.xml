@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-event_math_function"/>
+  <version value="3.1.0"/>
+  <name value="event_math_function"/>
+  <title value="Event Math Function"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="11"/>
+  <concept>
+    <code value="145"/>
+    <display value="minimum"/>
+    <designation>
+      <language value="es"/>
+      <value value="mínimo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="最小"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="mínimo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="最小值"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="144"/>
+    <display value="maximum"/>
+    <designation>
+      <language value="es"/>
+      <value value="máximo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="最大"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="máximo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="最大值"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="267"/>
+    <display value="mode"/>
+    <designation>
+      <language value="es"/>
+      <value value="modo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="最頻値"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="moda"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="众数"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="268"/>
+    <display value="median"/>
+    <designation>
+      <language value="es"/>
+      <value value="mediana"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="中央値"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="mediana"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="中位数"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="146"/>
+    <display value="mean"/>
+    <designation>
+      <language value="es"/>
+      <value value="media"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="平均値"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="média"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="均值"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="147"/>
+    <display value="change"/>
+    <designation>
+      <language value="es"/>
+      <value value="cambio"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="変化"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="alteração"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="变化"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="148"/>
+    <display value="total"/>
+    <designation>
+      <language value="es"/>
+      <value value="total"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="合計値"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="total"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="总计"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="149"/>
+    <display value="variation"/>
+    <designation>
+      <language value="es"/>
+      <value value="variación"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="偏差"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="variação"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="变异"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="521"/>
+    <display value="decrease"/>
+    <designation>
+      <language value="es"/>
+      <value value="disminución"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="減少"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="decréscimo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="降低"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="522"/>
+    <display value="increase"/>
+    <designation>
+      <language value="es"/>
+      <value value="incremento"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="増加"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="acréscimo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="升高"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="640"/>
+    <display value="actual"/>
+    <designation>
+      <language value="es"/>
+      <value value="real"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="実際の"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="real"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="实际值"/>
+    </designation>
+  </concept>
+</CodeSystem>

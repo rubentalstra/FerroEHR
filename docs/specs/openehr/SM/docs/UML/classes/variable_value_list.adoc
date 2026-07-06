@@ -1,0 +1,23 @@
+=== VARIABLE_VALUE_LIST Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*VARIABLE_VALUE_LIST*
+
+h|*Description*
+2+a|Variable value in the form of a list.
+
+h|*Inherit*
+2+|`<<_variable_value_class,VARIABLE_VALUE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_any_class[Any^]>`
+a|Single value, copied or referenced from the Result set of the latest sample of the relevant source Data retrieve frame.
+
+May require transformation to obtain the right List structure.
+|===

@@ -1,0 +1,5 @@
+= Persistence
+
+The `persistence` package defines a simplified form of the core BMM model, expressed as the `P_BMM_*` classes, suitable for serialising and human authoring of BMM schemas. Such a schema is typically saved as a `.bmm` file in the {openehr_odin}[ODIN^] syntax, and supports file inclusion and re-use, so that a single logical model may be expressed as a number of schema files.
+
+The `P_BMM_*` model, its class definitions and its serialised syntax are specified separately. See the {openehr_bmm_persistence}[BMM Persistence specification^] for full details.

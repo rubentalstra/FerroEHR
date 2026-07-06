@@ -1,0 +1,5 @@
+:spec_title: Basic Meta-Model (BMM)
+:copyright_year: 2016
+:spec_status: STABLE
+:keywords: reflection, meta-model, UML, BMM
+:description: Basic Meta-Model (BMM) specification

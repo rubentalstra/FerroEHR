@@ -1,0 +1,11 @@
+=== BMM_TYPE_ELEMENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_TYPE_ELEMENT (abstract)__*
+
+h|*Inherit*
+2+|`<<_bmm_classifier_class,BMM_CLASSIFIER>>`
+
+|===

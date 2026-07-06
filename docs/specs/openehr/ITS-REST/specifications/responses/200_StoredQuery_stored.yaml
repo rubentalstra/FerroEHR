@@ -1,0 +1,5 @@
+description: |
+  `200 OK` is returned when the query was successfully stored.
+headers:
+  Location:
+    $ref: ../headers/Location_Query.yaml

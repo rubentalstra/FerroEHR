@@ -1,0 +1,21 @@
+[appendix]
+= Glossary
+
+[cols="1,3"]
+|===
+2+|openEHR Terms
+|HCA        |Health care agent - any doctor, nurse or other recognised staff member, or software or device
+|HCF        |Health care facility - any place where EHRs are kept
+|HCP        |Health care professional - any doctor, nurse or other recognised staff member of an HCF
+2+|Clinical Terms
+|Care Pathway |A global care management strategy for a patient, showing management of health problems or issues in a time-based framework, similar to a project management view of an engineering work.
+|Episode    |A series of clinical events linked in time, such as a hospital admission or a surgical episode.
+|Issue      |A problem as identified by the patient, e.g. "inability to do exercise due to breathing difficulty"; may be the object of wider health care, e.g. social workers, physiotherapists etc.
+|Problem    |A health problem of the patient, as identified by its underlying medical cause, e.g. asthma; the object of medical care.
+2+|IT Terms
+|API        |Application programmer’s interface - the software interface to a library or module.
+|COM        |Microsoft’s Component Object Model; designed to enable integration of binary components obeying stated exported interfaces.
+|CORBA      |Common Object Request Broker Architecture - an object-oriented middleware architecture enabling the construction of 3-tier systems, in which backend data providers (DBMSs etc) are known only by the services they export to the network. CORBA is an open standard managed by the Object Management Group (OMG).
+|DCOM       |Distributed version of Microsoft COM. Similar in its aim to CORBA.
+|ODMG-93    |A standard for object databases, which includes an object definition language (ODL) for writing schemas, an object query language (OQL) for querying, and several language bindings.
+|===

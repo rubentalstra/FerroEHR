@@ -1,0 +1,18 @@
+title: TERMINOLOGY_CODE
+type: object
+required:
+  - terminology_id
+  - code_string
+properties:
+  terminology_id:
+    type: string
+  terminology_version:
+    type: string
+  code_string:
+    type: string
+  uri:
+    type: string
+    format: uri
+example:
+  terminology_id: 'snomed_ct'
+  code_string: '308335008'

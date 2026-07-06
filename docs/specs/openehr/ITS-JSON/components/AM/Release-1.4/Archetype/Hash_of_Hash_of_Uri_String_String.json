@@ -1,0 +1,6 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/Hash_of_Hash_of_Uri_String_String.json",
+    "title": "Hash <Hash<Uri, String>, String>",
+    "$comments": "Defined in Archetype IM"
+}

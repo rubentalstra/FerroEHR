@@ -1,0 +1,101 @@
+openapi: 3.0.3
+info:
+  title: Definition API
+  version: latest
+  x-status: STABLE
+  x-spec: definition
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: 'https://specifications.openehr.org/'
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: 'https://creativecommons.org/licenses/by-nd/3.0/'
+  description:
+    $ref: ./docs/definition/Intro.md
+security: []
+servers:
+  - url: 'https://{baseUrl}/v1'
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+paths:
+  '/definition/template/adl1.4':
+    post:
+      $ref: ./operations/definition_template_adl1.4_upload.yaml
+    get:
+      $ref: ./operations/definition_template_adl1.4_list.yaml
+  '/definition/template/adl1.4/{template_id}':
+    get:
+      $ref: ./operations/definition_template_adl1.4_get.yaml
+  '/definition/template/adl2':
+    post:
+      $ref: ./operations/definition_template_adl2_upload.yaml
+    get:
+      $ref: ./operations/definition_template_adl2_list.yaml
+  '/definition/template/adl2/{template_id}':
+    get:
+      $ref: ./operations/definition_template_adl2_get.yaml
+  '/definition/template/adl2/{template_id}/{version}':
+    get:
+      $ref: ./operations/definition_template_adl2_version_get.yaml
+  '/definition/query/{qualified_query_name}':
+    get:
+      $ref: ./operations/definition_query_list.yaml
+    put:
+      $ref: ./operations/definition_query_store.yaml
+  '/definition/query/{qualified_query_name}/{version}':
+    put:
+      $ref: ./operations/definition_query_version_store.yaml
+    get:
+      $ref: ./operations/definition_query_version_get.yaml
+tags:
+  - name: ADL1.4
+    x-displayName: ADL1.4 TEMPLATE
+    description: |
+      Management of [AOM and ADL 1.4](https://specifications.openehr.org/releases/AM/latest) Operational Templates (OPTs). 
+      These templates can be created using [modelling tools](https://www.openehr.org/downloads/modellingtools) such as the Template Designer and the Archetype Designer. 
+      
+      Operational templates simplify the creation of openEHR-based input or storage implementations by, for a specific COMPOSITION template (use case), collecting all labels, requirements and constraints from all contained archetypes and sub-templates into a single easily parsed file. 
+      This file can be a basis for UI-generation/creation and for data validation.
+  - name: ADL2
+    x-displayName: ADL2 TEMPLATE
+    description: |
+      Management of [AOM2](https://specifications.openehr.org/releases/AM/latest/AOM2.html#_templates) templates.
+      
+      See also [ADL2 Template specifications](https://specifications.openehr.org/releases/AM/latest/ADL2.html#_templates).
+  - name: Query
+    x-displayName: Stored Query
+    x-summary: |
+    description: |
+      Management of [stored (registered) queries](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_registered_queries) in the system.
+      Actions upon resources of this group are also formally described in the [I_DEFINITION_QUERY](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_definition_query_interface) Abstract Service Model interface.
+
+      Stored queries are identified by their [qualified name and version](query.html#tag/Qualified_query_name).
+      They can be executed using the [query endpoint](query.html#tag/Query/operation/query_execute_stored_query_body).
+
+  - name: TemplateList_schema
+    x-displayName: Template list
+    description:
+      $ref: ./tags/TemplateList_schema.md
+  - name: Template_schema
+    x-displayName: Template
+    description:
+      $ref: ./tags/Template_schema.md
+  - name: StoredQuery_schema
+    x-displayName: Stored Query
+    description:
+      $ref: ./tags/StoredQuery_schema.md
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - ADL1.4
+      - ADL2
+      - Query
+  - name: Resource schema
+    tags:
+      - TemplateList_schema
+      - Template_schema
+      - StoredQuery_schema

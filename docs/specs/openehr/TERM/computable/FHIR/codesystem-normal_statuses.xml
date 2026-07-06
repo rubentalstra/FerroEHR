@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-normal_statuses"/>
+  <version value="3.1.0"/>
+  <name value="normal_statuses"/>
+  <title value="Normal Statuses"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="7"/>
+  <concept>
+    <code value="HHH"/>
+    <display value="HHH"/>
+  </concept>
+  <concept>
+    <code value="HH"/>
+    <display value="HH"/>
+  </concept>
+  <concept>
+    <code value="H"/>
+    <display value="H"/>
+  </concept>
+  <concept>
+    <code value="N"/>
+    <display value="N"/>
+  </concept>
+  <concept>
+    <code value="L"/>
+    <display value="L"/>
+  </concept>
+  <concept>
+    <code value="LL"/>
+    <display value="LL"/>
+  </concept>
+  <concept>
+    <code value="LLL"/>
+    <display value="LLL"/>
+  </concept>
+</CodeSystem>

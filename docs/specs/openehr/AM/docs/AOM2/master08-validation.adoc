@@ -1,0 +1,131 @@
+= Validation and Transformation Semantics
+
+This section provides a guide for validation, flattening and diffing, based on the ADL workbench reference compiler. The sequence of processing a given archetype A in the Workbench is as follows:
+
+* evaluate specialisation lineage of A
+** process each parent in order from the top
+* evaluate supplier archetypes of A (those related by `use_archetype` statements)
+** process suppliers, recursively
+* parse A
+* AOM phase 1 validation - standalone validation
+* if passed, and A is specialised:
+** AOM phase 2 validation - validate against flat parent
+** flatten A against flat parent
+** AOM phase 3 validation - validation performed on flat form of A.
+
+== Validation
+
+Validation is best implemented in a multi-pass fashion, with more basic kinds of errors being checked first. The ADL Workbench implements three validation phases as described below.
+
+=== Phase 1 - Basic Integrity
+
+The following validation can be performed on an archetype mostly without reference to its parent, if it is specialised.
+
+==== Basic checks
+
+* check match of root RM type with RM type mentioned in identifier (VARDT);
+* valid root at code (id code) for specialisation level (VARCN);
+* any missing mandatory parts, e.g. `terminology` section (STCNT);
+* check that specialisation depth is one greater than specialisation depth of parent (VACSD);
+
+==== AUTHORED_ARCHETYPE meta-data checks
+
+* check original language in main part of archetype is available in `terminology` section (VOLT);
+* check `adl_version` and `rm_release` version id formats (VARAV, VARRV);
+* check that languages defined in translations section are in the archetype terminology (VOTM);
+
+==== Definition Structure Validation
+
+* check that differential paths only found in specialised archetypes (VDIFV);
+* check that differential paths in specialised archetypes exist in flat parent (VDIFP);
+
+==== Basic Terminology Validation
+
+* validate terminology code formats and specialisation depths (VATCV, VTSD);
+* validate terminology languages - check all at-codes and ac-codes found in all languages (VTLC);
+* validate terminology bindings - check that all terms and paths mentioned in bindings exist in terminology and definition (VTTBK, VTCBK, VETDF);
+* validate terminology value-sets - check that every code in terminology value set definitions is in the terminology, with no duplications (VTVSID, VTVSMD, VTVSUQ);
+
+==== Various Structure Validation
+
+* check slot definition validity (VDSEV);
+* check `C_ARCHETYPE_ROOT` validity (VARXRA, VARXTV);
+
+==== Code Validation
+
+* check that all codes mentioned in `definition` are defined in terminology (VTSD, VATID);
+* validate `C_TERMINOLOGY_CODE` objects (VATCD, VATDF, VACDF, VATDA);
+
+==== Validate Annotations
+
+* for each language, ensure that annotations paths are valida (VRANP);
+* ensure that annotations are proper translations of each other.
+
+=== Phase 2 - Validation of Specialised Archetype Against Flat Parent
+
+==== Validate Against Reference Model
+
+The following checks require a computational representation of the reference model to be available.
+
+* check that type and attribute names exist in RM (VCORM, VCARM);
+* check that enumeration type constraints use valid literal values (VCORMENV, VCORMENU, VCORMEN);
+* validate any allowed type substitutions (VCORMT);
+* check that `existence` in `C_ATTRIBUTE` is valid with respect to RM (VCAEX);
+* check that `cardinality` in `C_ATTRIBUTE` is valid with respect to RM (VCACA);
+* check mismatch of -arity of `C_ATTRIBUTE` in archetype and RM (VCAM).
+
+==== Validate Specialised Definition
+
+The following checks are made on a specialised `definition` with respect to its flat parent.
+
+* check that node differential path can and does exist in parent (VSONPT, VSONIN);
+* check that `SIBLING_ORDER` is valid in flat parent (VSSM);
+* on `C_ATTRIBUTE` nodes
+** check conformance of `existence` to flat parent (VSANCE);
+** check conformance of `cardinality` to flat parent (VSANCC);
+* on `C_ARCHETYPE_ROOT`:
+** check that `archetype_ref` archetype ID matches parent slot constraint (VARXS);
+** check that `archetype_ref` archetype ID exists in current library of archetypes (VARXR);
+** filler id specialisation depth is wrong (VARXID);
+* ensure `ARCHETYPE_SLOT` in child redefines only `ARCHETYPE_SLOT` in parent (VDSSID);
+* for node `C_COMPLEX_OBJECT_PROXY` in parent, check that proxy path exists (VSUNT);
+* otherwise, AOM types of child and parent node must be identical (VSONT).
+
+For passing nodes, check:
+
+* evaluate `c_conforms_to()` function:
+** RM type non-conformance (VSONCT);
+** occurrences non-conformance (VSONCO);
+** node id non-conformance value mismatch (VSONI);
+** invalid leaf object value redefinition (VPOV, VUNK);
+** tuple validation against parent node (VTPNC, VTPIN).
+
+==== Validate Rules
+
+* ensure RM types and paths mentioned in rules are valid against flat parent archetype and RM (VRRLPRM, VRRLPAR).
+
+=== Phase 3 - Validation of Flat Form
+
+These validations are carried out after successful generation of the flat form of the current archetype.
+
+* ensure `C_COMPLEX_OBJECT_PROXY` paths actually exist in current flat form (VUNP);
+* ensure object node `occurrences` valid with respect to enclosing `cardinality` (VACMCO).
+
+== Flattening
+
+Flattening is conceptually a simple operation - the overlaying of a differential child archetype onto a flat parent . Concretely, it is a somewhat sophisticated operation, since it has to take into account a number of specifics allowed by ADL and the AOM, including:
+
+* differential paths, including ones that contain overridden at-codes (id-codes);
+* nodes in the child can override nodes of different AOM types in the parent in specific circumstances;
+* sibling ordering markers;
+* overlays with cloning: where more than one child specialisation node exists for a single parent complex structure, the parent structure will be cloned before each overlay;
+* deletions (`existence matches {0}`, `occurrences matches {0}`).
+* proxy reference targets are expanded inline if the child archetype overrides them.    
+
+The algorithm used in the ADL Workbench provide a reasonable template for achieving proper flattening of AOM archetypes and templates.
+
+== Diffing
+
+Diffing is the reverse of flattening, and is primarily used to support editing operations. The basis of visual editing of an archetype is the flat form of the parent, with the user permitted to make modifications that are conformant with the flat parent. The Diffing operation is used to extract the resulting differential form archetype from the final state of visual editing.
+
+The algorithm used in the ADL Workbench provides a reasonable template for achieving diffing of AOM archetypes.

@@ -1,0 +1,26 @@
+=== S_ARCHETYPED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_ARCHETYPED*
+
+h|*Description*
+2+a|Simplified RM form of `ARCHETYPED` RM class.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*archetype_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `ARCHETYPE_ID`.
+
+h|*0..1*
+|*template_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `TEMPLATE_ID`.
+
+h|*0..1*
+|*rm_version*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|(unchanged from RM)
+|===

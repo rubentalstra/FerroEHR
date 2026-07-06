@@ -1,0 +1,12 @@
+title: Annotations1
+type: object
+properties:
+  comment:
+    type: string
+  view:pass_through:
+    type: string
+example:
+  comment: >-
+    Perloff D, Grim C, Flack J, Frohlich ED, Hill M, McDonald M, Morgenstern BZ.
+    Human blood pressure determination by sphygmomanometry. Circulation
+    1993;88;2460-2470. 

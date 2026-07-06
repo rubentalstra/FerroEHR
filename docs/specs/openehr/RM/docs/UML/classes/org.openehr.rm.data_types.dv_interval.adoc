@@ -1,0 +1,21 @@
+=== DV_INTERVAL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*DV_INTERVAL<T>*
+
+h|*Description*
+2+a|Generic class defining an interval (i.e. range) of a comparable type. An interval is a contiguous subrange of a comparable base type. Used to define intervals of dates, times, quantities (whose units match) and so on. The type parameter, `T`, must be a descendant of the type `DV_ORDERED`, which is necessary (but not sufficient) for instances to be compared (`_strictly_comparable_` is also needed). 
+
+Without the `DV_INTERVAL` class, quite a few more `DV_` classes would be needed to express logical intervals, namely interval versions of all the date/time classes, and of quantity classes. Further, it allows the semantics of intervals to be stated in one place unequivocally, including the conditions for strict comparison. 
+
+The basic semantics are derived from the class `Interval<T>`, described in the support RM.
+
+h|*Inherit*
+2+|`<<_data_value_class,DATA_VALUE>>`, `link:/releases/BASE/{base_release}/foundation_types.html#_interval_class[Interval^]`
+
+
+h|*Invariants*
+2+a|__Limits_consistent__: `(not upper_unbounded and not lower_unbounded) implies (lower.is_strictly_comparable_to(upper) and lower \<= upper)`
+|===

@@ -1,0 +1,22 @@
+=== EL_TUPLE_ITEM Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_TUPLE_ITEM*
+
+h|*Description*
+2+a|A single tuple item, with an optional name.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*item*: `<<_el_expression_class,EL_EXPRESSION>>`
+a|Reference to value entity. If Void, this indicates that the item in this position is Void, e.g. within a routine call parameter list.
+
+h|*0..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional name of tuple item.
+|===

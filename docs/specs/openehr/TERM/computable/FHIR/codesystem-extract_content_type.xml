@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-extract_content_type"/>
+  <version value="3.1.0"/>
+  <name value="extract_content_type"/>
+  <title value="Extract Content Type"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="6"/>
+  <concept>
+    <code value="803"/>
+    <display value="openEHR EHR"/>
+    <designation>
+      <language value="es"/>
+      <value value="HCE openEHR"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="openEHR EHR"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="registo de saúde electrónico em openEHR"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="openEHR EHR"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="804"/>
+    <display value="openEHR Demographic"/>
+    <designation>
+      <language value="es"/>
+      <value value="Demográficos openEHR"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="openEHR Demographic"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="openEHR demográfico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="openEHR 人口统计学信息"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="805"/>
+    <display value="openEHR synchronisation"/>
+    <designation>
+      <language value="es"/>
+      <value value="Sincronización openEHR"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="openEHR synchronisation"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Sincronização openEHR"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="openEHR 同步化"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="806"/>
+    <display value="openEHR generic"/>
+    <designation>
+      <language value="es"/>
+      <value value="Genérico openEHR"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="openEHR generic"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="openEHR genérico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="openEHR 通用"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="807"/>
+    <display value="generic EMR"/>
+    <designation>
+      <language value="es"/>
+      <value value="HCE genérica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="generic EMR"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Registro electrónico médico genérico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="通用 EMR"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="808"/>
+    <display value="other"/>
+    <designation>
+      <language value="es"/>
+      <value value="otro"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="other"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="Outro"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="其他"/>
+    </designation>
+  </concept>
+</CodeSystem>

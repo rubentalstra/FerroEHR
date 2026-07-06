@@ -1,0 +1,45 @@
+= The Rules Package
+
+The AOM `rules` package makes use of the `org.openehr.lang.beom` package described in the {openehr_basic_expression_language}[openEHR Basic Expression Language (BEL) specification^] and adds a small number of other classes to support two needs in the AOM:
+
+* representation of the assertions within `ARCHETYPE_SLOT` (i.e. the 'includes' and 'excludes'), which are concretely regex pattern matchers for Archetype Ids;
+* representation of statements within the `rules` section of an archetype.
+
+The AOM `rules` package is illustrated below.
+
+[.text-center]
+.am.aom2.rules Package
+image::{uml_diagrams_uri}/AM-aom2.rules.svg[id=rules_package, align="center"]
+
+== Archetype Slot Assertions
+
+The `ARCHETYPE_SLOT` class  contains `_includes_` and `_excludes_` attributes, which are constraints on archetypes allowed to populate the slot location at run-time. These are represented by `ASSERTIONs` containing expressions of the form: 
+
+----
+archetype_path matches Archetype-id-regex-matcher
+----
+
+These are represented by the structure `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`.
+
+== Archetype Rules
+
+The `rules` section of an archetype may contain various kinds of statements that may be used to express constraints ranging across multiple nodes, i.e. constraints that can't be expressed inline within the main `definition` section structure. The Basic Expression Language enables the representation of the following kinds of statements in an archetype:
+
+* _declarations_ of variables;
+* _assignments_ of expression results to variables;
+* _assertions_ of values.
+
+Expressions (i.e. evaluable value-returning operations, function calls etc) appear within assignments and assertions. Within these expressions, two kinds of entity are needed that are not directly supported by the expression meta-types defined in the `lang.beom` package, as follows:
+
+* instances of `EXPR_ARCHETYPE_REF` to express archetype paths as proxies for runtime value references, and;
+* `C_PRIMITIVE_OBJECT` constraints as Boolean-valued sub-expressions.
+
+The first of these allows a path reference to a leaf in an archetype (e.g. systolic blood pressure) to be used as a special kind of variable whose value can be replaced at runtime by all instances that are found at that archetype path in the data.
+
+The second allows typical archetype constraints of the form `value matches value_constraint` to be used inline in expressions. This facilitates the representation of common expressions of this form within larger rules, e.g. `/path/to/systolic/pressure matches {|140..160|}`.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}expr_constraint.adoc[]
+include::{uml_export_dir}/classes/{pkg}expr_archetype_id_constraint.adoc[]
+include::{uml_export_dir}/classes/{pkg}expr_archetype_ref.adoc[]

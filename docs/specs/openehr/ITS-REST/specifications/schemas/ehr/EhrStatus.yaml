@@ -1,0 +1,35 @@
+title: EHR_STATUS
+description: An EHR_STATUS resource
+type: object
+allOf:
+  - $ref: ../common/Versionable.yaml
+required:
+  - subject
+  - is_queryable
+  - is_modifiable
+properties:
+  _type:
+    type: string
+    default: EHR_STATUS
+  subject:
+    $ref: ../common/UPartyProxy.yaml
+  is_queryable:
+    type: boolean
+    default: true
+  is_modifiable:
+    type: boolean
+    default: true
+  other_details:
+    $ref: ../data_structures/UItemStructure.yaml
+x-discriminator-value: EHR_STATUS
+example:
+  archetype_node_id: openEHR-EHR-EHR_STATUS.generic.v1
+  name:
+    value: EHR status
+  uid:
+    _type: OBJECT_VERSION_ID
+    value: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+  subject:
+    _type: PARTY_SELF
+  is_queryable: true
+  is_modifiable: true

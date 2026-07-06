@@ -1,0 +1,668 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+|[[latest_issue]]5.2.1
+|{spec_tickets}/SPECRM-87[SPECRM-87^]: Support tags; updated EHR model (<<rm_ehr>>); added <<tags>> (Addresses {spec_tickets}/SPECPR-265[SPECPR-265^]).
+|S Iancu, +
+B Næss, +
+M Polajnar
+|[[latest_issue_date]]17 Nov 2022
+
+|
+|{spec_tickets}/SPECRM-107[SPECRM-107^]: Add `inactive` and `abandoned` states to Version lifecycle (fixes {spec_tickets}/SPECPR-383[SPECPR-383^]).
+|J Holslag, + 
+ Jelte Zeilstra, +
+ Bas Janssen
+|12 Aug 2022
+
+|
+|{spec_tickets}/SPECRM-100[SPECRM-100^]. Facilitate `ACTION` with unknown date. Document use of `ACTION._time_`
+|P Pazos, +
+ S Iancu, +
+ I McNicoll, +
+ H Frankel
+|24 May 2022
+
+4+^h|*RM Release 1.1.0*
+
+|5.2.0
+|{spec_tickets}/SPECRM-55[SPECRM-55^]. Add `_folders_:LIST<OBJECT_REF>` on `EHR`; make `_directory_` refer to first member of `_folders_`. See <<_folders>>.
+|B Naess, +
+ S Iancu
+|23 Sep 2020
+
+|
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]: Convert citations to bibtex form.
+|T Beale
+|15 Dec 2019
+
+|
+|{spec_tickets}/SPECRM-92[SPECRM-92^]. Correct numerous minor typographical and formatting errors.
+|J Mewes
+|09 Nov 2019
+
+|
+|{spec_tickets}/SPECRM-89[SPECRM-89^]. Add 'episodic' type to `COMPOSITION._category_`. Update text and diagrams in sections 4.2.4, 4.3.
+|P Pazos, +
+ I McNicoll
+|01 Nov 2019
+
+|
+|{spec_tickets}/SPECRM-56[SPECRM-56^]. Add archetypable details meta-data to `FOLDER`. (addresses {spec_tickets}/SPECPR-85[SPECPR-85^]).
+|B Naess, +
+ S Iancu, +
+ P Pazos, +
+ I McNicoll, +
+ T Beale
+|08 Oct 2019
+
+|
+|{spec_tickets}/SPECRM-88[SPECRM-88^]. Improve documentation relating to use of `_uid_` in versioning and `LOCATABLE` descendants in `change_control` package; improve advice on setting `_uid_` in `COMPOSITION`, `EHR_STATUS` and `EHR_ACCESS`. (Addresses {spec_tickets}/SPECPR-322[SPECPR-322^]).
+|P Pazos, +
+ M Polajnar, +
+ S Arikan, +
+ T Beale
+|29 Sep 2019
+
+|
+|{spec_tickets}/SPECRM-85[SPECRM-85^]. Correct typographical errors: 'planned_step' should be 'plan_step' in section 8.2.5.7. Careflow Process to State Machine Mapping (see {spec_tickets}/SPECPR-204[SPECPR-204^]).
+|P Pazos
+|22 May 2019
+
+4+^h|*RM Release 1.0.4*
+
+|5.1.3
+|{spec_tickets}/SPECRM-84[SPECRM-84^]. Improve documentation of `EHR_STATUS._is_modifiable_` and EHR active status (see {spec_tickets}/SPECPR-284[SPECPR-284^]). +
+ Added new sub-section "EHR Active Status" in section 4.
+|M Asgari, +
+ I McNicoll, +
+ T Beale
+|28 Dec 2018
+
+|
+|{spec_tickets}/SPECRM-71[SPECRM-71^]. Make `ACTIVITY._timing_` optional. +
+ {spec_tickets}/SPECRM-68[SPECRM-68^]. Improve guidance on use of `ACTIVITY._timing_` (Fixes {spec_tickets}/SPECPR-242[SPECPR-242^]. +
+ {spec_tickets}/SPECRM-69[SPECRM-69^]. Add missing ISM transitions and improve documentation of states (Fixes {spec_tickets}/SPECPR-203[SPECPR-203^].
+|P Pazos
+|26 Nov 2018
+
+|
+|{spec_tickets}/SPECRM-80[SPECRM-80^]. Improve description of `_system_id_` field in `EHR`, `AUDIT_DETAILS` and `FEEDER_AUDIT_DETAILS`.
+|H Frankel, +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPECRM-59[SPECRM-59^]. Add identifier recommendations to EHR spec(s).
+|B Lah
+|23 Apr 2018
+
+|
+|{spec_tickets}/SPECRM-52[SPECRM-52^]. Remove `COMPOSITION` invariant preventing context for persistent Compositions. (Fixes {spec_tickets}/SPECPR-78[SPECPR-78^]) +
+ Update Clinical Investigator Recording Process diagram.
+|H Frankel, +
+ S Heard
+|07 Feb 2017
+
+|
+|{spec_tickets}/SPECPUB-3[SPECPUB-3^]. Re-instate inheritance from descendants of `VERSIONED_OBJECT<T>` to `VERSIONED_OBJECT` from Release 1.0.2 (lost in original UML conversion). +
+ Correct `EVENT_CONTEXT._health_care_facility_` and `_participations_` links that were mangled in initial UML conversion.
+|T Beale
+|07 Jun 2016
+
+|
+|{spec_tickets}/SPECRM-46[SPECRM-46^]. Fix RM Release 1.0.3 typos and minor documentary errors. Correct `ACTION._description_` text to past tense. ({spec_tickets}/SPECPR-77[SPECPR-77^]).
+|P Pazos
+|04 Apr 2016
+
+4+^h|*RM Release 1.0.3*
+
+|5.1.2
+|{spec_tickets}/SPECRM-28[SPECRM-28^]. Corrections to EHR and Common IM documentation. +
+ Improve explanation in section 4.4.2 (EHR Creation) of `EHR_STATUS`.`_is_modifiable_` ({spec_tickets}/SPECPR-28[SPECPR-28^]). +
+ Fix description of `CARE_ENTRY`.`_guideline_id_` ({spec_tickets}/SPECPR-75[SPECPR-75^]). +
+ Fix typo in EHR IM in section 'Standard Clinical Types of Data' ({spec_tickets}/SPECPR-87[SPECPR-87^]). +
+ EHR IM missing example in section 'Care_entry and Admin_entry'. ({spec_tickets}/SPECPR-89[SPECPR-89^]).
+|C Ma, +
+ P Pazos
+|10 Oct 2015
+
+|
+|{spec_tickets}/SPECRM-37[SPECRM-37^]: Add optional `_reason_: List<DV_TEXT>` attribute to `ISM_TRANSITION` class ({spec_tickets}/SPECPR-58[SPECPR-58^]).
+|S Heard
+|
+
+|
+|{spec_tickets}/SPECRM-43[SPECRM-43^]: Improve documentation of `EHR._system_id_` in clone/copy scenario ({spec_tickets}/SPECPR-5128[SPECPR-128^]).
+|S Heard
+|
+
+4+^h|*Release 1.0.2*
+
+|5.1.1
+|{spec_tickets}/SPEC-274[SPEC-274^]. Observation should be Evaluation in problem/SOAP structure figure.
+|R Chen
+|16 Aug 2008
+
+|
+|{spec_tickets}/SPEC-275[SPEC-275^]: Update Entry package design principles in EHR IM.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-253[SPEC-253^]: Clarify explanation of Instruction/Action model in EHR IM to indicate state machine per Activity.
+|T Beale
+|
+
+4+^h|*Release 1.0.1*
+
+|5.1.0
+|{spec_tickets}/SPEC-200[SPEC-200^]: Correct Release 1.0 typographical errors. Correct `INSTRUCTION_DETAILS`.`_instruction_id_` type to `LOCATABLE_REF`. Correct inheritance of `CONTENT_ITEM` to `LOCATABLE`.
+|S Heard +
+ M Forss +
+ C Ma
+|08 Apr 2007
+
+|
+|{spec_tickets}/SPEC-201[SPEC-201^]: Add archetype ids to Instruction `ACTIVITY` class.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-203[SPEC-203^]: Release 1.0 explanatory text improvements. Minor changes to Entry section. Improved section on "time in the EHR".
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-210[SPEC-210^]: Remove `LOCATABLE` inheritance from `ISM_TRANSITION` and `INSTRUCTION_DETAILS` classes
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-130[SPEC-130^]: Correct security details in `LOCATABLE` and `ARCHETYPED` classes. Add `EHR_ACCESS` class.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-218[SPEC-218^]: Add `_language_` attribute to `COMPOSITION`.
+|G Grieve
+|
+
+|
+|{spec_tickets}/SPEC-219[SPEC-219^]: Use constants instead of literals to refer to terminology in RM.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-244[SPEC-244^]: Separate `LOCATABLE` path functions into `PATHABLE` class.
+|T Beale +
+ H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-246[SPEC-246^]: Correct openEHR terminology rubrics.
+|B Verhees +
+ M Forss
+|
+
+4+^h|*Release 1.0*
+
+|5.0 
+|{spec_tickets}/SPEC-14[SPEC-14^]: Adjust `HISTORY`.
+|S Heard
+|25 Jan 2006
+
+
+|
+|{spec_tickets}/SPEC-140[SPEC-140^]. Redevelop Instruction, based on workflow principles.
+|S Heard +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-147[SPEC-147^]. Make `DIRECTORY` Re-usable.
+|R Chen
+|
+
+|
+|{spec_tickets}/SPEC-162[SPEC-162^]. Allow party identifiers when no demographic data. Changes to `EHR`, `EVENT_CONTEXT`, and `ENTRY`.
+|S Heard +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-164[SPEC-164^]. Improve description of use of times in `OBSERVATION`.
+|S Heard +
+ H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-174[SPEC-174^]. Add `ADMIN_ENTRY` subtype.
+|S Heard +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-175[SPEC-175^]. Make `ENTRY`.`provider` optional.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-177[SPEC-177^]. Make `COMPOSITION`.`_content_` a `CONTENT_ITEM`.
+|S Heard, +
+ D Kalra
+|
+
+|
+|{spec_tickets}/SPEC-180[SPEC-180^]. Move `EVENT_CONTEXT`.`_composer_` to `COMPOSITION`
+|T Beale +
+ S Heard
+|
+
+|
+|{spec_tickets}/SPEC-181[SPEC-181^]: Change `ENTRY`.`_provider_` to `PARTY_PROXY`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-182[SPEC-182^]: Rationalise `VERSION`.`_lifecycle_state_` and `ATTESTATION`.`_status_`.
+|C Ma +
+ D Kalra
+|
+
+|
+|{spec_tickets}/SPEC-187[SPEC-187^]: Correct modelling errors in `DIRECTORY` class and rename.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-188[SPEC-188^]: Add `_generating_type_` function to `ANY` for use in invariants.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-189[SPEC-189^]. Add `LOCATABLE`.`_parent_`. New invariants in EHR and `COMPOSITION`.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-190[SPEC-190^]. Rename `VERSION_REPOSITORY` to `VERSIONED_OBJECT`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-191[SPEC-191^]: Add `EHR_STATUS` class to `ehr` package.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-194[SPEC-194^]: Correct anomalies with `LOCATABLE`.`_uid_`
+|H Frankel +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-195[SPEC-195^]: Rename `EHR`.`_all_compositions_` to `_compositions_`.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-161[SPEC-161^]. Support distributed versioning. Correct identifier types in `EHR`, `ACTION` classes.
+|T Beale +
+ H Frankel
+|
+
+4+^h|*Release 0.96*
+
+4+^h|*Release 0.95*
+
+|4.5 
+|{spec_tickets}/SPEC-108[SPEC-108^]. Minor changes to change_control package.
+|T Beale
+|10 Dec 2004
+
+|
+|{spec_tickets}/SPEC-24[SPEC-24^]. Revert meaning to `STRING` and rename as `_archetype_node_id_`.
+|S Heard, +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-98[SPEC-98^]. `EVENT_CONTEXT`.`_time_` should allow optional end time.
+|S Heard, +
+ DSTC
+|
+
+|
+|{spec_tickets}/SPEC-109[SPEC-109^]. Add `_act_status_` to `ENTRY`, as in CEN prEN13606.
+|A Goodchild
+|
+
+|
+|{spec_tickets}/SPEC-116[SPEC-116^]. Add `PARTICIPATION`.`_function_` vocabulary and invariant.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-118[SPEC-118^]. Make package names lower case.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-64[SPEC-64^]. Re-evaluate `COMPOSITION`.`_is_persistent_` attribute.  Converted is_persistent to a function; added category attribute.
+|D Kalra
+|
+
+|
+|{spec_tickets}/SPEC-102[SPEC-102^]. Make `DV_TEXT` `_language_` and `_charset_` optional.
+|DSTC
+|
+
+4+^h|*Release 0.9*
+
+|4.4.1 
+|{spec_tickets}/SPEC-96[SPEC-96^]. Allow 0..* `SECTIONs` as `COMPOSITION` content. 
+|DSTC 
+|11 Mar 2004
+
+|4.4 
+|{spec_tickets}/SPEC-19[SPEC-19^]. Add `HISTORY` & `STRUCTURE` supertype.
+|T Beale
+|06 Mar 2004
+
+|
+|{spec_tickets}/SPEC-28[SPEC-28^]. Change name of `STRUCTURE` class to avoid clashes.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-87[SPEC-87^]. `EVENT_CONTEXT`.`_location_` should be optional.
+|DSTC
+|
+
+|
+|{spec_tickets}/SPEC-88[SPEC-88^]. Move `INSTRUCTION`.`_guideline_id_` to `ENTRY`.
+|T Beale, +
+ D Kalra
+|
+
+|
+|{spec_tickets}/SPEC-92[SPEC-92^]. Improve `EVENT_CONTEXT` modelling. Rename `_author_` to `_composer_`. +
+ Formally validated using ISE Eiffel 5.4.
+|S Heard
+|
+
+|4.3.10 
+|{spec_tickets}/SPEC-44[SPEC-44^]. Add reverse ref from `VERSION_REPOSITORY<T>` to owner object. Add invariants to `DIRECTORY` and `VERSIONED_COMPOSITION` classes.
+|D Lloyd
+|25 Feb 2004
+
+|
+|{spec_tickets}/SPEC-46[SPEC-46^]. Rename `COORDINATED_TERM` and `DV_CODED_TEXT`.`_definition_`.
+|T Beale
+|
+
+|4.3.9 
+|{spec_tickets}/SPEC-21[SPEC-21^]. Rename `CLINICAL_CONTEXT`.`_practice_setting_` to `_setting_`.
+|A Goodchild 
+|10 Feb 2004
+
+|4.3.8 
+|{spec_tickets}/SPEC-57[SPEC-57^]. Environmental information needs to be included in the EHR.
+|T Beale 
+|02 Nov 2003
+
+|4.3.7 
+|{spec_tickets}/SPEC-48[SPEC-48^]. Pre-release review of documents. +
+ {spec_tickets}/SPEC-49[SPEC-49^]. Correct reference types in `EHR`, `DIRECTORY` classes. `EHR`.`_contributions_`, `_all_compositions_`, `FOLDER`.`_compositions_` attributes and invariants corrected. +
+ {spec_tickets}/SPEC-50[SPEC-50^]. Update Path syntax reference model to ADL specification.
+|T Beale, +
+ D Lloyd
+|25 Oct 2003
+
+|4.3.6 
+|{spec_tickets}/SPEC-41[SPEC-41^]. Visually differentiate primitive types in openEHR documents.
+|D Lloyd 
+|04 Oct 2003
+
+|4.3.5 
+|{spec_tickets}/SPEC-13[SPEC-13^]. Rename key classes, according to CEN ENV 13606.
+|S Heard, +
+ D Kalra, +
+ T Beale
+|15 Sep 2003
+
+|4.3.4 
+|{spec_tickets}/SPEC-11[SPEC-11^]. Add author attribute to `EVENT_CONTEXT`. +
+ {spec_tickets}/SPEC-27[SPEC-27^]. Move feeder_audit to `LOCATABLE` to be compatible with CEN 13606 revision.
+|S Heard, +
+ D Kalra
+|20 Jun 2003
+
+|4.3.3 
+|{spec_tickets}/SPEC-20[SPEC-20^]. Move `VERSION._territory_` to `TRANSACTION`. +
+ {spec_tickets}/SPEC-18[SPEC-18^]. Add `DIRECTORY` class to `rm.ehr` Package.
+ {spec_tickets}/SPEC-5[SPEC-5^]. Rename `CLINICAL_CONTEXT` to `EVENT_CONTEXT`.
+|A Goodchild 
+|10 Jun 2003
+
+|4.3.2 
+|{spec_tickets}/SPEC-6[SPEC-6^]. Make `ENTRY`.`_provider_` a `PARTICIPATION`. +
+ {spec_tickets}/SPEC-7[SPEC-7^]. Replace `ENTRY`.`_subject_` and `_subject_relationship_` with `RELATED_PARTY`. +
+ {spec_tickets}/SPEC-8[SPEC-8^]. Remove `_confidence_` and `_is_exceptional_` attributes from `ENTRY`.
+ {spec_tickets}/SPEC-9[SPEC-9^]. Merge `ENTRY` `_protocol_` and `_reasoning_` attributes.
+|S Heard, +
+ T Beale,
+ D Kalra,
+ D Lloyd
+|11 Apr 2003
+
+|4.3.1 
+|DSTC review - typos corrected. 
+|A Goodchild 
+|08 Apr 2003
+
+|4.3 
+|{spec_tickets}/SPEC-3[SPEC-3^], {spec_tickets}/SPEC-4[SPEC-4^]. Removed `ORGANISER_TREE`.  `CLINICAL_CONTEXT` and `FEEDER_AUDIT` inherit from `LOCATABLE`.  Changes to path syntax. Improved definitions of `ENTRY` subtypes. Improved instance diagrams. DSTC detailed review. +
+ (Formally validated).
+|T Beale, +
+ Z Tun, +
+ A Goodchild
+|18 Mar 2003
+
+|4.2 
+|Formally validated using ISE Eiffel 5.2. Moved `VERSIONED_TRANSACTION` class to `ehr` Package, to correspond better with serialised formalisms like XML.
+|T Beale, +
+ A Goodchild
+|25 Feb 2003
+
+|4.1 
+|Changes post CEN WG meeting Rome Feb 2003. Moved `TRANSACTION`.`_version_id_` postcondition to an invariant. Moved feeder_audit back to `TRANSACTION`. Added `ENTRY`.`_act_id_`.  `VERSION_AUDIT`.`_attestations_` moved to new `ATTESTATIONS` class attached to `VERSIONED<T>`.
+|T Beale, +
+ S Heard, +
+ D Kalra, +
+ D Lloyd
+|8 Feb 2003
+
+|4.0.2 
+|Various corrections and DSTC change requests. Reverted `OBSERVATION`.`_items_`: `LIST<HISTORY<T>>` to `_data_`: `HISTORY<T>` and `EVALUATION`.`_items_`: `LIST<STRUCTURE<T>>` to `_data_`: `STRUCTURE<T>`. Changed `CLINICAL_CONTEXT`.`_other_context_` to a `STRUCTURE`. Added `ENTRY`.`_other_participations_`; Added `CLINICAL_CONTEXT`.`_participations_`; removed `_hcp_legally_responsible_` (to be archetyped). Replaced `EVENT_TRANSACTION` and `PERSISTENT_TRANSACTION` with `TRANSACTION` and a boolean attribute `_is_persistent_`.
+|T Beale 
+|3 Feb 2003
+
+|4.0.1 
+|Detailed corrections to diagrams and class text from DSTC. 
+|Z Tun 
+|8 Jan 2003
+
+|4.0 
+|Moved `HISTORY` classes to Data Structures RM. No semantic changes.
+|T Beale 
+|18 Dec 2002
+
+|3.8.2 
+|Corrections on 3.8.1. No semantic changes. 
+|D Lloyd 
+|11 Nov 2002
+
+|3.8.1 
+|Removed `SUB_FOLDER` class. Now folder structure can be nested separately archetyped folder structures, same as for `ORGANISERs`. Removed `AUTHORED_TA` and `ACQUISITION_TA` classes; simplified versioning.
+|T Beale, +
+ D Kalra, +
+ D Lloyd +
+ A Goodchild
+|28 Oct 2002
+
+|3.8 
+|Added practice_setting attribute to `CLINICAL_CONTEXT`, inspired from HL7v3/ANSI CDA standard Release 2.0.  Changed `DV_PLAIN_TEXT` to `DV_TEXT`. Removed `_hca_coauthorising_`; renamed `_hca_recording_`; adjusted all instances of `*_ID`; converted `CLINICAL_CONTEXT`.`_start_time_`, `_end_time_` to an interval.
+|T Beale, +
+ S Heard, +
+ D Kalra, +
+ M Darlison
+|22 Oct 2002
+
+|3.7 
+|Removed Spatial package to Common RM document.  Renamed `ACTION` back to `ACTION_SPECIFICATION`. Removed the class `NAVIGABLE_STRUCTURE`. Renamed `SPATIAL` to `STRUCTURE`.  Removed classes `STATE_HISTORY`, `STATE`, `SINGLE_STATE`. Removed Communication (`EHR_EXTRACT`) section to own document.
+|T Beale 
+|22 Sep 2002
+
+|3.6 
+|Removed Common and Demographic packages to their own documents.
+|T Beale 
+|28 Aug 2002
+
+|3.5.1 
+|Altered syntax of `EXTERNAL_ID` identifiers. 
+|T Beale, +
+ Z Tun
+|20 Aug 2002
+
+|3.5 
+|Rewrote Demographic and Ehr_extract packages. 
+|T Beale 
+|18 Aug 2002
+
+|3.3.1 
+|Simplified `EHR_EXTRACT` model, numerous small changes from DSTC review.
+|T Beale, +
+ Z Tun
+|15 Aug 2002
+
+|3.3 
+|Rewrite of contributions, version control semantics. 
+|T Beale, +
+ D Lloyd, +
+ D Kalra, +
+ S Heard
+|01 Aug 2002
+
+|3.2 
+|DSTC comments. Various minor errors/omissions. Changed inheritance of `SINGLE_EVENT` and `SINGLE_STATE`.  Included `STRUCTURE` subtype methods from GEHR. ehr_id added to VT. Altered `EHR`/`FOLDER` attrs. Added `EXTERNAL_ID`.`_version_`.
+|T Beale, +
+ Z Tun
+|25 Jun 2002
+
+|3.1.1 
+|Minor corrections. 
+|T Beale 
+|20 May 2002
+
+|3.1 
+|Reworking of Structure section, `ACTION` class, `INSTRUCTION` class. 
+|T Beale, +
+ S Heard
+|16 May 2002
+
+|3.0 
+|Plans, actions updated. 
+|T Beale, +
+ S Heard
+|10 May 2002
+
+|2.9 
+|Additions from HL7v3 coded term model, alterations to quantity model, added explanation sections.
+|T Beale 
+|5 May 2002
+
+|2.8.2a 
+|Interim version with various review modifications 
+|T Beale 
+|28 Apr 2002
+
+|2.8.2 
+|Error corrections to `EHR_EXTRACT` package. P Schloeffel comments on 2.7.
+|T Beale, +
+ P Schloeffel
+|25 Apr 2002
+
+|2.8.1 
+|Further minor changes from UCL on v2.7. 
+|T Beale 
+|24 Apr 2002
+
+|2.8 
+|Dipak Kalra (UCL) comments on v2.6 incorporated. Added External Package. Minor changes elsewhere.
+|T Beale, +
+ D Kalra
+|23 Apr 2002
+
+|2.7 
+|Final development of initial draft, including `EHR_EXTRACT`, related models
+|T Beale 
+|20 Apr 2002
+
+|2.6 
+|Further development of path syntax, incorporation of Dipak Kalra’s comments
+|T Beale, +
+ D Kalra
+|15 Apr 2002
+
+|2.5 
+|Further development of clinical and record management clusters.
+|T Beale 
+|10 Apr 2002
+
+|2.4 
+|Included David Lloyd’s rev 2.3 comments. 
+|T Beale, +
+ D Lloyd
+|4 Apr 2002
+
+|2.3 
+|Improved context analysis. 
+|T Beale 
+|4 Mar 2002
+
+|2.2 
+|Added path syntax. 
+|T Beale 
+|19 Nov 2001
+
+|2.1 
+|Minor organisational changes, some content additions. 
+|T Beale 
+|18 Nov 2001
+
+|2.0 
+|Rewrite of large sections post-Eurorec 2001 conference, Aix-en-Provence. Added folder, contribution concepts.
+|T Beale 
+|15 Nov 2001
+
+|1.2 
+|Major additions to introduction, design philosophy 
+|T Beale 
+|1 Nov 2001
+
+|1.1 
+|Major changes to diagrams; STILL UNREVIEWED 
+|T Beale 
+|13 Oct 2001
+
+|1.0 
+|Based on GEHR Object Model 
+|T Beale
+|22 Sep 2001
+
+|===

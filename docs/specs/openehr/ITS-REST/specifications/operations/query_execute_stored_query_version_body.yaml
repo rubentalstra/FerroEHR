@@ -1,0 +1,30 @@
+operationId: query_execute_stored_query_version_body
+summary: Execute stored AQL version (POST)
+description: |
+  Execute a stored query, identified by the supplied `qualified_query_name` (at specified `version`).  
+  
+  See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
+    
+  Queries can be stored or, once stored, their definition can be retrieved using the [definition endpoint](definition.html#tag/Query).
+tags:
+  - Query
+parameters:
+  - $ref: ../parameters/path/qualified_query_name.yaml
+  - $ref: ../parameters/path/version.yaml
+requestBody:
+  description: |
+    Specifications for a stored AQL query execution.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/query/Query.yaml
+  required: true
+responses:
+  '200':
+    $ref: ../responses/200_Query.yaml
+  '400':
+    $ref: ../responses/400_Query.yaml
+  '404':
+    $ref: ../responses/404_Query_version.yaml
+  '408':
+    $ref: ../responses/408_Query.yaml

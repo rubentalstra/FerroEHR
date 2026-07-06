@@ -1,0 +1,15 @@
+title: ELEMENT
+type: object
+allOf:
+  - $ref: ../data_structures/Item.yaml
+properties:
+  _type:
+    type: string
+    default: ELEMENT
+  null_flavour:
+    $ref: ../data_types/DvCodedText.yaml
+  value:
+    $ref: ../data_types/UDataValue.yaml
+  null_reason:
+    $ref: ../data_types/UDvText.yaml
+x-discriminator-value: ELEMENT

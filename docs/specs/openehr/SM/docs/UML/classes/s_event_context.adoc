@@ -1,0 +1,45 @@
+=== S_EVENT_CONTEXT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_EVENT_CONTEXT*
+
+h|*Description*
+2+a|Simplified RM form of `EVENT_CONTEXT` RM class.
+
+h|*Inherit*
+2+|`link:/releases/SM/{sm_release}/S_TYPE.html#_s_type_class[S_TYPE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*time*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_DATE_TIME`.
+
+h|*0..1*
+|*end_time*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_DATE_TIME`.
+
+h|*0..1*
+|*location*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|(unchanged from RM)
+
+h|*0..1*
+|*participations*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_participation_class,S_PARTICIPATION>>>`
+a|(unchanged from RM)
+
+h|*0..1*
+|*health_care_facility*: `<<_s_party_identified_class,S_PARTY_IDENTIFIED>>`
+a|(unchanged from RM)
+
+h|*0..1*
+|*setting*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|(unchanged from RM)
+
+h|*0..1*
+|*other_context*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_item_class,S_ITEM>>>`
+a|Converted from `ITEM_STRUCTURE`.
+|===

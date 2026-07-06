@@ -1,0 +1,203 @@
+= Test Suite: DEMOGRAPHIC_SERVICE
+
+// Some useful links: 
+:i_demographic_service_link: {openehr_sm_openehr_platform}#_i_demographic_service_interface
+:i_party_link: {openehr_sm_openehr_platform}#_i_party_interface
+:i_party_relationship_link: {openehr_sm_openehr_platform}#_i_party_relationship_interface
+
+== Normative Reference
+
+Items in this validation suite conceptually use the following abstract interfaces from the {i_demographic_service_link}[Abstract Platform Service Model, DEMOGRAPHIC component^].
+
+* `I_DEMOGRAPHIC_SERVICE`
+
+These are concretely realised in implementation technology specfic APIs, such as the {openehr_ehr_rest_api}[EHR REST API^].
+
+This test suite uses artefacts defined by the following information model specifications:
+
+* Service Interfaces:
+** {openehr_sm_openehr_platform}#_demographic_package[Abstract Demographic Service Model^]
+* Information Models:
+** {openehr_rm_demographic}[Demographic IM^]
+** {openehr_rm_common}[Common IM^]
+** {openehr_rm_data_structures}[Data Structures IM^]
+** {openehr_rm_data_types}[Data Types IM^]
+** {openehr_rm_support}[Support IM^]
+** {openehr_rm_common}#_change_control_package[Versioning^]
+
+== Dependencies
+
+This test suite depends on other test suites:
+
+* <<_func_conf_def_adl_component, Functional Conformance: Definitions Component>>, providing OPTs.
+
+== Test Environment
+
+[width="5%",cols="100%",]
+|===
+|TBD
+|===
+
+== Test Data Sets
+
+[width="5%",cols="100%",]
+|===
+|TBD
+|===
+
+== Test Cases
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.create_party()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._create_party()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.get_party()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._get_party()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.get_party_at_time()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._get_party_at_time()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.update_party()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._update_party()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.delete_party()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._delete_party()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.get_party_at_version()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._get_party_at_version()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.create_party_relationship()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._create_party_relationship()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.get_party_relationship()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._get_party_relationship()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._get_party_relationship_at_time()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.update_party_relationship()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._update_party_relationship()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.delete_party_relationship()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._delete_party_relationship()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version()
+
+Service Model reference: {i_demographic_service_link}[`I_DEMOGRAPHIC_SERVICE._get_party_relationship_at_version()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+                                                                            

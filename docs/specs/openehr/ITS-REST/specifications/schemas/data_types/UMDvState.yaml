@@ -1,0 +1,11 @@
+title: DV_STATE
+type: object
+allOf:
+  - $ref: ../data_types/DvState.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [DV_STATE]
+x-discriminator-value: DV_STATE

@@ -1,0 +1,20 @@
+= Definitions Package
+
+== Overview
+
+The `base_types.definitions` package shown below defines symbolic definitions used by the openEHR models.
+
+[.text-center]
+.base.base_types.definitions package
+image::{uml_diagrams_uri}/BASE-base_types.definitions.svg[id=base_definition_types, align="center", width=65%]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}basic_definitions.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}openehr_definitions.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}validity_kind.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}version_status.adoc[]
+

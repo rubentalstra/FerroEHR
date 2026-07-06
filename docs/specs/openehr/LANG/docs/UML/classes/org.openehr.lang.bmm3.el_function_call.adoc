@@ -1,0 +1,45 @@
+=== EL_FUNCTION_CALL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*EL_FUNCTION_CALL*
+
+h|*Description*
+2+a|A call made on a closed function agent, returning a result. Equivalent to an 'application' of a function in Lambda calculus.
+
+h|*Inherit*
+2+|`<<_el_feature_ref_class,EL_FEATURE_REF>>`, `<<_el_agent_call_class,EL_AGENT_CALL>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*agent*: `<<_el_function_agent_class,EL_FUNCTION_AGENT>>`
+a|The function agent being called.
+
+h|*1..1 +
+(redefined)*
+|*is_writable*: `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+`{default{nbsp}={nbsp}false}`
+a|Defined to return False.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*eval_type* (): `<<_bmm_type_class,BMM_TYPE>>`
+a|Return `_agent.definition.type_`.
+
+h|*1..1 +
+(redefined)*
+|*reference* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Generated full reference name, consisting of any scoping elements, function name and routine parameters enclosed in parentheses.
+
+h|*Invariants*
+2+a|__Inv_valid_agent__: `agent.is_callable()`
+|===

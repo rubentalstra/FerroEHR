@@ -1,0 +1,7 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.2.0/P_aom2/P_C_DATE_TIME-detailed.json",
+    "title": "P_C_DATE_TIME",
+    "description": "ISO 8601-compatible constraint on instances of Date_Time. There is no validity flag for \u2018year\u2019, since it must always be by definition mandatory in order to have a sensible date/time at all. Syntax expressions of instances of this class include \u201cYYYY-MM-DDT??:??:??\u201d (date/time with optional time) and \u201cYYYY-MMDDTHH:MM:xx\u201d (date/time, seconds not allowed).",
+    "$comments": "Defined in P_aom2 IM"
+}

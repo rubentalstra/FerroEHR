@@ -1,0 +1,18 @@
+title: INSTRUCTION_DETAILS
+type: object
+allOf:
+  - $ref: ../common/Pathable.yaml
+required:
+  - instruction_id
+  - activity_id
+properties:
+  _type:
+    type: string
+    default: INSTRUCTION_DETAILS
+  instruction_id:
+    $ref: ../base_types/LocatableRef.yaml
+  activity_id:
+    type: string
+  wf_details:
+    $ref: ../data_structures/UItemStructure.yaml
+x-discriminator-value: INSTRUCTION_DETAILS

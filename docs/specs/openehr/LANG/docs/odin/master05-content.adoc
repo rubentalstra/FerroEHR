@@ -1,0 +1,275 @@
+= Content
+
+== General Structure
+
+Within any kind of ODIN object instance (i.e. implied, anonymous or identified), the structure is a hierarchy of attribute names and object values. In its simplest form, an ODIN object consists of repetitions of the following pattern:
+
+[source, antlr-java]
+--------
+object = attribute_name '=' '<' value '>' ;
+--------
+
+Each attribute name is the name of an attribute in an implied or actual object or relational model. Each "value" is either a literal value of a primitive type (see section <<Primitive Types>>) or a further nesting of attribute names and values, terminating in leaf nodes of primitive type values. Where sibling attribute nodes occur, the attribute identifiers must be unique, just as in a standard object or relational model.
+
+The following shows a typical structure.
+
+[source, odin]
+--------
+attr_1 = <
+    attr_2 = <
+        attr_3 = <leaf_value>
+        attr_4 = <leaf_value>
+    >
+    attr_5 = <
+        attr_3 = <
+            attr_6 = <leaf_value>
+        >
+        attr_7 = <leaf_value>
+    >
+>
+attr_8 = <...>
+--------
+
+In the above structure, each "<>" encloses an instance of some type. The hierarchical structure corresponds to the part-of relationship between objects, otherwise known as composition and _aggregation_ relationships in object-oriented formalisms such as UML (the difference between the two is usually described as being "sub-objects related by aggregation can have independent lifetimes, whereas sub-objects related by composition have co-terminal lifetimes and are always destroyed with the parent"; ODIN does not differentiate between the two, since it is the business of a model, not the data, to express such semantics). Associations between instances in ODIN are also representable by references, and are described in the section <<Associations and Shared Objects>>.
+
+Validity rules for object-structuring of ODIN are as follows:
+
+[.rule]
+VDATU: attribute name uniqueness: sibling attributes occurring within an object node must be uniquely named with respect to each other, in the same way as in class definitions in an information model.
+
+== Paths
+
+For any ODIN structure, a set of paths can be extracted that correspond to the tree structure of the data. The complete set of paths for the above example is as follows.
+
+[source, odin]
+--------
+    /attr_1
+    /attr_1/attr_2
+    /attr_1/attr_2/attr_3           -- path to a leaf value
+    /attr_1/attr_2/attr_4           -- path to a leaf value
+    /attr_1/attr_5
+    /attr_1/attr_5/attr_3
+    /attr_1/attr_5/attr_3/attr_6    -- path to a leaf value
+    /attr_1/attr_5/attr_7           -- path to a leaf value
+    /attr_8
+--------
+
+The path syntax used with ODIN maps trivially to W3C Xpath and Xquery paths, and is described in section <<Path Syntax>>.
+
+== Void Objects
+
+A void object, i.e. an object attribute that has no value is allowed in an ODIN text, but ignored by parsers. It is legal to output void objects, but not recommended. A void object looks as follows:
+
+[source, odin]
+--------
+    address = <...>    -- person's address
+--------
+
+== Container Objects
+
+The syntax described so far allows an instance of an arbitrarily large object to be expressed, but does not support attributes of container types such as lists, sets and hash tables, i.e. items whose type in an underlying reference model is something like `attr:List<Type>` , `attr:Set<Type>` or `attr: Hash<KeyType, ValueType>` . There are two ways instance data of such container objects can be expressed in ODIN. The first applies to leaf values and is to use a list style literal value for , where the "list nature" of the data is expressed within the manifest value itself, as in the following examples.
+
+[source, odin]
+--------
+fruits = <"pear", "cumquat", "peach">
+some_primes = <1, 2, 3, 5>
+--------
+
+See <<Lists of Built-in Types>> for the complete description of list leaf types.
+
+However for containers holding non-primitive values, including more container objects, a different syntax is needed. Consider by way of example that an instance of the container `List<Person>` could in theory be expressed as follows.
+
+[source, odin]
+--------
+-- WARNING: THIS IS NOT VALID ODIN
+
+people = <
+    <name = <...> date_of_birth = <...> sex = <...> interests = <...> >
+    <name = <...> date_of_birth = <...> sex = <...> interests = <...> >
+    -- etc
+>
+--------
+
+Here, 'anonymous' blocks of data are repeated inside the outer block. However, this makes the data hard to read, and does not provide an easy way of constructing paths to the contained items. A better syntax becomes more obvious when we consider that members of container objects in their computable form are nearly always accessed by a method such as `member(i)` , `item[i]` or just plain `[i]` , in the case of array access in the C-based languages.
+
+ODIN opts for the array-style syntax, known in ODIN as container member keys. No attribute name is explicitly given; any primitive comparable value is allowed as the key, rather than just integers used in C-style array access. Further, if integers are used, it is not assumed that they dictate ordinal indexing, i.e. it is possible to use a series of keys `[2]` , `[4]` , `[8]` etc. The following example shows one version of the above container in valid ODIN:
+
+[source, odin]
+--------
+people = <
+    [1] = <name = <...> birth_date = <...> interests = <...> >
+    [2] = <name = <...> birth_date = <...> interests = <...> >
+    [3] = <name = <...> birth_date = <...> interests = <...> >
+>
+--------
+
+Strings and dates may also be used. Keys are coloured blue in this specification in order to distinguish the run-time status of key values from the design-time status of class and attribute names. The following example shows the use of string values as keys for the contained items.
+
+[source, odin]
+--------
+people = <
+    ["akmal:1975-04-22"] = <name = <...> birth_date = <...> interests = <...> >
+    ["akmal:1962-02-11"] = <name = <...> birth_date = <...> interests = <...> >
+    ["gianni:1978-11-30"] = <name = <...> birth_date = <...> interests = <...> >
+>
+--------
+
+The syntax for primitive values used as keys follows exactly the same syntax described below for data of primitive types. It is convenient in some cases to construct key values from one or more of the values of the contained items, in the same way as relational database keys are constructed from sufficient field values to guarantee uniqueness. However, they need not be - they may be independent of the contained data, as in the case of hash tables, where the keys are part of the hash table structure, or equally, they may simply be integer index values, as in the 'locations' attribute in the 'school_schedule' structure shown below.
+
+Container structures can appear anywhere in an overall instance structure, allowing complex data such as the following to be expressed in a readable way.
+
+[source, odin]
+--------
+school_schedule = <
+    lesson_times = <08:30:00, 09:30:00, 10:30:00, ...>
+
+    locations = <
+        [1] = <"under the big plane tree">
+        [2] = <"under the north arch">
+        [3] = <"in a garden">
+    >
+
+    subjects = <
+        ["philosophy:plato"] = < -- note construction of key
+            name = <"philosophy">
+            teacher = <"plato">
+            topics = <"meta-physics", "natural science">
+            weighting = <76%>
+        >
+        ["philosophy:kant"] = <
+            name = <"philosophy">
+            teacher = <"kant">
+            topics = <"meaning and reason", "meta-physics", "ethics">
+            weighting = <80%>
+        >
+        ["art"] = <
+            name = <"art">
+            teacher = <"goya">
+            topics = <"technique", "portraiture", "satire">
+            weighting = <78%>
+        >
+    >
+>
+--------
+
+The example above conforms directly to the object-oriented type specification (given in a pascal-like syntax):
+
+[source, idl]
+--------
+class SCHEDULE
+    lesson_times: List<Time>
+    locations: List<String>
+    subjects: List<SUBJECT> -- or it could be Hash<SUBJECT>
+end
+
+class SUBJECT
+    name: String
+    teacher: String
+    topics: List<String>
+    weighting: Real
+end
+--------
+
+Other class specifications corresponding to the same data are possible, but will all be isomorphic to the above.
+
+How key values relate to a particular object structure depends on the object model being used during the ODIN parsing process. It is possible to write a parser which makes reasonable inferences from an information model whose instances are represented as ODIN text; it is also possible to include explicit typing information in the ODIN itself (see section <<Adding Type Information>> below).
+
+The validity rule for objects within a container attribute is as follows:
+
+[.rule]
+VDOBU: object identifier uniqueness: sibling objects occurring within a container attribute must be uniquely identified with respect to each other.
+
+Paths through container objects are formed in the same way as paths in other structured data, with the addition of the key, to ensure uniqueness. The key is included syntactically enclosed in brackets, in a similar way to Xpath predicates. Paths through containers in the above example include the following:
+
+[source, odin]
+--------
+/school_schedule/locations[1]                   -- path to "under the big..."
+/school_schedule/subjects["philosophy:kant"]    -- path to "kant"
+--------
+
+== Nested Container Objects
+
+In some cases the data of interest are instances of nested container types, such as `List<List<Message>>` (a list of Message lists) or `Hash<List<Integer>, String>` (a hash of integer lists keyed by strings). The ODIN syntax for such structures follows directly from the syntax for a single container object. The following example shows an instance of the type `List<List<String>>` expressed in ODIN syntax.
+
+[source, odin]
+--------
+list_of_string_lists = <
+    [1] = <
+        [1] = <"first string in first list">
+        [2] = <"second string in first list">
+    >
+    [2] = <
+        [1] = <"first string in second list">
+        [2] = <"second string in second list">
+        [3] = <"third string in second list">
+    >
+    [3] = <
+        [1] = <"only string in third list">
+    >
+>
+--------
+
+The paths of the above example are as follows:
+
+[source, odin]
+--------
+/list_of_string_lists[1]/[1]
+/list_of_string_lists[1]/[2]
+/list_of_string_lists[2]/[1]
+etc
+--------
+
+== Adding Type Information
+
+In many cases, ODIN data is of a simple structure, very regular, and highly repetitive, such as the expression of simple demographic data. In such cases, it is preferable to express as little as possible about the information model on which the data are based, since various software components want to use the data, and use it in different ways. However, there are also cases where the data is highly complex, and more model information is needed to help a parser. Examples include large design databases for aircraft and health records. Data obeying more complex models typically include sub-objects that are of a subtype of the statically declared type in the information model, in other words, dynamically bound types.
+
+Where dynamic binding occurs in the data, it must be indicated in an ODIN document. Typing information is added to using a syntactical addition inspired by the `(type)` casting operator of the C language, whose meaning is approximately: force the type of the result of the following expression to be `type`. In ODIN typing is therefore done by including the type name in parentheses after the '=' sign, as in the following example.
+
+[source, odin]
+--------
+destinations = <
+    ["seville"] = (TOURIST_DESTINATION) <
+        profile = (DESTINATION_PROFILE) <...>
+        hotels = <
+            ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+            ["sofitel"] = (LUXURY_HOTEL) <...>
+            ["hotel real"] = (PENSION) <...>
+        >
+        attractions = <
+            ["la corrida"] = (SPORT_VENUE) <...>
+            ["Alcázar"] = (HISTORIC_SITE) <...>
+        >
+    >
+>
+--------
+
+The path set from the above example is as follows:
+
+[source, odin]
+--------
+/destinations["seville"]/hotels["gran sevilla"]
+/destinations["seville"]/hotels["sofitel"]
+/destinations["seville"]/hotels["hotel real"]
+
+/bookings["seville:0134"]/customer_id
+/bookings["seville:0134"]/period
+/bookings["seville:0134"]/hotel
+
+/hotels["sofitel"]
+/hotels["hotel real"]
+/hotels["gran sevilla"]
+--------
+
+In the above, no type identifiers are included after the `hotels` and `attractions` attributes, so it is assumed by the parser that they are of their statically declared type, typically something like `List<HOTEL>` and `List<ATTRACTION>` respectively. Nevertheless, complete typing information can be included, as follows.
+
+[source, odin]
+--------
+hotels = (List<HOTEL>) <
+    ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+>
+--------
+
+This illustrates the use of generic, i.e. template types, expressed in the standard UML syntax, using angle brackets. Any number of template arguments and any level of nesting is allowed, as in the UML. At first view, there may appear to be a risk of confusion between template type '<>' delimiters and the standard ODIN block delimiters. However the parsing rules are easy to state; essentially the difference is that an ODIN data block is always preceded by an '=' symbol.
+
+Type identifiers can also include namespace information, which is necessary when same-named types appear in different packages of a model. Namespaces are included by prepending package names, separated by the '.' character, in the same way as in most programming languages, as in the qualified type names `org.openehr.rm.ehr.content.ENTRY` and `Core.Abstractions.Relationships.Relationship`.
+

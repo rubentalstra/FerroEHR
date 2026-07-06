@@ -1,0 +1,5 @@
+:spec_title: Data Structures Information Model
+:copyright_year: 2003
+:spec_status: STABLE
+:keywords: EHR, data structures, reference model, openehr
+:description: openEHR Data Structures Information Model specification

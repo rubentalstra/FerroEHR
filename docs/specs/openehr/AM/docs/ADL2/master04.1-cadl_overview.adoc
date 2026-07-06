@@ -1,0 +1,83 @@
+= cADL - Constraint ADL
+== Overview
+
+cADL is a block-structured syntax which enables constraints on data defined by object-oriented information models to be expressed in archetypes or other knowledge definition formalisms. It is most useful for defining the specific allowable configurations of data whose instances conform to very general object models. The general appearance of cADL is illustrated by the following example:
+
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    PERSON[at0000] matches {                             -- constraint on a PERSON instance
+        name matches {                                   -- constraint on PERSON.name
+            TEXT[at0001] matches {/.+/}                  -- any non-empty string
+        }
+        addresses cardinality matches {1..*} matches {   -- constraint on
+            ADDRESS[at0002] matches {                    -- PERSON.addresses
+                -- etc --
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    PERSON[id1] matches {                                -- constraint on a PERSON instance
+        name matches {                                   -- constraint on PERSON.name
+            TEXT[id2] matches {/.+/}                     -- any non-empty string
+        }
+        addresses cardinality matches {1..*} matches {   -- constraint on
+            ADDRESS[id3] matches {                       -- PERSON.addresses
+                -- etc --
+            }
+        }
+    }
+--------
+====
+
+Some of the textual keywords in this example can be more efficiently rendered using common mathematical logic symbols. In the following example, the `matches` keyword have been replaced by an equivalent symbol:
+
+[tabs,sync-group-id=adl-example]
+
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    PERSON[at0000] ∈ {                            -- constraint on a PERSON instance
+        name ∈ {                                  -- constraint on PERSON.name
+            TEXT[at0001] ∈ {/..*/}                -- any non-empty string
+        }
+        addresses cardinality ∈ {1..*} ∈ {        -- constraint on
+            ADDRESS[at0002] ∈ {                   -- PERSON.addresses
+                -- etc --
+            }
+        }
+    }
+--------
+id-coded ADL2::
++
+[source, cadl]
+--------
+    PERSON[id1] ∈ {                            -- constraint on a PERSON instance
+        name ∈ {                               -- constraint on PERSON.name
+            TEXT[id2] ∈ {/..*/}                -- any non-empty string
+        }
+        addresses cardinality ∈ {1..*} ∈ {     -- constraint on
+            ADDRESS[id3] ∈ {                   -- PERSON.addresses
+                -- etc --
+            }
+        }
+    }
+--------
+====
+
+
+
+The full set of equivalences appears below. Raw cADL is persisted in the text-based form, to remove any difficulties when authoring cADL text in normal text editors, and to aid reading in English. However, the symbolic form might be more widely used for display purposes and in more sophisticated tools, as it is more succinct and less language-dependent. The use of symbols or text is completely a matter of taste, and no meaning whatsoever is lost by completely ignoring one or other format according to one's personal preference. This document uses both conventions.
+
+In the standard cADL documented in this section, literal leaf values (such as the regular expression `/.+/` in the above example) are always constraints on a set of 'standard' widely-accepted primitive types, as described in the {openehr_odin}[openEHR ODIN syntax specification^].

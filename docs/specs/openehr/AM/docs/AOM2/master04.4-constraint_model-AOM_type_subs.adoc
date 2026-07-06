@@ -1,0 +1,22 @@
+== AOM Type Substitutions
+
+The `C_OBJECT` types defined in <<_object_node_types>> are reproduced below, with concrete types that may actually occur in archetypes shown in dark yellow / non-italic.
+
+[.text-center]
+.C_Object Substitutions
+image::{diagrams_uri}/c_object_substitutions.svg[id=c_object_substitutions, align="center"]
+
+Within a specialised archetype, nodes that redefine corresponding nodes in the parent are normally of the same `C_OBJECT` type (we can think of this as a 'meta-type', since the RM type is the 'type' in the information model sense), but in some cases may also be of different `C_OBJECT` types.
+
+The rules for meta-type redefinition are as follows:
+
+* A node of each meta-type can be redefined by a node of the same meta-type, with narrowed / added constraints;
+* `ARCHETYPE_SLOT` can be redefined by:
+** one or more `C_ARCHETYPE_ROOT` nodes taken together, considered to define a 'filled' version of the slot;
+** an `ARCHETYPE_SLOT` , in order to close the slot.
+* A `C_ARCHETYPE_ROOT` node can be redefined by:
+** A `C_ARCHETYPE_ROOT` , where the archetype_ref of the redefining node is a specialisation of that mentioned in the parent node.
+* A 'terminal' `C_COMPLEX_OBJECT` node containing no constraint other than RM type, `_node_id_` and possibly occurrences (i.e. having no substructure), can be redefined by a constraint of any other AOM type other than `C_PRMITIVE_OBJECT`.
+
+The 'terminal' `C_COMPLEX_OBJECT` can be understood as a placeholder node primarily defined for the purpose of stating RM type and meaning (at-code/id-code).
+

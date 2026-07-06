@@ -1,0 +1,78 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/short_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+The work reported in this paper has been funded in by the following organisations:
+
+* University College London - Centre for Health Informatics and Multi-professional Education (CHIME);
+* Ocean Informatics.
+
+Special thanks to David Ingram, Emeritus Professor of Health Informatics at UCL who provided a vision and collegial working environment ever since the days of GEHR (1992).
+
+=== Trademarks
+
+* 'openEHR' is a trademark of the openEHR Foundation
+* 'Java' is a registered trademark of Oracle Corporation
+* 'Microsoft' and '.Net' are trademarks of the Microsoft Corporation
+
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-aims.adoc[leveloffset=+1]
+include::master04-design_principles.adoc[leveloffset=+1]
+include::master05-package_structure.adoc[leveloffset=+1]
+include::master06-design_of_the_ehr.adoc[leveloffset=+1]
+include::master07-security.adoc[leveloffset=+1]
+include::master08-versioning.adoc[leveloffset=+1]
+include::master09-identification.adoc[leveloffset=+1]
+include::master10-archetypes.adoc[leveloffset=+1]
+include::master11-paths.adoc[leveloffset=+1]
+include::master12-terminology.adoc[leveloffset=+1]
+include::master13-deployment.adoc[leveloffset=+1]
+include::master14-integration.adoc[leveloffset=+1]
+include::master15-standards.adoc[leveloffset=+1]
+include::master16-implementation.adoc[leveloffset=+1]
+
+
+//
+// --------------------------------------------- Amendment Record -----------------------------------------------
+//
+:sectnums!:
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:sectnums!:
+== References
+
+bibliography::[]

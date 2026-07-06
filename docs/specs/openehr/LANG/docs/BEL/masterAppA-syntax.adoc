@@ -1,0 +1,9 @@
+[appendix]
+= Syntax Specification
+
+The grammar and lexical specification for the standard Expression syntax is shown below in ANTLR4 form.
+ 
+[source, antlr-java]
+--------
+include::{openehr_adl_antlr_include}/adl/base_expressions.g4[]
+--------

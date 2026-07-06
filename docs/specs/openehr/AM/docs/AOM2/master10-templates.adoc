@@ -1,0 +1,91 @@
+= Templates
+
+== Overview
+
+Within the Archetype formalism, a template is used to aggregate and refine archetypes, to produce a structure corresponding to a particular data set. Templates thus provide a way to use archetypes for specific purposes, while the archetypes contain _possible_ data items, not linked to specific purposes. See the {openehr_am_adl2}#_templates[ADL2 specification, Templates section^] for a detailed description of template semantics.
+
+Templates are formally defined as specialised archetypes, via the `TEMPLATE` and `TEMPLATE_OVERLAY` classes shown in <<archetype_package>>. This means that all the formal characteristics of a template are defined by the openEHR Archetype Object Model (AOM) and Archetype Definition Language (ADL) specifications apply to templates. This includes the meta-data (inherited from the `AUTHORED_RESOURCE` class), specialisation semantics (templates can be specialised into other templates), `terminology` section (allowing multi-lingual local term definitions and external terminology bindings) as well as the `rules` and `annotations` sections.
+
+Since a template is a specialised archetype, it cannot change the semantics of archetypes it specialises, and it consequently obeys the same rules as any other specialised archetype. Accordingly, all data created due to the use of templates are guaranteed to conform to the referenced archetypes, as well as the underlying reference model.
+
+However, the mode of use of the AOM and ADL in a template is slightly different from the typical archetype. Firstly, the following features are commonly used in templates but not generally in archetypes:
+
+* slot-filling - achieved by specialisation, as described in the {openehr_am_adl2}#_slot_filling_and_redefinition[ADL2 specification^];
+* specifying `{0..0}` constraints to remove elements not needed from the referenced archetypes;
+* specifying `{1..1}` constraints to mandate elements from the referenced archetypes;
+* setting default values;
+* addition of terminology bindings to specific terminology ref-sets.
+
+Secondly, specialisation in templates is usually only of existing nodes defined in the flat parent, i.e. no new nodes are added. If new data nodes are required in the template context, appropriate specialised archetypes should be created to define them, prior to use in the final template.
+
+These variations are not formally required by the ADL/AOM formalism, but are intended to be realised instead by tooling that recognises archetypes and templates via the leading ADL keyword (ADL files) or serialisation type marker (other serialisation types). This approach simplifies life for tool builders, since a single standardised compiler will always compile any archetype or template.
+
+Because a template generally refers to a number of archetypes due to slot-filling - i.e. the root archetype plus component archetypes mentioned as slot-fillers - and also usually defines further constraints on the root and component archetypes, the referenced entities end up being of three types:
+
+* a published archetype, used as is;
+* a published template, used as is;
+* a private template-local template overlay.
+
+The first two of these are explicitly identified and published artefacts, and can usually be obtained as files in any of the available serialisation syntaxes. The template overlay is somewhat like the 'private' or anonymous class definition available in some programming languages, and is obtainable either as a separate file associated with the root template, or within the template source file.
+
+== An Example
+
+In order to better explain the template artefact structure, an example is described below. Assume the logical structure required is as shown below. This shows three archetypes of specific RM types, that should be chained together by slot-filling at specific paths, to form a final template. The template also adds further constraints via overlays.
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded archetypes structure::
++
+* `org.openehr::openEHR-EHR-COMPOSITION.encounter_report.v1 / content[at0004]`
+** `org.openehr::openEHR-EHR-SECTION.vital_signs_headings.v1 / items [at0001]`
+*** `org.openehr::openEHR-EHR-EVALUATION.problem_description.v1`
+
+id-coded archetypes structure::
++
+* `org.openehr::openEHR-EHR-COMPOSITION.encounter_report.v1 / content[id5]`
+** `org.openehr::openEHR-EHR-SECTION.vital_signs_headings.v1 / items [id2]`
+*** `org.openehr::openEHR-EHR-EVALUATION.problem_description.v1`
+====
+
+The actual template structure needed to achieve this is shown below. The archetype `org.openehr::openEHR-EHR-COMPOSITION.encounter_report.v1` is shown at the top right. This is templated (i.e. specialised) by the template `uk.nhs.clinical::openEHR-EHR-COMPOSITION.t_encounter_report.v1` at the top left. The template performs the job of filling the `at0004` (`id5`) slot in the root archetype by specialising the slot. The specialised version adds a filler object (designated with the `C_ARCHETYPE_ROOT` instance) and also overrides the original `ARCHETYPE_SLOT` instance to close the slot to any further filling, either by further templating or at runtime.
+
+[.text-center]
+.Template source structure example
+image::{uml_diagrams_uri}/AM-template_example_1.svg[id=AOM-template_example_1, align="center"]
+
+The filler object specifies in its `_archetype_ref_` attribute the artefact being used to fill the slot (shown on the diagram as an ellipsis, for brevity). Here it is not simply the archetype `org.openehr::openEHR-EHR-SECTION.vital_signs_headings.v1`, but a specialised form of this archetype, defined as a local template overlay, whose identifier is `uk.nhs.clinical::openEHR-EHR-SECTION.t_encounter_report-vital_signs_headings-0001.v1`.
+
+The same kind of redefinition occurs within this `SECTION` template overlay. The `at0006` (`id7`) slot node from the original archetype (`org.openehr::openEHR-EHR-SECTION.vital_signs_headings.v1`) is redefined by the `C_ARCHETYPE_ROOT` node in the template overlay. The overlay would normally add other constraints of its own - typically removing unwanted items and mandating other items from the specialisation parent archetypes - not shown here.
+
+The source template is thus constructed of two artefacts, namely:
+
+* the 'template', i.e. the template root;
+* an internal 'template overlay' component.
+
+These are connected together in the flattening operation as part of Operational Template generation; at that point, the `C_COMPLEX_OBJECT` root node of the template overlay (lower left) is overlaid on the `at0004.1` (`id5.1`) `C_ARCHETYPE_ROOT` node of the template, forming a single large archetype structure.
+
+It is not always the case that the components of a template must be internal. Within the template environment, lower level reference model classes may be templated in their own right, and such templates simply reused in the new template being constructed. In this case, the outer template may contain both its own internal template components, and other templates.
+
+== Template Identifiers
+
+Templates are identified using normal ADL multi-axial identifiers and GUIDs, just as for archetypes. However, to make them easier for tools and humans to see, some simple conventions are suggested for the concept part of the identifier, as follows.
+
+* `template`: use a concept identifier based on the archetype prepended with `t_`;
+* `template_overlay`: use a concept identifier consisting of the concatenation of:
+** the root template identifier (including the '`t_`');
+** the concept identifier of the specialisation parent archetype of the overlay;
+** a final `_N`, where 'N' is an integer.
+
+The following are examples.
+
+[source, adl]
+--------
+uk.nhs.clinical::openEHR-EHR-COMPOSITION.t_encounter_report.v1.0.0  -- root template
+
+uk.nhs.clinical::openEHR-EHR-EVALUATION.t_encounter_report-problem_description_1.v1.0.0   -- overlay
+uk.nhs.clinical::openEHR-EHR-EVALUATION.t_encounter_report-medications_2.v1.0.0           -- overlay
+uk.nhs.clinical::openEHR-EHR-EVALUATION.t_encounter_report-care_plan_3.v1.0.0             -- overlay
+--------
+
+This approach defines a short concept identifier which obeys the formal rule that concept identifiers   must be unique within a namespace and RM type, is human-readable, and most importantly, is tool-generatable.
+

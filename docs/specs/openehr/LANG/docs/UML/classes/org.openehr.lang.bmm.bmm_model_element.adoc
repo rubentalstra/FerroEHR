@@ -1,0 +1,21 @@
+=== BMM_MODEL_ELEMENT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__BMM_MODEL_ELEMENT (abstract)__*
+
+h|*Description*
+2+a|Ancestor class of most BMM model elements.
+
+h|*Inherit*
+2+|`<<_bmm_definitions_class,BMM_DEFINITIONS>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*documentation*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional documentation of this element.
+|===

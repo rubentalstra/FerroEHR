@@ -1,0 +1,26 @@
+title: TemplateMetadata
+description:
+  Uploaded TEMPLATE meta information.
+required:
+  - template_id
+  - concept
+  - archetype_id
+  - created_timestamp
+type: object
+properties:
+  template_id:
+    type: string
+  version:
+    type: string
+  concept:
+    type: string
+  archetype_id:
+    type: string
+  created_timestamp:
+    type: string
+example:
+  template_id: "openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0"
+  version: "1.0.1"
+  concept: "Vital Signs"
+  archetype_id: "openEHR-EHR-COMPOSITION.encounter.v1"
+  created_timestamp: '2017-08-14T19:24:56.639Z'

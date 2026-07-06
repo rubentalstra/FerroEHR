@@ -1,0 +1,6 @@
+description: |
+  `200 OK` is returned when the requested REVISION_HISTORY is successfully retrieved.
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/common/RevisionHistory.yaml

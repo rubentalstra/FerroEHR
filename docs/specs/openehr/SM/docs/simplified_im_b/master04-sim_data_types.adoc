@@ -1,0 +1,242 @@
+= SIM-B Data types Package
+
+== Overview
+
+The following UML diagram shows the SIM `rm.data_types` package defining `S_XXX` types corresponding to the RM `rm.data_types` package types.
+
+[.text-center]
+.`sm.simplified_im_b.rm.data_types` package
+image::{uml_diagrams_uri}/SM-simplified_im_b.rm.data_types.svg[id=sm_simplified_im_b_rm_data_types, align="center"]
+
+== Serial Formats
+
+=== S_DV_TEXT
+
+The following shows the SDT serial formats for an `S_DV_TEXT` instance:
+
+==== Path structure + terse value form
+
+[source,json]
+----
+{
+    "a/b/c/d": "anxiety"
+}
+----
+
+==== Path structure + regular value form
+
+[source,json]
+----
+{
+    "a/b/c/d|value": "anxiety"
+}
+----
+
+==== Regular structure + regular value form
+
+[.tbd]
+TBD: are the inner attributes supposed to have bars or not, i.e. "|value" etc?
+
+[source,json]
+----
+{
+    "a" : {
+        "b" : {
+            "c": {
+                "d" : {
+                    "|value": "anxiety"
+                }
+            }
+        }
+    }
+}
+----
+
+==== Regular structure + terse value form
+
+[source,json]
+----
+{
+    "a" : {
+        "b" : {
+            "c": {
+                "d" : "anxiety"
+            }
+        }
+    }
+}
+----
+
+=== S_DV_CODED_TEXT
+
+The following shows the SDT serial formats for an `S_DV_CODED_TEXT` instance:
+
+==== Path structure + terse value form
+
+[source,json]
+----
+{
+    "a/b/c/d": "snomed_ct::48694002|anxiety|"
+}
+----
+
+==== Path structure + regular value form
+
+[source,json]
+----
+{
+    "a/b/c/d|terminology": "snomed_ct",
+    "a/b/c/d|code": "48694002",
+    "a/b/c/d|value": "anxiety"
+}
+----
+
+==== Regular structure + regular value form
+
+[.tbd]
+TBD: are the inner attributes supposed to have bars or not, i.e. "|terminology" etc?
+
+[source,json]
+----
+{
+    "a" : {
+        "b" : {
+            "c": {
+                "d" : {
+                    "|terminology": "snomed_ct",
+                    "|code": "48694002",
+                    "|value": "anxiety"
+                }
+            }
+        }
+    }
+}
+----
+
+==== Regular structure + terse value form
+
+[source,json]
+----
+{
+    "a" : {
+        "b" : {
+            "c": {
+                "d" : "snomed_ct::48694002|anxiety|"
+            }
+        }
+    }
+}
+----
+
+
+=== S_DV_QUANTITY
+
+The following shows the SDT serial formats for an `S_DV_QUANTITY` instance:
+
+==== Path structure + terse value form
+
+[source,json]
+----
+{
+    "a/b/c/d": "125 mm[Hg]"
+}
+----
+
+==== Path structure + regular value form
+
+[source,json]
+----
+{
+    "a/b/c/d|magnitude": 125,
+    "a/b/c/d|units":    "mm[Hg]",
+    "a/b/c/d|xx":       "xx_val", -- other DvQ fields
+    "a/b/c/d|yy":       "yy_val"
+}
+----
+
+==== Regular structure + regular value form
+
+[.tbd]
+TBD: are the inner attributes supposed to have bars or not, i.e. "|magnitude" etc?
+
+[source,json]
+----
+{
+    "a" : {
+        "b" : {
+            "c": {
+                "d" : {
+                    "magnitude": 125,
+                    "units":     "mm[Hg]",
+                    "xx":        "xx_val",
+                    "yy":        "yy_val"
+                }
+            }
+        }
+    }
+}
+----
+
+==== Regular structure + terse value form
+
+[source,json]
+----
+{
+    "a" : {
+        "b" : {
+            "c": {
+                "d" : "125 mm[Hg]"
+            }
+        }
+    }
+}
+----
+
+=== S_DV_PARSABLE
+
+The following shows the SDT serial formats for an `S_DV_PARSABLE` instance:
+
+==== Path structure + regular value form
+
+[source,json]
+----
+{
+    "a/b/c/d|formalism": "markdown",
+    "a/b/c/d|value":     "This is some markdown https://somwehere.org[linked text]"
+}
+----
+
+==== Regular structure + regular value form
+
+[source,json]
+----
+{
+    "a" : {
+        "b" : {
+            "c": {
+                "d" : {
+                    "formalism": "markdown",
+                    "value":     "This is some markdown https://somwehere.org[linked text]"
+                }
+            }
+        }
+    }
+}
+----
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/s_data_value.adoc[]
+include::{uml_export_dir}/classes/s_dv_identifier.adoc[]
+
+include::{uml_export_dir}/classes/s_dv_text.adoc[]
+include::{uml_export_dir}/classes/s_dv_coded_text.adoc[]
+include::{uml_export_dir}/classes/s_code_phrase.adoc[]
+
+include::{uml_export_dir}/classes/s_dv_parsable.adoc[]
+
+include::{uml_export_dir}/classes/s_dv_quantity.adoc[]
+include::{uml_export_dir}/classes/s_dv_count.adoc[]
+include::{uml_export_dir}/classes/s_dv_proportion.adoc[]
+include::{uml_export_dir}/classes/s_dv_ordinal.adoc[]
+

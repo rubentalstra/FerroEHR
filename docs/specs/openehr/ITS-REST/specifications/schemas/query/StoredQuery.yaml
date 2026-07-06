@@ -1,0 +1,31 @@
+title: StoredQuery
+description: |
+  Stored Query content meta information.
+required:
+  - name
+  - type
+  - version
+  - saved
+  - q
+type: object
+properties:
+  name:
+    $ref: ./QueryName.yaml
+  type:
+    $ref: ./QueryType.yaml
+  version:
+    $ref: ./QueryVersion.yaml
+  saved:
+    type: string
+    format: date-time
+  q:
+    $ref: ./AQL.yaml
+example:
+  name: "org.openehr::compositions"
+  type: "aql"
+  version: "1.0.1"
+  saved: '2017-07-16T19:20:30.450+01:00'
+  q:
+    SELECT c 
+      FROM EHR e[ehr_id/value=$ehr_id] CONTAINS COMPOSITION c[$compositionid] 
+    WHERE c/name/value = 'Vitals'

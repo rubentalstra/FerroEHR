@@ -1,0 +1,30 @@
+= Preface
+
+== Purpose
+
+This document describes the Basic Meta-Model (BMM), a model of object models. It may be considered as an approximate replacement for the UML XMI. It is human-readable and writable, and supports generic types (open and closed), container types, and multiple inheritance.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_bmm}[{openehr_bmm}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_lang_forum}[openEHR languages specifications forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== History
+
+The Basic Meta-Model originated in the openEHR BASE component, where it was published up to and including {openehr_base_release_104}/bmm.html[BASE Release 1.0.4^]. With the establishment of the openEHR LANG (Generic Languages) component, the BMM specification was migrated to LANG, which is now its normative home. This document describes the stable v2.x form of BMM, i.e. the form implemented by current openEHR tooling such as Archie.
+
+Continued development of the meta-model, extending it with an expression and statement meta-model together with richer feature and signature metadata, is carried out separately and is documented in the {openehr_bmm3}[BMM v3 specification^]. The v2.x form described here remains the normative, tool-implemented version.
+
+The P_BMM persistence model, which defines the serialised schema form of a BMM model together with its {openehr_odin}[ODIN^] syntax, is specified separately in the {openehr_bmm_persistence}[BMM Persistence specification^].
+

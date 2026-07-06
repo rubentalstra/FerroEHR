@@ -1,0 +1,102 @@
+= Basics
+
+== File Encoding
+
+ODIN files are intended to be capable of accommodating characters from any language, and may be used for multiple languages at once, e.g. as translation files for software. Accordingly, the assumed encoding for an ODIN file is UTF-8 unicode.
+
+ODIN files encoded in latin 1 (ISO-8859-1) or another variant of ISO-8859 - both containing accented characters with unicode codes outside the ASCII 0-127 range - may work perfectly well, for various reasons:
+
+* the contain nothing but ASCII, i.e. unicode code-points 0 - 127; this will be the case in English-language authored archetypes containing no foreign words;
+* some layer of the operating system is smart enough to do an on-the-fly conversion of characters above 127 into UTF-8, even if the archetype tool being used is designed for pure UTF-8 only;
+* a tool using the ODIN file might support UTF-8 and ISO-8859 variants.
+
+For situations where binary UTF-8 cannot be supported, ASCII encoding of unicode characters above code-point 127 should only be done using the system supported by many programming languages today, namely `\u` escaped UTF-16. In this system, unicode codepoints are mapped to either:
+
+* `\uHHHH` - 4 hex digits which will be the same (possibly 0-filled on the left) as the unicode code-point number expressed in hexadecimal; this applies to unicode codepoints in the range `U+0000` - `U+FFFF` (the 'base multi-lingual plane', BMP);
+* `\uHHHHHHHH` - 8 hex digits to encode unicode code-points in the range U+10000 through `U+10FFFF` (non-BMP planes); the algorithm is described in {rfc2781}[IETF RFC 2781].
+
+It is not expected that the above approach will be commonly needed, and it may not be needed at all; it is preferable to find ways to ensure that native UTF-8 can be supported, since this reduces the burden for ODIN parser and tool implementers. The above guidance is therefore provided only to ensure a standard approach is used for ASCII-encoded unicode, if it becomes unavoidable.
+
+Thus, while the only officially designated encoding for ODIN and its constituent syntaxes is UTF-8, real software systems may be more tolerant. This document therefore specifies that any tool designed to process ODIN files need only support UTF-8; supporting other encodings is an optional extra. This could change in the future, if required by the ODIN user community.
+
+URIs, which have their own data type in ODIN, are handled in a specific way: all characters outside the 'unreserved set' defined by {rfc3986}[IETF RFC 3986] are 'percent-encoded'. The unreserved set is:
+
+[source, antlr-java]
+--------
+unreserved : ALPHA | DIGIT | '-' | '.' | '_' | '~' ;
+
+ALPHA : [a-zA-Z] ;
+DIGIT : [0-9] ;
+--------
+
+== Special Character Sequences
+
+In string and character data values, characters not in the lower ASCII (0-127) range should normally be UTF-8 encoded, but with the option of using the following quoted forms customary in software development:
+
+* `\r` - carriage return
+* `\n` - linefeed
+* `\t` - tab
+* `\\` - backslash
+* `\"` - literal double quote within a String terminal value
+* `\'` - literal single quote within a Character terminal value
+
+Any other character combination starting with a backslash is illegal; to get the effect of a literal backslash, the `\\` sequence should always be used.
+
+Typically in a normal string, including multi-line paragraphs as used in ODIN, only `\\` and `\"` are likely to be necessary, since all of the others can be accommodated in their literal forms; the same goes for single characters - only `\\` and `\'` are likely to commonly occur. However, some authors may prefer to use `\n` and `\t` to make intended formatting clearer, or to allow for text editors that do not react properly to such characters. Parsers should therefore support the above list.
+
+== Keywords
+
+ODIN has no keywords of its own: all identifiers are assumed to come from an information model.
+
+== Reserved Characters
+
+In ODIN, a small number of characters are reserved and have the following meanings:
+
+* `<`: open an object block;
+* `>`: close an object block;
+* `=`: indicate attribute value = object block;
+* `(`, `)`: type name or plug-in syntax type delimiters;
+* `<#`: open an object block expressed in a plug-in syntax;
+* `#>`: close an object block expressed in a plug-in syntax.
+
+Within <> delimiters, various characters are used as follows to indicate primitive values:
+
+* `"`: double quote characters are used to delimit string values;
+* `'`: single quote characters are used to delimit single character values;
+* `|`: bar characters are used to delimit intervals;
+* `[]`: brackets are used to delimit coded terms.
+
+== Comments
+
+In an ODIN text, comments are indicated by the characters "--". Multi-line comments are achieved using the "--" leader on each line where the comment continues.
+
+In this document, ODIN comments are shown in brown.
+
+== Information Model Identifiers
+
+Two types of identifiers from information models are used in ODIN: type names and attribute names. A *type name* is any identifier with an initial upper case letter, followed by any combination of letters, digits and underscores. A *generic type name* (including nested forms) additionally may include commas and angle brackets, and must be syntactically correct as per the UML. An *attribute name* is any identifier with an initial lower case letter, followed by any combination of letters, digits and underscores. Any convention that obeys this rule is allowed.
+
+At least two well-known conventions that are ubiquitous in information models obey the above rule. One of these is the following convention:
+
+* type names are in all uppercase, e.g. `PERSON` , except for 'built-in' types, such as primitive types (` Integer` , `String` , `Boolean` , `Real` , `Double` ) and assumed container types (`List<T>` , `Set<T>` , `Hash<T, U>` ), which are in mixed case, in order to provide easy differentiation of built-in types from constructed types defined in the reference model. Built-in types are the same types assumed by UML, OCL, IDL and other similar object-oriented formalisms.
+* attribute names are shown in all lowercase, e.g. `home_address` .
+* in both type names and attribute names, underscores are used to represent word breaks. This convention is used to maximise the readability of this document.
+
+The other common style is the programmer's mixed-case or "camel case" convention exemplified by `Person` and `homeAddress` , as long as they obey the rule above. The convention chosen for any particular ODIN document should be based on the convention used in the underlying information model. Identifiers are shown in green in this document.
+
+== Semi-colons
+
+Semi-colons can be used to separate ODIN blocks, for example when it is preferable to include multiple attribute/value pairs on one line. Semi-colons make no semantic difference at all, and are included only as a matter of taste. The following examples are equivalent:
+
+[source, odin]
+--------
+term = <text = <"plan">; description = <"The clinician's advice">>
+term = <text = <"plan"> description = <"The clinician's advice">>
+
+term = <
+    text = <"plan">
+    description = <"The clinician's advice">
+>
+--------
+
+Semi-colons are completely optional in ODIN.

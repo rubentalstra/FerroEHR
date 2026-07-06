@@ -1,0 +1,41 @@
+title: Tree
+required:
+  - id
+  - name
+  - localizedName
+  - rmType
+  - nodeId
+  - min
+  - max
+  - localizedNames
+  - localizedDescriptions
+  - aqlPath
+  - children
+type: object
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  localizedName:
+    type: string
+  rmType:
+    type: string
+  nodeId:
+    type: string
+  min:
+    type: integer
+    format: int32
+  max:
+    type: integer
+    format: int32
+  localizedNames:
+    $ref: ./LocalizedNames.yaml
+  localizedDescriptions:
+    $ref: ./LocalizedDescriptions.yaml
+  aqlPath:
+    type: string
+  children:
+    type: array
+    items:
+      $ref: ./Child.yaml

@@ -1,0 +1,14 @@
+=== VERSIONED_EHR_STATUS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*VERSIONED_EHR_STATUS*
+
+h|*Description*
+2+a|Version container for `EHR_STATUS` instance.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_versioned_object_class[VERSIONED_OBJECT^]`
+
+|===

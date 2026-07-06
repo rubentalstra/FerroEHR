@@ -1,0 +1,38 @@
+=== PARTY_IDENTIFIED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*PARTY_IDENTIFIED*
+
+h|*Description*
+2+a|Proxy data for an identified party other than the subject of the record, minimally consisting of human-readable identifier(s), such as name, formal (and possibly computable) identifiers such as NHS number, and an optional link to external data. There must be at least one of name, identifier or external_ref present.
+
+Used to describe parties where only identifiers may be known, and there is no entry at all in the demographic system (or even no demographic system). Typically for health care providers, e.g. name and provider number of an institution. 
+
+Should not be used to include patient identifying information.
+
+h|*Inherit*
+2+|`<<_party_proxy_class,PARTY_PROXY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional human-readable name (in String form).
+
+h|*0..1*
+|*identifiers*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/RM/{rm_release}/data_types.html#_dv_identifier_class[DV_IDENTIFIER^]>`
+a|One or more formal identifiers (possibly computable).
+
+h|*Invariants*
+2+a|__Basic_validity__: `name /= Void or identifiers /= Void or external_ref /= Void`
+
+h|
+2+a|__Name_valid__: `name /= Void implies not name.is_empty`
+
+h|
+2+a|__Identifiers_valid__: `identifiers /= Void implies not identifiers.is_empty`
+|===

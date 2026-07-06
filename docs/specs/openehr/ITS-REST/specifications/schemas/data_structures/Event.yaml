@@ -1,0 +1,18 @@
+title: EVENT
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+required:
+  - time
+  - data
+properties:
+  _type:
+    type: string
+    default: EVENT
+  time:
+    $ref: ../data_types/DvDateTime.yaml
+  state:
+    $ref: ../data_structures/UItemStructure.yaml
+  data:
+    $ref: ../data_structures/UItemStructure.yaml
+x-discriminator-value: EVENT

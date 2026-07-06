@@ -1,0 +1,32 @@
+= Overview
+
+== Design Concept
+
+The Serial Data Formats (SDF) define compact serialisations for:
+
+* the {openehr_foundation_types}[openEHR Foundation Types^] and 
+* the {openehr_rm_data_types}[openEHR RM Data types^].
+
+The intention is twofold:
+
+* to reduce the size and increase the human-readability of JSON-serialised openEHR data;
+* to make generation of openEHR data easier.
+
+The formats defined in this specification are mostly re-used from elsewhere in openEHR, and may be expected to be implemented in a standard library for each major implementation technology.
+
+
+== Variant forms and Rules for Mixing
+
+[.tbd]
+TBD: xxxx
+
+=== EhrScape Format
+
+[.tbd]
+TBD: xxxx
+
+
+== Parsing Model
+
+[.tbd]
+TBD: xxxx

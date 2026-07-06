@@ -1,0 +1,6 @@
+description: |
+  The `Location` response header indicates the URL of the directory FOLDER resource.
+schema:
+  type: string
+  format: url
+  example: 'https://openEHRSys.example.com/v1/ehr/7d44b88c-4199-4bad-97dc-d78268e01398/directory/8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1'

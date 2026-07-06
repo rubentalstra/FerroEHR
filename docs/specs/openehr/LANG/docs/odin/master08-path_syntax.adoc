@@ -1,0 +1,48 @@
+= Path Syntax
+
+== Semantics
+
+The general form of the path syntax is as follows (see syntax section below for full specification):
+
+[source, ebnf]
+--------
+path            =     ['/'] path_segment { '/' path_segment } ;
+path_segment    =     attr_name [ '[' object_id ']' ] ;
+--------
+
+Essentially, ODIN paths consist of segments separated by slashes ('/'), where each segment is an attribute name with optional object identifier predicate, indicated by brackets ('[]').
+
+ODIN Paths are formed from an alternation of segments made up of an attribute name and optional object node identifier predicate, separated by slash ('/') characters. Node identifiers are delimited by brackets (i.e. []).
+
+Paths are _absolute_ or relative with respect to the document in which they are mentioned. Absolute paths commence with an initial slash ('/') character.
+
+A typical ODIN path used to refer to a node in an ODIN text is as follows.
+
+[source, odin]
+--------
+/term_definitions["en"]/items["at0001"]/text
+--------
+
+In the following sections, paths are shown for all the ODIN data examples.
+
+== Relationship with W3C Xpath
+
+The ODIN path syntax is semantically a subset of the Xpath query language, with a few syntactic shortcuts to reduce the verbosity of the most common cases. Xpath differentiates between "children" and "attributes" sub-items of an object due to the difference in XML between Elements (true sub-objects) and Attributes (tag-embedded primitive values). In ODIN, as with any pure object formalism, there is no such distinction, and all sub-parts of any object are referenced in the manner of Xpath children; in particular, in the Xpath abbreviated syntax, the key `child::` does not need to be used.
+
+ODIN does not distinguish attributes from children, and also assumes the `node_id` attribute. Thus, the following expressions are legal for cADL structures:
+
+[source, odin]
+--------
+items[1]            -- the first member of 'items'
+items["systolic"]   -- the member of 'items' with meaning 'systolic'
+items["at0001"]     -- the member of 'items' with node id 'at0001'
+--------
+
+The Xpath equivalents are:
+
+[source, xpath]
+--------
+items[1]                                -- the first member of 'items'
+items[@key = 'systolic']                -- the member of 'items' with key "systolic"
+items[@archetype_node_id = 'at0001']    -- the member of 'items' with archetype_node_id attribute 'at0001'
+--------

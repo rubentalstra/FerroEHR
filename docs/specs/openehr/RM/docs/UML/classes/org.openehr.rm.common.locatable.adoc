@@ -1,0 +1,64 @@
+=== LOCATABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__LOCATABLE (abstract)__*
+
+h|*Description*
+2+a|Root class of all information model classes that can be archetyped. Most classes in the openEHR reference model inherit from the `LOCATABLE` class, which defines the idea of  locatability in an archetyped structure. `LOCATABLE` defines a runtime name and an `_archetype_node_id_`.
+
+h|*Inherit*
+2+|`<<_pathable_class,PATHABLE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/RM/{rm_release}/data_types.html#_dv_text_class[DV_TEXT^]`
+a|Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
+
+h|*1..1*
+|*archetype_node_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology. 
+
+At an archetype root point, the value of this attribute is always the stringified form of the `_archetype_id_` found in the `_archetype_details_` object.
+
+h|*0..1*
+|*uid*: `link:/releases/BASE/{base_release}/base_types.html#_uid_based_id_class[UID_BASED_ID^]`
+a|Optional globally unique object identifier for root points of archetyped structures.
+
+h|*0..1*
+|*links*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_link_class,LINK>>>`
+a|Links to other archetyped structures (data whose root object inherits from `ARCHETYPED`, such as `ENTRY`, `SECTION` and so on). Links may be to structures in other compositions.
+
+h|*0..1*
+|*archetype_details*: `<<_archetyped_class,ARCHETYPED>>`
+a|Details of archetyping used on this node.
+
+h|*0..1*
+|*feeder_audit*: `<<_feeder_audit_class,FEEDER_AUDIT>>`
+a|Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*concept* (): `link:/releases/RM/{rm_release}/data_types.html#_dv_text_class[DV_TEXT^]`
+a|Clinical concept of the archetype as a whole (= derived from the archetype_node_id' of the root node)
+
+h|*1..1*
+|*is_archetype_root* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if this node is the root of an archetyped structure.
+
+h|*Invariants*
+2+a|__Links_valid__: `links /= Void implies not links.is_empty`
+
+h|
+2+a|__Archetyped_valid__: `is_archetype_root xor archetype_details = Void`
+
+h|
+2+a|__Archetype_node_id_valid__: `not archetype_node_id.is_empty`
+|===

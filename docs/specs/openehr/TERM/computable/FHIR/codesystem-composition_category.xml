@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-composition_category"/>
+  <version value="3.1.0"/>
+  <name value="composition_category"/>
+  <title value="Composition Category"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="4"/>
+  <concept>
+    <code value="431"/>
+    <display value="persistent"/>
+    <designation>
+      <language value="es"/>
+      <value value="persistente"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="永続"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="persistente"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="持久类"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="451"/>
+    <display value="episodic"/>
+    <designation>
+      <language value="es"/>
+      <value value="episódico"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="一時的"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="episódico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="偶发类"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="433"/>
+    <display value="event"/>
+    <designation>
+      <language value="es"/>
+      <value value="evento"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="イベント"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="evento"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="事件类"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="815"/>
+    <display value="report"/>
+    <designation>
+      <language value="es"/>
+      <value value="informe"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="*report(en)"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="relatório"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="报告类"/>
+    </designation>
+  </concept>
+</CodeSystem>

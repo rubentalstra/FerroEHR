@@ -1,0 +1,42 @@
+operationId: definition_template_adl2_upload
+summary: Upload a template
+description: |
+  Upload a new ADL2 operational template.
+tags:
+  - ADL2
+parameters:
+  - $ref: ../parameters/query/at_version.yaml
+  - $ref: ../parameters/header/Prefer.yaml
+requestBody:
+  description: ''
+  content:
+    text/plain:
+      schema:
+        oneOf:
+          - $ref: ../schemas/aom/OperationalTemplateV2.yaml
+          - type: string
+      example: |-
+        operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)
+            openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+
+        specialize
+            openEHR-EHR-COMPOSITION.discharge.v1
+
+        language
+            original_language = <[ISO_639-1::en]>
+
+        description
+            lifecycle_state = <"unmanaged">
+            original_author = <
+                ["name"] = <"Ian McNicoll">
+                ["organisation"] = <"openEHR Foundation">
+                ["email"] = <"ian.mcnicoll@openehr.org">
+        ...
+  required: true
+responses:
+  '201':
+    $ref: ../responses/201_Template_adl2_upload.yaml
+  '400':
+    $ref: ../responses/400_invalid_template_content.yaml
+  '409':
+    $ref: ../responses/409_template_already_exists.yaml

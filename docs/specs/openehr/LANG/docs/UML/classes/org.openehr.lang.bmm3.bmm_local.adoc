@@ -1,0 +1,14 @@
+=== BMM_LOCAL Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_LOCAL*
+
+h|*Description*
+2+a|A routine local variable (writable).
+
+h|*Inherit*
+2+|`<<_bmm_writable_variable_class,BMM_WRITABLE_VARIABLE>>`
+
+|===

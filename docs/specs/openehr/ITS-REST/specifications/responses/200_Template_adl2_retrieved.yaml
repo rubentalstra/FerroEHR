@@ -1,0 +1,26 @@
+description: |
+  `200 OK` is returned when the template is successfully retrieved.
+content:
+  text/plain:
+    schema:
+      oneOf:
+        - $ref: ../schemas/aom/OperationalTemplateV2.yaml
+        - type: string
+    example: >-
+      operational_template (adl_version=2.0.6; rm_release=1.0.2;
+      generated)
+          openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0
+      
+      specialize
+          openEHR-EHR-COMPOSITION.discharge.v1
+      
+      language
+          original_language = <[ISO_639-1::en]>
+      
+      description
+          lifecycle_state = <"unmanaged">
+          original_author = <
+              ["name"] = <"Ian McNicoll">
+              ["organisation"] = <"openEHR Foundation">
+              ["email"] = <"ian.mcnicoll@openehr.org">
+      ...

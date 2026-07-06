@@ -1,0 +1,13 @@
+title: EVALUATION
+type: object
+allOf:
+  - $ref: ../ehr/CareEntry.yaml
+required:
+  - data
+properties:
+  _type:
+    type: string
+    default: EVALUATION
+  data:
+    $ref: ../data_structures/UItemStructure.yaml
+x-discriminator-value: EVALUATION

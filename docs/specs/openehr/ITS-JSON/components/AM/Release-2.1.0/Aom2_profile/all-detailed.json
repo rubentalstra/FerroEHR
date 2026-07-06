@@ -1,0 +1,219 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2_profile/all-detailed.json",
+    "title": "Aom2_profile IM definitions",
+    "$comments": "Part of AM component, Release-2.1.0 version.",
+    "definitions": {
+        "AOM_PROFILE": {
+            "title": "AOM_PROFILE",
+            "description": "Profile of common settings relating to use of reference model(s) and terminology for a given archetype developing organisation.",
+            "$comments": "Defined in Aom2_profile IM",
+            "type": "object",
+            "properties": {
+                "aom_rm_type_substitutions": {
+                    "description": "Allowed type substitutions: Actual RM type names keyed by AOM built-in types which can subsitute for them in an archetype. E.g. <value = \"String\", key = \"ISO8601_DATE\"> means that if RM property TYPE.some_property is of type String, an ISO8601_DATE is allowed at that position in the archetype.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+                },
+                "aom_lifecycle_mappings": {
+                    "description": "List of mappings of lifecycle state names used in archetypes to AOM lifecycle state names. value = AOM lifecycle state; key = source lifecycle state.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+                },
+                "profile_name": {
+                    "description": "Name of this profile, usually based on the publisher it pertains to e.g. \"openEHR\", \"cdisc\", etc.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "aom_rm_type_mappings": {
+                    "description": "Mappings from AOM built-in types to actual types in RM: whenever the type name is encountered in an archetype, it is mapped to a specific RM type.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AOM_TYPE_MAPPING"
+                    }
+                },
+                "rm_primitive_type_equivalences": {
+                    "description": "Equivalences of RM primitive types to in-built set of primitive types. Used to determine which AOM C_PRIMITIVE_OBJECT descendant is used for a primitive type. Typical entries:\n\n* value\tkey\n* \"Real\"\t\"Double\"\n* \"Integer\"\t\"Integer64\"",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash_of_String_String"
+                }
+            },
+            "required": [
+                "profile_name"
+            ]
+        },
+        "AOM_TYPE_MAPPING": {
+            "title": "AOM_TYPE_MAPPING",
+            "description": "Data object expressing a mapping between two types.",
+            "$comments": "Defined in Aom2_profile IM",
+            "type": "object",
+            "properties": {
+                "source_class_name": {
+                    "description": "Name of the AOM type being mapped to an RM type.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "target_class_name": {
+                    "description": "Name of the RM type in the mapping.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "property_mappings": {
+                    "description": "List of mappings of properties of this type to another type.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AOM_PROPERTY_MAPPING"
+                    }
+                }
+            },
+            "required": [
+                "source_class_name",
+                "target_class_name"
+            ]
+        },
+        "AOM_PROPERTY_MAPPING": {
+            "title": "AOM_PROPERTY_MAPPING",
+            "description": "Data object expressing a mapping between two class properties.",
+            "$comments": "Defined in Aom2_profile IM",
+            "type": "object",
+            "properties": {
+                "source_property_name": {
+                    "description": "Name of property in source class.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                },
+                "target_property_name": {
+                    "description": "Name of property in target class.",
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+                }
+            },
+            "required": [
+                "source_property_name",
+                "target_property_name"
+            ]
+        },
+        "Hash<String, AOM_PROPERTY_MAPPING>": {
+            "title": "Hash<String, AOM_PROPERTY_MAPPING>",
+            "$comments": "Defined in Aom2_profile IM, inherits from Hash",
+            "type": "object",
+            "$inherits": [
+                "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash"
+            ],
+            "$functions": {
+                "has": {
+                    "description": "Test for membership of a value.",
+                    "parameters": {
+                        "v": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/T"
+                        }
+                    },
+                    "required_parameters": [
+                        "v"
+                    ],
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                    }
+                },
+                "count": {
+                    "description": "Number of items in container.",
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                },
+                "is_empty": {
+                    "description": "True if container is empty.",
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                    }
+                },
+                "has_key": {
+                    "description": "Test for membership of a key.",
+                    "parameters": {
+                        "a_key": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/K"
+                        }
+                    },
+                    "required_parameters": [
+                        "a_key"
+                    ],
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                    }
+                },
+                "item": {
+                    "description": "Return item for key  a_key'.",
+                    "parameters": {
+                        "a_key": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/K"
+                        }
+                    },
+                    "required_parameters": [
+                        "a_key"
+                    ],
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/V"
+                    }
+                }
+            }
+        },
+        "Hash<String, AOM_TYPE_MAPPING>": {
+            "title": "Hash<String, AOM_TYPE_MAPPING>",
+            "$comments": "Defined in Aom2_profile IM, inherits from Hash",
+            "type": "object",
+            "$inherits": [
+                "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Hash"
+            ],
+            "$functions": {
+                "has": {
+                    "description": "Test for membership of a value.",
+                    "parameters": {
+                        "v": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/T"
+                        }
+                    },
+                    "required_parameters": [
+                        "v"
+                    ],
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                    }
+                },
+                "count": {
+                    "description": "Number of items in container.",
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Integer"
+                    }
+                },
+                "is_empty": {
+                    "description": "True if container is empty.",
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                    }
+                },
+                "has_key": {
+                    "description": "Test for membership of a key.",
+                    "parameters": {
+                        "a_key": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/K"
+                        }
+                    },
+                    "required_parameters": [
+                        "a_key"
+                    ],
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/Boolean"
+                    }
+                },
+                "item": {
+                    "description": "Return item for key  a_key'.",
+                    "parameters": {
+                        "a_key": {
+                            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/K"
+                        }
+                    },
+                    "required_parameters": [
+                        "a_key"
+                    ],
+                    "return": {
+                        "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/V"
+                    }
+                }
+            }
+        }
+    },
+    "$component": "AM",
+    "$version": "Release-2.1.0"
+}

@@ -60,6 +60,14 @@ on 2026-07-03 (the versions available as clean `*.bmm.json`).
 | ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/` |
 | ITS-BMM (BMM meta-model, JSON) | per-component (see above) | STABLE per-schema | **the codegen input**; vendored `*.bmm.json` at `crates/openehr-codegen/vendor/bmm/` with provenance |
 
+**Spec text vendored in-repo:** the normative documentation for every
+component above — plus SM (platform service model / SDT) and **CNF (the
+conformance guide + Platform Conformance Test Schedule + Robot suite)** — is
+vendored at `docs/specs/openehr/` by `scripts/vendor-spec-docs.sh`, pinned to
+these same versions (exact commits in each component's `PROVENANCE.md` and in
+the script). It is the read/conformance oracle; codegen still consumes only
+`crates/openehr-codegen/vendor/**` and `crates/openehr-its/schemas/**`.
+
 **Parity note:** these are the *latest* spec versions; stock EHRbase/`archie`
 emits an RM 1.1.0-era wire format. Track this divergence as a Stage-1 REST
 parity consideration — the fidelity gate (EHRbase canonical-JSON corpus

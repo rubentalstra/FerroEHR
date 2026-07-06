@@ -1,0 +1,83 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+=== Editor
+
+* Thomas Beale, Ars Semantica (UK); openEHR Foundation Management Board.
+
+=== Contributors
+
+This specification benefited from wide formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+
+* Rong Chen MD, PhD, Cambio Healthcare Systems, Sweden
+* Heath Frankel, CTO Ocean Informatics, Australia
+* Sam Heard MD, Ocean Informatics, Australia
+* Sebastian Iancu, Architect, Code24, Netherlands 
+* Dipak Kalra MD, PhD, Professor Health Informatics, CHIME, UCL, UK
+* David Lloyd (ret), CHIME, UCL, UK
+* Chunlan Ma PhD, MD, Ocean Informatics, Australia
+* Zar zar Tun, DSTC, Australia
+
+=== Support
+
+The work reported in this paper has been funded in part by the following organisations:
+
+* University College London - Centre for Health Informatics and Multi-professional Education (CHIME);
+* Ocean Informatics; 
+* Distributed Systems Technology Centre (DSTC), under the Cooperative Research Centres Program through the Department of the Prime Minister and Cabinet of the Commonwealth Government of Australia.
+
+Special thanks to David Ingram, Emeritus Professor of Health Informatics at UCL, who provided a vision and collegial working environment ever since the days of GEHR (1992).
+
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+
+ifdef::package_qualifiers[]
+:pkg: org.openehr.rm.demographic.
+endif::[]
+
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-demographic_package.adoc[leveloffset=+1]
+
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:sectnums!:
+== References
+
+bibliography::[]

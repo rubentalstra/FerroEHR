@@ -1,0 +1,1364 @@
+= dADL - Data ADL
+
+== Overview
+
+The dADL syntax provides a formal means of expressing instance data based on an underlying object-oriented or relational information model, which is readable both by humans and machines. The general appearance is exemplified by the following:
+
+[source, odin]
+--------
+person = (List<PERSON>) < 
+    [01234] = < 
+        name = < -- person's name 
+            forenames = <"Sherlock"> 
+            family_name = <"Holmes"> 
+            salutation = <"Mr"> 
+        >
+        address = < -- person's address 
+            habitation_number = <"221B">
+            street_name = <"Baker St">
+            city = <"London">
+            country = <"England">
+        >
+    >
+    [01235] = < -- etc >
+>
+--------
+
+In the above the attribute names `person` , `name` , `address` etc, and the type `List<PERSON>` are all assumed to come from an information model. The `[01234]` and `[01235]` tags identify container items.
+
+The basic design principle of dADL is to be able to represent data in a way that is both machine-processable and human readable, while making the fewest assumptions possible about the information model to which the data conforms. To this end, type names are optional; often, only attribute names and values are explicitly shown. No syntactical assumptions are made about whether the underlying model is relational, object-oriented or what it actually looks like. More than one information model can be compatible with the same dADL-expressed data. The UML semantics of composition/aggregation and association are expressible, as are shared objects. Literal leaf values are only of 'standard' widely recognised types, i.e. Integer, Real, Boolean, String, Character and a range of Date/time types. In standard dADL, all complex types are expressed structurally.
+
+A common question about dADL is why it is needed, when there is already XML? To start with, this question highlights the widespread misconception about XML, namely that because it can be read by a text editor, it is intended for humans. In fact, XML is designed for machine processing, and is textual to guarantee its interoperability. Realistic examples of XML (e.g. XML-schema instance, OWL-RDF ontologies) are generally unreadable for humans. dADL is on the other hand designed as a human-writable and readable formalism that is also machine processable; it may be thought of as an _abstract syntax for object-oriented data_. dADL also differs from XML by:
+
+* providing a more comprehensive set of leaf data types, including intervals of numerics and date/time types, and lists of all primitive types;
+* adhering to object-oriented semantics, particularly for container types, which XML schema languages generally do not; 
+* not using the confusing XML notion of ‘attributes’ and ‘elements’ to represent what are essentially object properties;
+* requiring half the space of the equivalent XML.
+
+Of course, this does not prevent XML exchange syntaxes being used for dADL, and indeed the conversion to XML instance is rather straightforward. Details on the XML expression of dADL and use of Xpath expressions is described in <<_expression_of_dadl_in_xml>>.
+
+The dADL syntax as described above has a number of useful characteristics that enable the extensive use of paths to navigate it, and express references. These include:
+
+* each `<>` block corresponds to an object (i.e. an instance of some type in an information model);
+* the name before an '=' is always an attribute name or else a container element key, which attaches to the attribute of the enclosing block;
+* paths can be formed by navigating down a tree branch and concatenating attribute name, container keys (where they are encountered) and '/' characters;
+* every node is reachable by a path;
+* shared objects can be referred to by path references.
+
+== Basics
+
+=== Scope of a dADL Document
+
+A dADL document may contain one or more objects from the same object model.
+
+=== Keywords
+
+dADL has no keywords of its own: all identifiers are assumed to come from an information model.
+
+=== Reserved Characters
+
+In dADL, a small number of characters are reserved and have the following meanings:
+
+* `<`: open an object block;
+* `>`: close an object block;
+* `=`: indicate attribute value = object block;
+* `(`, `)`: type name or plug-in syntax type delimiters;
+* `<#`: open an object block expressed in a plug-in syntax;
+* `#>`: close an object block expressed in a plug-in syntax.
+
+Within <> delimiters, various characters are used as follows to indicate primitive values:
+
+* `"`: double quote characters are used to delimit string values;
+* `'`: single quote characters are used to delimit single character values;
+* `|`: bar characters are used to delimit intervals;
+* `[]`: brackets are used to delimit coded terms.
+
+=== Comments
+
+In a dADL text, comments satisfy the following rule.
+
+[.principle]
+*Comments* are indicated by the characters "--". Multi-line comments are achieved using the "--" leader on each line where the comment continues.
+
+In this document, dADL comments are shown in brown.
+
+=== Information Model Identifiers
+
+Two types of identifiers from information models are used in dADL: type names and attribute names. 
+
+[.principle]
+A *type name* is any identifier with an initial upper case letter, followed by any combination of letters, digits and underscores. A *generic type name* (including nested forms) additionally may include commas and angle brackets, and must be syntactically correct as per the UML. An *attribute name* is any identifier with an initial lower case letter, followed by any combination of letters, digits and underscores. Any convention that obeys this rule is allowed.
+
+At least two well-known conventions that are ubiquitous in information models obey the above rule. One of these is the following convention:
+
+* type names are in all uppercase, e.g. `PERSON` , except for 'built-in' types, such as primitive types (` Integer` , `String` , `Boolean` , `Real` , `Double` ) and assumed container types (`List<T>` , `Set<T>` , `Hash<T, U>` ), which are in mixed case, in order to provide easy differentiation of built-in types from constructed types defined in the reference model. Built-in types are the same types assumed by UML, OCL, IDL and other similar object-oriented formalisms.
+* attribute names are shown in all lowercase, e.g. `home_address` .
+* in both type names and attribute names, underscores are used to represent word breaks. This convention is used to maximise the readability of this document.
+
+The other common style is the programmer's mixed-case or "camel case" convention exemplified by `Person` and `homeAddress` , as long as they obey the rule above. The convention chosen for any particular dADL document should be based on the convention used in the underlying information model. Identifiers are shown in green in this document.
+
+=== Semi-colons
+
+Semi-colons can be used to separate dADL blocks, for example when it is preferable to include multiple attribute/value pairs on one line. Semi-colons make no semantic difference at all, and are included only as a matter of taste. The following examples are equivalent:
+
+[source, odin]
+--------
+term = <text = <"plan">; description = <"The clinician's advice">>
+term = <text = <"plan"> description = <"The clinician's advice">>
+
+term = <
+    text = <"plan">
+    description = <"The clinician's advice">
+>
+--------
+
+[.principle]
+Semi-colons are completely optional in dADL.
+
+== Paths
+
+Because dADL data is hierarchical, and all nodes are uniquely identified, a reliable path can be determined for every node in a dADL text. The syntax of paths in dADL is the standard ADL path syntax, described in detail in <<_adl_paths>>. Paths are directly convertible to XPath expressions for use in XML-encoded data.
+
+A typical ADL path used to refer to a node in a dADL text is as follows.
+
+```
+/term_definitions["en"]/items["at0001"]/text
+```
+
+In the following sections, paths are shown for all the dADL data examples.
+
+== Structure
+
+=== General Form
+
+A dADL document expresses serialised instances of one or more complex objects. Each such instance is a hierarchy of attribute names and object values. In its simplest form, a dADL text consists of repetitions of the following pattern:
+
+--------
+attribute_name '=' '<' value '>' ;
+--------
+
+Each attribute name is the name of an attribute in an implied or actual object or relational model. Each "value" is either a literal value of a primitive type (see <<_primitive_types>>) or a further nesting of attribute names and values, terminating in leaf nodes of primitive type values. Where sibling attribute nodes occur, the attribute identifiers must be unique, just as in a standard object or relational model.
+
+[.principle]
+Sibling attribute names must be unique.
+
+The following shows a typical structure.
+
+[source, odin]
+--------
+attr_1 = <
+    attr_2 = <
+        attr_3 = <leaf_value>
+        attr_4 = <leaf_value>
+    >
+    attr_5 = <
+        attr_3 = <
+            attr_6 = <leaf_value>
+        >
+        attr_7 = <leaf_value>
+    >
+>
+attr_8 = <...>
+--------
+
+In the above structure, each "<>" encloses an instance of some type. The hierarchical structure corresponds to the part-of relationship between objects, otherwise known as _composition_ and _aggregation_ relationships in object-oriented formalisms such as UML (the difference between the two is usually described as being "sub-objects related by aggregation can have independent lifetimes, whereas sub-objects related by composition have co-terminal lifetimes and are always destroyed with the parent"; dADL does not differentiate between the two, since it is the business of a model, not the data, to express such semantics). Associations between instances in dADL are also representable by references, and are described in <<_associations_and_shared_objects>>.
+
+==== Outer Delimiters
+
+To be completely regular, an outer level of delimiters should be used, because the totality of a dADL text is an object, not a collection of disembodied attribute/object pairs. However, the outermost delimiters can be left out in order to improve readability, and without complicating the parsing process. The completely regular form would appear as follows:
+
+----
+<
+    attr_1 = <
+    >
+    attr_8 = <>
+>
+----
+
+[.principle]
+Outer '<>' delimiters in a dADL text are optional.
+
+==== Paths
+
+The complete set of paths for the above example is as follows.
+
+[source, odin]
+--------
+    /attr_1
+    /attr_1/attr_2
+    /attr_1/attr_2/attr_3           -- path to a leaf value
+    /attr_1/attr_2/attr_4           -- path to a leaf value
+    /attr_1/attr_5
+    /attr_1/attr_5/attr_3
+    /attr_1/attr_5/attr_3/attr_6    -- path to a leaf value
+    /attr_1/attr_5/attr_7           -- path to a leaf value
+    /attr_8
+--------
+
+The path syntax used with dADL maps trivially to W3C Xpath and Xquery paths, and is described in <<_paths>>.
+
+=== Empty Sections
+
+Empty sections are allowed at both internal and leaf node levels, enabling the author to express the fact that there is in some particular instance, no data for an attribute, while still showing that the attribute itself is expected to exist in the underlying information model. An empty section looks as follows:
+
+[source, odin]
+--------
+    address = <...>    -- person's address
+--------
+
+Nested empty sections can be used.
+
+NOTE: within this document, empty sections are shown in many places to represent fully populated data, which would of course require much more space.
+
+[.principle]
+Empty sections can appear anywhere.
+
+=== Container Objects
+
+The syntax described so far allows an instance of an arbitrarily large object to be expressed, but does not support attributes of container types such as lists, sets and hash tables, i.e. items whose type in an underlying reference model is something like `attr:List<Type>` , `attr:Set<Type>` or `attr: Hash<ValueType, KeyType>` . There are two ways instance data of such container objects can be expressed in dADL. The first applies to leaf values and is to use a list style literal value for , where the "list nature" of the data is expressed within the manifest value itself, as in the following examples.
+
+[source, odin]
+--------
+fruits = <"pear", "cumquat", "peach">
+some_primes = <1, 2, 3, 5>
+--------
+
+See <<Lists of Built-in Types>> for the complete description of list leaf types. This approach is fine for leaf data.  However for containers holding non-primitive values, including more container objects, a different syntax is needed. Consider by way of example that an instance of the container `List<Person>` could in theory be expressed as follows.
+
+[source, odin]
+--------
+-- WARNING: THIS IS NOT VALID dADL
+
+people = <
+    <name = <...> date_of_birth = <...> sex = <...> interests = <...> >
+    <name = <...> date_of_birth = <...> sex = <...> interests = <...> >
+    -- etc
+>
+--------
+
+Here, 'anonymous' blocks of data are repeated inside the outer block. However, this makes the data hard to read, and does not provide an easy way of constructing paths to the contained items. A better syntax becomes more obvious when we consider that members of container objects in their computable form are nearly always accessed by a method such as `member(i)` , `item[i]` or just plain `[i]` , in the case of array access in the C-based languages.
+
+dADL opts for the array-style syntax, known in dADL as container member _keys_. No attribute name is explicitly given; any primitive comparable value is allowed as the key, rather than just integers used in C-style array access. Further, if integers are used, it is not assumed that they dictate ordinal indexing, i.e. it is possible to use a series of keys `[2]` , `[4]` , `[8]` etc. The following example shows one version of the above container in valid dADL:
+
+[source, odin]
+--------
+people = <
+    [1] = <name = <...> birth_date = <...> interests = <...> >
+    [2] = <name = <...> birth_date = <...> interests = <...> >
+    [3] = <name = <...> birth_date = <...> interests = <...> >
+>
+--------
+
+Strings and dates may also be used. Keys are coloured blue in the this specification in order to distinguish the run-time status of key values from the design-time status of class and attribute names. The following example shows the use of string values as keys for the contained items.
+
+[source, odin]
+--------
+people = <
+    ["akmal:1975-04-22"] = <name = <...> birth_date = <...> interests = <...> >
+    ["akmal:1962-02-11"] = <name = <...> birth_date = <...> interests = <...> >
+    ["gianni:1978-11-30"] = <name = <...> birth_date = <...> interests = <...> >
+>
+--------
+
+The syntax for primitive values used as keys follows exactly the same syntax described below for data of primitive types. It is convenient in some cases to construct key values from one or more of the values of the contained items, in the same way as relational database keys are constructed from sufficient field values to guarantee uniqueness. However, they need not be - they may be independent of the contained data, as in the case of hash tables, where the keys are part of the hash table structure, or equally, they may simply be integer index values, as in the 'locations' attribute in the 'school_schedule' structure shown below.
+
+Container structures can appear anywhere in an overall instance structure, allowing complex data such as the following to be expressed in a readable way.
+
+[source, odin]
+--------
+school_schedule = <
+    lesson_times = <08:30:00, 09:30:00, 10:30:00, ...>
+
+    locations = <
+        [1] = <"under the big plane tree">
+        [2] = <"under the north arch">
+        [3] = <"in a garden">
+    >
+
+    subjects = <
+        ["philosophy:plato"] = < -- note construction of key
+            name = <"philosophy">
+            teacher = <"plato">
+            topics = <"meta-physics", "natural science">
+            weighting = <76%>
+        >
+        ["philosophy:kant"] = <
+            name = <"philosophy">
+            teacher = <"kant">
+            topics = <"meaning and reason", "meta-physics", "ethics">
+            weighting = <80%>
+        >
+        ["art"] = <
+            name = <"art">
+            teacher = <"goya">
+            topics = <"technique", "portraiture", "satire">
+            weighting = <78%>
+        >
+    >
+>
+--------
+
+[.principle]
+*Container instances* are expressed using repetitions of a block introduced by a key, in the form of a primitive value in brackets i.e. '[]'.
+
+The example above conforms directly to the object-oriented type specification (given in a pascal-like syntax):
+
+[source, idl]
+--------
+class SCHEDULE
+    lesson_times: List<Time>
+    locations: List<String>
+    subjects: List<SUBJECT> -- or it could be Hash<SUBJECT>
+end
+
+class SUBJECT
+    name: String
+    teacher: String
+    topics: List<String>
+    weighting: Real
+end
+--------
+
+Other class specifications corresponding to the same data are possible, but will all be isomorphic to the above.
+
+How key values relate to a particular object structure depends on the object model being used during the dADL parsing process. It is possible to write a parser which makes reasonable inferences from an information model whose instances are represented as dADL text; it is also possible to include explicit typing information in the dADL itself (see <<Adding Type Information>> below).
+
+==== Paths
+
+Paths through container objects are formed in the same way as paths in other structured data, with the addition of the key, to ensure uniqueness. The key is included syntactically enclosed in brackets, in a similar way to Xpath predicates. Paths through containers in the above example include the following:
+
+[source, odin]
+--------
+/school_schedule/locations[1]                   -- path to "under the big..."
+/school_schedule/subjects["philosophy:kant"]    -- path to "kant"
+--------
+
+=== Nested Container Objects
+
+In some cases the data of interest are instances of nested container types, such as `List<List<Message>>` (a list of Message lists) or `Hash<List<Integer>, String>` (a hash of integer lists keyed by strings). The dADL syntax for such structures follows directly from the syntax for a single container object. The following example shows an instance of the type `List<List<String>>` expressed in dADL syntax.
+
+[source, odin]
+--------
+list_of_string_lists = <
+    [1] = <
+        [1] = <"first string in first list">
+        [2] = <"second string in first list">
+    >
+    [2] = <
+        [1] = <"first string in second list">
+        [2] = <"second string in second list">
+        [3] = <"third string in second list">
+    >
+    [3] = <
+        [1] = <"only string in third list">
+    >
+>
+--------
+
+==== Paths
+
+The paths of the above example are as follows:
+
+[source, odin]
+--------
+/list_of_string_lists[1]/[1]
+/list_of_string_lists[1]/[2]
+/list_of_string_lists[2]/[1]
+etc
+--------
+
+=== Adding Type Information
+
+In many cases, dADL data is of a simple structure, very regular, and highly repetitive, such as the expression of simple demographic data. In such cases, it is preferable to express as little as possible about the implied reference model of the data (i.e. the object or relational model to which it conforms), since various software components want to use the data, and use it in different ways. However, there are also cases where the data is highly complex, and more model information is needed to help software parse it,. Examples include large design databases such as for aircraft, and health records. Typing information is added to instance data using a syntactical addition inspired by the `(type)` casting operator of the C language, whose meaning is approximately: force the type of the result of the following expression to be `type`. In dADL typing is therefore done by including the type name in parentheses after the '=' sign, as in the following example.
+
+[source, odin]
+--------
+destinations = <
+    ["seville"] = (TOURIST_DESTINATION) <
+        profile = (DESTINATION_PROFILE) <...>
+        hotels = <
+            ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+            ["sofitel"] = (LUXURY_HOTEL) <...>
+            ["hotel real"] = (PENSION) <...>
+        >
+        attractions = <
+            ["la corrida"] = (SPORT_VENUE) <...>
+            ["Alcázar"] = (HISTORIC_SITE) <...>
+        >
+    >
+>
+--------
+
+Note that in the above, no type identifiers are included after the "hotels" and "attractions" attributes, and it is up to the processing software to infer the correct types (usually easy - it will be pre-determined by an information model). However, the complete typing information can be included, as follows.
+
+[source, odin]
+--------
+hotels = (List<HOTEL>) <
+    ["gran sevilla"] = (HISTORIC_HOTEL) <>
+>
+--------
+
+This illustrates the use of generic, i.e. template types, expressed in the standard UML syntax, using angle brackets. Any number of template arguments and any level of nesting is allowed, as in the UML. At first view, there may appear to be a risk of confusion between template type '<>' delimiters and the standard dADL block delimiters. However the parsing rules are easy to state; essentially the difference is that a dADL data block is always preceded by an '=' symbol.
+
+Type identifiers can also include namespace information, which is necessary when same-named types appear in different packages of a model. Namespaces are included by prepending package names, separated by the '.' character, in the same way as in most programming languages, as in the qualified type names `org.openehr.rm.ehr.content.ENTRY` and `Core.Abstractions.Relationships.Relationship`.
+
+[.principle]
+*Type Information* can be included optionally on any node immediately before the opening '<' of any block, in the form of a UML-style type identifier in parentheses. Dot-separated namespace identifiers and template parameters may be used.
+
+=== Associations and Shared Objects
+
+All of the facilities described so far allow any object-oriented data to be faithfully expressed in a formal, systematic way which is both machine- and human-readable, and allow any node in the data to be addressed using an Xpath-style path. The availability of reliable paths allows not only the representation of single 'business objects', which are the equivalent of UML _aggregation_ (and _composition_) hierarchies, but also the representation of associations between objects, and by extension, shared objects.
+
+Consider that in the example above, 'hotel' objects may be shared objects, referred to by association. This can be expressed as follows.
+
+[source, odin]
+--------
+destinations = <
+    ["seville"] = <
+        hotels = <
+            ["gran sevilla"] = </hotels["gran sevilla"]>
+            ["sofitel"] = </hotels["sofitel"]>
+            ["hotel real"] = </hotels["hotel real"]>
+        >
+    >
+>
+bookings = <
+    ["seville:0134"] = <
+        customer_id = <"0134">
+        period = <...>
+        hotel = </hotels["sofitel"]>
+    >
+>
+hotels = <
+    ["gran sevilla"] = (HISTORIC_HOTEL) <>
+    ["sofitel"] = (LUXURY_HOTEL) <>
+    ["hotel real"] = (PENSION) <>
+>
+--------
+
+Associations are expressed via the use of fully qualified paths as the data for an attribute. In this example, there are references from a list of destinations, and from a booking list, to the same hotel object. If type information is included, it should go in the declarations of the relevant objects; type declarations can also be used before path references, which might be useful if the association type is an ancestor type (i.e. more general type) of the type of the actual object being referred to. 
+
+Data in other dADL documents can be referred to using the URI syntax to locate the document, with the internal path included as described above.
+
+[.principle]
+*Shared objects* are referenced using paths. Objects in other dADL documents can be referred to using normal URIs whose path section conforms to dADL path syntax.
+
+==== Paths
+The path set from the above example is as follows:
+
+[source, odin]
+--------
+/destinations["seville"]/hotels["gran sevilla"]
+/destinations["seville"]/hotels["sofitel"]
+/destinations["seville"]/hotels["hotel real"]
+/bookings["seville:0134"]/customer_id
+/bookings["seville:0134"]/period
+/bookings["seville:0134"]/hotel
+/hotels["sofitel"]
+/hotels["hotel real"]
+/hotels["gran sevilla"]
+--------
+
+== Leaf Data - Built-in Types
+
+All dADL data eventually devolve to instances of the primitive types `String`, `Integer`, `Real`, `Double`, `String`, `Character`, various date/time types, lists or intervals of these types, and a few special types. dADL does not use type or attribute names for instances of primitive types, only manifest values, making it possible to assume as little as possible about type names and structures of the primitive types. In all the following examples, the manifest data values are assumed to appear immediately inside a leaf pair of angle brackets, i.e.
+
+--------
+some_attribute = <manifest value here>
+--------
+
+=== Primitive Types
+
+==== Character Data
+
+Characters are shown in a number of ways. In the literal form, a character is shown in single quotes,
+as follows:
+
+----
+'a'
+----
+
+Characters outside the low ASCII (0-127) range must be UTF-8 encoded, with a small number of backslash-quoted ASCII characters allowed, as described in <<File Encoding and Character Quoting>>.
+
+==== String Data
+
+All strings are enclosed in double quotes, as follows:
+
+----
+"this is a string"
+----
+
+Quotes are encoded using ISO/IEC 10646 codes, e.g. :
+
+----
+"this is a much longer string, what one might call a &quot;phrase&quot;."
+----
+
+Line extension of strings is done simply by including returns in the string. The exact contents of the string are computed as being the characters between the double quote characters, with the removal of white space leaders up to the left-most character of the first line of the string. This has the effect of allowing the inclusion of multi-line strings in dADL texts, in their most natural human-readable form, e.g.:
+
+[source, odin]
+--------
+text = <"And now the STORM-BLAST came, and he
+        Was tyrannous and strong :
+        He struck with his o'ertaking wings,
+        And chased us south along.">
+--------
+
+String data can be used to contain almost any other kind of data, which is intended to be parsed as some other formalism. Characters outside the low ASCII (0-127) range must be UTF-8 encoded, with a small number of backslash-quoted ASCII characters allowed, as described in <<_file_encoding_and_character_quoting>>.
+
+==== Integer Data
+Integers are represented simply as numbers, e.g.:
+
+----
+25
+300000
+29e6
+----
+
+Commas or periods for breaking long numbers are not allowed, since they confuse the use of commas used to denote list items (see <<Lists of Built-in Types>> below).
+
+==== Real Data
+Real numbers are assumed whenever a decimal is detected in a number, e.g.:
+
+----
+25.0
+3.1415926
+6.023e23
+----
+
+Commas or periods for breaking long numbers are not allowed. Only periods may be used to separate the decimal part of a number; unfortunately, the European use of the comma for this purpose conflicts with the use of the comma to distinguish list items (see <<_lists_of_built_in_types>> below).
+
+==== Boolean Data
+
+Boolean values can be indicated by the following values (case-insensitive):
+
+----
+True
+False
+----
+
+==== Dates and Times
+
+===== Complete Date/Times
+
+In dADL, full and partial dates, times and durations can be expressed. All full dates, times and durations are expressed using a subset of {iso_8601}[ISO 8601]. The Support IM provides a full explanation of the ISO 8601 semantics supported in openEHR.
+
+In dADL, the use of ISO 8601 allows extended form only (i.e. ':' and '-' must be used). The ISO 8601 method of representing partial dates consisting of a single year number, and partial times consisting of hours only are not supported, since they are ambiguous. See below for partial forms. Patterns for complete dates and times in dADL include the following:
+
+----
+yyyy-MM-dd                      -- a date
+hh:mm:ss[,sss][Z|+/-hhmm]       -- a time with optional seconds
+yyyy-MM-ddThh:mm:ss[,sss][Z]    -- a date/time
+----
+
+where:
+
+----
+yyyy = four-digit year
+MM = month in year
+dd = day in month
+hh = hour in 24 hour clock
+mm = minutes
+ss,sss = seconds, incuding fractional part
+Z = the timezone in the form of a '+' or '-' followed by 4 digits indicating the hour offset, e.g. +0930, or else the literal 'Z' indicating +0000 (the Greenwich meridian).
+----
+
+Durations are expressed using a string which starts with 'P', and is followed by a list of periods, each appended by a single letter designator: 'Y' for years, "M' for months, 'W' for weeks, 'D' for days, 'H' for hours, 'M' for minutes, and 'S' for seconds. The literal 'T' separates the YMWD part from the HMS part, ensuring that months and minutes can be distinguished. Examples of date/time data include:
+
+----
+1919-01-23                  -- birthdate of Django Reinhardt
+16:35:04,5                  -- rise of Venus in Sydney on 24 Jul 2003
+2001-05-12T07:35:20+1000    -- timestamp on an email received from Australia
+P22D4TH15M0S                -- period of 22 days, 4 hours, 15 minutes
+----
+
+===== Partial Date/Times
+Two ways of expressing partial (i.e. incomplete) date/times are supported in dADL. The ISO 8601 incomplete formats are supported in extended form only (i.e. with '-' and ':' separators) for all patterns that are unambiguous on their own. Dates consisting of only the year, and times consisting of only the hour are not supported, since both of these syntactically look like integers. The supported ISO 8601 patterns are as follows:
+
+----
+yyyy-MM             -- a date with no days
+hh:mm               -- a time with no seconds
+yyyy-MM-ddThh:mm    -- a date/time with no seconds
+yyyy-MM-ddThh       -- a date/time, no minutes or seconds
+----
+
+To deal with the limitations of ISO 8601 partial patterns in a context-free parsing environment, a second form of pattern is supported in dADL, based on ISO 8601. In this form, '?' characters are substituted for missing digits. Valid partial dates follow the patterns:
+
+----
+yyyy-MM-??  -- date with unknown day in month
+yyyy-??-??  -- date with unknown month and day
+----
+
+Valid partial times follow the patterns:
+
+----
+hh:mm:?? -- time with unknown seconds
+hh:??:?? -- time with unknown minutes and seconds
+----
+
+Valid date/times follow the patterns:
+
+----
+yyyy-MM-ddThh:mm:?? -- date/time with unknown seconds
+yyyy-MM-ddThh:??:?? -- date/time with unknown minutes and seconds
+yyyy-MM-ddT??:??:?? -- date/time with unknown time
+yyyy-MM-??T??:??:?? -- date/time with unknown day and time
+yyyy-??-??T??:??:?? -- date/time with unknown month, day and time
+----
+
+=== Intervals of Ordered Primitive Types
+
+Intervals of any ordered primitive type, i.e., `Integer`, `Real`, `Date`, `Time`, `Date_time` and `Duration`, can be stated using the following uniform syntax, where `N`, `M` are instances of any of the ordered types:
+
+----
+|N..M|      -- the two-sided range N >= x <= M
+|N>..M|     -- the two-sided range N > x <= M
+|N..<M|     -- the two-sided range N >= x <M
+|N>..<M|    -- the two-sided range N > x <M
+|<N|        -- the one-sided range x < N
+|>N|        -- the one-sided range x > N
+|>=N|       -- the one-sided range x >= N
+|<=N|       -- the one-sided range x <= N
+|N +/-M|    -- interval of N ± M
+----
+
+The allowable values for `N` and `M` include any value in the range of the relevant type, as well as:
+
+----
+infinity
+-infinity
+* equivalent to infinity
+----
+
+Examples of this syntax include:
+
+----
+|0..5|          -- integer interval
+|0.0..1000.0|   -- real interval
+|0.0..<1000.0|  -- real interval 0.0 >= x < 1000.0
+|08:02..09:10|  -- interval of time
+|>= 1939-02-01| -- open-ended interval of dates
+|5.0 +/-0.5|    -- 4.5 - 5.5
+|>=0|           -- >= 0
+|0..infinity|   -- 0 - infinity (i.e. >= 0)
+----
+
+=== Other Built-in Types
+
+==== URIs
+URI can be expressed as dADL data in the usual way found on the web, and follow the standard syntax from `http://www.ietf.org/rfc/rfc3986.txt`. Examples of URIs in dADL:
+
+----
+http://archetypes.are.us/home.html
+ftp://get.this.file.com#section_5
+http://www.mozilla.org/products/firefox/upgrade/?application=thunderbird
+----
+
+Encoding of special characters in URIs follows the {rfc3986}[IETF RFC 3986^], as described under <<File Encoding and Character Quoting>>.
+
+==== Coded Terms
+Coded terms are ubiquitous in medical and clinical information, and are likely to become so in most other industries, as ontologically-based information systems and the 'semantic web' emerge. The logical structure of a coded term is simple: it consists of an identifier of a terminology, and an identifier of a code within that terminology. The dADL string representation is as follows:
+
+----
+[terminology_id::code]
+----
+
+Typical examples from clinical data:
+
+----
+[icd10AM::F60.1] -- from ICD10AM
+[snomed-ct::2004950] -- from snomed-ct
+[snomed-ct(3.1)::2004950] -- from snomed-ct v 3.1
+----
+
+=== Lists of Built-in Types
+
+Data of any primitive type can occur singly or in lists, which are shown as comma-separated lists of item, all of the same type, such as in the following examples:
+
+----
+"cyan", "magenta", "yellow", "black" -- printer's colours
+1, 1, 2, 3, 5 -- first 5 fibonacci numbers
+08:02, 08:35, 09:10 -- set of train times
+----
+
+No assumption is made in the syntax about whether a list represents a set, a list or some other kind of sequence - such semantics must be taken from an underlying information model.
+
+Lists which happen to have only one datum are indicated by using a comma followed by a list continuation marker of three dots, i.e. "...", e.g.:
+
+----
+"en", ... -- languages
+"icd10", ... -- terminologies
+[at0200], ...
+----
+
+White space may be freely used or avoided in lists, i.e. the following two lists are identical:
+
+----
+1,1,2,3
+1, 1, 2,3
+----
+
+== Plug-in Syntaxes
+
+Using the dADL syntax, any object structure can be serialised. In some cases, the requirement is to express some part of the structure in an abstract syntax, rather than in the more literal serialised object form of dADL. dADL provides for this possibility by allowing the value of any object (i.e. what appears between any matching pair of `<>` delimiters) to be expressed in some other syntax, known as a "plug-in" syntax. Plug-in syntaxes are indicated in dADL in a similar way as typed objects, i.e. by the use of the syntax type in parentheses preceding the `<>` block. For a plug-in section, the <> delimiters are modified to `<# #>`, to allow for easier parser design, and easier recognition of such blocks by human readers. The general form is as follows:
+
+----
+attr_name = (syntax) <#
+    ...
+#>
+----
+
+The following example illustrates a cADL plug-in section in an archetype, which it itself a dADL document:
+
+----
+definition = (cadl) <#
+    ENTRY[at0000] ∈ { -- blood pressure measurement
+        name ∈ { -- any synonym of BP
+            CODED_TEXT ∈ {
+                code ∈ {
+                    CODE_PHRASE ∈ {[ac0001]}
+                }
+            }
+        }
+    }
+#>
+----
+
+Clearly, many plug-in syntaxes might one day be used within dADL data; there is no guarantee that every dADL parser will support them. The general approach to parsing should be to use plug-in parsers, i.e. to obtain a parser for a plug-in syntax that can be built into the existing parser framework.
+
+== Expression of dADL in XML
+
+The dADL syntax maps quite easily to XML instance. It is important to realise that people using XML often develop different mappings for object-oriented data, due to the fact that XML does not have systematic object-oriented semantics. This is particularly the case where containers such as lists and sets such as `employees: List<Person>` are mapped to XML; many implementors have to invent additional tags such as 'employee' to make the mapping appear visually correct. The particular mapping chosen here is designed to be a faithful reflection of the semantics of the object-oriented data, and does not try take into account visual aesthetics of the XML. The result is that Xpath expressions are the same for dADL and XML, and also correspond to what one would expect based on an underlying object model. The main elements of the mapping are as follows.
+
+=== Single Attributes
+
+Single attribute nodes map to tagged nodes of the same name.
+
+=== Container Attributes
+
+Container attribute nodes map to a series of tagged nodes of the same name, each with the XML attribute `_id_` set to the dADL key. For example, the dADL:
+
+[source, odin]
+--------
+subjects = <
+    ["philosophy:plato"] = <
+        name = <"philosophy">
+    >
+    ["philosophy:kant"] = <
+        name = <"philosophy">
+    >
+>
+--------
+
+maps to the XML:
+
+[source, xml]
+--------
+<subjects id="philosophy:plato">
+    <name>
+        philosophy
+    </name>
+</subjects>
+<subjects id="philosophy:kant">
+    <name>
+        philosophy
+    </name>
+</subjects>
+--------
+
+This guarantees that the path `subjects[@id="philosophy:plato"]/name` navigates to the same element in both dADL and the XML.
+
+=== Nested Container Attributes
+
+Nested container attribute nodes map to a series of tagged nodes of the same name, each with the XML attribute `_id_` set to the dADL key. For example, consider an object structure defined by the signature `countries:Hash<Hash<Hotel,String>,String>`. An instance of this in dADL looks as follows:
+
+[source, odin]
+--------
+countries = <
+    ["spain"] = <
+        ["hotels"] = <...>
+        ["attractions"] = <...>
+    >
+    ["egypt"] = <
+        ["hotels"] = <...>
+        ["attractions"] = <...>
+    >
+>
+--------
+
+can be mapped to the XML in which the synthesised element tag "_items" and the attribute "key" are used:
+
+[source, xml]
+--------
+<countries key="spain">
+    <_items key="hotels">
+        ...
+    </_items>
+    <_items key="attractions">
+        ...
+    </_items>
+</countries>
+<countries key="eqypt">
+    <_items id="hotels">
+        ...
+    </_items>
+    <_items key="attractions">
+        ...
+    </_items>
+</countries>
+--------
+
+In this case, the dADL path countries["spain"]/["hotels"] will be transformed to the Xpath `countries[@key="spain"]/_items[@key="hotels"]` in order to navigate to the same element.
+
+=== Type Names
+
+Type names map to XML 'type' attributes e.g. the dADL:
+
+[source, odin]
+--------
+destinations = <
+    ["seville"] = (TOURIST_DESTINATION) <
+        profile = (DESTINATION_PROFILE) <>
+        hotels = <
+            ["gran sevilla"] = (HISTORIC_HOTEL) <>
+        >
+    >
+>
+--------
+
+maps to:
+
+[source, xml]
+--------
+<destinations id="seville" adl:type="TOURIST_DESTINATION">
+    <profile adl:type="DESTINATION_PROFILE">
+        ...
+    </profile>
+    <hotels id="gran sevilla" adl:type="HISTORIC_HOTEL">
+        ...
+    </hotels>
+</destinations>
+--------
+
+== Syntax Specification
+
+The grammar and lexical specification for the standard dADL syntax is shown below. This grammar is implemented using lex (.l file) and yacc (.y file) specifications for in the Eiffel programming environment. The current release of these files is available at https://github.com/openEHR/adl-tools/tree/Release-1.4/libraries/common_libs/src/structures/syntax/dadl/parser[Tag `Release-1.4` of the adl-tools Github repository^]. The .l and .y files can be converted for use in another yacc/lex-based programming environment. The dADL production rules are also available as an https://github.com/openEHR/adl-tools/blob/Release-1.4/libraries/common_libs/src/structures/syntax/dadl/parser/dadl2_validator.html[HTML document^].
+
+=== Grammar
+
+The following provides the https://github.com/openEHR/adl-tools/blob/Release-1.4/libraries/common_libs/src/structures/syntax/dadl/parser/dadl2_validator.y[dADL parser production rules^] (yacc specification).
+
+[source, antlr-java]
+--------
+input:
+    attr_vals
+    | complex_object_block
+    ;
+
+attr_vals:
+    attr_val
+    | attr_vals attr_val
+    | attr_vals ';' attr_val
+    ;
+
+attr_val:
+    attr_id SYM_EQ object_block
+    ;
+    
+attr_id:
+    V_ATTRIBUTE_IDENTIFIER
+    ;
+
+object_block:
+    complex_object_block
+    | primitive_object_block
+    | plugin_object_block
+    ;
+
+plugin_object_block:
+    V_PLUGIN_SYNTAX_TYPE V_PLUGIN_BLOCK
+    ;
+
+complex_object_block:
+    single_attr_object_block
+    | multiple_attr_object_block
+    ;
+
+multiple_attr_object_block:
+    untyped_multiple_attr_object_block
+    | type_identifier untyped_multiple_attr_object_block
+    ;
+
+untyped_multiple_attr_object_block:
+    multiple_attr_object_block_head keyed_objects SYM_END_DBLOCK
+    ;
+
+multiple_attr_object_block_head:
+    SYM_START_DBLOCK
+    ;
+keyed_objects:
+    keyed_object
+    | keyed_objects keyed_object
+    ;
+
+keyed_object:
+    object_key SYM_EQ object_block
+    ;
+
+object_key:
+    '[' simple_value ']'
+    ;
+
+single_attr_object_block:
+    untyped_single_attr_object_block
+    | type_identifier untyped_single_attr_object_block
+    ;
+
+untyped_single_attr_object_block:
+    single_attr_object_complex_head SYM_END_DBLOCK
+    | single_attr_object_complex_head attr_vals SYM_END_DBLOCK
+    ;
+
+single_attr_object_complex_head:
+    SYM_START_DBLOCK
+
+primitive_object_block:
+    untyped_primitive_object_block
+    | type_identifier untyped_primitive_object_block
+    ;
+
+untyped_primitive_object_block:
+    SYM_START_DBLOCK primitive_object_value SYM_END_DBLOCK
+    ;
+
+primitive_object_value:
+    simple_value
+    | simple_list_value
+    | simple_interval_value
+    | term_code
+    | term_code_list_value
+    ;
+
+simple_value:
+    string_value
+    | integer_value
+    | real_value
+    | boolean_value
+    | character_value
+    | date_value
+    | time_value
+    | date_time_value
+    | duration_value
+    | uri_value
+    ;
+
+simple_list_value:
+    string_list_value
+    | integer_list_value
+    | real_list_value
+    | boolean_list_value
+    | character_list_value
+    | date_list_value
+    | time_list_value
+    | date_time_list_value
+    | duration_list_value
+    ;
+
+simple_interval_value:
+    integer_interval_value
+    | real_interval_value
+    | date_interval_value
+    | time_interval_value
+    | date_time_interval_value
+    | duration_interval_value
+    ;
+
+type_identifier:
+    '(' V_TYPE_IDENTIFIER ')'
+    | '(' V_GENERIC_TYPE_IDENTIFIER ')'
+    | V_TYPE_IDENTIFIER
+    | V_GENERIC_TYPE_IDENTIFIER
+    ;
+
+string_value:
+    V_STRING
+    ;
+
+string_list_value:
+    V_STRING ',' V_STRING
+    | string_list_value ',' V_STRING
+    | V_STRING ',' SYM_LIST_CONTINUE
+    ;
+
+integer_value:
+    V_INTEGER
+    | '+' V_INTEGER
+    | '-' V_INTEGER
+    ;
+
+integer_list_value:
+    integer_value ',' integer_value
+    | integer_list_value ',' integer_value
+    | integer_value ',' SYM_LIST_CONTINUE
+    ;
+
+integer_interval_value:
+    SYM_INTERVAL_DELIM integer_value SYM_ELLIPSIS integer_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT integer_value SYM_ELLIPSIS integer_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM integer_value SYM_ELLIPSIS SYM_LT integer_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT integer_value SYM_ELLIPSIS SYM_LT integer_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LT integer_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LE integer_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT integer_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GE integer_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM integer_value SYM_INTERVAL_DELIM
+    ;
+
+real_value:
+    V_REAL
+    | '+' V_REAL
+    | '-' V_REAL
+    ;
+
+real_list_value:
+    real_value ',' real_value
+    | real_list_value ',' real_value
+    | real_value ',' SYM_LIST_CONTINUE
+    ;
+
+real_interval_value:
+    SYM_INTERVAL_DELIM real_value SYM_ELLIPSIS real_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT real_value SYM_ELLIPSIS real_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM real_value SYM_ELLIPSIS SYM_LT real_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT real_value SYM_ELLIPSIS SYM_LT real_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LT real_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LE real_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT real_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GE real_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM real_value SYM_INTERVAL_DELIM
+    ;
+
+boolean_value:
+    SYM_TRUE
+    | SYM_FALSE
+    ;
+
+boolean_list_value:
+    boolean_value ',' boolean_value
+    | boolean_list_value ',' boolean_value
+    | boolean_value ',' SYM_LIST_CONTINUE
+    ;
+
+character_value:
+    V_CHARACTER
+    ;
+
+character_list_value:
+    character_value ',' character_value
+    | character_list_value ',' character_value
+    | character_value ',' SYM_LIST_CONTINUE
+    ;
+
+date_value:
+    V_ISO8601_EXTENDED_DATE
+    ;
+
+date_list_value:
+    date_value ',' date_value
+    | date_list_value ',' date_value
+    | date_value ',' SYM_LIST_CONTINUE
+    ;
+
+date_interval_value:
+    SYM_INTERVAL_DELIM date_value SYM_ELLIPSIS date_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT date_value SYM_ELLIPSIS date_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM date_value SYM_ELLIPSIS SYM_LT date_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT date_value SYM_ELLIPSIS SYM_LT date_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LT date_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LE date_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT date_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GE date_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM date_value SYM_INTERVAL_DELIM
+    ;
+
+time_value:
+    V_ISO8601_EXTENDED_TIME
+
+time_list_value:
+    time_value ',' time_value
+    | time_list_value ',' time_value
+    | time_value ',' SYM_LIST_CONTINUE
+    ;
+
+time_interval_value:
+    SYM_INTERVAL_DELIM time_value SYM_ELLIPSIS time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT time_value SYM_ELLIPSIS time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM time_value SYM_ELLIPSIS SYM_LT time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT time_value SYM_ELLIPSIS SYM_LT time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LT time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LE time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GE time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM time_value SYM_INTERVAL_DELIM
+    ;
+
+date_time_value:
+    V_ISO8601_EXTENDED_DATE_TIME
+    ;
+
+date_time_list_value:
+    date_time_value ',' date_time_value
+    | date_time_list_value ',' date_time_value
+    | date_time_value ',' SYM_LIST_CONTINUE
+    ;
+
+date_time_interval_value:
+    SYM_INTERVAL_DELIM date_time_value SYM_ELLIPSIS date_time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT date_time_value SYM_ELLIPSIS date_time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM date_time_value SYM_ELLIPSIS SYM_LT date_time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT date_time_value SYM_ELLIPSIS SYM_LT date_time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LT date_time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LE date_time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT date_time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GE date_time_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM date_time_value SYM_INTERVAL_DELIM
+    ;
+
+duration_value:
+    V_ISO8601_DURATION
+    ;
+
+duration_list_value:
+    duration_value ',' duration_value
+    | duration_list_value ',' duration_value
+    | duration_value ',' SYM_LIST_CONTINUE
+    ;
+
+duration_interval_value:
+    SYM_INTERVAL_DELIM duration_value SYM_ELLIPSIS duration_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT duration_value SYM_ELLIPSIS duration_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM duration_value SYM_ELLIPSIS SYM_LT duration_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT duration_value SYM_ELLIPSIS SYM_LT duration_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LT duration_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_LE duration_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GT duration_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM SYM_GE duration_value SYM_INTERVAL_DELIM
+    | SYM_INTERVAL_DELIM duration_value SYM_INTERVAL_DELIM
+    ;
+
+term_code:
+    V_QUALIFIED_TERM_CODE_REF
+
+term_code_list_value:
+    term_code ',' term_code
+    | term_code_list_value ',' term_code
+    | term_code ',' SYM_LIST_CONTINUE
+    ;
+
+uri_value:
+    V_URI
+    ;
+
+--------
+
+=== Symbols
+
+The following provides the https://github.com/openEHR/adl-tools/blob/Release-1.4/libraries/common_libs/src/structures/syntax/dadl/parser/dadl_scanner.l[dADL lexical analyser production rules] (lex specification) used in the `Release-1.4` parser:
+
+--------
+
+----------/* definitions */ -----------------------------------------------
+ALPHANUM [a-zA-Z0-9]
+IDCHAR [a-zA-Z0-9_]
+NAMECHAR [a-zA-Z0-9._\-]
+NAMECHAR_SPACE [a-zA-Z0-9._\- ]
+NAMECHAR_PAREN [a-zA-Z0-9._\-()]
+UTF8CHAR (([\xC2-\xDF][\x80-\xBF])|(\xE0[\xA0-\xBF][\x80-\xBF])|([\xE1-\xEF][\x80-\xBF][\x80-\xBF])|(\xF0[\x90-\xBF][\x80-\xBF][\x80-\xBF])|([\xF1-\xF7][\x80-\xBF][\x80-\xBF][\x80-\xBF]))
+
+----------/** Separators **/---------------------------------------------
+[ \t\r]+            -- Ignore separators
+\n+                 -- (increment line count)
+
+----------/** comments **/-----------------------------------------------
+"--".*              -- Ignore comments
+"--".*\n[ \t\r]*    -- (increment line count)
+
+----------/* symbols */ -------------------------------------------------
+"-"                 -- -> Minus_code
+"+"                 -- -> Plus_code
+"*"                 -- -> Star_code
+"/"                 -- -> Slash_code
+"^"                 -- -> Caret_code
+"."                 -- -> Dot_code
+";"                 -- -> Semicolon_code
+","                 -- -> Comma_code
+":"                 -- -> Colon_code
+"!"                 -- -> Exclamation_code
+"("                 -- -> Left_parenthesis_code
+")"                 -- -> Right_parenthesis_code
+"$"                 -- -> Dollar_code
+"??"                -- -> SYM_DT_UNKNOWN
+"?"                 -- -> Question_mark_code
+"|"                 -- -> SYM_INTERVAL_DELIM
+"["                 -- -> Left_bracket_code
+"]"                 -- -> Right_bracket_code
+"="                 -- -> SYM_EQ
+">="                -- -> SYM_GE
+"<="                -- -> SYM_LE
+"<"                 -- -> SYM_LT or SYM_START_DBLOCK
+">"                 -- -> SYM_GT or SYM_END_DBLOCK
+
+".."                -- -> SYM_ELLIPSIS
+"..."               -- -> SYM_LIST_CONTINUE
+
+----------/* keywords */ ---------------------------------------------
+[Tt][Rr][Uu][Ee]                    -- -> SYM_TRUE
+[Ff][Aa][Ll][Ss][Ee]                -- -> SYM_FALSE
+[Ii][Nn][Ff][Ii][Nn][Ii][Tt][Yy]    -- -> SYM_INFINITY
+
+----------/* V_URI */ -------------------------------------------------
+[a-z]+:\/\/[^<>|\\{}^~"\[\] ]*
+
+----------/* V_QUALIFIED_TERM_CODE_REF form [ICD10AM(1998)::F23] */ -----
+\[{NAMECHAR_PAREN}+::{NAMECHAR}+\]
+
+----------/* ERR_V_QUALIFIED_TERM_CODE_REF */ -----
+\[{NAMECHAR_PAREN}+::{NAMECHAR_SPACE}+\]
+
+----------/* V_LOCAL_TERM_CODE_REF */ ---------------------------------
+\[{ALPHANUM}{NAMECHAR}*\]
+
+----------/* V_LOCAL_CODE */ ------------------------------------------
+a[ct][0-9.]+
+
+----------/* V_ISO8601_EXTENDED_DATE_TIME YYYY-MM-DDThh:mm:ss[,sss][Z|+/-nnnn] */ ---
+[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9](,[0-9]+)?(Z|[+-][0-9]{4})? |
+[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9](Z|[+-][0-9]{4})? |
+[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9](Z|[+-][0-9]{4})?
+
+----------/* V_ISO8601_EXTENDED_TIME hh:mm:ss[,sss][Z|+/-nnnn] */ --------
+[0-2][0-9]:[0-6][0-9]:[0-6][0-9](,[0-9]+)?(Z|[+-][0-9]{4})? |
+[0-2][0-9]:[0-6][0-9](Z|[+-][0-9]{4})?
+
+----------/* V_ISO8601_EXTENDED_DATE YYYY-MM-DD */ ------------------------
+[0-9]{4}-[0-1][0-9]-[0-3][0-9] |
+[0-9]{4}-[0-1][0-9]
+
+----------/* V_ISO8601_DURATION PnYnMnWnDTnnHnnMnnS */ -------------
+-- here we allow a deviation from the standard to allow weeks to be
+-- mixed in with the rest since this commonly occurs in medicine
+P([0-9]+[yY])?([0-9]+[mM])?([0-9]+[wW])?([0-9]+[dD])?T([0-9]+[hH])?([0-9]+[mM])?([0-9]+[sS])? |
+P([0-9]+[yY])?([0-9]+[mM])?([0-9]+[wW])?([0-9]+[dD])?
+
+----------/* V_TYPE_IDENTIFIER */ ---------------------------------------
+[A-Z]{IDCHAR}*
+
+----------/* V_GENERIC_TYPE_IDENTIFIER */ -------------------------------
+[A-Z]{IDCHAR}*<[a-zA-Z0-9,_<>]+>
+
+----------/* V_ATTRIBUTE_IDENTIFIER */ ----------------------------------
+[a-z]{IDCHAR}*
+
+----------/* CADL Blocks */ -------------------------------------------
+
+\{[^{}]* -- beginning of CADL block
+<IN_CADL_BLOCK>\{[^{}]* -- got an open brace
+<IN_CADL_BLOCK>[^{}]*\} -- got a close brace
+
+----------/* V_INTEGER */ ----------------------------------------------
+[0-9]+ |
+[0-9]+[eE][+-]?[0-9]+
+
+----------/* V_REAL */ -------------------------------------------------
+[0-9]+\.[0-9]+|
+[0-9]+\.[0-9]+[eE][+-]?[0-9]+
+
+----------/* V_STRING */ -----------------------------------------------
+\"[^\\\n"]*\"
+\"[^\\\n"]*{ -- beginning of a multi-line string
+<IN_STR> {
+\\\\ -- match escaped backslash, i.e. \\ -> \
+\\\" -- match escaped double quote, i.e. \" -> "
+{UTF8CHAR}+ -- match UTF8 chars
+[^\\\n"]+ -- match any other characters
+\\\n[ \t\r]* -- match LF in line
+[^\\\n"]*\" -- match final end of string
+.|\n |
+<<EOF>> -- unclosed String -> ERR_STRING
+}
+
+----------/* V_CHARACTER */ --------------------------------------------
+\'[^\\\n']\' -- normal character in 0-127
+\'\\n\ -- \n
+\'\\r\ -- \r
+\'\\t\ -- \t
+\'\\'\ -- \'
+\'\\\\ -- \\
+\'{UTF8CHAR}\' -- UTF8 char
+\'.{1,2} |
+\'\\[0-9]+(\/)? -- invalid character -> ERR_CHARACTER
+
+--------
+
+== Syntax Alternatives
+
+WARNING: the syntax in this section is not part of dADL
+
+=== Container Attributes
+
+A reasonable alternative to the syntax described above for nested container objects would have been to use an arbitrary member attribute name, such as "items", or perhaps "_items" (in order to indicate to a parser that the attribute name cannot be assumed to correspond to a real property in an object model), as well as the key for each container member, giving syntax like the following:
+
+----
+people = <
+    _items[1] = <name = <> birth_date = <> interests = <>>
+    _items[2] = <name = <> birth_date = <> interests = <>>
+    _items[3] = <name = <> birth_date = <> interests = <>>
+>
+----
+
+Additionally, with this alternative, it becomes more obvious how to include the values of other properties of container types, such as ordering, maximum size and so on, e.g.:
+
+----
+people = <
+    _items[1] = <name = <> birth_date = <> interests = <>>
+    _items[2] = <name = <> birth_date = <> interests = <>>
+    _items[3] = <name = <> birth_date = <> interests = <>>
+    _is_ordered = <True>
+    _upper = <200>
+>
+----
+
+Again, since the names of such properties in any given object technology cannot be assumed, the special underscore form of attribute names is used. However, we are now led to somewhat clumsy paths, where "_items" will occur very frequently, due to the ubiquity of containers in real data:
+
+----
+/people/_items[1]/
+/people/_items[2]/
+/people/_items[3]/
+/people/_is_ordered/
+/people/_upper/
+----
+
+A compromise which satisfies the need for correct representation of all attributes of container types and the need for brevity and comprehensibility of paths would be to make optional the "_items", but retain other container pseudo-attributes (likely to be much more rarely used), thus:
+
+----
+people = <
+    [1] = <name = <> birth_date = <> interests = <>>
+    [2] = <name = <> birth_date = <> interests = <>>
+    [3] = <name = <> birth_date = <> interests = <>>
+    _is_ordered = <True>
+    _upper = <200>
+>
+----
+
+The above form leads to the following paths:
+
+----
+/people[1]/
+/people[2]/
+/people[3]/
+/people/_is_ordered/
+/people/_upper/
+----
+
+The alternative syntax in this sub-section is not currently part of dADL, but could be included in the future, if there was a need to support more precise modelling of container types in dADL. If such support were to be added, it is recommended that the names of the pseudo-attributes ("_item", "_is_ordered" etc) be based on names of appropriate container types from a recognised standard such as OMG UML, OCL or IDL.
+

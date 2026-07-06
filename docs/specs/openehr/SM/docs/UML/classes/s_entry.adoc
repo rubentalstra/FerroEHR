@@ -1,0 +1,29 @@
+=== S_ENTRY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__S_ENTRY (abstract)__*
+
+h|*Description*
+2+a|Simplified RM form of `ENTRY` RM class.
+
+h|*Inherit*
+2+|`<<_s_content_item_class,S_CONTENT_ITEM>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*subject*: `<<_s_party_proxy_class,S_PARTY_PROXY>>`
+a|Converted to `S_PARTY_PROXY` or `S_PARTY_IDENTIFIED` from `PARTY_SELF`, `PARTY_IDENTIFIED` or `PARTY_RELATED`.
+
+h|*0..1*
+|*provider*: `<<_s_party_proxy_class,S_PARTY_PROXY>>`
+a|Converted to `S_PARTY_PROXY` or `S_PARTY_IDENTIFIED` from `PARTY_SELF`, `PARTY_IDENTIFIED` or `PARTY_RELATED`.
+
+h|*0..1*
+|*other_participations*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_participation_class,S_PARTICIPATION>>>`
+a|(unchanged from RM)
+|===

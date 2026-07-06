@@ -1,0 +1,9 @@
+title: UID_BASED_ID
+oneOf:
+  - $ref: ../base_types/UMHierObjectId.yaml
+  - $ref: ../base_types/UMObjectVersionId.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    HIER_OBJECT_ID: ../base_types/UMHierObjectId.yaml
+    OBJECT_VERSION_ID: ../base_types/UMObjectVersionId.yaml

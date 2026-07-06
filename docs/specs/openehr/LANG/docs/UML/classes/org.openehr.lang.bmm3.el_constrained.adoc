@@ -1,0 +1,21 @@
+=== EL_CONSTRAINED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EL_CONSTRAINED (abstract)__*
+
+h|*Description*
+2+a|Abstract parent for second-order constrained forms of first-order expression meta-types.
+
+h|*Inherit*
+2+|`<<_el_expression_class,EL_EXPRESSION>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*base_expression*: `<<_el_expression_class,EL_EXPRESSION>>`
+a|The base expression of this constrained form.
+|===

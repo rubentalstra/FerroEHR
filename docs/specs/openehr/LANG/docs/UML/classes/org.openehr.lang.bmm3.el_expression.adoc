@@ -1,0 +1,27 @@
+=== EL_EXPRESSION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EL_EXPRESSION (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of all typed expression meta-types.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*eval_type* (): `<<_bmm_type_class,BMM_TYPE>>`
+a|Meta-type of expression entity used in type-checking and evaluation. 
+
+Effected in descendants.
+
+h|*1..1*
+|*is_boolean* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post_result__: `Result = eval_type().equal( \{BMM_MODEL}.boolean_type_definition())`
+a|True if `_eval_type_` is notionally Boolean (i.e. a `BMM_SIMPLE_TYPE` with `_type_name()_` = `Boolean`).
+|===

@@ -1,0 +1,30 @@
+=== C_OBJECT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__C_OBJECT (abstract)__*
+
+h|*Description*
+2+a|Abstract model of constraint on any kind of object node.
+
+h|*Inherit*
+2+|`<<_archetype_constraint_class,ARCHETYPE_CONSTRAINT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*rm_type_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Reference model type that this node corresponds to.
+
+h|*1..1*
+|*occurrences*: `link:/releases/BASE/{base_release}/foundation_types.html#_interval_class[Interval^]<link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]>`
+a|Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1).
+
+h|*1..1*
+|*node_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a node_id; for nodes under a container C_ATTRIBUTE, the id must be an id-code must be defined in the archetype terminology. For valid structures, all node ids are at-codes.
+For C_PRIMITIVE_OBJECTs, it will have the special value Primitive_node_id.
+|===

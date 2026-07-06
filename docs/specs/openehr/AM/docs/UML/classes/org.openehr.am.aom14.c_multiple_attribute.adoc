@@ -1,0 +1,29 @@
+=== C_MULTIPLE_ATTRIBUTE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*C_MULTIPLE_ATTRIBUTE*
+
+h|*Description*
+2+a|Concrete model of constraint on multiply-valued (ie. container) attribute node.
+
+h|*Inherit*
+2+|`<<_c_attribute_class,C_ATTRIBUTE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*cardinality*: `<<_cardinality_class,CARDINALITY>>`
+a|Cardinality of this attribute constraint, if it constraints a container attribute.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*members* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_c_object_class,C_OBJECT>>>`
+a|List of constraints representing members of the container value of this attribute within the data. Semantics of the uniqueness and ordering of items in the container are given by the cardinality.
+|===

@@ -1,0 +1,13 @@
+title: ITEM
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+properties:
+  _type:
+    type: string
+x-discriminator-value: ITEM
+x-cg-discriminator:
+  propertyName: _type
+  mapping:
+    ELEMENT: '#/components/schemas/Element'
+    CLUSTER: '#/components/schemas/Clstr'

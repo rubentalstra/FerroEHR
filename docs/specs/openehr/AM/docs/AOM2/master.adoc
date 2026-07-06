@@ -1,0 +1,128 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+== Acknowledgements
+
+=== Primary Author
+
+* Thomas Beale, Ars Semantica, UK; openEHR International Board.
+
+=== Contributors
+
+This specification and its sibling Archetype Definition Language specification have benefited from wide formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+
+* Koray Atalag, MD, PhD, Sen. Researcher, National Institute for Health Innovation (NIHI), New Zealand
+* Silje Ljosland Bakke, RN, Nasjonal IKT HF, Norway
+* Linda Bird PhD, IHTSDO, Australia
+* Pieter Bos, Senior Software Engineer, Nedap, Netherlands
+* Diego Boscá, IBIME, Technical University Valencia, VeraTech for Health, Spain
+* Rong Chen MD, PhD, Cambio Healthcare Systems, Sweden
+* Joey Coyle MD, PhD, Intermountain Healthcare, New York
+* Borut Fabjan, Program Manager, Better d.o.o., Slovenia
+* Sebastian Garde PhD, Ocean Informatics, UK
+* Peter Gummer, Ocean Informatics, Australia
+* Sam Heard MD, Ocean Informatics, Australia
+* Stan Huff MD, Intermountain Healthcare, UT, USA
+* David Ingram PhD, Emeritus Professor of Health Informatics, UCL, UK
+* Dipak Kalra MD, PhD, Professor Health Informatics, CHIME, UCL, UK
+* Shinji Kobayashi PhD, Kyoto University EHR research unit, Japan
+* Bostjan Lah, Architect, Better d.o.o., Slovenia
+* Patrick Langford, NeuronSong LLC, Utah, USA
+* David Lloyd, CHIME, UCL (ret), UK
+* Chunlan Ma PhD, MD, Ocean Informatics, Australia
+* Ian McNicoll MD, FreshEHR, UK
+* David Moner, IBIME, Technical University Valencia, VeraTech for Health, Spain
+* Claude Nanjo MA African Studies., MPH, Cognitive Medical Systems Inc., California
+* Pablo Pazos Gutierrez, Tarmac IT, CaboLabs, Uruguay
+* Harold Solbrig, Mayo Clinic, Rochester, USA
+* Erik Sundvall PhD, Linkoping University, Sweden
+* Alessandro Torrisi, Code24, The Netherlands
+* Bert Verhees, ROSA Software, The Netherlands
+* Jelte Zeilstra, Software Engineer, Nedap, Netherlands
+
+=== Supporters
+
+The work reported in this paper has been funded by the following organisations:
+
+* the {openehr_industry_partners}[openEHR Industry Partners^];
+* Ars Semantica, UK;
+* UCL (University College London) - Centre for Health Informatics and Multiprofessional Education (CHIME);
+* Ocean Informatics, Australia.
+
+Special thanks to David Ingram, Emeritus Professor of Health Informatics at UCL, who provided a vision and collegial working environment ever since the days of GEHR (1992).
+
+=== Trademarks
+
+* 'openEHR' is a trademark of the openEHR Foundation
+* 'Java' is a registered trademark of Oracle Corporation
+* 'Microsoft' is a trademark of the Microsoft Corporation
+
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+
+:sectnums:
+
+ifdef::package_qualifiers[]
+:pkg: org.openehr.am.aom2.
+endif::[]
+
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-model_overview.adoc[leveloffset=+1]
+include::master03-archetype_package.adoc[leveloffset=+1]
+
+include::master04.1-constraint_model-overview.adoc[leveloffset=+1]
+include::master04.2-constraint_model-semantics.adoc[leveloffset=+1]
+include::master04.3-constraint_model-second_order.adoc[leveloffset=+1]
+include::master04.4-constraint_model-AOM_type_subs.adoc[leveloffset=+1]
+include::master04.5-constraint_model-class_definitions.adoc[leveloffset=+1]
+
+include::master05-rules_package.adoc[leveloffset=+1]
+include::master06-rm_overlay.adoc[leveloffset=+1]
+include::master07-terminology_package.adoc[leveloffset=+1]
+include::master08-validation.adoc[leveloffset=+1]
+include::master09-serialisation_model.adoc[leveloffset=+1]
+include::master10-templates.adoc[leveloffset=+1]
+include::master11-rm_adaptation.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Amendment Record -----------------------------------------------
+//
+:sectnums!:
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+:sectnums!:
+== References
+
+bibliography::[]

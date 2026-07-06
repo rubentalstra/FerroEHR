@@ -1,0 +1,475 @@
+= Paths and Locators
+
+== Overview
+
+The openEHR architecture includes a path mechanism that enables any node within a top level structure
+to be specified from the top of the structure using a "semantic" (i.e. archetype-based) X-path
+compatible path. The availability of such paths radically changes the available querying possibilities
+with health information, and is one of the major distinguishing features of openEHR.
+
+Technically, the combination of a path and a Version identifier such as `OBJECT_VERSION_ID` forms
+a 'globally qualified node reference' which can be expressed using `LOCATABLE_REF`. It can also be
+expressed in portable URI form as a `DV_EHR_URI`, known as a 'globally qualified node locator'.
+Either representation enables any openEHR data node to be referred to from anywhere. This section
+describes the syntax and semantics of paths, and of the URI form of reference. In the following, the
+term 'archetype path' means a path extracted from an archetype, while "data path" means one that
+identifies an item in data. They are no different formally, and this terminology is only used to indicate
+where they are used.
+
+== Paths
+
+=== Basic Syntax
+
+Paths in openEHR are defined in an Xpath1-compatible syntax which is a superset of the path syntax
+described in the Archetype Definition Language (ADL). The syntax is designed to be easily mappable
+to {w3c_xpath}[W3C Xpath expressions^], for use with openEHR-based XML.
+
+The data path syntax used in locator expressions follows the general pattern of a path consisting of
+segments each consisting of an attribute name, and separated by the slash ('/') character, i.e.:
+
+----
+attribute_name / attribute_name / ... / attribute_name
+----
+
+NOTE: In all openEHR documentation, the term 'attribute' is used in the object-oriented sense of 'property of an object', not in the XML sense of named values appearing within a tag. The syntax described here should not be considered to necessarily have a literal mapping to XML instance, but rather to have a logical mapping to object-oriented data structures.
+
+Paths select the object which is the value of the final attribute name in the path, when going from
+some starting point in the tree and following attribute names given in the path. The starting point is
+indicated by the initial part of the path, and can be specified in two ways:
+
+* _relative path_: path starts with an attribute name, and the starting point is the current point in the tree (given by some previous operation or knowledge);
+* _absolute path_: path starts with a `/`; the starting point is the top of the structure.
+
+In addition, the `//` notation from Xpath can be used to define a path pattern:
+
+* _path pattern_: path starts with or contains the symbol '//' and is taken to be a pattern which can match any number of path segments in the data; the pattern is matched if an actual path can be found anywhere in the structure for which part of the path matches the path section before the `//` symbol, and a later section matches the section appearing after the `//`.
+
+=== Predicate Expressions
+
+==== Overview
+Paths specified solely with attribute names are limited in two ways. Firstly, they can only locate objects in structures in which there are no containers such as lists or sets. However, in any realistic data, including most openEHR data, list, set and hash structures are common. Additional syntax is needed to match a particular object from among the siblings referred to by a container attribute. This takes the form of a predicate expression enclosed in brackets ('[]') after the relevant attribute in a segment, i.e.:
+
+----
+attribute_name [predicate expression]
+----
+
+The general form of a path then resembles the following:
+
+----
+attribute_name / attribute_name [predicate expression] / ...
+----
+
+Here, predicate expressions are used optionally on those attributes defined in the reference model to be of a container type (i.e. having a cardinality of > 1). If a predicate expression is not used on a container attribute, the whole container is selected. Note that predicate expressions are often possible even on single-valued attributes, and can be used (e.g. if generic path-processing software can't tell the difference) but are not required.
+
+The second limitation of basic paths is that they cannot locate objects based on other conditions, such as the object having a child node with a particular value. To address this, predicate expressions can be used to select an object on the basis of other conditions relative to the object, by including boolean expressions including paths, operators, values and parentheses. The syntax of predicate expressions used in openEHR is a subset of the Xpath syntax for predicates with a small number of short-cuts.
+
+==== Archetype path Predicate
+
+The most important predicate uses the archetype_node_id value (inherited from `LOCATABLE`) to limit the items returned from a container, such as to certain `ELEMENTs` within a `CLUSTER`. The shortcut form allows the archetype code to be included on its own as the predicate, e.g. `[at0003]`. This shortcut corresponds to using an archetype path against the runtime data. A typical archetype-derived path is the following (applied to an Observation instance):
+
+----
+/data/events[at0003]/data/items[at0025]/value/magnitude
+----
+
+This path refers to the magnitude of a 1-minute Apgar total in an Observation containing a full Apgar result structure. In this path, the `[atNNNN]` predicates are a shortcut for `[@archetype_node_id = 'atNNNN']` in standard Xpath. 
+
+NOTE: while an archetype path is always unique in an archetype, it can correspond to more than one item in runtime data, due to the repeated use of the same archetype node within a container.
+
+==== Name-based Predicate
+
+If the `LOCATABLE._name_` value in certain data is populated with meaningful values, a useful predicate can be formed using a combination of `name.value` (which takes the Xpath-like form `name/value` in a predicate) and the `_archetype_node_id_` value. The standard Xpath form of this expression is exemplified by the following:
+
+----
+/data/events[@archetype_node_id = 'at0001' and name/value='standing']
+----
+
+with the openEHR equivalent being:
+
+----
+/data/events[at0001 and name/value='standing']
+----
+
+Since the combination of an archetype node identifier and a `_name_` value is very common in archetyped databases, a shortcut is also available for the `_name/value_` expression, which is to simply include the value after a comma as follows:
+
+----
+/data/events[at0001, 'standing']
+----
+
+==== Other Predicates
+
+Other predicates can be used, based on the value of other attributes such as `ELEMENT._name_` or
+`EVENT._time_`. Combinations of the archetype_node_id and other such values are commonly used in
+querying, such as the following path fragment (applied to an `OBSERVATION` instance):
+
+----
+/data/events[at0007 AND time >= '24-06-2005T09:30:00']
+----
+
+This path would choose Events in `OBSERVATION._data_` whose `_archetype_node_id_` meaning is 'summary
+event' (`at0007` in some archetype) and which occurred at or after the given time. The following
+example would choose an Evaluation containing a diagnosis (`at0002.1`) of 'other bacterial intestinal
+infections' (ICD10 code `A04`):
+
+----
+/data/items[at0002.1
+    AND value/defining_code/terminology_id/value = 'ICD10AM'
+    AND value/defining_code/code_string = 'A04']
+----
+
+=== Paths within Top-level Structures
+
+Paths within top-level structures strictly adhere to attribute and function names in the relevant parts of the reference model. Predicate expressions are needed to distinguish multiple siblings in various points in paths into these structures, but particularly at archetype "chaining" points. A chaining point is where one archetype takes over from another as illustrated in figure <<archetypes_and_data>>. Chaining points in Compositions occur between the Composition and a Section structure, potentially between a Section structure and other sub-Section structures (constrained by a different Section archetype), and between either Compositions or Section structures, and Entries. Chaining might also occur inside an Entry, if archetyping is used on lower level structures such as Item_lists etc. Most chaining points correspond to container types such as `List<T>` etc., e.g. `COMPOSITION._content_` is defined to be a `List<CONTENT_ITEM>`, meaning that in real data, the content of a Composition could be a List of Section structures. To distinguish between such sibling structures, predicate expressions are used, based on the archetype_id. At the root point of an archetype in data (e.g. top of a Section structure), the archetype_id carries the identifier of the archetype used to create that structure, in the same manner as any interior point in an archetyped structure has an `_archetype_node_id_` attribute carrying archetype `_node_id_` values. The chaining point between Sections and Entries works in the same manner, and since multiple Entries can occur under a single Section, `_archetype_id_` predicates are also used to distinguish them. The same shorthand is used for `_archetype_id_` predicate expressions as for `_archetype_node_ids_`, i.e. instead of using `[@archetype_id = "xxxxx"]`, `[xxxx]` can be used instead.
+
+The following paths are examples of referring to items within a Composition:
+
+----
+/content[openEHR-EHR-SECTION.vital_signs.v1 and name/value='Vital signs']/items[openEHR-EHR-OBSERVATION.heart_rate-pulse.v1 and name/value='Pulse']/data/events[at0003 and name/value='Any event']/data/items[at1005]
+
+/content[openEHR-EHR-SECTION.vital_signs.v1 and name/value='Vital signs']/items[openEHR-EHR-OBSERVATION.blood_pressure.v1 and name/value='Blood pressure']/data/events[at0006 and name/value='any event']/data/items[at0004]
+
+/content[openEHR-EHR-SECTION.vital_signs.v1, 'Vital signs']/items[openEHR-EHR-OBSERVATION.blood_pressure.v1, 'Blood pressure']/data/events[at0006, 'any event']/data/items[at0005]
+----
+
+Paths within the other top level types follow the same general approach, i.e. are created by following
+the required attributes down the hierarchy.
+
+=== Data Paths and Uniqueness
+
+Archetype paths are not guaranteed to uniquely identify items in data, due to the fact that one archetype
+node may correspond to multiple instances in the data. However it is often useful to be able
+to construct a unique path to an item in real data. This can be done by using attributes other than
+`_archetype_node_id_` in path predicates. 
+
+==== Using a Uid-based Predicate
+The most reliable way to obtain unique path for run-time nodes in data is is by populating the inherited `LOCATABLE._uid_` field with UUIDs. A predicate can be formed from just the `_uid_` value, or the combination of  `_uid_` value and the `_archetype_node_id_` value, which although technically speaking is redundant, is more informative (e.g. it can be displayed with the `_archetype_node_id_` meaning visible for the user). This is the preferred method to achieve runtime unique node identification. The standard Xpath form of this expression is exemplified by the following:
+
+----
+/data/events[@uid='25f2f224-64f0-41ec-a5c7-c31c040c77ce']   <!-- assumes 'uid' is an XML attribute in XSD -->
+/data/events[@archetype_node_id = 'at0001' and @uid='25f2f224-64f0-41ec-a5c7-c31c040c77ce']
+----
+
+with the openEHR equivalent being:
+
+----
+/data/events[uid='25f2f224-64f0-41ec-a5c7-c31c040c77ce']
+/data/events[at0001 and uid='25f2f224-64f0-41ec-a5c7-c31c040c77ce']
+----
+
+==== Using a Name-based Predicate
+
+If the `LOCATABLE._name_` value in certain data is known to be reliably populated with unique values across immediate siblings, the `name/value` term may be used as described above to form a uniquely identifying predicate for a node. Consider as an example the following `OBSERVATION` archetype (expressed in {openehr_odin}[ODIN syntax^]):
+
+[source, cadl]
+--------
+OBSERVATION[at0000] matches {                               -- blood pressure measurement
+    data matches {
+        HISTORY matches {
+            events {1..*} matches {
+                EVENT[at0006] {0..1} matches {              -- any event
+                    name matches {
+                        DV_TEXT matches {...}
+                    }
+                    data matches {
+                        ITEM_LIST[at0003] matches {         -- systemic arterial BP
+                            count matches {|>=2|}
+                            items matches {
+                                ELEMENT[at0004] matches {   -- systolic BP
+                                    name matches {
+                                        DV_TEXT matches {...}
+                                    }
+                                    value matches {
+                                        magnitude matches {...}
+                                    }
+                                }
+                                ELEMENT[at0005] matches {   -- diastolic BP
+                                    name matches {
+                                        DV_TEXT matches {...}
+                                    }
+                                    value matches {
+                                        magnitude matches {...}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+--------
+
+The following path extracted from the archetype refers to the systolic blood pressure magnitude:
+
+----
+/data/events[at0006]/data/items[at0004]/value/magnitude
+----
+
+The codes `[atnnnn]` at each node of the archetype become the `_archetype_node_id_` found in each node in the data.
+
+Now consider an `OBSERVATION` instance (expressed here in {openehr_odin}[ODIN syntax^]), in which a history of two blood pressures has been recorded using this archetype:
+
+[source, odin]
+--------
+<                                                       -- OBSERVATION - blood pressure measurement
+    archetype_node_id = <"openEHR-EHR-OBSERVATION.blood_pressure.v1">
+    name = <value = <"BP measurement">>
+    data = <                                            -- HISTORY
+        archetype_node_id = <"at0001">
+        origin = <2005-12-03T09:22:00>
+        events = <                                      -- List <EVENT>
+            [1] = <                                     -- EVENT
+                archetype_node_id = <"at0006">
+                name = <value = <"sitting">>
+                time = <2005-12-03T09:22:00>
+                data = <                                -- ITEM_LIST
+                    archetype_node_id = <"at0003">
+                    items = <                           -- List<ELEMENT>
+                        [1] = <
+                            name = <value = <"systolic">>
+                            archetype_node_id = <"at0004">
+                            value = <magnitude = <120.0> ...>
+                        >
+                        [2] = <
+                            name = <value = <"diastolic">>
+                            archetype_node_id = <"at0005">
+                            value = <magnitude = <80.0> ...>
+                        >
+                    >
+                >
+            >
+            [2] = <                                     -- EVENT
+                archetype_node_id = <"at0006">
+                name = <value = <"standing">>
+                time = <2005-12-03T09:27:00>
+                data = <                                -- ITEM_LIST
+                    archetype_node_id = <"at0003">
+                    items = <                           -- List<ELEMENT>
+                        [1] = <
+                            name = <value = <"systolic">>
+                            archetype_node_id = <"at0004">
+                            value = <magnitude = <105.0> ...>
+                        >
+                        [2] = <
+                            name = <value = <"diastolic">>
+                            archetype_node_id = <"at0005">
+                            value = <magnitude = <70.0> ...>
+                        >
+                    >
+                >
+            >
+        >
+    >
+>
+--------
+
+The same data are shown in JSON syntax:
+
+[source, json]
+--------
+{
+    "_type": "OBSERVATION",
+    "archetype_node_id": "openEHR-EHR-OBSERVATION.blood_pressure.v1",
+    "name": {
+        "value": "BP measurement"
+    },
+    "data": {
+        "archetype_node_id": "at0001",
+        "origin": "2005-12-03T09:22:00",
+        "events": [
+            {
+                "_type": "POINT_EVENT",
+                "archetype_node_id": "at0006",
+                "name": {
+                    "value": "sitting"
+                },
+                "time": "2005-12-03T09:22:00",
+                "data": {
+                    "_type": "ITEM_LIST",
+                    "archetype_node_id": "at0003",
+                    "items": [
+                        {
+                            "name": {
+                                "value": "systolic"
+                            },
+                            "archetype_node_id": "at0004",
+                            "value": {
+                                "magnitude": 120.0
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "diastolic"
+                            },
+                            "archetype_node_id": "at0005",
+                            "value": {
+                                "magnitude": 80.0
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "_type": "POINT_EVENT",
+                "archetype_node_id": "at0006",
+                "name": {
+                    "value": "standing"
+                },
+                "time": "2005-12-03T09:27:00",
+                "data": {
+                    "_type": "ITEM_LIST",
+                    "archetype_node_id": "at0003",
+                    "items": [
+                        {
+                            "name": {
+                                "value": "systolic"
+                            },
+                            "archetype_node_id": "at0004",
+                            "value": {
+                                "magnitude": 105.0
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "diastolic"
+                            },
+                            "archetype_node_id": "at0005",
+                            "value": {
+                                "magnitude": 70.0
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}
+--------
+
+NOTE: in the above example, `_name_` values are shown as if they were all `DV_TEXTs`, whereas in reality in openEHR they more likely to be `DV_CODED_TEXT` instances; either is allowed by the archetype. This has been done to reduce the size of the example, and makes no difference to the paths shown below.
+
+The archetype path mentioned above matches both systolic pressures in the recording. In many querying situations, this may be the intention. However, to uniquely match each of the systolic pressure nodes, paths would need to be created that are based not only on the `_archetype_node_id_` but also on another attribute. In the case above, the `_name_` attribute may be used, if it is known to have been reliably populated with unique values across sets of immediate siblings under container attributes. The paths are created using the openEHR shortcut form of the `name/value' predicate described earlier, as follows:
+
+----
+/data/events[at0006, 'sitting']/data/items[at0004]/value/magnitude
+/data/events[at0006, 'sitting']/data/items[at0005]/value/magnitude
+/data/events[at0006, 'standing']/data/items[at0004]/value/magnitude
+/data/events[at0006, 'standing']/data/items[at0005]/value/magnitude
+----
+
+Each of these paths has an Xpath equivalent of the following form:
+
+----
+/data/events[@archetype_node_id='at0006' and name/value='standing']/data/items[@archetype_node_id='at0004']/value/magnitude
+----
+
+To achieve unique paths based on the `LOCATABLE._name_` attribute, the system has to specifically ensure uniqueness of `_name_` for sibling nodes, e.g. by systematically being set to a copy of one or more other attribute values. For example, in an `EVENT` object, `_name_` could be a string copy of the `_time_` attribute.
+
+In general, uniqueness of property values of sibling nodes is not required, and the only guaranteed unique paths are those based on positional predicates.
+
+==== Using Positional Parameters
+
+If it is known within a system that the order of items in container attributes in the data is always preserved across storage, transformation etc., guaranteed unique paths can be created using the Xpath positional parameter. Using the above example, unique to the systolic and diastolic pressures of each event (sitting and standing measurements) can be constructed using the following expressions (identical in openEHR and Xpath):
+
+----
+/data/events[1]/data/items[1]/value/magnitude
+/data/events[1]/data/items[2]/value/magnitude
+/data/events[2]/data/items[1]/value/magnitude
+/data/events[2]/data/items[2]/value/magnitude
+----
+
+== EHR URIs
+
+There are two broad categories of URIs that can be used with any resource: direct references, and queries. The first kind are usually generated by the system containing the referred-to item, and passed to other systems as definitive references, while the second are queries from the requesting system in the form of a URI.
+
+Query-oriented URIs are not formally defined here, since the expectation is that a query service will be used, and that URI formats for querying will dependent on the type of service (for example REST URIs are usually based on served resources).
+
+A dedicated type `DV_EHR_URI` is defined within the RM `data_types` package to carry the URIs described here. A `DV_EHR_URI` instance can only refer to an entity within an openEHR EHR (i.e. not some other kind of resource).
+
+The following guiding principles have been used to inform the design of EHR URIs.
+
+* It is assumed that one URI 'scheme' (i.e. what precedes the ':' in an {rfc3986}[IETF RFC3986^] URI) is used for each major category of data, i.e. EHR, demographics, etc. Thus, the `ehr` scheme corresponds to EHR content.
+* URIs described here refer to information items within `VERSION._data_`, i.e. to objects such as `COMPOSITION` or `FOLDER`;
+* Versions are identified within URIs either via the relevant `VERSIONED_OBJECT._uid_` (i.e. a GUID)  or the `VERSION._uid_` (a 3-part `OBJECT_VERSION_ID`).
+
+
+=== EHR Reference URIs
+
+To create a reference to a node in an EHR in the form of a URI (uniform resource identifier), three elements are needed: the path within a top-level structure, a reference to a top-level structure within an EHR, a reference to an EHR, and an optional reference to an EHR system (i.e. repository). These can be combined to form a URI in an 'ehr' scheme-space which conforms to the following model:
+
+[source, uri]
+----
+ehr://system_id/ehr_id/top_level_structure_locator/path_inside_top_level_structure
+
+// ----------- variations -----------
+ehr://system_id/ehr_id                // refer to an EHR within a specific EHR system/service
+ehr:/ehr_id	                          // refer to an EHR within the 'current' (i.e. local) EHR system
+ehr:/ehr_id/top_level_structure_locator // a specific COMPOSITION, FOLDER etc
+ehr:/ehr_id/top_level_structure_locator/path_inside_top_level_structure 
+                                      // a sub-item of a specific COMPOSITION, FOLDER etc
+----
+
+The possible values for `top_level_structure_locator` come from attribute names of the class `EHR`, visible in the link:{openehr_rm_ehr}#_ehr_package[ehr package^], namely `__compositions__`, `__directory__` etc.
+
+In this way, any object in any openEHR EHR is addressable via a URI. Within `ehr` space, URL-style references to particular servers, hosts etc. are not used, due to not being reliable in the long term. Instead, logical identifiers for EHRs and/or subjects are used, ensuring that URIs remain correct for the lifetime of the resources to which they refer. The openEHR data type `DV_EHR_URI` is designed to carry URIs of this form, enabling URIs to be constructed for use within `LINKs` and elsewhere in the openEHR EHR.
+
+NOTE: So-called 'plain-text URIs' that contain RFC-3986 forbidden characters such as spaces etc., are allowed on the basis of human readability, but must be RFC-3986 encoded prior to use in e.g. REST APIs or other contexts relying on machine-level conformance.
+
+See {rfc3986}[RFC-3986, Universal Resource Identifiers in WWW^] by Tim Berners-Lee. See W3C document {w3c_uri_addressing}[Naming and Addressing: URIs, URLs, ...^] for a starting point on URIs. 
+
+An `ehr:` URI implies the availability of a name resolution mechanism in ehr-space, similar to the DNS, which provides such services for http-, ftp- and other well-known URI schemes. Until such services are established, ad hoc means of dealing with `ehr:` URIs are likely to be used, as well as more traditional `http://` style references. The subsections below describe how URIs of both kinds can be constructed.
+
+==== EHR Location
+
+In ehr-space, a direct locator for an EHR is an EHR identifier (i.e. `EHR._ehr_id_`) as distinct from a subject or patient identifier. Normally the copy in the 'local system' is the one required, and a majority of the time, may be the only one in existence. In this case, the required EHR can be identified simply by an unqualified identifier, giving a URI of the form:
+
+[source, uri]
+----
+ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/
+----
+
+However, due to copying / synchronising of the EHR for one subject among multiple EHR systems, a given EHR identifier may exist at more than one location. It is not guaranteed that each such EHR is a completely identical copy of the others, since partial copying is allowed. Therefore, in an environment where EHR copies exist, and there is a need to identify exactly which EHR instance is required, a system identifier is also required, giving a URI of the form:
+
+[source, uri]
+----
+ehr://uk.nhs.ehr1/347a5490-55ee-4da9-b91a-9bba710f730e/
+----
+
+==== Top-level Structure Locator
+
+There are two logical ways to identify a top-level structure in an openEHR EHR. The first is via the identifier of the required top-level object (i.e. `VERSIONED_OBJECT._uid_`). When a URI uses the object identifier, the latest trunk version is always assumed. This leads to URIs like the following:
+
+[source, uri]
+----
+ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/compositions/87284370-2D4B-4e3d-A3F3-F303D2F4F34B
+ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/directory
+----
+
+The second way to identify a top-level structure is by using an exact Version identifier, which takes the form `object_id::creating_system_id::version_tree_id`. This leads to URIs like the following:
+
+[source, uri]
+----
+ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/compositions/87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2
+----
+
+This URI identifies a top-level item whose version identifier is `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`, i.e. the second trunk version of the Versioned Object identified by the GUID, created at an EHR system identified by `net.nhs.rmh`. Note that the mention of a system in the version identifier does not imply that the requested EHR is at that system, only that the top-level object being sought was created at that system.
+ 
+==== Item URIs
+
+With the addition of path expressions as described earlier, URIs can be constructed that refer to the finest grained items in the openEHR EHR, such as the following:
+
+[source, uri]
+----
+ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/compositions/87284370-2D4B-4e3d-A3F3-F303D2F4F34B/content[openEHR-EHR-SECTION.vital_signs.v1]/items[openEHR-EHR-OBSERVATION.heart_rate-pulse.v1]/data/events[at0006, 'any event']/data/items[at0004]
+----
+
+==== Relative URIs
+
+URIs can also be constructed relative to the current EHR, in which case they do not mention the EHR id, as in the following example:
+
+[source, uri]
+----
+ehr:compositions/87284370-2D4B-4e3d-A3F3-F303D2F4F34B/content[openEHR-EHR-SECTION.vital_signs.v1]/items[openEHR-EHR-OBSERVATION.blood_pressure.v1]/data/events[at0006, 'any event']/data/items[at0004]
+ehr:directory
+----
+

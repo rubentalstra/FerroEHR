@@ -1,0 +1,93 @@
+{
+    "id": "CNF",
+    "title": "Conformance Specifications",
+    "description": "openEHR Conformance Specifications",
+    "keywords": "conformance",
+    "status": "DEVELOPMENT",
+    "specifications": [
+        {
+            "id": "guide",
+            "title": "openEHR Conformance Guide",
+            "title_short": "Conformance Guide",
+            "description": "openEHR Conformance Guide",
+            "summary": "Guide to conformance testing in openEHR.",
+            "micro_summary": "Guide to conformance testing in openEHR.",
+            "copyright_year": "2021",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "conformance, guide"
+        },
+        {
+            "id": "platform_test_schedule",
+            "title": "openEHR Platform Conformance Test Schedule",
+            "title_short": "Platform Conformance Test Schedule",
+            "description": "openEHR Platform Conformance Test Schedule",
+            "summary": "Specification of test cases for demonstrating conformance to the openEHR Platform definition.",
+            "micro_summary": "System Under Test (SUT), Test, Conformance Schedule, Profiles, Certification",
+            "copyright_year": "2017",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "conformance, test",
+            "notes": [
+                {
+                    "link": "https://specifications.openehr.org/wiki/spaces/spec/pages/94181296/Conformance+Notes+-+SEC+meeting+Alkmaar+2017",
+                    "text": "SEC Meeting Alkmaar 2017 notes"
+                },
+                {
+                    "link": "https://specifications.openehr.org/wiki/spaces/spec/pages/73367558/openEHR+Conformance",
+                    "text": "Original page"
+                }
+            ]
+        },
+        {
+            "id": "profiles",
+            "title": "openEHR Platform Profiles",
+            "title_short": "Platform Profiles",
+            "description": "openEHR Platform Profiles",
+            "summary": "Profiles of platform components corresponding to common industry product offerings.",
+            "micro_summary": "Platform component profiles.",
+            "copyright_year": "2022",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "conformance, profile, product"
+        },
+        {
+            "id": "certificate",
+            "title": "openEHR Conformance Certificate",
+            "title_short": "Conformance Certificate",
+            "description": "openEHR Conformance Certificate",
+            "summary": "openEHR Conformance Certificate.",
+            "micro_summary": "openEHR Conformance Certificate.",
+            "copyright_year": "2021",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "conformance, certificate"
+        }
+    ],
+    "expressions": [
+        {
+            "id": "REST API src",
+            "dependency": {
+                "component": "ITS-REST",
+                "release": "latest"
+            }
+        },
+        {
+            "id": "CNF-SM",
+            "type": "url",
+            "title": "Service Model (SM)",
+            "description": "Service Model (SM) specification",
+            "link": "/releases/SM/latest"
+        }
+    ],
+    "jira": {
+        "open_issues": "11108",
+        "roadmap": "SPECCNF"
+    },
+    "releases": [
+        {
+            "id": "1.0.0",
+            "date": "",
+            "jira": {
+                "crs": "SPECCNF/versions/12524",
+                "prs": "SPECPR/versions/12525"
+            }
+        }
+    ]
+}

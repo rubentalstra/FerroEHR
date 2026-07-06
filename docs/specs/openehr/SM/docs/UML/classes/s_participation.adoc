@@ -1,0 +1,29 @@
+=== S_PARTICIPATION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_PARTICIPATION*
+
+h|*Description*
+2+a|Simplified RM form of `PARTICIPATION` RM class, for instances where `_performer_` is of type `PARTY_SELF`.
+
+h|*Inherit*
+2+|`link:/releases/SM/{sm_release}/S_TYPE.html#_s_type_class[S_TYPE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `PARTICIPATION._performer.external_ref.id.value_`.
+
+h|*0..1*
+|*mode*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `PARTICIPATION._mode_: DV_CODED_TEXT`.
+
+h|*1..1*
+|*function*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `PARTICIPATION._function_: DV_TEXT`.
+|===

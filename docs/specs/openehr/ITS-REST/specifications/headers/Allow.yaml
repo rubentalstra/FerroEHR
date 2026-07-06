@@ -1,0 +1,5 @@
+description: |
+  The `Allow` header lists the set of methods supported.
+schema:
+  type: string
+  example: 'GET, POST, PUT, DELETE, OPTIONS'

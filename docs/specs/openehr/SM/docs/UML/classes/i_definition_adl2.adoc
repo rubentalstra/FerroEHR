@@ -1,0 +1,127 @@
+=== I_DEFINITION_ADL2 Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_DEFINITION_ADL2*
+
+h|*Description*
+2+a|Interface to ADL2 definitions (i.e. models) in an EHR 'system'.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_artefact* ( +
+an_id: `link:/releases/AM/{am_release}/AOM2.html#_archetype_hrid_class[ARCHETYPE_HRID^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if AOM2 artefact with id `_an_id_` exists in the service.
+
+h|*1..1*
+|*valid_artefact* ( +
+an_artefact: `link:/releases/AM/{am_release}/AOM2.html#_authored_archetype_class[AUTHORED_ARCHETYPE^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Test validity of artefact.
+
+h|*0..1*
+|*upload_artefact* ( +
+an_artefact: `link:/releases/AM/{am_release}/AOM2.html#_authored_archetype_class[AUTHORED_ARCHETYPE^][1]` +
+) +
+ +
+__Pre_valid__: `valid_artefact (an_arch)` +
+__Post_has_artefact__: `has_artefact (an_arch.identifier)`
+a|Upload an ADL2 artefact, i.e. archetype, template or operational_template. If an artefact with the same physical identifier and namespace exists, replace it.
+
+The artefact must validate.
+
+
+
+
+.Errors
+* `invalid artefact` (+ specific messages)
+
+h|*1..1*
+|*get_artefact* ( +
+an_id: `link:/releases/AM/{am_release}/AOM2.html#_archetype_hrid_class[ARCHETYPE_HRID^][1]` +
+): `link:/releases/AM/{am_release}/AOM2.html#_authored_archetype_class[AUTHORED_ARCHETYPE^]` +
+ +
+__Pre_artefact_exists__: `has_artefact (an_id)`
+a|Get the AOM2 artefact with id `_an_id_`.
+
+
+
+
+.Errors
+* `artefact_does_not_exist`
+
+h|*0..1*
+|*list_artefacts* ( +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/AM/{am_release}/AOM2.html#_archetype_hrid_class[ARCHETYPE_HRID^]>`
+a|List all AOM2 artefacts known in the service.
+
+h|*0..1*
+|*list_archetypes* ( +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/AM/{am_release}/AOM2.html#_archetype_hrid_class[ARCHETYPE_HRID^]>`
+a|List all archetypes, i.e. artefacts whose concrete type is `AUTHORED_ARCHETYPE`.
+
+h|*0..1*
+|*list_templates* ( +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/AM/{am_release}/AOM2.html#_archetype_hrid_class[ARCHETYPE_HRID^]>`
+a|List all archetypes, i.e. artefacts whose concrete type is `TEMPLATE`.
+
+h|*0..1*
+|*list_opts* ( +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/AM/{am_release}/AOM2.html#_archetype_hrid_class[ARCHETYPE_HRID^]>`
+a|List all archetypes, i.e. artefacts whose concrete type is `OPERATIONAL_TEMPLATE`.
+
+h|*0..1*
+|*list_matching_artefacts* ( +
+id_pattern: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+item_offset: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]`, +
+items_to_fetch: `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^][0..1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/AM/{am_release}/AOM2.html#_archetype_hrid_class[ARCHETYPE_HRID^]>`
+a|List all artefacts whose identifiers match a regex pattern.
+
+
+
+
+.Errors
+* `invalid_id_pattern`
+
+h|*0..1*
+|*delete_artefact* ( +
+an_id: `link:/releases/AM/{am_release}/AOM2.html#_archetype_hrid_class[ARCHETYPE_HRID^][1]` +
+)
+a|Delete the AOM2 artefact with id `_an_id_`.
+
+
+
+
+.Errors
+* `artefact_does_not_exist`
+
+h|*1..1*
+|*artefacts_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Return total artefacts count.
+
+h|*1..1*
+|*archetypes_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Return total archetypes count.
+
+h|*1..1*
+|*templates_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Return total templates count.
+
+h|*1..1*
+|*opts_count* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]`
+a|Return total OPTs count.
+|===

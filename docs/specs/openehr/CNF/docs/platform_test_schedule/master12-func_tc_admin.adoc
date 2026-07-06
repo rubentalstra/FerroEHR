@@ -1,0 +1,159 @@
+= Test Suite: ADMIN_SERVICE
+
+// Some useful links: 
+:i_admin_service_link: {openehr_sm_openehr_platform}#_i_admin_service_interface
+:i_admin_archive_link: {openehr_sm_openehr_platform}#_i_admin_archive_interface
+:i_admin_dump_load_link: {openehr_sm_openehr_platform}#_i_admin_dump_load_interface
+
+== Normative Reference
+
+Items in this validation suite conceptually use the following abstract interfaces from the {i_admin_service_link}[Abstract Platform Service Model, ADMIN component^].
+
+* `I_ADMIN_SERVICE`
+* `I_ADMIN_DUMP_LOAD`
+* `I_ADMIN_ARCHIVE`
+
+These are concretely realised in implementation technology specfic APIs, such as the {openehr_admin_rest_api}[ADMIN REST API^].
+
+This test suite uses artefacts defined by the following information model specifications:
+
+* Service Interfaces:
+** {openehr_sm_openehr_platform}#_admin_package[Abstract Admin Service Model^]
+
+== Dependencies
+
+TBD
+
+== Test Environment
+
+[width="5%",cols="100%",]
+|===
+|TBD
+|===
+
+== Test Data Sets
+
+[width="5%",cols="100%",]
+|===
+|TBD
+|===
+
+== Test Cases
+
+=== Service Model operation: I_ADMIN_SERVICE.list_contributions()
+
+Service Model reference: {i_admin_service_link}[`I_ADMIN_SERVICE._list_contributions()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+
+=== Service Model operation: I_ADMIN_SERVICE.contribution_count()
+
+Service Model reference: {i_admin_service_link}[`I_ADMIN_SERVICE._contribution_count()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_ADMIN_SERVICE.versioned_composition_count()
+
+Service Model reference: {i_admin_service_link}[`I_ADMIN_SERVICE._versioned_composition_count()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_ADMIN_SERVICE.composition_version_count()
+
+Service Model reference: {i_admin_service_link}[`I_ADMIN_SERVICE._composition_version_count()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_ADMIN_SERVICE.physical_ehr_delete()
+
+Service Model reference: {i_admin_service_link}[`I_ADMIN_SERVICE._physical_ehr_delete()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_ADMIN_SERVICE.physical_party_delete()
+
+Service Model reference: {i_admin_service_link}[`I_ADMIN_SERVICE._physical_party_delete()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_ADMIN_DUMP_LOAD.export_ehrs()
+
+Service Model reference: {i_admin_dump_load_link}[`I_ADMIN_DUMP_LOAD._export_ehrs()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_ADMIN_ARCHIVE.archive_ehrs()
+
+Service Model reference: {i_admin_archive_link}[`I_ADMIN_ARCHIVE._archive_ehrs()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+
+
+=== Service Model operation: I_ADMIN_ARCHIVE.archive_parties()
+
+Service Model reference: {i_admin_archive_link}[`I_ADMIN_ARCHIVE._archive_parties()_`^]
+
+==== Test Case aaaa
+
+TBD
+
+==== Test Case bbbb
+
+TBD
+

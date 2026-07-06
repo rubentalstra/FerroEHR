@@ -1,0 +1,31 @@
+= Overview
+
+This document provides an overview of the openEHR architecture. It commences with a description of the specification project, followed by an overview of the model structure and packages. Key global semantics including security, archetyping, identification, version and paths are then described. The relationship to published standards is described, and finally, the approach to building implementations is outlined.
+
+== The openEHR Specification Program
+
+The {openehr_specification_program}[openEHR Specification Program^] is responsible for developing the specifications of openEHR, from which the openEHR Health Computing Platform is implemented. The outputs of the program consist of a number of _components_, as shown in the diagram below, with each component (marked in blue) consisting of one or more separate specifications.
+
+[.text-center]
+.The openEHR Specification project
+image::{diagrams_uri}/openehr_block_diagram.svg[id=specification_project, align="center", width=70%]
+
+The components in the left group contain the _abstract specifications_ (also known as the 'Platform Independent Model' or PIM) and are divided into the following:
+
+* *Foundation (BASE)*: primitive types, definitions, identifiers, other basic types needed across openEHR;
+* *Formalisms (LANG, AM, QUERY)*: various generic formalisms, including BMM (Basic Meta-Model), (ADL (Archetype Definition Language) and AQL (Archetype Query Language);
+* *Content (TERM, RM)*: the models of primary content of the openEHR platform, including demographics, EHR; supporting openEHR Terminology (along with expressions of various ISO, IETF and other vocabularies (language names, territory names, MIME types, etc.) that are not typically published in a directly usable format);
+* *Process & CDS (PROC, CDS)*: clinical process and clinical decision support components, containing the Task Planning and GDL (Guideline Definition Language) specifications;
+* *Platform Services*: abstract formal APIs defining the interfaces to the openEHR platform.
+
+Some of these specifications (e.g. Antlr grammars) are directly usable in software development. Most of the abstract specifications have concrete expressions in formalisms such as JSON, XML schema, openEHR BMM and REST APIs enabling their direct use in development. These are known as Implementation Technology Specifications (ITSs; also known as 'Platform-Specific Models' or PSMs), and are collected in the {openehr_its_component}[ITS component^] shown on the right. They also constitute openEHR's _interoperability specifications_.
+
+As implementation technologies change over time, the ITS specifications will be replaced, while the main group of abstract specifications will generally only change in response to real-world requirements other than information technology.
+
+The {openehr_cnf_component}[CNF component^] at the top defines _conformance criteria_, and is primarily based on ITS artefacts such as REST APIs, XSDs, but also upon AQL queries, archetypes and some other abstract artefacts. It includes a formal definition of the notional openEHR Platform and how to test it in a standard way. This is used as the basis for openEHR product certification and also for procurement tender specification.
+
+The specifications published by openEHR constitute the _primary reference for all openEHR semantics_. The presentation style is deliberately intended to be clear and semantically close to the _ideas_ being communicated. Accordingly, the specifications do not follow any particular programming language or idiom, but instead use  various formalisms and illustrations appropriate to each topic.
+
+Change control is performed by the {openehr_sec}[openEHR Specifications Editorial Committee (SEC)^], using a formal process based on Problem Reports (PRs) and Change Requests (CRs), and a formal release cycle. The details are described in the {openehr_specification_program}[Specifications Program part of the openEHR website^].
+
+The openEHR specification documents and related formal artefacts may be found on the {openehr_specs}[specifications home page^]. The documents are maintained in {asciidoctor_home}[Asciidoctor^] source form, and make significant use of included formal elements, including extracted UML class texts and diagrams, as well as grammar files.

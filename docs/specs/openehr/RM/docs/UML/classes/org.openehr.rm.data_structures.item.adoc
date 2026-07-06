@@ -1,0 +1,14 @@
+=== ITEM Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__ITEM (abstract)__*
+
+h|*Description*
+2+a|The abstract parent of `CLUSTER` and `ELEMENT` representation classes.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/common.html#_locatable_class[LOCATABLE^]`
+
+|===

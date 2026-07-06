@@ -1,0 +1,17 @@
+operationId: directory_get_by_version_id
+summary: Get folder in directory version
+description: |
+  Retrieves a particular version of the directory FOLDER identified by `version_uid` and associated with the EHR identified by `ehr_id`.
+
+  If `path` is supplied, retrieves from the directory only the sub-FOLDER that is associated with that path.
+tags:
+  - DIRECTORY
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/path/version_uid.yaml
+  - $ref: ../parameters/query/path.yaml
+responses:
+  '200':
+    $ref: ../responses/200_FOLDER_retrieved.yaml
+  '404':
+    $ref: ../responses/404_directory_unknown_ehr_id_or_no_version_uid_or_no_path.yaml

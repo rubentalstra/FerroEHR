@@ -1,0 +1,16 @@
+title: Input2
+required:
+  - type
+type: object
+properties:
+  type:
+    type: string
+  suffix:
+    type: string
+  list:
+    type: array
+    items:
+      $ref: ./List1.yaml
+    description: ''
+example:
+  type: DATETIME

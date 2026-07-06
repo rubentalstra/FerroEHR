@@ -1,0 +1,14 @@
+=== S_DV_IDENTIFIER Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_DV_IDENTIFIER*
+
+h|*Description*
+2+a|Simplified RM form of `DV_IDENTIFIER` RM class.
+
+h|*Inherit*
+2+|`link:/releases/RM/{rm_release}/data_types.html#_dv_identifier_class[DV_IDENTIFIER^]`, `<<_s_data_value_class,S_DATA_VALUE>>`
+
+|===

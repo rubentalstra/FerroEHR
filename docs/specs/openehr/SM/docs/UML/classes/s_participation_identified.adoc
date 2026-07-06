@@ -1,0 +1,21 @@
+=== S_PARTICIPATION_IDENTIFIED Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_PARTICIPATION_IDENTIFIED*
+
+h|*Description*
+2+a|Simplified RM form of `PARTICIPATION` RM class, for instances where `_performer_` is of type `PARTY_IDENTIFIED`.
+
+h|*Inherit*
+2+|`<<_s_participation_class,S_PARTICIPATION>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `PARTICIPATION._performer.name_`.
+|===

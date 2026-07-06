@@ -1,0 +1,27 @@
+=== TERMINOLOGY_ID Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*TERMINOLOGY_ID*
+
+h|*Description*
+2+a|Identifier for terminologies such as accessed via a terminology query service. In this class, the value attribute identifies the Terminology in the terminology service, e.g.  SNOMED-CT . A terminology is assumed to be in a particular language, which must be explicitly specified.
+
+Lexical form: `name [  '(' version  ')' ]`.
+
+h|*Inherit*
+2+|`<<_object_id_class,OBJECT_ID>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Return the terminology id (which includes the  version  in some cases). Distinct names correspond to distinct (i.e. non-compatible) terminologies. Thus the names  `"ICD10AM"` and `"ICD10"` refer to distinct terminologies.
+
+h|*1..1*
+|*version_id* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Version of this terminology, if versioning supported, else the empty string.
+|===

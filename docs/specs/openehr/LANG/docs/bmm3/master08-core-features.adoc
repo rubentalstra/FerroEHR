@@ -1,0 +1,321 @@
+= Class Features
+
+== Overview
+
+Within the definition of each class in a BMM model are found the declarations of its _features_. _Variables_ are declared within routines. Features and variables are kinds of _formal elements_, i.e. _typed_ entities having a _signature_ (`BMM_FORMAL_ELEMENT`). This section describes class features, their parts, and their semantics.
+
+=== Feature Taxonomy
+
+_Features_ are understood in BMM as typed entities referenceable within a module context. Class features consist of the formal sub-parts of a class, namely:
+
+* _routines_: _procedures_ and _functions_;
+* _properties_: mutable static definitions, described in detail in previous sections;
+* _constants_: immutable static values.
+
+The taxonomy of feature declarations is shown below in the simplified view of the BMM feature meta-model.
+
+[.text-center]
+.Feature taxonomy
+image::{uml_diagrams_uri}/LANG-bmm3.core.feature-taxonomy.svg[id=feature-taxonomy, align="center"]
+
+=== Class Model
+
+The full feature meta-model is shown below.
+
+[.text-center]
+.`base.bmm.core.feature` package
+image::{uml_diagrams_uri}/LANG-bmm3.core.feature.svg[id=core_feature, align="center"]
+
+=== Feature Groups and Visibility
+
+Features are arranged within a class in _feature groups_, each represented by an instance of a meta-type `BMM_FEATURE_GROUP`, shown in the following UML view.
+
+[.text-center]
+.Feature Groups
+image::{uml_diagrams_uri}/LANG-bmm3.core.feature-group.svg[id=core_feature_group, align="center"]
+
+By default there is at least one feature group called `"feature"`. Feature groups may be given any name, and are usually used to group features on the basis of things like:
+
+* meta-type, e.g. a group called `"rules"` limited to publicly visible functions only;
+* logical feature type, e.g. commands, queries, factory methods etc.
+
+The primary purpose of feature groups is to represent specific meta-data that naturally applies to more than one feature in general, and is thus convenient to represent on a logical container rather than repeat individually. Feature group meta-data is recorded in the `_properties_` attribute. A feature group may also set default visibility for all features in the group.
+
+Selective _visibility_ of features to external clients is expressed in the attributes `BMM_FEATURE_GROUP._visibility_` with potential overrides achieved using `BMM_FEATURE._visibility_`, i.e. at an individual feature level. Visibility is defined using sub-types of the abstract meta-class `BMM_VISIBILITY`.
+
+[.tbd]
+TBD: define visibility meta-model; probably need to support C++/Java approach and type-based.
+
+=== Differential and Flat Form
+
+In modelling or programming terms, the features defined on a particular class within a model constitute the features it _introduces with respect to its inheritance parent(s)_. We can think of this list of features as the _differential_ set. A 'top-level' class with no declared inheritance ancestor is considered to inherit by default from the `Any` class, and its feature set is relationally differential to the top class.
+
+In contrast, the _effective_ set of features for an instance at runtime is the result of evaluating these lists of features down the inheritance hierarchy to obtain the _flat_ set of features. The features _properties_ and _flat_properties_ defined on `BMM_CLASS` provide access to these two lists for any class.
+
+=== Signatures
+
+All features are formal computational entities, and therefore have formal signatures (described in <<Signature Meta-type>>), represented by `BMM_FORMAL_ELEMENT._signature_`. A standard taxonomy of feature signature types is illustrated below, in which properties have signatures with no arguments (this is also true for argument-less functions), and procedures have the special built-in Status result type (`BMM_STATUS_TYPE`), following the meta-model of various functional languages, e.g. Haskell (in which procedure invocations return the special 'unit' type).
+
+[.text-center]
+.Signature taxonomy
+image::{diagrams_uri}/signature_taxonomy.svg[id=signature_taxonomy, align="center", width="40%"]
+
+=== Synthesis due to Generic Parameter Substitution
+
+Due to the possibility of generating concrete types via substitution of concrete generic parameters for formal parameters of generic classes, new concrete types of features may routinely result anywhere in a fully computed in-memory BMM model. BMM allows such features to be synthesised with their resulting concrete types rather than their 'source-defined' open parameter types, and provides the Boolean flag `_is_synthesised_generic_` on `BMM_FEATURE` to mark any such synthesised feature. An example of the use of this is described below in <<_generic_inheritance>>.
+
+== Properties
+
+Properties are features whose values are stored rather than computed on each reference, and are represented by the meta-type `BMM_INSTANTIABLE_FEATURE`. They are distinguished from routines by having no arguments (signature of degree zero).
+
+=== Static Properties
+
+Static properties are properties whose values are pre-defined by some means, and read-only during execution (`_is_nullable_` is False).
+
+==== Constants
+
+Constant class features (meta-type `BMM_CONSTANT`) correspond to classic constants in most computer languages, and are defined with a literal value.
+
+The following abstract syntax illustrates how constants may be defined in a BMM model.
+
+[source,kotlin]
+----
+class BASIC_DEFINITIONS
+
+feature
+    //
+    // simple constants
+    //
+    constant CR: Character = '\015';
+    constant LF: Character = '\012';
+
+    //
+    // constant of complex type
+    // TODO: correct JSON (maybe YAML?) or other syntax
+    //
+    constant SafeSpeed: Interval<Quantity> = |0.0 km/h .. 60.0 km/h|;
+----
+
+==== Singletons
+
+The other kind of static property is computed once during execution (meta-type `BMM_SINGLETON`) via an argumentless function-body. Like a value-based constant, it has the same value for all instances of the containing type, including descendant and generically derived types.
+
+The following illustrates how singletons may be defined in a BMM model.
+
+[source,kotlin]
+----
+feature
+    //
+    // constant generated by a function call
+    //
+    singleton criticalPressure: ProxyVar<Quantity>
+        Result := {ProxyVar<Quantity>}({Quantity}(0.0, "kPa"), {Quantity}(150.0, "kPa"));
+----
+
+=== Writable Properties
+
+Writable class properties are defined via the meta-class `BMM_PROPERTY`, and its subtypes which distinguish _unitary properties_ (single-valued attributes in a class) from _container properties_ (multiply-valued attributes).
+
+The `BMM_PROPERTY` meta-type defines semantics common to all properties, including `_is_composition_`, which indicates whether the property reference instantiates a part-of relationship or an association.
+
+==== Unitary versus Container Properties
+
+Single-valued properties in a BMM model are instances of the type `BMM_UNITARY_PROPERTY`, and have as their `_type_` the meta-type `BMM_UNITARY_TYPE`. Container properties are instances of the meta-type `BMM_CONTAINER_PROPERTY`, which adds the attribute `_cardinality_`, enabling the possible number of container elements to be constrained (this corresponds to the multiplicities used at the end of UML associations). The meta-type `BMM_INDEXED_CONTAINER_PROPERTY` adds the attribute `_index_type_`, enabling representation of indexed concrete container types such as `Hash<K,V>` etc.
+
+A typical example of properties of class is shown below, in which the flattened property view of a class `OBSERVATION` includes the inherited properties `_other_participations_` and `_links_` properties exemplifying the container property meta-type:
+
+[.text-center]
+.BMM class - properties view
+image::{images_uri}/awb_class_properties.png[id=awb_class_properties, align="center", width="50%"]
+
+The following illustrates how various kinds of properties may appear in a BMM model. The first two properties are associations, used to represent references to shared objects (including singletons), while the remainder are normal compositional sub-parts, i.e. owned sub-instances that will cease to exist when the parent object is destroyed. All of the properties are single-valued, other than `other_participations`, which is defined as a container property with cardinality `[\*]` (i.e. `0..*`) and 'set' semantics.
+
+[source,kotlin]
+----
+abstract class ENTRY extend CARE_ENTRY
+
+feature -- Locale
+    association property language: CODE_PHRASE <<"iso::iso_639-2">> [0..1];
+    association property encoding: CODE_PHRASE <<"iana::character-sets">> [0..1];
+
+feature -- Access
+    composition property protocol: ITEM_STRUCTURE[1];
+    composition property guideline_id: OBJECT_REF[0..1];
+    composition property subject: PARTY_PROXY[0..1];
+    composition property other_participations: PARTICIPATION[*]{set};
+----
+
+=== Semantic Level
+
+[.tbd]
+TBD: this BMM feature requires review
+
+Properties also include two other Boolean meta-data items, `_is_im_runtime_` and `_is_im_infrastructure_`, which can be used to classify property values in a model according to a 'semantic level', which roughly corresponds to the continuum from domain-specific to infrastructure. These may be individually set, or both may be False. The three meaningful value settings are as follows:
+
+* _both False_: the value of the property is considered to be design-time constrainable;
+* _is IM runtime_: True if the property value is only knowable at runtime, as is typically the case for identifiers, dates etc;
+* _is infrastructure_: True if the property is not a user- or business-oriented property, but something required by software design, e.g instance identifier, meta-data etc.
+
+The above screenshot also includes properties have different settings of the `_is_im_runtime_` and `_is_im_infrastructure_` meta-data flags: property names in black are neither; those in grey are IM runtime (`_guideline_id_`, `_workflow_id_`), and those in light grey are infrastructure properties (`_language_`, `_encoding_`, `_uid_`, etc).
+
+== Functions and Procedures
+
+Functions and procedures are kinds of _routine_, which are computational features of a class. The classes `BMM_FUNCTION`, `BMM_PROCEDURE` and `BMM_ROUTINE` respectively provide the meta-model for _definitions_ of the two types of routine.
+
+The formal parameter definitions of both kinds of routines are represented by an ordered list of instances of the meta-class `BMM_PARAMETER`, which is defined as a kind of _variable_. A formal parameter may optionally have the read/write direction defined, which indicates whether the variable contains an input value, should only be written to, or both, i.e. read then written to. The `_is_nullable_` meta-attribute inherited from `BMM_FEATURE` indicates whether each parameter is mandatory or not.
+
+An additional feature of the meta-model for functions is the notion of _operator_, which supports the representation of a function call in a formal expression as an operator symbol with one or two operands, in the typical form found in programming languages and first order logics. The BMM approach considers an operator as an optional addition to any function of `_arity_` 1 or 2 that may reasonably be represented in an abstract syntax using operator syntax. Operators thus support the use of expressions like `weight > 90` to mean `weight.gt (90)`, where `weight` is of type `Real`, and the function `gt(other: Real)` is defined.
+
+Any routine may have pre- and/or post-conditions defined for it, represented in BMM by `BMM_ASSERTIONs` populating the `_pre_conditions_` and `_post_conditions_` attributes of `BMM_ROUINE`. An Assertion is a <<_bmm_assertion_class,tagged Boolean Expression>>.
+
+The following abstract syntax illustrates the various elements of function definitions.
+
+[source,kotlin]
+----
+abstract class DV_AMOUNT
+    inherit
+        DV_QUANTIFIED
+
+feature -- Arithmetic Operations
+
+    function equal (other: DV_AMOUNT[1]): Boolean[1] 
+        alias {infix '='};
+
+    function less_than (other: DV_AMOUNT[1]): Boolean[1] 
+        alias {infix '<'};
+
+feature -- Arithmetic Operations
+
+    function add (other: DV_AMOUNT[1]): DV_AMOUNT[1] 
+        alias {infix '+'};
+
+    function subtract (other: DV_AMOUNT[1]): DV_AMOUNT[1] 
+        alias {infix '-'};
+
+    function multiply (val: Real[1]): DV_AMOUNT[1] 
+        alias {infix '*'};
+
+    function divide (val: Real[1]): DV_AMOUNT[1] 
+        alias {infix '/', infix '÷'};
+----
+
+=== Pre- and Post-conditions
+
+All BMM routine definitions may include pre- and/or post-conditions, with the semantics of Djikstra's weakest pre-condition logic (citenp:[Djikstra_DOP_1976]), Object-Z (citenp:[Object_Z]) and the Eiffel language (citenp:[Meyer_OOSC2]).
+
+The essential semantics are as follows:
+
+* _pre-conditions_ specify truth conditions on public object state and/or parameters that must hold for the routine to execute correctly;
+** if a pre-condition is not met at the moment of routine call, the client (caller) is at fault;
+* _post-conditions_ specify truth conditions on public object state and/or result (in the case of functions) that will hold at the end of routine execution;
+** if a post-condition is not met at the moment of routine completion, the routine is at fault, i.e. contains bugs.
+
+The use of pre- and post-conditions is also known as _design by contract (DbC)_, a term introduced by Meyer, and is widely used in general IT, particularly in specification languages such as {omg_idl}[OMG Interface Definition Language (IDL)^].
+
+The following shows how a routine contract may be specified in an abstract syntax.
+
+[source,kotlin]
+----
+class I_EHR_SERVICE
+
+feature -- Creation
+
+    create_ehr_with_id (
+        an_ehr_id: UUID[1];
+        an_ehr_status: EHR_STATUS[0..1]
+    ): UUID[1]
+        pre_condition
+            No_duplicate: not has_ehr (an_ehr_id)
+        post_condition
+            Has_ehr: has_ehr (Result)
+----
+
+=== Creators and Converters
+
+In common with may OOPLs, BMM classes may specify _creators_, i.e. instance-creating procedures, known as 'constructors' in some OOPLs. These are just a subset of all procedures known in `BMM_CLASS._procedures_` that when executed will satisfy the class invariants. A further subset of the creators are single-argument _converters_ which can initialise a new instance from an instance of another type. Converter routines are typically used to support type conversion in expressions, e.g. `String` to `Date` etc. These two subsets are formally defined as the `_creators_` and `_converters_` reference lists of procedures on `BMM_CLASS`, as shown in the following UML view.
+
+[.text-center]
+.Class creators and converters
+image::{uml_diagrams_uri}/LANG-bmm3.core.class-creators.svg[id=core_class_creators, align="center"]
+
+Creators and converters might be distinguished among other procedures in an abstract syntax as follows.
+
+[source,kotlin]
+----
+class Date
+
+inherit
+    Temporal
+    
+convert
+    create_from_string
+
+feature -- Creators
+
+    procedure create_from_string (a_date_str: String[1])
+
+    procedure create (a_day, a_month, a_year: Integer[1])
+
+feature -- Modification
+
+    procedure set_day (a_day: Integer[1])
+----
+
+=== Routine Body
+
+BMM supports the definition of statements, i.e. implementation within a `ROUTINE` as well as 'external' routines, which are represented by an instance of the meta-class `BMM_ROUTINE_EXTERNAL`. These classes are shown in the following UML view.
+
+[.text-center]
+.Routine body
+image::{uml_diagrams_uri}/LANG-bmm3.core.feature-routine.svg[id=core_feature_routine, align="center"]
+
+The meta-model of statements is described in detail in <<_statements>>.
+
+== Variables
+
+At the finest level of detail of a model definition are what are typically thought of as _variables_ within a routine scope. These may be either writable (`BMM_WRITABLE_VARIABLE`) or read-only (`BMM_READONlY_VARIABLE`) variables.
+
+Writable variables include _local variables_ (variables declared locally within a routine) and the special pre-defined variable `Result`, which is automatically available within any function. Read-only variables include _parameters_ (declared in the arguments part of a routine declaration), and the special variable `Self`, which represents the current instance.
+
+== Model Theoretic Questions
+
+The features meta-model as defined here entails certain choices that have consequences. One question is how to treat procedures. In a mathematical sense, procedures have no return type, and therefore should not be allowed within 'normal' expressions. However in a computational sense, a procedure call normally performs some state-changing action (for example, authenticating to a database), and it is potentially useful to obtain an execution status and use it in further logic. The choice made in BMM is to treat _procedures as typed entities_, with a result meta-type and concrete type of `Status` (represented by `BMM_STATUS_TYPE`). This is similar to the approach in various languages such as Haskell and {kotlin}[Kotlin^], which both have a 'unit' type for the same purpose. This approach allows procedures to fit within the typed framework without complicating the meta-model.
+
+Procedure calls are prevented from appearing in expressions by the <<_expressions, expressions>> part of the meta-model, and can only appear on their own (the usual case) or in an assignment statement in which a result status value may be obtained from the Status object. This value may then be used in normal expressions, e.g. a case statement.
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}bmm_formal_element.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_feature.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_feature_group.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_visibility.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_instantiable_feature.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_static.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_constant.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_singleton.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_property.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_unitary_property.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_container_property.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_indexed_container_property.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_routine.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_function.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_operator.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_operator_position.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_procedure.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_variable.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_writable_variable.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_local.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_result.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_readonly_variable.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_self.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_parameter.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_parameter_direction.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}bmm_routine_definition.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_local_routine.adoc[]
+include::{uml_export_dir}/classes/{pkg}bmm_external_routine.adoc[]

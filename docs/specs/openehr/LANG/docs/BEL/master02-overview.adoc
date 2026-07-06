@@ -1,0 +1,35 @@
+= Overview
+
+The openEHR Basic Expression Object Model (BEOM) defines the semantics of computable expressions and statements that are used in openEHR archetypes, and might be used in healthcare and life sciences computing where rules and expressions are needed.
+
+The openEHR Basic Expression Language (BEL) specified here is an abstract syntax counterpart to the BEOM, and may be considered the default syntax. Other syntaxes or syntax variants are possible, and other serialisation methods are possible, such as object graph serialisation into XML, JSON, YAML etc. The BEL is provided firstly as a way of specifying and explaining the semantics of the BEOM, and secondly, as one way of actually authoring expressions and rules in textual form. This approach is the same as with any programming language, where the usual form for learning and programming is the abstract language form, while the computational form is an abstract syntax tree (AST) or similar.
+
+Accordingly, the BEOM should be considered the normative definition (rather than the syntax) of the openEHR Basic Expression formalism, and indeed not all implementations need support the language: they might for example only serialse in JSON or use purely graphical visualisation.
+
+Key features of BEL include:
+
+* strong typing;
+* standard logical operators including universal quantification;
+* standard arithmetic and relational comparison operators, enabling the use of numerics and date/time types;
+* parentheses for overriding operator precedence;
+* built-in functions like `current_date`, standard functions such as `max()` defined on primitive types, as well as the ability to use external functions;
+* support for simple statements, such as variable declaration and assignment.
+
+For reasons of comprehensibility and explanation, the Expression Language is defined first in this specification.
+
+== Design Background
+
+The openEHR Basic Expression Language is based on a limited first-order predicate logic language with some additions to support a few basic types of statements, enabling the authoring of executable texts, i.e. _programs_. One type of statement is the _assertion_, which has similarities with {omg_ocl}[OMG's OCL (Object Constraint Language)^], and to the Object-Z language cite:[Object_Z]. See citenp:[Sowa2000], citenp:[Hein2002], citenp:[Kilov1994] for an explanation of predicate logic in information modelling. It is not exactly the same as any of these languages because:
+
+* it has a different meta-model;
+* the syntax is designed to be comprehensible to developers familiar with modern mainstream object-oriented and functional languages such as Java, C#, Python, TypeScript etc.
+
+The semantic requirements are for expressions including arithmetic, boolean, and relational operators, functions, quantifier operators, operator precedence, parentheses, constant values, and certain kinds of variables. However, there is no support in the core specification for procedural semantics or most of the other complexities of full-blown programming languages.
+
+== Execution Model
+
+The assumed execution model of the Expression language is that a BEL text is executed by an _execution engine_. Expressions within statements are evaluated by an _evaluator_ against a _data context_, which determines the truth values of the expression(s). Initially the data context is assumed to be that of openEHR templated archetypes, within a typical component that uses archetypes.
+
+== General Structure
+
+The Expression Language may be used to write _statements_ containing typed expressions. Statements may be _declarations_, _assignments_ or _assertions_. These contain expressions that in turn contain _symbols_ which represent typed _variables_ and _constants_. Variables are either _bound_ or _local_, and are defined using `$` names, e.g. `$heart_rate` as used in shell script and some other programming languages. A bound variable is mapped to a field in the data context. In the current version of the language, this is achieved by assignment statements that either assign a path in the data context to a symbolic variable (reading) or the reverse (writing back). In this sense, 'assignment' can be understood as _associating_ a data context path with a named variable.

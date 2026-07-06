@@ -1,0 +1,72 @@
+= Generic_extract Package
+
+== Overview
+
+The `rm.extract.generic_extract` package defines a kind of Extract designed to be used by
+non-openEHR systems (including EHR/EMR systems) that want to send data to another system using
+openEHR structures defined by archetypes and templates. Such systems typically do not natively contain
+standardised data of any kind, and usually have quite variable and idiosyncratic support for versioning.
+The following UML diagram illustrates the `rm.extract.generic_extract package`.
+
+[.text-center]
+.rm.extract.generic_extract Package
+image::{uml_diagrams_uri}/RM-ehr_extract.generic_extract.svg[id=rm_generic_extract, align="center"]
+
+The figure below illustrates the instance structure of a typical `GENERIC_EXTRACT`. The containment structure
+is shown in blue, and content item wrappers (meta-data) in yellow.
+
+[.text-center]
+.Typical generic extract structure
+image::{diagrams_uri}/typical_generic_extract.png[id=typical_generic_extract, align="center", width=80%]
+
+== Design
+
+=== Structure
+
+The `GENERIC_CONTENT_ITEM` subtype of `EXTRACT_CONTENT_ITEM` defines meta-data more or
+less of which can be populated by typical legacy systems, as well as document sources such as
+IHE/XDS repositories. Various groups of meta-data are defined: document type / status information,
+commit audit details and document lifecycle information.
+
+The document meta-data items are as follows:
+
+* `_item_type_`: a coded term indicating the content 'model' or schema, which may be a published standard, and/or some kind of archetype, template or similar content control artefact;
+* `_item_type_version_`: version of the `_item_type_` model.
+
+The next group of items defines details of creation of the original information. In some systems, this
+is the same as 'committal', i.e. the act of creating and committing the original data to the system. In
+other cases, the information in the extract is being assembled for the first time for the purposes of the
+extract, and the audit information therefore corresponds to this act. The audit details are as follows:
+
+* `_author_`: identity of the author of the original content - this is a UID reference to a demographic item in another part of the current extract;
+* `_creation_time_`: date/time when the content was created;
+* `_authoriser_`: identity of a professional who authorised this content, if relevant - this is a UID reference to a demographic item in another part of the current extract;
+* `_authorisation_time_`: date/time when the content was authorised;
+* `_item_status_`: lifecycle status of the content;
+* `_version_id_`: version of this particular instance of the content item when it was created and/or committed, in environments where versioning is supported;
+* `_version_set_id_`: 'version set' identifier, i.e. identifier of group of versions which together constitute a set of versions in time of a given logical content item;
+* `_system_id_`: system where the content was created / committed to / extracted from;
+* `_other_details_`: other meta-data, in the form of a keyed list of Strings.
+
+All of these items are optional, reflecting their varying availability in different source systems. An
+archetype or template of the Extract may force some or all to be mandatory for specific kinds of
+Extract.
+
+The `_item_` attribute carries content which may be any openEHR `LOCATABLE` structure, including
+things like `COMPOSITION`, any kind of `ENTRY` including `GENERIC_ENTRY`, `ITEM_TREE`, or even
+`CLUSTER`. This is assumed to have been converted by some data transformation process from data
+within the original system.
+
+==== Demographic Referencing
+
+Within the content a generic Extract, expressed using openEHR `COMPOSITIONs`, participations are
+expressed using intances of `PARTICIPATION`. This is clearly somewhat inefficient for the required
+use here, since they will be constructed on the fly from simpler non-openEHR data, and a more flexible
+variant may be required for the future.
+
+[.tbd]
+*To Be Determined*: a more efficient participation reference mechanism, to support participations constructed on the fly for the purposes of the Extract.
+
+== Class Descriptions
+
+include::{uml_export_dir}/classes/{pkg}generic_content_item.adoc[]

@@ -1,0 +1,15 @@
+= Assumed Types
+
+NOTE: These sections have been removed to a separate specification in the BASE component, as indicated in the sections below.
+
+== Inbuilt Primitive Types
+
+NOTE: The classes documented in this section are now available in the BASE component {openehr_foundation_types}#_primitive_types[Foundation Types specification, Primitive Types section].
+
+== Assumed Library Types
+
+NOTE: The classes documented in this section are now available in the BASE component {openehr_foundation_types}#_structure_types[Foundation Types specification, Structure Types section].
+
+== Date/Time Types
+
+NOTE: The classes documented in this section are now available in the BASE component {openehr_foundation_types}#_time_types[Foundation Types specification, Time Types section].

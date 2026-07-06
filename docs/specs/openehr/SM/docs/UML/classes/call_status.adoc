@@ -1,0 +1,34 @@
+=== CALL_STATUS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*CALL_STATUS*
+
+h|*Description*
+2+a|Object representing a call status.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*code*: `<<_call_status_type_enumeration,CALL_STATUS_TYPE>>`
+a|Call status code for last call.
+
+h|*1..1*
+|*call_name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of call that this status documents.
+
+h|*1..1*
+|*call_string*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Full call, in stringified form, including arguments. Non-primitive objects are shown as addresses unless an exported as_string() method is available.
+
+h|*1..1*
+|*meaning*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Meaning of the result status.
+
+h|*1..1*
+|*message*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Error message text.
+|===

@@ -1,0 +1,133 @@
+=== I_SUBJECT_PROXY_SERVICE Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_SUBJECT_PROXY_SERVICE*
+
+h|*Description*
+2+a|Service that maintains subject 'proxies' consisting of variables, and also enables applications to associate data-sets with subject variables.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*register_subject* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+subject_category: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][0..1]` +
+) +
+ +
+__Pre_subject_valid__: `not has_subject(subject_id)`
+a|Register a new subject. The subject category may also be specified, otherwise it will be the default category.
+
+h|*0..1*
+|*add_subject_variable* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+var: `<<_subject_variable_class,SUBJECT_VARIABLE>>[1]` +
+) +
+ +
+__Pre_subject_valid__: `has_subject(subject_id)`
+a|Add a new subject variable definition to the proxy for `_subject_id_`.
+
+h|*0..1*
+|*register_application_data_set* ( +
+definition: `<<_subject_data_set_class,SUBJECT_DATA_SET>>[1]` +
+) +
+ +
+__Pre_subject_valid__: `has_subject(subject_id)`
+a|Register a data-set consisting of a set of subject variable for an existing subject by an application.
+
+This may have the effect of creating new subject variables, reducing the currency of existing subject variables, if the currency is lower in the corresponding data set variable, or making no change for variables that already exist.
+
+h|*0..1*
+|*remove_application_data_set* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+application_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+) +
+ +
+__Pre_subject_valid__: `has_subject(subject_id)` +
+__Pre_application_valid__: `has_application(application_id)`
+a|Remove this data-set from the service.
+
+h|*0..1*
+|*remove_subject* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+) +
+ +
+__Pre_subject_valid__: `has_subject(subject_id)`
+a|Remove proxy and any data-sets for an existing subject.
+
+h|*0..1*
+|*remove_application* ( +
+application_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+) +
+ +
+__Pre_application_valid__: `has_application(application_id)`
+a|Remove all data-sets for `_application_id_`, across all subjects.
+
+h|*1..1*
+|*get_variable* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+var_name: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_variable_value_class,VARIABLE_VALUE>>` +
+ +
+__Pre_subject_valid__: `has_subject(subject_id)`
+a|Get a single variable value from a data-set.
+
+h|*1..1*
+|*get_data_set* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+data_set_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `<<_data_set_result_class,DATA_SET_RESULT>>` +
+ +
+__Pre_subject_valid__: `has_subject(subject_id)`
+a|Get a full data set result.
+
+h|*1..1*
+|*has_subject* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if subject with id `_subject_id_` has been registered in the service.
+
+h|*1..1*
+|*has_application* ( +
+application_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if application with id `_application_id_` has been registered in the service.
+
+h|*0..1*
+|*get_variable_defs* ( +
+subject_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Return a list of variable definitions each of the form "name: Type", where 'name' is the canonical name, i.e. `SUBJECT_VARIABLE._name_`.
+
+h|*0..1*
+|*register_binding* ( +
+binding: `<<_env_binding_class,ENV_BINDING>>[1]` +
+) +
+ +
+__Pre_new_env__: `not has_binding(binding.env_id)`
+a|Register a binding for an environment, consisting of a set of variable bindings, each including method(s) for data retrieval to populate the related variable.
+
+TODO: determine whether SPS is 1:1 with an 'environment', in which case, only one binding is ever required in a system instance.
+
+h|*0..1*
+|*add_binding_frame* ( +
+env_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]`, +
+frame[1] +
+) +
+ +
+__Pre_valid_binding__: `has_binding(env_id)`
+a|Add a retrieve frame definition to the binding container for an environment.
+
+h|*1..1*
+|*has_binding* ( +
+env_id: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Return True if evironment binding with id `_env_id_` has been registered in the service.
+
+h|*0..1*
+|*reset*
+a|Set back to virgin state, i.e. remove all subjects, variables and bindings.
+|===

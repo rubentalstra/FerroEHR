@@ -1,0 +1,43 @@
+=== P_BMM_PACKAGE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*P_BMM_PACKAGE*
+
+h|*Description*
+2+a|Persisted form of a package as a tree structure whose nodes can contain more packages and/or classes.
+
+h|*Inherit*
+2+|`<<_p_bmm_package_container_class,P_BMM_PACKAGE_CONTAINER>>`, `<<_p_bmm_model_element_class,P_BMM_MODEL_ELEMENT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of the package from schema; this name may be qualified if it is a top-level package within the schema, or unqualified. Persistent attribute.
+
+h|*0..1*
+|*classes*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of classes in this package. Persistent attribute.
+
+h|*0..1*
+|*bmm_package_definition*: `link:/releases/LANG/{lang_release}/bmm.html#_bmm_package_class[BMM_PACKAGE^]`
+a|`BMM_PACKAGE` created by `_create_bmm_package_definition_`.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*merge* ( +
+other: `<<_p_bmm_package_class,P_BMM_PACKAGE>>[1]` +
+): `void`
+a|Merge packages and classes from other (from an included `P_BMM_SCHEMA`) into this package.
+
+h|*1..1*
+|*create_bmm_package_definition* (): `void`
+a|Generate a `BMM_PACKAGE_DEFINITION` object and write it to `_bmm_package_definition_`.
+|===

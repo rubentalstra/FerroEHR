@@ -1,0 +1,5 @@
+:spec_title: openEHR Platform Profiles
+:copyright_year: 2022
+:spec_status: DEVELOPMENT
+:keywords: conformance, profile, product
+:description: openEHR Platform Profiles

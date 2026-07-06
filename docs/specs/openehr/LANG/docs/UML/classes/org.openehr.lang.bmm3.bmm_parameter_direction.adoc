@@ -1,0 +1,26 @@
+=== BMM_PARAMETER_DIRECTION Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*BMM_PARAMETER_DIRECTION*
+
+h|*Description*
+2+a|Enumeration of parameter read/write direction values.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|in
+a|Parameter is an input parameter, and treated as readonly by the receiving routine.
+
+h|
+|out
+a|Parameter is an output parameter, and treated as a reference to an entity writeable by the receiving routine.
+
+h|
+|in_out
+a|Parameter is an input and output parameter, and treated as a reference to an entity readable and writeable by the receiving routine.
+|===

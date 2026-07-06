@@ -1,0 +1,8 @@
+= Overview
+
+{openehr_query_aql}[Archetype Query Language (AQL)] is a declarative query language developed specifically for expressing queries used for searching and retrieving the data found in archetype-based repositories.
+
+This document provides AQL syntax examples as well as example of use of AQL in various complex scenarios, for both single-subject and population queries.
+
+These examples mostly relate to the {openehr_rm}[openEHR Reference Model (RM)^] and the {openehr_CKM}[openEHR clinical archetypes^],
+but the syntax is independent of information model, application, programming language, system environment, and storage model.

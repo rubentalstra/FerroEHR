@@ -1,0 +1,81 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*BASE Release 1.3.0*
+
+|[[latest_issue]]1.3.1
+| Adding deprecated VALIDITY_KIND.disallowed (including {spec_tickets}/SPECPR-378[SPECPR-378^] and {spec_tickets}/SPECPR-387[SPECPR-387^]).
+|P Pazos
+|[[latest_issue_date]]07 Mar 2025
+
+|
+| Improving definition of ARCHETYPE_ID ({spec_tickets}/SPECBASE-35[SPECBASE-35^]).
+|S Iancu
+|09 Mar 2025
+
+|1.3.0
+| Documentation fixes and typos (including {spec_tickets}/SPECPR-365[SPECPR-365^] and {spec_tickets}/SPECPR-392[SPECPR-392^]).
+|S Iancu, +
+J Zeilstra, +
+P Bos
+|10 Jan 2025
+
+4+^h|*BASE Release 1.2.0*
+
+|1.2.0
+|{spec_tickets}/SPECBASE-26[SPECBASE-26^]. Add Built-in classes and functions for use in AQL, EL; added `builtins` package.
+|openEHR SEC
+|28 Nov 2020
+
+|
+|{spec_tickets}/SPECBASE-28[SPECBASE-28^]. Fix `internet_id` and `uid_based_id` confusion in <<_syntaxes,syntax definition>>; +
+ {spec_tickets}/SPECBASE-29[SPECBASE-29^]. Fix version-id syntax issue in `ARCHETYPE_ID` <<_syntaxes,syntax definition>>.
+|S Garde, +
+ S Iancu
+|05 Nov 2020
+
+|
+|{spec_tickets}/SPECBASE-27[SPECBASE-27^]. Correct `OBJECT_REF._namespace_` regex so that it is legal.
+|J Smolka, +
+ S Iancu, +
+ M Polajnar, +
+ D Bosca
+|25 Aug 2020
+
+|
+|{spec_tickets}/SPECRM-88[SPECRM-88^]. Improve documentation relating to use of `_uid_` in versioning and `LOCATABLE` descendants in `change_control` package; Improve explanatory text in section 'Identifying Versions within openEHR Versioned Containers' (addresses {spec_tickets}/SPECPR-322[SPECPR-322^]); +
+corrected definition of `UID_BASED_ID._has_extension()_` to 'True if empty' rather than 'True if Void'.
+|P Pazos, +
+ M Polajnar, +
+ T Beale
+|15 Oct 2019
+
+4+^h|*BASE Release 1.1.0*
+
+|1.1.0
+|{spec_tickets}/SPECBASE-19[SPECBASE-19^]. Broaden `LOCATABLE_REF._as_uri()_` to allow URIs referring to any health data.
+|T Beale
+|09 Jan 2018
+
+|
+|{spec_tickets}/SPECPUB-6[SPECPUB-6^]. Correct UML package nesting and paths in documents; insert `base` parent package.
+|T Beale
+|27 Nov 2017
+
+|
+|{spec_tickets}/SPECBASE-7[SPECBASE-7^]. Add Base Types specification to BASE component.
+|T Beale 
+|02 Sep 2017
+
+|0.7.0
+|Initial Writing; split out from Foundation Types. Taken from {openehr_rm_103_support}[openEHR RM Release 1.0.3 Support Model]
+|T Beale 
+|17 Aug 2017
+
+|===
+
+
+The Amendment history relevant to the original content in this specification can be found {openehr_rm_103_support}#_amendment_record[here] ({openehr_rm_support}#_amendment_record[a fully hyper-linked version] may be found on the working baseline).

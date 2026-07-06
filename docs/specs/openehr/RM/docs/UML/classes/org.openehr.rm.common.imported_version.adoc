@@ -1,0 +1,49 @@
+=== IMPORTED_VERSION Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*IMPORTED_VERSION<T>*
+
+h|*Description*
+2+a|Versions whose content is an `ORIGINAL_VERSION` copied from another location; this class inherits `_commit_audit_` and `_contribution_` from `VERSION<T>`, providing imported versions with their own audit trail and Contribution, distinct from those of the imported `ORIGINAL_VERSION`.
+
+h|*Inherit*
+2+|`<<_version_class,VERSION>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*item*: `<<_original_version_class,ORIGINAL_VERSION>>`
+a|The `ORIGINAL_VERSION` object that was imported.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(effected)*
+|*uid* (): `link:/releases/BASE/{base_release}/base_types.html#_object_version_id_class[OBJECT_VERSION_ID^]` +
+ +
+__Post__: `Result = item.uid`
+a|Computed version of inheritance precursor, derived as `_item.uid_`.
+
+h|*1..1 +
+(effected)*
+|*preceding_version_uid* (): `link:/releases/BASE/{base_release}/base_types.html#_object_version_id_class[OBJECT_VERSION_ID^]` +
+ +
+__Post__: `Result = item.preceding_version_uid`
+a|Computed version of inheritance precursor, derived as `_item.preceding_version_uid_`.
+
+h|*1..1 +
+(effected)*
+|*lifecycle_state* (): `link:/releases/RM/{rm_release}/data_types.html#_dv_coded_text_class[DV_CODED_TEXT^]`
+a|Lifecycle state of the content item in wrapped `ORIGINAL_VERSION`, derived as `_item.lifecycle_state_`; coded by openEHR vocabulary `version lifecycle state`.
+
+h|*1..1 +
+(effected)*
+|*data* (): `T`
+a|Original content of this Version.
+|===

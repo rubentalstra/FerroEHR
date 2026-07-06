@@ -1,0 +1,27 @@
+{
+    "name": "openehr/specifications-tools-terminology",
+    "description": "Tools to manage openEHR Terminology specifications.",
+    "license": "Apache-2.0",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "ext-json": "*",
+        "ext-xml": "*",
+        "ext-dom": "*",
+        "ext-simplexml": "*"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest"
+    },
+    "autoload": {
+        "psr-4": {
+            "OpenEHR\\Specifications\\Tools\\Terminology\\": "src/"
+        },
+        "files": [
+            "src/constants.php"
+        ]
+    },
+    "bin": [
+        "bin/generate_all"
+    ]
+}

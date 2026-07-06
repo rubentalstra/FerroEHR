@@ -1,0 +1,25 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*ITS_REST Release 1.0.3*
+
+4+^h|*ITS_REST Release 1.0.2*
+
+|[[latest_issue]]1.0.2
+|{spec_tickets}/SPECITS-57[SPECITS-57^]. Updating information and links of simplified JSON formats
+|E Sundvall, +
+S Iancu
+|[[latest_issue_date]]13 Mar 2021
+
+4+^h|*ITS_REST Release 1.0.1*
+
+|0.7.0
+|{spec_tickets}/SPECITS-33[SPECITS-33^]. Add Simplified Data Template format specification; +
+ Initial writing, adapted from the Marand Better Platform 'Web Templates' specification, EtherCIS documentation and the Ocean Health Systems Template Data Schema.
+|openEHR SEC
+|17 Jul 2019
+
+|===

@@ -1,0 +1,286 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser, Implementer|Completed
+
+4+^h|*AM Release 2.3.0*
+
+|[[latest_issue]]1.4.6
+|{spec_tickets}/SPECAM-84[SPECAM-84^]. Fix typos in AOM, ADL 1.4.
+|R Kavanagh
+|[[latest_issue_date]]03 Apr 2023
+
+|1.4.5
+|{spec_tickets}/SPECAM-75[SPECAM-75^]. Improve specification of constraint patterns (addresses problem {spec_tickets}/SPECPR-374[SPECPR-374^]). Modified <<#date_time_constraint_patterns>> to include timezone constraints.
+|P Pazos, +
+T Beale
+|20 Dec 2022
+
+|1.4.4
+|{spec_tickets}/SPECAM-69[SPECAM-69^]. Support negative durations (see also {spec_tickets}/SPECRM-96[SPECRM-96^]); add examples in <<_duration_constraints>>.
+|P Bos, +
+ S Garde
+|09 Sep 2020
+
+|1.4.3
+|{spec_tickets}/SPECPUB-7[SPECPUB-7^]: Convert citations to bibtex form.
+|T Beale
+|15 Dec 2019
+
+4+^h|*AM Release 2.2.0*
+
+4+^h|*AM Release 2.1.0*
+
+4+^h|*AM Release 2.0.6*
+
+|1.4.2
+|{spec_tickets}/SPECAM-24[SPECAM-24^]: Standardise structure for recording governance meta-data in 1.4 archetypes. +
+ Added appendix describing extension meta-data.
+|S Garde, +
+ H Leslie, +
+ I McNicoll, +
+ S Ljosland Bakke, +
+ T Beale
+|22 May 2016
+
+4+^h|*Release 1.0.2*
+
+|1.4.1
+|{spec_tickets}/SPEC-268[SPEC-268^]: Correct missing parentheses in dADL type identifiers. dADL grammar and cADL scanner rules updated.
+|R Chen
+|12 Dec 2008
+
+|
+|{spec_tickets}/SPEC-284[SPEC-284^]: Correct inconsistencies in naming of `term_definitions`, `constraint_definitions`, `term_bindings`, `constraint_bindings` attributes in XML-schema and specifications. +
+ Improved explanatory text for composite identifiers, including statement on case-sensitivity. Warning on `.v1draft` non-conformance
+|A Torrisi
+|
+
+|
+|{spec_tickets}/SPEC-260[SPEC-260^]: Correct the regex published for the ARCHETYPE_ID type. Update ADL grammar `ARCHEYTPE_ID` definition.
+|P Gummer, +
+ J Arnett, +
+ E Browne
+|
+
+4+^h|*Release 1.0.1*
+
+|1.4.0
+|{spec_tickets}/SPEC-203[SPEC-203^]: Release 1.0 explanatory text improvements. Improve Archetype slot explanation.
+|T Beale
+|13 Mar 2007
+
+|
+|{spec_tickets}/SPEC-208[SPEC-208^]: Improve ADL grammar for assertion expressions.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-160[SPEC-160^]: Duration constraints. Added ISO 8601 patterns for duration in cADL.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-213[SPEC-213^]: Correct ADL grammar for date/times to be properly ISO8601-compliant. Include 'T' in cADL patterns and dADL and cADL Date/time, Time and Duration values.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-216[SPEC-216^]: Allow mixture of W, D etc in ISO8601 Duration (deviation from standard).
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-200[SPEC-200^]: Correct Release 1.0 typographical errors.
+|A Patterson +
+ R Chen +
+ S Garde +
+ T Beale
+|
+
+|
+|{spec_tickets}/SPEC-225[SPEC-225^]: Allow generic type names in ADL.
+|M Forss
+|
+
+|
+|{spec_tickets}/SPEC-226[SPEC-226^]: Rename `C_CODED_TEXT` to `C_CODE_PHRASE`
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-233[SPEC-233^]: Define semantics for `occurrences` on `ARCHETYPE_INTERNAL_REF`.
+|K Atalag
+|
+
+|
+|{spec_tickets}/SPEC-241[SPEC-241^]: Correct cADL grammar for archeype slot match expressions
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-223[SPEC-223^]: Clarify quoting rules in ADL
+|A Patterson
+|
+
+|
+|{spec_tickets}/SPEC-242[SPEC-242^]: Allow non-inclusive two-sided ranges in ADL.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-245[SPEC-245^]: Allow term bindings to paths in archetypes.
+|S Heard
+|
+
+4+^h|*Release 1.0*
+
+|1.3.1
+|{spec_tickets}/SPEC-136[SPEC-136^]. Add validity rules to ADL document.
+|T Beale
+|18 Jan 2006
+
+|
+|{spec_tickets}/SPEC-171[SPEC-171^]. Add validity check for cardinality & occurrences
+|A Maldondo
+|
+
+|1.3.0
+|{spec_tickets}/SPEC-141[SPEC-141^]. Allow point intervals in ADL. Updated atomic types part of cADL section and dADL grammar section.
+|S Heard
+|18 Jun 2005
+
+|
+|{spec_tickets}/SPEC-142[SPEC-142^]. Update dADL grammar to support assumed values. +
+ {spec_tickets}/SPEC-143[SPEC-143^]. Add partial date/time values to dADL syntax. +
+ {spec_tickets}/SPEC-149[SPEC-149^]. Add URIs to dADL and remove query() syntax. +
+ {spec_tickets}/SPEC-153[SPEC-153^]. Synchronise ADL and AOM for language attributes +
+ {spec_tickets}/SPEC-156[SPEC-156^]. Update documentation of container types. +
+ {spec_tickets}/SPEC-138[SPEC-138^]. Archetype-level assertions.
+|T Beale
+|
+
+4+^h|*Release 0.95*
+
+|1.2.1
+|{spec_tickets}/SPEC-125[SPEC-125^]. `C_QUANTITY` example in ADL manual uses old dADL syntax. +
+ {spec_tickets}/SPEC-115[SPEC-115^]. Correct "/[xxx]" path grammar error in ADL. +
+ Create new section describing ADL path syntax. +
+ {spec_tickets}/SPEC-127[SPEC-127^]. Restructure archetype specifications. Remove clinical constraint types section of document.
+|T Beale
+|11 Feb 2005
+
+|1.2
+|{spec_tickets}/SPEC-110[SPEC-110^]. Update ADL document and create AOM document.
+|T Beale
+|15 Nov 2004
+
+|
+|Added explanatory material; added domain type support; rewrote of most dADL sections. Added section on assumed values, "controlled" flag, nested container structures. Change language handling. +
+ Rewrote OWL section based on input from: University of Manchester, UK; University Seville, Spain.
+|A Rector +
+ R Qamar +
+ I Román Martínez
+|
+
+|
+|Various changes to assertions due to input from the DSTC.
+|A Goodchild +
+ Z Z Tun
+| 
+
+|
+|Detailed review from Clinical Information Project, Australia.
+|E Browne
+|
+
+|
+|*Remove UML models to "Archetype Object Model" document.*
+|T Beale
+|
+
+|
+|Detailed review from CHIME, UCL.
+|T Austin
+|
+
+|
+|{spec_tickets}/SPEC-103[SPEC-103^]. Redevelop archetype UML model, add new keywords: `allow_archetype`, `include`, `exclude`.
+|T Beale
+|
+
+|
+|{spec_tickets}/SPEC-104[SPEC-104^]. Fix ordering bug when `use_node` used. Required parser rules for identifiers to make class and attribute identifiers distinct.
+|K Atalag
+|
+
+|
+|Added grammars for all parts of ADL, as well as new UML diagrams.
+|T Beale
+|
+
+
+4+^h|*Release 0.9*
+
+|1.1
+|{spec_tickets}/SPEC-79[SPEC-79^]. Change interval syntax in ADL.
+|T Beale
+|24 Jan 2004
+
+|1.0
+|{spec_tickets}/SPEC-77[SPEC-77^]. Add cADL date/time pattern constraints. +
+ {spec_tickets}/SPEC-78[SPEC-78^]. Add predefined clinical types.
+ Better explanation of cardinality, occurrences and existence.
+|S Heard, +
+ T Beale
+|14 Jan 2004
+
+|0.9.9
+|{spec_tickets}/SPEC-73[SPEC-73^]. Allow lists of Reals and Integers in cADL. +
+ {spec_tickets}/SPEC-75[SPEC-75^]. Add predefined clinical types library to ADL. +
+ Added cADL and dADL object models.
+|T Beale, +
+ S Heard
+|28 Dec 2003
+
+|0.9.8
+|{spec_tickets}/SPEC-70[SPEC-70^]. Create Archetype System Description.
+ Moved Archetype Identification Section to new Archetype System document.  Copyright Assgined by Ocean Informatics P/L Australia to The openEHR Foundation.
+|T Beale, +
+ S Heard
+|29 Nov 2003
+
+|0.9.7
+|Added simple value list continuation (",..."). Changed path syntax so that trailing '/' required for object paths. +
+ Remove ranges with excluded limits. +
+ Added terms and term lists to dADL leaf types.
+|T Beale
+|01 Nov 2003
+
+|0.9.6
+|Additions during HL7 WGM Memphis Sept 2003
+|T Beale
+|09 Sep 2003
+
+|0.9.5
+|Added comparison to other formalisms. Renamed CDL to cADL and dDL to dADL. Changed path syntax to conform (nearly) to Xpath. Numerous small changes.
+|T Beale
+|03 Sep 2003
+
+|0.9
+|Rewritten with sections on cADL and dDL.
+|T Beale
+|28 July 2003
+
+|0.8.1
+|Added basic type constraints, re-arranged sections.
+|T Beale
+|15 July 2003
+
+|0.8
+|Initial Writing
+|T Beale
+|10 July 2003
+
+|===

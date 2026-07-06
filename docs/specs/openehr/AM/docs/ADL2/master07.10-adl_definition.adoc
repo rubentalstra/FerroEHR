@@ -1,0 +1,173 @@
+== Definition Section
+
+The `definition` section contains the main formal definition of the archetype, and is written in the Constraint Definition Language (cADL). A typical `definition` section is as follows:
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, adl]
+--------
+definition
+    OBSERVATION[at0000] ∈ {                                              -- blood pressure measurement
+        name ∈ {                                                         -- any synonym of BP
+            DV_CODED_TEXT[at9000] ∈ {
+                defining_code ∈ {
+                    CODE_PHRASE[at9001] ∈ {[ac1]}
+                }
+            }
+        }
+        data ∈ {
+            HISTORY[at0003] ∈ {                                             -- history
+                events cardinality ∈ {1..*} ∈ {
+                    POINT_EVENT[at0004] occurrences ∈ {0..1} ∈ {            -- baseline
+                        name ∈ {
+                            DV_CODED_TEXT[at9002] ∈ {
+                                defining_code ∈ {
+                                    CODE_PHRASE[at9003] ∈ {[ac2]}
+                                }
+                            }
+                        }
+                        data ∈ {
+                            ITEM_LIST[at0007] ∈ {                              -- systemic arterial BP
+                                items cardinality ∈ {2..*} ∈ {
+                                    ELEMENT[at0008] ∈ {                        -- systolic BP
+                                        name ∈ {                               -- any synonym of 'systolic'
+                                            DV_CODED_TEXT[at9004] ∈ {
+                                                defining_code ∈ {
+                                                    CODE_PHRASE[at9005] ∈ {[ac2]}
+                                                }
+                                            }
+                                        }
+                                        value ∈ {
+                                            DV_QUANTITY[at9006] ∈ {
+                                                magnitude ∈ {|0..1000|}
+                                                property ∈ {[properties::944]}  -- "pressure"
+                                                units ∈ {[units::387]}          -- "mm[Hg]"
+                                            }
+                                        }
+                                    }
+                                    ELEMENT[at0078] ∈ {                          -- diastolic BP
+                                        name ∈ {                                 -- any synonym of 'diastolic'
+                                            DV_CODED_TEXT[at9007] ∈ {
+                                                defining_code ∈ {
+                                                    CODE_PHRASE[at9008] ∈ {[ac3]}
+                                                }
+                                            }
+                                        }
+                                        value ∈ {
+                                            DV_QUANTITY[at9009] ∈ {
+                                                magnitude ∈ {|0..1000|}
+                                                property ∈ {[properties::944]}   -- "pressure"
+                                                units ∈ {[units::387]}           -- "mm[Hg]"
+                                            }
+                                        }
+                                    }
+                                    ELEMENT[at0016] occurrences ∈ {0..*} ∈ {*}    -- unknown new item
+                                }
+                            ...
+--------
+
+id-coded ADL2::
++
+[source, adl]
+--------
+definition
+    OBSERVATION[id1] ∈ {                                                 -- blood pressure measurement
+        name ∈ {                                                         -- any synonym of BP
+            DV_CODED_TEXT[id2] ∈ {
+                defining_code ∈ {
+                    CODE_PHRASE[id3] ∈ {[ac1]}
+                }
+            }
+        }
+        data ∈ {
+            HISTORY[id4] ∈ {                                             -- history
+                events cardinality ∈ {1..*} ∈ {
+                    POINT_EVENT[id5] occurrences ∈ {0..1} ∈ {            -- baseline
+                        name ∈ {
+                            DV_CODED_TEXT[id6] ∈ {
+                                defining_code ∈ {
+                                    CODE_PHRASE[id7] ∈ {[ac2]}
+                                }
+                            }
+                        }
+                        data ∈ {
+                            ITEM_LIST[id8] ∈ {                              -- systemic arterial BP
+                                items cardinality ∈ {2..*} ∈ {
+                                    ELEMENT[id9] ∈ {                        -- systolic BP
+                                        name ∈ {                            -- any synonym of 'systolic'
+                                            DV_CODED_TEXT[id10] ∈ {
+                                                defining_code ∈ {
+                                                    CODE_PHRASE[id11] ∈ {[ac2]}
+                                                }
+                                            }
+                                        }
+                                        value ∈ {
+                                            DV_QUANTITY[id12] ∈ {
+                                                magnitude ∈ {|0..1000|}
+                                                property ∈ {[properties::944]}  -- "pressure"
+                                                units ∈ {[units::387]}          -- "mm[Hg]"
+                                            }
+                                        }
+                                    }
+                                    ELEMENT[id79] ∈ {                            -- diastolic BP
+                                        name ∈ {                                 -- any synonym of 'diastolic'
+                                            DV_CODED_TEXT[id14] ∈ {
+                                                defining_code ∈ {
+                                                    CODE_PHRASE[id15] ∈ {[ac3]}
+                                                }
+                                            }
+                                        }
+                                        value ∈ {
+                                            DV_QUANTITY[id16] ∈ {
+                                                magnitude ∈ {|0..1000|}
+                                                property ∈ {[properties::944]}   -- "pressure"
+                                                units ∈ {[units::387]}           -- "mm[Hg]"
+                                            }
+                                        }
+                                    }
+                                    ELEMENT[id17] occurrences ∈ {0..*} ∈ {*}    -- unknown new item
+                                }
+                            ...
+--------
+====
+
+This definition expresses constraints on instances of the types `ENTRY` , `HISTORY` , `EVENT` , `ITEM_LIST` , `ELEMENT` , `QUANTITY` , and `CODED_TEXT` so as to allow them to represent a blood pressure measurement, consisting of a history of measurement events, each consisting of at least systolic and diastolic pressures, as well as any number of other items (expressed by the `[id17]` "any" node near the bottom).
+
+=== Design-time and Run-time paths
+
+All archetype object constraint nodes require a node identifier. When data are created according to the `definition` section of an archetype, the archetype node identifiers can be written into the data, providing a reliable way of finding data nodes, regardless of what other runtime names might have been chosen by the user for the node in question. There are two reasons for doing this. Firstly, querying cannot rely on runtime names of nodes (e.g. names like "sys BP", "systolic bp", "sys blood press." entered by a doctor are unreliable for querying); secondly, it allows runtime data retrieved from a persistence mechanism to be re-associated with the cADL structure which was used to create it.
+
+An example which shows the difference between design-time meanings associated with node identifiers and runtime names is the following, from a `SECTION` archetype representing the problem/SOAP headings (a simple heading structure commonly used by clinicians to record patient contacts under top-level headings corresponding to the patient's problem(s), and under each problem heading, the headings "subjective", "objective", "assessment", and "plan").
+
+[tabs,sync-group-id=adl-example]
+====
+at-coded ADL2::
++
+[source, cadl]
+--------
+    SECTION[at0000] matches {                       -- problem
+        name matches {
+            DV_CODED_TEXT[at9000] matches {
+                defining_code matches {[ac1]}       -- any clinical problem type
+            }
+        }
+    }
+--------
+
+id-coded ADL2::
++
+[source, cadl]
+--------
+    SECTION[id1] matches {                          -- problem
+        name matches {
+            DV_CODED_TEXT[id2] matches {
+                defining_code matches {[ac1]}       -- any clinical problem type
+            }
+        }
+    }
+--------
+====
+
+In the above, the node identifier `[at0000]` (`[id1]`) is assigned a meaning such as "clinical problem" in the archetype terminology section. The subsequent lines express a constraint on the runtime _name_ attribute, using the internal code `[ac1]` . The constraint `[ac1]` is also defined in the archetype terminology section with a formal statement meaning "any clinical problem type", which could clearly evaluate to thousands of possible values, such as "diabetes", "arthritis" and so on. As a result, in the runtime data, the node identifier corresponding to "clinical problem" and the actual problem type chosen at runtime by a user, e.g. "diabetes", can both be found. This enables querying to find all nodes with meaning "problem", or all nodes describing the problem "diabetes". Internal `[acN]` codes are described in <<_local_value_set_codes>>.

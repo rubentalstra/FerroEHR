@@ -1,0 +1,15 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*SM Release 1.0.0 (unreleased)*
+
+|[[latest_issue]]0.5.0
+|{spec_tickets}/SPECSM-5[SPECSM-5^]. Add Simplified Data Formats (SDF) +
+ Initial writing, adapted from the Better Platform 'Web Templates' specification and EtherCIS documentation.
+|openEHR SEC
+|[[latest_issue_date]]27 Aug 2020
+
+|===

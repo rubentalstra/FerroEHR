@@ -1,0 +1,9 @@
+operationId: definition_template_adl2_list
+summary: List templates
+description: |
+  List the available ADL2 operational templates on the system.
+tags:
+  - ADL2
+responses:
+  '200':
+    $ref: ../responses/200_TemplateList_adl2.yaml

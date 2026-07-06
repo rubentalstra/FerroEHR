@@ -1,0 +1,22 @@
+=== C_DOMAIN_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__C_DOMAIN_TYPE (abstract)__*
+
+h|*Description*
+2+a|Abstract parent type of domain-specific constrainer types, to be defined in external packages.
+
+h|*Inherit*
+2+|`<<_c_defined_object_class,C_DEFINED_OBJECT>>`
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(abstract)*
+|*standard_equivalent* (): `<<_c_complex_object_class,C_COMPLEX_OBJECT>>`
+a|Standard (i.e. C_OBJECT) form of constraint.
+|===

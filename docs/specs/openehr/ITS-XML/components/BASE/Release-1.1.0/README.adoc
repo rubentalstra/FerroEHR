@@ -1,0 +1,6 @@
+# Base Models
+
+openEHR https://specifications.openehr.org/releases/BASE/Release-1.1.0[Base Models] XML schema Release-1.1.0.
+
+### Acknowledgements
+Authored by https://www.openehr.org[openEHR Foundation] - 2008-2018

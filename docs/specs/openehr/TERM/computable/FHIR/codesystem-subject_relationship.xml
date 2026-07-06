@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-subject_relationship"/>
+  <version value="3.1.0"/>
+  <name value="subject_relationship"/>
+  <title value="Subject Relationship"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="36"/>
+  <concept>
+    <code value="0"/>
+    <display value="self"/>
+    <designation>
+      <language value="es"/>
+      <value value="sí mismo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="自己"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="próprio"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="本人"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="3"/>
+    <display value="foetus"/>
+    <designation>
+      <language value="es"/>
+      <value value="feto"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="胎児"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="feto"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="胎儿"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="10"/>
+    <display value="mother"/>
+    <designation>
+      <language value="es"/>
+      <value value="madre"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="母"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="mãe"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="母亲"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="9"/>
+    <display value="father"/>
+    <designation>
+      <language value="es"/>
+      <value value="padre"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="父"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="pai"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="父亲"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="6"/>
+    <display value="donor"/>
+    <designation>
+      <language value="es"/>
+      <value value="donante"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="ドナー"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="dador"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="供体"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="253"/>
+    <display value="unknown"/>
+    <designation>
+      <language value="es"/>
+      <value value="desconocido"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="未知"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="desconhecido"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="未知"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="261"/>
+    <display value="adopted daughter"/>
+    <designation>
+      <language value="es"/>
+      <value value="hija adoptiva"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="養女"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="filha adoptiva"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="养女"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="260"/>
+    <display value="adopted son"/>
+    <designation>
+      <language value="es"/>
+      <value value="hijo adoptivo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="養子"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="filho adoptivo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="养子"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="259"/>
+    <display value="adoptive father"/>
+    <designation>
+      <language value="es"/>
+      <value value="padre adoptivo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="養父"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="pai adoptivo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="养父"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="258"/>
+    <display value="adoptive mother"/>
+    <designation>
+      <language value="es"/>
+      <value value="madre adoptiva"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="養母"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="mãe adoptiva"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="养母"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="256"/>
+    <display value="biological father"/>
+    <designation>
+      <language value="es"/>
+      <value value="padre biológico"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="生物学上の父"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="pai biológico"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="亲生父亲"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="255"/>
+    <display value="biological mother"/>
+    <designation>
+      <language value="es"/>
+      <value value="madre biológica"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="生物学上の母"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="mãe biológica"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="亲生母亲"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="23"/>
+    <display value="brother"/>
+    <designation>
+      <language value="es"/>
+      <value value="hermano"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="兄弟"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="irmão"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="兄弟"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="28"/>
+    <display value="child"/>
+    <designation>
+      <language value="es"/>
+      <value value="niño"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="子"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="filho"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="孩子"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="265"/>
+    <display value="cohabitee"/>
+    <designation>
+      <language value="es"/>
+      <value value="cohabitante"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="同居者"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="coabitante"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="同居者"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="257"/>
+    <display value="cousin"/>
+    <designation>
+      <language value="es"/>
+      <value value="primo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="従兄弟"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="primo(a)"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="同辈堂表亲戚"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="29"/>
+    <display value="daughter"/>
+    <designation>
+      <language value="es"/>
+      <value value="hija"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="娘"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="filha"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="女儿"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="264"/>
+    <display value="guardian"/>
+    <designation>
+      <language value="es"/>
+      <value value="guardián"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="保護者"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="guardião(ã)"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="监护人"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="39"/>
+    <display value="maternal aunt"/>
+    <designation>
+      <language value="es"/>
+      <value value="tía materna"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="母方の叔母"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="tia materna"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="姨母"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="8"/>
+    <display value="maternal grandfather"/>
+    <designation>
+      <language value="es"/>
+      <value value="abuelo materno"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="母方"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="avô materno"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="外祖父"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="7"/>
+    <display value="maternal grandmother"/>
+    <designation>
+      <language value="es"/>
+      <value value="abuela materna"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="母型の"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="avó materna"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="外祖母"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="38"/>
+    <display value="maternal uncle"/>
+    <designation>
+      <language value="es"/>
+      <value value="tío materno"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="母型の叔父"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="tio materno"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="舅父"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="189"/>
+    <display value="neonate"/>
+    <designation>
+      <language value="es"/>
+      <value value="neonato"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="新生児"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="recém-nascido"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="新生儿"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="254"/>
+    <display value="parent"/>
+    <designation>
+      <language value="es"/>
+      <value value="padre"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="親"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="pai/mãe"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="父母"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="22"/>
+    <display value="partner/spouse"/>
+    <designation>
+      <language value="es"/>
+      <value value="compañero/esposo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="配偶者"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="companheiro/cônjuge"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="伴侣/配偶"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="41"/>
+    <display value="paternal aunt"/>
+    <designation>
+      <language value="es"/>
+      <value value="tía paterna"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="父方の叔母"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="tia paterna"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="姑母"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="36"/>
+    <display value="paternal grandfather"/>
+    <designation>
+      <language value="es"/>
+      <value value="abuelo paterno"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="父方の祖母"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="avô paterno"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="祖父"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="37"/>
+    <display value="paternal grandmother"/>
+    <designation>
+      <language value="es"/>
+      <value value="abuela paterna"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="父方の祖-"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="avó paterna"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="祖母"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="40"/>
+    <display value="paternal uncle"/>
+    <designation>
+      <language value="es"/>
+      <value value="tío paterno"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="父方の叔父"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="tio paterno"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="叔伯"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="27"/>
+    <display value="sibling"/>
+    <designation>
+      <language value="es"/>
+      <value value="hermano"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="同胞"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="irmão(ã)"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="兄弟姐妹"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="24"/>
+    <display value="sister"/>
+    <designation>
+      <language value="es"/>
+      <value value="hermana"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="姉妹"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="irmã"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="姐妹"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="31"/>
+    <display value="son"/>
+    <designation>
+      <language value="es"/>
+      <value value="hijo"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="息子"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="filho"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="儿子"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="263"/>
+    <display value="step father"/>
+    <designation>
+      <language value="es"/>
+      <value value="padrastro"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="義父"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="padrasto"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="继父"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="262"/>
+    <display value="step mother"/>
+    <designation>
+      <language value="es"/>
+      <value value="madrastra"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="義母"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="madrasta"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="继母"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="25"/>
+    <display value="step or half brother"/>
+    <designation>
+      <language value="es"/>
+      <value value="hermanastro o medio hermano"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="義理あるいは異父母兄弟"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="meio-irmão"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="继兄弟或同父异母或同母异父兄弟"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="26"/>
+    <display value="step or half sister"/>
+    <designation>
+      <language value="es"/>
+      <value value="hermanastra o media hermana"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="義理あるいは異父母姉妹"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="meia-irmã"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="继姐妹或同父异母或同母异父姐妹"/>
+    </designation>
+  </concept>
+</CodeSystem>

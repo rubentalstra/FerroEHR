@@ -1,0 +1,56 @@
+= Implementation Strategies
+
+== Overview
+This section notes a few of the general challenges for mapping the openEHR data types to implementation
+technologies such as programming languages and XML. For specific guidelines, Implementation
+Technology Specification (ITS) document for each target formalism should be consulted.
+
+== Quantities and Ordered_numeric
+In the quantity package, the type `DV_QUANTIFIED` is shown having an abstract property of type
+Ordered_numeric. This is intended to indicate that the type `DV_QUANTIFIED` is distinguished by
+the magnitude property (compared to say `DV_ORDERED`, which describes ordered things without having
+magnitudes). The type Ordered_numeric be mapped to various types in implementation technologies
+as follows:
+
+* Java: `java.lang.Number`
+* C#: `System.IComparable`
+* Eiffel: `NUMERIC`
+
+All of these type systems currently suffer from not having a single type whose meaning is both
+"ordered" (having the function '<') and "numeric" (having the functions '+', '-', '*', '/') but in practice
+it does not matter much. For type systems with no convenient supertype of the numeric concrete
+types `Real`, `Integer`, `Double`, the `_magnitude_` property can safely be left out of `DV_QUANTIFIED`;
+the only drawback is that code cannot call `DV_QUANTIFIED`.`_magnitude_` polymorphically, e.g. in a
+statistical application processing `DV_QUANTITY` and `DV_COUNT` objects.
+
+== Unicode
+Unicode is supported in various ways in different languages. In Java, since JDK 1.1, unicode support
+is implicit in the base classes. From the documentation:
+
+    the classes java.io.InputStreamReader, java.io.OutputStreamWriter, and
+    java.lang.String can convert between Unicode and a number of other character
+    encodings. More information is available at:
+    http://java.sun.com/j2se/1.3/docs/guide/intl/encoding.doc.html.
+
+In the C# language, conversion can be done between Unicode and other codepages using the System.
+`Text.UnicodeEncoding` (for UTF-16) and `System.Text.UTF8Encoding` (for UTF-8) classes.
+
+In XML unicode is handled by specifying the encoding of the document in the XML declaration, e.g.
+`<?xml version="1.0" encoding="UTF-16"?>`.
+
+In the Eiffel language, unicode is available in the Gobo public domain library (see
+http://www.gobosoft.com), in the `UC_STRING` class, which inherits from the String class.
+The support in other languages varies, and may require a special type like the `UC_STRING` used in
+Eiffel.
+
+== Dates and Times
+
+In some formalisms, dates and times are represented using a single calendar-like class. This is not
+considered to be good practice from the point of specification, since it is more difficult to state proper
+invariants for such a class used to represent a particular logical type such as a `DATE` or `TIME`, however,
+its utility in implementation is recognised.
+
+Where implementors want to use such a class (call it `CALENDAR` here for the sake of discussion) the
+recommended approach is to wrap the class `CALENDAR` with classes representing the types described
+in this specification, i.e. `DATE` etc. This enables the addition of any necessary functionality in the
+wrapper for example, for serialising and deserialising in and out of XML.

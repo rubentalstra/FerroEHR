@@ -1,0 +1,50 @@
+= The Raw Operational Template
+
+A 'raw' OPT is the first stage of OPT processing from a master source template, and all the other templates and archetypes that it references. All references to archetype nodes and other archetypes are resolved, and the structure is fully flattened, with all deleted nodes removed.
+
+== Artefact Structure
+
+Since an OPT is considered a 'top-level' standalone artefact, there is no specialisation statement. There are no other differences to the 'outer' structure of the artefact, so its structure is the same as any top-level archetype, i.e. in ADL terms, it obeys the following Antlr4 rule:
+
+[source, antlr-java]
+--------
+adl_operational_template: 'operational_template' '(' qualifiers? ')'
+        ARCHETYPE_HRID
+    'language'
+        odin_text
+    'description'
+        odin_text
+    'definition'
+        cadl_text
+    ('rules'
+        rules_text)?
+    'terminology'
+        odin_text
+    ('annotations' 
+        odin_text)?
+    'component_terminologies'
+        odin_text
+    ;
+--------
+
+== Archetype References
+
+All references to other archetypes (typically not including full version information) found in the source archetypes and templates are resolved to full archetype identifiers, and replaced by these identifiers in the OPT output (guaranteed to include full 3-part versions).
+
+== Flattening
+
+The flattening process for an OPT is somewhat more extensive than the standard flattening process that produces a flattened archetype, described {openehr_am_aom2}#_flattening[in the AOM specification].
+
+OPT Flattening involves the following additional steps:
+
+* since sibling sets of object nodes under a container attribute node are expressed in full (i.e. taking into account additions and removals from specialised child archetypes), there are no sibling order markers (i.e. 'before' and 'after' markers) in a raw OPT;
+* `use_node` internal references are replaced by an inline copy of the target structure of the reference;
+* for slots:
+** all `closed` slots are removed;
+** all slot-filler archetype references are replaced by an inline copy of the archetype to which the reference resolves;
+* all deleted nodes are removed from the output, i.e. attribute (`C_ATTRIBUTE`) nodes that have `existence matches {0}` and object (`C_OBJECT`) nodes with `occurrences matches {0}`;
+
+== Terminology
+
+During the OPT flattening process, the flat form of the `terminology` section of each flattened constituent archetype or template (other than the root template) is gathered under the `component_terminologies` section.
+

@@ -1,0 +1,25 @@
+= Terminology Package
+
+== Overview
+
+The `base.foundation_types.terminology` package provides leaf types used to represent a _terminology code_, i.e. a code within a _terminology_, and a _term_, which is the combination of a code and one rubric (natural language) string associated with it. Terminology codes are sometimes called _concept codes_ among terminology experts, and when used as references, _concept references_.
+
+An instance of `Terminology_code` is a reference to any referenceable _entity_ within a terminology or ontology, which may be:
+
+* a single _term_, for which a rubric(s) and potentially relationships (at least the `IS-A` relationship) are defined;
+* a _value set_ i.e. a set of single terms, possibly in a tree or other structure corresponding to relationships between the member terms;
+* any other terminological entity referencable with a code.
+
+An instance of `Terminology_term` provides a way to record a terminology code and the rubric used in some operational context, allowing the receiver or reader of the data to avoid having to perform a terminology lookup to obtain the rubric, e.g. for display purposes.
+
+[.text-center]
+.`base.foundation_types.terminology` package
+image::{uml_diagrams_uri}/BASE-foundation_types.terminology.svg[id=foundation_types_terminology_types, align="center"]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}terminology_term.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}terminology_code.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}code_phrase.adoc[]

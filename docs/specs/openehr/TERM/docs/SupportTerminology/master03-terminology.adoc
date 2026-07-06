@@ -1,0 +1,19 @@
+= Terminology
+
+The following subsections describe the purpose of the openEHR Terminology code sets and vocabularies. The computable definition may be found in the {openehr_terminology_resources}[openEHR `specifications-TERM` repository^].
+
+== Code Sets
+
+include::codesets/openehr_external_terminologies-codesets.adoc[]
+
+include::codesets/openehr_terminology-codesets.adoc[]
+
+== Vocabularies
+
+Within the openEHR vocabularies, terms are identified in groups, each with its own identifier. The identifiers of the groups is defined in the Support Information Model, Terminology package. Each set of terms is described below on a per-group basis.
+
+include::codesets/openehr_terminology-vocabularies.adoc[]
+
+
+
+

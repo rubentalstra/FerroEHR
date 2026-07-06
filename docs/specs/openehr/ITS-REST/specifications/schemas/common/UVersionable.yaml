@@ -1,0 +1,9 @@
+title: Versionable
+oneOf:
+  - $ref: ../ehr/Composition.yaml
+  - $ref: ../ehr/EhrStatus.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    COMPOSITION: ../ehr/Composition.yaml
+    EHR_STATUS: ../ehr/EhrStatus.yaml

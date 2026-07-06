@@ -1,0 +1,29 @@
+=== Terminology_relation Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*Terminology_relation*
+
+h|*Description*
+2+a|Definition of a relationship within the terminology meta-model. May have a terminology code (`_local_code_`) from the terminology of this extract, or be defined by a code from another terminology that includes the meta-model of this terminology (`_external_code_`).
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Name of this relation from relevant meta-model.
+
+h|*0..1*
+|*local_code*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Local code defining this relation, if in a terminology whose meta-model is defined as terms.
+
+h|*0..1*
+|*external_code*: `link:/releases/BASE/{base_release}/foundation_types.html#_terminology_code_class[Terminology_code^]`
+a|Code from another terminology that defines a relation used by this terminology. Used for terminologies that don't have codes for their own meta-model.
+
+h|*Invariants*
+2+a|__Inv_valid_definition__: `local_code /= Void xor external_code /= Void`
+|===

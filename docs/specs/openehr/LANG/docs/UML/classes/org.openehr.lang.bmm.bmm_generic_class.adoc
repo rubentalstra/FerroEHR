@@ -1,0 +1,40 @@
+=== BMM_GENERIC_CLASS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_GENERIC_CLASS*
+
+h|*Description*
+2+a|Definition of a generic class in an object model.
+
+h|*Inherit*
+2+|`<<_bmm_class_class,BMM_CLASS>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*generic_parameters*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_generic_parameter_class,BMM_GENERIC_PARAMETER>>>`
+a|List of generic parameter definitions, keyed by name of generic parameter; these are defined either directly on this class or by the addition of an ancestor class which is generic.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1 +
+(redefined)*
+|*suppliers* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Add suppliers from generic parameters.
+
+h|*1..1 +
+(redefined)*
+|*type_signature* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Signature form of the type, which for generics includes generic parameter constrainer types e.g. Interval<T:Ordered>.
+
+h|*1..1 +
+(redefined)*
+|*type_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Formal string form of the type as per UML.
+|===

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <url value="https://specifications.openehr.org/fhir/codesystem-extract_action_type"/>
+  <version value="3.1.0"/>
+  <name value="extract_action_type"/>
+  <title value="Extract Action Type"/>
+  <status value="active"/>
+  <experimental value="false"/>
+  <date value="2024-08-22"/>
+  <publisher value="openEHR International"/>
+  <contact>
+    <name value="openEHR TERM specifications"/>
+    <telecom>
+      <system value="url"/>
+      <value value="https://specifications.openehr.org/releases/TERM/Release-3.1.0"/>
+    </telecom>
+  </contact>
+  <caseSensitive value="true"/>
+  <content value="complete"/>
+  <count value="3"/>
+  <concept>
+    <code value="809"/>
+    <display value="cancel"/>
+    <designation>
+      <language value="es"/>
+      <value value="cancelación"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="キャンセル"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="cancelar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="取消"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="810"/>
+    <display value="resend"/>
+    <designation>
+      <language value="es"/>
+      <value value="reenvío"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="再送"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="reenviar"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="重新发送"/>
+    </designation>
+  </concept>
+  <concept>
+    <code value="811"/>
+    <display value="send new"/>
+    <designation>
+      <language value="es"/>
+      <value value="nuevo envío"/>
+    </designation>
+    <designation>
+      <language value="ja"/>
+      <value value="新規送信"/>
+    </designation>
+    <designation>
+      <language value="pt"/>
+      <value value="enviar novo"/>
+    </designation>
+    <designation>
+      <language value="zh"/>
+      <value value="发送新的"/>
+    </designation>
+  </concept>
+</CodeSystem>

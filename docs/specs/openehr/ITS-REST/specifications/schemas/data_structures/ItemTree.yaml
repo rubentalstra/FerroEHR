@@ -1,0 +1,13 @@
+title: ITEM_TREE
+type: object
+allOf:
+  - $ref: ../data_structures/ItemStructure.yaml
+properties:
+  _type:
+    type: string
+    default: ITEM_TREE
+  items:
+    type: array
+    items:
+      $ref: ../data_structures/UItem.yaml
+x-discriminator-value: ITEM_TREE

@@ -1,0 +1,28 @@
+= Preface
+
+== Purpose
+
+This document describes a 'simplified template' (ST) format, along with various concrete data formats, intended to be easier to use than the canonical formats, for typical developers with minimal exposure to openEHR. These formats are designed to enable easier creation of openEHR content (i.e. Compositions etc).
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_simplified_data_template}[{openehr_simplified_data_template}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_technical_list}/its[openEHR ITS forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+When used with openEHR-REST API, the available calls to be conformance tested are the same as for other openEHR serialisation formats (canonical JSON etc), but with at different representation format (indicated by setting appropriate Content-Type http header).
+
+[.tbd]
+*TBD*: Conformance testing and Content-Type will be further described later. 

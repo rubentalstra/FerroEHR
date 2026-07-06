@@ -1,0 +1,25 @@
+= Interval
+
+== Overview
+
+Another kind of structure commonly needed in rich data is the interval. The definition of the `Interval<T>` class here is an intensional one, i.e. it states its members by implication from its limits, rather than enumerating them. To support the common need for defining times in models that could be either a fixed point in time or a time interval, the classes `Point_interval<T>` and `Proper_interval<T>` are provided. If `Interval<X>` is defined as the type of feature in a class in an openEHR model, where `X` is some descendant of `Ordered`, then at runtime, either a `Point_interval` or `Proper_interval` may be attached.
+
+In addition to the generic interval types, the derived types `Multiplicity_interval` and `Cardinality` are provided, for use in models to represent multiplicity, optionality, and cardinality.
+
+The following UML diagram illustrates the `interval` package.
+
+[.text-center]
+.`base.foundation_types.interval` package
+image::{uml_diagrams_uri}/BASE-foundation_types.interval.svg[id=foundation_types_interval, align="center"]
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}interval.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}point_interval.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}proper_interval.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}multiplicity_interval.adoc[]
+
+include::{uml_export_dir}/classes/{pkg}cardinality.adoc[]

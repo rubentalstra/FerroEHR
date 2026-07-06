@@ -1,0 +1,18 @@
+operationId: definition_query_list
+summary: List stored queries
+description: |
+  Retrieves list of all stored queries on the system matched by `qualified_query_name` as pattern.
+  
+  If pattern should given be in the format of `[{namespace}::]{query-name}`, and when is empty, it will be treated as "wildcard" in the search.   
+  
+  Examples:
+    - `GET https://openEHRSys.example.com/v1/definition/query/org.openehr` will list all versions of all queries with names starting with `org.openehr`
+    - `GET https://openEHRSys.example.com/v1/definition/query/org.openehr::compositions` will list all versions of the query named `org.openehr::compositions`
+
+tags:
+  - Query
+parameters:
+  - $ref: ../parameters/path/qualified_query_name.yaml
+responses:
+  '200':
+    $ref: ../responses/200_QueryList.yaml

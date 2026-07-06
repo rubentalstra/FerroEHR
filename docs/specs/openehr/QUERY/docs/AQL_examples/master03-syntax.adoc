@@ -1,0 +1,3 @@
+= Syntax Examples
+
+The following sub-sections illustrate various AQL operator syntax examples.

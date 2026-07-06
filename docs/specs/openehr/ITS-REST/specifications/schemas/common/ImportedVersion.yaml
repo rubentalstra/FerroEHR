@@ -1,0 +1,13 @@
+title: IMPORTED_VERSION
+type: object
+allOf:
+  - $ref: ../common/Version.yaml
+required:
+  - item
+properties:
+  _type:
+    type: string
+    default: IMPORTED_VERSION
+  item:
+    $ref: ../common/OriginalVersion.yaml
+x-discriminator-value: IMPORTED_VERSION

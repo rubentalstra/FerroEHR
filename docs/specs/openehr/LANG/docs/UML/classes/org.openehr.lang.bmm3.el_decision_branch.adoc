@@ -1,0 +1,18 @@
+=== EL_DECISION_BRANCH Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EL_DECISION_BRANCH<T> (abstract)__*
+
+h|*Description*
+2+a|Abstract parent of meta-types representing a branch of some kind of decision structure. Defines `result` as being of the generic type `T`.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*result*: `T`
+a|Result expression of conditional, if its `_condition_` evaluates to True.
+|===

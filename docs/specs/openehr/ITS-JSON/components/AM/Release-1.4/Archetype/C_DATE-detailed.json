@@ -1,0 +1,63 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-1.4/Archetype/C_DATE-detailed.json",
+    "title": "C_DATE",
+    "description": "ISO 8601-compatible constraint on instances of Date in the form either of a set of validity values, or an actual date range. There is no validity flag for \u2018year\u2019, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include \u201cYYYY-??-??\u201d (date with optional month and day).",
+    "$comments": "Defined in Archetype IM, inherits from C_PRIMITIVE",
+    "type": "object",
+    "properties": {
+        "assumed_value": {
+            "description": "The value to assume if this item is not included in data, due to being part of an optional structure."
+        },
+        "day_validity": {
+            "description": "Validity of day in constrained date."
+        },
+        "month_validity": {
+            "description": "Validity of month in constrained date."
+        },
+        "timezone_validity": {
+            "description": "Validity of timezone in constrained date."
+        },
+        "range": {
+            "description": "Interval of Dates specifying constraint."
+        }
+    },
+    "$inherits": [
+        "all-detailed.json#/definitions/C_PRIMITIVE"
+    ],
+    "$functions": {
+        "default_value": {
+            "description": "Generate a default value from this constraint object.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+            }
+        },
+        "has_assumed_value": {
+            "description": "True if there is an assumed value.",
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        },
+        "valid_value": {
+            "description": "True if a_value is valid with respect to constraint expressed in concrete instance of this type.",
+            "parameters": {
+                "a_value": {
+                    "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Any"
+                }
+            },
+            "required_parameters": [
+                "a_value"
+            ],
+            "return": {
+                "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.0.3/Base_types/all-detailed.json#/definitions/Boolean"
+            }
+        }
+    },
+    "$invariants": {
+        "Assumed_value_valid": "has_assumed_value implies valid_value(assumed_value)",
+        "Pattern_validity": "pattern /= Void implies valid_iso8601_date_constraint_pattern(pattern)",
+        "Month_validity_optional": "month_validity = {VALIDITY_KIND}.optional implies (day_validity = {VALIDITY_KIND}.optional or day_validity = {VALIDITY_KIND}.disallowed)",
+        "Month_validity_disallowed": "month_validity = {VALIDITY_KIND}.disallowed implies day_validity = {VALIDITY_KIND}.disallowed",
+        "Validity_is_range": "validity_is_range = (range /= Void)"
+    }
+}

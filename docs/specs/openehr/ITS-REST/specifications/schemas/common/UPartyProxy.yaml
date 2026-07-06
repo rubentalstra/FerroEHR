@@ -1,0 +1,11 @@
+title: PARTY_PROXY
+oneOf:
+  - $ref: ../common/UMPartySelf.yaml
+  - $ref: ../common/UMPartyIdentified.yaml
+  - $ref: ../common/UMPartyRelated.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    PARTY_SELF: ../common/UMPartySelf.yaml
+    PARTY_IDENTIFIED: ../common/UMPartyIdentified.yaml
+    PARTY_RELATED: ../common/UMPartyRelated.yaml

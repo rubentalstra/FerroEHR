@@ -1,0 +1,152 @@
+=== I_EHR_COMPOSITION Interface
+
+[cols="^1,3,5"]
+|===
+h|*Interface*
+2+^h|*I_EHR_COMPOSITION*
+
+h|*Description*
+2+a|Interface for commit and retrieve of Compositions, with implicit Contribution creation.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*has_composition* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_version_uid: `link:/releases/BASE/{base_release}/base_types.html#_object_version_id_class[OBJECT_VERSION_ID^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|Return True if a Composition version with identifier `_a_version_uid_` exists.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+
+h|*1..1*
+|*get_composition_latest* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_versioned_object_uid: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/RM/{rm_release}/ehr.html#_composition_class[COMPOSITION^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)` +
+__Pre_has_composition__: `has_composition (an_ehr_id, a_version_uid)`
+a|Retrieve the latest version of a Composition.
+
+
+.Parameters +
+[horizontal]
+`_a_versioned_object_uid_`:: Uid of the `VERSIONED_COMPOSITION`.
+
+.Errors
+* `ehr_id_does_not_exist`
+* `composition_does_not_exist`
+
+h|*1..1*
+|*get_composition_at_time* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_versioned_object_uid: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_time: `link:/releases/BASE/{base_release}/foundation_types.html#_iso8601_date_time_class[Iso8601_date_time^][0..1]` +
+): `link:/releases/RM/{rm_release}/ehr.html#_composition_class[COMPOSITION^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|Retrieve the Composition version extant at a given time, from a Versioned Composition. If no time supplied, get the latest.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+* `composition_does_not_exist`
+
+h|*1..1*
+|*get_composition_at_version* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_version_uid: `link:/releases/BASE/{base_release}/base_types.html#_object_version_id_class[OBJECT_VERSION_ID^][1]` +
+): `link:/releases/RM/{rm_release}/ehr.html#_composition_class[COMPOSITION^]`
+a|Get a particular Version of a Composition by version id.
+
+
+
+
+.Errors
+* `ehr_does_not_exist`
+* `object_version_does_not_exist`
+
+h|*1..1*
+|*get_versioned_composition* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_versioned_object_uid: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+): `link:/releases/RM/{rm_release}/ehr.html#_versioned_composition_class[VERSIONED_COMPOSITION^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|Retrieve the `VERSIONED_OBJECT` of a Composition by uid.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+* `versioned_composition_does_not_exist`
+
+h|*1..1*
+|*create_composition* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_comp: `<<_uv_composition_class,UV_COMPOSITION>>[1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)` +
+__Pre_composition_definitions_valid__: `definitions_valid (a_comp)` +
+__Pre_content_valid__: `valid_content (a_comp)` +
+__Post_has_composition__: `has_composition (an_ehr_id, Result)`
+a|Create the first version of a new Composition. Causes server-side creation of a new `VERSIONED_OBJECT`, `ORIGINAL_VERSION` and new `CONTRIBUTION`.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+* `composition_already_exists`
+* `definition_unknown`
+* `content_invalid`
+
+h|*1..1*
+|*update_composition* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_comp: `<<_uv_composition_class,UV_COMPOSITION>>[1]` +
+): `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^]` +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)` +
+__Pre_composition_definitions_valid__: `definitions_valid (a_comp)` +
+__Pre_content_valid__: `valid_content (a_comp)`
+a|Update an existing Composition, which includes server-side creation of a new `ORIGINAL_VERSION` and a new `CONTRIBUTION`.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+* `composition_does_not_exist`
+* `definition_unknown`
+* `content_invalid`
+
+h|*0..1*
+|*delete_composition* ( +
+an_ehr_id: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]`, +
+a_version_uid: `link:/releases/BASE/{base_release}/base_types.html#_uuid_class[UUID^][1]` +
+) +
+ +
+__Pre_has_ehr__: `has_ehr (an_ehr_id)`
+a|Logically delete a Composition by creating a new version in which the content is removed and the lifecycle state is set to `523&#124;deleted&#124;`. The `_a_version_uid_` argument identifies the current top Composition Version.
+
+
+
+
+.Errors
+* `ehr_id_does_not_exist`
+* `composition_does_not_exist`
+|===

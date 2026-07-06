@@ -1,0 +1,34 @@
+=== BMM_GENERIC_TYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_GENERIC_TYPE*
+
+h|*Description*
+2+a|Type reference based on a generic class, e.g. 'HashTable <List <Packet>, String>'.
+
+h|*Inherit*
+2+|`<<_bmm_type_class,BMM_TYPE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*generic_parameters*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_bmm_type_class,BMM_TYPE>>>`
+a|Generic parameters of the root_type in this type specifier. The order must match the order of the owning class's formal generic parameter declarations.
+
+h|*1..1*
+|*base_class*: `<<_bmm_generic_class_class,BMM_GENERIC_CLASS>>`
+a|The base class of this type.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*type_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Return the full name of the type including generic parameters, e.g. 'DV_INTERVAL<T>', 'TABLE<List<THING>,String>'.
+|===

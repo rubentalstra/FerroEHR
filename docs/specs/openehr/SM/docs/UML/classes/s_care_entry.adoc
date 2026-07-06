@@ -1,0 +1,21 @@
+=== S_CARE_ENTRY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__S_CARE_ENTRY (abstract)__*
+
+h|*Description*
+2+a|Simplified RM form of `CARE_ENTRY` RM class.
+
+h|*Inherit*
+2+|`<<_s_entry_class,S_ENTRY>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*protocol*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_item_class,S_ITEM>>>`
+a|Converted from `ITEM_STRUCTURE`.
+|===

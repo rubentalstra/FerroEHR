@@ -1,0 +1,25 @@
+=== S_DV_CODED_TEXT Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_DV_CODED_TEXT*
+
+h|*Description*
+2+a|Simplified RM form of `DV_CODED_TEXT` RM class.
+
+h|*Inherit*
+2+|`<<_s_dv_text_class,S_DV_TEXT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*code*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_CODED_TEXT._defining_code.code_string_`.
+
+h|*1..1*
+|*terminology*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_CODED_TEXT._defining_code.terminology_id_`.
+|===

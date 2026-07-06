@@ -1,0 +1,33 @@
+title: EHR
+description: An EHR resource
+type: object
+properties:
+  system_id:
+    $ref: ../base_types/HierObjectId.yaml
+  ehr_id:
+    $ref: ../base_types/HierObjectId.yaml
+  ehr_status:
+    $ref: ../base_types/ObjectRef.yaml
+  ehr_access:
+    $ref: ../base_types/ObjectRef.yaml
+  time_created:
+    $ref: ../data_types/DvDateTime.yaml
+example:
+  system_id:
+    value: 9624982A-9F42-41A5-9318-AE13D5F5031F
+  ehr_id:
+    value: 7d44b88c-4199-4bad-97dc-d78268e01398
+  ehr_status:
+    id:
+      _type: OBJECT_VERSION_ID
+      value: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+    namespace: local
+    type: EHR_STATUS
+  ehr_access:
+    id:
+      _type: OBJECT_VERSION_ID
+      value: 59a8d0ac-140e-4feb-b2d6-af99f8e68af8::openEHRSys.example.com::1
+    namespace: local
+    type: EHR_ACCESS
+  time_created:
+    value: '2015-01-20T19:30:22.765+01:00'

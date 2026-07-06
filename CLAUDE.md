@@ -8,7 +8,7 @@ Single workspace. **Crate naming:** `openehr-*` = the openEHR **specification** 
 
 - `crates/openehr-base`, `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang` — **generated** spec crates (`openehr-codegen -- emit`). `openehr-its` — canonical JSON + **generated** XML (`emit-xml`) + **generated** ITS-REST contract (`emit-rest`) + hand-written runtimes. `openehr-query` — hand-written AQL lexer/parser/AST. `openehr-flat` — FLAT/STRUCTURED (hand-written). `openehr-codegen` (BMM/XSD/OAS→Rust generator) + `openehr-derive` (proc-macro) are the hand-written tooling.
 - `crates/ehrbase-rest`, `ehrbase-compat`, `ehrbase` — the application (built idiomatically; `ehrbase` is the binary).
-- `docs/` — plans (the roadmap), ADRs, VERSIONS, architecture, postgres-features, research, enterprise.
+- `docs/` — plans (the roadmap), ADRs, VERSIONS, architecture, postgres-features, research, enterprise. **`docs/specs/openehr/` — the vendored openEHR spec text + CNF test schedule (the conformance oracle; see its README + `/spec-lookup`).**
 - `.claude/` — rules, skills, hooks (no agents/worktrees — all work is done in-session).
 
 ## Code generation (ADR-004) — READ THIS FIRST
@@ -137,6 +137,7 @@ Stage-1 app build, `docs/plans/` phases 09–20) and are built compiling per pha
 
 ## IMPORTANT hard rules
 
+- **The vendored spec text is the oracle.** Before implementing or reviewing any spec-facing behaviour (RM semantics, invariants, REST wire, AQL, canonical JSON/XML, templates, terminology), read the relevant section under `docs/specs/openehr/` (use `/spec-lookup`) and cross-check the CNF platform test schedule (`docs/specs/openehr/CNF/`). Never resolve a spec question from memory or from EHRbase behaviour alone; cite the spec file + section for conformance-relevant decisions.
 - **Never hand-edit a `// @generated` file.** The generated spec crates (`openehr-base`, `openehr-rm`, `openehr-am`) are produced by `openehr-codegen`; edit the emitter or the `*_impl.rs` sibling and regenerate, never the generated file itself.
 - **No PORT STATUS trailer** (that was the retired 1:1-port convention). Generated files carry a `// @generated` header; application code is plain idiomatic Rust.
 - **Use the annotation vocabulary** where relevant: `// TODO(port):` (unfinished), `// PERF(port):` (optimize after conformance), `// PORT NOTE:` (a deliberate spec-gap or design decision, with the reason), `// SAFETY:` (any `unsafe`).

@@ -1,0 +1,30 @@
+=== BMM_DEFINITIONS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_DEFINITIONS*
+
+h|*Description*
+2+a|Definitions used by all BMM packages.
+
+h|*Constants*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*Bmm_internal_version*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}`
+a|Current internal version of BMM meta-model, used to determine if a given schema can be processed by a given implementation of the model.
+
+h|*1..1*
+|*Schema_name_delimiter*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"::"`
+a|Delimiter used to separate schema id from package path in a fully qualified path.
+
+h|*1..1*
+|*Package_name_delimiter*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}"."`
+a|Delimiter used to separate package names in a package path.
+
+h|*1..1*
+|*Bmm_schema_file_extension*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]{nbsp}={nbsp}".bmm"`
+a|Extension used for BMM files.
+|===

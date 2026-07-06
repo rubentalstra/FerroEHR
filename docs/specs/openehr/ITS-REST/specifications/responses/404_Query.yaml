@@ -1,0 +1,2 @@
+description: |
+  `404 Not Found` is returned when a stored query with `qualified_query_name` does not exist.

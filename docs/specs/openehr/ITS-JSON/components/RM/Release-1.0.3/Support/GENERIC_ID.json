@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/RM/Release-1.0.3/Support/GENERIC_ID.json",
+    "definitions": {
+        "GENERIC_ID": {
+            "type": "object",
+            "required": [
+                "value",
+                "scheme"
+            ],
+            "properties": {
+                "value": {
+                    "type": "string"
+                },
+                "scheme": {
+                    "type": "string"
+                },
+                "_type": {
+                    "type": "string",
+                    "const": "GENERIC_ID"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

@@ -1,0 +1,21 @@
+title: INSTRUCTION
+type: object
+allOf:
+  - $ref: ../ehr/CareEntry.yaml
+required:
+  - narrative
+properties:
+  _type:
+    type: string
+    default: INSTRUCTION
+  narrative:
+    $ref: ../data_types/UDvText.yaml
+  expiry_time:
+    $ref: ../data_types/DvDateTime.yaml
+  wf_definition:
+    $ref: ../data_types/DvParsable.yaml
+  activities:
+    type: array
+    items:
+      $ref: ../ehr/Activity.yaml
+x-discriminator-value: INSTRUCTION

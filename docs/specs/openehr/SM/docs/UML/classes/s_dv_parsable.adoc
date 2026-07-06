@@ -1,0 +1,25 @@
+=== S_DV_PARSABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_DV_PARSABLE*
+
+h|*Description*
+2+a|Simplified RM form of `DV_PARSABLE` RM class.
+
+h|*Inherit*
+2+|`<<_s_data_value_class,S_DATA_VALUE>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*value*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_PARSABLE._value_`.
+
+h|*1..1*
+|*formalism*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_PARSABLE._formalism_`.
+|===

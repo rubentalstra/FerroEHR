@@ -1,0 +1,108 @@
+title: Child
+required:
+  - id
+  - rmType
+  - min
+  - max
+  - aqlPath
+type: object
+properties:
+  id:
+    type: string
+  rmType:
+    type: string
+  nodeId:
+    type: string
+  min:
+    type: integer
+    format: int32
+  max:
+    type: integer
+    format: int32
+  aqlPath:
+    type: string
+  children:
+    type: array
+    items:
+      $ref: ./Child1.yaml
+    description: ''
+  name:
+    type: string
+  localizedName:
+    type: string
+  localizedNames:
+    $ref: ./LocalizedNames1.yaml
+  localizedDescriptions:
+    $ref: ./LocalizedDescriptions.yaml
+  termBindings:
+    $ref: ./TermBindings.yaml
+  inputs:
+    type: array
+    items:
+      $ref: ./Input3.yaml
+    description: ''
+  inContext:
+    type: boolean
+example:
+  id: context
+  rmType: EVENT_CONTEXT
+  nodeId: ''
+  min: 1
+  max: 1
+  aqlPath: /context
+  children:
+    - id: context_detail
+      name: Context detail
+      localizedName: Context detail
+      rmType: CLUSTER
+      nodeId: openEHR-EHR-CLUSTER.context_detail.v1
+      min: 0
+      max: -1
+      localizedNames:
+        sl: Podrobnosti
+      localizedDescriptions:
+        sl: Dodatni podatki o kontekstu
+      aqlPath: >-
+        /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]
+      children:
+        - id: tags
+          name: Tags
+          localizedName: Tags
+          rmType: DV_TEXT
+          nodeId: at0008
+          min: 1
+          max: -1
+          localizedNames:
+            sl: Tagi
+          localizedDescriptions:
+            sl: '*'
+          annotations:
+            comment: >-
+              Tags applied to the composition. They can contain various ids,
+              such as episode id, central case id or other types of information
+              forming composition meta-data.
+          aqlPath: >-
+            /context/other_context[at0001]/items[openEHR-EHR-CLUSTER.context_detail.v1]/items[at0008]/value
+          inputs:
+            - type: TEXT
+    - id: start_time
+      name: Start_time
+      rmType: DV_DATE_TIME
+      min: 0
+      max: 1
+      aqlPath: /context/start_time
+      inputs:
+        - type: DATETIME
+      inContext: true
+    - id: setting
+      name: Setting
+      rmType: DV_CODED_TEXT
+      min: 0
+      max: 1
+      aqlPath: /context/setting
+      inputs:
+        - suffix: code
+          type: TEXT
+        - suffix: value
+          type: TEXT
+      inContext: true

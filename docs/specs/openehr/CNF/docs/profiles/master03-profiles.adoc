@@ -1,0 +1,94 @@
+= Default Profiles
+
+The default product profiles defined are as follows:
+
+* *CORE*: a minimal functional openEHR platform implementation that enables the storage and retrieval of openEHR EHR data;
+* *STANDARD*: a 'standard' configuration of capabilities that adds AQL querying and logging to the CORE;
+* *OPTIONS*: components that are considered optional for non-specialised solutions.
+
+In order to obtain `CORE` or `STANDARD` conformance, all mentioned capabilities must be met in testing. The `OPTIONS` profile is a catch-all pseudo-profile that covers all testable capabilities not included in `CORE` or `STANDARD`; `OPTIONS` is obtained if any optional capability is passed in testing.
+
+== Functional
+
+[cols="1,1,^1,^1,^1", options="header"]
+|===
+|Product Component
+                    |Capability             |CORE       |STANDARD       |OPTIONS
+
+.5+|*Definitions*   |ADL 1.4 Archetype +
+                     provisioning           |&#10004;   |&#10004;       |
+                    |ADL 1.4 OPT +
+                     provisioning          ^|&#10004;   |&#10004;       |          
+                    |ADL 2 Archetype +
+                     provisioning          ^|           |               |&#10004;
+                    |ADL 2 OPT +
+                     provisioning          ^|           |               |&#10004;
+                    |Query +
+                     provisioning          ^|           |&#10004;       |
+
+.7+|*EHR +
+ Persistence*       |EHR Operations         |&#10004;   |&#10004;       |
+                    |EHR Status            ^|&#10004;   |&#10004;       |          
+                    |Composition +
+                     Operations            ^|&#10004;   |&#10004;       |          
+                    |Directory +
+                     Operations            ^|           |&#10004;       |          
+                    |Change sets           ^|&#10004;   |&#10004;       |
+                    |Versioning            ^|&#10004;   |&#10004;       |
+                    |Archetype +
+                     Validation            ^|&#10004;   |&#10004;       |
+
+.3+|*Demographic +
+ Persistence*       |Party Operations       |           |               |&#10004;
+                    |Party +
+                     Relationship +
+                     Operations            ^|           |               |&#10004;
+                    |Archetype +
+                     validation            ^|           |               |&#10004;
+
+.3+|*Querying*      |AQL basic			   ^|           |&#10004;		|
+                    |AQL advanced          ^|           |               |&#10004;
+                    |AQL & terminology     ^|           |               |&#10004;
+
+.6+|*Admin*         |Activity Report        |           |               |&#10004;
+                    |Physical Deletion     ^|           |               |&#10004;
+                    |EHR Dump/Load         ^|           |               |&#10004;
+                    |Bulk EHR load         ^|           |               |&#10004;
+                    |EHR Archive           ^|           |               |&#10004;
+                    |Demographic Archive   ^|           |               |&#10004;
+
+.2+|*Messaging*     |EHR Extract            |           |               |&#10004;
+                    |TDS                   ^|           |               |&#10004;
+
+.7+|*REST APIs*     |DEFINITION API         |&#10004;   |&#10004;       |
+                    |EHR API               ^|&#10004;   |&#10004;       |
+                    |DEMOGRAPHIC API       ^|			|				|&#10004;
+                    |QUERY API             ^|           |&#10004;       |
+                    |ADMIN API             ^|           |               |&#10004;
+                    |MESSAGE API           ^|           |               |&#10004;
+                
+|===
+
+== Non-Functional
+
+[cols="1,1,^1,^1,^1", options="header"]
+|===
+|Product Attribute
+                |Capability         |CORE       |STANDARD       |OPTIONS
+
+.3+|*Security & +
+ Privacy*       |Signing            |           |&#10004;       |
+                |Anonymous EHRs    ^|&#10004;   |&#10004;       |
+                
+|===
+
+== Other Non-Functional
+
+[cols="1,1", options="header"]
+|===
+|Product Attribute                  |Values
+
+|*External Data Format*             |XML, JSON
+                
+|===
+

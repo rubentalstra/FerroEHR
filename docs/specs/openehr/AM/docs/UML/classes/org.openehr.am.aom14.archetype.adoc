@@ -1,0 +1,135 @@
+=== ARCHETYPE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*ARCHETYPE*
+
+h|*Description*
+2+a|Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.
+
+h|*Inherit*
+2+|`link:/releases/BASE/{base_release}/resource.html#_authored_resource_class[AUTHORED_RESOURCE^]`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*definition*: `<<_c_complex_object_class,C_COMPLEX_OBJECT>>`
+a|Root node of the definition of this archetype.
+
+h|*1..1*
+|*ontology*: `<<_archetype_ontology_class,ARCHETYPE_ONTOLOGY>>`
+a|The ontology of the archetype.
+
+h|*0..1*
+|*adl_version*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|ADL version if archetype was read in from an ADL sharable archetype.
+
+h|*1..1*
+|*archetype_id*: `link:/releases/BASE/{base_release}/base_types.html#_archetype_id_class[ARCHETYPE_ID^]`
+a|Multi-axial identifier of this archetype in archetype space.
+
+h|*0..1 +
+(redefined)*
+|*uid*: `link:/releases/BASE/{base_release}/base_types.html#_hier_object_id_class[HIER_OBJECT_ID^]`
+a|OID identifier of this archetype.
+
+h|*1..1*
+|*concept*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The normative meaning of the archetype as a whole, expressed as a local archetype code, typically “at0000”.
+
+h|*0..1*
+|*parent_archetype_id*: `link:/releases/BASE/{base_release}/base_types.html#_archetype_id_class[ARCHETYPE_ID^]`
+a|Identifier of the specialisation parent of this archetype.
+
+h|*0..1*
+|*invariants*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_assertion_class,ASSERTION>>>`
+a|Invariant statements about this object. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*concept_name* ( +
+a_lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]` +
+ +
+__post-condition__: `Result.is_equal (definition.node_id)`
+a|The concept name of the archetype in language a_lang; corresponds to the term definition of the concept attribute in the archetype ontology.
+
+h|*1..1*
+|*physical_paths* (): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of language-independent paths extracted from archetype. Paths obey Xpath-like syntax and are formed from alternations of C_OBJECT.node_id and C_ATTRIBUTE.rm_attribute_name values.
+
+h|*1..1*
+|*logical_paths* ( +
+lang: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^][1]` +
+): `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|Set of language-dependent paths extracted from archetype. Paths obey the same syntax as physical_paths, but with node_ids replaced by their meanings from the ontology.
+
+h|*1..1*
+|*specialisation_depth* (): `link:/releases/BASE/{base_release}/foundation_types.html#_integer_class[Integer^]` +
+ +
+__post-condition__: `Result = terminology.specialisation_depth`
+a|Specialisation depth of this archetype; larger than 0 if this archetype has a parent. Derived from terminology.specialisation_depth.
+
+h|*1..1*
+|*is_specialised* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__post-condition__: `Result implies parent_archetype_id /= Void`
+a|True if this archetype is a specialisation of another.
+
+h|*1..1*
+|*is_valid* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]` +
+ +
+__Post__: `not (node_ids_valid and internal_references_valid and constraint_references_valid) implies not Result`
+a|True if the archetype is valid overall; various tests should be used, including checks on node_ids, internal references, and constraint references.
+
+h|*1..1*
+|*node_ids_valid* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if every node_id found on a C_OBJECT node is found in ontology.term_codes.
+
+h|*0..1*
+|*previous_version* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Version of predecessor archetype of this archetype, if any.
+
+h|*1..1*
+|*internal_references_valid* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if every ARCHETYPE_INTERNAL_REF. target_path refers to a legitimate node in the archetype definition.
+
+h|*1..1*
+|*constraint_references_valid* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|True if every CONSTRAINT_REF.reference found on a C_OBJECT node in the archetype definition is found in ontology.constraint_codes.
+
+h|*1..1*
+|*short_concept_name* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|The short concept name of the archetype extracted from the archetype_id.
+
+h|*1..1*
+|*version* (): `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|
+
+h|*Invariants*
+2+a|__Inv_concept_valid__: `ontology.has_term_code (concept_code)`
+
+h|
+2+a|__Inv_specialisation_validity__: `is_specialised implies specialisation_depth > 0`
+
+h|
+2+a|__Inv_invariants_valid__: `invariants /= Void implies not invariants.is_empty`
+
+h|
+2+a|__Inv_uid_validity__: `uid /= Void implies not uid.is_empty`
+
+h|
+2+a|__Inv_version_validity__: `version /= Void and then version.is_equal(archetype_id.version_id)`
+
+h|
+2+a|__Inv_description_valid__: `description /= Void`
+
+h|
+2+a|__Inv_original_language_valid__: `original_language /= void and then language /= Void`
+|===

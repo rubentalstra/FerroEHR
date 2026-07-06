@@ -1,0 +1,26 @@
+=== S_ACTIVITY Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*S_ACTIVITY*
+
+h|*Description*
+2+a|Simplified RM form of `ACTIVITY` RM class.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*timing*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Converted from `DV_PARSABLE`.
+
+h|*0..1*
+|*action_archetype_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|(unchanged from RM)
+
+h|*1..1*
+|*description*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_s_item_class,S_ITEM>>>`
+a|Converted from `ITEM_STRUCTURE`.
+|===

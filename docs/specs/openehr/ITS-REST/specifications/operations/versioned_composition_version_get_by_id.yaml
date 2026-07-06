@@ -1,0 +1,15 @@
+operationId: versioned_composition_version_get_by_id
+summary: Get versioned COMPOSITION version by id
+description: |
+  Retrieves a VERSION identified by `version_uid` of a VERSIONED_COMPOSITION identified by `versioned_object_uid` and associated with the EHR identified by `ehr_id`.
+tags:
+  - COMPOSITION
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/path/versioned_object_uid_COMPOSITION.yaml
+  - $ref: ../parameters/path/version_uid_COMPOSITION.yaml
+responses:
+  '200':
+    $ref: ../responses/200_VERSION.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id_or_versioned_object_uid_or_version_uid.yaml

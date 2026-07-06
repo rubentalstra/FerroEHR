@@ -1,0 +1,15 @@
+title: CLUSTER
+type: object
+allOf:
+  - $ref: ../data_structures/Item.yaml
+required:
+  - items
+properties:
+  _type:
+    type: string
+    default: CLUSTER
+  items:
+    type: array
+    items:
+      $ref: ../data_structures/UItem.yaml
+x-discriminator-value: CLUSTER

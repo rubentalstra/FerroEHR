@@ -1,0 +1,30 @@
+=== STATEMENT_SET Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*STATEMENT_SET*
+
+h|*Description*
+2+a|A container for a specific set of statements intended to be used together.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*statement*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<<<_statement_class,STATEMENT>>>`
+a|The member statements of this statement set.
+
+h|*0..1*
+|*name*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Optional name of this rule set.
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*execution_result* (): `link:/releases/BASE/{base_release}/foundation_types.html#_boolean_class[Boolean^]`
+a|Execution result of the whole rule set. Determined by the and-ing of result values of Assertions in the rule set.
+|===

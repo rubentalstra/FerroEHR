@@ -1,0 +1,22 @@
+=== BMM_VALUE_SET_SPEC Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*BMM_VALUE_SET_SPEC*
+
+h|*Description*
+2+a|Definition of a range-constrained class whose value range is defined by reference to a 'value set' within an external resource, e.g. a reference data service.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*resource_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of a resource (typically available as a service) that contains legal values of a specific type. This is typically a URI but need not be.
+
+h|*1..1*
+|*value_set_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|Identifier of a value set within the resource identified by `_resource_id_`, which specifies the set of legal values of a type. This might be a URI, but need not be.
+|===

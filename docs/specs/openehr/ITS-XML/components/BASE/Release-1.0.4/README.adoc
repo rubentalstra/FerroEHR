@@ -1,0 +1,8 @@
+# BaseTypes Release-1.0.4
+
+The https://specifications.openehr.org/releases/BASE/Release-1.0.4[BASE Release-1.0.4] specifications does not contain any type definition that requires to have an XML schema.
+
+Some BASE related types were however defined under https://specifications.openehr.org/releases/RM/Release-1.0.3/support.html[RM Release-1.0.3], until they were extract as part of https://specifications.openehr.org/releases/BASE/Release-1.1.0[BASE Release-1.1.0] specifications.
+
+### Acknowledgements
+Authored by https://www.openehr.org[openEHR Foundation] - 2008-2018

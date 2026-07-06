@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/AM/Release-2.1.0/Aom2/EXPR_ARCHETYPE_REF-detailed.json",
+    "title": "EXPR_ARCHETYPE_REF",
+    "description": "Expression tree leaf item representing a reference to a value found in data at a location specified by a path in the archetype definition.\n\n* A path referring to a value in the archetype (paths with a leading \u2018/\u2019 are in the definition section.\n* Paths with no leading \u2018/\u2019 are in the outer part of the archetype, e.g. \u201carchetype_id/value\u201d refers to the String value of the archetype_id attribute of the enclosing archetype.\n",
+    "$comments": "Defined in Aom2 IM, inherits from EXPR_VALUE_REF",
+    "type": "object",
+    "properties": {
+        "path": {
+            "description": "The path to the archetype node.",
+            "$ref": "https://specifications.openehr.org/releases/ITS-JSON/latest/components/BASE/Release-1.1.0/Foundation_types/all-detailed.json#/definitions/String"
+        },
+        "item": {
+            "$ref": "all-detailed.json#/definitions/ARCHETYPE_CONSTRAINT"
+        }
+    },
+    "required": [
+        "path",
+        "item"
+    ],
+    "$inherits": [
+        null
+    ]
+}

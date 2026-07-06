@@ -1,0 +1,221 @@
+= Amendment Record
+
+[cols="1,6,2,2", options="header"]
+|===
+|Issue|Details|Raiser|Completed
+
+4+^h|*TERM Release 3.1.0 (unreleased)*
+
+|[[latest_issue]]3.1.3
+|{spec_tickets}/SPECTERM-34[SPECTERM-34]: Added Chinese translation of the openehr_terminology.xml.
+|L Zhang
+|[[latest_issue_date]]22 Aug 2024
+
+|
+|{spec_tickets}/SPECTERM-33[SPECTERM-33]: Added UCUM unit [drp] (drop) to the volume properties in PropertyUnitData.xml.
+|B Littleton, +
+S Ljosland Bakke
+|20 Aug 2024
+
+|3.1.2
+|{spec_tickets}/SPECTERM-28[SPECTERM-28]: Added ml/m2 and l/min/m2 to units in PropertyUnitData.xml (fixes {spec_tickets}/SPECPR-410[SPECPR-410^] and {spec_tickets}/SPECPR-412[SPECPR-412^]).
+|S Kohler, +
+S Ljosland Bakke
+|7 Apr 2024
+
+|3.1.1
+|{spec_tickets}/SPECTERM-27[SPECTERM-27]: Added J/cm2, hPa, kgf/m² and other fixing other errors in PropertyUnitData.xml.
+|S Ljosland Bakke
+|20 Mar 2024
+
+|3.1.0
+|{spec_tickets}/SPECTERM-26[SPECTERM-26]: Adding support for missing DICOM media types.
+|Chaya, +
+I McNicoll, +
+S Iancu
+|19 Sep 2023
+
+|
+|{spec_tickets}/SPECPR-425[SPECPR-425]: Corrected typo for unit "kiloVolt" in PropertyUnitData.xml.
+|S Ljosland Bakke
+|19 Sep 2023
+
+4+^h|*TERM Release 3.0.0*
+
+|3.0.0
+|{spec_tickets}/SPECTERM-23[SPECTERM-23]: Improving translations.
+|S Kobayashi, +
+ V Pereira, +
+ D Bosca
+|26 Jun 2023
+
+|
+|{spec_tickets}/SPECTERM-25[SPECTERM-25]: Adding "format conversion" and "restoration" new types to the audit_change_type group.
+|S Iancu
+|05 Mar 2023
+
+|
+|{spec_tickets}/SPECTERM-5[SPECTERM-5]: Adding "report" to Composition Category to support report Compositions.
+|B Næss, +
+ S Iancu
+|05 Mar 2023
+
+|
+|{spec_tickets}/SPECTERM-15[SPECTERM-15]: Rendering terminology code sets and vocabulary in the SupportTerminology document.
+|S Iancu
+|11 Feb 2023
+
+|
+|{spec_tickets}/SPECTERM-16[SPECTERM-16]: Rendering terminology code sets and vocabulary as FHIR CodeSystem and ValueSet.
+|S Iancu
+|11 Feb 2023
+
+|
+|{spec_tickets}/SPECTERM-17[SPECTERM-17]: Improving terminology XML file format by adding unique identifiers,
+version and date attributes; updating XSD.
+|S Iancu
+|11 Feb 2023
+
+|
+|{spec_tickets}/SPECTERM-24[SPECTERM-24]: Added PropertyUnitData.xml file to openEHR terminologies (fixes {spec_tickets}/SPECPR-408[SPECPR-408^]).
+|V Pereira, +
+ S Ljosland Bakke
+|04 Feb 2023
+
+4+^h|*TERM Release 2.4.0*
+
+|2.4.2
+|{spec_tickets}/SPECTERM-22[SPECTERM-22]: Added missing SHA-* integrity check algorithms.
+|S Iancu
+|13 Dec 2022
+
+|
+|{spec_tickets}/SPECTERM-21[SPECTERM-21]: Corrected terminology rubric typos inside "property" group (fixes {spec_tickets}/SPECPR-404[SPECPR-404^]).
+|S Iancu, +
+ P Pazos
+|13 Dec 2022
+
+|
+|{spec_tickets}/SPECTERM-4[SPECTERM-4]: Added new vocabulary groups for EHR Extract related to Release 1.0.3 (fixes {spec_tickets}/SPECPR-370[SPECPR-370^]).
+|S Iancu, +
+ T Beale
+|13 Dec 2022
+
+|
+|{spec_tickets}/SPECTERM-10[SPECTERM-10]: Added "inactive" and "abandoned" to "version lifecycle state" group (fixes {spec_tickets}/SPECPR-383[SPECPR-383^]).
+|S Iancu, +
+ T Beale
+|13 Dec 2022
+
+|
+|{spec_tickets}/SPECTERM-20[SPECTERM-20]: Added "mental healthcare" to "setting" group (fixes {spec_tickets}/SPECPR-382[SPECPR-382^]).
+|S Iancu, +
+ J Holslag
+|13 Dec 2022
+
+|2.4.1
+|{spec_tickets}/SPECTERM-19[SPECTERM-19]: Correcting code for 'episodic' in Composition.category vocabulary (fixes {spec_tickets}/SPECPR-367[SPECPR-367^]).
+|S Iancu, +
+ M Polajnar
+|06 Dec 2022
+
+|
+|{spec_tickets}/SPECTERM-18[SPECTERM-18]: Updating external terminology code-sets and cleanup duplicates (fixes {spec_tickets}/SPECPR-95[SPECPR-95^], {spec_tickets}/SPECPR-403[SPECPR-403^]).
+|S Iancu, +
+ R van Etten, +
+ B Jures
+|06 Dec 2022
+
+|
+|{spec_tickets}/SPECTERM-11[SPECTERM-11]: Merging terminology resource (XML) files into terminology specifications repository.
+|S Iancu
+|06 Dec 2022
+
+|2.4.0
+|{spec_tickets}/SPECTERM-14[SPECTERM-14]: Adding some missing media types in external terminologies (fixes {spec_tickets}/SPECPR-402[SPECPR-402^]).
+|S Iancu, +
+ P Pazos
+|23 Nov 2022
+
+|
+|{spec_tickets}/SPECTERM-12[SPECTERM-12^]: Adding Spanish terminology file from https://github.com/openEHR/terminology and updating related links (fixes {spec_tickets}/SPECPR-401[SPECPR-401^]).
+|P Pazos
+|23 Nov 2022
+
+4+^h|*TERM Release 2.3.0*
+
+|2.3.0
+|Adding a copy of terminology files Release-2.3.0 of https://github.com/openEHR/terminology and updating related links.
+|S Iancu
+|20 Oct 2019
+
+4+^h|*TERM Release 2.2.0*
+
+|2.2.0
+|Adding a copy of terminology files Release-2.2.0 of https://github.com/openEHR/terminology and updating related links.
+|S Iancu
+|01 Aug 2018
+
+4+^h|*TERM Release 2.1.0*
+
+|2.1.0
+|{spec_tickets}/SPECTERM-6[SPECTERM-6^]: Correct Terminology typos.
+|I McNicoll
+|08 Nov 2017
+
+4+^h|*Release 1.0*
+
+|1.0
+|{spec_tickets}/SPEC-219[SPECRM-219^]: Use constants instead of literals to refer to terminology in RM.
+|R Chen
+|08 Apr 2007
+
+|
+|{spec_tickets}/SPEC-221[SPECRM-221^]. Add normal_status to `DV_ORDERED`. Add new "normal status" terminology group.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-217[SPECRM-217^]: Additional math function.
+|S Heard
+|
+
+|
+|{spec_tickets}/SPEC-235[SPECRM-235^]: Make attestation-only commit require a Contribution. Add 'attestation' code to audit-change type.
+|A Patterson
+|
+
+|
+|{spec_tickets}/SPEC-246[SPECRM-246^]: Correct openEHR terminology rubrics.
+|B Verhees, +
+ M Forss
+|
+
+4+^h|*Release 0.9*
+
+|0.9
+|{spec_tickets}/SPEC-184[SPECRM-184^]. Separate out terminology from Support IM.
+|H Frankel
+|22 Oct 2005
+
+|
+|{spec_tickets}/SPEC-182[SPECRM-182^]: Rationalise `VERSION._lifecycle_state_` and `ATTESTATION.status_`. Add new term set for attestation reason, deprecate attestation state term set.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-162[SPECRM-162^]. Allow party identifiers when no demographic data. Deprecate some terms from version lifecycle status group, add some new terms.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-140[SPECRM-140^]. Redevelop Instruction, based on workflow principles. Add term sets for Instruction State machine.
+|H Frankel
+|
+
+|
+|{spec_tickets}/SPEC-192[SPECRM-192^]: Add display-as-absolute facility to delta Events in History
+|H Frankel
+|
+
+|===

@@ -1,0 +1,55 @@
+= Artefacts
+
+== Model / Syntax Relationship
+
+The Archetype Object Model can be considered as the model of an in-memory archetype or a template, or equivalently, a standard syntax tree for any serialised format - not just ADL. The normative abstract syntax form of an archetype is ADL, but an archetype may just as easily be parsed from and serialised to XML, JSON or any other format. The in-memory archetype representation may also be created by calls to a suitable AOM construction API, from an archetype or template editing tool. These relationships, and the relation between each form and its specification are shown below.
+
+[.text-center]
+.Relationship of in-memory and syntax forms
+image::{diagrams_uri}/serialised_forms.png[id=serialised_forms, align="center", width=80%]
+
+The existence of source and flat form archetypes and templates, potentially in multiple serialised formats may initially appear confusing, although any given environment tends to use a single serialised form. The figure below illustrates all possible archetype and template artefact types, including file types.
+
+[.text-center]
+.ADL Archetype Types
+image::{diagrams_uri}/artefact_types.png[id=artefact_types, align="center", width=80%]
+
+== The Development Process
+
+Archetypes are authored and transformed according to a number of steps very similar to class definitions within an object-oriented programming environment. The activities in the process are as follows:
+
+* *authoring*: creates source-form archetypes, expressed in AOM objects;
+* *validation*: determine if archetype satisfies semantic validity rules; requires flat form of parent of current archetype if specialised;
+* *flattening*: creates flattened archetypes.
+
+Templates are authored the same way, although typically using only mandations, prohibitions and refinements. The final step is the generation of an operational template, which is the fully flattened and substituted form of the source definitions implicated by the template.
+
+The tool chain for the process is illustrated below. From a software development point of view, template authoring is the starting point. A template references one or more archetypes, so its compilation (parsing, validation, flattening) involves both the template source and the validated, flattened forms of the referenced archetypes. With these as input, a template flattener can generate the final output, an operational template.
+
+[.text-center]
+.Archetype toolchain
+image::{diagrams_uri}/toolchain.png[id=toolchain, align="center", width=80%]
+
+== Compilation
+
+A tool that parses, validates, flattens and generates new outputs from a library of artefacts is called a compiler. Due to the existence of specialisation, archetype specialisation lineages rather than just single archetypes are processed - i.e. specialised archetypes can only be compiled in conjunction with their specialisation parents up to the top level. Each such archetype also potentially has a list of supplier archetypes, i.e. archetypes it references via the ADL use_reference statement. For an archetype to compile, all of its suppliers and specialisation parents must already compile.
+
+This is exactly how object-oriented programming environments work. For any given lineage, compilation proceeds from the top-level archetype downward. Each archetype is validated, and if it passes, flattened with the parent in the chain. This continues until the archetype originally being compiled is reached. In the case of archetypes with no specialisations, compilation involves the one archetype only and its suppliers.
+
+The figure below illustrates the object structures for an archetype lineage as created by a compilation process, with the elements corresponding to the top-level archetype bolded. Differential input file(s) are converted by the parser into differential object parse trees, shown on the left of the ‘flattener’ processes. The same structures would be created by an editor application.
+
+[.text-center]
+.Archetype compilation
+image::{diagrams_uri}/archetype_compilation.png[id=archetype_compilation, align="center", width=80%]
+
+The differential in-memory representation is validated by the semantic checker, which verifies numerous things, such as that term codes referenced in the definition section are defined in the terminology section. It can also validate the classes and attributes mentioned in the archetype against a specification for the relevant reference model.
+
+The results of the compilation process can be seen in the archetype visualisations in the openEHR {openehr_awb}[ADL Workbench].
+
+== Optimisations
+
+In an authoring (i.e. ‘design time’) environment, artefacts should always be considered ‘suspect’ until proven otherwise by reliable validation. This is true regardless of the original syntax - ADL, XML or something else. Once validated however, the flat form can be reserialised both in a format suitable for editor tools to use (ADL, XML, ...), and also in a format that can be regarded as a reliable pure object serialisation of the in-memory structure. The latter form is often XML-based, but can be any object representation form, such as JSON, the openEHR ODIN (previously dADL) syntax, YAML, a binary form, or a database structure. It will not be an abstract syntax form such as ADL, since there is an unavoidable semantic transformation required between the abstract syntax and object form.
+
+The utility of this pure object serialisation is that it can be used as persistence of the validated artefact, to be converted to in-memory form using only a non-validating stream parser, rather than a multi-pass validating compiler. This allows such validated artefacts to be used in both design environments and more importantly, runtime systems with no danger of compilation errors. It is the same principle used in creating .jar files from Java source code, and .Net assemblies from C# source code.
+
+Within openEHR environments, managing the authoring and persisted forms of archetypes is achieved using various mechanisms including digital signing, which are described in the openEHR

@@ -1,0 +1,17 @@
+title: AQL
+type: string
+description: |
+  The given AQL query.
+example:
+  SELECT 
+    e/ehr_id/value, 
+    c/context/start_time/value as startTime,
+    obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic,
+    c/uid/value AS cid, 
+    c/name 
+  FROM 
+    EHR e 
+      CONTAINS COMPOSITION c[openEHR-EHR-COMPOSITION.encounter.v1] 
+        CONTAINS OBSERVATION obs[openEHR-EHR-OBSERVATION.blood_pressure.v1] 
+  WHERE 
+    obs/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $systolic_bp

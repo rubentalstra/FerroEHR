@@ -1,0 +1,48 @@
+=== REFERENCE_MODEL_ACCESS Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*REFERENCE_MODEL_ACCESS*
+
+h|*Description*
+2+a|Access to service interface to BMM object model.
+
+h|*Inherit*
+2+|`<<_bmm_definitions_class,BMM_DEFINITIONS>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*0..1*
+|*schema_directories*: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
+a|List of directories where all the schemas loaded here are found.
+
+h|*0..1*
+|*all_schemas*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_schema_descriptor_class,SCHEMA_DESCRIPTOR>>>`
+a|All schemas found and loaded from `schema_directories`. Keyed by schema_id, i.e. model_publisher '_' schema_name '_' model_release, e.g. openehr_rm_1.0.3.
+
+h|*0..1*
+|*valid_models*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],<<_bmm_model_class,BMM_MODEL>>>`
+a|Top-level (root) models in use. Keyed by logical schema_name, i.e. model_publisher '_' model_name, e.g. "openehr_rm".
+
+h|*Functions*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1*
+|*initialise_with_load_list* ( +
+a_schema_dirs: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>[1]`, +
+a_schema_load_list: `link:/releases/BASE/{base_release}/foundation_types.html#_list_class[List^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>` +
+): `void`
+a|Initialise with a specific schema load list, usually a sub-set of schemas that will be found in the directories `a_schema_dirs`.
+
+h|*1..1*
+|*initialise_all* (): `void`
+a|Initialise with all schemas found in the schema directories.
+
+h|*1..1*
+|*reload_schemas* (): `void`
+a|Reload all schemas.
+|===

@@ -1,0 +1,12 @@
+description: |
+  `201 Created` is returned when the COMPOSITION was created. 
+  Content body is only returned when `Prefer` header has `return=representation`, otherwise only headers are returned.
+headers:
+  ETag:
+    $ref: ../headers/ETag_COMPOSITION.yaml
+  Location:
+    $ref: ../headers/Location_COMPOSITION.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/Composition.yaml

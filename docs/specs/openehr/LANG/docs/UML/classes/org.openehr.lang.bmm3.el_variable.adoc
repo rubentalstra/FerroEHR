@@ -1,0 +1,14 @@
+=== EL_VARIABLE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*__EL_VARIABLE (abstract)__*
+
+h|*Description*
+2+a|Abstract meta-type of any kind of symbolic variable.
+
+h|*Inherit*
+2+|`<<_el_value_generator_class,EL_VALUE_GENERATOR>>`
+
+|===

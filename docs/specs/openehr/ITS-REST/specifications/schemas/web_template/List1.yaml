@@ -1,0 +1,23 @@
+title: List1
+required:
+  - value
+  - label
+  - localizedLabels
+  - localizedDescriptions
+type: object
+properties:
+  value:
+    type: string
+  label:
+    type: string
+  localizedLabels:
+    $ref: ./LocalizedLabels.yaml
+  localizedDescriptions:
+    $ref: ./LocalizedDescriptions.yaml
+example:
+  value: at0022
+  label: Mouth
+  localizedLabels:
+    sl: Usta
+  localizedDescriptions:
+    sl: '*Temperature is measured within the mouth(en)'

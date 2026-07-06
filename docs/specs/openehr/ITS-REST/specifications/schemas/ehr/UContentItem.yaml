@@ -1,0 +1,15 @@
+title: CONTENT_ITEM
+oneOf:
+  - $ref: ../ehr/UMAdminEntry.yaml
+  - $ref: ../ehr/UMObservation.yaml
+  - $ref: ../ehr/UMEvaluation.yaml
+  - $ref: ../ehr/UMInstruction.yaml
+  - $ref: ../ehr/UMAction.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    ADMIN_ENTRY: ../ehr/UMAdminEntry.yaml
+    OBSERVATION: ../ehr/UMObservation.yaml
+    EVALUATION: ../ehr/UMEvaluation.yaml
+    INSTRUCTION: ../ehr/UMInstruction.yaml
+    ACTION: ../ehr/UMAction.yaml

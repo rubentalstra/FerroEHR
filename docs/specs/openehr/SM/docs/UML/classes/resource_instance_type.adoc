@@ -1,0 +1,26 @@
+=== RESOURCE_INSTANCE_TYPE Enumeration
+
+[cols="^1,3,5"]
+|===
+h|*Enumeration*
+2+^h|*RESOURCE_INSTANCE_TYPE*
+
+h|*Description*
+2+a|Enumeration of resource instance types.
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|
+|Primary
+a|Primary instance of the resource.
+
+h|
+|Duplicate
+a|A duplicate instance of the resource.
+
+h|
+|Supplementary
+a|
+|===

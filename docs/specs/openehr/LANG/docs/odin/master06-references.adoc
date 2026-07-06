@@ -1,0 +1,77 @@
+= References
+
+== Associations and Shared Objects
+
+All of the facilities described so far allow any object-oriented data to be faithfully expressed in a formal, systematic way which is both machine- and human-readable, and allow any node in the data to be addressed using an Xpath-style path. The availability of reliable paths allows not only the representation of single 'business objects', which are the equivalent of UML aggregation (and composition) hierarchies, but also the representation of associations between objects, and by extension, shared objects.
+
+=== Within An Object
+
+Consider that in the example above, 'hotel' objects may be shared objects, referred to by association. This can be expressed as follows.
+
+[source, odin]
+--------
+destinations = <
+    ["seville"] = <
+        hotels = <
+            ["gran sevilla"] = </hotels["gran sevilla"]>
+            ["sofitel"] = </hotels["sofitel"]>
+            ["hotel real"] = </hotels["hotel real"]>
+        >
+    >
+>
+
+bookings = <
+    ["seville:0134"] = <
+        customer_id = <"0134">
+        period = <...>
+        hotel = </hotels["sofitel"]>
+    >
+>
+   
+hotels = <
+    ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+    ["sofitel"] = (LUXURY_HOTEL) <...>
+    ["hotel real"] = (PENSION) <...>
+>
+--------
+
+Associations are expressed via the use of fully qualified paths as the data for an attribute. In this example, there are references from a list of destinations, and from a booking list, to the same hotel object. If type information is included, it should go in the declarations of the relevant objects; type declarations can also be used before path references, which might be useful if the association type is an ancestor type (i.e. more general type) of the type of the actual object being referred to.
+
+=== Across Objects
+
+In an ODIN document containing identified objects, with references across objects, reference paths will include object identifiers, as shown below:
+
+[source, odin]
+--------
+["travel_db_0293822"] = <
+    destinations = <
+        ["seville"] = <
+            hotels = <
+                ["gran sevilla"] = <["tourism_db_13"]/hotels["gran sevilla"]>
+                ["sofitel"] = <["tourism_db_13"]/hotels["sofitel"]>
+                ["hotel real"] = <["tourism_db_13"]/hotels["hotel real"]>
+            >
+        >
+    >
+  
+    bookings = <
+        ["seville:0134"] = <
+            customer_id = <"0134">
+            period = <...>
+            hotel = <["tourism_db_13"]/hotels["sofitel"]>
+        >
+    >
+>
+
+["tourism_db_13"] = <
+    hotels = <
+        ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+        ["sofitel"] = (LUXURY_HOTEL) <...>
+        ["hotel real"] = (PENSION) <...>
+    >
+>
+--------
+
+=== Across ODIN Documents
+
+Data in other ODIN documents can be referred to using a URI containing a reference path to locate the document, with the internal path included as described above.

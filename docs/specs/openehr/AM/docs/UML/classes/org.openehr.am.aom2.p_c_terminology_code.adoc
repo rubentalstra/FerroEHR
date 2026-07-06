@@ -1,0 +1,36 @@
+=== P_C_TERMINOLOGY_CODE Class
+
+[cols="^1,3,5"]
+|===
+h|*Class*
+2+^h|*P_C_TERMINOLOGY_CODE*
+
+h|*Description*
+2+a|Constrainer type for instances of TERMINOLOGY_CODE. The primary expression of the constraint is in the property `tuple_constraint', and comes in 3 variations:
+* a single at-code
+* a single ac-code, representing a value-set that is defined in the archetype terminology
+* a list of at- and/or ac-codes, representing the possibilities of a tuple constraint
+The last possibility above is enabled by the merge_tuple routine, which enables the constraint of another single-valued C_TERMINOLOGY_CODE to be merged with the current one.
+
+h|*Inherit*
+2+|`<<_p_c_primitive_object_class,P_C_PRIMITIVE_OBJECT>>`
+
+h|*Attributes*
+^h|*Signature*
+^h|*Meaning*
+
+h|*1..1 +
+(redefined)*
+|*constraint*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
+a|
+
+h|*0..1 +
+(redefined)*
+|*assumed_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_terminology_code_class[Terminology_code^]`
+a|
+
+h|*1..1 +
+(redefined)*
+|*default_value*: `link:/releases/BASE/{base_release}/foundation_types.html#_terminology_code_class[Terminology_code^]`
+a|
+|===

@@ -1,0 +1,6 @@
+== Rules
+
+The `rules` section in an archetype consists of definitions and assertion statements. Assertions in archetypes have the effect of further reducing the instance space that conforms to an archetype by specifying relationships between values that must hold. For example the main part of an archetype may specify that the existence of a subtree, containing data points related to 'tobacco use' for example, is dependent on the value of another data point representing 'smoker?' being True.
+
+In specialised archetypes, further invariants can be added, but existing ones cannot be changed. New invariants cannot logically contradict existing invariants and are considered to be logically related to invariants from the flat parent by the logical semi-strict operator 'and then'.
+

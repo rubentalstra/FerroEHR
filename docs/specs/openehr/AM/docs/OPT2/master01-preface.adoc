@@ -1,0 +1,54 @@
+= Preface
+
+== Purpose
+
+This document provides the formal specification of the Operational Template (OPT) for ADL2 artefacts. The OPT is a first generation 'compiled' artefact based on source archetypes and templates, that serves as the starting point for further downstream format generation (e.g. schemas, APIs) as well as the computational format for operational EHR systems using archetypes.
+
+This specification is primarily intended for software developers.
+
+== Related Documents
+
+Prerequisite documents for reading this document include:
+
+* The {openehr_am_overview}[openEHR Archetype Technical Overview^]
+
+Related documents include:
+
+* The {openehr_am_aom2}[openEHR Archetype Object Model (AOM2)^];
+
+== Nomenclature
+
+In this document, the term 'attribute' denotes any stored property of a type defined in an object model, including primitive attributes and any kind of relationship such as an association or aggregation. XML 'attributes' are always referred to explicitly as 'XML attributes'.
+
+We also use the word 'archetype' in a broad sense to designate what are commonly understood to be 'archetypes' (specifications of clinical data groups / data constraints) and 'templates' (data sets based on archetypes, since at a technical level, an ADL/AOM 2 template is in fact just an archetype. Accordingly, statements about 'archetypes' in this specification can be always understood to also apply to templates, unless otherwise indicated.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_am_development_opt2}[{openehr_am_development_opt2}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_adl_forum}[openEHR ADL forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+Conformance of a data or software artifact to an openEHR specification is determined by a formal test of that artifact against the relevant {openehr_its_component}[openEHR Implementation Technology Specification(s) (ITSs)^], such as an IDL interface or an XML-schema. Since ITSs are formal derivations from underlying models, ITS conformance indicates model conformance.
+
+== Tools
+
+Various tools exist for creating and processing archetypes. The {openehr_awb}[ADL Workbench^] is a reference compiler, visualiser and editor. The openEHR tools can be {modelling_tools}[downloaded from the website^] .
+
+Source projects can be found at the {openehr_git}[openEHR Github project^].
+
+== Relationship to OPT '1.4'
+
+This specification describes an Operational Template based on ADL2/AOM2, rather than the original OPT, which is an XML-schema format based on ADL 1.4 archetypes.
+
