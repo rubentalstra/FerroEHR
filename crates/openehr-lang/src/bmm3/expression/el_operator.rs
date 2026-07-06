@@ -2,13 +2,45 @@
 
 use crate::bmm3::expression::el_binary_operator::ElBinaryOperator;
 use crate::bmm3::expression::el_unary_operator::ElUnaryOperator;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract parent of operator types.
 /// Closed subtype set of `EL_OPERATOR` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElOperator {
     ElBinaryOperator(ElBinaryOperator),
     ElUnaryOperator(ElUnaryOperator),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ElOperator {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("EL_BINARY_OPERATOR") => {
+                ::core::result::Result::Ok(Self::ElBinaryOperator(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_UNARY_OPERATOR") => {
+                ::core::result::Result::Ok(Self::ElUnaryOperator(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "EL_OPERATOR: missing required `_type` on polymorphic slot (expected one of: EL_BINARY_OPERATOR, EL_UNARY_OPERATOR)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "EL_OPERATOR: unexpected `_type` {__other:?} (expected one of: EL_BINARY_OPERATOR, EL_UNARY_OPERATOR)"
+                )))
+            }
+        }
+    }
 }

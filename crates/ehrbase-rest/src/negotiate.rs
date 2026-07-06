@@ -28,6 +28,8 @@ use serde::de::DeserializeOwned;
 use openehr_its::rest::runtime::ApiError;
 use openehr_its::xml::{FromXml, ToXml};
 
+use crate::response::{ResourceMeta, ServiceResponse};
+
 /// A negotiated wire format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Format {
@@ -335,6 +337,180 @@ pub(crate) fn empty(status: StatusCode) -> Response {
     status.into_response()
 }
 
+/// A bodyless success response carrying a `Location` header — the ITS-REST
+/// shape for a resource store/create whose body is empty (e.g. a stored-query
+/// store: `200 OK` + `Location: …/definition/query/{name}/{version}`).
+pub(crate) fn empty_with_location(status: StatusCode, location: &str) -> Response {
+    let mut resp = status.into_response();
+    if let Ok(value) = HeaderValue::from_str(location) {
+        resp.headers_mut().insert(header::LOCATION, value);
+    }
+    resp
+}
+
+// ── ITS-REST response-header + `Prefer` handling (W2-A) ─────────────────────
+//
+// The header-bearing EHR operations carry a [`ServiceResponse`] (RM payload +
+// typed [`ResourceMeta`]) out of the service seam; these helpers turn that into
+// a negotiated response with the spec-mandated `ETag`/`Location` headers and the
+// `Prefer` `return=minimal` (default) vs `return=representation` body policy.
+
+/// Whether the client asked for the full representation on `Prefer`
+/// (`return=representation`). The ITS-REST default is `return=minimal`
+/// (`parameters/header/Prefer.yaml`) — a header-only response.
+pub(crate) fn prefers_representation(headers: &HeaderMap) -> bool {
+    headers
+        .get("prefer")
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|p| {
+            p.split(',')
+                .any(|t| t.trim().eq_ignore_ascii_case("return=representation"))
+        })
+}
+
+/// Build the (path-absolute) `Location` URL for an EHR sub-resource under the
+/// configured base path (`headers/Location_*.yaml`). `segment` is the resource
+/// collection (`composition`/`ehr_status`/`directory`/`contribution`); `None`
+/// targets the EHR resource itself (`/ehr/{ehr_id}`).
+pub(crate) fn location(base_path: &str, ehr_id: &str, segment: Option<&str>, uid: &str) -> String {
+    match segment {
+        Some(seg) => format!("{base_path}/ehr/{ehr_id}/{seg}/{uid}"),
+        None => format!("{base_path}/ehr/{ehr_id}"),
+    }
+}
+
+/// Set `ETag` (the `uid`, double-quoted) and `Location` on a response from
+/// resource metadata (ITS-REST `headers/ETag_*.yaml` + `headers/Location_*.yaml`).
+pub(crate) fn set_resource_headers(
+    resp: &mut Response,
+    base_path: &str,
+    segment: Option<&str>,
+    meta: &ResourceMeta,
+) {
+    if let Ok(etag) = HeaderValue::from_str(&format!("\"{}\"", meta.uid)) {
+        resp.headers_mut().insert(header::ETAG, etag);
+    }
+    if let Ok(loc) = HeaderValue::from_str(&location(base_path, &meta.ehr_id, segment, &meta.uid)) {
+        resp.headers_mut().insert(header::LOCATION, loc);
+    }
+}
+
+/// Render a create/update response honouring `Prefer` and setting
+/// `ETag`/`Location`. Default (`return=minimal`) → `minimal_status` with no
+/// body; `return=representation` → `repr_status` with the RM body (JSON or
+/// canonical XML via `T`). `segment` is the `Location` resource collection.
+pub(crate) fn write_rm<T>(
+    headers: &HeaderMap,
+    base_path: &str,
+    minimal_status: StatusCode,
+    repr_status: StatusCode,
+    segment: Option<&str>,
+    resp: &ServiceResponse,
+    root_tag: &str,
+) -> Response
+where
+    T: DeserializeOwned + Serialize + ToXml,
+{
+    let mut out = if prefers_representation(headers) {
+        respond_rm::<T>(headers, repr_status, &resp.body, root_tag)
+    } else {
+        empty(minimal_status)
+    };
+    if let Some(meta) = &resp.meta {
+        set_resource_headers(&mut out, base_path, segment, meta);
+    }
+    out
+}
+
+/// As [`write_rm`] but for a JSON-only payload (no canonical-XML shape, e.g. a
+/// CONTRIBUTION wrapper).
+pub(crate) fn write_json(
+    headers: &HeaderMap,
+    base_path: &str,
+    minimal_status: StatusCode,
+    repr_status: StatusCode,
+    segment: Option<&str>,
+    resp: &ServiceResponse,
+) -> Response {
+    let mut out = if prefers_representation(headers) {
+        respond(headers, repr_status, &resp.body)
+    } else {
+        empty(minimal_status)
+    };
+    if let Some(meta) = &resp.meta {
+        set_resource_headers(&mut out, base_path, segment, meta);
+    }
+    out
+}
+
+/// Render a `200 OK` read of a single spec-typed RM object, additionally setting
+/// the `ETag`/`Location` the operation's spec declares (e.g.
+/// `200_COMPOSITION_retrieved.yaml`, `200_EHR_STATUS_retrieved.yaml`).
+pub(crate) fn read_rm<T>(
+    headers: &HeaderMap,
+    base_path: &str,
+    segment: Option<&str>,
+    resp: &ServiceResponse,
+    root_tag: &str,
+) -> Response
+where
+    T: DeserializeOwned + Serialize + ToXml,
+{
+    let mut out = respond_rm::<T>(headers, StatusCode::OK, &resp.body, root_tag);
+    if let Some(meta) = &resp.meta {
+        set_resource_headers(&mut out, base_path, segment, meta);
+    }
+    out
+}
+
+/// Render a `200 OK` read of a JSON-only payload (no canonical-XML shape, e.g.
+/// an `ORIGINAL_VERSION` wrapper) whose spec response declares `ETag`/`Location`
+/// — the `*_version_get_at_time` reads (`200_VERSION_at_time.yaml` /
+/// `200_VERSION_of_COMPOSITION_at_time.yaml`: `ETag` = the `version_uid`,
+/// `Location` = the VERSION resource URL).
+pub(crate) fn read_json(
+    headers: &HeaderMap,
+    base_path: &str,
+    segment: Option<&str>,
+    resp: &ServiceResponse,
+) -> Response {
+    let mut out = respond(headers, StatusCode::OK, &resp.body);
+    if let Some(meta) = &resp.meta {
+        set_resource_headers(&mut out, base_path, segment, meta);
+    }
+    out
+}
+
+/// A `204 No Content` delete outcome carrying the deleted version's
+/// `ETag`/`Location` (`204_COMPOSITION_deleted.yaml`).
+pub(crate) fn deleted_with_headers(
+    base_path: &str,
+    segment: Option<&str>,
+    resp: &ServiceResponse,
+) -> Response {
+    let mut out = empty(StatusCode::NO_CONTENT);
+    if let Some(meta) = &resp.meta {
+        set_resource_headers(&mut out, base_path, segment, meta);
+    }
+    out
+}
+
+/// Render an error response, additionally setting the latest-version
+/// `ETag`/`Location` the spec requires on a `409`/`412` (the current
+/// `version_uid`; `409_COMPOSITION_with_uid_based_id.yaml`, `412_*.yaml`).
+pub(crate) fn error_with_meta(
+    error: ApiError,
+    base_path: &str,
+    segment: Option<&str>,
+    meta: Option<&ResourceMeta>,
+) -> Response {
+    let mut out = crate::error::RestError(error).into_response();
+    if let Some(meta) = meta {
+        set_resource_headers(&mut out, base_path, segment, meta);
+    }
+    out
+}
+
 /// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)
 /// verbatim as `application/xml`.
 pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {
@@ -550,5 +726,126 @@ mod tests {
         assert!(xml.contains("<value"), "root element present: {xml}");
         assert!(xml.contains("hello"), "leaf value present: {xml}");
         assert!(!xml.contains("_type"), "not a serialized JSON blob: {xml}");
+    }
+
+    // ── W2-A: header + `Prefer` handling ────────────────────────────────────
+
+    const BASE: &str = "/ehrbase/rest/openehr/v1";
+
+    fn etag(resp: &Response) -> Option<String> {
+        resp.headers()
+            .get(header::ETAG)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned)
+    }
+
+    fn loc(resp: &Response) -> Option<String> {
+        resp.headers()
+            .get(header::LOCATION)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned)
+    }
+
+    #[test]
+    fn prefer_default_is_minimal() {
+        // Absent → minimal (spec default).
+        assert!(!prefers_representation(&HeaderMap::new()));
+        assert!(!prefers_representation(&headers(&[(
+            "prefer",
+            "return=minimal"
+        )])));
+        assert!(prefers_representation(&headers(&[(
+            "prefer",
+            "return=representation"
+        )])));
+        // Case-insensitive.
+        assert!(prefers_representation(&headers(&[(
+            "prefer",
+            "RETURN=REPRESENTATION"
+        )])));
+    }
+
+    #[test]
+    fn location_builds_per_segment() {
+        assert_eq!(location(BASE, "e1", None, "e1"), format!("{BASE}/ehr/e1"));
+        assert_eq!(
+            location(BASE, "e1", Some("composition"), "v::s::1"),
+            format!("{BASE}/ehr/e1/composition/v::s::1")
+        );
+    }
+
+    fn meta(ehr: &str, uid: &str) -> ResourceMeta {
+        ResourceMeta::new(ehr.to_owned(), uid.to_owned())
+    }
+
+    #[test]
+    fn write_rm_minimal_is_headers_only() {
+        use openehr_rm::prelude::Composition;
+        let value = serde_json::json!({"_type": "COMPOSITION"});
+        let resp = ServiceResponse::new(value, meta("e1", "v::s::1"));
+        // Default (no Prefer) → minimal: 201, no body, ETag + Location set.
+        let out = write_rm::<Composition>(
+            &HeaderMap::new(),
+            BASE,
+            StatusCode::CREATED,
+            StatusCode::CREATED,
+            Some("composition"),
+            &resp,
+            "composition",
+        );
+        assert_eq!(out.status(), StatusCode::CREATED);
+        assert_eq!(etag(&out).as_deref(), Some("\"v::s::1\""));
+        assert_eq!(
+            loc(&out).as_deref(),
+            Some(&*format!("{BASE}/ehr/e1/composition/v::s::1"))
+        );
+        // Minimal → no content-type body header.
+        assert_eq!(content_type(&out), None);
+    }
+
+    #[test]
+    fn write_rm_representation_returns_body() {
+        use openehr_rm::prelude::Composition;
+        let value = serde_json::json!({"_type": "COMPOSITION"});
+        let resp = ServiceResponse::new(value, meta("e1", "v::s::2"));
+        let h = headers(&[("prefer", "return=representation")]);
+        let out = write_rm::<Composition>(
+            &h,
+            BASE,
+            StatusCode::NO_CONTENT,
+            StatusCode::OK,
+            Some("composition"),
+            &resp,
+            "composition",
+        );
+        // Representation → 200 (repr status) with a JSON body + headers.
+        assert_eq!(out.status(), StatusCode::OK);
+        assert_eq!(content_type(&out).as_deref(), Some(APPLICATION_JSON));
+        assert_eq!(etag(&out).as_deref(), Some("\"v::s::2\""));
+    }
+
+    #[test]
+    fn deleted_with_headers_is_204_with_etag() {
+        let resp = ServiceResponse::deleted(meta("e1", "v::s::3"));
+        let out = deleted_with_headers(BASE, Some("composition"), &resp);
+        assert_eq!(out.status(), StatusCode::NO_CONTENT);
+        assert_eq!(etag(&out).as_deref(), Some("\"v::s::3\""));
+        assert!(loc(&out).is_some());
+    }
+
+    #[test]
+    fn error_with_meta_sets_latest_version_headers() {
+        let out = error_with_meta(
+            ApiError::PreconditionFailed("stale".to_owned()),
+            BASE,
+            Some("ehr_status"),
+            Some(&meta("e1", "v::s::5")),
+        );
+        assert_eq!(out.status(), StatusCode::PRECONDITION_FAILED);
+        assert_eq!(etag(&out).as_deref(), Some("\"v::s::5\""));
+        assert_eq!(
+            loc(&out).as_deref(),
+            Some(&*format!("{BASE}/ehr/e1/ehr_status/v::s::5"))
+        );
     }
 }

@@ -4,15 +4,62 @@ use crate::am24::aom2::persistence::constraint_model::p_c_complex_object::PCComp
 use crate::am24::aom2::persistence::primitive::p_c_boolean::PCBoolean;
 use crate::am24::aom2::persistence::primitive::p_c_string::PCString;
 use crate::am24::aom2::persistence::primitive::p_c_terminology_code::PCTerminologyCode;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract parent type of C_OBJECT subtypes that are defined by value, i.e. whose definitions are actually in the archetype rather than being by reference.
 /// Closed subtype set of `P_C_DEFINED_OBJECT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PCDefinedObject {
     PCBoolean(PCBoolean),
     PCComplexObject(PCComplexObject),
     PCString(PCString),
     PCTerminologyCode(PCTerminologyCode),
+}
+
+impl<'de> ::serde::Deserialize<'de> for PCDefinedObject {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("P_C_ARCHETYPE_ROOT") => {
+                ::core::result::Result::Ok(Self::PCComplexObject(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_C_BOOLEAN") => {
+                ::core::result::Result::Ok(Self::PCBoolean(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_C_COMPLEX_OBJECT") => {
+                ::core::result::Result::Ok(Self::PCComplexObject(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_C_STRING") => {
+                ::core::result::Result::Ok(Self::PCString(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_C_TERMINOLOGY_CODE") => {
+                ::core::result::Result::Ok(Self::PCTerminologyCode(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "P_C_DEFINED_OBJECT: missing required `_type` on polymorphic slot (expected one of: P_C_ARCHETYPE_ROOT, P_C_BOOLEAN, P_C_COMPLEX_OBJECT, P_C_STRING, P_C_TERMINOLOGY_CODE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "P_C_DEFINED_OBJECT: unexpected `_type` {__other:?} (expected one of: P_C_ARCHETYPE_ROOT, P_C_BOOLEAN, P_C_COMPLEX_OBJECT, P_C_STRING, P_C_TERMINOLOGY_CODE)"
+                )))
+            }
+        }
+    }
 }

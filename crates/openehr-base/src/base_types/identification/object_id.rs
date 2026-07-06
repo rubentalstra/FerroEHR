@@ -6,13 +6,13 @@ use crate::base_types::identification::hier_object_id::HierObjectId;
 use crate::base_types::identification::object_version_id::ObjectVersionId;
 use crate::base_types::identification::template_id::TemplateId;
 use crate::base_types::identification::terminology_id::TerminologyId;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Ancestor class of identifiers of informational objects. Ids may be completely meaningless, in which case their only job is to refer to something, or may carry some information to do with the identified object.
 ///
 /// Object ids are used inside an object to identify that object. To identify another object in another service, use an `OBJECT_REF`, or else use a UID for local objects identified by UID. If none of the subtypes is suitable, direct instances of this class may be used.
 /// Closed subtype set of `OBJECT_ID` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ObjectId {
     ArchetypeId(ArchetypeId),
@@ -21,4 +21,56 @@ pub enum ObjectId {
     ObjectVersionId(ObjectVersionId),
     TemplateId(TemplateId),
     TerminologyId(TerminologyId),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ObjectId {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("ARCHETYPE_ID") => {
+                ::core::result::Result::Ok(Self::ArchetypeId(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("GENERIC_ID") => {
+                ::core::result::Result::Ok(Self::GenericId(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("HIER_OBJECT_ID") => {
+                ::core::result::Result::Ok(Self::HierObjectId(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("OBJECT_VERSION_ID") => {
+                ::core::result::Result::Ok(Self::ObjectVersionId(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TEMPLATE_ID") => {
+                ::core::result::Result::Ok(Self::TemplateId(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("TERMINOLOGY_ID") => {
+                ::core::result::Result::Ok(Self::TerminologyId(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "OBJECT_ID: missing required `_type` on polymorphic slot (expected one of: ARCHETYPE_ID, GENERIC_ID, HIER_OBJECT_ID, OBJECT_VERSION_ID, TEMPLATE_ID, TERMINOLOGY_ID)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "OBJECT_ID: unexpected `_type` {__other:?} (expected one of: ARCHETYPE_ID, GENERIC_ID, HIER_OBJECT_ID, OBJECT_VERSION_ID, TEMPLATE_ID, TERMINOLOGY_ID)"
+                )))
+            }
+        }
+    }
 }

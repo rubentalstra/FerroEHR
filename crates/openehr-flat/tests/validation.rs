@@ -263,6 +263,81 @@ fn inflate_rec(v: &mut Value, mutated: &mut bool) {
     }
 }
 
+// ── RM invariant routing through the updated dispatcher (EVENT/HISTORY/interval) ─
+//
+// These prove the composition validator's RM-invariant pass routes real
+// composition content through `openehr_rm::validate::validate_rm_value`, so the
+// richer invariant layer (HISTORY Period_consistency, DV_INTERVAL
+// Limits_consistent) fires on actual instances — not just in openehr-rm's own
+// unit tests. They use `validate_rm_and_terminology` (the template-independent
+// entry point), so no OPT fixture is needed.
+
+#[test]
+fn inconsistent_history_period_surfaces_period_consistency() {
+    // An OBSERVATION whose HISTORY declares a 1-hour period but carries an event
+    // 30 minutes off the origin violates HISTORY.Period_consistency.
+    let comp = serde_json::json!({
+        "_type": "COMPOSITION", "archetype_node_id": "openEHR-EHR-COMPOSITION.t.v1",
+        "content": [{
+            "_type": "OBSERVATION", "archetype_node_id": "openEHR-EHR-OBSERVATION.t.v1",
+            "name": {"_type": "DV_TEXT", "value": "obs"},
+            "data": {
+                "_type": "HISTORY", "archetype_node_id": "at0001",
+                "name": {"_type": "DV_TEXT", "value": "history"},
+                "origin": {"_type": "DV_DATE_TIME", "value": "2021-01-01T00:00:00"},
+                "period": {"_type": "DV_DURATION", "value": "PT1H"},
+                "events": [{
+                    "_type": "POINT_EVENT", "archetype_node_id": "at0002",
+                    "name": {"_type": "DV_TEXT", "value": "event"},
+                    "time": {"_type": "DV_DATE_TIME", "value": "2021-01-01T01:30:00"},
+                    "data": {"_type": "ITEM_TREE", "archetype_node_id": "at0003",
+                        "name": {"_type": "DV_TEXT", "value": "tree"}}
+                }]
+            }
+        }]
+    });
+    let msgs = openehr_flat::validate_rm_and_terminology(&comp);
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Invariant
+            && m.message == "Invariant Period_consistency failed on type HISTORY"),
+        "expected HISTORY.Period_consistency from the dispatcher, got {msgs:?}"
+    );
+    // The violation is keyed by an RM instance path into the HISTORY.
+    assert!(
+        msgs.iter().any(
+            |m| m.message.contains("Period_consistency") && m.path.contains("/content[0]/data")
+        ),
+        "the invariant path should point into the composition, got {msgs:?}"
+    );
+}
+
+#[test]
+fn inverted_dv_interval_surfaces_limits_consistent() {
+    // An inverted DV_INTERVAL<DV_QUANTITY> (lower 10 kg > upper 2 kg) nested as an
+    // ELEMENT value violates DV_INTERVAL.Limits_consistent — reached because the
+    // dispatcher deserialises the interval element type as DV_ORDERED.
+    let comp = serde_json::json!({
+        "_type": "COMPOSITION", "archetype_node_id": "openEHR-EHR-COMPOSITION.t.v1",
+        "content": [{
+            "_type": "ELEMENT", "archetype_node_id": "at0001",
+            "name": {"_type": "DV_TEXT", "value": "range"},
+            "value": {
+                "_type": "DV_INTERVAL",
+                "lower": {"_type": "DV_QUANTITY", "magnitude": 10.0, "units": "kg"},
+                "upper": {"_type": "DV_QUANTITY", "magnitude": 2.0, "units": "kg"},
+                "lower_included": true, "upper_included": true,
+                "lower_unbounded": false, "upper_unbounded": false
+            }
+        }]
+    });
+    let msgs = openehr_flat::validate_rm_and_terminology(&comp);
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Invariant
+            && m.message == "Invariant Limits_consistent failed on type DV_INTERVAL"),
+        "expected DV_INTERVAL.Limits_consistent from the dispatcher, got {msgs:?}"
+    );
+}
+
 // ── a WebTemplate node builder sanity check (paths line up) ───────────────────
 
 #[test]

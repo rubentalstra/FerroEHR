@@ -5,16 +5,20 @@
 //! `(method, path, operation_id)`. This module turns that table into an axum
 //! router: for every route it mounts a handler that captures the operation id,
 //! collects the request's raw parts, and calls the group's dispatcher. Each
-//! dispatcher ([`ehr`], [`demographic`], …) rebuilds the exact `*Params` with
-//! [`crate::params`], calls the trait method on [`AppState`], and renders a
-//! negotiated response.
+//! implemented group's dispatcher ([`ehr`], [`definition`]) rebuilds the exact
+//! `*Params` with [`crate::params`], calls the trait method on [`AppState`],
+//! and renders a negotiated response.
+//!
+//! Groups with **no implemented operations** (demographic, query, admin) are
+//! mounted on the generic [`not_implemented`] dispatcher instead of
+//! hand-written per-operation arms that could only forward to a 501 backend
+//! (finding F-13-03) — the wire behaviour is the same `501` + standard error
+//! body the backend defaults produced. A group gets a real dispatcher module
+//! in the phase that first implements one of its operations.
 
-mod admin;
 mod definition;
-mod demographic;
 mod ehr;
 mod flat;
-mod query;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -71,10 +75,23 @@ pub(crate) fn api_router() -> Router<AppState> {
 
     Router::new()
         .merge(mount(g::ehr::ROUTES, ehr::dispatch))
-        .merge(mount(g::demographic::ROUTES, demographic::dispatch))
+        .merge(mount(g::demographic::ROUTES, not_implemented))
         .merge(mount(g::definition::ROUTES, definition::dispatch))
-        .merge(mount(g::query::ROUTES, query::dispatch))
-        .merge(mount(g::admin::ROUTES, admin::dispatch))
+        .merge(mount(g::query::ROUTES, not_implemented))
+        .merge(mount(g::admin::ROUTES, not_implemented))
+}
+
+/// The dispatcher for an API group with no implemented operations: every
+/// route answers `501 Not Implemented` with the standard error body — exactly
+/// what per-operation arms forwarding to a `NotImplemented` backend produced
+/// (F-13-03), without ~500 lines of dead scaffolding.
+fn not_implemented(_state: AppState, op: &'static str, _parts: RequestParts) -> BoxResponse {
+    use axum::response::IntoResponse;
+    Box::pin(async move {
+        tracing::debug!(operation = op, "unimplemented ITS-REST operation");
+        crate::error::RestError(openehr_its::rest::runtime::ApiError::NotImplemented)
+            .into_response()
+    })
 }
 
 /// Mount one API group's routes onto a router, grouping methods that share a

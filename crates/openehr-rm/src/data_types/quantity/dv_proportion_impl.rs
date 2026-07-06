@@ -4,6 +4,7 @@
 //! percent 2, fraction 3, integer_fraction 4), plus the inherited DV_AMOUNT /
 //! DV_QUANTIFIED invariants.
 
+use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::data_types::quantity::dv_proportion::DvProportion;
 use crate::validate::{InvariantViolation, Validate, is_integral, push_dv_amount_invariants};
 
@@ -66,6 +67,14 @@ impl Validate for DvProportion {
             self.accuracy,
             self.accuracy_is_percent,
             self.magnitude_status.as_deref(),
+        );
+        // Inherited DV_ORDERED Normal_range_and_status_consistency.
+        push_normal_range_consistency(
+            out,
+            "DV_PROPORTION",
+            self.normal_status.as_ref(),
+            self.normal_range.as_deref(),
+            self,
         );
     }
 }

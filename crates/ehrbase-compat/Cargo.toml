@@ -11,7 +11,11 @@ publish = false
 
 [dependencies]
 ehrbase-rest = { path = "../ehrbase-rest" }
-openehr-flat = { path = "../openehr-flat" }
+# This crate IS the EHRbase/Better compatibility surface (EhrScape + FLAT/
+# WebTemplate), so it opts into the Better-only FLAT extras that the default
+# openehr-flat path keeps gated off (`|unit_system`/`|unit_display_name`; see
+# F-13-25 and serialization.md). Core ITS-REST serving stays quirk-free.
+openehr-flat = { path = "../openehr-flat", features = ["ehrbase-quirks"] }
 
 [lints]
 workspace = true

@@ -14,7 +14,7 @@
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Annotation {
     pub path: String,
-    pub items: std::collections::BTreeMap<String, String>,
+    pub items: indexmap::IndexMap<String, String>,
 }
 
 /// openEHR AOM/OPT `ARCHETYPE`.
@@ -87,7 +87,7 @@ pub struct ArchetypeSlot {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ArchetypeTerm {
     pub code: String,
-    pub items: std::collections::BTreeMap<String, String>,
+    pub items: indexmap::IndexMap<String, String>,
 }
 
 /// openEHR AOM/OPT `ASSERTION`.
@@ -523,18 +523,18 @@ pub struct OperationalTemplate {
     pub ontology: Option<FlatArchetypeOntology>,
     pub component_ontologies: Vec<FlatArchetypeOntology>,
     pub annotations: Vec<Annotation>,
-    pub constraints: Option<serde_json::Value>,
+    pub constraints: Option<TConstraint>,
     pub view: Option<serde_json::Value>,
 }
 
 /// openEHR AOM/OPT `RESOURCE_DESCRIPTION`.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ResourceDescription {
-    pub original_author: std::collections::BTreeMap<String, String>,
+    pub original_author: indexmap::IndexMap<String, String>,
     pub other_contributors: Vec<String>,
     pub lifecycle_state: String,
     pub resource_package_uri: Option<String>,
-    pub other_details: Option<std::collections::BTreeMap<String, String>>,
+    pub other_details: Option<indexmap::IndexMap<String, String>>,
     pub details: Vec<ResourceDescriptionItem>,
     pub parent_resource: Option<Box<AuthoredResource>>,
 }
@@ -549,8 +549,8 @@ pub struct ResourceDescriptionItem {
     pub use_: Option<String>,
     pub misuse: Option<String>,
     pub copyright: Option<String>,
-    pub original_resource_uri: Option<std::collections::BTreeMap<String, String>>,
-    pub other_details: Option<std::collections::BTreeMap<String, String>>,
+    pub original_resource_uri: Option<indexmap::IndexMap<String, String>>,
+    pub other_details: Option<indexmap::IndexMap<String, String>>,
 }
 
 /// openEHR AOM/OPT `STATE`.
@@ -592,9 +592,9 @@ pub struct Transition {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct TranslationDetails {
     pub language: openehr_base::prelude::CodePhrase,
-    pub author: std::collections::BTreeMap<String, String>,
+    pub author: indexmap::IndexMap<String, String>,
     pub accreditation: Option<String>,
-    pub other_details: Option<std::collections::BTreeMap<String, String>>,
+    pub other_details: Option<indexmap::IndexMap<String, String>>,
 }
 
 /// openEHR AOM/OPT `T_ATTRIBUTE`.
@@ -613,6 +613,12 @@ pub struct TComplexObject {
     pub node_id: String,
     pub attributes: Vec<CAttribute>,
     pub default_value: Option<openehr_rm::prelude::DataValue>,
+}
+
+/// openEHR AOM/OPT `T_CONSTRAINT`.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct TConstraint {
+    pub attributes: Vec<TAttribute>,
 }
 
 /// openEHR AOM/OPT `TermBindingSet`.

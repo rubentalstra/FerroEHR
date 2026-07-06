@@ -1246,6 +1246,32 @@ fn emit_enum(
         );
     }
 
+    // ── `_type` dispatch (ADR-005-style, mirrors the XML xsi:type runtime) ────
+    // The ITS-JSON schema requires `_type` on an *abstract* polymorphic slot
+    // (`DATA_VALUE`, `UID`, `VERSION`, …) and rejects a `_type`-less value, while
+    // a *concrete* polymorphic slot (`DV_TEXT`, holding a plain DV_TEXT or a
+    // DV_CODED_TEXT) makes `_type` optional and defaults a `_type`-less value to
+    // the base concrete type. We emit a hand-rolled `Deserialize` that dispatches
+    // on `_type` (deep descendants routed to their direct variant, which
+    // recurses) instead of `#[serde(untagged)]`, whose structural guessing
+    // silently mis-types a `_type`-less value (audit F-04-01/03). Serialize keeps
+    // `#[serde(untagged)]` — its output is byte-identical (variant payload only).
+    let dispatch = model.xsi_dispatch(&class.name, variants);
+    // `_type` dispatch is valid only when every concrete target actually carries
+    // a `_type` on the wire (a Struct or PolyEnum, not a transparent enumeration
+    // Newtype); otherwise keep the structural `#[serde(untagged)]` reader.
+    let type_dispatch = !dispatch.is_empty()
+        && dispatch
+            .iter()
+            .all(|(spec, _)| model.concrete_carries_type(spec));
+    // The variant a `_type`-less value defaults to: `Some` for a concrete
+    // polymorphic slot (its own `{Name}Data`), `None` for an abstract slot (a
+    // `_type`-less value is rejected, per the schema).
+    let self_ident = dispatch
+        .iter()
+        .find(|(spec, _)| *spec == class.name)
+        .map(|(_, id)| id.clone());
+
     // Header: an untagged enum uses serde derives; a polymorphic-concrete file
     // also emits an `OpenEhrType` struct, so it needs that import too.
     b.push_str(&format!(
@@ -1256,13 +1282,16 @@ fn emit_enum(
         b.push_str("// Hand-written spec functions/invariants live in the sibling `*_impl.rs` (ADR-004).\n");
     }
     b.push('\n');
-    let fixed: &[&str] = if self_data {
-        &[
+    // When we hand-roll `Deserialize`, only `Serialize` is derived; `Deserialize`
+    // is referenced by full path in the emitted impl, so drop its import.
+    let fixed: &[&str] = match (self_data, type_dispatch) {
+        (true, true) => &["use serde::Serialize;", "use openehr_derive::OpenEhrType;"],
+        (true, false) => &[
             "use serde::{Deserialize, Serialize};",
             "use openehr_derive::OpenEhrType;",
-        ]
-    } else {
-        &["use serde::{Deserialize, Serialize};"]
+        ],
+        (false, true) => &["use serde::Serialize;"],
+        (false, false) => &["use serde::{Deserialize, Serialize};"],
     };
     write_uses(&mut b, fixed, &imports);
 
@@ -1290,13 +1319,119 @@ fn emit_enum(
         "/// {slot} of `{}` (ADR-004): dispatched on each payload's `_type`.\n",
         class.name
     ));
-    b.push_str("#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n");
+    if type_dispatch {
+        b.push_str("#[derive(Debug, Clone, PartialEq, Serialize)]\n");
+    } else {
+        b.push_str("#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n");
+    }
     b.push_str("#[serde(untagged)]\n");
     b.push_str(&format!("pub enum {ty}{gen_decl} {{\n"));
     for (variant, payload) in &payloads {
         b.push_str(&format!("    {variant}({payload}),\n"));
     }
     b.push_str("}\n");
+
+    if type_dispatch {
+        b.push('\n');
+        b.push_str(&emit_type_dispatch_deser(
+            &ty,
+            &enum_generics,
+            &class.name,
+            &dispatch,
+            self_ident.as_deref(),
+        ));
+    }
+    b
+}
+
+/// Emit a hand-rolled `Deserialize` for an abstract/polymorphic enum that
+/// dispatches on the canonical-JSON `_type` discriminator instead of
+/// `#[serde(untagged)]`'s structural fallback (audit F-04-01/02/03).
+///
+/// The value is buffered into a `serde_json::Value` (these types are
+/// canonical-JSON-only for serde; XML has its own `FromXml` path), its `_type`
+/// read, and the whole value re-deserialized into the one matching variant via
+/// `serde_json::from_value` — which preserves that variant's precise inner error
+/// (F-04-03) and re-checks `_type` + unknown keys in the inner `OpenEhrType`
+/// reader. A deep descendant (`DV_CODED_TEXT` in a `DATA_VALUE` slot) routes to
+/// its direct variant (`DvText`), whose own dispatcher recurses.
+///
+/// `self_ident` is `Some(variant)` for a concrete polymorphic slot — a
+/// `_type`-less value defaults to the base concrete type, matching the schema's
+/// `if not required _type then <base>` construction — and `None` for an abstract
+/// slot, where a `_type`-less value is rejected (schema `required: [_type]`).
+fn emit_type_dispatch_deser(
+    ty: &str,
+    generics: &[String],
+    spec_name: &str,
+    dispatch: &[(String, String)],
+    self_ident: Option<&str>,
+) -> String {
+    let expected = dispatch
+        .iter()
+        .map(|(s, _)| s.clone())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let (impl_hdr, ty_ref, where_cl) = if generics.is_empty() {
+        ("impl<'de>".to_string(), ty.to_string(), String::new())
+    } else {
+        let ps = generics.join(", ");
+        // `from_value` deserializes an owned `Value`, so each parameter must be
+        // `DeserializeOwned` (satisfied at every call site — the RM types are all
+        // owned, and canonical JSON is parsed from owned input).
+        let wc = generics
+            .iter()
+            .map(|p| format!("{p}: ::serde::de::DeserializeOwned"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        (
+            format!("impl<'de, {ps}>"),
+            format!("{ty}<{ps}>"),
+            format!("\nwhere\n{wc},"),
+        )
+    };
+
+    let mut b = String::new();
+    b.push_str(&format!(
+        "{impl_hdr} ::serde::Deserialize<'de> for {ty_ref}{where_cl} {{\n"
+    ));
+    // `too_many_lines`: enums with many concrete descendants generate a long
+    // match. `match_same_arms`: several `_type`s can route to one direct variant
+    // (deep descendants collapse), yielding intentionally-identical arms.
+    b.push_str("    #[allow(clippy::too_many_lines, clippy::match_same_arms)]\n");
+    b.push_str(
+        "    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>\n",
+    );
+    b.push_str("    where\n        D: ::serde::Deserializer<'de>,\n    {\n");
+    b.push_str(
+        "        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;\n",
+    );
+    b.push_str("        match __value.get(\"_type\").and_then(::serde_json::Value::as_str) {\n");
+    for (spec, ident) in dispatch {
+        b.push_str(&format!(
+            "            ::core::option::Option::Some({spec:?}) => ::core::result::Result::Ok(\n                Self::{ident}(::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?),\n            ),\n"
+        ));
+    }
+    if let Some(ident) = self_ident {
+        b.push_str(&format!(
+            "            ::core::option::Option::None => ::core::result::Result::Ok(\n                Self::{ident}(::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?),\n            ),\n"
+        ));
+    } else {
+        let msg = format!(
+            "{spec_name}: missing required `_type` on polymorphic slot (expected one of: {expected})"
+        );
+        b.push_str(&format!(
+            "            ::core::option::Option::None => ::core::result::Result::Err(::serde::de::Error::custom(\n                {msg:?},\n            )),\n"
+        ));
+    }
+    // Inline the binding (`{__other:?}`) so the generated `format!` is
+    // clippy-clean (`uninlined_format_args`).
+    let fmt =
+        format!("{spec_name}: unexpected `_type` {{__other:?}} (expected one of: {expected})");
+    b.push_str(&format!(
+        "            ::core::option::Option::Some(__other) => ::core::result::Result::Err(::serde::de::Error::custom(\n                ::std::format!({fmt:?}),\n            )),\n"
+    ));
+    b.push_str("        }\n    }\n}\n");
     b
 }
 
@@ -1576,6 +1711,27 @@ impl Model {
             out.push((name.clone(), ident));
         }
         out
+    }
+
+    /// Does a *concrete* class carry a `_type` discriminator on the
+    /// canonical-JSON wire? A `Struct` or `PolyEnum` does (it derives
+    /// `OpenEhrType`, which emits `_type` first); a transparent enumeration
+    /// `Newtype` (`VALIDITY_KIND` → a bare JSON string) does not. Used to decide
+    /// whether an enum's variants can be dispatched on `_type` (F-04-01):
+    /// `_type` dispatch is only valid when every concrete target carries one.
+    fn concrete_carries_type(&self, name: &str) -> bool {
+        let Some(class) = self.get(name) else {
+            return false;
+        };
+        if !self.enum_variants(name).is_empty() {
+            return true; // PolyEnum — the `{Name}` enum + `{Name}Data` both tag.
+        }
+        // Mirror `decide`'s concrete newtype rule: a 0-field concrete leaf whose
+        // sole ancestor is a primitive is a transparent newtype (no `_type`).
+        let flattened = self.flattened_props(class);
+        !(flattened.is_empty()
+            && class.ancestors.len() == 1
+            && primitive(&class.ancestors[0]).is_some())
     }
 
     /// Generic parameter names a type exposes (`Version<T>` → `["T"]`).

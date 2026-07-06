@@ -8,9 +8,21 @@
 //! A [`WebTemplateNode`] doubles as the mutable tree the builder shapes: fields
 //! marked `#[serde(skip)]` are build-time scratch (the full dedup id chain, the
 //! polymorphic alternate id, the cardinality RM path) and never serialized.
+//!
+//! Relationship to the vendored ITS-REST schema (F-10-04): the normative
+//! `schemas/web_template/{WebTemplate,Tree,Child,Input,…}.yaml` describe a
+//! *subset* of the fuller Better 2.3 shape emitted here. The impl carries
+//! additive Better fields the ITS-REST schema does not list (`cardinalities`,
+//! `inContext`, `proportionTypes`, `termBindings`, `dependsOn` on nodes;
+//! `listOpen`, `terminology` on inputs; `ordinal`/`scale`/`localizedLabels`/
+//! `termBindings` on coded values; `semVer`/`otherDetails`/`version` on the
+//! root). Those schemas set no `additionalProperties: false`, so the extras are
+//! schema-legal and carry information consumers need. The one place the schema
+//! is *stricter* than a naive render is its `Tree.required` list — satisfied by
+//! [`serialize_root`].
 
 use indexmap::IndexMap;
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 
 /// A single template rendered in the Better web format.
 ///
@@ -28,9 +40,44 @@ pub struct WebTemplate {
     pub default_language: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub languages: Vec<String>,
+    #[serde(serialize_with = "serialize_root")]
     pub tree: WebTemplateNode,
     #[serde(rename = "otherDetails", skip_serializing_if = "IndexMap::is_empty")]
     pub other_details: IndexMap<String, String>,
+}
+
+/// Serialize the **root** node so it satisfies the normative ITS-REST
+/// `Tree` schema (`schemas/web_template/Tree.yaml`), whose `required` set —
+/// `id, name, localizedName, rmType, nodeId, min, max, localizedNames,
+/// localizedDescriptions, aqlPath, children` — is stricter than the `Child`
+/// schema a nested [`WebTemplateNode`] serializes against.
+///
+/// A well-formed OPT root already carries every required member, so this
+/// reproduces the normal node serialization byte-for-byte; it only *fills in*
+/// members a sparse root would otherwise omit (empty rubric maps, an unbounded
+/// `min`, an empty `nodeId`, no children), so a strict JSON-Schema validator
+/// accepts the `WebTemplate`. Children keep the looser `Child`-schema shape
+/// (Better parity). Missing scalars default to spec-valid placeholders
+/// (`name`/`localizedName` ← the node `id`, `nodeId` ← `""`, `min` ← `0`).
+fn serialize_root<S: Serializer>(node: &WebTemplateNode, s: S) -> Result<S::Ok, S::Error> {
+    // Serialize via the derived (Child-shaped) impl, then ensure the
+    // Tree-required members are present. Appended keys are schema-legal (JSON
+    // object member order is not significant); nothing already emitted is
+    // touched, so the well-formed case is unchanged.
+    use serde_json::json;
+    let mut value = serde_json::to_value(node).map_err(serde::ser::Error::custom)?;
+    if let serde_json::Value::Object(map) = &mut value {
+        map.entry("name").or_insert_with(|| json!(node.id));
+        map.entry("localizedName")
+            .or_insert_with(|| json!(node.name.clone().unwrap_or_else(|| node.id.clone())));
+        map.entry("nodeId").or_insert_with(|| json!(""));
+        map.entry("min").or_insert_with(|| json!(0));
+        map.entry("localizedNames").or_insert_with(|| json!({}));
+        map.entry("localizedDescriptions")
+            .or_insert_with(|| json!({}));
+        map.entry("children").or_insert_with(|| json!([]));
+    }
+    value.serialize(s)
 }
 
 /// One node of the web-template tree.
@@ -81,6 +128,12 @@ pub struct WebTemplateNode {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<WebTemplateNode>,
 
+    /// AOM 1.4 `C_ATTRIBUTE.existence` constraints on this node's mandatory RM
+    /// attributes — captured for the validation walk, **not** part of the Better
+    /// web-template JSON (F-07-04), so `#[serde(skip)]`.
+    #[serde(skip)]
+    pub existence: Vec<WebTemplateExistence>,
+
     // ── build-time scratch (never serialized) ────────────────────────────────
     /// Full `parent/segment` id chain, used to scope dedup and cardinality ids.
     #[serde(skip)]
@@ -115,6 +168,7 @@ impl WebTemplateNode {
             depends_on: None,
             cardinalities: Vec::new(),
             children: Vec::new(),
+            existence: Vec::new(),
             full_id: String::new(),
             alt_json_id: None,
             name_code: None,
@@ -266,6 +320,22 @@ pub struct WebTemplateRange {
     pub max_op: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max: Option<serde_json::Value>,
+}
+
+/// An AOM 1.4 `C_ATTRIBUTE.existence` constraint on a single RM attribute
+/// (whether the attribute *field* is present at all — distinct from `cardinality`
+/// = container membership and `occurrences` = per-object-block count; AOM 1.4
+/// `master04-constraint_model_package.adoc` §existence). Captured for the
+/// validation walk only; not part of the Better web-template JSON.
+///
+/// `path` is the absolute archetype path of the constrained attribute
+/// (`{node aqlPath}/{rm_attribute_name}`); `min`/`max` are the existence bounds
+/// (`max == -1` unbounded). A mandatory attribute has `min >= 1`.
+#[derive(Debug, Clone)]
+pub struct WebTemplateExistence {
+    pub min: i32,
+    pub max: i32,
+    pub path: String,
 }
 
 /// A container cardinality: `{min, max, ids}`. `path` is build-time scratch used

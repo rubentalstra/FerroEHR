@@ -6,11 +6,12 @@
 //! than `OR` (the grammar's left recursion is realized here as `or` over `and`
 //! over atoms), with parenthesized grouping.
 //!
-//! Coverage note: this is the core of the grammar (select/from/where/order/
-//! limit, `CONTAINS` trees, identified paths, standard/node/archetype
-//! predicates, comparisons, primitives, params, aggregates, functions). A few
-//! rarely-used corners are marked `// TODO(port):` and parse into the nearest
-//! faithful AST node.
+//! Coverage note: this covers the grammar (select/from/where/order/limit,
+//! `CONTAINS` trees, identified paths, standard/node/archetype predicates —
+//! including the `VERSION[standardPredicate]` and top-level
+//! `pathPredicate` standard forms — comparisons, primitives, params,
+//! aggregates, functions). Overflowing integer literals and `TOP`/`LIMIT`/
+//! `OFFSET` counts are reported as parse errors, never silently coerced.
 
 use crate::ast::{
     AggregateCall, ArchetypePredicate, ClassExprOperand, ColumnExpr, CompareOperand,
@@ -53,37 +54,159 @@ fn ident<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
     select! { Token::Identifier(s) => s }
 }
 
-/// Strip the surrounding quotes from a lexed string literal (unescaping is a
-/// later concern — see the lexer PORT NOTE).
+/// Strip the surrounding quotes from a lexed string literal and unescape it per
+/// `AqlLexer.g4` `ESCAPE_SEQ` / `OCTAL_ESC` / `UTF8CHAR` (F-08-09), so the AST
+/// carries the decoded value that predicate matching / `LIKE` / `terminology()`
+/// operands compare against — not the raw escaped source text.
 fn unquote(s: &str) -> String {
-    let bytes = s.as_bytes();
-    if bytes.len() >= 2 {
-        s[1..s.len() - 1].to_string()
-    } else {
-        s.to_string()
+    let inner = if s.len() >= 2 { &s[1..s.len() - 1] } else { s };
+    unescape(inner)
+}
+
+/// Decode AQL string escapes. `ESCAPE_SEQ: '\\' ['"?abfnrtv\\]`,
+/// `UTF8CHAR: '\\u' HEX{4}`, and `OCTAL_ESC: '\\' [0-3]?OCTAL{1,2}` (a `\`
+/// followed by 1–3 octal digits). Unknown escapes are passed through verbatim
+/// (the backslash is retained), which keeps the function total on any input.
+fn unescape(inner: &str) -> String {
+    if !inner.contains('\\') {
+        return inner.to_string();
+    }
+    let mut out = String::with_capacity(inner.len());
+    let mut chars = inner.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        let Some(&next) = chars.peek() else {
+            out.push('\\');
+            break;
+        };
+        match next {
+            '\'' | '"' | '?' | '\\' => {
+                out.push(next);
+                chars.next();
+            }
+            'a' => push_escaped(&mut out, &mut chars, '\u{07}'),
+            'b' => push_escaped(&mut out, &mut chars, '\u{08}'),
+            'f' => push_escaped(&mut out, &mut chars, '\u{0C}'),
+            'n' => push_escaped(&mut out, &mut chars, '\n'),
+            'r' => push_escaped(&mut out, &mut chars, '\r'),
+            't' => push_escaped(&mut out, &mut chars, '\t'),
+            'v' => push_escaped(&mut out, &mut chars, '\u{0B}'),
+            'u' => {
+                chars.next(); // consume 'u'
+                // Look ahead (without consuming) at the next four chars.
+                let hex: String = chars.clone().take(4).collect();
+                if hex.len() == 4
+                    && let Ok(cp) = u32::from_str_radix(&hex, 16)
+                    && let Some(ch) = char::from_u32(cp)
+                {
+                    for _ in 0..4 {
+                        chars.next();
+                    }
+                    out.push(ch);
+                } else {
+                    out.push('\\');
+                    out.push('u');
+                }
+            }
+            '0'..='7' => {
+                chars.next(); // consume first octal digit
+                let mut digits = String::new();
+                digits.push(next);
+                while digits.len() < 3
+                    && let Some(&d) = chars.peek()
+                    && ('0'..='7').contains(&d)
+                {
+                    digits.push(d);
+                    chars.next();
+                }
+                if let Ok(cp) = u32::from_str_radix(&digits, 8)
+                    && let Some(ch) = char::from_u32(cp)
+                {
+                    out.push(ch);
+                } else {
+                    out.push('\\');
+                    out.push_str(&digits);
+                }
+            }
+            _ => out.push('\\'),
+        }
+    }
+    out
+}
+
+/// Consume the escape letter (already peeked) and push its decoded char.
+fn push_escaped(out: &mut String, chars: &mut std::iter::Peekable<std::str::Chars<'_>>, ch: char) {
+    chars.next();
+    out.push(ch);
+}
+
+/// A lexed numeric literal, tagged by the grammar token it came from.
+#[derive(Clone, Copy)]
+enum NumKind {
+    /// `INTEGER`
+    Int,
+    /// `REAL` / `SCI_REAL`
+    Real,
+    /// `SCI_INTEGER`
+    SciInt,
+}
+
+/// Convert a lexed numeric to a [`Primitive`], returning `None` on overflow so
+/// the parser surfaces a hard error instead of silently coercing to `0`/`inf`
+/// (F-08-03). `SCI_INTEGER` retains its integer-ness when the magnitude is
+/// integral and fits `i64`, else degrades to `Real` (F-08-11).
+fn parse_number(kind: NumKind, s: &str) -> Option<Primitive> {
+    match kind {
+        NumKind::Int => s.parse::<i64>().ok().map(Primitive::Integer),
+        NumKind::Real => {
+            let r = s.parse::<f64>().ok()?;
+            r.is_finite().then_some(Primitive::Real(r))
+        }
+        NumKind::SciInt => {
+            let r = s.parse::<f64>().ok()?;
+            if !r.is_finite() {
+                return None;
+            }
+            #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
+            if r.fract() == 0.0 && r >= i64::MIN as f64 && r <= i64::MAX as f64 {
+                Some(Primitive::Integer(r as i64))
+            } else {
+                Some(Primitive::Real(r))
+            }
+        }
     }
 }
 
 fn primitive<'a>() -> impl Parser<'a, &'a [Token], Primitive, Err<'a>> + Clone {
+    // A single unsigned numeric literal; overflow is a hard parse error, not a
+    // silent `0`/`inf` (F-08-03).
     let unsigned = select! {
-        Token::Integer(s) => Primitive::Integer(s.parse().unwrap_or_default()),
-        Token::Real(s) => Primitive::Real(s.parse().unwrap_or_default()),
-        Token::SciInteger(s) => Primitive::Real(s.parse().unwrap_or_default()),
-        Token::SciReal(s) => Primitive::Real(s.parse().unwrap_or_default()),
-    };
-    // numericPrimitive : … | SYM_MINUS numericPrimitive
-    let negative = just(Token::Minus).ignore_then(unsigned).map(|p| match p {
-        Primitive::Integer(n) => Primitive::Integer(-n),
-        Primitive::Real(r) => Primitive::Real(-r),
-        other => other,
-    });
+        Token::Integer(s) => (NumKind::Int, s),
+        Token::Real(s) => (NumKind::Real, s),
+        Token::SciInteger(s) => (NumKind::SciInt, s),
+        Token::SciReal(s) => (NumKind::Real, s),
+    }
+    .try_map(|(kind, s), span| parse_number(kind, &s).ok_or_else(|| Simple::new(None, span)));
+    // numericPrimitive : … | SYM_MINUS numericPrimitive — the minus recurses,
+    // so `- - 5` is accepted (F-08-08). Zero leading minuses folds to the bare
+    // unsigned literal.
+    let signed = just(Token::Minus)
+        .repeated()
+        .foldr(unsigned, |_minus, p| match p {
+            Primitive::Integer(n) => Primitive::Integer(n.wrapping_neg()),
+            Primitive::Real(r) => Primitive::Real(-r),
+            other => other,
+        });
     let other = select! {
         Token::String(s) => Primitive::String(unquote(&s)),
         Token::True => Primitive::Boolean(true),
         Token::False => Primitive::Boolean(false),
         Token::Null => Primitive::Null,
     };
-    negative.or(unsigned).or(other)
+    signed.or(other)
 }
 
 fn parameter<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
@@ -92,13 +215,17 @@ fn parameter<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
 
 // ── paths & predicates (mutually recursive: predicate ← objectPath ← predicate) ──
 
-/// Returns `(identified_path, object_path, path_predicate)` parsers. Built
-/// together because a `pathPredicate` contains an `objectPath` which contains
-/// `pathPart`s that may themselves carry a `pathPredicate`.
+/// Returns `(identified_path, path_predicate, standard_predicate)` parsers.
+/// Built together because a `pathPredicate` contains an `objectPath` which
+/// contains `pathPart`s that may themselves carry a `pathPredicate`. The bare
+/// `standardPredicate` parser is also handed back so the caller can wire it into
+/// `versionPredicate` (`AqlParser.g4` `versionPredicate` third alternative —
+/// F-08-02).
 #[allow(clippy::type_complexity)]
 fn path_parsers<'a>() -> (
     impl Parser<'a, &'a [Token], IdentifiedPath, Err<'a>> + Clone,
     impl Parser<'a, &'a [Token], PathPredicate, Err<'a>> + Clone,
+    impl Parser<'a, &'a [Token], StandardPredicate, Err<'a>> + Clone,
 ) {
     let mut identified = Recursive::declare();
     let mut object = Recursive::declare();
@@ -168,14 +295,24 @@ fn path_parsers<'a>() -> (
         });
 
     // pathPredicate : '[' (standardPredicate | archetypePredicate | nodePredicate) ']'
-    // Ordered so the most specific (archetype/node codes) win before the
-    // generic standard comparison.
+    //
+    // The grammar's three-way classification is honoured here (F-08-10). A
+    // bare comparison (`[ehr_id/value='123']`) is *both* a standardPredicate
+    // and a nodePredicate in the grammar; ANTLR lists `standardPredicate`
+    // first, so a lone comparison classifies as `PathPredicate::Standard`. A
+    // comparison that is part of an `AND`/`OR` tree, or that sits beside
+    // node/archetype codes, stays a `nodePredicate`. We realise that split by
+    // parsing the node boolean tree and lifting a *top-level* bare
+    // `NodePredicate::Standard` back out to `PathPredicate::Standard`. The
+    // `archetype` alternative wins first for a plain `[ARCHETYPE_HRID]`.
     predicate.define(
         archetype
             .clone()
             .map(PathPredicate::Archetype)
-            .or(node.map(|n| PathPredicate::Node(Box::new(n))))
-            .or(standard.map(|s| PathPredicate::Standard(Box::new(s))))
+            .or(node.map(|n| match n {
+                NodePredicate::Standard(s) => PathPredicate::Standard(s),
+                other => PathPredicate::Node(Box::new(other)),
+            }))
             .delimited_by(just(Token::LeftBracket), just(Token::RightBracket)),
     );
 
@@ -205,7 +342,7 @@ fn path_parsers<'a>() -> (
             }),
     );
 
-    (identified, predicate)
+    (identified, predicate, standard)
 }
 
 // ── functions & terminals ───────────────────────────────────────────────────
@@ -284,7 +421,11 @@ fn function_parsers<'a>(
 
 #[allow(clippy::too_many_lines)] // one combinator builder for the whole grammar
 fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
-    let (identified, _predicate) = path_parsers();
+    // The whole path grammar (identified paths, the path predicate, and the
+    // bare standard predicate) is built once here and shared by both the
+    // SELECT/terminal side (`identified`) and the FROM side (`predicate` on a
+    // class operand, `standard` inside a VERSION predicate) — F-13-51.
+    let (identified, predicate, standard) = path_parsers();
 
     // terminal : primitive | PARAMETER | identifiedPath | functionCall
     // (functionCall needs terminal → declare terminal recursively.)
@@ -309,9 +450,11 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
     let select_expr = column
         .then(just(Token::As).ignore_then(ident()).or_not())
         .map(|(column, alias)| SelectExpr { column, alias });
-    // top (deprecated)
+    // top (deprecated). Overflow is a parse error, not a silent `0` (F-08-03).
+    let top_count = select! { Token::Integer(s) => s }
+        .try_map(|s: String, span| s.parse::<i64>().map_err(|_| Simple::new(None, span)));
     let top = just(Token::Top)
-        .ignore_then(select! { Token::Integer(s) => s.parse::<i64>().unwrap_or_default() })
+        .ignore_then(top_count)
         .then(
             select! {
                 Token::Forward => TopDirection::Forward,
@@ -337,11 +480,14 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
 
     // ── FROM / containsExpr ──
     // classExprOperand : IDENTIFIER variable? pathPredicate? | VERSION variable? [versionPredicate]?
-    let (_ip2, predicate2) = path_parsers();
+    // versionPredicate : LATEST_VERSION | ALL_VERSIONS | standardPredicate
+    // The third (standardPredicate) alternative is wired here — F-08-02 — so
+    // `VERSION v[commit_audit/time_committed > '2020-01-01']` parses.
     let version_predicate = select! {
         Token::LatestVersion => VersionPredicate::Latest,
         Token::AllVersions => VersionPredicate::All,
-    };
+    }
+    .or(standard.map(|s| VersionPredicate::Standard(Box::new(s))));
     let class_operand = just(Token::Version)
         .ignore_then(ident().or_not())
         .then(
@@ -353,14 +499,13 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
             variable,
             predicate,
         })
-        .or(ident()
-            .then(ident().or_not())
-            .then(predicate2.or_not())
-            .map(|((rm_type, variable), predicate)| ClassExprOperand::Class {
+        .or(ident().then(ident().or_not()).then(predicate.or_not()).map(
+            |((rm_type, variable), predicate)| ClassExprOperand::Class {
                 rm_type,
                 variable,
                 predicate,
-            }));
+            },
+        ));
 
     let contains = recursive(|contains| {
         let atom = class_operand
@@ -473,7 +618,10 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
             .or_not(),
         )
         .map(|(path, order)| OrderByExpr { path, order });
-    let int = select! { Token::Integer(s) => s.parse::<i64>().unwrap_or_default() };
+    // LIMIT/OFFSET counts; overflow is a parse error, not a silent `0`
+    // (F-08-03).
+    let int = select! { Token::Integer(s) => s }
+        .try_map(|s: String, span| s.parse::<i64>().map_err(|_| Simple::new(None, span)));
     let limit = just(Token::Limit)
         .ignore_then(int)
         .then(just(Token::Offset).ignore_then(int).or_not())
@@ -637,6 +785,340 @@ mod tests {
     fn trailing_tokens_are_rejected() {
         // EOF is enforced: junk after a complete query must fail.
         assert!(parse_str("SELECT c FROM COMPOSITION c EXTRA").is_err());
+    }
+
+    // ── F-08-02: VERSION standard-predicate form ──────────────────────────
+    #[test]
+    fn version_latest_and_all_predicates() {
+        for (src, want) in [
+            (
+                "SELECT c FROM VERSION v[LATEST_VERSION]",
+                VersionPredicate::Latest,
+            ),
+            (
+                "SELECT c FROM VERSION v[ALL_VERSIONS]",
+                VersionPredicate::All,
+            ),
+        ] {
+            let q = parse_str(src).expect("parse");
+            match q.from {
+                ContainsExpr::Contained {
+                    operand:
+                        ClassExprOperand::Version {
+                            predicate: Some(p), ..
+                        },
+                    ..
+                } => assert_eq!(p, want),
+                other => panic!("expected version operand, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn version_standard_predicate_parses() {
+        // F-08-02: the third versionPredicate alternative (standardPredicate).
+        let q = parse_str("SELECT c FROM VERSION v[commit_audit/time_committed > '2020-01-01']")
+            .expect("parse");
+        match q.from {
+            ContainsExpr::Contained {
+                operand:
+                    ClassExprOperand::Version {
+                        variable,
+                        predicate: Some(VersionPredicate::Standard(s)),
+                    },
+                ..
+            } => {
+                assert_eq!(variable.as_deref(), Some("v"));
+                assert_eq!(s.op, crate::lexer::CompOp::Gt);
+            }
+            other => panic!("expected VERSION standard predicate, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn version_standard_predicate_with_parameter() {
+        let q = parse_str("SELECT c FROM VERSION v[uid/value = $vid]").expect("parse");
+        assert!(matches!(
+            q.from,
+            ContainsExpr::Contained {
+                operand: ClassExprOperand::Version {
+                    predicate: Some(VersionPredicate::Standard(_)),
+                    ..
+                },
+                ..
+            }
+        ));
+    }
+
+    // ── F-08-03: numeric overflow is a parse error ────────────────────────
+    #[test]
+    fn integer_overflow_is_a_parse_error() {
+        // Was silently coerced to `Integer(0)`; must now fail.
+        assert!(
+            parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 99999999999999999999999").is_err()
+        );
+    }
+
+    #[test]
+    fn in_range_integer_still_parses() {
+        let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 9223372036854775807")
+            .expect("parse i64::MAX");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Compare {
+                rhs: Terminal::Primitive(Primitive::Integer(9_223_372_036_854_775_807)),
+                ..
+            }))
+        ));
+    }
+
+    #[test]
+    fn limit_and_top_overflow_are_parse_errors() {
+        assert!(parse_str("SELECT c FROM COMPOSITION c LIMIT 99999999999999999999999").is_err());
+        assert!(parse_str("SELECT TOP 99999999999999999999999 c FROM COMPOSITION c").is_err());
+    }
+
+    #[test]
+    fn real_overflow_is_a_parse_error() {
+        // Was silently `inf`; must now fail.
+        assert!(parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 1.0e999").is_err());
+    }
+
+    // ── F-08-08: recursive unary minus ────────────────────────────────────
+    #[test]
+    fn double_unary_minus_parses() {
+        let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = - - 5").expect("parse");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Compare {
+                rhs: Terminal::Primitive(Primitive::Integer(5)),
+                ..
+            }))
+        ));
+    }
+
+    #[test]
+    fn single_negative_numeric_parses() {
+        let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = -5").expect("parse");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Compare {
+                rhs: Terminal::Primitive(Primitive::Integer(-5)),
+                ..
+            }))
+        ));
+    }
+
+    // ── F-08-09: string unescaping ────────────────────────────────────────
+    #[test]
+    fn string_escapes_are_decoded() {
+        let q = parse_str(r"SELECT c FROM COMPOSITION c WHERE c/x = 'a\nb\t\\c'").expect("parse");
+        match q.where_ {
+            Some(WhereExpr::Identified(IdentifiedExpr::Compare {
+                rhs: Terminal::Primitive(Primitive::String(s)),
+                ..
+            })) => assert_eq!(s, "a\nb\t\\c"),
+            other => panic!("expected decoded string, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn string_unicode_and_quote_escapes_are_decoded() {
+        assert_eq!(unquote(r"'A\''"), "A'");
+        assert_eq!(unquote(r#""a\"b""#), "a\"b");
+        // UTF8CHAR `\uHHHH`: `A` -> 'A', `é` -> 'é'.
+        assert_eq!(unquote(r"'\u0041\u00e9'"), "Aé");
+        // OCTAL_ESC: octal 101 = 'A'.
+        assert_eq!(unquote(r"'\101'"), "A");
+        // Unknown escape passes through verbatim (total on any input).
+        assert_eq!(unquote(r"'x\z'"), r"x\z");
+        // A stray `\u` with too few hex digits is left verbatim.
+        assert_eq!(unquote(r"'\u12'"), r"\u12");
+    }
+
+    // ── F-08-10: three-way predicate classification ───────────────────────
+    #[test]
+    fn bare_standard_predicate_classifies_as_standard() {
+        // A lone comparison in a predicate is PathPredicate::Standard, not
+        // PathPredicate::Node(NodePredicate::Standard).
+        let q = parse_str("SELECT e FROM EHR e[ehr_id/value = '123']").expect("parse");
+        match q.from {
+            ContainsExpr::Contained {
+                operand:
+                    ClassExprOperand::Class {
+                        predicate: Some(PathPredicate::Standard(s)),
+                        ..
+                    },
+                ..
+            } => assert_eq!(s.op, crate::lexer::CompOp::Eq),
+            other => panic!("expected PathPredicate::Standard, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn boolean_predicate_stays_node() {
+        // A comparison inside an AND tree stays a nodePredicate.
+        let q = parse_str("SELECT o FROM OBSERVATION o[at0001 AND value/magnitude > 5]")
+            .expect("parse");
+        assert!(matches!(
+            q.from,
+            ContainsExpr::Contained {
+                operand: ClassExprOperand::Class {
+                    predicate: Some(PathPredicate::Node(_)),
+                    ..
+                },
+                ..
+            }
+        ));
+    }
+
+    // ── F-08-11: SCI_INTEGER retains integer-ness ─────────────────────────
+    #[test]
+    fn scientific_integer_stays_integer() {
+        let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 1e3").expect("parse");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Compare {
+                rhs: Terminal::Primitive(Primitive::Integer(1000)),
+                ..
+            }))
+        ));
+    }
+
+    #[test]
+    fn scientific_real_is_real() {
+        let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 1.5e2").expect("parse");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Compare {
+                rhs: Terminal::Primitive(Primitive::Real(_)),
+                ..
+            }))
+        ));
+    }
+
+    // ── coverage: constructs previously untested ──────────────────────────
+    #[test]
+    fn like_operand_parses() {
+        let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/name/value LIKE 'blood%'")
+            .expect("parse");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Like { .. }))
+        ));
+        let q =
+            parse_str("SELECT c FROM COMPOSITION c WHERE c/name/value LIKE $pat").expect("parse");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Like {
+                operand: LikeOperand::Parameter(_),
+                ..
+            }))
+        ));
+    }
+
+    #[test]
+    fn matches_uri_and_terminology_operands() {
+        let q = parse_str(
+            "SELECT o FROM OBSERVATION o WHERE o/value MATCHES {http://openehr.org/vs/x}",
+        )
+        .expect("parse");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Matches {
+                operand: MatchesOperand::Uri(_),
+                ..
+            }))
+        ));
+        let q = parse_str(
+            "SELECT o FROM OBSERVATION o WHERE o/value/defining_code \
+             MATCHES terminology('expand', 'snomed', 'x')",
+        )
+        .expect("parse");
+        assert!(matches!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Matches {
+                operand: MatchesOperand::Terminology(_),
+                ..
+            }))
+        ));
+    }
+
+    #[test]
+    fn aggregate_stats_parse() {
+        for (src, want) in [
+            (
+                "SELECT MIN(o/value/magnitude) FROM OBSERVATION o",
+                StatFunc::Min,
+            ),
+            (
+                "SELECT MAX(o/value/magnitude) FROM OBSERVATION o",
+                StatFunc::Max,
+            ),
+            (
+                "SELECT SUM(o/value/magnitude) FROM OBSERVATION o",
+                StatFunc::Sum,
+            ),
+            (
+                "SELECT AVG(o/value/magnitude) FROM OBSERVATION o",
+                StatFunc::Avg,
+            ),
+        ] {
+            let q = parse_str(src).expect("parse");
+            match &q.select.columns[0].column {
+                ColumnExpr::Aggregate(AggregateCall::Stat { func, .. }) => assert_eq!(*func, want),
+                other => panic!("expected stat aggregate, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn top_forward_backward_parses() {
+        let q = parse_str("SELECT TOP 5 BACKWARD c FROM COMPOSITION c").expect("parse");
+        let top = q.select.top.expect("top");
+        assert_eq!(top.count, 5);
+        assert_eq!(top.direction, Some(TopDirection::Backward));
+    }
+
+    #[test]
+    fn parameter_predicates_parse() {
+        // archetypePredicate PARAMETER, and node predicate `[at0002, $name]`.
+        assert!(parse_str("SELECT o FROM OBSERVATION o[$archetypeId]").is_ok());
+        let q = parse_str("SELECT o FROM OBSERVATION o[at0002, $name]").expect("parse");
+        assert!(matches!(
+            q.from,
+            ContainsExpr::Contained {
+                operand: ClassExprOperand::Class {
+                    predicate: Some(PathPredicate::Node(_)),
+                    ..
+                },
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn hyphenated_term_code_in_predicate_parses() {
+        // F-08-01 end-to-end: the node-name term-code slot accepts a hyphenated id.
+        let q =
+            parse_str("SELECT o FROM OBSERVATION o[at0001, SNOMED-CT::1234|x|]").expect("parse");
+        assert!(matches!(
+            q.from,
+            ContainsExpr::Contained {
+                operand: ClassExprOperand::Class {
+                    predicate: Some(PathPredicate::Node(_)),
+                    ..
+                },
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn line_comment_in_query_parses() {
+        // F-08-04 end-to-end.
+        let q = parse_str("SELECT c -- pick the composition\nFROM COMPOSITION c").expect("parse");
+        assert_eq!(q.select.columns.len(), 1);
     }
 
     #[test]

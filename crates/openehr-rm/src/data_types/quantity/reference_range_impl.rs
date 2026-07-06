@@ -1,34 +1,33 @@
-//! Hand-written RM class invariant (ADR-003) for `REFERENCE_RANGE`.
+//! Hand-written RM class invariant + functions (ADR-003) for `REFERENCE_RANGE`.
 //!
-//! `Range_is_simple` (archie `ReferenceRange`): each present, bounded limit of
-//! the `range` must be a *simple* `DV_ORDERED` — one that itself carries no
-//! `normal_range` and no `other_reference_ranges` (so reference ranges do not
-//! nest).
+//! Spec: RM 1.2.0
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.reference_range.adoc`.
+//!
+//! - `Range_is_simple` (invariant): each present, bounded limit of the `range`
+//!   must be a *simple* `DV_ORDERED` — one that itself carries no
+//!   `normal_range` and no `other_reference_ranges` (so reference ranges do
+//!   not nest).
+//! - `is_in_range(v)` (function): whether `v` lies inside `range`, via the
+//!   base `Interval.has` semantics over openEHR ordered magnitudes
+//!   (`dv_interval_impl` / `dv_ordered_impl`). `None` when the comparison is
+//!   undecidable (incomparable types/units or unavailable magnitude).
 
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::reference_range::ReferenceRange;
 use crate::validate::{InvariantViolation, Validate};
 
-/// A `DV_ORDERED` is "simple" when it declares neither a normal range nor other
-/// reference ranges (archie `DvOrdered.isSimple`).
-fn is_simple(o: &DvOrdered) -> bool {
-    match o {
-        DvOrdered::DvCount(x) => x.normal_range.is_none() && x.other_reference_ranges.is_empty(),
-        DvOrdered::DvQuantity(x) => x.normal_range.is_none() && x.other_reference_ranges.is_empty(),
-        DvOrdered::DvOrdinal(x) => x.normal_range.is_none() && x.other_reference_ranges.is_empty(),
-        DvOrdered::DvScale(x) => x.normal_range.is_none() && x.other_reference_ranges.is_empty(),
-        DvOrdered::DvProportion(x) => {
-            x.normal_range.is_none() && x.other_reference_ranges.is_empty()
-        }
-        DvOrdered::DvDate(x) => x.normal_range.is_none() && x.other_reference_ranges.is_empty(),
-        DvOrdered::DvDateTime(x) => x.normal_range.is_none() && x.other_reference_ranges.is_empty(),
-        DvOrdered::DvDuration(x) => x.normal_range.is_none() && x.other_reference_ranges.is_empty(),
-        DvOrdered::DvTime(x) => x.normal_range.is_none() && x.other_reference_ranges.is_empty(),
-    }
+fn limit_ok(unbounded: bool, limit: Option<&DvOrdered>) -> bool {
+    unbounded || limit.is_some_and(DvOrdered::is_simple)
 }
 
-fn limit_ok(unbounded: bool, limit: Option<&DvOrdered>) -> bool {
-    unbounded || limit.is_some_and(is_simple)
+impl ReferenceRange {
+    /// RM `REFERENCE_RANGE.is_in_range(v)`: `true` when `v` is inside `range`.
+    /// `None` when `v` is not strictly comparable to the range limits or a
+    /// magnitude is unavailable.
+    #[must_use]
+    pub fn is_in_range(&self, v: &DvOrdered) -> Option<bool> {
+        self.range.has(v)
+    }
 }
 
 impl Validate for ReferenceRange {
@@ -119,5 +118,22 @@ mod tests {
                 .any(|m| m.message == "Invariant Range_is_simple failed on type REFERENCE_RANGE"),
             "got {v:?}"
         );
+    }
+
+    #[test]
+    fn is_in_range_membership() {
+        let r = range_with(quantity(0.0), quantity(10.0));
+        assert_eq!(
+            r.is_in_range(&DvOrdered::DvQuantity(quantity(5.0))),
+            Some(true)
+        );
+        assert_eq!(
+            r.is_in_range(&DvOrdered::DvQuantity(quantity(11.0))),
+            Some(false)
+        );
+        // A value of a different (incomparable) subtype is undecidable.
+        let mut other = quantity(5.0);
+        other.units = "mm[Hg]".to_owned();
+        assert_eq!(r.is_in_range(&DvOrdered::DvQuantity(other)), None);
     }
 }

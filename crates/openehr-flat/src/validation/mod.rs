@@ -48,9 +48,11 @@ mod subtype;
 mod terminology;
 
 use indexmap::IndexMap;
+use openehr_rm::paths::select_children;
 use openehr_rm::validate::validate_rm_value;
 use serde_json::Value;
 
+use crate::path;
 use crate::webtemplate::{WebTemplate, WebTemplateNode};
 
 /// A single validation violation, keyed by the RM path of the offending node.
@@ -105,6 +107,35 @@ pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<Valida
     // Pass 2: RM-mandated openEHR terminology.
     v.terminology_pass(composition, "", None);
     // Pass 3: archetype conformance guided by the WebTemplate tree.
+    v.walk(composition, &wt.tree);
+    v.out
+}
+
+/// Validate only the **template-independent** passes: RM class invariants + the
+/// RM-mandated openEHR terminology. These hold for *every* RM instance whether
+/// or not an operational template is referenced (RM invariants and terminology
+/// bindings are properties of the instance, not of the archetype — spec 07
+/// finding F-07-02). A COMPOSITION committed without a declared `template_id`
+/// cannot be archetype-conformance-checked, but must still pass these.
+#[must_use]
+pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage> {
+    let mut v = Validator::default();
+    v.rm_invariant_pass(composition, "");
+    v.terminology_pass(composition, "", None);
+    v.out
+}
+
+/// Validate only the archetype-conformance pass against a resolved
+/// [`WebTemplate`] (type conformance, occurrences, cardinality, and leaf domain
+/// constraints). Callers run [`validate_rm_and_terminology`] separately for the
+/// template-independent checks, so this is the additional pass a *declared*
+/// template contributes.
+#[must_use]
+pub fn validate_archetype_conformance(
+    composition: &Value,
+    wt: &WebTemplate,
+) -> Vec<ValidationMessage> {
+    let mut v = Validator::default();
     v.walk(composition, &wt.tree);
     v.out
 }
@@ -197,6 +228,44 @@ impl Validator {
         }
 
         self.check_cardinalities(instance, wt);
+        self.check_existence(instance, wt);
+    }
+
+    /// AOM 1.4 `C_ATTRIBUTE.existence` check (F-07-04): for each mandatory plain
+    /// RM attribute constrained on this node, verify the attribute *field* is
+    /// present on the matched instance. Existence is distinct from occurrences
+    /// (archetype-node-identified children) and cardinality (container
+    /// membership) — it governs whether the attribute field is there at all — so
+    /// this fills the gap for plain structural attributes the occurrence check
+    /// deliberately skips. Only the lower bound (mandatory presence) is enforced;
+    /// the upper bound is governed by RM single-valuedness / cardinality.
+    fn check_existence(&mut self, instance: &Value, wt: &WebTemplateNode) {
+        for ex in &wt.existence {
+            if ex.min < 1 {
+                continue;
+            }
+            let Some(rel) = ex.path.strip_prefix(&wt.aql_path) else {
+                continue;
+            };
+            let segments = path::parse(rel);
+            let Some((last, intermediate)) = segments.split_last() else {
+                continue;
+            };
+            // Navigate the intermediate segments to the container node(s).
+            let containers = path::navigate(&[instance], intermediate);
+            for container in &containers {
+                if attr_absent(container, &last.attribute) {
+                    self.push(
+                        ex.path.clone(),
+                        format!(
+                            "mandatory attribute '{}' is missing (existence {}..)",
+                            last.attribute, ex.min
+                        ),
+                        ValidationKind::Required,
+                    );
+                }
+            }
+        }
     }
 
     /// Resolve a group of `WebTemplate` children sharing an aql path (a single
@@ -214,28 +283,21 @@ impl Validator {
             // Not a path descendant of the parent (unexpected) — skip.
             return;
         };
-        let segments = parse_segments(rel);
+        let segments = path::parse(rel);
         if segments.is_empty() {
             return;
         }
-        // The identity segment is the last one carrying a node-id predicate; if
-        // none carries one, the last segment (a plain single-valued attribute).
+        // The identity segment is the last one carrying a predicate; if none
+        // carries one, the last segment (a plain single-valued attribute).
         let identity_idx = segments
             .iter()
-            .rposition(|s| !matches!(s.pred, Pred::Any))
+            .rposition(|s| !s.predicate.is_empty())
             .unwrap_or(segments.len() - 1);
         let id_seg = &segments[identity_idx];
         let trailing = &segments[identity_idx + 1..];
 
         // Navigate the intermediate segments to the container node(s).
-        let mut containers: Vec<&Value> = vec![parent];
-        for seg in &segments[..identity_idx] {
-            containers = containers
-                .iter()
-                .flat_map(|c| get_attr(c, &seg.attr))
-                .filter(|n| seg.pred.matches(n))
-                .collect();
-        }
+        let containers = path::navigate(&[parent], &segments[..identity_idx]);
 
         // Occurrences are an *archetype-node* constraint: only checked when the
         // matched node is identified by an archetype-node predicate (at-code /
@@ -249,8 +311,8 @@ impl Validator {
         // single ISM_TRANSITION — occurrence-checking them would spuriously demand
         // every state, so they are skipped (ISM_TRANSITION presence is an RM
         // invariant). `in_context` nodes are supplied structurally.
-        let occ_applies = matches!(id_seg.pred, Pred::Node(_) | Pred::NodeNamed(..))
-            && id_seg.attr != "ism_transition"
+        let occ_applies = id_seg.predicate.archetype_node_id.is_some()
+            && id_seg.attribute != "ism_transition"
             && !group.iter().any(|c| c.in_context == Some(true));
         let group_min = group.iter().filter_map(|c| c.min).min().unwrap_or(0).max(0);
         let group_max = if group.iter().any(|c| c.max == -1) {
@@ -260,15 +322,12 @@ impl Validator {
         };
 
         for container in &containers {
-            let matched: Vec<&Value> = get_attr(container, &id_seg.attr)
-                .into_iter()
-                .filter(|n| id_seg.pred.matches(n))
-                .collect();
+            let matched = select_children(container, id_seg);
             if occ_applies {
                 self.emit_occurrences(&first.aql_path, group_min, group_max, matched.len());
             }
             for node in matched {
-                for target in navigate_trailing(node, trailing) {
+                for target in path::navigate(&[node], trailing) {
                     if group.len() == 1 {
                         self.walk(target, first);
                     } else {
@@ -339,24 +398,16 @@ impl Validator {
             let Some(rel) = card.path.strip_prefix(&wt.aql_path) else {
                 continue;
             };
-            let segments = parse_segments(rel);
-            if segments.is_empty() {
+            let segments = path::parse(rel);
+            let Some((last, intermediate)) = segments.split_last() else {
                 continue;
-            }
+            };
             // Navigate all but the last segment to the container, then count the
             // last attribute's children (cardinality is over the whole set).
-            let mut containers: Vec<&Value> = vec![instance];
-            for seg in &segments[..segments.len() - 1] {
-                containers = containers
-                    .iter()
-                    .flat_map(|c| get_attr(c, &seg.attr))
-                    .filter(|n| seg.pred.matches(n))
-                    .collect();
-            }
-            let last = &segments[segments.len() - 1];
+            let containers = path::navigate(&[instance], intermediate);
             for container in &containers {
                 let count =
-                    i32::try_from(get_attr(container, &last.attr).len()).unwrap_or(i32::MAX);
+                    i32::try_from(select_children(container, last).len()).unwrap_or(i32::MAX);
                 let min = card.min.unwrap_or(0).max(0);
                 if count < min {
                     self.push(
@@ -381,128 +432,31 @@ impl Validator {
 }
 
 // ── path navigation ───────────────────────────────────────────────────────────
+//
+// RM-path parsing (`[atNNNN]` / `[archetype-id]` / `[atNNNN,'name']` predicates)
+// and per-step navigation over the canonical-JSON tree are the single
+// implementation in [`openehr_rm::paths`], reached here via [`crate::path`]
+// (`parse` / `navigate` / `select_children`). Only the checks below —
+// attribute-presence for the existence rule and RM instance-path
+// normalisation — are validation-specific.
 
-/// A predicate on a path segment (`[atNNNN]`, `[archetype_id]`, `[atNNNN,'Name']`).
-enum Pred {
-    /// No predicate — matches every node under the attribute.
-    Any,
-    /// Matches a node whose `archetype_node_id` equals this id.
-    Node(String),
-    /// Matches a node whose `archetype_node_id` and `name/value` both match.
-    NodeNamed(String, String),
-}
-
-impl Pred {
-    fn matches(&self, node: &Value) -> bool {
-        match self {
-            Pred::Any => true,
-            Pred::Node(id) => node_id(node) == Some(id.as_str()),
-            Pred::NodeNamed(id, name) => {
-                node_id(node) == Some(id.as_str()) && instance_name(node).as_deref() == Some(name)
-            }
-        }
-    }
-}
-
-/// One parsed path segment: an RM attribute plus an optional predicate.
-struct Segment {
-    attr: String,
-    pred: Pred,
-}
-
-/// Parse a relative aql path (`/attr[pred]/attr2/…`) into segments, respecting
-/// `[...]` brackets (a `/` inside a predicate does not split).
-fn parse_segments(rel: &str) -> Vec<Segment> {
-    let mut raw: Vec<&str> = Vec::new();
-    let (mut depth, mut start) = (0i32, 0usize);
-    for (i, c) in rel.char_indices() {
-        match c {
-            '[' => depth += 1,
-            ']' => depth -= 1,
-            '/' if depth == 0 => {
-                if i > start {
-                    raw.push(&rel[start..i]);
-                }
-                start = i + 1;
-            }
-            _ => {}
-        }
-    }
-    if start < rel.len() {
-        raw.push(&rel[start..]);
-    }
-    raw.into_iter().map(parse_segment).collect()
-}
-
-fn parse_segment(seg: &str) -> Segment {
-    let Some(open) = seg.find('[') else {
-        return Segment {
-            attr: seg.to_owned(),
-            pred: Pred::Any,
-        };
-    };
-    let attr = seg[..open].to_owned();
-    let inner = seg[open + 1..].trim_end_matches(']');
-    let pred = match inner.split_once(',') {
-        Some((id, name)) => Pred::NodeNamed(
-            id.trim().to_owned(),
-            name.trim().trim_matches('\'').trim_matches('"').to_owned(),
-        ),
-        None => {
-            if inner.is_empty() {
-                Pred::Any
-            } else {
-                Pred::Node(inner.trim().to_owned())
-            }
-        }
-    };
-    Segment { attr, pred }
-}
-
-/// The object(s) under an RM attribute: a single object → one, an array → each
-/// object element, anything else → none.
-fn get_attr<'a>(node: &'a Value, attr: &str) -> Vec<&'a Value> {
+/// Whether an RM attribute field is absent (missing, JSON `null`, or an empty
+/// array) on a node — the negation of "the attribute is present" for the
+/// existence check.
+fn attr_absent(node: &Value, attr: &str) -> bool {
     match node.get(attr) {
-        Some(Value::Array(a)) => a.iter().filter(|v| v.is_object()).collect(),
-        Some(v @ Value::Object(_)) => vec![v],
-        _ => Vec::new(),
-    }
-}
-
-/// Follow a chain of trailing (predicate-free) attributes from a node, returning
-/// the reached object nodes. An empty chain returns the node itself.
-fn navigate_trailing<'a>(node: &'a Value, segments: &[Segment]) -> Vec<&'a Value> {
-    let mut current = vec![node];
-    for seg in segments {
-        current = current
-            .iter()
-            .flat_map(|c| get_attr(c, &seg.attr))
-            .filter(|n| seg.pred.matches(n))
-            .collect();
-    }
-    current
-}
-
-fn node_id(node: &Value) -> Option<&str> {
-    node.get("archetype_node_id").and_then(Value::as_str)
-}
-
-/// A node's `name/value` (the `name` is a `DV_TEXT`, or occasionally a bare
-/// string).
-fn instance_name(node: &Value) -> Option<String> {
-    match node.get("name") {
-        Some(Value::String(s)) => Some(s.clone()),
-        Some(Value::Object(o)) => o.get("value").and_then(Value::as_str).map(str::to_owned),
-        _ => None,
+        None | Some(Value::Null) => true,
+        Some(Value::Array(a)) => a.is_empty(),
+        Some(_) => false,
     }
 }
 
 /// Normalize an RM instance path (empty → the root `/`).
-fn norm_path(path: &str) -> String {
-    if path.is_empty() {
+fn norm_path(p: &str) -> String {
+    if p.is_empty() {
         "/".to_owned()
     } else {
-        path.to_owned()
+        p.to_owned()
     }
 }
 

@@ -4,7 +4,7 @@
 use crate::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use crate::am24::aom2::rules::expr_archetype_id_constraint::ExprArchetypeIdConstraint;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Expression tree leaf item representing a constraint on a primitive type, expressed in the form of a concrete subtype of C_PRIMITIVE_OBJECT.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -16,9 +16,39 @@ pub struct ExprConstraintData {
 
 /// Expression tree leaf item representing a constraint on a primitive type, expressed in the form of a concrete subtype of C_PRIMITIVE_OBJECT.
 /// Polymorphic slot of `EXPR_CONSTRAINT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExprConstraint {
     ExprArchetypeIdConstraint(ExprArchetypeIdConstraint),
     ExprConstraint(ExprConstraintData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ExprConstraint {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("EXPR_ARCHETYPE_ID_CONSTRAINT") => {
+                ::core::result::Result::Ok(Self::ExprArchetypeIdConstraint(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EXPR_CONSTRAINT") => {
+                ::core::result::Result::Ok(Self::ExprConstraint(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::ExprConstraint(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "EXPR_CONSTRAINT: unexpected `_type` {__other:?} (expected one of: EXPR_ARCHETYPE_ID_CONSTRAINT, EXPR_CONSTRAINT)"
+                )))
+            }
+        }
+    }
 }

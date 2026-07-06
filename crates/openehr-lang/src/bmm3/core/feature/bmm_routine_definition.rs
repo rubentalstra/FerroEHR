@@ -2,13 +2,45 @@
 
 use crate::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine;
 use crate::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract ancestor of routine body meta-types.
 /// Closed subtype set of `BMM_ROUTINE_DEFINITION` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmRoutineDefinition {
     BmmExternalRoutine(BmmExternalRoutine),
     BmmLocalRoutine(BmmLocalRoutine),
+}
+
+impl<'de> ::serde::Deserialize<'de> for BmmRoutineDefinition {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("BMM_EXTERNAL_ROUTINE") => {
+                ::core::result::Result::Ok(Self::BmmExternalRoutine(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_LOCAL_ROUTINE") => {
+                ::core::result::Result::Ok(Self::BmmLocalRoutine(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "BMM_ROUTINE_DEFINITION: missing required `_type` on polymorphic slot (expected one of: BMM_EXTERNAL_ROUTINE, BMM_LOCAL_ROUTINE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "BMM_ROUTINE_DEFINITION: unexpected `_type` {__other:?} (expected one of: BMM_EXTERNAL_ROUTINE, BMM_LOCAL_ROUTINE)"
+                )))
+            }
+        }
+    }
 }

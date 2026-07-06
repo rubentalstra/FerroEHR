@@ -1,11 +1,31 @@
 # ADR-007: Squashed sqlx baseline migrations, verified against the EHRbase Flyway chain
 
-- **Status:** accepted
+- **Status:** **superseded by ADR-008** (the shipped schema content). The sqlx
+  two-schema migrator + testcontainer gate + baseline-per-schema *method* it
+  established are retained; the EHRbase-derived schema it shipped is not.
 - **Date:** 2026-07-05
 - **Amends:** ADR-006 §4 ("the 41 Flyway SQL migrations … are the schema, run
   via `sqlx migrate`") — the *schema* is still EHRbase's v2 schema verbatim;
   the *files* that create it are now our own clean baselines.
 - **Phase:** P09 (persistence foundation).
+
+> ## ⚠️ AMENDMENT (2026-07-05, ADR-008): the shipped schema is greenfield, not the EHRbase baseline
+>
+> This ADR's central deliverable — a squashed EHRbase-Flyway baseline
+> (`migrations/{ext,ehr}/0001_baseline.sql`), the verbatim
+> `crates/ehrbase/tests/resources/legacy_schema/` fixture, and the
+> `baseline_schema_is_identical_to_legacy_flyway_chain` equality gate — was
+> **replaced by ADR-008 §2** the same day. The tree now ships the greenfield
+> PG18-native schema instead: `crates/ehrbase/migrations/ehr/0001_schema.sql`
+> (unified `node` table + temporal `vo_version` + `ehr`/`audit`/`contribution`/
+> `template_store`/`stored_query`/`item_tag`) and
+> `ext/0001_openehr_functions.sql`. **The `legacy_schema/` fixture and the
+> equality-gate test no longer exist.** What ADR-008 *retained* from this ADR is
+> only the infrastructure and method: the sqlx two-schema migrator + bootstrap
+> (`ehrbase::db::run_migrations`), the testcontainer PG18 gate, and one squashed
+> `0001_*` baseline per schema authored via the official `sqlx migrate add` CLI.
+> Read the Context/Decision below as the historical rationale for that method,
+> not as a description of the current schema.
 
 ## Context
 

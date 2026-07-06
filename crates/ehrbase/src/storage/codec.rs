@@ -12,6 +12,7 @@ use crate::storage::StorageError;
 const STRUCTURE_TYPES: &[&str] = &[
     "COMPOSITION",
     "EHR_STATUS",
+    "EHR_ACCESS",
     "FOLDER",
     "EVENT_CONTEXT",
     "SECTION",

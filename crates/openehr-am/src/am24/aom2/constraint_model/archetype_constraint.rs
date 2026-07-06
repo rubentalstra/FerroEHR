@@ -13,11 +13,11 @@ use crate::am24::aom2::constraint_model::primitive::c_real::CReal;
 use crate::am24::aom2::constraint_model::primitive::c_string::CString;
 use crate::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use crate::am24::aom2::constraint_model::primitive::c_time::CTime;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract parent of all constraint model types. Defines conformance and congruence function signatures.
 /// Closed subtype set of `ARCHETYPE_CONSTRAINT` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ArchetypeConstraint {
     ArchetypeSlot(Box<ArchetypeSlot>),
@@ -33,4 +33,88 @@ pub enum ArchetypeConstraint {
     CString(Box<CString>),
     CTerminologyCode(Box<CTerminologyCode>),
     CTime(Box<CTime>),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ArchetypeConstraint {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("ARCHETYPE_SLOT") => {
+                ::core::result::Result::Ok(Self::ArchetypeSlot(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_ARCHETYPE_ROOT") => {
+                ::core::result::Result::Ok(Self::CComplexObject(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_ATTRIBUTE") => {
+                ::core::result::Result::Ok(Self::CAttribute(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_BOOLEAN") => {
+                ::core::result::Result::Ok(Self::CBoolean(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_COMPLEX_OBJECT") => {
+                ::core::result::Result::Ok(Self::CComplexObject(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_COMPLEX_OBJECT_PROXY") => {
+                ::core::result::Result::Ok(Self::CComplexObjectProxy(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_DATE") => ::core::result::Result::Ok(Self::CDate(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("C_DATE_TIME") => {
+                ::core::result::Result::Ok(Self::CDateTime(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_DURATION") => {
+                ::core::result::Result::Ok(Self::CDuration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_INTEGER") => {
+                ::core::result::Result::Ok(Self::CInteger(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_REAL") => ::core::result::Result::Ok(Self::CReal(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("C_STRING") => ::core::result::Result::Ok(Self::CString(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("C_TERMINOLOGY_CODE") => {
+                ::core::result::Result::Ok(Self::CTerminologyCode(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("C_TIME") => ::core::result::Result::Ok(Self::CTime(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "ARCHETYPE_CONSTRAINT: missing required `_type` on polymorphic slot (expected one of: ARCHETYPE_SLOT, C_ARCHETYPE_ROOT, C_ATTRIBUTE, C_BOOLEAN, C_COMPLEX_OBJECT, C_COMPLEX_OBJECT_PROXY, C_DATE, C_DATE_TIME, C_DURATION, C_INTEGER, C_REAL, C_STRING, C_TERMINOLOGY_CODE, C_TIME)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "ARCHETYPE_CONSTRAINT: unexpected `_type` {__other:?} (expected one of: ARCHETYPE_SLOT, C_ARCHETYPE_ROOT, C_ATTRIBUTE, C_BOOLEAN, C_COMPLEX_OBJECT, C_COMPLEX_OBJECT_PROXY, C_DATE, C_DATE_TIME, C_DURATION, C_INTEGER, C_REAL, C_STRING, C_TERMINOLOGY_CODE, C_TIME)"
+                )))
+            }
+        }
+    }
 }

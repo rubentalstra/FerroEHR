@@ -27,8 +27,8 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
+use ehrbase_rest::EhrService;
 use openehr_its::rest::generated::definition::DefinitionApi;
-use openehr_its::rest::generated::ehr::EhrApi;
 use openehr_its::rest::runtime::ApiError;
 
 struct Pg {
@@ -114,7 +114,10 @@ async fn composition_validation_gates_persistence() {
         .ehr_create(params(json!({})), None)
         .await
         .expect("ehr_create");
-    let ehr_id = ehr["ehr_id"]["value"].as_str().expect("ehr_id").to_owned();
+    let ehr_id = ehr.body["ehr_id"]["value"]
+        .as_str()
+        .expect("ehr_id")
+        .to_owned();
 
     // ── valid composition → committed and retrievable ────────────────────────
     let created = svc
@@ -124,7 +127,10 @@ async fn composition_validation_gates_persistence() {
         )
         .await
         .expect("valid composition accepted (201)");
-    let ovid = created["uid"]["value"].as_str().expect("uid").to_owned();
+    let ovid = created.body["uid"]["value"]
+        .as_str()
+        .expect("uid")
+        .to_owned();
     let vo_id = ovid.split("::").next().unwrap().to_owned();
 
     let fetched = svc
@@ -132,7 +138,7 @@ async fn composition_validation_gates_persistence() {
         .await
         .expect("valid composition persisted");
     assert_eq!(
-        fetched["uid"]["value"], ovid,
+        fetched.body["uid"]["value"], ovid,
         "persisted composition round-trips"
     );
     assert_eq!(
@@ -203,7 +209,10 @@ async fn composition_update_is_validated() {
         .ehr_create(params(json!({})), None)
         .await
         .expect("ehr_create");
-    let ehr_id = ehr["ehr_id"]["value"].as_str().expect("ehr_id").to_owned();
+    let ehr_id = ehr.body["ehr_id"]["value"]
+        .as_str()
+        .expect("ehr_id")
+        .to_owned();
 
     // Seed a valid v1.
     let v1 = svc
@@ -213,7 +222,7 @@ async fn composition_update_is_validated() {
         )
         .await
         .expect("valid v1");
-    let ovid_v1 = v1["uid"]["value"].as_str().expect("uid").to_owned();
+    let ovid_v1 = v1.body["uid"]["value"].as_str().expect("uid").to_owned();
     let vo_id = ovid_v1.split("::").next().unwrap().to_owned();
 
     // An update whose body fails template validation is rejected (422) and the
@@ -235,7 +244,7 @@ async fn composition_update_is_validated() {
         .await
         .expect("current still readable");
     assert_eq!(
-        current["uid"]["value"], ovid_v1,
+        current.body["uid"]["value"], ovid_v1,
         "the rejected update did not advance the version"
     );
 }

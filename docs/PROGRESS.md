@@ -40,19 +40,26 @@ partially superseded. Phase files 10/16/19 re-scoped.
 
 | # | Phase | Title | Status | Consumes / crates |
 |---|---|---|---|---|
-| 1 | 09 | Persistence foundation | **done (2026-07-05)** | `ehrbase::db` (settings/pool/migrate/iden); squashed `0001_baseline.sql` per schema + schema-equality gate vs the legacy Flyway chain (ADR-007); `sea-query-sqlx` replaces `sea-query-binder`; testcontainers PG18, 8/8 tests |
+| 1 | 09 | Persistence foundation | **done (2026-07-05)** | `ehrbase::db` (settings/pool/migrate/iden); the ADR-007 legacy-Flyway baseline + equality gate was subsequently replaced by the greenfield `0001_schema.sql` per schema (ADR-008); `sea-query-sqlx` replaces `sea-query-binder`; testcontainers PG18 |
 | 2 | 10 | Storage foundation (greenfield node model, ADR-008) | **done (2026-07-05)** | Spike-validated schema (node per-version + temporal vo_version + ext magnitude fns); lossless node codec (`ehrbase::storage`); 15/15 tests |
 | 3 | 11 | REST server foundation + **auth** | **done (2026-07-05)** | `ehrbase-rest` axum app: all 5 generated `*Api` traits mounted (~96 ops) via a generic `ROUTES` dispatcher + type-directed `*Params` deserializer; full `tower-http` stack; JSON/XML negotiation (`openehr-its`); Basic (argon2) + OAuth2/OIDC bearer (jsonwebtoken/JWKS, resource-server) as one middleware (401/403); `figment` config; Swagger UI + status/health/info; `ehrbase` binary boots. 48 crate + 107/107 workspace tests, clippy-clean |
-| 4 | 12 | Service layer (versioning, contributions, audit) | **in progress (2026-07-05)** | `ehrbase::service` (DI `Backend` seam): EHR/EHR_STATUS/COMPOSITION/DIRECTORY/CONTRIBUTION CRUD on the `node`/`vo_version` store, temporal versioning + time-travel, `contribution_create` (atomic multi-version), revision history, `ehr_get_by_subject`, stored-query CRUD, item-tag CRUD, committer-from-principal; e2e on PG 18 (8 tests). Open: typed XML responses, demographic, template link (P13), AQL (P16), RBAC (S2) |
-| 5 | 13 | Template ingestion (OPT 1.4 XML, ADL/AOM) | not-started | `openehr-am`, `openehr-lang` |
-| 6 | 14 | WebTemplate builder | not-started | P13, `moka` |
-| 7 | 15 | Composition validation | not-started | P14, `openehr-term` |
-| 8 | 16 | AQL engine (AST→ASL→SQL) | not-started | `openehr-query`, P09/P10/P14, `sea-query` |
+| 4 | 12 | Service layer (versioning, contributions, audit) | **done (2026-07-05, PR #16)** | `ehrbase::service` (DI `Backend` seam): EHR/EHR_STATUS/COMPOSITION/DIRECTORY/CONTRIBUTION CRUD on the `node`/`vo_version` store, temporal versioning + time-travel, `contribution_create` (atomic multi-version), revision history, `ehr_get_by_subject`, stored-query CRUD, item-tag CRUD, committer-from-principal, typed XML responses (`respond_rm`); e2e on PG 18 |
+| 5 | 13 | Template ingestion (OPT 1.4 XML) | **done (2026-07-05, PR #17)** | Codegen `emit-opt` → `openehr-its::opt14` (typed OPT + C_* tree + XML); all 91 vendored `.opt` parse; DEFINITION `adl1.4` upload/list/get on `template_store`; `adl2` = 501 |
+| 6 | 14 | WebTemplate + FLAT/STRUCTURED (SDT surface) | **done (2026-07-05, PR #18)** | `openehr-flat`: WebTemplate builder + FLAT + STRUCTURED (Better parity), `moka`-cached; SDT endpoints |
+| 7 | 15 | Composition validation | **done (2026-07-06, PR #19)** | RM invariants + terminology + WebTemplate walk → ITS-REST 422 |
+| 8 | 16 | AQL engine (typed IR → SQL, ADR-008) | not-started | `openehr-query`, P09/P10/P14, `sea-query` — **current phase** |
 | 9 | 17 | FLAT/STRUCTURED + EhrScape | not-started | `openehr-flat`, `ehrbase-compat`, P14 |
 | 10 | 18 | Workspace integration | not-started | binary wiring; delete ported-out Java |
 | 11 | 19 | openEHR conformance (CNF schedule, ADR-008) | not-started | `specifications-CNF` runners, corpus suites |
 | 12 | 20 | Optimization | not-started | PG18 AIO, pipelining, `JSON_TABLE` |
 | 13 | 99 | Cutover | not-started | delete residual Java/Maven; tag release |
 
-**Stage 2** (after P19 parity holds): RBAC/attribute authz, plugin system,
+**Stage 2** (after P19 conformance holds): RBAC/attribute authz, plugin system,
 multi-tenancy — see `PORT_MASTER_PLAN §11`.
+
+## Spec audit (2026-07-06)
+
+Full-codebase audit against the vendored openEHR specs: **14 areas, ~197
+findings** tracked in `docs/spec-audit/SPEC_AUDIT.md` (per-finding checkboxes in
+`docs/spec-audit/findings/`). Fixes land in waves on `claude/spec-audit-full`;
+Wave 1 (critical wire/CNF divergences) underway.

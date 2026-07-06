@@ -110,21 +110,39 @@ async fn template_upload_list_get_roundtrip() {
         "retrieved OPT XML is byte-identical to the upload"
     );
 
-    // Re-upload replaces idempotently (ON CONFLICT), still one row, still retrievable.
-    svc.definition_template_adl1_4_upload(params(json!({})), Value::String(xml.clone()))
+    // Re-uploading an existing template_id is a 409 Conflict, not a silent
+    // overwrite: OPTs are immutable on the adl1.4 endpoint (ITS-REST
+    // `409_template_already_exists.yaml`; CNF `upload_opt-valid_opt_twice_conflict`).
+    let conflict = svc
+        .definition_template_adl1_4_upload(params(json!({})), Value::String(xml.clone()))
         .await
-        .expect("re-upload");
+        .expect_err("re-upload of an existing template_id must conflict");
+    assert!(
+        matches!(conflict, openehr_its::rest::runtime::ApiError::Conflict(_)),
+        "got {conflict:?}"
+    );
+
+    // The original template is untouched and there is still exactly one row.
     let list2 = svc
         .definition_template_adl1_4_list(params(json!({})))
         .await
-        .expect("list after re-upload");
+        .expect("list after conflicting re-upload");
     assert_eq!(
         list2
             .iter()
             .filter(|t| t["template_id"] == TEMPLATE_ID)
             .count(),
         1,
-        "re-upload replaced, not duplicated"
+        "conflicting re-upload did not duplicate"
+    );
+    let still = svc
+        .definition_template_adl1_4_get(params(json!({ "template_id": TEMPLATE_ID })))
+        .await
+        .expect("get after conflict");
+    assert_eq!(
+        still.as_str().expect("xml"),
+        xml,
+        "conflicting re-upload did not overwrite the stored OPT"
     );
 }
 

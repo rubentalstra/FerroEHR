@@ -31,9 +31,9 @@ const XSD_V1_DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL"
 );
-/// v2 (namespace `.../v2`) XSD root (per-component release folders). Reserved for
-/// a future v2-specific trait if the wire shape ever diverges from v1 (ADR-005).
-#[allow(dead_code)]
+/// v2 (namespace `.../v2`) XSD root (per-component release folders). Supplies the
+/// RM-instance types the v1 `ALL/` bundle lacks (EHR + demographic) or carries
+/// stale (extract) to the emit-xml input (ADR-005; F-05-01).
 const XSD_V2_DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../openehr-its/schemas/xml/its-xml-2.0.0-nsv2"
@@ -169,10 +169,20 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
     // identical across the two ITS-XML lineages; they differ only by the root
     // `xmlns` string, which the `Namespace` serialize-time param selects. So a
     // single `ToXml` impl set — generated from the v1 (parity) XSD — serves both
-    // (one impl per type; a second set would be a duplicate-impl conflict). The
-    // v2 XSDs stay vendored; a genuine v2 structural divergence, if it ever
-    // appears, would get its own trait then.
-    let v1 = xsd::XsdModel::parse_files(&xsd::v1_files(Path::new(XSD_V1_DIR)))?;
+    // (one impl per type; a second set would be a duplicate-impl conflict).
+    //
+    // The v1 `ALL/` bundle is not a complete RM closure: it has no `Ehr.xsd` and
+    // no demographic schema, and its `Extract.xsd` is the stale RM-1.0.2 model.
+    // So the emit-xml input is the v1 *served* core (which wins for shared types
+    // via first-wins `.or_insert`) followed by the v2 RM-1.1.0 EHR/demographic/
+    // extract schemas, which supply the LOCATABLE subtypes the v1 bundle lacks —
+    // resolving `archetype_node_id` as the required XML **attribute** for
+    // EHR_STATUS/EHR_ACCESS, the demographic PARTY hierarchy, and the extract
+    // LOCATABLE subtypes (F-05-01). Same wire shape bar the root `xmlns`.
+    let v1 = xsd::XsdModel::parse_files(&xsd::xml_emit_files(
+        Path::new(XSD_V1_DIR),
+        Path::new(XSD_V2_DIR),
+    ))?;
 
     let gen_dir = Path::new(ITS_ROOT).join("src/xml/generated");
     std::fs::create_dir_all(&gen_dir)?;
@@ -190,7 +200,7 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
         },
     ];
     let mut unmatched = Vec::new();
-    let body = emit_xml::emit_file(&schemas, &v1, &mut unmatched);
+    let body = emit_xml::emit_file(&schemas, &v1, &mut unmatched)?;
     let impls_path = gen_dir.join("impls.rs");
     std::fs::write(&impls_path, &body)?;
 

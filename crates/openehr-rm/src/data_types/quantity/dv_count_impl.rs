@@ -1,9 +1,12 @@
 //! Hand-written RM class invariants (ADR-003) for `DV_COUNT`.
 //!
 //! `DV_COUNT` inherits the DV_AMOUNT / DV_QUANTIFIED invariants
-//! (`Accuracy_is_percent_validity`, `Accuracy_valid`, `Magnitude_status_valid`).
+//! (`Accuracy_is_percent_validity`, `Accuracy_valid`, `Magnitude_status_valid`)
+//! plus the DV_ORDERED `Normal_range_and_status_consistency` (via the
+//! ordered-magnitude machinery in `dv_ordered_impl`, F-12-04/06).
 
 use crate::data_types::quantity::dv_count::DvCount;
+use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::validate::{InvariantViolation, Validate, push_dv_amount_invariants};
 
 impl Validate for DvCount {
@@ -14,6 +17,13 @@ impl Validate for DvCount {
             self.accuracy,
             self.accuracy_is_percent,
             self.magnitude_status.as_deref(),
+        );
+        push_normal_range_consistency(
+            out,
+            "DV_COUNT",
+            self.normal_status.as_ref(),
+            self.normal_range.as_deref(),
+            self,
         );
     }
 }

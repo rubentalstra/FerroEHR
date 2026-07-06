@@ -172,6 +172,12 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::AuthoredResource {
             v.write_xml(w, "description", Some("RESOURCE_DESCRIPTION"))?;
         }
         // PORT NOTE: Hash<String, TRANSLATION_DETAILS> field `translations` is off the RM canonical-XML wire (resource metadata); not serialized.
+        if let Some(v) = &self.uid {
+            v.write_xml(w, "uid", Some("UUID"))?;
+        }
+        if let Some(v) = &self.annotations {
+            v.write_xml(w, "annotations", Some("RESOURCE_ANNOTATIONS"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -256,6 +262,9 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::CodePhrase {
             .write_xml(w, "terminology_id", Some("TERMINOLOGY_ID"))?;
         self.code_string
             .write_xml(w, "code_string", Some("String"))?;
+        if let Some(v) = &self.preferred_term {
+            v.write_xml(w, "preferred_term", Some("String"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -1871,6 +1880,42 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescription {
         // PORT NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
         self.parent_resource
             .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
+        if let Some(v) = &self.title {
+            v.write_xml(w, "title", Some("String"))?;
+        }
+        if let Some(v) = &self.original_namespace {
+            v.write_xml(w, "original_namespace", Some("String"))?;
+        }
+        if let Some(v) = &self.original_publisher {
+            v.write_xml(w, "original_publisher", Some("String"))?;
+        }
+        if let Some(v) = &self.custodian_namespace {
+            v.write_xml(w, "custodian_namespace", Some("String"))?;
+        }
+        if let Some(v) = &self.custodian_organisation {
+            v.write_xml(w, "custodian_organisation", Some("String"))?;
+        }
+        if let Some(v) = &self.copyright {
+            v.write_xml(w, "copyright", Some("String"))?;
+        }
+        if let Some(v) = &self.licence {
+            v.write_xml(w, "licence", Some("String"))?;
+        }
+        if let Some(m) = &self.ip_acknowledgements {
+            for (k, v) in m {
+                w.write_kv_element("ip_acknowledgements", k, v)?;
+            }
+        }
+        if let Some(m) = &self.references {
+            for (k, v) in m {
+                w.write_kv_element("references", k, v)?;
+            }
+        }
+        if let Some(m) = &self.conversion_details {
+            for (k, v) in m {
+                w.write_kv_element("conversion_details", k, v)?;
+            }
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -2291,6 +2336,12 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::TranslationDetails {
             for (k, v) in m {
                 w.write_kv_element("other_details", k, v)?;
             }
+        }
+        if let Some(v) = &self.version_last_translated {
+            v.write_xml(w, "version_last_translated", Some("String"))?;
+        }
+        for v in &self.other_contributors {
+            v.write_xml(w, "other_contributors", Some("String"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -2875,6 +2926,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Action {
         if let Some(v) = &self.instruction_details {
             v.write_xml(w, "instruction_details", Some("INSTRUCTION_DETAILS"))?;
         }
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -3213,14 +3267,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Address {
                 __attrs.push(("xsi:type", "ADDRESS".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -3246,7 +3299,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Address {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -3257,10 +3309,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Address {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -3294,9 +3342,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Address {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -3447,6 +3500,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::AdminEntry {
             v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
         }
         self.data.write_xml(w, "data", Some("ITEM_STRUCTURE"))?;
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -3573,14 +3629,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Agent {
                 __attrs.push(("xsi:type", "AGENT".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -3599,17 +3654,17 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Agent {
         for v in &self.contacts {
             v.write_xml(w, "contacts", Some("CONTACT"))?;
         }
-        if let Some(v) = &self.details {
-            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
-        }
         for v in &self.relationships {
             v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
         }
-        for v in &self.languages {
-            v.write_xml(w, "languages", Some("DV_TEXT"))?;
+        if let Some(v) = &self.details {
+            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
         for v in &self.roles {
             v.write_xml(w, "roles", Some("PARTY_REF"))?;
+        }
+        for v in &self.languages {
+            v.write_xml(w, "languages", Some("DV_TEXT"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -3622,7 +3677,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Agent {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -3638,10 +3692,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Agent {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -3690,9 +3740,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Agent {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -4159,14 +4214,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Capability {
                 __attrs.push(("xsi:type", "CAPABILITY".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -4195,7 +4249,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Capability {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -4207,10 +4260,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Capability {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -4248,9 +4297,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Capability {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -4449,6 +4503,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::CodePhrase {
             .write_xml(w, "terminology_id", Some("TERMINOLOGY_ID"))?;
         self.code_string
             .write_xml(w, "code_string", Some("String"))?;
+        if let Some(v) = &self.preferred_term {
+            v.write_xml(w, "preferred_term", Some("String"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -4717,14 +4774,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Contact {
                 __attrs.push(("xsi:type", "CONTACT".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -4737,11 +4793,11 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Contact {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.addresses {
-            v.write_xml(w, "addresses", Some("ADDRESS"))?;
-        }
         if let Some(v) = &self.time_validity {
             v.write_xml(w, "time_validity", Some("DV_INTERVAL"))?;
+        }
+        for v in &self.addresses {
+            v.write_xml(w, "addresses", Some("ADDRESS"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -4754,7 +4810,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Contact {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -4766,10 +4821,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Contact {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -4807,9 +4858,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Contact {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -6952,6 +7008,12 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvQuantity {
         if let Some(v) = &self.precision {
             v.write_xml(w, "precision", Some("Integer"))?;
         }
+        if let Some(v) = &self.units_system {
+            v.write_xml(w, "units_system", Some("String"))?;
+        }
+        if let Some(v) = &self.units_display_name {
+            v.write_xml(w, "units_display_name", Some("String"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -7674,23 +7736,23 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Ehr {
         self.system_id
             .write_xml(w, "system_id", Some("HIER_OBJECT_ID"))?;
         self.ehr_id.write_xml(w, "ehr_id", Some("HIER_OBJECT_ID"))?;
+        self.time_created
+            .write_xml(w, "time_created", Some("DV_DATE_TIME"))?;
         for v in &self.contributions {
             v.write_xml(w, "contributions", Some("OBJECT_REF"))?;
         }
-        self.ehr_status
-            .write_xml(w, "ehr_status", Some("OBJECT_REF"))?;
         self.ehr_access
             .write_xml(w, "ehr_access", Some("OBJECT_REF"))?;
-        for v in &self.compositions {
-            v.write_xml(w, "compositions", Some("OBJECT_REF"))?;
-        }
+        self.ehr_status
+            .write_xml(w, "ehr_status", Some("OBJECT_REF"))?;
         if let Some(v) = &self.directory {
             v.write_xml(w, "directory", Some("OBJECT_REF"))?;
         }
-        self.time_created
-            .write_xml(w, "time_created", Some("DV_DATE_TIME"))?;
         for v in &self.folders {
             v.write_xml(w, "folders", Some("OBJECT_REF"))?;
+        }
+        for v in &self.compositions {
+            v.write_xml(w, "compositions", Some("OBJECT_REF"))?;
         }
         for v in &self.tags {
             v.write_xml(w, "tags", Some("OBJECT_REF"))?;
@@ -7801,14 +7863,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::EhrAccess {
                 __attrs.push(("xsi:type", "EHR_ACCESS".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -7835,7 +7896,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EhrAccess {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -7846,10 +7906,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EhrAccess {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -7883,9 +7939,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EhrAccess {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -7911,14 +7972,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::EhrStatus {
                 __attrs.push(("xsi:type", "EHR_STATUS".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -7950,7 +8010,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EhrStatus {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -7964,10 +8023,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EhrStatus {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -8013,9 +8068,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EhrStatus {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -8074,6 +8134,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Element {
         }
         if let Some(v) = &self.null_flavour {
             v.write_xml(w, "null_flavour", Some("DV_CODED_TEXT"))?;
+        }
+        if let Some(v) = &self.null_reason {
+            v.write_xml(w, "null_reason", Some("DV_TEXT"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -8267,6 +8330,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Evaluation {
             v.write_xml(w, "guideline_id", Some("OBJECT_REF"))?;
         }
         self.data.write_xml(w, "data", Some("ITEM_STRUCTURE"))?;
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -8722,14 +8788,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractActionRequest {
                 __attrs.push(("xsi:type", "EXTRACT_ACTION_REQUEST".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
         for v in &self.links {
             v.write_xml(w, "links", Some("LINK"))?;
@@ -8754,7 +8819,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractActionRequest 
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -8766,10 +8830,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractActionRequest 
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -8806,9 +8866,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractActionRequest 
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element uid".into())
             })?,
@@ -8859,6 +8924,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractChapterData {
         }
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
+        }
+        for v in &self.items {
+            v.write_xml(w, "items", Some("EXTRACT_ITEM"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -9043,14 +9111,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractEntityChapter {
                 __attrs.push(("xsi:type", "EXTRACT_ENTITY_CHAPTER".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -9079,7 +9146,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractEntityChapter 
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -9091,10 +9157,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractEntityChapter 
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -9132,9 +9194,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractEntityChapter 
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -9168,6 +9235,17 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractEntityManifest {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
+        self.extract_id_key
+            .write_xml(w, "extract_id_key", Some("String"))?;
+        if let Some(v) = &self.ehr_id {
+            v.write_xml(w, "ehr_id", Some("String"))?;
+        }
+        if let Some(v) = &self.subject_id {
+            v.write_xml(w, "subject_id", Some("String"))?;
+        }
+        for v in &self.other_ids {
+            v.write_xml(w, "other_ids", Some("String"))?;
+        }
         for v in &self.item_list {
             v.write_xml(w, "item_list", Some("OBJECT_REF"))?;
         }
@@ -9753,6 +9831,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractSpec {
         }
         self.manifest
             .write_xml(w, "manifest", Some("EXTRACT_MANIFEST"))?;
+        self.priority.write_xml(w, "priority", Some("Integer"))?;
+        self.include_multimedia
+            .write_xml(w, "include_multimedia", Some("Boolean"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -9865,6 +9946,8 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractUpdateSpec {
         for v in &self.trigger_events {
             v.write_xml(w, "trigger_events", Some("DV_CODED_TEXT"))?;
         }
+        self.update_method
+            .write_xml(w, "update_method", Some("CODE_PHRASE"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -9948,6 +10031,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractVersionSpec {
         if let Some(v) = &self.commit_time_interval {
             v.write_xml(w, "commit_time_interval", Some("DV_INTERVAL"))?;
         }
+        self.include_revision_history
+            .write_xml(w, "include_revision_history", Some("Boolean"))?;
+        self.include_data
+            .write_xml(w, "include_data", Some("Boolean"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -10147,6 +10234,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::FeederAuditDetails {
         if let Some(v) = &self.version_id {
             v.write_xml(w, "version_id", Some("String"))?;
         }
+        if let Some(v) = &self.other_details {
+            v.write_xml(w, "other_details", Some("ITEM_STRUCTURE"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -10255,6 +10345,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Folder {
         for v in &self.items {
             v.write_xml(w, "items", Some("OBJECT_REF"))?;
         }
+        if let Some(v) = &self.details {
+            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -10352,14 +10445,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::GenericContentItem {
                 __attrs.push(("xsi:type", "GENERIC_CONTENT_ITEM".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -10379,9 +10471,6 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::GenericContentItem {
         }
         if let Some(v) = &self.is_masked {
             v.write_xml(w, "is_masked", Some("Boolean"))?;
-        }
-        if let Some(v) = &self.item {
-            v.write_xml(w, "item", Some("LOCATABLE"))?;
         }
         if let Some(v) = &self.item_type {
             v.write_xml(w, "item_type", Some("DV_CODED_TEXT"))?;
@@ -10418,6 +10507,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::GenericContentItem {
                 w.write_kv_element("other_details", k, v)?;
             }
         }
+        if let Some(v) = &self.item {
+            v.write_xml(w, "item", Some("LOCATABLE"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -10429,7 +10521,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::GenericContentItem {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -10454,10 +10545,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::GenericContentItem {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -10539,9 +10626,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::GenericContentItem {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -10696,14 +10788,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Group {
                 __attrs.push(("xsi:type", "GROUP".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -10722,17 +10813,17 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Group {
         for v in &self.contacts {
             v.write_xml(w, "contacts", Some("CONTACT"))?;
         }
-        if let Some(v) = &self.details {
-            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
-        }
         for v in &self.relationships {
             v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
         }
-        for v in &self.languages {
-            v.write_xml(w, "languages", Some("DV_TEXT"))?;
+        if let Some(v) = &self.details {
+            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
         for v in &self.roles {
             v.write_xml(w, "roles", Some("PARTY_REF"))?;
+        }
+        for v in &self.languages {
+            v.write_xml(w, "languages", Some("DV_TEXT"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -10745,7 +10836,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Group {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -10761,10 +10851,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Group {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -10813,9 +10899,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Group {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -11124,6 +11215,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Instruction {
         }
         for v in &self.activities {
             v.write_xml(w, "activities", Some("ACTIVITY"))?;
+        }
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -11523,6 +11617,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::IsmTransition {
         }
         if let Some(v) = &self.careflow_step {
             v.write_xml(w, "careflow_step", Some("DV_CODED_TEXT"))?;
+        }
+        for v in &self.reason {
+            v.write_xml(w, "reason", Some("DV_TEXT"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -12570,8 +12667,8 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Message {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        self.audit.write_xml(w, "audit", Some("AUDIT_DETAILS"))?;
         self.author.write_xml(w, "author", Some("PARTY_PROXY"))?;
+        self.audit.write_xml(w, "audit", Some("AUDIT_DETAILS"))?;
         self.content
             .write_xml(w, "content", Some("MESSAGE_CONTENT"))?;
         if let Some(v) = &self.signature {
@@ -12733,6 +12830,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Observation {
         self.data.write_xml(w, "data", Some("HISTORY"))?;
         if let Some(v) = &self.state {
             v.write_xml(w, "state", Some("HISTORY"))?;
+        }
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -12981,14 +13081,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::OpenehrContentItem {
                 __attrs.push(("xsi:type", "OPENEHR_CONTENT_ITEM".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -13023,7 +13122,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::OpenehrContentItem {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -13037,10 +13135,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::OpenehrContentItem {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -13083,9 +13177,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::OpenehrContentItem {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -13202,14 +13301,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Organisation {
                 __attrs.push(("xsi:type", "ORGANISATION".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -13228,17 +13326,17 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Organisation {
         for v in &self.contacts {
             v.write_xml(w, "contacts", Some("CONTACT"))?;
         }
-        if let Some(v) = &self.details {
-            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
-        }
         for v in &self.relationships {
             v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
         }
-        for v in &self.languages {
-            v.write_xml(w, "languages", Some("DV_TEXT"))?;
+        if let Some(v) = &self.details {
+            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
         for v in &self.roles {
             v.write_xml(w, "roles", Some("PARTY_REF"))?;
+        }
+        for v in &self.languages {
+            v.write_xml(w, "languages", Some("DV_TEXT"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -13251,7 +13349,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Organisation {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -13267,10 +13364,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Organisation {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -13319,9 +13412,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Organisation {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -13745,14 +13843,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::PartyIdentity {
                 __attrs.push(("xsi:type", "PARTY_IDENTITY".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -13778,7 +13875,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyIdentity {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -13789,10 +13885,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyIdentity {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -13826,9 +13918,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyIdentity {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -13986,14 +14083,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::PartyRelationship {
                 __attrs.push(("xsi:type", "PARTY_RELATIONSHIP".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -14009,11 +14105,11 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::PartyRelationship {
         if let Some(v) = &self.details {
             v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
-        self.target.write_xml(w, "target", Some("PARTY_REF"))?;
         if let Some(v) = &self.time_validity {
             v.write_xml(w, "time_validity", Some("DV_INTERVAL"))?;
         }
         self.source.write_xml(w, "source", Some("PARTY_REF"))?;
+        self.target.write_xml(w, "target", Some("PARTY_REF"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -14025,7 +14121,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyRelationship {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -14039,10 +14134,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyRelationship {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -14086,9 +14177,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyRelationship {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -14422,14 +14518,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Person {
                 __attrs.push(("xsi:type", "PERSON".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -14448,17 +14543,17 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Person {
         for v in &self.contacts {
             v.write_xml(w, "contacts", Some("CONTACT"))?;
         }
-        if let Some(v) = &self.details {
-            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
-        }
         for v in &self.relationships {
             v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
         }
-        for v in &self.languages {
-            v.write_xml(w, "languages", Some("DV_TEXT"))?;
+        if let Some(v) = &self.details {
+            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
         for v in &self.roles {
             v.write_xml(w, "roles", Some("PARTY_REF"))?;
+        }
+        for v in &self.languages {
+            v.write_xml(w, "languages", Some("DV_TEXT"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -14471,7 +14566,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Person {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -14487,10 +14581,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Person {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -14539,9 +14629,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Person {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -15228,14 +15323,13 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Role {
                 __attrs.push(("xsi:type", "ROLE".to_string()));
             }
         }
+        __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
         let mut __e = crate::xml::runtime::XmlStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
-        self.archetype_node_id
-            .write_xml(w, "archetype_node_id", Some("String"))?;
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
@@ -15254,20 +15348,20 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Role {
         for v in &self.contacts {
             v.write_xml(w, "contacts", Some("CONTACT"))?;
         }
+        for v in &self.relationships {
+            v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+        }
         if let Some(v) = &self.details {
             v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
-        for v in &self.relationships {
-            v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+        for v in &self.capabilities {
+            v.write_xml(w, "capabilities", Some("CAPABILITY"))?;
         }
         if let Some(v) = &self.time_validity {
             v.write_xml(w, "time_validity", Some("DV_INTERVAL"))?;
         }
         self.performer
             .write_xml(w, "performer", Some("PARTY_REF"))?;
-        for v in &self.capabilities {
-            v.write_xml(w, "capabilities", Some("CAPABILITY"))?;
-        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -15279,7 +15373,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Role {
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         let mut __name = None;
-        let mut __archetype_node_id = None;
         let mut __uid = None;
         let mut __links = Vec::new();
         let mut __archetype_details = None;
@@ -15296,10 +15389,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Role {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
                     "name" => {
                         __name = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "archetype_node_id" => {
-                        __archetype_node_id =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "uid" => {
                         __uid = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
@@ -15352,9 +15441,14 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Role {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
-            archetype_node_id: __archetype_node_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element archetype_node_id".into())
-            })?,
+            archetype_node_id: start
+                .attr("archetype_node_id")
+                .ok_or_else(|| {
+                    crate::xml::runtime::XmlError::Parse(
+                        "missing attribute archetype_node_id".into(),
+                    )
+                })?
+                .to_string(),
             uid: __uid,
             links: __links,
             archetype_details: __archetype_details,
@@ -15898,6 +15992,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::TranslationDetails {
             for (k, v) in m {
                 w.write_kv_element("other_details", k, v)?;
             }
+        }
+        if let Some(v) = &self.accreditaton {
+            v.write_xml(w, "accreditaton", Some("String"))?;
         }
         w.write_end(tag)?;
         Ok(())

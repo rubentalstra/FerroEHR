@@ -8,7 +8,7 @@ use crate::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnu
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Definition of an enumeration type. In the BMM system, an 'enumeration' type is understood as an underlying basic type and a set of named constants of that type. It is designed so that the default type is Integer, and the default constants are numbered 0, 1, ... Optional model elements can be specified to override the values and / or the type.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -47,10 +47,45 @@ pub struct BmmEnumerationData {
 
 /// Definition of an enumeration type. In the BMM system, an 'enumeration' type is understood as an underlying basic type and a set of named constants of that type. It is designed so that the default type is Integer, and the default constants are numbered 0, 1, ... Optional model elements can be specified to override the values and / or the type.
 /// Polymorphic slot of `BMM_ENUMERATION` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmEnumeration {
     BmmEnumerationInteger(BmmEnumerationInteger),
     BmmEnumerationString(BmmEnumerationString),
     BmmEnumeration(BmmEnumerationData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for BmmEnumeration {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => {
+                ::core::result::Result::Ok(Self::BmmEnumeration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => {
+                ::core::result::Result::Ok(Self::BmmEnumerationInteger(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => {
+                ::core::result::Result::Ok(Self::BmmEnumerationString(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmEnumeration(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "BMM_ENUMERATION: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING)"
+                )))
+            }
+        }
+    }
 }

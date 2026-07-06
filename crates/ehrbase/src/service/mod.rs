@@ -22,6 +22,7 @@
 //! engine (P16).
 
 mod api;
+mod codes;
 mod composition;
 mod contribution;
 mod directory;
@@ -29,6 +30,7 @@ mod ehr;
 mod item_tag;
 mod stored_query;
 mod template;
+mod version_id;
 mod versioned;
 mod vobject;
 
@@ -76,6 +78,11 @@ pub enum ServiceError {
     /// The requested resource does not exist.
     #[error("{0} not found")]
     NotFound(String),
+    /// The request is malformed at the semantic level (e.g. a stale/invalid
+    /// `preceding_version_uid`, or an operation on an already-deleted object) —
+    /// ITS-REST `400 Bad Request` (`400_already_deleted.yaml`).
+    #[error("bad request: {0}")]
+    BadRequest(String),
     /// The request conflicts with current state (e.g. EHR already exists).
     #[error("conflict: {0}")]
     Conflict(String),
@@ -104,6 +111,7 @@ impl From<ServiceError> for ApiError {
     fn from(e: ServiceError) -> Self {
         match e {
             ServiceError::NotFound(m) => ApiError::NotFound(m),
+            ServiceError::BadRequest(m) => ApiError::BadRequest(m),
             ServiceError::Conflict(m) => ApiError::Conflict(m),
             ServiceError::VersionConflict(m) => ApiError::PreconditionFailed(m),
             ServiceError::Unprocessable(m) => ApiError::Unprocessable(m),

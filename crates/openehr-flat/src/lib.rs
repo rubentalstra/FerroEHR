@@ -14,6 +14,7 @@
 pub mod cache;
 pub mod error;
 pub mod flat;
+pub(crate) mod path;
 pub mod structured;
 pub mod validation;
 pub mod webtemplate;
@@ -21,5 +22,8 @@ pub mod webtemplate;
 pub use error::FlatError;
 pub use flat::{from_flat, to_flat};
 pub use structured::{flat_to_structured, from_structured, structured_to_flat, to_structured};
-pub use validation::{ValidationKind, ValidationMessage, validate_composition};
+pub use validation::{
+    ValidationKind, ValidationMessage, validate_archetype_conformance, validate_composition,
+    validate_rm_and_terminology,
+};
 pub use webtemplate::{WebTemplate, build_web_template};

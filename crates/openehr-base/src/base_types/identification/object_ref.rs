@@ -6,7 +6,7 @@ use crate::base_types::identification::locatable_ref::LocatableRef;
 use crate::base_types::identification::object_id::ObjectId;
 use crate::base_types::identification::party_ref::PartyRef;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Class describing a reference to another object, which may exist locally or be maintained outside the current namespace, e.g. in another service. Services are usually external, e.g. available in a LAN (including on the same host) or the internet via Corba, SOAP, or some other distributed protocol. However, in small systems they may be part of the same executable as the data containing the Id.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -28,11 +28,51 @@ pub struct ObjectRefData {
 
 /// Class describing a reference to another object, which may exist locally or be maintained outside the current namespace, e.g. in another service. Services are usually external, e.g. available in a LAN (including on the same host) or the internet via Corba, SOAP, or some other distributed protocol. However, in small systems they may be part of the same executable as the data containing the Id.
 /// Polymorphic slot of `OBJECT_REF` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ObjectRef {
     AccessGroupRef(AccessGroupRef),
     LocatableRef(LocatableRef),
     PartyRef(PartyRef),
     ObjectRef(ObjectRefData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ObjectRef {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("ACCESS_GROUP_REF") => {
+                ::core::result::Result::Ok(Self::AccessGroupRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("LOCATABLE_REF") => {
+                ::core::result::Result::Ok(Self::LocatableRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("OBJECT_REF") => {
+                ::core::result::Result::Ok(Self::ObjectRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("PARTY_REF") => {
+                ::core::result::Result::Ok(Self::PartyRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::ObjectRef(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "OBJECT_REF: unexpected `_type` {__other:?} (expected one of: ACCESS_GROUP_REF, LOCATABLE_REF, OBJECT_REF, PARTY_REF)"
+                )))
+            }
+        }
+    }
 }

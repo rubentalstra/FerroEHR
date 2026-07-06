@@ -5,11 +5,11 @@ use crate::foundation_types::time::iso8601_date_time::Iso8601DateTime;
 use crate::foundation_types::time::iso8601_duration::Iso8601Duration;
 use crate::foundation_types::time::iso8601_time::Iso8601Time;
 use crate::foundation_types::time::iso8601_timezone::Iso8601Timezone;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract ancestor type of ISO 8601 types, defining interface for 'extended' and 'partial' concepts from ISO 8601.
 /// Closed subtype set of `Iso8601_type` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Iso8601Type {
     Iso8601Date(Iso8601Date),
@@ -17,4 +17,51 @@ pub enum Iso8601Type {
     Iso8601Duration(Iso8601Duration),
     Iso8601Time(Iso8601Time),
     Iso8601Timezone(Iso8601Timezone),
+}
+
+impl<'de> ::serde::Deserialize<'de> for Iso8601Type {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("Iso8601_date") => {
+                ::core::result::Result::Ok(Self::Iso8601Date(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("Iso8601_date_time") => {
+                ::core::result::Result::Ok(Self::Iso8601DateTime(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("Iso8601_duration") => {
+                ::core::result::Result::Ok(Self::Iso8601Duration(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("Iso8601_time") => {
+                ::core::result::Result::Ok(Self::Iso8601Time(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("Iso8601_timezone") => {
+                ::core::result::Result::Ok(Self::Iso8601Timezone(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "Iso8601_type: missing required `_type` on polymorphic slot (expected one of: Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "Iso8601_type: unexpected `_type` {__other:?} (expected one of: Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone)"
+                )))
+            }
+        }
+    }
 }

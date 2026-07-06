@@ -2,7 +2,7 @@
 //!
 //! Walks the [`WebTemplate`] tree in parallel with the canonical-JSON
 //! composition: each web-template child's RM value(s) are located by the
-//! relative AQL path from its parent (`aql::resolve`), the flat path segment is
+//! relative AQL path from its parent (`path::resolve`), the flat path segment is
 //! the child's json-`id` (`:i`-indexed when the node is repeating, Better's
 //! `isRepeating` rule: `max == -1 || max > 1`), and each populated leaf emits
 //! its `path|suffix` datum parts via [`mappers::leaf_to_flat`]. The composition
@@ -11,9 +11,10 @@
 
 use serde_json::Value;
 
+use super::context;
 use super::mappers::{self, FlatMap};
-use super::{aql, context};
 use crate::FlatError;
+use crate::path;
 use crate::webtemplate::{WebTemplate, WebTemplateNode};
 
 /// Convert a canonical-JSON composition to a FLAT map, driven by `wt`.
@@ -54,8 +55,8 @@ fn walk(node: &WebTemplateNode, rm: &Value, prefix: &str, out: &mut FlatMap) {
         if node.rm_type == "EVENT_CONTEXT" && !child.aql_path.contains("other_context") {
             continue;
         }
-        let rel = aql::relative(&node.aql_path, &child.aql_path);
-        let matches = aql::resolve(rm, &rel);
+        let rel = path::relative(&node.aql_path, &child.aql_path);
+        let matches = path::resolve(rm, &rel);
         let repeating = child.max == -1 || child.max > 1;
         // Polymorphic choice alternatives share one aqlPath; emit only under the
         // alternative whose rm type matches this value's `_type`.

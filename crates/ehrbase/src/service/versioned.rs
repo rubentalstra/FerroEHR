@@ -7,6 +7,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
+use super::codes;
 use super::vobject::VersionRead;
 use super::{EhrbaseService, ServiceError};
 
@@ -61,9 +62,24 @@ impl EhrbaseService {
         Ok(json!({ "_type": "REVISION_HISTORY", "items": items }))
     }
 
-    /// A `VERSIONED_OBJECT` for `vo_id` owned by `ehr_id`.
-    pub(super) fn versioned_object(vo_id: Uuid, ehr_id: Uuid) -> Value {
-        json!({
+    /// A `VERSIONED_OBJECT` for `vo_id` owned by `ehr_id`, including the mandatory
+    /// `time_created` (1..1) — the commit time of the object's first version
+    /// (`VERSIONED_OBJECT.time_created`, RM `change_control`; F-06-05/F-01-08).
+    pub(super) async fn versioned_object(
+        &self,
+        vo_id: Uuid,
+        ehr_id: Uuid,
+    ) -> Result<Value, ServiceError> {
+        let time_created: jiff_sqlx::Timestamp = sqlx::query_scalar(
+            "SELECT a.time_committed FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+             WHERE v.vo_id = $1 AND v.sys_version = 1",
+        )
+        .bind(vo_id)
+        .fetch_optional(&self.pool)
+        .await?
+        .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))?;
+        let time_created = time_created.to_jiff();
+        Ok(json!({
             "_type": "VERSIONED_OBJECT",
             "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },
             "owner_id": {
@@ -71,14 +87,22 @@ impl EhrbaseService {
                 "namespace": "local",
                 "type": "EHR",
                 "id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() }
-            }
-        })
+            },
+            "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
+        }))
     }
 
     /// An `ORIGINAL_VERSION` wrapping a loaded version: its `OBJECT_VERSION_ID`,
-    /// the CONTRIBUTION reference, lifecycle state, and the data itself.
+    /// the CONTRIBUTION reference, the mandatory `commit_audit` (1..1), the
+    /// `preceding_version_uid` (present iff not the first version), the coded
+    /// `lifecycle_state`, and the version data (absent for a deleted version).
+    ///
+    /// Spec: `VERSION.commit_audit` 1..1 (F-06-01/F-01-07);
+    /// `VERSION.Preceding_version_uid_validity` (F-06-03);
+    /// `ORIGINAL_VERSION.lifecycle_state` coded from `version_lifecycle_state` —
+    /// `523|deleted|` for a deleted version (F-06-04/F-02-07).
     pub(super) fn original_version(&self, read: &VersionRead) -> Value {
-        json!({
+        let mut ov = json!({
             "_type": "ORIGINAL_VERSION",
             "uid": {
                 "_type": "OBJECT_VERSION_ID",
@@ -90,16 +114,40 @@ impl EhrbaseService {
                 "type": "CONTRIBUTION",
                 "id": { "_type": "HIER_OBJECT_ID", "value": read.contribution_id.to_string() }
             },
+            "commit_audit": Self::audit_details(
+                &read.audit.system_id,
+                &read.audit.change_type,
+                read.audit.description.as_deref(),
+                &read.audit.committer,
+                &read.time_committed,
+            ),
             "lifecycle_state": {
                 "_type": "DV_CODED_TEXT",
-                "value": "complete",
+                "value": codes::lifecycle_rubric(&read.lifecycle_state),
                 "defining_code": {
                     "_type": "CODE_PHRASE",
-                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                    "code_string": "532"
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": codes::OPENEHR },
+                    "code_string": read.lifecycle_state
                 }
-            },
-            "data": read.canonical
-        })
+            }
+        });
+        if let Value::Object(map) = &mut ov {
+            // preceding_version_uid: the prior version's OBJECT_VERSION_ID —
+            // present for every non-first version, absent for the first.
+            if read.sys_version > 1 {
+                map.insert(
+                    "preceding_version_uid".to_owned(),
+                    json!({
+                        "_type": "OBJECT_VERSION_ID",
+                        "value": self.object_version_id(read.vo_id, read.sys_version - 1)
+                    }),
+                );
+            }
+            // A deleted version carries no data (canonical is Null).
+            if !read.canonical.is_null() {
+                map.insert("data".to_owned(), read.canonical.clone());
+            }
+        }
+        ov
     }
 }

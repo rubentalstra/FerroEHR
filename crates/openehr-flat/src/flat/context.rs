@@ -21,24 +21,16 @@
 
 use serde_json::{Map, Value, json};
 
+use super::defaults::{
+    DEFAULT_SETTING_CODE, DEFAULT_SETTING_TERM, DEFAULT_SETTING_VALUE, DEFAULT_TIME,
+};
+// One shared `CODE_PHRASE` builder (F-13-22): `graph` owns the canonical RM-node
+// JSON builders; this module reuses it rather than re-inlining the shape.
+use super::graph::code_phrase;
 use super::mappers::FlatMap;
-
-/// Better's context defaults (`ConversionContext.Builder`).
-const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
-const DEFAULT_SETTING_CODE: &str = "238";
-const DEFAULT_SETTING_VALUE: &str = "other care";
-const DEFAULT_SETTING_TERM: &str = "openehr";
 
 fn non_empty_str(v: Option<&Value>) -> Option<&str> {
     v.and_then(Value::as_str).filter(|s| !s.is_empty())
-}
-
-fn code_phrase(terminology: &str, code: &str) -> Value {
-    json!({
-        "_type": "CODE_PHRASE",
-        "terminology_id": {"_type": "TERMINOLOGY_ID", "value": terminology},
-        "code_string": code,
-    })
 }
 
 // ── RM → flat ───────────────────────────────────────────────────────────────
@@ -334,12 +326,18 @@ fn participations_from_ctx(flat: &Map<String, Value>) -> Vec<Value> {
             party_identified(flat, name, id, "PERSON"),
         );
         if let Some(m) = mode {
+            // PORT NOTE (F-10-07): `ctx/participation_mode` carries a free-text
+            // mode value with no code, but `PARTICIPATION.mode` is a
+            // `DV_CODED_TEXT` coded from the openEHR `participation_mode` group.
+            // We default the code to the group's `193` "not specified" (a valid
+            // member) rather than the fabricated, invalid `openehr::0` — so the
+            // rebuilt composition passes terminology validation.
             p.insert(
                 "mode".into(),
                 json!({
                     "_type": "DV_CODED_TEXT",
                     "value": m,
-                    "defining_code": code_phrase("openehr", "0"),
+                    "defining_code": code_phrase("openehr", "193"),
                 }),
             );
         }
@@ -432,9 +430,14 @@ fn walk_entry_defaults(node: &mut Value, ctx: &EntryDefaults<'_>) {
         }
         Some("ACTION") => {
             if let Some(s) = ctx.ism_state {
+                // PORT NOTE (F-10-07): `ISM_TRANSITION.current_state` is coded
+                // from the openEHR `instruction_states` group; default the code
+                // to `524` "initial" (matching `graph::fill_structural_mandatory`
+                // and `from_flat`, the one source of truth) rather than the
+                // invalid, fabricated `openehr::0`.
                 m.insert(
                     "ism_transition".to_owned(),
-                    json!({"_type": "ISM_TRANSITION", "current_state": {"_type": "DV_CODED_TEXT", "value": s, "defining_code": code_phrase("openehr", "0")}}),
+                    json!({"_type": "ISM_TRANSITION", "current_state": {"_type": "DV_CODED_TEXT", "value": s, "defining_code": code_phrase("openehr", "524")}}),
                 );
             }
         }

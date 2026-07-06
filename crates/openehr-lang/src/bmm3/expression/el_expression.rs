@@ -18,11 +18,11 @@ use crate::bmm3::expression::el_tuple::ElTuple;
 use crate::bmm3::expression::el_type_ref::ElTypeRef;
 use crate::bmm3::expression::el_unary_operator::ElUnaryOperator;
 use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract parent of all typed expression meta-types.
 /// Closed subtype set of `EL_EXPRESSION` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElExpression {
     ElAttached(ElAttached),
@@ -42,4 +42,109 @@ pub enum ElExpression {
     ElTypeRef(ElTypeRef),
     ElUnaryOperator(Box<ElUnaryOperator>),
     ElWritableVariable(ElWritableVariable),
+}
+
+impl<'de> ::serde::Deserialize<'de> for ElExpression {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("EL_ATTACHED") => {
+                ::core::result::Result::Ok(Self::ElAttached(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_BINARY_OPERATOR") => {
+                ::core::result::Result::Ok(Self::ElBinaryOperator(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_BOOLEAN_EXPRESSION") => {
+                ::core::result::Result::Ok(Self::ElBooleanExpression(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_CASE_TABLE") => {
+                ::core::result::Result::Ok(Self::ElCaseTable(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_CONDITION_CHAIN") => {
+                ::core::result::Result::Ok(Self::ElConditionChain(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_DEFINED") => {
+                ::core::result::Result::Ok(Self::ElDefined(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_FUNCTION_AGENT") => {
+                ::core::result::Result::Ok(Self::ElFunctionAgent(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_FUNCTION_CALL") => {
+                ::core::result::Result::Ok(Self::ElFunctionCall(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_LITERAL") => {
+                ::core::result::Result::Ok(Self::ElLiteral(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => {
+                ::core::result::Result::Ok(Self::ElProcedureAgent(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_PROPERTY_REF") => {
+                ::core::result::Result::Ok(Self::ElPropertyRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_READONLY_VARIABLE") => {
+                ::core::result::Result::Ok(Self::ElReadonlyVariable(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_STATIC_REF") => {
+                ::core::result::Result::Ok(Self::ElStaticRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_TUPLE") => ::core::result::Result::Ok(Self::ElTuple(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some("EL_TYPE_REF") => {
+                ::core::result::Result::Ok(Self::ElTypeRef(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_UNARY_OPERATOR") => {
+                ::core::result::Result::Ok(Self::ElUnaryOperator(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => {
+                ::core::result::Result::Ok(Self::ElWritableVariable(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "EL_EXPRESSION: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_BINARY_OPERATOR, EL_BOOLEAN_EXPRESSION, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TUPLE, EL_TYPE_REF, EL_UNARY_OPERATOR, EL_WRITABLE_VARIABLE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "EL_EXPRESSION: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_BINARY_OPERATOR, EL_BOOLEAN_EXPRESSION, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TUPLE, EL_TYPE_REF, EL_UNARY_OPERATOR, EL_WRITABLE_VARIABLE)"
+                )))
+            }
+        }
+    }
 }

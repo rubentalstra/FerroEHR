@@ -5,7 +5,7 @@ use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor;
 use crate::bmm3::core::model::bmm_model::BmmModel;
 use openehr_derive::OpenEhrType;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Descriptor for a BMM schema. Contains a meta-data table of attributes obtained from a mini-ODIN parse of the schema file.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
@@ -25,9 +25,39 @@ pub struct SchemaDescriptorData {
 
 /// Descriptor for a BMM schema. Contains a meta-data table of attributes obtained from a mini-ODIN parse of the schema file.
 /// Polymorphic slot of `SCHEMA_DESCRIPTOR` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum SchemaDescriptor {
     PBmmSchemaDescriptor(PBmmSchemaDescriptor),
     SchemaDescriptor(SchemaDescriptorData),
+}
+
+impl<'de> ::serde::Deserialize<'de> for SchemaDescriptor {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("P_BMM_SCHEMA_DESCRIPTOR") => {
+                ::core::result::Result::Ok(Self::PBmmSchemaDescriptor(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("SCHEMA_DESCRIPTOR") => {
+                ::core::result::Result::Ok(Self::SchemaDescriptor(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::SchemaDescriptor(
+                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+            )),
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "SCHEMA_DESCRIPTOR: unexpected `_type` {__other:?} (expected one of: P_BMM_SCHEMA_DESCRIPTOR, SCHEMA_DESCRIPTOR)"
+                )))
+            }
+        }
+    }
 }

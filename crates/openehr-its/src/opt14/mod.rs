@@ -15,3 +15,12 @@ pub use types::*;
 pub fn from_xml(xml: &str) -> Result<OperationalTemplate, crate::xml::runtime::XmlError> {
     crate::xml::runtime::from_xml(xml)
 }
+
+/// Serialize an [`OperationalTemplate`] back to OPT 1.4 XML (root
+/// `<template>`, `http://schemas.openehr.org/v1`).
+///
+/// # Errors
+/// Propagates canonical-XML serialization errors.
+pub fn to_xml(opt: &OperationalTemplate) -> Result<String, crate::xml::runtime::XmlError> {
+    crate::xml::runtime::to_xml(opt, "template", crate::xml::runtime::Namespace::V1)
+}

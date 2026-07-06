@@ -49,11 +49,21 @@ impl EhrbaseService {
             })
     }
 
-    /// Store (or replace) an OPT 1.4 operational template from its canonical XML,
-    /// returning the stored template's metadata descriptor.
+    /// Store an OPT 1.4 operational template from its canonical XML, returning
+    /// the stored template's metadata descriptor.
     ///
     /// The XML is parsed to validate it is a well-formed OPT and to pull the
     /// `template_id` (the unique key), `concept`, and root archetype id.
+    ///
+    /// Operational templates are **immutable on the `adl1.4` upload endpoint**:
+    /// re-uploading an existing `template_id` is a **`Conflict`** (→ ITS-REST
+    /// `409`), never a silent overwrite. This matches
+    /// `docs/specs/openehr/ITS-REST/specifications/responses/409_template_already_exists.yaml`
+    /// ("409 Conflict is returned when a template with same `template_id` …
+    /// already exists") and the CNF Robot case
+    /// `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict` ("upload same OPT
+    /// again" → status 409). A legitimate replacement path (admin) is a later,
+    /// separate concern; this endpoint must not mutate an existing template.
     pub(super) async fn store_template(&self, xml: &str) -> Result<Value, ServiceError> {
         let opt = openehr_its::opt14::from_xml(xml)
             .map_err(|e| ServiceError::Unprocessable(format!("invalid OPT 1.4 XML: {e}")))?;
@@ -70,21 +80,27 @@ impl EhrbaseService {
             (!a.trim().is_empty()).then_some(a)
         };
 
-        sqlx::query(
+        // Insert-only: `DO NOTHING` on the `template_id` unique key makes the
+        // duplicate case race-free (no overwrite, no SQLSTATE parsing) — an
+        // affected-row count of 0 means the template already exists → 409.
+        let inserted = sqlx::query(
             "INSERT INTO template_store (template_id, concept, root_archetype, content) \
              VALUES ($1, $2, $3, $4) \
-             ON CONFLICT (template_id) DO UPDATE SET \
-               concept = EXCLUDED.concept, \
-               root_archetype = EXCLUDED.root_archetype, \
-               content = EXCLUDED.content, \
-               created_at = now()",
+             ON CONFLICT (template_id) DO NOTHING",
         )
         .bind(&template_id)
         .bind(&concept)
         .bind(&root_archetype)
         .bind(xml)
         .execute(&self.pool)
-        .await?;
+        .await?
+        .rows_affected();
+
+        if inserted == 0 {
+            return Err(ServiceError::Conflict(format!(
+                "an operational template with template_id '{template_id}' already exists"
+            )));
+        }
 
         self.get_template_meta(&template_id).await
     }

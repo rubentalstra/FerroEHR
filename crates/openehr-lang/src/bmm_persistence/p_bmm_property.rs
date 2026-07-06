@@ -4,15 +4,62 @@ use crate::bmm_persistence::p_bmm_container_property::PBmmContainerProperty;
 use crate::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty;
 use crate::bmm_persistence::p_bmm_single_property::PBmmSingleProperty;
 use crate::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Persistent form of `BMM_PROPERTY`.
 /// Closed subtype set of `P_BMM_PROPERTY` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PBmmProperty {
     PBmmContainerProperty(PBmmContainerProperty),
     PBmmGenericProperty(PBmmGenericProperty),
     PBmmSingleProperty(PBmmSingleProperty),
     PBmmSinglePropertyOpen(PBmmSinglePropertyOpen),
+}
+
+impl<'de> ::serde::Deserialize<'de> for PBmmProperty {
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("P_BMM_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::PBmmContainerProperty(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_GENERIC_PROPERTY") => {
+                ::core::result::Result::Ok(Self::PBmmGenericProperty(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::PBmmContainerProperty(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SINGLE_PROPERTY") => {
+                ::core::result::Result::Ok(Self::PBmmSingleProperty(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SINGLE_PROPERTY_OPEN") => {
+                ::core::result::Result::Ok(Self::PBmmSinglePropertyOpen(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "P_BMM_PROPERTY: missing required `_type` on polymorphic slot (expected one of: P_BMM_CONTAINER_PROPERTY, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "P_BMM_PROPERTY: unexpected `_type` {__other:?} (expected one of: P_BMM_CONTAINER_PROPERTY, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN)"
+                )))
+            }
+        }
+    }
 }

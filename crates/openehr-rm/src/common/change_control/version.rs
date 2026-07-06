@@ -2,13 +2,48 @@
 
 use crate::common::change_control::imported_version::ImportedVersion;
 use crate::common::change_control::original_version::OriginalVersion;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Abstract model of one Version within a Version container, containing data, commit audit trail, and the identifier of its Contribution.
 /// Closed subtype set of `VERSION` (ADR-004): dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Version<T> {
     ImportedVersion(ImportedVersion<T>),
     OriginalVersion(OriginalVersion<T>),
+}
+
+impl<'de, T> ::serde::Deserialize<'de> for Version<T>
+where
+    T: ::serde::de::DeserializeOwned,
+{
+    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
+        match __value.get("_type").and_then(::serde_json::Value::as_str) {
+            ::core::option::Option::Some("IMPORTED_VERSION") => {
+                ::core::result::Result::Ok(Self::ImportedVersion(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::Some("ORIGINAL_VERSION") => {
+                ::core::result::Result::Ok(Self::OriginalVersion(
+                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(::serde::de::Error::custom(
+                    "VERSION: missing required `_type` on polymorphic slot (expected one of: IMPORTED_VERSION, ORIGINAL_VERSION)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => {
+                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
+                    "VERSION: unexpected `_type` {__other:?} (expected one of: IMPORTED_VERSION, ORIGINAL_VERSION)"
+                )))
+            }
+        }
+    }
 }

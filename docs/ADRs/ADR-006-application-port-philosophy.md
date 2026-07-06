@@ -1,11 +1,28 @@
 # ADR-006: EHRbase application-layer port philosophy + modern stack + auth
 
-- **Status:** accepted
+- **Status:** accepted, **§3 and §4 superseded by ADR-008** (own PG18 storage +
+  AQL engine; openEHR CNF conformance replaces the EHRbase parity harness). §1,
+  §2, §5, §6 (idiomatic modern-Rust app on the generated crates; the stack; auth
+  in Stage 1) stand.
 - **Date:** 2026-07-04
 - **Amends:** `PORT_MASTER_PLAN.md` principles 1 & 3 and §10, **for the
   application layer only**. The spec layer was already superseded by ADR-004.
 - **Builds on:** ADR-004 (spec crates generated from BMM), ADR-005 (ITS XML/REST
   generated). ADR-003 (spec-gap behaviour) still governs `openehr-*` `*_impl.rs`.
+
+> ## ⚠️ AMENDMENT (2026-07-05, ADR-008): storage/engine are greenfield; conformance replaces parity
+>
+> §3 ("bespoke server logic **follows EHRbase's algorithm as the reference**";
+> "composition versioning (current + `_history`)"; the AQL AST→ASL→SQL framing)
+> and §4 ("the real EHRbase v2 schema is **reused verbatim**") are **superseded
+> by ADR-008**. The application's storage, versioning, and AQL engine are now our
+> own PG18-native designs (one `node` table + one temporal `vo_version` table —
+> **no current/`_history` pairs**; a typed AQL IR of our own design over a
+> BMM-generated RM model), and the acceptance instrument is the **openEHR CNF
+> conformance schedule**, not the parity harness / `USE_REFERENCE_EHRBASE` gate.
+> EHRbase is prior art, not an oracle. The rest of ADR-006 — build the app as
+> modern idiomatic Rust on the generated `openehr-*` crates, the pinned stack,
+> Basic + OAuth2/OIDC auth in Stage 1 — is unchanged. Read ADR-008 first.
 
 ## Context
 
