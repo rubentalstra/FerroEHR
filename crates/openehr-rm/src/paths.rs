@@ -63,12 +63,21 @@ pub struct Predicate {
 }
 
 impl Predicate {
-    fn is_empty(&self) -> bool {
+    /// Whether this predicate constrains nothing (matches every node).
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
         self.archetype_node_id.is_none() && self.name_value.is_none()
     }
 
-    /// Whether a JSON node satisfies this predicate.
-    fn matches(&self, node: &Value) -> bool {
+    /// Whether a canonical-JSON RM node satisfies this predicate.
+    ///
+    /// The `archetype_node_id` conjunct matches `LOCATABLE.archetype_node_id`
+    /// (the `[atNNNN]` / `[archetype-id]` shortcut); the `name_value` conjunct
+    /// matches `LOCATABLE.name.value` (a `DV_TEXT`) by exact, case-sensitive
+    /// string comparison — the Xpath `name/value='…'` semantics of BASE
+    /// `master11-paths` §"Name-based Predicate". Both are ANDed.
+    #[must_use]
+    pub fn matches(&self, node: &Value) -> bool {
         if let Some(id) = self.archetype_node_id.as_deref()
             && node.get("archetype_node_id").and_then(Value::as_str) != Some(id)
         {
@@ -286,6 +295,24 @@ fn step<'a>(node: &'a Value, segment: &PathSegment, out: &mut Vec<&'a Value>) {
             }
         }
     }
+}
+
+/// One RM path step over the canonical-JSON tree: every value under
+/// `segment.attribute` on `node` that satisfies `segment.predicate`, in
+/// document order.
+///
+/// A single-valued attribute yields at most one value (kept only if the
+/// predicate matches — a predicate constrains a node regardless of the
+/// attribute's cardinality, BASE `master11-paths` §"Predicate Expressions");
+/// a container attribute yields each matching element. This is the primitive
+/// [`items_at_path`] iterates, exposed so path-walking consumers (the FLAT
+/// converters, the composition validator) compose it instead of re-deriving a
+/// walker.
+#[must_use]
+pub fn select_children<'a>(node: &'a Value, segment: &PathSegment) -> Vec<&'a Value> {
+    let mut out = Vec::new();
+    step(node, segment, &mut out);
+    out
 }
 
 /// RM `PATHABLE.items_at_path`: every item the path resolves to, relative to

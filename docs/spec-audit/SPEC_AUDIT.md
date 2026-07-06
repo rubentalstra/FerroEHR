@@ -138,7 +138,19 @@ Total: **180 findings**.
       comparison, EVENT invariants) — feeds P16 AQL.
 
 ### Wave 3 — minor divergences, hygiene, consolidation
-- [ ] W3-A One AQL-path module (delete the 3 parsers) — F-13-20/21, F-13-50..52.
+- [x] W3-A One RM-path module — F-13-20/21, F-13-50/51/52. Both `openehr-flat`
+      path parsers + their predicate-matching/navigation deleted and routed
+      through the single `openehr_rm::paths` (BASE master11-paths) via a thin
+      crate-local `openehr-flat/src/path.rs`; `openehr-rm` gained only
+      spec-general surface (`Predicate::matches`/`is_empty` pub +
+      `select_children`). Two validator leniencies tightened to the spec
+      (predicate re-checked on single-valued attributes; `name/value` matches
+      canonical `DV_TEXT` only). `openehr-query` hygiene: F-13-50 (VERSION/node
+      standard-predicate arms) already landed in W2-E; F-13-51 double
+      `path_parsers()` build collapsed to one; F-13-52 stale doc fixed (lossy
+      numeric parse already fixed by W2-E). The `openehr-query` AQL *grammar*
+      parser stays distinct from RM-instance navigation — unifying the two is
+      P16 work (per F-12-02 note).
 - [ ] W3-B Generic NotImplemented dispatcher (~500 LoC gone) — F-13-03.
 - [ ] W3-C `ehrbase-quirks` feature actually gates Better-isms — F-13-25.
 - [ ] W3-D opt14 ↔ am14 constraint-model consolidation or ADR — F-09-02.
@@ -179,3 +191,16 @@ Total: **180 findings**.
   canonical-XML COMPOSITION fixtures: 4 fixtures byte-identical modulo the cited
   cabolabs verbose-`xsi:type` convention (minimal-subset verified), 0 real
   divergences. F-05-04/05 assessed (do not block; left with notes).
+- 2026-07-06: **W3-A done** (F-13-20/21, F-13-50/51/52). The two byte-identical
+  `openehr-flat` AQL-path parsers + their duplicated predicate-matching and
+  RM-navigation are deleted and consolidated onto the single
+  `openehr_rm::paths` implementation (F-12-02, BASE master11-paths) via a thin
+  crate-local `openehr-flat/src/path.rs`. `openehr-rm` additions were minimal
+  and spec-general only (`Predicate::matches`/`is_empty` made pub, a
+  `select_children` per-step primitive). Two validator leniencies resolved to
+  the spec (predicate now re-checked on single-valued attributes; `name/value`
+  matches only the canonical `DV_TEXT` form) — both only affect non-canonical
+  input. `openehr-query` hygiene: F-13-50 already fixed by W2-E; F-13-51
+  duplicate `path_parsers()` build collapsed; F-13-52 stale doc corrected.
+  `openehr-rm`/`openehr-flat`/`openehr-query` build + clippy + fmt clean, 279
+  tests pass, workspace builds green.

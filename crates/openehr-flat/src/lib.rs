@@ -14,6 +14,7 @@
 pub mod cache;
 pub mod error;
 pub mod flat;
+pub(crate) mod path;
 pub mod structured;
 pub mod validation;
 pub mod webtemplate;

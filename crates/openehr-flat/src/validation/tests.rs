@@ -543,10 +543,20 @@ fn existence_empty_array_counts_as_absent() {
 
 #[test]
 fn segment_parsing_respects_brackets() {
-    let segs = parse_segments("/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value");
+    // Parsing now routes through the single `openehr_rm::paths` implementation
+    // via `crate::path`; this asserts the validator sees the same segments.
+    let segs = crate::path::parse("/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value");
     assert_eq!(segs.len(), 3);
-    assert_eq!(segs[0].attr, "content");
-    assert!(matches!(&segs[0].pred, Pred::Node(id) if id == "openEHR-EHR-SECTION.x.v1"));
-    assert!(matches!(&segs[1].pred, Pred::NodeNamed(id, name) if id == "at0004" && name == "Sys"));
-    assert!(matches!(segs[2].pred, Pred::Any));
+    assert_eq!(segs[0].attribute, "content");
+    assert_eq!(
+        segs[0].predicate.archetype_node_id.as_deref(),
+        Some("openEHR-EHR-SECTION.x.v1")
+    );
+    assert_eq!(segs[0].predicate.name_value, None);
+    assert_eq!(
+        segs[1].predicate.archetype_node_id.as_deref(),
+        Some("at0004")
+    );
+    assert_eq!(segs[1].predicate.name_value.as_deref(), Some("Sys"));
+    assert!(segs[2].predicate.is_empty());
 }

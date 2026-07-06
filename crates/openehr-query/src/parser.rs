@@ -6,11 +6,12 @@
 //! than `OR` (the grammar's left recursion is realized here as `or` over `and`
 //! over atoms), with parenthesized grouping.
 //!
-//! Coverage note: this is the core of the grammar (select/from/where/order/
-//! limit, `CONTAINS` trees, identified paths, standard/node/archetype
-//! predicates, comparisons, primitives, params, aggregates, functions). A few
-//! rarely-used corners are marked `// TODO(port):` and parse into the nearest
-//! faithful AST node.
+//! Coverage note: this covers the grammar (select/from/where/order/limit,
+//! `CONTAINS` trees, identified paths, standard/node/archetype predicates —
+//! including the `VERSION[standardPredicate]` and top-level
+//! `pathPredicate` standard forms — comparisons, primitives, params,
+//! aggregates, functions). Overflowing integer literals and `TOP`/`LIMIT`/
+//! `OFFSET` counts are reported as parse errors, never silently coerced.
 
 use crate::ast::{
     AggregateCall, ArchetypePredicate, ClassExprOperand, ColumnExpr, CompareOperand,
@@ -420,7 +421,11 @@ fn function_parsers<'a>(
 
 #[allow(clippy::too_many_lines)] // one combinator builder for the whole grammar
 fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
-    let (identified, _predicate, _standard) = path_parsers();
+    // The whole path grammar (identified paths, the path predicate, and the
+    // bare standard predicate) is built once here and shared by both the
+    // SELECT/terminal side (`identified`) and the FROM side (`predicate` on a
+    // class operand, `standard` inside a VERSION predicate) — F-13-51.
+    let (identified, predicate, standard) = path_parsers();
 
     // terminal : primitive | PARAMETER | identifiedPath | functionCall
     // (functionCall needs terminal → declare terminal recursively.)
@@ -475,7 +480,6 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
 
     // ── FROM / containsExpr ──
     // classExprOperand : IDENTIFIER variable? pathPredicate? | VERSION variable? [versionPredicate]?
-    let (_ip2, predicate2, standard2) = path_parsers();
     // versionPredicate : LATEST_VERSION | ALL_VERSIONS | standardPredicate
     // The third (standardPredicate) alternative is wired here — F-08-02 — so
     // `VERSION v[commit_audit/time_committed > '2020-01-01']` parses.
@@ -483,7 +487,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         Token::LatestVersion => VersionPredicate::Latest,
         Token::AllVersions => VersionPredicate::All,
     }
-    .or(standard2.map(|s| VersionPredicate::Standard(Box::new(s))));
+    .or(standard.map(|s| VersionPredicate::Standard(Box::new(s))));
     let class_operand = just(Token::Version)
         .ignore_then(ident().or_not())
         .then(
@@ -495,14 +499,13 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
             variable,
             predicate,
         })
-        .or(ident()
-            .then(ident().or_not())
-            .then(predicate2.or_not())
-            .map(|((rm_type, variable), predicate)| ClassExprOperand::Class {
+        .or(ident().then(ident().or_not()).then(predicate.or_not()).map(
+            |((rm_type, variable), predicate)| ClassExprOperand::Class {
                 rm_type,
                 variable,
                 predicate,
-            }));
+            },
+        ));
 
     let contains = recursive(|contains| {
         let atom = class_operand

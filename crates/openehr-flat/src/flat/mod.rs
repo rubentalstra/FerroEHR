@@ -12,7 +12,6 @@
 //!
 //! [`WebTemplate`]: crate::webtemplate::WebTemplate
 
-mod aql;
 mod context;
 mod from_flat;
 mod graph;

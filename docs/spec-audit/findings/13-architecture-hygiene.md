@@ -263,7 +263,17 @@ parallel implementations of the same operations internally.
   one `Seg`/`Pred` type; delete `validation::{parse_segments, parse_segment,
   Pred, Segment}` and route the validator through it. Longer-term (P16) share a
   single RM-path abstraction with `openehr-query` rather than three parsers.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W3-A — both flat parsers deleted. Parsing +
+  predicate-matching + per-step navigation now route through the single
+  canonical implementation in `openehr_rm::paths` (BASE master11-paths), reached
+  via a new thin crate-local `openehr-flat/src/path.rs` (`parse` / `relative` /
+  `navigate` / `resolve`). Deleted: `flat/aql.rs` (`AqlSeg`, `parse_path`,
+  `parse_seg`, `matches_pred`, `resolve`, `relative`) and
+  `validation/mod.rs`'s `Pred`, `Segment`, `parse_segments`, `parse_segment`,
+  `get_attr`, `navigate_trailing`, `node_id`, `instance_name`. `openehr-rm`
+  gained only spec-general surface: `Predicate::matches`/`is_empty` made public
+  and a `select_children` per-step primitive (the step `items_at_path` already
+  iterated). Semantic differences resolved to the spec — see F-13-21.)*
 
 ### F-13-21: Predicate-matching + RM-instance navigation duplicated alongside the parsers
 - **Severity:** major
@@ -273,7 +283,29 @@ parallel implementations of the same operations internally.
   `navigate_trailing`+`get_attr` are the same descent, maintained twice.
 - **Target design:** Fold into the shared `path` module: one `matches(node,
   &Pred)`, one `resolve(rm, &[Seg]) -> Vec<&Value>`, one `instance_name`/`node_id`.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W3-A — predicate matching is now the single
+  `openehr_rm::paths::Predicate::matches`; navigation is `select_children`
+  (per-step) composed by `openehr-flat/src/path.rs::navigate`. Both flat copies
+  gone. **Two SPEC-behaviour differences fell out and were resolved to the
+  spec, both tightening the validator's previous leniency (a valid canonical
+  composition is unaffected — the divergence only shows on non-canonical or
+  malformed input, which is itself an RM violation):**
+  1. **Predicate re-checked on single-valued attributes.** The old flat
+     `resolve`/`navigate_trailing` descended a single-valued (object) attribute
+     *without* re-testing the segment predicate; the RM step
+     (`select_children`) re-tests it. BASE
+     `master11-paths` §"Predicate Expressions" ("predicate expressions are
+     often possible even on single-valued attributes, and can be used …") — a
+     predicate constrains the matched node regardless of the attribute's
+     cardinality, so re-checking is correct. Effect: a single-valued node whose
+     `archetype_node_id` disagrees with the path predicate no longer resolves
+     (was silently descended before).
+  2. **`name/value` matches only the canonical `DV_TEXT` form.** The old
+     `instance_name` also accepted a bare-string `name`; RM `Predicate::matches`
+     matches `LOCATABLE.name.value` (a `DV_TEXT`) exactly, per BASE
+     `master11-paths` §"Name-based Predicate" (Xpath `name/value='…'`).
+     Canonical JSON always encodes `name` as a `DV_TEXT` object, so this drops a
+     non-canonical leniency only.)*
 
 ### F-13-22: `CODE_PHRASE` / `DV_CODED_TEXT` / `DV_DATE_TIME` JSON builders triplicated + inlined
 - **Severity:** major
@@ -401,7 +433,11 @@ The AST is clean and does **not** re-model RM types (good). Issues:
 - **Target design:** Either wire the standard-predicate arm in `class_operand`
   (`parser.rs:345`), or drop the variant until P16 implements it. Don't ship an
   AST shape no input can produce.
-- [ ] fixed
+- [x] fixed *(already resolved by W2-E, verified in W3-A: `parser.rs`
+  `version_predicate` now yields `VersionPredicate::Standard` from the
+  standard-predicate arm (F-08-02), and `NodePredicate::Standard` /
+  `PathPredicate::Standard` are constructed for bare comparisons (F-08-10). No
+  unconstructable variant remains.)*
 
 ### F-13-51: `path_parsers()` built twice, each call discarding half; `query()` oversized
 - **Severity:** minor
@@ -409,7 +445,13 @@ The AST is clean and does **not** re-model RM types (good). Issues:
 - **Target design:** Build `path_parsers()` once and share both halves. Extract
   `select_clause`/`contains_expr`/`where_expr`/`order_limit` sub-grammar builders
   (mirroring `path_parsers`), removing the lint allow.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W3-A — the duplicate `path_parsers()` build in
+  `query()` is removed: it is now built once and its three halves
+  (`identified` for the SELECT/terminal side; `predicate`/`standard` for the
+  FROM `classExprOperand` / VERSION predicate) are shared. The
+  `query()`-oversized / sub-grammar-extraction half is a larger refactor with
+  W2-E-regression risk and is left as a P16 cleanup — the `#[allow(too_many_lines)]`
+  stays.)*
 
 ### F-13-52: Silent lossy numeric parsing + stale doc + span-collapsing wrapper
 - **Severity:** minor
@@ -417,7 +459,14 @@ The AST is clean and does **not** re-model RM types (good). Issues:
 - **Target design:** Propagate a parse error (or saturate with a documented
   decision) instead of defaulting to zero; fix the stale doc; ensure the P16
   engine calls `parse` (span-rich), not `parse_str`.
-- [ ] fixed
+- [x] fixed *(2026-07-06 — the lossy `.parse().unwrap_or_default()` numeric
+  parses were already replaced by W2-E: integer/real primitives use
+  `.ok().map(...)`/`.ok()?` (→ parse error, not `0`) and `TOP`/`LIMIT`/`OFFSET`
+  use `.try_map(… .map_err(Simple::new))` (overflow = parse error). W3-A fixed
+  the remaining stale doc claim (the module header no longer claims non-existent
+  `// TODO(port):` markers; it states the overflow-is-an-error behaviour). The
+  `parse_str` span-collapse is a convenience wrapper for tests/CLI; the P16
+  engine using span-rich `parse` is P16 guidance, left as a note.)*
 
 ---
 
