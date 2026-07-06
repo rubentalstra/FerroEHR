@@ -3,3 +3,7 @@
 pub mod composition;
 pub mod content;
 pub mod event_context;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod composition_impl;
+pub mod event_context_impl;

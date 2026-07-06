@@ -1,0 +1,60 @@
+//! Hand-written RM class invariants (ADR-003) for `DV_DURATION`.
+//!
+//! `Value_valid`: `value` is a valid ISO-8601 duration (openEHR permits a
+//! leading sign and a `W` designator mixed with the others). Plus the inherited
+//! DV_AMOUNT / DV_QUANTIFIED invariants (`DV_DURATION` extends `DV_AMOUNT`). See
+//! `dv_date_impl` for the PORT NOTE on why value well-formedness is explicit.
+
+use crate::data_types::quantity::date_time::dv_duration::DvDuration;
+use crate::validate::{
+    InvariantViolation, Validate, is_valid_iso_duration, push_dv_amount_invariants,
+};
+
+impl Validate for DvDuration {
+    fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        if !is_valid_iso_duration(&self.value) {
+            out.push(InvariantViolation::here(
+                "Invariant Value_valid failed on type DV_DURATION",
+            ));
+        }
+        push_dv_amount_invariants(
+            out,
+            "DV_DURATION",
+            self.accuracy,
+            self.accuracy_is_percent,
+            self.magnitude_status.as_deref(),
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn duration(value: &str) -> DvDuration {
+        DvDuration {
+            normal_status: None,
+            normal_range: None,
+            other_reference_ranges: Vec::new(),
+            magnitude_status: None,
+            accuracy: None,
+            accuracy_is_percent: None,
+            value: value.to_owned(),
+        }
+    }
+
+    #[test]
+    fn valid_duration() {
+        assert!(duration("P1Y2M10DT2H30M").invariants().is_empty());
+        assert!(duration("PT10H").invariants().is_empty());
+    }
+
+    #[test]
+    fn invalid_duration() {
+        let v = duration("10 hours").invariants();
+        assert!(
+            v.iter()
+                .any(|m| m.message == "Invariant Value_valid failed on type DV_DURATION")
+        );
+    }
+}

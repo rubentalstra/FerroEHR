@@ -9,3 +9,9 @@ pub mod party_related;
 pub mod party_self;
 pub mod revision_history;
 pub mod revision_history_item;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod attestation_impl;
+pub mod audit_details_impl;
+pub mod party_identified_impl;
+pub mod party_related_impl;

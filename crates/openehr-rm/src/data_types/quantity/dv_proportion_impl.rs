@@ -1,0 +1,172 @@
+//! Hand-written RM class invariants (ADR-003) for `DV_PROPORTION`.
+//!
+//! Mirrors archie `DvProportion` (`ProportionKind` = ratio 0, unitary 1,
+//! percent 2, fraction 3, integer_fraction 4), plus the inherited DV_AMOUNT /
+//! DV_QUANTIFIED invariants.
+
+use crate::data_types::quantity::dv_proportion::DvProportion;
+use crate::validate::{InvariantViolation, Validate, is_integral, push_dv_amount_invariants};
+
+// ProportionKind codes.
+const PK_UNITARY: i32 = 1;
+const PK_PERCENT: i32 = 2;
+const PK_FRACTION: i32 = 3;
+const PK_INTEGER_FRACTION: i32 = 4;
+
+impl Validate for DvProportion {
+    // PORT NOTE: openEHR/archie compare denominator against 0/1/100 by exact
+    // value (`denominator.equals(0d)` etc.), so exact float comparison is the
+    // intended semantics here.
+    #[allow(clippy::float_cmp)]
+    fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        let ty = self.r#type;
+        let integral = is_integral(self.numerator) && is_integral(self.denominator);
+
+        // Type_validity: type in 0..=4.
+        if !(0..=4).contains(&ty) {
+            out.push(InvariantViolation::here(
+                "Invariant Type_validity failed on type DV_PROPORTION",
+            ));
+        }
+        // Valid_denominator: denominator != 0.
+        if self.denominator == 0.0 {
+            out.push(InvariantViolation::here(
+                "Invariant Valid_denominator failed on type DV_PROPORTION",
+            ));
+        }
+        // Precision_validity: precision 0 implies integral numerator & denominator.
+        if self.precision == Some(0) && !integral {
+            out.push(InvariantViolation::here(
+                "Invariant Precision_validity failed on type DV_PROPORTION",
+            ));
+        }
+        // Fraction_validity: fraction / integer_fraction kinds are integral.
+        if (ty == PK_FRACTION || ty == PK_INTEGER_FRACTION) && !integral {
+            out.push(InvariantViolation::here(
+                "Invariant Fraction_validity failed on type DV_PROPORTION",
+            ));
+        }
+        // Unitary_validity: unitary kind has denominator 1.
+        if ty == PK_UNITARY && self.denominator != 1.0 {
+            out.push(InvariantViolation::here(
+                "Invariant Unitary_validity failed on type DV_PROPORTION",
+            ));
+        }
+        // Percent_validity: percent kind has denominator 100.
+        if ty == PK_PERCENT && self.denominator != 100.0 {
+            out.push(InvariantViolation::here(
+                "Invariant Percent_validity failed on type DV_PROPORTION",
+            ));
+        }
+
+        // Inherited DV_AMOUNT + DV_QUANTIFIED invariants.
+        push_dv_amount_invariants(
+            out,
+            "DV_PROPORTION",
+            self.accuracy,
+            self.accuracy_is_percent,
+            self.magnitude_status.as_deref(),
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn proportion(
+        numerator: f64,
+        denominator: f64,
+        ty: i32,
+        precision: Option<i32>,
+    ) -> DvProportion {
+        DvProportion {
+            normal_status: None,
+            normal_range: None,
+            other_reference_ranges: Vec::new(),
+            magnitude_status: None,
+            accuracy: None,
+            accuracy_is_percent: None,
+            numerator,
+            denominator,
+            r#type: ty,
+            precision,
+        }
+    }
+
+    fn messages(p: &DvProportion) -> Vec<String> {
+        p.invariants().into_iter().map(|v| v.message).collect()
+    }
+
+    #[test]
+    fn valid_proportions() {
+        assert!(
+            proportion(5.0, 1.0, PK_UNITARY, None)
+                .invariants()
+                .is_empty()
+        );
+        assert!(
+            proportion(1.0, 100.0, PK_PERCENT, None)
+                .invariants()
+                .is_empty()
+        );
+        assert!(
+            proportion(5.0, 100.0, PK_FRACTION, None)
+                .invariants()
+                .is_empty()
+        );
+        assert!(proportion(0.5, 100.6, 0, None).invariants().is_empty()); // ratio
+    }
+
+    #[test]
+    fn unitary_requires_denominator_one() {
+        assert!(
+            messages(&proportion(5.5, 2.0, PK_UNITARY, None))
+                .contains(&"Invariant Unitary_validity failed on type DV_PROPORTION".to_owned())
+        );
+    }
+
+    #[test]
+    fn percent_requires_denominator_hundred() {
+        assert!(
+            messages(&proportion(5.5, 2.0, PK_PERCENT, None))
+                .contains(&"Invariant Percent_validity failed on type DV_PROPORTION".to_owned())
+        );
+    }
+
+    #[test]
+    fn fraction_requires_integral() {
+        assert!(
+            messages(&proportion(5.5, 2.0, PK_INTEGER_FRACTION, None))
+                .contains(&"Invariant Fraction_validity failed on type DV_PROPORTION".to_owned())
+        );
+    }
+
+    #[test]
+    fn denominator_zero_invalid() {
+        assert!(
+            messages(&proportion(5.5, 0.0, 0, None))
+                .contains(&"Invariant Valid_denominator failed on type DV_PROPORTION".to_owned())
+        );
+    }
+
+    #[test]
+    fn type_out_of_range_invalid() {
+        assert!(
+            messages(&proportion(5.5, 1.0, -1, None))
+                .contains(&"Invariant Type_validity failed on type DV_PROPORTION".to_owned())
+        );
+        assert!(
+            messages(&proportion(5.5, 1.0, 5, None))
+                .contains(&"Invariant Type_validity failed on type DV_PROPORTION".to_owned())
+        );
+    }
+
+    #[test]
+    fn precision_zero_requires_integral() {
+        assert!(
+            messages(&proportion(5.5, 1.0, 0, Some(0)))
+                .contains(&"Invariant Precision_validity failed on type DV_PROPORTION".to_owned())
+        );
+    }
+}

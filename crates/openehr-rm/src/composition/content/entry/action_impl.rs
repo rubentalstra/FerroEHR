@@ -1,0 +1,132 @@
+//! Hand-written RM class invariants (ADR-003) for `ACTION`.
+//!
+//! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
+//! `Archetype_node_id_valid`). See `observation_impl` for the PORT NOTE.
+
+use crate::composition::content::entry::action::Action;
+use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+
+impl Validate for Action {
+    fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        if self.archetype_details.is_none() {
+            out.push(InvariantViolation::here(
+                "Invariant Is_archetypeRoot failed on type ACTION",
+            ));
+        }
+        push_archetype_node_id_valid(out, "ACTION", &self.archetype_node_id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::archetyped::archetyped::Archetyped;
+    use crate::common::generic::party_proxy::PartyProxy;
+    use crate::common::generic::party_self::PartySelf;
+    use crate::composition::content::entry::ism_transition::IsmTransition;
+    use crate::data_structures::item_structure::item_structure::ItemStructure;
+    use crate::data_structures::item_structure::item_tree::ItemTree;
+    use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
+    use crate::data_types::text::code_phrase::CodePhrase;
+    use crate::data_types::text::dv_coded_text::DvCodedText;
+    use crate::data_types::text::dv_text::{DvText, DvTextData};
+    use openehr_base::prelude::{ArchetypeId, TerminologyId};
+
+    fn text(value: &str) -> DvText {
+        DvText::DvText(DvTextData {
+            value: value.to_owned(),
+            hyperlink: None,
+            formatting: None,
+            mappings: Vec::new(),
+            language: None,
+            encoding: None,
+        })
+    }
+
+    fn code(terminology: &str, code: &str) -> CodePhrase {
+        CodePhrase {
+            terminology_id: TerminologyId {
+                value: terminology.to_owned(),
+            },
+            code_string: code.to_owned(),
+            preferred_term: None,
+        }
+    }
+
+    fn coded(value: &str, terminology: &str, cs: &str) -> DvCodedText {
+        DvCodedText {
+            value: value.to_owned(),
+            hyperlink: None,
+            formatting: None,
+            mappings: Vec::new(),
+            language: None,
+            encoding: None,
+            defining_code: code(terminology, cs),
+        }
+    }
+
+    fn action() -> Action {
+        Action {
+            name: text("Administer"),
+            archetype_node_id: "openEHR-EHR-ACTION.medication.v1".to_owned(),
+            uid: None,
+            links: Vec::new(),
+            archetype_details: Some(Archetyped {
+                archetype_id: ArchetypeId {
+                    value: "openEHR-EHR-ACTION.medication.v1".to_owned(),
+                },
+                template_id: None,
+                rm_version: "1.1.0".to_owned(),
+            }),
+            feeder_audit: None,
+            language: code("ISO_639-1", "en"),
+            encoding: code("IANA_character-sets", "UTF-8"),
+            other_participations: Vec::new(),
+            workflow_id: None,
+            subject: PartyProxy::PartySelf(PartySelf { external_ref: None }),
+            provider: None,
+            protocol: None,
+            guideline_id: None,
+            time: DvDateTime {
+                normal_status: None,
+                normal_range: None,
+                other_reference_ranges: Vec::new(),
+                magnitude_status: None,
+                accuracy: None,
+                value: "2021-01-01T10:00:00".to_owned(),
+            },
+            ism_transition: IsmTransition {
+                current_state: coded("active", "openehr", "245"),
+                transition: None,
+                careflow_step: None,
+                reason: Vec::new(),
+            },
+            instruction_details: None,
+            description: ItemStructure::ItemTree(Box::new(ItemTree {
+                name: text("tree"),
+                archetype_node_id: "at0002".to_owned(),
+                uid: None,
+                links: Vec::new(),
+                archetype_details: None,
+                feeder_audit: None,
+                items: Vec::new(),
+            })),
+        }
+    }
+
+    #[test]
+    fn valid_action() {
+        assert!(action().invariants().is_empty());
+    }
+
+    #[test]
+    fn missing_archetype_details_invalid() {
+        let mut a = action();
+        a.archetype_details = None;
+        assert!(
+            a.invariants()
+                .iter()
+                .any(|m| m.message == "Invariant Is_archetypeRoot failed on type ACTION")
+        );
+    }
+}

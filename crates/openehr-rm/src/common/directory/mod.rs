@@ -2,3 +2,6 @@
 
 pub mod folder;
 pub mod versioned_folder;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod folder_impl;

@@ -13,3 +13,10 @@ pub mod dv_quantity;
 pub mod dv_scale;
 pub mod proportion_kind;
 pub mod reference_range;
+
+// hand-written modules (ADR-003 spec behaviour), auto-declared:
+pub mod dv_count_impl;
+pub mod dv_interval_impl;
+pub mod dv_proportion_impl;
+pub mod dv_quantity_impl;
+pub mod reference_range_impl;
