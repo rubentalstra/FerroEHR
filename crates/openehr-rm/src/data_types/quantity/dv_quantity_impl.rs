@@ -4,11 +4,14 @@
 //! (`Accuracy_is_percent_validity`, `Accuracy_valid`) and DV_QUANTIFIED
 //! (`Magnitude_status_valid`) invariants — see the shared helper.
 //!
-//! PORT NOTE: the DV_ORDERED `Normal_status_validity` (terminology) and
-//! `Normal_range_and_status_consistency` (magnitude comparison) invariants are
-//! deferred — the former needs `openehr-term`, the latter the P16
-//! `openehr_magnitude` machinery.
+//! Plus the DV_ORDERED `Normal_range_and_status_consistency` invariant, via
+//! the ordered-magnitude machinery in `dv_ordered_impl` (F-12-04/06).
+//!
+//! PORT NOTE: the DV_ORDERED `Normal_status_validity` invariant (terminology)
+//! is deferred to the composition validator + `openehr-term` (this crate has
+//! no terminology dependency).
 
+use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::data_types::quantity::dv_quantity::DvQuantity;
 use crate::validate::{InvariantViolation, Validate, push_dv_amount_invariants};
 
@@ -20,6 +23,13 @@ impl Validate for DvQuantity {
             self.accuracy,
             self.accuracy_is_percent,
             self.magnitude_status.as_deref(),
+        );
+        push_normal_range_consistency(
+            out,
+            "DV_QUANTITY",
+            self.normal_status.as_ref(),
+            self.normal_range.as_deref(),
+            self,
         );
     }
 }
@@ -92,5 +102,64 @@ mod tests {
                 &"Invariant Magnitude_status_valid failed on type DV_QUANTITY".to_owned()
             )
         );
+    }
+
+    #[test]
+    fn normal_range_and_status_consistency() {
+        use crate::data_types::quantity::dv_interval::DvInterval;
+        use crate::data_types::text::code_phrase::CodePhrase;
+        use openehr_base::prelude::TerminologyId;
+
+        let range = |lo: f64, hi: f64| {
+            Box::new(DvInterval {
+                lower: Some(quantity_with(lo)),
+                upper: Some(quantity_with(hi)),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: true,
+                upper_included: true,
+            })
+        };
+        let status = |code: &str| CodePhrase {
+            terminology_id: TerminologyId {
+                value: "openehr_normal_statuses".to_owned(),
+            },
+            code_string: code.to_owned(),
+            preferred_term: None,
+        };
+
+        // In range + status "N": consistent.
+        let mut q = quantity(); // magnitude 43.0
+        q.normal_range = Some(range(0.0, 100.0));
+        q.normal_status = Some(status("N"));
+        assert!(q.invariants().is_empty());
+
+        // In range + status "H": inconsistent.
+        let mut q = quantity();
+        q.normal_range = Some(range(0.0, 100.0));
+        q.normal_status = Some(status("H"));
+        assert!(messages(&q).contains(
+            &"Invariant Normal_range_and_status_consistency failed on type DV_QUANTITY".to_owned()
+        ));
+
+        // Out of range + status "N": inconsistent.
+        let mut q = quantity();
+        q.normal_range = Some(range(100.0, 200.0));
+        q.normal_status = Some(status("N"));
+        assert!(messages(&q).contains(
+            &"Invariant Normal_range_and_status_consistency failed on type DV_QUANTITY".to_owned()
+        ));
+
+        // Out of range + status "H": consistent.
+        let mut q = quantity();
+        q.normal_range = Some(range(100.0, 200.0));
+        q.normal_status = Some(status("H"));
+        assert!(q.invariants().is_empty());
+    }
+
+    fn quantity_with(magnitude: f64) -> DvQuantity {
+        let mut q = quantity();
+        q.magnitude = magnitude;
+        q
     }
 }

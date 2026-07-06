@@ -12,9 +12,45 @@
 use crate::data_types::text::term_mapping::TermMapping;
 use crate::validate::{InvariantViolation, Validate};
 
+impl TermMapping {
+    /// RM `TERM_MAPPING.is_valid_match_code(c)`: `c` is one of `> = < ?`.
+    #[must_use]
+    pub fn is_valid_match_code(c: char) -> bool {
+        matches!(c, '>' | '=' | '<' | '?')
+    }
+
+    /// RM `TERM_MAPPING.narrower()`: the mapping is to a narrower term
+    /// (`match = '<'`).
+    #[must_use]
+    pub fn narrower(&self) -> bool {
+        self.r#match == '<'
+    }
+
+    /// RM `TERM_MAPPING.broader()`: the mapping is to a broader term
+    /// (`match = '>'`).
+    #[must_use]
+    pub fn broader(&self) -> bool {
+        self.r#match == '>'
+    }
+
+    /// RM `TERM_MAPPING.equivalent()`: the mapping is to an equivalent term
+    /// (`match = '='`).
+    #[must_use]
+    pub fn equivalent(&self) -> bool {
+        self.r#match == '='
+    }
+
+    /// RM `TERM_MAPPING.unknown()`: the kind of mapping is unknown
+    /// (`match = '?'`).
+    #[must_use]
+    pub fn unknown(&self) -> bool {
+        self.r#match == '?'
+    }
+}
+
 impl Validate for TermMapping {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if !matches!(self.r#match, '<' | '=' | '>' | '?') {
+        if !Self::is_valid_match_code(self.r#match) {
             out.push(InvariantViolation::here(
                 "Invariant Match_valid failed on type TERM_MAPPING",
             ));

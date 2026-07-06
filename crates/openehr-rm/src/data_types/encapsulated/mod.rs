@@ -6,3 +6,4 @@ pub mod dv_parsable;
 
 // hand-written modules (ADR-003 spec behaviour), auto-declared:
 pub mod dv_multimedia_impl;
+pub mod dv_parsable_impl;

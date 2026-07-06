@@ -299,13 +299,19 @@ fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantVio
 ///
 /// Coverage is the set of concrete `openehr-rm` / `openehr-base` types that
 /// carry a non-terminology class invariant (the ones with a `*_impl.rs`
-/// sibling). Generic containers (`DV_INTERVAL`, `HISTORY`) are checked with
+/// sibling). `DV_INTERVAL` is dispatched with a `DvOrdered` element type so
+/// the `Limits_consistent` ordering invariant is reached (F-12-04/10), falling
+/// back to `serde_json::Value` (own boundary-flag invariants only) when the
+/// limits do not deserialize as typed `DV_ORDERED` values. The other generic
+/// containers (`HISTORY`, `POINT_EVENT`, `INTERVAL_EVENT`) are checked with
 /// `serde_json::Value` as the element type — enough for their own (non-child)
 /// invariants.
+#[allow(clippy::too_many_lines)] // a flat _type → run::<T> dispatch table
 pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use openehr_base::base_types::identification::internet_id::InternetId;
     use openehr_base::base_types::identification::iso_oid::IsoOid;
     use openehr_base::base_types::identification::object_ref::ObjectRefData;
+    use openehr_base::base_types::identification::object_version_id::ObjectVersionId;
     use openehr_base::base_types::identification::party_ref::PartyRef;
     use openehr_base::base_types::identification::version_tree_id::VersionTreeId;
 
@@ -316,6 +322,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use crate::common::generic::audit_details::AuditDetailsData;
     use crate::common::generic::party_identified::PartyIdentifiedData;
     use crate::common::generic::party_related::PartyRelated;
+    use crate::common::tags::item_tag::ItemTag;
     use crate::composition::composition::Composition;
     use crate::composition::content::entry::action::Action;
     use crate::composition::content::entry::activity::Activity;
@@ -327,19 +334,25 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use crate::composition::content::navigation::section::Section;
     use crate::composition::event_context::EventContext;
     use crate::data_structures::history::history::History;
+    use crate::data_structures::history::interval_event::IntervalEvent;
+    use crate::data_structures::history::point_event::PointEvent;
     use crate::data_structures::item_structure::item_table::ItemTable;
     use crate::data_structures::representation::cluster::Cluster;
     use crate::data_structures::representation::element::Element;
     use crate::data_types::basic::dv_identifier::DvIdentifier;
     use crate::data_types::encapsulated::dv_multimedia::DvMultimedia;
+    use crate::data_types::encapsulated::dv_parsable::DvParsable;
     use crate::data_types::quantity::date_time::dv_date::DvDate;
     use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
     use crate::data_types::quantity::date_time::dv_duration::DvDuration;
     use crate::data_types::quantity::date_time::dv_time::DvTime;
     use crate::data_types::quantity::dv_count::DvCount;
     use crate::data_types::quantity::dv_interval::DvInterval;
+    use crate::data_types::quantity::dv_ordered::DvOrdered;
+    use crate::data_types::quantity::dv_ordinal::DvOrdinal;
     use crate::data_types::quantity::dv_proportion::DvProportion;
     use crate::data_types::quantity::dv_quantity::DvQuantity;
+    use crate::data_types::quantity::dv_scale::DvScale;
     use crate::data_types::quantity::reference_range::ReferenceRange;
     use crate::data_types::text::code_phrase::CodePhrase;
     use crate::data_types::text::term_mapping::TermMapping;
@@ -364,12 +377,26 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "DV_DATE" => run::<DvDate>(value, out),
         "DV_TIME" => run::<DvTime>(value, out),
         "DV_DATE_TIME" => run::<DvDateTime>(value, out),
+        "DV_ORDINAL" => run::<DvOrdinal>(value, out),
+        "DV_SCALE" => run::<DvScale>(value, out),
+        "DV_PARSABLE" => run::<DvParsable>(value, out),
         "REFERENCE_RANGE" => run::<ReferenceRange>(value, out),
-        "DV_INTERVAL" => run::<DvInterval<Value>>(value, out),
+        // DV_INTERVAL: prefer the DV_ORDERED-typed element so the
+        // Limits_consistent ordering invariant runs (F-12-04); fall back to
+        // Value elements (boundary flags only) for non-DV_ORDERED payloads.
+        "DV_INTERVAL" => {
+            if let Ok(v) = serde_json::from_value::<DvInterval<DvOrdered>>(value.clone()) {
+                v.validate_invariants(out);
+            } else {
+                run::<DvInterval<Value>>(value, out);
+            }
+        }
         // data_structures
         "ELEMENT" => run::<Element>(value, out),
         "CLUSTER" => run::<Cluster>(value, out),
         "HISTORY" => run::<History<Value>>(value, out),
+        "POINT_EVENT" => run::<PointEvent<Value>>(value, out),
+        "INTERVAL_EVENT" => run::<IntervalEvent<Value>>(value, out),
         "ITEM_TABLE" => run::<ItemTable>(value, out),
         // common
         "PARTY_IDENTIFIED" => run::<PartyIdentifiedData>(value, out),
@@ -390,10 +417,12 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "ADMIN_ENTRY" => run::<AdminEntry>(value, out),
         "SECTION" => run::<Section>(value, out),
         "FOLDER" => run::<Folder>(value, out),
+        "ITEM_TAG" => run::<ItemTag>(value, out),
         // base identification
         "OBJECT_REF" => run::<ObjectRefData>(value, out),
         "PARTY_REF" => run::<PartyRef>(value, out),
         "VERSION_TREE_ID" => run::<VersionTreeId>(value, out),
+        "OBJECT_VERSION_ID" => run::<ObjectVersionId>(value, out),
         "ISO_OID" => run::<IsoOid>(value, out),
         "INTERNET_ID" => run::<InternetId>(value, out),
         _ => {}

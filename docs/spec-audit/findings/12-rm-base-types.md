@@ -65,7 +65,17 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   highest-value ones are itemised in F-12-02/03/04. Where a function is
   intentionally realised elsewhere (magnitude → SQL, ADR-008), record a
   `// PORT NOTE:` on the type so the omission is deliberate, not silent.
-- [ ] fixed
+- [ ] fixed *(partial, 2026-07-06 W2-L — landed: the identification accessor
+  layer (F-12-03/07), DV_ORDERED magnitude/comparison/`is_simple`/`is_normal`
+  (F-12-04), PATHABLE paths (F-12-02), `EVENT.offset_from` +
+  `INTERVAL_EVENT.interval_start_time` + `HISTORY.is_periodic` (F-12-05),
+  `DV_URI.{scheme,path,query,fragment_id}`, `TERM_MAPPING.{narrower,broader,
+  equivalent,unknown,is_valid_match_code}`, `DV_PARSABLE.size`,
+  `DV_PROPORTION.{magnitude,is_integral}`, `DV_QUANTITY.is_integral`. Still
+  missing (no current consumer): ITEM_TABLE/ITEM_LIST accessor suites,
+  `DATA_STRUCTURE.as_hierarchy`, `VERSIONED_OBJECT.*`,
+  `REVISION_HISTORY.most_recent_version`, DV_AMOUNT
+  `add/subtract/multiply/negative` arithmetic — add per consuming phase.)*
 
 ### F-12-02: PATHABLE path functions (`item_at_path`, `path_exists`, `parent`, …) implemented nowhere
 - **Severity:** major
@@ -90,7 +100,18 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   back-reference — implement via a path-index/visitor, never an owning ref.
   Confirm the P16 planner's intended source of truth (RM function vs. the
   nested-set `node` table) before duplicating.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-L — `crates/openehr-rm/src/paths.rs`: `RmPath`
+  parser (BASE master11-paths syntax: `atNNNN`/archetype-id predicates, the
+  `,'name'` shortcut, explicit `name/value='…'` / `@archetype_node_id='…'`
+  conjuncts; general comparison predicates rejected as
+  `PathError::UnsupportedPredicate` — those are AQL, P16) + navigation over
+  the canonical-JSON RM tree: `items_at_path` / `item_at_path` /
+  `path_exists` / `path_unique` / `path_of_item` / `parent_of` (root-anchored
+  parent lookup — no owning back-refs). Deliberately JSON-tree-based, not a
+  typed-enum visitor: every consumer (node codec, P15 validator, FLAT) holds
+  canonical JSON. **Consolidation plan:** `openehr-flat/src/flat/aql.rs`
+  (`parse_path`) and the app-layer path parsers (F-13-20/21, W3-A) migrate
+  onto this module — owned by those crates' waves, not W2-L.)*
 
 ### F-12-03: OBJECT_VERSION_ID / UID_BASED_ID / HIER_OBJECT_ID accessors + lexical-form handling missing
 - **Severity:** major
@@ -119,7 +140,20 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   `version_tree_id_impl.rs` pattern), then wire OBJECT_VERSION_ID into the
   `validate_rm_value` dispatcher. Complete the VERSION_TREE_ID accessor
   functions while there.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-L — new `openehr-base` identification siblings:
+  `lexical.rs` (shared `IdError` thiserror type + UID-subtype builder),
+  `uid_based_id_impl.rs` (`root`/`extension`/`has_extension` on
+  HIER_OBJECT_ID, OBJECT_VERSION_ID and the `UidBasedId` enum + `value()`),
+  `object_version_id_impl.rs` (`object_id`/`creating_system_id`/
+  `version_tree_id`/`is_branch`, strict three-part `FromStr`, and a
+  `Value_format_valid` invariant wired into `validate_rm_value`), and
+  `version_tree_id_impl.rs` extended with `trunk_version`/`is_branch`/
+  `is_first`/`branch_number`/`branch_version` + `FromStr` (branch segments now
+  require ≥ 1 per the spec's `Branch_*_valid`). **Migration targets (owned by
+  the app-crate agents, F-13-01/W2-B):** the 5 hand-rolled `::`-splitters in
+  `crates/ehrbase`/`ehrbase-rest` should move to
+  `openehr_base::…::ObjectVersionId::{from_str, object_id, creating_system_id,
+  version_tree_id, is_branch}`.)*
 
 ### F-12-04: DV_ORDERED comparison / magnitude unimplemented → interval + reference-range ordering not enforced
 - **Severity:** major
@@ -147,7 +181,21 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   the SQL `openehr_magnitude` for indexed query paths but do not leave RM
   validation blind. Confirm the accept-set against the AQL spec's DV_ORDERED
   ordering rules.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-L — `dv_ordered_impl.rs`: `magnitude()` per the
+  spec on every DV_QUANTIFIED subtype (DV_DATE days since 0001-01-01,
+  DV_TIME/DV_DATE_TIME seconds, DV_DURATION nominal seconds via
+  `Iso8601_duration.to_seconds` with `Average_days_in_year` 365.24 /
+  `Average_days_in_month` 30.42 per BASE `Time_definitions`),
+  `is_strictly_comparable_to` + `less_than` per subtype (units-gated for
+  DV_QUANTITY, kind-gated for DV_PROPORTION) and on the `DvOrdered` enum,
+  `is_simple`/`is_normal`, and an `OrderedLimit` comparison trait.
+  `dv_interval_impl.rs` now enforces `Limits_consistent` (incomparable or
+  inverted limits are violations; undecidable — `Value` elements or malformed
+  magnitudes — are left to the element's own `Value_valid`) and provides
+  `has()`; `reference_range_impl.rs` gains `is_in_range()`; every DV_ORDERED
+  subtype now also runs `Normal_range_and_status_consistency`. The P16
+  `openehr_magnitude` SQL function stays the indexed-path realisation and
+  must stay aligned with this module (PORT NOTE recorded on the module).)*
 
 ### F-12-05: EVENT / POINT_EVENT / INTERVAL_EVENT invariants missing and not in the validator dispatcher
 - **Severity:** major
@@ -169,7 +217,19 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   generic; dispatch with `serde_json::Value` element type as HISTORY/DV_INTERVAL
   already do). Cross-check `Period_consistency` against the spec before deciding
   whether it, like `Periodic_validity`, is genuinely un-enforceable.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-L — new `event_impl.rs` (`Event::{time,data,
+  offset_from}`; offset computed from an explicit origin, no parent back-ref),
+  `point_event_impl.rs` / `interval_event_impl.rs` (`Validate` +
+  `INTERVAL_EVENT.interval_start_time()` = `time - width`, preserving the
+  value's own timezone suffix) with `POINT_EVENT`/`INTERVAL_EVENT` dispatcher
+  arms. `HISTORY` gains `is_periodic()` and **does** enforce
+  `Period_consistency` (event offsets must be whole multiples of `period`,
+  1 µs tolerance; malformed times are the value's own `Value_valid` problem) —
+  cross-checked: it is a distinct, non-ignored BMM invariant, and per ADR-008
+  the spec wins over archie's omission. `EVENT.Offset_validity1` and
+  `INTERVAL_EVENT.Interval_start_time_valid` hold by construction for the
+  computed functions (PORT NOTEs recorded); `Math_function_validity` is
+  terminology-bound → P15 validator + `openehr-term`, per the crate policy.)*
 
 ### F-12-06: Curated invariant set omits several non-terminology RM invariants
 - **Severity:** minor
@@ -194,7 +254,23 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   to live at the service layer (P12) before adding here. Record any deliberately
   omitted (e.g. archie-`ignored`) invariants with a `// PORT NOTE:` + spec cite,
   as `composition_impl.rs` already does.
-- [ ] fixed
+- [ ] fixed *(partial, 2026-07-06 W2-L — added: `DV_PARSABLE`
+  (`Formalism_valid`; `Size_valid` ≥ 0 holds by construction for a byte
+  length), `ITEM_TAG` (`Inv_key_valid` incl. the is_justified
+  no-leading/trailing-whitespace rule, `Inv_value_valid`), and
+  `DV_ORDERED.Normal_range_and_status_consistency` on all 9 subtypes
+  (unlocked by F-12-04), each with dispatcher arms. Not added, with reasons:
+  `ITEM_LIST.Valid_structure` — structural (`items: Vec<Element>` cannot hold
+  a non-ELEMENT); `LOCATABLE.Links_valid` and
+  `DV_ORDERED.Other_reference_ranges_validity` — `Vec` fields cannot
+  distinguish Void from empty on our model, so `absent implies non-empty` is
+  unexpressable; `LOCATABLE.Archetyped_valid` — `is_archetype_root` is
+  defined by `archetype_details /= Void`, making the xor definitional;
+  `DV_ORDERED.Is_simple_validity` — definitional for the computed
+  `is_simple()`. `EHR.*` / `EHR_ACCESS` / `VERSIONED_COMPOSITION` /
+  `ORIGINAL_VERSION.*` / `REVISION_HISTORY_ITEM` remain open pending the
+  service-layer-vs-RM decision the Fix note calls for (version-family objects
+  are constructed by the P12 service, not ingested as composition content).)*
 
 ### F-12-07: BASE/RM identifier & terminology accessor functions missing (ARCHETYPE_ID, TERMINOLOGY_ID, LOCATABLE_REF)
 - **Severity:** minor
@@ -210,7 +286,12 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
 - **Fix:** (`*_impl.rs` level) add accessor impls when P16/template work needs
   them; low priority until then, but flag so it is not silently re-implemented
   in the application layer.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-L — `archetype_id_impl.rs`
+  (`qualified_rm_entity`/`domain_concept`/`rm_originator`/`rm_name`/
+  `rm_entity`/`specialisation`/`version_id` + strict `FromStr`),
+  `terminology_id_impl.rs` (`name`/`version_id`), `locatable_ref_impl.rs`
+  (`as_uri`). The AQL CONTAINS matcher (P16) and template handling should
+  consume these instead of re-splitting strings.)*
 
 ### F-12-08: `DV_ORDERED.normal_range` generic parameter is inconsistently monomorphised
 - **Severity:** info
@@ -261,7 +342,10 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   a DV_ORDERED-typed element (or run a `_type`-directed element pass) so the
   ordering invariant is actually reached. No action needed before then; recorded
   so the two findings are fixed together.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-L, together with F-12-04 — the `DV_INTERVAL`
+  dispatcher arm now deserializes `DvInterval<DvOrdered>` first (reaching
+  `Limits_consistent`) and falls back to `DvInterval<Value>` (boundary-flag
+  invariants only) when the limits are not typed `DV_ORDERED` payloads.)*
 
 ### F-12-11: foundation-type BMM functions/invariants unimplemented (Iso8601_timezone, Time_Definitions, Statistical/Math/Env utilities)
 - **Severity:** info
@@ -279,7 +363,12 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
 - **Fix:** none required for conformance. If P16 needs `Time_Definitions`
   validity predicates or `Statistical_evaluator` for AQL aggregates, implement
   them in the engine/`*_impl.rs` at that point. Record as a known non-gap.
-- [ ] fixed
+- [x] fixed *(2026-07-06 W2-L — recorded as a known non-gap per the Fix note.
+  The `Time_definitions` constants the duration-magnitude rule needs
+  (`Average_days_in_year` 365.24, `Average_days_in_month` 30.42,
+  `Days_in_week`) now exist as spec-cited constants in
+  `openehr-rm/src/data_types/quantity/dv_ordered_impl.rs`; the remaining
+  foundation utilities stay unimplemented until a consumer appears.)*
 
 ## Hygiene notes
 

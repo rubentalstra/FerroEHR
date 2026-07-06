@@ -8,6 +8,8 @@
 //! express that guarantee explicitly (see `crate::validate` ISO-8601 helpers).
 
 use crate::data_types::quantity::date_time::dv_date::DvDate;
+use crate::data_types::quantity::dv_ordered::DvOrdered;
+use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::validate::{
     InvariantViolation, Validate, is_valid_iso_date, push_magnitude_status_valid,
 };
@@ -20,6 +22,15 @@ impl Validate for DvDate {
             ));
         }
         push_magnitude_status_valid(out, "DV_DATE", self.magnitude_status.as_deref());
+        // Inherited DV_ORDERED Normal_range_and_status_consistency (the
+        // normal_range element type is the DvOrdered enum here).
+        push_normal_range_consistency(
+            out,
+            "DV_DATE",
+            self.normal_status.as_ref(),
+            self.normal_range.as_deref(),
+            &DvOrdered::DvDate(self.clone()),
+        );
     }
 }
 
