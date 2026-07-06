@@ -44,12 +44,28 @@ pub fn emit_file(
          use crate::xml::runtime::{ToXml, FromXml, XmlEvent, XmlError};\n\n",
     );
     let mut locatable_violations: Vec<String> = Vec::new();
+    let mut bmm_only_violations: Vec<String> = Vec::new();
+    let mut appended: Vec<String> = Vec::new();
     for s in schemas {
         for ty in s.model.xml_types(s.schema) {
             check_locatable_attr(&ty, xsd, &mut locatable_violations);
+            check_bmm_field_coverage(&ty, xsd, &mut bmm_only_violations);
+            if let XmlType::Struct { spec, fields, .. } = &ty {
+                for f in bmm_only_fields(spec, fields, xsd) {
+                    appended.push(format!("{spec}.{}", f.wire_name));
+                }
+            }
             emit_to_xml(&mut b, &ty, s.prelude, xsd, unmatched);
             emit_from_xml(&mut b, &ty, s.prelude, xsd);
         }
+    }
+    if !appended.is_empty() {
+        eprintln!(
+            "emit-xml (F-05-02): {} allowlisted BMM-only field(s) appended as trailing \
+             canonical-XML elements (RM 1.2.0 / BASE 1.3.0 vs vendored ITS-XML skew): {}",
+            appended.len(),
+            appended.join(", ")
+        );
     }
     if !locatable_violations.is_empty() {
         return Err(format!(
@@ -59,6 +75,19 @@ pub fn emit_file(
              these types reach `LOCATABLE`.",
             locatable_violations.len(),
             locatable_violations.join(", ")
+        ));
+    }
+    if !bmm_only_violations.is_empty() {
+        return Err(format!(
+            "emit-xml guard (F-05-02): {} BMM field(s) of XSD-covered type(s) have no matching \
+             XSD element/attribute, so the XSD-driven `ToXml` would silently drop them while the \
+             BMM-driven `FromXml` still reads them (an undetectable JSON/XML divergence). Either \
+             extend the driving XSD input (crates/openehr-codegen/src/xsd.rs) so the field gets a \
+             deterministic slot, or add it to `XML_BMM_ONLY_ALLOWLIST` in emit_xml.rs (with a \
+             spec-delta citation) to have it appended as a trailing canonical-XML element. \
+             Fields: {}.",
+            bmm_only_violations.len(),
+            bmm_only_violations.join(", ")
         ));
     }
     Ok(b)
@@ -112,6 +141,306 @@ fn attr_names(spec: &str, xsd: &XsdModel) -> BTreeSet<String> {
     }
 }
 
+/// F-05-02 reconciliation: allowlist of BMM fields that have **no** matching
+/// element or attribute in any vendored ITS-XML XSD (the RM-1.2.0-vs-ITS-XML-
+/// 1.0.2/BASE-1.2.0 version skew). Each accepted `(spec, wire_name)` pair is
+/// emitted as a **deterministic trailing element** in BMM field order (so it is
+/// never silently dropped), and carries the spec delta that justifies it. Any
+/// XSD-covered struct with a BMM field NOT on this list fails codegen (the
+/// [`check_bmm_field_coverage`] guard), forcing an explicit decision instead of
+/// a silent drop.
+///
+/// Empty is the desired state: it means every RM-1.2.0 BMM field of an
+/// XSD-covered type maps to a vendored-XSD slot. Entries appear only where the
+/// model genuinely outran the vendored schema; the append emission keeps
+/// canonical JSON and canonical XML field-complete and mutually consistent.
+const XML_BMM_ONLY_ALLOWLIST: &[BmmOnlyField] = &[
+    // ── BASE 1.3.0 resource-class growth (ITS-XML 1.0.2 Resource.xsd predates it) ──
+    BmmOnlyField {
+        spec: "AUTHORED_RESOURCE",
+        wire_name: "uid",
+        reason: "BASE 1.3.0 added AUTHORED_RESOURCE.uid (HIER_OBJECT_ID); absent from ITS-XML 1.0.2 Resource.xsd.",
+    },
+    BmmOnlyField {
+        spec: "AUTHORED_RESOURCE",
+        wire_name: "annotations",
+        reason: "BASE 1.3.0 added AUTHORED_RESOURCE.annotations (RESOURCE_ANNOTATIONS); absent from ITS-XML 1.0.2 Resource.xsd.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "title",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.title; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "original_namespace",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.original_namespace; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "original_publisher",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.original_publisher; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "custodian_namespace",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.custodian_namespace; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "custodian_organisation",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.custodian_organisation; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "copyright",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.copyright; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "licence",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.licence; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "ip_acknowledgements",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.ip_acknowledgements; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "references",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.references; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "RESOURCE_DESCRIPTION",
+        wire_name: "conversion_details",
+        reason: "BASE 1.3.0 RESOURCE_DESCRIPTION.conversion_details; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "TRANSLATION_DETAILS",
+        wire_name: "version_last_translated",
+        reason: "BASE 1.3.0 TRANSLATION_DETAILS.version_last_translated; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "TRANSLATION_DETAILS",
+        wire_name: "other_contributors",
+        reason: "BASE 1.3.0 TRANSLATION_DETAILS.other_contributors; ITS-XML 1.0.2 Resource.xsd lacks it.",
+    },
+    BmmOnlyField {
+        spec: "TRANSLATION_DETAILS",
+        wire_name: "accreditaton",
+        reason: "BASE 1.3.0 BMM spells this field `accreditaton` (sic); ITS-XML 1.0.2 Resource.xsd uses `accreditation`. Canonical JSON derives from the BMM, so the BMM spelling is emitted for JSON/XML consistency.",
+    },
+    // ── BASE 1.3.0 CODE_PHRASE.preferred_term ──
+    BmmOnlyField {
+        spec: "CODE_PHRASE",
+        wire_name: "preferred_term",
+        reason: "BASE 1.3.0 added CODE_PHRASE.preferred_term; ITS-XML 1.0.2 BaseTypes.xsd CODE_PHRASE has terminology_id + code_string only.",
+    },
+    // ── RM 1.2.0 ENTRY.work_flow_id → workflow_id rename (all ENTRY subtypes) ──
+    BmmOnlyField {
+        spec: "ACTION",
+        wire_name: "workflow_id",
+        reason: "RM 1.2.0 renamed ENTRY.work_flow_id → workflow_id; ITS-XML 1.0.2 Content.xsd still declares work_flow_id. Canonical JSON corpus uses workflow_id.",
+    },
+    BmmOnlyField {
+        spec: "ADMIN_ENTRY",
+        wire_name: "workflow_id",
+        reason: "RM 1.2.0 renamed ENTRY.work_flow_id → workflow_id; ITS-XML 1.0.2 Content.xsd still declares work_flow_id.",
+    },
+    BmmOnlyField {
+        spec: "EVALUATION",
+        wire_name: "workflow_id",
+        reason: "RM 1.2.0 renamed ENTRY.work_flow_id → workflow_id; ITS-XML 1.0.2 Content.xsd still declares work_flow_id.",
+    },
+    BmmOnlyField {
+        spec: "INSTRUCTION",
+        wire_name: "workflow_id",
+        reason: "RM 1.2.0 renamed ENTRY.work_flow_id → workflow_id; ITS-XML 1.0.2 Content.xsd still declares work_flow_id.",
+    },
+    BmmOnlyField {
+        spec: "OBSERVATION",
+        wire_name: "workflow_id",
+        reason: "RM 1.2.0 renamed ENTRY.work_flow_id → workflow_id; ITS-XML 1.0.2 Content.xsd still declares work_flow_id.",
+    },
+    // ── RM 1.2.0 data-type / data-structure additions ──
+    BmmOnlyField {
+        spec: "DV_QUANTITY",
+        wire_name: "units_system",
+        reason: "RM 1.2.0 added DV_QUANTITY.units_system; absent from ITS-XML 1.0.2 BaseTypes.xsd.",
+    },
+    BmmOnlyField {
+        spec: "DV_QUANTITY",
+        wire_name: "units_display_name",
+        reason: "RM 1.2.0 added DV_QUANTITY.units_display_name; absent from ITS-XML 1.0.2 BaseTypes.xsd.",
+    },
+    BmmOnlyField {
+        spec: "ELEMENT",
+        wire_name: "null_reason",
+        reason: "RM 1.2.0 added ELEMENT.null_reason; ITS-XML 1.0.2 Structure.xsd ELEMENT has value + null_flavour only.",
+    },
+    BmmOnlyField {
+        spec: "ISM_TRANSITION",
+        wire_name: "reason",
+        reason: "RM 1.2.0 added ISM_TRANSITION.reason (List<DV_TEXT>); ITS-XML 1.0.2 Content.xsd has current_state/transition/careflow_step only.",
+    },
+    BmmOnlyField {
+        spec: "FEEDER_AUDIT_DETAILS",
+        wire_name: "other_details",
+        reason: "RM 1.2.0 added FEEDER_AUDIT_DETAILS.other_details (ITEM_STRUCTURE); absent from ITS-XML 1.0.2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "FOLDER",
+        wire_name: "details",
+        reason: "RM 1.2.0 added FOLDER.details (ITEM_STRUCTURE); absent from ITS-XML 1.0.2 Composition.xsd.",
+    },
+    BmmOnlyField {
+        spec: "EHR",
+        wire_name: "tags",
+        reason: "RM 1.2.0 added EHR.tags; absent from ITS-XML 2.0.0 (RM 1.1.0) Ehr.xsd, the vendored EHR shape.",
+    },
+    // ── RM 1.2.0 EhrExtract includes_* → include_* renames ──
+    BmmOnlyField {
+        spec: "EXTRACT_SPEC",
+        wire_name: "include_multimedia",
+        reason: "RM 1.2.0 renamed EXTRACT_SPEC.includes_multimedia → include_multimedia; ITS-XML 2.0.0 EhrExtract.xsd still declares includes_multimedia.",
+    },
+    BmmOnlyField {
+        spec: "EXTRACT_VERSION_SPEC",
+        wire_name: "include_revision_history",
+        reason: "RM 1.2.0 renamed EXTRACT_VERSION_SPEC.includes_revision_history → include_revision_history; ITS-XML 2.0.0 EhrExtract.xsd still declares includes_revision_history.",
+    },
+    BmmOnlyField {
+        spec: "EXTRACT_VERSION_SPEC",
+        wire_name: "include_data",
+        reason: "RM 1.2.0 renamed EXTRACT_VERSION_SPEC.includes_data → include_data; ITS-XML 2.0.0 EhrExtract.xsd still declares includes_data.",
+    },
+    // ── VERSIONED_OBJECT base fields on the VERSIONED_* container types ──
+    // uid/owner_id/time_created come from VERSIONED_OBJECT, defined ONLY in the
+    // v2 Common.xsd (RM 1.1.0), which the emit-xml input deliberately does not
+    // merge: v1 Version.xsd omits VERSIONED_OBJECT, and pulling in v2 Common.xsd
+    // would re-shape the served VERSION-family types. These container types are
+    // not served as canonical XML (406 at the REST edge, F-05-06); the base
+    // fields are appended in canonical VERSIONED_OBJECT order so nothing is lost.
+    BmmOnlyField {
+        spec: "VERSIONED_COMPOSITION",
+        wire_name: "uid",
+        reason: "VERSIONED_OBJECT.uid; base defined only in un-merged v2 Common.xsd (see module note).",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_COMPOSITION",
+        wire_name: "owner_id",
+        reason: "VERSIONED_OBJECT.owner_id; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_COMPOSITION",
+        wire_name: "time_created",
+        reason: "VERSIONED_OBJECT.time_created; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_EHR_ACCESS",
+        wire_name: "uid",
+        reason: "VERSIONED_OBJECT.uid; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_EHR_ACCESS",
+        wire_name: "owner_id",
+        reason: "VERSIONED_OBJECT.owner_id; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_EHR_ACCESS",
+        wire_name: "time_created",
+        reason: "VERSIONED_OBJECT.time_created; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_EHR_STATUS",
+        wire_name: "uid",
+        reason: "VERSIONED_OBJECT.uid; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_EHR_STATUS",
+        wire_name: "owner_id",
+        reason: "VERSIONED_OBJECT.owner_id; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_EHR_STATUS",
+        wire_name: "time_created",
+        reason: "VERSIONED_OBJECT.time_created; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_PARTY",
+        wire_name: "uid",
+        reason: "VERSIONED_OBJECT.uid; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_PARTY",
+        wire_name: "owner_id",
+        reason: "VERSIONED_OBJECT.owner_id; base defined only in un-merged v2 Common.xsd.",
+    },
+    BmmOnlyField {
+        spec: "VERSIONED_PARTY",
+        wire_name: "time_created",
+        reason: "VERSIONED_OBJECT.time_created; base defined only in un-merged v2 Common.xsd.",
+    },
+];
+
+/// One allowlisted BMM-only field (F-05-02): the owning concrete type's spec
+/// name, the field's wire name, and the spec-delta citation.
+struct BmmOnlyField {
+    spec: &'static str,
+    wire_name: &'static str,
+    /// Why this field is absent from the vendored XSD and safe to append.
+    #[allow(dead_code)] // documentation, surfaced in codegen output on drift
+    reason: &'static str,
+}
+
+/// Is `(spec, wire_name)` an accepted BMM-only field (F-05-02 allowlist)?
+fn bmm_only_allowed(spec: &str, wire_name: &str) -> bool {
+    XML_BMM_ONLY_ALLOWLIST
+        .iter()
+        .any(|e| e.spec == spec && e.wire_name == wire_name)
+}
+
+/// F-05-02 reconciliation: the BMM fields of an XSD-covered struct whose
+/// `wire_name` matches **no** XSD attribute or element, in BMM field order.
+/// These are the fields `ToXml` (XSD-driven) would silently drop while `FromXml`
+/// (BMM-driven) still reads. For a struct **not** in the XSD the emitter already
+/// walks the full BMM field set (attribute-less BMM order), so nothing is
+/// dropped there and this returns empty.
+fn bmm_only_fields<'a>(spec: &str, fields: &'a [XmlField], xsd: &XsdModel) -> Vec<&'a XmlField> {
+    if !xsd.types.contains_key(spec) {
+        return Vec::new();
+    }
+    let (attrs, elems) = xsd.flattened(spec);
+    let mut covered: BTreeSet<&str> = BTreeSet::new();
+    for a in &attrs {
+        covered.insert(a.name.as_str());
+    }
+    for e in &elems {
+        covered.insert(e.name.as_str());
+    }
+    fields
+        .iter()
+        .filter(|f| !covered.contains(f.wire_name.as_str()))
+        .collect()
+}
+
+/// F-05-02 guard: for every emitted XSD-covered struct, any BMM field with no
+/// XSD slot must be on the [`XML_BMM_ONLY_ALLOWLIST`]. An un-allowlisted field
+/// would be dropped by the XSD-driven `ToXml` while still read by the BMM-driven
+/// `FromXml` (a silent JSON/XML divergence no round-trip gate can see, because
+/// both serializations omit it). Record every such field so codegen fails with
+/// the complete reconciliation list — the mirror of [`check_locatable_attr`].
+fn check_bmm_field_coverage(ty: &XmlType, xsd: &XsdModel, violations: &mut Vec<String>) {
+    if let XmlType::Struct { spec, fields, .. } = ty {
+        for f in bmm_only_fields(spec, fields, xsd) {
+            if !bmm_only_allowed(spec, &f.wire_name) {
+                violations.push(format!("{spec}.{}", f.wire_name));
+            }
+        }
+    }
+}
+
 // ── serialization ─────────────────────────────────────────────────────────────
 
 /// Emit `impl ToXml` for one [`XmlType`]. Public so the OPT emitter
@@ -142,7 +471,7 @@ pub fn emit_to_xml(
                  if let Some(d) = declared {{ if d != \"{spec}\" {{ __attrs.push((\"xsi:type\", \"{spec}\".to_string())); }} }}\n"
             );
             // Wire order + attr/element split from the XSD; else BMM order, no attrs.
-            let (attrs, elems): (Vec<String>, Vec<String>) = if xsd.types.contains_key(spec) {
+            let (attrs, mut elems): (Vec<String>, Vec<String>) = if xsd.types.contains_key(spec) {
                 let (a, e) = xsd.flattened(spec);
                 (
                     a.iter().map(|x| x.name.clone()).collect(),
@@ -154,6 +483,12 @@ pub fn emit_to_xml(
                     fields.iter().map(|f| f.wire_name.clone()).collect(),
                 )
             };
+            // F-05-02: append any allowlisted BMM-only field (no XSD slot) as a
+            // deterministic trailing element in BMM order, so it is not dropped.
+            // (Non-allowlisted BMM-only fields already failed the guard above.)
+            for f in bmm_only_fields(spec, fields, xsd) {
+                elems.push(f.wire_name.clone());
+            }
             for aname in &attrs {
                 if let Some(f) = by_wire.get(aname.as_str()) {
                     if f.optional {

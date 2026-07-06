@@ -172,6 +172,12 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::AuthoredResource {
             v.write_xml(w, "description", Some("RESOURCE_DESCRIPTION"))?;
         }
         // PORT NOTE: Hash<String, TRANSLATION_DETAILS> field `translations` is off the RM canonical-XML wire (resource metadata); not serialized.
+        if let Some(v) = &self.uid {
+            v.write_xml(w, "uid", Some("UUID"))?;
+        }
+        if let Some(v) = &self.annotations {
+            v.write_xml(w, "annotations", Some("RESOURCE_ANNOTATIONS"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -256,6 +262,9 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::CodePhrase {
             .write_xml(w, "terminology_id", Some("TERMINOLOGY_ID"))?;
         self.code_string
             .write_xml(w, "code_string", Some("String"))?;
+        if let Some(v) = &self.preferred_term {
+            v.write_xml(w, "preferred_term", Some("String"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -1871,6 +1880,42 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescription {
         // PORT NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
         self.parent_resource
             .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
+        if let Some(v) = &self.title {
+            v.write_xml(w, "title", Some("String"))?;
+        }
+        if let Some(v) = &self.original_namespace {
+            v.write_xml(w, "original_namespace", Some("String"))?;
+        }
+        if let Some(v) = &self.original_publisher {
+            v.write_xml(w, "original_publisher", Some("String"))?;
+        }
+        if let Some(v) = &self.custodian_namespace {
+            v.write_xml(w, "custodian_namespace", Some("String"))?;
+        }
+        if let Some(v) = &self.custodian_organisation {
+            v.write_xml(w, "custodian_organisation", Some("String"))?;
+        }
+        if let Some(v) = &self.copyright {
+            v.write_xml(w, "copyright", Some("String"))?;
+        }
+        if let Some(v) = &self.licence {
+            v.write_xml(w, "licence", Some("String"))?;
+        }
+        if let Some(m) = &self.ip_acknowledgements {
+            for (k, v) in m {
+                w.write_kv_element("ip_acknowledgements", k, v)?;
+            }
+        }
+        if let Some(m) = &self.references {
+            for (k, v) in m {
+                w.write_kv_element("references", k, v)?;
+            }
+        }
+        if let Some(m) = &self.conversion_details {
+            for (k, v) in m {
+                w.write_kv_element("conversion_details", k, v)?;
+            }
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -2291,6 +2336,12 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::TranslationDetails {
             for (k, v) in m {
                 w.write_kv_element("other_details", k, v)?;
             }
+        }
+        if let Some(v) = &self.version_last_translated {
+            v.write_xml(w, "version_last_translated", Some("String"))?;
+        }
+        for v in &self.other_contributors {
+            v.write_xml(w, "other_contributors", Some("String"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -2875,6 +2926,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Action {
         if let Some(v) = &self.instruction_details {
             v.write_xml(w, "instruction_details", Some("INSTRUCTION_DETAILS"))?;
         }
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -3446,6 +3500,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::AdminEntry {
             v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
         }
         self.data.write_xml(w, "data", Some("ITEM_STRUCTURE"))?;
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -4446,6 +4503,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::CodePhrase {
             .write_xml(w, "terminology_id", Some("TERMINOLOGY_ID"))?;
         self.code_string
             .write_xml(w, "code_string", Some("String"))?;
+        if let Some(v) = &self.preferred_term {
+            v.write_xml(w, "preferred_term", Some("String"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -6948,6 +7008,12 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvQuantity {
         if let Some(v) = &self.precision {
             v.write_xml(w, "precision", Some("Integer"))?;
         }
+        if let Some(v) = &self.units_system {
+            v.write_xml(w, "units_system", Some("String"))?;
+        }
+        if let Some(v) = &self.units_display_name {
+            v.write_xml(w, "units_display_name", Some("String"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -7688,6 +7754,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Ehr {
         for v in &self.compositions {
             v.write_xml(w, "compositions", Some("OBJECT_REF"))?;
         }
+        for v in &self.tags {
+            v.write_xml(w, "tags", Some("OBJECT_REF"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -8066,6 +8135,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Element {
         if let Some(v) = &self.null_flavour {
             v.write_xml(w, "null_flavour", Some("DV_CODED_TEXT"))?;
         }
+        if let Some(v) = &self.null_reason {
+            v.write_xml(w, "null_reason", Some("DV_TEXT"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -8258,6 +8330,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Evaluation {
             v.write_xml(w, "guideline_id", Some("OBJECT_REF"))?;
         }
         self.data.write_xml(w, "data", Some("ITEM_STRUCTURE"))?;
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -9757,6 +9832,8 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractSpec {
         self.manifest
             .write_xml(w, "manifest", Some("EXTRACT_MANIFEST"))?;
         self.priority.write_xml(w, "priority", Some("Integer"))?;
+        self.include_multimedia
+            .write_xml(w, "include_multimedia", Some("Boolean"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -9954,6 +10031,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractVersionSpec {
         if let Some(v) = &self.commit_time_interval {
             v.write_xml(w, "commit_time_interval", Some("DV_INTERVAL"))?;
         }
+        self.include_revision_history
+            .write_xml(w, "include_revision_history", Some("Boolean"))?;
+        self.include_data
+            .write_xml(w, "include_data", Some("Boolean"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -10153,6 +10234,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::FeederAuditDetails {
         if let Some(v) = &self.version_id {
             v.write_xml(w, "version_id", Some("String"))?;
         }
+        if let Some(v) = &self.other_details {
+            v.write_xml(w, "other_details", Some("ITEM_STRUCTURE"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -10260,6 +10344,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Folder {
         }
         for v in &self.items {
             v.write_xml(w, "items", Some("OBJECT_REF"))?;
+        }
+        if let Some(v) = &self.details {
+            v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -11129,6 +11216,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Instruction {
         for v in &self.activities {
             v.write_xml(w, "activities", Some("ACTIVITY"))?;
         }
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -11527,6 +11617,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::IsmTransition {
         }
         if let Some(v) = &self.careflow_step {
             v.write_xml(w, "careflow_step", Some("DV_CODED_TEXT"))?;
+        }
+        for v in &self.reason {
+            v.write_xml(w, "reason", Some("DV_TEXT"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -12737,6 +12830,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Observation {
         self.data.write_xml(w, "data", Some("HISTORY"))?;
         if let Some(v) = &self.state {
             v.write_xml(w, "state", Some("HISTORY"))?;
+        }
+        if let Some(v) = &self.workflow_id {
+            v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
         }
         w.write_end(tag)?;
         Ok(())
@@ -15897,6 +15993,9 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::TranslationDetails {
                 w.write_kv_element("other_details", k, v)?;
             }
         }
+        if let Some(v) = &self.accreditaton {
+            v.write_xml(w, "accreditaton", Some("String"))?;
+        }
         w.write_end(tag)?;
         Ok(())
     }
@@ -16022,6 +16121,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::VersionedComposition {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
+        self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
+        self.owner_id.write_xml(w, "owner_id", Some("OBJECT_REF"))?;
+        self.time_created
+            .write_xml(w, "time_created", Some("DV_DATE_TIME"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -16094,6 +16197,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::VersionedEhrAccess {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
+        self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
+        self.owner_id.write_xml(w, "owner_id", Some("OBJECT_REF"))?;
+        self.time_created
+            .write_xml(w, "time_created", Some("DV_DATE_TIME"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -16166,6 +16273,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::VersionedEhrStatus {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
+        self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
+        self.owner_id.write_xml(w, "owner_id", Some("OBJECT_REF"))?;
+        self.time_created
+            .write_xml(w, "time_created", Some("DV_DATE_TIME"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -16470,6 +16581,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::VersionedParty {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
+        self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
+        self.owner_id.write_xml(w, "owner_id", Some("OBJECT_REF"))?;
+        self.time_created
+            .write_xml(w, "time_created", Some("DV_DATE_TIME"))?;
         w.write_end(tag)?;
         Ok(())
     }

@@ -129,7 +129,27 @@ Counts: 1 critical, 2 major, 4 minor, 4 info.
   XSD-match in a second `unmatched` list that the `codegen-drift`/`check-xsd`
   step reports. Alternatively pin the XML driver to the v2 (RM-1.1.0/BASE-1.2.0)
   XSDs which are closer to the BMM.
-- [ ] fixed
+- **Fix applied (emitter, W2-I):** `emit_xml.rs` now reconciles the two field
+  sets per XSD-covered struct. `bmm_only_fields()` computes (BMM fields ∖ XSD
+  attrs∪elems); a guard (`check_bmm_field_coverage`, enforced in `emit_file` the
+  way `check_locatable_attr` is) **fails codegen** listing every BMM field with
+  no XSD slot unless it is on the `XML_BMM_ONLY_ALLOWLIST` — each allowlist entry
+  citing the RM-1.2.0/BASE-1.3.0-vs-vendored-ITS-XML spec delta. Allowlisted
+  fields are appended as **deterministic trailing canonical-XML elements** in BMM
+  order (`emit_to_xml`), so nothing is silently dropped; the reconciliation is
+  reported to stderr on every `emit-xml`. **The reconciliation surfaced 44
+  previously-dropped fields** (the ToXml/FromXml asymmetry was live, not merely
+  latent): BASE 1.3.0 AUTHORED_RESOURCE.uid/annotations + the 10 RESOURCE_-
+  DESCRIPTION additions + 2 TRANSLATION_DETAILS additions + the `accreditaton`
+  (sic) BMM spelling + CODE_PHRASE.preferred_term; RM 1.2.0 ENTRY.workflow_id
+  (renamed from `work_flow_id`, ×5 subtypes), DV_QUANTITY.units_system/
+  units_display_name, ELEMENT.null_reason, ISM_TRANSITION.reason,
+  FEEDER_AUDIT_DETAILS.other_details, FOLDER.details, EHR.tags; EhrExtract
+  includes_*→include_* renames (EXTRACT_SPEC/EXTRACT_VERSION_SPEC); and the
+  VERSIONED_OBJECT base fields (uid/owner_id/time_created) on the four
+  VERSIONED_* container types (base defined only in un-merged v2 Common.xsd).
+  All now emitted with their RM-1.2.0 canonical names (matching canonical JSON).
+- [x] fixed
 
 ### F-05-03: C14N byte-parity gate against archie/EHRbase output is un-wired
 - **Severity:** major
@@ -148,7 +168,27 @@ Counts: 1 critical, 2 major, 4 minor, 4 info.
 - **Fix:** wire an archie-canonical vector set (or the live parity harness) with
   `xmllint --c14n` comparison as the acceptance gate for XML (Stage-1). Track as a
   known gap until then.
-- [ ] fixed
+- **Fix applied (W2-I):** new gate `crates/openehr-its/tests/xml_c14n.rs`. It
+  takes the vendored **CNF** canonical-XML COMPOSITION fixtures
+  (`docs/specs/openehr/CNF/.../compositions/CANONICAL_XML/*.xml`), parses each
+  via `FromXml`, re-serializes via `to_canonical_xml`, canonicalizes both the
+  fixture and our output with `xmllint --noblanks --c14n` (verified available on
+  the machine), and **byte-compares**. Result: our output is byte-identical to
+  all 4 valid fixtures for element order, values, `archetype_node_id`
+  attributes, namespaces, and text — the **only** residual is the cabolabs
+  generator's *verbose* `xsi:type` (redundant on the document root + every
+  concrete-typed slot, e.g. `<name xsi:type="DV_TEXT">`), whereas we (and
+  archie/EHRbase, the Stage-1 parity target) emit the **minimal** set. This one
+  cited serialization-convention axis is normalized: a fixture is classed an
+  `xsi:type`-convention match only if stripping every `xsi:type` from both sides
+  is byte-identical **and** our `xsi:type` set is a subset of the reference's;
+  **any other difference is a hard failure** (the comparison is not loosened for
+  content). The 3 `__invalid_*` fixtures are skip-listed (validation-negative
+  inputs). Gate result: 0 strict, 4 xsi:type-convention, 3 skipped, 0 failed.
+  (True *strict* byte-parity awaits an archie-minimal-convention canonical vector
+  set; the gate is wired and live now, catching any structural/value/order/attr
+  regression.)
+- [x] fixed
 
 ### F-05-04: interval inclusivity flags always emitted; archie omits them at the unbounded default
 - **Severity:** minor
@@ -166,6 +206,10 @@ Counts: 1 critical, 2 major, 4 minor, 4 info.
 - **Fix:** (emitter) when a field carries a `default` (the archie-omitted-at-
   default set), skip writing it on `ToXml` when the value equals that default,
   mirroring the tolerant read. Verify against archie vectors once F-05-03 lands.
+- **W2-I assessment (left):** does **not** block the F-05-03 byte-parity gate —
+  none of the 4 CNF canonical COMPOSITION fixtures carry a `DV_INTERVAL`, so the
+  flags are never exercised there and our output is byte-identical without this
+  change. Deferred (minor); revisit when an archie interval vector is added.
 - [ ] fixed
 
 ### F-05-05: number/boolean lexical forms not gated for parity; `f32` vs `f64` asymmetry
@@ -185,6 +229,12 @@ Counts: 1 critical, 2 major, 4 minor, 4 info.
 - **Fix:** add an exact-number-parity check to the XML gate (F-05-03) over the
   corpus; make `f32` use the same whole-number formatting as `f64` for
   consistency.
+- **W2-I assessment (partially addressed):** the new C14N gate (F-05-03) now
+  byte-checks number/boolean lexical forms for every value present in the CNF
+  canonical fixtures (a `120` vs `120.0` regression would fail it) — that part of
+  the fix is effectively landed. The `f32`/`f64` `.0` asymmetry in `runtime.rs`
+  is untouched (runtime is out of the emitter-only scope of this task and no RM
+  field is `f32`); left as a latent-trap note.
 - [ ] fixed
 
 ### F-05-06: VERSION-family / CONTRIBUTION XML is refused (406) though ITS-XML defines the shape; the payload is an untyped monomorphization artifact

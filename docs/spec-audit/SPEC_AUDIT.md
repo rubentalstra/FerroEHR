@@ -125,7 +125,10 @@ Total: **180 findings**.
       OBJECT_REF-shaped response.
 - [ ] W2-G **Stored-query semver/name matching** — F-03-07/08.
 - [ ] W2-H **Terminology validation completeness** — F-07-03/04, F-11-02/03/04.
-- [ ] W2-I **XML ToXml/FromXml field-set symmetry + C14N gate** — F-05-02/03.
+- [x] W2-I **XML ToXml/FromXml field-set symmetry + C14N gate** — F-05-02/03.
+      Emitter reconciles BMM↔XSD field sets (guard + cited allowlist; 44
+      previously-dropped fields now appended, no silent drops); C14N byte-parity
+      gate wired against CNF canonical fixtures (`xml_c14n.rs`).
 - [ ] W2-J **EHR_ACCESS + duplicate-subject 409** — F-06-07, F-01-04;
       version-at-time ops implemented (F-01-05, F-02-04).
 - [ ] W2-K **WebTemplate single-source resolution** — F-13-02 (one cache,
@@ -163,3 +166,16 @@ Total: **180 findings**.
   lexer/parser conformance, tests 21→48). W2-L (RM/BASE spec functions) and
   W2-F/G/J (item tags, stored-query matching, EHR_ACCESS, duplicate-subject
   409, at-time ops) in flight.
+- 2026-07-06: **W2-I done** (F-05-02/03) — emit-xml now reconciles the BMM and
+  XSD field sets per type: a codegen guard fails on any XSD-covered BMM field
+  with no XSD slot unless allowlisted with a cited RM-1.2.0/BASE-1.3.0-vs-
+  ITS-XML skew reason, and allowlisted fields are appended as deterministic
+  trailing canonical-XML elements. Surfaced + fixed **44 fields that ToXml was
+  silently dropping** (workflow_id rename, DV_QUANTITY units_system/-display,
+  ELEMENT.null_reason, ISM_TRANSITION.reason, FOLDER/FEEDER_AUDIT details,
+  EHR.tags, BASE 1.3.0 resource-class growth, EhrExtract includes_*→include_*,
+  VERSIONED_OBJECT base fields). C14N byte-parity gate wired
+  (`openehr-its/tests/xml_c14n.rs`, `xmllint --noblanks --c14n`) against the CNF
+  canonical-XML COMPOSITION fixtures: 4 fixtures byte-identical modulo the cited
+  cabolabs verbose-`xsi:type` convention (minimal-subset verified), 0 real
+  divergences. F-05-04/05 assessed (do not block; left with notes).
