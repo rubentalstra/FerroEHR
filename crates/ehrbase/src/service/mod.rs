@@ -32,9 +32,9 @@ mod template;
 mod versioned;
 mod vobject;
 
-use sqlx::PgPool;
-
+use openehr_flat::cache::WebTemplateCache;
 use openehr_its::rest::runtime::ApiError;
+use sqlx::PgPool;
 
 /// The default openEHR system identifier stamped into `OBJECT_VERSION_ID`s and
 /// audit rows. Configurable per deployment (P18 wires it from config).
@@ -45,6 +45,9 @@ pub const DEFAULT_SYSTEM_ID: &str = "ehrbase-rs.local";
 pub struct EhrbaseService {
     pool: PgPool,
     system_id: String,
+    /// Cache of `WebTemplate`s built from stored OPTs, used by composition
+    /// validation (P15) on create/update. Cheaply cloneable (moka-backed).
+    web_templates: WebTemplateCache,
 }
 
 impl EhrbaseService {
@@ -54,6 +57,7 @@ impl EhrbaseService {
         Self {
             pool,
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
+            web_templates: WebTemplateCache::default(),
         }
     }
 
@@ -81,6 +85,10 @@ pub enum ServiceError {
     /// The submitted payload is malformed or fails a structural rule.
     #[error("unprocessable: {0}")]
     Unprocessable(String),
+    /// A well-formed payload that fails semantic (template/RM/terminology)
+    /// validation — carries the per-path violations for the ITS-REST 422 body.
+    #[error("{} validation error(s)", .0.len())]
+    ValidationFailed(Vec<openehr_its::rest::runtime::ValidationError>),
     /// A storage/codec failure.
     #[error("storage: {0}")]
     Storage(#[from] crate::storage::StorageError),
@@ -99,6 +107,7 @@ impl From<ServiceError> for ApiError {
             ServiceError::Conflict(m) => ApiError::Conflict(m),
             ServiceError::VersionConflict(m) => ApiError::PreconditionFailed(m),
             ServiceError::Unprocessable(m) => ApiError::Unprocessable(m),
+            ServiceError::ValidationFailed(v) => ApiError::ValidationFailed(v),
             // Storage/DB/JSON failures are our fault, not the client's.
             ServiceError::Storage(e) => ApiError::Internal(e.to_string()),
             ServiceError::Database(e) => ApiError::Internal(e.to_string()),
