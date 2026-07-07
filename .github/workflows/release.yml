@@ -18,7 +18,7 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         with:
           release-type: rust
           # For per-crate publishing later, switch to a manifest config:
@@ -38,7 +38,7 @@ jobs:
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
@@ -58,7 +58,7 @@ jobs:
           tar -C "target/${{ matrix.target }}/release" -czf "$out" "$bin"
           echo "ASSET=$out" >> "$GITHUB_ENV"
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ env.ASSET }}
 
@@ -69,10 +69,10 @@ jobs:
   #   runs-on: ubuntu-latest
   #   permissions: { contents: read, packages: write }
   #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: docker/login-action@v3
+  #     - uses: actions/checkout@v7
+  #     - uses: docker/login-action@v4
   #       with: { registry: ghcr.io, username: ${{ github.actor }}, password: ${{ secrets.GITHUB_TOKEN }} }
-  #     - uses: docker/build-push-action@v6
+  #     - uses: docker/build-push-action@v7
   #       with:
   #         push: true
   #         tags: ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }},ghcr.io/${{ github.repository }}:latest
