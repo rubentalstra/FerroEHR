@@ -1,0 +1,37 @@
+# syntax=docker/dockerfile:1
+#
+# CI packaging Dockerfile — COPY-only, no compilation (containers.yml).
+#
+# The `ehrbase` binaries are built natively per architecture on the CI runners
+# (inside rust:*-slim-bookworm, so they target Debian 12 glibc 2.36 — exactly
+# what this distroless base ships) and land in the build context as
+# bin/amd64/ehrbase and bin/arm64/ehrbase. Because no RUN executes, a
+# multi-arch buildx of this file needs no QEMU and finishes in seconds.
+#
+# For local from-source builds use docker/Dockerfile (the compose default).
+
+FROM gcr.io/distroless/cc-debian12:nonroot
+
+# amd64 | arm64 — supplied by buildx per platform.
+ARG TARGETARCH
+COPY --chmod=0755 bin/${TARGETARCH}/ehrbase /usr/local/bin/ehrbase
+
+EXPOSE 8080
+
+# Shell-less image: the healthcheck is the binary's own subcommand, which
+# probes /rest/status and exits 0 (2xx) / 1 otherwise.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["/usr/local/bin/ehrbase", "healthcheck"]
+
+ENTRYPOINT ["/usr/local/bin/ehrbase"]
+
+# OCI image labels. CI (docker/metadata-action) overrides source/revision/
+# version/created at build time; these are sensible static defaults.
+ARG VERSION="0.1.0"
+ARG REVISION=""
+LABEL org.opencontainers.image.title="ehrbase-rs" \
+      org.opencontainers.image.description="Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.0.3 + AQL 1.1)" \
+      org.opencontainers.image.source="https://github.com/rubentalstra/ehrbase-rs" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}"

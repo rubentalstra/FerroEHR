@@ -1,4 +1,20 @@
 # .github/workflows/containers.yml
+#
+# Container images, built for speed (docs/design/container-images.md):
+#
+#   1. The `ehrbase` binary is compiled OUTSIDE Docker, natively per
+#      architecture (amd64 on ubuntu-24.04, arm64 on ubuntu-24.04-arm — no
+#      QEMU emulation anywhere), inside a rust:*-slim-bookworm job container
+#      so the binary links against the same glibc (Debian 12 / 2.36) as the
+#      distroless cc-debian12 runtime image. Swatinem/rust-cache makes warm
+#      builds incremental.
+#   2. The image build itself is a COPY-only packaging step
+#      (docker/Dockerfile.runtime) — a multi-arch buildx push that takes
+#      seconds because no code runs inside the build.
+#   3. The smoke test pulls the pushed image by digest instead of rebuilding.
+#
+# docker/Dockerfile (multi-stage, from-source) remains the local/compose path;
+# CI does not use it.
 name: Containers
 
 on:
@@ -37,26 +53,80 @@ jobs:
               - 'docker/postgres/**'
               - '.github/workflows/containers.yml'
 
-  # ── Application image (always built; multi-arch) ────────────────────────────
-  app-image:
-    name: app image
-    runs-on: ubuntu-latest
+  # ── Compile the server binary natively per arch (no QEMU, no in-Docker cargo) ─
+  binary:
+    name: binary (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: amd64
+            runner: ubuntu-24.04
+          - platform: arm64
+            runner: ubuntu-24.04-arm
+    # Debian 12 (bookworm) container so the produced binary targets glibc 2.36,
+    # matching gcr.io/distroless/cc-debian12 exactly. The tag must equal the
+    # rust-toolchain.toml channel — verified below, never assumed.
+    container: rust:1.96.1-slim-bookworm
     steps:
       - uses: actions/checkout@v7
 
-      - name: Verify Dockerfile RUST_VERSION matches rust-toolchain.toml
+      - name: Verify toolchain pins (container + Dockerfile == rust-toolchain.toml)
         shell: bash
         run: |
           set -euo pipefail
           channel=$(grep -E '^channel' rust-toolchain.toml | sed -E 's/.*"(.*)".*/\1/')
+          have=$(rustc --version | awk '{print $2}')
           arg=$(grep -E '^ARG RUST_VERSION=' docker/Dockerfile | head -1 | cut -d= -f2)
-          echo "rust-toolchain channel=$channel  Dockerfile RUST_VERSION=$arg"
+          echo "rust-toolchain=$channel  container-rustc=$have  Dockerfile ARG=$arg"
+          if [ "$channel" != "$have" ]; then
+            echo "::error::Job container rustc ($have) != rust-toolchain.toml ($channel). Bump the container: tag in containers.yml."
+            exit 1
+          fi
           if [ "$channel" != "$arg" ]; then
-            echo "::error::Toolchain pin drift: rust-toolchain.toml=$channel Dockerfile=$arg"
+            echo "::error::docker/Dockerfile RUST_VERSION ($arg) != rust-toolchain.toml ($channel)."
             exit 1
           fi
 
-      - uses: docker/setup-qemu-action@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: containers-${{ matrix.platform }}
+
+      - name: Build (release, native)
+        run: cargo build --release --locked -p ehrbase
+
+      - name: Strip
+        run: strip target/release/ehrbase
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ehrbase-${{ matrix.platform }}
+          path: target/release/ehrbase
+          if-no-files-found: error
+          retention-days: 1
+
+  # ── Package + push the multi-arch app image (COPY-only; seconds) ────────────
+  app-image:
+    name: app image
+    runs-on: ubuntu-24.04
+    needs: binary
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: ehrbase-amd64
+          path: bin/amd64
+      - uses: actions/download-artifact@v8
+        with:
+          name: ehrbase-arm64
+          path: bin/arm64
+
+      # No QEMU: the runtime Dockerfile is COPY-only, so a multi-arch build
+      # executes no foreign-arch code.
       - uses: docker/setup-buildx-action@v4
 
       - uses: docker/login-action@v4
@@ -77,11 +147,12 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
-      - name: Build and push
+      - name: Package and push
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/Dockerfile
+          file: docker/Dockerfile.runtime
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -89,15 +160,14 @@ jobs:
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}
-          cache-from: type=gha,scope=app
-          cache-to: type=gha,mode=max,scope=app
           provenance: true
           sbom: true
 
   # ── PostgreSQL image (only on docker/postgres changes or tags; multi-arch) ──
+  # COPY-only on top of postgres:18.4, so multi-arch needs no QEMU either.
   postgres-image:
     name: postgres image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: changes
     if: >-
       needs.changes.outputs.postgres == 'true' ||
@@ -105,7 +175,6 @@ jobs:
       github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
@@ -134,38 +203,30 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=postgres
-          cache-to: type=gha,mode=max,scope=postgres
           provenance: true
           sbom: true
 
-  # ── Smoke test (amd64): compose both up, exercise the API, prove idempotency ─
+  # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
   smoke:
     name: compose smoke (amd64)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: app-image
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
 
-      - name: Build app image (amd64, load)
-        uses: docker/build-push-action@v7
+      - uses: docker/login-action@v4
         with:
-          context: .
-          file: docker/Dockerfile
-          platforms: linux/amd64
-          load: true
-          tags: ehrbase-rs:smoke
-          cache-from: type=gha,scope=app
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build postgres image (amd64, load)
-        uses: docker/build-push-action@v7
-        with:
-          context: docker/postgres
-          file: docker/postgres/Dockerfile
-          platforms: linux/amd64
-          load: true
-          tags: ehrbase-rs-postgres:smoke
+      - name: Pull pushed app image (by digest)
+        run: |
+          docker pull "${APP_IMAGE}@${{ needs.app-image.outputs.digest }}"
+          docker tag  "${APP_IMAGE}@${{ needs.app-image.outputs.digest }}" ehrbase-rs:smoke
+
+      - name: Build postgres image (amd64; COPY-only, seconds)
+        run: docker build -t ehrbase-rs-postgres:smoke docker/postgres
 
       - name: Smoke test
         shell: bash
