@@ -17,7 +17,6 @@ quick-xml = { workspace = true }
 tokio = { workspace = true }
 tokio-rustls = { workspace = true }
 rustls = { workspace = true }
-rustls-pemfile = { workspace = true }
 
 # Time (ISO-8601 UTC EventDateTime + syslog TIMESTAMP).
 jiff = { workspace = true }
