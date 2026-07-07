@@ -104,6 +104,7 @@ impl WebTemplateService for MockBackend {
         Ok(Arc::new(web_template()))
     }
 }
+impl ehrbase_rest::QueryService for MockBackend {}
 
 fn config() -> RestConfig {
     RestConfig {

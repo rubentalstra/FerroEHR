@@ -73,9 +73,9 @@ pub fn emittable_specs(model: &Model, schema: &BmmSchema) -> BTreeSet<String> {
 
 /// A property resolved onto a concrete class, tracking which class it came from
 /// (for the `// inherited: X` banner).
-struct ResolvedProp<'a> {
-    owner: String,
-    prop: &'a crate::bmm::BmmProperty,
+pub(crate) struct ResolvedProp<'a> {
+    pub(crate) owner: String,
+    pub(crate) prop: &'a crate::bmm::BmmProperty,
 }
 
 /// Foundation classes that are **mapped to Rust and never emitted**: the
@@ -130,17 +130,34 @@ impl Model {
         Model { classes }
     }
 
-    fn get(&self, name: &str) -> Option<&BmmClass> {
+    pub(crate) fn get(&self, name: &str) -> Option<&BmmClass> {
         self.classes.get(name)
     }
 
+    /// Iterate every class in the merged model, in name order.
+    pub(crate) fn class_iter(&self) -> impl Iterator<Item = (&String, &BmmClass)> {
+        self.classes.iter()
+    }
+
+    /// Whether `name` is a generic parameter declared on `class` or any of its
+    /// (transitive) ancestors — e.g. `T` for `INTERVAL_EVENT` (declared on the
+    /// ancestor `EVENT<T>`). Used to resolve a bare-parameter attribute type to
+    /// its bound in the concrete class's scope.
+    pub(crate) fn is_generic_param(&self, class: &str, name: &str) -> bool {
+        let Some(c) = self.get(class) else {
+            return false;
+        };
+        c.generic_params.iter().any(|g| g.name == name)
+            || c.ancestors.iter().any(|a| self.is_generic_param(a, name))
+    }
+
     /// Is `name` mapped to Rust rather than emitted (primitive or [`SKIP`])?
-    fn is_mapped(name: &str) -> bool {
+    pub(crate) fn is_mapped(name: &str) -> bool {
         primitive(name).is_some() || SKIP.contains(&name)
     }
 
     /// Does `class` inherit from `target` (transitively)?
-    fn inherits(&self, class: &str, target: &str) -> bool {
+    pub(crate) fn inherits(&self, class: &str, target: &str) -> bool {
         let Some(c) = self.get(class) else {
             return false;
         };
@@ -236,7 +253,7 @@ impl Model {
 
     /// Flatten a class's properties, ancestor-first, with child redefinitions
     /// overriding the inherited type in place.
-    fn flattened_props(&self, class: &BmmClass) -> Vec<ResolvedProp<'_>> {
+    pub(crate) fn flattened_props(&self, class: &BmmClass) -> Vec<ResolvedProp<'_>> {
         let mut order: Vec<String> = Vec::new();
         let mut map: BTreeMap<String, ResolvedProp<'_>> = BTreeMap::new();
         self.gather(&class.name, &mut order, &mut map);
@@ -444,7 +461,7 @@ impl Model {
     /// without repeating its bound (`INTERVAL_EVENT<T>` re-lists `T` but the
     /// `T: ITEM_STRUCTURE` bound lives on `EVENT<T>`); the bound is inherited by
     /// parameter name, since the family reuses the same name down the hierarchy.
-    fn resolved_param_bound(&self, class_name: &str, param: &str) -> Option<String> {
+    pub(crate) fn resolved_param_bound(&self, class_name: &str, param: &str) -> Option<String> {
         let class = self.get(class_name)?;
         if let Some(g) = class.generic_params.iter().find(|g| g.name == param)
             && let Some(bound) = &g.conforms_to

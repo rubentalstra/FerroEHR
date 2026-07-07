@@ -44,6 +44,14 @@ impl WebTemplateCache {
             .await
     }
 
+    /// Whether `template_id` is currently cached. Used by callers to report a
+    /// cache hit/miss metric around [`Self::get_or_build`]; approximate under
+    /// concurrency (a peek, not a lock).
+    #[must_use]
+    pub fn contains(&self, template_id: &str) -> bool {
+        self.inner.contains_key(template_id)
+    }
+
     /// Drop the cached entry for `template_id` (e.g. on template replacement).
     pub async fn invalidate(&self, template_id: &str) {
         self.inner.invalidate(template_id).await;

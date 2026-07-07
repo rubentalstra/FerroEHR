@@ -96,12 +96,17 @@ impl Authenticator {
         Ok(Arc::new(Self { config, jwt }))
     }
 
-    fn enabled(&self) -> bool {
+    pub(crate) fn enabled(&self) -> bool {
         self.config.enabled
     }
 
+    /// The configured admin scope, if the coarse admin gate is enabled.
+    pub(crate) fn admin_scope(&self) -> Option<&str> {
+        self.config.admin_scope.as_deref()
+    }
+
     /// The `WWW-Authenticate` challenge advertising the enabled mechanisms.
-    fn challenge(&self) -> HeaderValue {
+    pub(crate) fn challenge(&self) -> HeaderValue {
         let mut parts = Vec::new();
         if self.config.basic.is_some() {
             parts.push(r#"Basic realm="ehrbase""#);
@@ -116,7 +121,10 @@ impl Authenticator {
             .unwrap_or_else(|_| HeaderValue::from_static("Basic"))
     }
 
-    async fn authenticate(&self, headers: &http::HeaderMap) -> Result<Principal, AuthError> {
+    pub(crate) async fn authenticate(
+        &self,
+        headers: &http::HeaderMap,
+    ) -> Result<Principal, AuthError> {
         let auth = headers
             .get(header::AUTHORIZATION)
             .ok_or(AuthError::MissingCredentials)?;
@@ -200,17 +208,38 @@ pub async fn middleware(
     match auth.authenticate(req.headers()).await {
         Ok(principal) => {
             if let Err(e) = auth.authorize_admin(&path, &principal) {
-                return RestError(e.to_api_error()).into_response();
+                metrics::counter!(
+                    crate::management::AUTH_FAILURES,
+                    "mechanism" => mechanism_label(principal.method),
+                    "status" => "403",
+                )
+                .increment(1);
+                // Attribute the 403 to the authenticated caller for the audit layer.
+                let mut resp = RestError(e.to_api_error()).into_response();
+                resp.extensions_mut().insert(principal);
+                return resp;
             }
             req.extensions_mut().insert(principal.clone());
             // Publish the principal for the service layer (committer attribution).
-            REQUEST_PRINCIPAL
+            let for_audit = principal.clone();
+            let mut resp = REQUEST_PRINCIPAL
                 .scope(Some(principal), next.run(req))
-                .await
+                .await;
+            // Republish onto the response so the outer ATNA audit layer — which
+            // cannot observe request-extension mutations — can attribute events.
+            resp.extensions_mut().insert(for_audit);
+            resp
         }
         Err(e) => {
             let api = e.to_api_error();
-            let needs_challenge = api.status() == StatusCode::UNAUTHORIZED;
+            let status = api.status();
+            metrics::counter!(
+                crate::management::AUTH_FAILURES,
+                "mechanism" => scheme_label(req.headers()),
+                "status" => if status == StatusCode::FORBIDDEN { "403" } else { "401" },
+            )
+            .increment(1);
+            let needs_challenge = status == StatusCode::UNAUTHORIZED;
             let mut resp = RestError(api).into_response();
             if needs_challenge {
                 resp.headers_mut()
@@ -218,6 +247,30 @@ pub async fn middleware(
             }
             resp
         }
+    }
+}
+
+/// The `mechanism` metric label for a known authenticated principal.
+fn mechanism_label(method: AuthMethod) -> &'static str {
+    match method {
+        AuthMethod::Basic => "basic",
+        AuthMethod::Bearer => "bearer",
+    }
+}
+
+/// The `mechanism` metric label derived from the request's `Authorization`
+/// scheme (for failures where no principal was established).
+fn scheme_label(headers: &http::HeaderMap) -> &'static str {
+    match headers
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.split_whitespace().next())
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
+        Some("basic") => "basic",
+        Some("bearer") => "bearer",
+        _ => "none",
     }
 }
 

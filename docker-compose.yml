@@ -1,72 +1,76 @@
+# Quickstart for ehrbase-rs: the preconfigured PostgreSQL image + the app image.
 #
-# Minimal setup for a running EHRbase. Contains the server component as well as the required postgres instance.
+#   docker compose up --build          # build + run both from the Dockerfiles
+#   curl -u ehrbase:ehrbase -X POST -i \
+#     http://localhost:8080/ehrbase/rest/openehr/v1/ehr
 #
+# The same Dockerfiles CI publishes are used here (no drift). CI can point the
+# `*_IMAGE` vars at pre-built images and run `docker compose up --no-build`.
+name: ehrbase-rs
+
 services:
-
-  #
-  # EHRBase container. see `.env.ehrbase` for configuration details.
-  #
-  ehrbase:
-    image: ${EHRBASE_IMAGE:-ehrbase/ehrbase:next}
-    env_file:
-      - .env.ehrbase
+  ehrbase-postgres:
+    image: ${EHRBASE_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs-postgres:local}
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
     environment:
-      DB_URL: jdbc:postgresql://ehrdb:5432/ehrbase
-      DB_USER_ADMIN: ehrbase
-      DB_PASS_ADMIN: ehrbase
-      DB_USER: ehrbase_restricted
-      DB_PASS: ehrbase_restricted
-    links:
-      - ehrdb
-      - keycloak
-    depends_on:
-      ehrdb:
-        condition: service_healthy
-      keycloak:
-        condition: service_started
+      # Bootstrap superuser (postgres) — dev default; override in production.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # App role/database created by the init script (dev defaults).
+      EHRBASE_DB_USER: ${EHRBASE_DB_USER:-ehrbase}
+      EHRBASE_DB_PASSWORD: ${EHRBASE_DB_PASSWORD:-ehrbase}
+      EHRBASE_DB_NAME: ${EHRBASE_DB_NAME:-ehrbase}
+    volumes:
+      - ehrbase-pgdata:/var/lib/postgresql
     ports:
-      - "8080:8080"
-    networks:
-      - ehrbase-net
-
-  #
-  # Pre-configured ehrbase postgres.
-  #
-  ehrdb:
-    image: ${EHRBASE_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      EHRBASE_USER_ADMIN: ehrbase
-      EHRBASE_PASSWORD_ADMIN: ehrbase
-      EHRBASE_USER: ehrbase_restricted
-      EHRBASE_PASSWORD: ehrbase_restricted
+      - "${EHRBASE_DB_PORT:-5432}:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U ${EHRBASE_DB_USER:-ehrbase} -d ${EHRBASE_DB_NAME:-ehrbase}"]
       interval: 5s
       timeout: 5s
-      retries: 12
-    ports:
-      - "5432:5432"
-    networks:
-      - ehrbase-net
+      retries: 20
+      start_period: 10s
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0.3
-    #image: registry.vitasystems.dev/docker-registry/keycloak-x:0.9.9
-    container_name: keycloak
-    command: "start-dev --import-realm"
-    ports:
-      - "8081:8080"
+  ehrbase:
+    image: ${EHRBASE_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs:local}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on:
+      ehrbase-postgres:
+        condition: service_healthy
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      EHRBASE_DB_URL: postgres://${EHRBASE_DB_USER:-ehrbase}:${EHRBASE_DB_PASSWORD:-ehrbase}@ehrbase-postgres:5432/${EHRBASE_DB_NAME:-ehrbase}
+      # Dev config mounted below: enables Basic auth with the ehrbase/ehrbase user.
+      EHRBASE_REST_CONFIG: /etc/ehrbase/ehrbase.toml
+    volumes:
+      - ./docker/ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
+    ports:
+      - "${EHRBASE_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ehrbase", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Keycloak for OAuth2/OIDC bearer auth (the "ehrbase" realm is imported from
+  # docker/keycloak/import). The app defaults to Basic auth (see ehrbase.dev.toml),
+  # so it does NOT depend on Keycloak; point EHRBASE_REST_AUTH__OIDC__* (or a TOML
+  # [auth.oidc] block) at http://localhost:8081/auth/realms/ehrbase to use it.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.4
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HTTP_RELATIVE_PATH: /auth
       KC_HTTP_PORT: 8080
     volumes:
-      - ./tests/keycloak/import:/opt/keycloak/data/import
-    networks:
-      - ehrbase-net
+      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8080"
 
-networks:
-  ehrbase-net: { }
+volumes:
+  ehrbase-pgdata:

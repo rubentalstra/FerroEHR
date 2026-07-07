@@ -2,9 +2,11 @@
 //!
 //! [`AppState`] is the type the generated ITS-REST server traits are
 //! implemented on (see [`crate::api`]). It is cheap to clone (an `Arc` inside)
-//! and is threaded through axum as router state. It carries the configuration
-//! and the service [`Backend`](crate::Backend) the dispatcher calls into (the
-//! DB-backed service is injected by the `ehrbase` crate; default `StubBackend`).
+//! and is threaded through axum as router state. It carries the configuration,
+//! the service [`Backend`](crate::Backend) the dispatcher calls into, the
+//! optional ATNA audit sender, and the [`Observability`] bundle (management
+//! surface + telemetry handles + health registry) — which defaults to fully
+//! off, so a server without observability is the clean default.
 //!
 //! The REST layer holds **no caches of its own** — in particular, `WebTemplate`
 //! resolution is a single service-owned concern reached through
@@ -12,11 +14,15 @@
 
 use std::sync::Arc;
 
+use ehrbase_audit::AuditSender;
+
 use crate::backend::{Backend, StubBackend};
 use crate::config::RestConfig;
+use crate::management::Observability;
 
-/// Cheaply-cloneable application state: the configuration plus the service
-/// backend the HTTP dispatcher calls into.
+/// Cheaply-cloneable application state: the configuration, the service backend
+/// the HTTP dispatcher calls into, the optional audit sender, and the
+/// observability bundle.
 #[derive(Clone, Debug)]
 pub struct AppState {
     inner: Arc<Inner>,
@@ -26,6 +32,10 @@ pub struct AppState {
 struct Inner {
     config: RestConfig,
     backend: Arc<dyn Backend>,
+    /// The ATNA audit sender, when auditing is wired in (the binary supplies it).
+    audit: Option<AuditSender>,
+    /// The observability bundle (management config + telemetry handles).
+    observability: Observability,
 }
 
 impl AppState {
@@ -40,8 +50,35 @@ impl AppState {
     /// application injects its DB-backed service here).
     #[must_use]
     pub fn with_backend(config: RestConfig, backend: Arc<dyn Backend>) -> Self {
+        Self::with_backend_and_audit(config, backend, None)
+    }
+
+    /// Construct state with a concrete backend and an optional ATNA audit sender
+    /// (observability off).
+    #[must_use]
+    pub fn with_backend_and_audit(
+        config: RestConfig,
+        backend: Arc<dyn Backend>,
+        audit: Option<AuditSender>,
+    ) -> Self {
+        Self::with_parts(config, backend, audit, Observability::default())
+    }
+
+    /// Construct state from all parts, including the observability bundle.
+    #[must_use]
+    pub fn with_parts(
+        config: RestConfig,
+        backend: Arc<dyn Backend>,
+        audit: Option<AuditSender>,
+        observability: Observability,
+    ) -> Self {
         Self {
-            inner: Arc::new(Inner { config, backend }),
+            inner: Arc::new(Inner {
+                config,
+                backend,
+                audit,
+                observability,
+            }),
         }
     }
 
@@ -54,5 +91,15 @@ impl AppState {
     /// The service backend the HTTP dispatcher calls into.
     pub(crate) fn backend(&self) -> &dyn Backend {
         &*self.inner.backend
+    }
+
+    /// The ATNA audit sender, if auditing is enabled/wired.
+    pub(crate) fn audit(&self) -> Option<AuditSender> {
+        self.inner.audit.clone()
+    }
+
+    /// The observability bundle (management + telemetry handles).
+    pub(crate) fn observability(&self) -> &Observability {
+        &self.inner.observability
     }
 }

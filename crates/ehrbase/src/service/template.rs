@@ -35,6 +35,19 @@ impl EhrbaseService {
             }
             Err(e) => return Err(e),
         };
+        // Record cache hit/miss (§1.2 webtemplate_cache_events_total). The peek
+        // is approximate under concurrency; good enough for a rate metric.
+        let event = if self.web_templates.contains(template_id) {
+            "hit"
+        } else {
+            "miss"
+        };
+        metrics::counter!(
+            crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS,
+            "event" => event,
+        )
+        .increment(1);
+
         self.web_templates
             .get_or_build(template_id, || {
                 let opt = openehr_its::opt14::from_xml(&xml)

@@ -276,6 +276,7 @@ async fn apply_change(
             )
             .await?;
             insert_nodes(tx, vo_id, 1, ehr_id, &rows).await?;
+            record_composition_commit(kind, "creation");
             Ok(Committed {
                 vo_id,
                 sys_version: 1,
@@ -308,6 +309,7 @@ async fn apply_change(
             )
             .await?;
             insert_nodes(tx, vo_id, next, ehr_id, &rows).await?;
+            record_composition_commit(kind, "modification");
             Ok(Committed {
                 vo_id,
                 sys_version: next,
@@ -333,12 +335,26 @@ async fn apply_change(
                 None,
             )
             .await?;
+            record_composition_commit(kind, "deletion");
             Ok(Committed {
                 vo_id,
                 sys_version: next,
                 contribution_id,
             })
         }
+    }
+}
+
+/// Record a committed COMPOSITION for the `compositions_committed_total`
+/// metric (§1.2). Only COMPOSITIONs are counted; `EHR_STATUS`/FOLDER writes are
+/// not this metric's subject.
+fn record_composition_commit(kind: Kind, change_type: &'static str) {
+    if kind == Kind::Composition {
+        metrics::counter!(
+            crate::telemetry::prometheus::COMPOSITIONS_COMMITTED,
+            "change_type" => change_type,
+        )
+        .increment(1);
     }
 }
 

@@ -19,11 +19,14 @@ files — that is what this regenerates.
 
 1. **Regenerate all targets** (order matters — spec crates first):
    ```
-   cargo run -p openehr-codegen -- emit        # openehr-base/rm/am/term/lang
-   cargo run -p openehr-codegen -- emit-xml    # openehr-its XML ToXml/FromXml
-   cargo run -p openehr-codegen -- emit-rest   # openehr-its ITS-REST contract
-   cargo run -p openehr-codegen -- emit-opt    # openehr-its opt14 (OPT 1.4 model + XML codec)
+   cargo run -p openehr-codegen -- emit           # openehr-base/rm/am/term/lang (rm incl. src/model)
+   cargo run -p openehr-codegen -- emit-xml        # openehr-its XML ToXml/FromXml
+   cargo run -p openehr-codegen -- emit-rest       # openehr-its ITS-REST contract
+   cargo run -p openehr-codegen -- emit-opt         # openehr-its opt14 (OPT 1.4 model + XML codec)
+   cargo run -p openehr-codegen -- emit-rm-model    # openehr-rm src/model (static RM attribute/type model, ADR-008 §3)
    ```
+   (`emit` already emits `openehr-rm/src/model`; `emit-rm-model` refreshes just
+   that subtree and is byte-identical, so run order does not matter.)
 2. **Build + gate the affected crates:**
    ```
    cargo build -q -p openehr-base -p openehr-rm -p openehr-am -p openehr-term -p openehr-lang -p openehr-its
@@ -47,5 +50,5 @@ files — that is what this regenerates.
 - Vendored inputs: BMM at `crates/openehr-codegen/vendor/bmm/`, XSD/OAS/JSON at
   `crates/openehr-its/{schemas,vendor}/` (each with `PROVENANCE.md`).
 - To change generated output, edit the emitter
-  (`crates/openehr-codegen/src/{emit,emit_xml,emit_rest,xsd,oas,naming}.rs`) or a
-  `*_impl.rs` sibling — see `.claude/rules/codegen.md`.
+  (`crates/openehr-codegen/src/{emit,emit_xml,emit_rest,emit_rm_model,xsd,oas,naming}.rs`)
+  or a `*_impl.rs` sibling — see `.claude/rules/codegen.md`.

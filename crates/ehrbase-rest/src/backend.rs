@@ -429,19 +429,80 @@ pub trait EhrService: Send + Sync {
     }
 }
 
+/// A normalized AQL query request: the paging window, the single-EHR scope, and
+/// the `$parameter` bindings, gathered from the query string or the request body
+/// (`AdhocQueryExecute` / `Query`) by the dispatch layer (ITS-REST query
+/// `parameters/query/{ehr_id,offset,fetch}` + `query_parameters`).
+#[derive(Debug, Clone, Default)]
+pub struct AqlQueryRequest {
+    /// The `ehr_id` scope (query param or `openEHR-EHR-id` header), if any.
+    pub ehr_id: Option<String>,
+    /// The `offset` paging parameter (0-based row to start from).
+    pub offset: Option<i64>,
+    /// The `fetch` paging parameter (max rows to return).
+    pub fetch: Option<i64>,
+    /// The `query_parameters` (`$name` binds, no `$` prefix).
+    pub parameters: std::collections::BTreeMap<String, Value>,
+}
+
+/// The AQL query execution seam (P16) — the QUERY API group's application seam,
+/// re-joined to [`Backend`] now that the engine lands (the W3-B slimming removed
+/// `QueryApi` with the note "query rejoins at P16"). It returns the assembled
+/// ITS-REST 1.0.3 `RESULT_SET` as canonical JSON; the HTTP edge renders it.
+///
+/// Both methods default to `NotImplemented`, so [`StubBackend`] (and any partial
+/// backend) inherits a `501` until the real service overrides them.
+#[async_trait]
+pub trait QueryService: Send + Sync {
+    /// `POST/GET /query/aql` — execute an ad-hoc AQL query, returning its
+    /// `RESULT_SET`.
+    async fn query_execute_adhoc(
+        &self,
+        _aql: String,
+        _request: AqlQueryRequest,
+    ) -> Result<Value, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `POST/GET /query/{qualified_query_name}[/{version}]` — execute a stored
+    /// query, returning its `RESULT_SET`. `version` is a full/partial SEMVER or
+    /// `None` for the latest.
+    async fn query_execute_stored(
+        &self,
+        _qualified_query_name: String,
+        _version: Option<String>,
+        _request: AqlQueryRequest,
+    ) -> Result<Value, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+}
+
 /// The full server backend: everything the ITS-REST surface dispatches to.
 /// Implemented once, on the application's service (or on [`StubBackend`]).
-/// Groups with no implemented operations (demographic / query / admin) are
-/// deliberately absent — their routes answer 501 without touching the backend
-/// (F-13-03); each generated trait joins this union in the phase that first
-/// implements it.
+/// Groups with no implemented operations (demographic / admin) are deliberately
+/// absent — their routes answer 501 without touching the backend (F-13-03); each
+/// generated trait joins this union in the phase that first implements it.
 pub trait Backend:
-    EhrService + DefinitionApi + WebTemplateService + Send + Sync + std::fmt::Debug + 'static
+    EhrService
+    + DefinitionApi
+    + WebTemplateService
+    + QueryService
+    + Send
+    + Sync
+    + std::fmt::Debug
+    + 'static
 {
 }
 
 impl<T> Backend for T where
-    T: EhrService + DefinitionApi + WebTemplateService + Send + Sync + std::fmt::Debug + 'static
+    T: EhrService
+        + DefinitionApi
+        + WebTemplateService
+        + QueryService
+        + Send
+        + Sync
+        + std::fmt::Debug
+        + 'static
 {
 }
 
@@ -457,3 +518,4 @@ pub struct StubBackend;
 impl EhrService for StubBackend {}
 impl DefinitionApi for StubBackend {}
 impl WebTemplateService for StubBackend {}
+impl QueryService for StubBackend {}

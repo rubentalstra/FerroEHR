@@ -1,0 +1,490 @@
+//! AST → typed IR lowering (ADR-008, P16). Covers the full accepted feature
+//! envelope in `docs/design/aql-engine.md` §Feature envelope; every rejected
+//! construct maps to a precise [`AqlFeatureError`].
+//!
+//! The FROM clause is lowered first (building the [`Source`] list, the
+//! [`ContainsTree`], and the variable [`Bindings`]); SELECT / WHERE / ORDER BY
+//! are then analysed against those bindings. Parameter presence is validated by
+//! [`super::plan`] after the whole IR is built.
+
+use openehr_query::ast::{
+    AggregateCall, ClassExprOperand, ColumnExpr, CompareOperand, ContainsExpr, FunctionCall,
+    IdentifiedExpr, LikeOperand, MatchesOperand, OrderByExpr, SelectQuery, SortOrder, StatFunc,
+    Terminal, ValueListItem, VersionPredicate, WhereExpr,
+};
+use openehr_rm::model;
+
+use super::analyze::{
+    Binding, BindingKind, Bindings, analyze_path, param_name, resolve_ehr_predicate,
+    resolve_node_predicate, resolve_version_predicate, typed_lit,
+};
+use super::error::{AnalysisError, AqlError, AqlFeatureError};
+use super::ir::{
+    AggFunc, Bind, Coercion, Contained, ContainsTree, EhrPredicate, EhrSource, Expr, LikePattern,
+    Link, Operand, OrderKey, PathTarget, QueryIr, RmSource, ScalarFn, SelectColumn, SelectValue,
+    Source, SourceId, TypeSet, TypedLit, VersionScope, VersionSource,
+};
+
+/// Lowers one parsed [`SelectQuery`] into a [`QueryIr`] (without parameter-
+/// presence validation, which [`super::plan`] performs).
+pub(crate) fn lower(query: &SelectQuery) -> Result<QueryIr, AqlError> {
+    let mut planner = Planner::default();
+    let contains = planner.lower_from(&query.from, None)?;
+
+    let select = query
+        .select
+        .columns
+        .iter()
+        .map(|c| planner.lower_select_column(c))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let filter = query
+        .where_
+        .as_ref()
+        .map(|w| planner.lower_where(w))
+        .transpose()?;
+
+    let order_by = query
+        .order_by
+        .iter()
+        .map(|o| planner.lower_order_by(o))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let (limit, offset) = lower_limit(query)?;
+
+    Ok(QueryIr {
+        sources: planner.sources,
+        contains,
+        filter,
+        select,
+        order_by,
+        distinct: query.select.distinct,
+        limit,
+        offset,
+        params: Vec::new(), // filled by `plan`
+    })
+}
+
+/// The FROM-clause lowering state: the growing source list and variable
+/// bindings.
+#[derive(Debug, Default)]
+struct Planner {
+    sources: Vec<Source>,
+    bindings: Bindings,
+}
+
+impl Planner {
+    fn next_id(&self) -> SourceId {
+        SourceId(self.sources.len())
+    }
+
+    // ── FROM ────────────────────────────────────────────────────────────────
+
+    fn lower_from(
+        &mut self,
+        expr: &ContainsExpr,
+        inherited: Option<&VersionScope>,
+    ) -> Result<ContainsTree, AqlError> {
+        match expr {
+            ContainsExpr::And(a, b) => Ok(ContainsTree::And(
+                Box::new(self.lower_from(a, inherited)?),
+                Box::new(self.lower_from(b, inherited)?),
+            )),
+            ContainsExpr::Or(a, b) => Ok(ContainsTree::Or(
+                Box::new(self.lower_from(a, inherited)?),
+                Box::new(self.lower_from(b, inherited)?),
+            )),
+            ContainsExpr::Contained { operand, contains } => {
+                let (source, child_scope) = self.lower_operand(operand, inherited)?;
+                let contained = contains
+                    .as_ref()
+                    .map(|cc| -> Result<_, AqlError> {
+                        let link = if cc.negated {
+                            Link::NotContains
+                        } else {
+                            Link::Contains
+                        };
+                        let tree = self.lower_from(&cc.expr, child_scope.as_ref())?;
+                        Ok(Box::new(Contained { link, tree }))
+                    })
+                    .transpose()?;
+                Ok(ContainsTree::Operand { source, contained })
+            }
+        }
+    }
+
+    /// Lower one class/version operand, returning its [`SourceId`] and the
+    /// version scope to propagate to its contained children.
+    fn lower_operand(
+        &mut self,
+        operand: &ClassExprOperand,
+        inherited: Option<&VersionScope>,
+    ) -> Result<(SourceId, Option<VersionScope>), AqlError> {
+        match operand {
+            ClassExprOperand::Class {
+                rm_type,
+                variable,
+                predicate,
+            } => {
+                let id = self.next_id();
+                if rm_type == "EHR" {
+                    let predicates = predicate
+                        .as_ref()
+                        .map(Self::lower_ehr_predicate)
+                        .transpose()?
+                        .into_iter()
+                        .flatten()
+                        .collect();
+                    self.sources.push(Source::Ehr(EhrSource {
+                        id,
+                        var: variable.clone(),
+                        predicates,
+                    }));
+                    if let Some(v) = variable {
+                        self.bindings.insert(
+                            v.clone(),
+                            Binding {
+                                source: id,
+                                kind: BindingKind::Ehr,
+                            },
+                        );
+                    }
+                    return Ok((id, inherited.cloned()));
+                }
+
+                // An RM structure/VO class. It must be addressable in the node
+                // store: at least one concrete descendant is a structure root.
+                let class = model::class(rm_type)
+                    .ok_or_else(|| AnalysisError::UnknownClass(rm_type.clone()))?;
+                let concrete =
+                    TypeSet::new(class.descendants.iter().map(|s| (*s).to_owned()).collect());
+                if !concrete.names().iter().any(|t| model::is_structure_root(t)) {
+                    return Err(AqlFeatureError::UnsupportedSourceClass(rm_type.clone()).into());
+                }
+
+                let constraint = predicate
+                    .as_ref()
+                    .map(resolve_node_predicate)
+                    .transpose()?
+                    .unwrap_or_default();
+                let scope = inherited.cloned().unwrap_or(VersionScope::Latest);
+                self.sources.push(Source::Rm(RmSource {
+                    id,
+                    var: variable.clone(),
+                    rm_type: concrete.clone(),
+                    archetype: constraint.archetype,
+                    name: constraint.name,
+                    standard: constraint.standard,
+                    scope,
+                }));
+                if let Some(v) = variable {
+                    self.bindings.insert(
+                        v.clone(),
+                        Binding {
+                            source: id,
+                            kind: BindingKind::Rm(concrete),
+                        },
+                    );
+                }
+                Ok((id, inherited.cloned()))
+            }
+            ClassExprOperand::Version {
+                variable,
+                predicate,
+            } => {
+                let id = self.next_id();
+                let scope = match predicate {
+                    None | Some(VersionPredicate::Latest) => VersionScope::Latest,
+                    Some(VersionPredicate::All) => VersionScope::All,
+                    Some(VersionPredicate::Standard(sp)) => {
+                        VersionScope::Predicate(resolve_version_predicate(sp)?)
+                    }
+                };
+                self.sources.push(Source::Version(VersionSource {
+                    id,
+                    var: variable.clone(),
+                    scope: scope.clone(),
+                }));
+                if let Some(v) = variable {
+                    self.bindings.insert(
+                        v.clone(),
+                        Binding {
+                            source: id,
+                            kind: BindingKind::Version,
+                        },
+                    );
+                }
+                Ok((id, Some(scope)))
+            }
+        }
+    }
+
+    /// Resolve an EHR class predicate into standard EHR-field predicates. EHR
+    /// predicates are standard predicates (`ehr_id/value=$id`); a node-predicate
+    /// `AND`-tree of them is also accepted.
+    fn lower_ehr_predicate(
+        pred: &openehr_query::ast::PathPredicate,
+    ) -> Result<Vec<EhrPredicate>, AqlError> {
+        use openehr_query::ast::{NodePredicate, PathPredicate};
+        match pred {
+            PathPredicate::Standard(sp) => {
+                let (field, op, value) = resolve_ehr_predicate(sp)?;
+                Ok(vec![EhrPredicate { field, op, value }])
+            }
+            PathPredicate::Node(np) => match np.as_ref() {
+                NodePredicate::Standard(sp) => {
+                    let (field, op, value) = resolve_ehr_predicate(sp)?;
+                    Ok(vec![EhrPredicate { field, op, value }])
+                }
+                NodePredicate::And(a, b) => {
+                    let mut out = Self::lower_ehr_predicate(&PathPredicate::Node(a.clone()))?;
+                    out.extend(Self::lower_ehr_predicate(&PathPredicate::Node(b.clone()))?);
+                    Ok(out)
+                }
+                _ => Err(
+                    AnalysisError::TypeMismatch("unsupported EHR predicate form".to_owned()).into(),
+                ),
+            },
+            PathPredicate::Archetype(_) => Err(AnalysisError::TypeMismatch(
+                "EHR does not take an archetype predicate".to_owned(),
+            )
+            .into()),
+        }
+    }
+
+    // ── SELECT ────────────────────────────────────────────────────────────────
+
+    fn lower_select_column(
+        &self,
+        col: &openehr_query::ast::SelectExpr,
+    ) -> Result<SelectColumn, AqlError> {
+        let value = match &col.column {
+            ColumnExpr::Path(p) => SelectValue::Path(analyze_path(p, &self.bindings)?),
+            ColumnExpr::Primitive(p) => SelectValue::Literal(typed_lit(p)),
+            ColumnExpr::Aggregate(agg) => self.lower_aggregate(agg)?,
+            ColumnExpr::Function(f) => {
+                let (func, args) = self.lower_function(f)?;
+                SelectValue::Function { func, args }
+            }
+        };
+        Ok(SelectColumn {
+            value,
+            alias: col.alias.clone(),
+        })
+    }
+
+    fn lower_aggregate(&self, agg: &AggregateCall) -> Result<SelectValue, AqlError> {
+        match agg {
+            AggregateCall::Count { distinct, path } => Ok(SelectValue::Aggregate {
+                func: AggFunc::Count,
+                arg: path
+                    .as_ref()
+                    .map(|p| analyze_path(p, &self.bindings))
+                    .transpose()?,
+                distinct: *distinct,
+            }),
+            AggregateCall::Stat { func, path } => Ok(SelectValue::Aggregate {
+                func: match func {
+                    StatFunc::Min => AggFunc::Min,
+                    StatFunc::Max => AggFunc::Max,
+                    StatFunc::Sum => AggFunc::Sum,
+                    StatFunc::Avg => AggFunc::Avg,
+                },
+                arg: Some(analyze_path(path, &self.bindings)?),
+                distinct: false,
+            }),
+        }
+    }
+
+    // ── WHERE ───────────────────────────────────────────────────────────────
+
+    fn lower_where(&self, expr: &WhereExpr) -> Result<Expr, AqlError> {
+        match expr {
+            WhereExpr::Identified(ie) => self.lower_identified(ie),
+            WhereExpr::Not(w) => Ok(Expr::Not(Box::new(self.lower_where(w)?))),
+            WhereExpr::And(a, b) => Ok(Expr::And(
+                Box::new(self.lower_where(a)?),
+                Box::new(self.lower_where(b)?),
+            )),
+            WhereExpr::Or(a, b) => Ok(Expr::Or(
+                Box::new(self.lower_where(a)?),
+                Box::new(self.lower_where(b)?),
+            )),
+        }
+    }
+
+    fn lower_identified(&self, ie: &IdentifiedExpr) -> Result<Expr, AqlError> {
+        match ie {
+            IdentifiedExpr::Exists(path) => Ok(Expr::Exists(analyze_path(path, &self.bindings)?)),
+            IdentifiedExpr::Compare { lhs, op, rhs } => {
+                let lhs = self.lower_compare_operand(lhs)?;
+                let mut rhs = self.lower_terminal(rhs)?;
+                let coercion = comparison_coercion(&lhs, &rhs);
+                let mut lhs = lhs;
+                if coercion == Coercion::Temporal {
+                    retype_temporal(&mut lhs);
+                    retype_temporal(&mut rhs);
+                }
+                Ok(Expr::Compare {
+                    lhs,
+                    op: *op,
+                    rhs,
+                    coercion,
+                })
+            }
+            IdentifiedExpr::Like { path, operand } => Ok(Expr::Like {
+                path: analyze_path(path, &self.bindings)?,
+                pattern: match operand {
+                    LikeOperand::String(s) => LikePattern::Literal(s.clone()),
+                    LikeOperand::Parameter(p) => LikePattern::Param(param_name(p)),
+                },
+            }),
+            IdentifiedExpr::Matches { path, operand } => {
+                let target = analyze_path(path, &self.bindings)?;
+                let coercion = target_coercion(&target);
+                let values = match operand {
+                    MatchesOperand::ValueList(items) => items
+                        .iter()
+                        .map(bind_from_value_item)
+                        .collect::<Result<Vec<_>, _>>()?,
+                    MatchesOperand::Terminology(_) => {
+                        return Err(AqlFeatureError::MatchesTerminology.into());
+                    }
+                    MatchesOperand::Uri(_) => return Err(AqlFeatureError::MatchesUri.into()),
+                };
+                Ok(Expr::Matches {
+                    path: target,
+                    values,
+                    coercion,
+                })
+            }
+        }
+    }
+
+    fn lower_compare_operand(&self, op: &CompareOperand) -> Result<Operand, AqlError> {
+        match op {
+            CompareOperand::Path(p) => Ok(Operand::Path(analyze_path(p, &self.bindings)?)),
+            CompareOperand::Function(f) => {
+                let (func, args) = self.lower_function(f)?;
+                Ok(Operand::Function { func, args })
+            }
+        }
+    }
+
+    fn lower_terminal(&self, t: &Terminal) -> Result<Operand, AqlError> {
+        match t {
+            Terminal::Primitive(p) => Ok(Operand::Literal(typed_lit(p))),
+            Terminal::Parameter(p) => Ok(Operand::Param(param_name(p))),
+            Terminal::Path(p) => Ok(Operand::Path(analyze_path(p, &self.bindings)?)),
+            Terminal::Function(f) => {
+                let (func, args) = self.lower_function(f)?;
+                Ok(Operand::Function { func, args })
+            }
+        }
+    }
+
+    fn lower_function(&self, call: &FunctionCall) -> Result<(ScalarFn, Vec<Operand>), AqlError> {
+        match call {
+            FunctionCall::Terminology(_) => Err(AqlFeatureError::TerminologyFunction.into()),
+            FunctionCall::Named { name, args } => {
+                let func = scalar_fn(name)
+                    .ok_or_else(|| AqlFeatureError::UnsupportedFunction(name.clone()))?;
+                let args = args
+                    .iter()
+                    .map(|a| self.lower_terminal(a))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok((func, args))
+            }
+        }
+    }
+
+    // ── ORDER BY ──────────────────────────────────────────────────────────────
+
+    fn lower_order_by(&self, o: &OrderByExpr) -> Result<OrderKey, AqlError> {
+        Ok(OrderKey {
+            path: analyze_path(&o.path, &self.bindings)?,
+            ascending: !matches!(o.order, Some(SortOrder::Descending)),
+        })
+    }
+}
+
+/// LIMIT / TOP resolution: `TOP n` maps to `LIMIT n`; combining the two is
+/// rejected (QUERY §Query structure/LIMIT).
+fn lower_limit(query: &SelectQuery) -> Result<(Option<i64>, Option<i64>), AqlError> {
+    match (&query.select.top, &query.limit) {
+        (Some(_), Some(_)) => Err(AqlFeatureError::TopWithLimit.into()),
+        (Some(top), None) => Ok((Some(top.count), None)),
+        (None, Some(limit)) => Ok((Some(limit.limit), limit.offset)),
+        (None, None) => Ok((None, None)),
+    }
+}
+
+fn scalar_fn(name: &str) -> Option<ScalarFn> {
+    match name.to_ascii_lowercase().as_str() {
+        "length" => Some(ScalarFn::Length),
+        "substring" => Some(ScalarFn::Substring),
+        "position" => Some(ScalarFn::Position),
+        "concat" => Some(ScalarFn::Concat),
+        "concat_ws" => Some(ScalarFn::ConcatWs),
+        "abs" => Some(ScalarFn::Abs),
+        "ceil" => Some(ScalarFn::Ceil),
+        "floor" => Some(ScalarFn::Floor),
+        "round" => Some(ScalarFn::Round),
+        "mod" => Some(ScalarFn::Mod),
+        "current_date" => Some(ScalarFn::CurrentDate),
+        "current_time" => Some(ScalarFn::CurrentTime),
+        "current_date_time" => Some(ScalarFn::CurrentDateTime),
+        "now" => Some(ScalarFn::Now),
+        _ => None,
+    }
+}
+
+fn bind_from_value_item(item: &ValueListItem) -> Result<Bind, AqlError> {
+    match item {
+        ValueListItem::Primitive(p) => Ok(Bind::Literal(typed_lit(p))),
+        ValueListItem::Parameter(p) => Ok(Bind::Param(param_name(p))),
+        ValueListItem::Terminology(_) => Err(AqlFeatureError::MatchesTerminology.into()),
+    }
+}
+
+/// The coercion for a comparison: the data-leaf operand's coercion drives it
+/// (left preferred, then right); non-path/scalar pairs fall back to
+/// [`Coercion::Raw`].
+fn comparison_coercion(lhs: &Operand, rhs: &Operand) -> Coercion {
+    if let Operand::Path(t) = lhs {
+        return target_coercion(t);
+    }
+    if let Operand::Path(t) = rhs {
+        return target_coercion(t);
+    }
+    Coercion::Raw
+}
+
+fn target_coercion(t: &PathTarget) -> Coercion {
+    match t {
+        PathTarget::Data(l) => l.coercion,
+        PathTarget::Version { field, .. } => {
+            if *field == super::ir::VersionField::TimeCommitted {
+                Coercion::Temporal
+            } else {
+                Coercion::Text
+            }
+        }
+        PathTarget::Ehr { field, .. } => {
+            if *field == super::ir::EhrField::TimeCreated {
+                Coercion::Temporal
+            } else {
+                Coercion::Text
+            }
+        }
+    }
+}
+
+/// Retype a string literal operand as a temporal when the comparison context is
+/// temporal (QUERY §Built-in Types/Dates and Times: a quoted value is typed
+/// from its identified-path context, not the literal).
+fn retype_temporal(op: &mut Operand) {
+    if let Operand::Literal(TypedLit::String(s)) = op {
+        *op = Operand::Literal(TypedLit::Temporal(std::mem::take(s)));
+    }
+}

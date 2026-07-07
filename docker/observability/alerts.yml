@@ -1,0 +1,84 @@
+# Alert starter pack (binding doc §5) — documented, not imposed. Load into a
+# Prometheus/Grafana alerting instance and calibrate thresholds against real
+# traffic (§7: tuning of shipped rules, never missing capability).
+#
+# Every rule uses only the closed-label metric families from the §1.2 catalog.
+groups:
+  - name: ehrbase-red
+    rules:
+      - alert: HighServerErrorRatio
+        # >1% of requests are 5xx over 5m.
+        expr: |
+          sum(rate(http_server_request_duration_seconds_count{status_class="5xx"}[5m]))
+            /
+          sum(rate(http_server_request_duration_seconds_count[5m]))
+            > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "5xx ratio above 1% (5m)"
+          description: "The server error ratio has exceeded 1% for 5 minutes."
+
+      - alert: HighRequestLatencyP99
+        # p99 request latency above 2s over 10m.
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (le) (rate(http_server_request_duration_seconds_bucket[10m]))
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 request latency above 2s (10m)"
+          description: "99th-percentile HTTP request latency has exceeded 2s for 10 minutes."
+
+  - name: ehrbase-saturation
+    rules:
+      - alert: ConnectionPoolExhaustion
+        # No idle connections for 5m (pool saturated).
+        expr: max_over_time(db_pool_connections{state="idle"}[5m]) == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DB connection pool exhausted"
+          description: "The connection pool has had no idle connections for 5 minutes."
+
+  - name: ehrbase-audit
+    rules:
+      - alert: AuditRecordsDropped
+        # Any increase in dropped audit records — fail-open auditing losing
+        # records is a page (binding doc §5).
+        expr: increase(atna_audit_dropped_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ATNA audit records dropped"
+          description: "The audit pipeline dropped records in the last 5 minutes."
+
+  - name: ehrbase-security
+    rules:
+      - alert: AuthFailureSpike
+        # Sustained authentication-failure rate (attack detection).
+        expr: sum(rate(auth_failures_total[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Authentication failure spike"
+          description: "Authentication failures exceed 5/s over 5 minutes."
+
+  - name: ehrbase-availability
+    rules:
+      - alert: ReadinessDown
+        # The readiness probe is failing.
+        expr: up{job="ehrbase"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ehrbase readiness DOWN"
+          description: "The ehrbase target is not being scraped / is unavailable."

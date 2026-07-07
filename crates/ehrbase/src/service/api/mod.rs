@@ -7,13 +7,15 @@
 //! `WebTemplate` cache to the REST layer (one resolution for validation, FLAT
 //! / STRUCTURED, and `wt+json` — W2-K/F-13-02).
 //!
-//! The unimplemented API groups (demographic: a future RM phase; query/AQL:
-//! P16; admin: later) are not part of the [`ehrbase_rest::Backend`] seam at
-//! all — their routes answer 501 through the REST layer's generic
-//! not-implemented dispatcher (F-13-03), so no empty trait impls live here.
+//! [`query`] implements the [`ehrbase_rest::QueryService`] seam (ad-hoc + stored
+//! AQL execution on the P16 engine). The remaining unimplemented API groups
+//! (demographic: a future RM phase; admin: later) are not part of the
+//! [`ehrbase_rest::Backend`] seam — their routes answer 501 through the REST
+//! layer's generic not-implemented dispatcher (F-13-03).
 
 mod definition;
 mod ehr;
+mod query;
 
 use std::sync::Arc;
 

@@ -1,0 +1,21 @@
+# Dev-only server configuration, mounted into the app container by
+# docker-compose and pointed at via EHRBASE_REST_CONFIG.
+#
+# The out-of-the-box AuthConfig has authentication ENABLED but no configured
+# mechanism, so every API request 401s until a user store is provided. This
+# file ships ONE Basic-auth user so the quickstart authenticates out of the box.
+#
+# DEV DEFAULTS — do NOT use in production. The credentials are:
+#   username: ehrbase
+#   password: ehrbase   (stored below only as its Argon2id PHC hash)
+
+bind = "0.0.0.0:8080"
+cors_permissive = true
+
+[auth]
+enabled = true
+
+[[auth.basic.users]]
+username = "ehrbase"
+# Argon2id hash of the password "ehrbase".
+password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r2sbj8/y0HbNAcwMb/YseM1fTINO3Dc"

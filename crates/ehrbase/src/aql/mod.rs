@@ -1,0 +1,216 @@
+//! The AQL execution engine (ADR-008, P16) — our own typed IR over the
+//! greenfield node store.
+//!
+//! This module is the *planning* front half of the engine: it turns a parsed
+//! [`openehr_query::ast::SelectQuery`] into a typed [`ir::QueryIr`] through path
+//! analysis ([`analyze`]) and AST→IR lowering ([`lower`]). The back half
+//! (IR→SQL via `sea-query`, execution via `sqlx`, `RESULT_SET` assembly) is the
+//! next package and is deliberately absent here — the IR carries no SQL.
+//!
+//! Design authority: `docs/design/aql-engine.md`. Spec authority: the vendored
+//! QUERY 1.1 text at `docs/specs/openehr/QUERY/docs/AQL/`. The RM typing oracle
+//! is the generated `openehr_rm::model` (ADR-008 §3).
+//!
+//! Entry point: [`plan`].
+
+mod analyze;
+pub mod error;
+pub mod exec;
+pub mod ir;
+mod lower;
+pub mod sql;
+
+use std::collections::BTreeSet;
+
+use openehr_query::ast::SelectQuery;
+
+pub use error::{AnalysisError, AqlError, AqlFeatureError, ExecError, SqlError};
+pub use exec::{ColumnMeta, QueryResult, execute};
+pub use ir::{ParamValue, Params, QueryIr};
+pub use sql::{SqlCtx, build as build_sql};
+
+use ir::{
+    ArchetypeConstraint, Bind, Expr, NameConstraint, NodeConstraint, Operand, PathTarget,
+    SelectValue, Source, VersionScope,
+};
+
+/// Plan an AQL query: analyse and lower it into a typed [`QueryIr`], validating
+/// that every referenced `$parameter` is supplied in `params`.
+///
+/// This is the single entry point of the planning package. It never touches the
+/// database and never produces SQL.
+///
+/// # Errors
+///
+/// * [`AqlError::Feature`] — a syntactically valid construct outside the
+///   accepted feature envelope (each variant cites its QUERY spec section).
+/// * [`AqlError::Analysis`] — an unknown class/variable, an unresolvable
+///   attribute, a type mismatch, or an unbound parameter.
+pub fn plan(query: &SelectQuery, params: &Params) -> Result<QueryIr, AqlError> {
+    let mut ir = lower::lower(query)?;
+    let referenced = collect_params(&ir);
+    for name in &referenced {
+        if !params.contains(name) {
+            return Err(AnalysisError::UnboundParameter(name.clone()).into());
+        }
+    }
+    ir.params = referenced;
+    Ok(ir)
+}
+
+/// Collect every `$parameter` name referenced anywhere in the IR (sorted, unique).
+fn collect_params(ir: &QueryIr) -> Vec<String> {
+    let mut out = BTreeSet::new();
+    for source in &ir.sources {
+        collect_source(source, &mut out);
+    }
+    if let Some(filter) = &ir.filter {
+        collect_expr(filter, &mut out);
+    }
+    for col in &ir.select {
+        collect_select(&col.value, &mut out);
+    }
+    for key in &ir.order_by {
+        collect_path_target(&key.path, &mut out);
+    }
+    out.into_iter().collect()
+}
+
+fn collect_source(source: &Source, out: &mut BTreeSet<String>) {
+    match source {
+        Source::Ehr(s) => {
+            for p in &s.predicates {
+                collect_bind(&p.value, out);
+            }
+        }
+        Source::Rm(s) => {
+            if let Some(a) = &s.archetype {
+                collect_archetype(a, out);
+            }
+            if let Some(n) = &s.name {
+                collect_name(n, out);
+            }
+            for sp in &s.standard {
+                collect_bind(&sp.value, out);
+            }
+            collect_scope(&s.scope, out);
+        }
+        Source::Version(s) => collect_scope(&s.scope, out),
+    }
+}
+
+fn collect_scope(scope: &VersionScope, out: &mut BTreeSet<String>) {
+    if let VersionScope::Predicate(p) = scope {
+        collect_bind(&p.value, out);
+    }
+}
+
+fn collect_expr(expr: &Expr, out: &mut BTreeSet<String>) {
+    match expr {
+        Expr::Compare { lhs, rhs, .. } => {
+            collect_operand(lhs, out);
+            collect_operand(rhs, out);
+        }
+        Expr::Exists(t) => collect_path_target(t, out),
+        Expr::Like { path, pattern } => {
+            collect_path_target(path, out);
+            if let ir::LikePattern::Param(p) = pattern {
+                out.insert(p.clone());
+            }
+        }
+        Expr::Matches { path, values, .. } => {
+            collect_path_target(path, out);
+            for v in values {
+                collect_bind(v, out);
+            }
+        }
+        Expr::And(a, b) | Expr::Or(a, b) => {
+            collect_expr(a, out);
+            collect_expr(b, out);
+        }
+        Expr::Not(a) => collect_expr(a, out),
+    }
+}
+
+fn collect_operand(op: &Operand, out: &mut BTreeSet<String>) {
+    match op {
+        Operand::Path(t) => collect_path_target(t, out),
+        Operand::Param(p) => {
+            out.insert(p.clone());
+        }
+        Operand::Function { args, .. } => {
+            for a in args {
+                collect_operand(a, out);
+            }
+        }
+        Operand::Literal(_) => {}
+    }
+}
+
+fn collect_select(value: &SelectValue, out: &mut BTreeSet<String>) {
+    match value {
+        SelectValue::Path(t) => collect_path_target(t, out),
+        SelectValue::Aggregate { arg, .. } => {
+            if let Some(t) = arg {
+                collect_path_target(t, out);
+            }
+        }
+        SelectValue::Function { args, .. } => {
+            for a in args {
+                collect_operand(a, out);
+            }
+        }
+        SelectValue::Literal(_) => {}
+    }
+}
+
+fn collect_path_target(target: &PathTarget, out: &mut BTreeSet<String>) {
+    if let PathTarget::Data(leaf) = target {
+        if let Some(c) = &leaf.root_predicate {
+            collect_node_constraint(c, out);
+        }
+        for step in &leaf.anchor {
+            if let Some(c) = &step.predicate {
+                collect_node_constraint(c, out);
+            }
+        }
+        for step in &leaf.fragment {
+            if let Some(c) = &step.predicate {
+                collect_node_constraint(c, out);
+            }
+        }
+    }
+}
+
+fn collect_node_constraint(c: &NodeConstraint, out: &mut BTreeSet<String>) {
+    if let Some(a) = &c.archetype {
+        collect_archetype(a, out);
+    }
+    if let Some(n) = &c.name {
+        collect_name(n, out);
+    }
+    for sp in &c.standard {
+        collect_bind(&sp.value, out);
+    }
+}
+
+fn collect_archetype(a: &ArchetypeConstraint, out: &mut BTreeSet<String>) {
+    if let ArchetypeConstraint::Param(p) = a {
+        out.insert(p.clone());
+    }
+}
+
+fn collect_name(n: &NameConstraint, out: &mut BTreeSet<String>) {
+    if let NameConstraint::Param(p) = n {
+        out.insert(p.clone());
+    }
+}
+
+fn collect_bind(b: &Bind, out: &mut BTreeSet<String>) {
+    if let Bind::Param(p) = b {
+        out.insert(p.clone());
+    }
+}
+
+#[cfg(test)]
+mod tests;

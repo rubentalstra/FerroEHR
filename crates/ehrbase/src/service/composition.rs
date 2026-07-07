@@ -34,6 +34,8 @@ impl EhrbaseService {
         )
         .await?;
         tx.commit().await?;
+        metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
+            .increment(1);
 
         self.read_composition(ehr_id, committed.vo_id, Some(committed.sys_version))
             .await
@@ -159,6 +161,8 @@ impl EhrbaseService {
         )
         .await?;
         tx.commit().await?;
+        metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
+            .increment(1);
 
         self.read_composition(ehr_id, vo_id, Some(committed.sys_version))
             .await
@@ -229,6 +233,8 @@ impl EhrbaseService {
         )
         .await?;
         tx.commit().await?;
+        metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
+            .increment(1);
         // 204_COMPOSITION_deleted: the (now deleted) version_uid in ETag/Location.
         Ok(ServiceResponse::deleted(ResourceMeta::new(
             ehr_id.to_string(),
@@ -300,6 +306,7 @@ impl EhrbaseService {
     ) -> Result<(), ServiceError> {
         // Always: RM class invariants + RM-mandated openEHR terminology.
         let mut messages = openehr_flat::validate_rm_and_terminology(composition);
+        let rm_terminology_failures = messages.len();
         // Additionally: archetype conformance, when a template is declared.
         if let Some(template_id) = composition
             .pointer("/archetype_details/template_id/value")
@@ -310,6 +317,24 @@ impl EhrbaseService {
                 composition,
                 &wt,
             ));
+        }
+        // §1.2 validation_failures_total{pass}. openEHR-flat groups RM-invariant
+        // + terminology into one pass; template (archetype conformance) is the
+        // second.
+        let template_failures = messages.len() - rm_terminology_failures;
+        if rm_terminology_failures > 0 {
+            metrics::counter!(
+                crate::telemetry::prometheus::VALIDATION_FAILURES,
+                "pass" => "rm_terminology",
+            )
+            .increment(rm_terminology_failures as u64);
+        }
+        if template_failures > 0 {
+            metrics::counter!(
+                crate::telemetry::prometheus::VALIDATION_FAILURES,
+                "pass" => "template",
+            )
+            .increment(template_failures as u64);
         }
         if messages.is_empty() {
             return Ok(());
