@@ -1,8 +1,8 @@
 //! Authentication configuration (Stage 1: Basic + OAuth2/OIDC bearer).
 //!
 //! Loaded via `figment` alongside the rest of [`crate::config::RestConfig`].
-//! Fine-grained RBAC is Stage 2 (ADR-006); the only authorization here is the
-//! optional coarse [`AuthConfig::admin_scope`] gate — a seam, off by default.
+//! The coarse RBAC gate is configured separately (`ehrbase_authz::AuthzConfig`);
+//! [`AuthConfig::admin_scope`] here is a deprecated back-compat alias.
 
 use serde::{Deserialize, Serialize};
 
@@ -29,9 +29,11 @@ pub struct AuthConfig {
     /// OAuth2/OIDC bearer validation. Absent → bearer disabled.
     #[serde(default)]
     pub oidc: Option<OidcConfig>,
-    /// When set, requests to `/admin/*` must carry this `OAuth2` scope, else 403.
-    /// Stage-1 seam for Stage-2 RBAC; unset by default (authentication-only).
-    // TODO(port): Stage 2 RBAC — replace this coarse scope gate with real authz.
+    /// **Deprecated alias**, retained for back-compat: a configured scope name
+    /// surfaces as the identically-named (upper-cased) role via the scope→role
+    /// extraction, so the RBAC `admin_role` gate subsumes it (a scope `ADMIN`
+    /// becomes role `ADMIN`). Still consulted by the management surface's
+    /// `AdminOnly` access level. Unset by default.
     #[serde(default)]
     pub admin_scope: Option<String>,
 }
@@ -69,6 +71,16 @@ pub struct BasicUser {
     pub username: String,
     /// Argon2 PHC hash string (`$argon2id$v=19$...`).
     pub password_hash: Redacted,
+    /// Roles granted to this user (normalized to upper-case when authenticated),
+    /// feeding the RBAC gate (§5.2 of `docs/enterprise/access-control.md`).
+    /// Defaults to `["USER"]` — the baseline clinical role — when unspecified;
+    /// configure `["ADMIN"]` for an administrative account.
+    #[serde(default = "default_basic_roles")]
+    pub roles: Vec<String>,
+}
+
+fn default_basic_roles() -> Vec<String> {
+    vec!["USER".to_owned()]
 }
 
 /// OAuth2/OIDC bearer configuration. Validation happens as a resource server:

@@ -90,7 +90,9 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .fetch_one(&pool)
         .await
         .expect("ehr bookkeeping");
-    assert_eq!((applied_ext, applied_ehr), (1, 1));
+    // ext: 0001_openehr_functions. ehr: 0001_schema + 0002_add_vo_version_signature
+    // (version signing — RM common §"Digital Signature").
+    assert_eq!((applied_ext, applied_ehr), (1, 2));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -277,6 +279,129 @@ async fn node_codec_round_trips_through_the_database() {
     let expected = i64::try_from(rows.iter().filter(|r| r.rm_type == "OBSERVATION").count())
         .expect("count fits");
     assert_eq!(contains, expected);
+}
+
+/// §6.2: the stored `vo_version.template_id` is read back through the version
+/// read-back and surfaced by `EhrbaseService::template_of_version` (the ABAC
+/// template attribute).
+#[tokio::test]
+async fn template_id_is_read_back_from_vo_version() {
+    use ehrbase::service::EhrbaseService;
+
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("authz_template_db").await;
+    let (vo, ehr_id) = seed_version(&pool).await;
+    // Production sets this on commit (service/vobject.rs); set it directly here.
+    sqlx::query("UPDATE vo_version SET template_id = $2 WHERE vo_id = $1")
+        .bind(vo)
+        .bind("org.openehr::vital_signs.v1")
+        .execute(&pool)
+        .await
+        .expect("set template_id");
+    // Nodes so the read-back can reassemble the current version.
+    let rows = decompose(corpus_sample()).expect("decompose");
+    insert_nodes(&pool, vo, 1, ehr_id, &rows).await;
+
+    let service = EhrbaseService::new(pool);
+    // Current version.
+    assert_eq!(
+        service
+            .template_of_version(vo, None)
+            .await
+            .expect("read template")
+            .as_deref(),
+        Some("org.openehr::vital_signs.v1")
+    );
+    // Explicit version 1.
+    assert_eq!(
+        service
+            .template_of_version(vo, Some(1))
+            .await
+            .expect("read template v1")
+            .as_deref(),
+        Some("org.openehr::vital_signs.v1")
+    );
+    // Unknown object → None (not an error).
+    assert_eq!(
+        service
+            .template_of_version(Uuid::now_v7(), None)
+            .await
+            .expect("unknown ok"),
+        None
+    );
+}
+
+/// §6.4 projection-independence regression (v1 defect #1): the ABAC query
+/// subject-scope pre-filter restricts rows to the caller's patient EHRs, and the
+/// executor collects the touched EHR/template sets, **even when the query
+/// projects neither `ehr_id`/`value` nor a template path**.
+#[tokio::test]
+async fn query_subject_scope_filters_and_collects_projection_independently() {
+    use ehrbase::service::EhrbaseService;
+    use ehrbase_rest::{AqlQueryRequest, QueryService};
+
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("authz_query_scope_db").await;
+
+    // Two EHRs with distinct subjects, each holding one composition (same corpus
+    // body) under a distinct template id.
+    let (vo_a, ehr_a) = seed_version(&pool).await;
+    let (vo_b, ehr_b) = seed_version(&pool).await;
+    for (ehr, vo, subject, template) in [
+        (ehr_a, vo_a, "SUBJ-A", "org.openehr::t_a.v1"),
+        (ehr_b, vo_b, "SUBJ-B", "org.openehr::t_b.v1"),
+    ] {
+        sqlx::query("UPDATE ehr SET subject_id = $2 WHERE id = $1")
+            .bind(ehr)
+            .bind(subject)
+            .execute(&pool)
+            .await
+            .expect("set subject");
+        sqlx::query("UPDATE vo_version SET template_id = $2 WHERE vo_id = $1")
+            .bind(vo)
+            .bind(template)
+            .execute(&pool)
+            .await
+            .expect("set template");
+        let rows = decompose(corpus_sample()).expect("decompose");
+        insert_nodes(&pool, vo, 1, ehr, &rows).await;
+    }
+
+    let service = EhrbaseService::new(pool);
+    // The projection is `c/name/value` — neither ehr_id nor a template path.
+    let aql = "SELECT c/name/value FROM COMPOSITION c";
+
+    // Unscoped: both compositions are visible (control).
+    let all = service
+        .query_execute_adhoc(aql.to_owned(), AqlQueryRequest::default())
+        .await
+        .expect("unscoped query");
+    assert_eq!(row_count(&all.result_set), 2, "both compositions visible");
+
+    // Scoped to SUBJ-A + collection on: only A's row is fetched, and the touched
+    // EHR/template sets are collected despite the projection.
+    let scoped = service
+        .query_execute_adhoc(
+            aql.to_owned(),
+            AqlQueryRequest {
+                subject_scope: Some("SUBJ-A".to_owned()),
+                collect_attributes: true,
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("scoped query");
+    assert_eq!(row_count(&scoped.result_set), 1, "only SUBJ-A row fetched");
+    assert_eq!(scoped.ehr_ids, vec![ehr_a.to_string()]);
+    assert_eq!(scoped.template_ids, vec!["org.openehr::t_a.v1".to_owned()]);
+}
+
+/// The number of `rows` in an ITS-REST `RESULT_SET`.
+fn row_count(result_set: &Value) -> usize {
+    result_set
+        .get("rows")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len)
 }
 
 // ─── helpers ────────────────────────────────────────────────────────────────

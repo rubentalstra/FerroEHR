@@ -38,6 +38,7 @@ fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
             users: vec![BasicUser {
                 username: "admin".to_owned(),
                 password_hash: Redacted(hash("pw")),
+                roles: vec!["ADMIN".to_owned()],
             }],
         }),
         oidc: None,
@@ -64,7 +65,8 @@ fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
         },
         ..Observability::default()
     };
-    ehrbase_rest::build_full(config, Arc::new(StubBackend), None, observability).expect("build")
+    ehrbase_rest::build_full(config, Arc::new(StubBackend), None, None, observability)
+        .expect("build")
 }
 
 async fn status_of(app: Router, req: Request<Body>) -> StatusCode {
@@ -174,7 +176,8 @@ fn app_with_metrics() -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    ehrbase_rest::build_full(config, Arc::new(StubBackend), None, observability).expect("build")
+    ehrbase_rest::build_full(config, Arc::new(StubBackend), None, None, observability)
+        .expect("build")
 }
 
 #[tokio::test]
@@ -268,8 +271,9 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         },
         ..Observability::default()
     };
-    let main_app = ehrbase_rest::build_full(config, Arc::new(StubBackend), None, observability)
-        .expect("build");
+    let main_app =
+        ehrbase_rest::build_full(config, Arc::new(StubBackend), None, None, observability)
+            .expect("build");
 
     // …the main app 404s the management route.
     assert_eq!(

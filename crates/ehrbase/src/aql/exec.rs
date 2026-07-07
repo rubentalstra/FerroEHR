@@ -79,6 +79,55 @@ pub async fn execute(
     })
 }
 
+/// The distinct EHR ids and template ids an AQL query touches, collected for the
+/// ABAC query post-check (`docs/enterprise/access-control.md` §6.4) —
+/// independent of the query's projection (the v1 defect-#1 fix).
+#[derive(Debug, Clone, Default)]
+pub struct QueryScope {
+    /// Distinct touched EHR ids (as strings).
+    pub ehr_ids: Vec<String>,
+    /// Distinct touched template ids.
+    pub template_ids: Vec<String>,
+}
+
+/// Run the scope-collection query for `ir` and return the distinct EHR-id and
+/// template-id sets it touches (§6.4). Empty when the query has no VO root.
+///
+/// # Errors
+/// [`AqlError::Sql`] if the scope query cannot be lowered; [`AqlError::Exec`] if
+/// the database rejects it.
+pub async fn collect_scope(
+    pool: &PgPool,
+    ir: &QueryIr,
+    params: &Params,
+    ctx: &SqlCtx,
+) -> Result<QueryScope, AqlError> {
+    let Some(scope) = super::sql::build_scope(ir, params, ctx)? else {
+        return Ok(QueryScope::default());
+    };
+    let rows = sqlx::query_with(sqlx::AssertSqlSafe(scope.sql), scope.values)
+        .fetch_all(pool)
+        .await
+        .map_err(ExecError::from)?;
+    let mut ehr_ids = std::collections::BTreeSet::new();
+    let mut template_ids = std::collections::BTreeSet::new();
+    for row in &rows {
+        // Every bound VO root contributes an (ehr_id, template_id) column pair.
+        for (ehr_col, template_col) in &scope.columns {
+            if let Ok(Some(e)) = row.try_get::<Option<Uuid>, _>(ehr_col.as_str()) {
+                ehr_ids.insert(e.to_string());
+            }
+            if let Ok(Some(t)) = row.try_get::<Option<String>, _>(template_col.as_str()) {
+                template_ids.insert(t);
+            }
+        }
+    }
+    Ok(QueryScope {
+        ehr_ids: ehr_ids.into_iter().collect(),
+        template_ids: template_ids.into_iter().collect(),
+    })
+}
+
 /// Read one cell for `spec` from a result `row`.
 async fn read_cell(
     pool: &PgPool,

@@ -156,6 +156,7 @@ async fn run_aql(svc: &EhrbaseService, aql: &str, request: AqlQueryRequest) -> V
     svc.query_execute_adhoc(aql.to_owned(), request)
         .await
         .unwrap_or_else(|e| panic!("query {aql:?}: {e:?}"))
+        .result_set
 }
 
 fn rows(result: &Value) -> &Vec<Value> {

@@ -41,6 +41,7 @@ fn config(enabled: bool) -> RestConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
                     password_hash: Redacted(argon2_hash("pw")),
+                    roles: vec!["USER".to_owned()],
                 }],
             }),
             oidc: Some(OidcConfig {
@@ -201,25 +202,15 @@ async fn valid_bearer_reaches_handler() {
 }
 
 #[tokio::test]
-async fn admin_route_without_scope_is_403() {
+async fn admin_route_reachable_without_rbac() {
+    // The legacy path-string `admin_scope` gate was removed (§5.2); this harness
+    // builds without an RBAC handle, so an authenticated caller reaches the admin
+    // dispatcher regardless of scope (→ 501, not gated). The role-based admin
+    // gate is exercised end-to-end in `rbac_e2e`.
     let req = Request::builder()
         .method("DELETE")
         .uri(format!("{BASE}/admin/ehr/abc"))
-        .header(header::AUTHORIZATION, bearer("openid")) // lacks ehrbase:admin
-        .body(Body::empty())
-        .unwrap();
-    let (status, _h, body) = send(app(true), req).await;
-    assert_eq!(status, StatusCode::FORBIDDEN);
-    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
-    assert_eq!(v["error"], "Forbidden");
-}
-
-#[tokio::test]
-async fn admin_route_with_scope_reaches_handler() {
-    let req = Request::builder()
-        .method("DELETE")
-        .uri(format!("{BASE}/admin/ehr/abc"))
-        .header(header::AUTHORIZATION, bearer("ehrbase:admin"))
+        .header(header::AUTHORIZATION, bearer("openid"))
         .body(Body::empty())
         .unwrap();
     let (status, _h, _b) = send(app(true), req).await;

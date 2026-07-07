@@ -40,37 +40,52 @@ async fn run(
     let h = &parts.headers;
     let q = parts.query.as_deref();
 
-    let result = match op {
+    // ABAC (§6.4): the patient subject-scope pre-filter + collection flag. A
+    // missing configured patient claim is a ready 403.
+    let (subject_scope, collect) = match super::abac::query_pre(&state, op) {
+        Ok(prep) => prep,
+        Err(deny) => return Ok(deny),
+    };
+    let scope = |mut request: AqlQueryRequest| {
+        request.subject_scope.clone_from(&subject_scope);
+        request.collect_attributes = collect;
+        request
+    };
+
+    let outcome = match op {
         // ── ad-hoc ────────────────────────────────────────────────────────────
         "query_execute_adhoc_query" => {
             let p = params::build::<QueryExecuteAdhocQueryParams>(&parts.path, q, h)?;
-            let request = AqlQueryRequest {
+            let request = scope(AqlQueryRequest {
                 ehr_id: p.ehr_id,
                 offset: p.offset,
                 fetch: p.fetch,
                 parameters: p.query_parameters.unwrap_or_default(),
-            };
+                ..Default::default()
+            });
             state.backend().query_execute_adhoc(p.q, request).await?
         }
         "query_execute_adhoc_query_body" => {
             let body: AdhocQueryExecute = decode_body(h, &parts.body)?;
-            let request = AqlQueryRequest {
+            let request = scope(AqlQueryRequest {
                 ehr_id: ehr_id_from_request(q, h),
                 offset: body.offset,
                 fetch: body.fetch,
                 parameters: body.query_parameters.unwrap_or_default(),
-            };
+                ..Default::default()
+            });
             state.backend().query_execute_adhoc(body.q, request).await?
         }
         // ── stored (latest) ─────────────────────────────────────────────────────
         "query_execute_stored_query" => {
             let p = params::build::<QueryExecuteStoredQueryParams>(&parts.path, q, h)?;
-            let request = AqlQueryRequest {
+            let request = scope(AqlQueryRequest {
                 ehr_id: p.ehr_id,
                 offset: p.offset,
                 fetch: p.fetch,
                 parameters: p.query_parameters.unwrap_or_default(),
-            };
+                ..Default::default()
+            });
             state
                 .backend()
                 .query_execute_stored(p.qualified_query_name, None, request)
@@ -78,7 +93,7 @@ async fn run(
         }
         "query_execute_stored_query_body" => {
             let name = path_segment(&parts, "qualified_query_name")?;
-            let request = stored_body_request(q, h, &parts.body)?;
+            let request = scope(stored_body_request(q, h, &parts.body)?);
             state
                 .backend()
                 .query_execute_stored(name, None, request)
@@ -87,12 +102,13 @@ async fn run(
         // ── stored (explicit version) ─────────────────────────────────────────
         "query_execute_stored_query_version" => {
             let p = params::build::<QueryExecuteStoredQueryVersionParams>(&parts.path, q, h)?;
-            let request = AqlQueryRequest {
+            let request = scope(AqlQueryRequest {
                 ehr_id: p.ehr_id,
                 offset: p.offset,
                 fetch: p.fetch,
                 parameters: p.query_parameters.unwrap_or_default(),
-            };
+                ..Default::default()
+            });
             state
                 .backend()
                 .query_execute_stored(p.qualified_query_name, Some(p.version), request)
@@ -101,7 +117,7 @@ async fn run(
         "query_execute_stored_query_version_body" => {
             let name = path_segment(&parts, "qualified_query_name")?;
             let version = path_segment(&parts, "version")?;
-            let request = stored_body_request(q, h, &parts.body)?;
+            let request = scope(stored_body_request(q, h, &parts.body)?);
             state
                 .backend()
                 .query_execute_stored(name, Some(version), request)
@@ -114,7 +130,12 @@ async fn run(
         }
     };
 
-    Ok(negotiate::respond(h, StatusCode::OK, &result))
+    // ABAC query post-check (§6.4): PDP fan-out over the touched template set.
+    if let Err(deny) = super::abac::query_post(&state, op, &outcome).await {
+        return Ok(deny);
+    }
+
+    Ok(negotiate::respond(h, StatusCode::OK, &outcome.result_set))
 }
 
 /// Build the request for a stored-query `POST` body (`Query` schema: `offset`,
@@ -130,6 +151,7 @@ fn stored_body_request(
         offset: Some(parsed.offset),
         fetch: Some(parsed.fetch),
         parameters: parsed.query_parameters,
+        ..Default::default()
     })
 }
 

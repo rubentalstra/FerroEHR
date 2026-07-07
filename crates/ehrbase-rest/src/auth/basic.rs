@@ -35,9 +35,21 @@ pub(super) fn verify(header: &HeaderValue, cfg: &BasicConfig) -> Result<Principa
         .verify_password(password.as_bytes(), &parsed)
         .map_err(|_| AuthError::InvalidCredentials)?;
 
+    // Basic-user roles are configured (default `["USER"]`); normalize to
+    // upper-case so they match the RBAC role model regardless of config casing.
+    let roles = user
+        .roles
+        .iter()
+        .map(|r| r.trim().to_ascii_uppercase())
+        .filter(|r| !r.is_empty())
+        .collect();
+
     Ok(Principal {
         subject: username.to_owned(),
         scopes: Vec::new(),
+        roles,
+        // Basic auth carries no JWT claims (ABAC under Basic is rejected).
+        claims: serde_json::Map::new(),
         method: AuthMethod::Basic,
     })
 }
@@ -91,6 +103,7 @@ mod tests {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
                 password_hash: Redacted(hash("s3cret")),
+                roles: vec!["user".to_owned()],
             }],
         }
     }
@@ -131,6 +144,28 @@ mod tests {
         let p = verify(&header("alice", "s3cret"), &store()).expect("ok");
         assert_eq!(p.subject, "alice");
         assert_eq!(p.method, AuthMethod::Basic);
+    }
+
+    #[test]
+    fn configured_roles_are_upper_cased() {
+        // The configured lower-case `user` role surfaces normalized on the
+        // Principal (§5.1 — Basic role config, upper-casing).
+        let p = verify(&header("alice", "s3cret"), &store()).expect("ok");
+        assert_eq!(p.roles, vec!["USER".to_owned()]);
+        assert!(p.claims.is_empty(), "Basic carries no JWT claims");
+    }
+
+    #[test]
+    fn admin_user_role_config() {
+        let cfg = BasicConfig {
+            users: vec![BasicUser {
+                username: "root".to_owned(),
+                password_hash: Redacted(hash("s3cret")),
+                roles: vec!["ADMIN".to_owned()],
+            }],
+        };
+        let p = verify(&header("root", "s3cret"), &cfg).expect("ok");
+        assert_eq!(p.roles, vec!["ADMIN".to_owned()]);
     }
 
     #[test]
