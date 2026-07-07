@@ -8,6 +8,7 @@ use crate::registry::CaseEntry;
 
 mod composition;
 mod data_types;
+mod drive;
 mod entry;
 pub mod mutate;
 

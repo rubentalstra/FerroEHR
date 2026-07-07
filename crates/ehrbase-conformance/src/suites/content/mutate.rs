@@ -58,6 +58,96 @@ pub fn set_array_count(object: &mut Value, array_field: &str, count: usize) {
     }
 }
 
+/// Set `COMPOSITION.category` to a coded value (openEHR terminology group 13):
+/// `433` = `event`, `431` = `persistent` (the `Category_validity` RM invariant
+/// keys context presence off this). Both `value` and `defining_code.code_string`
+/// are updated so the wire object is internally consistent.
+pub fn set_category(comp: &mut Value, code: &str, value: &str) {
+    if let Value::Object(map) = comp {
+        map.insert(
+            "category".to_owned(),
+            serde_json::json!({
+                "_type": "DV_CODED_TEXT",
+                "value": value,
+                "defining_code": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": code,
+                }
+            }),
+        );
+    }
+}
+
+/// Remove `COMPOSITION.context` (the "no context" data set).
+pub fn remove_context(comp: &mut Value) {
+    if let Value::Object(map) = comp {
+        map.remove("context");
+    }
+}
+
+/// Whether `COMPOSITION.context` is present.
+#[must_use]
+pub fn has_context(comp: &Value) -> bool {
+    comp.get("context").is_some_and(|c| !c.is_null())
+}
+
+/// A depth-first search for the first node (object) whose `_type` equals `ty`,
+/// returning a mutable reference. Arrays and object values are traversed in
+/// document order; the outermost matching node wins.
+pub fn first_node_mut<'a>(value: &'a mut Value, ty: &str) -> Option<&'a mut Value> {
+    // Check the node itself first (pre-order), then descend.
+    if value.get("_type").and_then(Value::as_str) == Some(ty) {
+        return Some(value);
+    }
+    match value {
+        Value::Object(map) => {
+            for (_k, v) in map.iter_mut() {
+                if let Some(found) = first_node_mut(v, ty) {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        Value::Array(items) => {
+            for v in items.iter_mut() {
+                if let Some(found) = first_node_mut(v, ty) {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        _ => None,
+    }
+}
+
+/// Whether a node of `_type == ty` exists anywhere in `value`.
+#[must_use]
+pub fn contains_node(value: &Value, ty: &str) -> bool {
+    if value.get("_type").and_then(Value::as_str) == Some(ty) {
+        return true;
+    }
+    match value {
+        Value::Object(map) => map.values().any(|v| contains_node(v, ty)),
+        Value::Array(items) => items.iter().any(|v| contains_node(v, ty)),
+        _ => false,
+    }
+}
+
+/// Set a scalar field on an object node (creating/overwriting it).
+pub fn set_field(node: &mut Value, field: &str, val: Value) {
+    if let Value::Object(map) = node {
+        map.insert(field.to_owned(), val);
+    }
+}
+
+/// Remove a field from an object node.
+pub fn remove_field(node: &mut Value, field: &str) {
+    if let Value::Object(map) = node {
+        map.remove(field);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -85,5 +175,45 @@ mod tests {
         assert_eq!(v["content"].as_array().unwrap().len(), 3);
         set_array_count(&mut v, "content", 1);
         assert_eq!(v["content"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn category_and_context() {
+        let mut v = json!({ "context": { "_type": "EVENT_CONTEXT" } });
+        set_category(&mut v, "431", "persistent");
+        assert_eq!(v["category"]["defining_code"]["code_string"], "431");
+        assert!(has_context(&v));
+        remove_context(&mut v);
+        assert!(!has_context(&v));
+    }
+
+    #[test]
+    fn node_finder() {
+        let mut v = json!({
+            "_type": "COMPOSITION",
+            "name": { "_type": "DV_TEXT", "value": "x" },
+            "content": [
+                { "_type": "SECTION", "items": [
+                    { "_type": "OBSERVATION", "data": { "_type": "HISTORY",
+                        "events": [ { "_type": "POINT_EVENT",
+                            "data": { "_type": "ITEM_TREE", "items": [
+                                { "_type": "ELEMENT", "value": { "_type": "DV_QUANTITY", "magnitude": 1.0 } }
+                            ] } } ] } }
+                ] }
+            ]
+        });
+        assert!(contains_node(&v, "OBSERVATION"));
+        assert!(contains_node(&v, "DV_QUANTITY"));
+        assert!(!contains_node(&v, "DV_URI"));
+
+        // The outermost (pre-order) DV_TEXT is the composition name; mutating it
+        // survives an OBSERVATION.data removal.
+        let dv = first_node_mut(&mut v, "DV_TEXT").unwrap();
+        set_field(dv, "value", json!("y"));
+        assert_eq!(v["name"]["value"], "y");
+
+        let obs = first_node_mut(&mut v, "OBSERVATION").unwrap();
+        remove_field(obs, "data");
+        assert!(v["content"][0]["items"][0].get("data").is_none());
     }
 }
