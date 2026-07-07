@@ -16,6 +16,8 @@
 //! *non-generated* surface (status/health/swagger/management), which never
 //! reaches [`class_of`].
 
+use crate::request::{AccessMode, ResourceKind};
+
 /// The coarse authorization class of an operation (§5.2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OperationClass {
@@ -141,6 +143,55 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
     Some(class)
 }
 
+/// The ABAC [`ResourceKind`] of a generated operation, derived from its op-id
+/// prefix (§5.3). `None` for operations ABAC does not model as resources
+/// (`definition_*`, `demographic_*`, `admin_*`) — those are RBAC-only.
+///
+/// Order matters: `ehr_status_*` and `versioned_ehr_status_*` are tested before
+/// the generic `ehr_*` fallthrough.
+#[must_use]
+pub fn kind_of(op: &str) -> Option<ResourceKind> {
+    let kind = if op.starts_with("ehr_status_") || op.starts_with("versioned_ehr_status_") {
+        ResourceKind::EhrStatus
+    } else if op.starts_with("composition_") || op.starts_with("versioned_composition_") {
+        ResourceKind::Composition
+    } else if op.starts_with("contribution_") {
+        ResourceKind::Contribution
+    } else if op.starts_with("query_execute_") {
+        ResourceKind::Query
+    } else if op.starts_with("directory_") {
+        ResourceKind::Directory
+    } else if op.starts_with("ehr_") {
+        // The generic EHR family (create/get/get-by-subject/tags) — after the
+        // ehr_status guard above.
+        ResourceKind::Ehr
+    } else {
+        return None;
+    };
+    Some(kind)
+}
+
+/// The ABAC [`AccessMode`] of a generated operation (the Cedar action axis,
+/// §5.6). Returns `None` for operations without a [`ResourceKind`]; for a
+/// clinical op it is always `Some`. Derived from the op-id verb.
+#[must_use]
+pub fn access_of(op: &str) -> Option<AccessMode> {
+    kind_of(op)?;
+    let mode = if op.starts_with("query_execute_") {
+        AccessMode::Execute
+    } else if op.contains("_create") {
+        AccessMode::Create
+    } else if op.contains("_update") {
+        AccessMode::Update
+    } else if op.contains("_delete") {
+        AccessMode::Delete
+    } else {
+        // get / get_by_* / get_at_time / revision_history / tags_get → a read.
+        AccessMode::Read
+    };
+    Some(mode)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -202,5 +253,88 @@ mod tests {
         );
         assert_eq!(class_of("person_get"), Some(OperationClass::Clinical));
         assert_eq!(class_of("no_such_operation"), None);
+    }
+
+    #[test]
+    fn kind_derivation_prefix_rules() {
+        assert_eq!(kind_of("ehr_create"), Some(ResourceKind::Ehr));
+        assert_eq!(kind_of("ehr_get_by_subject"), Some(ResourceKind::Ehr));
+        assert_eq!(kind_of("ehr_tags_get"), Some(ResourceKind::Ehr));
+        assert_eq!(kind_of("ehr_status_update"), Some(ResourceKind::EhrStatus));
+        assert_eq!(
+            kind_of("versioned_ehr_status_get"),
+            Some(ResourceKind::EhrStatus)
+        );
+        assert_eq!(
+            kind_of("composition_create"),
+            Some(ResourceKind::Composition)
+        );
+        assert_eq!(
+            kind_of("versioned_composition_get"),
+            Some(ResourceKind::Composition)
+        );
+        assert_eq!(
+            kind_of("contribution_create"),
+            Some(ResourceKind::Contribution)
+        );
+        assert_eq!(
+            kind_of("query_execute_adhoc_query"),
+            Some(ResourceKind::Query)
+        );
+        assert_eq!(kind_of("directory_create"), Some(ResourceKind::Directory));
+        // RBAC-only families have no ABAC resource kind.
+        assert_eq!(kind_of("definition_template_adl1.4_upload"), None);
+        assert_eq!(kind_of("person_get"), None);
+        assert_eq!(kind_of("admin_ehr_delete"), None);
+    }
+
+    #[test]
+    fn access_mode_derivation() {
+        assert_eq!(access_of("composition_create"), Some(AccessMode::Create));
+        assert_eq!(access_of("ehr_create_with_id"), Some(AccessMode::Create));
+        assert_eq!(access_of("composition_update"), Some(AccessMode::Update));
+        assert_eq!(access_of("composition_delete"), Some(AccessMode::Delete));
+        assert_eq!(access_of("composition_get"), Some(AccessMode::Read));
+        assert_eq!(
+            access_of("query_execute_stored_query"),
+            Some(AccessMode::Execute)
+        );
+        assert_eq!(access_of("definition_query_list"), None);
+    }
+
+    /// §5.3: every generated operation with an ABAC [`ResourceKind`] also has an
+    /// [`AccessMode`], and every RBAC-only family (`definition_*`,
+    /// `demographic_*`, `admin_*`) maps to no kind. Guards the derivation the
+    /// same way the class guard does.
+    #[test]
+    fn kind_and_access_agree_over_all_routes() {
+        for op in all_route_ops() {
+            if kind_of(op).is_some() {
+                assert!(
+                    access_of(op).is_some(),
+                    "op {op} has a ResourceKind but no AccessMode"
+                );
+            } else {
+                assert!(
+                    op.starts_with("definition_") || op.starts_with("admin_") || is_demographic(op),
+                    "op {op} has no ResourceKind but is not a known RBAC-only family"
+                );
+                assert!(access_of(op).is_none());
+            }
+        }
+    }
+
+    /// The demographic-API op families (RBAC-only; ABAC never covered them).
+    fn is_demographic(op: &str) -> bool {
+        const PREFIXES: [&str; 7] = [
+            "agent_",
+            "group_",
+            "organisation_",
+            "person_",
+            "role_",
+            "versioned_party_",
+            "demographic_",
+        ];
+        PREFIXES.iter().any(|p| op.starts_with(p))
     }
 }
