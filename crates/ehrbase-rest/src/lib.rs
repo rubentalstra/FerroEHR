@@ -34,7 +34,8 @@ mod status;
 pub use auth::{AuthMethod, Authenticator, Principal};
 pub use authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
 pub use backend::{
-    AqlQueryRequest, Backend, EhrService, QueryService, StubBackend, WebTemplateService,
+    AqlQueryRequest, Backend, EhrService, QueryOutcome, QueryService, StubBackend,
+    WebTemplateService,
 };
 pub use config::RestConfig;
 pub use error::RestError;

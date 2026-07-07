@@ -56,6 +56,18 @@ pub fn extract_roles(claims: &Map<String, Value>, paths: &[String]) -> Vec<Strin
     roles
 }
 
+/// Resolve a dotted claim path to a string value (the ABAC `organization` /
+/// `patient` attribute lookup, §6). Returns `None` when the path is absent or
+/// the value is not a (non-empty) string.
+#[must_use]
+pub fn claim_string(claims: &Map<String, Value>, path: &str) -> Option<String> {
+    lookup(claims, path)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+}
+
 /// Resolve a dotted claim path through nested JSON objects.
 fn lookup<'a>(claims: &'a Map<String, Value>, path: &str) -> Option<&'a Value> {
     let mut parts = path.split('.');

@@ -14,7 +14,14 @@
 //! ATNA audit layer records it for free. Query execution is **not** handled here
 //! — its scope + post-check live in the query path (§6.4, step 8). All of this
 //! is inert unless an [`AbacGate`](crate::authz::AbacGate) is wired
-//! (`abac.enabled`).
+//! (`abac.enabled`). End-to-end coverage through the assembled router (pre-check
+//! deny/allow, post-check deny, and the ATNA deny record) lives in
+//! `tests/abac_e2e.rs`.
+//!
+//! The PEP helpers return `Result<(), Response>` (the deny/error path is a ready
+//! axum `Response`, which is a large type) — `result_large_err` is allowed
+//! module-wide accordingly.
+#![allow(clippy::result_large_err)]
 
 use axum::response::{IntoResponse, Response};
 
@@ -42,6 +49,7 @@ enum Mode {
 }
 
 /// The §7 enforcement matrix, keyed by operation id.
+#[allow(clippy::match_same_arms)] // grouped by resource family; explicitness is the point
 fn mode_of(op: &str) -> Mode {
     match op {
         "ehr_create" | "ehr_create_with_id" | "ehr_get_by_id" | "ehr_get_by_subject" => Mode::Pre,
@@ -55,6 +63,67 @@ fn mode_of(op: &str) -> Mode {
         // Item tags, query (§6.4), definition/demographic/admin: not ABAC-checked.
         _ => Mode::Skip,
     }
+}
+
+/// The ABAC preparation for a query execution (§6.4): the patient subject scope
+/// to thread into the SQL, and whether the executor should collect the touched
+/// EHR/template sets for the post-check. `Ok((None, false))` when ABAC is off.
+/// `Err(response)` is a ready 403 (a missing configured patient claim).
+pub(super) fn query_pre(
+    state: &AppState,
+    op: &'static str,
+) -> Result<(Option<String>, bool), Response> {
+    let Some(handle) = state.authz() else {
+        return Ok((None, false));
+    };
+    let Some(abac) = handle.abac() else {
+        return Ok((None, false));
+    };
+    if kind_of(op) != Some(ResourceKind::Query) {
+        return Ok((None, false));
+    }
+    let principal = current_principal().unwrap_or_else(fallback_principal);
+    let patient = resolve_patient_claim(abac, &principal)?;
+    // Collect attributes whenever ABAC is on so the post-check has the touched
+    // template set; the subject scope pre-filters rows to the caller's patient.
+    Ok((patient, true))
+}
+
+/// The ABAC post-check for a query execution (§6.4): the PDP fan-out over the
+/// touched template set. An empty result permits (v1 parity). The patient gate
+/// is already enforced by the subject-scope pre-filter (rows outside the
+/// caller's patient are never fetched), so it is not re-run per EHR here.
+pub(super) async fn query_post(
+    state: &AppState,
+    op: &'static str,
+    outcome: &crate::backend::QueryOutcome,
+) -> Result<(), Response> {
+    let Some(handle) = state.authz() else {
+        return Ok(());
+    };
+    let Some(abac) = handle.abac() else {
+        return Ok(());
+    };
+    if kind_of(op) != Some(ResourceKind::Query) {
+        return Ok(());
+    }
+    // Empty result set → nothing touched → permit (§6.4).
+    if outcome.ehr_ids.is_empty() && outcome.template_ids.is_empty() {
+        return Ok(());
+    }
+    let principal = current_principal().unwrap_or_else(fallback_principal);
+    let patient = resolve_patient_claim(abac, &principal)?;
+    let template =
+        (!outcome.template_ids.is_empty()).then(|| Attr::Set(outcome.template_ids.clone()));
+    let req = AuthzRequest {
+        operation_id: op,
+        kind: ResourceKind::Query,
+        access: AccessMode::Execute,
+        organization: organization(abac, &principal),
+        patient: patient.map(Attr::One),
+        template,
+    };
+    decide(abac, &principal, &req).await
 }
 
 /// Pre-check the request. `Err(response)` short-circuits the dispatch with a
@@ -405,7 +474,117 @@ fn fallback_principal() -> Principal {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use async_trait::async_trait;
+    use ehrbase_authz::engine::{AuthzError, PolicyEngine};
+    use http::StatusCode;
+
     use super::*;
+    use crate::auth::AuthMethod;
+    use crate::authz::{AuthzResolvers, ResolveError};
+
+    /// A counting engine: records how often `decide` is called (the patient gate
+    /// must deny *without* reaching it), always permits.
+    #[derive(Debug, Default)]
+    struct CountingEngine(Arc<AtomicUsize>);
+
+    #[async_trait]
+    impl PolicyEngine for CountingEngine {
+        async fn decide(&self, _req: &AuthzRequest<'_>) -> Result<Decision, AuthzError> {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Ok(Decision::Permit)
+        }
+    }
+
+    fn gate_with_subject(subject: Option<&'static str>, calls: Arc<AtomicUsize>) -> AbacGate {
+        let subject = subject.map(str::to_owned);
+        AbacGate {
+            engine: Arc::new(CountingEngine(calls)),
+            resolvers: AuthzResolvers {
+                subject: Arc::new(move |_ehr_id: String| {
+                    let subject = subject.clone();
+                    Box::pin(async move { Ok::<_, ResolveError>(subject) })
+                }),
+                template_of_version: Arc::new(|_vo: String, _v: Option<i32>| {
+                    Box::pin(async move { Ok::<_, ResolveError>(None) })
+                }),
+            },
+            organization_claim: None,
+            patient_claim: Some("patient_id".to_owned()),
+            directory_checked: false,
+        }
+    }
+
+    fn principal_with_patient(patient: &str) -> Principal {
+        let mut claims = serde_json::Map::new();
+        claims.insert("patient_id".to_owned(), serde_json::json!(patient));
+        Principal {
+            subject: "alice".to_owned(),
+            scopes: Vec::new(),
+            roles: vec!["USER".to_owned()],
+            claims,
+            method: AuthMethod::Bearer,
+        }
+    }
+
+    #[tokio::test]
+    async fn subject_mismatch_denies_without_engine_call() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let gate = gate_with_subject(Some("P2"), calls.clone());
+        let principal = principal_with_patient("P1");
+        let err = subject_gate(&gate, &principal, Some("P1"), Some("ehr-1"))
+            .await
+            .expect_err("mismatch must deny");
+        assert_eq!(err.status(), StatusCode::FORBIDDEN);
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            0,
+            "no engine call on gate deny"
+        );
+    }
+
+    #[tokio::test]
+    async fn subject_match_passes_gate() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let gate = gate_with_subject(Some("P1"), calls);
+        let principal = principal_with_patient("P1");
+        assert!(
+            subject_gate(&gate, &principal, Some("P1"), Some("ehr-1"))
+                .await
+                .is_ok()
+        );
+    }
+
+    #[tokio::test]
+    async fn null_subject_passes_gate() {
+        // A subject-less EHR is not patient-scoped (v1 parity, §5.7).
+        let calls = Arc::new(AtomicUsize::new(0));
+        let gate = gate_with_subject(None, calls);
+        let principal = principal_with_patient("P1");
+        assert!(
+            subject_gate(&gate, &principal, Some("P1"), Some("ehr-1"))
+                .await
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn missing_patient_claim_is_forbidden() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let gate = gate_with_subject(Some("P1"), calls);
+        // A principal with no patient claim configured-but-absent → 403.
+        let principal = Principal {
+            subject: "alice".to_owned(),
+            scopes: Vec::new(),
+            roles: vec!["USER".to_owned()],
+            claims: serde_json::Map::new(),
+            method: AuthMethod::Bearer,
+        };
+        let err = resolve_patient_claim(&gate, &principal).expect_err("missing claim");
+        assert_eq!(err.status(), StatusCode::FORBIDDEN);
+    }
 
     #[test]
     fn mode_matrix() {

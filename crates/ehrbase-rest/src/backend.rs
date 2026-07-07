@@ -443,6 +443,38 @@ pub struct AqlQueryRequest {
     pub fetch: Option<i64>,
     /// The `query_parameters` (`$name` binds, no `$` prefix).
     pub parameters: std::collections::BTreeMap<String, Value>,
+    /// The ABAC patient-scope subject id (`docs/enterprise/access-control.md`
+    /// §6.4): when set, the engine pre-filters every VO root to EHRs whose
+    /// subject equals it. `None` = no patient scope.
+    pub subject_scope: Option<String>,
+    /// Whether the executor should collect the touched EHR-id / template-id sets
+    /// for the ABAC query post-check (set by the dispatcher when ABAC is on).
+    pub collect_attributes: bool,
+}
+
+/// The outcome of an AQL execution: the assembled `RESULT_SET` plus — when the
+/// caller asked for them (`AqlQueryRequest::collect_attributes`) — the distinct
+/// EHR ids and template ids the query touched, for the ABAC post-check (§6.4).
+#[derive(Debug, Clone, Default)]
+pub struct QueryOutcome {
+    /// The ITS-REST 1.0.3 `RESULT_SET` (canonical JSON) the HTTP edge renders.
+    pub result_set: Value,
+    /// The distinct EHR ids the query touched (empty unless collected).
+    pub ehr_ids: Vec<String>,
+    /// The distinct template ids the query touched (empty unless collected).
+    pub template_ids: Vec<String>,
+}
+
+impl QueryOutcome {
+    /// An outcome with no collected attributes (the pre-ABAC shape).
+    #[must_use]
+    pub fn plain(result_set: Value) -> Self {
+        Self {
+            result_set,
+            ehr_ids: Vec::new(),
+            template_ids: Vec::new(),
+        }
+    }
 }
 
 /// The AQL query execution seam (P16) — the QUERY API group's application seam,
@@ -460,7 +492,7 @@ pub trait QueryService: Send + Sync {
         &self,
         _aql: String,
         _request: AqlQueryRequest,
-    ) -> Result<Value, ApiError> {
+    ) -> Result<QueryOutcome, ApiError> {
         Err(ApiError::NotImplemented)
     }
 
@@ -472,7 +504,7 @@ pub trait QueryService: Send + Sync {
         _qualified_query_name: String,
         _version: Option<String>,
         _request: AqlQueryRequest,
-    ) -> Result<Value, ApiError> {
+    ) -> Result<QueryOutcome, ApiError> {
         Err(ApiError::NotImplemented)
     }
 }

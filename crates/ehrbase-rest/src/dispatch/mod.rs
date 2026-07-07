@@ -16,6 +16,7 @@
 //! body the backend defaults produced. A group gets a real dispatcher module
 //! in the phase that first implements one of its operations.
 
+mod abac;
 mod definition;
 mod ehr;
 mod flat;
@@ -122,12 +123,17 @@ fn mount(
                       headers: HeaderMap,
                       State(state): State<AppState>,
                       body: Bytes| async move {
-                    let mut resp = dispatch(
-                        state,
-                        op,
-                        RequestParts::new(&raw_path, query, headers, body),
-                    )
-                    .await;
+                    let parts = RequestParts::new(&raw_path, query, headers, body);
+                    // ABAC (§7): pre-check short-circuits before the backend on a
+                    // deny/engine-failure; the post-check may replace a success
+                    // with 403/500. Both inert unless ABAC is wired.
+                    let mut resp = match abac::pre_check(&state, op, &parts).await {
+                        Ok(()) => {
+                            let resp = dispatch(state.clone(), op, parts).await;
+                            abac::post_check(&state, op, resp).await
+                        }
+                        Err(deny) => deny,
+                    };
                     // The single, generic ATNA hook: tag the response with the
                     // matched operation id for the audit layer (§8.2 step 1).
                     resp.extensions_mut().insert(crate::audit::AuditOpId(op));

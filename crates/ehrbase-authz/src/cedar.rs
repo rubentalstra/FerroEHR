@@ -288,7 +288,10 @@ fn parse_and_validate(src: &str, schema: &Schema) -> Result<PolicySet, AuthzErro
     if result.validation_passed() {
         Ok(policies)
     } else {
-        let errors: Vec<String> = result.validation_errors().map(std::string::ToString::to_string).collect();
+        let errors: Vec<String> = result
+            .validation_errors()
+            .map(std::string::ToString::to_string)
+            .collect();
         Err(AuthzError::PolicyLoad(format!(
             "policy set failed schema validation: {}",
             errors.join("; ")

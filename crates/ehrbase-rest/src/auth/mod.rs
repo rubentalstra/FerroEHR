@@ -228,13 +228,13 @@ pub(crate) async fn middleware(
         Ok(principal) => {
             // RBAC gate (§5.2): resolve the matched operation's class and gate it
             // against the caller's roles. `None` authz handle = auth-only.
-            if let Some(authz) = &layer.authz {
+            if let Some(rbac) = layer.authz.as_deref().and_then(AuthzHandle::rbac) {
                 let matched = req
                     .extensions()
                     .get::<MatchedPath>()
                     .map(|m| m.as_str().to_owned());
-                let class = authz.rbac.class_for(req.method(), matched.as_deref());
-                if let RbacDecision::Deny(reason) = authz.rbac.decide(class, &principal.roles) {
+                let class = rbac.class_for(req.method(), matched.as_deref());
+                if let RbacDecision::Deny(reason) = rbac.decide(class, &principal.roles) {
                     metrics::counter!(
                         crate::management::AUTH_FAILURES,
                         "mechanism" => mechanism_label(principal.method),

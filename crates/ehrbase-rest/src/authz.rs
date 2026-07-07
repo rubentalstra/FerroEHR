@@ -75,34 +75,109 @@ pub fn build_engine(config: &AbacConfig) -> Result<Option<Arc<dyn PolicyEngine>>
 }
 
 /// The per-server authorization handle. `None` on [`AppState`](crate::AppState)
-/// means authorization is off (authentication-only behaviour).
+/// means authorization is off (authentication-only behaviour). Carries the
+/// coarse RBAC gate and/or the fine-grained ABAC gate.
 #[derive(Debug)]
 pub struct AuthzHandle {
-    pub(crate) rbac: RbacGate,
+    rbac: Option<RbacGate>,
+    abac: Option<AbacGate>,
 }
 
 impl AuthzHandle {
-    /// Build the handle from the loaded config and the REST base path (needed to
-    /// key the route→class map by the same full templates axum's `MatchedPath`
-    /// resolves to). `None` when RBAC is disabled — the caller then leaves the
+    /// Build an RBAC-only handle from config + the REST base path. `None` when
+    /// RBAC is disabled — the caller then leaves the
     /// [`AppState`](crate::AppState) slot empty, preserving auth-only behaviour.
+    /// (The binary uses [`AuthzHandle::build`] to attach ABAC.)
     #[must_use]
     pub fn from_config(config: &AuthzConfig, base_path: &str) -> Option<Self> {
         if !config.rbac.enabled {
             return None;
         }
         Some(Self {
-            rbac: RbacGate::new(config.rbac.clone(), base_path),
+            rbac: Some(RbacGate::new(config.rbac.clone(), base_path)),
+            abac: None,
         })
     }
 
+    /// Build the full handle (the binary): the RBAC gate (when enabled) plus the
+    /// ABAC gate (when `engine` is `Some`, i.e. `abac.enabled`). `None` when
+    /// neither layer is active, so `AppState` stays empty (auth-only).
+    #[must_use]
+    pub fn build(
+        config: &AuthzConfig,
+        base_path: &str,
+        engine: Option<Arc<dyn PolicyEngine>>,
+        resolvers: AuthzResolvers,
+    ) -> Option<Self> {
+        let rbac = config
+            .rbac
+            .enabled
+            .then(|| RbacGate::new(config.rbac.clone(), base_path));
+        let abac = engine.map(|engine| AbacGate::new(&config.abac, engine, resolvers));
+        if rbac.is_none() && abac.is_none() {
+            return None;
+        }
+        Some(Self { rbac, abac })
+    }
+
+    /// The coarse RBAC gate, if enabled.
+    pub(crate) fn rbac(&self) -> Option<&RbacGate> {
+        self.rbac.as_ref()
+    }
+
+    /// The fine-grained ABAC gate, if enabled.
+    pub(crate) fn abac(&self) -> Option<&AbacGate> {
+        self.abac.as_ref()
+    }
+
     /// The configured JWT role-claim paths (fed into the [`Authenticator`] so
-    /// Bearer role extraction uses them).
+    /// Bearer role extraction uses them); defaults when RBAC is off.
     ///
     /// [`Authenticator`]: crate::Authenticator
     #[must_use]
     pub fn role_claims(&self) -> Vec<String> {
-        self.rbac.rules.role_claims.clone()
+        self.rbac
+            .as_ref()
+            .map_or_else(roles::default_role_claims, |r| r.rules.role_claims.clone())
+    }
+}
+
+/// The fine-grained ABAC gate: the PDP engine, the DB-backed attribute
+/// resolvers, and the resolved claim names + directory opt-in
+/// (`docs/enterprise/access-control.md` §5.7/§7). The PEP
+/// ([`crate::dispatch::abac`]) drives it.
+pub(crate) struct AbacGate {
+    pub(crate) engine: Arc<dyn PolicyEngine>,
+    pub(crate) resolvers: AuthzResolvers,
+    /// The JWT claim carrying the caller's organization (blank → unused).
+    pub(crate) organization_claim: Option<String>,
+    /// The JWT claim carrying the patient id; its presence enables the subject
+    /// gate (§5.7).
+    pub(crate) patient_claim: Option<String>,
+    /// Whether a `directory` policy is configured (v1 parity: DIRECTORY is
+    /// unchecked unless opted in).
+    pub(crate) directory_checked: bool,
+}
+
+impl std::fmt::Debug for AbacGate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AbacGate")
+            .field("organization_claim", &self.organization_claim)
+            .field("patient_claim", &self.patient_claim)
+            .field("directory_checked", &self.directory_checked)
+            .finish_non_exhaustive()
+    }
+}
+
+impl AbacGate {
+    fn new(config: &AbacConfig, engine: Arc<dyn PolicyEngine>, resolvers: AuthzResolvers) -> Self {
+        Self {
+            engine,
+            resolvers,
+            organization_claim: config.organization_claim().map(str::to_owned),
+            patient_claim: config.patient_claim().map(str::to_owned),
+            directory_checked: config.policy.contains_key("directory"),
+        }
     }
 }
 

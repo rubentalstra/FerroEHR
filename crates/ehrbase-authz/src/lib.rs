@@ -43,4 +43,4 @@ pub use config::{
 };
 pub use engine::{AuthzError, PolicyEngine};
 pub use request::{AccessMode, Attr, AuthzRequest, Combination, Decision, ResourceKind};
-pub use roles::{RbacDecision, authorize, default_role_claims, extract_roles};
+pub use roles::{RbacDecision, authorize, claim_string, default_role_claims, extract_roles};
