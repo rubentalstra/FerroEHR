@@ -51,7 +51,16 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
       category) + the RM-1.2.0 `EHR_STATUS` overlay (§6) + the
       `composition_validation_lib` typed mutators (`content/mutate.rs`); corpus
       pinned by a guard test.
-- [ ] 4. master04/05 (DEFINITION, 22) and master08 (CONTRIBUTION, 31).
+- [~] 4. master04/05 (DEFINITION, 22) and master08 (CONTRIBUTION, 31).
+      **master07 (COMPOSITION): 28/31 transcribed** (the 3 `has_composition-*`
+      cases have no ITS-REST endpoint → `NotYetTranscribed`); event/persistent
+      create + read round-trips run under JSON **and** XML. **master08
+      (CONTRIBUTION): 22/31 transcribed** (`has_contribution-*` ×4 +
+      `list_contributions-*` ×5 have no endpoint → `NotYetTranscribed`).
+      Both fixture-driven (compositions `CANONICAL_JSON`/`CANONICAL_XML`,
+      contributions `valid` + `invalid`, the OPTs they reference) and green
+      e2e against the self-hosted SUT except the recorded `F-open-3..8`
+      findings.
 - [ ] 5. master09 (DIRECTORY, 37) — completes the CORE + directory surface.
 - [ ] 6. Query: master11's real cases + the `QUERY-FIXTURE-*` corpus with
       golden-result diffing.
@@ -103,6 +112,63 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
   `removed_mandatory_elements`) are accepted by OPT 1.4 upload. CNF master04
   `upload_opt-invalid_opt` requires rejection. Needs an `F-AA-NN` + a stricter
   OPT ingest validation pass.
+
+### master07 (COMPOSITION) — surfaced by the transcribed cases
+
+- **F-open-3 (create/update_composition, mandatory RM attribute not enforced):**
+  a COMPOSITION missing a mandatory RM attribute (`composer` [1]) is **accepted**
+  with `201` on commit. The commit path validates `data` as a raw `Value`
+  (`validate_composition_for_commit` → `openehr_flat::validate_rm_and_terminology`
+  + template conformance), which does not enforce mandatory-attribute *presence*
+  (that would come from typed `Composition` deserialization, which the commit
+  path never performs). Surfaces master07 `create_composition-invalid_event`'s
+  intent and master08 `commit_contribution-invalid_composition`/
+  `two_commits_second_invalid` (below). CNF master07 §create_composition-invalid_*
+  + RM `COMPOSITION` invariants require rejection (`composition_create.yaml` 422).
+- **F-open-4 (update_composition-wrong_template):** updating an existing event
+  COMPOSITION with a body referencing a **different** `template_id`
+  (`persistent_minimal.en.v1` over `nested.en.v1`) is accepted with `200`. CNF
+  master07 `update_composition-wrong_template` requires rejection on the
+  `template_id` mismatch (`composition_update.yaml` 422). No template-continuity
+  check on update.
+- **F-open-5 (create_composition-same_opt_twice):** a second `create` for the
+  same persistent OPT in one EHR is accepted with `201` (persistent
+  single-instance not enforced). CNF master07 `create_composition-same_opt_twice`
+  expects a negative response. NOTE: the schedule itself flags this as
+  spec-ambiguous ("under debate in the openEHR SEC … lack of information in the
+  openEHR specifications; some implementations permit … and some others not"), so
+  this is a divergence from the CNF case's *stated* criterion, recorded honestly
+  rather than weakened away.
+- **F-open-6 (get_versioned_composition, XML):** `GET versioned_composition` with
+  `Accept: application/xml` returns `406` ("canonical XML for this response is
+  available once typed payloads land (P12)"). Canonical XML is a claimed
+  STANDARD-profile data format; `VERSIONED_COMPOSITION` has no canonical-XML
+  serializer yet. The JSON variant passes. CNF master07
+  `get_versioned_composition` under XML requires `200`
+  (`versioned_composition_get.yaml`).
+
+### master08 (CONTRIBUTION) — surfaced by the transcribed cases
+
+- **F-open-3 (shared):** `commit_contribution-invalid_composition` and
+  `-two_commits_second_invalid` are accepted with `201` — same root cause as
+  F-open-3 (a COMPOSITION VERSION missing a mandatory RM attribute is not
+  rejected on the CONTRIBUTION commit path). CNF master08 C.2/C.8 require
+  rejection (and C.8 requires the whole commit to fail atomically).
+- **F-open-7 (commit_contribution-ehr_status_invalid_change_type):** a
+  CONTRIBUTION with a `VERSION<EHR_STATUS>` whose `change_type = 249|creation|`
+  is accepted with `201` even though the EHR already has its (mandatory,
+  singleton) `EHR_STATUS`. CNF master08 D.3 requires rejection ("the `EHR_STATUS`
+  already existing for the EHR"); RM `EHR.ehr_status` is `[1]`. The commit path
+  does not reject a second `EHR_STATUS` creation.
+- **F-open-8 (commit_contribution-fail_create_existing_directory):** a
+  CONTRIBUTION creating a directory (`VERSION<FOLDER>`, `change_type =
+  creation`) when the EHR already has a root directory is accepted with `201`.
+  CNF master08 E.2 requires rejection ("wrong `change_type` because the root
+  `FOLDER` already exists"). The dedicated `directory_create` endpoint returns
+  `409` for this, so the CONTRIBUTION path is inconsistent with it.
+
+All eight `F-open-*` are surfaced by the runner asserting the ITS-REST/CNF
+expectation, never fabricated and never weakened to green a run (design §4.5).
 
 ## Handoff for next session
 
