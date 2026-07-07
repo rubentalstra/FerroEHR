@@ -1,8 +1,14 @@
 # Version Signing (VERSION.signature) — design
 
-- **Status:** designed, implement immediately (2026-07-07; owner-prioritized —
-  the sole STANDARD-profile gap in the CNF conformance claim, see
-  `docs/design/conformance-framework.md` §3.1)
+- **Status:** implemented (2026-07-07; owner-prioritized — closed the sole
+  STANDARD-profile gap in the CNF conformance claim, see
+  `docs/design/conformance-framework.md` §3.1). Landed on
+  `claude/s2-access-control` per `docs/plans/s2-phase-02-version-signing.md`:
+  `openehr-rm` `VERSION.canonical_form()` (RFC 8785 JCS), the `ehrbase-signing`
+  crate (digest + OpenPGP RFC 4880 via rPGP), the `vobject` commit-path reshape
+  (sign the assembled `ORIGINAL_VERSION`), `verify_on_read`, and the binary
+  wiring — all tested (openehr-rm property/golden, ehrbase-signing unit + pgp,
+  service e2e on PG18).
 - **Spec authority (extracted 2026-07-07, citations verified):**
   - `docs/specs/openehr/RM/docs/common/master06-change_control_package.adoc`
     §Digital Signature — the normative signing process

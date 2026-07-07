@@ -90,7 +90,9 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .fetch_one(&pool)
         .await
         .expect("ehr bookkeeping");
-    assert_eq!((applied_ext, applied_ehr), (1, 1));
+    // ext: 0001_openehr_functions. ehr: 0001_schema + 0002_add_vo_version_signature
+    // (version signing — RM common §"Digital Signature").
+    assert_eq!((applied_ext, applied_ehr), (1, 2));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
