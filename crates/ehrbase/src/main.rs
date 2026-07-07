@@ -15,6 +15,7 @@ use ehrbase_audit::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
 use ehrbase_authz::AuthzConfig;
 use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry, ManagementConfig};
 use ehrbase_rest::{AuthzHandle, Observability};
+use ehrbase_signing::{Signer, SigningConfig};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -134,7 +135,19 @@ async fn serve() -> anyhow::Result<()> {
         env_snapshot,
     };
 
-    let service = EhrbaseService::new(pool);
+    // Version signing (RM common §"Digital Signature"; docs/design/version-signing.md).
+    // Fail-closed at boot: `pgp` mode without a loadable, usable key refuses to
+    // start (Signer::from_config performs the key load + a test signature).
+    let signing_config = SigningConfig::load().context("loading signing configuration")?;
+    let signer =
+        Arc::new(Signer::from_config(&signing_config).context("initialising the version signer")?);
+    tracing::info!(
+        signing = signer.enabled(),
+        verify_on_read = ?signer.verify_on_read(),
+        "version signing configured"
+    );
+
+    let service = EhrbaseService::new(pool).with_signer(signer);
 
     // Build the RBAC gate. Only wired when authentication is enabled (the gate
     // runs after authentication); `from_config` yields `None` when RBAC is

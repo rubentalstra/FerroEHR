@@ -52,6 +52,7 @@ impl EhrbaseService {
                         kind: Kind::EhrStatus,
                         canonical: status,
                         template_id: None,
+                        signature: None,
                     },
                 ),
                 (
@@ -60,9 +61,11 @@ impl EhrbaseService {
                         kind: Kind::EhrAccess,
                         canonical: default_ehr_access(),
                         template_id: None,
+                        signature: None,
                     },
                 ),
             ],
+            &self.signing_ctx(),
         )
         .await?;
         tx.commit().await?;
@@ -206,6 +209,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
+            &self.signing_ctx(),
         )
         .await?;
         tx.commit().await?;
@@ -248,7 +252,7 @@ impl EhrbaseService {
             .await?
             .filter(|r| r.ehr_id == ehr_id)
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
-        Ok(self.original_version(&read))
+        self.original_version(&read)
     }
 
     /// The `ORIGINAL_VERSION` of an EHR's `EHR_STATUS` extant at `at`, or the
@@ -273,7 +277,8 @@ impl EhrbaseService {
             ServiceError::NotFound(format!("EHR_STATUS version at time for EHR {ehr_id}"))
         })?;
         let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
-        Ok(ServiceResponse::new(self.original_version(&read), meta))
+        let ov = self.original_version(&read)?;
+        Ok(ServiceResponse::new(ov, meta))
     }
 
     /// The current `EHR_STATUS` version metadata (for a `412` `ETag`/`Location`).

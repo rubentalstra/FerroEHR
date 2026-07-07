@@ -89,6 +89,7 @@ getrandom = "0.4.3"
 sha2 = "0.11.0"
 hmac = "0.13.0"
 blake3 = "1"
+pgp = { version = "0.20.0", default-features = false }   # rPGP — pure-Rust OpenPGP (RFC 4880/9580); version signing (no OpenSSL/C, fits the rustls-only stack). default-features off drops the bzip2 (libbz2-rs-sys) dep — detached signatures need no compression, and it fails the cargo-deny license gate.
 
 # ── OpenAPI / Swagger (code-first) ───────────────────────────────────────────
 utoipa = { version = "5.5.0", features = ["axum_extras", "chrono", "uuid", "decimal"] }
