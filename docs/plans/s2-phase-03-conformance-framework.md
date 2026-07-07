@@ -64,8 +64,14 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
 - [ ] 5. master09 (DIRECTORY, 37) — completes the CORE + directory surface.
 - [ ] 6. Query: master11's real cases + the `QUERY-FIXTURE-*` corpus with
       golden-result diffing.
-- [ ] 7. Content chapters (master15–17, 119) — table-driven against the
-      validation service.
+- [x] 7. Content chapters (master15–17, **118/119 transcribed**; the 119th is the
+      `CONT-DV_TEXT-validate_open#2` upstream duplicate → `Excluded`). All 118
+      registered + cited against the truth tables via the typed mutation catalogue
+      (`content/mutate.rs`) + driver (`content/drive.rs`). **12 driven** at the
+      RM/schema level (mandatory-attribute rows) on the vendored committable bases
+      — all 12 surface **F-open-9** (shared root cause with F-open-3); **106
+      Skipped** (archetype-constraint cases needing a constraint-expressing OPT the
+      corpus does not ship). Green e2e on self-hosted PG18 (0 transport errors).
 - [ ] 8. OPTIONS chapters we implement (master12 admin subset, master10
       demographic) + the `SIGN-*` capability cases; wire the two CI tiers;
       first committed `docs/conformance/` + README badge.
@@ -169,6 +175,52 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
 
 All eight `F-open-*` are surfaced by the runner asserting the ITS-REST/CNF
 expectation, never fabricated and never weakened to green a run (design §4.5).
+
+### master15/16/17 (content / data validation) — surfaced by the transcribed cases
+
+The 118 `CONT-*` cases (the 119th, `CONT-DV_TEXT-validate_open#2`, stays
+`Excluded(UpstreamDuplicate)`) are transcribed against the vendored schedule
+truth tables. **106 are `Skipped`** with a documented reason: the constraint the
+case exercises (content/context cardinality; HISTORY events cardinality + summary
+existence; EVENT / ITEM_STRUCTURE class narrowing; every `validate_range` /
+`validate_list` / `validate_pattern` / `validate_constraint` / `validate_property*`
+/ `validate_ratio*` / `DV_INTERVAL` bound / `C_BOOLEAN` / `C_STRING` /
+`C_CODE_PHRASE`) needs a **constraint-expressing OPT that the vendored corpus does
+not contain** — upstream ships none (master15 §Implementation notes: the
+archetypes "should be generated"), and the framework does not generate archetypes.
+Those cases are cited but not executable as specified: a `Skipped` (design §2.2a),
+never a fabricated pass and never a masked failure (without the constraining OPT
+the SUT correctly accepts data no template forbids — there is nothing to reject).
+
+**12 cases are drivable** at the RM/schema level — a mandatory RM attribute whose
+absence any conformant server must reject regardless of archetype — against the
+known-committable `nested` / `persistent_minimal` bases. **All 12 fail (findings),
+one shared root cause:**
+
+- **F-open-9 (mandatory RM attribute / value presence not enforced on commit —
+  content-chapter confirmation of F-open-3):** committing a COMPOSITION in which a
+  mandatory RM attribute is removed is **accepted with `201`** where the CNF truth
+  tables (rows marked "(RM/schema constraint)" / "RM/Schema mandatory") require
+  rejection (`composition_create.yaml` `422`). Surfaced across:
+  `CONT-OBS-*` ×4 (OBSERVATION.data existence.lower — master16 §OBSERVATION),
+  `CONT-EVENT-state_ex_opt|mand` ×2 (EVENT.data existence.lower — master16 §EVENT),
+  `CONT-DV_TEXT-validate_open` (DV_TEXT.value — master17.2),
+  `CONT-DV_COUNT-validate_open` (DV_COUNT.magnitude — master17.3),
+  `CONT-DV_ORDINAL-validate_open` (DV_ORDINAL.value — master17.3),
+  `CONT-DV_BOOLEAN-anything_allowed` (DV_BOOLEAN.value — master17.1),
+  `CONT-DV_DATE_TIME-validate_open` (DV_DATE_TIME.value — master17.4),
+  `CONT-DV_EHR_URI-validate_open` (DV_EHR_URI.value — master17.7). Root cause is
+  the same as F-open-3: the commit path validates `data` as a raw `serde_json::Value`
+  (`validate_composition_for_commit`) and never performs typed RM deserialization,
+  so a missing mandatory attribute/leaf-value is not caught. RM invariants
+  (`RM/data_types`, `RM/ehr` OBSERVATION/EVENT `data [1]`) + the master17.x tables
+  require rejection. Fix once in the commit-time validation (typed presence checks)
+  and all 12 flip green.
+
+All content findings are surfaced by the runner asserting the CNF truth-table
+`expected` column, never fabricated and never weakened to green a run (design §4.5);
+the self-hosted PG18 run reports 0 transport errors (12 Failed = findings, 106
+Skipped = non-executable-as-specified).
 
 ### master11 (QUERY) — surfaced by the `QUERY-FIXTURE-*` cases
 
