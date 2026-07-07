@@ -30,6 +30,15 @@ pub struct Principal {
     pub subject: String,
     /// `OAuth2` scopes granted to the caller (empty for Basic).
     pub scopes: Vec<String>,
+    /// Roles granted to the caller, normalized to upper-case. Extracted from the
+    /// configured JWT claim paths (default `realm_access.roles` + `scope`) for
+    /// Bearer; from the Basic user's configured roles for Basic. Consumed by the
+    /// RBAC gate (§5.2 of `docs/enterprise/access-control.md`).
+    pub roles: Vec<String>,
+    /// The retained, validated JWT claim set (Bearer only; empty for Basic).
+    /// Kept so the Stage-2 ABAC layer can resolve attributes (organization /
+    /// patient) without re-parsing the token; unused by the RBAC gate.
+    pub claims: serde_json::Map<String, serde_json::Value>,
     /// Which mechanism authenticated the caller.
     pub method: AuthMethod,
 }
@@ -314,6 +323,7 @@ mod tests {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
                     password_hash: Redacted(hash("pw")),
+                    roles: vec!["USER".to_owned()],
                 }],
             }),
             oidc: None,
@@ -370,6 +380,8 @@ mod tests {
         let principal = Principal {
             subject: "alice".to_owned(),
             scopes: vec![],
+            roles: vec![],
+            claims: serde_json::Map::new(),
             method: AuthMethod::Basic,
         };
         let err = auth
@@ -385,6 +397,8 @@ mod tests {
         let principal = Principal {
             subject: "alice".to_owned(),
             scopes: vec!["ehrbase:admin".to_owned()],
+            roles: vec![],
+            claims: serde_json::Map::new(),
             method: AuthMethod::Basic,
         };
         assert!(auth.authorize_admin("/x/admin/ehr/y", &principal).is_ok());
@@ -396,6 +410,8 @@ mod tests {
         let principal = Principal {
             subject: "alice".to_owned(),
             scopes: vec![],
+            roles: vec![],
+            claims: serde_json::Map::new(),
             method: AuthMethod::Basic,
         };
         assert!(auth.authorize_admin("/x/ehr/y", &principal).is_ok());

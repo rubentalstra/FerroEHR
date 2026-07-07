@@ -15,30 +15,9 @@ use std::time::Duration;
 
 use jsonwebtoken::jwk::JwkSet;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header};
-use serde::{Deserialize, Serialize};
 
 use super::config::OidcConfig;
 use super::{AuthError, AuthMethod, Principal};
-
-/// The subset of JWT claims the CDR reads. `iss`/`aud`/`exp` are validated by
-/// `jsonwebtoken` from the raw token; `scope`/`scp` feed the coarse admin gate.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Claims {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    sub: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    iss: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    aud: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    exp: Option<u64>,
-    /// `OAuth2` space-delimited scope string.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    scope: Option<String>,
-    /// Alternative scope claim used by some `IdPs`.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    scp: Vec<String>,
-}
 
 /// A configured bearer-token validator.
 pub(super) struct JwtValidator {
@@ -46,6 +25,69 @@ pub(super) struct JwtValidator {
     audiences: Vec<String>,
     algorithms: Vec<Algorithm>,
     keys: KeySource,
+    /// Dotted JWT claim paths mined for RBAC roles (default
+    /// `["realm_access.roles", "scope"]`); configurable via `authz.rbac.role_claims`.
+    role_claims: Vec<String>,
+}
+
+/// The default RBAC role-claim paths (Keycloak `realm_access.roles` + the
+/// `OAuth2` `scope` claim), matching the v1 authorities converter.
+pub(super) fn default_role_claims() -> Vec<String> {
+    vec!["realm_access.roles".to_owned(), "scope".to_owned()]
+}
+
+/// Extract roles from a validated JWT claim map given dotted claim paths.
+///
+/// A path resolves through nested JSON objects (`realm_access.roles`). The value
+/// at a path is normalized to a role list: an array yields each string element;
+/// a plain string is split on whitespace (the `scope` claim). Every role is
+/// trimmed, upper-cased, and de-duplicated with first-seen order preserved.
+pub(super) fn extract_roles(
+    claims: &serde_json::Map<String, serde_json::Value>,
+    paths: &[String],
+) -> Vec<String> {
+    let mut roles: Vec<String> = Vec::new();
+    let mut push = |raw: &str| {
+        let norm = raw.trim().to_ascii_uppercase();
+        if !norm.is_empty() && !roles.contains(&norm) {
+            roles.push(norm);
+        }
+    };
+    for path in paths {
+        let Some(value) = lookup(claims, path) else {
+            continue;
+        };
+        match value {
+            serde_json::Value::Array(items) => {
+                for item in items {
+                    if let Some(s) = item.as_str() {
+                        push(s);
+                    }
+                }
+            }
+            serde_json::Value::String(s) => {
+                for token in s.split_whitespace() {
+                    push(token);
+                }
+            }
+            _ => {}
+        }
+    }
+    roles
+}
+
+/// Resolve a dotted claim path through nested JSON objects.
+fn lookup<'a>(
+    claims: &'a serde_json::Map<String, serde_json::Value>,
+    path: &str,
+) -> Option<&'a serde_json::Value> {
+    let mut parts = path.split('.');
+    let first = parts.next()?;
+    let mut current = claims.get(first)?;
+    for part in parts {
+        current = current.as_object()?.get(part)?;
+    }
+    Some(current)
 }
 
 enum KeySource {
@@ -63,6 +105,18 @@ impl JwtValidator {
     /// # Errors
     /// Returns a message when the algorithm list or key material is invalid.
     pub(super) fn from_config(cfg: &OidcConfig) -> Result<Self, String> {
+        Self::with_role_claims(cfg, default_role_claims())
+    }
+
+    /// Build a validator with explicit RBAC role-claim paths (§5.1 —
+    /// `authz.rbac.role_claims`).
+    ///
+    /// # Errors
+    /// Returns a message when the algorithm list or key material is invalid.
+    pub(super) fn with_role_claims(
+        cfg: &OidcConfig,
+        role_claims: Vec<String>,
+    ) -> Result<Self, String> {
         let algorithms = cfg
             .algorithms
             .iter()
@@ -90,6 +144,7 @@ impl JwtValidator {
             audiences: cfg.audiences.clone(),
             algorithms,
             keys,
+            role_claims,
         })
     }
 
@@ -116,20 +171,40 @@ impl JwtValidator {
         }
 
         let key = self.decoding_key(header.kid.as_deref()).await?;
-        let data = decode::<Claims>(token, &key, &validation)
+        // Decode into the full claim map so the validated claim set is retained
+        // for the RBAC role extraction and the Stage-2 ABAC attribute resolution;
+        // `jsonwebtoken` still validates `exp`/`iss`/`aud` from the raw payload
+        // independent of the deserialize target.
+        let data = decode::<serde_json::Map<String, serde_json::Value>>(token, &key, &validation)
             .map_err(|e| AuthError::InvalidToken(e.to_string()))?;
+        let claims = data.claims;
 
-        let mut scopes: Vec<String> = data
-            .claims
-            .scope
-            .as_deref()
+        let subject = claims
+            .get("sub")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown")
+            .to_owned();
+
+        // Scopes: the space-delimited `scope` string plus the `scp` array,
+        // preserved verbatim for the deprecated `admin_scope` seam / back-compat.
+        let mut scopes: Vec<String> = claims
+            .get("scope")
+            .and_then(serde_json::Value::as_str)
             .map(|s| s.split_whitespace().map(str::to_owned).collect())
             .unwrap_or_default();
-        scopes.extend(data.claims.scp);
+        if let Some(scp) = claims.get("scp").and_then(serde_json::Value::as_array) {
+            scopes.extend(scp.iter().filter_map(|v| v.as_str().map(str::to_owned)));
+        }
+
+        // Roles from the configured claim paths (default `realm_access.roles` +
+        // `scope`), normalized to upper-case (§5.1 / v1 authority converter).
+        let roles = extract_roles(&claims, &self.role_claims);
 
         Ok(Principal {
-            subject: data.claims.sub.unwrap_or_else(|| "unknown".to_owned()),
+            subject,
             scopes,
+            roles,
+            claims,
             method: AuthMethod::Bearer,
         })
     }
@@ -212,6 +287,7 @@ impl RemoteJwks {
 mod tests {
     use super::*;
     use jsonwebtoken::{EncodingKey, Header, encode};
+    use serde_json::{Value, json};
 
     const SECRET: &str = "test-signing-secret";
     const ISSUER: &str = "https://issuer.example";
@@ -232,7 +308,7 @@ mod tests {
         .expect("validator")
     }
 
-    fn token(claims: &Claims) -> String {
+    fn token(claims: &Value) -> String {
         encode(
             &Header::new(Algorithm::HS256),
             claims,
@@ -241,15 +317,13 @@ mod tests {
         .expect("encode")
     }
 
-    fn base_claims() -> Claims {
-        Claims {
-            sub: Some("alice".to_owned()),
-            iss: Some(ISSUER.to_owned()),
-            aud: None,
-            exp: Some(now() + 3600),
-            scope: Some("openid profile".to_owned()),
-            scp: Vec::new(),
-        }
+    fn base_claims() -> Value {
+        json!({
+            "sub": "alice",
+            "iss": ISSUER,
+            "exp": now() + 3600,
+            "scope": "openid profile",
+        })
     }
 
     #[tokio::test]
@@ -261,12 +335,14 @@ mod tests {
         assert_eq!(p.subject, "alice");
         assert_eq!(p.method, AuthMethod::Bearer);
         assert!(p.scopes.contains(&"openid".to_owned()));
+        // The validated claim set is retained on the Principal (§5.1).
+        assert_eq!(p.claims.get("sub").and_then(Value::as_str), Some("alice"));
     }
 
     #[tokio::test]
     async fn expired_token_rejected() {
         let mut c = base_claims();
-        c.exp = Some(now() - 3600); // beyond jsonwebtoken's default 60s leeway
+        c["exp"] = json!(now() - 3600); // beyond jsonwebtoken's default 60s leeway
         let err = validator(&[])
             .validate(&token(&c))
             .await
@@ -277,7 +353,7 @@ mod tests {
     #[tokio::test]
     async fn wrong_issuer_rejected() {
         let mut c = base_claims();
-        c.iss = Some("https://evil.example".to_owned());
+        c["iss"] = json!("https://evil.example");
         let err = validator(&[])
             .validate(&token(&c))
             .await
@@ -288,7 +364,7 @@ mod tests {
     #[tokio::test]
     async fn wrong_audience_rejected() {
         let mut c = base_claims();
-        c.aud = Some("other-api".to_owned());
+        c["aud"] = json!("other-api");
         let err = validator(&["my-api"])
             .validate(&token(&c))
             .await
@@ -299,7 +375,7 @@ mod tests {
     #[tokio::test]
     async fn correct_audience_accepted() {
         let mut c = base_claims();
-        c.aud = Some("my-api".to_owned());
+        c["aud"] = json!("my-api");
         let p = validator(&["my-api"])
             .validate(&token(&c))
             .await
@@ -320,5 +396,58 @@ mod tests {
         t.replace_range(flip..=flip, &tampered.to_string());
         let err = validator(&[]).validate(&t).await.expect_err("reject");
         assert!(matches!(err, AuthError::InvalidToken(_)));
+    }
+
+    #[tokio::test]
+    async fn keycloak_realm_access_roles_extracted() {
+        // Keycloak-shaped token: roles live under `realm_access.roles` and are
+        // upper-cased; the `scope` claim also contributes roles (§5.1 / §9.2).
+        let mut c = base_claims();
+        c["realm_access"] = json!({ "roles": ["user", "ehrbase-admin"] });
+        c["scope"] = json!("openid EHR_READ");
+        let p = validator(&[]).validate(&token(&c)).await.expect("ok");
+        assert!(p.roles.contains(&"USER".to_owned()));
+        assert!(p.roles.contains(&"EHRBASE-ADMIN".to_owned()));
+        // Scope tokens are mined into roles too (upper-cased).
+        assert!(p.roles.contains(&"OPENID".to_owned()));
+        assert!(p.roles.contains(&"EHR_READ".to_owned()));
+        // Scopes stay verbatim (not upper-cased) for the deprecated seam.
+        assert!(p.scopes.contains(&"openid".to_owned()));
+    }
+
+    #[test]
+    fn extract_roles_upper_cases_and_dedups() {
+        let claims = json!({
+            "realm_access": { "roles": ["admin", "Admin", "user"] },
+            "scope": "user OFFLINE_ACCESS",
+        })
+        .as_object()
+        .cloned()
+        .unwrap();
+        let roles = extract_roles(&claims, &default_role_claims());
+        assert_eq!(
+            roles,
+            vec![
+                "ADMIN".to_owned(),
+                "USER".to_owned(),
+                "OFFLINE_ACCESS".to_owned()
+            ]
+        );
+    }
+
+    #[test]
+    fn extract_roles_missing_paths_yields_empty() {
+        let claims = json!({ "sub": "x" }).as_object().cloned().unwrap();
+        assert!(extract_roles(&claims, &default_role_claims()).is_empty());
+    }
+
+    #[test]
+    fn extract_roles_custom_nested_path() {
+        let claims = json!({ "resource_access": { "client": { "roles": ["writer"] } } })
+            .as_object()
+            .cloned()
+            .unwrap();
+        let roles = extract_roles(&claims, &["resource_access.client.roles".to_owned()]);
+        assert_eq!(roles, vec!["WRITER".to_owned()]);
     }
 }

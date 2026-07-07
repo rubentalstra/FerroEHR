@@ -69,6 +69,16 @@ pub struct BasicUser {
     pub username: String,
     /// Argon2 PHC hash string (`$argon2id$v=19$...`).
     pub password_hash: Redacted,
+    /// Roles granted to this user (normalized to upper-case when authenticated),
+    /// feeding the RBAC gate (§5.2 of `docs/enterprise/access-control.md`).
+    /// Defaults to `["USER"]` — the baseline clinical role — when unspecified;
+    /// configure `["ADMIN"]` for an administrative account.
+    #[serde(default = "default_basic_roles")]
+    pub roles: Vec<String>,
+}
+
+fn default_basic_roles() -> Vec<String> {
+    vec!["USER".to_owned()]
 }
 
 /// OAuth2/OIDC bearer configuration. Validation happens as a resource server:

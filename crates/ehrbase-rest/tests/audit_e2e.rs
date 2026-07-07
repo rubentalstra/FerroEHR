@@ -106,6 +106,7 @@ fn rest_config() -> RestConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
                     password_hash: Redacted(hash_pw("pw")),
+                    roles: vec!["USER".to_owned()],
                 }],
             }),
             oidc: None,

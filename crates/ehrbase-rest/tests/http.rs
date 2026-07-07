@@ -41,6 +41,7 @@ fn config(enabled: bool) -> RestConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
                     password_hash: Redacted(argon2_hash("pw")),
+                    roles: vec!["USER".to_owned()],
                 }],
             }),
             oidc: Some(OidcConfig {
