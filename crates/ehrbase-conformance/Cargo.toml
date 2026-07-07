@@ -21,7 +21,6 @@ async-trait = { workspace = true }
 reqwest = { workspace = true }
 clap = { workspace = true }
 jiff = { workspace = true }
-tracing = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
 # The SIGN-* capability cases (design §4.6) recompute the version digest from the
