@@ -27,6 +27,10 @@ openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 
 ---
 
+<p align="center">
+  <img src="assets/logo.svg" alt="EHRbase-rs" width="560">
+</p>
+
 [openEHR](https://www.openehr.org/) separates clinical knowledge from software:
 applications store and query structured health records through a vendor-neutral
 REST API and the Archetype Query Language, against a shared clinical information
