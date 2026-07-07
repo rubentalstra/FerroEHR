@@ -156,7 +156,10 @@ fn method_filter(method: &str) -> Option<MethodFilter> {
 /// Strip RFC 6570 query/expansion suffixes (e.g. `all{?ehr_id*}` → `all`) that
 /// the `OpenAPI` paths carry but axum path templates do not use; `{name}` capture
 /// segments are already axum-0.8 syntax and pass through unchanged.
-fn normalize_path(path: &str) -> String {
+///
+/// Shared with the RBAC gate ([`crate::authz`]), which keys its route→class map
+/// by the same normalized templates so an axum `MatchedPath` resolves exactly.
+pub(crate) fn normalize_path(path: &str) -> String {
     let bytes = path.as_bytes();
     let mut out = String::with_capacity(path.len());
     let mut i = 0;

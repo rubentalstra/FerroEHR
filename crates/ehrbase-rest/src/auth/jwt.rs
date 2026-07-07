@@ -30,65 +30,10 @@ pub(super) struct JwtValidator {
     role_claims: Vec<String>,
 }
 
-/// The default RBAC role-claim paths (Keycloak `realm_access.roles` + the
-/// `OAuth2` `scope` claim), matching the v1 authorities converter.
-pub(super) fn default_role_claims() -> Vec<String> {
-    vec!["realm_access.roles".to_owned(), "scope".to_owned()]
-}
-
-/// Extract roles from a validated JWT claim map given dotted claim paths.
-///
-/// A path resolves through nested JSON objects (`realm_access.roles`). The value
-/// at a path is normalized to a role list: an array yields each string element;
-/// a plain string is split on whitespace (the `scope` claim). Every role is
-/// trimmed, upper-cased, and de-duplicated with first-seen order preserved.
-pub(super) fn extract_roles(
-    claims: &serde_json::Map<String, serde_json::Value>,
-    paths: &[String],
-) -> Vec<String> {
-    let mut roles: Vec<String> = Vec::new();
-    let mut push = |raw: &str| {
-        let norm = raw.trim().to_ascii_uppercase();
-        if !norm.is_empty() && !roles.contains(&norm) {
-            roles.push(norm);
-        }
-    };
-    for path in paths {
-        let Some(value) = lookup(claims, path) else {
-            continue;
-        };
-        match value {
-            serde_json::Value::Array(items) => {
-                for item in items {
-                    if let Some(s) = item.as_str() {
-                        push(s);
-                    }
-                }
-            }
-            serde_json::Value::String(s) => {
-                for token in s.split_whitespace() {
-                    push(token);
-                }
-            }
-            _ => {}
-        }
-    }
-    roles
-}
-
-/// Resolve a dotted claim path through nested JSON objects.
-fn lookup<'a>(
-    claims: &'a serde_json::Map<String, serde_json::Value>,
-    path: &str,
-) -> Option<&'a serde_json::Value> {
-    let mut parts = path.split('.');
-    let first = parts.next()?;
-    let mut current = claims.get(first)?;
-    for part in parts {
-        current = current.as_object()?.get(part)?;
-    }
-    Some(current)
-}
+// The role model (default claim paths + extraction algorithm) lives in the leaf
+// `ehrbase-authz` crate so the REST layer and the RBAC gate share one
+// implementation (§5.1).
+use ehrbase_authz::roles::extract_roles;
 
 enum KeySource {
     /// Symmetric HS256 secret.
@@ -100,14 +45,6 @@ enum KeySource {
 }
 
 impl JwtValidator {
-    /// Build a validator from configuration.
-    ///
-    /// # Errors
-    /// Returns a message when the algorithm list or key material is invalid.
-    pub(super) fn from_config(cfg: &OidcConfig) -> Result<Self, String> {
-        Self::with_role_claims(cfg, default_role_claims())
-    }
-
     /// Build a validator with explicit RBAC role-claim paths (§5.1 —
     /// `authz.rbac.role_claims`).
     ///
@@ -285,8 +222,10 @@ impl RemoteJwks {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use ehrbase_authz::roles::default_role_claims;
     use jsonwebtoken::{EncodingKey, Header, encode};
+
+    use super::*;
     use serde_json::{Value, json};
 
     const SECRET: &str = "test-signing-secret";
@@ -298,13 +237,16 @@ mod tests {
     }
 
     fn validator(audiences: &[&str]) -> JwtValidator {
-        JwtValidator::from_config(&OidcConfig {
-            issuer: ISSUER.to_owned(),
-            audiences: audiences.iter().map(|s| (*s).to_owned()).collect(),
-            algorithms: vec!["HS256".to_owned()],
-            hmac_secret: Some(super::super::config::Redacted(SECRET.to_owned())),
-            jwks_json: None,
-        })
+        JwtValidator::with_role_claims(
+            &OidcConfig {
+                issuer: ISSUER.to_owned(),
+                audiences: audiences.iter().map(|s| (*s).to_owned()).collect(),
+                algorithms: vec!["HS256".to_owned()],
+                hmac_secret: Some(super::super::config::Redacted(SECRET.to_owned())),
+                jwks_json: None,
+            },
+            default_role_claims(),
+        )
         .expect("validator")
     }
 

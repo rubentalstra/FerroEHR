@@ -11,10 +11,13 @@
 //! traits' default); the default [`StubBackend`] implements none.
 //!
 //! Authentication (Stage 1) is HTTP Basic + OAuth2/OIDC bearer, applied as one
-//! middleware over the API router ([`auth`]). Fine-grained RBAC is Stage 2.
+//! middleware over the API router ([`auth`]); the same middleware runs the
+//! coarse **RBAC** gate ([`authz`]) when an [`AuthzHandle`] is wired.
+//! Fine-grained ABAC is the follow-up (`docs/enterprise/access-control.md`).
 
 mod audit;
 pub mod auth;
+pub mod authz;
 pub mod backend;
 pub mod config;
 mod dispatch;
@@ -29,6 +32,7 @@ mod state;
 mod status;
 
 pub use auth::{AuthMethod, Authenticator, Principal};
+pub use authz::AuthzHandle;
 pub use backend::{
     AqlQueryRequest, Backend, EhrService, QueryService, StubBackend, WebTemplateService,
 };
@@ -137,11 +141,23 @@ pub fn build_full(
     config: RestConfig,
     backend: std::sync::Arc<dyn Backend>,
     audit: Option<ehrbase_audit::AuditSender>,
+    authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<axum::Router, ServeError> {
-    let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
-    let state = AppState::with_parts(config, backend, audit, observability);
+    let authenticator = build_authenticator(&config, authz.as_deref())?;
+    let state = AppState::with_parts(config, backend, audit, authz, observability);
     Ok(router(state, authenticator))
+}
+
+/// Build the [`Authenticator`], threading the RBAC role-claim paths from the
+/// authorization handle (default paths when none is wired) so Bearer role
+/// extraction matches the gate's configuration (§5.1).
+fn build_authenticator(
+    config: &RestConfig,
+    authz: Option<&AuthzHandle>,
+) -> Result<std::sync::Arc<Authenticator>, ServeError> {
+    let role_claims = authz.map_or_else(authz::default_role_claims, AuthzHandle::role_claims);
+    Authenticator::with_role_claims(config.auth.clone(), role_claims).map_err(ServeError::Auth)
 }
 
 /// Build and serve the application with full observability: the API + audit +
@@ -155,13 +171,14 @@ pub async fn serve_full(
     config: RestConfig,
     backend: std::sync::Arc<dyn Backend>,
     audit: Option<ehrbase_audit::AuditSender>,
+    authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<(), ServeError> {
-    let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
+    let authenticator = build_authenticator(&config, authz.as_deref())?;
     let bind = config.bind.clone();
     let management_enabled = observability.management.enabled;
     let management_port = observability.management.port;
-    let state = AppState::with_parts(config, backend, audit, observability);
+    let state = AppState::with_parts(config, backend, audit, authz, observability);
     let main_app = router(state.clone(), authenticator.clone());
 
     // Separate-port management listener (§2): its own axum server task.

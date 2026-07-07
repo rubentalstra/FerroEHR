@@ -12,8 +12,9 @@ use std::time::Duration;
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
 use ehrbase_audit::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
-use ehrbase_rest::Observability;
+use ehrbase_authz::AuthzConfig;
 use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry, ManagementConfig};
+use ehrbase_rest::{AuthzHandle, Observability};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -81,6 +82,10 @@ async fn serve() -> anyhow::Result<()> {
     let rest_config = ehrbase_rest::RestConfig::load().context("loading REST configuration")?;
     let management_config = ManagementConfig::load().context("loading management configuration")?;
     let audit_config = AuditConfig::load().context("loading ATNA audit configuration")?;
+    let authz_config = AuthzConfig::load().context("loading authorization configuration")?;
+    authz_config
+        .validate()
+        .context("validating authorization configuration")?;
     let db_settings = DbSettings::from_env().context("loading database settings")?;
 
     // Telemetry: install the subscriber (logs + optional OTLP spans), the
@@ -131,16 +136,32 @@ async fn serve() -> anyhow::Result<()> {
 
     let service = EhrbaseService::new(pool);
 
+    // Build the RBAC gate. Only wired when authentication is enabled (the gate
+    // runs after authentication); `from_config` yields `None` when RBAC is
+    // disabled, restoring authentication-only behaviour.
+    let authz = if rest_config.auth.enabled {
+        AuthzHandle::from_config(&authz_config, &rest_config.base_path).map(Arc::new)
+    } else {
+        None
+    };
+
     tracing::info!(
         bind = %rest_config.bind,
         base_path = %rest_config.base_path,
         audit = audit_sender.is_some(),
+        rbac = authz.is_some(),
         management = observability.management.enabled,
         "starting ehrbase"
     );
-    ehrbase_rest::serve_full(rest_config, Arc::new(service), audit_sender, observability)
-        .await
-        .context("serving ehrbase-rest")?;
+    ehrbase_rest::serve_full(
+        rest_config,
+        Arc::new(service),
+        audit_sender,
+        authz,
+        observability,
+    )
+    .await
+    .context("serving ehrbase-rest")?;
 
     // The server has stopped and dropped its audit-sender clone; drain the queue.
     if let Some(handle) = audit_handle {

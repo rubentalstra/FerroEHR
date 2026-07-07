@@ -1,9 +1,13 @@
-//! Authentication (Stage 1): HTTP Basic + OAuth2/OIDC bearer.
+//! Authentication (Stage 1): HTTP Basic + OAuth2/OIDC bearer, plus the coarse
+//! **RBAC** gate (Stage-2 capability, owner-prioritized).
 //!
 //! Applied as one axum middleware over the API router (not per handler). A
-//! successful authentication puts a [`Principal`] into the request extensions
-//! for downstream handlers/the service layer. Fine-grained RBAC is Stage 2; the
-//! only authorization here is the optional coarse admin-scope gate.
+//! successful authentication puts a [`Principal`] (with roles + retained JWT
+//! claims) into the request extensions for downstream handlers/the service
+//! layer. When an [`crate::authz::AuthzHandle`] is wired, the middleware then
+//! runs the RBAC gate over the matched operation's class
+//! (`docs/enterprise/access-control.md` §5.2): a deny is a `403` with the
+//! `Principal` attached to the response so the ATNA audit layer records it.
 
 mod basic;
 pub mod config;
@@ -11,17 +15,28 @@ mod jwt;
 
 use std::sync::Arc;
 
-use axum::extract::{FromRequestParts, Request, State};
+use axum::extract::{FromRequestParts, MatchedPath, Request, State};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
+use ehrbase_authz::RbacDecision;
 use http::request::Parts;
 use http::{HeaderValue, StatusCode, header};
 
 use openehr_its::rest::runtime::ApiError;
 
+use crate::authz::AuthzHandle;
 use crate::error::RestError;
 pub use config::AuthConfig;
 use jwt::JwtValidator;
+
+/// The state the [`middleware`] runs on: the authenticator plus the optional
+/// authorization handle (the RBAC gate; `None` restores authentication-only
+/// behaviour). Cheap to clone.
+#[derive(Clone)]
+pub(crate) struct AuthLayer {
+    pub(crate) authenticator: Arc<Authenticator>,
+    pub(crate) authz: Option<Arc<AuthzHandle>>,
+}
 
 /// The authenticated caller.
 #[derive(Debug, Clone)]
@@ -98,8 +113,21 @@ impl Authenticator {
     /// # Errors
     /// Returns a message if the OIDC key material/algorithms are invalid.
     pub fn new(config: AuthConfig) -> Result<Arc<Self>, String> {
+        Self::with_role_claims(config, ehrbase_authz::roles::default_role_claims())
+    }
+
+    /// Build from configuration with explicit RBAC role-claim paths (§5.1 —
+    /// `authz.rbac.role_claims`), used when an [`crate::authz::AuthzHandle`] is
+    /// wired; [`Authenticator::new`] defaults them.
+    ///
+    /// # Errors
+    /// Returns a message if the OIDC key material/algorithms are invalid.
+    pub fn with_role_claims(
+        config: AuthConfig,
+        role_claims: Vec<String>,
+    ) -> Result<Arc<Self>, String> {
         let jwt = match &config.oidc {
-            Some(oidc) => Some(JwtValidator::from_config(oidc)?),
+            Some(oidc) => Some(JwtValidator::with_role_claims(oidc, role_claims)?),
             None => None,
         };
         Ok(Arc::new(Self { config, jwt }))
@@ -166,24 +194,6 @@ impl Authenticator {
             _ => Err(AuthError::InvalidCredentials),
         }
     }
-
-    /// The coarse admin-scope gate (Stage-1 seam). No-op unless configured.
-    fn authorize_admin(&self, path: &str, principal: &Principal) -> Result<(), AuthError> {
-        // TODO(port): Stage 2 RBAC — replace with real per-operation authorization.
-        let Some(required) = &self.config.admin_scope else {
-            return Ok(());
-        };
-        if is_admin_path(path) && !principal.scopes.iter().any(|s| s == required) {
-            return Err(AuthError::Forbidden(format!(
-                "admin operations require the '{required}' scope"
-            )));
-        }
-        Ok(())
-    }
-}
-
-fn is_admin_path(path: &str) -> bool {
-    path.split('/').any(|seg| seg == "admin")
 }
 
 tokio::task_local! {
@@ -202,31 +212,41 @@ pub fn current_principal() -> Option<Principal> {
     REQUEST_PRINCIPAL.try_with(Clone::clone).ok().flatten()
 }
 
-/// The authentication middleware. Attached to the API router; public endpoints
-/// (status, health, Swagger) are mounted outside it.
-pub async fn middleware(
-    State(auth): State<Arc<Authenticator>>,
+/// The authentication + RBAC middleware. Attached to the API router; public
+/// endpoints (status, health, Swagger) are mounted outside it.
+pub(crate) async fn middleware(
+    State(layer): State<AuthLayer>,
     mut req: Request,
     next: Next,
 ) -> Response {
+    let auth = &layer.authenticator;
     if !auth.enabled() {
         return REQUEST_PRINCIPAL.scope(None, next.run(req)).await;
     }
 
-    let path = req.uri().path().to_owned();
     match auth.authenticate(req.headers()).await {
         Ok(principal) => {
-            if let Err(e) = auth.authorize_admin(&path, &principal) {
-                metrics::counter!(
-                    crate::management::AUTH_FAILURES,
-                    "mechanism" => mechanism_label(principal.method),
-                    "status" => "403",
-                )
-                .increment(1);
-                // Attribute the 403 to the authenticated caller for the audit layer.
-                let mut resp = RestError(e.to_api_error()).into_response();
-                resp.extensions_mut().insert(principal);
-                return resp;
+            // RBAC gate (§5.2): resolve the matched operation's class and gate it
+            // against the caller's roles. `None` authz handle = auth-only.
+            if let Some(authz) = &layer.authz {
+                let matched = req
+                    .extensions()
+                    .get::<MatchedPath>()
+                    .map(|m| m.as_str().to_owned());
+                let class = authz.rbac.class_for(req.method(), matched.as_deref());
+                if let RbacDecision::Deny(reason) = authz.rbac.decide(class, &principal.roles) {
+                    metrics::counter!(
+                        crate::management::AUTH_FAILURES,
+                        "mechanism" => mechanism_label(principal.method),
+                        "status" => "403",
+                    )
+                    .increment(1);
+                    // Attribute the 403 to the authenticated caller so the outer
+                    // ATNA audit layer records the denied access (§7).
+                    let mut resp = RestError(ApiError::Forbidden(reason)).into_response();
+                    resp.extensions_mut().insert(principal);
+                    return resp;
+                }
             }
             req.extensions_mut().insert(principal.clone());
             // Publish the principal for the service layer (committer attribution).
@@ -374,48 +394,9 @@ mod tests {
         assert_eq!(p.subject, "alice");
     }
 
-    #[test]
-    fn admin_gate_forbids_without_scope() {
-        let auth = basic_only();
-        let principal = Principal {
-            subject: "alice".to_owned(),
-            scopes: vec![],
-            roles: vec![],
-            claims: serde_json::Map::new(),
-            method: AuthMethod::Basic,
-        };
-        let err = auth
-            .authorize_admin("/ehrbase/rest/openehr/v1/admin/ehr/x", &principal)
-            .expect_err("forbidden");
-        assert!(matches!(err, AuthError::Forbidden(_)));
-        assert_eq!(err.to_api_error().status(), StatusCode::FORBIDDEN);
-    }
-
-    #[test]
-    fn admin_gate_allows_with_scope() {
-        let auth = basic_only();
-        let principal = Principal {
-            subject: "alice".to_owned(),
-            scopes: vec!["ehrbase:admin".to_owned()],
-            roles: vec![],
-            claims: serde_json::Map::new(),
-            method: AuthMethod::Basic,
-        };
-        assert!(auth.authorize_admin("/x/admin/ehr/y", &principal).is_ok());
-    }
-
-    #[test]
-    fn non_admin_path_never_gated() {
-        let auth = basic_only();
-        let principal = Principal {
-            subject: "alice".to_owned(),
-            scopes: vec![],
-            roles: vec![],
-            claims: serde_json::Map::new(),
-            method: AuthMethod::Basic,
-        };
-        assert!(auth.authorize_admin("/x/ehr/y", &principal).is_ok());
-    }
+    // The old placeholder `authorize_admin`/`is_admin_path` path-string gate was
+    // deleted (§5.2); the RBAC gate replaces it and is covered by the
+    // `ehrbase-authz` unit tests + the `rbac_e2e` integration suite.
 
     #[tokio::test]
     async fn bearer_without_oidc_is_rejected() {

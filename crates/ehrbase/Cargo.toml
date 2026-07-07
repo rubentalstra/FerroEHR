@@ -48,6 +48,7 @@ openehr-query = { path = "../openehr-query" }
 ehrbase-rest = { path = "../ehrbase-rest" }
 ehrbase-compat = { path = "../ehrbase-compat" }
 ehrbase-audit = { path = "../ehrbase-audit" }
+ehrbase-authz = { path = "../ehrbase-authz" }
 
 [dev-dependencies]
 figment = { workspace = true, features = ["test"] }
