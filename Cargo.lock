@@ -1714,6 +1714,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "ehrbase-conformance"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "clap",
+ "ehrbase",
+ "ehrbase-rest",
+ "jiff",
+ "openehr-its",
+ "openehr-rm",
+ "reqwest 0.13.4",
+ "serde",
+ "serde_json",
+ "testcontainers",
+ "testcontainers-modules",
+ "thiserror 2.0.18",
+ "tokio",
+ "tower",
+ "tower-http 0.7.0",
+ "tracing",
+]
+
+[[package]]
 name = "ehrbase-rest"
 version = "0.1.0"
 dependencies = [
@@ -1756,14 +1780,12 @@ version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "figment",
- "metrics",
  "pgp",
  "rand 0.8.6",
  "secrecy",
  "serde",
  "sha2 0.11.0",
  "thiserror 2.0.18",
- "tracing",
 ]
 
 [[package]]
