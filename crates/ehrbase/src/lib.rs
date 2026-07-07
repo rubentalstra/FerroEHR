@@ -6,6 +6,8 @@
 //! exposes the application modules so integration tests (and later phases)
 //! can drive them directly.
 
+pub mod aql;
 pub mod db;
 pub mod service;
 pub mod storage;
+pub mod telemetry;

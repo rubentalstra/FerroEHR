@@ -3,9 +3,8 @@
 **/*.rs.bk
 *.pdb
 
-# Cargo — remove the next line to commit Cargo.lock for reproducible bins
-# (gitignore has no inline comments; the pattern must stand alone)
-Cargo.lock
+# Cargo.lock IS committed: this workspace ships a server binary (not a library),
+# so a pinned lockfile gives reproducible `--locked` container builds.
 
 # Env / secrets
 .env

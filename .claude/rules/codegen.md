@@ -13,11 +13,15 @@ hand-written. `openehr-codegen` reads the vendored specs and emits Rust:
   `openehr-its/src/xml/generated/` (from the vendored XSDs + the BMM field model).
 - `emit-rest` → the ITS-REST contract (DTOs + `#[async_trait]` server traits +
   routes) into `openehr-its/src/rest/generated/` (from the vendored `-codegen` OAS).
+- `emit-rm-model` → the static RM attribute/type model (attributes+types,
+  multiplicity, descendant/ancestor sets, structure classification) into
+  `openehr-rm/src/model/` — the AQL planner's oracle (ADR-008 §3). `emit` already
+  emits it as part of `openehr-rm`; this target refreshes just that subtree.
 
 ## The one hard rule
 
 **Never hand-edit a `// @generated` file.** To change generated output, edit the
-emitter (`crates/openehr-codegen/src/{emit,emit_xml,emit_rest,xsd,oas,naming}.rs`)
+emitter (`crates/openehr-codegen/src/{emit,emit_xml,emit_rest,emit_rm_model,xsd,oas,naming}.rs`)
 or a hand-written `*_impl.rs` sibling (spec behaviour, ADR-003), then regenerate.
 A hand edit is silently overwritten on the next `emit` and fails the CI
 `codegen-drift` job.

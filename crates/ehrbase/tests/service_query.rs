@@ -110,6 +110,76 @@ async fn get(app: Router, uri: &str) -> (StatusCode, String) {
     (status, String::from_utf8_lossy(&bytes).into_owned())
 }
 
+async fn post_json(app: Router, uri: &str, body: &str) -> (StatusCode, String) {
+    let req = Request::builder()
+        .method("POST")
+        .uri(uri)
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(body.to_owned()))
+        .unwrap();
+    let resp = app.oneshot(req).await.unwrap();
+    let status = resp.status();
+    let bytes = resp.into_body().collect().await.unwrap().to_bytes();
+    (status, String::from_utf8_lossy(&bytes).into_owned())
+}
+
+/// The QUERY API is wired end to end through the router (P16): `POST /query/aql`
+/// and `GET /query/aql` execute an ad-hoc query and return a `RESULT_SET`
+/// (`schemas/query/ResultSet`: `columns` + `rows`, `_schema_version` 1.0.3).
+#[tokio::test]
+async fn adhoc_aql_over_http_returns_result_set() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("adhoc_query").await;
+
+    // Empty store → COUNT(*) over compositions is 0, but the endpoint, dispatch,
+    // engine, and RESULT_SET assembly are all exercised.
+    let (status, body) = post_json(
+        app(pool.clone()),
+        &format!("{BASE}/query/aql"),
+        r#"{"q":"SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c"}"#,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "adhoc POST /query/aql: {body}");
+    let json: serde_json::Value = serde_json::from_str(&body).expect("result set json");
+    assert_eq!(
+        json["meta"]["_schema_version"],
+        serde_json::json!("1.0.3"),
+        "RESULT_SET carries the ITS-REST schema version"
+    );
+    assert_eq!(
+        json["rows"],
+        serde_json::json!([[0]]),
+        "COUNT(*) = 0 on an empty store"
+    );
+
+    // The GET form takes `q` as a query parameter (URL-encoded).
+    let (status, body) = get(
+        app(pool),
+        &format!(
+            "{BASE}/query/aql?q=SELECT%20COUNT(*)%20FROM%20EHR%20e%20CONTAINS%20COMPOSITION%20c"
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "adhoc GET /query/aql: {body}");
+    let json: serde_json::Value = serde_json::from_str(&body).expect("result set json");
+    assert_eq!(json["rows"], serde_json::json!([[0]]));
+}
+
+/// A malformed AQL query is a `400 Bad Request` (ITS-REST `400_QUERY.yaml`), not
+/// a `500` — the parse failure is surfaced as a client error.
+#[tokio::test]
+async fn malformed_adhoc_aql_is_400() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("adhoc_bad").await;
+    let (status, _body) = post_json(
+        app(pool),
+        &format!("{BASE}/query/aql"),
+        r#"{"q":"SELECT FROM WHERE not aql"}"#,
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "malformed AQL → 400");
+}
+
 #[tokio::test]
 async fn versioned_store_returns_200_with_location_and_409_on_duplicate() {
     let pg = Pg::start().await;

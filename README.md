@@ -7,7 +7,6 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
-[![EHRbase Logo](ehrbase.png)](ehrbase.png)
 
 > [!IMPORTANT]
 > **This is a hard fork of [`ehrbase/ehrbase`](https://github.com/ehrbase/ehrbase) — a from-scratch, pure-Rust reimplementation.**
@@ -141,6 +140,86 @@ cargo run -p openehr-codegen -- emit-rest   # ITS-REST contract (openehr-its)
 > crates are **generated** (`// @generated … DO NOT EDIT`). To change one, edit the
 > emitter (`crates/openehr-codegen/src/emit.rs`) or a sibling `*_impl.rs` and regenerate
 > — never hand-edit a generated file. See [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md).
+
+## Run with Docker
+
+Two images (mirroring EHRbase's app + preconfigured-postgres model): the
+`ehrbase` server and a PostgreSQL 18 image with the role, database, schemas, and
+extensions pre-created. The quickstart [`docker-compose.yml`](docker-compose.yml)
+builds and runs both from the [`docker/`](docker/) Dockerfiles:
+
+```shell
+docker compose up --build          # build + start both services
+
+# The server is on http://localhost:8080; probe the public status endpoint:
+curl http://localhost:8080/ehrbase/rest/status
+
+# Create an EHR (Basic auth; dev default credentials ehrbase / ehrbase):
+curl -u ehrbase:ehrbase -X POST -i \
+  http://localhost:8080/ehrbase/rest/openehr/v1/ehr
+
+docker compose down -v             # stop and remove the data volume
+```
+
+Published images: `ghcr.io/rubentalstra/ehrbase-rs` and
+`ghcr.io/rubentalstra/ehrbase-rs-postgres`. The dev Basic-auth user
+(`ehrbase`/`ehrbase`) comes from [`docker/ehrbase.dev.toml`](docker/ehrbase.dev.toml)
+— **dev only**; configure real credentials (or OIDC) for production. The
+postgres image bakes no migration state; the server runs its sqlx migrations at
+boot (see [`docker/postgres/README.md`](docker/postgres/README.md)).
+
+## Observability
+
+`tracing` is the single instrumentation API: it fans out to **stdout logs**
+(JSON in containers, pretty on a TTY) and — when an OTLP endpoint is configured —
+to **OTLP/gRPC traces**. **Metrics** use the `metrics` facade and are pulled by
+Prometheus from `/management/prometheus`; an OTLP metrics-push path is available
+too. Design contract: [`docs/design/observability.md`](docs/design/observability.md).
+
+**Everything is off by default and independently opt-in.** The management surface
+never widens the clinical API's attack surface: each endpoint is disabled unless
+configured, access-controlled through the auth layer, secret-redacting, and
+optionally bound to a separate internal port.
+
+Key configuration (all `EHRBASE_*`):
+
+| Env | Effect |
+|---|---|
+| `EHRBASE_MANAGEMENT_ENABLED=true` | mount the management surface |
+| `EHRBASE_MANAGEMENT_PORT=9464` | serve `/management/*` on a separate internal port |
+| `EHRBASE_MANAGEMENT_PROBES_ENABLED=true` | expose public `/management/health/{liveness,readiness}` |
+| `EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS=admin_only` | per-endpoint access (`off`\|`admin_only`\|`private`\|`public`) |
+| `EHRBASE_OTEL_OTLP_ENDPOINT=http://collector:4317` | install the OTLP trace exporter (absent = not installed) |
+| `EHRBASE_OTEL_METRICS_PUSH=true` | also push metrics over OTLP |
+| `EHRBASE_LOG_FORMAT=json` · `EHRBASE_LOG_FILTER=info,ehrbase=debug` | log rendering + boot filter |
+
+Management endpoints (all under `/management`, off by default):
+`health` · `health/liveness` · `health/readiness` · `info` · `prometheus` ·
+`metrics[/{name}]` · `env` (secret-redacted) · `loggers` (GET/POST/DELETE runtime
+log-filter control). PHI never enters telemetry — metric labels are closed sets
+(route templates, status classes, enumerated outcomes), and span/log fields are
+denylisted; identified data lives only in the ATNA audit trail, joined by
+`request_id`/`trace_id`.
+
+### Local LGTM stack
+
+The [`docker-compose.observability.yml`](docker-compose.observability.yml) overlay
+adds a single-container [`grafana/otel-lgtm`](https://github.com/grafana/docker-otel-lgtm)
+stack (OTLP collector + Prometheus + Tempo + Loki + Grafana) and points the app at
+it (traces via OTLP, metrics scraped from the internal management port):
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+# Grafana: http://localhost:3000  (provisioned "ehrbase-rs — service overview" dashboard)
+```
+
+A provisioned Grafana dashboard
+([`docker/observability/grafana-dashboard.json`](docker/observability/grafana-dashboard.json))
+covers RED-by-route, DB pool, AQL latency by phase, validation failures, audit
+health, and build info. An alert starter pack
+([`docker/observability/alerts.yml`](docker/observability/alerts.yml)) documents
+the initial rules (5xx ratio, p99 latency, pool exhaustion, dropped audit records,
+auth-failure spike, readiness down).
 
 ## Documentation
 

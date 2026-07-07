@@ -9,7 +9,7 @@
 //! `*Params` with [`crate::params`], calls the trait method on [`AppState`],
 //! and renders a negotiated response.
 //!
-//! Groups with **no implemented operations** (demographic, query, admin) are
+//! Groups with **no implemented operations** (demographic, admin) are
 //! mounted on the generic [`not_implemented`] dispatcher instead of
 //! hand-written per-operation arms that could only forward to a 501 backend
 //! (finding F-13-03) — the wire behaviour is the same `501` + standard error
@@ -19,6 +19,7 @@
 mod definition;
 mod ehr;
 mod flat;
+mod query;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -77,7 +78,7 @@ pub(crate) fn api_router() -> Router<AppState> {
         .merge(mount(g::ehr::ROUTES, ehr::dispatch))
         .merge(mount(g::demographic::ROUTES, not_implemented))
         .merge(mount(g::definition::ROUTES, definition::dispatch))
-        .merge(mount(g::query::ROUTES, not_implemented))
+        .merge(mount(g::query::ROUTES, query::dispatch))
         .merge(mount(g::admin::ROUTES, not_implemented))
 }
 
@@ -120,12 +121,17 @@ fn mount(
                       RawQuery(query): RawQuery,
                       headers: HeaderMap,
                       State(state): State<AppState>,
-                      body: Bytes| {
-                    dispatch(
+                      body: Bytes| async move {
+                    let mut resp = dispatch(
                         state,
                         op,
                         RequestParts::new(&raw_path, query, headers, body),
                     )
+                    .await;
+                    // The single, generic ATNA hook: tag the response with the
+                    // matched operation id for the audit layer (§8.2 step 1).
+                    resp.extensions_mut().insert(crate::audit::AuditOpId(op));
+                    resp
                 },
             );
         }

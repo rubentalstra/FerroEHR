@@ -34,25 +34,13 @@ async fn health() -> impl IntoResponse {
     (StatusCode::OK, "OK")
 }
 
-#[derive(Debug, Serialize)]
-struct Info {
-    name: &'static str,
-    version: &'static str,
-}
-
-async fn info() -> Json<Info> {
-    Json(Info {
-        name: env!("CARGO_PKG_NAME"),
-        version: env!("CARGO_PKG_VERSION"),
-    })
-}
-
-/// Build the public status/health/management router, hung off the REST root
-/// (`/ehrbase/rest`).
+/// Build the public status/health router, hung off the REST root
+/// (`/ehrbase/rest`). This is the product probe surface; the ops surface
+/// (`/management/*`, including `info`) lives in [`crate::management`] and is
+/// off by default.
 pub(crate) fn router(rest_root: &str) -> Router<AppState> {
     Router::new()
         .route(&format!("{rest_root}/status"), get(status))
         .route("/health", get(health))
         .route(&format!("{rest_root}/status/health"), get(health))
-        .route("/management/info", get(info))
 }

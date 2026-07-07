@@ -393,6 +393,12 @@ pub(crate) fn set_resource_headers(
     if let Ok(loc) = HeaderValue::from_str(&location(base_path, &meta.ehr_id, segment, &meta.uid)) {
         resp.headers_mut().insert(header::LOCATION, loc);
     }
+    // The single, generic ATNA hook for the participant object: surface the
+    // resource ids the envelope already carries for the audit layer (§8.2 step 3).
+    resp.extensions_mut().insert(crate::audit::AuditObject {
+        ehr_id: Some(meta.ehr_id.clone()),
+        uid: Some(meta.uid.clone()),
+    });
 }
 
 /// Render a create/update response honouring `Prefer` and setting

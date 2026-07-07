@@ -1,0 +1,51 @@
+# Observability overlay for the ehrbase-rs dev stack (binding doc §5).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+#
+# Adds a single-container LGTM stack (grafana/otel-lgtm = OTLP collector +
+# Prometheus + Tempo + Loki + Grafana) and points the app at it:
+#   - traces  → OTLP/gRPC to otel-lgtm:4317 (→ Tempo)
+#   - metrics → pulled by the bundled Prometheus from ehrbase:9464/management/prometheus
+#   - logs    → stdout (12-factor; the platform collects them)
+#
+# The management surface is enabled on an INTERNAL port (9464) exposed only on
+# the compose network — never published to the host. Grafana (3000) is the only
+# published port. This overlay is a manual dev convenience, not a CI job.
+services:
+  ehrbase:
+    environment:
+      # Traces to the LGTM collector (metrics stay a Prometheus pull; see below).
+      EHRBASE_OTEL_OTLP_ENDPOINT: http://otel-lgtm:4317
+      EHRBASE_OTEL_SERVICE_NAME: ehrbase
+      EHRBASE_OTEL_ENVIRONMENT: dev
+      EHRBASE_OTEL_TRACES_SAMPLE_RATIO: "1.0"
+      EHRBASE_LOG_FORMAT: json
+      # Management surface on an internal-only port; public within the compose
+      # network so the bundled Prometheus can scrape without credentials.
+      EHRBASE_MANAGEMENT_ENABLED: "true"
+      EHRBASE_MANAGEMENT_PORT: "9464"
+      EHRBASE_MANAGEMENT_PROBES_ENABLED: "true"
+      EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH: "public"
+      EHRBASE_MANAGEMENT_ENDPOINTS_INFO: "public"
+      EHRBASE_MANAGEMENT_ENDPOINTS_METRICS: "public"
+      EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS: "public"
+    expose:
+      - "9464"
+    depends_on:
+      otel-lgtm:
+        condition: service_started
+
+  otel-lgtm:
+    # Single-container LGTM dev stack. Pin a digest/tag in production.
+    image: grafana/otel-lgtm:latest
+    environment:
+      # Keep collected data in the container's lifetime (dev).
+      - ENABLE_LOGS_ALL=true
+    volumes:
+      # Extra Prometheus scrape config (scrapes the app's /management/prometheus).
+      - ./docker/observability/prometheus-scrape.yaml:/otel-lgtm/prometheus/scrape-configs/ehrbase.yaml:ro
+      # Provisioned Grafana dashboard.
+      - ./docker/observability/grafana-dashboard.json:/otel-lgtm/grafana/dashboards/ehrbase.json:ro
+    ports:
+      # Grafana UI only. OTLP (4317/4318) stays on the compose network.
+      - "${GRAFANA_PORT:-3000}:3000"
