@@ -1,0 +1,12 @@
+# cargo-audit configuration (CI runs plain `cargo audit`).
+# Keep this ignore list in lockstep with [advisories].ignore in deny.toml.
+
+[advisories]
+ignore = [
+  # 2026-07-07: Marvin attack timing sidechannel in `rsa` (via openidconnect →
+  # ehrbase-rest OIDC auth). No fixed release exists upstream; we only *verify*
+  # RS256 ID-token signatures (public-key operation) and never hold RSA private
+  # keys, so the private-key timing oracle does not apply. Re-check when
+  # rsa > 0.9 ships. https://rustsec.org/advisories/RUSTSEC-2023-0071
+  "RUSTSEC-2023-0071",
+]

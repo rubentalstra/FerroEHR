@@ -1,41 +1,39 @@
 # syntax=docker/dockerfile:1
 #
-# Multi-stage build for the `ehrbase` server binary (ADR-006/008).
+# From-source multi-stage build for the `ehrbase` server binary (ADR-006/008).
+# This is the LOCAL/compose path (`docker compose build`, `docker build -f
+# docker/Dockerfile .`); CI packages prebuilt native binaries with
+# docker/Dockerfile.runtime instead (see .github/workflows/containers.yml).
 #
-#   build context : the repository root  (`docker build -f docker/Dockerfile .`)
-#   builder       : rust:${RUST_VERSION}-slim-bookworm + cargo-chef dependency
-#                   layer caching → `cargo build --release --locked -p ehrbase`
-#   runtime       : gcr.io/distroless/cc-debian12:nonroot (shell-less, non-root)
+#   builder : rust:${RUST_VERSION}-slim-bookworm, single `cargo build` with
+#             BuildKit cache mounts for the registry and target dir — repeat
+#             local builds are incremental, and nothing (cargo-chef, a second
+#             dependency compile) runs besides the one real build.
+#   runtime : gcr.io/distroless/cc-debian12:nonroot (shell-less, non-root;
+#             glibc 2.36 matches the bookworm builder).
 #
 # The toolchain is single-sourced from rust-toolchain.toml; RUST_VERSION must
 # equal its `channel` (CI cross-checks the two so they never drift).
 
 ARG RUST_VERSION=1.96.1
 
-# ── chef: rust base with cargo-chef installed ───────────────────────────────
-FROM rust:${RUST_VERSION}-slim-bookworm AS chef
+# ── builder: one cached compile ──────────────────────────────────────────────
+FROM rust:${RUST_VERSION}-slim-bookworm AS builder
 WORKDIR /app
-RUN cargo install cargo-chef --locked
-# The binary is pure-Rust (rustls, no OpenSSL); cargo-chef cook/build need no
-# extra system libraries beyond the slim base.
-
-# ── planner: distil the dependency graph into a recipe ──────────────────────
-FROM chef AS planner
 COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
+# The binary is pure-Rust (rustls, no OpenSSL); no system libraries are needed
+# beyond the slim base. Cache mounts persist the crates.io registry and the
+# incremental target dir across builds; the binary is copied out of the mount
+# before it unmounts.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/app/target,sharing=locked \
+    cargo build --release --locked -p ehrbase \
+    && cp target/release/ehrbase /usr/local/bin/ehrbase \
+    && strip /usr/local/bin/ehrbase
 
-# ── builder: cook deps (cached), then build the workspace binary ────────────
-FROM chef AS builder
-COPY --from=planner /app/recipe.json recipe.json
-# This layer is cached and only re-runs when the dependency set changes.
-RUN cargo chef cook --release --recipe-path recipe.json
-COPY . .
-RUN cargo build --release --locked -p ehrbase \
-    && strip target/release/ehrbase
-
-# ── runtime: distroless cc (glibc + CA certs), non-root ─────────────────────
+# ── runtime: distroless cc (glibc + CA certs), non-root ──────────────────────
 FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
-COPY --from=builder /app/target/release/ehrbase /usr/local/bin/ehrbase
+COPY --from=builder /usr/local/bin/ehrbase /usr/local/bin/ehrbase
 
 EXPOSE 8080
 

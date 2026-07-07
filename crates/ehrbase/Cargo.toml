@@ -26,7 +26,6 @@ tracing-opentelemetry.workspace = true
 opentelemetry.workspace = true
 opentelemetry_sdk.workspace = true
 opentelemetry-otlp.workspace = true
-opentelemetry-semantic-conventions.workspace = true
 metrics.workspace = true
 metrics-exporter-prometheus.workspace = true
 jiff-sqlx.workspace = true
@@ -72,5 +71,6 @@ opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "testing"] }
 workspace = true
 
 [package.metadata.cargo-machete]
-# Scaffolded dependency graph (ADR-004 / phase 0R); these internal crates are wired now and consumed when this crate is ported (P6+).
-ignored = ["ehrbase-compat", "ehrbase-rest", "openehr-am", "openehr-base", "openehr-flat", "openehr-its", "openehr-lang", "openehr-query", "openehr-rm", "openehr-term"]
+# Wired for later phases, not consumed yet: ehrbase-compat (P17 EhrScape),
+# openehr-am (ADL2), openehr-lang (BMM at runtime).
+ignored = ["ehrbase-compat", "openehr-am", "openehr-lang"]

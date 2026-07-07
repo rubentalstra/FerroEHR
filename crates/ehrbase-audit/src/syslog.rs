@@ -302,8 +302,10 @@ pub fn add_roots(roots: &mut rustls::RootCertStore, pem: &[u8]) -> io::Result<()
 }
 
 fn load_certs(pem: &[u8]) -> io::Result<Vec<rustls::pki_types::CertificateDer<'static>>> {
-    let mut reader = io::BufReader::new(pem);
-    let certs: Vec<_> = rustls_pemfile::certs(&mut reader).collect::<Result<_, _>>()?;
+    use rustls::pki_types::pem::PemObject;
+    let certs: Vec<_> = rustls::pki_types::CertificateDer::pem_slice_iter(pem)
+        .collect::<Result<_, _>>()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     if certs.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -314,9 +316,9 @@ fn load_certs(pem: &[u8]) -> io::Result<Vec<rustls::pki_types::CertificateDer<'s
 }
 
 fn load_key(pem: &[u8]) -> io::Result<rustls::pki_types::PrivateKeyDer<'static>> {
-    let mut reader = io::BufReader::new(pem);
-    rustls_pemfile::private_key(&mut reader)?
-        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "no private key found in PEM"))
+    use rustls::pki_types::pem::PemObject;
+    rustls::pki_types::PrivateKeyDer::from_pem_slice(pem)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
 
 #[cfg(test)]

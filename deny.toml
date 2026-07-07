@@ -5,7 +5,14 @@
 version = 2
 # Fail on any RustSec advisory. Add exceptions explicitly and dated.
 yanked = "deny"
-ignore = []
+ignore = [
+  # 2026-07-07: Marvin attack timing sidechannel in `rsa` (pulled in via
+  # openidconnect → ehrbase-rest OIDC auth). No fixed release exists upstream;
+  # we only *verify* RS256 ID-token signatures (public-key operation) and never
+  # hold RSA private keys, so the private-key timing oracle does not apply.
+  # Re-check when rsa > 0.9 ships. https://rustsec.org/advisories/RUSTSEC-2023-0071
+  { id = "RUSTSEC-2023-0071", reason = "no fix upstream; RSA used for signature verification only (no private keys held)" },
+]
 
 [licenses]
 version = 2
@@ -21,6 +28,11 @@ allow = [
   "Unicode-3.0",
   "MPL-2.0",
   "CC0-1.0",
+  # MIT No Attribution (borrow-or-share, via fluent-uri → sqlx).
+  "MIT-0",
+  # Community Data License Agreement — Permissive 2.0 (webpki-roots: the
+  # Mozilla CA bundle data). Permissive, Apache-2.0-compatible.
+  "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.9
 exceptions = []

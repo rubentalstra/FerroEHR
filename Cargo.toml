@@ -83,7 +83,6 @@ cedar-policy = "4"                  # alternative policy engine (verify latest)
 # ── TLS / crypto foundations ─────────────────────────────────────────────────
 rustls = "0.23"
 tokio-rustls = "0.26"
-rustls-pemfile = "2"
 webpki-roots = "1.0.8"
 rand = "0.10.1"
 getrandom = "0.4.3"
