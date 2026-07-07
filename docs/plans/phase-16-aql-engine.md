@@ -3,7 +3,7 @@
 > Re-scoped 2026-07-05 by ADR-008: our own design (no ASL port); EHRbase's
 > engine is prior art only.
 
-- Status: done (Stage-1 app build, step 8 of 13)
+- Status: done (2026-07-07)
 - Consumes: `openehr-query` (AST, done), P10 (node model), P14 (WebTemplate),
   the BMM-generated RM attribute model
 - Compile required: yes (compiling, tested increment)
@@ -22,7 +22,7 @@ execution via `sqlx`, and `RESULT_SET` (ITS-REST 1.0.3) assembly.
 
 ## Preconditions
 
-- [ ] P10 (node model), P14 (WebTemplate), RM attribute model generated
+- [x] P10 (node model), P14 (WebTemplate), RM attribute model generated
 
 ## Scope
 

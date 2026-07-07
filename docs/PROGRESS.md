@@ -47,8 +47,8 @@ partially superseded. Phase files 10/16/19 re-scoped.
 | 5 | 13 | Template ingestion (OPT 1.4 XML) | **done (2026-07-05, PR #17)** | Codegen `emit-opt` → `openehr-its::opt14` (typed OPT + C_* tree + XML); all 91 vendored `.opt` parse; DEFINITION `adl1.4` upload/list/get on `template_store`; `adl2` = 501 |
 | 6 | 14 | WebTemplate + FLAT/STRUCTURED (SDT surface) | **done (2026-07-05, PR #18)** | `openehr-flat`: WebTemplate builder + FLAT + STRUCTURED (Better parity), `moka`-cached; SDT endpoints |
 | 7 | 15 | Composition validation | **done (2026-07-06, PR #19)** | RM invariants + terminology + WebTemplate walk → ITS-REST 422 |
-| 8 | 16 | AQL engine (typed IR → SQL, ADR-008) | not-started | `openehr-query`, P09/P10/P14, `sea-query` — **current phase** |
-| 9 | 17 | FLAT/STRUCTURED + EhrScape | not-started | `openehr-flat`, `ehrbase-compat`, P14 |
+| 8 | 16 | AQL engine (typed IR → SQL, ADR-008) | **done (2026-07-07)** | `emit-rm-model` BMM attribute model; typed IR (`ehrbase::aql::plan`); typed sea-query SQL (nested-set CONTAINS, magnitude, LATEST+**ALL_VERSIONS**); RESULT_SET 1.0.3; `/query/*` live; corpus e2e PG18. Same branch: ATNA audit trail, GHCR images+CI, full observability stack |
+| 9 | 17 | FLAT/STRUCTURED + EhrScape | not-started — **current phase** | `openehr-flat`, `ehrbase-compat`, P14 |
 | 10 | 18 | Workspace integration | not-started | binary wiring; delete ported-out Java |
 | 11 | 19 | openEHR conformance (CNF schedule, ADR-008) | not-started | `specifications-CNF` runners, corpus suites |
 | 12 | 20 | Optimization | not-started | PG18 AIO, pipelining, `JSON_TABLE` |
