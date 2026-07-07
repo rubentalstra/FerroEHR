@@ -47,8 +47,13 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // rejections) · HTTP metrics (§1.2) · root span (§1.1, outermost so the span
     // and metrics cover the whole request incl. auth). The metrics/span layers
     // sit on the API router so `MatchedPath` resolves to the route template.
-    let api =
-        dispatch::api_router().layer(from_fn_with_state(authenticator.clone(), auth::middleware));
+    let api = dispatch::api_router().layer(from_fn_with_state(
+        auth::AuthLayer {
+            authenticator: authenticator.clone(),
+            authz: state.authz(),
+        },
+        auth::middleware,
+    ));
     let api = match state.audit() {
         Some(sender) => api.layer(from_fn_with_state(sender, crate::audit::middleware)),
         None => api,

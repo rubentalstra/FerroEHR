@@ -134,6 +134,7 @@ impl EhrbaseService {
     /// created CONTRIBUTION. Each version's storage action and preserved audit
     /// change-type code come from [`classify`]; the object kind from the payload
     /// `_type` (create) or the stored object (modify/delete).
+    #[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
     pub(super) async fn create_contribution(
         &self,
         ehr_id: Uuid,
@@ -164,6 +165,12 @@ impl EhrbaseService {
             )?;
             let version_audit = self.parse_audit(version.get("commit_audit"), code.clone());
             version_codes.push(code);
+            // A client-supplied UPDATE_VERSION.signature (RM common §"Digital
+            // Signature") is stored verbatim; absent, the server signs (§3.3).
+            let signature = version
+                .get("signature")
+                .and_then(Value::as_str)
+                .map(str::to_owned);
             let change = match action {
                 Action::Create => {
                     let data = data.ok_or_else(|| {
@@ -177,6 +184,7 @@ impl EhrbaseService {
                         kind,
                         canonical: data,
                         template_id: None,
+                        signature,
                     }
                 }
                 Action::Modify => {
@@ -192,6 +200,7 @@ impl EhrbaseService {
                         canonical: data,
                         expected: Some(expected),
                         template_id: None,
+                        signature,
                     }
                 }
                 Action::Delete => {
@@ -201,6 +210,7 @@ impl EhrbaseService {
                         vo_id,
                         kind,
                         expected: Some(expected),
+                        signature,
                     }
                 }
             };
@@ -229,8 +239,14 @@ impl EhrbaseService {
         let contribution_audit = self.parse_audit(body.get("audit"), contribution_code);
 
         let mut tx = self.pool.begin().await?;
-        let (contribution_id, _) =
-            vobject::commit_contribution(&mut tx, ehr_id, &contribution_audit, changes).await?;
+        let (contribution_id, _) = vobject::commit_contribution(
+            &mut tx,
+            ehr_id,
+            &contribution_audit,
+            changes,
+            &self.signing_ctx(),
+        )
+        .await?;
         tx.commit().await?;
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);

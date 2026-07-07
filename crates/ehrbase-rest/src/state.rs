@@ -16,6 +16,7 @@ use std::sync::Arc;
 
 use ehrbase_audit::AuditSender;
 
+use crate::authz::AuthzHandle;
 use crate::backend::{Backend, StubBackend};
 use crate::config::RestConfig;
 use crate::management::Observability;
@@ -34,6 +35,9 @@ struct Inner {
     backend: Arc<dyn Backend>,
     /// The ATNA audit sender, when auditing is wired in (the binary supplies it).
     audit: Option<AuditSender>,
+    /// The authorization handle (the RBAC gate), when access control is wired in
+    /// (the binary supplies it); `None` restores authentication-only behaviour.
+    authz: Option<Arc<AuthzHandle>>,
     /// The observability bundle (management config + telemetry handles).
     observability: Observability,
 }
@@ -54,22 +58,24 @@ impl AppState {
     }
 
     /// Construct state with a concrete backend and an optional ATNA audit sender
-    /// (observability off).
+    /// (observability off, no authorization handle).
     #[must_use]
     pub fn with_backend_and_audit(
         config: RestConfig,
         backend: Arc<dyn Backend>,
         audit: Option<AuditSender>,
     ) -> Self {
-        Self::with_parts(config, backend, audit, Observability::default())
+        Self::with_parts(config, backend, audit, None, Observability::default())
     }
 
-    /// Construct state from all parts, including the observability bundle.
+    /// Construct state from all parts, including the authorization handle and the
+    /// observability bundle.
     #[must_use]
     pub fn with_parts(
         config: RestConfig,
         backend: Arc<dyn Backend>,
         audit: Option<AuditSender>,
+        authz: Option<Arc<AuthzHandle>>,
         observability: Observability,
     ) -> Self {
         Self {
@@ -77,6 +83,7 @@ impl AppState {
                 config,
                 backend,
                 audit,
+                authz,
                 observability,
             }),
         }
@@ -96,6 +103,11 @@ impl AppState {
     /// The ATNA audit sender, if auditing is enabled/wired.
     pub(crate) fn audit(&self) -> Option<AuditSender> {
         self.inner.audit.clone()
+    }
+
+    /// The authorization handle (RBAC gate), if access control is wired.
+    pub(crate) fn authz(&self) -> Option<Arc<AuthzHandle>> {
+        self.inner.authz.clone()
     }
 
     /// The observability bundle (management + telemetry handles).

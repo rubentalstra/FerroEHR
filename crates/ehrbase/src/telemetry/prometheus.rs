@@ -33,6 +33,10 @@ pub const AQL_QUERY_DURATION: &str = "aql_query_duration_seconds";
 pub const COMPOSITIONS_COMMITTED: &str = "compositions_committed_total";
 /// Validation-failure counter (`pass` = `rm_invariant/terminology/template`).
 pub const VALIDATION_FAILURES: &str = "validation_failures_total";
+/// Version-signature verification-failure counter (`verdict` =
+/// `digest_mismatch/pgp_invalid`), incremented under `verify_on_read`
+/// (RM common §"Digital Signature").
+pub const VERSION_SIGNATURE_INVALID: &str = "version_signature_invalid_total";
 /// `WebTemplate` cache event counter (`event` = hit/miss/eviction).
 pub const WEBTEMPLATE_CACHE_EVENTS: &str = "webtemplate_cache_events_total";
 /// Process start time gauge (unix seconds).

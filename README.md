@@ -1,243 +1,225 @@
+<div align="center">
+
 # EHRbase-rs
 
-**A pure-Rust openEHR Clinical Data Repository** — ITS-REST 1.0.3 at the API,
-AQL 1.1 as the query language, PostgreSQL-18-native storage designed from
-first principles.
+**A pure-Rust openEHR Clinical Data Repository**
+
+openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&nbsp; PostgreSQL 18-native storage
 
 [![CI](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/ci.yml)
 [![Containers](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/containers.yml)
+[![Last commit](https://img.shields.io/github/last-commit/rubentalstra/ehrbase-rs/develop?logo=github)](https://github.com/rubentalstra/ehrbase-rs/commits/develop)
+
 [![Rust](https://img.shields.io/badge/rust-1.96%2B-orange.svg?logo=rust)](rust-toolchain.toml)
 [![Edition](https://img.shields.io/badge/edition-2024-blue.svg?logo=rust)](Cargo.toml)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791.svg?logo=postgresql&logoColor=white)](docs/VERSIONS.md)
+[![openEHR](https://img.shields.io/badge/openEHR-ITS--REST_1.0.3_%C2%B7_AQL_1.1-1F6FEB.svg)](https://specifications.openehr.org/)
+[![GHCR](https://img.shields.io/badge/ghcr.io-ehrbase--rs-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs)
+
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Security policy](https://img.shields.io/badge/security-policy-yellow.svg)](SECURITY.md)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
+[Quickstart](#quickstart) · [Features](#features) · [Architecture](#architecture) · [Building](#building-from-source) · [Documentation](#documentation) · [Contributing](#contributing-and-security)
+
+</div>
+
+---
+
+[openEHR](https://www.openehr.org/) separates clinical knowledge from software:
+applications store and query structured health records through a vendor-neutral
+REST API and the Archetype Query Language, against a shared clinical information
+model. **EHRbase-rs** implements that standard natively in Rust — one small
+binary, no JVM, no external SDKs — with the openEHR type system, serialization,
+and REST contract **generated deterministically from the official
+machine-readable specifications**, and the storage engine, AQL engine, and
+services designed from first principles for PostgreSQL 18.
+
 > [!IMPORTANT]
-> This is a hard fork of [`ehrbase/ehrbase`](https://github.com/ehrbase/ehrbase),
-> reimplemented from scratch in Rust — no JVM, no `archie`/openEHR-SDK, no ANTLR
-> runtime. Its conformance target is the **openEHR specifications** (verified by
-> the official CNF conformance framework), not bug-for-bug parity with upstream.
-> Pre-release software: not yet production-ready (see [Status](#status--roadmap)).
+> EHRbase-rs is a from-scratch Rust reimplementation, forked from
+> [`ehrbase/ehrbase`](https://github.com/ehrbase/ehrbase) (Java). Its conformance
+> target is the **openEHR specifications** — verified against the official CNF
+> conformance framework — not parity with upstream. It is **pre-release
+> software** and not yet ready for production use.
 
-An [openEHR](https://www.openehr.org/) CDR is a standards-based backend for
-interoperable clinical applications: applications store and query structured
-clinical data through the vendor-neutral
-[openEHR REST API](https://specifications.openehr.org/releases/ITS-REST/latest/)
-and the [Archetype Query Language](https://specifications.openehr.org/releases/QUERY/latest/AQL.html).
-EHRbase-rs implements that surface natively in Rust, in two layers:
+## Features
 
-1. **The openEHR foundation (`openehr-*` crates)** — the Reference Model, canonical
-   JSON/XML serialization, the ITS-REST contract, and the AQL parser, **generated
-   deterministically from openEHR's machine-readable specifications** (BMM/XSD/OpenAPI).
-   A spec-version bump is a re-run, not a rewrite ([ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md),
-   [ADR-005](docs/ADRs/ADR-005-its-codegen.md)).
-2. **The application (`ehrbase-*` crates)** — storage, versioning, services, the AQL
-   engine, validation, and auth: modern idiomatic Rust of our own design on that
-   foundation ([ADR-006](docs/ADRs/ADR-006-application-port-philosophy.md),
-   [ADR-008](docs/ADRs/ADR-008-greenfield-pg18-storage.md)).
+- **The complete openEHR REST API** — EHR, EHR_STATUS, COMPOSITION,
+  DIRECTORY/FOLDER, CONTRIBUTION, QUERY, and template management (OPT 1.4), with
+  canonical JSON and XML content negotiation.
+- **A full AQL query engine** — typed path analysis over a spec-generated
+  Reference Model, compiled to efficient SQL: `CONTAINS` is an integer interval
+  join, never a JSON tree walk. Supports `LATEST_VERSION` **and** `ALL_VERSIONS`.
+- **Temporal, versioned storage** — every write is a new immutable version with
+  contribution and audit metadata in the same transaction; point-in-time reads
+  ("what did this record look like on that date?") are first-class.
+- **Composition validation** — Reference Model invariants, terminology bindings,
+  and template constraints enforced on every write.
+- **Simplified data formats** — WebTemplate, FLAT, and STRUCTURED JSON for
+  form-driven clients.
+- **Authentication built in** — HTTP Basic and OAuth2/OIDC bearer
+  (Keycloak-style); role- and attribute-based authorization is in active
+  development.
+- **Security audit trail (IHE ATNA)** — every API operation emits a DICOM
+  AuditMessage over syslog (UDP/TLS), with build-time coverage guarantees.
+- **Production-grade telemetry** — structured logs, OTLP traces, Prometheus
+  metrics, and a locked-down management surface; identified data never enters
+  telemetry.
+- **A clean deployment story** — distroless, non-root, shell-less multi-arch
+  containers (amd64 + arm64) with a pure-Rust TLS stack.
 
-## Highlights
+## Quickstart
 
-- **The openEHR REST API (ITS-REST 1.0.3)** — EHR, EHR_STATUS, COMPOSITION,
-  DIRECTORY/FOLDER, CONTRIBUTION, QUERY, and DEFINITION (OPT 1.4 templates), served
-  from server traits and routes generated from the official OpenAPI contract.
-- **A full AQL 1.1 engine** — hand-written parser, path analysis against a
-  BMM-generated RM attribute model, a typed query IR lowered to SQL. CONTAINS is a
-  nested-set integer interval join, never a JSON tree walk. `LATEST_VERSION` **and**
-  `ALL_VERSIONS` are supported.
-- **PG18-native storage** — one unified `node` table (a row per RM structure node,
-  canonical JSON fragments, no key aliasing) plus one temporal `vo_version` table
-  (`PRIMARY KEY … WITHOUT OVERLAPS`) instead of current/history table pairs; full
-  time-travel reads; contribution + audit written in the same transaction as every
-  change.
-- **Composition validation** — RM invariants + terminology + WebTemplate constraint
-  checking → ITS-REST 422 problem details.
-- **SDT surface** — WebTemplate (`wt+json`), FLAT, and STRUCTURED formats with
-  Better-semantics parity.
-- **Authentication** — Basic and OAuth2/OIDC (Keycloak-style) bearer auth out of the
-  box; RBAC/ABAC authorization is in active development
-  ([design](docs/enterprise/access-control.md)).
-- **IHE ATNA audit trail** — every API operation emits a DICOM AuditMessage over
-  RFC 5424 syslog (UDP or TLS), with a total-coverage guard so no endpoint ships
-  unaudited.
-- **Observability** — `tracing` + OTLP traces, Prometheus metrics, a management
-  surface that is off by default, and a one-command local Grafana LGTM stack.
-  PHI never enters telemetry.
-- **Small, safe deployment** — a distroless, non-root, shell-less container
-  (~pure-Rust binary with rustls; no OpenSSL), multi-arch (amd64 + arm64).
-
-## Quickstart (Docker)
-
-Two published images, mirroring EHRbase's app + preconfigured-postgres model:
-`ghcr.io/rubentalstra/ehrbase-rs` and `ghcr.io/rubentalstra/ehrbase-rs-postgres`
-(PostgreSQL 18 with the role, database, schemas, and extensions pre-created — the
-server runs its own migrations at boot).
+Run the server and a preconfigured PostgreSQL 18 with Docker Compose:
 
 ```shell
-docker compose up --build          # build + start server and database
+docker compose up --build
+```
 
-# Probe the public status endpoint:
+```shell
+# Probe the status endpoint
 curl http://localhost:8080/ehrbase/rest/status
 
-# Create an EHR (dev Basic credentials: ehrbase / ehrbase):
+# Create an EHR (development credentials: ehrbase / ehrbase)
 curl -u ehrbase:ehrbase -X POST -i \
   http://localhost:8080/ehrbase/rest/openehr/v1/ehr
 
-# Run an AQL query:
+# Query it with AQL
 curl -u ehrbase:ehrbase -H 'Content-Type: application/json' \
   -d '{"q":"SELECT e/ehr_id/value FROM EHR e"}' \
   http://localhost:8080/ehrbase/rest/openehr/v1/query/aql
-
-docker compose down -v             # stop and remove the data volume
 ```
 
-The dev credentials come from [`docker/ehrbase.dev.toml`](docker/ehrbase.dev.toml)
-— **development only**; configure real credentials or OIDC for anything else.
-All configuration is environment-driven (`EHRBASE_*`).
+Published images: [`ghcr.io/rubentalstra/ehrbase-rs`](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs)
+and [`ghcr.io/rubentalstra/ehrbase-rs-postgres`](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs-postgres)
+(PostgreSQL 18 with roles, schemas, and extensions pre-created; the server runs
+its own migrations at boot). Configuration is environment-driven (`EHRBASE_*`);
+the development credentials come from
+[`docker/ehrbase.dev.toml`](docker/ehrbase.dev.toml) and must be replaced outside
+development.
 
 <details>
-<summary>Local observability stack (Grafana LGTM)</summary>
+<summary><b>Optional: local observability stack (Grafana LGTM)</b></summary>
 
-The [`docker-compose.observability.yml`](docker-compose.observability.yml) overlay
-adds a single-container OTLP collector + Prometheus + Tempo + Loki + Grafana and
-points the app at it:
+<br>
+
+One overlay adds an OTLP collector, Prometheus, Tempo, Loki, and Grafana with a
+provisioned service-overview dashboard:
 
 ```shell
 docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
-# Grafana: http://localhost:3000 — provisioned "ehrbase-rs — service overview" dashboard
+# Grafana → http://localhost:3000
 ```
 
-Dashboards and an alert starter pack live in
-[`docker/observability/`](docker/observability/); the design contract is
-[`docs/design/observability.md`](docs/design/observability.md).
+Dashboards and alert rules live in [`docker/observability/`](docker/observability/);
+the design is documented in [`docs/design/observability.md`](docs/design/observability.md).
+
 </details>
-
-## Status & roadmap
-
-**Stage 1 (a complete, conformant CDR) is most of the way through.** Foundation
-phases 00–08 (generated spec layer, serialization, contracts, parsers) and
-application phases 09–16 are done:
-
-| Done | Delivered |
-|---|---|
-| P09–P10 | persistence infrastructure + the greenfield node/temporal-version storage with a lossless codec |
-| P11–P12 | the full REST surface (~96 operations) + auth, and the service layer (versioned CRUD, contributions, time-travel, tags, stored queries) |
-| P13–P15 | OPT 1.4 template ingestion, WebTemplate/FLAT/STRUCTURED, composition validation |
-| P16 | the AQL engine, ATNA audit trail, container images, observability |
-
-Remaining before the first release: **P17** FLAT/EhrScape compatibility wiring,
-**P18** workspace integration, **P19** openEHR **CNF conformance** (the acceptance
-instrument), **P20** optimization. In parallel, enterprise capabilities are being
-restored, starting with [RBAC/ABAC access control](docs/enterprise/access-control.md).
-Progress is tracked in [`docs/PROGRESS.md`](docs/PROGRESS.md) and
-[`docs/plans/`](docs/plans/).
-
-Quality gates on every commit: build + 600+ tests against real PostgreSQL 18
-(testcontainers), clippy `-D warnings`, rustfmt, `cargo deny`/`audit`/`machete`,
-codegen drift (the generated layer must match the vendored specs), and a container
-smoke test that boots both images and exercises the API.
 
 ## Architecture
 
+The workspace has two layers with a strict one-way dependency: the application
+builds on the specification, never the reverse.
+
 ```
-crates/
-├── openehr-codegen    # BMM/XSD/OAS → Rust generator            ┐ tooling
-├── openehr-derive     # #[derive(OpenEhrType)] canonical JSON   ┘
-├── openehr-base       # BASE 1.3.0: foundation + base types     ┐
-├── openehr-rm         # RM 1.2.0: the Reference Model           │ generated
-├── openehr-am         # AM 1.4 + 2.4: ADL/AOM (am14 + am24)     │ from the
-├── openehr-lang       # LANG: BMM / ODIN object model           ┘ vendored specs
-├── openehr-term       # TERM 3.1.0: terminology bundle (hand-written)
-├── openehr-query      # AQL 1.1 lexer + parser (logos + chumsky)
-├── openehr-its        # canonical JSON/XML + generated ITS-REST contract + fidelity gates
-├── openehr-flat       # WebTemplate / FLAT / STRUCTURED (SDT)
-├── ehrbase-rest       # the axum REST server + auth              ┐
-├── ehrbase-compat     # EhrScape / admin / compatibility surface │ the application
-├── ehrbase-audit      # IHE ATNA audit trail                     │ (our own design)
-└── ehrbase            # binary: storage, services, AQL engine    ┘
+                        ┌──────────────────────────────────────────────┐
+  openEHR machine-      │  openehr-*  ·  the specification layer       │
+  readable specs   ───► │  Reference Model, canonical JSON/XML, REST   │
+  (BMM · XSD · OpenAPI) │  contract — generated, never hand-edited;    │
+                        │  AQL parser and SDT formats hand-written     │
+                        └──────────────────────▲───────────────────────┘
+                                               │
+                        ┌──────────────────────┴───────────────────────┐
+                        │  ehrbase-*  ·  the application layer         │
+                        │  axum REST server, auth, services,           │
+                        │  node-based temporal storage, AQL→SQL        │
+                        │  engine, ATNA audit — our own design         │
+                        └──────────────────────────────────────────────┘
 ```
 
-Dependencies point one way: application → specification, never the reverse. The
-generated crates carry `// @generated` headers and are never hand-edited — changes
-go through the emitter and a regeneration, enforced by a CI drift check. The full
-picture is in [`docs/architecture.md`](docs/architecture.md).
+| Crate | Role |
+|---|---|
+| `openehr-base` · `openehr-rm` · `openehr-am` · `openehr-lang` | the openEHR type system, generated from the BMM meta-model |
+| `openehr-term` | the openEHR terminology bundle |
+| `openehr-its` | canonical JSON/XML serialization + the generated ITS-REST contract |
+| `openehr-query` | the AQL lexer/parser (`logos` + `chumsky`, no ANTLR) |
+| `openehr-flat` | WebTemplate / FLAT / STRUCTURED formats |
+| `openehr-codegen` · `openehr-derive` | the spec-to-Rust generator and its proc-macro |
+| `ehrbase-rest` | the axum REST server and authentication |
+| `ehrbase-audit` | the IHE ATNA audit trail |
+| `ehrbase-compat` | EhrScape and administrative compatibility surface |
+| `ehrbase` | the server binary: storage, services, and the AQL engine |
+
+A CI drift check regenerates the specification layer on every commit and fails
+if it differs from the vendored specs — the generated code can never silently
+diverge from the standard. The full design is described in
+[`docs/architecture.md`](docs/architecture.md).
 
 ## Tech stack
 
-| Layer | Choice |
+| | |
 |---|---|
-| Language | Rust stable **1.96**, edition 2024 |
-| Database | **PostgreSQL 18** (18.4+): `uuidv7()`, temporal `WITHOUT OVERLAPS` keys, `RETURNING OLD/NEW`, `JSON_TABLE`, skip scan |
-| Web / async | `axum` · `tower-http` · `hyper` · `tokio` |
-| Persistence | `sqlx` + `sea-query` (dynamic AQL SQL; not an ORM) |
-| Auth | `jsonwebtoken` · `oauth2` · `openidconnect` · `argon2` |
-| Serialization | `serde`/`serde_json` · `quick-xml` |
-| Parsers | `logos` + `chumsky` — no ANTLR runtime |
-| Observability | `tracing` · OpenTelemetry OTLP · `metrics` + Prometheus |
-
-Every version is pinned: the manifest (`[workspace.dependencies]`) is authoritative,
-with the platform/spec matrix in [`docs/VERSIONS.md`](docs/VERSIONS.md).
+| Language | Rust 1.96, edition 2024 |
+| Database | PostgreSQL 18 — `uuidv7()`, temporal `WITHOUT OVERLAPS` keys, `JSON_TABLE`, `RETURNING OLD/NEW` |
+| HTTP | `axum` · `tower-http` · `tokio` |
+| Persistence | `sqlx` + `sea-query` |
+| Auth | `oauth2` · `openidconnect` · `jsonwebtoken` · `argon2` |
+| Telemetry | `tracing` · OpenTelemetry · Prometheus |
 
 ## Building from source
 
-Prerequisites: the pinned Rust toolchain (installed automatically by `rustup` from
-[`rust-toolchain.toml`](rust-toolchain.toml)), Docker (for the PostgreSQL 18
-integration tests via testcontainers), and `xmllint` (`libxml2-utils`) for the
-canonical-XML parity tests.
+Requires the pinned toolchain (installed automatically by `rustup`), Docker for
+the PostgreSQL integration tests, and `xmllint` for the canonical-XML tests.
 
 ```shell
-cargo build --workspace                # build everything
-cargo nextest run --workspace          # unit + integration tests
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo fmt --all --check
-
-# Regenerate the openEHR spec + ITS layer from the vendored specifications:
-cargo run -p openehr-codegen -- emit        # spec crates from BMM
-cargo run -p openehr-codegen -- emit-xml    # canonical-XML impls
-cargo run -p openehr-codegen -- emit-rest   # ITS-REST contract
+cargo build --workspace
+cargo nextest run --workspace
 ```
+
+Every commit passes the full gate: 600+ tests against real PostgreSQL 18,
+`clippy -D warnings`, rustfmt, supply-chain policy (`cargo deny`, `cargo audit`),
+unused-dependency checks, spec-codegen drift, and a container smoke test.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete developer workflow.
+
+## Status
+
+The core CDR is functional today: the REST API, versioned storage, templates,
+validation, simplified formats, the AQL engine, authentication, auditing, and
+the container images all work and are covered by the test suite. Before a first
+stable release the project will complete EhrScape compatibility, certification
+against the official openEHR conformance test suite, and a performance pass.
+Detailed progress lives in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ## Documentation
 
-| Where | What |
+| | |
 |---|---|
-| [`docs/architecture.md`](docs/architecture.md) | the system design |
-| [`docs/plans/`](docs/plans/) · [`docs/PROGRESS.md`](docs/PROGRESS.md) | the roadmap and phase history |
-| [`docs/ADRs/`](docs/ADRs/) | decision records — start with [ADR-008](docs/ADRs/ADR-008-greenfield-pg18-storage.md) (storage + conformance pivot) and [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md)/[005](docs/ADRs/ADR-005-its-codegen.md) (spec codegen) |
-| [`docs/design/`](docs/design/) | subsystem designs: [AQL engine](docs/design/aql-engine.md) · [observability](docs/design/observability.md) · [container images](docs/design/container-images.md) |
-| [`docs/enterprise/`](docs/enterprise/) | enterprise capabilities: [ATNA audit](docs/enterprise/atna-audit.md) · [access control](docs/enterprise/access-control.md) |
-| [`docs/specs/openehr/`](docs/specs/openehr/) | the vendored openEHR specification text + CNF conformance schedule (the oracle) |
+| [`docs/architecture.md`](docs/architecture.md) | system design |
+| [`docs/ADRs/`](docs/ADRs/) | architecture decision records |
+| [`docs/design/`](docs/design/) | subsystem designs — AQL engine, observability, container images |
+| [`docs/enterprise/`](docs/enterprise/) | ATNA audit trail, access control |
+| [`docs/specs/openehr/`](docs/specs/openehr/) | the vendored openEHR specifications (the conformance oracle) |
 
-For openEHR itself, see the [openEHR specifications](https://specifications.openehr.org/)
-and the upstream [EHRbase documentation](https://docs.ehrbase.org).
+For the openEHR standard itself, see the
+[openEHR specifications](https://specifications.openehr.org/); for the upstream
+Java implementation, the [EHRbase documentation](https://docs.ehrbase.org).
 
-## Relationship to upstream EHRbase
+## Contributing and security
 
-This project began as an EHRbase fork (imported at v2.33.0) and keeps that history
-in git. Since [ADR-008](docs/ADRs/ADR-008-greenfield-pg18-storage.md) its internals
-are greenfield designs and its compatibility target is the **openEHR specifications**
-— verified by the official CNF conformance framework — rather than EHRbase parity.
-It pins the *latest* published spec versions (RM 1.2.0, BASE 1.3.0, TERM 3.1.0,
-AM 1.4.0 + 2.4.0). EHRbase remains valued prior art. This project is not affiliated
-with or endorsed by the upstream EHRbase project or vitagroup.
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md). Please report suspected vulnerabilities
+privately per the [security policy](SECURITY.md), not in public issues.
 
-## Contributing
+## Acknowledgments and license
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
-Every pull request must pass the full CI gate (build, tests, clippy, rustfmt,
-supply-chain checks, codegen drift).
+EHRbase-rs began as a fork of **EHRbase**, developed by
+[vitasystems GmbH](https://www.vitagroup.ag/) and the
+[Peter L. Reichertz Institute](https://www.plri.de/), and keeps that lineage in
+its git history; it is not affiliated with or endorsed by the upstream project.
+The openEHR specifications and the machine-readable models this project
+generates from are published by the
+[openEHR Foundation](https://www.openehr.org/).
 
-## Acknowledgments
-
-This project is a fork of, and owes its architecture to, **EHRbase**, jointly
-developed by [vitasystems GmbH](https://www.vitagroup.ag/) and the
-[Peter L. Reichertz Institute (PLRI)](https://www.plri.de/). Upstream EHRbase in
-turn contains code derived from EtherCIS and relies on the openEHR Reference Model
-implementation [Archie](https://github.com/openEHR/archie) by Nedap. The openEHR
-specifications and the machine-readable BMM meta-model this project generates from
-are published by the [openEHR Foundation](https://www.openehr.org/).
-
-## License
-
-EHRbase-rs is licensed under the [Apache License, Version 2.0](LICENSE), the same
-license as upstream EHRbase.
+Licensed under the [Apache License 2.0](LICENSE), the same license as upstream
+EHRbase.

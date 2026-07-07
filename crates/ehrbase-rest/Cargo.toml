@@ -17,6 +17,8 @@ openehr-its = { path = "../openehr-its" }
 openehr-flat = { path = "../openehr-flat" }
 # IHE ATNA audit trail (DICOM AuditMessage over syslog) — the audit tower layer.
 ehrbase-audit = { path = "../ehrbase-audit" }
+# Access control (RBAC): operation classification + role model + gate decision.
+ehrbase-authz = { path = "../ehrbase-authz" }
 
 # Web framework & HTTP core.
 axum = { workspace = true }

@@ -15,7 +15,7 @@ use jiff::Timestamp;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use ehrbase_rest::AqlQueryRequest;
+use ehrbase_rest::{AqlQueryRequest, QueryOutcome};
 use openehr_its::rest::runtime::ApiError;
 use openehr_query::parser::parse_str;
 
@@ -40,7 +40,7 @@ impl EhrbaseService {
         aql: &str,
         name: Option<&str>,
         request: &AqlQueryRequest,
-    ) -> Result<Value, ApiError> {
+    ) -> Result<QueryOutcome, ApiError> {
         let plan_start = Instant::now();
         let ast = match parse_str(aql) {
             Ok(ast) => ast,
@@ -76,6 +76,7 @@ impl EhrbaseService {
         let ctx = SqlCtx {
             system_id: self.system_id.clone(),
             ehr_id,
+            subject_scope: request.subject_scope.clone(),
             limit,
             offset,
         };
@@ -89,8 +90,24 @@ impl EhrbaseService {
             }
         };
         record_phase("execute", exec_start);
+
+        let mut outcome = QueryOutcome::plain(result_set_json(aql, name, &result));
+        // ABAC query post-check attributes (§6.4): collect the touched EHR/template
+        // sets independently of the projection, when the PEP asked for them.
+        if request.collect_attributes {
+            match aql::exec::collect_scope(&self.pool, &ir, &params, &ctx).await {
+                Ok(scope) => {
+                    outcome.ehr_ids = scope.ehr_ids;
+                    outcome.template_ids = scope.template_ids;
+                }
+                Err(e) => {
+                    count_query(exec_outcome(&e));
+                    return Err(map_exec_error(e));
+                }
+            }
+        }
         count_query("ok");
-        Ok(result_set_json(aql, name, &result))
+        Ok(outcome)
     }
 }
 
