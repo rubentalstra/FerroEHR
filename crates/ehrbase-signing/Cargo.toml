@@ -1,0 +1,36 @@
+[package]
+name = "ehrbase-signing"
+version = "0.1.0"
+description = "openEHR VERSION.signature signing/verification (SHA-256 digest + OpenPGP RFC 4880) for the ehrbase-rs CDR"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+# OpenPGP (RFC 4880) detached signatures — rPGP, pure Rust (no OpenSSL/C).
+pgp = { workspace = true }
+# PORT NOTE: rPGP 0.20's public signing API (`DetachedSignature::sign_binary_data`)
+# takes an `rng: Rng + CryptoRng` from rand 0.8's rand_core 0.6; the workspace
+# `rand` pin (0.10) is a trait-incompatible major, so this crate pins the rand
+# version pgp itself requires purely to name `OsRng` for that one call.
+rand = "0.8"
+# Digest mode (SHA-256) + radix-64.
+sha2 = { workspace = true }
+base64 = { workspace = true }
+# Config (figment, EHRBASE_SIGNING_*) + serde; passphrase kept in secrecy.
+serde = { workspace = true }
+figment = { workspace = true }
+secrecy = { workspace = true, features = ["serde"] }
+# Errors, tracing, metrics.
+thiserror = { workspace = true }
+tracing = { workspace = true }
+metrics = { workspace = true }
+
+[dev-dependencies]
+figment = { workspace = true, features = ["test"] }
+
+[lints]
+workspace = true
