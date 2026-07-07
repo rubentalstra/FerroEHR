@@ -15,7 +15,6 @@ serde_json.workspace = true
 quick-xml.workspace = true
 thiserror.workspace = true
 jsonschema.workspace = true
-base64.workspace = true
 uuid.workspace = true
 # The generated `opt14` model keeps `StringDictionaryItem` groups in
 # document order (XSD ordered sequence; F-09-05) — order-preserving map.

@@ -13,14 +13,12 @@ publish = false
 openehr-rm = { path = "../openehr-rm" }
 openehr-its = { path = "../openehr-its" }
 openehr-am = { path = "../openehr-am" }
-openehr-base = { path = "../openehr-base" }
 openehr-term = { path = "../openehr-term" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 indexmap = { workspace = true }
 moka = { workspace = true }
 thiserror = { workspace = true }
-jiff = { workspace = true }
 regex = { workspace = true }
 
 [dev-dependencies]
@@ -34,6 +32,5 @@ ehrbase-quirks = []
 workspace = true
 
 [package.metadata.cargo-machete]
-# `openehr-am`/`openehr-term` are wired for the (later) FLAT/terminology paths; the
-# WebTemplate builder (this PR) resolves labels from the archetype rubrics like Better does.
-ignored = ["openehr-am", "openehr-term"]
+# `openehr-am` is wired for the (later) FLAT/ADL2 paths; not consumed yet.
+ignored = ["openehr-am"]

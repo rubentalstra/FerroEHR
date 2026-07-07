@@ -92,14 +92,11 @@ F9DV18ILppscP5wy0SP20/U=
 ";
 
 fn server_config() -> Arc<rustls::ServerConfig> {
-    let mut cert_reader = std::io::BufReader::new(TEST_LEAF_PEM);
-    let certs: Vec<_> = rustls_pemfile::certs(&mut cert_reader)
+    use rustls::pki_types::pem::PemObject;
+    let certs: Vec<_> = rustls::pki_types::CertificateDer::pem_slice_iter(TEST_LEAF_PEM)
         .collect::<Result<_, _>>()
         .expect("certs");
-    let mut key_reader = std::io::BufReader::new(TEST_LEAF_KEY_PEM);
-    let key = rustls_pemfile::private_key(&mut key_reader)
-        .expect("key parse")
-        .expect("key present");
+    let key = rustls::pki_types::PrivateKeyDer::from_pem_slice(TEST_LEAF_KEY_PEM).expect("key");
 
     let provider = Arc::new(rustls::crypto::aws_lc_rs::default_provider());
     let config = rustls::ServerConfig::builder_with_provider(provider)
