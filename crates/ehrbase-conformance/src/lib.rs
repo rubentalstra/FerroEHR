@@ -13,5 +13,7 @@
 //! until triaged; nothing is ever silently uncovered.
 
 pub mod case;
+pub mod harness;
 pub mod registry;
 pub mod schedule;
+pub mod suites;
