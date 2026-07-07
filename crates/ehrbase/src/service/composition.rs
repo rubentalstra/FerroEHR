@@ -189,6 +189,31 @@ impl EhrbaseService {
         )))
     }
 
+    /// The OPT `template_id` a COMPOSITION version was committed against, read
+    /// back from `vo_version.template_id` (`docs/enterprise/access-control.md`
+    /// §6.2) — the ABAC template attribute for the `composition_delete`
+    /// pre-check (the template of the preceding, still-current version) and any
+    /// resolver over a specific version. `version` = `None` reads the current
+    /// version. `Ok(None)` when the object is unknown or carries no template.
+    ///
+    /// PERF(port): this goes through the full version read-back (node
+    /// reassembly) for spec fidelity; a direct `SELECT template_id FROM
+    /// vo_version` is a cheaper equivalent if this ever shows on a hot path.
+    ///
+    /// # Errors
+    /// [`ServiceError`] if the version read-back query fails.
+    pub async fn template_of_version(
+        &self,
+        vo_id: Uuid,
+        version: Option<i32>,
+    ) -> Result<Option<String>, ServiceError> {
+        let read = match version {
+            Some(v) => vobject::read_version(&self.pool, vo_id, v).await?,
+            None => vobject::read_current(&self.pool, vo_id).await?,
+        };
+        Ok(read.and_then(|r| r.template_id))
+    }
+
     /// Logically delete a COMPOSITION (a new `523|deleted|` version).
     ///
     /// `expected` is the version tree id carried by the mandatory

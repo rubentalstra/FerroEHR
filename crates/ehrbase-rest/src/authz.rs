@@ -4,11 +4,75 @@
 //! gate, built by the binary from [`ehrbase_authz::AuthzConfig`].
 
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
 
+use ehrbase_authz::cedar::CedarEngine;
+use ehrbase_authz::remote::RemotePdp;
 use ehrbase_authz::{
-    AuthzConfig, OperationClass, RbacConfig, RbacDecision, authorize, class_of, roles,
+    AbacConfig, AbacEngineKind, AuthzConfig, AuthzError, OperationClass, PolicyEngine, RbacConfig,
+    RbacDecision, authorize, class_of, roles,
 };
 use http::Method;
+
+/// An attribute-resolution failure (a DB lookup error). Fail-closed at the PEP
+/// (§5.7): a resolution failure denies (→ 403/500), never silently permits.
+#[derive(Debug, thiserror::Error)]
+#[error("attribute resolution failed: {0}")]
+pub struct ResolveError(pub String);
+
+/// The future a resolver closure returns.
+pub type ResolverFuture<T> = Pin<Box<dyn Future<Output = Result<T, ResolveError>> + Send>>;
+
+/// `ehr_id → EHR subject external-ref id` (the promoted `ehr.subject_id`
+/// column; the audit `SubjectResolver` query). Ids are passed as strings so the
+/// REST layer stays `uuid`-free (the binary parses).
+pub type SubjectFn = Arc<dyn Fn(String) -> ResolverFuture<Option<String>> + Send + Sync>;
+
+/// `(vo_id, version) → template_id` (`vo_version.template_id`, read back via
+/// [`crate::backend`] in the binary). `version = None` = the current version.
+pub type TemplateOfVersionFn =
+    Arc<dyn Fn(String, Option<i32>) -> ResolverFuture<Option<String>> + Send + Sync>;
+
+/// The DB-backed attribute resolvers the ABAC PEP calls (§6). Defined here so
+/// the REST layer can hold them; the closures are built in the binary (which
+/// owns the pool + service), the audit-`SubjectResolver` precedent.
+#[derive(Clone)]
+pub struct AuthzResolvers {
+    /// EHR subject external-ref id lookup.
+    pub subject: SubjectFn,
+    /// COMPOSITION version → template id lookup.
+    pub template_of_version: TemplateOfVersionFn,
+}
+
+impl std::fmt::Debug for AuthzResolvers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AuthzResolvers").finish_non_exhaustive()
+    }
+}
+
+/// Build the configured ABAC [`PolicyEngine`] (§5.5/§5.6), or `None` when ABAC
+/// is disabled. Called by the binary at boot after [`AuthzConfig::validate`].
+///
+/// # Errors
+/// [`AuthzError`] if the Cedar schema/policies fail to load/validate, or the
+/// remote-PDP client cannot be built.
+pub fn build_engine(config: &AbacConfig) -> Result<Option<Arc<dyn PolicyEngine>>, AuthzError> {
+    if !config.enabled {
+        return Ok(None);
+    }
+    let engine: Arc<dyn PolicyEngine> = match config.engine {
+        AbacEngineKind::Cedar => {
+            let dir = config.cedar.policy_dir.as_deref().ok_or_else(|| {
+                AuthzError::PolicyLoad("abac.cedar.policy_dir is not set".to_owned())
+            })?;
+            Arc::new(CedarEngine::new(dir, config.cedar.reload_secs)?)
+        }
+        AbacEngineKind::Remote => Arc::new(RemotePdp::new(config)?),
+    };
+    Ok(Some(engine))
+}
 
 /// The per-server authorization handle. `None` on [`AppState`](crate::AppState)
 /// means authorization is off (authentication-only behaviour).
@@ -182,5 +246,37 @@ mod tests {
         cfg.rbac.enabled = false;
         assert!(AuthzHandle::from_config(&cfg, BASE).is_none());
         assert!(AuthzHandle::from_config(&AuthzConfig::default(), BASE).is_some());
+    }
+
+    #[test]
+    fn build_engine_none_when_abac_disabled() {
+        // ABAC off (the default) → no engine, current behaviour preserved.
+        let engine = build_engine(&AbacConfig::default()).expect("build");
+        assert!(engine.is_none());
+    }
+
+    #[tokio::test]
+    async fn resolvers_invoke_their_closures() {
+        // The AuthzResolvers type carries async DB closures; exercise the shape
+        // with in-memory stand-ins (the binary supplies pool-backed ones).
+        let resolvers = AuthzResolvers {
+            subject: Arc::new(|ehr_id: String| {
+                Box::pin(async move { Ok((ehr_id == "known").then(|| "subject-1".to_owned())) })
+            }),
+            template_of_version: Arc::new(|_vo: String, version: Option<i32>| {
+                Box::pin(async move { Ok(version.map(|v| format!("t.v{v}"))) })
+            }),
+        };
+        assert_eq!(
+            (resolvers.subject)("known".to_owned()).await.unwrap(),
+            Some("subject-1".to_owned())
+        );
+        assert_eq!((resolvers.subject)("other".to_owned()).await.unwrap(), None);
+        assert_eq!(
+            (resolvers.template_of_version)("vo".to_owned(), Some(3))
+                .await
+                .unwrap(),
+            Some("t.v3".to_owned())
+        );
     }
 }

@@ -32,7 +32,7 @@ mod state;
 mod status;
 
 pub use auth::{AuthMethod, Authenticator, Principal};
-pub use authz::AuthzHandle;
+pub use authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
 pub use backend::{
     AqlQueryRequest, Backend, EhrService, QueryService, StubBackend, WebTemplateService,
 };

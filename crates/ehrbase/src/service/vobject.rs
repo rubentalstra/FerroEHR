@@ -98,6 +98,11 @@ pub(super) struct VersionRead {
     pub(super) audit: AuditInput,
     /// When the version was committed (its audit `time_committed`).
     pub(super) time_committed: jiff::Timestamp,
+    /// The stored `vo_version.template_id` (the OPT id a COMPOSITION was
+    /// committed against), read back for the ABAC template attribute
+    /// (`docs/enterprise/access-control.md` §6.2). `None` for versioned objects
+    /// that carry no template (`EHR_STATUS`, FOLDER) or a delete.
+    pub(super) template_id: Option<String>,
     /// The reassembled canonical JSON, or `Value::Null` for a deleted version
     /// (a logical delete stores no node rows — RM `change_control` §"Logical
     /// Deletion").
@@ -142,6 +147,7 @@ async fn version_read(
         time_committed: row
             .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
             .to_jiff(),
+        template_id: row.try_get("template_id")?,
         canonical,
     })
 }
@@ -596,7 +602,7 @@ pub(super) async fn read_current(
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.template_id, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND upper_inf(v.sys_period)",
@@ -617,7 +623,7 @@ pub(super) async fn read_version(
     sys_version: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.template_id, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND v.sys_version = $2",
@@ -641,7 +647,7 @@ pub(super) async fn version_at(
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.template_id, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz",

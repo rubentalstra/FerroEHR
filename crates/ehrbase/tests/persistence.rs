@@ -279,6 +279,56 @@ async fn node_codec_round_trips_through_the_database() {
     assert_eq!(contains, expected);
 }
 
+/// §6.2: the stored `vo_version.template_id` is read back through the version
+/// read-back and surfaced by `EhrbaseService::template_of_version` (the ABAC
+/// template attribute).
+#[tokio::test]
+async fn template_id_is_read_back_from_vo_version() {
+    use ehrbase::service::EhrbaseService;
+
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("authz_template_db").await;
+    let (vo, ehr_id) = seed_version(&pool).await;
+    // Production sets this on commit (service/vobject.rs); set it directly here.
+    sqlx::query("UPDATE vo_version SET template_id = $2 WHERE vo_id = $1")
+        .bind(vo)
+        .bind("org.openehr::vital_signs.v1")
+        .execute(&pool)
+        .await
+        .expect("set template_id");
+    // Nodes so the read-back can reassemble the current version.
+    let rows = decompose(corpus_sample()).expect("decompose");
+    insert_nodes(&pool, vo, 1, ehr_id, &rows).await;
+
+    let service = EhrbaseService::new(pool);
+    // Current version.
+    assert_eq!(
+        service
+            .template_of_version(vo, None)
+            .await
+            .expect("read template")
+            .as_deref(),
+        Some("org.openehr::vital_signs.v1")
+    );
+    // Explicit version 1.
+    assert_eq!(
+        service
+            .template_of_version(vo, Some(1))
+            .await
+            .expect("read template v1")
+            .as_deref(),
+        Some("org.openehr::vital_signs.v1")
+    );
+    // Unknown object → None (not an error).
+    assert_eq!(
+        service
+            .template_of_version(Uuid::now_v7(), None)
+            .await
+            .expect("unknown ok"),
+        None
+    );
+}
+
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 /// Creates ehr + audit + contribution + an open v1 `vo_version`; returns
