@@ -1,0 +1,18 @@
+[package]
+name = "ehrbase-conformance"
+version = "0.1.0"
+description = "openEHR CNF Platform Conformance Test Schedule runner (the ADR-008 acceptance instrument)"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true
