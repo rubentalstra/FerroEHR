@@ -148,6 +148,41 @@ pub fn remove_field(node: &mut Value, field: &str) {
     }
 }
 
+/// Set the value at an RFC-6901 JSON Pointer (`/content/0/…/value/units`),
+/// returning whether the slot resolved. Points a constraint-violating value at
+/// exactly the leaf an OPT constrains (design §2.2a: fixture-cited mutation of a
+/// vendored composition, not a hand-built one).
+pub fn set_pointer(root: &mut Value, pointer: &str, val: Value) -> bool {
+    match root.pointer_mut(pointer) {
+        Some(slot) => {
+            *slot = val;
+            true
+        }
+        None => false,
+    }
+}
+
+/// Remove the leaf a JSON Pointer addresses (its parent's last segment),
+/// returning whether it was present. `~1`/`~0` escapes are decoded per RFC 6901.
+pub fn remove_pointer(root: &mut Value, pointer: &str) -> bool {
+    let Some(idx) = pointer.rfind('/') else {
+        return false;
+    };
+    let parent = &pointer[..idx];
+    let key = pointer[idx + 1..].replace("~1", "/").replace("~0", "~");
+    match root.pointer_mut(parent) {
+        Some(Value::Object(map)) => map.remove(&key).is_some(),
+        Some(Value::Array(items)) => match key.parse::<usize>() {
+            Ok(i) if i < items.len() => {
+                items.remove(i);
+                true
+            }
+            _ => false,
+        },
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

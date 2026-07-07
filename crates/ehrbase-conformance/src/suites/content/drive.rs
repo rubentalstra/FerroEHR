@@ -71,6 +71,79 @@ fn codec(e: fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
+// ── constraint-OPT driving (the full constraint-carrying corpus) ──────────────
+
+/// A committable COMPOSITION from the vendored corpus, plus the OPT that
+/// constrains it. Content-chapter constraint cases upload the OPT, commit the
+/// unmutated composition (accepted), then commit a copy with the constrained
+/// leaf violated (rejected) — the `master15/16/17.x` truth-table oracle
+/// (design §4.5). `opt` is `valid_templates/`-relative (matching
+/// [`support::ensure_opt`]); `comp` is a corpus-root-relative bare
+/// canonical-JSON COMPOSITION fixture (a `.contribution.json` wrapper is not
+/// usable directly — its embedded COMPOSITION omits `archetype_details` on its
+/// content ENTRYs and fails the `Is_archetypeRoot` RM invariant as a bare commit).
+pub struct Constraint {
+    /// OPT path relative to `valid_templates/` (e.g. `all_types/Test_all_types.opt`).
+    pub opt: &'static str,
+    /// Bare canonical-JSON COMPOSITION fixture path (corpus-root-relative).
+    pub comp: &'static str,
+}
+
+/// Provision `opt_rel` (idempotent), create a fresh EHR, and commit `comp`.
+async fn commit_opt(
+    ctx: &RunContext<'_>,
+    opt_rel: &str,
+    comp: &Value,
+) -> Result<HttpResponse, CaseError> {
+    support::ensure_opt(ctx, opt_rel).await?;
+    let ehr_id = support::create_ehr(ctx).await?;
+    ctx.send(
+        HttpRequest::post(format!("/ehr/{ehr_id}/composition"))
+            .json_body(comp)?
+            .header("accept", "application/json"),
+    )
+    .await
+}
+
+/// One constraint-violating data set: a row label, a mutation to apply to a clone
+/// of the valid composition, and the expected (rejected) outcome.
+pub type Violation = (String, Box<dyn FnOnce(&mut Value) + Send>, Expected);
+
+/// Drive a constraint case: row 0 is the unmutated composition (accepted), the
+/// remaining rows are [`Violation`]s. Each row commits a fresh clone to a fresh
+/// EHR against the constraint OPT. Any wrong outcome fails the whole case (a
+/// finding, design §4.5), naming the first diverging row.
+pub async fn drive_constraint(
+    ctx: &RunContext<'_>,
+    constraint: &Constraint,
+    accepted_label: &str,
+    violations: Vec<Violation>,
+) -> Result<DataSetReport, CaseError> {
+    let base = fixtures::read_json(constraint.comp).map_err(codec)?;
+    let mut rows: Vec<(String, Value, Expected)> =
+        vec![(accepted_label.to_owned(), base.clone(), Expected::Accepted)];
+    for (label, mutate_fn, expected) in violations {
+        let mut comp = base.clone();
+        mutate_fn(&mut comp);
+        rows.push((label, comp, expected));
+    }
+    let total = u32::try_from(rows.len()).unwrap_or(u32::MAX);
+    let mut passed = 0u32;
+    let mut first_failure: Option<CaseError> = None;
+    for (label, comp, expected) in rows {
+        let resp = commit_opt(ctx, constraint.opt, &comp).await?;
+        match check(&resp, expected, &label) {
+            Ok(()) => passed += 1,
+            Err(e) if first_failure.is_none() => first_failure = Some(e),
+            Err(_) => {}
+        }
+    }
+    if let Some(e) = first_failure {
+        return Err(e);
+    }
+    Ok(DataSetReport { passed, total })
+}
+
 /// The expected outcome of committing a data instance (design §4.5): the schedule
 /// truth-table `expected` column, concretized to the ITS-REST validation contract.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
