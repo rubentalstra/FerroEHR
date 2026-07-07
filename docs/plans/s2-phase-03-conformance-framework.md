@@ -41,8 +41,11 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
 - [x] 2. SUT client + modes (External / SelfHosted) + CLI + `scripts/conformance.sh`;
       prove both modes with one hand-picked case
       (`I_EHR_SERVICE.create_ehr-main`) end-to-end incl. RESULTS.md / badge.
-- [ ] 3. master06 (EHR + EHR_STATUS, 21 cases) — the CORE heart; then master07
-      (COMPOSITION, 31) with both formats.
+- [~] 3. master06 (EHR + EHR_STATUS, **21/21 done**, fixture-driven, green e2e);
+      master07 (COMPOSITION, 31) still to do. Also landed: `fixtures.rs` — typed
+      read-only access to the ENTIRE vendored `test_data_sets` corpus (valid +
+      invalid, every category) + the RM-1.2.0 `EHR_STATUS` overlay (§6), corpus
+      pinned by a guard test.
 - [ ] 4. master04/05 (DEFINITION, 22) and master08 (CONTRIBUTION, 31).
 - [ ] 5. master09 (DIRECTORY, 37) — completes the CORE + directory surface.
 - [ ] 6. Query: master11's real cases + the `QUERY-FIXTURE-*` corpus with
@@ -75,6 +78,20 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
 - No `I_DEFINITION_ADL2` ids exist in the current vendored schedule, so the
   `Adl2Returns501` exclusion rule matches zero cases today (kept for a future
   re-vendor).
+- The fixture-derived negative case
+  `FIXTURE-I_EHR_SERVICE.create_ehr-invalid_status` is a **FixtureDerived**
+  case (outside the 322 schedule inventory by design §3.4); the coverage guard
+  therefore only requires `Schedule`-provenance registry ids ⊆ inventory.
+
+## Findings (design §4.5 — failures are findings, never exclusions)
+
+- **F-open-1 (create_ehr, invalid `EHR_STATUS`):** of the 11 vendored
+  `ehr/invalid` data sets, only 2 are rejected by the SUT — 9 invalid
+  `EHR_STATUS` payloads (e.g. missing `_type`, missing/empty subject id or
+  namespace, missing `is_modifiable`/`is_queryable`) are accepted with `201`.
+  CNF master06 §Test Data Sets (INVALID class 2) requires rejection. Needs an
+  `F-AA-NN` write-up + fix in EHR create validation before the CORE claim can
+  be made. Surfaced by the runner, not fabricated.
 
 ## Handoff for next session
 
