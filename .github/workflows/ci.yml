@@ -101,6 +101,24 @@ jobs:
       - name: Regenerate and diff
         run: bash scripts/check-codegen-drift.sh
 
+  # ── CNF conformance: the enforced-coverage guard (fast, no DB) ───────────────
+  # Parses the vendored openEHR Platform Conformance Test Schedule and asserts
+  # every one of the 322 identified cases is classified (implemented or excluded
+  # with a structural reason) against the committed inventory snapshot — an
+  # upstream/vendoring change fails the build until triaged. The self-hosted
+  # conformance e2e (testcontainers PG18) runs in the `test` job via
+  # --all-features; this job is the fast always-on coverage signal.
+  conformance:
+    name: cnf coverage guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - run: cargo nextest run -p ehrbase-conformance
+
   # ── Build + tests against PostgreSQL 18.4 ────────────────────────────────────
   test:
     name: build & test (pg18)
