@@ -105,7 +105,11 @@ async fn upload_invalid_set(ctx: &RunContext<'_>) -> Result<DataSetReport, CaseE
     let opts = fixtures::opts_invalid().map_err(|e| CaseError::Codec(e.to_string()))?;
     let opts: Vec<_> = opts
         .into_iter()
-        .filter(|f| f.name.ends_with(".opt"))
+        .filter(|f| {
+            std::path::Path::new(&f.name)
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("opt"))
+        })
         .collect();
     let mut passed = 0u32;
     let mut total = 0u32;

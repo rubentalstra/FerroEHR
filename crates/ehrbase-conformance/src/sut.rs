@@ -82,9 +82,10 @@ impl Sut {
 enum KeepAlive {
     External,
     // Held only to run its `Drop` (stops the server task + testcontainer);
-    // never read, by design.
+    // never read, by design. Boxed so the enum isn't sized by the (large)
+    // self-host state in every build.
     #[cfg(feature = "self-host")]
-    SelfHosted(#[allow(dead_code)] self_host::SelfHostState),
+    SelfHosted(#[allow(dead_code)] Box<self_host::SelfHostState>),
 }
 
 #[cfg(feature = "self-host")]
@@ -149,7 +150,7 @@ mod self_host {
             .await
             .map_err(|e| SutError::Boot(format!("migrate: {e}")))?;
 
-        let config = rest_config();
+        let config = rest_config()?;
         let base_path = config.base_path.clone();
         let backend: Arc<dyn Backend> = Arc::new(EhrbaseService::new(pool));
         let router = ehrbase_rest::build_with(config, backend)
@@ -186,16 +187,16 @@ mod self_host {
         let client = SutClient::new(base_url, Some(cred.clone()), Some(cred))?;
         Ok(Sut {
             client,
-            _keep_alive: KeepAlive::SelfHosted(SelfHostState {
+            _keep_alive: KeepAlive::SelfHosted(Box::new(SelfHostState {
                 _container: container,
                 server,
-            }),
+            })),
         })
     }
 
     /// The self-hosted REST config: the ITS-REST base path with the dev Basic
     /// user configured (built via serde to avoid importing the auth types).
-    fn rest_config() -> RestConfig {
+    fn rest_config() -> Result<RestConfig, SutError> {
         serde_json::from_value(serde_json::json!({
             "bind": "127.0.0.1:0",
             "base_path": "/ehrbase/rest/openehr/v1",
@@ -213,7 +214,7 @@ mod self_host {
                 }
             }
         }))
-        .expect("static self-host RestConfig is valid")
+        .map_err(|e| SutError::Boot(format!("static self-host RestConfig invalid: {e}")))
     }
 
     /// Poll `status_url` until it answers 2xx (the app is up) or we give up.

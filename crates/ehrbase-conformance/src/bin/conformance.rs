@@ -132,6 +132,9 @@ async fn main() {
 
 /// Build the SUT (external or self-hosted). Returns an auth-mode label for the
 /// statement alongside the SUT.
+// `async` is load-bearing under `--features self-host` (awaits container boot);
+// without the feature the body has no await, which is expected.
+#[cfg_attr(not(feature = "self-host"), allow(clippy::unused_async))]
 async fn build_sut(args: &RunArgs) -> Result<(Sut, String), String> {
     if args.self_host {
         #[cfg(feature = "self-host")]
