@@ -26,53 +26,34 @@ jobs:
           #   manifest-file: .release-please-manifest.json
 
   # Build the server binary and attach it when a GitHub Release is published.
+  # Native runner per arch (no cross toolchain, no QEMU) — same strategy as
+  # .github/workflows/containers.yml, which handles the GHCR images on tags.
   build-binaries:
     if: github.event_name == 'release'
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - runner: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
+          - runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          target: ${{ matrix.target }}
-      - name: Install cross linker (aarch64)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
       - name: Build server
-        run: cargo build --release --target ${{ matrix.target }} -p openehr-server
+        run: cargo build --release --locked -p ehrbase
       - name: Package
         shell: bash
+        env:
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          bin="openehr-server"
-          out="${bin}-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz"
-          tar -C "target/${{ matrix.target }}/release" -czf "$out" "$bin"
+          out="ehrbase-${TAG}-${{ matrix.target }}.tar.gz"
+          strip target/release/ehrbase
+          tar -C target/release -czf "$out" ehrbase
           echo "ASSET=$out" >> "$GITHUB_ENV"
       - name: Upload to release
         uses: softprops/action-gh-release@v3
         with:
           files: ${{ env.ASSET }}
-
-  # OPTIONAL: container image to GHCR (needs a Dockerfile at repo root).
-  # Uncomment when a Dockerfile exists.
-  # container:
-  #   if: github.event_name == 'release'
-  #   runs-on: ubuntu-latest
-  #   permissions: { contents: read, packages: write }
-  #   steps:
-  #     - uses: actions/checkout@v7
-  #     - uses: docker/login-action@v4
-  #       with: { registry: ghcr.io, username: ${{ github.actor }}, password: ${{ secrets.GITHUB_TOKEN }} }
-  #     - uses: docker/build-push-action@v7
-  #       with:
-  #         push: true
-  #         tags: ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }},ghcr.io/${{ github.repository }}:latest

@@ -13,8 +13,8 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  # Flip repository variable PORT_STRICT to "true" at Phase P17 (make-it-compile)
-  # to make the compile/clippy/test jobs REQUIRED. Until then they are advisory.
+  # ADR-006 retired the "phases need not compile" gate: every job here is
+  # REQUIRED. (The historical PORT_STRICT advisory switch is gone.)
 
 jobs:
   # ── Always required: formatting ──────────────────────────────────────────────
@@ -76,15 +76,12 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-audit
-      # Cargo.lock is not committed (see .gitignore); audit needs one to scan.
-      - run: cargo generate-lockfile
+      # Cargo.lock IS committed (workspace ships a binary); audit the real pins.
       - run: cargo audit
 
-  # ── Advisory until P17: clippy ──────────────────────────────────────────────
   clippy:
     name: clippy
     runs-on: ubuntu-latest
-    continue-on-error: ${{ vars.PORT_STRICT != 'true' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -96,7 +93,6 @@ jobs:
   codegen-drift:
     name: codegen drift
     runs-on: ubuntu-latest
-    continue-on-error: ${{ vars.PORT_STRICT != 'true' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -105,11 +101,10 @@ jobs:
       - name: Regenerate and diff
         run: bash scripts/check-codegen-drift.sh
 
-  # ── Advisory until P17: build + tests against PostgreSQL 18.4 ────────────────
+  # ── Build + tests against PostgreSQL 18.4 ────────────────────────────────────
   test:
     name: build & test (pg18)
     runs-on: ubuntu-latest
-    continue-on-error: ${{ vars.PORT_STRICT != 'true' }}
     services:
       postgres:
         image: postgres:18.4
@@ -128,8 +123,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Enable required extensions
+        # libxml2-utils provides xmllint — the C14N XML parity gate shells out
+        # to it (serialization.md); the runner image does not ship it.
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
+          sudo apt-get update && sudo apt-get install -y postgresql-client libxml2-utils
           PGPASSWORD=openehr psql -h localhost -U openehr -d openehr_test \
             -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS pg_trgm;'
       - uses: taiki-e/install-action@v2
@@ -140,11 +137,9 @@ jobs:
       - run: cargo nextest run --workspace --all-features --no-tests=pass
       - run: cargo test --workspace --doc
 
-  # ── Advisory until P17: coverage ────────────────────────────────────────────
   coverage:
     name: coverage
     runs-on: ubuntu-latest
-    continue-on-error: ${{ vars.PORT_STRICT != 'true' }}
     services:
       postgres:
         image: postgres:18.4
@@ -160,6 +155,8 @@ jobs:
       DATABASE_URL: postgres://openehr:openehr@localhost:5432/openehr_test
     steps:
       - uses: actions/checkout@v7
+      - name: Install xmllint (C14N parity gate)
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: llvm-tools-preview
@@ -172,11 +169,10 @@ jobs:
           name: coverage-lcov
           path: lcov.info
 
-  # ── Advisory: unused dependencies ───────────────────────────────────────────
+  # ── Unused dependencies ──────────────────────────────────────────────────────
   unused-deps:
     name: cargo-machete
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
       - uses: taiki-e/install-action@v2
