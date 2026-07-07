@@ -81,11 +81,12 @@ emulation is 10–20× slower than native, and the original pipeline did exactly
 that (twice: cargo-chef cook + build), then rebuilt the image a third time in
 the smoke job. The rewrite:
 
-1. **`binary (amd64|arm64)`** — matrix over native runners (`ubuntu-24.04`,
-   `ubuntu-24.04-arm`; free for public repos), each inside a
+1. **`binary (amd64|arm64)`** — matrix over native runners (`ubuntu-26.04`,
+   `ubuntu-26.04-arm`; free for public repos), each inside a
    `rust:1.96.1-slim-bookworm` **job container** so the binary links Debian 12
    glibc 2.36 — exactly the distroless runtime's libc (building on the Ubuntu
-   24.04 host would link glibc 2.39 and not run on the runtime image).
+   host directly would link a newer glibc and not run on the runtime image;
+   this also makes the host Ubuntu version irrelevant to the binary).
    `Swatinem/rust-cache` (per-platform shared key) makes warm builds
    incremental; a verify step asserts container rustc == `rust-toolchain.toml`
    == the Dockerfile ARG. Binaries are stripped and uploaded as artifacts.

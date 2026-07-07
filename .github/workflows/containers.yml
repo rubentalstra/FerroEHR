@@ -3,7 +3,7 @@
 # Container images, built for speed (docs/design/container-images.md):
 #
 #   1. The `ehrbase` binary is compiled OUTSIDE Docker, natively per
-#      architecture (amd64 on ubuntu-24.04, arm64 on ubuntu-24.04-arm — no
+#      architecture (amd64 on ubuntu-26.04, arm64 on ubuntu-26.04-arm — no
 #      QEMU emulation anywhere), inside a rust:*-slim-bookworm job container
 #      so the binary links against the same glibc (Debian 12 / 2.36) as the
 #      distroless cc-debian12 runtime image. Swatinem/rust-cache makes warm
@@ -62,9 +62,9 @@ jobs:
       matrix:
         include:
           - platform: amd64
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
           - platform: arm64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
     # Debian 12 (bookworm) container so the produced binary targets glibc 2.36,
     # matching gcr.io/distroless/cc-debian12 exactly. The tag must equal the
     # rust-toolchain.toml channel — verified below, never assumed.
@@ -109,7 +109,7 @@ jobs:
   # ── Package + push the multi-arch app image (COPY-only; seconds) ────────────
   app-image:
     name: app image
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: binary
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -167,7 +167,7 @@ jobs:
   # COPY-only on top of postgres:18.4, so multi-arch needs no QEMU either.
   postgres-image:
     name: postgres image
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: changes
     if: >-
       needs.changes.outputs.postgres == 'true' ||
@@ -209,7 +209,7 @@ jobs:
   # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
   smoke:
     name: compose smoke (amd64)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: app-image
     steps:
       - uses: actions/checkout@v7
