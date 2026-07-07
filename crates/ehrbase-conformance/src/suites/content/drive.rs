@@ -120,6 +120,23 @@ pub async fn drive_constraint(
     violations: Vec<Violation>,
 ) -> Result<DataSetReport, CaseError> {
     let base = fixtures::read_json(constraint.comp).map_err(codec)?;
+    drive_constraint_base(ctx, constraint.opt, base, accepted_label, violations).await
+}
+
+/// Drive a constraint case from an already-materialised base COMPOSITION
+/// (design §4.5). Identical row semantics to [`drive_constraint`], but the valid
+/// base is supplied directly rather than read from a canonical-JSON fixture —
+/// used where the constraint's only committable instance is a **FLAT** one
+/// converted via [`fixtures::flat_to_canonical`] (path *b*), so no canonical
+/// composition fixture exists to name. `opt_rel` is provisioned per row exactly
+/// as for [`drive_constraint`].
+pub async fn drive_constraint_base(
+    ctx: &RunContext<'_>,
+    opt_rel: &str,
+    base: Value,
+    accepted_label: &str,
+    violations: Vec<Violation>,
+) -> Result<DataSetReport, CaseError> {
     let mut rows: Vec<(String, Value, Expected)> =
         vec![(accepted_label.to_owned(), base.clone(), Expected::Accepted)];
     for (label, mutate_fn, expected) in violations {
@@ -131,7 +148,7 @@ pub async fn drive_constraint(
     let mut passed = 0u32;
     let mut first_failure: Option<CaseError> = None;
     for (label, comp, expected) in rows {
-        let resp = commit_opt(ctx, constraint.opt, &comp).await?;
+        let resp = commit_opt(ctx, opt_rel, &comp).await?;
         match check(&resp, expected, &label) {
             Ok(()) => passed += 1,
             Err(e) if first_failure.is_none() => first_failure = Some(e),

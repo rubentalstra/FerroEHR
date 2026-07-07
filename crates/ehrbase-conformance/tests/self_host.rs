@@ -127,6 +127,10 @@ async fn content_cases_run_against_self_hosted_sut() {
         "CONT-DV_QUANTITY-validate_property_units",
         "CONT-DV_ORDINAL-validate_constraint",
         "CONT-DV_CODED_TEXT-validate_local_codes",
+        // FLAT-backed (path b): the `time_series` DV_QUANTITY magnitude-range
+        // constraint is converted from its FLAT-only instance in-harness; our
+        // validator enforces both the magnitude range and the units list.
+        "CONT-DV_QUANTITY-validate_property_units_mag",
     ] {
         assert_eq!(status(id), CaseStatus::Passed, "{id} must pass (enforced)");
     }
@@ -143,6 +147,10 @@ async fn content_cases_run_against_self_hosted_sut() {
         "CONT-ITEM_STR-type_item_list",
         "CONT-ITEM_STR-type_item_table",
         "CONT-ITEM_STR-type_item_single",
+        // F-open-40: DV_PROPORTION `type` C_INTEGER.list not enforced. The
+        // `minimal_action_2` OPT constrains `type` to {3,4}; the SUT accepts
+        // `type=0` (201) where master17.3 §validate_any_fraction rejects it (422).
+        "CONT-DV_PROPORTION-validate_any_fraction",
     ] {
         assert_eq!(
             status(id),

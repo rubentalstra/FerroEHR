@@ -59,6 +59,15 @@ pub enum FixtureError {
         /// The parse error.
         source: serde_json::Error,
     },
+    /// A FLAT→canonical conversion failed (OPT parse, `WebTemplate` build, or
+    /// `from_flat`).
+    #[error("FLAT→canonical conversion for {what}: {detail}")]
+    Convert {
+        /// What was being converted (the OPT + FLAT paths).
+        what: String,
+        /// The underlying error text.
+        detail: String,
+    },
 }
 
 /// The corpus root as a path.
@@ -379,6 +388,47 @@ fn serde_de_error(msg: &str) -> serde_json::Error {
     <serde_json::Error as serde::de::Error>::custom(msg)
 }
 
+// ── FLAT→canonical conversion (design §4.5) ──────────────────────────────────
+
+/// Convert a vendored FLAT (simSDT) instance into a canonical-JSON COMPOSITION,
+/// driven by its constraining OPT's `WebTemplate` — the **same** `from_flat`
+/// path the SUT's FLAT endpoint uses (`ehrbase-rest` `dispatch/flat.rs`), run
+/// deterministically in-harness so a content case whose only constraining
+/// template ships a FLAT instance (no canonical composition) becomes drivable
+/// without a double-commit (design §4.5, path *b*).
+///
+/// `opt_valid_rel` is `valid_templates/`-relative (matching
+/// [`crate::suites::support::ensure_opt`]); `flat_rel` is corpus-root-relative.
+/// The result is committable directly (the OPT is provisioned separately by the
+/// case), so storage↔API needs no translation.
+///
+/// # Errors
+/// [`FixtureError::Io`]/[`FixtureError::Json`] on fixture access, or
+/// [`FixtureError::Convert`] if the OPT does not parse, the `WebTemplate` cannot
+/// be built, or `from_flat` fails.
+pub fn flat_to_canonical(opt_valid_rel: &str, flat_rel: &str) -> Result<Value, FixtureError> {
+    let what = format!("valid_templates/{opt_valid_rel} + {flat_rel}");
+    let xml = read(&format!("valid_templates/{opt_valid_rel}"))?;
+    let opt = openehr_its::opt14::from_xml(&xml).map_err(|e| FixtureError::Convert {
+        what: what.clone(),
+        detail: format!("opt14 parse: {e}"),
+    })?;
+    let wt = openehr_flat::build_web_template(&opt).map_err(|e| FixtureError::Convert {
+        what: what.clone(),
+        detail: format!("build_web_template: {e}"),
+    })?;
+    let flat_text = read(flat_rel)?;
+    let flat: serde_json::Map<String, Value> =
+        serde_json::from_str(&flat_text).map_err(|source| FixtureError::Json {
+            path: flat_rel.to_owned(),
+            source,
+        })?;
+    openehr_flat::from_flat(&flat, &wt).map_err(|e| FixtureError::Convert {
+        what,
+        detail: format!("from_flat: {e}"),
+    })
+}
+
 // ── RM-version adaptation overlay (§6) ───────────────────────────────────────
 
 /// Adapt a vendored `EHR_STATUS` (RM-1.0.x-era) into an RM-1.2.0-wire-valid one:
@@ -460,6 +510,28 @@ mod tests {
             let v = f.json().unwrap_or_else(|e| panic!("{}: {e}", f.name));
             assert_eq!(v["_type"], "EHR_STATUS", "{}", f.name);
         }
+    }
+
+    #[test]
+    fn flat_to_canonical_time_series_yields_committable_quantity() {
+        // The `time_series` DV_QUANTITY (magnitude range [0,+inf), units mm3)
+        // ships ONLY as a FLAT instance — convert it via the same `from_flat`
+        // path the SUT uses and confirm the constrained leaf is addressable.
+        let comp = flat_to_canonical(
+            "time_series/time_series.opt",
+            "compositions/FLAT/time_series.en.v1_20211018103435_000001_1.xml.flat.json",
+        )
+        .expect("convert time_series FLAT");
+        assert_eq!(comp["_type"], "COMPOSITION");
+        let mag = comp
+            .pointer("/content/0/data/events/0/data/items/0/value/magnitude")
+            .and_then(Value::as_f64)
+            .expect("DV_QUANTITY magnitude leaf");
+        assert!((mag - 702.9).abs() < 1e-6, "magnitude {mag}");
+        assert_eq!(
+            comp.pointer("/content/0/data/events/0/data/items/0/value/units"),
+            Some(&Value::String("mm3".to_owned()))
+        );
     }
 
     #[test]

@@ -22,18 +22,37 @@
 //! `yyyy-mm-ddTHH:MM:SS` `C_DATE_TIME`) also drives but is an **open finding**
 //! (the SUT accepts the partial value the truth table rejects).
 //!
+//! **FLAT-backed & instance-backed constraint cases (design §4.5, path *b*).**
+//! Two further cases have a constraining OPT that parses but whose only
+//! committable instance is not a plain canonical-JSON composition:
+//! - `CONT-DV_QUANTITY-validate_property_units_mag` — the `time_series` OPT
+//!   constrains a `DV_QUANTITY` magnitude range `[0,∞)` (units `{mm3}`) and ships
+//!   **only a FLAT instance**. The harness converts that FLAT to canonical
+//!   in-process via [`fixtures::flat_to_canonical`] (the same `from_flat` path
+//!   the SUT's FLAT endpoint uses), commits `702.9 mm3` (accepted), then a
+//!   below-range magnitude and an off-list unit (both rejected).
+//! - `CONT-DV_PROPORTION-validate_any_fraction` — `minimal_action_2.opt`
+//!   constrains `DV_PROPORTION` `type` to `C_INTEGER.list {3,4}` and ships a bare
+//!   canonical composition (`type=3`, accepted); `type=0` is off the list
+//!   (rejected).
+//!
 //! The remaining non-`validate_open` cases stay `Skipped`
 //! ([`drive::skip_archetype`]): no vendored OPT both constrains the relevant leaf
-//! *and* ships a committable canonical-JSON composition — `DV_COUNT` range/list &
-//! `DV_QUANTITY` magnitude-range live only in `ehrn_vital_signs` (FLAT-only
-//! instance); `DV_PROPORTION` in `proportion.opt`/`ehrn` (no canonical instance);
+//! *and* ships any committable instance our stack can provision —
+//! `DV_COUNT` range/list is constrained **only** by `ehrn_vital_signs.v2.opt`,
+//! which our `opt14` parser rejects (`xml parse error: missing element type`), so
+//! that template cannot be provisioned on the SUT at all and its FLAT instance
+//! cannot be converted (F-open-41); the other `DV_PROPORTION` kind cases
+//! (`validate_ratio/unitary/percent/fraction/integer_fraction`) live only in
+//! `proportion.opt`, which parses but ships **no** instance (canonical or FLAT);
 //! `DV_SCALE`, `DV_DATE/DV_TIME` constraints, `DV_BOOLEAN` & `DV_IDENTIFIER` patterns, and
 //! `DV_MULTIMEDIA` media-type lists have no constrained committable canonical leaf.
 
 use serde_json::{Value, json};
 
 use crate::case::Chapter;
-use crate::harness::{CaseFuture, CaseRun, RunContext};
+use crate::fixtures;
+use crate::harness::{CaseError, CaseFuture, CaseRun, RunContext};
 use crate::registry::CaseEntry;
 
 use super::drive::{self, Base, Constraint, Expected, meta};
@@ -88,7 +107,11 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         run_dv_quantity_units,
     ));
-    all.push(skip("CONT-DV_QUANTITY-validate_property_units_mag", c));
+    all.push(open(
+        "CONT-DV_QUANTITY-validate_property_units_mag",
+        c,
+        run_dv_quantity_units_mag,
+    ));
     all.push(open(
         "CONT-DV_PROPORTION-validate_open",
         c,
@@ -99,7 +122,11 @@ pub fn entries() -> Vec<CaseEntry> {
     all.push(skip("CONT-DV_PROPORTION-validate_percent", c));
     all.push(skip("CONT-DV_PROPORTION-validate_fraction", c));
     all.push(skip("CONT-DV_PROPORTION-validate_integer_fraction", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_any_fraction", c));
+    all.push(open(
+        "CONT-DV_PROPORTION-validate_any_fraction",
+        c,
+        run_dv_proportion_any_fraction,
+    ));
     all.push(skip("CONT-DV_PROPORTION-validate_ratio_range", c));
     // DV_INTERVAL<T> cases — interval bound constraints, no committable leaf.
     for id in [
@@ -370,6 +397,93 @@ fn run_dv_coded_local<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                         "/content/0/data/events/0/data/items/1/value/defining_code/code_string",
                         json!("at0025"),
                     );
+                }),
+                Expected::Rejected,
+            )],
+        )
+        .await
+    })
+}
+
+/// master17.3 CONT-DV_QUANTITY-validate_property_units_mag. The `time_series` OPT
+/// constrains OBSERVATION `data/events[0]/data/items[0]` (`at0004`) `DV_QUANTITY` to
+/// property `openehr::129` (volume), units list `{mm3}`, **magnitude range**
+/// `[0,∞)`. Its only committable instance is a FLAT one (no canonical
+/// composition), converted in-harness via [`fixtures::flat_to_canonical`] (path
+/// *b*): the vendored value is `702.9 mm3` (accepted); `-1.0 mm3` is below the
+/// magnitude range → the truth-table "magnitude not in range for unit" row, and
+/// `702.9 L` uses a unit off the `{mm3}` list → the "`L` is not allowed" row (both
+/// rejected).
+fn run_dv_quantity_units_mag<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let base = fixtures::flat_to_canonical(
+            "time_series/time_series.opt",
+            "compositions/FLAT/time_series.en.v1_20211018103435_000001_1.xml.flat.json",
+        )
+        .map_err(|e| CaseError::Codec(e.to_string()))?;
+        drive::drive_constraint_base(
+            ctx,
+            "time_series/time_series.opt",
+            base,
+            "DV_QUANTITY 702.9 mm3 in magnitude range [0,inf) (accepted)",
+            vec![
+                (
+                    "DV_QUANTITY magnitude -1.0 below range [0,inf) \
+                     (C_DV_QUANTITY.list: magnitude not in range for unit)"
+                        .to_owned(),
+                    Box::new(|c: &mut Value| {
+                        mutate::set_pointer(
+                            c,
+                            "/content/0/data/events/0/data/items/0/value/magnitude",
+                            json!(-1.0),
+                        );
+                    }),
+                    Expected::Rejected,
+                ),
+                (
+                    "DV_QUANTITY units 'L' not in [mm3] (C_DV_QUANTITY.list: `L` is not allowed)"
+                        .to_owned(),
+                    Box::new(|c: &mut Value| {
+                        mutate::set_pointer(
+                            c,
+                            "/content/0/data/events/0/data/items/0/value/units",
+                            json!("L"),
+                        );
+                    }),
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+/// `Test minimal_action_2.opt` + its bare canonical composition. ACTION
+/// `description/items[0]` (`at0002`) `DV_PROPORTION` is constrained by a
+/// `C_INTEGER` list `{3,4}` on `type` (numerator `C_REAL` `[0,∞)`, denominator
+/// `C_REAL` `(0,∞)`). The vendored value is `type=3` num=889 den=149 (accepted);
+/// `type=0` (ratio) is off the `{3,4}` list → the truth-table "`C_INTEGER.list`"
+/// rejection.
+const MINIMAL_ACTION_2_PROPORTION: Constraint = Constraint {
+    opt: "minimal/minimal_action_2.opt",
+    comp: "valid_templates/minimal/minimal_action_2.instance.composition.json",
+};
+
+/// master17.3 CONT-DV_PROPORTION-validate_any_fraction (`type` `C_INTEGER.list`
+/// `[3,4]`). `type=3` (fraction) is in the list (accepted); `type=0` (ratio) is
+/// off it → the truth-table `C_INTEGER.list` row (rejected). num=889/den=149 stay
+/// RM-valid for `type=0` (ratio: any denominator != 0), so the only violated
+/// constraint is the archetype's `C_INTEGER.list`.
+fn run_dv_proportion_any_fraction<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        drive::drive_constraint(
+            ctx,
+            &MINIMAL_ACTION_2_PROPORTION,
+            "DV_PROPORTION type 3 (fraction) in list [3,4] (accepted)",
+            vec![(
+                "DV_PROPORTION type 0 (ratio) not in list [3,4] (C_INTEGER.list)".to_owned(),
+                Box::new(|c: &mut Value| {
+                    mutate::set_pointer(c, "/content/0/description/items/0/value/type", json!(0));
                 }),
                 Expected::Rejected,
             )],

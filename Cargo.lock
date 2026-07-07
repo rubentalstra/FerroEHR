@@ -1724,6 +1724,7 @@ dependencies = [
  "ehrbase",
  "ehrbase-rest",
  "jiff",
+ "openehr-flat",
  "openehr-its",
  "openehr-rm",
  "reqwest 0.13.4",

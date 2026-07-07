@@ -34,6 +34,11 @@ base64 = { workspace = true }
 
 openehr-its = { path = "../openehr-its" }
 openehr-rm = { path = "../openehr-rm" }
+# FLAT→canonical conversion for content cases whose ONLY constraining template
+# ships a FLAT instance (no canonical composition): the harness converts the
+# vendored FLAT deterministically via the same `from_flat` path the SUT's FLAT
+# endpoint uses (design §4.5), then commits the canonical result + a mutated copy.
+openehr-flat = { path = "../openehr-flat" }
 
 # `self-host` mode: boot the real application (testcontainers PG18 + the axum
 # app) in-process, so the runner can drive a SUT it controls end to end without

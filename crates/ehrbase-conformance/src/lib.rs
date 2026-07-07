@@ -17,6 +17,14 @@
 //! [`report`]s the machine- and human-readable result set. Even at the honest
 //! zero state the report generates and shows `0/N` — the backlog is enforced and
 //! visible.
+//!
+//! Two pedantic lints are allowed crate-wide because they fight the natural
+//! shape of a data-heavy conformance registry, not any real defect:
+//! `too_many_lines` (the per-chapter `entries()` functions are long, flat
+//! `vec![]` case tables) and `needless_pass_by_value` (the case-builder helpers
+//! take small owned payloads by value for call-site ergonomics — a consistent
+//! idiom across every `suites/*` module).
+#![allow(clippy::too_many_lines, clippy::needless_pass_by_value)]
 
 pub mod assert;
 pub mod case;

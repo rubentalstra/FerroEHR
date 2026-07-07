@@ -34,7 +34,7 @@ impl std::fmt::Debug for Sut {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Sut")
             .field("base_url", &self.client.describe())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -81,8 +81,10 @@ impl Sut {
 /// task and the container).
 enum KeepAlive {
     External,
+    // Held only to run its `Drop` (stops the server task + testcontainer);
+    // never read, by design.
     #[cfg(feature = "self-host")]
-    SelfHosted(self_host::SelfHostState),
+    SelfHosted(#[allow(dead_code)] self_host::SelfHostState),
 }
 
 #[cfg(feature = "self-host")]
