@@ -170,6 +170,53 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
 All eight `F-open-*` are surfaced by the runner asserting the ITS-REST/CNF
 expectation, never fabricated and never weakened to green a run (design §4.5).
 
+### master11 (QUERY) — surfaced by the `QUERY-FIXTURE-*` cases
+
+Query findings use a distinct **F-open-20+** block to avoid colliding with the
+concurrent content-chapter agent's numbering; if a collision survives merge the
+orchestrator renumbers. All surfaced by the QUERY-FIXTURE golden diffs against a
+self-hosted PG18 SUT (0 transport errors; the normalizer's per-diff rule labels
+prove nothing was silently suppressed).
+
+- **F-open-20 (RESULT_SET column `path` omitted for EHR/VERSION-scoped SELECT
+  columns):** the AQL engine emits `columns: [{"name":"#0"}]` with **no `path`**
+  for SELECT columns targeting EHR or VERSION pseudo-attributes
+  (`e/ehr_id/value`, `e/time_created/value`, `e/system_id/value`), while emitting
+  the path correctly for COMPOSITION/ENTRY data columns (`c/uid/value` →
+  `path: "/uid/value"`). Both the vendored goldens and the ITS-REST
+  `schemas/query/ResultSet.yaml` **example** carry `path: '/ehr_id/value'` for
+  exactly this column. `RESULT_SET_COLUMN.path` is `0..1`
+  (`SM/docs/UML/classes/result_set_column.adoc`: "RM path of data item for this
+  column *as specified in query*"), so this is not a hard schema breach — but the
+  path *is* specified in the query and is emitted for other column classes, so
+  the **asymmetric omission** is the defect (`target_path_string` returns `None`
+  for `PathTarget::Ehr`/`PathTarget::Version` in
+  `crates/ehrbase/src/aql/sql.rs`). Impact: every group-A query (EHR selects) and
+  the group-D EHR-column selects fail the golden column diff (`A/empty_db` 0/27,
+  `A/loaded_db` 0/23, and master11 `execute_ad_hoc_query-empty_db` +
+  `execute_stored_query-empty_db`); composition/entry projections pass
+  (`B/empty_db` 17/18, `C/empty_db` 10/11). Needs an `F-AA-NN` + emitting the
+  identified path for EHR/VERSION targets in the column metadata; the four
+  QUERY-FIXTURE column-diff cases go green when it lands.
+- **F-open-21 (corpus artifact — NOT a defect against the SUT): `TIMEWINDOW`
+  queries rejected, which is spec-correct.** Corpus queries using the `TIMEWINDOW`
+  clause (`A/109`, `B/103`, `C/103`, …) are rejected by our parser with `400
+  invalid AQL`. This is **conformant**: `TIMEWINDOW` was *removed* from AQL
+  (`QUERY/docs/AQL/master00-amendment_record.adoc`, SPECQUERY-20 "remove
+  `TIMEWINDOW`"), and the corpus README lists these among the EHRSCAPE-failing
+  queries. Recorded so the resulting per-query golden-diff failures are
+  understood as a corpus-legacy artifact (EHRSCAPE extension predating the AQL
+  cleanup), not a server bug — no fix needed. The spec, not EHRSCAPE, is the
+  oracle (ADR-008).
+
+The QUERY framework is demonstrably a real conformance instrument, not a rubber
+stamp: it **passes** where the server is conformant (`smoke_test`,
+`execute_ad_hoc_query-loaded_db`, `QUERY-FIXTURE-invalid` 2/2 rejected, and the
+B/C COMPOSITION/ENTRY column projections) and **fails with a precise, cited
+finding** where it is not (F-open-20). Golden diffing runs through the documented
+[`query_golden`] normalizer (design §6), and each suppressed difference names its
+rule in the failure/skip message.
+
 ## Handoff for next session
 
 Steps 1–2 landed: the crate parses the schedule (323 raw / 322 identified / 57

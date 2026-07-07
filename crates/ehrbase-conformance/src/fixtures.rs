@@ -340,6 +340,45 @@ pub fn validation() -> Result<Vec<Fixture>, FixtureError> {
     list("validation", "")
 }
 
+/// The AQL text (`q`) of a query fixture (`query/aql_queries_valid/<group>/…` or
+/// `…_invalid/…`). The `q` field is the query string the case executes.
+///
+/// # Errors
+/// [`FixtureError`] on I/O or parse failure, or if the fixture has no string
+/// `q` field.
+pub fn aql_text(fixture: &Fixture) -> Result<String, FixtureError> {
+    let value = fixture.json()?;
+    value["q"]
+        .as_str()
+        .map(str::to_owned)
+        .ok_or_else(|| FixtureError::Json {
+            path: fixture.path.display().to_string(),
+            source: serde_de_error("query fixture has no string `q`"),
+        })
+}
+
+/// The golden `RESULT_SET` for a query in a DB state, matched by identical base
+/// name under `query/expected_results/<db>/<group>/<name>.json`. Returns `None`
+/// (not an error) when no golden exists for that query in that DB state — the
+/// corpus deliberately ships each query's golden in only the DB state(s) that
+/// apply to it (design §6).
+///
+/// # Errors
+/// [`FixtureError::Json`] if a golden file exists but is not valid JSON.
+pub fn aql_golden(db: &str, group: &str, name: &str) -> Result<Option<Value>, FixtureError> {
+    let rel = format!("query/expected_results/{db}/{group}/{name}");
+    let p = path(&rel);
+    if !p.is_file() {
+        return Ok(None);
+    }
+    read_json(&rel).map(Some)
+}
+
+/// Build a `serde_json::Error` carrying `msg` (for the typed `q`-missing case).
+fn serde_de_error(msg: &str) -> serde_json::Error {
+    <serde_json::Error as serde::de::Error>::custom(msg)
+}
+
 // ── RM-version adaptation overlay (§6) ───────────────────────────────────────
 
 /// Adapt a vendored `EHR_STATUS` (RM-1.0.x-era) into an RM-1.2.0-wire-valid one:
