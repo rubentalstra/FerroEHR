@@ -65,6 +65,11 @@ pub struct SqlCtx {
     pub system_id: String,
     /// The REST `ehr_id` query parameter, constraining the query to one EHR.
     pub ehr_id: Option<Uuid>,
+    /// The ABAC patient-scope subject id (`docs/enterprise/access-control.md`
+    /// §6.4): when set, every VO root is restricted to EHRs whose
+    /// `subject_id` equals it, so rows the caller may not see are never fetched —
+    /// independent of what the query projects.
+    pub subject_scope: Option<String>,
     /// The effective row limit (AQL `LIMIT`/`TOP` or REST `fetch`, pre-composed).
     pub limit: Option<i64>,
     /// The effective row offset (AQL `OFFSET` or REST `offset`, pre-composed).
@@ -143,6 +148,65 @@ pub fn build(ir: &QueryIr, params: &Params, ctx: &SqlCtx) -> Result<PreparedQuer
     })
 }
 
+/// A built scope-collection query: `SELECT DISTINCT` of every bound VO root's
+/// `ehr_id` + `template_id` over the same containment/filter as the main query
+/// (§6.4). Its rows carry the set of EHRs and templates the query touches —
+/// across **all** bound variables and **independent of the projection** (fixes
+/// v1 defect #1) — for the ABAC query post-check.
+#[derive(Debug)]
+pub struct ScopeQuery {
+    /// The generated SQL.
+    pub sql: String,
+    /// The bound parameter values.
+    pub values: SqlxValues,
+    /// The `(ehr-id column, template-id column)` alias pairs, one per bound VO
+    /// root, the executor reads each result row's ehr/template from.
+    pub columns: Vec<(String, String)>,
+}
+
+/// Build the ABAC scope-collection query for `ir`. `None` when the query has no
+/// VO root (nothing to collect).
+///
+/// # Errors
+/// [`SqlError`] for a construct the SQL generator does not render.
+pub fn build_scope(
+    ir: &QueryIr,
+    params: &Params,
+    ctx: &SqlCtx,
+) -> Result<Option<ScopeQuery>, AqlError> {
+    let mut b = Builder::new(ir, params, ctx);
+    b.build_from(&ir.contains)?;
+    b.apply_ehr_scope();
+    b.build_where()?;
+    let roots: Vec<(String, String)> = b
+        .group_roots
+        .clone()
+        .into_iter()
+        .zip(b.group_vos.clone())
+        .collect();
+    if roots.is_empty() {
+        return Ok(None);
+    }
+    // One (ehr_id, template_id) column pair per bound VO root — the row-wise
+    // cartesian of the joined roots, DISTINCT-ed, so every touched EHR/template
+    // across every bound variable is collected.
+    let mut columns = Vec::with_capacity(roots.len());
+    for (i, (node, vo)) in roots.iter().enumerate() {
+        let ehr_col = format!("scope_ehr_{i}");
+        let template_col = format!("scope_template_{i}");
+        b.q.expr_as(col(node, "ehr_id"), Alias::new(ehr_col.as_str()));
+        b.q.expr_as(col(vo, "template_id"), Alias::new(template_col.as_str()));
+        columns.push((ehr_col, template_col));
+    }
+    b.q.distinct();
+    let (sql, values) = b.q.build_sqlx(PostgresQueryBuilder);
+    Ok(Some(ScopeQuery {
+        sql,
+        values,
+        columns,
+    }))
+}
+
 /// A VO "group": the node alias that roots it and the `vo_version` alias its
 /// nodes belong to. Content sources contained within it share the `vo` alias and
 /// interval-join into `node`.
@@ -163,6 +227,9 @@ struct Builder<'a> {
     version_vo: HashMap<usize, String>,
     /// Node aliases that root a VO group (targets of the REST `ehr_id` filter).
     group_roots: Vec<String>,
+    /// The `vo_version` alias for each entry in `group_roots` (parallel vec) —
+    /// the source of the touched `template_id` for the ABAC scope collection.
+    group_vos: Vec<String>,
     /// Fresh-alias counter for anchor subqueries / anti-joins.
     sub_ctr: usize,
 }
@@ -179,6 +246,7 @@ impl<'a> Builder<'a> {
             ehr_alias: HashMap::new(),
             version_vo: HashMap::new(),
             group_roots: Vec::new(),
+            group_vos: Vec::new(),
             sub_ctr: 0,
         }
     }
@@ -326,6 +394,7 @@ impl<'a> Builder<'a> {
             self.ensure_audit(&voa);
             self.push_scope(&voa, &r.scope)?;
             self.group_roots.push(node.clone());
+            self.group_vos.push(voa.clone());
             if let Some(e) = ehr {
                 self.q.and_where(col(&node, "ehr_id").eq(col(e, "id")));
             }
@@ -380,12 +449,22 @@ impl<'a> Builder<'a> {
     }
 
     fn apply_ehr_scope(&mut self) {
-        let Some(ehr_id) = self.ctx.ehr_id else {
-            return;
-        };
-        let roots = self.group_roots.clone();
-        for root in roots {
-            self.q.and_where(col(&root, "ehr_id").eq(Expr::val(ehr_id)));
+        if let Some(ehr_id) = self.ctx.ehr_id {
+            for root in self.group_roots.clone() {
+                self.q.and_where(col(&root, "ehr_id").eq(Expr::val(ehr_id)));
+            }
+        }
+        // ABAC patient scope (§6.4): restrict every VO root to the caller's
+        // patient EHRs. Rows outside are never fetched — regardless of the
+        // query's projection (the v1 defect-#1 fix).
+        if let Some(subject) = self.ctx.subject_scope.clone() {
+            for root in self.group_roots.clone() {
+                let mut sub = Query::select();
+                sub.column(Alias::new("id"))
+                    .from(Ehr::Table)
+                    .and_where(Expr::col(Alias::new("subject_id")).eq(Expr::val(subject.clone())));
+                self.q.and_where(col(&root, "ehr_id").in_subquery(sub));
+            }
         }
     }
 
