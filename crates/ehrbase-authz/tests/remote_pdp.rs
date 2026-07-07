@@ -3,6 +3,7 @@
 //! the configured keys; 200 → permit, non-200 → deny; connect/timeout →
 //! `AuthzError` (→ 500 at the PEP); cartesian fan-out order + short-circuit;
 //! all-must-permit.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::collections::BTreeMap;
 

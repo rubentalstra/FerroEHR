@@ -34,9 +34,9 @@ figment = { workspace = true, features = ["test"] }
 # tables (read-only spec crate, dev-only — no runtime dependency on openehr-its;
 # the same trick as ehrbase-audit).
 openehr-its = { path = "../openehr-its" }
-# ABAC engine tests: the RemotePdp wire-contract suite + insta decision goldens.
+# ABAC engine tests: the RemotePdp wire-contract suite + the Cedar/remote
+# differential suite.
 wiremock = { workspace = true }
-insta = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
 [lints]

@@ -25,9 +25,10 @@
 //!   `AccessMode` (total-coverage-guarded).
 //! - [`request`] — the ABAC [`AuthzRequest`] + multi-valued fan-out.
 //! - [`engine`] — the [`PolicyEngine`] PDP seam + [`AuthzError`].
+//! - [`cedar`] — the embedded Cedar engine (schema, policy loading, reload).
 //! - [`remote`] — the v1-compatible remote PDP client.
-//! - `cedar` — the embedded Cedar engine (added in step 5).
 
+pub mod cedar;
 pub mod classify;
 pub mod config;
 pub mod engine;
