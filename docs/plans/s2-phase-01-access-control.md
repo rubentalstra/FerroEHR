@@ -45,19 +45,40 @@ RBAC gate.
   (§9.6 subset). — Done: RBAC gate in `auth::middleware`; deny = 403 + Principal
   on response extensions (ATNA audits it); `rbac.enabled` default true when auth
   enabled, disabling restores auth-only behaviour.
-- [ ] 4. **PDP seam + RemotePdp** (§5.4, §5.5): trait, fan-out semantics, reqwest
-  client, wiremock contract suite (§9.3). — ABAC PR.
-- [ ] 5. **CedarEngine** (§5.6): schema, action mapping (guarded), policy loading
-  + validation, example policies, differential tests vs RemotePdp (§9.4). — ABAC PR.
-- [ ] 6. **Resolvers + template read-back** (§6): `template_id` into `VersionRead`
-  + the two SELECTs; `AuthzResolvers` in the binary; unit tests. — ABAC PR.
-- [ ] 7. **ABAC PEP — non-query** (§5.7, §7): patient gate + pre/post checks in
-  dispatch `mount`; 403/500 mapping; ATNA deny e2e (§9.5, §9.6). — ABAC PR.
-- [ ] 8. **ABAC PEP — query** (§6.4): `SqlCtx.subject_scope` + executor attribute
-  collection + post-check; projection-independence regression test. — ABAC PR.
-- [ ] 9. **Docs + close-out**: config reference into the deploy docs; `/write-adr`
-  for the Cedar decision (§1.1); update `v1-vs-v2-delta.md` §1 status; workspace
-  gate. — ABAC PR.
+- [x] 4. **PDP seam + RemotePdp** (§5.4, §5.5): trait, fan-out semantics, reqwest
+  client, wiremock contract suite (§9.3). — Done: `ehrbase_authz::engine::PolicyEngine`
+  (async, fail-closed `AuthzError`); `request::{AuthzRequest, Combination}` owns the
+  cartesian fan-out (all-must-permit, short-circuit, empty→permit); `remote::RemotePdp`
+  is the byte-compatible v1 client (flat body, 200=permit, explicit timeouts); 7 wiremock
+  contract tests.
+- [x] 5. **CedarEngine** (§5.6): schema, action mapping (guarded), policy loading
+  + validation, example policies, differential tests vs RemotePdp (§9.4). — Done:
+  cedar-policy 4.11.2; schema built from the `ResourceKind`×`AccessMode` enums (no drift);
+  `*.cedar` loaded + strict-validated at boot (invalid = refuse to start); `arc-swap`
+  reload; `examples/policies/consent.cedar`; differential test proves Cedar≡RemotePdp over
+  a request corpus.
+- [x] 6. **Resolvers + template read-back** (§6): `template_id` into `VersionRead`
+  + the read SELECTs; `AuthzResolvers` in the binary; unit tests. — Done: additive
+  `template_id` on `VersionRead` + `read_current`/`read_version`/`version_at`;
+  `EhrbaseService::template_of_version`; `ehrbase_rest::{AuthzResolvers, build_engine}`
+  (pool/service closures wired in the binary); DB read-back test + resolver unit test.
+- [x] 7. **ABAC PEP — non-query** (§5.7, §7): patient gate + pre/post checks in
+  dispatch `mount`; 403/500 mapping; ATNA deny e2e (§9.5, §9.6). — Done: `dispatch::abac`
+  PEP driven from the generic `mount` (pre before backend, post on success via the
+  `AuditObject`); local patient gate (subject mismatch = 403 without engine call);
+  403 carries `Principal` (ATNA audits it); engine failure = 500; behind `abac.enabled`.
+  Patient-gate + matrix unit tests + full HTTP e2e (`tests/abac_e2e.rs`).
+- [x] 8. **ABAC PEP — query** (§6.4): `SqlCtx.subject_scope` + executor attribute
+  collection + post-check; projection-independence regression test. — Done:
+  `SqlCtx.subject_scope` adds `ehr_id IN (SELECT id FROM ehr WHERE subject_id=$s)` at every
+  VO root; `sql::build_scope` + `exec::collect_scope` gather the touched EHR/template sets
+  independently of the projection; `QueryOutcome` surfaces them; the query dispatcher runs
+  `abac::query_post` (template PDP fan-out, empty→permit) before serialization.
+  Projection-independence DB regression test (testcontainers PG18).
+- [x] 9. **Docs + close-out**: config reference (§8 table in this design doc); design
+  Status flipped to *implemented (RBAC+ABAC)*; workspace gate. — Done. (Cedar-decision ADR
+  content lives in access-control.md §1.1 per the orchestrator's instruction, in lieu of a
+  separate `/write-adr`.)
 
 ## Exit criteria
 
@@ -77,6 +98,46 @@ RBAC gate.
   gate (unchanged); the RBAC `management_access` tri-state + `Management` class
   are modelled/tested in `ehrbase-authz` for the ABAC PR's use, not double-gated
   onto the management router in this PR.
+- **Cedar decision (§1.1):** recorded in `docs/enterprise/access-control.md`
+  §1.1 (the ADR content) rather than a separate `/write-adr`, per the ABAC-PR
+  orchestrator instruction — Cedar over casbin for the typed, boot-validated
+  schema and one language for RBAC+ABAC; the `PolicyEngine` seam keeps it swappable.
+- **§7 matrix decisions the design left open, resolved during the ABAC PEP:**
+  - *Composition read template source* — taken from the returned version uid
+    (`AuditObject`) via the `template_of_version` resolver, not by re-parsing the
+    response body (the design allowed either; the uid path is format-agnostic).
+  - *Query patient gate* — enforced by the `subject_scope` SQL pre-filter (rows
+    outside the caller's patient are never fetched); the post-check therefore runs
+    only the template PDP fan-out, not a redundant per-EHR subject re-check
+    (`// PORT NOTE:` in `dispatch::abac::query_post`).
+  - *Cedar resource attributes* — a uniform `patient?`/`template?` on every
+    resource entity type (populated per fan-out combination), rather than the
+    design's per-kind `subject`/`template` split, for a simpler total schema that
+    passes strict validation. The example policy guards optional-attribute access
+    with `resource has X &&` so it validates strictly.
+  - *ABAC query collection* — the touched EHR/template sets are collected across
+    **all** bound VO roots (`sql::build_scope` emits an `(ehr_id, template_id)`
+    column pair per root; `exec::collect_scope` unions them), so multi-variable
+    CONTAINS is fully covered.
+
+## Coverage
+
+Fully integrated and tested — no residual TODOs:
+
+- **Engine paths:** the `RemotePdp` wiremock contract suite (7 cases) + the
+  `CedarEngine` golden/validation tests + the Cedar≡RemotePdp differential test.
+- **Patient gate + matrix:** `dispatch::abac` unit tests (subject mismatch denies
+  without an engine call, missing-claim 403, the pre/post matrix, uid parsing).
+- **Full ABAC HTTP e2e** (`crates/ehrbase-rest/tests/abac_e2e.rs`): through the
+  assembled router with a bearer `patient_id` token — a composition **create**
+  for another patient's EHR is a pre-check 403 (and the ATNA layer records the
+  deny), an own-patient create clears the gate, a composition **read** of another
+  patient's EHR is a post-check 403, an own-patient read is served, a missing
+  patient claim is 403, and disabling ABAC restores today's behaviour.
+- **Query path** (`crates/ehrbase/tests/persistence.rs`, testcontainers PG18):
+  the projection-independence regression — subject scope filters rows and the
+  touched EHR/template sets are collected even when the query projects neither
+  `ehr_id` nor a template path.
 
 ## Handoff for next session
 

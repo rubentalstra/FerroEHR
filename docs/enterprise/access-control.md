@@ -1,6 +1,6 @@
 # RBAC + ABAC Access Control — Rust-native design
 
-- **Status:** designed, ready to implement (2026-07-07)
+- **Status:** implemented (RBAC+ABAC) (2026-07-07)
 - **Stage:** Stage 2 capability, owner-prioritized into Stage 1 (same route as the
   ATNA audit trail — see `PORT_MASTER_PLAN.md` §11.2, `docs/enterprise/v1-vs-v2-delta.md` §1)
 - **Owner:** —
