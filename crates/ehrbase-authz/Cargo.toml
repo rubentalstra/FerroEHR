@@ -1,0 +1,29 @@
+[package]
+name = "ehrbase-authz"
+version = "0.1.0"
+description = "Access control (RBAC + ABAC) for the ehrbase-rs CDR: operation classification, role model, and the policy-decision seam"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+# Config (figment) + serde; JSON claim-set navigation for role extraction.
+serde = { workspace = true }
+serde_json = { workspace = true }
+figment = { workspace = true }
+
+# Errors.
+thiserror = { workspace = true }
+
+[dev-dependencies]
+figment = { workspace = true, features = ["test"] }
+# The total-coverage classification guard walks the generated ITS-REST ROUTES
+# tables (read-only spec crate, dev-only — no runtime dependency on openehr-its;
+# the same trick as ehrbase-audit).
+openehr-its = { path = "../openehr-its" }
+
+[lints]
+workspace = true

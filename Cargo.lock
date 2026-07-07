@@ -1262,6 +1262,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ehrbase-authz"
+version = "0.1.0"
+dependencies = [
+ "figment",
+ "openehr-its",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "ehrbase-compat"
 version = "0.1.0"
 dependencies = [
