@@ -10,9 +10,16 @@
   `docs/specs/openehr/CNF/` (upstream `openEHR/specifications-CNF` @ `33251d2a`,
   946 files) — **confirmed identical to the live upstream `master` HEAD**
   (compare API: 0 ahead / 0 behind; last upstream commit 2024-08-06; the three
-  open issues/PRs are 2017–2023 stale). The CNF material is a *frozen* target:
-  no re-vendoring needed, and the coverage guard (§4.2) is keyed to a stable
-  corpus. Also: the P19 phase file, the `/run-conformance` skill contract, the
+  open issues/PRs are 2017–2023 stale). The upstream `development` branch
+  (2 commits, 2026-05-04) was also diffed: it is purely an **Antora
+  documentation-toolchain migration** — every schedule/profile/certificate
+  page is a rename plus `include::partial$…` headers; **zero test-case
+  content changes** (master11/17.5 still stubs there too). Consequence: the
+  CNF *content* is a frozen target, but the *file layout* will move to
+  `modules/<book>/pages/*.adoc` if development merges — the §4.2 coverage
+  guard therefore keys on the test-case **heading regexes over a configured
+  glob**, never on hard-coded `docs/…/masterNN` paths, and a future re-vendor
+  is a path-glob update, not a parser rewrite. Also: the P19 phase file, the `/run-conformance` skill contract, the
   existing e2e/compose harnesses, and the excluded upstream `.py` helpers
   (fetched and assessed 2026-07-07 — see §2.2a).
 - **Related:** `docs/enterprise/atna-audit.md` + `docs/enterprise/access-control.md`
