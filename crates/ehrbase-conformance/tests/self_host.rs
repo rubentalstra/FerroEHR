@@ -1,7 +1,8 @@
 //! Feature-gated end-to-end proof (design §8 step 2–3): boot the self-hosted SUT
-//! (testcontainers PG18 + the real app in-process) and run the master06 EHR +
-//! `EHR_STATUS` cases against it — proving the whole pipeline (SUT lifecycle →
-//! transport → cases → assertions → results) with real fixtures.
+//! (testcontainers PG18 + the real app in-process) and run the transcribed cases
+//! against it — proving the whole pipeline (SUT lifecycle → transport → cases →
+//! assertions → results) with real fixtures, under **both** JSON and XML so the
+//! format-parameterized composition cases (master07) execute.
 //!
 //! Requires Docker; run with `cargo test -p ehrbase-conformance --features self-host`.
 #![cfg(feature = "self-host")]
@@ -21,7 +22,7 @@ async fn master06_ehr_cases_run_against_self_hosted_sut() {
     let config = RunConfig {
         filter: None,
         profile: None,
-        formats: vec![Format::Json],
+        formats: vec![Format::Json, Format::Xml],
         rm_version: "1.2.0".to_owned(),
         auth_mode: "basic (self-host, RBAC off)".to_owned(),
     };
