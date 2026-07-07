@@ -17,6 +17,7 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
+use ehrbase_conformance::case::Provenance;
 use ehrbase_conformance::registry::{ExclusionReason, Registration, registry};
 use ehrbase_conformance::schedule::parse_default;
 
@@ -57,10 +58,17 @@ fn every_schedule_case_is_classified_and_matches_the_snapshot() {
         adl2, 0,
         "no I_DEFINITION_ADL2 cases in the current vendored schedule"
     );
+    // Only Schedule-provenance entries appear in the 322 inventory; the
+    // supplementary FixtureDerived / RunnerDefined cases (design §3.4, §4.6) sit
+    // outside it by design.
+    let schedule_impl = reg
+        .entries()
+        .iter()
+        .filter(|e| e.meta.provenance == Provenance::Schedule)
+        .count();
     assert_eq!(
-        implemented,
-        reg.entries().len(),
-        "implemented count equals the registry size"
+        implemented, schedule_impl,
+        "implemented (in-inventory) count equals the schedule-provenance registry size"
     );
     assert_eq!(
         implemented + placeholder + duplicate + adl2 + not_yet + other,
@@ -94,12 +102,15 @@ fn every_schedule_case_is_classified_and_matches_the_snapshot() {
         );
     }
 
-    // (3) No phantom registry entries: every implemented id is in the inventory.
+    // (3) No phantom schedule cases: every Schedule-provenance registry id is in
+    // the inventory. FixtureDerived / RunnerDefined ids are intentionally not.
     for entry in reg.entries() {
-        assert!(
-            keys.contains(entry.meta.id),
-            "registry id {:?} is not in the schedule inventory (phantom case)",
-            entry.meta.id
-        );
+        if entry.meta.provenance == Provenance::Schedule {
+            assert!(
+                keys.contains(entry.meta.id),
+                "schedule-provenance registry id {:?} is not in the inventory (phantom case)",
+                entry.meta.id
+            );
+        }
     }
 }

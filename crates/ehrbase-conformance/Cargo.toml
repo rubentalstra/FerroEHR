@@ -9,6 +9,10 @@ repository.workspace = true
 authors.workspace = true
 publish = false
 
+[[bin]]
+name = "conformance"
+path = "src/bin/conformance.rs"
+
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -19,6 +23,7 @@ clap = { workspace = true }
 jiff = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
+uuid = { workspace = true }
 
 openehr-its = { path = "../openehr-its" }
 openehr-rm = { path = "../openehr-rm" }
