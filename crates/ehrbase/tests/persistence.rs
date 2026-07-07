@@ -337,8 +337,8 @@ async fn template_id_is_read_back_from_vo_version() {
 /// projects neither `ehr_id`/`value` nor a template path**.
 #[tokio::test]
 async fn query_subject_scope_filters_and_collects_projection_independently() {
-    use ehrbase_rest::{AqlQueryRequest, QueryService};
     use ehrbase::service::EhrbaseService;
+    use ehrbase_rest::{AqlQueryRequest, QueryService};
 
     let pg = Pg::start().await;
     let pool = pg.migrated_pool("authz_query_scope_db").await;
