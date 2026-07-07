@@ -19,6 +19,7 @@ pub mod backend;
 pub mod config;
 mod dispatch;
 mod error;
+pub mod management;
 mod negotiate;
 mod openapi;
 mod params;
@@ -33,8 +34,9 @@ pub use backend::{
 };
 pub use config::RestConfig;
 pub use error::RestError;
+pub use management::{ManagementConfig, Observability};
 pub use response::{ResourceMeta, ServiceResponse};
-pub use router::router;
+pub use router::{management_router, router};
 pub use state::AppState;
 
 /// Errors raised while starting the server.
@@ -119,16 +121,80 @@ pub async fn serve_with_audit(
     backend: std::sync::Arc<dyn Backend>,
     audit: Option<ehrbase_audit::AuditSender>,
 ) -> Result<(), ServeError> {
+    let bind = config.bind.clone();
+    let app = build_with_audit(config, backend, audit)?;
+    run_server(app, &bind).await
+}
+
+/// Build the application router with a concrete backend, an optional ATNA audit
+/// sender, and a full [`Observability`] bundle (management surface + telemetry
+/// handles). The management surface is merged into the returned router when it
+/// is enabled and not bound to a separate port.
+///
+/// # Errors
+/// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
+pub fn build_full(
+    config: RestConfig,
+    backend: std::sync::Arc<dyn Backend>,
+    audit: Option<ehrbase_audit::AuditSender>,
+    observability: Observability,
+) -> Result<axum::Router, ServeError> {
+    let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
+    let state = AppState::with_parts(config, backend, audit, observability);
+    Ok(router(state, authenticator))
+}
+
+/// Build and serve the application with full observability: the API + audit +
+/// telemetry surface, and — when `management.port` is set — the management
+/// surface on its own internal listener (otherwise merged into the main app).
+/// Graceful shutdown on `SIGINT`/`SIGTERM` covers both listeners.
+///
+/// # Errors
+/// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
+pub async fn serve_full(
+    config: RestConfig,
+    backend: std::sync::Arc<dyn Backend>,
+    audit: Option<ehrbase_audit::AuditSender>,
+    observability: Observability,
+) -> Result<(), ServeError> {
+    let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
+    let bind = config.bind.clone();
+    let management_enabled = observability.management.enabled;
+    let management_port = observability.management.port;
+    let state = AppState::with_parts(config, backend, audit, observability);
+    let main_app = router(state.clone(), authenticator.clone());
+
+    // Separate-port management listener (§2): its own axum server task.
+    let management_task = if management_enabled && let Some(port) = management_port {
+        let management_app = management_router(&state, authenticator);
+        let management_bind = format!("0.0.0.0:{port}");
+        tracing::info!(bind = %management_bind, "ehrbase-rest management listening (separate port)");
+        Some(tokio::spawn(async move {
+            if let Err(e) = run_server(management_app, &management_bind).await {
+                tracing::error!("management listener stopped: {e}");
+            }
+        }))
+    } else {
+        None
+    };
+
+    let result = run_server(main_app, &bind).await;
+    if let Some(task) = management_task {
+        task.abort();
+    }
+    result
+}
+
+/// Serve one router: wrap it in the path-normalization layer, bind, and serve
+/// with graceful shutdown and per-connection peer info.
+async fn run_server(app: axum::Router, bind: &str) -> Result<(), ServeError> {
     use std::net::SocketAddr;
 
     use tower::Layer;
     use tower_http::normalize_path::NormalizePathLayer;
 
-    let bind = config.bind.clone();
-    let app = build_with_audit(config, backend, audit)?;
     let app = NormalizePathLayer::trim_trailing_slash().layer(app);
-
-    let listener = tokio::net::TcpListener::bind(&bind).await?;
+    let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!(%bind, "ehrbase-rest listening");
     let make = axum::ServiceExt::<axum::extract::Request>::into_make_service_with_connect_info::<
         SocketAddr,

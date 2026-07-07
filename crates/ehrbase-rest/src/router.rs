@@ -18,6 +18,7 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
 use crate::auth::{self, Authenticator};
+use crate::management::{self, ManagementState};
 use crate::state::AppState;
 use crate::{dispatch, openapi, status};
 
@@ -34,20 +35,27 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// before routing); see [`crate::serve`].
 pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     let cfg = state.config().clone();
+    let observability = state.observability().clone();
     let rest_root = cfg
         .base_path
         .strip_suffix("/openehr/v1")
         .unwrap_or(&cfg.base_path)
         .to_owned();
 
-    // The generated ITS-REST surface, gated by authentication. The ATNA audit
-    // layer wraps auth (outermost) so it observes auth rejections too (§8.2);
-    // installed only when a sender is wired in.
-    let api = dispatch::api_router().layer(from_fn_with_state(authenticator, auth::middleware));
+    // The generated ITS-REST surface, gated by authentication. Layers, innermost
+    // → outermost: auth · ATNA audit (§8.2, wraps auth so it observes auth
+    // rejections) · HTTP metrics (§1.2) · root span (§1.1, outermost so the span
+    // and metrics cover the whole request incl. auth). The metrics/span layers
+    // sit on the API router so `MatchedPath` resolves to the route template.
+    let api =
+        dispatch::api_router().layer(from_fn_with_state(authenticator.clone(), auth::middleware));
     let api = match state.audit() {
         Some(sender) => api.layer(from_fn_with_state(sender, crate::audit::middleware)),
         None => api,
     };
+    let api = api
+        .layer(axum::middleware::from_fn(management::http_metrics))
+        .layer(axum::middleware::from_fn(management::root_span));
 
     let mut app = Router::new()
         .nest(&cfg.base_path, api)
@@ -66,22 +74,44 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         CorsLayer::new()
     };
 
-    app.layer(
-        ServiceBuilder::new()
-            .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
-            .layer(PropagateRequestIdLayer::x_request_id())
-            .layer(SetSensitiveRequestHeadersLayer::new(std::iter::once(
-                AUTHORIZATION,
-            )))
-            .layer(TraceLayer::new_for_http())
-            .layer(CatchPanicLayer::new())
-            .layer(cors)
-            .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
-            .layer(TimeoutLayer::with_status_code(
-                StatusCode::REQUEST_TIMEOUT,
-                REQUEST_TIMEOUT,
-            ))
-            .layer(CompressionLayer::new()),
-    )
-    .with_state(state)
+    let app = app
+        .layer(
+            ServiceBuilder::new()
+                .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
+                .layer(PropagateRequestIdLayer::x_request_id())
+                .layer(SetSensitiveRequestHeadersLayer::new(std::iter::once(
+                    AUTHORIZATION,
+                )))
+                .layer(TraceLayer::new_for_http())
+                .layer(CatchPanicLayer::new())
+                .layer(cors)
+                .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
+                .layer(TimeoutLayer::with_status_code(
+                    StatusCode::REQUEST_TIMEOUT,
+                    REQUEST_TIMEOUT,
+                ))
+                .layer(CompressionLayer::new()),
+        )
+        .with_state(state);
+
+    // Merge the management surface only when enabled AND not bound to a separate
+    // port (the binary serves the separate-port case on its own listener).
+    if observability.management.enabled && observability.management.port.is_none() {
+        let mgmt = management::router(ManagementState::from_observability(
+            observability,
+            authenticator,
+        ));
+        app.merge(mgmt)
+    } else {
+        app
+    }
+}
+
+/// Build the standalone management router (separate-port mode). The binary
+/// serves this on the management listener when `management.port` is set.
+pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) -> Router {
+    management::router(ManagementState::from_observability(
+        state.observability().clone(),
+        authenticator,
+    ))
 }

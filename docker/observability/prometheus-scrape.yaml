@@ -1,0 +1,11 @@
+# Extra Prometheus scrape config merged into the bundled otel-lgtm Prometheus
+# (binding doc §5). Scrapes the app's management Prometheus endpoint over the
+# compose network. The management port (9464) is internal-only.
+- job_name: ehrbase
+  metrics_path: /management/prometheus
+  scrape_interval: 15s
+  static_configs:
+    - targets:
+        - ehrbase:9464
+      labels:
+        service: ehrbase

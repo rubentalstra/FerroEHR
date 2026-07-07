@@ -1,7 +1,19 @@
 # Observability — traces, metrics, logs, health (binding design)
 
-- **Status:** design v2 (2026-07-06) — full rewrite of the 2026-07-05 sketch;
-  this version is the implementation contract.
+- **Status:** **implemented** (2026-07-07) — the design v2 contract shipped in a
+  single pass (§7). `ehrbase::telemetry` (init + `TelemetryGuard` + reloadable
+  `EnvFilter` + json/pretty/auto logs + OTLP traces + OTLP metrics-push code path
+  + Prometheus recorder with the §1.2 bucket ladders + build/process gauges +
+  db-pool/tokio-runtime samplers) and `ehrbase-rest::management` (health registry
+  + liveness/readiness + info/prometheus/metrics/env/loggers behind the
+  access-level layer + separate-port mode + the own HTTP-metrics tower layer +
+  root-span/traceparent middleware) are all in the tree, wired through the binary
+  (`serve_full`) and covered by the §6 test suite (unit + `management.rs` +
+  `trace_shape.rs` + `telemetry.rs` metric-catalog snapshot + OTLP smokes +
+  cardinality guard). Deviations from the spec below are recorded in the
+  "Implementation notes" at the end.
+- **Status (prior):** design v2 (2026-07-06) — full rewrite of the 2026-07-05
+  sketch; the implementation contract.
 - **Prior art:** EHRbase's Spring Boot Actuator surface
   (`https://docs.ehrbase.org/docs/EHRbase/Explore/Status-And-Metrics`) — the
   *behavioural* reference for the management endpoints and their
@@ -276,3 +288,35 @@ tuning of shipped code, never missing capability.
 6. No new crate: `ehrbase::telemetry` + `ehrbase-rest::management`.
 7. Dev stack = `grafana/otel-lgtm` single container; dashboard + alert pack
    ship in the repo.
+
+## 9. Implementation notes (as-built deviations, 2026-07-07)
+
+All justified; each favours the §8.4 PHI invariant or the pinned crate set.
+
+1. **`url.path` span attribute dropped.** §1.1 lists `url.path`, but the raw path
+   embeds the `ehr_id` — a direct §8.4 PHI violation. The root span records
+   `http.route` (the template) instead; `url.path` is omitted. The trace-shape
+   test asserts the `ehr_id` never appears in any span field.
+2. **OTLP metrics push covers SDK-native gauges, not the whole `metrics` facade.**
+   The pinned set has no `metrics`→OTLP bridge, so the OTLP meter provider (built
+   + installed + smoke-tested when `otel.metrics_push` is on) mirrors the
+   pool/runtime gauges through the OTel meter; the counter/histogram families stay
+   Prometheus-pull (§8.2 makes pull the metrics default). Everything is on
+   `/management/prometheus` regardless.
+3. **OTLP export smoke uses the in-process in-memory exporter** (allowed by the
+   task note) rather than a tonic mock collector: it exercises the SDK batch/
+   periodic export pipeline (spans and metrics) without a live collector.
+4. **`validation_failures_total{pass}` labels are `rm_terminology` + `template`.**
+   `openehr-flat` combines RM-invariant + terminology into one validation pass, so
+   the label set reflects the two passes the validator actually exposes.
+5. **`db_transactions_total{outcome}` is emitted `commit` at the composition +
+   contribution write paths** (the dominant clinical writes); rollback is not
+   separately counted (errors surface via the HTTP + AQL/validation metrics). The
+   metric is registered/bucketed; broadening emission to every service tx is a
+   follow-up.
+6. **Readiness DB-DOWN test uses a lazily-connected unreachable pool** rather than
+   a testcontainer stop — deterministic and Docker-free; the healthy direction is
+   covered by the persistence suite and the health-registry unit truth table.
+7. **`/management/info` moved off the always-on P11 status router** into the
+   opt-in management surface (which "extends the P11 endpoint" per §2), so it is
+   now off by default like the rest of the surface.

@@ -10,3 +10,4 @@ pub mod aql;
 pub mod db;
 pub mod service;
 pub mod storage;
+pub mod telemetry;

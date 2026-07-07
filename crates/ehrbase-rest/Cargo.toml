@@ -39,6 +39,14 @@ figment = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 jiff = { workspace = true }
+# Metrics facade + the Prometheus recorder handle (the HTTP-metrics tower layer
+# and the /management/prometheus render surface).
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+# Trace-context propagation (W3C traceparent) + the OTel span extension used by
+# the root-span middleware; the export layer itself is installed in the binary.
+opentelemetry = { workspace = true }
+tracing-opentelemetry = { workspace = true }
 
 # Authentication: Basic (argon2) + OAuth2/OIDC bearer (jsonwebtoken over a JWKS,
 # issuer discovery via openidconnect, whose bundled reqwest does the network I/O).
@@ -62,6 +70,9 @@ serde_json = { workspace = true }
 figment = { workspace = true, features = ["test"] }
 jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 [features]
 admin-api = []

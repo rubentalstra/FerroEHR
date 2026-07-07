@@ -232,6 +232,8 @@ impl EhrbaseService {
         let (contribution_id, _) =
             vobject::commit_contribution(&mut tx, ehr_id, &contribution_audit, changes).await?;
         tx.commit().await?;
+        metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
+            .increment(1);
 
         let body = self.get_contribution(ehr_id, contribution_id).await?;
         // 201_CONTRIBUTION: ETag(contribution_uid) + Location.

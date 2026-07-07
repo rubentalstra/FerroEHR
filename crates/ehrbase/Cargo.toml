@@ -19,6 +19,16 @@ reqwest.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+# Observability (telemetry init): the OTLP export layer + metrics facade +
+# Prometheus recorder. The single `tracing` API fans out to stdout logs and
+# (opt-in) OTLP spans; `metrics` is pulled via the Prometheus recorder.
+tracing-opentelemetry.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+opentelemetry-semantic-conventions.workspace = true
+metrics.workspace = true
+metrics-exporter-prometheus.workspace = true
 jiff-sqlx.workspace = true
 sea-query.workspace = true
 sea-query-sqlx.workspace = true
@@ -49,6 +59,14 @@ axum.workspace = true
 tower.workspace = true
 http.workspace = true
 http-body-util.workspace = true
+insta.workspace = true
+ehrbase-rest = { path = "../ehrbase-rest" }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-opentelemetry.workspace = true
+opentelemetry.workspace = true
+# The in-memory OTLP exporters for the export-pipeline smoke tests.
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "testing"] }
 
 [lints]
 workspace = true

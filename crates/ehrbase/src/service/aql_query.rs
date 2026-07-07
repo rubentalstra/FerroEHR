@@ -9,6 +9,8 @@
 //! `LIMIT`/`OFFSET`/`TOP` (`400`), and otherwise take the AQL clause when present
 //! else the REST parameter.
 
+use std::time::Instant;
+
 use jiff::Timestamp;
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -18,6 +20,7 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_query::parser::parse_str;
 
 use crate::aql::{self, AqlError, ExecError, ParamValue, Params, QueryResult, SqlCtx};
+use crate::telemetry::prometheus::{AQL_QUERIES, AQL_QUERY_DURATION};
 
 use super::EhrbaseService;
 
@@ -28,18 +31,48 @@ impl EhrbaseService {
     /// Parse, plan, execute, and assemble an AQL query into an ITS-REST
     /// `RESULT_SET` JSON value. `name` is the stored-query name for the result
     /// metadata (`None` for an ad-hoc query).
+    ///
+    /// Emits the §1.2 AQL metrics: `aql_query_duration_seconds{phase}` for the
+    /// `plan` and `execute` phases (the engine folds sql-lowering + assembly
+    /// into `execute`), and `aql_queries_total{outcome}` exactly once per call.
     pub(super) async fn execute_aql(
         &self,
         aql: &str,
         name: Option<&str>,
         request: &AqlQueryRequest,
     ) -> Result<Value, ApiError> {
-        let ast = parse_str(aql).map_err(|e| ApiError::BadRequest(format!("invalid AQL: {e}")))?;
+        let plan_start = Instant::now();
+        let ast = match parse_str(aql) {
+            Ok(ast) => ast,
+            Err(e) => {
+                count_query("analysis_error");
+                return Err(ApiError::BadRequest(format!("invalid AQL: {e}")));
+            }
+        };
         let params = build_params(request);
-        let ir = aql::plan(&ast, &params).map_err(map_plan_error)?;
+        let ir = match aql::plan(&ast, &params) {
+            Ok(ir) => ir,
+            Err(e) => {
+                count_query(plan_outcome(&e));
+                return Err(map_plan_error(e));
+            }
+        };
+        record_phase("plan", plan_start);
 
-        let (limit, offset) = compose_paging(ir.limit, ir.offset, request)?;
-        let ehr_id = parse_ehr_id(request.ehr_id.as_deref())?;
+        let (limit, offset) = match compose_paging(ir.limit, ir.offset, request) {
+            Ok(paging) => paging,
+            Err(e) => {
+                count_query("analysis_error");
+                return Err(e);
+            }
+        };
+        let ehr_id = match parse_ehr_id(request.ehr_id.as_deref()) {
+            Ok(id) => id,
+            Err(e) => {
+                count_query("analysis_error");
+                return Err(e);
+            }
+        };
         let ctx = SqlCtx {
             system_id: self.system_id.clone(),
             ehr_id,
@@ -47,10 +80,45 @@ impl EhrbaseService {
             offset,
         };
 
-        let result = aql::execute(&self.pool, &ir, &params, &ctx)
-            .await
-            .map_err(map_exec_error)?;
+        let exec_start = Instant::now();
+        let result = match aql::execute(&self.pool, &ir, &params, &ctx).await {
+            Ok(result) => result,
+            Err(e) => {
+                count_query(exec_outcome(&e));
+                return Err(map_exec_error(e));
+            }
+        };
+        record_phase("execute", exec_start);
+        count_query("ok");
         Ok(result_set_json(aql, name, &result))
+    }
+}
+
+/// Increment `aql_queries_total{outcome}` (§1.2). Closed outcome set.
+fn count_query(outcome: &'static str) {
+    metrics::counter!(AQL_QUERIES, "outcome" => outcome).increment(1);
+}
+
+/// Record `aql_query_duration_seconds{phase}` for a completed phase.
+fn record_phase(phase: &'static str, start: Instant) {
+    metrics::histogram!(AQL_QUERY_DURATION, "phase" => phase).record(start.elapsed().as_secs_f64());
+}
+
+/// The outcome label for a planning error.
+fn plan_outcome(e: &AqlError) -> &'static str {
+    match e {
+        AqlError::Feature(_) => "feature_rejected",
+        AqlError::Analysis(_) | AqlError::Sql(_) => "analysis_error",
+        AqlError::Exec(_) => "exec_error",
+    }
+}
+
+/// The outcome label for an execution error.
+fn exec_outcome(e: &AqlError) -> &'static str {
+    match e {
+        AqlError::Feature(_) => "feature_rejected",
+        AqlError::Analysis(_) | AqlError::Sql(_) => "analysis_error",
+        AqlError::Exec(_) => "exec_error",
     }
 }
 
