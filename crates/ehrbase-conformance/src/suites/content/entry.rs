@@ -11,17 +11,29 @@
 //!   carries an OBSERVATION → HISTORY → `POINT_EVENT`). The `state`/`protocol`
 //!   existence rows in the same tables are `0..1` in the RM and only an archetype
 //!   narrows them — those rows are archetype constraints (not asserted here).
-//! - **archetype constraints** (skipped): HISTORY `events` cardinality + `summary`
-//!   existence, EVENT type narrowing (`POINT_EVENT/INTERVAL_EVENT`), and
-//!   `ITEM_STRUCTURE` type narrowing (`ITEM_TREE/LIST/TABLE/SINGLE`) — all need a
-//!   constraint-expressing OPT the corpus does not contain (design §2.2a);
-//!   transcribed + cited, returning `Skipped`.
+//! - **`ITEM_STRUCTURE` type narrowing** (driven via `clinical_content_validation`):
+//!   that OPT narrows four EVALUATION `data` slots to `ITEM_SINGLE/TREE/LIST/TABLE`
+//!   and ships a committable composition. Each case commits the valid composition
+//!   (accepted) then a copy whose slot `_type` is swapped to a sibling subtype the
+//!   slot forbids (rejected, "Class not allowed"). Our validator does **not** yet
+//!   enforce this narrowing (an **open finding** — the SUT accepts the wrong
+//!   subtype); driven and failing, never masked as a skip (design §4.5).
+//! - **archetype constraints still skipped**: HISTORY `events` cardinality +
+//!   `summary` existence and EVENT type narrowing (`POINT_EVENT/INTERVAL_EVENT`) —
+//!   no vendored OPT narrows HISTORY.events cardinality beyond `0..*` nor an EVENT
+//!   slot to a subtype (searched `all_types`, `minimal_entry_combination/*`,
+//!   `clinical_content_validation`, `composition_evaluation_test`,
+//!   `cardinality_of_section`); `CONT-ITEM_STR-type_any` likewise (no OPT leaves an
+//!   `ITEM_STRUCTURE` slot open). Transcribed + cited, returning `Skipped`.
+
+use serde_json::{Value, json};
 
 use crate::case::Chapter;
 use crate::harness::{CaseFuture, CaseRun, RunContext};
 use crate::registry::CaseEntry;
 
-use super::drive::{self, meta};
+use super::drive::{self, Constraint, Expected, meta};
+use super::mutate;
 
 /// The implemented master16 case entries (26 CONT cases).
 #[must_use]
@@ -63,18 +75,73 @@ pub fn entries() -> Vec<CaseEntry> {
     all.push(entry("CONT-EVENT-type_point_event", run_skip_event_type));
     all.push(entry("CONT-EVENT-type_interval_event", run_skip_event_type));
 
-    // ── ITEM_STRUCTURE (5) — type narrowing archetype ────────────────────────
-    for id in [
-        "CONT-ITEM_STR-type_any",
-        "CONT-ITEM_STR-type_item_tree",
-        "CONT-ITEM_STR-type_item_list",
-        "CONT-ITEM_STR-type_item_table",
-        "CONT-ITEM_STR-type_item_single",
-    ] {
-        all.push(entry(id, run_skip_item_str));
-    }
+    // ── ITEM_STRUCTURE (5) — type narrowing, driven via clinical_content_validation ─
+    // The `clinical_content_validation` OPT narrows four EVALUATION `data` slots to
+    // a specific ITEM_STRUCTURE subtype; its vendored composition fills each with
+    // the matching type (accepted). Swapping a slot's `_type` to a sibling subtype
+    // is the truth-table "Class not allowed" rejection (master16 §ITEM_STRUCTURE).
+    // `type_any` stays skipped: no vendored OPT leaves an ITEM_STRUCTURE slot open,
+    // so the "any subtype accepted" positive cannot be isolated.
+    all.push(entry("CONT-ITEM_STR-type_any", run_skip_item_str));
+    all.push(entry("CONT-ITEM_STR-type_item_tree", run_item_str_tree));
+    all.push(entry("CONT-ITEM_STR-type_item_list", run_item_str_list));
+    all.push(entry("CONT-ITEM_STR-type_item_table", run_item_str_table));
+    all.push(entry("CONT-ITEM_STR-type_item_single", run_item_str_single));
 
     all
+}
+
+/// `clinical_content_validation.opt` + its vendored composition. Content slots:
+/// `content[1].data`=`ITEM_SINGLE`, `[2]`=`ITEM_TREE`, `[3]`=`ITEM_LIST`,
+/// `[4]`=`ITEM_TABLE` — each narrowed by the OPT to that exact subtype.
+const CLINICAL: Constraint = Constraint {
+    opt: "validation/clinical_content_validation.opt",
+    comp: "compositions/CANONICAL_JSON/clinical_content_validation__full.json",
+};
+
+/// Drive an `ITEM_STRUCTURE` type-narrowing case: commit the vendored composition
+/// (accepted), then a copy whose `pointer` node's `_type` is swapped to
+/// `wrong_type`, a sibling subtype the OPT slot forbids (rejected, "Class not
+/// allowed").
+fn drive_item_str<'a>(
+    ctx: &'a RunContext<'a>,
+    narrowed: &'static str,
+    pointer: &'static str,
+    wrong_type: &'static str,
+) -> CaseFuture<'a> {
+    Box::pin(async move {
+        drive::drive_constraint(
+            ctx,
+            &CLINICAL,
+            "ITEM_STRUCTURE slot filled with the narrowed subtype (accepted)",
+            vec![(
+                format!(
+                    "ITEM_STRUCTURE {narrowed} slot filled with {wrong_type} (Class not allowed)"
+                ),
+                Box::new(move |c: &mut Value| {
+                    mutate::set_pointer(c, &format!("{pointer}/_type"), json!(wrong_type));
+                }),
+                Expected::Rejected,
+            )],
+        )
+        .await
+    })
+}
+
+fn run_item_str_tree<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_item_str(ctx, "ITEM_TREE", "/content/2/data", "ITEM_LIST")
+}
+
+fn run_item_str_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_item_str(ctx, "ITEM_LIST", "/content/3/data", "ITEM_TREE")
+}
+
+fn run_item_str_table<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_item_str(ctx, "ITEM_TABLE", "/content/4/data", "ITEM_TREE")
+}
+
+fn run_item_str_single<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_item_str(ctx, "ITEM_SINGLE", "/content/1/data", "ITEM_TREE")
 }
 
 fn entry(id: &'static str, run: CaseRun) -> CaseEntry {
