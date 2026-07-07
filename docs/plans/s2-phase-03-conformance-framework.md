@@ -67,11 +67,16 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
 - [x] 7. Content chapters (master15–17, **118/119 transcribed**; the 119th is the
       `CONT-DV_TEXT-validate_open#2` upstream duplicate → `Excluded`). All 118
       registered + cited against the truth tables via the typed mutation catalogue
-      (`content/mutate.rs`) + driver (`content/drive.rs`). **12 driven** at the
-      RM/schema level (mandatory-attribute rows) on the vendored committable bases
-      — all 12 surface **F-open-9** (shared root cause with F-open-3); **106
-      Skipped** (archetype-constraint cases needing a constraint-expressing OPT the
-      corpus does not ship). Green e2e on self-hosted PG18 (0 transport errors).
+      (`content/mutate.rs`) + driver (`content/drive.rs`). **20 driven** — 12 at
+      the RM/schema level (mandatory-attribute rows, all surface **F-open-9**) plus
+      8 re-driven against the full constraint-carrying corpus
+      (`all_types`/`clinical_content_validation` OPTs + their canonical
+      compositions): 3 **pass** (DV_QUANTITY units / DV_ORDINAL / DV_CODED_TEXT
+      local-codes — our validator enforces these), 5 new findings (**F-open-30**
+      C_DATE_TIME pattern, **F-open-31** ITEM_STRUCTURE narrowing ×4). **98
+      Skipped** (no OPT both constrains the leaf and ships a committable canonical
+      composition — OPTs searched named per case). Self-host e2e on PG18: 3 passed,
+      17 failed (findings), 98 skipped, 0 transport errors.
 - [ ] 8. OPTIONS chapters we implement (master12 admin subset, master10
       demographic) + the `SIGN-*` capability cases; wire the two CI tiers;
       first committed `docs/conformance/` + README badge.
@@ -217,9 +222,52 @@ one shared root cause:**
   require rejection. Fix once in the commit-time validation (typed presence checks)
   and all 12 flip green.
 
+**Constraint-carrying OPTs re-drive the archetype-constraint cases (2026-07-07).**
+The content chapters were re-driven against the *full* constraint corpus
+(`all_types/Test_all_types{,_v2}.opt` + their bare canonical compositions under
+`query/data_load/compositions/`, `clinical_content_validation.opt` + its
+composition) via [`drive::drive_constraint`]. **Driven rose 12 → 20**; the
+self-hosted PG18 run now reports **3 passed, 17 failed (findings), 98 skipped**
+(0 transport errors). The three newly-**passing** cases prove our validator
+already enforces those archetype constraints correctly:
+`CONT-DV_QUANTITY-validate_property_units` (units off the `{mg,kg}` list rejected),
+`CONT-DV_ORDINAL-validate_constraint` (symbol off the ordinal list rejected),
+`CONT-DV_CODED_TEXT-validate_local_codes` (code off the `local` code_list rejected).
+Two new findings:
+
+- **F-open-30 (`C_DATE_TIME` field-validity pattern not enforced):**
+  `CONT-DV_DATE_TIME-validate_constraint` drives `Test_all_types` `items[at0010]`
+  (DV_DATE_TIME `value` constrained to `yyyy-mm-ddTHH:MM:SS`). A partial value
+  `2021` (missing the mandatory month/day/time fields) is **accepted with `201`**
+  where master17.4 §DV_DATE_TIME-validate_constraint requires rejection. The leaf
+  validator (`openehr-flat` `leaf.rs`) documents temporal-range/pattern checks as
+  deferred; this is the CNF confirmation. Fix in the leaf C_DATE_TIME validity check.
+- **F-open-31 (ITEM_STRUCTURE type narrowing not enforced):**
+  `CONT-ITEM_STR-type_item_{tree,list,table,single}` drive
+  `clinical_content_validation` — four EVALUATION `data` slots the OPT narrows to a
+  specific ITEM_STRUCTURE subtype. Swapping a slot's `_type` to a sibling subtype
+  (e.g. ITEM_LIST where the slot is narrowed to ITEM_TREE) is **accepted with `201`**
+  where master16 §ITEM_STRUCTURE requires rejection ("Class not allowed"). The
+  WebTemplate archetype-conformance walk does not reject a sibling ITEM_STRUCTURE
+  subtype in a narrowed slot. All four flip green when the walk enforces the slot's
+  narrowed `rm_type`.
+
+Cases still `Skipped` name the OPTs searched and why none drives them (per-case
+notes in `data_types.rs` / `entry.rs` / `composition.rs`): no vendored OPT both
+constrains the leaf *and* ships a committable canonical-JSON composition — the
+`master15` COMPOSITION content-cardinality intervals (`cardinality_of_section`
+constrains SECTION occurrences, not the six per-case content-cardinality
+intervals), `master16` HISTORY cardinality / EVENT subtype narrowing (no OPT
+narrows either), DV_COUNT range/list & DV_QUANTITY magnitude-range
+(`ehrn_vital_signs`, FLAT-only instance), DV_PROPORTION (`proportion.opt`/`ehrn`,
+no canonical instance), DV_SCALE / DV_DATE / DV_TIME / DV_DURATION-fields /
+DV_BOOLEAN / DV_IDENTIFIER / DV_MULTIMEDIA media-type (no constrained committable
+canonical leaf; `obs_*` contribution instances omit `archetype_details` on their
+content ENTRYs and fail the `Is_archetypeRoot` RM invariant as a bare commit).
+
 All content findings are surfaced by the runner asserting the CNF truth-table
 `expected` column, never fabricated and never weakened to green a run (design §4.5);
-the self-hosted PG18 run reports 0 transport errors (12 Failed = findings, 106
+the self-hosted PG18 run reports 0 transport errors (17 Failed = findings, 98
 Skipped = non-executable-as-specified).
 
 ### master11 (QUERY) — surfaced by the `QUERY-FIXTURE-*` cases

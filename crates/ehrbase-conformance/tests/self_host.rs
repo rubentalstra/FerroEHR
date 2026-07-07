@@ -62,6 +62,96 @@ async fn master06_ehr_cases_run_against_self_hosted_sut() {
     assert_eq!(results.identified(), 322);
 }
 
+/// The content-chapter (master15/16/17.x) data-validation cases against the
+/// self-hosted SUT. Prints every outcome for visibility; asserts only that no
+/// case errors at the transport level. The pass/fail split is the finding
+/// surface (design §4.5): a driven constraint case that FAILS is an open finding
+/// (the SUT accepted a value the truth table rejects), not a masked skip.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn content_cases_run_against_self_hosted_sut() {
+    let sut = Sut::self_hosted()
+        .await
+        .expect("boot self-hosted SUT (is Docker running?)");
+
+    let config = RunConfig {
+        filter: Some("CONT-".to_owned()),
+        profile: None,
+        formats: vec![Format::Json],
+        rm_version: "1.2.0".to_owned(),
+        auth_mode: "basic (self-host, RBAC off)".to_owned(),
+    };
+    let results = run(sut.transport(), &config).await.expect("run");
+
+    let mut passed = 0u32;
+    let mut failed = 0u32;
+    let mut skipped = 0u32;
+    for c in &results.cases {
+        match c.status {
+            CaseStatus::Passed => passed += 1,
+            CaseStatus::Failed => failed += 1,
+            CaseStatus::Skipped => skipped += 1,
+            CaseStatus::Errored => {}
+        }
+        println!(
+            "{:<48} {:?} {}/{} {}",
+            c.id,
+            c.status,
+            c.passed_data_sets,
+            c.total_data_sets,
+            c.message.as_deref().unwrap_or("")
+        );
+    }
+    println!("CONTENT SUMMARY: {passed} passed, {failed} failed (findings), {skipped} skipped");
+
+    assert!(
+        !results
+            .cases
+            .iter()
+            .any(|c| c.status == CaseStatus::Errored),
+        "no content case should error at the transport level"
+    );
+
+    let status = |id: &str| {
+        results
+            .cases
+            .iter()
+            .find(|c| c.id == id)
+            .unwrap_or_else(|| panic!("{id} ran"))
+            .status
+    };
+
+    // Archetype constraints our validator ENFORCES → the driven case PASSES (both
+    // the vendored valid composition accepted and the constraint-violating copy
+    // rejected). These lock in correct behaviour; a regression flips them.
+    for id in [
+        "CONT-DV_QUANTITY-validate_property_units",
+        "CONT-DV_ORDINAL-validate_constraint",
+        "CONT-DV_CODED_TEXT-validate_local_codes",
+    ] {
+        assert_eq!(status(id), CaseStatus::Passed, "{id} must pass (enforced)");
+    }
+
+    // Archetype constraints our validator does NOT yet enforce → the driven case
+    // FAILS: the SUT accepts (201) a value the truth table rejects (422). Recorded
+    // as open findings (F-open-30/31), never masked as a skip; each assertion
+    // flips to Passed when the validator gap is closed.
+    for id in [
+        // F-open-30: C_DATE_TIME field-validity pattern not enforced.
+        "CONT-DV_DATE_TIME-validate_constraint",
+        // F-open-31: ITEM_STRUCTURE type narrowing (Class not allowed) not enforced.
+        "CONT-ITEM_STR-type_item_tree",
+        "CONT-ITEM_STR-type_item_list",
+        "CONT-ITEM_STR-type_item_table",
+        "CONT-ITEM_STR-type_item_single",
+    ] {
+        assert_eq!(
+            status(id),
+            CaseStatus::Failed,
+            "{id} is an open finding (SUT accepts a value the truth table rejects)"
+        );
+    }
+}
+
 /// The runner-defined SIGN-* capability cases (design §4.6) against the
 /// self-hosted SUT: the four digest cases must PASS (the SUT signs by default,
 /// `digest` mode — version-signing.md §3.4) and `SIGN-pgp-verifies` must be
