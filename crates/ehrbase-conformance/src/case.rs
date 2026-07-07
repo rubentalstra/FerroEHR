@@ -85,6 +85,12 @@ pub enum Chapter {
     Master17_6,
     /// master17.7 — content: data types — URI.
     Master17_7,
+    /// A non-schedule pseudo-chapter for the runner-defined `SIGN-*` capability
+    /// cases (design §4.6): upstream ships zero Signing test material, so these
+    /// sit outside the 322-case schedule inventory. Deliberately **absent from
+    /// [`Chapter::ALL`]** (which is the schedule chapters only) — it maps to no
+    /// `.adoc` file and never appears in the parsed inventory.
+    Signing,
 }
 
 impl Chapter {
@@ -134,6 +140,9 @@ impl Chapter {
             Chapter::Master17_5 => "master17.5-content_tc_data_types-time_specification.adoc",
             Chapter::Master17_6 => "master17.6-content_tc_data_types-encapsulated.adoc",
             Chapter::Master17_7 => "master17.7-content_tc_data_types-uri.adoc",
+            // A sentinel that matches no vendored `.adoc`, so `from_source_file`
+            // never yields this pseudo-chapter (runner-defined SIGN-* cases only).
+            Chapter::Signing => "__runner_defined__signing",
         }
     }
 
@@ -149,6 +158,9 @@ impl Chapter {
     /// the first `-`), e.g. `"master06"`, `"master17.3"`.
     #[must_use]
     pub fn label(self) -> &'static str {
+        if matches!(self, Chapter::Signing) {
+            return "signing";
+        }
         // The prefix before the first '-' of the source file name.
         let file = self.source_file();
         match file.split_once('-') {

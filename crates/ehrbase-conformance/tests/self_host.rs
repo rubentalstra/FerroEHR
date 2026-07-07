@@ -8,7 +8,7 @@
 #![cfg(feature = "self-host")]
 #![allow(clippy::expect_used)]
 
-use ehrbase_conformance::case::{Format, Profile};
+use ehrbase_conformance::case::Format;
 use ehrbase_conformance::results::CaseStatus;
 use ehrbase_conformance::run::{RunConfig, run};
 use ehrbase_conformance::sut::Sut;
@@ -60,4 +60,92 @@ async fn master06_ehr_cases_run_against_self_hosted_sut() {
 
     // The inventory is still fully classified.
     assert_eq!(results.identified(), 322);
+}
+
+/// The runner-defined SIGN-* capability cases (design §4.6) against the
+/// self-hosted SUT: the four digest cases must PASS (the SUT signs by default,
+/// `digest` mode — version-signing.md §3.4) and `SIGN-pgp-verifies` must be
+/// SKIPPED (the self-hosted SUT is not in `pgp` mode).
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn sign_capability_cases_run_against_self_hosted_sut() {
+    let sut = Sut::self_hosted()
+        .await
+        .expect("boot self-hosted SUT (is Docker running?)");
+
+    let config = RunConfig {
+        filter: Some("SIGN-".to_owned()),
+        profile: None,
+        formats: vec![Format::Json, Format::Xml],
+        rm_version: "1.2.0".to_owned(),
+        auth_mode: "basic (self-host, RBAC off)".to_owned(),
+    };
+    let results = run(sut.transport(), &config).await.expect("run");
+
+    for c in &results.cases {
+        println!(
+            "{:<24} {:<5} {:?} {}/{} {}",
+            c.id,
+            c.format,
+            c.status,
+            c.passed_data_sets,
+            c.total_data_sets,
+            c.message.as_deref().unwrap_or("")
+        );
+    }
+
+    // No transport-level errors.
+    assert!(
+        !results
+            .cases
+            .iter()
+            .any(|c| c.status == CaseStatus::Errored),
+        "no SIGN case should error at the transport level"
+    );
+
+    let outcome = |id: &str, fmt: &str| {
+        results
+            .cases
+            .iter()
+            .find(|c| c.id == id && c.format == fmt)
+            .unwrap_or_else(|| panic!("{id} ({fmt}) ran"))
+    };
+
+    // The four digest cases prove the capability in canonical JSON.
+    for id in [
+        "SIGN-digest-present",
+        "SIGN-digest-recomputes",
+        "SIGN-all-kinds",
+        "SIGN-client-verbatim",
+    ] {
+        let c = outcome(id, "json");
+        assert_eq!(c.status, CaseStatus::Passed, "{id} (json): {:?}", c.message);
+    }
+
+    // SIGN-digest-present in canonical XML surfaces the SAME known gap as F-open-6:
+    // the versioned-object VERSION endpoints have no canonical-XML serializer yet
+    // (406 "canonical XML … once typed payloads land (P12)"). The RM/serialization
+    // layer already emits the signature in XML (ehrbase `service_signing::
+    // canonical_xml_carries_the_signature`); only the REST negotiation is missing.
+    // Recorded as a finding, not weakened away — this assertion flips when the gap
+    // is fixed.
+    let xml = outcome("SIGN-digest-present", "xml");
+    assert_eq!(
+        xml.status,
+        CaseStatus::Failed,
+        "SIGN-digest-present (xml) is expected to fail on the F-open-6 gap: {:?}",
+        xml.message
+    );
+    assert!(
+        xml.message.as_deref().unwrap_or_default().contains("406"),
+        "the XML failure must be the F-open-6 406, got {:?}",
+        xml.message
+    );
+
+    // The pgp case is skipped (digest-mode SUT, no configured OpenPGP key).
+    let pgp = results
+        .cases
+        .iter()
+        .find(|c| c.id == "SIGN-pgp-verifies")
+        .expect("SIGN-pgp-verifies ran");
+    assert_eq!(pgp.status, CaseStatus::Skipped, "{:?}", pgp.message);
 }

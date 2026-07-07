@@ -24,6 +24,13 @@ jiff = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
+# The SIGN-* capability cases (design §4.6) recompute the version digest from the
+# served VERSION's canonical form: `sha256:` + base64(SHA-256(canonical_form)),
+# the exact format `ehrbase-signing` produces (docs/design/version-signing.md
+# §3.2). Recomputed here (not pulled from `ehrbase-signing`) so the lean
+# external-SUT CLI build stays free of the crypto stack.
+sha2 = { workspace = true }
+base64 = { workspace = true }
 
 openehr-its = { path = "../openehr-its" }
 openehr-rm = { path = "../openehr-rm" }

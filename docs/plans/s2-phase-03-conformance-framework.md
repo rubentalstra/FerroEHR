@@ -269,6 +269,42 @@ finding** where it is not (F-open-20). Golden diffing runs through the documente
 [`query_golden`] normalizer (design §6), and each suppressed difference names its
 rule in the failure/skip message.
 
+### SIGN-* (runner-defined Signing capability, design §4.6) — the STANDARD Signing evidence
+
+The five `SIGN-*` cases (`suites/sign.rs`, `Provenance::RunnerDefined`, pseudo-
+chapter `Chapter::Signing`, **outside** the 322 inventory — coverage guard
+confirmed green) specify the implemented behaviour in
+`docs/design/version-signing.md`. Self-hosted PG18 e2e
+(`sign_capability_cases_run_against_self_hosted_sut`, 0 transport errors):
+
+- **SIGN-digest-present (JSON): PASS** — the served `ORIGINAL_VERSION` carries a
+  `sha256:<32-byte-base64>` digest (version-signing.md §3.2/§4.4).
+- **SIGN-digest-recomputes (JSON): PASS** — the strongest case: the served
+  digest recomputes from the version's own RFC 8785 `canonical_form`
+  (`openehr_rm::…::version_impl::canonical_form_of_json`), proving commit-time ==
+  read-time object identity (§6.3).
+- **SIGN-all-kinds (JSON): PASS (4/4)** — an EHR_STATUS-update version and both a
+  create + modification COMPOSITION version via the CONTRIBUTION path recompute;
+  the FOLDER write is driven (accepted) but its signature is **not
+  API-observable** — the directory read surface serves the bare FOLDER (no
+  `ORIGINAL_VERSION` wrapper). PORT NOTE in `sign.rs`: FOLDER version-signature
+  verification via the API awaits a versioned-directory version-read surface; the
+  storage-level signing is proven by the ehrbase `service_signing` SQL sweep.
+- **SIGN-client-verbatim (JSON): PASS** — a CONTRIBUTION version carrying a
+  client-supplied signature is served verbatim, never re-signed (§3.3).
+- **SIGN-pgp-verifies: SKIPPED(SutConfig)** — the self-hosted SUT boots in
+  `digest` mode (§3.4); a `pgp`-keyed self-host SUT (a boot-path change) is a
+  **follow-up**. The four digest cases prove the capability.
+- **SIGN-digest-present (XML): FAIL — shared root cause with F-open-6.** The
+  `versioned_composition/{vo}/version/{ovid}` endpoint returns `406` for
+  `application/xml` (same "canonical XML … once typed payloads land (P12)" gap as
+  F-open-6, on the version-get endpoint rather than the versioned-object-get
+  endpoint). The RM/serialization layer already emits `<signature>` in canonical
+  XML (proven by ehrbase `service_signing::canonical_xml_carries_the_signature`);
+  only the REST negotiation for versioned-object responses is missing. Recorded,
+  not weakened: `SIGN-digest-present` keeps `formats = [Json, Xml]` so a real
+  `conformance run` continues to surface the gap until it is fixed.
+
 ## Handoff for next session
 
 Steps 1–2 landed: the crate parses the schedule (323 raw / 322 identified / 57
