@@ -41,10 +41,15 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
 - [x] 2. SUT client + modes (External / SelfHosted) + CLI + `scripts/conformance.sh`;
       prove both modes with one hand-picked case
       (`I_EHR_SERVICE.create_ehr-main`) end-to-end incl. RESULTS.md / badge.
-- [~] 3. master06 (EHR + EHR_STATUS, **21/21 done**, fixture-driven, green e2e);
-      master07 (COMPOSITION, 31) still to do. Also landed: `fixtures.rs` — typed
-      read-only access to the ENTIRE vendored `test_data_sets` corpus (valid +
-      invalid, every category) + the RM-1.2.0 `EHR_STATUS` overlay (§6), corpus
+- [~] 3. master06 (EHR + EHR_STATUS, **21/21 done**), master09 (DIRECTORY,
+      **11/11 core done**), master05 (query provisioning, **3 done**), master04
+      (OPT provisioning, **upload-valid + invalid + list done**) — all
+      fixture-driven, green e2e against the self-hosted SUT. master07/08/11/
+      content/admin/demographic/SIGN modules scaffolded (design §4.1 layout) with
+      empty `entries()`. Also landed: `fixtures.rs` — typed read-only access to
+      the ENTIRE vendored `test_data_sets` corpus (valid + invalid, every
+      category) + the RM-1.2.0 `EHR_STATUS` overlay (§6) + the
+      `composition_validation_lib` typed mutators (`content/mutate.rs`); corpus
       pinned by a guard test.
 - [ ] 4. master04/05 (DEFINITION, 22) and master08 (CONTRIBUTION, 31).
 - [ ] 5. master09 (DIRECTORY, 37) — completes the CORE + directory surface.
@@ -92,6 +97,12 @@ FLAT/STRUCTURED/EhrScape (not CNF-gated — `openehr-flat` suite); benchmarks
   CNF master06 §Test Data Sets (INVALID class 2) requires rejection. Needs an
   `F-AA-NN` write-up + fix in EHR create validation before the CORE claim can
   be made. Surfaced by the runner, not fabricated.
+- **F-open-2 (upload_opt, invalid OPT):** of the 18 vendored invalid `.opt`
+  templates, 12 are rejected — 6 invalid OPTs (e.g. `alien_tags`,
+  `multiple_elements` duplicate template-id/concept/definition,
+  `removed_mandatory_elements`) are accepted by OPT 1.4 upload. CNF master04
+  `upload_opt-invalid_opt` requires rejection. Needs an `F-AA-NN` + a stricter
+  OPT ingest validation pass.
 
 ## Handoff for next session
 

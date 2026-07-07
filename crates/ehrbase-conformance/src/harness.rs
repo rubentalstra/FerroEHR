@@ -124,6 +124,16 @@ impl HttpRequest {
             .push(("content-type".to_owned(), "application/json".to_owned()));
         Ok(self)
     }
+
+    /// Attach a raw text body with an explicit content type (e.g. OPT 1.4 XML
+    /// for template upload, or an AQL string).
+    #[must_use]
+    pub fn text_body(mut self, body: impl Into<String>, content_type: &str) -> Self {
+        self.body = Some(body.into().into_bytes());
+        self.headers
+            .push(("content-type".to_owned(), content_type.to_owned()));
+        self
+    }
 }
 
 /// A response from the SUT.

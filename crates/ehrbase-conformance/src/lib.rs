@@ -28,5 +28,6 @@ pub mod report;
 pub mod results;
 pub mod run;
 pub mod schedule;
+pub mod sign;
 pub mod suites;
 pub mod sut;

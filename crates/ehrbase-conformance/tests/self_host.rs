@@ -19,8 +19,8 @@ async fn master06_ehr_cases_run_against_self_hosted_sut() {
         .expect("boot self-hosted SUT (is Docker running?)");
 
     let config = RunConfig {
-        filter: Some("I_EHR".to_owned()),
-        profile: Some(Profile::Core),
+        filter: None,
+        profile: None,
         formats: vec![Format::Json],
         rm_version: "1.2.0".to_owned(),
         auth_mode: "basic (self-host, RBAC off)".to_owned(),
