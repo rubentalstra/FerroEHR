@@ -3,6 +3,7 @@
 //! `sqlx` transaction so a version + its nodes + the contribution + the audit
 //! commit atomically.
 
+use ehrbase_signing::Signer;
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
 use uuid::Uuid;
@@ -11,6 +12,16 @@ use crate::storage::{NodeRow, decompose, reassemble};
 
 use super::ServiceError;
 use super::codes::lifecycle;
+use super::versioned::build_original_version;
+
+/// The signing context threaded into the shared commit path so every
+/// versioned-object write signs its `ORIGINAL_VERSION` (RM common §"Digital
+/// Signature"; `docs/design/version-signing.md` §3.3). Borrows the service's
+/// system id and configured [`Signer`].
+pub(super) struct SigningCtx<'a> {
+    pub(super) system_id: &'a str,
+    pub(super) signer: &'a Signer,
+}
 
 /// The kind of versioned object (discriminates `vo_version.kind`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,6 +109,9 @@ pub(super) struct VersionRead {
     pub(super) audit: AuditInput,
     /// When the version was committed (its audit `time_committed`).
     pub(super) time_committed: jiff::Timestamp,
+    /// The stored `VERSION.signature` (RM common §"Digital Signature"), or
+    /// `None` for versions committed before signing was enabled (0..1).
+    pub(super) signature: Option<String>,
     /// The reassembled canonical JSON, or `Value::Null` for a deleted version
     /// (a logical delete stores no node rows — RM `change_control` §"Logical
     /// Deletion").
@@ -142,22 +156,34 @@ async fn version_read(
         time_committed: row
             .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
             .to_jiff(),
+        signature: row.try_get("signature")?,
         canonical,
     })
 }
 
-/// Insert an `audit` row, returning its id.
-async fn insert_audit(tx: &mut PgConnection, audit: &AuditInput) -> Result<Uuid, ServiceError> {
-    Ok(sqlx::query_scalar(
+/// Insert an `audit` row, returning its id **and** the DB-assigned
+/// `time_committed`. The timestamp is captured (`RETURNING`) so the commit path
+/// can build the exact `ORIGINAL_VERSION` that will later be served — the signed
+/// bytes must match the read-time canonical form (design §6.3).
+async fn insert_audit(
+    tx: &mut PgConnection,
+    audit: &AuditInput,
+) -> Result<(Uuid, jiff::Timestamp), ServiceError> {
+    let row = sqlx::query(
         "INSERT INTO audit (system_id, change_type, description, committer) \
-         VALUES ($1, $2, $3, $4) RETURNING id",
+         VALUES ($1, $2, $3, $4) RETURNING id, time_committed",
     )
     .bind(&audit.system_id)
     .bind(&audit.change_type)
     .bind(&audit.description)
     .bind(&audit.committer)
     .fetch_one(&mut *tx)
-    .await?)
+    .await?;
+    let id: Uuid = row.try_get("id")?;
+    let time_committed = row
+        .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+        .to_jiff();
+    Ok((id, time_committed))
 }
 
 /// Insert a `contribution` row referencing its audit, returning its id.
@@ -175,15 +201,17 @@ async fn insert_contribution(
     .await?)
 }
 
-/// Insert an `audit` row and its enclosing `contribution`, returning both ids.
+/// Insert an `audit` row and its enclosing `contribution`, returning the
+/// contribution id, the audit id, and the audit's `time_committed` (for the
+/// version's `commit_audit`, which is signed).
 async fn write_contribution(
     tx: &mut PgConnection,
     ehr_id: Uuid,
     audit: &AuditInput,
-) -> Result<(Uuid, Uuid), ServiceError> {
-    let audit_id = insert_audit(tx, audit).await?;
+) -> Result<(Uuid, Uuid, jiff::Timestamp), ServiceError> {
+    let (audit_id, time_committed) = insert_audit(tx, audit).await?;
     let contribution_id = insert_contribution(tx, ehr_id, audit_id).await?;
-    Ok((contribution_id, audit_id))
+    Ok((contribution_id, audit_id, time_committed))
 }
 
 /// Bulk-insert the decomposed node rows for one version.
@@ -220,12 +248,19 @@ async fn insert_nodes(
 }
 
 /// One change applied within a CONTRIBUTION (the openEHR change-set unit).
+///
+/// `signature` carries a **client-supplied** `UPDATE_VERSION.signature` (RM
+/// common §"Digital Signature"; design §3.3): when present it is stored verbatim
+/// and the server does not re-sign; when absent the server signs the assembled
+/// `ORIGINAL_VERSION` if signing is enabled. The direct (non-CONTRIBUTION)
+/// endpoints always pass `None` (server-side signing).
 pub(super) enum Change {
     /// Create a new versioned object.
     Create {
         kind: Kind,
         canonical: serde_json::Value,
         template_id: Option<String>,
+        signature: Option<String>,
     },
     /// Commit a new version of an existing object.
     Modify {
@@ -234,22 +269,77 @@ pub(super) enum Change {
         canonical: serde_json::Value,
         expected: Option<i32>,
         template_id: Option<String>,
+        signature: Option<String>,
     },
     /// Logically delete an object (a content-less `deleted` version).
     Delete {
         vo_id: Uuid,
         kind: Kind,
         expected: Option<i32>,
+        signature: Option<String>,
     },
 }
 
+/// Compute the `VERSION.signature` for a version about to be persisted
+/// (RM common §"Digital Signature"; design §3.3).
+///
+/// A **client-supplied** signature (from the CONTRIBUTION `UPDATE_VERSION` path)
+/// wins and is stored verbatim (never re-signed, never validated against our
+/// canonical form — the author may use another agreed serialization). Otherwise,
+/// when signing is enabled, the fully-assembled `ORIGINAL_VERSION` — the *exact*
+/// value that will later be served (built by the shared [`build_original_version`]
+/// so commit-time and read-time bytes match) — is signed via its
+/// `canonical_form()`.
+#[allow(clippy::too_many_arguments)] // the parts of an ORIGINAL_VERSION + signing context
+fn sign_version(
+    ctx: &SigningCtx<'_>,
+    audit: &AuditInput,
+    time_committed: jiff::Timestamp,
+    vo_id: Uuid,
+    sys_version: i32,
+    contribution_id: Uuid,
+    lifecycle_state: &str,
+    data: &serde_json::Value,
+    client_signature: Option<String>,
+) -> Result<Option<String>, ServiceError> {
+    if let Some(sig) = client_signature {
+        return Ok(Some(sig));
+    }
+    if !ctx.signer.enabled() {
+        return Ok(None);
+    }
+    let ov = build_original_version(
+        ctx.system_id,
+        vo_id,
+        sys_version,
+        contribution_id,
+        audit,
+        &time_committed,
+        lifecycle_state,
+        data,
+        None,
+    );
+    let canonical = openehr_rm::common::change_control::version_impl::canonical_form_of_json(&ov)
+        .map_err(|e| ServiceError::Signing(e.to_string()))?;
+    let signature = ctx
+        .signer
+        .sign(&canonical)
+        .map_err(|e| ServiceError::Signing(e.to_string()))?;
+    Ok(Some(signature))
+}
+
 /// The core write path shared by single-object writes and CONTRIBUTION commits:
-/// apply one [`Change`] under an already-open contribution + version audit.
+/// apply one [`Change`] under an already-open contribution + version audit,
+/// signing the assembled `ORIGINAL_VERSION` (RM common §"Digital Signature").
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)] // the three change arms + commit context
 async fn apply_change(
     tx: &mut PgConnection,
     ehr_id: Uuid,
     contribution_id: Uuid,
     audit_id: Uuid,
+    audit: &AuditInput,
+    time_committed: jiff::Timestamp,
+    ctx: &SigningCtx<'_>,
     change: Change,
 ) -> Result<Committed, ServiceError> {
     match change {
@@ -257,12 +347,27 @@ async fn apply_change(
             kind,
             canonical,
             template_id,
+            signature,
         } => {
             if kind == Kind::EhrStatus {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
             }
             let rows = decompose(canonical)?;
             let vo_id = Uuid::now_v7();
+            // Sign the exact data that will be served on read (reassembled from
+            // the stored nodes) so the digest recomputes at read time (§6.3).
+            let served = reassemble(&rows)?;
+            let signature = sign_version(
+                ctx,
+                audit,
+                time_committed,
+                vo_id,
+                1,
+                contribution_id,
+                lifecycle::COMPLETE,
+                &served,
+                signature,
+            )?;
             insert_vo_version(
                 tx,
                 vo_id,
@@ -273,6 +378,7 @@ async fn apply_change(
                 contribution_id,
                 audit_id,
                 template_id.as_deref(),
+                signature.as_deref(),
             )
             .await?;
             insert_nodes(tx, vo_id, 1, ehr_id, &rows).await?;
@@ -289,6 +395,7 @@ async fn apply_change(
             canonical,
             expected,
             template_id,
+            signature,
         } => {
             if kind == Kind::EhrStatus {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
@@ -296,6 +403,18 @@ async fn apply_change(
             let rows = decompose(canonical)?;
             let next = next_version(&mut *tx, ehr_id, vo_id, kind, expected).await?;
             close_current(&mut *tx, vo_id).await?;
+            let served = reassemble(&rows)?;
+            let signature = sign_version(
+                ctx,
+                audit,
+                time_committed,
+                vo_id,
+                next,
+                contribution_id,
+                lifecycle::COMPLETE,
+                &served,
+                signature,
+            )?;
             insert_vo_version(
                 tx,
                 vo_id,
@@ -306,6 +425,7 @@ async fn apply_change(
                 contribution_id,
                 audit_id,
                 template_id.as_deref(),
+                signature.as_deref(),
             )
             .await?;
             insert_nodes(tx, vo_id, next, ehr_id, &rows).await?;
@@ -320,9 +440,24 @@ async fn apply_change(
             vo_id,
             kind,
             expected,
+            signature,
         } => {
             let next = next_version(&mut *tx, ehr_id, vo_id, kind, expected).await?;
             close_current(&mut *tx, vo_id).await?;
+            // A deleted version carries no data — its `ORIGINAL_VERSION.data` is
+            // Void (RM change_control §"Logical Deletion"); the signature is
+            // over the data-less version wrapper.
+            let signature = sign_version(
+                ctx,
+                audit,
+                time_committed,
+                vo_id,
+                next,
+                contribution_id,
+                lifecycle::DELETED,
+                &serde_json::Value::Null,
+                signature,
+            )?;
             insert_vo_version(
                 tx,
                 vo_id,
@@ -333,6 +468,7 @@ async fn apply_change(
                 contribution_id,
                 audit_id,
                 None,
+                signature.as_deref(),
             )
             .await?;
             record_composition_commit(kind, "deletion");
@@ -443,11 +579,12 @@ async fn insert_vo_version(
     contribution_id: Uuid,
     audit_id: Uuid,
     template_id: Option<&str>,
+    signature: Option<&str>,
 ) -> Result<(), ServiceError> {
     sqlx::query(
         "INSERT INTO vo_version \
-         (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, contribution_id, audit_id, template_id) \
-         VALUES ($1, $2, $3, $4, tstzrange(now(), NULL, '[)'), $5, $6, $7, $8)",
+         (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, contribution_id, audit_id, template_id, signature) \
+         VALUES ($1, $2, $3, $4, tstzrange(now(), NULL, '[)'), $5, $6, $7, $8, $9)",
     )
     .bind(vo_id)
     .bind(kind.as_str())
@@ -457,12 +594,14 @@ async fn insert_vo_version(
     .bind(contribution_id)
     .bind(audit_id)
     .bind(template_id)
+    .bind(signature)
     .execute(&mut *tx)
     .await?;
     Ok(())
 }
 
 /// Create the first version of a new versioned object under its own contribution.
+#[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(super) async fn create(
     tx: &mut PgConnection,
     ehr_id: Uuid,
@@ -470,17 +609,22 @@ pub(super) async fn create(
     canonical: serde_json::Value,
     template_id: Option<&str>,
     audit: &AuditInput,
+    ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
-    let (contribution_id, audit_id) = write_contribution(tx, ehr_id, audit).await?;
+    let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
     apply_change(
         tx,
         ehr_id,
         contribution_id,
         audit_id,
+        audit,
+        time_committed,
+        ctx,
         Change::Create {
             kind,
             canonical,
             template_id: template_id.map(str::to_owned),
+            signature: None,
         },
     )
     .await
@@ -497,19 +641,24 @@ pub(super) async fn update(
     expected: Option<i32>,
     template_id: Option<&str>,
     audit: &AuditInput,
+    ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
-    let (contribution_id, audit_id) = write_contribution(tx, ehr_id, audit).await?;
+    let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
     apply_change(
         tx,
         ehr_id,
         contribution_id,
         audit_id,
+        audit,
+        time_committed,
+        ctx,
         Change::Modify {
             vo_id,
             kind,
             canonical,
             expected,
             template_id: template_id.map(str::to_owned),
+            signature: None,
         },
     )
     .await
@@ -523,17 +672,22 @@ pub(super) async fn delete(
     kind: Kind,
     expected: Option<i32>,
     audit: &AuditInput,
+    ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
-    let (contribution_id, audit_id) = write_contribution(tx, ehr_id, audit).await?;
+    let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
     apply_change(
         tx,
         ehr_id,
         contribution_id,
         audit_id,
+        audit,
+        time_committed,
+        ctx,
         Change::Delete {
             vo_id,
             kind,
             expected,
+            signature: None,
         },
     )
     .await
@@ -546,13 +700,26 @@ pub(super) async fn commit_contribution(
     ehr_id: Uuid,
     contribution_audit: &AuditInput,
     changes: Vec<(AuditInput, Change)>,
+    ctx: &SigningCtx<'_>,
 ) -> Result<(Uuid, Vec<Committed>), ServiceError> {
-    let contribution_audit_id = insert_audit(tx, contribution_audit).await?;
+    let (contribution_audit_id, _) = insert_audit(tx, contribution_audit).await?;
     let contribution_id = insert_contribution(tx, ehr_id, contribution_audit_id).await?;
     let mut committed = Vec::with_capacity(changes.len());
     for (version_audit, change) in changes {
-        let audit_id = insert_audit(tx, &version_audit).await?;
-        committed.push(apply_change(tx, ehr_id, contribution_id, audit_id, change).await?);
+        let (audit_id, time_committed) = insert_audit(tx, &version_audit).await?;
+        committed.push(
+            apply_change(
+                tx,
+                ehr_id,
+                contribution_id,
+                audit_id,
+                &version_audit,
+                time_committed,
+                ctx,
+                change,
+            )
+            .await?,
+        );
     }
     Ok((contribution_id, committed))
 }
@@ -596,7 +763,7 @@ pub(super) async fn read_current(
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND upper_inf(v.sys_period)",
@@ -617,7 +784,7 @@ pub(super) async fn read_version(
     sys_version: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND v.sys_version = $2",
@@ -641,7 +808,7 @@ pub(super) async fn version_at(
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz",

@@ -1504,6 +1504,7 @@ dependencies = [
  "ehrbase-authz",
  "ehrbase-compat",
  "ehrbase-rest",
+ "ehrbase-signing",
  "figment",
  "http",
  "http-body-util",

@@ -31,6 +31,7 @@ impl EhrbaseService {
             composition,
             None,
             &audit,
+            &self.signing_ctx(),
         )
         .await?;
         tx.commit().await?;
@@ -108,7 +109,7 @@ impl EhrbaseService {
             .await?
             .filter(|r| r.ehr_id == ehr_id)
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} v{version}")))?;
-        Ok(self.original_version(&read))
+        self.original_version(&read)
     }
 
     /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `at`, or the latest
@@ -132,7 +133,8 @@ impl EhrbaseService {
         .filter(|r| r.ehr_id == ehr_id)
         .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} version at time")))?;
         let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
-        Ok(ServiceResponse::new(self.original_version(&read), meta))
+        let ov = self.original_version(&read)?;
+        Ok(ServiceResponse::new(ov, meta))
     }
 
     /// Commit a new version of a COMPOSITION. `expected` (from `If-Match`)
@@ -158,6 +160,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
+            &self.signing_ctx(),
         )
         .await?;
         tx.commit().await?;
@@ -230,6 +233,7 @@ impl EhrbaseService {
             Kind::Composition,
             Some(expected),
             &audit,
+            &self.signing_ctx(),
         )
         .await?;
         tx.commit().await?;

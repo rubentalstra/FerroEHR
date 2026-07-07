@@ -49,6 +49,7 @@ ehrbase-rest = { path = "../ehrbase-rest" }
 ehrbase-compat = { path = "../ehrbase-compat" }
 ehrbase-audit = { path = "../ehrbase-audit" }
 ehrbase-authz = { path = "../ehrbase-authz" }
+ehrbase-signing = { path = "../ehrbase-signing" }
 
 [dev-dependencies]
 figment = { workspace = true, features = ["test"] }

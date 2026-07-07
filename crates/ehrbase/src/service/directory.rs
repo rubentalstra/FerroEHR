@@ -25,8 +25,16 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::CREATION, "DIRECTORY creation");
-        let committed =
-            vobject::create(&mut tx, ehr_id, Kind::Folder, folder, None, &audit).await?;
+        let committed = vobject::create(
+            &mut tx,
+            ehr_id,
+            Kind::Folder,
+            folder,
+            None,
+            &audit,
+            &self.signing_ctx(),
+        )
+        .await?;
         tx.commit().await?;
 
         self.directory_at(ehr_id, committed.vo_id).await
@@ -99,6 +107,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
+            &self.signing_ctx(),
         )
         .await?;
         tx.commit().await?;
@@ -117,7 +126,16 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::DELETED, "DIRECTORY delete");
-        vobject::delete(&mut tx, ehr_id, vo_id, Kind::Folder, expected, &audit).await?;
+        vobject::delete(
+            &mut tx,
+            ehr_id,
+            vo_id,
+            Kind::Folder,
+            expected,
+            &audit,
+            &self.signing_ctx(),
+        )
+        .await?;
         tx.commit().await?;
         Ok(ServiceResponse::plain(Value::Null))
     }

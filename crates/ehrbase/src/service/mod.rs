@@ -35,6 +35,9 @@ mod version_id;
 mod versioned;
 mod vobject;
 
+use std::sync::Arc;
+
+use ehrbase_signing::Signer;
 use openehr_flat::cache::WebTemplateCache;
 use openehr_its::rest::runtime::ApiError;
 use sqlx::PgPool;
@@ -51,16 +54,22 @@ pub struct EhrbaseService {
     /// Cache of `WebTemplate`s built from stored OPTs, used by composition
     /// validation (P15) on create/update. Cheaply cloneable (moka-backed).
     web_templates: WebTemplateCache,
+    /// Version signer (`VERSION.signature`, RM common §"Digital Signature";
+    /// `docs/design/version-signing.md`). Defaults to server-side `digest`
+    /// signing; `main.rs` wires the configured [`Signer`].
+    signer: Arc<Signer>,
 }
 
 impl EhrbaseService {
-    /// Construct the service over a connection pool with the default system id.
+    /// Construct the service over a connection pool with the default system id
+    /// and the default (server-side `digest`) version signer.
     #[must_use]
     pub fn new(pool: PgPool) -> Self {
         Self {
             pool,
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
             web_templates: WebTemplateCache::default(),
+            signer: Arc::new(Signer::digest_default()),
         }
     }
 
@@ -69,6 +78,28 @@ impl EhrbaseService {
     pub fn with_system_id(mut self, system_id: impl Into<String>) -> Self {
         self.system_id = system_id.into();
         self
+    }
+
+    /// Install the configured version [`Signer`] (RM common §"Digital
+    /// Signature").
+    #[must_use]
+    pub fn with_signer(mut self, signer: Arc<Signer>) -> Self {
+        self.signer = signer;
+        self
+    }
+
+    /// The signing context (system id + signer) handed to the `vobject` commit
+    /// path so every versioned-object write signs its `ORIGINAL_VERSION`.
+    pub(in crate::service) fn signing_ctx(&self) -> vobject::SigningCtx<'_> {
+        vobject::SigningCtx {
+            system_id: &self.system_id,
+            signer: &self.signer,
+        }
+    }
+
+    /// The configured version [`Signer`] (used for read-time verification).
+    pub(super) fn signer(&self) -> &Signer {
+        &self.signer
     }
 }
 
@@ -106,6 +137,11 @@ pub enum ServiceError {
     /// A JSON (de)serialization failure.
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),
+    /// A version-signing or read-time integrity failure (RM common §"Digital
+    /// Signature") — either signing at commit failed, or `verify_on_read =
+    /// strict` found a stored signature that does not match the served version.
+    #[error("signing: {0}")]
+    Signing(String),
 }
 
 impl From<ServiceError> for ApiError {
@@ -121,6 +157,8 @@ impl From<ServiceError> for ApiError {
             ServiceError::Storage(e) => ApiError::Internal(e.to_string()),
             ServiceError::Database(e) => ApiError::Internal(e.to_string()),
             ServiceError::Json(e) => ApiError::BadRequest(e.to_string()),
+            // A signing/integrity failure is a server-side fault (5xx).
+            ServiceError::Signing(m) => ApiError::Internal(m),
         }
     }
 }
