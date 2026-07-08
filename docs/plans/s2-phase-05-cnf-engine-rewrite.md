@@ -37,10 +37,12 @@ legacy corpus, no Robot, no Python.**
       human titles; `own:` registration slugs), area by area — with the
       one-time design-review checklist against the old corpus (nothing it
       tested left uncovered *by design*, no machine mapping).
-- [ ] `engine/flow.rs` — the declarative given/when/expect step API; migrate
-      the EHR area as the pattern.
-- [ ] `model/profile.rs` — capability→profile matrix (design §8) +
-      all-or-nothing machine verdict wired into the statement.
+- [x] `engine/flow.rs` — the declarative step API (numbered, named steps;
+      step-stamped assertion failures). EHR-area migration folded into the
+      re-key pass below.
+- [x] `model/profile.rs` — capability→profile matrix (design §8) +
+      all-or-nothing machine verdict; statement §4 renders per-capability
+      verdict tables for CORE/STANDARD/OPTIONS. 32/32 tests, clippy-clean.
 - [ ] `testdata/generate.rs` — the VAL generators (cardinality grids,
       presence/absence, boundary values, type substitution over authored
       OPTs): 1,000+ variants with per-variant `ECC-VAL-nnn.vv` outcomes.
