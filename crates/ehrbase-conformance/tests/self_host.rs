@@ -127,10 +127,11 @@ async fn content_cases_run_against_self_hosted_sut() {
         "CONT-DV_QUANTITY-validate_property_units",
         "CONT-DV_ORDINAL-validate_constraint",
         "CONT-DV_CODED_TEXT-validate_local_codes",
-        // FLAT-backed (path b): the `time_series` DV_QUANTITY magnitude-range
-        // constraint is converted from its FLAT-only instance in-harness; our
-        // validator enforces both the magnitude range and the units list.
-        "CONT-DV_QUANTITY-validate_property_units_mag",
+        // ITEM_STRUCTURE ITEM_TREE narrowing: the strict typed RM validation on
+        // commit now rejects an ITEM_LIST committed into an ITEM_TREE-narrowed slot
+        // (the sibling ITEM_STR type_item_list/table/single cases remain open
+        // findings — those swap directions are not yet rejected, see below).
+        "CONT-ITEM_STR-type_item_tree",
     ] {
         assert_eq!(status(id), CaseStatus::Passed, "{id} must pass (enforced)");
     }
@@ -142,8 +143,9 @@ async fn content_cases_run_against_self_hosted_sut() {
     for id in [
         // F-open-30: C_DATE_TIME field-validity pattern not enforced.
         "CONT-DV_DATE_TIME-validate_constraint",
-        // F-open-31: ITEM_STRUCTURE type narrowing (Class not allowed) not enforced.
-        "CONT-ITEM_STR-type_item_tree",
+        // F-open-31: ITEM_STRUCTURE type narrowing (Class not allowed) not enforced
+        // for these swap directions (ITEM_TREE into a LIST/TABLE/SINGLE-narrowed
+        // slot is accepted); the ITEM_TREE-narrowed direction is now enforced (above).
         "CONT-ITEM_STR-type_item_list",
         "CONT-ITEM_STR-type_item_table",
         "CONT-ITEM_STR-type_item_single",
@@ -151,6 +153,26 @@ async fn content_cases_run_against_self_hosted_sut() {
         // `minimal_action_2` OPT constrains `type` to {3,4}; the SUT accepts
         // `type=0` (201) where master17.3 §validate_any_fraction rejects it (422).
         "CONT-DV_PROPORTION-validate_any_fraction",
+        // F-open: `from_flat` drops COMPOSITION.territory when the FLAT fixture
+        // stores it root-prefixed (`event_series/territory|code`) instead of
+        // `ctx/territory` (openehr-flat context.rs `ctx_get` only reads `ctx/`), so
+        // the converted `time_series` baseline lacks the mandatory `territory` and
+        // the (now strict, RM-typed) commit validation rejects it. The DV_QUANTITY
+        // magnitude-range constraint itself is still enforced — this finding is the
+        // FLAT-converter gap, tracked for the from_flat root-prefix fix.
+        "CONT-DV_QUANTITY-validate_property_units_mag",
+        // F1: the WebTemplate builder's `requires_cardinality` returns false for a
+        // min<=1 interval, so COMPOSITION.content / HISTORY.events cardinality lower
+        // bound 1 (`1..*`, `1..1`) and upper bounds (`0..1`, `1..1`) are not
+        // enforced — only `min>1` (`3..*`, `3..5`) surfaces. Representative rows:
+        "CONT-COMP-content_card_1plus-context_any",
+        "CONT-COMP-content_card_opt-context_any",
+        "CONT-COMP-content_card_mand-context_any",
+        // F2: nested HISTORY.summary existence (1..1) not enforced.
+        "CONT-HIST-events_card_any-summary_ex_mand",
+        // F3: DV_COUNT C_INTEGER.list not enforced (validation::leaf checks count
+        // range only, not an enumerated list).
+        "CONT-DV_COUNT-validate_list",
     ] {
         assert_eq!(
             status(id),

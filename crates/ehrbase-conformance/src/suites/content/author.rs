@@ -21,8 +21,7 @@
 //! is the server's genuine validation decision.
 
 use openehr_its::opt14::{
-    self, CArchetypeRoot, CAttribute, CInteger, CObject, CPrimitive, CPrimitiveObject,
-    CSingleAttribute, CString, Intervalofinteger, OperationalTemplate,
+    self, CArchetypeRoot, CAttribute, CInteger, CObject, CPrimitive, CPrimitiveObject, CSingleAttribute, CString, Intervalofinteger, OperationalTemplate,
 };
 
 use crate::harness::CaseError;
@@ -414,7 +413,9 @@ fn constrain_leaf_primitive(
         let Some(prim) = prim.take() else {
             return true;
         };
-        let idx = if let Some(i) = attrs.iter().position(|a| attr_name(a) == value_attr) { i } else {
+        let idx = if let Some(i) = attrs.iter().position(|a| attr_name(a) == value_attr) {
+            i
+        } else {
             attrs.push(CAttribute::CSingleAttribute(CSingleAttribute {
                 rm_attribute_name: value_attr.to_owned(),
                 existence: closed_interval(1, 1),

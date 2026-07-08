@@ -227,7 +227,12 @@ async fn drive_hist_case(
             mutate::set_array_count(h, "events", count);
             mutate::remove_field(h, "summary");
         }
-        let accepted = events_ok(card, count) && !summary_mand;
+        // RM `HISTORY.Events_valid` (history_impl): at least one event OR a summary
+        // must be present. Every row here has summary absent, so 0 events is
+        // rejected by the RM invariant regardless of the archetype cardinality —
+        // this is spec-authoritative over the master16 table's "no events, absent
+        // summary → accepted" row (ADR-008: the RM invariant governs).
+        let accepted = count >= 1 && events_ok(card, count) && !summary_mand;
         let label = format!(
             "{count} event(s), summary absent → {}",
             if accepted { "accepted" } else { "rejected" }
