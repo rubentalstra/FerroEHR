@@ -33,10 +33,12 @@ legacy corpus, no Robot, no Python.**
       allocation guard, 310 cases numbered), `SpecVersions` (latest-only),
       catalogue-driven runner + reports (RESULTS/CATALOG/STATEMENT/badge);
       all legacy-corpus mapping machinery deleted. 29/29 tests, clippy-clean.
-- [ ] Re-title + re-key the existing ~310 cases as native ECC cases (proper
-      human titles; `own:` registration slugs), area by area — with the
-      one-time design-review checklist against the old corpus (nothing it
-      tested left uncovered *by design*, no machine mapping).
+- [x] Re-title + re-key the existing ~310 cases as native ECC cases —
+      done (c885d2be0): CaseMeta v4 (`id` slug + `title` + explicit `area` +
+      `citation`; Chapter/Provenance/schedule_ref/upstream_tags deleted),
+      all 310 TSV lines re-titled in place with ECC numbers byte-identical;
+      32/32, clippy-clean. Design-review checklist:
+      `docs/design/ecc-coverage-review.md`.
 - [x] `engine/flow.rs` — the declarative step API (numbered, named steps;
       step-stamped assertion failures). EHR-area migration folded into the
       re-key pass below.
@@ -50,11 +52,10 @@ legacy corpus, no Robot, no Python.**
       the pinned contract.
 - [ ] `QRY` build-out — AQL 1.1 construct checklist + corpus goldens with a
       rule-named normalizer.
-- [ ] Badge set rewrite (owner, 2026-07-08): four generated badges — total
-      (`badge.json`) + per-profile `badge-core/standard/options.json`, each
-      profile badge driven by the machine verdict (design §6). Implement in
-      `reporting/report.rs` after the CaseMeta-v4 pass lands (avoid
-      colliding with the in-flight implementer).
+- [x] Badge set rewrite (owner): four generated badges — total
+      (`badge.json`) + per-profile `badge-core/standard/options.json`,
+      profile badges driven by the machine verdict (PASS only when the
+      all-or-nothing verdict holds); artifact-set test extended.
 - [ ] `SEC` sweeps (RBAC 401/403), JUnit/CTRF output, CI tiers, first
       generated STANDARD-profile statement.
 - [ ] Regenerate `docs/conformance/` with the v4 artifact set (replaces the
