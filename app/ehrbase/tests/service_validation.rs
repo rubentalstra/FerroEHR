@@ -27,7 +27,7 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::EhrService;
+use ehrbase_rest::{EhrCompositionService, EhrService};
 use openehr_its::rest::generated::definition::DefinitionApi;
 use openehr_its::rest::runtime::ApiError;
 
@@ -85,7 +85,9 @@ fn fixture(rel: &str) -> String {
 }
 
 fn composition(name: &str) -> Value {
-    let rel = format!("../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/{name}");
+    let rel = format!(
+        "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/{name}"
+    );
     serde_json::from_str(&fixture(&rel)).unwrap_or_else(|e| panic!("parse {name}: {e}"))
 }
 

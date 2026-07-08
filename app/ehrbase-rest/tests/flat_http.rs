@@ -58,8 +58,10 @@ struct MockBackend {
     created_body: Mutex<Option<Value>>,
 }
 
+impl EhrService for MockBackend {}
+
 #[async_trait]
-impl EhrService for MockBackend {
+impl ehrbase_rest::EhrCompositionService for MockBackend {
     async fn composition_create(
         &self,
         _params: CompositionCreateParams,
@@ -82,6 +84,10 @@ impl EhrService for MockBackend {
             .ok_or_else(|| ApiError::NotFound("composition not found".to_owned()))
     }
 }
+
+impl ehrbase_rest::EhrStatusService for MockBackend {}
+impl ehrbase_rest::EhrDirectoryService for MockBackend {}
+impl ehrbase_rest::EhrContributionService for MockBackend {}
 
 #[async_trait]
 impl DefinitionApi for MockBackend {

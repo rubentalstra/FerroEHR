@@ -50,8 +50,10 @@ const PATIENT_OTHER: &str = "PATIENT-2";
 #[derive(Debug)]
 struct MockBackend;
 
+impl EhrService for MockBackend {}
+
 #[async_trait]
-impl EhrService for MockBackend {
+impl ehrbase_rest::EhrCompositionService for MockBackend {
     async fn composition_create(
         &self,
         params: CompositionCreateParams,
@@ -75,6 +77,9 @@ impl EhrService for MockBackend {
     }
 }
 
+impl ehrbase_rest::EhrStatusService for MockBackend {}
+impl ehrbase_rest::EhrDirectoryService for MockBackend {}
+impl ehrbase_rest::EhrContributionService for MockBackend {}
 impl openehr_its::rest::generated::definition::DefinitionApi for MockBackend {}
 impl ehrbase_rest::WebTemplateService for MockBackend {}
 impl ehrbase_rest::QueryService for MockBackend {}
