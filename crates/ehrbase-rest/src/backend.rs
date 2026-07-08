@@ -509,13 +509,226 @@ pub trait QueryService: Send + Sync {
     }
 }
 
+/// The concrete demographic RM party type a `demographic` operation targets.
+///
+/// The ITS-REST `demographic` group has a parallel set of operations per party
+/// kind (`agent`/`group`/`organisation`/`person`/`role`); the dispatch layer
+/// maps the operation-id prefix to one of these and the [`DemographicService`]
+/// takes it as a parameter, collapsing the 5× route repetition into one
+/// implementation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PartyKind {
+    Agent,
+    Group,
+    Organisation,
+    Person,
+    Role,
+}
+
+impl PartyKind {
+    /// The concrete openEHR RM `_type` a body of this kind must declare
+    /// (`AGENT` / `GROUP` / `ORGANISATION` / `PERSON` / `ROLE`).
+    #[must_use]
+    pub fn rm_type(self) -> &'static str {
+        match self {
+            PartyKind::Agent => "AGENT",
+            PartyKind::Group => "GROUP",
+            PartyKind::Organisation => "ORGANISATION",
+            PartyKind::Person => "PERSON",
+            PartyKind::Role => "ROLE",
+        }
+    }
+
+    /// The URL path segment for this kind (`agent` / … / `role`) — the
+    /// `/demographic/{segment}` collection and the `Location` tail root.
+    #[must_use]
+    pub fn segment(self) -> &'static str {
+        match self {
+            PartyKind::Agent => "agent",
+            PartyKind::Group => "group",
+            PartyKind::Organisation => "organisation",
+            PartyKind::Person => "person",
+            PartyKind::Role => "role",
+        }
+    }
+}
+
+/// The DEMOGRAPHIC API group's application seam.
+///
+/// ITS-REST 1.0.3 defines **no** demographic wire contract (the SM demographic
+/// service is abstract; the CNF demographic schedule — master10 — is all TBD;
+/// the CNF profiles table lists demographic as OPTIONS-profile only). This seam
+/// is therefore our own design **by analogy with the EHR group** (ADR-008):
+/// parties are versioned objects on the same machinery with no EHR scope, and
+/// the status codes / `ETag` / `Location` / `Prefer` / `If-Match` behaviour
+/// mirrors the EHR group. Each method returns a [`ServiceResponse`] (RM payload
+/// + typed [`ResourceMeta`]) from which the HTTP edge derives the headers; a
+/// demographic [`ResourceMeta`] carries an **empty** `ehr_id` (parties are not
+/// EHR-scoped), so the dispatcher builds a `/demographic/…` `Location` without
+/// one. Every method defaults to `NotImplemented`.
+#[async_trait]
+pub trait DemographicService: Send + Sync {
+    /// `POST /demographic/{kind}` — create a party. `201` + `ETag`(version
+    /// uid)/`Location`; body per `Prefer`.
+    async fn party_create(
+        &self,
+        _kind: PartyKind,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/{kind}/{uid_based_id}` — retrieve a party (current,
+    /// at-time, or a specific version). `200` + `ETag`/`Location`; a deleted
+    /// current version → `Null` body (→ `204`).
+    async fn party_get(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+        _version_at_time: Option<String>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /demographic/{kind}/{uid_based_id}` — commit a new party version.
+    /// `If-Match` carries the preceding `OBJECT_VERSION_ID`; `200`/`204` per
+    /// `Prefer`; `ETag`/`Location` on both.
+    async fn party_update(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+        _if_match: String,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete. The
+    /// `uid_based_id` MUST be an `OBJECT_VERSION_ID` (the preceding version).
+    /// `204` + `ETag`/`Location` of the deleted version.
+    async fn party_delete(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/versioned_party/{versioned_object_uid}` — the
+    /// `VERSIONED_PARTY`. `200` (plain).
+    async fn versioned_party_get(
+        &self,
+        _versioned_object_uid: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/versioned_party/{versioned_object_uid}/revision_history`.
+    async fn versioned_party_revision_history(
+        &self,
+        _versioned_object_uid: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/versioned_party/{versioned_object_uid}/version` — the
+    /// VERSION extant at a time (or the latest). `ETag`(version uid)/`Location`.
+    async fn versioned_party_version_get_at_time(
+        &self,
+        _versioned_object_uid: String,
+        _version_at_time: Option<String>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`
+    /// — the `ORIGINAL_VERSION`. `200` (plain).
+    async fn versioned_party_version_get_by_id(
+        &self,
+        _versioned_object_uid: String,
+        _version_uid: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `POST /demographic/contribution` — commit a demographic CONTRIBUTION
+    /// (ehr-less; its versions reference party objects). `201` +
+    /// `ETag`(contribution uid)/`Location`; body per `Prefer`.
+    async fn demographic_contribution_create(
+        &self,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/contribution/{contribution_uid}` — a demographic
+    /// (ehr-less) CONTRIBUTION. `200` (plain).
+    async fn demographic_contribution_get(
+        &self,
+        _contribution_uid: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/tags` — all demographic item tags (ehr-less).
+    async fn demographic_tags_get(
+        &self,
+        _tag_key: Option<String>,
+        _tag_value: Option<String>,
+        _tag_target_path: Option<String>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/{kind}/{uid_based_id}/tags`.
+    async fn party_tags_get(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /demographic/{kind}/{uid_based_id}/tags`.
+    async fn party_tags_update(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+        _body: Vec<Value>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /demographic/{kind}/{uid_based_id}/tags/{key}`.
+    async fn party_tags_delete(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+        _key: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// The current party version metadata, for the latest `version_uid` the
+    /// spec-analogous `412` precondition failure echoes in `ETag`/`Location`.
+    /// `None` if the party is unknown.
+    async fn demographic_latest_meta(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+    ) -> Result<Option<ResourceMeta>, ApiError> {
+        Ok(None)
+    }
+}
+
 /// The full server backend: everything the ITS-REST surface dispatches to.
 /// Implemented once, on the application's service (or on [`StubBackend`]).
-/// Groups with no implemented operations (demographic / admin) are deliberately
-/// absent — their routes answer 501 without touching the backend (F-13-03); each
+/// Groups with no implemented operations (admin) are deliberately absent —
+/// their routes answer 501 without touching the backend (F-13-03); each
 /// generated trait joins this union in the phase that first implements it.
 pub trait Backend:
     EhrService
+    + DemographicService
     + DefinitionApi
     + WebTemplateService
     + QueryService
@@ -528,6 +741,7 @@ pub trait Backend:
 
 impl<T> Backend for T where
     T: EhrService
+        + DemographicService
         + DefinitionApi
         + WebTemplateService
         + QueryService
@@ -548,6 +762,7 @@ impl<T> Backend for T where
 pub struct StubBackend;
 
 impl EhrService for StubBackend {}
+impl DemographicService for StubBackend {}
 impl DefinitionApi for StubBackend {}
 impl WebTemplateService for StubBackend {}
 impl QueryService for StubBackend {}
