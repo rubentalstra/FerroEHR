@@ -25,6 +25,17 @@ since 2024-08). "Up to date with the latest official specs" therefore means
 **deriving the missing depth from the other pinned official artifacts**, not
 re-vendoring.
 
+## v3.1 pivot (owner, 2026-07-08): our own catalogue + numbering
+
+The official CNF corpus is frozen/unmaintained upstream — it cannot be the
+primary key system. The framework is now **ours**: the *ehrbase-rs Conformance
+Catalogue* (ECC), ids `ECC-<AREA>-<NNN>[.<VV>]`, numbers allocated once in a
+committed catalogue file and never reused. The official CNF (schedule +
+Robot + OAS + AQL corpus) is the **reference oracle**: extractors + trace
+guards prove every official unit is realized by an ECC case or excluded with
+a reason. Our catalogue exceeds the official corpus wherever it is stale
+(status codes, RM 1.2.0, signing, security, full AQL).
+
 ## Design thesis (v3 — supersedes the registry-only model of
 `docs/design/conformance-framework.md` §4 where they conflict)
 
@@ -64,8 +75,15 @@ findings, never exclusions (v1 §4.5 discipline unchanged).
 - [x] Author the v3 design (`docs/design/conformance-framework.md` rewrite):
       multi-source case model (S1–S6), source-prefixed ids + fingerprints,
       per-source coverage gates, machine-enforced profile verdicts.
-- [ ] Engine core rewrite: case model + source registries + per-source
-      coverage guards.
+- [x] Schedule reference extractor: variant rows (1,371 pinned per chapter,
+      fingerprinted, named data-set blocks) + chapter-level data-set matrices
+      (372 tables incl. master06 16-row + master08 anchored) — 2026-07-08.
+- [x] Vendor the ISO 18308 Conformance Statement
+      (`docs/specs/openehr/REQUIREMENTS/`, via vendor-spec-docs.sh) as the
+      requirements-level trace dimension (`iso18308:<section>`) — 2026-07-08.
+- [ ] Engine core rewrite: ECC catalogue (committed allocation file, own
+      numbering, Area taxonomy) + trace-based registry + trace guards +
+      iso18308 rollup in reports.
 - [ ] Schedule source: variant-expanded transcription (all masterNN).
 - [ ] Robot source: transcribe suites service-by-service with goldens.
 - [ ] ITS-REST source: OAS-derived endpoint/status matrix generator + cases.

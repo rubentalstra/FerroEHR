@@ -132,6 +132,13 @@ ECC-<AREA>-<NNN>.<VV>     a data-set variant of that case (ECC-VAL-042.07)
   `robot:I_EHR_COMPOSITION/create_composition-event/001`,
   `oas:EHR.createEhr@409`, `aql:B/102@loaded_db` — plus the spec citation
   (file + section) that grounds its assertions.
+- **Requirements dimension:** `iso18308:<section>` refs link cases to the
+  openEHR ISO 18308 Conformance Statement (vendored at
+  `docs/specs/openehr/REQUIREMENTS/iso18308_conformance.pdf`, Rev 1.5.1) —
+  the requirements-level view (ISO §4 privacy/security/audit/integrity, §5.7
+  version control, §1 structure, …). The report can roll ECC results up by
+  ISO 18308 section, giving a requirements-conformance overview on top of the
+  API/content one.
 
 Reference-side unit ids (the `sched:`/`robot:`/`oas:`/`aql:` forms) are
 assigned deterministically by the extractors (table row order, document
