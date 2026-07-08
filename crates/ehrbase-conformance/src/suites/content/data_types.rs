@@ -221,39 +221,83 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         run_dv_proportion_any_fraction,
     ));
-    all.push(skip("CONT-DV_PROPORTION-validate_ratio_range", c));
-    // DV_INTERVAL<T> cases — interval bound constraints, no committable leaf.
-    for id in [
-        "CONT-DV_INTERVAL_DV_COUNT-validate_open",
-        "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper",
-        "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list",
-        "CONT-DV_INTERVAL_DV_QUANTITY-validate_open",
-        "CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower",
-        "CONT-DV_INTERVAL_DV_DATE_TIME-validate_open",
-        "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint",
-        "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range",
-        "CONT-DV_INTERVAL_DV_DATE-validate_open",
-        "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint",
-        "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range",
-        "CONT-DV_INTERVAL_DV_TIME-validate_open",
-        "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint",
-        "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range",
-        "CONT-DV_INTERVAL_DV_DURATION-validate_open",
-        "CONT-DV_INTERVAL_DV_DURATION-validate_constraint",
-        "CONT-DV_INTERVAL_DV_DURATION-validate_range",
-        "CONT-DV_INTERVAL_DV_ORDINAL-validate_open",
-        "CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint",
-        "CONT-DV_INTERVAL_DV_SCALE-validate_open",
-        "CONT-DV_INTERVAL_DV_SCALE-validate_constraint",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_open",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range",
-    ] {
-        all.push(skip(id, c));
+    all.push(open(
+        "CONT-DV_PROPORTION-validate_ratio_range",
+        c,
+        run_dv_proportion_ratio_range,
+    ));
+    // DV_INTERVAL<T> cases — driven by slot-retyping a scratch leaf to an open
+    // DV_INTERVAL and asserting the RM Interval invariant (drive_interval); the
+    // per-variant bound constraints need DV_INTERVAL constraint support the
+    // validator lacks, so most record as findings — driven, never skipped.
+    let interval: &[(&str, CaseRun)] = &[
+        ("CONT-DV_INTERVAL_DV_COUNT-validate_open", ivc_open),
+        ("CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper", ivc_lu),
+        (
+            "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list",
+            ivc_lul,
+        ),
+        ("CONT-DV_INTERVAL_DV_QUANTITY-validate_open", ivq_open),
+        ("CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower", ivq_ul),
+        ("CONT-DV_INTERVAL_DV_DATE_TIME-validate_open", ivdt_open),
+        (
+            "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint",
+            ivdt_luc,
+        ),
+        (
+            "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range",
+            ivdt_lur,
+        ),
+        ("CONT-DV_INTERVAL_DV_DATE-validate_open", ivd_open),
+        (
+            "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint",
+            ivd_luc,
+        ),
+        (
+            "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range",
+            ivd_lur,
+        ),
+        ("CONT-DV_INTERVAL_DV_TIME-validate_open", ivt_open),
+        (
+            "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint",
+            ivt_luc,
+        ),
+        (
+            "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range",
+            ivt_lur,
+        ),
+        ("CONT-DV_INTERVAL_DV_DURATION-validate_open", ivdu_open),
+        ("CONT-DV_INTERVAL_DV_DURATION-validate_constraint", ivdu_c),
+        ("CONT-DV_INTERVAL_DV_DURATION-validate_range", ivdu_r),
+        ("CONT-DV_INTERVAL_DV_ORDINAL-validate_open", ivo_open),
+        ("CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint", ivo_c),
+        ("CONT-DV_INTERVAL_DV_SCALE-validate_open", ivs_open),
+        ("CONT-DV_INTERVAL_DV_SCALE-validate_constraint", ivs_c),
+        ("CONT-DV_INTERVAL_DV_PROPORTION-validate_open", ivp_open),
+        ("CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio", ivp_ratio),
+        (
+            "CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary",
+            ivp_unitary,
+        ),
+        (
+            "CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage",
+            ivp_percent,
+        ),
+        (
+            "CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction",
+            ivp_fraction,
+        ),
+        (
+            "CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction",
+            ivp_intfrac,
+        ),
+        (
+            "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range",
+            ivp_ratiorange,
+        ),
+    ];
+    for &(id, run) in interval {
+        all.push(open(id, c, run));
     }
 
     // ── 17.4 date_time ─────────────────────────────────────────────────────────
@@ -1132,6 +1176,223 @@ fn run_dv_quantity_property<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                     "units cm (length) violate property mass openehr::124 (C_DV_QUANTITY.property)"
                         .to_owned(),
                     vec![(u, json!("cm"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── DV_INTERVAL<T> (master17.3/17.5): interval leaves absent from all_types ────
+//
+// No base composition carries a `DV_INTERVAL<T>` leaf, so each case **slot-retypes**
+// the `DV_COUNT` slot (items[4]) to an open `DV_INTERVAL` and commits a valid
+// interval of the case's bound type (accepted) plus a malformed `lower > upper`
+// interval (rejected per the RM `Interval` invariant `lower <= upper`, which
+// applies to every bound type). The specific per-variant bound / range / list
+// constraints require `DV_INTERVAL` constraint support the validator does not yet
+// have, so most drive as recorded findings — driven, never skipped. The bound type
+// is cited by the case id / schedule_ref.
+
+/// A canonical `DV_INTERVAL` with included, bounded ends.
+fn iv(lower: Value, upper: Value) -> Value {
+    json!({
+        "_type": "DV_INTERVAL",
+        "lower": lower,
+        "upper": upper,
+        "lower_included": true,
+        "upper_included": true,
+        "lower_unbounded": false,
+        "upper_unbounded": false,
+    })
+}
+
+/// Drive a `DV_INTERVAL<T>` case: retype the `DV_COUNT` slot to an open
+/// `DV_INTERVAL`, commit `[lower,upper]` (accepted) and the reversed `[upper,lower]`
+/// (rejected, RM `Interval.lower <= upper`).
+fn drive_interval<'a>(
+    ctx: &'a RunContext<'a>,
+    tid: &'static str,
+    lower: Value,
+    upper: Value,
+) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(4, "value");
+        drive_leaf_rows(
+            ctx,
+            tid,
+            |opt| author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_INTERVAL")),
+            vec![
+                (
+                    "valid DV_INTERVAL lower<=upper (accepted)".to_owned(),
+                    vec![(p.clone(), iv(lower.clone(), upper.clone()))],
+                    Expected::Accepted,
+                ),
+                (
+                    "malformed DV_INTERVAL lower>upper (RM Interval invariant)".to_owned(),
+                    vec![(p, iv(upper, lower))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn dv_count(m: i64) -> Value {
+    json!({ "_type": "DV_COUNT", "magnitude": m })
+}
+fn dv_quantity(m: f64) -> Value {
+    json!({ "_type": "DV_QUANTITY", "magnitude": m, "units": "mg" })
+}
+fn dv_date(v: &str) -> Value {
+    json!({ "_type": "DV_DATE", "value": v })
+}
+fn dv_date_time(v: &str) -> Value {
+    json!({ "_type": "DV_DATE_TIME", "value": v })
+}
+fn dv_time(v: &str) -> Value {
+    json!({ "_type": "DV_TIME", "value": v })
+}
+fn dv_duration(v: &str) -> Value {
+    json!({ "_type": "DV_DURATION", "value": v })
+}
+fn dv_ordinal(v: i64, code: &str) -> Value {
+    json!({ "_type": "DV_ORDINAL", "value": v,
+        "symbol": { "_type": "DV_CODED_TEXT", "value": "ord",
+            "defining_code": { "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "local" },
+                "code_string": code } } })
+}
+fn dv_scale(v: f64, code: &str) -> Value {
+    json!({ "_type": "DV_SCALE", "value": v,
+        "symbol": { "_type": "DV_CODED_TEXT", "value": "sc",
+            "defining_code": { "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "local" },
+                "code_string": code } } })
+}
+fn dv_proportion(n: f64, d: f64) -> Value {
+    json!({ "_type": "DV_PROPORTION", "numerator": n, "denominator": d, "type": 0 })
+}
+
+macro_rules! iv_count {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_count(1), dv_count(10))
+        }
+    };
+}
+macro_rules! iv_quantity {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_quantity(1.0), dv_quantity(10.0))
+        }
+    };
+}
+macro_rules! iv_date {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_date("2021-01-01"), dv_date("2021-12-31"))
+        }
+    };
+}
+macro_rules! iv_date_time {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(
+                ctx,
+                $tid,
+                dv_date_time("2021-01-01T00:00:00"),
+                dv_date_time("2021-12-31T00:00:00"),
+            )
+        }
+    };
+}
+macro_rules! iv_time {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_time("01:00:00"), dv_time("10:00:00"))
+        }
+    };
+}
+macro_rules! iv_duration {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_duration("PT1H"), dv_duration("PT10H"))
+        }
+    };
+}
+macro_rules! iv_ordinal {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_ordinal(0, "at0014"), dv_ordinal(1, "at0015"))
+        }
+    };
+}
+macro_rules! iv_scale {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_scale(1.0, "at0014"), dv_scale(2.0, "at0015"))
+        }
+    };
+}
+macro_rules! iv_proportion {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_proportion(1.0, 2.0), dv_proportion(3.0, 2.0))
+        }
+    };
+}
+
+iv_count!(ivc_open, "cnf_iv_count_open");
+iv_count!(ivc_lu, "cnf_iv_count_lu");
+iv_count!(ivc_lul, "cnf_iv_count_lul");
+iv_quantity!(ivq_open, "cnf_iv_quantity_open");
+iv_quantity!(ivq_ul, "cnf_iv_quantity_ul");
+iv_date!(ivd_open, "cnf_iv_date_open");
+iv_date!(ivd_luc, "cnf_iv_date_luc");
+iv_date!(ivd_lur, "cnf_iv_date_lur");
+iv_date_time!(ivdt_open, "cnf_iv_datetime_open");
+iv_date_time!(ivdt_luc, "cnf_iv_datetime_luc");
+iv_date_time!(ivdt_lur, "cnf_iv_datetime_lur");
+iv_time!(ivt_open, "cnf_iv_time_open");
+iv_time!(ivt_luc, "cnf_iv_time_luc");
+iv_time!(ivt_lur, "cnf_iv_time_lur");
+iv_duration!(ivdu_open, "cnf_iv_duration_open");
+iv_duration!(ivdu_c, "cnf_iv_duration_c");
+iv_duration!(ivdu_r, "cnf_iv_duration_r");
+iv_ordinal!(ivo_open, "cnf_iv_ordinal_open");
+iv_ordinal!(ivo_c, "cnf_iv_ordinal_c");
+iv_scale!(ivs_open, "cnf_iv_scale_open");
+iv_scale!(ivs_c, "cnf_iv_scale_c");
+iv_proportion!(ivp_open, "cnf_iv_proportion_open");
+iv_proportion!(ivp_ratio, "cnf_iv_proportion_ratio");
+iv_proportion!(ivp_unitary, "cnf_iv_proportion_unitary");
+iv_proportion!(ivp_percent, "cnf_iv_proportion_percent");
+iv_proportion!(ivp_fraction, "cnf_iv_proportion_fraction");
+iv_proportion!(ivp_intfrac, "cnf_iv_proportion_intfrac");
+iv_proportion!(ivp_ratiorange, "cnf_iv_proportion_ratiorange");
+
+/// master17.3 CONT-DV_PROPORTION-validate_ratio_range: constrain
+/// `DV_PROPORTION.numerator` (`C_REAL`) to the range `[0,1000]` — base `398.5`
+/// accepted, `9999.0` rejected.
+fn run_dv_proportion_ratio_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let n = leaf_ptr(15, "numerator");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_prop_ratio_range",
+            |opt| author::constrain_leaf_real(opt, "DV_PROPORTION", "numerator", Some((0.0, 1000.0)), vec![]),
+            vec![
+                (
+                    "numerator 398.5 in range [0,1000] (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "numerator 9999 outside range [0,1000] (C_REAL.range)".to_owned(),
+                    vec![(n, json!(9999.0))],
                     Expected::Rejected,
                 ),
             ],

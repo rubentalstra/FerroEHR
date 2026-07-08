@@ -8,12 +8,14 @@
 //! / STRUCTURED, and `wt+json` — W2-K/F-13-02).
 //!
 //! [`query`] implements the [`ehrbase_rest::QueryService`] seam (ad-hoc + stored
-//! AQL execution on the P16 engine). The remaining unimplemented API groups
-//! (demographic: a future RM phase; admin: later) are not part of the
-//! [`ehrbase_rest::Backend`] seam — their routes answer 501 through the REST
-//! layer's generic not-implemented dispatcher (F-13-03).
+//! AQL execution on the P16 engine). [`demographic`] implements the
+//! [`ehrbase_rest::DemographicService`] seam (PARTY CRUD + `VERSIONED_PARTY` on
+//! the shared vobject machinery, no EHR scope); [`admin`] implements
+//! [`ehrbase_rest::AdminService`] (physical EHR delete, SM `I_ADMIN_SERVICE`).
 
+mod admin;
 mod definition;
+mod demographic;
 mod ehr;
 mod query;
 
