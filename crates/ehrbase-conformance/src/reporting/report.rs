@@ -328,7 +328,36 @@ fn render_statement_md(results: &RunResults, catalog: &Catalog) -> String {
         out.push('\n');
     }
 
-    out.push_str("## 4. Deviations (skips), by reason\n\n");
+    out.push_str("## 4. Profile verdict (machine-computed, all-or-nothing)\n\n");
+    for profile in [
+        crate::case::Profile::Core,
+        crate::case::Profile::Standard,
+        crate::case::Profile::Options,
+    ] {
+        let v = crate::profile::verdict(profile, results);
+        let _ = writeln!(
+            out,
+            "### {profile:?} — {}\n",
+            if v.pass { "**PASS**" } else { "not claimable" }
+        );
+        out.push_str("| Capability | Passed | Failed | Errored | Skipped | Verdict |\n");
+        out.push_str("|---|--:|--:|--:|--:|---|\n");
+        for c in &v.capabilities {
+            let _ = writeln!(
+                out,
+                "| {} | {} | {} | {} | {} | {} |",
+                c.capability,
+                c.passed,
+                c.failed,
+                c.errored,
+                c.skipped,
+                if c.pass { "pass" } else { "fail" }
+            );
+        }
+        out.push('\n');
+    }
+
+    out.push_str("## 5. Deviations (skips), by reason\n\n");
     let mut reasons: BTreeMap<&str, usize> = BTreeMap::new();
     for c in &results.cases {
         if c.status == CaseStatus::Skipped {

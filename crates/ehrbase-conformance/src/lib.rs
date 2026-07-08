@@ -41,7 +41,7 @@ pub mod suites;
 // Stable public facade: the flat module paths are the crate API (used by the
 // suites, the CLI, and the integration tests); the directories above are the
 // maintenance layout.
-pub use engine::{assert, client, harness, registry, run, sut};
-pub use model::{case, catalog, version};
+pub use engine::{assert, client, flow, harness, registry, run, sut};
+pub use model::{case, catalog, profile, version};
 pub use testdata::fixtures;
 pub use reporting::{report, results};
