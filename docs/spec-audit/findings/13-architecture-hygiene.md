@@ -37,7 +37,7 @@ handful of concrete, fixable places. The recurring themes are:
    (F-13-11); `ehrbase-compat` is empty scaffolding while its intended contents
    live in `ehrbase-rest` (F-13-12).
 
-Scope: hand-written code in `crates/ehrbase`, `ehrbase-rest`, `ehrbase-compat`,
+Scope: hand-written code in `app/ehrbase`, `ehrbase-rest`, `ehrbase-compat`,
 plus the crate-level findings for `openehr-flat`, `openehr-its` runtimes/opt14,
 `openehr-query`, and `openehr-term` (sections F-13-20+ below, from the
 per-crate audit passes). `// @generated` files were not style-reviewed.
@@ -47,10 +47,10 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 ### F-13-01: `OBJECT_VERSION_ID` codec reimplemented 5× across 3 files, no owning type
 - **Severity:** major
 - **Code:**
-  - encode: `crates/ehrbase/src/service/ehr.rs:209` `object_version_id()` → `format!("{vo_id}::{system}::{sys_version}")`
-  - decode: `crates/ehrbase/src/service/api/ehr.rs:355` `parse_object_id()`, `:368` `parse_version_uid()`, `:379` `expected_from_if_match()`
-  - decode again: `crates/ehrbase/src/service/ehr.rs:279` `parse_expected_version()` (a near-duplicate of `expected_from_if_match`)
-  - decode again: `crates/ehrbase/src/service/contribution.rs:279` `parse_preceding()` (splits `::`, takes `nth(1)` for the version)
+  - encode: `app/ehrbase/src/service/ehr.rs:209` `object_version_id()` → `format!("{vo_id}::{system}::{sys_version}")`
+  - decode: `app/ehrbase/src/service/api/ehr.rs:355` `parse_object_id()`, `:368` `parse_version_uid()`, `:379` `expected_from_if_match()`
+  - decode again: `app/ehrbase/src/service/ehr.rs:279` `parse_expected_version()` (a near-duplicate of `expected_from_if_match`)
+  - decode again: `app/ehrbase/src/service/contribution.rs:279` `parse_preceding()` (splits `::`, takes `nth(1)` for the version)
 - **Problem:** The openEHR `OBJECT_VERSION_ID` has a defined three-part grammar
   (`object_id "::" creating_system_id "::" version_tree_id`). Here it is a
   bag of ad-hoc `split("::")`/`rsplit("::")` calls with divergent behaviour:
@@ -72,7 +72,7 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
   (`api/ehr.rs::parse_object_id`/`parse_version_uid`/`expected_from_if_match`,
   `ehr.rs::parse_expected_version`, the inline `split("::")`/`nth(1)` in
   `contribution.rs::parse_preceding`). The one decoder is
-  `crates/ehrbase/src/service/version_id.rs`, built **on the BASE value type**
+  `app/ehrbase/src/service/version_id.rs`, built **on the BASE value type**
   (`openehr_base::prelude::ObjectVersionId::from_str` — the strict three-part
   lexical parse of `object_version_id_impl.rs`); the module adds only the
   storage typing (object_id must be the UUID `vo_id`; trunk `i32`) and the
@@ -87,8 +87,8 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 ### F-13-02: Two `WebTemplate` caches and two resolution paths; REST FLAT glue inverts layering
 - **Severity:** major
 - **Code:**
-  - service cache + resolver: `crates/ehrbase/src/service/mod.rs:49` (`EhrbaseService.web_templates: WebTemplateCache`) + `crates/ehrbase/src/service/template.rs:25` `web_template_for()`
-  - REST cache + resolver: `crates/ehrbase-rest/src/state.rs:27` (`AppState.web_templates`) + `crates/ehrbase-rest/src/dispatch/flat.rs:61` `web_template_for()`
+  - service cache + resolver: `app/ehrbase/src/service/mod.rs:49` (`EhrbaseService.web_templates: WebTemplateCache`) + `app/ehrbase/src/service/template.rs:25` `web_template_for()`
+  - REST cache + resolver: `app/ehrbase-rest/src/state.rs:27` (`AppState.web_templates`) + `app/ehrbase-rest/src/dispatch/flat.rs:61` `web_template_for()`
 - **Problem:** There are **two independent `WebTemplateCache` instances** for
   the same templates. The FLAT glue in `dispatch/flat.rs` builds/caches its own
   `WebTemplate` by calling `state.backend().definition_template_adl1_4_get(...)`
@@ -127,7 +127,7 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 
 ### F-13-03: Full dispatch arms hand-written for entirely-unimplemented API groups
 - **Severity:** major
-- **Code:** `crates/ehrbase-rest/src/dispatch/demographic.rs` (43 match arms, ~393 LoC), `dispatch/query.rs` (6 arms, 106 LoC), `dispatch/admin.rs` (3 arms). `EhrbaseService` implements `DemographicApi`/`QueryApi`/`AdminApi` as **empty impls** (`crates/ehrbase/src/service/api/mod.rs:20-22`), so every one of those operations returns `NotImplemented` (501).
+- **Code:** `app/ehrbase-rest/src/dispatch/demographic.rs` (43 match arms, ~393 LoC), `dispatch/query.rs` (6 arms, 106 LoC), `dispatch/admin.rs` (3 arms). `EhrbaseService` implements `DemographicApi`/`QueryApi`/`AdminApi` as **empty impls** (`app/ehrbase/src/service/api/mod.rs:20-22`), so every one of those operations returns `NotImplemented` (501).
 - **Problem:** ~500 lines of per-operation boilerplate (build `*Params`, decode
   body, call backend, negotiate response) exist solely to forward to a backend
   method that unconditionally 501s. The `demographic` group has no
@@ -160,14 +160,14 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 
 ### F-13-04: Dead dependency wiring hidden behind a `cargo-machete` ignore list
 - **Severity:** major
-- **Code:** `crates/ehrbase/Cargo.toml:51` — `ignored = ["ehrbase-compat", "ehrbase-rest", "openehr-am", "openehr-base", "openehr-flat", "openehr-its", "openehr-lang", "openehr-query", "openehr-rm", "openehr-term"]`. Verified 0 references in `crates/ehrbase/{src,tests}` for: `openehr_am`, `openehr_base`, `openehr_lang`, `openehr_query`, `openehr_term`, `ehrbase_compat`.
+- **Code:** `app/ehrbase/Cargo.toml:51` — `ignored = ["ehrbase-compat", "ehrbase-rest", "openehr-am", "openehr-base", "openehr-flat", "openehr-its", "openehr-lang", "openehr-query", "openehr-rm", "openehr-term"]`. Verified 0 references in `app/ehrbase/{src,tests}` for: `openehr_am`, `openehr_base`, `openehr_lang`, `openehr_query`, `openehr_term`, `ehrbase_compat`.
 - **Problem:** Six path dependencies are declared and never used; `cargo-machete`
   would flag them, so an ignore list was added to silence it. That inverts the
   tool's purpose — it now hides real dead wiring instead of catching it.
   `ehrbase-compat` in particular is an empty crate (see F-13-12) wired into the
   binary for nothing. `openehr-query`/`sea-query` are pre-wired for P16 but have
   no consumer today.
-- **Target design:** Remove the unused deps from `crates/ehrbase/Cargo.toml` and
+- **Target design:** Remove the unused deps from `app/ehrbase/Cargo.toml` and
   the corresponding `ignored` entries; re-add each (with `dep.workspace = true`)
   in the phase that first consumes it (`openehr-query` at P16, `ehrbase-compat`
   at P17, etc.). Keep the ignore list only for genuinely
@@ -205,7 +205,7 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 
 ### F-13-07: `Backend` seam is `serde_json::Value`-typed with no response-header channel
 - **Severity:** major
-- **Code:** the five generated `*Api` traits return `Result<Value, ApiError>` (see every method in `crates/ehrbase/src/service/api/ehr.rs`); dispatch then re-types the `Value` into an `openehr-rm` type for XML (`negotiate::respond_rm`, `negotiate.rs:293`, `serde_json::from_value(value.clone())`); requests go XML→`openehr-rm`→`Value` (`negotiate::rm_value`, `:214`). No method can return `ETag`/`Location` (cross-referenced by F-01-01).
+- **Code:** the five generated `*Api` traits return `Result<Value, ApiError>` (see every method in `app/ehrbase/src/service/api/ehr.rs`); dispatch then re-types the `Value` into an `openehr-rm` type for XML (`negotiate::respond_rm`, `negotiate.rs:293`, `serde_json::from_value(value.clone())`); requests go XML→`openehr-rm`→`Value` (`negotiate::rm_value`, `:214`). No method can return `ETag`/`Location` (cross-referenced by F-01-01).
 - **Problem:** The whole service↔REST contract passes untyped `Value`, so (a)
   the wire edge does `bytes → typed → Value` inbound and `Value → typed → bytes`
   outbound — two extra full serde round-trips and a `value.clone()` per XML
@@ -242,7 +242,7 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 
 ### F-13-09: Hand-rolled percent-decoding / form-urlencoded splitting
 - **Severity:** minor
-- **Code:** `crates/ehrbase-rest/src/params.rs:92` `form_urlencoded_pairs`, `:112` `percent_decode`, `:132` `hex_val`.
+- **Code:** `app/ehrbase-rest/src/params.rs:92` `form_urlencoded_pairs`, `:112` `percent_decode`, `:132` `hex_val`.
 - **Problem:** ~40 lines reimplement `application/x-www-form-urlencoded` parsing
   and percent-decoding. The comment says it avoids "a dependency purely for
   query splitting", but `url` 2 (which re-exports `form_urlencoded`) and
@@ -255,7 +255,7 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 
 ### F-13-10: Stale doc comments describing unfinished state that is now finished
 - **Severity:** minor (info)
-- **Code:** `crates/ehrbase/src/service/api/ehr.rs:1-6` ("Methods not yet wired (revision history, time-travel reads, item tags, ehr_get_by_subject, contribution_create) inherit the generated NotImplemented default") — all of these are in fact implemented in the same file. `crates/ehrbase-rest/src/negotiate.rs:278` and `:288` reference "(P12)" / "once typed payloads land (P12)" for behaviour that has landed.
+- **Code:** `app/ehrbase/src/service/api/ehr.rs:1-6` ("Methods not yet wired (revision history, time-travel reads, item tags, ehr_get_by_subject, contribution_create) inherit the generated NotImplemented default") — all of these are in fact implemented in the same file. `app/ehrbase-rest/src/negotiate.rs:278` and `:288` reference "(P12)" / "once typed payloads land (P12)" for behaviour that has landed.
 - **Problem:** Module docs assert an unimplemented state contradicted by the code
   beneath them — misleads the next reader and rots trust in the comments.
 - **Target design:** Update the `api/ehr.rs` header to reflect the implemented
@@ -265,7 +265,7 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 
 ### F-13-11: Served OpenAPI document carries no paths
 - **Severity:** minor (info)
-- **Code:** `crates/ehrbase-rest/src/openapi.rs` — `#[derive(OpenApi)]` with `info(...)` only; no `paths(...)`.
+- **Code:** `app/ehrbase-rest/src/openapi.rs` — `#[derive(OpenApi)]` with `info(...)` only; no `paths(...)`.
 - **Problem:** Swagger UI serves a title-and-description-only document (no
   operations), so the UI is effectively empty. It is intentionally a seam for a
   future code→OAS drift-check (ADR-005), but as shipped it is dead weight that
@@ -277,7 +277,7 @@ per-crate audit passes). `// @generated` files were not style-reviewed.
 
 ### F-13-12: `ehrbase-compat` is empty scaffolding; its intended contents live in `ehrbase-rest`
 - **Severity:** minor
-- **Code:** `crates/ehrbase-compat/src/lib.rs` (6 lines, doc comment only); wired as a dep of `ehrbase` (F-13-04) and never mounted. The FLAT/STRUCTURED glue that `rest-axum.md`/architecture assign to `ehrbase-compat` currently lives in `crates/ehrbase-rest/src/dispatch/flat.rs` (F-13-02).
+- **Code:** `app/ehrbase-compat/src/lib.rs` (6 lines, doc comment only); wired as a dep of `ehrbase` (F-13-04) and never mounted. The FLAT/STRUCTURED glue that `rest-axum.md`/architecture assign to `ehrbase-compat` currently lives in `app/ehrbase-rest/src/dispatch/flat.rs` (F-13-02).
 - **Problem:** An empty crate is carried in the graph, and the code that should
   eventually populate it sits in the wrong crate, coupling FLAT-interop concerns
   into the core ITS-REST server. This is planned P17 work, but the misplacement

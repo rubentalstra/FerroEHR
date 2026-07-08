@@ -7,7 +7,7 @@ Phase-15 built a three-pass composition validator in `openehr-flat::validation`
 (`openehr_rm::validate::validate_rm_value`, backed by ~43 `*_impl.rs` files),
 (2) an openEHR-terminology pass, and (3) a WebTemplate archetype-conformance
 walk (occurrences / cardinality / leaf domain constraints). It is wired into the
-COMPOSITION create/update path (`crates/ehrbase/src/service/composition.rs`) and
+COMPOSITION create/update path (`app/ehrbase/src/service/composition.rs`) and
 maps failures to ITS-REST `422` with a `{message, validationErrors[]}` body.
 
 The RM class-invariant pass is genuinely good: for the classes that have an
@@ -38,7 +38,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 ### F-07-01: CONTRIBUTION-endpoint commits bypass composition validation entirely
 - **Severity:** critical
 - **Spec:** openEHR RM Common IM — Change Control (`docs/specs/openehr/RM/docs/common/`, CONTRIBUTION / VERSION / commit semantics); ITS-REST 1.0.3 `POST /ehr/{ehr_id}/contribution` (`docs/specs/openehr/ITS-REST/.../contribution`); CNF platform schedule master08-contribution. A CONTRIBUTION is a set of VERSIONs whose content must satisfy the same validity rules as a direct commit — there is no spec basis for content committed via a CONTRIBUTION being exempt from validation.
-- **Code:** `crates/ehrbase/src/service/contribution.rs:43-109` (`create_contribution` → builds `Change::Create`/`Change::Modify` with `canonical: data` and calls `vobject::commit_contribution` directly); contrast `crates/ehrbase/src/service/composition.rs:18,118` which call `validate_composition_for_commit` on the direct path.
+- **Code:** `app/ehrbase/src/service/contribution.rs:43-109` (`create_contribution` → builds `Change::Create`/`Change::Modify` with `canonical: data` and calls `vobject::commit_contribution` directly); contrast `app/ehrbase/src/service/composition.rs:18,118` which call `validate_composition_for_commit` on the direct path.
 - **Problem:** `create_contribution` never invokes `validate_composition_for_commit` (or any validator). A COMPOSITION (or EHR_STATUS / FOLDER) POSTed inside a CONTRIBUTION is decomposed and persisted with no RM-invariant, terminology, or template-conformance checking. The entire phase-15 subsystem is dead on this path. The phase file lists this as a deferred follow-up ("CONTRIBUTION-path compositions bypass `create_composition`"), but it is a spec-conformance bypass of a required commit route, not a minor edge case.
 - **Fix:** In `create_contribution`, for each `Change::Create`/`Change::Modify` whose `Kind::Composition`, run the same validation as the direct path before `commit_contribution` (share a `validate_for_commit(kind, &data)` helper). Reject the whole contribution atomically with `422` if any version fails. Add an e2e test (valid + invalid composition inside a contribution).
 - [x] fixed
@@ -46,7 +46,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 ### F-07-02: A COMPOSITION with no declared `template_id` skips *all* validation, not just template-conformance
 - **Severity:** major
 - **Spec:** RM invariants (e.g. `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.representation.element.adoc` `Inv_null_flavour_indicated`; `.../org.openehr.rm.composition.composition.adoc` `Category_validity`, `Content_valid`) are properties of the RM instance and are **template-independent** — they hold whether or not an OPT is referenced. AOM `valid_value` (`docs/specs/openehr/AM/docs/AOM1.4/master04-constraint_model_package.adoc` §"Valid_value") is the *archetype*-conformance function; RM invariants are separate and always apply.
-- **Code:** `crates/ehrbase/src/service/composition.rs:210-233` (`validate_composition_for_commit`): returns `Ok(())` immediately when `/archetype_details/template_id/value` is absent. The RM-invariant and terminology passes live *inside* `openehr_flat::validate_composition(composition, &wt)` (`crates/openehr-flat/src/validation/mod.rs:101-110`), which is only reached when a WebTemplate exists.
+- **Code:** `app/ehrbase/src/service/composition.rs:210-233` (`validate_composition_for_commit`): returns `Ok(())` immediately when `/archetype_details/template_id/value` is absent. The RM-invariant and terminology passes live *inside* `openehr_flat::validate_composition(composition, &wt)` (`crates/openehr-flat/src/validation/mod.rs:101-110`), which is only reached when a WebTemplate exists.
 - **Problem:** The PORT NOTE correctly argues a *templateless* composition cannot be template-validated, but the implementation skips the whole validator, so it also skips the two template-independent passes (RM class invariants + RM-mandated terminology). A templateless composition with, e.g., an ELEMENT having both `value` and `null_flavour`, or an invalid `category` code, is accepted.
 - **Fix:** Split the entry point. Always run `rm_invariant_pass` + `terminology_pass` (they need no WebTemplate). Only gate the WebTemplate/archetype-conformance pass on a resolved template. Expose an `openehr_flat::validate_rm_and_terminology(composition)` (no `wt`) and call it unconditionally in `validate_composition_for_commit`.
 - [x] fixed
@@ -142,7 +142,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 ### F-07-12: `422` body flattens structured `{path, message}` violations into `"<path>: <message>"` strings
 - **Severity:** info
 - **Spec:** ITS-REST 1.0.3 `responses/422_COMPOSITION.yaml` declares **no** content schema; the reused `schemas/others/Error.yaml` has `validationErrors: [string]`. So the current shape is *permitted*.
-- **Code:** `crates/ehrbase-rest/src/error.rs:57-60` maps `ValidationFailed(errors)` into `validationErrors` strings; `crates/ehrbase/src/service/composition.rs:225-231` builds `ValidationError{path,message}` from the validator's structured `ValidationMessage{path,message,kind}`.
+- **Code:** `app/ehrbase-rest/src/error.rs:57-60` maps `ValidationFailed(errors)` into `validationErrors` strings; `app/ehrbase/src/service/composition.rs:225-231` builds `ValidationError{path,message}` from the validator's structured `ValidationMessage{path,message,kind}`.
 - **Problem:** No conformance defect (spec schema is empty), but the validator's rich per-node path/kind is collapsed to a string, and machine-readable path granularity is lost. Documented PORT NOTE.
 - **Fix:** None required for conformance. Optionally retain structured objects if a future CNF fixture constrains the 422 body.
 - [ ] fixed

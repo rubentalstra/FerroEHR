@@ -1,6 +1,6 @@
 # ATNA Audit Trail — Rust-native design
 
-- **Status:** implemented, **total coverage** (2026-07-06) — `crates/ehrbase-audit`
+- **Status:** implemented, **total coverage** (2026-07-06) — `app/ehrbase-audit`
   (DICOM AuditMessage + RFC 5424/5425/5426 syslog + bounded-mpsc sender), the
   `ehrbase-rest` audit tower layer, and the `ehrbase` binary wiring (sender boot,
   graceful-shutdown drain, `ehr.subject_id` resolver). **Every generated ITS-REST
@@ -198,7 +198,7 @@ New workspace crate **`ehrbase-audit`** (application layer, hand-written,
 `tokio`, `tokio-rustls`, `jiff`, `serde` for config):
 
 ```
-crates/ehrbase-audit/src/
+app/ehrbase-audit/src/
 ├── message.rs    # DICOM AuditMessage model (PS3.15 §A.5) + quick-xml serializer
 ├── codes.rs      # DCM / RFC-3881 code constants (EventID, RoleID, TypeCodes)
 ├── event.rs      # AuditEvent — the transport-agnostic input the server hands us

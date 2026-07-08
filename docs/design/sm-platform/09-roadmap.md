@@ -19,12 +19,14 @@ the SIM-B/SDF audit (it is FLAT work).
 
 *The structural move; behaviour-preserving except listed additions.*
 
-- [ ] **Workspace layout (owner ruling):** `git mv` all `ehrbase-*` crates
-      from `crates/` to **`app/`**; `openehr-*` (spec layer + codegen
-      tooling) stays in `crates/`. Root `Cargo.toml` members =
-      `["crates/*", "app/*"]`; update workspace path-deps, CI workflows,
-      scripts, `.claude/rules` path scopes, `CLAUDE.md` repo map,
-      `docs/architecture.md`. One mechanical commit, workspace green.
+- [x] **Workspace layout (owner ruling) — done 2026-07-08** on
+      `claude/sm-platform-design`: application crates → **`app/*`**;
+      dev/verification tooling → **`tools/*`** with renames
+      (`ehrbase-conformance` → `conformance`, `ehrbase-bench` →
+      `benchmark`); spec layer stays in `crates/`. Members =
+      `["crates/*", "app/*", "tools/*"]`; path-deps, CI, scripts, docker
+      runners, `.claude/rules` scopes, `CLAUDE.md`, `docs/architecture.md`
+      all updated; workspace green (build + clippy-neutral + full nextest).
 - [ ] `app/ehrbase-sm`: create crate; move the `Backend` trait family out
       of `ehrbase-rest::backend`, split the EHR mega-trait into
       `EhrService`/`EhrStatusService`/`EhrDirectoryService`/

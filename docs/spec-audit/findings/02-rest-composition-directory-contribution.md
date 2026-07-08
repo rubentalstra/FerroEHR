@@ -7,8 +7,8 @@ VERSIONED_COMPOSITION against ITS-REST 1.0.3
 (`docs/specs/openehr/ITS-REST/specifications/`) and the CNF Platform Conformance
 Test Schedule (`docs/specs/openehr/CNF/docs/platform_test_schedule/master07`
 [composition], `master08` [contribution], `master09` [directory]). Code audited:
-`crates/ehrbase-rest/{dispatch/ehr.rs, negotiate.rs, error.rs, params.rs}` and
-`crates/ehrbase/src/service/{composition.rs, directory.rs, contribution.rs,
+`app/ehrbase-rest/{dispatch/ehr.rs, negotiate.rs, error.rs, params.rs}` and
+`app/ehrbase/src/service/{composition.rs, directory.rs, contribution.rs,
 versioned.rs, vobject.rs, api/ehr.rs, mod.rs}`.
 
 The versioning core (temporal `vo_version`, decompose→nodes, contribution+audit
@@ -380,7 +380,7 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   OBJECT_VERSION_ID for delete, consider a single strict parser
   (`{uuid}::{system}::{int}`) reused by delete + `If-Match`, with explicit 400s.
 
-- **Test masking:** `crates/ehrbase/tests/service_ehr.rs:216-223` asserts only
+- **Test masking:** `app/ehrbase/tests/service_ehr.rs:216-223` asserts only
   `.is_err()` on a get-after-delete, which passes on the current 500. After
   F-02-01, strengthen it to assert the 204 status (do not weaken it). The delete
   call there also passes a bare `vo_id` as `uid_based_id`, which only "works"

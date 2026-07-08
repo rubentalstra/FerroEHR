@@ -50,17 +50,21 @@ and the full Admin set, all Stage-1 scope.
    adapter over it (as SM's assumed architecture prescribes); `ehrbase`
    implements the traits. The current `ehrbase-rest::backend` trait family
    migrates and the EHR mega-trait splits along SM interface boundaries.
-2. **Physical two-layer workspace layout.** The ADR-004/008 naming split
-   becomes directory structure: all application crates move to **`app/*`**
-   (`ehrbase`, `ehrbase-sm`, `ehrbase-rest`, `ehrbase-compat`,
-   `ehrbase-audit`, `ehrbase-authz`, `ehrbase-signing`,
-   `ehrbase-conformance`, `ehrbase-bench`); the generated openEHR spec layer
-   and its tooling stay in **`crates/*`** (`openehr-*`, `openehr-codegen`,
-   `openehr-derive`). Root workspace `members = ["crates/*", "app/*"]`;
-   moved with `git mv` (history preserved); all path references (workspace
-   path-deps, CI, scripts, `.claude/rules` scopes, docs) updated in the same
-   mechanical commit. Executed as SM-1's opening task. Dependencies point
-   one way only: `app/* → crates/*`.
+2. **Physical three-directory workspace layout (executed 2026-07-08).** The
+   ADR-004/008 naming split becomes directory structure: the application
+   crates move to **`app/*`** (`ehrbase`, `ehrbase-sm`, `ehrbase-rest`,
+   `ehrbase-compat`, `ehrbase-audit`, `ehrbase-authz`, `ehrbase-signing`);
+   the dev/verification tooling — not part of the shipped application —
+   moves to **`tools/*`** with renames: `ehrbase-conformance` →
+   **`tools/conformance`** (the ECC runner) and `ehrbase-bench` →
+   **`tools/benchmark`**; the generated openEHR spec layer and its tooling
+   stay in **`crates/*`** (`openehr-*`, `openehr-codegen`,
+   `openehr-derive`). Root workspace
+   `members = ["crates/*", "app/*", "tools/*"]`; moved with `git mv`
+   (history preserved); all path references (workspace path-deps, CI,
+   scripts, docker runners, `.claude/rules` scopes, docs) updated in the
+   same mechanical commit. Dependencies point one way only:
+   `tools/* → app/* → crates/*`.
 3. **Precedence rule:** SM governs internal decomposition, naming, and call
    semantics (pre/post-conditions become test assertions). **ITS-REST 1.0.3
    + the CNF/ECC schedule remain the wire oracle** — SM is TRIAL; where the

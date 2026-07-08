@@ -188,13 +188,13 @@ production can keep it off the public listener entirely.
 ## 4. Module layout & wiring
 
 ```
-crates/ehrbase/src/telemetry/         # binary-owned init (no new crate)
+app/ehrbase/src/telemetry/         # binary-owned init (no new crate)
 ├── mod.rs        # init() -> TelemetryGuard { reload_handle, prometheus_handle, otel shutdown }
 ├── layers.rs     # subscriber assembly: EnvFilter(reload) + fmt(json|pretty) + otel(optional)
 ├── prometheus.rs # recorder install, bucket ladders, build_info gauge
 └── samplers.rs   # background task: db pool gauges (+ tokio runtime gauges when verified)
 
-crates/ehrbase-rest/src/management/
+app/ehrbase-rest/src/management/
 ├── mod.rs          # router builder + access-level layer + per-endpoint gating
 ├── health.rs       # HealthIndicator trait + registry + aggregate/liveness/readiness
 ├── info.rs         # build/spec info (extends the P11 endpoint)

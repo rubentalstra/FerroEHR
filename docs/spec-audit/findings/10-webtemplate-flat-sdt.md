@@ -5,9 +5,9 @@
 `crates/openehr-flat` implements three simplified serialisation surfaces —
 the **WebTemplate** builder (OPT 1.4 → Better `web-template` 2.3 JSON), the
 **FLAT** (simSDT) `RM ⇄ flat-map` converter, and the **STRUCTURED** (structSDT)
-`RM ⇄ nested-tree` converter — served from `crates/ehrbase-rest/src/dispatch/`
+`RM ⇄ nested-tree` converter — served from `app/ehrbase-rest/src/dispatch/`
 (`flat.rs` glue, `definition.rs` for the template GET; wired into COMPOSITION
-create/get/update in `ehr.rs`). `crates/ehrbase-compat` is an empty stub; all
+create/get/update in `ehr.rs`). `app/ehrbase-compat` is an empty stub; all
 serving is in `ehrbase-rest`.
 
 The implementation is careful, well-annotated Better/EHRbase-parity work. The
@@ -102,7 +102,7 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 ### F-10-02: `definition.rs` comment misstates the spec — WebTemplate on the adl1.4 GET is spec-defined, not an EHRbase extension
 - **Severity:** minor
 - **Spec:** `ITS-REST/specifications/operations/definition_template_adl1.4_get.yaml:6` (`Accept: application/openehr.wt+json` explicitly supported); `responses/200_Template_adl1_4_retrieved.yaml:62-64` → `schemas/web_template/WebTemplate.yaml`; `parameters/header/Accept_template.yaml:12`.
-- **Code:** `crates/ehrbase-rest/src/dispatch/definition.rs:188-190` ("Serving `wt+json` on the spec `adl1.4/{id}` GET endpoint is a deliberate EHRbase-compatible extension (openEHR ITS-REST returns only the OPT itself).").
+- **Code:** `app/ehrbase-rest/src/dispatch/definition.rs:188-190` ("Serving `wt+json` on the spec `adl1.4/{id}` GET endpoint is a deliberate EHRbase-compatible extension (openEHR ITS-REST returns only the OPT itself).").
 - **Problem:** The behaviour is correct, but the code's own spec citation is wrong: ITS-REST 1.0.3 *does* normatively define `wt+json` on this endpoint returning the WebTemplate schema. The inaccurate note undersells conformance and could mislead a future reviewer into treating a spec-required response as optional.
 - **Fix:** Correct the comment to cite `definition_template_adl1.4_get.yaml` + `WebTemplate.yaml`; this is spec-conformant behaviour, not an extension.
 - [ ] fixed
@@ -205,7 +205,7 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
 ### F-10-12: FLAT/STRUCTURED composition commit/retrieve media types are not in the vendored ITS-REST composition operations (extension)
 - **Severity:** info
 - **Spec:** ITS-REST — `wt.flat+json`/`wt.structured+json` appear only in `Resources.md` data-representation prose and on the *template* GET; a grep of `operations/`, `requestBodies/`, `responses/` finds them only in `definition_template_adl1.4_get.yaml`, not in any COMPOSITION operation.
-- **Code:** `crates/ehrbase-rest/src/dispatch/ehr.rs:167-230` wires `composition_from_flat`/`_structured` and `composition_flat_response`/`_structured_response` onto COMPOSITION create/get/update via `negotiate::wants_flat`/`is_flat_body`/`wants_structured`.
+- **Code:** `app/ehrbase-rest/src/dispatch/ehr.rs:167-230` wires `composition_from_flat`/`_structured` and `composition_flat_response`/`_structured_response` onto COMPOSITION create/get/update via `negotiate::wants_flat`/`is_flat_body`/`wants_structured`.
 - **Problem:** Committing/retrieving a COMPOSITION in FLAT/STRUCTURED is an EHRbase-compatible extension of the ITS-REST COMPOSITION endpoints (the vendored OAS defines only canonical JSON/XML there). Not CNF-gated. Behaviourally aligned with EHRbase; just record it as an extension surface.
 - **Fix:** None functional. Note in `dispatch/flat.rs` docs that COMPOSITION FLAT/STRUCTURED I/O is an EHRbase extension beyond the vendored ITS-REST COMPOSITION operations.
 - [ ] fixed
@@ -263,13 +263,13 @@ No critical findings; 1 major (fabricated invalid codes), the rest minor/info.
   `crates/openehr-flat/src/flat/aql.rs` hand-parses `/attr[predicate]` segments
   independently of the full AQL front-end in `crates/openehr-query` (which has a
   `logos`+`chumsky` lexer/parser) and of the materialised-path handling in
-  `crates/ehrbase/src/storage/codec.rs`. Three places parse openEHR paths. The
+  `app/ehrbase/src/storage/codec.rs`. Three places parse openEHR paths. The
   flat parser is a deliberately narrow subset (predicates only, no full AQL), so
   reuse may not be worth it, but this should be a conscious decision — note it,
   or expose a shared `openehr-query` path-segment API the flat converter can
   consume, especially before the P16 RM-model work (F-10-11) lands.
 
-- **`ehrbase-compat` is an empty stub** (`crates/ehrbase-compat/src/lib.rs`, 6
+- **`ehrbase-compat` is an empty stub** (`app/ehrbase-compat/src/lib.rs`, 6
   lines). The EhrScape/WebTemplate/FLAT endpoints the crate is slated to own
   (per `architecture.md` and `rest-axum.md`) currently live in
   `ehrbase-rest/src/dispatch/flat.rs` + `definition.rs`. Not a defect, but the

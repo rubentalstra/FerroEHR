@@ -109,15 +109,15 @@ columns for hot extractions. See `docs/postgres-features.md`.
 
 ## Workspace layout
 
-Two physical layers (ADR-010; the directory move executes as SM-1's opening
-task): **`app/*`** holds the application crates (`ehrbase`, `ehrbase-sm`,
+Three physical directories (ADR-010; move executed 2026-07-08):
+**`app/*`** holds the application crates (`ehrbase`, `ehrbase-sm` [SM-1],
 `ehrbase-rest`, `ehrbase-compat`, `ehrbase-audit`, `ehrbase-authz`,
-`ehrbase-signing`, `ehrbase-conformance`, `ehrbase-bench`); **`crates/*`**
-holds the generated openEHR spec layer + its tooling (`openehr-*`,
-`openehr-codegen`, `openehr-derive`). Root workspace
-`members = ["crates/*", "app/*"]`.
-Dependencies point downward only: app (`app/ehrbase-*`) → spec
-(`crates/openehr-*`). The service seam is the SM-aligned native API
+`ehrbase-signing`); **`tools/*`** holds the dev/verification tooling that is
+*not* part of the shipped application (`conformance` — the ECC runner,
+`benchmark`); **`crates/*`** holds the generated openEHR spec layer + its
+tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root workspace
+`members = ["crates/*", "app/*", "tools/*"]`.
+Dependencies point downward only: `tools/* → app/* → crates/openehr-*`. The service seam is the SM-aligned native API
 (`ehrbase-sm`, ADR-010): one trait per SM Platform Service Model interface,
 with `ehrbase-rest` as the ITS-REST protocol adapter — see
 `docs/design/sm-platform/08-target-architecture.md`.

@@ -141,7 +141,7 @@ the emitter/derive as the fix site.
   (`docs/specs/openehr/CNF/docs/platform_test_schedule/` master15–17).
 - **Code:** all `#[serde(untagged)]` enums (e.g.
   `crates/openehr-rm/src/data_types/basic/data_value.rs:29`); surfaced at the
-  REST edge via `crates/ehrbase-rest/src/negotiate.rs:260,308` (errors mapped to
+  REST edge via `app/ehrbase-rest/src/negotiate.rs:260,308` (errors mapped to
   `ApiError::BadRequest`).
 - **Problem:** `#[serde(untagged)]` discards each inner variant's real error
   (e.g. "missing field `units`" on a `DV_QUANTITY`) and reports only "data did
@@ -191,7 +191,7 @@ the emitter/derive as the fix site.
   `additionalProperties:false` (the strictness F-04-01/F-04-02 rely on).
 - **Code:** `crates/openehr-its/src/json.rs:60` (`validate_canonical`) is
   referenced only from `crates/openehr-its/tests/fidelity.rs`; the REST
-  ingestion path (`crates/ehrbase-rest/src/negotiate.rs:173-262`,
+  ingestion path (`app/ehrbase-rest/src/negotiate.rs:173-262`,
   `rm_value`/`json_value`) deserializes with bare `serde_json::from_slice` /
   `from_str` and never calls `validate_canonical`.
 - **Problem:** Because incoming bodies are only run through the lenient

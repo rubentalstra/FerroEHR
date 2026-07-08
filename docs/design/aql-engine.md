@@ -15,7 +15,7 @@ AQL text ──openehr-query──▶ AST
         ──exec─────▶ RESULT_SET      (ITS-REST 1.0.3)
 ```
 
-Modules (all in `crates/ehrbase/src/aql/`): `analyze`, `ir`, `lower`, `sql`,
+Modules (all in `app/ehrbase/src/aql/`): `analyze`, `ir`, `lower`, `sql`,
 `exec`, `error`. The RM attribute model is **generated** (`emit-rm-model` →
 `openehr_rm::model`): attribute→declared type + container + mandatory,
 ancestors/descendants, abstract flag, `is_structure_root` (matches the node
@@ -125,7 +125,7 @@ documented envelope (ADR-008 §3).
 
 Pipeline: `analyze` + `ir` + `lower` (32 unit tests) → `sql` (fully typed
 sea-query) → `exec` (RESULT_SET) → the `QueryService` seam + `/query/*`
-endpoints. e2e in `crates/ehrbase/tests/service_aql.rs` (+ HTTP in
+endpoints. e2e in `app/ehrbase/tests/service_aql.rs` (+ HTTP in
 `service_query.rs`), PG18 testcontainers.
 
 | Construct | State |
