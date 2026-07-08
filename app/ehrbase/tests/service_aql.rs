@@ -35,7 +35,7 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{AqlQueryRequest, EhrService, QueryService};
+use ehrbase_rest::{AqlQueryRequest, EhrCompositionService, EhrService, QueryService};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The magnitude leaf path used throughout (bp.v1-style descent to the ELEMENT).

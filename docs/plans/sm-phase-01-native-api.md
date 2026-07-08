@@ -44,28 +44,36 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
       path-deps, cross-crate fixture paths, CI, scripts, docker runners,
       `.claude/rules` scopes, `CLAUDE.md`, `docs/architecture.md` updated.
       Gate held: build green, nextest 813/813.
-- [ ] `app/ehrbase-sm` scaffold (workspace member, `thiserror`, deps on
-      `openehr-base`/`openehr-rm`/`openehr-its` only) — `/crate-scaffold`
-- [ ] Move `ServiceResponse`/`ResourceMeta`, `AqlQueryRequest`/`QueryOutcome`,
-      `PartyKind` into `ehrbase-sm::types`; re-export from `ehrbase-rest`
-      for a soft migration
+- [x] `app/ehrbase-sm` scaffold — done 2026-07-09 (deps: openehr-base/rm/its/
+      flat + async-trait/serde/jiff; no thiserror needed yet)
+- [x] Move `ServiceResponse`/`ResourceMeta`, `AqlQueryRequest`/`QueryOutcome`,
+      `PartyKind` into `ehrbase-sm::types`; `ehrbase-rest` `backend.rs`/
+      `response.rs` are re-export shims — done 2026-07-09
 - [ ] Define `CallStatus` + the SM↔`ServiceError`↔HTTP table (doc 08 §5);
-      map `ServiceError` through it
-- [ ] Split `EhrService` into `EhrService`/`EhrStatusService`/
+      map `ServiceError` through it — *table + `CallStatusType`/`CallStatus`
+      landed in `ehrbase-sm::error` (28 statuses, unit-tested); the
+      `ServiceError` rewiring in `ehrbase` remains*
+- [x] Split `EhrService` into `EhrService`/`EhrStatusService`/
       `EhrDirectoryService`/`EhrCompositionService`/`EhrContributionService`
-      (SM citations in doc-comments); `Backend` alias updated; dispatchers
-      rewired
-- [ ] Move `DemographicService`/`AdminService`/`QueryService`/
+      (SM citations in doc-comments); `Backend` alias updated (duplicate
+      `DemographicService` bound dropped); dispatchers + 12 test files
+      rewired — done 2026-07-09, 817/817 tests
+- [x] Move `DemographicService`/`AdminService`/`QueryService`/
       `WebTemplateService` + generated `DefinitionApi` bound into the alias
-      from `ehrbase-sm`
+      from `ehrbase-sm` — done 2026-07-09
 - [ ] `UpdateVersion<T>` + `UpdateAudit` types; `vobject` constructors take
       them; ITS-REST adapter builds them from body + headers. Honour the
       three wire divergences per design 08 §3 (review F2): `commit_audit`
       field name, partial `UpdateAttestation` items, `signature` field —
       each with a `// PORT NOTE:` citing
-      `ITS-REST/specifications/schemas/common/UpdateVersion.yaml`
-- [ ] `ValidityChecker` trait over the existing validation choke points
-- [ ] `SystemLog` facade naming `ehrbase-audit` as the SM component
+      `ITS-REST/specifications/schemas/common/UpdateVersion.yaml` — *types
+      landed in `ehrbase-sm::types` with the three PORT NOTEs + a wire-shape
+      deserialization test; the `vobject`/adapter rewiring remains*
+- [ ] `ValidityChecker` trait over the existing validation choke points —
+      *trait landed (`services/validity.rs`); wiring `EhrbaseService`'s
+      validate choke points to it remains*
+- [x] `SystemLog` facade naming `ehrbase-audit` as the SM component
+      (`services/system_log.rs`, doc-cites the `I_SYSTEM_LOG` stub + ATNA)
 - [ ] `EhrSummary` gains `contribution_count`/`composition_count`
       (`i_ehr_service.adoc` EHR_SUMMARY); wire into `ehr_summary`
 - [ ] `list_contributions(ehr_id, time_range, page)` +
