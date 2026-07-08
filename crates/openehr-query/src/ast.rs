@@ -14,13 +14,6 @@ pub struct SelectQuery {
     pub select: SelectClause,
     /// `FROM <containsExpr>`
     pub from: ContainsExpr,
-    /// `TIMEWINDOW <duration>[/<anchor>]` — a **legacy** clause: AQL 1.1 removed
-    /// `TIMEWINDOW` from the grammar (QUERY `master00-amendment_record.adoc`,
-    /// SPECQUERY-20), but the CNF query corpus still drives it as valid, so the
-    /// parser accepts and records the raw window text. Consumers decide the
-    /// semantics (the reference behaviour the CNF goldens encode is: accepted,
-    /// no filtering).
-    pub time_window: Option<String>,
     /// `WHERE <whereExpr>`
     pub where_: Option<WhereExpr>,
     /// `ORDER BY …`

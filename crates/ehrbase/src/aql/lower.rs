@@ -52,15 +52,6 @@ pub(crate) fn lower(query: &SelectQuery) -> Result<QueryIr, AqlError> {
 
     let (limit, offset) = lower_limit(query)?;
 
-    // PORT NOTE: the legacy `TIMEWINDOW` clause is accepted and deliberately
-    // ignored. AQL 1.1 removed TIMEWINDOW from the grammar (QUERY
-    // `master00-amendment_record.adoc`, SPECQUERY-20), so it has no normative
-    // semantics; the CNF query corpus still drives it as valid, and its
-    // loaded-db goldens (A/109, B/103, C/103) expect the same rows as the
-    // unwindowed query — i.e. the reference behaviour the goldens encode is
-    // "accepted, no filtering", which is exactly what ignoring it yields.
-    let _ = &query.time_window;
-
     Ok(QueryIr {
         sources: planner.sources,
         contains,

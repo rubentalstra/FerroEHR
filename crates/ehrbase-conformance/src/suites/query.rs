@@ -35,6 +35,12 @@
 //!
 //! Invalid queries (`aql_queries_invalid/**`) are load-bearing negatives: the
 //! server must reject them (`400`/`422` per ITS-REST `400_QUERY.yaml`).
+//!
+//! **Corpus-override:** the corpus's `TIMEWINDOW` fixtures predate AQL 1.1,
+//! which removed the clause from the grammar (SPECQUERY-20). The pinned spec
+//! wins over the corpus classification: those queries are driven expecting a
+//! `4xx` rejection instead of their (void) goldens — see
+//! [`uses_removed_timewindow`].
 
 use uuid::Uuid;
 
@@ -190,6 +196,19 @@ fn unrunnable(aql: &str) -> bool {
     aql.contains("__MODIFY_") || aql.contains('$')
 }
 
+/// **Corpus-override (spec supersedes corpus):** whether a query uses the
+/// `TIMEWINDOW` clause. The corpus classifies these fixtures (`A/109`,
+/// `B/103`, `C/103`) as *valid*, but AQL 1.1 removed `TIMEWINDOW` from the
+/// grammar (QUERY `master00-amendment_record.adoc`, SPECQUERY-20 — "remove
+/// `TIMEWINDOW`"); it appears nowhere in the current grammar. Per the pinned
+/// spec such a query is invalid AQL and the SUT must reject it (ITS-REST
+/// `400_QUERY.yaml`), so the expectation is inverted: a `4xx` passes, an
+/// acceptance is the finding. The rejection is id-independent, so even the
+/// `__MODIFY_…__` variant is driven verbatim rather than skipped.
+fn uses_removed_timewindow(aql: &str) -> bool {
+    aql.to_ascii_uppercase().contains(" TIMEWINDOW ")
+}
+
 /// The query text for a golden of `name` in `group` (paired by identical base
 /// name under `aql_queries_valid/<group>/<name>`), or `None` when the paired
 /// query fixture is absent.
@@ -220,6 +239,24 @@ async fn run_golden_group(
         let Some(aql) = paired_query(group, &gold.name) else {
             continue; // a golden with no paired query fixture
         };
+        if uses_removed_timewindow(&aql) {
+            // Spec override: AQL 1.1 removed TIMEWINDOW (SPECQUERY-20) — the
+            // query must be *rejected*, its golden is void. See
+            // [`uses_removed_timewindow`].
+            total += 1;
+            let resp = adhoc(ctx, &aql).await?;
+            if (400..500).contains(&resp.status) {
+                passed += 1;
+            } else {
+                first_fail.get_or_insert(format!(
+                    "{}/{}: TIMEWINDOW was removed from AQL 1.1 \
+                     (master00-amendment_record.adoc, SPECQUERY-20) — expected a \
+                     4xx rejection, got {}",
+                    group, gold.name, resp.status
+                ));
+            }
+            continue;
+        }
         if unrunnable(&aql) {
             skipped += 1;
             continue;
