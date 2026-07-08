@@ -627,20 +627,13 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         .then(just(Token::Offset).ignore_then(int).or_not())
         .map(|(limit, offset)| Limit { limit, offset });
 
-    // The legacy `TIMEWINDOW <duration>/<anchor>` clause (removed from AQL 1.1 —
-    // SPECQUERY-20 — but driven as valid by the CNF query corpus): the window
-    // text is recorded verbatim on the AST. A bare duration (no `/anchor`)
-    // lexes as an Identifier, so both spellings are admitted here.
-    let time_window = just(Token::TimeWindow).ignore_then(select! {
-        Token::TimeWindowLiteral(s) => s,
-        Token::Identifier(s) => s,
-    });
-
-    // selectQuery : selectClause fromClause timeWindow? whereClause?
-    //               orderByClause? limitClause? '--'? EOF
+    // selectQuery : selectClause fromClause whereClause? orderByClause?
+    //               limitClause? '--'? EOF
+    //
+    // NOTE: no TIMEWINDOW clause — AQL 1.1 removed it (SPECQUERY-20); a query
+    // using it is invalid and fails to parse, which is the conformant outcome.
     select_clause
         .then(just(Token::From).ignore_then(contains))
-        .then(time_window.or_not())
         .then(just(Token::Where).ignore_then(where_expr).or_not())
         .then(
             just(Token::Order)
@@ -656,10 +649,9 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         .then(limit.or_not())
         .then_ignore(just(Token::DoubleDash).or_not())
         .map(
-            |(((((select, from), time_window), where_), order_by), limit)| SelectQuery {
+            |((((select, from), where_), order_by), limit)| SelectQuery {
                 select,
                 from,
-                time_window,
                 where_,
                 order_by: order_by.unwrap_or_default(),
                 limit,
@@ -730,6 +722,22 @@ mod tests {
                 offset: Some(5)
             })
         );
+    }
+
+    #[test]
+    fn timewindow_is_rejected() {
+        // AQL 1.1 removed the `TIMEWINDOW` clause from the grammar (QUERY
+        // `master00-amendment_record.adoc`, SPECQUERY-20) — a query using it is
+        // invalid AQL and must fail to parse. The CNF query corpus (A/109,
+        // B/103, C/103) predates the removal; the conformance runner encodes
+        // that as a documented corpus-override, never the parser.
+        for q in [
+            "SELECT e/ehr_id/value FROM EHR e TIMEWINDOW PT12H/2019-10-24",
+            "SELECT c FROM COMPOSITION c TIMEWINDOW PT12H/2019-10-24",
+            "SELECT c FROM COMPOSITION c TIMEWINDOW PT12H",
+        ] {
+            assert!(parse_str(q).is_err(), "TIMEWINDOW must not parse: {q}");
+        }
     }
 
     #[test]
