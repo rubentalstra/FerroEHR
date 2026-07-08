@@ -17,7 +17,9 @@
 //! in the phase that first implements one of its operations.
 
 mod abac;
+mod admin;
 mod definition;
+mod demographic;
 mod ehr;
 mod flat;
 mod query;
@@ -77,10 +79,10 @@ pub(crate) fn api_router() -> Router<AppState> {
 
     Router::new()
         .merge(mount(g::ehr::ROUTES, ehr::dispatch))
-        .merge(mount(g::demographic::ROUTES, not_implemented))
+        .merge(mount(g::demographic::ROUTES, demographic::dispatch))
         .merge(mount(g::definition::ROUTES, definition::dispatch))
         .merge(mount(g::query::ROUTES, query::dispatch))
-        .merge(mount(g::admin::ROUTES, not_implemented))
+        .merge(mount(g::admin::ROUTES, admin::dispatch))
 }
 
 /// The dispatcher for an API group with no implemented operations: every
