@@ -28,17 +28,24 @@ coverage (owner ruling 2026-07-08: nothing deferred; EHR_EXTRACT in scope).
 SM's picture — a nominal **native API** behind **protocol adapters** — maps
 onto the workspace as:
 
-```
-                        ┌───────────────────────────────┐
-   protocol adapters    │        native API             │      component
-┌──────────────────┐    │  ehrbase-sm (trait layer)     │  ┌────────────────┐
-│ ehrbase-rest     │───▶│   EhrService      Definitions │◀─│ ehrbase        │
-│  (ITS-REST 1.0.3)│    │   Demographic     Query       │  │  EhrbaseService│
-│  + `ehrscape`    │    │   EhrIndex        Terminology │  │  (PG18 storage,│
-│    feature module│    │   Message         SubjectProxy│  │   vobject, AQL)│
-│ mgmt/admin HTTP  │───▶│   Admin           SystemLog   │  └────────────────┘
-└──────────────────┘    │   ValidityChecker             │
-                        └───────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph adapters ["protocol adapters"]
+        rest["ehrbase-rest<br/>(ITS-REST 1.0.3)<br/>+ ehrscape feature module"]
+        mgmt["mgmt/admin HTTP"]
+    end
+
+    subgraph sm ["native API — ehrbase-sm (trait layer)"]
+        traits["EhrService · Definitions<br/>Demographic · Query<br/>EhrIndex · Terminology<br/>Message · SubjectProxy<br/>Admin · SystemLog<br/>ValidityChecker"]
+    end
+
+    subgraph component ["component"]
+        ehrbase["ehrbase<br/>EhrbaseService<br/>(PG18 storage, vobject, AQL)"]
+    end
+
+    rest --> traits
+    mgmt --> traits
+    ehrbase -- implements --> traits
 ```
 
 **Workspace layout (owner ruling, 2026-07-08; executed the same day): three
