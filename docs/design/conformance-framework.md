@@ -185,16 +185,19 @@ error.
 
 ## 6. Reports (`docs/conformance/`, regenerated per run)
 
-- `results.json` — machine-readable outcomes (ECC id, area, capability,
-  profiles, format, status, data sets, duration), SUT identity incl.
-  `SpecVersions`, run selection.
-- `RESULTS.md` — per-area execution matrix + failures list (each failure →
-  finding).
-- `CATALOG.md` — the full catalogue per area: every case, status, title,
-  last outcome. The "full list per category" overview.
-- `CONFORMANCE_STATEMENT.md` — the scoped generated claim: identity, scope,
-  detailed report, the machine profile verdict (per-capability tables for
-  CORE/STANDARD/OPTIONS), deviations (skips by reason).
+Deliberately few artifacts — one machine record, two markdown documents
+with distinct jobs, four badges (owner directive: no report sprawl):
+
+- `results.json` — the single machine record: outcomes (ECC id, title,
+  capability, profiles, format, status, data sets, duration, citation), SUT
+  identity incl. `SpecVersions`, run selection.
+- `CONFORMANCE_REPORT.md` — **the run**, one document: identity + scope,
+  per-area execution matrix, detailed per-case table, the machine profile
+  verdicts (per-capability tables for CORE/STANDARD/OPTIONS), failures
+  (each → finding), deviations (skips by reason).
+- `CATALOG.md` — **the catalogue**: the full per-category test list (every
+  case, status, title, last outcome) — kept separate because it grows to
+  2,000+ rows.
 - **Badges (four)** — shields endpoint schema, all generated from the run:
   - `badge.json` — the total: `ECC conformance: <passed>/<active catalogue>`
     (red on any failure, brightgreen only at full pass, else yellow);
