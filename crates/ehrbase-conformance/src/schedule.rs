@@ -107,7 +107,7 @@ pub struct Schedule {
     pub cases: Vec<ScheduleCase>,
     /// The total number of `^=+ Test Case …$` heading lines matched across all
     /// `.adoc` files, **including** the documentation template that
-    /// [`Schedule::cases`] drops (design asserts this equals 323).
+    /// [`Schedule::cases`] drops (design asserts this equals 325).
     pub raw_heading_count: usize,
 }
 
@@ -240,14 +240,20 @@ pub fn parse_schedule(dir: &Path) -> Result<Schedule, ScheduleError> {
 }
 
 /// If `line` is a `=+ Test Case <id>` heading, return the trimmed `<id>`.
+///
+/// The whitespace between the `=` run and `Test Case` is `trim_start`-ed, not
+/// matched as a single space: the vendored master04 contains one heading with
+/// a double space (`====  Test Case I_DEFINITION_ADL14.get_opts-retrieve_all`)
+/// that a strict single-space match silently drops from the identified
+/// inventory.
 fn heading_id(line: &str) -> Option<&str> {
     let trimmed = line.trim_end();
     let eq_len = trimmed.bytes().take_while(|&b| b == b'=').count();
     if eq_len == 0 {
         return None;
     }
-    let rest = &trimmed[eq_len..];
-    let id = rest.strip_prefix(" Test Case ")?.trim();
+    let rest = trimmed[eq_len..].trim_start();
+    let id = rest.strip_prefix("Test Case ")?.trim();
     (!id.is_empty()).then_some(id)
 }
 
@@ -261,16 +267,19 @@ mod tests {
 
     #[test]
     fn raw_heading_count_is_323() {
-        // The verified total across all chapters (design §4.2, orchestrator
-        // facts 2026-07-07): includes the master03 documentation template.
-        assert_eq!(schedule().raw_heading_count, 323);
+        // The verified total across all chapters: includes the master03
+        // documentation template AND the two double-spaced headings the original
+        // 2026-07-07 count missed (master04 `get_opts-retrieve_all`, master07
+        // `get_composition_at_time`).
+        assert_eq!(schedule().raw_heading_count, 325);
     }
 
     #[test]
-    fn inventory_is_322_real_cases() {
-        // 323 raw − 1 documentation template = 322 identified cases.
+    fn inventory_is_324_real_cases() {
+        // 325 raw − 1 documentation template = 324 identified cases (two
+        // upstream headings carry a double space after `====`).
         let s = schedule();
-        assert_eq!(s.cases.len(), 322);
+        assert_eq!(s.cases.len(), 324);
         // No documentation-template ids leak into the inventory.
         assert!(!s.cases.iter().any(|c| c.id.contains('<')));
     }
@@ -279,7 +288,7 @@ mod tests {
     fn placeholder_and_real_split() {
         let s = schedule();
         assert_eq!(s.placeholder_count(), 57, "aaaa (28) + bbbb (29)");
-        assert_eq!(s.real_count(), 265, "265 real occurrences (incl. 1 dup)");
+        assert_eq!(s.real_count(), 267, "267 real occurrences (incl. 1 dup)");
     }
 
     #[test]
@@ -293,14 +302,14 @@ mod tests {
     }
 
     #[test]
-    fn distinct_real_ids_is_264() {
+    fn distinct_real_ids_is_266() {
         let items = schedule().inventory().expect("inventory");
         let distinct: std::collections::BTreeSet<&str> = items
             .iter()
             .filter(|i| !i.placeholder)
             .map(|i| i.id.as_str())
             .collect();
-        assert_eq!(distinct.len(), 264, "265 occurrences − 1 duplicate");
+        assert_eq!(distinct.len(), 266, "267 occurrences − 1 duplicate");
     }
 
     #[test]
@@ -312,6 +321,6 @@ mod tests {
             items.len(),
             "every classification key is unique"
         );
-        assert_eq!(items.len(), 322);
+        assert_eq!(items.len(), 324);
     }
 }

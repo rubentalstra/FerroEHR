@@ -452,8 +452,18 @@ impl Validator {
             };
             // Navigate all but the last segment to the container, then count the
             // last attribute's children (cardinality is over the whole set).
+            //
+            // AOM 1.4 §cardinality vs §existence: cardinality constrains the
+            // container's membership **when the attribute is present**; whether
+            // the attribute may be absent at all is the C_ATTRIBUTE.existence
+            // constraint. An absent (or null) attribute field is therefore not
+            // a cardinality violation — an explicitly present empty container
+            // (`"content": []`) is.
             let containers = path::navigate(&[instance], intermediate);
             for container in &containers {
+                if matches!(container.get(&last.attribute), None | Some(Value::Null)) {
+                    continue;
+                }
                 let count =
                     i32::try_from(select_children(container, last).len()).unwrap_or(i32::MAX);
                 let min = card.min.unwrap_or(0).max(0);

@@ -535,6 +535,11 @@ pub struct SelectColumn {
     pub value: SelectValue,
     /// An optional `AS alias` (also the `RESULT_SET` column name).
     pub alias: Option<String>,
+    /// The `RESULT_SET` column `path`: the SELECT expression's path exactly as
+    /// written in the query (minus the root variable; `"/"` for a bare
+    /// variable), when the column is a path expression. ITS-REST 1.0.3
+    /// `RESULT_SET.columns[].path`; the CNF query goldens compare it verbatim.
+    pub path: Option<String>,
 }
 
 /// A projected SELECT value.

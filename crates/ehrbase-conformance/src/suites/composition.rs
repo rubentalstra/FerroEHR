@@ -99,6 +99,11 @@ pub fn entries() -> Vec<CaseEntry> {
         ),
         // ── get at time ──────────────────────────────────────────────────────
         entry_fmt(
+            "I_EHR_COMPOSITION.get_composition_at_time",
+            BOTH,
+            run_get_at_time,
+        ),
+        entry_fmt(
             "I_EHR_COMPOSITION.get_composition_at_time-no_time_arg",
             BOTH,
             run_get_at_time_no_arg,
@@ -507,6 +512,31 @@ fn run_get_latest_bad_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 // ── get at time ──────────────────────────────────────────────────────────────
+
+/// master07 `I_EHR_COMPOSITION.get_composition_at_time` (the base case — its
+/// upstream heading carries a double space after `====`): a GET at the
+/// **current** time must return the latest version of the matching COMPOSITION
+/// with the committed content ("When requesting a COMPOSITION at time using the
+/// current time, the last version of the matching composition, if it exists,
+/// should be retrieved").
+fn run_get_at_time<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let (ehr_id, uid) = setup(ctx, Kind::Event).await?;
+        let object = support::object_uid(&uid).to_owned();
+        let now = jiff::Timestamp::now();
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!(
+                    "/ehr/{ehr_id}/composition/{object}?version_at_time={now}"
+                ))
+                .header("accept", ctx.format.media_type()),
+            )
+            .await?;
+        assert::status(&resp, 200)?;
+        check_composition(ctx, &resp)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
 
 fn run_get_at_time_no_arg<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
