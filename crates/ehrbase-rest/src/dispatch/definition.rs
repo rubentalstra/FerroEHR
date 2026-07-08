@@ -10,7 +10,10 @@
 //! underscored names (`definition_template_adl1_4_list`, `definition_query_store_yaml`).
 
 use axum::response::{IntoResponse, Response};
-use http::StatusCode;
+use http::{HeaderMap, StatusCode, header};
+
+use openehr_its::rest::runtime::ApiError;
+use openehr_rm::prelude::Composition;
 
 // DefinitionApi methods resolve through the `dyn Backend` trait object; import only params.
 use openehr_its::rest::generated::definition::{
@@ -85,13 +88,39 @@ async fn run(
         }
         "definition_template_adl1.4_example_get" => {
             let p = params::build::<DefinitionTemplateAdl14ExampleGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
+            // The backend generates the canonical example COMPOSITION (an unknown
+            // template → 404; an invalid `type`/`detail_level` → 400).
+            let comp = state
+                .backend()
+                .definition_template_adl1_4_example_get(p)
+                .await?;
+            // Negotiate the four representations the dev-OAS `Accept_LOCATABLE`
+            // enumerates (json / xml / wt.flat+json / wt.structured+json). The
+            // FLAT/STRUCTURED converters reach the WebTemplate through the same
+            // `WebTemplateService` seam as `dispatch::flat` (the example carries
+            // its own `archetype_details/template_id`). Any other media type is a
+            // `406` (the endpoint's `406` response).
+            if negotiate::wants_flat(h) {
+                return super::flat::composition_flat_response(&state, StatusCode::OK, &comp).await;
+            }
+            if negotiate::wants_structured(h) {
+                return super::flat::composition_structured_response(&state, StatusCode::OK, &comp)
+                    .await;
+            }
+            if !example_accept_supported(h) {
+                return Err(RestError(ApiError::NotAcceptable(
+                    "the template example is available as application/json, application/xml, \
+                     application/openehr.wt.flat+json, or application/openehr.wt.structured+json"
+                        .to_owned(),
+                )));
+            }
+            // JSON (default) or canonical XML, via the single spec-typed COMPOSITION
+            // path (`respond_rm` re-types the value so the generated `ToXml` runs).
+            Ok(negotiate::respond_rm::<Composition>(
                 h,
                 StatusCode::OK,
-                &state
-                    .backend()
-                    .definition_template_adl1_4_example_get(p)
-                    .await?,
+                &comp,
+                "composition",
             ))
         }
         "definition_template_adl2_list" => {
@@ -198,6 +227,33 @@ async fn run(
             format!("unrouted definition operation: {other}"),
         ))),
     }
+}
+
+/// Whether the request's `Accept` names one of the four representations the
+/// `adl1.4/{id}/example` endpoint supports (dev-OAS `Accept_LOCATABLE`:
+/// `application/json`, `application/xml`, `application/openehr.wt.flat+json`,
+/// `application/openehr.wt.structured+json`). An absent `Accept` (or `*/*`)
+/// defaults to JSON; anything else is a `406`.
+///
+/// The FLAT/STRUCTURED media types are resolved before this call, so here they
+/// only need to keep a mixed `Accept` from being rejected.
+fn example_accept_supported(headers: &HeaderMap) -> bool {
+    let Some(accept) = headers.get(header::ACCEPT).and_then(|v| v.to_str().ok()) else {
+        return true; // absent → canonical JSON
+    };
+    accept.split(',').any(|range| {
+        let media = range.split(';').next().unwrap_or(range).trim();
+        matches!(
+            media,
+            "" | "*/*"
+                | "application/*"
+                | "application/json"
+                | "application/xml"
+                | "text/xml"
+                | "application/openehr.wt.flat+json"
+                | "application/openehr.wt.structured+json"
+        )
+    })
 }
 
 /// Serve the service-owned Better `WebTemplate` for `template_id` as
