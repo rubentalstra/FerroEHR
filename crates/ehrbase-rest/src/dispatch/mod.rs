@@ -9,12 +9,9 @@
 //! `*Params` with [`crate::params`], calls the trait method on [`AppState`],
 //! and renders a negotiated response.
 //!
-//! Groups with **no implemented operations** (demographic, admin) are
-//! mounted on the generic [`not_implemented`] dispatcher instead of
-//! hand-written per-operation arms that could only forward to a 501 backend
-//! (finding F-13-03) — the wire behaviour is the same `501` + standard error
-//! body the backend defaults produced. A group gets a real dispatcher module
-//! in the phase that first implements one of its operations.
+//! Every API group has its own dispatcher module ([`ehr`], [`definition`],
+//! [`query`], [`demographic`], [`admin`]); operations whose backend seam method
+//! is not overridden surface as `501` + the standard error body.
 
 mod abac;
 mod admin;
@@ -83,19 +80,6 @@ pub(crate) fn api_router() -> Router<AppState> {
         .merge(mount(g::definition::ROUTES, definition::dispatch))
         .merge(mount(g::query::ROUTES, query::dispatch))
         .merge(mount(g::admin::ROUTES, admin::dispatch))
-}
-
-/// The dispatcher for an API group with no implemented operations: every
-/// route answers `501 Not Implemented` with the standard error body — exactly
-/// what per-operation arms forwarding to a `NotImplemented` backend produced
-/// (F-13-03), without ~500 lines of dead scaffolding.
-fn not_implemented(_state: AppState, op: &'static str, _parts: RequestParts) -> BoxResponse {
-    use axum::response::IntoResponse;
-    Box::pin(async move {
-        tracing::debug!(operation = op, "unimplemented ITS-REST operation");
-        crate::error::RestError(openehr_its::rest::runtime::ApiError::NotImplemented)
-            .into_response()
-    })
 }
 
 /// Mount one API group's routes onto a router, grouping methods that share a
