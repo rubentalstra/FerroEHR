@@ -78,9 +78,9 @@ run once available.
 
 | Dimension | Level(s) | ehrbase-rs | EHRbase Java |
 |---|---|---|---|
-| **Functional** | CORE / STANDARD / OPTIONS | _TBD_ | _TBD_ |
-| **Non-functional** | BASIC-SEC / BASIC-PRIV | _TBD_ | _TBD_ |
-| **External data format** | Canonical JSON / Canonical XML | _TBD_ | _TBD_ |
+| **Functional** | CORE / STANDARD / OPTIONS | not yet CORE (archetype-validation findings — see triage bucket 1) | _TBD_ |
+| **Non-functional** | BASIC-SEC / BASIC-PRIV | BASIC-SEC (Basic + OAuth2/OIDC auth; 401/403) | _TBD_ |
+| **External data format** | Canonical JSON / Canonical XML | Canonical JSON (run under JSON; XML partial) | _TBD_ |
 
 A profile (`docs/specs/openehr/CNF/docs/profiles`) is achieved only if **all** its
 capabilities pass. CORE and STANDARD are the meaningful certification targets;
@@ -93,23 +93,44 @@ OPTIONS is a catch-all for any optional capability passed.
 Numbers are `passed / implemented / total` per the schedule chapter. Fill from
 `docs/conformance/<edition>/RESULTS.md`.
 
+Passed / total, from a self-host run of ehrbase-rs on 2026-07-08
+(`docs/conformance/RESULTS.md`). The EHRbase-Java column is filled by
+`docker/conformance/run.sh java`.
+
 | Chapter (Service Model area) | Profile | ehrbase-rs | EHRbase Java |
 |---|---|---|---|
-| master04 — DEFINITION (ADL 1.4 / OPT) | CORE | _/_ / 15 | _/_ / 15 |
-| master05 — DEFINITION (stored query) | STANDARD | _/_ / 7 | _/_ / 7 |
-| master06 — EHR | CORE | _/_ / 21 | _/_ / 21 |
-| master07 — COMPOSITION | CORE | _/_ / 31 | _/_ / 31 |
-| master08 — CONTRIBUTION | CORE | _/_ / 31 | _/_ / 31 |
-| master09 — DIRECTORY (FOLDER) | STANDARD | _/_ / 37 | _/_ / 37 |
-| master10 — DEMOGRAPHIC (`DEMO-*`, runner-defined) | OPTIONS | _/_ | _/_ |
-| master11 — QUERY (AQL) | STANDARD | _/_ / 5 | _/_ / 5 |
-| master12 — ADMIN (`ADMIN-*`, runner-defined) | OPTIONS | _/_ | _/_ |
+| master04 — DEFINITION (ADL 1.4 / OPT) | CORE | 12 / 15 | _/_ / 15 |
+| master05 — DEFINITION (stored query) | STANDARD | 3 / 7 | _/_ / 7 |
+| master06 — EHR | CORE | 21 / 21 ✅ | _/_ / 21 |
+| master07 — COMPOSITION | CORE | 28 / 30 | _/_ / 31 |
+| master08 — CONTRIBUTION | CORE | 24 / 31 | _/_ / 31 |
+| master09 — DIRECTORY (FOLDER) | STANDARD | 36 / 37 | _/_ / 37 |
+| master10 — DEMOGRAPHIC (`DEMO-*`, runner-defined) | OPTIONS | 18 / 24 | _/_ |
+| master11 — QUERY (AQL) | STANDARD | 3 / ~12 | _/_ |
+| master12 — ADMIN (`ADMIN-*`, runner-defined) | OPTIONS | 6 / 6 ✅ | _/_ |
 | master13 — MESSAGING | OPTIONS | n/a (no API) | _/_ |
-| master15 — content: COMPOSITION | CORE | _/_ / 12 | _/_ / 12 |
-| master16 — content: ENTRY | CORE | _/_ / 26 | _/_ / 26 |
-| master17.x — content: DATA_VALUE | CORE | _/_ / 81 | _/_ / 81 |
-| **SIGN-* — Version signing** (runner-defined) | STANDARD | _/_ | _/_ |
-| **Total** | | **_/_ / 322** | **_/_ / 322** |
+| master15 — content: COMPOSITION | CORE | 3 / 12 | _/_ / 12 |
+| master16 — content: ENTRY | CORE | 13 / 26 | _/_ / 26 |
+| master17.x — content: DATA_VALUE | CORE | 31 / 80 | _/_ / 81 |
+| **SIGN-* — Version signing** (runner-defined) | STANDARD | (see SIGN suite) | _/_ |
+| **Total** | | **202 / 322** | **_/_ / 322** |
+
+## Findings triage (ehrbase-rs, 105 findings)
+
+Grouped by root cause — the fix path toward a CORE/STANDARD rating. The single
+biggest bucket (71 of 105) is one root cause in the composition validator.
+
+| # | Root cause | Findings | Fix location | Blocks |
+|--:|---|--:|---|---|
+| 1 | **Archetype value/cardinality constraints not enforced** (content `CONT-*`): cardinality lower=1 / upper bounds, C_INTEGER/C_REAL lists, temporal ranges/patterns, DV_INTERVAL bounds+type, C_CODE_PHRASE code lists, subtype narrowing | **71** | `openehr-flat` (`webtemplate/builder.rs` `requires_cardinality`, `validation/leaf.rs`, subtype/interval) | CORE (Archetype Validation) |
+| 2 | **AQL feature gaps**: `TIMEWINDOW` not parsed; RESULT_SET column `path` metadata missing | ~9 | `openehr-query` parser + `ehrbase::aql` result-set | STANDARD (AQL) |
+| 3 | **Missing REST realizations**: `delete_opt` (master04 ×4), `list_contributions` (master08 ×5), `get_versioned_directory` (×1), `list_queries` (master05 ×2) — SM ops with no ITS-REST verb on our surface | ~12 | add the endpoints to `ehrbase-rest` / service, or record as non-ITS per guide | STANDARD/OPTIONS |
+| 4 | **Service validation leniency**: `create_composition-same_opt_twice`, `update_composition-wrong_template`, `commit_contribution-*_invalid_change_type`, `-fail_create_existing_directory`, invalid EHR_STATUS partially accepted | ~5 | `ehrbase` service layer (template match, change-type, duplicate guard) | CORE |
+| 5 | **Demographic CRUD** (`DEMO-*` ×6): a few PARTY lifecycle rows | 6 | `ehrbase` demographic service / `ehrbase-rest` demographic dispatch | OPTIONS |
+
+**Rating today:** not yet CORE — the archetype-validation findings (bucket 1) are
+the gate. Closing bucket 1 + bucket 4 reaches **CORE**; adding buckets 2–3 reaches
+**STANDARD**.
 
 ---
 

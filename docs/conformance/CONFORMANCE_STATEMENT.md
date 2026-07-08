@@ -8,7 +8,7 @@
 
 | Field | Value |
 |---|---|
-| Base URL | `http://127.0.0.1:54408/ehrbase/rest/openehr/v1` |
+| Base URL | `http://127.0.0.1:55326/ehrbase/rest/openehr/v1` |
 | RM version | 1.2.0 |
 | Auth mode | basic (self-host, RBAC off) |
 | Corpus | `openEHR/specifications-CNF` @ `33251d2a` |
@@ -20,9 +20,9 @@
 | Profiles requested | all |
 | Data formats | json |
 | Identified cases | 322 |
-| Implemented | 210 |
-| Passed | 136 |
-| Failed | 87 |
+| Implemented | 263 |
+| Passed | 202 |
+| Failed | 105 |
 
 ## 3. Detailed test report
 
@@ -60,6 +60,8 @@
 | `I_EHR_COMPOSITION.get_composition_latest` | CompositionOps | json | 1/1 | PASS |
 | `I_EHR_COMPOSITION.get_composition_latest-bad_composition` | CompositionOps | json | 1/1 | PASS |
 | `I_EHR_COMPOSITION.get_composition_latest-bad_ehr` | CompositionOps | json | 1/1 | PASS |
+| `I_EHR_COMPOSITION.has_composition-bad_composition` | CompositionOps | json | 1/1 | PASS |
+| `I_EHR_COMPOSITION.has_composition-bad_ehr` | CompositionOps | json | 1/1 | PASS |
 | `I_EHR_COMPOSITION.get_composition_at_time-no_time_arg` | CompositionOps | json | 1/1 | PASS |
 | `I_EHR_COMPOSITION.get_composition_at_time-bad_composition` | CompositionOps | json | 1/1 | PASS |
 | `I_EHR_COMPOSITION.get_composition_at_time-bad_ehr` | CompositionOps | json | 1/1 | PASS |
@@ -100,6 +102,15 @@
 | `I_EHR_CONTRIBUTION.get_contribution-empty_ehr` | ChangeSets | json | 1/1 | PASS |
 | `I_EHR_CONTRIBUTION.get_contribution-bad_ehr` | ChangeSets | json | 1/1 | PASS |
 | `I_EHR_CONTRIBUTION.get_contribution-bad_contribution` | ChangeSets | json | 1/1 | PASS |
+| `I_EHR_CONTRIBUTION.has_contribution-existing` | ChangeSets | json | 1/1 | PASS |
+| `I_EHR_CONTRIBUTION.has_contribution-bad_contribution` | ChangeSets | json | 1/1 | PASS |
+| `I_EHR_CONTRIBUTION.has_contribution-bad_ehr` | ChangeSets | json | 1/1 | PASS |
+| `I_EHR_CONTRIBUTION.has_contribution-empty_ehr` | ChangeSets | json | 1/1 | PASS |
+| `I_EHR_CONTRIBUTION.list_contributions-empty` | ChangeSets | json | 0/0 | **FAIL** |
+| `I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr` | ChangeSets | json | 0/0 | **FAIL** |
+| `I_EHR_CONTRIBUTION.list_contributions-post_commit` | ChangeSets | json | 0/0 | **FAIL** |
+| `I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory` | ChangeSets | json | 0/0 | **FAIL** |
+| `I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status` | ChangeSets | json | 0/0 | **FAIL** |
 | `I_EHR_DIRECTORY.create_directory-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
 | `I_EHR_DIRECTORY.create_directory-ehr_with_directory` | DirectoryOps | json | 1/1 | PASS |
 | `I_EHR_DIRECTORY.create_directory-bad_ehr` | DirectoryOps | json | 1/1 | PASS |
@@ -111,12 +122,55 @@
 | `I_EHR_DIRECTORY.update_directory-bad_ehr` | DirectoryOps | json | 1/1 | PASS |
 | `I_EHR_DIRECTORY.delete_directory-ehr_with_directory` | DirectoryOps | json | 1/1 | PASS |
 | `I_EHR_DIRECTORY.delete_directory-bad_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_directory-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_directory-ehr_with_directory` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_directory-bad_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_path-ehr_root_directory` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_path-folder_structure` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_path-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_path-bad_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_directory_version-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_directory_version-directory_with_two_versions` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.has_directory_version-bad_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory-directory_with_structure` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_empty_time` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions_empty_time` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_time-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_time-empty_ehr_empty_time` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_time-multiple_versions_first` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_version-bad_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_version-directory_with_two_versions` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_directory_at_version-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_versioned_directory-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions` | DirectoryOps | json | 0/0 | **FAIL** |
+| `I_EHR_DIRECTORY.get_versioned_directory-bad_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.update_directory-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
+| `I_EHR_DIRECTORY.delete_directory-empty_ehr` | DirectoryOps | json | 1/1 | PASS |
 | `I_DEFINITION_ADL14.upload_opt-valid_opt` | Adl14OptProvisioning | json | 0/0 | **FAIL** |
 | `I_DEFINITION_ADL14.upload_opt-invalid_opt` | Adl14OptProvisioning | json | 0/0 | **FAIL** |
 | `I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.get_opt-retrieve_single` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.get_opt-retrieve_latest_version` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.get_opt-retrieve_specific_version` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.get_opt-retrieve_fail` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.get_opts-retrieve_all` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.validate_opt-valid_opt` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.validate_opt-invalid_opt` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.delete_opt-delete_non_existing` | Adl14OptProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_ADL14.delete_opt-delete_existing` | Adl14OptProvisioning | json | 0/0 | **FAIL** |
+| `I_DEFINITION_ADL14.delete_opt-delete_latest_version` | Adl14OptProvisioning | json | 0/0 | **FAIL** |
+| `I_DEFINITION_ADL14.delete_opt-delete_specific_version` | Adl14OptProvisioning | json | 1/1 | PASS |
 | `I_DEFINITION_QUERY.valid_query-valid` | QueryProvisioning | json | 1/1 | PASS |
 | `I_DEFINITION_QUERY.list_queries-non_empty` | QueryProvisioning | json | 1/1 | PASS |
 | `I_DEFINITION_QUERY.has_query-xxx` | QueryProvisioning | json | 1/1 | PASS |
+| `I_DEFINITION_QUERY.list_queries-empty` | QueryProvisioning | json | 0/0 | **FAIL** |
+| `I_DEFINITION_QUERY.list_queries-select_items` | QueryProvisioning | json | 0/0 | **FAIL** |
+| `I_DEFINITION_QUERY.valid_query-bad_formalism` | QueryProvisioning | json | 0/0 | **FAIL** |
+| `I_DEFINITION_QUERY.valid_query-invalid` | QueryProvisioning | json | 0/0 | **FAIL** |
 | `I_QUERY_SERVICE.smoke_test` | AqlBasic | json | 1/1 | PASS |
 | `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db` | AqlBasic | json | 0/0 | **FAIL** |
 | `I_QUERY_SERVICE.execute_stored_query-empty_db` | AqlBasic | json | 0/0 | **FAIL** |
@@ -130,6 +184,36 @@
 | `QUERY-FIXTURE-B-loaded_db` | AqlBasic | json | 0/0 | **FAIL** |
 | `QUERY-FIXTURE-C-loaded_db` | AqlBasic | json | 0/0 | skipped |
 | `QUERY-FIXTURE-D-loaded_db` | AqlBasic | json | 0/0 | **FAIL** |
+| `ADMIN-ehr-delete` | AdminApi | json | 1/1 | PASS |
+| `ADMIN-ehr-delete_absent` | AdminApi | json | 1/1 | PASS |
+| `ADMIN-ehr-delete_idempotent` | AdminApi | json | 1/1 | PASS |
+| `ADMIN-ehr-delete_all` | AdminApi | json | 1/1 | PASS |
+| `ADMIN-ehr-delete_all_partial` | AdminApi | json | 1/1 | PASS |
+| `ADMIN-ehr-delete_all_empty` | AdminApi | json | 1/1 | PASS |
+| `DEMO-person-create` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-person-get` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-person-get_by_version` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-person-update` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-person-delete` | DemographicApi | json | 0/0 | **FAIL** |
+| `DEMO-person-get_deleted` | DemographicApi | json | 0/0 | **FAIL** |
+| `DEMO-person-get_absent` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-person-update_bad_if_match` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-agent-create` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-agent-get` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-agent-delete` | DemographicApi | json | 0/0 | **FAIL** |
+| `DEMO-group-create` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-group-get` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-group-delete` | DemographicApi | json | 0/0 | **FAIL** |
+| `DEMO-organisation-create` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-organisation-get` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-organisation-delete` | DemographicApi | json | 0/0 | **FAIL** |
+| `DEMO-role-create` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-role-get` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-role-delete` | DemographicApi | json | 0/0 | **FAIL** |
+| `DEMO-create-bad_body` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-versioned_party-get` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-versioned_party-revision_history` | DemographicApi | json | 1/1 | PASS |
+| `DEMO-person-tags` | DemographicApi | json | 1/1 | PASS |
 | `CONT-COMP-content_card_any-context_any` | ArchetypeValidation | json | 6/6 | PASS |
 | `CONT-COMP-content_card_1plus-context_any` | ArchetypeValidation | json | 0/0 | **FAIL** |
 | `CONT-COMP-content_card_3plus-context_any` | ArchetypeValidation | json | 6/6 | PASS |
@@ -260,6 +344,6 @@ Excluded capabilities/cases, by structural reason (never "currently failing"):
 
 | Reason | Cases |
 |---|--:|
-| not_yet_transcribed | 54 |
+| not_yet_transcribed | 1 |
 | upstream_duplicate | 1 |
 | upstream_placeholder | 57 |
