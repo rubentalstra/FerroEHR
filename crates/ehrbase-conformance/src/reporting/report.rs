@@ -1,8 +1,9 @@
 //! Report generation (design v4): from a [`RunResults`] write the committed,
-//! public artifact set — `results.json` (machine-readable), `RESULTS.md` (the
-//! per-area execution matrix), `CATALOG.md` (the full ECC catalogue per
-//! area), `CONFORMANCE_STATEMENT.md` (the scoped claim + deviations), and
-//! `badge.json` (shields endpoint schema).
+//! public artifact set — `results.json` (the single machine record),
+//! `CONFORMANCE_REPORT.md` (the run: identity, scope, per-area matrix,
+//! machine profile verdicts, failures, deviations), `CATALOG.md` (the full
+//! per-category catalogue), and the four badges (total +
+//! core/standard/options, shields endpoint schema).
 //!
 //! Everything is **catalogue-driven**: the denominator is our own ECC
 //! catalogue, the identities are ECC numbers, and the claim is a pure
@@ -59,16 +60,12 @@ pub fn write_all(results: &RunResults, out_dir: &Path) -> Result<(), ReportError
         serde_json::to_string_pretty(results).map_err(|e| ReportError::Codec(e.to_string()))?;
     write_file(&out_dir.join("results.json"), &json)?;
     write_file(
-        &out_dir.join("RESULTS.md"),
-        &render_results_md(results, &catalog),
+        &out_dir.join("CONFORMANCE_REPORT.md"),
+        &render_report_md(results, &catalog),
     )?;
     write_file(
         &out_dir.join("CATALOG.md"),
         &render_catalog_md(results, &catalog),
-    )?;
-    write_file(
-        &out_dir.join("CONFORMANCE_STATEMENT.md"),
-        &render_statement_md(results, &catalog),
     )?;
     write_file(
         &out_dir.join("badge.json"),
@@ -146,21 +143,13 @@ fn render_header(out: &mut String, results: &RunResults) {
     );
 }
 
-fn render_results_md(results: &RunResults, catalog: &Catalog) -> String {
+/// The per-area execution matrix + the failures list (sections of the
+/// consolidated report).
+fn render_area_matrix(out: &mut String, results: &RunResults, catalog: &Catalog) {
     let by = tally_by_area(results, catalog);
     let denominators = active_per_area(catalog);
-    let mut out = String::new();
-    out.push_str("# ehrbase-rs Conformance — Test Execution Report\n\n");
-    render_header(&mut out, results);
-    let _ = write!(
-        out,
-        "**{} case×format executions · {} passed · {} failed.**\n\n",
-        results.executed(),
-        results.passed(),
-        results.failed(),
-    );
 
-    out.push_str("## Per-area matrix\n\n");
+    out.push_str("### Per-area matrix\n\n");
     out.push_str("| Area | Catalogue (active) | Passed | Failed | Errored | Skipped |\n");
     out.push_str("|---|--:|--:|--:|--:|--:|\n");
     for area in Area::ALL {
@@ -182,15 +171,15 @@ fn render_results_md(results: &RunResults, catalog: &Catalog) -> String {
         );
     }
 
-    // Failures section — each links to the finding workflow.
+    // Failures — each links to the finding workflow.
     let failures: Vec<_> = results
         .cases
         .iter()
         .filter(|c| c.status == CaseStatus::Failed)
         .collect();
-    out.push_str("\n## Failures\n\n");
+    out.push_str("\n### Failures\n\n");
     if failures.is_empty() {
-        out.push_str("_No failures in this run._\n");
+        out.push_str("_No failures in this run._\n\n");
     } else {
         out.push_str(
             "Each failure must become a finding (`F-AA-NN`) before/with the fix — never an exclusion.\n\n",
@@ -206,8 +195,8 @@ fn render_results_md(results: &RunResults, catalog: &Catalog) -> String {
                 c.message.as_deref().unwrap_or("(no message)")
             );
         }
+        out.push('\n');
     }
-    out
 }
 
 /// Render `CATALOG.md` — the full ECC catalogue grouped per area: every
@@ -272,9 +261,9 @@ fn render_catalog_md(results: &RunResults, catalog: &Catalog) -> String {
     out
 }
 
-fn render_statement_md(results: &RunResults, catalog: &Catalog) -> String {
+fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
     let mut out = String::new();
-    out.push_str("# ehrbase-rs Conformance Statement (generated)\n\n");
+    out.push_str("# ehrbase-rs Conformance Report (generated)\n\n");
     out.push_str(
         "> Generated from a conformance run — never hand-asserted. Scoped and\n\
          > honest: the deviations section lists every skip with its reason.\n\n",
@@ -282,6 +271,14 @@ fn render_statement_md(results: &RunResults, catalog: &Catalog) -> String {
 
     out.push_str("## 1. SUT identity\n\n");
     render_header(&mut out, results);
+    let _ = write!(
+        out,
+        "**{} case×format executions · {} passed · {} failed.**\n\n",
+        results.executed(),
+        results.passed(),
+        results.failed(),
+    );
+    render_area_matrix(&mut out, results, catalog);
 
     out.push_str("## 2. Scope of test\n\n");
     out.push_str("| Field | Value |\n|---|---|\n");
@@ -415,12 +412,12 @@ fn render_profile_badge(profile: Profile, results: &RunResults) -> String {
     let v = verdict(profile, results);
     let total = v.capabilities.len();
     let passing = v.capabilities.iter().filter(|c| c.pass).count();
-    let any_broken = v
-        .capabilities
-        .iter()
-        .any(|c| c.failed > 0 || c.errored > 0);
+    let any_broken = v.capabilities.iter().any(|c| c.failed > 0 || c.errored > 0);
     let (message, color) = if v.pass {
-        (format!("PASS ({passing}/{total} capabilities)"), "brightgreen")
+        (
+            format!("PASS ({passing}/{total} capabilities)"),
+            "brightgreen",
+        )
     } else if any_broken {
         (format!("{passing}/{total} capabilities"), "red")
     } else {
@@ -460,11 +457,11 @@ mod tests {
     fn zero_state_renders_all_artifacts() {
         let r = zero_state_results();
         let catalog = Catalog::default();
-        let md = render_results_md(&r, &catalog);
-        assert!(md.contains("0 passed"));
-        assert!(md.contains("_No failures in this run._"));
-        let statement = render_statement_md(&r, &catalog);
-        assert!(statement.contains("Scope of test"));
+        let report = render_report_md(&r, &catalog);
+        assert!(report.contains("0 passed"));
+        assert!(report.contains("_No failures in this run._"));
+        assert!(report.contains("Scope of test"));
+        assert!(report.contains("Profile verdict"));
         let badge = render_badge(&r, &catalog);
         assert!(badge.contains("\"message\": \"0/0\""));
         assert!(badge.contains("yellow"));
@@ -476,9 +473,8 @@ mod tests {
         write_all(&zero_state_results(), &dir).expect("write");
         for name in [
             "results.json",
-            "RESULTS.md",
+            "CONFORMANCE_REPORT.md",
             "CATALOG.md",
-            "CONFORMANCE_STATEMENT.md",
             "badge.json",
             "badge-core.json",
             "badge-standard.json",
