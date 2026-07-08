@@ -48,15 +48,73 @@
 //! `DV_SCALE`, `DV_DATE/DV_TIME` constraints, `DV_BOOLEAN` & `DV_IDENTIFIER` patterns, and
 //! `DV_MULTIMEDIA` media-type lists have no constrained committable canonical leaf.
 
+use openehr_its::opt14::OperationalTemplate;
 use serde_json::{Value, json};
 
 use crate::case::Chapter;
 use crate::fixtures;
-use crate::harness::{CaseError, CaseFuture, CaseRun, RunContext};
+use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, RunContext};
 use crate::registry::CaseEntry;
 
+use super::author;
 use super::drive::{self, Base, Constraint, Expected, meta};
 use super::mutate;
+
+/// The `all_types` base OPT + composition (a leaf of nearly every `DV_*` type at
+/// fixed `items` indices) — the authored-constraint base for master17 leaf cases.
+const ALL_TYPES_OPT: &str = "all_types/Test_all_types.opt";
+const ALL_TYPES_COMP: &str = "query/data_load/compositions/all_types.composition.json";
+
+/// Drive a master17 leaf value-constraint case by **authoring** the constraint into
+/// the `all_types` OPT (the vendored corpus ships no OPT constraining these leaves),
+/// then committing the base composition (its vendored leaf value satisfies the
+/// constraint → accepted) and a copy with the leaf value pushed out of the
+/// constraint (rejected). The accept/reject is the SUT's genuine validation of a
+/// real authored template (design §4.5), not a fabricated pass.
+async fn drive_leaf(
+    ctx: &RunContext<'_>,
+    tid: &'static str,
+    constrain: impl FnOnce(&mut OperationalTemplate) -> bool,
+    accepted_label: &str,
+    rejected_label: String,
+    invalid_pointer: &str,
+    invalid_value: Value,
+) -> Result<DataSetReport, CaseError> {
+    let mut opt = author::parse_base(ALL_TYPES_OPT)?;
+    author::set_template_id(&mut opt, tid);
+    if !constrain(&mut opt) {
+        return Err(CaseError::Assertion(format!(
+            "authoring the leaf constraint for {tid} found no matching leaf in the all_types OPT"
+        )));
+    }
+    let xml = author::to_xml(&opt)?;
+
+    let base = fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+    let mut accepted = base.clone();
+    mutate::retarget_template(&mut accepted, tid);
+    let mut rejected = base;
+    mutate::retarget_template(&mut rejected, tid);
+    if !mutate::set_pointer(&mut rejected, invalid_pointer, invalid_value) {
+        return Err(CaseError::Assertion(format!(
+            "invalid-value pointer {invalid_pointer} did not resolve in the all_types composition"
+        )));
+    }
+    drive::drive_authored(
+        ctx,
+        &xml,
+        vec![
+            (accepted_label.to_owned(), accepted, Expected::Accepted),
+            (rejected_label, rejected, Expected::Rejected),
+        ],
+    )
+    .await
+}
+
+/// The canonical-JSON pointer to the value of the `items[idx]` leaf in the
+/// `all_types` OBSERVATION (`content[0]/data/events[0]/data/items[idx]/value`).
+fn leaf_ptr(idx: usize, suffix: &str) -> String {
+    format!("/content/0/data/events/0/data/items/{idx}/value/{suffix}")
+}
 
 /// The implemented master17.x case entries.
 #[must_use]
@@ -74,7 +132,7 @@ pub fn entries() -> Vec<CaseEntry> {
     // ── 17.2 text ──────────────────────────────────────────────────────────────
     let c = Chapter::Master17_2;
     all.push(open("CONT-DV_TEXT-validate_open", c, open_dv_text));
-    all.push(skip("CONT-DV_TEXT-validate_list", c));
+    all.push(open("CONT-DV_TEXT-validate_list", c, run_dv_text_list));
     all.push(open(
         "CONT-DV_CODED_TEXT-validate_open",
         c,
@@ -98,8 +156,8 @@ pub fn entries() -> Vec<CaseEntry> {
     all.push(open("CONT-DV_SCALE-validate_open", c, open_dv_scale));
     all.push(skip("CONT-DV_SCALE-validate_constraint", c));
     all.push(open("CONT-DV_COUNT-validate_open", c, open_dv_count));
-    all.push(skip("CONT-DV_COUNT-validate_range", c));
-    all.push(skip("CONT-DV_COUNT-validate_list", c));
+    all.push(open("CONT-DV_COUNT-validate_range", c, run_dv_count_range));
+    all.push(open("CONT-DV_COUNT-validate_list", c, run_dv_count_list));
     all.push(open("CONT-DV_QUANTITY-validate_open", c, open_dv_quantity));
     all.push(skip("CONT-DV_QUANTITY-validate_property", c));
     all.push(open(
@@ -506,6 +564,84 @@ fn run_dv_date_time_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                 }),
                 Expected::Rejected,
             )],
+        )
+        .await
+    })
+}
+
+// ── authored leaf value-constraint cases (master17, via `all_types`) ──────────
+//
+// The vendored corpus ships no OPT constraining these leaves, so the case authors
+// the constraint into the `all_types` OPT and drives the base (which satisfies it)
+// + an out-of-constraint copy. Limited to leaves the `all_types` composition
+// carries (`DV_TEXT` items[0], `DV_COUNT` items[4]); the string/integer
+// `pattern`/`list`/`range` constraints these use are surfaced into the leaf input
+// by the WebTemplate builder and enforced by `validation::leaf`.
+
+/// master17.2 CONT-DV_TEXT-validate_list: author a `C_STRING` `list` on
+/// `DV_TEXT.value` that includes the base value (accepted), then commit a value off
+/// the list (rejected).
+fn run_dv_text_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let base =
+            fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+        let ptr = leaf_ptr(0, "value");
+        let Some(base_val) = base
+            .pointer(&ptr)
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+        else {
+            return Err(CaseError::Skipped(
+                "all_types composition has no DV_TEXT value leaf to constrain".to_owned(),
+            ));
+        };
+        let list = vec![base_val, "cnf-allowed-alternate".to_owned()];
+        drive_leaf(
+            ctx,
+            "cnf_cont_dv_text_list",
+            move |opt| author::constrain_leaf_string(opt, "DV_TEXT", "value", None, list),
+            "DV_TEXT value in the C_STRING list (accepted)",
+            "DV_TEXT value not in the C_STRING list (C_STRING.list)".to_owned(),
+            &ptr,
+            json!("cnf-not-in-list-value"),
+        )
+        .await
+    })
+}
+
+/// master17.3 CONT-DV_COUNT-validate_range: author a `C_INTEGER` `range` `[0,10]` on
+/// `DV_COUNT.magnitude` (base `3` is in range → accepted), then commit `999`
+/// (rejected).
+fn run_dv_count_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        drive_leaf(
+            ctx,
+            "cnf_cont_dv_count_range",
+            |opt| {
+                author::constrain_leaf_integer(opt, "DV_COUNT", "magnitude", Some((0, 10)), vec![])
+            },
+            "DV_COUNT magnitude 3 in range [0,10] (accepted)",
+            "DV_COUNT magnitude 999 outside range [0,10] (C_INTEGER.range)".to_owned(),
+            &leaf_ptr(4, "magnitude"),
+            json!(999),
+        )
+        .await
+    })
+}
+
+/// master17.3 CONT-DV_COUNT-validate_list: author a `C_INTEGER` `list` `{3}` on
+/// `DV_COUNT.magnitude` (base `3` is in the list → accepted), then commit `7`
+/// (rejected).
+fn run_dv_count_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        drive_leaf(
+            ctx,
+            "cnf_cont_dv_count_list",
+            |opt| author::constrain_leaf_integer(opt, "DV_COUNT", "magnitude", None, vec![3]),
+            "DV_COUNT magnitude 3 in the C_INTEGER list {3} (accepted)",
+            "DV_COUNT magnitude 7 not in the C_INTEGER list {3} (C_INTEGER.list)".to_owned(),
+            &leaf_ptr(4, "magnitude"),
+            json!(7),
         )
         .await
     })

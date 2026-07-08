@@ -21,8 +21,8 @@
 //! is the server's genuine validation decision.
 
 use openehr_its::opt14::{
-    self, CArchetypeRoot, CAttribute, CObject, CSingleAttribute, Intervalofinteger,
-    OperationalTemplate,
+    self, CArchetypeRoot, CAttribute, CInteger, CObject, CPrimitive, CPrimitiveObject,
+    CSingleAttribute, CString, Intervalofinteger, OperationalTemplate,
 };
 
 use crate::harness::CaseError;
@@ -375,4 +375,116 @@ pub fn narrow_nested_child_type(
         }
     });
     narrowed
+}
+
+// ── leaf value constraints (master17: C_STRING / C_INTEGER on a DV_* leaf) ─────
+
+/// The `rm_attribute_name` of a `C_ATTRIBUTE`.
+fn attr_name(a: &CAttribute) -> &str {
+    match a {
+        CAttribute::CMultipleAttribute(m) => &m.rm_attribute_name,
+        CAttribute::CSingleAttribute(s) => &s.rm_attribute_name,
+    }
+}
+
+/// Set the `C_PRIMITIVE` constraining the `value_attr` (`"value"`, `"magnitude"`)
+/// of the first nested object of type `host` (a DV_* leaf), creating the attribute
+/// and/or its `C_PRIMITIVE_OBJECT` if the base OPT leaves the leaf unconstrained.
+/// `prim_rm_type` is the primitive object's `rm_type_name` (`"String"`,
+/// `"Integer"`). The `WebTemplate` builder surfaces the `C_STRING` `pattern`/`list` and
+/// the numeric `range` into the leaf `input` (`webtemplate::inputs`), which the
+/// validator then enforces (`validation::leaf`). Returns `true` if applied.
+fn constrain_leaf_primitive(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    value_attr: &str,
+    prim_rm_type: &str,
+    prim: CPrimitive,
+) -> bool {
+    // `visit_objects` stops at the first object `f` returns true for; capture the
+    // primitive in an Option so it is moved into the closure exactly once.
+    let mut prim = Some(prim);
+    visit_objects(&mut opt.definition, &mut |obj| {
+        if object_rm_type(obj) != Some(host) {
+            return false;
+        }
+        let Some(attrs) = object_attributes_mut(obj) else {
+            return false;
+        };
+        let Some(prim) = prim.take() else {
+            return true;
+        };
+        let idx = if let Some(i) = attrs.iter().position(|a| attr_name(a) == value_attr) { i } else {
+            attrs.push(CAttribute::CSingleAttribute(CSingleAttribute {
+                rm_attribute_name: value_attr.to_owned(),
+                existence: closed_interval(1, 1),
+                children: Vec::new(),
+            }));
+            attrs.len() - 1
+        };
+        let children = match &mut attrs[idx] {
+            CAttribute::CSingleAttribute(s) => &mut s.children,
+            CAttribute::CMultipleAttribute(m) => &mut m.children,
+        };
+        for ch in children.iter_mut() {
+            if let CObject::CPrimitiveObject(po) = ch {
+                po.item = Some(Box::new(prim));
+                return true;
+            }
+        }
+        children.push(CObject::CPrimitiveObject(CPrimitiveObject {
+            rm_type_name: prim_rm_type.to_owned(),
+            occurrences: closed_interval(1, 1),
+            node_id: String::new(),
+            item: Some(Box::new(prim)),
+        }));
+        true
+    })
+}
+
+/// Constrain a DV_* leaf's string `value_attr` with a `C_STRING` regex `pattern`
+/// and/or an enumerated `list` (e.g. `DV_URI.value`, `DV_TEXT.value`). Returns
+/// `true` if applied.
+pub fn constrain_leaf_string(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    value_attr: &str,
+    pattern: Option<&str>,
+    list: Vec<String>,
+) -> bool {
+    constrain_leaf_primitive(
+        opt,
+        host,
+        value_attr,
+        "String",
+        CPrimitive::CString(CString {
+            pattern: pattern.map(str::to_owned),
+            list,
+            list_open: Some(false),
+            assumed_value: None,
+        }),
+    )
+}
+
+/// Constrain a DV_* leaf's integer `value_attr` with a `C_INTEGER` `range`
+/// (`lower..=upper`) and/or an enumerated `list` (e.g. `DV_COUNT.magnitude`).
+/// Returns `true` if applied.
+pub fn constrain_leaf_integer(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    value_attr: &str,
+    range: Option<(i32, i32)>,
+    list: Vec<i32>,
+) -> bool {
+    constrain_leaf_primitive(
+        opt,
+        host,
+        value_attr,
+        "Integer",
+        CPrimitive::CInteger(CInteger {
+            list,
+            range: range.map(|(lo, hi)| closed_interval(lo, hi)),
+            assumed_value: None,
+        }),
+    )
 }
