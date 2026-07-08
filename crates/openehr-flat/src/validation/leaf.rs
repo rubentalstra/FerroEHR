@@ -29,7 +29,73 @@ pub(super) fn check_inputs(v: &mut Validator, instance: &Value, wt: &WebTemplate
         "DV_TEXT" | "DV_URI" | "DV_EHR_URI" => check_text(v, instance, wt),
         "DV_BOOLEAN" => check_boolean(v, instance, wt),
         "DV_IDENTIFIER" => check_identifier(v, instance, wt),
+        "DV_PARSABLE" => check_parsable(v, instance, wt),
+        "DV_DATE" | "DV_TIME" | "DV_DATE_TIME" => check_temporal(v, instance, wt),
+        "DV_DURATION" => check_duration(v, instance, wt),
         _ => {}
+    }
+    // Constraints captured outside the Better `inputs` mapping (builder
+    // `capture_leaf_constraints`): C_INTEGER/C_REAL lists on numeric data and
+    // C_CODE_PHRASE lists on coded attributes (e.g. DV_MULTIMEDIA.media_type).
+    check_numeric_lists(v, instance, wt);
+    check_code_lists(v, instance, wt);
+}
+
+/// `C_INTEGER.list` / `C_REAL.list` membership on the leaf's numeric data
+/// (AOM 1.4 `master04-constraint_model_package.adoc` §`C_INTEGER/§C_REAL)`: the
+/// instance datum must be one of the enumerated values.
+fn check_numeric_lists(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
+    for (attr, list) in &wt.numeric_lists {
+        let Some(value) = instance.get(attr).and_then(as_f64) else {
+            continue;
+        };
+        if !list.iter().any(|allowed| (allowed - value).abs() < 1e-9) {
+            v.push(
+                &wt.aql_path,
+                format!("{attr} {value} is not in the constrained value list"),
+                ValidationKind::CodedValue,
+            );
+        }
+    }
+}
+
+/// `C_CODE_PHRASE` code-list membership on a coded RM attribute the `inputs`
+/// mapping does not model (e.g. `DV_MULTIMEDIA.media_type` — AOM 1.4
+/// §`C_CODE_PHRASE`). Enforced only when the instance's terminology matches the
+/// constraint's (or both are `local`), biasing toward confident violations.
+fn check_code_lists(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
+    for cl in &wt.code_lists {
+        let Some(cp) = instance.get(&cl.attr) else {
+            continue;
+        };
+        let code = cp.get("code_string").and_then(Value::as_str);
+        let term = cp
+            .get("terminology_id")
+            .and_then(|t| t.get("value"))
+            .and_then(Value::as_str);
+        let Some(code) = code else { continue };
+        if !terminology_matches(cl.terminology.as_deref(), term) {
+            continue;
+        }
+        if !cl.codes.iter().any(|c| c == code) {
+            v.push(
+                &wt.aql_path,
+                format!(
+                    "{} code '{code}' is not in the constrained code list",
+                    cl.attr
+                ),
+                ValidationKind::CodedValue,
+            );
+        }
+    }
+}
+
+/// Whether an instance code's terminology matches the constraint's terminology
+/// (`None` on the constraint side means the archetype-`local` terminology).
+fn terminology_matches(constraint: Option<&str>, instance: Option<&str>) -> bool {
+    match constraint {
+        None | Some("local" | "") => matches!(instance, None | Some("local" | "")),
+        Some(t) => instance == Some(t),
     }
 }
 
@@ -82,9 +148,14 @@ fn check_ordinal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
     check_code_membership(v, wt, input, code, terminology);
 }
 
-/// Report a coded value that is not among the constrained options. Only checked
-/// for an internal (`local`/empty) terminology and a non-open, non-empty list —
-/// external-terminology codes cannot be validated against the archetype list.
+/// Report a coded value that is not among the constrained options. Checked for
+/// a non-open, non-empty list whose terminology matches the instance code's —
+/// the archetype-`local` terminology when the input names none, or the exact
+/// external terminology the `C_CODE_PHRASE` names (AOM 1.4 §`C_CODE_PHRASE`: an
+/// enumerated external code list constrains membership just like a local one —
+/// master17.2 `CONT-DV_CODED_TEXT-validate_ext_term`). A code from a *different*
+/// terminology than the constraint's is left to the terminology pass
+/// (confident-violations bias).
 fn check_code_membership(
     v: &mut Validator,
     wt: &WebTemplateNode,
@@ -95,8 +166,7 @@ fn check_code_membership(
     if input.list.is_empty() || input.list_open == Some(true) {
         return;
     }
-    let is_internal = matches!(terminology, None | Some("local" | ""));
-    if !is_internal {
+    if !terminology_matches(input.terminology.as_deref(), terminology) {
         return;
     }
     let Some(code) = code else { return };
@@ -179,6 +249,27 @@ fn check_count(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
 }
 
 fn check_proportion(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
+    // `type` kind membership (C_INTEGER.list on DV_PROPORTION.type, surfaced as
+    // the node's `proportionTypes` — AOM 1.4 §C_INTEGER; master17.3
+    // CONT-DV_PROPORTION-validate_* truth tables). An empty set means the
+    // template did not constrain the kind.
+    if !wt.proportion_types.is_empty()
+        && let Some(kind) = instance.get("type").and_then(Value::as_i64)
+    {
+        let name = usize::try_from(kind)
+            .ok()
+            .and_then(|k| crate::webtemplate::PROPORTION_KINDS.get(k));
+        if name.is_none_or(|n| !wt.proportion_types.iter().any(|p| p == n)) {
+            v.push(
+                &wt.aql_path,
+                format!(
+                    "proportion type {kind} is not among the permitted kinds [{}]",
+                    wt.proportion_types.join(", ")
+                ),
+                ValidationKind::CodedValue,
+            );
+        }
+    }
     for part in ["numerator", "denominator"] {
         let Some(value) = instance.get(part).and_then(as_f64) else {
             continue;
@@ -236,6 +327,293 @@ fn check_identifier(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
         };
         check_string_constraints(v, wt, input, value);
     }
+}
+
+/// `DV_PARSABLE`: `C_STRING` list/pattern on `value` and `formalism`
+/// (AOM 1.4 §`C_STRING`; master17.6 `CONT-DV_PARSABLE-validate_value_formalism`).
+fn check_parsable(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
+    for part in ["value", "formalism"] {
+        let Some(input) = input_with_suffix(wt, part) else {
+            continue;
+        };
+        let Some(value) = instance.get(part).and_then(Value::as_str) else {
+            continue;
+        };
+        check_string_constraints(v, wt, input, value);
+    }
+}
+
+// ── temporal (C_DATE / C_TIME / C_DATE_TIME / C_DURATION, AOM 1.4) ────────────
+
+/// `DV_DATE`/`DV_TIME`/`DV_DATE_TIME`: the `C_*` pattern (mandatory/optional/
+/// prohibited field parts, AOM 1.4 `master04-constraint_model_package.adoc`
+/// §"Constraints on dates and times") and the ISO range, both surfaced in the
+/// leaf input's `validation` by the `WebTemplate` builder.
+fn check_temporal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
+    let Some(validation) = wt.inputs.first().and_then(|i| i.validation.as_ref()) else {
+        return;
+    };
+    let Some(value) = instance.get("value").and_then(Value::as_str) else {
+        return;
+    };
+    if let Some(pattern) = &validation.pattern
+        && !temporal_pattern_ok(pattern, value)
+    {
+        v.push(
+            &wt.aql_path,
+            format!("temporal value '{value}' does not satisfy the pattern '{pattern}'"),
+            ValidationKind::PatternError,
+        );
+    }
+    if let Some(range) = &validation.range
+        && !temporal_in_range(value, range)
+    {
+        v.push(
+            &wt.aql_path,
+            format!("temporal value '{value}' is outside the constrained range"),
+            ValidationKind::RangeError,
+        );
+    }
+}
+
+/// `DV_DURATION`: the `C_DURATION` pattern (allowed fields — encoded by the
+/// builder as which per-field inputs exist) and the ISO-8601 duration range
+/// (`WebTemplateNode::duration_range`), compared on total seconds.
+fn check_duration(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
+    let Some(value) = instance.get("value").and_then(Value::as_str) else {
+        return;
+    };
+    let Some(fields) = duration_fields(value) else {
+        return; // Malformed ISO duration — the RM-invariant pass owns that.
+    };
+    // Allowed-fields check only when the builder filtered the inputs (a full
+    // 7-field set means the pattern allowed everything / there was no pattern).
+    let allowed: Vec<&str> = wt
+        .inputs
+        .iter()
+        .filter_map(|i| i.suffix.as_deref())
+        .collect();
+    if !allowed.is_empty() && allowed.len() < 7 {
+        for (name, _) in fields.iter().filter(|(_, n)| *n != 0.0) {
+            if !allowed.contains(name) {
+                v.push(
+                    &wt.aql_path,
+                    format!(
+                        "duration '{value}' uses the '{name}' field the C_DURATION pattern \
+                         does not allow"
+                    ),
+                    ValidationKind::PatternError,
+                );
+            }
+        }
+    }
+    if let Some(range) = &wt.duration_range {
+        let secs = duration_seconds(&fields);
+        let min_ok = range
+            .min
+            .as_ref()
+            .and_then(Value::as_str)
+            .and_then(|b| duration_fields(b).map(|f| duration_seconds(&f)))
+            .is_none_or(|b| secs >= b);
+        let max_ok = range
+            .max
+            .as_ref()
+            .and_then(Value::as_str)
+            .and_then(|b| duration_fields(b).map(|f| duration_seconds(&f)))
+            .is_none_or(|b| secs <= b);
+        if !min_ok || !max_ok {
+            v.push(
+                &wt.aql_path,
+                format!("duration '{value}' is outside the constrained range"),
+                ValidationKind::RangeError,
+            );
+        }
+    }
+}
+
+/// Parse an ISO-8601 duration into its named fields (the RM `DV_DURATION` value
+/// syntax); `None` when the string is not a duration.
+fn duration_fields(value: &str) -> Option<Vec<(&'static str, f64)>> {
+    let rest = value.strip_prefix('-').unwrap_or(value);
+    let rest = rest.strip_prefix('P')?;
+    let (date_part, time_part) = match rest.split_once('T') {
+        Some((d, t)) => (d, t),
+        None => (rest, ""),
+    };
+    let mut out = Vec::new();
+    let mut parse = |part: &str, in_time: bool| -> Option<()> {
+        let mut num = String::new();
+        for ch in part.chars() {
+            if ch.is_ascii_digit() || ch == '.' || ch == ',' {
+                num.push(if ch == ',' { '.' } else { ch });
+            } else {
+                let n: f64 = num.parse().ok()?;
+                num.clear();
+                let name = match (ch, in_time) {
+                    ('Y', false) => "year",
+                    ('M', false) => "month",
+                    ('W', false) => "week",
+                    ('D', false) => "day",
+                    ('H', true) => "hour",
+                    ('M', true) => "minute",
+                    ('S', true) => "second",
+                    _ => return None,
+                };
+                out.push((name, n));
+            }
+        }
+        if num.is_empty() { Some(()) } else { None }
+    };
+    parse(date_part, false)?;
+    parse(time_part, true)?;
+    Some(out)
+}
+
+/// Total seconds of a parsed duration, using the RM's nominal field lengths
+/// (year = 365.25 d, month = 30.4375 d — RM `DV_DURATION.magnitude` semantics).
+fn duration_seconds(fields: &[(&'static str, f64)]) -> f64 {
+    fields
+        .iter()
+        .map(|(name, n)| {
+            n * match *name {
+                "year" => 31_557_600.0,
+                "month" => 2_629_800.0,
+                "week" => 604_800.0,
+                "day" => 86_400.0,
+                "hour" => 3_600.0,
+                "minute" => 60.0,
+                _ => 1.0,
+            }
+        })
+        .sum()
+}
+
+/// Whether a date/time/datetime instance value satisfies an AOM 1.4 temporal
+/// pattern (`yyyy-mm-dd`, `HH:MM:SS`, `yyyy-mm-ddTHH:MM:SS`, with `??` =
+/// optional and `XX` = prohibited parts). Only field *presence* is judged —
+/// value well-formedness is the RM-invariant pass's job.
+fn temporal_pattern_ok(pattern: &str, value: &str) -> bool {
+    let (pat_date, pat_time) = split_date_time(pattern);
+    let (val_date, val_time) = split_date_time(value);
+    // Date part: year is always required; month/day per the pattern segment.
+    let pat_segs: Vec<&str> = if pat_date.is_empty() {
+        Vec::new()
+    } else {
+        pat_date.splitn(3, '-').collect()
+    };
+    let val_count = if val_date.is_empty() {
+        0
+    } else {
+        val_date.splitn(3, '-').count()
+    };
+    for (i, seg) in pat_segs.iter().enumerate().skip(1) {
+        let present = val_count > i;
+        match *seg {
+            "??" => {}
+            "XX" => {
+                if present {
+                    return false;
+                }
+            }
+            _ => {
+                if !present {
+                    return false;
+                }
+            }
+        }
+    }
+    // Time part: hours/minutes/seconds per the pattern segment.
+    let pat_t: Vec<&str> = if pat_time.is_empty() {
+        Vec::new()
+    } else {
+        pat_time.splitn(3, ':').collect()
+    };
+    let val_t_count = if val_time.is_empty() {
+        0
+    } else {
+        val_time.splitn(3, ':').count()
+    };
+    for (i, seg) in pat_t.iter().enumerate() {
+        let present = val_t_count > i;
+        match *seg {
+            "??" => {}
+            "XX" => {
+                if present {
+                    return false;
+                }
+            }
+            _ => {
+                if !present {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
+
+/// Split a temporal string/pattern into its date and time parts. A value with
+/// no `T` that contains `:` is a pure time (`HH:MM:SS`); otherwise a pure date.
+fn split_date_time(s: &str) -> (&str, &str) {
+    if let Some((d, t)) = s.split_once('T') {
+        (d, trim_timezone(t))
+    } else if s.contains(':') {
+        ("", trim_timezone(s))
+    } else {
+        (s, "")
+    }
+}
+
+/// Strip a timezone designator from a time part (`Z`, `+hh:mm`, `-hh:mm`).
+fn trim_timezone(t: &str) -> &str {
+    let t = t.strip_suffix('Z').unwrap_or(t);
+    match t.rfind(['+', '-']) {
+        Some(i) => &t[..i],
+        None => t,
+    }
+}
+
+/// Whether a date/time/datetime value lies within an ISO-string range. The
+/// comparison is lexicographic over the timezone-stripped value truncated to
+/// the shorter precision — ISO-8601 date/time strings order lexicographically
+/// at equal precision; a prefix-equal, mixed-precision pair is treated as
+/// in-range (confident-violations bias).
+fn temporal_in_range(value: &str, range: &WebTemplateRange) -> bool {
+    let norm = |s: &str| -> String {
+        let (d, t) = split_date_time(s);
+        if t.is_empty() {
+            d.to_owned()
+        } else if d.is_empty() {
+            t.to_owned()
+        } else {
+            format!("{d}T{t}")
+        }
+    };
+    let val = norm(value);
+    let cmp = |bound: &str| -> std::cmp::Ordering {
+        let b = norm(bound);
+        let n = val.len().min(b.len());
+        val[..n].cmp(&b[..n])
+    };
+    if let Some(min) = range.min.as_ref().and_then(Value::as_str) {
+        let ok = match range.min_op.as_deref() {
+            Some(">") => cmp(min) == std::cmp::Ordering::Greater,
+            _ => cmp(min) != std::cmp::Ordering::Less,
+        };
+        if !ok {
+            return false;
+        }
+    }
+    if let Some(max) = range.max.as_ref().and_then(Value::as_str) {
+        let ok = match range.max_op.as_deref() {
+            Some("<") => cmp(max) == std::cmp::Ordering::Less,
+            _ => cmp(max) != std::cmp::Ordering::Greater,
+        };
+        if !ok {
+            return false;
+        }
+    }
+    true
 }
 
 /// A string datum against an enumerated value list and/or a regex pattern.
