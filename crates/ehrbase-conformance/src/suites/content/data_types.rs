@@ -255,51 +255,42 @@ macro_rules! dt_open {
     };
 }
 
-// Drivable with a vendored committable base leaf:
-dt_open!(open_dv_text, Base::PersistentMinimal, "DV_TEXT", "value");
-dt_open!(open_dv_count, Base::EventNested, "DV_COUNT", "magnitude");
-dt_open!(
-    open_dv_date_time,
-    Base::PersistentMinimal,
-    "DV_DATE_TIME",
-    "value"
-);
-// Self-skipping (no committable leaf of the type in the corpus) but expressed as
-// the same mandatory-field driver so a future fixture makes them drive without a
-// code change:
-dt_open!(open_dv_boolean, Base::EventNested, "DV_BOOLEAN", "value");
+// Driven against `Base::AllTypes` (the `test_all_types.en.v1` composition), which
+// carries a committable leaf of nearly every `DV_*` type — so every `validate_open`
+// (RM/Schema-mandatory) row drives through the `/composition` endpoint. The two
+// types `all_types` does not carry (`DV_SCALE`, `DV_EHR_URI`) auto-skip via
+// `data_type_mandatory`'s leaf-presence guard (never a fabricated pass).
+dt_open!(open_dv_text, Base::AllTypes, "DV_TEXT", "value");
+dt_open!(open_dv_count, Base::AllTypes, "DV_COUNT", "magnitude");
+dt_open!(open_dv_date_time, Base::AllTypes, "DV_DATE_TIME", "value");
+dt_open!(open_dv_boolean, Base::AllTypes, "DV_BOOLEAN", "value");
 dt_open!(
     open_dv_coded_text,
-    Base::EventNested,
+    Base::AllTypes,
     "DV_CODED_TEXT",
     "defining_code"
 );
-dt_open!(open_dv_ordinal, Base::EventNested, "DV_ORDINAL", "value");
-dt_open!(open_dv_scale, Base::EventNested, "DV_SCALE", "value");
-dt_open!(
-    open_dv_quantity,
-    Base::EventNested,
-    "DV_QUANTITY",
-    "magnitude"
-);
+dt_open!(open_dv_ordinal, Base::AllTypes, "DV_ORDINAL", "value");
+dt_open!(open_dv_scale, Base::AllTypes, "DV_SCALE", "value");
+dt_open!(open_dv_quantity, Base::AllTypes, "DV_QUANTITY", "magnitude");
 dt_open!(
     open_dv_proportion,
-    Base::EventNested,
+    Base::AllTypes,
     "DV_PROPORTION",
     "numerator"
 );
-dt_open!(open_dv_date, Base::EventNested, "DV_DATE", "value");
-dt_open!(open_dv_time, Base::EventNested, "DV_TIME", "value");
-dt_open!(open_dv_duration, Base::EventNested, "DV_DURATION", "value");
-dt_open!(open_dv_parsable, Base::EventNested, "DV_PARSABLE", "value");
+dt_open!(open_dv_date, Base::AllTypes, "DV_DATE", "value");
+dt_open!(open_dv_time, Base::AllTypes, "DV_TIME", "value");
+dt_open!(open_dv_duration, Base::AllTypes, "DV_DURATION", "value");
+dt_open!(open_dv_parsable, Base::AllTypes, "DV_PARSABLE", "value");
 dt_open!(
     open_dv_multimedia,
-    Base::EventNested,
+    Base::AllTypes,
     "DV_MULTIMEDIA",
     "media_type"
 );
-dt_open!(open_dv_uri, Base::EventNested, "DV_URI", "value");
-dt_open!(open_dv_ehr_uri, Base::EventNested, "DV_EHR_URI", "value");
+dt_open!(open_dv_uri, Base::AllTypes, "DV_URI", "value");
+dt_open!(open_dv_ehr_uri, Base::AllTypes, "DV_EHR_URI", "value");
 
 // ── constraint-OPT driven data-type cases (the full constraint corpus, §4.5) ──
 //
