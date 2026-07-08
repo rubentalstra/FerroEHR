@@ -57,10 +57,13 @@ findings, never exclusions (v1 §4.5 discipline unchanged).
 
 ## Tasks
 
-- [ ] Recon: exhaustive inventories (schedule chapters + variants, Robot suite
-      counts + goldens, current-crate map, upstream freshness) — in flight.
-- [ ] Author the v3 design (`docs/design/conformance-framework.md` rewrite):
-      multi-source case model, id scheme, coverage gates, report schema.
+- [x] Recon: exhaustive inventories (schedule chapters + variants, Robot suite
+      counts + goldens, current-crate map, upstream freshness) — done 2026-07-08:
+      schedule = 324 headings / ~1,576+ variant rows (content 1,371); Robot =
+      464 declared cases + goldens; vendored corpus verified upstream-current.
+- [x] Author the v3 design (`docs/design/conformance-framework.md` rewrite):
+      multi-source case model (S1–S6), source-prefixed ids + fingerprints,
+      per-source coverage gates, machine-enforced profile verdicts.
 - [ ] Engine core rewrite: case model + source registries + per-source
       coverage guards.
 - [ ] Schedule source: variant-expanded transcription (all masterNN).
