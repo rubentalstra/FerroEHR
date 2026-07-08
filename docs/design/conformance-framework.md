@@ -72,14 +72,14 @@ validation cases, a certificate-shaped report — and built better, from the
 
 ## 3. What we keep from the old CNF (ideas only) — and what we discard
 
-| Kept (as an idea, reimplemented) | Discarded |
-|---|---|
-| Profile-scoped claims (CORE / STANDARD / OPTIONS) and the capability matrix (§8) | The masterNN chapter structure and its ids |
-| "A test = case × data set" and accept/reject truth matrices | The hand-written 2019 truth tables (we generate) |
-| Certificate-shaped generated statement + execution report | The Robot/Python harness, entirely |
-| The functional service walk (EHR → status → composition → contribution → directory → templates → queries) as area seeds | Runtime mapping/tracing to legacy case ids |
-| Reusable input payloads (OPTs, compositions, AQL queries + goldens) as plain test data | Schedule/robot/OAS extractors as framework machinery |
-| The ISO 18308 requirements lens (vendored statement, `docs/specs/openehr/REQUIREMENTS/`) as a reporting rollup | Legacy inventory snapshots and classification enums |
+| Kept (as an idea, reimplemented)                                                                                        | Discarded                                            |
+|-------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
+| Profile-scoped claims (CORE / STANDARD / OPTIONS) and the capability matrix (§8)                                        | The masterNN chapter structure and its ids           |
+| "A test = case × data set" and accept/reject truth matrices                                                             | The hand-written 2019 truth tables (we generate)     |
+| Certificate-shaped generated statement + execution report                                                               | The Robot/Python harness, entirely                   |
+| The functional service walk (EHR → status → composition → contribution → directory → templates → queries) as area seeds | Runtime mapping/tracing to legacy case ids           |
+| Reusable input payloads (OPTs, compositions, AQL queries + goldens) as plain test data                                  | Schedule/robot/OAS extractors as framework machinery |
+| The ISO 18308 requirements lens (vendored statement, `docs/specs/openehr/REQUIREMENTS/`) as a reporting rollup          | Legacy inventory snapshots and classification enums  |
 
 The one-time human-reviewed completeness check ("did our catalogue cover
 every behaviour the old corpus tested?") lives in the phase plan as a design
@@ -104,33 +104,33 @@ area derivation is stable.
 
 ### 4.2 Areas (the category taxonomy)
 
-| Area | Scope |
-|---|---|
-| `EHR` | EHR service operations |
-| `STA` | EHR_STATUS operations |
-| `COM` | COMPOSITION operations |
-| `CTB` | CONTRIBUTION change sets |
-| `DIR` | Directory (FOLDER) operations |
-| `TPL` | Template / OPT provisioning |
-| `SQR` | Stored-query provisioning |
-| `QRY` | AQL execution |
-| `VAL` | Content / archetype validation (data types, structures) |
-| `REST` | ITS-REST operation × status matrix |
-| `DEM` | Demographic service |
-| `ADM` | Admin service |
-| `SEC` | Security / authorization |
-| `SIG` | Version signing |
-| `MSG` | Messaging (when implemented) |
+| Area   | Scope                                                   |
+|--------|---------------------------------------------------------|
+| `EHR`  | EHR service operations                                  |
+| `STA`  | EHR_STATUS operations                                   |
+| `COM`  | COMPOSITION operations                                  |
+| `CTB`  | CONTRIBUTION change sets                                |
+| `DIR`  | Directory (FOLDER) operations                           |
+| `TPL`  | Template / OPT provisioning                             |
+| `SQR`  | Stored-query provisioning                               |
+| `QRY`  | AQL execution                                           |
+| `VAL`  | Content / archetype validation (data types, structures) |
+| `REST` | ITS-REST operation × status matrix                      |
+| `DEM`  | Demographic service                                     |
+| `ADM`  | Admin service                                           |
+| `SEC`  | Security / authorization                                |
+| `SIG`  | Version signing                                         |
+| `MSG`  | Messaging (when implemented)                            |
 
 ### 4.3 The case universe (build-out plan, ≥2,000 executable tests)
 
-| Area group | Source of truth | Target size |
-|---|---|---|
-| Functional services (EHR/STA/COM/CTB/DIR/TPL/SQR) | SM interfaces + ITS-REST 1.0.3 semantics | ~300 cases (positive, negative, versioning, time-travel, concurrency preconditions) |
-| `REST` matrix | every ITS-REST operation × documented status | ~350–400 |
-| `VAL` generated matrices | RM 1.2.0 data-type + structure constraints × generator grids | **1,000+** variants (systematically exceeds the old 1,371 hand rows) |
-| `QRY` | AQL 1.1 construct checklist + our corpus with golden result sets | ~250 |
-| `SEC`/`SIG`/`ADM`/`DEM` | our implemented capabilities (access-control, signing designs) | ~100 |
+| Area group                                        | Source of truth                                                  | Target size                                                                         |
+|---------------------------------------------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| Functional services (EHR/STA/COM/CTB/DIR/TPL/SQR) | SM interfaces + ITS-REST 1.0.3 semantics                         | ~300 cases (positive, negative, versioning, time-travel, concurrency preconditions) |
+| `REST` matrix                                     | every ITS-REST operation × documented status                     | ~350–400                                                                            |
+| `VAL` generated matrices                          | RM 1.2.0 data-type + structure constraints × generator grids     | **1,000+** variants (systematically exceeds the old 1,371 hand rows)                |
+| `QRY`                                             | AQL 1.1 construct checklist + our corpus with golden result sets | ~250                                                                                |
+| `SEC`/`SIG`/`ADM`/`DEM`                           | our implemented capabilities (access-control, signing designs)   | ~100                                                                                |
 
 ## 5. Architecture (crate `ehrbase-conformance`)
 
@@ -227,25 +227,25 @@ Adopted from the openEHR profiles idea (reference:
 `docs/specs/openehr/CNF/docs/profiles/master03-profiles.adoc`), curated to
 our capability names; `model/profile.rs` encodes this table.
 
-| Capability | Areas | CORE | STANDARD | OPTIONS |
-|---|---|:-:|:-:|:-:|
-| OPT 1.4 provisioning | TPL | ✔ | ✔ | |
-| EHR operations | EHR | ✔ | ✔ | |
-| EHR_STATUS | STA | ✔ | ✔ | |
-| Composition operations | COM | ✔ | ✔ | |
-| Change sets | CTB | ✔ | ✔ | |
-| Versioning (incl. `ALL_VERSIONS`) | EHR/COM/DIR | ✔ | ✔ | |
-| Archetype validation | VAL | ✔ | ✔ | |
-| Anonymous EHRs | EHR | ✔ | ✔ | |
-| REST contract (DEFINITION + EHR APIs) | REST | ✔ | ✔ | |
-| Directory operations | DIR | | ✔ | |
-| Query provisioning | SQR | | ✔ | |
-| AQL basic + QUERY API | QRY | | ✔ | |
-| Version signing | SIG | | ✔ | |
-| Data formats: JSON + XML | all | ✔ | ✔ | |
-| Demographic / Admin / Messaging | DEM/ADM/MSG | | | ✔ |
-| ADL2/OPT2, AQL advanced, AQL×terminology | TPL/QRY | | | ✔ |
-| Security behaviour (RBAC 401/403) | SEC | reported with the claim | | |
+| Capability                               | Areas       |          CORE           | STANDARD | OPTIONS |
+|------------------------------------------|-------------|:-----------------------:|:--------:|:-------:|
+| OPT 1.4 provisioning                     | TPL         |            ✔            |    ✔     |         |
+| EHR operations                           | EHR         |            ✔            |    ✔     |         |
+| EHR_STATUS                               | STA         |            ✔            |    ✔     |         |
+| Composition operations                   | COM         |            ✔            |    ✔     |         |
+| Change sets                              | CTB         |            ✔            |    ✔     |         |
+| Versioning (incl. `ALL_VERSIONS`)        | EHR/COM/DIR |            ✔            |    ✔     |         |
+| Archetype validation                     | VAL         |            ✔            |    ✔     |         |
+| Anonymous EHRs                           | EHR         |            ✔            |    ✔     |         |
+| REST contract (DEFINITION + EHR APIs)    | REST        |            ✔            |    ✔     |         |
+| Directory operations                     | DIR         |                         |    ✔     |         |
+| Query provisioning                       | SQR         |                         |    ✔     |         |
+| AQL basic + QUERY API                    | QRY         |                         |    ✔     |         |
+| Version signing                          | SIG         |                         |    ✔     |         |
+| Data formats: JSON + XML                 | all         |            ✔            |    ✔     |         |
+| Demographic / Admin / Messaging          | DEM/ADM/MSG |                         |          |    ✔    |
+| ADL2/OPT2, AQL advanced, AQL×terminology | TPL/QRY     |                         |          |    ✔    |
+| Security behaviour (RBAC 401/403)        | SEC         | reported with the claim |          |         |
 
 ISO 18308 rollup: cases may cite `iso18308:<section>`
 (`docs/specs/openehr/REQUIREMENTS/iso18308_conformance.pdf`) so reports can
