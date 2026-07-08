@@ -1689,6 +1689,7 @@ dependencies = [
  "ehrbase-authz",
  "ehrbase-rest",
  "ehrbase-signing",
+ "ehrbase-sm",
  "figment",
  "http",
  "http-body-util",

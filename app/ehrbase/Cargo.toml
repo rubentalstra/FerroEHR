@@ -50,6 +50,7 @@ openehr-am = { path = "../../crates/openehr-am" }
 openehr-flat = { path = "../../crates/openehr-flat" }
 openehr-query = { path = "../../crates/openehr-query" }
 ehrbase-rest = { path = "../ehrbase-rest" }
+ehrbase-sm = { path = "../ehrbase-sm" }
 ehrbase-audit = { path = "../ehrbase-audit" }
 ehrbase-authz = { path = "../ehrbase-authz" }
 ehrbase-signing = { path = "../ehrbase-signing" }
