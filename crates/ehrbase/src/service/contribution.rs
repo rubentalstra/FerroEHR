@@ -208,6 +208,15 @@ impl EhrbaseService {
                     // A CONTRIBUTION commit is a full commit route: its versions
                     // are validated exactly as a direct create/update (F-07-01).
                     self.validate_for_commit(kind, &data).await?;
+                    // An EHR holds exactly one EHR_STATUS / EHR_ACCESS and at most
+                    // one directory (root FOLDER) — RM ehr, EHR class:
+                    // `ehr_status 1..1`, `directory 0..1`. A CONTRIBUTION that
+                    // *creates* a second one must be rejected (CNF master08
+                    // `commit_contribution-ehr_status_invalid_change_type` /
+                    // `-fail_create_existing_directory`).
+                    if let Some(ehr_id) = ehr_id {
+                        self.reject_duplicate_singleton(ehr_id, kind).await?;
+                    }
                     Change::Create {
                         kind,
                         canonical: data,
@@ -282,6 +291,31 @@ impl EhrbaseService {
             .increment(1);
 
         Ok(contribution_id)
+    }
+
+    /// Reject the *creation* of a second EHR-singleton versioned object. An EHR
+    /// holds exactly one `EHR_STATUS` and one `EHR_ACCESS` (`EHR.ehr_status 1..1`)
+    /// and at most one directory root FOLDER (`EHR.directory 0..1`) — RM ehr, EHR
+    /// class. These are provisioned when the EHR is created (`EHR_STATUS` /
+    /// `EHR_ACCESS`) or via `POST /directory`; a CONTRIBUTION `creation` of another
+    /// one is invalid (CNF master08 `-ehr_status_invalid_change_type` /
+    /// `-fail_create_existing_directory`). COMPOSITIONs are unbounded, so they
+    /// pass through. A live one already present → `409 Conflict`.
+    async fn reject_duplicate_singleton(
+        &self,
+        ehr_id: Uuid,
+        kind: Kind,
+    ) -> Result<(), ServiceError> {
+        if !matches!(kind, Kind::EhrStatus | Kind::EhrAccess | Kind::Folder) {
+            return Ok(());
+        }
+        if self.current_vo(ehr_id, kind).await?.is_some() {
+            return Err(ServiceError::Conflict(format!(
+                "EHR {ehr_id} already has a {}; only one is permitted (RM ehr, EHR class)",
+                kind.as_str()
+            )));
+        }
+        Ok(())
     }
 
     /// The stored kind of an existing object, or `NotFound`.

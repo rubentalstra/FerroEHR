@@ -347,22 +347,27 @@ async fn upload_opt(ctx: &RunContext<'_>, xml: String) -> Result<u16, CaseError>
 
 fn run_upload_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
-        // One valid OPT must be accepted (a distinct file per case avoids
-        // template_id collisions with other cases in the same server).
-        let opts = fixtures::opts_valid().map_err(|e| CaseError::Codec(e.to_string()))?;
-        let opt = opts
-            .iter()
-            .find(|f| f.name.contains("minimal_evaluation"))
-            .or_else(|| opts.first())
-            .ok_or_else(|| CaseError::Assertion("no valid OPT fixtures".to_owned()))?;
-        let xml = opt.read().map_err(|e| CaseError::Codec(e.to_string()))?;
+        // A fresh, valid OPT must be accepted with 201. The self-hosted SUT is
+        // shared across cases, so `minimal_evaluation.en.v1` may already be
+        // provisioned (e.g. by `ensure_present`); uploading it verbatim would
+        // then (correctly) 409 and this case would wrongly read as a rejected
+        // upload. Retarget the OPT to a unique `template_id` via the typed opt14
+        // model so it genuinely asserts a *fresh-upload* 201, order-independent.
+        let base = fixtures::read("valid_templates/minimal/minimal_evaluation.opt")
+            .map_err(|e| CaseError::Codec(e.to_string()))?;
+        let mut opt = openehr_its::opt14::from_xml(&base)
+            .map_err(|e| CaseError::Codec(format!("parse minimal_evaluation.opt: {e}")))?;
+        // Replicated locally (super::content::author::set_template_id is not
+        // edited): give the template a unique id per run.
+        opt.template_id.value = format!("minimal_evaluation.fresh.{}.v1", uuid::Uuid::new_v4());
+        let xml = openehr_its::opt14::to_xml(&opt)
+            .map_err(|e| CaseError::Codec(format!("serialize retargeted OPT: {e}")))?;
         let status = upload_opt(ctx, xml).await?;
         if (200..300).contains(&status) {
             Ok(DataSetReport::SINGLE)
         } else {
             Err(CaseError::Assertion(format!(
-                "valid OPT {} rejected with {status}",
-                opt.name
+                "fresh valid OPT rejected with {status}"
             )))
         }
     })
