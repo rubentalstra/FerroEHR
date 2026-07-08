@@ -1,8 +1,10 @@
 //! HTTP dispatch for the `definition` API group (templates + stored queries).
 //!
 //! Each arm rebuilds the operation's `*Params`, decodes any body, calls the
-//! trait method on [`AppState`], and renders a negotiated response. Handlers
-//! currently return `NotImplemented`; that surfaces here as a 501 response.
+//! trait method on [`AppState`], and renders a negotiated response. The only
+//! operations a full backend leaves unimplemented are the ADL2 template ones
+//! (deliberately 501 — ADL2 is an optional platform capability; see
+//! `service::api::definition`).
 //!
 //! Note: the generated `ROUTES` operation ids carry dots (e.g.
 //! `definition_template_adl1.4_list`, `definition_query_store.yaml`); the match
@@ -186,15 +188,26 @@ async fn run(
         }
         "definition_query_store.yaml" => {
             let p = params::build::<DefinitionQueryStoreYamlParams>(&parts.path, q, h)?;
+            let name = p.qualified_query_name.clone();
             let body = negotiate::text_body(&parts.body)?;
             state.backend().definition_query_store_yaml(p, body).await?;
-            // Spec: the store success is `200 OK` (not `204`).
-            // TODO(port): the no-version store auto-assigns the version, but the
-            // generated trait method is bodyless (`()`), so the assigned version
-            // is not available here to build the `Location` header (a coherent
-            // no-version auto-increment + Location design is deferred — see the
-            // finding 03 hygiene note). The versioned store arm below sets it.
-            Ok(negotiate::empty(StatusCode::OK))
+            // Spec: the store success is `200 OK` (not `204`), with a `Location`
+            // for the stored resource (`responses/200_StoredQuery_stored.yaml` +
+            // `headers/Location_Query.yaml`). The no-version store auto-assigns
+            // the SEMVER but the generated trait method is bodyless (`()`), so
+            // the assigned version is recovered through the list seam: exact-name
+            // rows come back ordered by version ascending, so the last one is the
+            // version this store just wrote (or upserted).
+            match stored_version_of(&state, &name, h).await {
+                Some(version) => {
+                    let location = format!(
+                        "{}/definition/query/{name}/{version}",
+                        state.config().base_path
+                    );
+                    Ok(negotiate::empty_with_location(StatusCode::OK, &location))
+                }
+                None => Ok(negotiate::empty(StatusCode::OK)),
+            }
         }
         "definition_query_version_get" => {
             let p = params::build::<DefinitionQueryVersionGetParams>(&parts.path, q, h)?;
@@ -254,6 +267,30 @@ fn example_accept_supported(headers: &HeaderMap) -> bool {
                 | "application/openehr.wt.structured+json"
         )
     })
+}
+
+/// The stored SEMVER of the stored query `name` after a no-version store: the
+/// exact-name entries from the list seam (ordered by version ascending), taking
+/// the highest. `None` when the lookup fails or finds nothing — the store
+/// itself already succeeded, so the response degrades to Location-less rather
+/// than failing the request.
+async fn stored_version_of(state: &AppState, name: &str, headers: &HeaderMap) -> Option<String> {
+    let list = state
+        .backend()
+        .definition_query_list(DefinitionQueryListParams {
+            qualified_query_name: name.to_owned(),
+            accept: headers
+                .get(header::ACCEPT)
+                .and_then(|v| v.to_str().ok())
+                .map(str::to_owned),
+        })
+        .await
+        .ok()?;
+    list.iter()
+        .filter(|entry| entry.get("name").and_then(|n| n.as_str()) == Some(name))
+        .filter_map(|entry| entry.get("version").and_then(|v| v.as_str()))
+        .next_back()
+        .map(str::to_owned)
 }
 
 /// Serve the service-owned Better `WebTemplate` for `template_id` as
