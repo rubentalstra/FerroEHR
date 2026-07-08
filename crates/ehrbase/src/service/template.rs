@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use openehr_flat::WebTemplate;
+use openehr_flat::{DetailLevel, ExampleType, WebTemplate};
 use serde_json::{Value, json};
 use sqlx::Row;
 
@@ -60,6 +60,36 @@ impl EhrbaseService {
                     "operational template {template_id} could not be built into a WebTemplate: {e}"
                 ))
             })
+    }
+
+    /// Generate an example COMPOSITION for a stored operational template
+    /// (`GET /definition/template/adl1.4/{template_id}/example`).
+    ///
+    /// The example is produced from the template's (cached) [`WebTemplate`] by
+    /// [`openehr_flat::example_composition`] at the requested [`DetailLevel`],
+    /// with a deterministic `uid` populated for the `output`
+    /// ([`ExampleType::Output`]) form.
+    ///
+    /// An unknown `template_id` is a **`NotFound`** (→ ITS-REST `404`), matching
+    /// the `adl1.4/{id}` GET surface (the endpoint's `404_unknown_template_id`
+    /// response) rather than the `422` `web_template_for` maps for an unknown
+    /// template on a *commit* path; a stored-but-unbuildable template stays a
+    /// `422` (`Unprocessable`).
+    pub(super) async fn template_example(
+        &self,
+        template_id: &str,
+        level: DetailLevel,
+        kind: ExampleType,
+    ) -> Result<Value, ServiceError> {
+        // Resolve existence first so an unknown id is a 404 (not the 422 the
+        // WebTemplate cache maps for a commit-time unknown template).
+        let _ = self.get_template_xml(template_id).await?;
+        let wt = self.web_template_for(template_id).await?;
+        let mut composition = openehr_flat::example_composition(&wt, level);
+        if kind == ExampleType::Output {
+            openehr_flat::apply_output_uid(&mut composition, template_id);
+        }
+        Ok(composition)
     }
 
     /// Store an OPT 1.4 operational template from its canonical XML, returning
