@@ -22,8 +22,10 @@ Three interfaces: `I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`,
 - **`I_TDD_SERVICE`** — Template Data Documents: `import_tdd(an_ehr_id:
   UUID, tdd: String)`; `import_tdds` (bulk — **no signature in source**).
 
-RM `EHR_EXTRACT` is experimental/deferred in our RM scope; the extract
-service is a documented deferral, not a Stage-1 target.
+RM `EHR_EXTRACT` is **in scope (owner decision, 2026-07-08)**: the RM
+`ehr_extract` package is generated from the BMM like every other RM package,
+and `I_EHR_EXTRACT_SERVICE` is built as part of the SM-aligned service layer
+(see doc 09 for the build order).
 
 ## 2. Subject Proxy service (`sm.platform.interface.subject_proxy`) — added SM 0.9.7 (2021)
 
@@ -206,11 +208,13 @@ get_frame.frame_id` doc says "name of the variable"; `SP_VARIABLE_DEF`/
 ## 7. Mapping note (current code)
 
 - Admin: `AdminService` seam + `service/admin.rs` implement
-  `physical_ehr_delete` (+ bulk); counts/archive/dump-load absent.
+  `physical_ehr_delete` (+ bulk); counts/archive/dump-load are gaps to build
+  (doc 07/09).
 - Terminology: `openehr-term::bundle` covers the openEHR vocabulary access
-  internally; there is **no external terminology-service surface** (no
-  value-set/subsumption API) — candidate future component.
+  internally; the external `I_TERMINOLOGY_SERVICE` surface (terminology ids,
+  term lookup, subsumption, value sets) is a gap to build (doc 07/09).
 - System Log: `ehrbase-audit` (ATNA) = the component, done.
-- Message + Subject Proxy: not implemented; both DEVELOPMENT-grade and tied
-  to specs (EHR Extract, PROC task planning) outside Stage-1 scope —
-  documented deferrals.
+- Message (incl. `I_EHR_EXTRACT_SERVICE` + `I_TDD_SERVICE`) and Subject
+  Proxy: not yet implemented — **both in scope**; where the SM text is a
+  stub, the design fills the contract explicitly (doc 08) and records each
+  filled gap with a `// PORT NOTE:` + citation.
