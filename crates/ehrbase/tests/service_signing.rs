@@ -75,11 +75,42 @@ fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
 }
 
+/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
+/// `composer` are all `1..1` (RM ehr, COMPOSITION class), so the typed RM
+/// validation rejects a fixture without them.
 fn composition(name: &str) -> Value {
     json!({
         "_type": "COMPOSITION",
         "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "name": { "_type": "DV_TEXT", "value": name }
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+                "_type": "ARCHETYPE_ID",
+                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+            },
+            "rm_version": "1.2.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+            "code_string": "en"
+        },
+        "territory": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+            "code_string": "NL"
+        },
+        "category": {
+            "_type": "DV_CODED_TEXT",
+            "value": "event",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "433"
+            }
+        },
+        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
     })
 }
 
