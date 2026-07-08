@@ -41,14 +41,36 @@ onto the workspace as:
                         └───────────────────────────────┘
 ```
 
-**New crate: `ehrbase-sm`** — the native API. Holds the service traits, the
+**Workspace layout (owner ruling, 2026-07-08): the two layers become
+physical.** The application crates move to **`app/*`**; the generated
+openEHR spec layer stays in **`crates/*`**:
+
+```
+crates/   openehr-base  openehr-rm  openehr-am  openehr-term  openehr-lang
+          openehr-its   openehr-query  openehr-flat
+          openehr-codegen  openehr-derive          # spec layer + its tooling
+app/      ehrbase  ehrbase-sm  ehrbase-rest  ehrbase-compat
+          ehrbase-audit  ehrbase-authz  ehrbase-signing
+          ehrbase-conformance  ehrbase-bench       # the application (ours)
+```
+
+Root `Cargo.toml`: `members = ["crates/*", "app/*"]`. The move is `git mv`
+(history preserved), then path updates in workspace path-deps, CI workflows,
+scripts (`check-codegen-drift.sh` etc.), `.claude/rules` path scopes, and
+docs. The tree now states the rule the naming implied: `crates/openehr-*` =
+generated from the vendored specs, never hand-edited; `app/ehrbase-*` =
+idiomatic Rust of our own design. Dependencies point one way only:
+`app/* → crates/*`.
+
+**New crate: `app/ehrbase-sm`** — the native API. Holds the service traits, the
 shared service types (update-version envelope, paging, error enums, summary
 DTOs), and the SM↔HTTP error table. `ehrbase-rest` (adapter) and `ehrbase`
 (component) both depend on it; the current `ehrbase-rest::backend` trait
 family migrates there. This fixes today's inversion (the native API living
 inside the REST adapter crate) and gives every future adapter (EhrScape,
 gRPC, message queue) the same seam. Dependencies stay downward:
-`ehrbase-rest → ehrbase-sm → openehr-*`; `ehrbase → ehrbase-sm`.
+`app/ehrbase-rest → app/ehrbase-sm → crates/openehr-*`;
+`app/ehrbase → app/ehrbase-sm`.
 
 ## 2. Trait layer (one trait per SM interface)
 
