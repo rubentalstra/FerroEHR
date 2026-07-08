@@ -2,14 +2,17 @@
 # .claude/hooks/rust_fmt_clippy.sh
 #
 # Claude Code PostToolUse hook (matcher: Write|Edit).
-# Formats an edited .rs file with rustfmt, then makes a best-effort scoped
-# `cargo clippy --fix` pass on the owning crate.
+# Formats an edited .rs file with rustfmt. Never blocks; swallows all failures
+# (rustfmt failing to parse a draft is expected and fine).
 #
-# NEVER blocks and swallows all failures: during Phases P1-P16 the code is not
-# required to compile (PORT_MASTER_PLAN.md section 4.1), so rustfmt failing to
-# parse a draft or clippy failing to compile is expected and fine. Before P17
-# the crate module trees are tiny, so the clippy attempt is cheap; after P17 it
-# earns its keep.
+# NOTE: this hook used to also run a scoped `cargo clippy --fix` on the owning
+# crate after every edit. That was removed 2026-07-08: with the full workspace
+# built, it triggered a check-build of the crate + its dependency cone per
+# file edit — and because it ran per-package (from the crate dir), resolver-v3
+# feature unification differed from the workspace build, invalidating shared
+# artifacts and thrashing the cargo cache (target/ grew past 190 GB; dev
+# builds hit 10+ minutes). Clippy remains a per-phase gate the agent runs
+# explicitly (`cargo clippy --workspace --all-targets`), not a per-edit hook.
 
 set -uo pipefail
 
@@ -28,14 +31,5 @@ esac
 [ -f "$file_path" ] || exit 0
 
 rustfmt --edition 2024 "$file_path" >/dev/null 2>&1 || true
-
-# Walk up to the owning crate (a Cargo.toml directly under crates/).
-dir="$(dirname "$file_path")"
-while [ "$dir" != "/" ] && [ ! -f "$dir/Cargo.toml" ]; do
-  dir="$(dirname "$dir")"
-done
-if [ -f "$dir/Cargo.toml" ] && [ "$(basename "$(dirname "$dir")")" = "crates" ]; then
-  (cd "$dir" && cargo clippy --fix --allow-dirty --allow-staged --quiet >/dev/null 2>&1) || true
-fi
 
 exit 0

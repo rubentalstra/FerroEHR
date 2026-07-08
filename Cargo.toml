@@ -207,3 +207,13 @@ sysinfo = "0.39.5"                   # CPU/RSS sampling for the benchmark harnes
 #
 # Toolchain: Rust stable 1.96 (1.96.1 current), edition 2024.
 # Database: PostgreSQL 18 (target 18.4+; 18.x is the current stable line; PG 19 in beta — do not target).
+
+# ── Build-speed profiles ─────────────────────────────────────────────────────
+# Full debuginfo on ~400 deps + 18 workspace crates made dev builds/links slow
+# and grew target/ past 190 GB. Line tables keep file:line backtraces for our
+# code; dependencies get none (their debuginfo is never read in this repo).
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
