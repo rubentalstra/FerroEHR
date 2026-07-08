@@ -180,6 +180,52 @@ pub enum Expected {
     Rejected,
 }
 
+/// Provision an **authored** OPT (in-memory ADL 1.4 XML, idempotent), create a
+/// fresh EHR, and commit `comp`.
+async fn commit_authored(
+    ctx: &RunContext<'_>,
+    opt_xml: &str,
+    comp: &Value,
+) -> Result<HttpResponse, CaseError> {
+    support::ensure_opt_xml(ctx, opt_xml).await?;
+    let ehr_id = support::create_ehr(ctx).await?;
+    ctx.send(
+        HttpRequest::post(format!("/ehr/{ehr_id}/composition"))
+            .json_body(comp)?
+            .header("accept", "application/json"),
+    )
+    .await
+}
+
+/// Drive a set of `(row-label, composition, expected)` data sets against an
+/// **authored** constraint OPT (provisioned once per row, idempotently). Identical
+/// row semantics to [`drive_rows`]/[`drive_constraint_base`] but the OPT is an
+/// in-memory string authored by [`super::author`] rather than a corpus fixture —
+/// the provisioning path for the master15–17 archetype-constraint truth tables the
+/// vendored corpus ships no template for. Any wrong outcome fails the whole case (a
+/// finding, design §4.5), naming the first diverging row.
+pub async fn drive_authored(
+    ctx: &RunContext<'_>,
+    opt_xml: &str,
+    rows: Vec<(String, Value, Expected)>,
+) -> Result<DataSetReport, CaseError> {
+    let total = u32::try_from(rows.len()).unwrap_or(u32::MAX);
+    let mut passed = 0u32;
+    let mut first_failure: Option<CaseError> = None;
+    for (label, comp, expected) in rows {
+        let resp = commit_authored(ctx, opt_xml, &comp).await?;
+        match check(&resp, expected, &label) {
+            Ok(()) => passed += 1,
+            Err(e) if first_failure.is_none() => first_failure = Some(e),
+            Err(_) => {}
+        }
+    }
+    if let Some(e) = first_failure {
+        return Err(e);
+    }
+    Ok(DataSetReport { passed, total })
+}
+
 /// Provision `base`'s OPT (idempotent), create a fresh EHR, and commit `comp`.
 async fn commit(ctx: &RunContext<'_>, base: Base, comp: &Value) -> Result<HttpResponse, CaseError> {
     support::ensure_opt(ctx, base.opt()).await?;

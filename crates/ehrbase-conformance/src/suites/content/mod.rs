@@ -6,6 +6,7 @@
 
 use crate::registry::CaseEntry;
 
+pub mod author;
 mod composition;
 mod data_types;
 mod drive;
