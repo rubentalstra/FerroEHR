@@ -35,7 +35,9 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{AqlQueryRequest, EhrCompositionService, EhrService, QueryService};
+use ehrbase_rest::{
+    AqlQueryRequest, EhrCompositionService, EhrService, EhrStatusService, QueryService,
+};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The magnitude leaf path used throughout (bp.v1-style descent to the ELEMENT).
@@ -157,6 +159,32 @@ async fn run_aql(svc: &EhrbaseService, aql: &str, request: AqlQueryRequest) -> V
         .await
         .unwrap_or_else(|e| panic!("query {aql:?}: {e:?}"))
         .result_set
+}
+
+/// Flip an EHR's `EHR_STATUS.is_queryable` to `false` through the service's
+/// canonical status-update path (`ehr_status_update`), supplying the current
+/// version `uid` as the `If-Match` precondition.
+async fn set_not_queryable(svc: &EhrbaseService, ehr_id: &str) {
+    // Read the current EHR_STATUS — its body carries the `uid` we need for the
+    // optimistic-concurrency precondition, plus the mandatory RM fields we keep.
+    let current = svc
+        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+        .await
+        .expect("ehr_status_get_at_time");
+    let if_match = current.body["uid"]["value"]
+        .as_str()
+        .expect("EHR_STATUS uid")
+        .to_owned();
+    let mut body = current.body.clone();
+    let obj = body.as_object_mut().expect("EHR_STATUS object");
+    obj.remove("uid");
+    obj.insert("is_queryable".to_owned(), json!(false));
+    svc.ehr_status_update(
+        params(json!({ "ehr_id": ehr_id, "If-Match": if_match })),
+        body,
+    )
+    .await
+    .expect("ehr_status_update is_queryable=false");
 }
 
 fn rows(result: &Value) -> &Vec<Value> {
@@ -432,4 +460,106 @@ async fn latest_versus_all_versions() {
         30.0,
         "latest magnitude is 30"
     );
+}
+
+/// The query-population gate, mandated by the SM `I_QUERY_SERVICE` interface for
+/// both `execute_stored_query` and `execute_ad_hoc_query`. The `ehr_ids`
+/// parameter doc reads (verbatim,
+/// `docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`):
+///
+/// > Specific set of EHRs on which to execute the query. If none supplied, a
+/// > full population query will be performed on all EHRs whose status has the
+/// > `is_queryable` flag set to `True`.
+///
+/// So an ad-hoc population query (no `ehr_id` scope) must include EHRs whose
+/// current EHR_STATUS is queryable and exclude those whose current EHR_STATUS
+/// has `is_queryable = False`.
+#[tokio::test]
+async fn population_query_excludes_not_queryable_ehrs() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_queryable_gate").await;
+    let svc = EhrbaseService::new(pool);
+
+    // Two EHRs; both start queryable (the default EHR_STATUS). Flip one off
+    // through the canonical EHR_STATUS update path.
+    let queryable = create_ehr(&svc).await;
+    let hidden = create_ehr(&svc).await;
+    set_not_queryable(&svc, &hidden).await;
+
+    // A full population query: NO ehr_id scope supplied (`ehr_ids` = none).
+    let r = run_aql(
+        &svc,
+        "SELECT e/ehr_id/value FROM EHR e",
+        AqlQueryRequest::default(),
+    )
+    .await;
+    let ids: Vec<String> = rows(&r)
+        .iter()
+        .map(|row| row[0].as_str().expect("ehr_id cell").to_owned())
+        .collect();
+
+    assert!(
+        ids.contains(&queryable),
+        "the queryable EHR is in the population result set: {ids:?}"
+    );
+    assert!(
+        !ids.contains(&hidden),
+        "the non-queryable EHR is excluded from the population result set \
+         (is_queryable = True gate): {ids:?}"
+    );
+}
+
+/// The assembled query response carries the ITS-REST 1.0.3 `RESULT_SET` shape.
+///
+/// Asserts only what the schema requires:
+/// * `rows` is present and an array — the sole `required` field of
+///   `docs/specs/openehr/ITS-REST/specifications/schemas/query/ResultSet.yaml`.
+/// * every `columns[]` entry carries a `name` — the sole `required` field of
+///   `schemas/query/ResultSetColumn.yaml`.
+/// * each row is an array whose length equals the number of columns —
+///   `schemas/query/ResultSetRow.yaml`: "A set of cells representing a
+///   RESULT_SET row, one cell for each column."
+#[tokio::test]
+async fn result_set_carries_the_its_rest_shape() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_result_set_shape").await;
+    let svc = EhrbaseService::new(pool);
+
+    let ehr_id = create_ehr(&svc).await;
+    create_comp(&svc, &ehr_id, "BP", 120.0).await;
+
+    // A two-column projection over the seeded composition (deterministic via the
+    // ehr_id scope), so the row/column relationship is meaningful.
+    let r = run_aql(
+        &svc,
+        "SELECT e/ehr_id/value, c/name/value FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+
+    // ResultSet.yaml `required: [rows]`.
+    let rows = r["rows"].as_array().expect("`rows` is a (required) array");
+    assert!(
+        !rows.is_empty(),
+        "the seeded composition yields at least one row"
+    );
+
+    // ResultSetColumn.yaml `required: [name]`.
+    let columns = r["columns"].as_array().expect("`columns` is an array");
+    for col in columns {
+        assert!(
+            col["name"].as_str().is_some(),
+            "every column carries a `name`: {col:?}"
+        );
+    }
+
+    // ResultSetRow.yaml: one cell per column.
+    for row in rows {
+        let cells = row.as_array().expect("each row is an array of cells");
+        assert_eq!(
+            cells.len(),
+            columns.len(),
+            "row cell count equals column count (one cell per column)"
+        );
+    }
 }
