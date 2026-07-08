@@ -1,0 +1,1105 @@
+{
+  "env": {
+    "run_date": "2026-07-08T07:06:08.724452Z",
+    "host": {
+      "cpu_model": "Apple M2",
+      "physical_cores": 8,
+      "logical_cpus": 8,
+      "cpu_mhz": 3504,
+      "total_memory_mib": 16384,
+      "os_name": "Darwin",
+      "os_version": "26.5.1",
+      "kernel_version": "25.5.0",
+      "arch": "arm64",
+      "hostname": "Rubens-MacBook-Air.local"
+    },
+    "payload": "composition_evaluation_test — 63 KB canonical-JSON composition",
+    "workload_lock": "d6fe4549fe0a6d26",
+    "harness_revision": "unknown",
+    "warmup_iters": 20,
+    "measure_iters": 100,
+    "runs": 2
+  },
+  "results": [
+    {
+      "scenario": "ehr_create",
+      "group": "EHR",
+      "description": "create EHR",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 201,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4835,
+            "p90_us": 6591,
+            "p99_us": 9415,
+            "p999_us": 12447,
+            "max_us": 12447,
+            "mean_us": 5268.94
+          },
+          "throughput_rps": 189.78408118949326
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4743,
+            "p90_us": 5631,
+            "p99_us": 7115,
+            "p999_us": 7147,
+            "max_us": 7147,
+            "mean_us": 4917.84
+          },
+          "throughput_rps": 203.33269071391985
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 4783,
+        "p90_us": 6043,
+        "p99_us": 8863,
+        "p999_us": 12447,
+        "max_us": 12447,
+        "mean_us": 5093.39
+      },
+      "throughput_median_rps": 196.55838595170655,
+      "throughput_cov": 0.048740294767807654
+    },
+    {
+      "scenario": "ehr_get",
+      "group": "EHR",
+      "description": "get EHR by id",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3479,
+            "p90_us": 4119,
+            "p99_us": 4991,
+            "p999_us": 5731,
+            "max_us": 5731,
+            "mean_us": 3615.8300000000004
+          },
+          "throughput_rps": 276.55077575949485
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3503,
+            "p90_us": 4107,
+            "p99_us": 4591,
+            "p999_us": 5195,
+            "max_us": 5195,
+            "mean_us": 3635.789999999999
+          },
+          "throughput_rps": 275.0374308753582
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3493,
+        "p90_us": 4119,
+        "p99_us": 4991,
+        "p999_us": 5731,
+        "max_us": 5731,
+        "mean_us": 3625.8100000000004
+      },
+      "throughput_median_rps": 275.79410331742656,
+      "throughput_cov": 0.0038800555087117206
+    },
+    {
+      "scenario": "ehr_get_by_subject",
+      "group": "EHR",
+      "description": "get EHR by subject",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3817,
+            "p90_us": 5323,
+            "p99_us": 6907,
+            "p999_us": 7123,
+            "max_us": 7123,
+            "mean_us": 4102.6
+          },
+          "throughput_rps": 243.7360843909674
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3635,
+            "p90_us": 3983,
+            "p99_us": 4671,
+            "p999_us": 6039,
+            "max_us": 6039,
+            "mean_us": 3703.829999999999
+          },
+          "throughput_rps": 269.9796167819146
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3715,
+        "p90_us": 4455,
+        "p99_us": 6667,
+        "p999_us": 7123,
+        "max_us": 7123,
+        "mean_us": 3903.2149999999983
+      },
+      "throughput_median_rps": 256.85785058644103,
+      "throughput_cov": 0.07224610683909216
+    },
+    {
+      "scenario": "ehr_status_get",
+      "group": "EHR_STATUS",
+      "description": "get EHR_STATUS",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3523,
+            "p90_us": 4335,
+            "p99_us": 4887,
+            "p999_us": 5119,
+            "max_us": 5119,
+            "mean_us": 3653.2099999999987
+          },
+          "throughput_rps": 273.7194430015172
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3553,
+            "p90_us": 4119,
+            "p99_us": 4983,
+            "p999_us": 5683,
+            "max_us": 5683,
+            "mean_us": 3699.5800000000004
+          },
+          "throughput_rps": 270.2850628987127
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3543,
+        "p90_us": 4131,
+        "p99_us": 4983,
+        "p999_us": 5683,
+        "max_us": 5683,
+        "mean_us": 3676.395
+      },
+      "throughput_median_rps": 272.00225295011495,
+      "throughput_cov": 0.008928137298592972
+    },
+    {
+      "scenario": "ehr_status_update",
+      "group": "EHR_STATUS",
+      "description": "update EHR_STATUS",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4535,
+            "p90_us": 7683,
+            "p99_us": 14375,
+            "p999_us": 22991,
+            "max_us": 22991,
+            "mean_us": 5327.6900000000005
+          },
+          "throughput_rps": 187.68557411140264
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 5887,
+            "p90_us": 7939,
+            "p99_us": 13839,
+            "p999_us": 16655,
+            "max_us": 16655,
+            "mean_us": 6481.3200000000015
+          },
+          "throughput_rps": 154.2789459273014
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 5243,
+        "p90_us": 7939,
+        "p99_us": 14375,
+        "p999_us": 22991,
+        "max_us": 22991,
+        "mean_us": 5904.505
+      },
+      "throughput_median_rps": 170.98226001935203,
+      "throughput_cov": 0.13815499527776767
+    },
+    {
+      "scenario": "versioned_ehr_status_get",
+      "group": "EHR_STATUS",
+      "description": "get versioned EHR_STATUS",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4093,
+            "p90_us": 7359,
+            "p99_us": 14679,
+            "p999_us": 17759,
+            "max_us": 17759,
+            "mean_us": 5064.68
+          },
+          "throughput_rps": 197.43167725279855
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3529,
+            "p90_us": 4487,
+            "p99_us": 5979,
+            "p999_us": 9199,
+            "max_us": 9199,
+            "mean_us": 3751.7200000000007
+          },
+          "throughput_rps": 266.5242538736802
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3807,
+        "p90_us": 5355,
+        "p99_us": 14599,
+        "p999_us": 17759,
+        "max_us": 17759,
+        "mean_us": 4408.200000000002
+      },
+      "throughput_median_rps": 231.97796556323937,
+      "throughput_cov": 0.21060547427276227
+    },
+    {
+      "scenario": "composition_create",
+      "group": "COMPOSITION",
+      "description": "create composition",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 201,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 7683,
+            "p90_us": 9919,
+            "p99_us": 15031,
+            "p999_us": 20479,
+            "max_us": 20479,
+            "mean_us": 8245.54
+          },
+          "throughput_rps": 121.27519666240569
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 7451,
+            "p90_us": 8559,
+            "p99_us": 14295,
+            "p999_us": 37343,
+            "max_us": 37343,
+            "mean_us": 8021.620000000001
+          },
+          "throughput_rps": 124.65473241289169
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 7555,
+        "p90_us": 9807,
+        "p99_us": 15031,
+        "p999_us": 37343,
+        "max_us": 37343,
+        "mean_us": 8133.580000000001
+      },
+      "throughput_median_rps": 122.96496453764868,
+      "throughput_cov": 0.01943393108286024
+    },
+    {
+      "scenario": "composition_get",
+      "group": "COMPOSITION",
+      "description": "get composition",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4207,
+            "p90_us": 5355,
+            "p99_us": 8695,
+            "p999_us": 8943,
+            "max_us": 8943,
+            "mean_us": 4550.57
+          },
+          "throughput_rps": 219.74023575033354
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4089,
+            "p90_us": 4751,
+            "p99_us": 5151,
+            "p999_us": 6843,
+            "max_us": 6843,
+            "mean_us": 4262.409999999999
+          },
+          "throughput_rps": 234.5954141213377
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 4167,
+        "p90_us": 5027,
+        "p99_us": 8447,
+        "p999_us": 8943,
+        "max_us": 8943,
+        "mean_us": 4406.489999999998
+      },
+      "throughput_median_rps": 227.16782493583563,
+      "throughput_cov": 0.04623981131500347
+    },
+    {
+      "scenario": "composition_update",
+      "group": "COMPOSITION",
+      "description": "update composition",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 6987,
+            "p90_us": 8839,
+            "p99_us": 12175,
+            "p999_us": 15399,
+            "max_us": 15399,
+            "mean_us": 7525.82
+          },
+          "throughput_rps": 132.87118520598935
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 6615,
+            "p90_us": 7387,
+            "p99_us": 8863,
+            "p999_us": 11103,
+            "max_us": 11103,
+            "mean_us": 6831.980000000002
+          },
+          "throughput_rps": 146.35983864249306
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 6719,
+        "p90_us": 8407,
+        "p99_us": 12087,
+        "p999_us": 15399,
+        "max_us": 15399,
+        "mean_us": 7178.900000000001
+      },
+      "throughput_median_rps": 139.61551192424122,
+      "throughput_cov": 0.06831560607106829
+    },
+    {
+      "scenario": "composition_delete",
+      "group": "COMPOSITION",
+      "description": "delete composition",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 204,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3081,
+            "p90_us": 3447,
+            "p99_us": 4035,
+            "p999_us": 4035,
+            "max_us": 4035,
+            "mean_us": 3157.46
+          },
+          "throughput_rps": 316.68138981784205
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3189,
+            "p90_us": 3583,
+            "p99_us": 3995,
+            "p999_us": 4815,
+            "max_us": 4815,
+            "mean_us": 3263.7099999999996
+          },
+          "throughput_rps": 306.38893669747813
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3143,
+        "p90_us": 3535,
+        "p99_us": 4035,
+        "p999_us": 4815,
+        "max_us": 4815,
+        "mean_us": 3210.5850000000014
+      },
+      "throughput_median_rps": 311.5351632576601,
+      "throughput_cov": 0.02336129032867694
+    },
+    {
+      "scenario": "composition_get_at_time",
+      "group": "COMPOSITION",
+      "description": "get composition at time",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3977,
+            "p90_us": 4431,
+            "p99_us": 5179,
+            "p999_us": 5631,
+            "max_us": 5631,
+            "mean_us": 4075.1400000000017
+          },
+          "throughput_rps": 245.3765939727956
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4021,
+            "p90_us": 4543,
+            "p99_us": 5087,
+            "p999_us": 5107,
+            "max_us": 5107,
+            "mean_us": 4115.869999999999
+          },
+          "throughput_rps": 242.9406506169756
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 4003,
+        "p90_us": 4495,
+        "p99_us": 5147,
+        "p999_us": 5631,
+        "max_us": 5631,
+        "mean_us": 4095.5050000000015
+      },
+      "throughput_median_rps": 244.15862229488562,
+      "throughput_cov": 0.007054725527596976
+    },
+    {
+      "scenario": "versioned_composition_get",
+      "group": "VERSIONED_COMPOSITION",
+      "description": "get versioned composition",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3913,
+            "p90_us": 4699,
+            "p99_us": 5411,
+            "p999_us": 5619,
+            "max_us": 5619,
+            "mean_us": 4063.4000000000005
+          },
+          "throughput_rps": 246.07727175270608
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3899,
+            "p90_us": 4455,
+            "p99_us": 5379,
+            "p999_us": 5875,
+            "max_us": 5875,
+            "mean_us": 4031.2000000000007
+          },
+          "throughput_rps": 248.05588740816694
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3905,
+        "p90_us": 4615,
+        "p99_us": 5411,
+        "p999_us": 5875,
+        "max_us": 5875,
+        "mean_us": 4047.3000000000015
+      },
+      "throughput_median_rps": 247.0665795804365,
+      "throughput_cov": 0.005662815868152414
+    },
+    {
+      "scenario": "versioned_composition_revision_history",
+      "group": "VERSIONED_COMPOSITION",
+      "description": "composition revision history",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3161,
+            "p90_us": 3665,
+            "p99_us": 4799,
+            "p999_us": 5059,
+            "max_us": 5059,
+            "mean_us": 3306.030000000001
+          },
+          "throughput_rps": 302.45281612062865
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3127,
+            "p90_us": 3447,
+            "p99_us": 4407,
+            "p999_us": 4451,
+            "max_us": 4451,
+            "mean_us": 3199.5799999999995
+          },
+          "throughput_rps": 312.5113119328941
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3143,
+        "p90_us": 3573,
+        "p99_us": 4451,
+        "p999_us": 5059,
+        "max_us": 5059,
+        "mean_us": 3252.805
+      },
+      "throughput_median_rps": 307.48206402676135,
+      "throughput_cov": 0.023131204806698467
+    },
+    {
+      "scenario": "versioned_composition_version_by_id",
+      "group": "VERSIONED_COMPOSITION",
+      "description": "get composition version by id",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4067,
+            "p90_us": 4575,
+            "p99_us": 5259,
+            "p999_us": 5371,
+            "max_us": 5371,
+            "mean_us": 4174.260000000001
+          },
+          "throughput_rps": 239.55550456962666
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4115,
+            "p90_us": 5315,
+            "p99_us": 7851,
+            "p999_us": 10255,
+            "max_us": 10255,
+            "mean_us": 4468.569999999999
+          },
+          "throughput_rps": 223.77288527255695
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 4087,
+        "p90_us": 4779,
+        "p99_us": 7631,
+        "p999_us": 10255,
+        "max_us": 10255,
+        "mean_us": 4321.415
+      },
+      "throughput_median_rps": 231.6641949210918,
+      "throughput_cov": 0.04817316346034792
+    },
+    {
+      "scenario": "contribution_get",
+      "group": "CONTRIBUTION",
+      "description": "get contribution",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4069,
+            "p90_us": 4547,
+            "p99_us": 5303,
+            "p999_us": 5459,
+            "max_us": 5459,
+            "mean_us": 4174.68
+          },
+          "throughput_rps": 239.53161967925388
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4081,
+            "p90_us": 4547,
+            "p99_us": 5743,
+            "p999_us": 7479,
+            "max_us": 7479,
+            "mean_us": 4223.23
+          },
+          "throughput_rps": 236.77895401064396
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 4075,
+        "p90_us": 4547,
+        "p99_us": 5459,
+        "p999_us": 7479,
+        "max_us": 7479,
+        "mean_us": 4198.954999999999
+      },
+      "throughput_median_rps": 238.15528684494893,
+      "throughput_cov": 0.008172938700624775
+    },
+    {
+      "scenario": "directory_create",
+      "group": "DIRECTORY",
+      "description": "create directory",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 201,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3367,
+            "p90_us": 3709,
+            "p99_us": 4299,
+            "p999_us": 5119,
+            "max_us": 5119,
+            "mean_us": 3451.9900000000002
+          },
+          "throughput_rps": 289.66808206119487
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3441,
+            "p90_us": 3705,
+            "p99_us": 4379,
+            "p999_us": 4603,
+            "max_us": 4603,
+            "mean_us": 3503.5699999999997
+          },
+          "throughput_rps": 285.4066581092237
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3409,
+        "p90_us": 3709,
+        "p99_us": 4379,
+        "p999_us": 5119,
+        "max_us": 5119,
+        "mean_us": 3477.78
+      },
+      "throughput_median_rps": 287.5373700852093,
+      "throughput_cov": 0.010479617912122579
+    },
+    {
+      "scenario": "directory_get",
+      "group": "DIRECTORY",
+      "description": "get directory",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3327,
+            "p90_us": 3547,
+            "p99_us": 4759,
+            "p999_us": 6423,
+            "max_us": 6423,
+            "mean_us": 3427.2499999999995
+          },
+          "throughput_rps": 291.7562798511532
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3349,
+            "p90_us": 4231,
+            "p99_us": 5391,
+            "p999_us": 6379,
+            "max_us": 6379,
+            "mean_us": 3569.730000000001
+          },
+          "throughput_rps": 280.12034877773425
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3337,
+        "p90_us": 3841,
+        "p99_us": 5391,
+        "p999_us": 6423,
+        "max_us": 6423,
+        "mean_us": 3498.4900000000002
+      },
+      "throughput_median_rps": 285.9383143144437,
+      "throughput_cov": 0.028774897785771036
+    },
+    {
+      "scenario": "directory_update",
+      "group": "DIRECTORY",
+      "description": "update directory",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3993,
+            "p90_us": 4327,
+            "p99_us": 5023,
+            "p999_us": 7263,
+            "max_us": 7263,
+            "mean_us": 4071.91
+          },
+          "throughput_rps": 245.5598433905756
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4247,
+            "p90_us": 4987,
+            "p99_us": 5827,
+            "p999_us": 7423,
+            "max_us": 7423,
+            "mean_us": 4407.420000000001
+          },
+          "throughput_rps": 226.87490110239466
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 4107,
+        "p90_us": 4755,
+        "p99_us": 5827,
+        "p999_us": 7423,
+        "max_us": 7423,
+        "mean_us": 4239.665
+      },
+      "throughput_median_rps": 236.21737224648513,
+      "throughput_cov": 0.05593258985315218
+    },
+    {
+      "scenario": "directory_delete",
+      "group": "DIRECTORY",
+      "description": "delete directory",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 204,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3901,
+            "p90_us": 4663,
+            "p99_us": 5395,
+            "p999_us": 5495,
+            "max_us": 5495,
+            "mean_us": 4039.6800000000007
+          },
+          "throughput_rps": 247.53197746801558
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4587,
+            "p90_us": 6267,
+            "p99_us": 6595,
+            "p999_us": 8167,
+            "max_us": 8167,
+            "mean_us": 4830.89
+          },
+          "throughput_rps": 206.98087844618016
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 4135,
+        "p90_us": 5495,
+        "p99_us": 6587,
+        "p999_us": 8167,
+        "max_us": 8167,
+        "mean_us": 4435.284999999998
+      },
+      "throughput_median_rps": 227.25642795709786,
+      "throughput_cov": 0.12617446010512917
+    },
+    {
+      "scenario": "aql_simple",
+      "group": "QUERY",
+      "description": "AQL: SELECT compositions",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 11839,
+            "p90_us": 12983,
+            "p99_us": 14943,
+            "p999_us": 15031,
+            "max_us": 15031,
+            "mean_us": 12067.679999999998
+          },
+          "throughput_rps": 82.86330559531686
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 11815,
+            "p90_us": 12991,
+            "p99_us": 15071,
+            "p999_us": 16719,
+            "max_us": 16719,
+            "mean_us": 12048.599999999993
+          },
+          "throughput_rps": 82.9951167515795
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 11839,
+        "p90_us": 12991,
+        "p99_us": 15031,
+        "p999_us": 16719,
+        "max_us": 16719,
+        "mean_us": 12058.140000000001
+      },
+      "throughput_median_rps": 82.92921117344818,
+      "throughput_cov": 0.0011239050885750623
+    },
+    {
+      "scenario": "aql_aggregate",
+      "group": "QUERY",
+      "description": "AQL: COUNT aggregate",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3465,
+            "p90_us": 3721,
+            "p99_us": 3955,
+            "p999_us": 4279,
+            "max_us": 4279,
+            "mean_us": 3519.6300000000006
+          },
+          "throughput_rps": 284.10802659951173
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3515,
+            "p90_us": 3947,
+            "p99_us": 5055,
+            "p999_us": 5107,
+            "max_us": 5107,
+            "mean_us": 3606.6
+          },
+          "throughput_rps": 277.2486310523075
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3481,
+        "p90_us": 3875,
+        "p99_us": 5047,
+        "p999_us": 5107,
+        "max_us": 5107,
+        "mean_us": 3563.1150000000002
+      },
+      "throughput_median_rps": 280.6783288259096,
+      "throughput_cov": 0.017280725329091397
+    },
+    {
+      "scenario": "template_upload",
+      "group": "DEFINITION",
+      "description": "upload OPT template",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 409,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4387,
+            "p90_us": 4883,
+            "p99_us": 5403,
+            "p999_us": 5559,
+            "max_us": 5559,
+            "mean_us": 4416.530000000001
+          },
+          "throughput_rps": 226.41030981986796
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 4339,
+            "p90_us": 4895,
+            "p99_us": 5075,
+            "p999_us": 5459,
+            "max_us": 5459,
+            "mean_us": 4378.579999999999
+          },
+          "throughput_rps": 228.36928912636756
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 4367,
+        "p90_us": 4895,
+        "p99_us": 5403,
+        "p999_us": 5559,
+        "max_us": 5559,
+        "mean_us": 4397.5549999999985
+      },
+      "throughput_median_rps": 227.38979947311776,
+      "throughput_cov": 0.006091775246909208
+    },
+    {
+      "scenario": "template_list",
+      "group": "DEFINITION",
+      "description": "list templates",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3193,
+            "p90_us": 3867,
+            "p99_us": 4283,
+            "p999_us": 4479,
+            "max_us": 4479,
+            "mean_us": 3300.6
+          },
+          "throughput_rps": 302.9534556731289
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3081,
+            "p90_us": 3375,
+            "p99_us": 4087,
+            "p999_us": 4359,
+            "max_us": 4359,
+            "mean_us": 3141.7499999999995
+          },
+          "throughput_rps": 318.27760889172157
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3145,
+        "p90_us": 3593,
+        "p99_us": 4283,
+        "p999_us": 4479,
+        "max_us": 4479,
+        "mean_us": 3221.1749999999984
+      },
+      "throughput_median_rps": 310.6155322824252,
+      "throughput_cov": 0.03488496720426769
+    },
+    {
+      "scenario": "template_get",
+      "group": "DEFINITION",
+      "description": "get template",
+      "target": "ehrbase-rs",
+      "gate_ok": true,
+      "gate_status": 200,
+      "runs": [
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3475,
+            "p90_us": 3667,
+            "p99_us": 3881,
+            "p999_us": 4991,
+            "max_us": 4991,
+            "mean_us": 3511.45
+          },
+          "throughput_rps": 284.7609134983168
+        },
+        {
+          "latency": {
+            "count": 100,
+            "p50_us": 3487,
+            "p90_us": 3795,
+            "p99_us": 4107,
+            "p999_us": 4695,
+            "max_us": 4695,
+            "mean_us": 3546.7400000000002
+          },
+          "throughput_rps": 281.9298805145925
+        }
+      ],
+      "merged": {
+        "count": 200,
+        "p50_us": 3477,
+        "p90_us": 3755,
+        "p99_us": 4107,
+        "p999_us": 4991,
+        "max_us": 4991,
+        "mean_us": 3529.0950000000003
+      },
+      "throughput_median_rps": 283.3453970064547,
+      "throughput_cov": 0.007065026083725773
+    }
+  ]
+}
