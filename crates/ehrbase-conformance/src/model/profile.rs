@@ -120,16 +120,15 @@ mod tests {
         CaseOutcome {
             ecc_id: "ECC-EHR-001".to_owned(),
             id: "k".to_owned(),
-            chapter: String::new(),
+            title: String::new(),
             capability: capability.to_owned(),
             profiles: vec![],
-            provenance: String::new(),
             format: "json".to_owned(),
             status,
             passed_data_sets: 0,
             total_data_sets: 0,
             message: None,
-            schedule_ref: String::new(),
+            citation: String::new(),
             duration_ms: 0,
         }
     }

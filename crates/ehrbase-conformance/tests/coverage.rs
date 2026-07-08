@@ -10,7 +10,7 @@
 //! case removed from the registry flips to `retired`.
 #![allow(clippy::expect_used)]
 
-use ehrbase_conformance::catalog::{CATALOG_PATH, Catalog, EccStatus, area_of};
+use ehrbase_conformance::catalog::{CATALOG_PATH, Catalog, EccStatus};
 use ehrbase_conformance::registry::registry;
 
 #[test]
@@ -26,9 +26,8 @@ fn every_registry_case_has_an_ecc_number() {
 
     if std::env::var_os("REGEN_CATALOG").is_some() {
         for entry in &missing {
-            let area = area_of(&entry.meta);
             catalog
-                .allocate(area, entry.meta.id, entry.meta.id)
+                .allocate(entry.meta.area, entry.meta.id, entry.meta.title)
                 .expect("allocate ECC number");
         }
         catalog
@@ -57,16 +56,15 @@ fn every_registry_case_has_an_ecc_number() {
         }
     }
 
-    // Area stability: the catalogue's area matches the registry's derivation
+    // Area stability: the catalogue's area matches the case's declared area
     // (numbers are permanent; an area remap means retire + reallocate).
     for entry in reg.entries() {
         let line = catalog
             .by_primary_ref(entry.meta.id)
             .expect("guarded above (or REGEN just allocated)");
         assert_eq!(
-            line.area,
-            area_of(&entry.meta),
-            "{}: catalogue area diverges from the registry's derived area",
+            line.area, entry.meta.area,
+            "{}: catalogue area diverges from the case's declared area",
             line.ecc_id
         );
     }

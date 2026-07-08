@@ -1,21 +1,23 @@
-//! master04 — DEFINITION: ADL 1.4 / OPT 1.4 provisioning (design §4.1).
+//! DEFINITION: ADL 1.4 / OPT 1.4 provisioning (area TPL).
 //!
-//! Transcribed from `master04-func_tc_definition_adl.adoc`, driving the ITS-REST
-//! `/definition/template/adl1.4` surface with the vendored `valid_templates` and
-//! `invalid_templates` `.opt` fixtures (valid **and** invalid — both load-bearing).
-//! Assertions concretize the OPT provisioning contract (`2xx` accept a valid OPT;
-//! `4xx` reject an invalid one; `200` list).
+//! Our own ECC cases (reference: `master04-func_tc_definition_adl.adoc`,
+//! design-time reading), driving the ITS-REST `/definition/template/adl1.4`
+//! surface with the vendored `valid_templates` and `invalid_templates` `.opt`
+//! fixtures (valid **and** invalid — both load-bearing). Assertions concretize
+//! the OPT provisioning contract (`2xx` accept a valid OPT; `4xx` reject an
+//! invalid one; `200` list).
 //!
-//! All master04 cases are implemented. `get_opt-*` round-trips a provisioned
-//! `template_id` (`GET /definition/template/adl1.4/{id}`); `validate_opt-*` is
-//! realized via the upload endpoint (which validates — 2xx valid / 4xx invalid);
+//! `get_opt-*` round-trips a provisioned `template_id`
+//! (`GET /definition/template/adl1.4/{id}`); `validate_opt-*` is realized via
+//! the upload endpoint (which validates — 2xx valid / 4xx invalid);
 //! `upload_opt-*_twice` asserts the conflict/idempotency semantics; `delete_opt-*`
 //! drives `DELETE /definition/template/adl1.4/{id}` — a verb the standard ITS-REST
 //! surface does not define, so a missing endpoint surfaces as a genuine finding,
 //! never a skip (CNF guide: abstract op → REST realization).
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{
     CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
@@ -33,74 +35,115 @@ macro_rules! case {
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         entry(
-            "I_DEFINITION_ADL14.upload_opt-valid_opt",
+            "tpl/upload-opt-valid-opt",
+            "Upload OPT — valid OPT",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             Capability::Adl14OptProvisioning,
             run_upload_valid,
         ),
         entry(
-            "I_DEFINITION_ADL14.upload_opt-invalid_opt",
+            "tpl/upload-opt-invalid-opt",
+            "Upload OPT — invalid OPT",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             Capability::Adl14OptProvisioning,
             run_upload_invalid,
         ),
         entry(
-            "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
+            "tpl/get-opts-retrieve-all-no-opts",
+            "List OPTs — retrieve all no OPTs",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             Capability::Adl14OptProvisioning,
             run_list,
         ),
         // upload_opt idempotency.
         c(
-            "I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict",
+            "tpl/upload-opt-valid-opt-twice-conflict",
+            "Upload OPT — valid OPT twice conflict",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_upload_twice_conflict,
         ),
         c(
-            "I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict",
+            "tpl/upload-opt-valid-opt-twice-no-conflict",
+            "Upload OPT — valid OPT twice no conflict",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_upload_twice_no_conflict,
         ),
         // get_opt — GET /definition/template/adl1.4/{template_id}[/{version}].
-        c("I_DEFINITION_ADL14.get_opt-retrieve_single", run_get_single),
         c(
-            "I_DEFINITION_ADL14.get_opt-retrieve_latest_version",
+            "tpl/get-opt-retrieve-single",
+            "Get OPT — retrieve single",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_get_single,
+        ),
+        c(
+            "tpl/get-opt-retrieve-latest-version",
+            "Get OPT — retrieve latest version",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_get_latest,
         ),
         c(
-            "I_DEFINITION_ADL14.get_opt-retrieve_specific_version",
+            "tpl/get-opt-retrieve-specific-version",
+            "Get OPT — retrieve specific version",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_get_specific,
         ),
-        c("I_DEFINITION_ADL14.get_opt-retrieve_fail", run_get_fail),
-        c("I_DEFINITION_ADL14.get_opts-retrieve_all", run_get_all),
+        c(
+            "tpl/get-opt-retrieve-fail",
+            "Get OPT — retrieve fail",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_get_fail,
+        ),
+        c(
+            "tpl/get-opts-retrieve-all",
+            "List OPTs — retrieve all",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_get_all,
+        ),
         // validate_opt — realized via the upload endpoint (which validates).
         c(
-            "I_DEFINITION_ADL14.validate_opt-valid_opt",
+            "tpl/validate-opt-valid-opt",
+            "Validate OPT — valid OPT",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_validate_valid,
         ),
         c(
-            "I_DEFINITION_ADL14.validate_opt-invalid_opt",
+            "tpl/validate-opt-invalid-opt",
+            "Validate OPT — invalid OPT",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_validate_invalid,
         ),
         // delete_opt — DELETE /definition/template/adl1.4/{template_id}
         // (no ITS-REST verb → a missing endpoint surfaces as a finding).
         c(
-            "I_DEFINITION_ADL14.delete_opt-delete_non_existing",
+            "tpl/delete-opt-delete-non-existing",
+            "Delete OPT — delete non existing",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_delete_absent,
         ),
         c(
-            "I_DEFINITION_ADL14.delete_opt-delete_existing",
+            "tpl/delete-opt-delete-existing",
+            "Delete OPT — delete existing",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_delete_existing,
         ),
         c(
-            "I_DEFINITION_ADL14.delete_opt-delete_latest_version",
+            "tpl/delete-opt-delete-latest-version",
+            "Delete OPT — delete latest version",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_delete_latest,
         ),
         c(
-            "I_DEFINITION_ADL14.delete_opt-delete_specific_version",
+            "tpl/delete-opt-delete-specific-version",
+            "Delete OPT — delete specific version",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_delete_specific,
         ),
     ]
 }
 
 /// Shorthand for an OPT-provisioning case entry.
-fn c(id: &'static str, run: CaseRun) -> CaseEntry {
-    entry(id, Capability::Adl14OptProvisioning, run)
+fn c(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
+    entry(id, title, citation, Capability::Adl14OptProvisioning, run)
 }
 
 /// The `template_id` of the vendored `minimal_evaluation` OPT.
@@ -316,17 +359,22 @@ fn assert_in(status: u16, allowed: &[u16]) -> Result<DataSetReport, CaseError> {
     }
 }
 
-fn entry(id: &'static str, capability: Capability, run: CaseRun) -> CaseEntry {
+fn entry(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    capability: Capability,
+    run: CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master04,
+            title,
+            area: Area::Tpl,
             capability,
             profiles: &[Profile::Core, Profile::Standard],
             formats: &[Format::Json],
-            provenance: Provenance::Schedule,
-            schedule_ref: id,
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,

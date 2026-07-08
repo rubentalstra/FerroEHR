@@ -1,14 +1,14 @@
-//! master10 — DEMOGRAPHIC (PARTY) cases — **runner-defined** (design §4.6).
+//! DEMOGRAPHIC (PARTY) cases — our own ECC cases (reference:
+//! `master10-func_tc_demographic.adoc`, design-time reading).
 //!
 //! The upstream CNF `master10-func_tc_demographic.adoc` chapter ships only
 //! placeholder `aaaa`/`bbbb` headings (no concrete cases — "Test Environment:
-//! TBD"), so there is nothing to transcribe. These `DEMO-*` cases are our own
-//! spec-grounded functional cases, specified against the **ITS-REST demographic
-//! API** (`/demographic/{person,agent,group,organisation,role}` plus
-//! `versioned_party` and tags) realizing SM `I_DEMOGRAPHIC_SERVICE`
+//! TBD"), so these `DEM` cases are our own spec-grounded functional cases,
+//! specified against the **ITS-REST demographic API**
+//! (`/demographic/{person,agent,group,organisation,role}` plus `versioned_party`
+//! and tags) realizing SM `I_DEMOGRAPHIC_SERVICE`
 //! (`docs/specs/openehr/SM/...#_i_demographic_service_interface`) over the RM
-//! Demographic IM. They carry [`Provenance::RunnerDefined`], exactly like the
-//! `SIGN-*` cases.
+//! Demographic IM.
 //!
 //! Party versioned-object contract (mirrors the EHR/composition group): `201`
 //! create (+`ETag`/`Location`), `200` get, `200`/`204` update, `204` delete,
@@ -20,62 +20,142 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::harness::{
     CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
 };
 use crate::registry::CaseEntry;
 use crate::suites::support;
 
-/// The implemented master10 (runner-defined) case entries.
+/// The demographic API citation shared by every case in this suite.
+const CITATION: &str =
+    "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic";
+
+/// The implemented DEMOGRAPHIC case entries.
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // PERSON — full versioned-object lifecycle + negatives.
-        entry("DEMO-person-create", run_person_create),
-        entry("DEMO-person-get", run_person_get),
-        entry("DEMO-person-get_by_version", run_person_get_by_version),
-        entry("DEMO-person-update", run_person_update),
-        entry("DEMO-person-delete", run_person_delete),
-        entry("DEMO-person-get_deleted", run_person_get_deleted),
-        entry("DEMO-person-get_absent", run_person_get_absent),
-        entry("DEMO-person-update_bad_if_match", run_person_bad_if_match),
-        // The other four PARTY kinds — create/get/delete.
-        entry("DEMO-agent-create", run_agent_create),
-        entry("DEMO-agent-get", run_agent_get),
-        entry("DEMO-agent-delete", run_agent_delete),
-        entry("DEMO-group-create", run_group_create),
-        entry("DEMO-group-get", run_group_get),
-        entry("DEMO-group-delete", run_group_delete),
-        entry("DEMO-organisation-create", run_org_create),
-        entry("DEMO-organisation-get", run_org_get),
-        entry("DEMO-organisation-delete", run_org_delete),
-        entry("DEMO-role-create", run_role_create),
-        entry("DEMO-role-get", run_role_get),
-        entry("DEMO-role-delete", run_role_delete),
-        // Cross-cutting.
-        entry("DEMO-create-bad_body", run_create_bad_body),
-        entry("DEMO-versioned_party-get", run_versioned_get),
         entry(
-            "DEMO-versioned_party-revision_history",
+            "dem/person-create",
+            "Demographic person create",
+            run_person_create,
+        ),
+        entry("dem/person-get", "Demographic person get", run_person_get),
+        entry(
+            "dem/person-get-by-version",
+            "Demographic person get by version",
+            run_person_get_by_version,
+        ),
+        entry(
+            "dem/person-update",
+            "Demographic person update",
+            run_person_update,
+        ),
+        entry(
+            "dem/person-delete",
+            "Demographic person delete",
+            run_person_delete,
+        ),
+        entry(
+            "dem/person-get-deleted",
+            "Demographic person get deleted",
+            run_person_get_deleted,
+        ),
+        entry(
+            "dem/person-get-absent",
+            "Demographic person get absent",
+            run_person_get_absent,
+        ),
+        entry(
+            "dem/person-update-bad-if-match",
+            "Demographic person update bad if match",
+            run_person_bad_if_match,
+        ),
+        // The other four PARTY kinds — create/get/delete.
+        entry(
+            "dem/agent-create",
+            "Demographic agent create",
+            run_agent_create,
+        ),
+        entry("dem/agent-get", "Demographic agent get", run_agent_get),
+        entry(
+            "dem/agent-delete",
+            "Demographic agent delete",
+            run_agent_delete,
+        ),
+        entry(
+            "dem/group-create",
+            "Demographic group create",
+            run_group_create,
+        ),
+        entry("dem/group-get", "Demographic group get", run_group_get),
+        entry(
+            "dem/group-delete",
+            "Demographic group delete",
+            run_group_delete,
+        ),
+        entry(
+            "dem/organisation-create",
+            "Demographic organisation create",
+            run_org_create,
+        ),
+        entry(
+            "dem/organisation-get",
+            "Demographic organisation get",
+            run_org_get,
+        ),
+        entry(
+            "dem/organisation-delete",
+            "Demographic organisation delete",
+            run_org_delete,
+        ),
+        entry(
+            "dem/role-create",
+            "Demographic role create",
+            run_role_create,
+        ),
+        entry("dem/role-get", "Demographic role get", run_role_get),
+        entry(
+            "dem/role-delete",
+            "Demographic role delete",
+            run_role_delete,
+        ),
+        // Cross-cutting.
+        entry(
+            "dem/create-bad-body",
+            "Demographic create bad body",
+            run_create_bad_body,
+        ),
+        entry(
+            "dem/versioned-party-get",
+            "Demographic versioned party get",
+            run_versioned_get,
+        ),
+        entry(
+            "dem/versioned-party-revision-history",
+            "Demographic versioned party revision history",
             run_versioned_history,
         ),
-        entry("DEMO-person-tags", run_person_tags),
+        entry(
+            "dem/person-tags",
+            "Demographic person tags",
+            run_person_tags,
+        ),
     ]
 }
 
-fn entry(id: &'static str, run: CaseRun) -> CaseEntry {
+fn entry(id: &'static str, title: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master10,
+            title,
+            area: Area::Dem,
             capability: Capability::DemographicApi,
             profiles: &[Profile::Options],
             formats: &[Format::Json],
-            provenance: Provenance::RunnerDefined,
-            schedule_ref: "master10-func_tc_demographic.adoc (upstream placeholder) — runner-defined vs SM \
-                 I_DEMOGRAPHIC_SERVICE + ITS-REST demographic API",
-            upstream_tags: &[],
+            citation: CITATION,
             compare: Compare::Superset,
         },
         run,

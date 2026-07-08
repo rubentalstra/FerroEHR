@@ -25,7 +25,6 @@
 
 use serde_json::Value;
 
-use crate::case::Chapter;
 use crate::fixtures;
 use crate::harness::{CaseError, CaseFuture, DataSetReport, RunContext};
 use crate::registry::CaseEntry;
@@ -203,24 +202,73 @@ cont_comp!(
 /// authored constraint OPTs).
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
-    const CASES: &[(&str, crate::harness::CaseRun)] = &[
-        ("CONT-COMP-content_card_any-context_any", r_any_any),
-        ("CONT-COMP-content_card_1plus-context_any", r_1plus_any),
-        ("CONT-COMP-content_card_3plus-context_any", r_3plus_any),
-        ("CONT-COMP-content_card_opt-context_any", r_opt_any),
-        ("CONT-COMP-content_card_mand-context_any", r_mand_any),
-        ("CONT-COMP-content_card_3to5-context_any", r_3to5_any),
-        ("CONT-COMP-content_card_any-context_mand", r_any_mand),
-        ("CONT-COMP-content_card_1plus-context_mand", r_1plus_mand),
-        ("CONT-COMP-content_card_3plus-context_mand", r_3plus_mand),
-        ("CONT-COMP-content_card_opt-context_mand", r_opt_mand),
-        ("CONT-COMP-content_card_mand-context_mand", r_mand_mand),
-        ("CONT-COMP-content_card_3to5-context_mand", r_3to5_mand),
+    const CIT: &str = "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)";
+    const CASES: &[(&str, &str, crate::harness::CaseRun)] = &[
+        (
+            "val/comp-content-card-any-context-any",
+            "Validate COMPOSITION — content card any context any",
+            r_any_any,
+        ),
+        (
+            "val/comp-content-card-1plus-context-any",
+            "Validate COMPOSITION — content card 1plus context any",
+            r_1plus_any,
+        ),
+        (
+            "val/comp-content-card-3plus-context-any",
+            "Validate COMPOSITION — content card 3plus context any",
+            r_3plus_any,
+        ),
+        (
+            "val/comp-content-card-opt-context-any",
+            "Validate COMPOSITION — content card OPT context any",
+            r_opt_any,
+        ),
+        (
+            "val/comp-content-card-mand-context-any",
+            "Validate COMPOSITION — content card mand context any",
+            r_mand_any,
+        ),
+        (
+            "val/comp-content-card-3to5-context-any",
+            "Validate COMPOSITION — content card 3to5 context any",
+            r_3to5_any,
+        ),
+        (
+            "val/comp-content-card-any-context-mand",
+            "Validate COMPOSITION — content card any context mand",
+            r_any_mand,
+        ),
+        (
+            "val/comp-content-card-1plus-context-mand",
+            "Validate COMPOSITION — content card 1plus context mand",
+            r_1plus_mand,
+        ),
+        (
+            "val/comp-content-card-3plus-context-mand",
+            "Validate COMPOSITION — content card 3plus context mand",
+            r_3plus_mand,
+        ),
+        (
+            "val/comp-content-card-opt-context-mand",
+            "Validate COMPOSITION — content card OPT context mand",
+            r_opt_mand,
+        ),
+        (
+            "val/comp-content-card-mand-context-mand",
+            "Validate COMPOSITION — content card mand context mand",
+            r_mand_mand,
+        ),
+        (
+            "val/comp-content-card-3to5-context-mand",
+            "Validate COMPOSITION — content card 3to5 context mand",
+            r_3to5_mand,
+        ),
     ];
     CASES
         .iter()
-        .map(|&(id, run)| CaseEntry {
-            meta: meta(id, Chapter::Master15, id),
+        .map(|&(id, title, run)| CaseEntry {
+            meta: meta(id, title, CIT),
             run,
         })
         .collect()

@@ -94,16 +94,15 @@ pub async fn run(transport: &dyn Transport, config: &RunConfig) -> Result<RunRes
                     .map(|e| e.ecc_id.clone())
                     .unwrap_or_default(),
                 id: meta.id.to_owned(),
-                chapter: meta.chapter.label().to_owned(),
+                title: meta.title.to_owned(),
                 capability: format!("{:?}", meta.capability),
                 profiles: meta.profiles.iter().map(|p| format!("{p:?}")).collect(),
-                provenance: format!("{:?}", meta.provenance),
                 format: format!("{format:?}").to_lowercase(),
                 status,
                 passed_data_sets,
                 total_data_sets,
                 message,
-                schedule_ref: meta.schedule_ref.to_owned(),
+                citation: meta.citation.to_owned(),
                 duration_ms,
             });
         }

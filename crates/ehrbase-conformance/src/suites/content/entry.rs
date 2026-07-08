@@ -28,7 +28,6 @@
 
 use serde_json::{Value, json};
 
-use crate::case::Chapter;
 use crate::fixtures;
 use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, RunContext};
 use crate::registry::CaseEntry;
@@ -58,16 +57,32 @@ fn events_ok(card: Card, count: usize) -> bool {
 /// The implemented master16 case entries (26 CONT cases).
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
+    const OBS_CIT: &str = "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)";
+    const HIST_CIT: &str = "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)";
+    const EVENT_CIT: &str = "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)";
+    const ITEM_CIT: &str = "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)";
     let mut all = Vec::new();
 
     // ── OBSERVATION (4) — driven: OBSERVATION.data existence (RM/schema) ──────
-    for id in [
-        "CONT-OBS-state_ex_opt-protocol_ex_opt",
-        "CONT-OBS-state_ex_opt-protocol_ex_mand",
-        "CONT-OBS-state_ex_mand-protocol_ex_opt",
-        "CONT-OBS-state_ex_mand-protocol_ex_mand",
+    for (id, title) in [
+        (
+            "val/obs-state-ex-opt-protocol-ex-opt",
+            "Validate OBSERVATION — state ex OPT protocol ex OPT",
+        ),
+        (
+            "val/obs-state-ex-opt-protocol-ex-mand",
+            "Validate OBSERVATION — state ex OPT protocol ex mand",
+        ),
+        (
+            "val/obs-state-ex-mand-protocol-ex-opt",
+            "Validate OBSERVATION — state ex mand protocol ex OPT",
+        ),
+        (
+            "val/obs-state-ex-mand-protocol-ex-mand",
+            "Validate OBSERVATION — state ex mand protocol ex mand",
+        ),
     ] {
-        all.push(entry(id, run_obs_data));
+        all.push(entry(id, title, OBS_CIT, run_obs_data));
     }
 
     // ── HISTORY (12) — driven against authored HISTORY.events cardinality +
@@ -79,22 +94,70 @@ pub fn entries() -> Vec<CaseEntry> {
     //    (a mandatory summary is violated by its absence) constraints without
     //    fabricating extra RM data. ──
     #[allow(clippy::items_after_statements)]
-    const HIST: &[(&str, crate::harness::CaseRun)] = &[
-        ("CONT-HIST-events_card_any-summary_ex_opt", h_any_opt),
-        ("CONT-HIST-events_card_1plus-summary_ex_opt", h_1plus_opt),
-        ("CONT-HIST-events_card_3plus-summary_ex_opt", h_3plus_opt),
-        ("CONT-HIST-events_card_opt-summary_ex_opt", h_opt_opt),
-        ("CONT-HIST-events_card_mand-summary_ex_opt", h_mand_opt),
-        ("CONT-HIST-events_card_3to5-summary_ex_opt", h_3to5_opt),
-        ("CONT-HIST-events_card_any-summary_ex_mand", h_any_mand),
-        ("CONT-HIST-events_card_1plus-summary_ex_mand", h_1plus_mand),
-        ("CONT-HIST-events_card_3plus-summary_ex_mand", h_3plus_mand),
-        ("CONT-HIST-events_card_opt-summary_ex_mand", h_opt_mand),
-        ("CONT-HIST-events_card_mand-summary_ex_mand", h_mand_mand),
-        ("CONT-HIST-events_card_3to5-summary_ex_mand", h_3to5_mand),
+    const HIST: &[(&str, &str, crate::harness::CaseRun)] = &[
+        (
+            "val/hist-events-card-any-summary-ex-opt",
+            "Validate HISTORY — events card any summary ex OPT",
+            h_any_opt,
+        ),
+        (
+            "val/hist-events-card-1plus-summary-ex-opt",
+            "Validate HISTORY — events card 1plus summary ex OPT",
+            h_1plus_opt,
+        ),
+        (
+            "val/hist-events-card-3plus-summary-ex-opt",
+            "Validate HISTORY — events card 3plus summary ex OPT",
+            h_3plus_opt,
+        ),
+        (
+            "val/hist-events-card-opt-summary-ex-opt",
+            "Validate HISTORY — events card OPT summary ex OPT",
+            h_opt_opt,
+        ),
+        (
+            "val/hist-events-card-mand-summary-ex-opt",
+            "Validate HISTORY — events card mand summary ex OPT",
+            h_mand_opt,
+        ),
+        (
+            "val/hist-events-card-3to5-summary-ex-opt",
+            "Validate HISTORY — events card 3to5 summary ex OPT",
+            h_3to5_opt,
+        ),
+        (
+            "val/hist-events-card-any-summary-ex-mand",
+            "Validate HISTORY — events card any summary ex mand",
+            h_any_mand,
+        ),
+        (
+            "val/hist-events-card-1plus-summary-ex-mand",
+            "Validate HISTORY — events card 1plus summary ex mand",
+            h_1plus_mand,
+        ),
+        (
+            "val/hist-events-card-3plus-summary-ex-mand",
+            "Validate HISTORY — events card 3plus summary ex mand",
+            h_3plus_mand,
+        ),
+        (
+            "val/hist-events-card-opt-summary-ex-mand",
+            "Validate HISTORY — events card OPT summary ex mand",
+            h_opt_mand,
+        ),
+        (
+            "val/hist-events-card-mand-summary-ex-mand",
+            "Validate HISTORY — events card mand summary ex mand",
+            h_mand_mand,
+        ),
+        (
+            "val/hist-events-card-3to5-summary-ex-mand",
+            "Validate HISTORY — events card 3to5 summary ex mand",
+            h_3to5_mand,
+        ),
     ];
-    for &(id, run) in HIST {
-        all.push(entry(id, run));
+    for &(id, title, run) in HIST {
+        all.push(entry(id, title, HIST_CIT, run));
     }
 
     // ── EVENT (5) — data existence driven; type narrowing driven via authored
@@ -104,11 +167,36 @@ pub fn entries() -> Vec<CaseEntry> {
     //    base accepted, a sibling (_type→INTERVAL_EVENT) rejected. `type_interval_
     //    event` needs a valid INTERVAL_EVENT the corpus does not carry (mandatory
     //    `width`/`math_function`) → honest skip. ──
-    all.push(entry("CONT-EVENT-state_ex_opt", run_event_data));
-    all.push(entry("CONT-EVENT-state_ex_mand", run_event_data));
-    all.push(entry("CONT-EVENT-type_any", run_event_any));
-    all.push(entry("CONT-EVENT-type_point_event", run_event_point));
-    all.push(entry("CONT-EVENT-type_interval_event", run_event_interval));
+    all.push(entry(
+        "val/event-state-ex-opt",
+        "Validate EVENT — state ex OPT",
+        EVENT_CIT,
+        run_event_data,
+    ));
+    all.push(entry(
+        "val/event-state-ex-mand",
+        "Validate EVENT — state ex mand",
+        EVENT_CIT,
+        run_event_data,
+    ));
+    all.push(entry(
+        "val/event-type-any",
+        "Validate EVENT — type any",
+        EVENT_CIT,
+        run_event_any,
+    ));
+    all.push(entry(
+        "val/event-type-point-event",
+        "Validate EVENT — type point event",
+        EVENT_CIT,
+        run_event_point,
+    ));
+    all.push(entry(
+        "val/event-type-interval-event",
+        "Validate EVENT — type interval event",
+        EVENT_CIT,
+        run_event_interval,
+    ));
 
     // ── ITEM_STRUCTURE (5) — type narrowing, driven via clinical_content_validation ─
     // The `clinical_content_validation` OPT narrows four EVALUATION `data` slots to
@@ -117,11 +205,36 @@ pub fn entries() -> Vec<CaseEntry> {
     // is the truth-table "Class not allowed" rejection (master16 §ITEM_STRUCTURE).
     // `type_any` stays skipped: no vendored OPT leaves an ITEM_STRUCTURE slot open,
     // so the "any subtype accepted" positive cannot be isolated.
-    all.push(entry("CONT-ITEM_STR-type_any", run_item_str_any));
-    all.push(entry("CONT-ITEM_STR-type_item_tree", run_item_str_tree));
-    all.push(entry("CONT-ITEM_STR-type_item_list", run_item_str_list));
-    all.push(entry("CONT-ITEM_STR-type_item_table", run_item_str_table));
-    all.push(entry("CONT-ITEM_STR-type_item_single", run_item_str_single));
+    all.push(entry(
+        "val/item-str-type-any",
+        "Validate ITEM_STRUCTURE — type any",
+        ITEM_CIT,
+        run_item_str_any,
+    ));
+    all.push(entry(
+        "val/item-str-type-item-tree",
+        "Validate ITEM_STRUCTURE — type item tree",
+        ITEM_CIT,
+        run_item_str_tree,
+    ));
+    all.push(entry(
+        "val/item-str-type-item-list",
+        "Validate ITEM_STRUCTURE — type item list",
+        ITEM_CIT,
+        run_item_str_list,
+    ));
+    all.push(entry(
+        "val/item-str-type-item-table",
+        "Validate ITEM_STRUCTURE — type item table",
+        ITEM_CIT,
+        run_item_str_table,
+    ));
+    all.push(entry(
+        "val/item-str-type-item-single",
+        "Validate ITEM_STRUCTURE — type item single",
+        ITEM_CIT,
+        run_item_str_single,
+    ));
 
     all
 }
@@ -179,9 +292,9 @@ fn run_item_str_single<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     drive_item_str(ctx, "ITEM_SINGLE", "/content/1/data", "ITEM_TREE")
 }
 
-fn entry(id: &'static str, run: CaseRun) -> CaseEntry {
+fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
-        meta: meta(id, Chapter::Master16, id),
+        meta: meta(id, title, citation),
         run,
     }
 }

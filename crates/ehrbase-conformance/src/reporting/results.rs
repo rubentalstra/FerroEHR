@@ -125,16 +125,14 @@ pub struct CaseOutcome {
     /// catalogue is missing (guarded against in `tests/coverage.rs`).
     #[serde(default)]
     pub ecc_id: String,
-    /// The primary reference key (the official CNF id for traced cases).
+    /// The registration key (our descriptive `<area>/<case>` slug).
     pub id: String,
-    /// The chapter label (e.g. `"master06"`).
-    pub chapter: String,
+    /// The human title.
+    pub title: String,
     /// The capability label.
     pub capability: String,
     /// The profiles that require the case's capability.
     pub profiles: Vec<String>,
-    /// The provenance label.
-    pub provenance: String,
     /// The wire format this outcome is for.
     pub format: String,
     /// The status.
@@ -145,9 +143,8 @@ pub struct CaseOutcome {
     pub total_data_sets: u32,
     /// The failure/skip message, if any.
     pub message: Option<String>,
-    /// The schedule reference.
-    pub schedule_ref: String,
+    /// The spec citation.
+    pub citation: String,
     /// Wall-clock duration in milliseconds.
     pub duration_ms: u128,
 }
-

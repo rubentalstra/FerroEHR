@@ -1,6 +1,7 @@
-//! master08 — CONTRIBUTION cases (design §4.1: `suites/contribution.rs`).
+//! CONTRIBUTION cases (design §4.1: `suites/contribution.rs`).
 //!
-//! Transcribed from `master08-func_tc_ehr_contribution.adoc`, driving the
+//! Our own ECC cases (reference: `master08-func_tc_ehr_contribution.adoc`,
+//! design-time reading), driving the
 //! ITS-REST `/ehr/{ehr_id}/contribution` surface (JSON only — a CONTRIBUTION
 //! commit is a version-set + audit wrapper with no canonical-XML wire shape).
 //! Consumes the vendored `contributions/{valid,invalid}` fixtures in full: the
@@ -24,7 +25,8 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{
     CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, HttpResponse, RunContext,
@@ -38,143 +40,210 @@ pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── commit_contribution ──────────────────────────────────────────────
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-valid_composition",
+            "ctb/commit-contribution-valid-composition",
+            "Commit contribution — valid composition",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_valid_composition,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-invalid_composition",
+            "ctb/commit-contribution-invalid-composition",
+            "Commit contribution — invalid composition",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_invalid_composition,
         ),
-        entry("I_EHR_CONTRIBUTION.commit_contribution-empty", run_empty),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions",
+            "ctb/commit-contribution-empty",
+            "Commit contribution — empty",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
+            run_empty,
+        ),
+        entry(
+            "ctb/commit-contribution-valid-invalid-compositions",
+            "Commit contribution — valid invalid compositions",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_valid_invalid_compositions,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt",
+            "ctb/commit-contribution-non-exiting-opt",
+            "Commit contribution — non exiting OPT",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_non_existing_opt,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-event_composition",
+            "ctb/commit-contribution-event-composition",
+            "Commit contribution — event composition",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_event_composition,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-persistent_composition",
+            "ctb/commit-contribution-persistent-composition",
+            "Commit contribution — persistent composition",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_persistent_composition,
         ),
-        entry("I_EHR_CONTRIBUTION.commit_contribution-delete", run_delete),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid",
+            "ctb/commit-contribution-delete",
+            "Commit contribution — delete",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
+            run_delete,
+        ),
+        entry(
+            "ctb/commit-contribution-two-commits-second-invalid",
+            "Commit contribution — two commits second invalid",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_two_commits_second_invalid,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation",
+            "ctb/commit-contribution-two-commits-second-creation",
+            "Commit contribution — two commits second creation",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_two_commits_second_creation,
         ),
         // ── EHR_STATUS contributions ─────────────────────────────────────────
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status",
+            "ctb/commit-contribution-minimal-ehr-status",
+            "Commit contribution — minimal EHR status",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_minimal_ehr_status,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status",
+            "ctb/commit-contribution-full-ehr-status",
+            "Commit contribution — full EHR status",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_full_ehr_status,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type",
+            "ctb/commit-contribution-ehr-status-invalid-change-type",
+            "Commit contribution — EHR status invalid change type",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_ehr_status_invalid_change_type,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-invalid_ehr_status",
+            "ctb/commit-contribution-invalid-ehr-status",
+            "Commit contribution — invalid EHR status",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_invalid_ehr_status,
         ),
         // ── FOLDER contributions ─────────────────────────────────────────────
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-valid_directory",
+            "ctb/commit-contribution-valid-directory",
+            "Commit contribution — valid directory",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_valid_directory,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory",
+            "ctb/commit-contribution-fail-create-existing-directory",
+            "Commit contribution — fail create existing directory",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_fail_create_existing_directory,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory",
+            "ctb/commit-contribution-fail-modify-non-existing-directory",
+            "Commit contribution — fail modify non existing directory",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_fail_modify_non_existing_directory,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory",
+            "ctb/commit-contribution-update-existing-directory",
+            "Commit contribution — update existing directory",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_update_existing_directory,
         ),
         // ── get_contribution ─────────────────────────────────────────────────
         entry(
-            "I_EHR_CONTRIBUTION.get_contribution-existing",
+            "ctb/get-contribution-existing",
+            "Get contribution — existing",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_existing,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.get_contribution-empty_ehr",
+            "ctb/get-contribution-empty-ehr",
+            "Get contribution — empty EHR",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_empty_ehr,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.get_contribution-bad_ehr",
+            "ctb/get-contribution-bad-ehr",
+            "Get contribution — bad EHR",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_bad_ehr,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.get_contribution-bad_contribution",
+            "ctb/get-contribution-bad-contribution",
+            "Get contribution — bad contribution",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_bad_contribution,
         ),
         // has_contribution — SM boolean realized via GET /contribution/{uid}
         // (200 has / 404 not); reuses the get_contribution runners.
         entry(
-            "I_EHR_CONTRIBUTION.has_contribution-existing",
+            "ctb/has-contribution-existing",
+            "Contribution existence check — existing",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_existing,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.has_contribution-bad_contribution",
+            "ctb/has-contribution-bad-contribution",
+            "Contribution existence check — bad contribution",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_bad_contribution,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.has_contribution-bad_ehr",
+            "ctb/has-contribution-bad-ehr",
+            "Contribution existence check — bad EHR",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_bad_ehr,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.has_contribution-empty_ehr",
+            "ctb/has-contribution-empty-ehr",
+            "Contribution existence check — empty EHR",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_empty_ehr,
         ),
         // list_contributions — GET /ehr/{id}/contribution (the contribution list).
         entry(
-            "I_EHR_CONTRIBUTION.list_contributions-empty",
+            "ctb/list-contributions-empty",
+            "List contributions — empty",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_list_empty,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr",
+            "ctb/list-contributions-non-existing-ehr",
+            "List contributions — non existing EHR",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_list_bad_ehr,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.list_contributions-post_commit",
+            "ctb/list-contributions-post-commit",
+            "List contributions — post commit",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_list_post_commit,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory",
+            "ctb/list-contributions-ehr-containing-directory",
+            "List contributions — EHR containing directory",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_list_with_directory,
         ),
         entry(
-            "I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status",
+            "ctb/list-contributions-ehr-containing-ehr-status",
+            "List contributions — EHR containing EHR status",
+            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_list_with_status,
         ),
     ]
 }
 
-fn entry(id: &'static str, run: CaseRun) -> CaseEntry {
+fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master08,
+            title,
+            area: Area::Ctb,
             capability: Capability::ChangeSets,
             profiles: &[Profile::Core, Profile::Standard],
             formats: &[Format::Json],
-            provenance: Provenance::Schedule,
-            schedule_ref: id,
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,

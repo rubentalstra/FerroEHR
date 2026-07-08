@@ -192,8 +192,9 @@ fn render_results_md(results: &RunResults, catalog: &Catalog) -> String {
         for c in failures {
             let _ = writeln!(
                 out,
-                "- **{}** (`{}`, {}): {}",
+                "- **{}** {} (`{}`, {}): {}",
                 c.ecc_id,
+                c.title,
                 c.id,
                 c.format,
                 c.message.as_deref().unwrap_or("(no message)")

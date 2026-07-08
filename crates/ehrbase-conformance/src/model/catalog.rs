@@ -21,8 +21,6 @@ use std::path::Path;
 
 use serde::Serialize;
 
-use crate::case::{CaseMeta, Chapter};
-
 /// The default catalogue file, resolved relative to this crate.
 pub const CATALOG_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/inventory/ecc-catalog.tsv");
 
@@ -130,40 +128,6 @@ impl Area {
     #[must_use]
     pub fn from_tag(tag: &str) -> Option<Area> {
         Area::ALL.into_iter().find(|a| a.tag() == tag)
-    }
-}
-
-/// Derive the catalogue area for a registered case from its metadata: the
-/// chapter is the primary signal; master06 splits on the interface prefix.
-#[must_use]
-pub fn area_of(meta: &CaseMeta) -> Area {
-    match meta.chapter {
-        Chapter::Master04 => Area::Tpl,
-        Chapter::Master05 => Area::Sqr,
-        Chapter::Master06 => {
-            if meta.id.starts_with("I_EHR_STATUS") {
-                Area::Sta
-            } else {
-                Area::Ehr
-            }
-        }
-        Chapter::Master07 => Area::Com,
-        Chapter::Master08 => Area::Ctb,
-        Chapter::Master09 => Area::Dir,
-        Chapter::Master10 => Area::Dem,
-        Chapter::Master11 => Area::Qry,
-        Chapter::Master12 => Area::Adm,
-        Chapter::Master13 => Area::Msg,
-        Chapter::Master15
-        | Chapter::Master16
-        | Chapter::Master17_1
-        | Chapter::Master17_2
-        | Chapter::Master17_3
-        | Chapter::Master17_4
-        | Chapter::Master17_5
-        | Chapter::Master17_6
-        | Chapter::Master17_7 => Area::Val,
-        Chapter::Signing => Area::Sig,
     }
 }
 
