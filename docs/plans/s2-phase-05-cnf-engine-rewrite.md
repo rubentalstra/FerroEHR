@@ -58,8 +58,12 @@ legacy corpus, no Robot, no Python.**
       all-or-nothing verdict holds); artifact-set test extended.
 - [ ] `SEC` sweeps (RBAC 401/403), JUnit/CTRF output, CI tiers, first
       generated STANDARD-profile statement.
-- [ ] Regenerate `docs/conformance/` with the v4 artifact set (replaces the
-      stale v2 reports + hand-maintained COVERAGE_GAPS).
+- [x] Regenerate `docs/conformance/` with the v4 artifact set — first ECC
+      run 2026-07-08 (self-host, JSON+XML): 318 executed · 211 passed ·
+      106 failed (the s2-phase-04 hardening backlog, VAL-dominated);
+      consolidated CONFORMANCE_REPORT.md + CATALOG.md + 4 badges; stale v2
+      RESULTS.md/CONFORMANCE_STATEMENT.md removed; README carries the four
+      ECC badges.
 
 ## Exit criteria
 
