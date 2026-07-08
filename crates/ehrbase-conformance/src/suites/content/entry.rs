@@ -107,7 +107,7 @@ pub fn entries() -> Vec<CaseEntry> {
     all.push(entry("CONT-EVENT-state_ex_mand", run_event_data));
     all.push(entry("CONT-EVENT-type_any", run_event_any));
     all.push(entry("CONT-EVENT-type_point_event", run_event_point));
-    all.push(entry("CONT-EVENT-type_interval_event", run_skip_event_type));
+    all.push(entry("CONT-EVENT-type_interval_event", run_event_interval));
 
     // ── ITEM_STRUCTURE (5) — type narrowing, driven via clinical_content_validation ─
     // The `clinical_content_validation` OPT narrows four EVALUATION `data` slots to
@@ -116,7 +116,7 @@ pub fn entries() -> Vec<CaseEntry> {
     // is the truth-table "Class not allowed" rejection (master16 §ITEM_STRUCTURE).
     // `type_any` stays skipped: no vendored OPT leaves an ITEM_STRUCTURE slot open,
     // so the "any subtype accepted" positive cannot be isolated.
-    all.push(entry("CONT-ITEM_STR-type_any", run_skip_item_str));
+    all.push(entry("CONT-ITEM_STR-type_any", run_item_str_any));
     all.push(entry("CONT-ITEM_STR-type_item_tree", run_item_str_tree));
     all.push(entry("CONT-ITEM_STR-type_item_list", run_item_str_list));
     all.push(entry("CONT-ITEM_STR-type_item_table", run_item_str_table));
@@ -399,17 +399,114 @@ fn run_event_point<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-fn run_skip_event_type<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+/// EVENT `type_interval_event`: author a `persistent_minimal` OPT narrowing
+/// `HISTORY.events` to `INTERVAL_EVENT`; a valid `INTERVAL_EVENT` (the base event
+/// augmented with the mandatory `width` + `math_function`) is accepted and the base
+/// `POINT_EVENT` is rejected ("Class not allowed").
+fn run_event_interval<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move {
-        drive::skip_archetype(
-            "EVENT narrowing to INTERVAL_EVENT (needs a valid INTERVAL_EVENT instance — mandatory \
-             width/math_function — absent from the vendored corpus)",
+        let tid = "cnf_cont_event_interval_event";
+        let mut opt = author::parse_base(PERSIST_OPT)?;
+        author::set_template_id(&mut opt, tid);
+        if !author::narrow_nested_child_type(&mut opt, "HISTORY", "events", "INTERVAL_EVENT") {
+            return Err(CaseError::Assertion(
+                "base OPT has no HISTORY.events child object to narrow".to_owned(),
+            ));
+        }
+        let xml = author::to_xml(&opt)?;
+        let base =
+            fixtures::read_json(PERSIST_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+
+        // Accepted: the base POINT_EVENT promoted to a valid INTERVAL_EVENT.
+        let mut accepted = base.clone();
+        mutate::retarget_template(&mut accepted, tid);
+        if let Some(e) = mutate::first_node_mut(&mut accepted, "POINT_EVENT") {
+            mutate::set_field(e, "_type", json!("INTERVAL_EVENT"));
+            mutate::set_field(
+                e,
+                "width",
+                json!({ "_type": "DV_DURATION", "value": "PT1H" }),
+            );
+            mutate::set_field(
+                e,
+                "math_function",
+                json!({ "_type": "DV_CODED_TEXT", "value": "mean",
+                    "defining_code": { "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "146" } }),
+            );
+        }
+
+        // Rejected: the base POINT_EVENT (a sibling the INTERVAL_EVENT slot forbids).
+        let mut rejected = base;
+        mutate::retarget_template(&mut rejected, tid);
+
+        drive::drive_authored(
+            ctx,
+            &xml,
+            vec![
+                (
+                    "INTERVAL_EVENT accepted (events narrowed to INTERVAL_EVENT)".to_owned(),
+                    accepted,
+                    Expected::Accepted,
+                ),
+                (
+                    "POINT_EVENT rejected (Class not allowed)".to_owned(),
+                    rejected,
+                    Expected::Rejected,
+                ),
+            ],
         )
+        .await
     })
 }
 
-fn run_skip_item_str<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+/// `ITEM_STRUCTURE` `type_any`: author the `clinical_content_validation` OPT with the
+/// `ITEM_TREE`-narrowed EVALUATION `data` slot **re-opened** to the abstract
+/// `ITEM_STRUCTURE`, then commit the vendored composition (its slot filled with
+/// `ITEM_TREE`) and a copy with that slot's `_type` swapped to `ITEM_LIST` — both
+/// accepted, exercising "any `ITEM_STRUCTURE` subtype accepted" (master16
+/// §`ITEM_STRUCTURE`).
+fn run_item_str_any<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move {
-        drive::skip_archetype("ITEM_STRUCTURE type narrowing (ITEM_TREE/LIST/TABLE/SINGLE)")
+        let tid = "cnf_cont_item_str_any";
+        let mut opt = author::parse_base("validation/clinical_content_validation.opt")?;
+        author::set_template_id(&mut opt, tid);
+        // Re-open the ITEM_TREE-narrowed slot to the abstract ITEM_STRUCTURE so any
+        // subtype is accepted.
+        author::retype_leaf(
+            &mut opt,
+            "ITEM_TREE",
+            author::open_complex("ITEM_STRUCTURE"),
+        );
+        let xml = author::to_xml(&opt)?;
+        let base = fixtures::read_json(
+            "compositions/CANONICAL_JSON/clinical_content_validation__full.json",
+        )
+        .map_err(|e| CaseError::Codec(e.to_string()))?;
+
+        let mut tree = base.clone();
+        mutate::retarget_template(&mut tree, tid);
+        let mut list = base;
+        mutate::retarget_template(&mut list, tid);
+        mutate::set_pointer(&mut list, "/content/2/data/_type", json!("ITEM_LIST"));
+
+        drive::drive_authored(
+            ctx,
+            &xml,
+            vec![
+                (
+                    "ITEM_TREE accepted in an open ITEM_STRUCTURE slot".to_owned(),
+                    tree,
+                    Expected::Accepted,
+                ),
+                (
+                    "ITEM_LIST accepted in an open ITEM_STRUCTURE slot (any subtype)".to_owned(),
+                    list,
+                    Expected::Accepted,
+                ),
+            ],
+        )
+        .await
     })
 }

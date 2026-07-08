@@ -694,3 +694,40 @@ pub fn open_complex(rm_type: &str) -> CObject {
         attributes: Vec::new(),
     })
 }
+
+/// Constrain a code-phrase leaf attribute (`DV_CODED_TEXT.defining_code`,
+/// `DV_MULTIMEDIA.media_type`) with a `C_CODE_PHRASE`: `terminology` + `codes`.
+/// Replaces the attribute's child object with a `C_CODE_PHRASE`. Returns `true` if
+/// applied.
+pub fn constrain_codephrase(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    attr: &str,
+    terminology: &str,
+    codes: Vec<String>,
+) -> bool {
+    let cp = openehr_its::opt14::CCodePhrase {
+        rm_type_name: "CODE_PHRASE".to_owned(),
+        occurrences: closed_interval(1, 1),
+        node_id: String::new(),
+        assumed_value: None,
+        terminology_id: Some(openehr_base::prelude::TerminologyId {
+            value: terminology.to_owned(),
+        }),
+        code_list: codes,
+    };
+    let mut cp = Some(cp);
+    with_nested_attribute(opt, host, attr, |a| {
+        let children = match a {
+            CAttribute::CSingleAttribute(s) => &mut s.children,
+            CAttribute::CMultipleAttribute(m) => &mut m.children,
+        };
+        if let Some(cp) = cp.take() {
+            if let Some(first) = children.first_mut() {
+                *first = CObject::CCodePhrase(cp);
+            } else {
+                children.push(CObject::CCodePhrase(cp));
+            }
+        }
+    })
+}
