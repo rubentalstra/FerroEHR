@@ -78,6 +78,7 @@ pub fn entries() -> Vec<CaseEntry> {
     //    cardinality (via the committed events count) and the summary existence
     //    (a mandatory summary is violated by its absence) constraints without
     //    fabricating extra RM data. ──
+    #[allow(clippy::items_after_statements)]
     const HIST: &[(&str, crate::harness::CaseRun)] = &[
         ("CONT-HIST-events_card_any-summary_ex_opt", h_any_opt),
         ("CONT-HIST-events_card_1plus-summary_ex_opt", h_1plus_opt),

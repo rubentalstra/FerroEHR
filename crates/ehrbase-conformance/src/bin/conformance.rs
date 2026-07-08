@@ -1,4 +1,4 @@
-//! The conformance CLI (design §4.4).
+//! The ECC conformance CLI (design v4).
 //!
 //! ```text
 //! conformance run   [--base-url URL | --self-host] [--filter S] [--profile core|standard|options]
@@ -16,15 +16,16 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use ehrbase_conformance::case::{Format, Profile};
 use ehrbase_conformance::client::Credential;
+use ehrbase_conformance::catalog::{Catalog, area_of};
 use ehrbase_conformance::registry::registry;
 use ehrbase_conformance::run::RunConfig;
-use ehrbase_conformance::schedule;
 use ehrbase_conformance::sut::Sut;
+use ehrbase_conformance::version::SpecVersions;
 use ehrbase_conformance::{report, run};
 
-/// openEHR CNF Platform Conformance Test Schedule runner.
+/// The ehrbase-rs Conformance Catalogue (ECC) runner.
 #[derive(Debug, Parser)]
-#[command(name = "conformance", about = "openEHR CNF conformance runner")]
+#[command(name = "conformance", about = "ehrbase-rs conformance catalogue (ECC) runner")]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -34,7 +35,7 @@ struct Cli {
 enum Command {
     /// Run the selected cases against a SUT and write the report set.
     Run(RunArgs),
-    /// List the implemented registry cases (with coverage totals).
+    /// List the catalogue cases (with per-area totals).
     List(ListArgs),
     /// Regenerate the Markdown/badge artifacts from an existing results.json.
     Report(ReportArgs),
@@ -178,7 +179,7 @@ async fn cmd_run(args: RunArgs) -> i32 {
         filter: args.filter.clone(),
         profile: args.profile.map(Profile::from),
         formats: args.format.formats(),
-        rm_version: "1.2.0".to_owned(),
+        versions: SpecVersions::latest(),
         auth_mode,
     };
     let results = match run::run(sut.transport(), &config).await {
@@ -193,13 +194,8 @@ async fn cmd_run(args: RunArgs) -> i32 {
         return 2;
     }
     println!(
-        "conformance: {} identified · {} implemented · {} passed · {} failed → {}",
-        results.identified(),
-        results
-            .inventory
-            .iter()
-            .filter(|i| i.is_implemented())
-            .count(),
+        "conformance: {} executed · {} passed · {} failed → {}",
+        results.executed(),
         results.passed(),
         results.failed(),
         args.out.display()
@@ -209,34 +205,39 @@ async fn cmd_run(args: RunArgs) -> i32 {
 
 fn cmd_list(args: &ListArgs) -> i32 {
     let reg = registry();
+    let catalog = match Catalog::load_default() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("error loading catalogue: {e}");
+            return 2;
+        }
+    };
     let mut shown = 0;
     for entry in reg.entries() {
         let meta = &entry.meta;
+        let ecc = catalog
+            .by_primary_ref(meta.id)
+            .map(|e| e.ecc_id.clone())
+            .unwrap_or_default();
         if let Some(filter) = &args.filter
             && !meta.id.contains(filter.as_str())
+            && !ecc.contains(filter.as_str())
         {
             continue;
         }
         println!(
-            "{:<40} {:<10} {:?} formats={:?} {:?}",
-            meta.id,
-            meta.chapter.label(),
+            "{ecc:<14} {:<5} {:?} formats={:?} {}",
+            area_of(meta).tag(),
             meta.capability,
             meta.formats,
-            meta.provenance
+            meta.id,
         );
         shown += 1;
     }
-    let identified = match schedule::parse_default().and_then(|s| s.inventory()) {
-        Ok(inv) => inv.len(),
-        Err(e) => {
-            eprintln!("error parsing schedule: {e}");
-            return 2;
-        }
-    };
     println!(
-        "\n{shown} shown · {} implemented of {identified} identified schedule cases",
-        reg.entries().len()
+        "\n{shown} shown · {} registered · {} catalogued",
+        reg.entries().len(),
+        catalog.entries().len()
     );
     0
 }

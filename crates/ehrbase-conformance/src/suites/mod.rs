@@ -9,6 +9,7 @@
 
 use crate::registry::CaseEntry;
 
+pub mod signing;
 pub mod content;
 pub mod support;
 
@@ -36,6 +37,6 @@ pub fn entries() -> Vec<CaseEntry> {
     all.extend(admin::entries()); // master12 (OPTIONS)
     all.extend(demographic::entries()); // master10 (OPTIONS)
     all.extend(content::entries()); // master15/16/17.x
-    all.extend(crate::sign::entries()); // runner-defined SIGN-* (§4.6)
+    all.extend(signing::entries()); // runner-defined SIGN-* (§4.6)
     all
 }

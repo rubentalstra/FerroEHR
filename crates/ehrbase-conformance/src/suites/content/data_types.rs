@@ -761,11 +761,14 @@ fn run_dv_count_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// listed `(pointer, value)` mutations applied — asserting its `Expected`. Handles
 /// cases whose accepted instance itself needs a mutation (e.g. `DV_BOOLEAN`
 /// only-false, `DV_PROPORTION` kinds whose valid instance differs from the base).
+/// One leaf-table row: `(label, [(path, value)], expected)`.
+type LeafRow = (String, Vec<(String, Value)>, Expected);
+
 async fn drive_leaf_rows(
     ctx: &RunContext<'_>,
     tid: &'static str,
     constrain: impl FnOnce(&mut OperationalTemplate) -> bool,
-    rows: Vec<(String, Vec<(String, Value)>, Expected)>,
+    rows: Vec<LeafRow>,
 ) -> Result<DataSetReport, CaseError> {
     let mut opt = author::parse_base(ALL_TYPES_OPT)?;
     author::set_template_id(&mut opt, tid);
@@ -1025,6 +1028,7 @@ fn run_dv_proportion_integer_fraction<'a>(ctx: &'a RunContext<'a>) -> CaseFuture
 /// A temporal case: author a temporal `C_*` constraint on `host`'s value, commit
 /// the in-constraint base value (accepted) and an out-of-constraint value
 /// (rejected).
+#[allow(clippy::too_many_arguments)]
 fn drive_temporal<'a>(
     ctx: &'a RunContext<'a>,
     tid: &'static str,

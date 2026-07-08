@@ -1,22 +1,28 @@
-//! openEHR CNF conformance runner — the ADR-008 acceptance instrument.
+//! The ehrbase-rs Conformance Catalogue (ECC) engine — the ADR-008
+//! acceptance instrument (`docs/design/conformance-framework.md`, v3.1).
 //!
-//! Implements the openEHR **Platform Conformance Test Schedule**
-//! (`docs/specs/openehr/CNF/docs/platform_test_schedule/`, vendored at the
-//! upstream `master` HEAD) as a native Rust test-case registry keyed on the
-//! schedule's own case ids (`I_<SERVICE>.<operation>-<variant>` /
-//! `CONT-<CLASS>-<variant>`), per `docs/design/conformance-framework.md`.
+//! **Our own conformance framework.** The primary identity system is the ECC
+//! catalogue ([`model::catalog`]): every case carries a stable
+//! `ECC-<AREA>-<NNN>` number allocated in the committed
+//! `inventory/ecc-catalog.tsv`, never reused. The official openEHR CNF corpus
+//! (schedule, Robot suite, ITS-REST OAS, AQL corpus — vendored under
+//! `docs/specs/openehr/`) is **design-time reference reading only** — we
+//! studied it, took what is good, and build better: a spec-first case
+//! universe over the *current* pinned specs (RM 1.2.0, ITS-REST 1.0.3,
+//! AQL 1.1, TERM 3.1.0), generated data sets instead of 2019-era hand-copied
+//! fixtures, and machine-enforced profile verdicts. No runtime mapping to
+//! the legacy corpus exists anywhere in this crate.
 //!
-//! The load-bearing property is **enforced total coverage** (design §4.2): a
-//! guard test parses the vendored schedule text and asserts every identified
-//! test case is either implemented in the registry or explicitly excluded
-//! with a structural reason. New or changed upstream cases fail the build
-//! until triaged; nothing is ever silently uncovered.
+//! Layered layout (enterprise shape, one responsibility per layer):
 //!
-//! The runner ([`run`]) drives a SUT ([`sut`]: external or self-hosted) through a
-//! [`harness::Transport`], executes the implemented [`registry`] cases, and
-//! [`report`]s the machine- and human-readable result set. Even at the honest
-//! zero state the report generates and shows `0/N` — the backlog is enforced and
-//! visible.
+//! - [`model`] — the domain: case metadata, areas, profiles, the ECC catalogue.
+//! - [`testdata`] — typed access to test data (vendored fixtures we reuse as
+//!   inputs, and our own generated data sets).
+//! - [`engine`] — execution: transport, SUT lifecycles, assertions, registry,
+//!   the runner.
+//! - [`reporting`] — the machine/human result artifacts (`results.json`,
+//!   `RESULTS`/`CATALOG`/`CONFORMANCE_STATEMENT` markdown, badge).
+//! - [`suites`] — the case implementations, one module per area/chapter.
 //!
 //! Two pedantic lints are allowed crate-wide because they fight the natural
 //! shape of a data-heavy conformance registry, not any real defect:
@@ -26,16 +32,16 @@
 //! idiom across every `suites/*` module).
 #![allow(clippy::too_many_lines, clippy::needless_pass_by_value)]
 
-pub mod assert;
-pub mod case;
-pub mod client;
-pub mod fixtures;
-pub mod harness;
-pub mod registry;
-pub mod report;
-pub mod results;
-pub mod run;
-pub mod schedule;
-pub mod sign;
+pub mod engine;
+pub mod model;
+pub mod testdata;
+pub mod reporting;
 pub mod suites;
-pub mod sut;
+
+// Stable public facade: the flat module paths are the crate API (used by the
+// suites, the CLI, and the integration tests); the directories above are the
+// maintenance layout.
+pub use engine::{assert, client, harness, registry, run, sut};
+pub use model::{case, catalog, version};
+pub use testdata::fixtures;
+pub use reporting::{report, results};
