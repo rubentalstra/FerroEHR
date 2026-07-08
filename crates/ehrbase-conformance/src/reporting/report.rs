@@ -12,7 +12,9 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::Path;
 
+use crate::case::Profile;
 use crate::catalog::{Area, Catalog, EccStatus};
+use crate::profile::verdict;
 use crate::results::{CaseStatus, RunResults};
 
 /// Errors raised while writing the report set.
@@ -72,6 +74,10 @@ pub fn write_all(results: &RunResults, out_dir: &Path) -> Result<(), ReportError
         &out_dir.join("badge.json"),
         &render_badge(results, &catalog),
     )?;
+    for profile in [Profile::Core, Profile::Standard, Profile::Options] {
+        let name = format!("badge-{}.json", format!("{profile:?}").to_lowercase());
+        write_file(&out_dir.join(name), &render_profile_badge(profile, results))?;
+    }
     Ok(())
 }
 
@@ -402,6 +408,34 @@ fn render_badge(results: &RunResults, catalog: &Catalog) -> String {
     serde_json::to_string_pretty(&badge).unwrap_or_else(|_| "{}".to_owned())
 }
 
+/// Render one per-profile badge (design §6): the message and colour come
+/// from the machine all-or-nothing verdict — a profile badge can never say
+/// PASS unless [`crate::profile::verdict`] does.
+fn render_profile_badge(profile: Profile, results: &RunResults) -> String {
+    let v = verdict(profile, results);
+    let total = v.capabilities.len();
+    let passing = v.capabilities.iter().filter(|c| c.pass).count();
+    let any_broken = v
+        .capabilities
+        .iter()
+        .any(|c| c.failed > 0 || c.errored > 0);
+    let (message, color) = if v.pass {
+        (format!("PASS ({passing}/{total} capabilities)"), "brightgreen")
+    } else if any_broken {
+        (format!("{passing}/{total} capabilities"), "red")
+    } else {
+        // Unevidenced (not yet run/claimable), but nothing failing.
+        (format!("{passing}/{total} capabilities"), "yellow")
+    };
+    let badge = serde_json::json!({
+        "schemaVersion": 1,
+        "label": format!("ECC {}", format!("{profile:?}").to_uppercase()),
+        "message": message,
+        "color": color,
+    });
+    serde_json::to_string_pretty(&badge).unwrap_or_else(|_| "{}".to_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -446,6 +480,9 @@ mod tests {
             "CATALOG.md",
             "CONFORMANCE_STATEMENT.md",
             "badge.json",
+            "badge-core.json",
+            "badge-standard.json",
+            "badge-options.json",
         ] {
             assert!(dir.join(name).exists(), "{name} written");
         }
