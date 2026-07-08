@@ -1,5 +1,5 @@
 ---
-paths: ["crates/ehrbase-rest/**", "crates/ehrbase-compat/**", "crates/ehrbase/src/application/**"]
+paths: ["app/ehrbase-rest/**", "app/ehrbase-compat/**", "app/ehrbase/src/application/**"]
 ---
 
 # REST server (axum) — P11, P17

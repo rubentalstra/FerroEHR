@@ -1,5 +1,5 @@
 ---
-paths: ["crates/openehr-query/**", "crates/ehrbase/src/aql/**"]
+paths: ["crates/openehr-query/**", "app/ehrbase/src/aql/**"]
 ---
 
 # AQL engine rules
@@ -10,7 +10,7 @@ locations:
 - `crates/openehr-query/` — the spec crate: AQL 1.1.0 **lexer + AST + parser**,
   **done** (`logos` + `chumsky`, corpus-validated). Semantic path analysis
   against WebTemplates is done as part of the engine (P16), consuming this AST.
-- `crates/ehrbase/src/aql/` — the **execution engine** (P16): AST → **our own
+- `app/ehrbase/src/aql/` — the **execution engine** (P16): AST → **our own
   typed query IR** → PostgreSQL, designed fresh per ADR-008 over the P10 node
   model, with path analysis driven by the **BMM-generated RM attribute model**
   (no reflection, no hand tables). EHRbase's engine is prior art only.

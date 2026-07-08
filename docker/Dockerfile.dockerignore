@@ -1,5 +1,5 @@
 # Build context trimming for docker/Dockerfile (context is the repo root).
-# Keep everything Cargo needs (crates/, Cargo.toml, Cargo.lock,
+# Keep everything Cargo needs (crates/, app/, tools/, Cargo.toml, Cargo.lock,
 # rust-toolchain.toml, migrations embedded via sqlx::migrate!) and drop the
 # rest so the context stays small and cache-friendly.
 
@@ -13,6 +13,8 @@ docs
 # Integration-test fixture corpora — a `--release -p ehrbase` build never
 # compiles test targets, so these are pure context weight (~85 MB).
 crates/*/tests
+app/*/tests
+tools/*/tests
 tests
 
 # Codegen inputs (BMM meta-model). Consumed only by `openehr-codegen` at

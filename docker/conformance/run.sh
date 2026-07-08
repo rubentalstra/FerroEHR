@@ -44,7 +44,7 @@ fi
 
 echo ">> [$EDITION] running the CNF suite → $OUT …"
 cd "$ROOT"
-cargo run -p ehrbase-conformance --bin conformance -- \
+cargo run -p conformance --bin conformance -- \
   run --base-url "$BASE" \
   --auth "basic:ehrbase:ehrbase" \
   --admin-auth "basic:${ADMIN_USER}:ehrbase" \

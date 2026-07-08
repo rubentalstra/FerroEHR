@@ -27,6 +27,6 @@ For the fast, no-Docker inner loop on the Rust edition (in-process app + a
 PostgreSQL testcontainer):
 
 ```bash
-cargo run -p ehrbase-conformance --features self-host --bin conformance -- \
+cargo run -p conformance --features self-host --bin conformance -- \
   run --self-host --out docs/conformance
 ```
