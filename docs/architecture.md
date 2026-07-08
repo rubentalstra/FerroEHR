@@ -14,10 +14,13 @@ PostgreSQL-18-native internals (ADR-008). Two layers:
    the openEHR specifications as the authority. EHRbase and other CDRs are
    prior art, not an oracle. This is the remaining Stage-1 work.
 
-Authoritative roadmap: `docs/plans/` (phases `00–20, 99`) + `docs/PROGRESS.md`.
+Authoritative roadmap: `docs/plans/` (phases `00–20, 99` + SM phases) +
+`docs/PROGRESS.md`.
 Decisions: `docs/ADRs/ADR-004` (spec codegen), `ADR-005` (ITS codegen),
 `ADR-006` (application philosophy), **`ADR-008` (greenfield storage + AQL +
-conformance target — read first)**.
+conformance target — read first)**, `ADR-010` (SM-aligned service
+architecture + the `app/*`/`crates/*` two-layer workspace layout; design set
+at `docs/design/sm-platform/`).
 
 ## The generated openEHR foundation (done)
 
@@ -104,9 +107,20 @@ constraints, `RETURNING OLD/NEW`, `JSON_TABLE` + SQL/JSON functions and
 jsonpath item methods (PG 17), B-tree skip scan, async I/O, STORED generated
 columns for hot extractions. See `docs/postgres-features.md`.
 
-## Workspace layout (13 crates)
+## Workspace layout
 
-Dependencies point downward only: app (`ehrbase-*`) → spec (`openehr-*`).
+Two physical layers (ADR-010; the directory move executes as SM-1's opening
+task): **`app/*`** holds the application crates (`ehrbase`, `ehrbase-sm`,
+`ehrbase-rest`, `ehrbase-compat`, `ehrbase-audit`, `ehrbase-authz`,
+`ehrbase-signing`, `ehrbase-conformance`, `ehrbase-bench`); **`crates/*`**
+holds the generated openEHR spec layer + its tooling (`openehr-*`,
+`openehr-codegen`, `openehr-derive`). Root workspace
+`members = ["crates/*", "app/*"]`.
+Dependencies point downward only: app (`app/ehrbase-*`) → spec
+(`crates/openehr-*`). The service seam is the SM-aligned native API
+(`ehrbase-sm`, ADR-010): one trait per SM Platform Service Model interface,
+with `ehrbase-rest` as the ITS-REST protocol adapter — see
+`docs/design/sm-platform/08-target-architecture.md`.
 
 | Crate | Role | Kind |
 |---|---|---|
