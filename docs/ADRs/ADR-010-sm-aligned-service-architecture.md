@@ -50,13 +50,24 @@ and the full Admin set, all Stage-1 scope.
    adapter over it (as SM's assumed architecture prescribes); `ehrbase`
    implements the traits. The current `ehrbase-rest::backend` trait family
    migrates and the EHR mega-trait splits along SM interface boundaries.
-2. **Precedence rule:** SM governs internal decomposition, naming, and call
+2. **Physical two-layer workspace layout.** The ADR-004/008 naming split
+   becomes directory structure: all application crates move to **`app/*`**
+   (`ehrbase`, `ehrbase-sm`, `ehrbase-rest`, `ehrbase-compat`,
+   `ehrbase-audit`, `ehrbase-authz`, `ehrbase-signing`,
+   `ehrbase-conformance`, `ehrbase-bench`); the generated openEHR spec layer
+   and its tooling stay in **`crates/*`** (`openehr-*`, `openehr-codegen`,
+   `openehr-derive`). Root workspace `members = ["crates/*", "app/*"]`;
+   moved with `git mv` (history preserved); all path references (workspace
+   path-deps, CI, scripts, `.claude/rules` scopes, docs) updated in the same
+   mechanical commit. Executed as SM-1's opening task. Dependencies point
+   one way only: `app/* → crates/*`.
+3. **Precedence rule:** SM governs internal decomposition, naming, and call
    semantics (pre/post-conditions become test assertions). **ITS-REST 1.0.3
    + the CNF/ECC schedule remain the wire oracle** — SM is TRIAL; where the
    two disagree the wire spec wins at the boundary, recorded with
    `// PORT NOTE:` + citation. SM spec defects/stubs (catalogued in the
    digests) are filled by explicit design decisions, never silently.
-3. **Full platform coverage** per the roadmap (doc 09): SM-1 native-API
+4. **Full platform coverage** per the roadmap (doc 09): SM-1 native-API
    crate + EHR-core completion (contribution listing, attestations) →
    SM-2 Definitions completion (archetypes, ADL2, query calls) →
    SM-3 PARTY_RELATIONSHIP + EHR Index → SM-4 Terminology surface + Admin
@@ -65,15 +76,15 @@ and the full Admin set, all Stage-1 scope.
    SM-6 Subject Proxy (variables, data sets, bindings, openEHR data-frame
    executor). `ehrbase-audit` is recognized as the realized System Log
    component.
-4. **SM service types are hand-written idiomatic Rust in `ehrbase-sm`**
+5. **SM service types are hand-written idiomatic Rust in `ehrbase-sm`**
    (application layer, ADR-006 discipline): the SM component publishes no
    BMM (UML is MagicDraw-only), so ADR-004 codegen does not apply — except
    the RM `ehr_extract` package, which *is* in the RM BMM and is generated
    like every other RM package.
-5. **SIM-B + SDF anchor the FLAT work** (P17): the `ctx/` vocabulary and
+6. **SIM-B + SDF anchor the FLAT work** (P17): the `ctx/` vocabulary and
    transformation rules are audited against SIM-B; SDF-normative leaf
    encodings are accepted alongside Better forms; divergences documented.
-6. **Wire exposure for components without an ITS-REST contract** (EHR Index,
+7. **Wire exposure for components without an ITS-REST contract** (EHR Index,
    Terminology, Message, Subject Proxy, dump/load): extension routes under
    our own OAS, excluded from the ITS-REST drift check, migrating to
    `emit-rest` if openEHR publishes contracts.
@@ -94,6 +105,10 @@ and the full Admin set, all Stage-1 scope.
   package previously unemitted.
 - **Risk control:** SM-1 is behaviour-preserving (ECC run must not move);
   each phase gates on the conformance suite; the trait split is mechanical.
+- **Path churn (accepted):** the `app/*` move touches every path reference
+  (workspace path-deps, CI, scripts, `.claude/rules` scopes, doc links);
+  `git mv` preserves per-file history. One mechanical commit, gated on a
+  green workspace.
 - Docs updated: `docs/design/sm-platform/` (the design set),
   `docs/plans/sm-phase-01-native-api.md` (first phase),
   `docs/architecture.md` gains the component map at SM-1.
@@ -116,3 +131,8 @@ and the full Admin set, all Stage-1 scope.
   to the REST crate.
 - **Partial scope (defer Message/Subject Proxy/EHR Index).** Rejected by
   the owner (2026-07-08): full coverage, EHR_EXTRACT included, Stage 1.
+- **Keep the flat `crates/*` layout.** Rejected by the owner (2026-07-08):
+  the spec-vs-application split is the project's load-bearing boundary
+  (generated/never-hand-edited vs ours/idiomatic); making it physical
+  (`crates/*` vs `app/*`) states the rule in the tree and keeps the
+  dependency direction visually checkable.
