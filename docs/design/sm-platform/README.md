@@ -8,7 +8,7 @@ statement in these docs carries a file + section citation there.
 
 Owner rulings baked in (2026-07-08):
 - **Full coverage — nothing deferred.** All ten SM platform services are in
-  scope, including `EHR_EXTRACT` (Message service), TDD, Subject Proxy,
+  scope, including EHR Extract (`EXTRACT`/`EXTRACT_SPEC`, Message service), TDD, Subject Proxy,
   Terminology surface, EHR Index, and the full Admin set.
 - SM governs internal decomposition + call semantics; **ITS-REST 1.0.3 + CNF
   remain the wire oracle** (SM is TRIAL/DEVELOPMENT). Conflicts resolve to

@@ -79,11 +79,14 @@ the SIM-B/SDF audit (it is FLAT work).
       `load_ehrs`, `ExportSpec` formats + compression + segmenting,
       `DumpLoadFailReport`, duplicate-id failure).
 
-## SM-5 — Message service (EHR_EXTRACT + TDD)
+## SM-5 — Message service (EXTRACT + TDD)
 
-- [ ] Codegen: emit the RM `ehr_extract` package from the vendored BMM
-      (extend `emit`; drift gate covers it). Canonical JSON/XML for the
-      extract types via the existing derive/emit-xml paths.
+- [x] ~~Codegen: emit the RM `ehr_extract` package~~ — **already done**
+      (correction 2026-07-09, conformance review F1): `openehr-rm::
+      ehr_extract` ships the full generated package (`Extract`,
+      `ExtractSpec`, `X_VERSIONED_*`, …) with canonical JSON + XML. SM-5
+      only adds a smoke test that the extract types round-trip through the
+      existing fidelity gates.
 - [ ] `EhrExtractService`: `export_ehrs`, `export_ehr_extracts(spec)`,
       `import_ehr(id?, extract)`, `import_ehr_extract` — over `vobject`
       reads + `commit_contribution` replay (IMPORTED_VERSION semantics).

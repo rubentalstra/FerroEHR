@@ -22,7 +22,7 @@ Three interfaces: `I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`,
 - **`I_TDD_SERVICE`** — Template Data Documents: `import_tdd(an_ehr_id:
   UUID, tdd: String)`; `import_tdds` (bulk — **no signature in source**).
 
-RM `EHR_EXTRACT` is **in scope (owner decision, 2026-07-08)**: the RM
+The EHR Extract capability (RM classes `EXTRACT`/`EXTRACT_SPEC` — there is no `EHR_EXTRACT` class; review F3) is **in scope (owner decision, 2026-07-08)**: the RM
 `ehr_extract` package is generated from the BMM like every other RM package,
 and `I_EHR_EXTRACT_SERVICE` is built as part of the SM-aligned service layer
 (see doc 09 for the build order).

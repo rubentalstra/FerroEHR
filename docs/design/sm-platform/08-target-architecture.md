@@ -121,7 +121,7 @@ per-method the SM call + pre/post-conditions. `#[async_trait]`, methods take
 | `I_QUERY_SERVICE` | `QueryService` | existing |
 | `I_TERMINOLOGY_SERVICE` | `TerminologyService` | new surface over `openehr-term` |
 | `I_MESSAGE_SERVICE` | `MessageService` | umbrella (spec stub → filled by design) |
-| `I_EHR_EXTRACT_SERVICE` | `EhrExtractService` | new; RM `ehr_extract` generated from BMM |
+| `I_EHR_EXTRACT_SERVICE` | `EhrExtractService` | new; the RM `ehr_extract` types (`EXTRACT`, `EXTRACT_SPEC`, …) are **already generated** in `openehr-rm` |
 | `I_TDD_SERVICE` | `TddService` | new |
 | `I_SUBJECT_PROXY_SERVICE` | `SubjectProxyService` | new component |
 | `I_DATA_BINDING` | `DataBinding` | internal trait; openEHR frame impl first |
@@ -137,10 +137,22 @@ mega-trait is a mechanical migration of today's methods.
 
 - **`UpdateVersion<T>`** (`UPDATE_VERSION<T>`): `preceding_version_uid:
   Option<ObjectVersionId>`, `lifecycle_state: TerminologyCode`,
-  `attestations: Option<Vec<Attestation>>`, `data: T`, `audit: UpdateAudit`.
+  `attestations: Option<Vec<Attestation>>`, `data: T`, `audit: UpdateAudit`,
+  `signature: Option<String>`.
   Today's `vobject::Change` + per-call args become constructors of this; the
   ITS-REST adapter builds it from body + headers (`If-Match`, `Prefer`,
   committer) — the wire *is* the update-version envelope, now named.
+  **Wire divergences (ITS-REST wins; conformance review F2, 2026-07-09;
+  oracle `ITS-REST/specifications/schemas/common/UpdateVersion.yaml`):**
+  (a) the wire field is **`commit_audit`**, not the SM's `audit` — the
+  adapter maps the name, the trait keeps the SM name (`// PORT NOTE:`);
+  (b) wire `attestations` items are the **partial `UpdateAttestation`**
+  form (server completes them into full RM `ATTESTATION`, analogous to
+  `UpdateAudit`→`AUDIT_DETAILS`), whereas the SM says full `ATTESTATION` —
+  the adapter reconstructs, `ehrbase-sm` carries both types
+  (`// PORT NOTE:`); (c) the wire carries **`signature: string`** (absent
+  from the SM class) — kept on `UpdateVersion<T>` and fed to
+  `ehrbase-signing` (`// PORT NOTE:`).
 - **`UpdateAudit`** (`UPDATE_AUDIT`): `change_type`, `description?`,
   `committer: PartyProxy` (today's `AuditInput`, invariant
   `Change_type_valid` enforced via `openehr-term`).
@@ -196,10 +208,13 @@ from the bundle rubrics. `at_date` honoured by (a) as "current bundle"
 
 ### 4.3 Message service (`MessageService` = `EhrExtractService` + `TddService`)
 
-- **Codegen prerequisite:** emit the RM `ehr_extract` package from the
-  vendored RM BMM (`openehr-codegen -- emit`; the package is in the BMM —
-  enable it like every other RM package; drift gate extends to it).
-- `export_ehrs(ehr_id)`: assemble `EHR_EXTRACT` from the node store —
+- **Codegen status (corrected 2026-07-09, conformance review F1):** the RM
+  `ehr_extract` package is **already generated** — `openehr-rm::ehr_extract`
+  ships `Extract`, `ExtractSpec`, `ExtractManifest`, the `X_VERSIONED_*`
+  family etc. with canonical JSON (`OpenEhrType`) and canonical XML
+  (`emit-xml` impls in `openehr-its`). No codegen work remains; SM-5 is
+  service work only.
+- `export_ehrs(ehr_id)`: assemble `EXTRACT` from the node store —
   reuse `vobject` reads + `versioned.rs` ORIGINAL_VERSION builders; full
   version history included per EXTRACT_SPEC.
 - `export_ehr_extracts(spec)`: EXTRACT_SPEC-driven subset (RM types govern).

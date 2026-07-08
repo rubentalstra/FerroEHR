@@ -36,9 +36,10 @@ analysis (doc 07) shows the EHR core near-complete and six components
 missing or partial.
 
 Owner rulings (2026-07-08): adopt the SM across the whole application;
-**full coverage — nothing deferred**, explicitly including `EHR_EXTRACT`
-(Message service), TDD, Subject Proxy, the Terminology surface, EHR Index,
-and the full Admin set, all Stage-1 scope.
+**full coverage — nothing deferred**, explicitly including the EHR Extract
+capability (RM `EXTRACT`/`EXTRACT_SPEC`, Message service), TDD, Subject
+Proxy, the Terminology surface, EHR Index, and the full Admin set, all
+Stage-1 scope.
 
 ## Decision
 
@@ -78,16 +79,18 @@ and the full Admin set, all Stage-1 scope.
    crate + EHR-core completion (contribution listing, attestations) →
    SM-2 Definitions completion (archetypes, ADL2, query calls) →
    SM-3 PARTY_RELATIONSHIP + EHR Index → SM-4 Terminology surface + Admin
-   (statistics, archive, dump/load) → SM-5 Message service (**RM
-   `ehr_extract` generated from the BMM**, extract export/import, TDD) →
+   (statistics, archive, dump/load) → SM-5 Message service (extract
+   export/import over the **already-generated** RM `ehr_extract` types
+   (`EXTRACT`/`EXTRACT_SPEC`), TDD) →
    SM-6 Subject Proxy (variables, data sets, bindings, openEHR data-frame
    executor). `ehrbase-audit` is recognized as the realized System Log
    component.
 5. **SM service types are hand-written idiomatic Rust in `ehrbase-sm`**
    (application layer, ADR-006 discipline): the SM component publishes no
-   BMM (UML is MagicDraw-only), so ADR-004 codegen does not apply — except
-   the RM `ehr_extract` package, which *is* in the RM BMM and is generated
-   like every other RM package.
+   BMM (UML is MagicDraw-only), so ADR-004 codegen does not apply. (The RM
+   `ehr_extract` package *is* in the RM BMM and is **already generated** in
+   `openehr-rm` with canonical JSON + XML — verified 2026-07-09; SM-5 builds
+   the service over those types, no codegen work.)
 6. **SIM-B + SDF anchor the FLAT work** (P17): the `ctx/` vocabulary and
    transformation rules are audited against SIM-B; SDF-normative leaf
    encodings are accepted alongside Better forms; divergences documented.
@@ -107,9 +110,9 @@ and the full Admin set, all Stage-1 scope.
 - **Honestly harder:** the SM is TRIAL with stub interfaces (`I_SYSTEM_LOG`,
   `I_MESSAGE_SERVICE`, empty enums, `@@` types) — we own the filled
   contracts and must track upstream changes; Subject Proxy pulls in
-  PROC-adjacent concepts (`SYSTEM_CALL`) we must type ourselves; EHR_EXTRACT
-  requires extending codegen coverage and canonical serialization to a
-  package previously unemitted.
+  PROC-adjacent concepts (`SYSTEM_CALL`) we must type ourselves; the
+  Extract service must define IMPORTED_VERSION replay semantics over the
+  generated `EXTRACT`/`EXTRACT_SPEC` types.
 - **Risk control:** SM-1 is behaviour-preserving (ECC run must not move);
   each phase gates on the conformance suite; the trait split is mechanical.
 - **Path churn (accepted):** the `app/*` move touches every path reference
