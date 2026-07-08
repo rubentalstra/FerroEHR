@@ -7,6 +7,13 @@
 # path (config-parity, §3.4). Bring a stack up, benchmark it, take it down;
 # `run.sh` does exactly that. Images are pinned by tag; record the digests in
 # the report's environment block.
+#
+# All services share one explicit network so each app resolves its database by
+# service name (Compose's default network would also do this; the explicit
+# declaration mirrors the reference EHRbase compose and removes any ambiguity).
+networks:
+  benchmark-net: {}
+
 services:
   # ── ehrbase-rs (this project) ───────────────────────────────────────────────
   ehrbase-rs-db:
@@ -19,6 +26,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 24
+    networks: [benchmark-net]
     profiles: ["rs"]
 
   ehrbase-rs:
@@ -33,6 +41,7 @@ services:
       - ../ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:
       - "8090:8080"
+    networks: [benchmark-net]
     profiles: ["rs"]
 
   # ── EHRbase (Java, the reference implementation) ────────────────────────────
@@ -50,6 +59,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 24
+    networks: [benchmark-net]
     profiles: ["java"]
 
   ehrbase-java:
@@ -73,4 +83,5 @@ services:
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "true"
     ports:
       - "8091:8080"
+    networks: [benchmark-net]
     profiles: ["java"]
