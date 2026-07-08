@@ -1,4 +1,4 @@
-# Phase SM-1 — the `ehrbase-sm` native-API crate + EHR-core completion
+# Phase SM-1 — repo layout (`app/*`) + the `ehrbase-sm` native-API crate + EHR-core completion
 
 - Status: not-started
 - Owner: —
@@ -8,8 +8,10 @@
 
 ## Objectives
 
-Make the SM Platform Service Model the explicit service seam: stand up
-`crates/ehrbase-sm` as the native API (traits + shared types + error table),
+Make the two-layer split physical and the SM Platform Service Model the
+explicit service seam: move the application crates to `app/*` (spec layer
+stays in `crates/*`), stand up
+`app/ehrbase-sm` as the native API (traits + shared types + error table),
 migrate the `Backend` trait family out of `ehrbase-rest`, split the EHR
 mega-trait along SM interface boundaries, and close the EHR-core gaps
 (contribution listing/count, attestations, EHR_SUMMARY counts). Behaviour-
@@ -23,7 +25,8 @@ preserving at the wire: the ECC conformance run must not move.
 
 ## Scope
 
-In: crate creation, trait migration/split, shared types (`UpdateVersion<T>`,
+In: the `app/*` workspace-layout move, crate creation, trait migration/split,
+shared types (`UpdateVersion<T>`,
 `UpdateAudit`, `Page`, `EhrSummary`+counts, execute specs, `CallStatus`
 table), `ValidityChecker` + `SystemLog` facades, `list_contributions`/
 `contribution_count`, attestation storage in the contribution path,
@@ -33,7 +36,15 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
 
 ## Tasks
 
-- [ ] `crates/ehrbase-sm` scaffold (workspace member, `thiserror`, deps on
+- [ ] **Workspace layout move (first, standalone mechanical commit):**
+      `git mv crates/{ehrbase,ehrbase-rest,ehrbase-compat,ehrbase-audit,
+      ehrbase-authz,ehrbase-signing,ehrbase-conformance,ehrbase-bench} app/`;
+      root `Cargo.toml` `members = ["crates/*", "app/*"]`; fix workspace
+      path-deps; update CI workflows, scripts, `.claude/rules` path scopes,
+      `.claude/hooks` path patterns, `CLAUDE.md` repo map,
+      `docs/architecture.md` workspace table, README badges/paths if any.
+      Gate: workspace builds + full test suite green before anything else.
+- [ ] `app/ehrbase-sm` scaffold (workspace member, `thiserror`, deps on
       `openehr-base`/`openehr-rm`/`openehr-its` only) — `/crate-scaffold`
 - [ ] Move `ServiceResponse`/`ResourceMeta`, `AqlQueryRequest`/`QueryOutcome`,
       `PartyKind` into `ehrbase-sm::types`; re-export from `ehrbase-rest`
@@ -61,8 +72,8 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
 - [ ] Query gate: e2e test that population queries exclude
       `is_queryable = false` EHRs (`i_query_service.adoc` `ehr_ids` doc);
       RESULT_SET meta audit vs ITS-REST shape
-- [ ] `docs/architecture.md`: add the SM component map + `ehrbase-sm` crate
-      row (14 crates)
+- [ ] `docs/architecture.md`: add the SM component map, the `app/*` vs
+      `crates/*` layout, and the `ehrbase-sm` crate row
 
 ## Exit criteria
 
