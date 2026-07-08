@@ -1,4 +1,13 @@
-# openEHR CNF Conformance Framework — design (v3: the multi-source engine)
+# The ehrbase-rs Conformance Catalogue (ECC) — design (v3.1: our own framework)
+
+> **v3.1 ownership inversion (owner directive, 2026-07-08):** the primary test
+> system is **ours** — our numbering, our taxonomy, our catalogue. The official
+> openEHR CNF corpus is **reference material**: upstream is frozen/unmaintained
+> (dormant since 2024-08, stub chapters never finished), so it cannot be the
+> key system of a living test engine. Instead, every official unit (schedule
+> case, truth-table row, robot case) must be **traced** by at least one ECC
+> case or excluded with a reason — guards prove we dropped nothing the
+> official corpus defines, while the catalogue itself is free to exceed it.
 
 - **Status:** v3 accepted 2026-07-08 (owner directive: complete redesign) —
   **supersedes v2's registry-only model**; implementation in progress on
@@ -67,11 +76,15 @@ load-bearing facts:
 
 ## 3. The case universe: six gated sources
 
-Every source has (a) an **extractor** that parses the vendored artifact into
-an inventory of executable-unit ids, (b) a **registry** of native Rust
-implementations keyed by those ids, and (c) a **coverage guard** (unit test)
-asserting `extracted = implemented ∪ excluded(reason)` — build-breaking on
-re-vendor drift, silent-drop-proof by construction.
+The catalogue (the ECC registry, §3.1) is the primary system; the sources
+below are where its cases take their **reference material** from. Every
+reference source has (a) an **extractor** that parses the vendored artifact
+into an inventory of reference-unit ids, and (b) a **trace guard** (unit
+test) asserting `extracted = traced-by-ECC ∪ excluded(reason)` —
+build-breaking on re-vendor drift, silent-drop-proof by construction. The
+catalogue is free to define cases with **no** official reference (S5/S6 and
+anything the frozen corpus never covered); those carry their spec citation as
+the grounding instead.
 
 | # | Source | Artifact parsed | Executable units (target) |
 |---|--------|-----------------|---------------------------|
@@ -93,23 +106,38 @@ new implementation — S3's guard accepts *coverage by reference*, so the matrix
 is a completeness check first and a case generator only for genuinely
 unevidenced (operation, status) pairs.
 
-### 3.1 Case identity (stable, source-prefixed)
+### 3.1 Case identity: the ECC id (ours, stable, industry-style)
+
+The catalogue's primary key is our own id, in the classic
+`<prefix>-<area>-<number>` test-catalogue convention:
 
 ```
-SCHED:I_EHR_SERVICE.create_ehr-main#ds03        (schedule case × data-set row)
-SCHED:CONT-DV_COUNT-validate_range#r07          (content truth-table row)
-ROBOT:I_EHR_COMPOSITION/create_composition-event/001
-REST:EHR.createEhr@409
-AQL:B/102@loaded_db
-FILL:CONT-DV_PERIODIC_TIME_SPEC-validate_open#r01
-RUN:SIGN-digest-recomputes
+ECC-<AREA>-<NNN>          a test case      (ECC-EHR-003, ECC-QRY-118)
+ECC-<AREA>-<NNN>.<VV>     a data-set variant of that case (ECC-VAL-042.07)
 ```
 
-Variant ids are assigned deterministically from the artifact (table row order,
-data-set table order) by the extractor, so a re-vendor that inserts a row
-breaks the guard loudly instead of silently shifting meaning: each implemented
-variant also pins a **content fingerprint** (normalized row text hash) checked
-by the guard.
+- **AREA** (the category — the "full list per category" view): `EHR` (EHR
+  service), `STA` (EHR_STATUS), `COM` (COMPOSITION), `CTB` (CONTRIBUTION),
+  `DIR` (directory/FOLDER), `TPL` (template/OPT provisioning), `SQR` (stored
+  queries), `QRY` (AQL execution), `VAL` (content/archetype validation —
+  the master15/16/17 ground plus our fills), `REST` (ITS-REST operation ×
+  status matrix), `DEM` (demographic), `ADM` (admin), `SEC` (security/authz),
+  `SIG` (version signing), `MSG` (messaging, when implemented).
+- **Numbers are allocated once and never reused**; a retired case keeps its
+  number with status `Retired`. Variants `.01`-`.99` are the case's data-set
+  rows.
+- **Trace links** are metadata, not identity: each ECC case lists the official
+  references it realizes —
+  `sched:I_EHR_SERVICE.create_ehr-main`, `sched-row:CONT-DV_COUNT-validate_range#r07`,
+  `robot:I_EHR_COMPOSITION/create_composition-event/001`,
+  `oas:EHR.createEhr@409`, `aql:B/102@loaded_db` — plus the spec citation
+  (file + section) that grounds its assertions.
+
+Reference-side unit ids (the `sched:`/`robot:`/`oas:`/`aql:` forms) are
+assigned deterministically by the extractors (table row order, document
+order), and every traced schedule row pins a **content fingerprint**
+(normalized row text hash) — a re-vendor that inserts or edits a row breaks
+the trace guard loudly instead of silently shifting meaning.
 
 ### 3.2 S1 — the schedule, variant-expanded (the normative spine)
 
