@@ -1,9 +1,11 @@
-//! The serializable run-results model (design §4.5): what `results.json` holds
-//! and what the Markdown/badge renderers consume. Kept as stable strings (chapter
-//! labels, reason labels, status names) so the JSON is a durable, tool-readable
-//! record independent of the Rust enum layout.
+//! The serializable run-results model (design v4): what `results.json` holds
+//! and what the Markdown/badge renderers consume. Kept as stable strings so
+//! the JSON is a durable, tool-readable record independent of the Rust enum
+//! layout.
 
 use serde::{Deserialize, Serialize};
+
+use crate::version::SpecVersions;
 
 /// The full result set of one conformance run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,11 +18,8 @@ pub struct RunResults {
     pub started: String,
     /// The selection that scoped this run.
     pub selection: SelectionInfo,
-    /// The outcome of every executed (implemented) case × format.
+    /// The outcome of every executed (registered) case × format.
     pub cases: Vec<CaseOutcome>,
-    /// The classification of every identified schedule case (the honest total
-    /// coverage — implemented and excluded alike).
-    pub inventory: Vec<InventoryClass>,
 }
 
 impl RunResults {
@@ -53,10 +52,11 @@ impl RunResults {
             .count()
     }
 
-    /// The number of identified schedule cases (the coverage denominator).
+    /// The number of executed case×format outcomes (the run denominator; the
+    /// catalogue denominator lives in `CATALOG.md`).
     #[must_use]
-    pub fn identified(&self) -> usize {
-        self.inventory.len()
+    pub fn executed(&self) -> usize {
+        self.cases.len()
     }
 }
 
@@ -65,13 +65,16 @@ impl RunResults {
 pub struct SutIdentity {
     /// The ITS-REST base URL.
     pub base_url: String,
-    /// The declared RM version (a property of the claim, not a deviation — §2.1).
-    pub rm_version: String,
+    /// The declared specification versions (a property of the claim).
+    #[serde(default)]
+    pub versions: SpecVersions,
     /// The declared auth mode (e.g. `"basic (RBAC off)"`).
     pub auth_mode: String,
 }
 
-/// The pinned CNF corpus.
+/// The pinned reference corpus this framework was designed against
+/// (design-time reading only — recorded for provenance, never consulted at
+/// runtime).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CorpusPin {
     /// The upstream repository.
@@ -117,7 +120,12 @@ pub enum CaseStatus {
 /// The outcome of one executed case in one format.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CaseOutcome {
-    /// The case id.
+    /// The ECC id (our own catalogue number, e.g. `"ECC-EHR-005"`) — the
+    /// primary public identity (design §3.1, v3.1). Empty only if the
+    /// catalogue is missing (guarded against in `tests/coverage.rs`).
+    #[serde(default)]
+    pub ecc_id: String,
+    /// The primary reference key (the official CNF id for traced cases).
     pub id: String,
     /// The chapter label (e.g. `"master06"`).
     pub chapter: String,
@@ -143,23 +151,3 @@ pub struct CaseOutcome {
     pub duration_ms: u128,
 }
 
-/// The classification of one identified schedule case.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InventoryClass {
-    /// The stable classification key.
-    pub key: String,
-    /// The raw case id.
-    pub id: String,
-    /// The chapter label.
-    pub chapter: String,
-    /// `"implemented"` or an exclusion-reason label.
-    pub kind: String,
-}
-
-impl InventoryClass {
-    /// Whether this entry is implemented.
-    #[must_use]
-    pub fn is_implemented(&self) -> bool {
-        self.kind == "implemented"
-    }
-}

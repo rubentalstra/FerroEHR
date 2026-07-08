@@ -111,7 +111,7 @@ pub fn to_xml(opt: &OperationalTemplate) -> Result<String, CaseError> {
 /// `template_id` avoids the 409 the store returns for a duplicate id — see
 /// `service::template::store_template`).
 pub fn set_template_id(opt: &mut OperationalTemplate, template_id: &str) {
-    opt.template_id.value = template_id.to_owned();
+    template_id.clone_into(&mut opt.template_id.value);
 }
 
 /// Set the cardinality interval of a **top-level** multiple attribute of the root
@@ -371,7 +371,7 @@ pub fn narrow_nested_child_type(
         };
         for ch in children {
             if let Some(t) = object_rm_type_mut(ch) {
-                *t = rm_type.to_owned();
+                rm_type.clone_into(t);
                 narrowed = true;
             }
         }

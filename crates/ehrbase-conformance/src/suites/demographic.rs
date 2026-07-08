@@ -4,12 +4,11 @@
 //! placeholder `aaaa`/`bbbb` headings (no concrete cases — "Test Environment:
 //! TBD"), so there is nothing to transcribe. These `DEMO-*` cases are our own
 //! spec-grounded functional cases, specified against the **ITS-REST demographic
-//! API** (`/demographic/{person,agent,group,organisation,role}` + `versioned_party`
-//! + tags) realizing SM `I_DEMOGRAPHIC_SERVICE`
+//! API** (`/demographic/{person,agent,group,organisation,role}` plus
+//! `versioned_party` and tags) realizing SM `I_DEMOGRAPHIC_SERVICE`
 //! (`docs/specs/openehr/SM/...#_i_demographic_service_interface`) over the RM
-//! Demographic IM. They carry [`Provenance::RunnerDefined`] so they sit outside
-//! the 322-case schedule inventory (the coverage guard excludes non-`Schedule`
-//! provenance), exactly like the `SIGN-*` cases.
+//! Demographic IM. They carry [`Provenance::RunnerDefined`], exactly like the
+//! `SIGN-*` cases.
 //!
 //! Party versioned-object contract (mirrors the EHR/composition group): `201`
 //! create (+`ETag`/`Location`), `200` get, `200`/`204` update, `204` delete,

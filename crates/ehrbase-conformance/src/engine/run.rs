@@ -1,24 +1,21 @@
-//! The runner (design §4.3–§4.5): executes the selected implemented cases
-//! against a SUT transport and assembles the [`RunResults`], including the full
-//! inventory classification so the report shows honest total coverage even at
-//! the zero state.
+//! The runner (design v4): executes the selected registered cases against a
+//! SUT transport and assembles the [`RunResults`]. Coverage accounting is
+//! catalogue-driven (`reporting`), not tied to any legacy corpus.
 
 use std::time::Instant;
 
 use crate::case::{Format, Profile};
 use crate::harness::{CaseError, RunContext, Transport};
-use crate::registry::{Registration, registry};
-use crate::results::{
-    CaseOutcome, CaseStatus, CorpusPin, InventoryClass, RunResults, SelectionInfo, SutIdentity,
-};
-use crate::schedule::{self, ScheduleError};
+use crate::registry::registry;
+use crate::results::{CaseOutcome, CaseStatus, CorpusPin, RunResults, SelectionInfo, SutIdentity};
+use crate::version::SpecVersions;
 
 /// Errors raised while setting up a run (before any case executes).
 #[derive(Debug, thiserror::Error)]
 pub enum RunError {
-    /// The schedule could not be parsed/classified.
+    /// The ECC catalogue could not be loaded.
     #[error(transparent)]
-    Schedule(#[from] ScheduleError),
+    Catalog(#[from] crate::catalog::CatalogError),
 }
 
 /// The scope + declared context of a run.
@@ -30,8 +27,9 @@ pub struct RunConfig {
     pub profile: Option<Profile>,
     /// The formats to run (intersected per-case with the case's own formats).
     pub formats: Vec<Format>,
-    /// The declared RM version (recorded in the statement).
-    pub rm_version: String,
+    /// The declared specification versions (recorded in the statement).
+    /// Only [`SpecVersions::latest`] is supported today.
+    pub versions: SpecVersions,
     /// The declared auth mode (recorded in the statement).
     pub auth_mode: String,
 }
@@ -42,7 +40,7 @@ impl Default for RunConfig {
             filter: None,
             profile: None,
             formats: vec![Format::Json],
-            rm_version: "1.2.0".to_owned(),
+            versions: SpecVersions::latest(),
             auth_mode: "unknown".to_owned(),
         }
     }
@@ -61,30 +59,13 @@ impl RunConfig {
 /// Execute the selected cases against `transport` and assemble the results.
 ///
 /// # Errors
-/// [`RunError::Schedule`] if the vendored schedule cannot be parsed/classified.
+/// [`RunError::Catalog`] if the ECC catalogue cannot be loaded.
 pub async fn run(transport: &dyn Transport, config: &RunConfig) -> Result<RunResults, RunError> {
     let reg = registry();
+    // The ECC catalogue: every outcome carries our own case number.
+    let catalog = crate::catalog::Catalog::load_default()?;
 
-    // Full inventory classification (the honest total-coverage view).
-    let schedule = schedule::parse_default()?;
-    let inventory: Vec<InventoryClass> = schedule
-        .inventory()?
-        .into_iter()
-        .map(|item| {
-            let kind = match reg.classify(&item) {
-                Registration::Implemented(_) => "implemented".to_owned(),
-                Registration::Excluded(reason) => reason.label(),
-            };
-            InventoryClass {
-                key: item.key,
-                id: item.id,
-                chapter: item.chapter.label().to_owned(),
-                kind,
-            }
-        })
-        .collect();
-
-    // Execute the implemented, selected cases.
+    // Execute the registered, selected cases.
     let mut cases = Vec::new();
     for entry in reg.entries() {
         let meta = &entry.meta;
@@ -108,6 +89,10 @@ pub async fn run(transport: &dyn Transport, config: &RunConfig) -> Result<RunRes
                 }
             };
             cases.push(CaseOutcome {
+                ecc_id: catalog
+                    .by_primary_ref(meta.id)
+                    .map(|e| e.ecc_id.clone())
+                    .unwrap_or_default(),
                 id: meta.id.to_owned(),
                 chapter: meta.chapter.label().to_owned(),
                 capability: format!("{:?}", meta.capability),
@@ -127,7 +112,7 @@ pub async fn run(transport: &dyn Transport, config: &RunConfig) -> Result<RunRes
     Ok(RunResults {
         sut: SutIdentity {
             base_url: transport.describe(),
-            rm_version: config.rm_version.clone(),
+            versions: config.versions.clone(),
             auth_mode: config.auth_mode.clone(),
         },
         corpus: CorpusPin::default(),
@@ -142,6 +127,5 @@ pub async fn run(transport: &dyn Transport, config: &RunConfig) -> Result<RunRes
                 .collect(),
         },
         cases,
-        inventory,
     })
 }
