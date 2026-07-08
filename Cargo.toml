@@ -9,7 +9,7 @@
 
 [workspace]
 resolver = "3"                      # resolver v3 (edition 2024)
-members = ["crates/*"]
+members = ["crates/*", "app/*", "tools/*"]
 
 [workspace.package]
 edition = "2024"
@@ -198,7 +198,7 @@ testcontainers = "0.27.3"           # real PostgreSQL 18 in tests (verify latest
 testcontainers-modules = { version = "0.15.0", features = ["postgres"] }   # verify latest
 criterion = { version = "0.8.2", features = ["html_reports"] }
 divan = "0.1"
-hdrhistogram = "7.5.4"               # coordinated-omission-corrected latency (ehrbase-bench)
+hdrhistogram = "7.5.4"               # coordinated-omission-corrected latency (tools/benchmark)
 sysinfo = "0.39.5"                   # CPU/RSS sampling for the benchmark harness
 
 # Cargo plugins used in CI (installed, not dependencies):

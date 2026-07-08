@@ -1,5 +1,5 @@
 ---
-paths: ["crates/ehrbase-rest/**", "crates/ehrbase/src/config/**", "crates/ehrbase/src/**/security/**"]
+paths: ["app/ehrbase-rest/**", "app/ehrbase/src/config/**", "app/ehrbase/src/**/security/**"]
 ---
 
 # Authentication — Basic + OAuth2/OIDC (Stage 1)

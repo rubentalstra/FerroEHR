@@ -1,0 +1,314 @@
+# The ehrbase-rs Conformance Catalogue (ECC) — allocated case numbers.
+# ecc_id<TAB>area<TAB>status<TAB>primary_ref<TAB>title
+# Numbers are allocated once and NEVER reused; retire, don't delete.
+# Regenerate additions: REGEN_CATALOG=1 cargo test -p conformance --test coverage
+ECC-EHR-001	EHR	active	ehr/has-ehr-existing-ehr-id	EHR existence check — existing EHR id
+ECC-EHR-002	EHR	active	ehr/has-ehr-existing-subject-id	EHR existence check — existing subject id
+ECC-EHR-003	EHR	active	ehr/has-ehr-non-existing-ehr-id	EHR existence check — non existing EHR id
+ECC-EHR-004	EHR	active	ehr/has-ehr-non-existing-subject-id	EHR existence check — non existing subject id
+ECC-EHR-005	EHR	active	ehr/create-ehr-main	Create EHR — main
+ECC-EHR-006	EHR	active	ehr/create-ehr-same-ehr-twice	Create EHR — same EHR twice
+ECC-EHR-007	EHR	active	ehr/create-ehr-two-ehrs-same-patient	Create EHR — two EHRs same patient
+ECC-EHR-008	EHR	active	ehr/get-ehr-existing-ehr-by-ehr-id	Get EHR — existing EHR by EHR id
+ECC-EHR-009	EHR	active	ehr/get-ehr-existing-ehr-by-subject-id	Get EHR — existing EHR by subject id
+ECC-EHR-010	EHR	active	ehr/get-ehr-get-ehr-by-invalid-ehr-id	Get EHR — get EHR by invalid EHR id
+ECC-EHR-011	EHR	active	ehr/get-ehr-get-ehr-by-invalid-subject-id	Get EHR — get EHR by invalid subject id
+ECC-STA-001	STA	active	sta/get-ehr-status-get-by-ehr-id	Get EHR_STATUS — get by EHR id
+ECC-STA-002	STA	active	sta/get-ehr-status-bad-ehr	Get EHR_STATUS — bad EHR
+ECC-STA-003	STA	active	sta/set-ehr-queryable-existing-ehr	Set EHR_STATUS is_queryable — existing EHR
+ECC-STA-004	STA	active	sta/set-ehr-queryable-bad-ehr	Set EHR_STATUS is_queryable — bad EHR
+ECC-STA-005	STA	active	sta/set-ehr-modifiable-existing-ehr	Set EHR_STATUS is_modifiable — existing EHR
+ECC-STA-006	STA	active	sta/set-ehr-modifiable-bad-ehr	Set EHR_STATUS is_modifiable — bad EHR
+ECC-STA-007	STA	active	sta/clear-ehr-queryable-existing-ehr	Clear EHR_STATUS is_queryable — existing EHR
+ECC-STA-008	STA	active	sta/clear-ehr-queryable-bad-ehr	Clear EHR_STATUS is_queryable — bad EHR
+ECC-STA-009	STA	active	sta/clear-ehr-modifiable-existing-ehr	Clear EHR_STATUS is_modifiable — existing EHR
+ECC-STA-010	STA	active	sta/clear-ehr-modifiable-bad-ehr	Clear EHR_STATUS is_modifiable — bad EHR
+ECC-EHR-012	EHR	active	ehr/create-ehr-invalid-status	Create EHR — reject invalid EHR_STATUS data sets
+ECC-COM-001	COM	active	com/create-composition-event	Create composition — event
+ECC-COM-002	COM	active	com/create-composition-persistent	Create composition — persistent
+ECC-COM-003	COM	active	com/create-composition-same-opt-twice	Create composition — same OPT twice
+ECC-COM-004	COM	active	com/create-composition-invalid-event	Create composition — invalid event
+ECC-COM-005	COM	active	com/create-composition-invalid-persistent	Create composition — invalid persistent
+ECC-COM-006	COM	active	com/create-composition-event-bad-opt	Create composition — event bad OPT
+ECC-COM-007	COM	active	com/create-composition-event-bad-ehr	Create composition — event bad EHR
+ECC-COM-008	COM	active	com/get-composition-latest	Get latest composition
+ECC-COM-009	COM	active	com/get-composition-latest-bad-composition	Get latest composition — bad composition
+ECC-COM-010	COM	active	com/get-composition-latest-bad-ehr	Get latest composition — bad EHR
+ECC-COM-011	COM	active	com/has-composition-bad-composition	Composition existence check — bad composition
+ECC-COM-012	COM	active	com/has-composition-bad-ehr	Composition existence check — bad EHR
+ECC-COM-013	COM	active	com/get-composition-at-time	Get composition at time
+ECC-COM-014	COM	active	com/get-composition-at-time-no-time-arg	Get composition at time — no time arg
+ECC-COM-015	COM	active	com/get-composition-at-time-bad-composition	Get composition at time — bad composition
+ECC-COM-016	COM	active	com/get-composition-at-time-bad-ehr	Get composition at time — bad EHR
+ECC-COM-017	COM	active	com/get-composition-at-times	Get composition at multiple times
+ECC-COM-018	COM	active	com/get-composition-version	Get composition version
+ECC-COM-019	COM	active	com/get-composition-version-bad-version	Get composition version — bad version
+ECC-COM-020	COM	active	com/get-composition-version-bad-ehr	Get composition version — bad EHR
+ECC-COM-021	COM	active	com/get-composition-versions	Get composition versions
+ECC-COM-022	COM	active	com/get-versioned-composition	Get versioned composition
+ECC-COM-023	COM	active	com/get-versioned-composition-non-existent	Get versioned composition — non existent
+ECC-COM-024	COM	active	com/get-versioned-composition-bad-ehr	Get versioned composition — bad EHR
+ECC-COM-025	COM	active	com/update-composition-event	Update composition — event
+ECC-COM-026	COM	active	com/update-composition-persistent	Update composition — persistent
+ECC-COM-027	COM	active	com/update-composition-non-existent	Update composition — non existent
+ECC-COM-028	COM	active	com/update-composition-wrong-template	Update composition — wrong template
+ECC-COM-029	COM	active	com/delete-composition-event	Delete composition — event
+ECC-COM-030	COM	active	com/delete-composition-persistent	Delete composition — persistent
+ECC-COM-031	COM	active	com/delete-composition-non-existent	Delete composition — non existent
+ECC-CTB-001	CTB	active	ctb/commit-contribution-valid-composition	Commit contribution — valid composition
+ECC-CTB-002	CTB	active	ctb/commit-contribution-invalid-composition	Commit contribution — invalid composition
+ECC-CTB-003	CTB	active	ctb/commit-contribution-empty	Commit contribution — empty
+ECC-CTB-004	CTB	active	ctb/commit-contribution-valid-invalid-compositions	Commit contribution — valid invalid compositions
+ECC-CTB-005	CTB	active	ctb/commit-contribution-non-exiting-opt	Commit contribution — non exiting OPT
+ECC-CTB-006	CTB	active	ctb/commit-contribution-event-composition	Commit contribution — event composition
+ECC-CTB-007	CTB	active	ctb/commit-contribution-persistent-composition	Commit contribution — persistent composition
+ECC-CTB-008	CTB	active	ctb/commit-contribution-delete	Commit contribution — delete
+ECC-CTB-009	CTB	active	ctb/commit-contribution-two-commits-second-invalid	Commit contribution — two commits second invalid
+ECC-CTB-010	CTB	active	ctb/commit-contribution-two-commits-second-creation	Commit contribution — two commits second creation
+ECC-CTB-011	CTB	active	ctb/commit-contribution-minimal-ehr-status	Commit contribution — minimal EHR status
+ECC-CTB-012	CTB	active	ctb/commit-contribution-full-ehr-status	Commit contribution — full EHR status
+ECC-CTB-013	CTB	active	ctb/commit-contribution-ehr-status-invalid-change-type	Commit contribution — EHR status invalid change type
+ECC-CTB-014	CTB	active	ctb/commit-contribution-invalid-ehr-status	Commit contribution — invalid EHR status
+ECC-CTB-015	CTB	active	ctb/commit-contribution-valid-directory	Commit contribution — valid directory
+ECC-CTB-016	CTB	active	ctb/commit-contribution-fail-create-existing-directory	Commit contribution — fail create existing directory
+ECC-CTB-017	CTB	active	ctb/commit-contribution-fail-modify-non-existing-directory	Commit contribution — fail modify non existing directory
+ECC-CTB-018	CTB	active	ctb/commit-contribution-update-existing-directory	Commit contribution — update existing directory
+ECC-CTB-019	CTB	active	ctb/get-contribution-existing	Get contribution — existing
+ECC-CTB-020	CTB	active	ctb/get-contribution-empty-ehr	Get contribution — empty EHR
+ECC-CTB-021	CTB	active	ctb/get-contribution-bad-ehr	Get contribution — bad EHR
+ECC-CTB-022	CTB	active	ctb/get-contribution-bad-contribution	Get contribution — bad contribution
+ECC-CTB-023	CTB	active	ctb/has-contribution-existing	Contribution existence check — existing
+ECC-CTB-024	CTB	active	ctb/has-contribution-bad-contribution	Contribution existence check — bad contribution
+ECC-CTB-025	CTB	active	ctb/has-contribution-bad-ehr	Contribution existence check — bad EHR
+ECC-CTB-026	CTB	active	ctb/has-contribution-empty-ehr	Contribution existence check — empty EHR
+ECC-CTB-027	CTB	active	ctb/list-contributions-empty	List contributions — empty
+ECC-CTB-028	CTB	active	ctb/list-contributions-non-existing-ehr	List contributions — non existing EHR
+ECC-CTB-029	CTB	active	ctb/list-contributions-post-commit	List contributions — post commit
+ECC-CTB-030	CTB	active	ctb/list-contributions-ehr-containing-directory	List contributions — EHR containing directory
+ECC-CTB-031	CTB	active	ctb/list-contributions-ehr-containing-ehr-status	List contributions — EHR containing EHR status
+ECC-DIR-001	DIR	active	dir/create-directory-empty-ehr	Create directory — empty EHR
+ECC-DIR-002	DIR	active	dir/create-directory-ehr-with-directory	Create directory — EHR with directory
+ECC-DIR-003	DIR	active	dir/create-directory-bad-ehr	Create directory — bad EHR
+ECC-DIR-004	DIR	active	dir/get-directory-ehr-root-directory	Get directory — EHR root directory
+ECC-DIR-005	DIR	active	dir/get-directory-bad-ehr	Get directory — bad EHR
+ECC-DIR-006	DIR	active	dir/get-directory-at-time-ehr-with-directory	Get directory at time — EHR with directory
+ECC-DIR-007	DIR	active	dir/get-directory-at-time-bad-ehr	Get directory at time — bad EHR
+ECC-DIR-008	DIR	active	dir/update-directory-ehr-with-directory	Update directory — EHR with directory
+ECC-DIR-009	DIR	active	dir/update-directory-bad-ehr	Update directory — bad EHR
+ECC-DIR-010	DIR	active	dir/delete-directory-ehr-with-directory	Delete directory — EHR with directory
+ECC-DIR-011	DIR	active	dir/delete-directory-bad-ehr	Delete directory — bad EHR
+ECC-DIR-012	DIR	active	dir/has-directory-empty-ehr	Directory existence check — empty EHR
+ECC-DIR-013	DIR	active	dir/has-directory-ehr-with-directory	Directory existence check — EHR with directory
+ECC-DIR-014	DIR	active	dir/has-directory-bad-ehr	Directory existence check — bad EHR
+ECC-DIR-015	DIR	active	dir/has-path-ehr-root-directory	Directory path existence check — EHR root directory
+ECC-DIR-016	DIR	active	dir/has-path-folder-structure	Directory path existence check — folder structure
+ECC-DIR-017	DIR	active	dir/has-path-empty-ehr	Directory path existence check — empty EHR
+ECC-DIR-018	DIR	active	dir/has-path-bad-ehr	Directory path existence check — bad EHR
+ECC-DIR-019	DIR	active	dir/has-directory-version-empty-ehr	Directory version existence check — empty EHR
+ECC-DIR-020	DIR	active	dir/has-directory-version-directory-with-two-versions	Directory version existence check — directory with two versions
+ECC-DIR-021	DIR	active	dir/has-directory-version-bad-ehr	Directory version existence check — bad EHR
+ECC-DIR-022	DIR	active	dir/get-directory-empty-ehr	Get directory — empty EHR
+ECC-DIR-023	DIR	active	dir/get-directory-directory-with-structure	Get directory — directory with structure
+ECC-DIR-024	DIR	active	dir/get-directory-at-time-ehr-with-directory-empty-time	Get directory at time — EHR with directory empty time
+ECC-DIR-025	DIR	active	dir/get-directory-at-time-ehr-with-directory-versions	Get directory at time — EHR with directory versions
+ECC-DIR-026	DIR	active	dir/get-directory-at-time-ehr-with-directory-versions-empty-time	Get directory at time — EHR with directory versions empty time
+ECC-DIR-027	DIR	active	dir/get-directory-at-time-empty-ehr	Get directory at time — empty EHR
+ECC-DIR-028	DIR	active	dir/get-directory-at-time-empty-ehr-empty-time	Get directory at time — empty EHR empty time
+ECC-DIR-029	DIR	active	dir/get-directory-at-time-multiple-versions-first	Get directory at time — multiple versions first
+ECC-DIR-030	DIR	active	dir/get-directory-at-version-bad-ehr	Get directory at version — bad EHR
+ECC-DIR-031	DIR	active	dir/get-directory-at-version-directory-with-two-versions	Get directory at version — directory with two versions
+ECC-DIR-032	DIR	active	dir/get-directory-at-version-empty-ehr	Get directory at version — empty EHR
+ECC-DIR-033	DIR	active	dir/get-versioned-directory-empty-ehr	Get versioned directory — empty EHR
+ECC-DIR-034	DIR	active	dir/get-versioned-directory-directory-with-two-versions	Get versioned directory — directory with two versions
+ECC-DIR-035	DIR	active	dir/get-versioned-directory-bad-ehr	Get versioned directory — bad EHR
+ECC-DIR-036	DIR	active	dir/update-directory-empty-ehr	Update directory — empty EHR
+ECC-DIR-037	DIR	active	dir/delete-directory-empty-ehr	Delete directory — empty EHR
+ECC-TPL-001	TPL	active	tpl/upload-opt-valid-opt	Upload OPT — valid OPT
+ECC-TPL-002	TPL	active	tpl/upload-opt-invalid-opt	Upload OPT — invalid OPT
+ECC-TPL-003	TPL	active	tpl/get-opts-retrieve-all-no-opts	List OPTs — retrieve all no OPTs
+ECC-TPL-004	TPL	active	tpl/upload-opt-valid-opt-twice-conflict	Upload OPT — valid OPT twice conflict
+ECC-TPL-005	TPL	active	tpl/upload-opt-valid-opt-twice-no-conflict	Upload OPT — valid OPT twice no conflict
+ECC-TPL-006	TPL	active	tpl/get-opt-retrieve-single	Get OPT — retrieve single
+ECC-TPL-007	TPL	active	tpl/get-opt-retrieve-latest-version	Get OPT — retrieve latest version
+ECC-TPL-008	TPL	active	tpl/get-opt-retrieve-specific-version	Get OPT — retrieve specific version
+ECC-TPL-009	TPL	active	tpl/get-opt-retrieve-fail	Get OPT — retrieve fail
+ECC-TPL-010	TPL	active	tpl/get-opts-retrieve-all	List OPTs — retrieve all
+ECC-TPL-011	TPL	active	tpl/validate-opt-valid-opt	Validate OPT — valid OPT
+ECC-TPL-012	TPL	active	tpl/validate-opt-invalid-opt	Validate OPT — invalid OPT
+ECC-TPL-013	TPL	active	tpl/delete-opt-delete-non-existing	Delete OPT — delete non existing
+ECC-TPL-014	TPL	active	tpl/delete-opt-delete-existing	Delete OPT — delete existing
+ECC-TPL-015	TPL	active	tpl/delete-opt-delete-latest-version	Delete OPT — delete latest version
+ECC-TPL-016	TPL	active	tpl/delete-opt-delete-specific-version	Delete OPT — delete specific version
+ECC-SQR-001	SQR	active	sqr/valid-query-valid	Store stored query — valid
+ECC-SQR-002	SQR	active	sqr/list-queries-non-empty	List stored queries — non empty
+ECC-SQR-003	SQR	active	sqr/has-query-xxx	Stored query existence check — xxx
+ECC-SQR-004	SQR	active	sqr/list-queries-empty	List stored queries — empty
+ECC-SQR-005	SQR	active	sqr/list-queries-select-items	List stored queries — select items
+ECC-SQR-006	SQR	active	sqr/valid-query-bad-formalism	Store stored query — bad formalism
+ECC-SQR-007	SQR	active	sqr/valid-query-invalid	Store stored query — invalid
+ECC-QRY-001	QRY	active	qry/smoke-test	Query service smoke test
+ECC-QRY-002	QRY	active	qry/execute-ad-hoc-query-empty-db	Execute ad-hoc AQL query — empty db
+ECC-QRY-003	QRY	active	qry/execute-stored-query-empty-db	Execute stored AQL query — empty db
+ECC-QRY-004	QRY	active	qry/execute-ad-hoc-query-loaded-db	Execute ad-hoc AQL query — loaded db
+ECC-QRY-005	QRY	active	qry/corpus-invalid	AQL corpus — invalid queries rejected
+ECC-QRY-006	QRY	active	qry/corpus-a-empty-db	AQL corpus — A empty db
+ECC-QRY-007	QRY	active	qry/corpus-b-empty-db	AQL corpus — B empty db
+ECC-QRY-008	QRY	active	qry/corpus-c-empty-db	AQL corpus — C empty db
+ECC-QRY-009	QRY	active	qry/corpus-d-empty-db	AQL corpus — D empty db
+ECC-QRY-010	QRY	active	qry/corpus-a-loaded-db	AQL corpus — A loaded db
+ECC-QRY-011	QRY	active	qry/corpus-b-loaded-db	AQL corpus — B loaded db
+ECC-QRY-012	QRY	active	qry/corpus-c-loaded-db	AQL corpus — C loaded db
+ECC-QRY-013	QRY	active	qry/corpus-d-loaded-db	AQL corpus — D loaded db
+ECC-ADM-001	ADM	active	adm/ehr-delete	Admin EHR delete
+ECC-ADM-002	ADM	active	adm/ehr-delete-absent	Admin EHR delete absent
+ECC-ADM-003	ADM	active	adm/ehr-delete-idempotent	Admin EHR delete idempotent
+ECC-ADM-004	ADM	active	adm/ehr-delete-all	Admin EHR delete all
+ECC-ADM-005	ADM	active	adm/ehr-delete-all-partial	Admin EHR delete all partial
+ECC-ADM-006	ADM	active	adm/ehr-delete-all-empty	Admin EHR delete all empty
+ECC-DEM-001	DEM	active	dem/person-create	Demographic person create
+ECC-DEM-002	DEM	active	dem/person-get	Demographic person get
+ECC-DEM-003	DEM	active	dem/person-get-by-version	Demographic person get by version
+ECC-DEM-004	DEM	active	dem/person-update	Demographic person update
+ECC-DEM-005	DEM	active	dem/person-delete	Demographic person delete
+ECC-DEM-006	DEM	active	dem/person-get-deleted	Demographic person get deleted
+ECC-DEM-007	DEM	active	dem/person-get-absent	Demographic person get absent
+ECC-DEM-008	DEM	active	dem/person-update-bad-if-match	Demographic person update bad if match
+ECC-DEM-009	DEM	active	dem/agent-create	Demographic agent create
+ECC-DEM-010	DEM	active	dem/agent-get	Demographic agent get
+ECC-DEM-011	DEM	active	dem/agent-delete	Demographic agent delete
+ECC-DEM-012	DEM	active	dem/group-create	Demographic group create
+ECC-DEM-013	DEM	active	dem/group-get	Demographic group get
+ECC-DEM-014	DEM	active	dem/group-delete	Demographic group delete
+ECC-DEM-015	DEM	active	dem/organisation-create	Demographic organisation create
+ECC-DEM-016	DEM	active	dem/organisation-get	Demographic organisation get
+ECC-DEM-017	DEM	active	dem/organisation-delete	Demographic organisation delete
+ECC-DEM-018	DEM	active	dem/role-create	Demographic role create
+ECC-DEM-019	DEM	active	dem/role-get	Demographic role get
+ECC-DEM-020	DEM	active	dem/role-delete	Demographic role delete
+ECC-DEM-021	DEM	active	dem/create-bad-body	Demographic create bad body
+ECC-DEM-022	DEM	active	dem/versioned-party-get	Demographic versioned party get
+ECC-DEM-023	DEM	active	dem/versioned-party-revision-history	Demographic versioned party revision history
+ECC-DEM-024	DEM	active	dem/person-tags	Demographic person tags
+ECC-VAL-001	VAL	active	val/comp-content-card-any-context-any	Validate COMPOSITION — content card any context any
+ECC-VAL-002	VAL	active	val/comp-content-card-1plus-context-any	Validate COMPOSITION — content card 1plus context any
+ECC-VAL-003	VAL	active	val/comp-content-card-3plus-context-any	Validate COMPOSITION — content card 3plus context any
+ECC-VAL-004	VAL	active	val/comp-content-card-opt-context-any	Validate COMPOSITION — content card OPT context any
+ECC-VAL-005	VAL	active	val/comp-content-card-mand-context-any	Validate COMPOSITION — content card mand context any
+ECC-VAL-006	VAL	active	val/comp-content-card-3to5-context-any	Validate COMPOSITION — content card 3to5 context any
+ECC-VAL-007	VAL	active	val/comp-content-card-any-context-mand	Validate COMPOSITION — content card any context mand
+ECC-VAL-008	VAL	active	val/comp-content-card-1plus-context-mand	Validate COMPOSITION — content card 1plus context mand
+ECC-VAL-009	VAL	active	val/comp-content-card-3plus-context-mand	Validate COMPOSITION — content card 3plus context mand
+ECC-VAL-010	VAL	active	val/comp-content-card-opt-context-mand	Validate COMPOSITION — content card OPT context mand
+ECC-VAL-011	VAL	active	val/comp-content-card-mand-context-mand	Validate COMPOSITION — content card mand context mand
+ECC-VAL-012	VAL	active	val/comp-content-card-3to5-context-mand	Validate COMPOSITION — content card 3to5 context mand
+ECC-VAL-013	VAL	active	val/obs-state-ex-opt-protocol-ex-opt	Validate OBSERVATION — state ex OPT protocol ex OPT
+ECC-VAL-014	VAL	active	val/obs-state-ex-opt-protocol-ex-mand	Validate OBSERVATION — state ex OPT protocol ex mand
+ECC-VAL-015	VAL	active	val/obs-state-ex-mand-protocol-ex-opt	Validate OBSERVATION — state ex mand protocol ex OPT
+ECC-VAL-016	VAL	active	val/obs-state-ex-mand-protocol-ex-mand	Validate OBSERVATION — state ex mand protocol ex mand
+ECC-VAL-017	VAL	active	val/hist-events-card-any-summary-ex-opt	Validate HISTORY — events card any summary ex OPT
+ECC-VAL-018	VAL	active	val/hist-events-card-1plus-summary-ex-opt	Validate HISTORY — events card 1plus summary ex OPT
+ECC-VAL-019	VAL	active	val/hist-events-card-3plus-summary-ex-opt	Validate HISTORY — events card 3plus summary ex OPT
+ECC-VAL-020	VAL	active	val/hist-events-card-opt-summary-ex-opt	Validate HISTORY — events card OPT summary ex OPT
+ECC-VAL-021	VAL	active	val/hist-events-card-mand-summary-ex-opt	Validate HISTORY — events card mand summary ex OPT
+ECC-VAL-022	VAL	active	val/hist-events-card-3to5-summary-ex-opt	Validate HISTORY — events card 3to5 summary ex OPT
+ECC-VAL-023	VAL	active	val/hist-events-card-any-summary-ex-mand	Validate HISTORY — events card any summary ex mand
+ECC-VAL-024	VAL	active	val/hist-events-card-1plus-summary-ex-mand	Validate HISTORY — events card 1plus summary ex mand
+ECC-VAL-025	VAL	active	val/hist-events-card-3plus-summary-ex-mand	Validate HISTORY — events card 3plus summary ex mand
+ECC-VAL-026	VAL	active	val/hist-events-card-opt-summary-ex-mand	Validate HISTORY — events card OPT summary ex mand
+ECC-VAL-027	VAL	active	val/hist-events-card-mand-summary-ex-mand	Validate HISTORY — events card mand summary ex mand
+ECC-VAL-028	VAL	active	val/hist-events-card-3to5-summary-ex-mand	Validate HISTORY — events card 3to5 summary ex mand
+ECC-VAL-029	VAL	active	val/event-state-ex-opt	Validate EVENT — state ex OPT
+ECC-VAL-030	VAL	active	val/event-state-ex-mand	Validate EVENT — state ex mand
+ECC-VAL-031	VAL	active	val/event-type-any	Validate EVENT — type any
+ECC-VAL-032	VAL	active	val/event-type-point-event	Validate EVENT — type point event
+ECC-VAL-033	VAL	active	val/event-type-interval-event	Validate EVENT — type interval event
+ECC-VAL-034	VAL	active	val/item-str-type-any	Validate ITEM_STRUCTURE — type any
+ECC-VAL-035	VAL	active	val/item-str-type-item-tree	Validate ITEM_STRUCTURE — type item tree
+ECC-VAL-036	VAL	active	val/item-str-type-item-list	Validate ITEM_STRUCTURE — type item list
+ECC-VAL-037	VAL	active	val/item-str-type-item-table	Validate ITEM_STRUCTURE — type item table
+ECC-VAL-038	VAL	active	val/item-str-type-item-single	Validate ITEM_STRUCTURE — type item single
+ECC-VAL-039	VAL	active	val/dv-boolean-anything-allowed	Validate DV_BOOLEAN — anything allowed
+ECC-VAL-040	VAL	active	val/dv-boolean-only-true-allowed	Validate DV_BOOLEAN — only true allowed
+ECC-VAL-041	VAL	active	val/dv-boolean-only-false-allowed	Validate DV_BOOLEAN — only false allowed
+ECC-VAL-042	VAL	active	val/dv-identifier-all-pattern	Validate DV_IDENTIFIER — all pattern
+ECC-VAL-043	VAL	active	val/dv-identifier-all-list	Validate DV_IDENTIFIER — all list
+ECC-VAL-044	VAL	active	val/dv-text-open	Validate DV_TEXT — open
+ECC-VAL-045	VAL	active	val/dv-text-list	Validate DV_TEXT — list
+ECC-VAL-046	VAL	active	val/dv-coded-text-open	Validate DV_CODED_TEXT — open
+ECC-VAL-047	VAL	active	val/dv-coded-text-local-codes	Validate DV_CODED_TEXT — local codes
+ECC-VAL-048	VAL	active	val/dv-coded-text-ext-term	Validate DV_CODED_TEXT — ext term
+ECC-VAL-049	VAL	active	val/dv-ordinal-open	Validate DV_ORDINAL — open
+ECC-VAL-050	VAL	active	val/dv-ordinal-constraint	Validate DV_ORDINAL — constraint
+ECC-VAL-051	VAL	active	val/dv-scale-open	Validate DV_SCALE — open
+ECC-VAL-052	VAL	active	val/dv-scale-constraint	Validate DV_SCALE — constraint
+ECC-VAL-053	VAL	active	val/dv-count-open	Validate DV_COUNT — open
+ECC-VAL-054	VAL	active	val/dv-count-range	Validate DV_COUNT — range
+ECC-VAL-055	VAL	active	val/dv-count-list	Validate DV_COUNT — list
+ECC-VAL-056	VAL	active	val/dv-quantity-open	Validate DV_QUANTITY — open
+ECC-VAL-057	VAL	active	val/dv-quantity-property	Validate DV_QUANTITY — property
+ECC-VAL-058	VAL	active	val/dv-quantity-property-units	Validate DV_QUANTITY — property units
+ECC-VAL-059	VAL	active	val/dv-quantity-property-units-mag	Validate DV_QUANTITY — property units mag
+ECC-VAL-060	VAL	active	val/dv-proportion-open	Validate DV_PROPORTION — open
+ECC-VAL-061	VAL	active	val/dv-proportion-ratio	Validate DV_PROPORTION — ratio
+ECC-VAL-062	VAL	active	val/dv-proportion-unitary	Validate DV_PROPORTION — unitary
+ECC-VAL-063	VAL	active	val/dv-proportion-percent	Validate DV_PROPORTION — percent
+ECC-VAL-064	VAL	active	val/dv-proportion-fraction	Validate DV_PROPORTION — fraction
+ECC-VAL-065	VAL	active	val/dv-proportion-integer-fraction	Validate DV_PROPORTION — integer fraction
+ECC-VAL-066	VAL	active	val/dv-proportion-any-fraction	Validate DV_PROPORTION — any fraction
+ECC-VAL-067	VAL	active	val/dv-proportion-ratio-range	Validate DV_PROPORTION — ratio range
+ECC-VAL-068	VAL	active	val/dv-interval-dv-count-open	Validate DV_INTERVAL<DV_COUNT> — open
+ECC-VAL-069	VAL	active	val/dv-interval-dv-count-lower-upper	Validate DV_INTERVAL<DV_COUNT> — lower upper
+ECC-VAL-070	VAL	active	val/dv-interval-dv-count-lower-upper-list	Validate DV_INTERVAL<DV_COUNT> — lower upper list
+ECC-VAL-071	VAL	active	val/dv-interval-dv-quantity-open	Validate DV_INTERVAL<DV_QUANTITY> — open
+ECC-VAL-072	VAL	active	val/dv-interval-dv-quantity-upper-lower	Validate DV_INTERVAL<DV_QUANTITY> — upper lower
+ECC-VAL-073	VAL	active	val/dv-interval-dv-date-time-open	Validate DV_INTERVAL<DV_DATE_TIME> — open
+ECC-VAL-074	VAL	active	val/dv-interval-dv-date-time-lower-upper-constraint	Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint
+ECC-VAL-075	VAL	active	val/dv-interval-dv-date-time-lower-upper-range	Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range
+ECC-VAL-076	VAL	active	val/dv-interval-dv-date-open	Validate DV_INTERVAL<DV_DATE> — open
+ECC-VAL-077	VAL	active	val/dv-interval-dv-date-lower-upper-constraint	Validate DV_INTERVAL<DV_DATE> — lower upper constraint
+ECC-VAL-078	VAL	active	val/dv-interval-dv-date-lower-upper-range	Validate DV_INTERVAL<DV_DATE> — lower upper range
+ECC-VAL-079	VAL	active	val/dv-interval-dv-time-open	Validate DV_INTERVAL<DV_TIME> — open
+ECC-VAL-080	VAL	active	val/dv-interval-dv-time-lower-upper-constraint	Validate DV_INTERVAL<DV_TIME> — lower upper constraint
+ECC-VAL-081	VAL	active	val/dv-interval-dv-time-lower-upper-range	Validate DV_INTERVAL<DV_TIME> — lower upper range
+ECC-VAL-082	VAL	active	val/dv-interval-dv-duration-open	Validate DV_INTERVAL<DV_DURATION> — open
+ECC-VAL-083	VAL	active	val/dv-interval-dv-duration-constraint	Validate DV_INTERVAL<DV_DURATION> — constraint
+ECC-VAL-084	VAL	active	val/dv-interval-dv-duration-range	Validate DV_INTERVAL<DV_DURATION> — range
+ECC-VAL-085	VAL	active	val/dv-interval-dv-ordinal-open	Validate DV_INTERVAL<DV_ORDINAL> — open
+ECC-VAL-086	VAL	active	val/dv-interval-dv-ordinal-constraint	Validate DV_INTERVAL<DV_ORDINAL> — constraint
+ECC-VAL-087	VAL	active	val/dv-interval-dv-scale-open	Validate DV_INTERVAL<DV_SCALE> — open
+ECC-VAL-088	VAL	active	val/dv-interval-dv-scale-constraint	Validate DV_INTERVAL<DV_SCALE> — constraint
+ECC-VAL-089	VAL	active	val/dv-interval-dv-proportion-open	Validate DV_INTERVAL<DV_PROPORTION> — open
+ECC-VAL-090	VAL	active	val/dv-interval-dv-proportion-ratio	Validate DV_INTERVAL<DV_PROPORTION> — ratio
+ECC-VAL-091	VAL	active	val/dv-interval-dv-proportion-unitary	Validate DV_INTERVAL<DV_PROPORTION> — unitary
+ECC-VAL-092	VAL	active	val/dv-interval-dv-proportion-percentage	Validate DV_INTERVAL<DV_PROPORTION> — percentage
+ECC-VAL-093	VAL	active	val/dv-interval-dv-proportion-fraction	Validate DV_INTERVAL<DV_PROPORTION> — fraction
+ECC-VAL-094	VAL	active	val/dv-interval-dv-proportion-integer-fraction	Validate DV_INTERVAL<DV_PROPORTION> — integer fraction
+ECC-VAL-095	VAL	active	val/dv-interval-dv-proportion-ratio-range	Validate DV_INTERVAL<DV_PROPORTION> — ratio range
+ECC-VAL-096	VAL	active	val/dv-duration-open	Validate DV_DURATION — open
+ECC-VAL-097	VAL	active	val/dv-duration-fields	Validate DV_DURATION — fields
+ECC-VAL-098	VAL	active	val/dv-duration-range	Validate DV_DURATION — range
+ECC-VAL-099	VAL	active	val/dv-duration-fields-range	Validate DV_DURATION — fields range
+ECC-VAL-100	VAL	active	val/dv-time-open	Validate DV_TIME — open
+ECC-VAL-101	VAL	active	val/dv-time-constraint	Validate DV_TIME — constraint
+ECC-VAL-102	VAL	active	val/dv-time-range	Validate DV_TIME — range
+ECC-VAL-103	VAL	active	val/dv-date-open	Validate DV_DATE — open
+ECC-VAL-104	VAL	active	val/dv-date-constraint	Validate DV_DATE — constraint
+ECC-VAL-105	VAL	active	val/dv-date-range	Validate DV_DATE — range
+ECC-VAL-106	VAL	active	val/dv-date-time-open	Validate DV_DATE_TIME — open
+ECC-VAL-107	VAL	active	val/dv-date-time-constraint	Validate DV_DATE_TIME — constraint
+ECC-VAL-108	VAL	active	val/dv-date-time-range	Validate DV_DATE_TIME — range
+ECC-VAL-109	VAL	active	val/dv-parsable-open	Validate DV_PARSABLE — open
+ECC-VAL-110	VAL	active	val/dv-parsable-value-formalism	Validate DV_PARSABLE — value formalism
+ECC-VAL-111	VAL	active	val/dv-multimedia-open	Validate DV_MULTIMEDIA — open
+ECC-VAL-112	VAL	active	val/dv-multimedia-media-type	Validate DV_MULTIMEDIA — media type
+ECC-VAL-113	VAL	active	val/dv-uri-open	Validate DV_URI — open
+ECC-VAL-114	VAL	active	val/dv-uri-pattern	Validate DV_URI — pattern
+ECC-VAL-115	VAL	active	val/dv-uri-list	Validate DV_URI — list
+ECC-VAL-116	VAL	active	val/dv-ehr-uri-open	Validate DV_EHR_URI — open
+ECC-VAL-117	VAL	active	val/dv-ehr-uri-pattern	Validate DV_EHR_URI — pattern
+ECC-VAL-118	VAL	active	val/dv-ehr-uri-list	Validate DV_EHR_URI — list
+ECC-SIG-001	SIG	active	sig/digest-present	Version signing — digest present
+ECC-SIG-002	SIG	active	sig/digest-recomputes	Version signing — digest recomputes
+ECC-SIG-003	SIG	active	sig/all-kinds	Version signing — all kinds
+ECC-SIG-004	SIG	active	sig/client-verbatim	Version signing — client verbatim
+ECC-SIG-005	SIG	active	sig/pgp-verifies	Version signing — pgp verifies

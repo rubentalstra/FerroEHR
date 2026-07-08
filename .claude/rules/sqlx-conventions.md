@@ -1,5 +1,5 @@
 ---
-paths: ["crates/ehrbase/**"]
+paths: ["app/ehrbase/**"]
 ---
 
 # sqlx + sea-query conventions (P09 persistence, P16 AQL)
@@ -16,7 +16,7 @@ use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
   helper functions. The interim EHRbase-derived baseline (ADR-007) is replaced
   wholesale at P10; nothing is deployed, so `0001` is re-authored.
 - Create migrations with the official CLI only:
-  `sqlx migrate add --source crates/ehrbase/migrations/<schema> --sequential <desc>`,
+  `sqlx migrate add --source app/ehrbase/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,
   `RETURNING OLD/NEW` where the design calls for them).
 - `ehrbase::db::run_migrations` bootstraps schemas + extensions and runs the

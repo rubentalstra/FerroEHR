@@ -18,7 +18,7 @@ use openehr_rm::prelude::{Composition, ItemTree};
 
 const DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../ehrbase/tests/resources/service/samples"
+    "/../../app/ehrbase/tests/resources/service/samples"
 );
 
 /// Parse `xml` into `T`, re-serialize, and confirm the canonical output is

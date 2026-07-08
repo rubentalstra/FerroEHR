@@ -71,4 +71,4 @@ args=(run --base-url "$BASE_URL" --auth "$AUTH" --admin-auth "$ADMIN_AUTH"
 [ -n "$FILTER" ] && args+=(--filter "$FILTER")
 
 # Exit code is the CLI's: 0 pass · 1 failures · 2 runner/SUT error.
-cargo run -q -p ehrbase-conformance --bin conformance -- "${args[@]}"
+cargo run -q -p conformance --bin conformance -- "${args[@]}"
