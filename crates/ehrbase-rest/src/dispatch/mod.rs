@@ -18,6 +18,7 @@
 
 mod abac;
 mod definition;
+mod demographic;
 mod ehr;
 mod flat;
 mod query;
@@ -77,7 +78,7 @@ pub(crate) fn api_router() -> Router<AppState> {
 
     Router::new()
         .merge(mount(g::ehr::ROUTES, ehr::dispatch))
-        .merge(mount(g::demographic::ROUTES, not_implemented))
+        .merge(mount(g::demographic::ROUTES, demographic::dispatch))
         .merge(mount(g::definition::ROUTES, definition::dispatch))
         .merge(mount(g::query::ROUTES, query::dispatch))
         .merge(mount(g::admin::ROUTES, not_implemented))

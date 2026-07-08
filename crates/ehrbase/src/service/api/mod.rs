@@ -14,6 +14,7 @@
 //! layer's generic not-implemented dispatcher (F-13-03).
 
 mod definition;
+mod demographic;
 mod ehr;
 mod query;
 
