@@ -14,8 +14,9 @@ use ehrbase_conformance::harness::{AuthSlot, HttpRequest, Method};
 use crate::BenchError;
 use crate::target::Target;
 
-const NESTED_OPT: &str = "valid_templates/nested/nested.opt";
-const NESTED_COMPOSITION: &str = "compositions/CANONICAL_JSON/nested.en.v1__full.json";
+// The same large (64 KB) real composition the workload uses.
+const OPT_PATH: &str = "valid_templates/validation/composition_evaluation_test.opt";
+const COMPOSITION_PATH: &str = "compositions/CANONICAL_JSON/composition_evaluation_test__full.json";
 
 /// Seed `ehrs` EHRs, each with `comps_per_ehr` compositions of the nested
 /// template. Returns the number of compositions committed. Idempotent on the
@@ -26,7 +27,7 @@ const NESTED_COMPOSITION: &str = "compositions/CANONICAL_JSON/nested.en.v1__full
 pub async fn seed(target: &Target, ehrs: u32, comps_per_ehr: u32) -> Result<u64, BenchError> {
     ensure_template(target).await?;
     let body =
-        fixtures::read_json(NESTED_COMPOSITION).map_err(|e| BenchError::Fixture(e.to_string()))?;
+        fixtures::read_json(COMPOSITION_PATH).map_err(|e| BenchError::Fixture(e.to_string()))?;
     let body = body.to_string();
 
     let mut committed = 0u64;
@@ -41,7 +42,7 @@ pub async fn seed(target: &Target, ehrs: u32, comps_per_ehr: u32) -> Result<u64,
 }
 
 async fn ensure_template(target: &Target) -> Result<(), BenchError> {
-    let opt = fixtures::read(NESTED_OPT).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let opt = fixtures::read(OPT_PATH).map_err(|e| BenchError::Fixture(e.to_string()))?;
     let req = HttpRequest::new(Method::Post, "/definition/template/adl1.4")
         .with_auth(AuthSlot::Regular)
         .header("content-type", "application/xml")

@@ -215,6 +215,7 @@ async fn cmd_run(args: RunArgs) -> i32 {
             run_date: args.run_date.unwrap_or_else(now_iso),
             // Auto-captured — every report states the machine that produced it.
             host: ehrbase_bench::host::HostInfo::capture(),
+            payload: ehrbase_bench::workload::payload_description(),
             workload_lock: workload_lock(),
             harness_revision: option_env!("GIT_REV").unwrap_or("unknown").to_owned(),
             warmup_iters: cfg.warmup_iters,

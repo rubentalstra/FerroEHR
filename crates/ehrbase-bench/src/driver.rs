@@ -61,8 +61,10 @@ pub struct RunResult {
 /// per-run results, the merged distribution, and the inter-run variance.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ScenarioResult {
-    /// The workload id (W1..).
+    /// The scenario id.
     pub scenario: String,
+    /// The resource group (EHR / COMPOSITION / QUERY / …) for the coverage overview.
+    pub group: String,
     /// Human description.
     pub description: String,
     /// The target label (ehrbase-rs / ehrbase-java).
@@ -86,6 +88,7 @@ impl ScenarioResult {
     fn gate_failed(scenario: Scenario, target: &Target, status: u16) -> Self {
         Self {
             scenario: scenario.id().to_owned(),
+            group: scenario.group().to_owned(),
             description: scenario.description().to_owned(),
             target: target.label().to_owned(),
             gate_ok: false,
@@ -157,6 +160,7 @@ pub async fn run_latency(
 
     Ok(ScenarioResult {
         scenario: scenario.id().to_owned(),
+        group: scenario.group().to_owned(),
         description: scenario.description().to_owned(),
         target: target.label().to_owned(),
         gate_ok: true,
