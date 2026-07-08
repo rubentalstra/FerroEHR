@@ -155,7 +155,7 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         run_dv_coded_local,
     ));
-    all.push(skip("CONT-DV_CODED_TEXT-validate_ext_term", c));
+    all.push(open("CONT-DV_CODED_TEXT-validate_ext_term", c, run_dv_coded_ext_term));
 
     // ── 17.3 quantity ──────────────────────────────────────────────────────────
     let c = Chapter::Master17_3;
@@ -165,8 +165,8 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         run_dv_ordinal_constraint,
     ));
-    all.push(open("CONT-DV_SCALE-validate_open", c, open_dv_scale));
-    all.push(skip("CONT-DV_SCALE-validate_constraint", c));
+    all.push(open("CONT-DV_SCALE-validate_open", c, run_dv_scale_open));
+    all.push(open("CONT-DV_SCALE-validate_constraint", c, run_dv_scale_constraint));
     all.push(open("CONT-DV_COUNT-validate_open", c, open_dv_count));
     all.push(open("CONT-DV_COUNT-validate_range", c, run_dv_count_range));
     all.push(open("CONT-DV_COUNT-validate_list", c, run_dv_count_list));
@@ -368,16 +368,16 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         open_dv_multimedia,
     ));
-    all.push(skip("CONT-DV_MULTIMEDIA-validate_media_type", c));
+    all.push(open("CONT-DV_MULTIMEDIA-validate_media_type", c, run_dv_multimedia_media_type));
 
     // ── 17.7 uri ───────────────────────────────────────────────────────────────
     let c = Chapter::Master17_7;
     all.push(open("CONT-DV_URI-validate_open", c, open_dv_uri));
-    all.push(skip("CONT-DV_URI-validate_pattern", c));
-    all.push(skip("CONT-DV_URI-validate_list", c));
-    all.push(open("CONT-DV_EHR_URI-validate_open", c, open_dv_ehr_uri));
-    all.push(skip("CONT-DV_EHR_URI-validate_pattern", c));
-    all.push(skip("CONT-DV_EHR_URI-validate_list", c));
+    all.push(open("CONT-DV_URI-validate_pattern", c, run_dv_uri_pattern));
+    all.push(open("CONT-DV_URI-validate_list", c, run_dv_uri_list));
+    all.push(open("CONT-DV_EHR_URI-validate_open", c, run_dv_ehr_uri_open));
+    all.push(open("CONT-DV_EHR_URI-validate_pattern", c, run_dv_ehr_uri_pattern));
+    all.push(open("CONT-DV_EHR_URI-validate_list", c, run_dv_ehr_uri_list));
 
     all
 }
@@ -1393,6 +1393,302 @@ fn run_dv_proportion_ratio_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
                 (
                     "numerator 9999 outside range [0,1000] (C_REAL.range)".to_owned(),
                     vec![(n, json!(9999.0))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── slot-retyped leaves absent from all_types: DV_URI/DV_EHR_URI/DV_SCALE ──────
+//
+// These DV_* types have no leaf in the all_types composition, so each case
+// retypes the DV_COUNT scratch slot (items[4]) to the target type and commits a
+// whole-value instance of it.
+
+/// The pointer to the whole value object of the `items[idx]` leaf.
+fn value_ptr(idx: usize) -> String {
+    format!("/content/0/data/events/0/data/items/{idx}/value")
+}
+
+fn run_dv_uri_pattern<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_uri_pattern",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_URI"))
+                    && author::constrain_leaf_string(opt, "DV_URI", "value", Some("http://.*"), vec![])
+            },
+            vec![
+                (
+                    "URI http://ok matches pattern (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_URI","value":"http://ok"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "URI ftp://no not matching http://.* (C_STRING.pattern)".to_owned(),
+                    vec![(p, json!({"_type":"DV_URI","value":"ftp://no"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_uri_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_uri_list",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_URI"))
+                    && author::constrain_leaf_string(
+                        opt,
+                        "DV_URI",
+                        "value",
+                        None,
+                        vec!["http://ok".to_owned()],
+                    )
+            },
+            vec![
+                (
+                    "URI http://ok in list (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_URI","value":"http://ok"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "URI http://other not in list (C_STRING.list)".to_owned(),
+                    vec![(p, json!({"_type":"DV_URI","value":"http://other"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_ehr_uri_open<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_ehr_uri_open",
+            |opt| author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_EHR_URI")),
+            vec![
+                (
+                    "DV_EHR_URI with value (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_EHR_URI","value":"ehr://x/y"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "DV_EHR_URI without value (RM/Schema mandatory)".to_owned(),
+                    vec![(p, json!({"_type":"DV_EHR_URI"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_ehr_uri_pattern<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_ehr_uri_pattern",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_EHR_URI"))
+                    && author::constrain_leaf_string(opt, "DV_EHR_URI", "value", Some("ehr://.*"), vec![])
+            },
+            vec![
+                (
+                    "ehr://x matches pattern (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_EHR_URI","value":"ehr://x"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "http://x not matching ehr://.* (C_STRING.pattern)".to_owned(),
+                    vec![(p, json!({"_type":"DV_EHR_URI","value":"http://x"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_ehr_uri_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_ehr_uri_list",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_EHR_URI"))
+                    && author::constrain_leaf_string(
+                        opt,
+                        "DV_EHR_URI",
+                        "value",
+                        None,
+                        vec!["ehr://ok".to_owned()],
+                    )
+            },
+            vec![
+                (
+                    "ehr://ok in list (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_EHR_URI","value":"ehr://ok"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "ehr://other not in list (C_STRING.list)".to_owned(),
+                    vec![(p, json!({"_type":"DV_EHR_URI","value":"ehr://other"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn dv_scale_value(v: f64, code: &str) -> Value {
+    json!({ "_type": "DV_SCALE", "value": v,
+        "symbol": { "_type": "DV_CODED_TEXT", "value": "sc",
+            "defining_code": { "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "local" },
+                "code_string": code } } })
+}
+
+fn run_dv_scale_open<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_scale_open",
+            |opt| author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_SCALE")),
+            vec![
+                (
+                    "DV_SCALE with value+symbol (accepted)".to_owned(),
+                    vec![(p.clone(), dv_scale_value(1.0, "at0014"))],
+                    Expected::Accepted,
+                ),
+                (
+                    "DV_SCALE without value (RM/Schema mandatory)".to_owned(),
+                    vec![(
+                        p,
+                        json!({"_type":"DV_SCALE","symbol":{"_type":"DV_CODED_TEXT","value":"sc",
+                            "defining_code":{"_type":"CODE_PHRASE",
+                                "terminology_id":{"_type":"TERMINOLOGY_ID","value":"local"},
+                                "code_string":"at0014"}}}),
+                    )],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_scale_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        // Constrain the retyped scale's value to the C_REAL list {1.0}; base 1.0
+        // accepted, 9.0 off the list rejected.
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_scale_constraint",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_SCALE"))
+                    && author::constrain_leaf_real(opt, "DV_SCALE", "value", None, vec![1.0])
+            },
+            vec![
+                (
+                    "DV_SCALE value 1.0 in list {1.0} (accepted)".to_owned(),
+                    vec![(p.clone(), dv_scale_value(1.0, "at0014"))],
+                    Expected::Accepted,
+                ),
+                (
+                    "DV_SCALE value 9.0 not in list {1.0} (C_REAL.list)".to_owned(),
+                    vec![(p, dv_scale_value(9.0, "at0014"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── code-phrase leaves present in all_types: DV_MULTIMEDIA / DV_CODED_TEXT ─────
+
+fn run_dv_multimedia_media_type<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(12, "media_type/code_string");
+        let t = leaf_ptr(12, "media_type/terminology_id/value");
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_multimedia_media_type",
+            |opt| {
+                author::constrain_codephrase(
+                    opt,
+                    "DV_MULTIMEDIA",
+                    "media_type",
+                    "IANA_media-types",
+                    vec!["image/png".to_owned()],
+                )
+            },
+            vec![
+                (
+                    "media_type image/png in list (accepted)".to_owned(),
+                    vec![
+                        (t.clone(), json!("IANA_media-types")),
+                        (p.clone(), json!("image/png")),
+                    ],
+                    Expected::Accepted,
+                ),
+                (
+                    "media_type image/gif not in list (C_CODE_PHRASE)".to_owned(),
+                    vec![(t, json!("IANA_media-types")), (p, json!("image/gif"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_coded_ext_term<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let code = leaf_ptr(1, "defining_code/code_string");
+        let term = leaf_ptr(1, "defining_code/terminology_id/value");
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_coded_ext_term",
+            |opt| {
+                author::constrain_codephrase(
+                    opt,
+                    "DV_CODED_TEXT",
+                    "defining_code",
+                    "SNOMED-CT",
+                    vec!["73211009".to_owned()],
+                )
+            },
+            vec![
+                (
+                    "SNOMED-CT 73211009 in the external code_list (accepted)".to_owned(),
+                    vec![
+                        (term.clone(), json!("SNOMED-CT")),
+                        (code.clone(), json!("73211009")),
+                    ],
+                    Expected::Accepted,
+                ),
+                (
+                    "SNOMED-CT 99999999 not in the external code_list (C_CODE_PHRASE)".to_owned(),
+                    vec![(term, json!("SNOMED-CT")), (code, json!("99999999"))],
                     Expected::Rejected,
                 ),
             ],
