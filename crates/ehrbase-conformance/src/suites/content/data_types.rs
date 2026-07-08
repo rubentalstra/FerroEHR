@@ -36,17 +36,16 @@
 //!   canonical composition (`type=3`, accepted); `type=0` is off the list
 //!   (rejected).
 //!
-//! The remaining non-`validate_open` cases stay `Skipped`
-//! ([`drive::skip_archetype`]): no vendored OPT both constrains the relevant leaf
-//! *and* ships any committable instance our stack can provision —
-//! `DV_COUNT` range/list is constrained **only** by `ehrn_vital_signs.v2.opt`,
-//! which our `opt14` parser rejects (`xml parse error: missing element type`), so
-//! that template cannot be provisioned on the SUT at all and its FLAT instance
-//! cannot be converted (F-open-41); the other `DV_PROPORTION` kind cases
-//! (`validate_ratio/unitary/percent/fraction/integer_fraction`) live only in
-//! `proportion.opt`, which parses but ships **no** instance (canonical or FLAT);
-//! `DV_SCALE`, `DV_DATE/DV_TIME` constraints, `DV_BOOLEAN` & `DV_IDENTIFIER` patterns, and
-//! `DV_MULTIMEDIA` media-type lists have no constrained committable canonical leaf.
+//! **All other value-constraint cases are driven via authored OPTs**
+//! ([`super::author`]): where no vendored OPT constrains the leaf, the case tightens
+//! the constraint into the `all_types` OPT (`C_STRING/C_INTEGER/C_REAL/C_BOOLEAN`/
+//! `C_DATE/TIME/DATE_TIME/DURATION/C_DV_QUANTITY.property/C_CODE_PHRASE`) or, for a
+//! type the base composition does not carry (`DV_URI`/`DV_EHR_URI`/`DV_SCALE`/
+//! `DV_INTERVAL<T>`), **slot-retypes** a scratch leaf to that type
+//! ([`author::retype_leaf`]) and commits a whole-value instance. Every master17
+//! case is a real endpoint test — **none are skipped**. Constraints the validator
+//! enforces PASS; the rest are recorded findings (temporal ranges, integer/real
+//! lists, `DV_INTERVAL` bounds, external terminology), never masked as skips.
 
 use openehr_its::opt14::{CPrimitive, OperationalTemplate};
 use serde_json::{Value, json};
@@ -155,7 +154,11 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         run_dv_coded_local,
     ));
-    all.push(open("CONT-DV_CODED_TEXT-validate_ext_term", c, run_dv_coded_ext_term));
+    all.push(open(
+        "CONT-DV_CODED_TEXT-validate_ext_term",
+        c,
+        run_dv_coded_ext_term,
+    ));
 
     // ── 17.3 quantity ──────────────────────────────────────────────────────────
     let c = Chapter::Master17_3;
@@ -166,7 +169,11 @@ pub fn entries() -> Vec<CaseEntry> {
         run_dv_ordinal_constraint,
     ));
     all.push(open("CONT-DV_SCALE-validate_open", c, run_dv_scale_open));
-    all.push(open("CONT-DV_SCALE-validate_constraint", c, run_dv_scale_constraint));
+    all.push(open(
+        "CONT-DV_SCALE-validate_constraint",
+        c,
+        run_dv_scale_constraint,
+    ));
     all.push(open("CONT-DV_COUNT-validate_open", c, open_dv_count));
     all.push(open("CONT-DV_COUNT-validate_range", c, run_dv_count_range));
     all.push(open("CONT-DV_COUNT-validate_list", c, run_dv_count_list));
@@ -368,16 +375,32 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         open_dv_multimedia,
     ));
-    all.push(open("CONT-DV_MULTIMEDIA-validate_media_type", c, run_dv_multimedia_media_type));
+    all.push(open(
+        "CONT-DV_MULTIMEDIA-validate_media_type",
+        c,
+        run_dv_multimedia_media_type,
+    ));
 
     // ── 17.7 uri ───────────────────────────────────────────────────────────────
     let c = Chapter::Master17_7;
     all.push(open("CONT-DV_URI-validate_open", c, open_dv_uri));
     all.push(open("CONT-DV_URI-validate_pattern", c, run_dv_uri_pattern));
     all.push(open("CONT-DV_URI-validate_list", c, run_dv_uri_list));
-    all.push(open("CONT-DV_EHR_URI-validate_open", c, run_dv_ehr_uri_open));
-    all.push(open("CONT-DV_EHR_URI-validate_pattern", c, run_dv_ehr_uri_pattern));
-    all.push(open("CONT-DV_EHR_URI-validate_list", c, run_dv_ehr_uri_list));
+    all.push(open(
+        "CONT-DV_EHR_URI-validate_open",
+        c,
+        run_dv_ehr_uri_open,
+    ));
+    all.push(open(
+        "CONT-DV_EHR_URI-validate_pattern",
+        c,
+        run_dv_ehr_uri_pattern,
+    ));
+    all.push(open(
+        "CONT-DV_EHR_URI-validate_list",
+        c,
+        run_dv_ehr_uri_list,
+    ));
 
     all
 }
@@ -389,26 +412,6 @@ fn open(id: &'static str, chapter: Chapter, run: CaseRun) -> CaseEntry {
         meta: meta(id, chapter, id),
         run,
     }
-}
-
-/// An archetype-constraint case: transcribed + cited, skipped at run time.
-fn skip(id: &'static str, chapter: Chapter) -> CaseEntry {
-    CaseEntry {
-        meta: meta(id, chapter, id),
-        run: run_skip,
-    }
-}
-
-/// The shared archetype-constraint skip (the specific constraint — `C_STRING` /
-/// `C_INTEGER` / `C_CODE_PHRASE` / range / list / pattern / interval bounds — is
-/// identified by the case id / `schedule_ref`).
-fn run_skip<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    Box::pin(async move {
-        drive::skip_archetype(
-            "DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / \
-             range / list / pattern / DV_INTERVAL bounds)",
-        )
-    })
 }
 
 /// Generate a `validate_open` run fn: drive the value type's mandatory field on a
@@ -437,7 +440,6 @@ dt_open!(
     "defining_code"
 );
 dt_open!(open_dv_ordinal, Base::AllTypes, "DV_ORDINAL", "value");
-dt_open!(open_dv_scale, Base::AllTypes, "DV_SCALE", "value");
 dt_open!(open_dv_quantity, Base::AllTypes, "DV_QUANTITY", "magnitude");
 dt_open!(
     open_dv_proportion,
@@ -456,7 +458,6 @@ dt_open!(
     "media_type"
 );
 dt_open!(open_dv_uri, Base::AllTypes, "DV_URI", "value");
-dt_open!(open_dv_ehr_uri, Base::AllTypes, "DV_EHR_URI", "value");
 
 // ── constraint-OPT driven data-type cases (the full constraint corpus, §4.5) ──
 //
@@ -1383,7 +1384,15 @@ fn run_dv_proportion_ratio_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
         drive_leaf_rows(
             ctx,
             "cnf_cont_dv_prop_ratio_range",
-            |opt| author::constrain_leaf_real(opt, "DV_PROPORTION", "numerator", Some((0.0, 1000.0)), vec![]),
+            |opt| {
+                author::constrain_leaf_real(
+                    opt,
+                    "DV_PROPORTION",
+                    "numerator",
+                    Some((0.0, 1000.0)),
+                    vec![],
+                )
+            },
             vec![
                 (
                     "numerator 398.5 in range [0,1000] (accepted)".to_owned(),
@@ -1420,7 +1429,13 @@ fn run_dv_uri_pattern<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             "cnf_dv_uri_pattern",
             |opt| {
                 author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_URI"))
-                    && author::constrain_leaf_string(opt, "DV_URI", "value", Some("http://.*"), vec![])
+                    && author::constrain_leaf_string(
+                        opt,
+                        "DV_URI",
+                        "value",
+                        Some("http://.*"),
+                        vec![],
+                    )
             },
             vec![
                 (
@@ -1504,7 +1519,13 @@ fn run_dv_ehr_uri_pattern<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             "cnf_dv_ehr_uri_pattern",
             |opt| {
                 author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_EHR_URI"))
-                    && author::constrain_leaf_string(opt, "DV_EHR_URI", "value", Some("ehr://.*"), vec![])
+                    && author::constrain_leaf_string(
+                        opt,
+                        "DV_EHR_URI",
+                        "value",
+                        Some("ehr://.*"),
+                        vec![],
+                    )
             },
             vec![
                 (
