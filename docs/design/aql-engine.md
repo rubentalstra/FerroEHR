@@ -7,12 +7,13 @@ feature envelope below documents every accept/reject.
 
 ## Pipeline
 
-```
-AQL text ──openehr-query──▶ AST
-        ──analyze──▶ TypedQuery      (path typing vs openehr_rm::model)
-        ──lower────▶ QueryIr         (typed relational IR, Rust enums)
-        ──sql──────▶ sea_query stmt  (one SELECT over node/vo_version/ehr)
-        ──exec─────▶ RESULT_SET      (ITS-REST 1.0.3)
+```mermaid
+flowchart LR
+    txt["AQL text"] -->|openehr-query| ast["AST"]
+    ast -->|analyze| tq["TypedQuery<br/>(path typing vs openehr_rm::model)"]
+    tq -->|lower| ir["QueryIr<br/>(typed relational IR, Rust enums)"]
+    ir -->|sql| stmt["sea_query stmt<br/>(one SELECT over node/vo_version/ehr)"]
+    stmt -->|exec| rs["RESULT_SET<br/>(ITS-REST 1.0.3)"]
 ```
 
 Modules (all in `app/ehrbase/src/aql/`): `analyze`, `ir`, `lower`, `sql`,
