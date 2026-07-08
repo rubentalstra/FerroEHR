@@ -1,0 +1,333 @@
+//! OPT authoring for the content-chapter constraint cases (master15–17).
+//!
+//! The vendored CNF corpus ships **no** OPT per archetype-constraint variant — the
+//! schedule itself says the archetypes "should be generated" (master15
+//! §Implementation notes). Rather than skip every cardinality / occurrences /
+//! value-constraint case (which would leave the data-validation truth tables
+//! untested), the suite **authors** the constraining OPT programmatically: it
+//! parses a vendored base OPT into the typed [`openehr_its::opt14`] model, tightens
+//! the exact constraint the case exercises, re-serialises to ADL 1.4 XML, and
+//! provisions it via [`super::super::support::ensure_opt_xml`].
+//!
+//! The authored template keeps the base's archetype structure (root archetype id,
+//! node ids, term codes, ontology) and only changes (a) the `template_id` — so each
+//! variant is a distinct, independently-uploadable template — and (b) the one
+//! constraint under test. A composition that conforms to the base archetype
+//! therefore still conforms to the authored template except where the tightened
+//! constraint is violated, which is exactly the truth-table oracle (design §4.5).
+//!
+//! This is not a fabricated pass: the constraint is really expressed in a real OPT
+//! the SUT ingests and builds a `WebTemplate` from, and the accept/reject outcome
+//! is the server's genuine validation decision.
+
+use openehr_its::opt14::{
+    self, CArchetypeRoot, CAttribute, CObject, CSingleAttribute, Intervalofinteger,
+    OperationalTemplate,
+};
+
+use crate::harness::CaseError;
+
+/// A `multiple-attribute` cardinality interval — the six intervals master15/16
+/// enumerate for a "multiple attribute" (`master15 §For testing a 'multiple
+/// attribute' cardinality`).
+#[derive(Clone, Copy, Debug)]
+pub enum Card {
+    /// `0..*` — any number, including none (no effective constraint).
+    Any,
+    /// `1..*` — at least one.
+    OnePlus,
+    /// `3..*` — at least three.
+    ThreePlus,
+    /// `0..1` — at most one.
+    Opt,
+    /// `1..1` — exactly one.
+    Mand,
+    /// `3..5` — between three and five.
+    ThreeToFive,
+}
+
+impl Card {
+    /// The AOM `IntervalOfInteger` this cardinality denotes.
+    #[must_use]
+    pub fn interval(self) -> Intervalofinteger {
+        match self {
+            Card::Any => open_interval(0),
+            Card::OnePlus => open_interval(1),
+            Card::ThreePlus => open_interval(3),
+            Card::Opt => closed_interval(0, 1),
+            Card::Mand => closed_interval(1, 1),
+            Card::ThreeToFive => closed_interval(3, 5),
+        }
+    }
+}
+
+/// A closed interval `lower..upper` (both bounds included).
+#[must_use]
+pub fn closed_interval(lower: i32, upper: i32) -> Intervalofinteger {
+    Intervalofinteger {
+        lower_included: Some(true),
+        upper_included: Some(true),
+        lower_unbounded: false,
+        upper_unbounded: false,
+        lower: Some(lower),
+        upper: Some(upper),
+    }
+}
+
+/// A half-open interval `lower..*` (upper unbounded).
+#[must_use]
+pub fn open_interval(lower: i32) -> Intervalofinteger {
+    Intervalofinteger {
+        lower_included: Some(true),
+        upper_included: Some(false),
+        lower_unbounded: false,
+        upper_unbounded: true,
+        lower: Some(lower),
+        upper: None,
+    }
+}
+
+/// Parse a vendored base OPT (relative to `valid_templates/`) into the typed model.
+///
+/// # Errors
+/// [`CaseError::Codec`] if the fixture is missing or does not parse.
+pub fn parse_base(opt_rel: &str) -> Result<OperationalTemplate, CaseError> {
+    let xml = crate::fixtures::read(&format!("valid_templates/{opt_rel}"))
+        .map_err(|e| CaseError::Codec(e.to_string()))?;
+    opt14::from_xml(&xml).map_err(|e| CaseError::Codec(e.to_string()))
+}
+
+/// Serialise an authored OPT back to ADL 1.4 XML.
+///
+/// # Errors
+/// [`CaseError::Codec`] if serialisation fails.
+pub fn to_xml(opt: &OperationalTemplate) -> Result<String, CaseError> {
+    opt14::to_xml(opt).map_err(|e| CaseError::Codec(e.to_string()))
+}
+
+/// Retarget the template so it uploads as a distinct template (a fresh
+/// `template_id` avoids the 409 the store returns for a duplicate id — see
+/// `service::template::store_template`).
+pub fn set_template_id(opt: &mut OperationalTemplate, template_id: &str) {
+    opt.template_id.value = template_id.to_owned();
+}
+
+/// Set the cardinality interval of a **top-level** multiple attribute of the root
+/// object (e.g. `COMPOSITION.content`). Returns `true` if the attribute was found.
+///
+/// The attribute's child object constraints are left untouched — in the vendored
+/// bases the single content archetype already permits `0..*` occurrences, so
+/// varying only the attribute cardinality isolates the cardinality constraint from
+/// the per-node occurrences constraint (master15 §Isolation).
+pub fn set_root_multiple_cardinality(
+    opt: &mut OperationalTemplate,
+    attr: &str,
+    interval: Intervalofinteger,
+) -> bool {
+    for a in &mut opt.definition.attributes {
+        if let CAttribute::CMultipleAttribute(m) = a
+            && m.rm_attribute_name == attr
+        {
+            m.cardinality.interval = interval;
+            return true;
+        }
+    }
+    false
+}
+
+/// Make a **top-level single attribute** of the root object mandatory by setting
+/// its `existence` to `1..1` (e.g. `COMPOSITION.context`). If the base does not
+/// constrain the attribute at all, a bare mandatory `C_SINGLE_ATTRIBUTE` (no value
+/// constraint — any RM value accepted, but the attribute must be present) is added,
+/// which is what the truth table's "context mandatory" column requires.
+pub fn set_root_single_mandatory(opt: &mut OperationalTemplate, attr: &str) {
+    for a in &mut opt.definition.attributes {
+        if let CAttribute::CSingleAttribute(s) = a
+            && s.rm_attribute_name == attr
+        {
+            s.existence = closed_interval(1, 1);
+            return;
+        }
+    }
+    opt.definition
+        .attributes
+        .push(CAttribute::CSingleAttribute(CSingleAttribute {
+            rm_attribute_name: attr.to_owned(),
+            existence: closed_interval(1, 1),
+            children: vec![],
+        }));
+}
+
+// ── nested-object structural constraints (master16: HISTORY, EVENT, …) ────────
+
+/// The child `C_OBJECT`s of a `C_OBJECT` (its attributes' children), for the
+/// recursive tree walk. `C_ARCHETYPE_ROOT` and `C_COMPLEX_OBJECT` are the only
+/// object kinds that carry attributes; the leaf/primitive/domain kinds have none.
+fn object_attributes_mut(obj: &mut CObject) -> Option<&mut Vec<CAttribute>> {
+    match obj {
+        CObject::CArchetypeRoot(r) => Some(&mut r.attributes),
+        CObject::CComplexObject(c) => Some(&mut c.attributes),
+        _ => None,
+    }
+}
+
+/// The `rm_type_name` of a `C_OBJECT`, where it has one.
+fn object_rm_type(obj: &CObject) -> Option<&str> {
+    match obj {
+        CObject::CArchetypeRoot(r) => Some(&r.rm_type_name),
+        CObject::CComplexObject(c) => Some(&c.rm_type_name),
+        CObject::CDefinedObject(o) => Some(&o.rm_type_name),
+        CObject::CPrimitiveObject(o) => Some(&o.rm_type_name),
+        CObject::CCodePhrase(o) => Some(&o.rm_type_name),
+        CObject::CCodeReference(o) => Some(&o.rm_type_name),
+        CObject::CDvOrdinal(o) => Some(&o.rm_type_name),
+        CObject::CDvQuantity(o) => Some(&o.rm_type_name),
+        CObject::CDvState(o) => Some(&o.rm_type_name),
+        CObject::ArchetypeInternalRef(_)
+        | CObject::ArchetypeSlot(_)
+        | CObject::ConstraintRef(_)
+        | CObject::TComplexObject(_) => None,
+    }
+}
+
+/// Depth-first apply `f` to every `C_OBJECT` in the definition tree, pre-order,
+/// stopping at the first object for which `f` returns `true`. Returns whether any
+/// object was matched.
+fn visit_objects(root: &mut CArchetypeRoot, f: &mut impl FnMut(&mut CObject) -> bool) -> bool {
+    fn descend_attrs(attrs: &mut [CAttribute], f: &mut impl FnMut(&mut CObject) -> bool) -> bool {
+        for a in attrs {
+            let children = match a {
+                CAttribute::CMultipleAttribute(m) => &mut m.children,
+                CAttribute::CSingleAttribute(s) => &mut s.children,
+            };
+            for ch in children.iter_mut() {
+                if f(ch) {
+                    return true;
+                }
+                if let Some(inner) = object_attributes_mut(ch)
+                    && descend_attrs(inner, f)
+                {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+    descend_attrs(&mut root.attributes, f)
+}
+
+/// Set the cardinality interval of a **multiple attribute** on the first nested
+/// object of type `host` (e.g. `HISTORY.events`), and open the constrained
+/// attribute's child object occurrences to `0..*` so that varying the number of
+/// committed children exercises *only* the container cardinality — not the
+/// per-node occurrences (master15/16 §Isolation). Returns `true` if applied.
+pub fn constrain_nested_multiple(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    attr: &str,
+    interval: Intervalofinteger,
+) -> bool {
+    visit_objects(&mut opt.definition, &mut |obj| {
+        if object_rm_type(obj) != Some(host) {
+            return false;
+        }
+        let Some(attrs) = object_attributes_mut(obj) else {
+            return false;
+        };
+        for a in attrs.iter_mut() {
+            if let CAttribute::CMultipleAttribute(m) = a
+                && m.rm_attribute_name == attr
+            {
+                m.cardinality.interval = interval.clone();
+                for ch in &mut m.children {
+                    set_object_occurrences(ch, open_interval(0));
+                }
+                return true;
+            }
+        }
+        false
+    })
+}
+
+/// Make a **single attribute** on the first nested object of type `host` mandatory
+/// (`existence 1..1`) — e.g. `HISTORY.summary`. Adds the attribute if absent.
+/// Returns `true` if the host object was found.
+pub fn constrain_nested_single_mandatory(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    attr: &str,
+) -> bool {
+    visit_objects(&mut opt.definition, &mut |obj| {
+        if object_rm_type(obj) != Some(host) {
+            return false;
+        }
+        let Some(attrs) = object_attributes_mut(obj) else {
+            return false;
+        };
+        for a in attrs.iter_mut() {
+            if let CAttribute::CSingleAttribute(s) = a
+                && s.rm_attribute_name == attr
+            {
+                s.existence = closed_interval(1, 1);
+                return true;
+            }
+        }
+        attrs.push(CAttribute::CSingleAttribute(CSingleAttribute {
+            rm_attribute_name: attr.to_owned(),
+            existence: closed_interval(1, 1),
+            children: vec![],
+        }));
+        true
+    })
+}
+
+/// Set the `occurrences` of a `C_OBJECT` (the constraint kinds that carry it).
+pub fn set_object_occurrences(obj: &mut CObject, interval: Intervalofinteger) {
+    match obj {
+        CObject::CArchetypeRoot(r) => r.occurrences = interval,
+        CObject::CComplexObject(c) => c.occurrences = interval,
+        CObject::CDefinedObject(o) => o.occurrences = interval,
+        CObject::CPrimitiveObject(o) => o.occurrences = interval,
+        CObject::CCodePhrase(o) => o.occurrences = interval,
+        CObject::CCodeReference(o) => o.occurrences = interval,
+        CObject::CDvOrdinal(o) => o.occurrences = interval,
+        CObject::CDvQuantity(o) => o.occurrences = interval,
+        CObject::CDvState(o) => o.occurrences = interval,
+        CObject::ArchetypeInternalRef(_)
+        | CObject::ArchetypeSlot(_)
+        | CObject::ConstraintRef(_)
+        | CObject::TComplexObject(_) => {}
+    }
+}
+
+/// Access the first nested object of type `host` and apply `f` to its attribute
+/// named `attr` (single or multiple). Returns `true` if applied — the general
+/// escape hatch for constraints not covered by the specific helpers above (used by
+/// the master17 leaf value-constraint authoring). `f` receives the matched
+/// [`CAttribute`].
+pub fn with_nested_attribute(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    attr: &str,
+    mut f: impl FnMut(&mut CAttribute),
+) -> bool {
+    visit_objects(&mut opt.definition, &mut |obj| {
+        if object_rm_type(obj) != Some(host) {
+            return false;
+        }
+        let Some(attrs) = object_attributes_mut(obj) else {
+            return false;
+        };
+        for a in attrs.iter_mut() {
+            let name = match a {
+                CAttribute::CMultipleAttribute(m) => &m.rm_attribute_name,
+                CAttribute::CSingleAttribute(s) => &s.rm_attribute_name,
+            };
+            if name == attr {
+                f(a);
+                return true;
+            }
+        }
+        false
+    })
+}
