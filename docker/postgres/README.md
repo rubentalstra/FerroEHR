@@ -32,7 +32,7 @@ every boot (a per-schema `_sqlx_migrations` ledger makes re-runs no-ops).
 Baking migration state into the image would couple the two images' release
 cycles for zero gain and risk a checksum mismatch between a stale baked schema
 and the running binary's embedded migrations. The single source of truth for
-schema content is `crates/ehrbase/migrations/{ext,ehr}/`, applied at boot. This
+schema content is `app/ehrbase/migrations/{ext,ehr}/`, applied at boot. This
 is also the official EHRbase precedent (its postgres image is init-scripts
 only).
 

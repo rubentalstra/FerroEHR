@@ -21,7 +21,7 @@ docs/spec-audit/SPEC_AUDIT.md, docs/design/aql-engine.md.
 Work these, in order, on a claude/phase-17-* branch:
 
 1. P17 — FLAT/EhrScape (docs/plans/phase-17-flat-ehrscape.md): wire the
-   openehr-flat FLAT/STRUCTURED converters through ehrbase-compat as the
+   openehr-flat FLAT/STRUCTURED converters through the ehrbase-rest ehrscape module as the
    EhrScape-compatible surface (/rest/ecis/v1/*), plus the FLAT composition
    endpoints on the main API, on top of the existing WebTemplateService seam
    and ServiceResponse envelope. Design the compat surface yourself before

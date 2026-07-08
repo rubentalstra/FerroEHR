@@ -4,7 +4,7 @@
 
 The ADRs and project docs carry a layer of pre-ADR-008 (and pre-ADR-004)
 statements that now actively contradict how the project works. Verified against
-the committed codebase (`crates/`, `crates/ehrbase/migrations/`, root
+the committed codebase (`crates/`, `app/ehrbase/migrations/`, root
 `Cargo.toml`, `rust-toolchain.toml`) and the merged git history
 (`phase-11..phase-15` = PRs #15–#19, on `develop`). The recurring problems:
 
@@ -42,7 +42,7 @@ noted (F-14-17) though outside the primary target set.
 - **Doc:** `docs/ADRs/ADR-007-squashed-baseline-migrations.md` (whole ADR; Status line)
 - **Problem:** Status reads `accepted`. The ADR's entire subject — a squashed
   EHRbase-Flyway baseline `migrations/{ext,ehr}/0001_baseline.sql`, the
-  `crates/ehrbase/tests/resources/legacy_schema/` fixture, and the
+  `app/ehrbase/tests/resources/legacy_schema/` fixture, and the
   `baseline_schema_is_identical_to_legacy_flyway_chain` gate — was replaced by
   ADR-008 §2 ("ADR-007's *shipped schema content* is replaced"). Verified: the
   actual migrations are `ehr/0001_schema.sql` (greenfield `node` + temporal

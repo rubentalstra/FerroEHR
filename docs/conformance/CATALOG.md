@@ -1,7 +1,7 @@
 # The ehrbase-rs Conformance Catalogue (ECC)
 
 Generated per run — do not edit. Numbers are allocated once in
-`crates/ehrbase-conformance/inventory/ecc-catalog.tsv` and never reused.
+`tools/conformance/inventory/ecc-catalog.tsv` and never reused.
 
 ## EHR — EHR service (12 cases, 12 active)
 
