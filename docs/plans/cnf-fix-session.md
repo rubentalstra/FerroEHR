@@ -5,11 +5,12 @@ orchestrator brief for closing the CNF findings and expanding real coverage.
 
 ---
 
-You are Fable 5, orchestrating on `ehrbase-rs` (branch: cut a new `claude/cnf-*`
-from `claude/cnf-hardening`). Read `CLAUDE.md`, `docs/ADRs/ADR-008`, and the CNF
-rules (`.claude/rules/spec-adherence.md`, `serialization.md`, `rest-axum.md`)
-first. The vendored spec + CNF schedule at `docs/specs/openehr/` is the oracle —
-never resolve a spec question from memory or from EHRbase behaviour.
+You are Fable 5, orchestrating on `ehrbase-rs`. **Stay on the current branch
+`claude/cnf-hardening` — do NOT cut a new branch.** Read `CLAUDE.md`,
+`docs/ADRs/ADR-008`, and the CNF rules (`.claude/rules/spec-adherence.md`,
+`serialization.md`, `rest-axum.md`) first. The vendored spec + CNF schedule at
+`docs/specs/openehr/` is the oracle — never resolve a spec question from memory or
+from EHRbase behaviour.
 
 ## Where we are (2026-07-08, self-host run)
 
@@ -20,30 +21,54 @@ server-agnostic (`--base-url` or `--self-host`), and emits the guide's artefacts
 EHRbase Java: `CNF_COMPARISON.md` (rs column filled; run
 `docker/conformance/run.sh java` for the reference column).
 
-## The "322" reality — read this before touching the denominator
+## Full 322 coverage is the target — every identified case must be driven
 
-**322 is the upstream inventory and is NOT fully reachable.** Of it, **57 are
-`aaaa`/`bbbb` placeholder headings** the official CNF never wrote (master10
-demographic 24, master12 admin 18, master13 messaging 14 — bodies are "Test
-Environment: TBD"). Only **265 are real cases** (264 distinct + 1 dup). So:
+openEHR CNF identifies **322** cases; the goal is the **best CNF framework**, so
+**all 322 must have a runner and be driven** (implemented = 322), then maximize
+passed. Today `implemented = 263`; the gap is the **59 not-yet-bound slots**,
+which are the **57 upstream `aaaa`/`bbbb` placeholders** (master10 demographic 24,
+master12 admin 18, master13 messaging 14) plus 2 stragglers.
 
-- Honest PASS denominator = **265 real** (minus the handful with no ITS-REST verb,
-  see bucket 3) **+ our 34 runner-defined** cases (`DEMO-*` 23, `ADMIN-*` 6,
-  `SIGN-*` 5) that cover the placeholder chapters' real endpoints.
-- **Task:** make the report state conformance against the *real testable set*, not
-  a fraction of 322. Add a "reachable" line to the report/certificate
-  (`report.rs`): `265 real + N runner-defined − M no-ITS-REST = reachable`, and
-  express CORE/STANDARD ratings against the profile capabilities, not the raw 322.
-- Do **not** fabricate cases to pad 322. master13 messaging has no server API →
-  it stays honestly uncovered.
+The placeholders have no upstream *body* (bodies read "Test Environment: TBD"), so
+we supply our own **runner-defined** cases against the real ITS-REST + Service
+Model surface and **bind them to the placeholder inventory slots** so the coverage
+guard counts every one of the 322 as implemented:
 
-## Also expand real coverage (the "we need more tests" ask)
+- **master10 demographic (24 slots):** we already have 23 `DEMO-*` cases — bind
+  them to the 24 `PLACEHOLDER-master10-*` slots (add/adjust to fill all 24).
+- **master12 admin (18 slots):** we have 6 `ADMIN-*` — expand to fill all 18
+  (per-EHR delete variants, bulk-delete variants, disabled→404 config case,
+  role-forbidden 403, etc.) and bind to the slots.
+- **master13 messaging (14 slots):** author `MSG-*` cases driving the ITS-REST
+  **messaging** surface; the server exposes no messaging API yet, so they drive
+  the expected endpoints and record as **findings** (endpoint missing) — driven,
+  never skipped, so the slot is covered.
+- Wire the coverage guard / registry so a placeholder slot is satisfied by its
+  bound runner-defined case (see `schedule.rs` inventory keys
+  `PLACEHOLDER-<file-stem>-<n>` and `registry.rs`).
+
+**Definition of "implemented = 322":** every identified case (real + placeholder)
+has a runner and executes an assertion against the SUT. Do not fabricate passes —
+a placeholder whose endpoint is unimplemented is a driven **finding**, which still
+counts as implemented/covered.
+
+## Also expand data-set coverage (the "we need way more tests" ask)
 
 Many functional cases (master06–09) currently drive a **single** data set
 (`DataSetReport::SINGLE`). The schedule truth tables specify **multiple** data
-sets per case (success + failure + border). Widen the high-value ones to drive
-all specified data sets (the content chapters already do this). This raises the
-genuine assertion count without inventing cases.
+sets per case (success + failure + border). Widen every such case to drive all
+specified data sets (the content chapters already do this) — this multiplies the
+genuine assertion count within the 322 without inventing cases.
+
+## Priority: FULLY close CORE first
+
+**Do CORE 100% before anything else** — finish buckets **1 + 4** and get every
+CORE-profile capability (EHR ops, EHR status, composition ops, change sets,
+versioning, **archetype validation**, ADL 1.4 archetype/OPT provisioning, EHR API,
+DEFINITION API) to **all-pass**. Only once CORE is fully green move to the full
+322-coverage work (placeholder binding + messaging + data-set expansion) and
+STANDARD (buckets 2 + 3). Do not spread effort — CORE is the gate and must be
+complete first.
 
 ## The 105 findings → fix in this order (CORE first)
 
@@ -109,7 +134,14 @@ crate compiling + clippy-clean + tested per change.
 
 ## Definition of done
 
-CORE rating achieved (buckets 1+4 green), STANDARD in reach (2+3), the report
-states conformance against the *real* reachable set (not raw 322), `CNF_COMPARISON.md`
-has both columns, and `docs/conformance/COVERAGE_GAPS.md` lists any residual
-non-ITS-REST cases with citations.
+1. **CORE fully green first** — buckets 1 + 4 closed; every CORE-profile capability
+   all-pass (the certificate rates **CORE**).
+2. **All 322 implemented/driven** — the 57 placeholder slots bound to runner-defined
+   cases (demographic/admin/messaging), messaging driving the real ITS-REST surface
+   (findings until the API exists); `implemented = 322` in `RESULTS.md`.
+3. **STANDARD in reach** — buckets 2 + 3 addressed (AQL + REST realizations).
+4. Data-set coverage widened on the single-data-set functional cases.
+5. `CNF_COMPARISON.md` has both columns (run `docker/conformance/run.sh java`);
+   `docs/conformance/COVERAGE_GAPS.md` lists any residual gaps with spec citations.
+
+Stay on `claude/cnf-hardening` throughout. Commit per bucket; no AI attribution.
