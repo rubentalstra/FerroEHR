@@ -14,8 +14,8 @@ use http_body_util::BodyExt;
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use tower::ServiceExt;
 
-use ehrbase_rest::RestConfig;
 use ehrbase_rest::auth::config::{AuthConfig, BasicConfig, BasicUser, OidcConfig, Redacted};
+use ehrbase_rest::{AdminConfig, RestConfig};
 
 const ISSUER: &str = "https://issuer.test";
 const SECRET: &str = "integration-secret";
@@ -53,6 +53,9 @@ fn config(enabled: bool) -> RestConfig {
             }),
             admin_scope: Some("ehrbase:admin".to_owned()),
         },
+        // The admin group must be reachable here: `admin_route_reachable_without_rbac`
+        // asserts the dispatcher's 501 (StubBackend), not the config gate's 404.
+        admin: AdminConfig { enabled: true },
     }
 }
 
