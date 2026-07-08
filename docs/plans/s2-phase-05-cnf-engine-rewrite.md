@@ -1,114 +1,76 @@
-# Phase S2-05 — CNF conformance engine full redesign (multi-source, spec-exhaustive)
+# Phase S2-05 — The ehrbase-rs Conformance Catalogue (ECC): full clean rewrite
 
-- Status: in-progress (design)
+- Status: in-progress (engine core v4 landed)
 - Started: 2026-07-08   Owner: —
 - Branch: `claude/cnf-hardening` (owner instruction: stay on this branch)
-- Consumes: the vendored spec corpus at `docs/specs/openehr/` (the oracle —
-  CNF schedule + Robot suite + ITS-REST OAS + QUERY/AQL + RM/BASE + ITS-JSON),
-  the existing `crates/ehrbase-conformance` (v1, PR #27) as prior art.
+- Design: `docs/design/conformance-framework.md` (**v4** — read first)
 - Compile required: yes — compiling, clippy-clean, tested increments.
 
-## Why this phase (owner directive, 2026-07-08)
+## Mission (owner directives, 2026-07-08)
 
-The v1 framework enforces the 322 identified schedule cases — but the schedule
-alone is a thin instrument: master11 (QUERY) is TBD stubs upstream, master17.5
-is empty, data-set variants are folded into single cases, and the Robot suite's
-hundreds of concrete executable cases + golden expected results are used only
-as fixtures. The owner wants a **complete redesign**: an official-grade testing
-engine whose case base is derived *exhaustively* from the vendored official
-specs — thousands of executable cases, every one citing its spec file+section —
-usable as the real acceptance instrument for conformance claims.
-
-Note (verified 2026-07-07, re-verified this phase): the vendored CNF **is**
-identical to upstream HEAD (`specifications-CNF` @ `33251d2a`; upstream dormant
-since 2024-08). "Up to date with the latest official specs" therefore means
-**deriving the missing depth from the other pinned official artifacts**, not
-re-vendoring.
-
-## v3.1 pivot (owner, 2026-07-08): our own catalogue + numbering
-
-The official CNF corpus is frozen/unmaintained upstream — it cannot be the
-primary key system. The framework is now **ours**: the *ehrbase-rs Conformance
-Catalogue* (ECC), ids `ECC-<AREA>-<NNN>[.<VV>]`, numbers allocated once in a
-committed catalogue file and never reused. The official CNF (schedule +
-Robot + OAS + AQL corpus) is the **reference oracle**: extractors + trace
-guards prove every official unit is realized by an ECC case or excluded with
-a reason. Our catalogue exceeds the official corpus wherever it is stale
-(status codes, RM 1.2.0, signing, security, full AQL).
-
-## Design thesis (v3 — supersedes the registry-only model of
-`docs/design/conformance-framework.md` §4 where they conflict)
-
-Keep the **schedule as the normative spine** (profile/certificate reporting
-keys on official case ids), but replace "one hand-registered case per schedule
-heading" with a **multi-source case engine**:
-
-1. **Schedule source** — every masterNN case, with every normative data-set /
-   flow variant expanded to a distinct executable case (not "16/16 data sets
-   inside one case").
-2. **Robot source** — full transcription of the vendored Robot suite's
-   concrete cases (native Rust, no Python), with its expected-result goldens;
-   provenance-tagged, mapped back to schedule ids where tags allow.
-3. **ITS-REST source** — an endpoint × documented-status-code matrix generated
-   from the vendored OpenAPI (the same corpus `emit-rest` consumes): every
-   operation, every documented response, both formats.
-4. **AQL source** — the fixture corpus (valid groups A–D + invalid + golden
-   result sets, empty + loaded DB) as first-class cases with golden diffing,
-   plus AQL 1.1 spec-feature cases for constructs the corpus misses.
-5. **Content source** — exhaustive truth tables for master15–17.x, including
-   engine-defined tables for the chapters upstream left empty (17.5),
-   grounded in the RM data_types spec text.
-6. **Runner-defined** — SIGN-* (unchanged from v1 §4.6) and any capability
-   with zero upstream material.
-
-Per-source **coverage gates** (the house pattern): each source has a parser
-over the vendored artifact and a guard asserting every extracted id is
-implemented or explicitly excluded with a reason enum. Failing cases are
-findings, never exclusions (v1 §4.5 discipline unchanged).
+Build **our own, modern conformance framework** — the ECC — as the project's
+acceptance instrument. The official openEHR CNF corpus is *reference reading
+only* (frozen upstream, unfinished chapters, 2019 Robot/Python harness): we
+studied it exhaustively, keep its good ideas (profile claims, data-set-driven
+validation, certificate-shaped reports), and build better from the current
+pinned specs. Our numbering (`ECC-<AREA>-<NNN>[.VV]`), our taxonomy, our
+generated data sets, version-aware (latest-only today), ≥2,000 executable
+tests at build-out, enterprise-clean layering. **No mapping machinery to the
+legacy corpus, no Robot, no Python.**
 
 ## Tasks
 
-- [x] Recon: exhaustive inventories (schedule chapters + variants, Robot suite
-      counts + goldens, current-crate map, upstream freshness) — done 2026-07-08:
-      schedule = 324 headings / ~1,576+ variant rows (content 1,371); Robot =
-      464 declared cases + goldens; vendored corpus verified upstream-current.
-- [x] Author the v3 design (`docs/design/conformance-framework.md` rewrite):
-      multi-source case model (S1–S6), source-prefixed ids + fingerprints,
-      per-source coverage gates, machine-enforced profile verdicts.
-- [x] Schedule reference extractor: variant rows (1,371 pinned per chapter,
-      fingerprinted, named data-set blocks) + chapter-level data-set matrices
-      (372 tables incl. master06 16-row + master08 anchored) — 2026-07-08.
+- [x] Recon: exhaustive inventories of the old corpus (schedule 324 headings /
+      1,371 truth rows; robot 464 cases; fixtures; upstream freshness) —
+      2026-07-08. Retained as design-review knowledge.
 - [x] Vendor the ISO 18308 Conformance Statement
-      (`docs/specs/openehr/REQUIREMENTS/`, via vendor-spec-docs.sh) as the
-      requirements-level trace dimension (`iso18308:<section>`) — 2026-07-08.
-- [ ] Engine core rewrite: ECC catalogue (committed allocation file, own
-      numbering, Area taxonomy) + trace-based registry + trace guards +
-      iso18308 rollup in reports.
-- [ ] Schedule source: variant-expanded transcription (all masterNN).
-- [ ] Robot source: transcribe suites service-by-service with goldens.
-- [ ] ITS-REST source: OAS-derived endpoint/status matrix generator + cases.
-- [ ] AQL source: corpus cases + golden diffing + spec-feature cases.
-- [ ] Content source: full truth tables incl. 17.5 fill.
-- [ ] Reports: results.json / RESULTS.md / CONFORMANCE_STATEMENT.md updated to
-      per-source provenance; badge.
-- [ ] CI: smoke tier + full tier updated; `scripts/conformance.sh` contract
-      preserved.
+      (`docs/specs/openehr/REQUIREMENTS/`) as the requirements-level lens.
+- [x] Design v4 (`docs/design/conformance-framework.md`): own framework,
+      own catalogue, spec-first universe, generated data sets, version
+      dimension, machine profile verdicts.
+- [x] **Engine core v4** — layered crate (`model/` `testdata/` `engine/`
+      `reporting/` `suites/` + facade), ECC catalogue (committed TSV,
+      allocation guard, 310 cases numbered), `SpecVersions` (latest-only),
+      catalogue-driven runner + reports (RESULTS/CATALOG/STATEMENT/badge);
+      all legacy-corpus mapping machinery deleted. 29/29 tests, clippy-clean.
+- [ ] Re-title + re-key the existing ~310 cases as native ECC cases (proper
+      human titles; `own:` registration slugs), area by area — with the
+      one-time design-review checklist against the old corpus (nothing it
+      tested left uncovered *by design*, no machine mapping).
+- [ ] `engine/flow.rs` — the declarative given/when/expect step API; migrate
+      the EHR area as the pattern.
+- [ ] `model/profile.rs` — capability→profile matrix (design §8) +
+      all-or-nothing machine verdict wired into the statement.
+- [ ] `testdata/generate.rs` — the VAL generators (cardinality grids,
+      presence/absence, boundary values, type substitution over authored
+      OPTs): 1,000+ variants with per-variant `ECC-VAL-nnn.vv` outcomes.
+- [ ] `REST` area — the ITS-REST operation × documented-status matrix from
+      the pinned contract.
+- [ ] `QRY` build-out — AQL 1.1 construct checklist + corpus goldens with a
+      rule-named normalizer.
+- [ ] `SEC` sweeps (RBAC 401/403), JUnit/CTRF output, CI tiers, first
+      generated STANDARD-profile statement.
+- [ ] Regenerate `docs/conformance/` with the v4 artifact set (replaces the
+      stale v2 reports + hand-maintained COVERAGE_GAPS).
 
 ## Exit criteria
 
-- [ ] Every vendored-artifact-extractable case id is implemented or
-      reason-excluded, enforced by per-source guards (build-breaking).
-- [ ] Total executable case count ≥ 4× the v1 322, each case carrying spec
-      file + section citation.
-- [ ] Full run against the compose stack produces the regenerated
-      `docs/conformance/` artifact set; failures tracked as findings.
+- [ ] Catalogue ≥2,000 executable tests across the areas (design §4.3),
+      every case with a human title and spec citation.
+- [ ] Profile verdict machine-computed; statement generated; failures are
+      findings; zero legacy-corpus machinery.
+- [ ] Full run against the compose stack produces the v4 `docs/conformance/`
+      set; CI tiers wired.
 
 ## Decisions made this phase
 
-- (pending v3 design doc)
+- v4 ownership: our framework, legacy CNF demoted to reference reading
+  (design doc v4 §1–§3).
+- Version dimension modeled, latest-only supported (design §2.5).
 
 ## Handoff for next session
 
-Recon agents dispatched (schedule inventory, Robot inventory, current-crate
-map, upstream freshness). Next: fold their results into the v3 design doc,
-then implement engine core.
+Engine core v4 is on the branch: layered crate, ECC catalogue live
+(310 numbered cases), catalogue-driven runner/reports, clippy-clean, 29/29.
+Next: the re-title/re-key pass (task 5) and `engine/flow.rs` — both are
+delegable area-by-area with the design doc §5/§7 as the spec.
