@@ -83,13 +83,13 @@ CONTAINS chains; `jsonb_path_query_first` + jsonpath item methods +
 document pre-filters) → execute (`sqlx`) → `RESULT_SET` (1.0.3). The feature
 envelope is documented per construct; rejections are explicit typed errors.
 
-## REST surface + auth (`ehrbase-rest`, `ehrbase-compat`, built at P11/P12)
+## REST surface + auth (`ehrbase-rest`, built at P11/P12)
 
 Base path `/ehrbase/rest/openehr/v1`, implementing the generated ITS-REST
 1.0.3 server traits over `axum` with a `tower-http` middleware stack and
 content negotiation (canonical JSON/XML via `openehr-its`). Extensions: admin
 API, `/rest/status`, `/management/*`, item tags, EhrScape compatibility
-(`ehrbase-compat`). **Auth (Stage 1):** Basic + OAuth2/OIDC via
+(a feature-gated `ehrscape` adapter module in `ehrbase-rest`, P17). **Auth (Stage 1):** Basic + OAuth2/OIDC via
 `argon2`/`jsonwebtoken`/`oauth2`/`openidconnect`; RBAC is Stage 2.
 
 ## Templates, validation, FLAT (P13–P15, P17)
@@ -111,7 +111,7 @@ columns for hot extractions. See `docs/postgres-features.md`.
 
 Three physical directories (ADR-010; move executed 2026-07-08):
 **`app/*`** holds the application crates (`ehrbase`, `ehrbase-sm` [SM-1],
-`ehrbase-rest`, `ehrbase-compat`, `ehrbase-audit`, `ehrbase-authz`,
+`ehrbase-rest`, `ehrbase-audit`, `ehrbase-authz`,
 `ehrbase-signing`); **`tools/*`** holds the dev/verification tooling that is
 *not* part of the shipped application (`conformance` — the ECC runner,
 `benchmark`); **`crates/*`** holds the generated openEHR spec layer + its
@@ -134,9 +134,14 @@ with `ehrbase-rest` as the ITS-REST protocol adapter — see
 | `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`, P16) | tooling |
 | `openehr-derive` | `#[derive(OpenEhrType)]` proc-macro | tooling |
-| `ehrbase-rest` | ITS-REST server (axum) + auth | application |
-| `ehrbase-compat` | EhrScape, admin, WebTemplate/FLAT endpoints | application |
+| `ehrbase-rest` | ITS-REST server (axum) + auth + EhrScape adapter (P17) | application |
+| `ehrbase-sm` | SM native-API traits + shared service types (SM-1) | application |
+| `ehrbase-audit` | IHE ATNA audit (the SM System Log component) | application |
+| `ehrbase-authz` | RBAC/ABAC authorization engine | application |
+| `ehrbase-signing` | Version signing | application |
 | `ehrbase` | Binary: storage, service layer, AQL engine, versioning, CLI | application |
+| `conformance` | ECC conformance runner (`tools/*`) | tooling |
+| `benchmark` | Benchmark harness (`tools/*`) | tooling |
 
 ## Build sequence & stages
 
