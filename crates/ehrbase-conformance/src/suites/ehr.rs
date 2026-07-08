@@ -1,11 +1,12 @@
-//! master06 — EHR + `EHR_STATUS` cases (design §4.1: `suites/ehr.rs`).
+//! EHR + `EHR_STATUS` cases (design §4.1: `suites/ehr.rs`).
 //!
-//! All 21 schedule cases from `master06-func_tc_ehr.adoc`, plus a fixture-derived
-//! negative case over the vendored invalid `EHR_STATUS` data sets. Positive
-//! payloads consume the vendored `ehr/valid` fixtures (RM-1.2.0-adapted per §6);
-//! negatives post the vendored `ehr/invalid` set verbatim. Assertions concretize
-//! the ITS-REST EHR API status contract (`201_EHR`: `ETag(ehr_id)` + Location;
-//! `200_EHR`; `404` for absent resources; `409` for duplicate id/subject).
+//! Our own ECC cases (reference: `master06-func_tc_ehr.adoc`, design-time
+//! reading), plus a fixture-derived negative case over the vendored invalid
+//! `EHR_STATUS` data sets. Positive payloads consume the vendored `ehr/valid`
+//! fixtures (RM-1.2.0-adapted per §6); negatives post the vendored `ehr/invalid`
+//! set verbatim. Assertions concretize the ITS-REST EHR API status contract
+//! (`201_EHR`: `ETag(ehr_id)` + Location; `200_EHR`; `404` for absent resources;
+//! `409` for duplicate id/subject).
 
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -13,7 +14,8 @@ use uuid::Uuid;
 use openehr_rm::prelude::Ehr;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, RunContext};
 use crate::registry::CaseEntry;
@@ -23,107 +25,149 @@ use crate::registry::CaseEntry;
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         entry(
-            "I_EHR_SERVICE.has_ehr-existing_ehr_id",
+            "ehr/has-ehr-existing-ehr-id",
+            "EHR existence check — existing EHR id",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_has_ehr_existing_ehr_id,
         ),
         entry(
-            "I_EHR_SERVICE.has_ehr-existing_subject_id",
+            "ehr/has-ehr-existing-subject-id",
+            "EHR existence check — existing subject id",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_has_ehr_existing_subject_id,
         ),
         entry(
-            "I_EHR_SERVICE.has_ehr-non_existing_ehr_id",
+            "ehr/has-ehr-non-existing-ehr-id",
+            "EHR existence check — non existing EHR id",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_has_ehr_non_existing_ehr_id,
         ),
         entry(
-            "I_EHR_SERVICE.has_ehr-non_existing_subject_id",
+            "ehr/has-ehr-non-existing-subject-id",
+            "EHR existence check — non existing subject id",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_has_ehr_non_existing_subject_id,
         ),
         entry(
-            "I_EHR_SERVICE.create_ehr-main",
+            "ehr/create-ehr-main",
+            "Create EHR — main",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_create_ehr_main,
         ),
         entry(
-            "I_EHR_SERVICE.create_ehr-same_ehr_twice",
+            "ehr/create-ehr-same-ehr-twice",
+            "Create EHR — same EHR twice",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_create_ehr_same_ehr_twice,
         ),
         entry(
-            "I_EHR_SERVICE.create_ehr-two_ehrs_same_patient",
+            "ehr/create-ehr-two-ehrs-same-patient",
+            "Create EHR — two EHRs same patient",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_create_ehr_two_ehrs_same_patient,
         ),
         entry(
-            "I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id",
+            "ehr/get-ehr-existing-ehr-by-ehr-id",
+            "Get EHR — existing EHR by EHR id",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_get_ehr_existing_by_ehr_id,
         ),
         entry(
-            "I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id",
+            "ehr/get-ehr-existing-ehr-by-subject-id",
+            "Get EHR — existing EHR by subject id",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_get_ehr_existing_by_subject_id,
         ),
         entry(
-            "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id",
+            "ehr/get-ehr-get-ehr-by-invalid-ehr-id",
+            "Get EHR — get EHR by invalid EHR id",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_get_ehr_invalid_ehr_id,
         ),
         entry(
-            "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id",
+            "ehr/get-ehr-get-ehr-by-invalid-subject-id",
+            "Get EHR — get EHR by invalid subject id",
+            "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
             Capability::EhrOperations,
             run_get_ehr_invalid_subject_id,
         ),
         entry(
-            "I_EHR_STATUS.get_ehr_status-get_by_ehr_id",
+            "sta/get-ehr-status-get-by-ehr-id",
+            "Get EHR_STATUS — get by EHR id",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_get_ehr_status_by_ehr_id,
         ),
         entry(
-            "I_EHR_STATUS.get_ehr_status-bad_ehr",
+            "sta/get-ehr-status-bad-ehr",
+            "Get EHR_STATUS — bad EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_get_ehr_status_bad_ehr,
         ),
         entry(
-            "I_EHR_STATUS.set_ehr_queryable-existing_ehr",
+            "sta/set-ehr-queryable-existing-ehr",
+            "Set EHR_STATUS is_queryable — existing EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_set_ehr_queryable_existing,
         ),
         entry(
-            "I_EHR_STATUS.set_ehr_queryable-bad_ehr",
+            "sta/set-ehr-queryable-bad-ehr",
+            "Set EHR_STATUS is_queryable — bad EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_set_ehr_queryable_bad,
         ),
         entry(
-            "I_EHR_STATUS.set_ehr_modifiable-existing_ehr",
+            "sta/set-ehr-modifiable-existing-ehr",
+            "Set EHR_STATUS is_modifiable — existing EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_set_ehr_modifiable_existing,
         ),
         entry(
-            "I_EHR_STATUS.set_ehr_modifiable-bad_ehr",
+            "sta/set-ehr-modifiable-bad-ehr",
+            "Set EHR_STATUS is_modifiable — bad EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_set_ehr_modifiable_bad,
         ),
         entry(
-            "I_EHR_STATUS.clear_ehr_queryable-existing_ehr",
+            "sta/clear-ehr-queryable-existing-ehr",
+            "Clear EHR_STATUS is_queryable — existing EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_clear_ehr_queryable_existing,
         ),
         entry(
-            "I_EHR_STATUS.clear_ehr_queryable-bad_ehr",
+            "sta/clear-ehr-queryable-bad-ehr",
+            "Clear EHR_STATUS is_queryable — bad EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_clear_ehr_queryable_bad,
         ),
         entry(
-            "I_EHR_STATUS.clear_ehr_modifiable-existing_ehr",
+            "sta/clear-ehr-modifiable-existing-ehr",
+            "Clear EHR_STATUS is_modifiable — existing EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_clear_ehr_modifiable_existing,
         ),
         entry(
-            "I_EHR_STATUS.clear_ehr_modifiable-bad_ehr",
+            "sta/clear-ehr-modifiable-bad-ehr",
+            "Clear EHR_STATUS is_modifiable — bad EHR",
+            "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
             Capability::EhrStatus,
             run_clear_ehr_modifiable_bad,
         ),
@@ -131,14 +175,13 @@ pub fn entries() -> Vec<CaseEntry> {
         // (master06 §Test Data Sets class 2) must be rejected.
         CaseEntry {
             meta: CaseMeta {
-                id: "FIXTURE-I_EHR_SERVICE.create_ehr-invalid_status",
-                chapter: Chapter::Master06,
+                id: "ehr/create-ehr-invalid-status",
+                title: "Create EHR — reject invalid EHR_STATUS data sets",
+                area: Area::Ehr,
                 capability: Capability::EhrOperations,
                 profiles: &[Profile::Core, Profile::Standard],
                 formats: &[Format::Json],
-                provenance: Provenance::FixtureDerived,
-                schedule_ref: "master06-func_tc_ehr.adoc §Test Data Sets (INVALID class 2)",
-                upstream_tags: &[],
+                citation: "ITS-REST 1.0.3 EHR API §create_ehr (422); RM 1.2.0 ehr §EHR_STATUS validation",
                 compare: Compare::Superset,
             },
             run: run_create_ehr_invalid_status,
@@ -146,18 +189,27 @@ pub fn entries() -> Vec<CaseEntry> {
     ]
 }
 
-/// A schedule-provenance master06 case with the shared metadata.
-fn entry(id: &'static str, capability: Capability, run: CaseRun) -> CaseEntry {
+/// An ECC case with the shared metadata; `area` is derived from `capability`.
+fn entry(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    capability: Capability,
+    run: CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master06,
+            title,
+            area: if matches!(capability, Capability::EhrStatus) {
+                Area::Sta
+            } else {
+                Area::Ehr
+            },
             capability,
             profiles: &[Profile::Core, Profile::Standard],
             formats: &[Format::Json],
-            provenance: Provenance::Schedule,
-            schedule_ref: id,
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,

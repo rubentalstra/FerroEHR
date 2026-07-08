@@ -50,7 +50,6 @@
 use openehr_its::opt14::{CPrimitive, OperationalTemplate};
 use serde_json::{Value, json};
 
-use crate::case::Chapter;
 use crate::fixtures;
 use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, RunContext};
 use crate::registry::CaseEntry;
@@ -118,198 +117,295 @@ fn leaf_ptr(idx: usize, suffix: &str) -> String {
 /// The implemented master17.x case entries.
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
-    let c = Chapter::Master17_1;
     let mut all = vec![
         // ── 17.1 basic ────────────────────────────────────────────────────────
-        open("CONT-DV_BOOLEAN-anything_allowed", c, open_dv_boolean),
-        open("CONT-DV_BOOLEAN-only_true_allowed", c, run_dv_boolean_true),
         open(
-            "CONT-DV_BOOLEAN-only_false_allowed",
-            c,
+            "val/dv-boolean-anything-allowed",
+            "Validate DV_BOOLEAN — anything allowed",
+            "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            open_dv_boolean,
+        ),
+        open(
+            "val/dv-boolean-only-true-allowed",
+            "Validate DV_BOOLEAN — only true allowed",
+            "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            run_dv_boolean_true,
+        ),
+        open(
+            "val/dv-boolean-only-false-allowed",
+            "Validate DV_BOOLEAN — only false allowed",
+            "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             run_dv_boolean_false,
         ),
         open(
-            "CONT-DV_IDENTIFIER-validate_all_pattern",
-            c,
+            "val/dv-identifier-all-pattern",
+            "Validate DV_IDENTIFIER — all pattern",
+            "RM 1.2.0 data_types §DV_IDENTIFIER; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             run_dv_identifier_pattern,
         ),
         open(
-            "CONT-DV_IDENTIFIER-validate_all_list",
-            c,
+            "val/dv-identifier-all-list",
+            "Validate DV_IDENTIFIER — all list",
+            "RM 1.2.0 data_types §DV_IDENTIFIER; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             run_dv_identifier_list,
         ),
     ];
 
     // ── 17.2 text ──────────────────────────────────────────────────────────────
-    let c = Chapter::Master17_2;
-    all.push(open("CONT-DV_TEXT-validate_open", c, open_dv_text));
-    all.push(open("CONT-DV_TEXT-validate_list", c, run_dv_text_list));
+    all.push(open("val/dv-text-open", "Validate DV_TEXT — open", "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_text));
+    all.push(open("val/dv-text-list", "Validate DV_TEXT — list", "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_text_list));
     all.push(open(
-        "CONT-DV_CODED_TEXT-validate_open",
-        c,
+        "val/dv-coded-text-open", "Validate DV_CODED_TEXT — open", "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_coded_text,
     ));
     all.push(open(
-        "CONT-DV_CODED_TEXT-validate_local_codes",
-        c,
+        "val/dv-coded-text-local-codes", "Validate DV_CODED_TEXT — local codes", "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_coded_local,
     ));
     all.push(open(
-        "CONT-DV_CODED_TEXT-validate_ext_term",
-        c,
+        "val/dv-coded-text-ext-term", "Validate DV_CODED_TEXT — ext term", "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_coded_ext_term,
     ));
 
     // ── 17.3 quantity ──────────────────────────────────────────────────────────
-    let c = Chapter::Master17_3;
-    all.push(open("CONT-DV_ORDINAL-validate_open", c, open_dv_ordinal));
+    all.push(open("val/dv-ordinal-open", "Validate DV_ORDINAL — open", "RM 1.2.0 data_types §DV_ORDINAL; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_ordinal));
     all.push(open(
-        "CONT-DV_ORDINAL-validate_constraint",
-        c,
+        "val/dv-ordinal-constraint", "Validate DV_ORDINAL — constraint", "RM 1.2.0 data_types §DV_ORDINAL; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_ordinal_constraint,
     ));
-    all.push(open("CONT-DV_SCALE-validate_open", c, run_dv_scale_open));
+    all.push(open("val/dv-scale-open", "Validate DV_SCALE — open", "RM 1.2.0 data_types §DV_SCALE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_scale_open));
     all.push(open(
-        "CONT-DV_SCALE-validate_constraint",
-        c,
+        "val/dv-scale-constraint", "Validate DV_SCALE — constraint", "RM 1.2.0 data_types §DV_SCALE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_scale_constraint,
     ));
-    all.push(open("CONT-DV_COUNT-validate_open", c, open_dv_count));
-    all.push(open("CONT-DV_COUNT-validate_range", c, run_dv_count_range));
-    all.push(open("CONT-DV_COUNT-validate_list", c, run_dv_count_list));
-    all.push(open("CONT-DV_QUANTITY-validate_open", c, open_dv_quantity));
+    all.push(open("val/dv-count-open", "Validate DV_COUNT — open", "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_count));
+    all.push(open("val/dv-count-range", "Validate DV_COUNT — range", "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_count_range));
+    all.push(open("val/dv-count-list", "Validate DV_COUNT — list", "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_count_list));
+    all.push(open("val/dv-quantity-open", "Validate DV_QUANTITY — open", "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_quantity));
     all.push(open(
-        "CONT-DV_QUANTITY-validate_property",
-        c,
+        "val/dv-quantity-property", "Validate DV_QUANTITY — property", "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_quantity_property,
     ));
     all.push(open(
-        "CONT-DV_QUANTITY-validate_property_units",
-        c,
+        "val/dv-quantity-property-units", "Validate DV_QUANTITY — property units", "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_quantity_units,
     ));
     all.push(open(
-        "CONT-DV_QUANTITY-validate_property_units_mag",
-        c,
+        "val/dv-quantity-property-units-mag", "Validate DV_QUANTITY — property units mag", "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_quantity_units_mag,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_open",
-        c,
+        "val/dv-proportion-open", "Validate DV_PROPORTION — open", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_proportion,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_ratio",
-        c,
+        "val/dv-proportion-ratio", "Validate DV_PROPORTION — ratio", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_proportion_ratio,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_unitary",
-        c,
+        "val/dv-proportion-unitary", "Validate DV_PROPORTION — unitary", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_proportion_unitary,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_percent",
-        c,
+        "val/dv-proportion-percent", "Validate DV_PROPORTION — percent", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_proportion_percent,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_fraction",
-        c,
+        "val/dv-proportion-fraction", "Validate DV_PROPORTION — fraction", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_proportion_fraction,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_integer_fraction",
-        c,
+        "val/dv-proportion-integer-fraction", "Validate DV_PROPORTION — integer fraction", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_proportion_integer_fraction,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_any_fraction",
-        c,
+        "val/dv-proportion-any-fraction", "Validate DV_PROPORTION — any fraction", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_proportion_any_fraction,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_ratio_range",
-        c,
+        "val/dv-proportion-ratio-range", "Validate DV_PROPORTION — ratio range", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_proportion_ratio_range,
     ));
     // DV_INTERVAL<T> cases — driven by slot-retyping a scratch leaf to an open
     // DV_INTERVAL and asserting the RM Interval invariant (drive_interval); the
     // per-variant bound constraints need DV_INTERVAL constraint support the
     // validator lacks, so most record as findings — driven, never skipped.
-    let interval: &[(&str, CaseRun)] = &[
-        ("CONT-DV_INTERVAL_DV_COUNT-validate_open", ivc_open),
-        ("CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper", ivc_lu),
+    let interval: &[(&str, &str, &str, CaseRun)] = &[
         (
-            "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list",
+            "val/dv-interval-dv-count-open",
+            "Validate DV_INTERVAL<DV_COUNT> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivc_open,
+        ),
+        (
+            "val/dv-interval-dv-count-lower-upper",
+            "Validate DV_INTERVAL<DV_COUNT> — lower upper",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivc_lu,
+        ),
+        (
+            "val/dv-interval-dv-count-lower-upper-list",
+            "Validate DV_INTERVAL<DV_COUNT> — lower upper list",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivc_lul,
         ),
-        ("CONT-DV_INTERVAL_DV_QUANTITY-validate_open", ivq_open),
-        ("CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower", ivq_ul),
-        ("CONT-DV_INTERVAL_DV_DATE_TIME-validate_open", ivdt_open),
         (
-            "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint",
+            "val/dv-interval-dv-quantity-open",
+            "Validate DV_INTERVAL<DV_QUANTITY> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivq_open,
+        ),
+        (
+            "val/dv-interval-dv-quantity-upper-lower",
+            "Validate DV_INTERVAL<DV_QUANTITY> — upper lower",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivq_ul,
+        ),
+        (
+            "val/dv-interval-dv-date-time-open",
+            "Validate DV_INTERVAL<DV_DATE_TIME> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdt_open,
+        ),
+        (
+            "val/dv-interval-dv-date-time-lower-upper-constraint",
+            "Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivdt_luc,
         ),
         (
-            "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range",
+            "val/dv-interval-dv-date-time-lower-upper-range",
+            "Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivdt_lur,
         ),
-        ("CONT-DV_INTERVAL_DV_DATE-validate_open", ivd_open),
         (
-            "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint",
+            "val/dv-interval-dv-date-open",
+            "Validate DV_INTERVAL<DV_DATE> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivd_open,
+        ),
+        (
+            "val/dv-interval-dv-date-lower-upper-constraint",
+            "Validate DV_INTERVAL<DV_DATE> — lower upper constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivd_luc,
         ),
         (
-            "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range",
+            "val/dv-interval-dv-date-lower-upper-range",
+            "Validate DV_INTERVAL<DV_DATE> — lower upper range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivd_lur,
         ),
-        ("CONT-DV_INTERVAL_DV_TIME-validate_open", ivt_open),
         (
-            "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint",
+            "val/dv-interval-dv-time-open",
+            "Validate DV_INTERVAL<DV_TIME> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivt_open,
+        ),
+        (
+            "val/dv-interval-dv-time-lower-upper-constraint",
+            "Validate DV_INTERVAL<DV_TIME> — lower upper constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivt_luc,
         ),
         (
-            "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range",
+            "val/dv-interval-dv-time-lower-upper-range",
+            "Validate DV_INTERVAL<DV_TIME> — lower upper range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivt_lur,
         ),
-        ("CONT-DV_INTERVAL_DV_DURATION-validate_open", ivdu_open),
-        ("CONT-DV_INTERVAL_DV_DURATION-validate_constraint", ivdu_c),
-        ("CONT-DV_INTERVAL_DV_DURATION-validate_range", ivdu_r),
-        ("CONT-DV_INTERVAL_DV_ORDINAL-validate_open", ivo_open),
-        ("CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint", ivo_c),
-        ("CONT-DV_INTERVAL_DV_SCALE-validate_open", ivs_open),
-        ("CONT-DV_INTERVAL_DV_SCALE-validate_constraint", ivs_c),
-        ("CONT-DV_INTERVAL_DV_PROPORTION-validate_open", ivp_open),
-        ("CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio", ivp_ratio),
         (
-            "CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary",
+            "val/dv-interval-dv-duration-open",
+            "Validate DV_INTERVAL<DV_DURATION> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdu_open,
+        ),
+        (
+            "val/dv-interval-dv-duration-constraint",
+            "Validate DV_INTERVAL<DV_DURATION> — constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdu_c,
+        ),
+        (
+            "val/dv-interval-dv-duration-range",
+            "Validate DV_INTERVAL<DV_DURATION> — range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdu_r,
+        ),
+        (
+            "val/dv-interval-dv-ordinal-open",
+            "Validate DV_INTERVAL<DV_ORDINAL> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivo_open,
+        ),
+        (
+            "val/dv-interval-dv-ordinal-constraint",
+            "Validate DV_INTERVAL<DV_ORDINAL> — constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivo_c,
+        ),
+        (
+            "val/dv-interval-dv-scale-open",
+            "Validate DV_INTERVAL<DV_SCALE> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivs_open,
+        ),
+        (
+            "val/dv-interval-dv-scale-constraint",
+            "Validate DV_INTERVAL<DV_SCALE> — constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivs_c,
+        ),
+        (
+            "val/dv-interval-dv-proportion-open",
+            "Validate DV_INTERVAL<DV_PROPORTION> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_open,
+        ),
+        (
+            "val/dv-interval-dv-proportion-ratio",
+            "Validate DV_INTERVAL<DV_PROPORTION> — ratio",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_ratio,
+        ),
+        (
+            "val/dv-interval-dv-proportion-unitary",
+            "Validate DV_INTERVAL<DV_PROPORTION> — unitary",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivp_unitary,
         ),
         (
-            "CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage",
+            "val/dv-interval-dv-proportion-percentage",
+            "Validate DV_INTERVAL<DV_PROPORTION> — percentage",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivp_percent,
         ),
         (
-            "CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction",
+            "val/dv-interval-dv-proportion-fraction",
+            "Validate DV_INTERVAL<DV_PROPORTION> — fraction",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivp_fraction,
         ),
         (
-            "CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction",
+            "val/dv-interval-dv-proportion-integer-fraction",
+            "Validate DV_INTERVAL<DV_PROPORTION> — integer fraction",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivp_intfrac,
         ),
         (
-            "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range",
+            "val/dv-interval-dv-proportion-ratio-range",
+            "Validate DV_INTERVAL<DV_PROPORTION> — ratio range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
             ivp_ratiorange,
         ),
     ];
-    for &(id, run) in interval {
-        all.push(open(id, c, run));
+    for &(id, title, cit, run) in interval {
+        all.push(open(id, title, cit, run));
     }
 
     // ── 17.4 date_time ─────────────────────────────────────────────────────────
-    let c = Chapter::Master17_4;
-    all.push(open("CONT-DV_DURATION-validate_open", c, open_dv_duration));
+    all.push(open("val/dv-duration-open", "Validate DV_DURATION — open", "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_duration));
     // No committable canonical-JSON composition carries a `C_DURATION`-constrained
     // DV_DURATION: all_types `items[at0018]` DV_DURATION is unconstrained; the
     // `obs_inst`/`ehrn_vital_signs` OPTs do constrain it (pattern `PDTH` / a
@@ -318,87 +414,71 @@ pub fn entries() -> Vec<CaseEntry> {
     // on its content ENTRYs (fails the `Is_archetypeRoot` RM invariant as a bare
     // commit), and `ehrn_vital_signs` ships only a FLAT instance. Not drivable.
     all.push(open(
-        "CONT-DV_DURATION-validate_fields",
-        c,
+        "val/dv-duration-fields", "Validate DV_DURATION — fields", "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_duration_fields,
     ));
     all.push(open(
-        "CONT-DV_DURATION-validate_range",
-        c,
+        "val/dv-duration-range", "Validate DV_DURATION — range", "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_duration_range,
     ));
     all.push(open(
-        "CONT-DV_DURATION-validate_fields_range",
-        c,
+        "val/dv-duration-fields-range", "Validate DV_DURATION — fields range", "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_duration_fields_range,
     ));
-    all.push(open("CONT-DV_TIME-validate_open", c, open_dv_time));
+    all.push(open("val/dv-time-open", "Validate DV_TIME — open", "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_time));
     all.push(open(
-        "CONT-DV_TIME-validate_constraint",
-        c,
+        "val/dv-time-constraint", "Validate DV_TIME — constraint", "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_time_constraint,
     ));
-    all.push(open("CONT-DV_TIME-validate_range", c, run_dv_time_range));
-    all.push(open("CONT-DV_DATE-validate_open", c, open_dv_date));
+    all.push(open("val/dv-time-range", "Validate DV_TIME — range", "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_time_range));
+    all.push(open("val/dv-date-open", "Validate DV_DATE — open", "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_date));
     all.push(open(
-        "CONT-DV_DATE-validate_constraint",
-        c,
+        "val/dv-date-constraint", "Validate DV_DATE — constraint", "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_date_constraint,
     ));
-    all.push(open("CONT-DV_DATE-validate_range", c, run_dv_date_range));
+    all.push(open("val/dv-date-range", "Validate DV_DATE — range", "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_date_range));
     all.push(open(
-        "CONT-DV_DATE_TIME-validate_open",
-        c,
+        "val/dv-date-time-open", "Validate DV_DATE_TIME — open", "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_date_time,
     ));
     all.push(open(
-        "CONT-DV_DATE_TIME-validate_constraint",
-        c,
+        "val/dv-date-time-constraint", "Validate DV_DATE_TIME — constraint", "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_date_time_constraint,
     ));
     all.push(open(
-        "CONT-DV_DATE_TIME-validate_range",
-        c,
+        "val/dv-date-time-range", "Validate DV_DATE_TIME — range", "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_date_time_range,
     ));
 
     // ── 17.6 encapsulated ──────────────────────────────────────────────────────
-    let c = Chapter::Master17_6;
-    all.push(open("CONT-DV_PARSABLE-validate_open", c, open_dv_parsable));
+    all.push(open("val/dv-parsable-open", "Validate DV_PARSABLE — open", "RM 1.2.0 data_types §DV_PARSABLE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_parsable));
     all.push(open(
-        "CONT-DV_PARSABLE-validate_value_formalism",
-        c,
+        "val/dv-parsable-value-formalism", "Validate DV_PARSABLE — value formalism", "RM 1.2.0 data_types §DV_PARSABLE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_parsable_formalism,
     ));
     all.push(open(
-        "CONT-DV_MULTIMEDIA-validate_open",
-        c,
+        "val/dv-multimedia-open", "Validate DV_MULTIMEDIA — open", "RM 1.2.0 data_types §DV_MULTIMEDIA; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_multimedia,
     ));
     all.push(open(
-        "CONT-DV_MULTIMEDIA-validate_media_type",
-        c,
+        "val/dv-multimedia-media-type", "Validate DV_MULTIMEDIA — media type", "RM 1.2.0 data_types §DV_MULTIMEDIA; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_multimedia_media_type,
     ));
 
     // ── 17.7 uri ───────────────────────────────────────────────────────────────
-    let c = Chapter::Master17_7;
-    all.push(open("CONT-DV_URI-validate_open", c, open_dv_uri));
-    all.push(open("CONT-DV_URI-validate_pattern", c, run_dv_uri_pattern));
-    all.push(open("CONT-DV_URI-validate_list", c, run_dv_uri_list));
+    all.push(open("val/dv-uri-open", "Validate DV_URI — open", "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_uri));
+    all.push(open("val/dv-uri-pattern", "Validate DV_URI — pattern", "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_uri_pattern));
+    all.push(open("val/dv-uri-list", "Validate DV_URI — list", "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_uri_list));
     all.push(open(
-        "CONT-DV_EHR_URI-validate_open",
-        c,
+        "val/dv-ehr-uri-open", "Validate DV_EHR_URI — open", "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_ehr_uri_open,
     ));
     all.push(open(
-        "CONT-DV_EHR_URI-validate_pattern",
-        c,
+        "val/dv-ehr-uri-pattern", "Validate DV_EHR_URI — pattern", "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_ehr_uri_pattern,
     ));
     all.push(open(
-        "CONT-DV_EHR_URI-validate_list",
-        c,
+        "val/dv-ehr-uri-list", "Validate DV_EHR_URI — list", "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_ehr_uri_list,
     ));
 
@@ -407,9 +487,9 @@ pub fn entries() -> Vec<CaseEntry> {
 
 /// A `validate_open` case: driven via [`drive::data_type_mandatory`] (auto-skips
 /// when the corpus has no committable leaf of the type).
-fn open(id: &'static str, chapter: Chapter, run: CaseRun) -> CaseEntry {
+fn open(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
-        meta: meta(id, chapter, id),
+        meta: meta(id, title, citation),
         run,
     }
 }
@@ -1204,7 +1284,7 @@ fn run_dv_quantity_property<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 // applies to every bound type). The specific per-variant bound / range / list
 // constraints require `DV_INTERVAL` constraint support the validator does not yet
 // have, so most drive as recorded findings — driven, never skipped. The bound type
-// is cited by the case id / schedule_ref.
+// is cited by the case id / citation.
 
 /// A canonical `DV_INTERVAL` with included, bounded ends.
 fn iv(lower: Value, upper: Value) -> Value {

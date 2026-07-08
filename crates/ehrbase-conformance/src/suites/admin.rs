@@ -1,10 +1,11 @@
-//! master12 — ADMIN (physical delete) cases — **runner-defined** (design §4.6).
+//! ADMIN (physical delete) cases — our own ECC cases (reference:
+//! `master12-func_tc_admin.adoc`, design-time reading).
 //!
 //! The upstream CNF `master12-func_tc_admin.adoc` chapter ships only placeholder
-//! `aaaa`/`bbbb` headings (no concrete cases), so there is nothing to transcribe.
-//! These `ADMIN-*` cases are our own spec-grounded functional cases against the
-//! **ITS-REST admin API**, which realizes SM `I_ADMIN_SERVICE.physical_ehr_delete`
-//! (`docs/specs/openehr/SM/...`) and the upstream Robot prior art
+//! `aaaa`/`bbbb` headings (no concrete cases), so these `ADM` cases are our own
+//! spec-grounded functional cases against the **ITS-REST admin API**, which
+//! realizes SM `I_ADMIN_SERVICE.physical_ehr_delete` (`docs/specs/openehr/SM/...`)
+//! and the upstream Robot prior art
 //! (`CNF/tests/platform/robot/I_ADMIN_SERVICE/001-EHR.robot`): a full physical
 //! cascade delete. The whole admin surface is exactly two operations —
 //! `DELETE /admin/ehr/{ehr_id}` and `DELETE /admin/ehr/all{?ehr_id*}` — so these
@@ -14,45 +15,73 @@
 //! (and for a re-delete — idempotent); `200 {"deleted": n}` for the bulk delete
 //! (partial success: missing ids skipped); `400` for an empty bulk request. The
 //! admin group is config-gated (`RestConfig::admin.enabled`); the self-hosted SUT
-//! enables it (`sut::self_host`), so these exercise the *active* surface. They
-//! carry [`Provenance::RunnerDefined`] and sit outside the 322-case inventory.
+//! enables it (`sut::self_host`), so these exercise the *active* surface.
 
 use serde_json::Value;
 use uuid::Uuid;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::harness::{
     CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
 };
 use crate::registry::CaseEntry;
 use crate::suites::support;
 
-/// The implemented master12 (runner-defined) case entries.
+/// The implemented ADMIN case entries.
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
-        entry("ADMIN-ehr-delete", run_delete),
-        entry("ADMIN-ehr-delete_absent", run_delete_absent),
-        entry("ADMIN-ehr-delete_idempotent", run_delete_idempotent),
-        entry("ADMIN-ehr-delete_all", run_delete_all),
-        entry("ADMIN-ehr-delete_all_partial", run_delete_all_partial),
-        entry("ADMIN-ehr-delete_all_empty", run_delete_all_empty),
+        entry(
+            "adm/ehr-delete",
+            "Admin EHR delete",
+            "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
+            run_delete,
+        ),
+        entry(
+            "adm/ehr-delete-absent",
+            "Admin EHR delete absent",
+            "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
+            run_delete_absent,
+        ),
+        entry(
+            "adm/ehr-delete-idempotent",
+            "Admin EHR delete idempotent",
+            "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
+            run_delete_idempotent,
+        ),
+        entry(
+            "adm/ehr-delete-all",
+            "Admin EHR delete all",
+            "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
+            run_delete_all,
+        ),
+        entry(
+            "adm/ehr-delete-all-partial",
+            "Admin EHR delete all partial",
+            "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
+            run_delete_all_partial,
+        ),
+        entry(
+            "adm/ehr-delete-all-empty",
+            "Admin EHR delete all empty",
+            "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
+            run_delete_all_empty,
+        ),
     ]
 }
 
-fn entry(id: &'static str, run: CaseRun) -> CaseEntry {
+fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master12,
+            title,
+            area: Area::Adm,
             capability: Capability::AdminApi,
             profiles: &[Profile::Options],
             formats: &[Format::Json],
-            provenance: Provenance::RunnerDefined,
-            schedule_ref: "master12-func_tc_admin.adoc (upstream placeholder) — runner-defined vs SM \
-                 I_ADMIN_SERVICE.physical_ehr_delete + ITS-REST admin API",
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,

@@ -15,8 +15,8 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand, ValueEnum};
 
 use ehrbase_conformance::case::{Format, Profile};
+use ehrbase_conformance::catalog::Catalog;
 use ehrbase_conformance::client::Credential;
-use ehrbase_conformance::catalog::{Catalog, area_of};
 use ehrbase_conformance::registry::registry;
 use ehrbase_conformance::run::RunConfig;
 use ehrbase_conformance::sut::Sut;
@@ -25,7 +25,10 @@ use ehrbase_conformance::{report, run};
 
 /// The ehrbase-rs Conformance Catalogue (ECC) runner.
 #[derive(Debug, Parser)]
-#[command(name = "conformance", about = "ehrbase-rs conformance catalogue (ECC) runner")]
+#[command(
+    name = "conformance",
+    about = "ehrbase-rs conformance catalogue (ECC) runner"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -226,11 +229,12 @@ fn cmd_list(args: &ListArgs) -> i32 {
             continue;
         }
         println!(
-            "{ecc:<14} {:<5} {:?} formats={:?} {}",
-            area_of(meta).tag(),
+            "{ecc:<14} {:<5} {:?} formats={:?} {} — {}",
+            meta.area.tag(),
             meta.capability,
             meta.formats,
             meta.id,
+            meta.title,
         );
         shown += 1;
     }

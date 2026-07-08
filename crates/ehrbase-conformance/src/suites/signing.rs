@@ -1,14 +1,10 @@
-//! The runner-defined `SIGN-*` capability cases (design §4.6): the STANDARD
-//! Signing capability's **entire evidence base** — upstream ships zero Signing
-//! test material (design §3.1), so these cases, specified against the implemented
-//! behaviour in `docs/design/version-signing.md`, are what proves the capability.
+//! The `SIG` capability cases — our own ECC cases (reference:
+//! `version-signing.md`, design-time reading): the STANDARD Signing capability's
+//! **entire evidence base** — upstream ships zero Signing test material, so these
+//! cases, specified against the implemented behaviour in
+//! `docs/design/version-signing.md`, are what proves the capability.
 //!
-//! All five carry [`Provenance::RunnerDefined`] and the [`Chapter::Signing`]
-//! pseudo-chapter, so they sit **outside** the 322-case schedule inventory (the
-//! coverage guard in `tests/coverage.rs` excludes non-`Schedule` provenance from
-//! the inventory match — confirmed unaffected).
-//!
-//! The four digest cases are the must-haves. `SIGN-pgp-verifies` needs a
+//! The four digest cases are the must-haves. `sig/pgp-verifies` needs a
 //! `pgp`-keyed SUT the runner would have to configure at boot; the self-hosted
 //! SUT ships in `digest` mode (design §3.4) and an external SUT's key config is
 //! unknown, so it reports `SKIPPED(SutConfig)` (§4.6) — the digest cases still
@@ -27,7 +23,8 @@ use sha2::{Digest as _, Sha256};
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{CaseError, CaseFuture, DataSetReport, HttpRequest, HttpResponse, RunContext};
 use crate::registry::CaseEntry;
@@ -39,7 +36,8 @@ pub fn entries() -> Vec<CaseEntry> {
     vec![
         // The served VERSION carries a `sha256:<base64>` digest — JSON + XML.
         entry(
-            "SIGN-digest-present",
+            "sig/digest-present",
+            "Version signing — digest present",
             BOTH,
             "version-signing.md §3.2 (digest default-on); §4.4 (rides every VERSION read)",
             run_digest_present,
@@ -47,7 +45,8 @@ pub fn entries() -> Vec<CaseEntry> {
         // THE strongest case: the digest recomputes from the served version's
         // own canonical form (commit-time == read-time object identity).
         entry(
-            "SIGN-digest-recomputes",
+            "sig/digest-recomputes",
+            "Version signing — digest recomputes",
             JSON,
             "version-signing.md §3.1 (canonical_form RFC 8785) + §6.3",
             run_digest_recomputes,
@@ -55,7 +54,8 @@ pub fn entries() -> Vec<CaseEntry> {
         // EHR_STATUS update, multi-version CONTRIBUTION, and a FOLDER write all
         // yield signed versions.
         entry(
-            "SIGN-all-kinds",
+            "sig/all-kinds",
+            "Version signing — all kinds",
             JSON,
             "version-signing.md §3.3 (all object kinds via the shared vobject commit path)",
             run_all_kinds,
@@ -63,14 +63,16 @@ pub fn entries() -> Vec<CaseEntry> {
         // A CONTRIBUTION UPDATE_VERSION with a client-supplied signature is stored
         // + served verbatim (never re-signed).
         entry(
-            "SIGN-client-verbatim",
+            "sig/client-verbatim",
+            "Version signing — client verbatim",
             JSON,
             "version-signing.md §3.3 (client-supplied signatures win, stored verbatim)",
             run_client_verbatim,
         ),
         // Self-host / pgp-keyed SUT only — reports SKIPPED(SutConfig) otherwise.
         entry(
-            "SIGN-pgp-verifies",
+            "sig/pgp-verifies",
+            "Version signing — pgp verifies",
             JSON,
             "version-signing.md §3.2 (pgp mode, RFC 4880 detached signature)",
             run_pgp_verifies,
@@ -83,23 +85,23 @@ const JSON: &[Format] = &[Format::Json];
 /// Both canonical formats.
 const BOTH: &[Format] = &[Format::Json, Format::Xml];
 
-/// A runner-defined SIGN-* case entry (design §4.6).
+/// A version-signing case entry (SIG area, STANDARD Signing capability).
 fn entry(
     id: &'static str,
+    title: &'static str,
     formats: &'static [Format],
-    schedule_ref: &'static str,
+    citation: &'static str,
     run: crate::harness::CaseRun,
 ) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Signing,
+            title,
+            area: Area::Sig,
             capability: Capability::Signing,
             profiles: &[Profile::Standard],
             formats,
-            provenance: Provenance::RunnerDefined,
-            schedule_ref,
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,

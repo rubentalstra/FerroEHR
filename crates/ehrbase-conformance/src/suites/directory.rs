@@ -1,6 +1,7 @@
 //! master09 — DIRECTORY (FOLDER) cases (design §4.1: `suites/directory.rs`).
 //!
-//! Transcribed from `master09-func_tc_ehr_directory.adoc`, driving the ITS-REST
+//! Our own ECC DIRECTORY cases (reference: `master09-func_tc_ehr_directory.adoc`,
+//! design-time reading), driving the ITS-REST
 //! `/ehr/{ehr_id}/directory` surface with the vendored `directory/` FOLDER
 //! fixtures (clean canonical JSON, no adaptation needed). Assertions concretize
 //! the directory status contract (`201` create; `200` get/update; `204` delete;
@@ -19,7 +20,8 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, RunContext};
 use crate::registry::CaseEntry;
@@ -30,157 +32,248 @@ use crate::suites::support;
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         entry(
-            "I_EHR_DIRECTORY.create_directory-empty_ehr",
+            "dir/create-directory-empty-ehr",
+            "Create directory — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_create_empty_ehr,
         ),
         entry(
-            "I_EHR_DIRECTORY.create_directory-ehr_with_directory",
+            "dir/create-directory-ehr-with-directory",
+            "Create directory — EHR with directory",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_create_when_present,
         ),
         entry(
-            "I_EHR_DIRECTORY.create_directory-bad_ehr",
+            "dir/create-directory-bad-ehr",
+            "Create directory — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_create_bad_ehr,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory-ehr_root_directory",
+            "dir/get-directory-ehr-root-directory",
+            "Get directory — EHR root directory",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_get_root,
         ),
-        entry("I_EHR_DIRECTORY.get_directory-bad_ehr", run_get_bad_ehr),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory",
+            "dir/get-directory-bad-ehr",
+            "Get directory — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            run_get_bad_ehr,
+        ),
+        entry(
+            "dir/get-directory-at-time-ehr-with-directory",
+            "Get directory at time — EHR with directory",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_get_at_time,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_time-bad_ehr",
+            "dir/get-directory-at-time-bad-ehr",
+            "Get directory at time — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_get_at_time_bad_ehr,
         ),
         entry(
-            "I_EHR_DIRECTORY.update_directory-ehr_with_directory",
+            "dir/update-directory-ehr-with-directory",
+            "Update directory — EHR with directory",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_update,
         ),
         entry(
-            "I_EHR_DIRECTORY.update_directory-bad_ehr",
+            "dir/update-directory-bad-ehr",
+            "Update directory — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_update_bad_ehr,
         ),
         entry(
-            "I_EHR_DIRECTORY.delete_directory-ehr_with_directory",
+            "dir/delete-directory-ehr-with-directory",
+            "Delete directory — EHR with directory",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_delete,
         ),
         entry(
-            "I_EHR_DIRECTORY.delete_directory-bad_ehr",
+            "dir/delete-directory-bad-ehr",
+            "Delete directory — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_delete_bad_ehr,
         ),
         // has_directory — SM boolean realized via GET /directory (200 has / 404 not).
-        entry("I_EHR_DIRECTORY.has_directory-empty_ehr", run_has_dir_empty),
         entry(
-            "I_EHR_DIRECTORY.has_directory-ehr_with_directory",
+            "dir/has-directory-empty-ehr",
+            "Directory existence check — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            run_has_dir_empty,
+        ),
+        entry(
+            "dir/has-directory-ehr-with-directory",
+            "Directory existence check — EHR with directory",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_has_dir_present,
         ),
-        entry("I_EHR_DIRECTORY.has_directory-bad_ehr", run_has_dir_bad),
+        entry(
+            "dir/has-directory-bad-ehr",
+            "Directory existence check — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            run_has_dir_bad,
+        ),
         // has_path — realized via GET /directory?path= (200 present / 404 absent).
         entry(
-            "I_EHR_DIRECTORY.has_path-ehr_root_directory",
+            "dir/has-path-ehr-root-directory",
+            "Directory path existence check — EHR root directory",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_has_path_root,
         ),
         entry(
-            "I_EHR_DIRECTORY.has_path-folder_structure",
+            "dir/has-path-folder-structure",
+            "Directory path existence check — folder structure",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_has_path_folder,
         ),
-        entry("I_EHR_DIRECTORY.has_path-empty_ehr", run_has_path_empty),
-        entry("I_EHR_DIRECTORY.has_path-bad_ehr", run_has_path_bad),
+        entry(
+            "dir/has-path-empty-ehr",
+            "Directory path existence check — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            run_has_path_empty,
+        ),
+        entry(
+            "dir/has-path-bad-ehr",
+            "Directory path existence check — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            run_has_path_bad,
+        ),
         // has_directory_version — realized via GET /directory/{version_uid}.
         entry(
-            "I_EHR_DIRECTORY.has_directory_version-empty_ehr",
+            "dir/has-directory-version-empty-ehr",
+            "Directory version existence check — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_has_ver_empty,
         ),
         entry(
-            "I_EHR_DIRECTORY.has_directory_version-directory_with_two_versions",
+            "dir/has-directory-version-directory-with-two-versions",
+            "Directory version existence check — directory with two versions",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_has_ver_present,
         ),
         entry(
-            "I_EHR_DIRECTORY.has_directory_version-bad_ehr",
+            "dir/has-directory-version-bad-ehr",
+            "Directory version existence check — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_has_ver_bad,
         ),
         // get_directory.
-        entry("I_EHR_DIRECTORY.get_directory-empty_ehr", run_get_dir_empty),
         entry(
-            "I_EHR_DIRECTORY.get_directory-directory_with_structure",
+            "dir/get-directory-empty-ehr",
+            "Get directory — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            run_get_dir_empty,
+        ),
+        entry(
+            "dir/get-directory-directory-with-structure",
+            "Get directory — directory with structure",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_get_dir_structure,
         ),
         // get_directory_at_time — GET /directory?version_at_time=.
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_empty_time",
+            "dir/get-directory-at-time-ehr-with-directory-empty-time",
+            "Get directory at time — EHR with directory empty time",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_time_empty_time,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions",
+            "dir/get-directory-at-time-ehr-with-directory-versions",
+            "Get directory at time — EHR with directory versions",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_time_versions,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions_empty_time",
+            "dir/get-directory-at-time-ehr-with-directory-versions-empty-time",
+            "Get directory at time — EHR with directory versions empty time",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_time_versions_empty_time,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_time-empty_ehr",
+            "dir/get-directory-at-time-empty-ehr",
+            "Get directory at time — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_time_empty_ehr,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_time-empty_ehr_empty_time",
+            "dir/get-directory-at-time-empty-ehr-empty-time",
+            "Get directory at time — empty EHR empty time",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_time_empty_ehr_empty_time,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_time-multiple_versions_first",
+            "dir/get-directory-at-time-multiple-versions-first",
+            "Get directory at time — multiple versions first",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_time_first,
         ),
         // get_directory_at_version — GET /directory/{version_uid}.
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_version-bad_ehr",
+            "dir/get-directory-at-version-bad-ehr",
+            "Get directory at version — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_version_bad,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_version-directory_with_two_versions",
+            "dir/get-directory-at-version-directory-with-two-versions",
+            "Get directory at version — directory with two versions",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_version_two,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_directory_at_version-empty_ehr",
+            "dir/get-directory-at-version-empty-ehr",
+            "Get directory at version — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_version_empty,
         ),
         // get_versioned_directory — GET /ehr/{id}/versioned_directory.
         entry(
-            "I_EHR_DIRECTORY.get_versioned_directory-empty_ehr",
+            "dir/get-versioned-directory-empty-ehr",
+            "Get versioned directory — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_versioned_empty,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions",
+            "dir/get-versioned-directory-directory-with-two-versions",
+            "Get versioned directory — directory with two versions",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_versioned_two,
         ),
         entry(
-            "I_EHR_DIRECTORY.get_versioned_directory-bad_ehr",
+            "dir/get-versioned-directory-bad-ehr",
+            "Get versioned directory — bad EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_versioned_bad,
         ),
         // update / delete on an EHR with no directory yet.
         entry(
-            "I_EHR_DIRECTORY.update_directory-empty_ehr",
+            "dir/update-directory-empty-ehr",
+            "Update directory — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_update_empty,
         ),
         entry(
-            "I_EHR_DIRECTORY.delete_directory-empty_ehr",
+            "dir/delete-directory-empty-ehr",
+            "Delete directory — empty EHR",
+            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_delete_empty,
         ),
     ]
 }
 
-fn entry(id: &'static str, run: CaseRun) -> CaseEntry {
+fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master09,
+            title,
+            area: Area::Dir,
             capability: Capability::DirectoryOps,
             profiles: &[Profile::Standard],
             formats: &[Format::Json],
-            provenance: Provenance::Schedule,
-            schedule_ref: id,
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,

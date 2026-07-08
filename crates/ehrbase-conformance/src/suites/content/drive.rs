@@ -22,7 +22,8 @@
 
 use serde_json::Value;
 
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{CaseError, DataSetReport, HttpRequest, HttpResponse, RunContext};
 use crate::suites::support;
@@ -383,21 +384,20 @@ pub async fn data_type_mandatory(
 
 // ── the shared CaseMeta builder for content cases ─────────────────────────────
 
-/// Build a content [`CaseMeta`] (design §4.2): capability
+/// Build a content [`CaseMeta`] (design §4.2): area [`Area::Val`], capability
 /// [`Capability::ArchetypeValidation`], required by CORE + STANDARD, JSON format
-/// (canonical-JSON validation is the wire path these cases exercise),
-/// [`Provenance::Schedule`], `schedule_ref` = the chapter file + case id.
+/// (canonical-JSON validation is the wire path these cases exercise), with the
+/// registration slug `id`, human `title`, and spec `citation`.
 #[must_use]
-pub fn meta(id: &'static str, chapter: Chapter, schedule_ref: &'static str) -> CaseMeta {
+pub fn meta(id: &'static str, title: &'static str, citation: &'static str) -> CaseMeta {
     CaseMeta {
         id,
-        chapter,
+        title,
+        area: Area::Val,
         capability: Capability::ArchetypeValidation,
         profiles: &[Profile::Core, Profile::Standard],
         formats: &[Format::Json],
-        provenance: Provenance::Schedule,
-        schedule_ref,
-        upstream_tags: &[],
+        citation,
         compare: Compare::Superset,
     }
 }

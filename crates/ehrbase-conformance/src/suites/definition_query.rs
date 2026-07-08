@@ -1,9 +1,10 @@
-//! master05 — DEFINITION: stored query provisioning (design §4.1).
+//! DEFINITION: stored query provisioning (area SQR).
 //!
-//! Transcribed from `master05-func_tc_definition_query.adoc`, driving the
-//! ITS-REST `/definition/query/{name}/{version}` surface with AQL text from the
-//! vendored `query/aql_queries_valid` corpus. Assertions concretize the stored
-//! query contract (`200` store with `Location`; `200` list).
+//! Our own ECC cases (reference: `master05-func_tc_definition_query.adoc`,
+//! design-time reading), driving the ITS-REST `/definition/query/{name}/{version}`
+//! surface with AQL text from the vendored `query/aql_queries_valid` corpus.
+//! Assertions concretize the stored query contract (`200` store with `Location`;
+//! `200` list).
 //!
 //! The negative `valid_query-invalid`/`-bad_formalism` cases assert store-time AQL
 //! validation (`400`/`422`); `list_queries` is realized via `GET /definition/query`.
@@ -11,7 +12,8 @@
 use uuid::Uuid;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, RunContext};
 use crate::registry::CaseEntry;
@@ -20,38 +22,63 @@ use crate::registry::CaseEntry;
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
-        entry("I_DEFINITION_QUERY.valid_query-valid", run_store_valid),
         entry(
-            "I_DEFINITION_QUERY.list_queries-non_empty",
+            "sqr/valid-query-valid",
+            "Store stored query — valid",
+            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
+            run_store_valid,
+        ),
+        entry(
+            "sqr/list-queries-non-empty",
+            "List stored queries — non empty",
+            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
             run_list_non_empty,
         ),
-        entry("I_DEFINITION_QUERY.has_query-xxx", run_has_query),
-        // list_queries — GET /definition/query (the stored-query list).
-        entry("I_DEFINITION_QUERY.list_queries-empty", run_list_all),
         entry(
-            "I_DEFINITION_QUERY.list_queries-select_items",
+            "sqr/has-query-xxx",
+            "Stored query existence check — xxx",
+            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
+            run_has_query,
+        ),
+        // list_queries — GET /definition/query (the stored-query list).
+        entry(
+            "sqr/list-queries-empty",
+            "List stored queries — empty",
+            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
+            run_list_all,
+        ),
+        entry(
+            "sqr/list-queries-select-items",
+            "List stored queries — select items",
+            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
             run_list_after_store,
         ),
         // valid_query negatives — store-time AQL validation → 400/422.
         entry(
-            "I_DEFINITION_QUERY.valid_query-bad_formalism",
+            "sqr/valid-query-bad-formalism",
+            "Store stored query — bad formalism",
+            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
             run_store_bad_formalism,
         ),
-        entry("I_DEFINITION_QUERY.valid_query-invalid", run_store_invalid),
+        entry(
+            "sqr/valid-query-invalid",
+            "Store stored query — invalid",
+            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
+            run_store_invalid,
+        ),
     ]
 }
 
-fn entry(id: &'static str, run: CaseRun) -> CaseEntry {
+fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master05,
+            title,
+            area: Area::Sqr,
             capability: Capability::QueryProvisioning,
             profiles: &[Profile::Standard],
             formats: &[Format::Json],
-            provenance: Provenance::Schedule,
-            schedule_ref: id,
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,
