@@ -36,14 +36,14 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
 
 ## Tasks
 
-- [ ] **Workspace layout move (first, standalone mechanical commit):**
-      `git mv crates/{ehrbase,ehrbase-rest,ehrbase-compat,ehrbase-audit,
-      ehrbase-authz,ehrbase-signing,ehrbase-conformance,ehrbase-bench} app/`;
-      root `Cargo.toml` `members = ["crates/*", "app/*"]`; fix workspace
-      path-deps; update CI workflows, scripts, `.claude/rules` path scopes,
-      `.claude/hooks` path patterns, `CLAUDE.md` repo map,
-      `docs/architecture.md` workspace table, README badges/paths if any.
-      Gate: workspace builds + full test suite green before anything else.
+- [x] **Workspace layout move — done 2026-07-08** (on
+      `claude/sm-platform-design`): application crates `git mv`'d to
+      `app/*`; dev/verification tooling to `tools/*` with renames
+      (`ehrbase-conformance` → `conformance`, `ehrbase-bench` →
+      `benchmark`); members = `["crates/*", "app/*", "tools/*"]`;
+      path-deps, cross-crate fixture paths, CI, scripts, docker runners,
+      `.claude/rules` scopes, `CLAUDE.md`, `docs/architecture.md` updated.
+      Gate held: build green, nextest 813/813.
 - [ ] `app/ehrbase-sm` scaffold (workspace member, `thiserror`, deps on
       `openehr-base`/`openehr-rm`/`openehr-its` only) — `/crate-scaffold`
 - [ ] Move `ServiceResponse`/`ResourceMeta`, `AqlQueryRequest`/`QueryOutcome`,

@@ -94,7 +94,7 @@ ECC-<AREA>-<NNN>        a case            (ECC-EHR-005, ECC-QRY-118)
 ECC-<AREA>-<NNN>.<VV>   a data-set variant (ECC-VAL-042.07)
 ```
 
-Allocation lives in `crates/ehrbase-conformance/inventory/ecc-catalog.tsv`
+Allocation lives in `tools/conformance/inventory/ecc-catalog.tsv`
 (committed): `ecc_id · area · status(active|retired|planned) · registration
 key · title`. Numbers are allocated once (next-free per area, in registry
 order via `REGEN_CATALOG=1`) and never reused — a removed case is `retired`,
@@ -132,7 +132,7 @@ area derivation is stable.
 | `QRY`                                             | AQL 1.1 construct checklist + our corpus with golden result sets | ~250                                                                                |
 | `SEC`/`SIG`/`ADM`/`DEM`                           | our implemented capabilities (access-control, signing designs)   | ~100                                                                                |
 
-## 5. Architecture (crate `ehrbase-conformance`)
+## 5. Architecture (crate `conformance`)
 
 ```
 src/
@@ -270,5 +270,5 @@ medico-legal, version control).
 - **Not a Robot/Python port and not a mapper** — no legacy corpus machinery
   exists at runtime; the vendored CNF is reading material and input payloads.
 - **Not the EhrScape/FLAT test bed** (that is `openehr-flat`'s suite, P17).
-- **Not a benchmark** (`ehrbase-bench` owns performance); durations are
+- **Not a benchmark** (`benchmark` owns performance); durations are
   telemetry only.

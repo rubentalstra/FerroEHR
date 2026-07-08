@@ -29,7 +29,7 @@ Two independent, composable layers:
    total-coverage-guarded table; a role model (default `USER`/`ADMIN`, extracted
    from JWT claims or Basic-auth config) gates each class. This replaces today's
    placeholder path-string check (`Authenticator::authorize_admin`,
-   `crates/ehrbase-rest/src/auth/mod.rs:161-173`, marked
+   `app/ehrbase-rest/src/auth/mod.rs:161-173`, marked
    `// TODO(port): Stage 2 RBAC`).
 2. **ABAC (fine-grained, opt-in `authz.abac.enabled`).** A policy decision point
    (PDP) is consulted per clinical operation with resolved attributes
@@ -154,17 +154,17 @@ The seams this design binds to, as the code stands today:
 
 | Fact | Where |
 |---|---|
-| `Principal { subject, scopes, method }` — **no roles/claims retained** | `crates/ehrbase-rest/src/auth/mod.rs:26-42`; JWT reduction in `auth/jwt.rs` |
+| `Principal { subject, scopes, method }` — **no roles/claims retained** | `app/ehrbase-rest/src/auth/mod.rs:26-42`; JWT reduction in `auth/jwt.rs` |
 | Principal inserted into request extensions + `REQUEST_PRINCIPAL` task-local + republished on the response | `auth/mod.rs:198-251` (`middleware`), `current_principal()` at `:191` |
 | Placeholder admin gate (path-segment == "admin" + one scope) | `auth/mod.rs:161-178` — **replaced by this design** |
 | Generated routes: `(&str method, &str path-template, &str operation_id)` per API group; ~96 ops | `crates/openehr-its/src/rest/generated/{ehr,query,definition,admin,demographic}.rs` (`ROUTES`) |
-| Generic dispatch choke point — has `op` id + resolved path params (`RequestParts.path: IndexMap`) + `AppState`; already inserts `AuditOpId(op)` | `crates/ehrbase-rest/src/dispatch/mod.rs:100-141` (`mount`) |
-| `Backend` seam (`EhrService + DefinitionApi + WebTemplateService + QueryService`) on `AppState` | `crates/ehrbase-rest/src/backend.rs:485-507`, `state.rs:33` |
-| EHR subject lookup: promoted `ehr.subject_id`/`subject_namespace` columns; forward resolver precedent (`SubjectResolver` closure, binary-owned) | `crates/ehrbase/src/service/ehr.rs:77-93`; `crates/ehrbase/src/main.rs:197-213` |
+| Generic dispatch choke point — has `op` id + resolved path params (`RequestParts.path: IndexMap`) + `AppState`; already inserts `AuditOpId(op)` | `app/ehrbase-rest/src/dispatch/mod.rs:100-141` (`mount`) |
+| `Backend` seam (`EhrService + DefinitionApi + WebTemplateService + QueryService`) on `AppState` | `app/ehrbase-rest/src/backend.rs:485-507`, `state.rs:33` |
+| EHR subject lookup: promoted `ehr.subject_id`/`subject_namespace` columns; forward resolver precedent (`SubjectResolver` closure, binary-owned) | `app/ehrbase/src/service/ehr.rs:77-93`; `app/ehrbase/src/main.rs:197-213` |
 | `vo_version.template_id` **stored but not read back** (`VersionRead` lacks it) | written at `service/vobject.rs:449,459`; `VersionRead` at `:88-105`; reads at `:594-632` |
-| AQL EHR scoping: `SqlCtx { ehr_id: Option<Uuid>, .. }` → `WHERE vo.ehr_id = $x` on every VO root | `crates/ehrbase/src/aql/sql.rs:63-67, 383-388`; `service/aql_query.rs:76-81` |
-| ATNA audit layer sits **outside** auth; any inner 403 with `Principal` on the response extensions is audited automatically | `crates/ehrbase-rest/src/audit.rs:98-115`; convention at `auth/mod.rs:218-220` |
-| Config precedent: standalone `AuditConfig` (`EHRBASE_ATNA_*`), loaded in `main.rs:83`, threaded as `Option<AuditSender>` | `crates/ehrbase-audit/src/config.rs`, `main.rs:175-192` |
+| AQL EHR scoping: `SqlCtx { ehr_id: Option<Uuid>, .. }` → `WHERE vo.ehr_id = $x` on every VO root | `app/ehrbase/src/aql/sql.rs:63-67, 383-388`; `service/aql_query.rs:76-81` |
+| ATNA audit layer sits **outside** auth; any inner 403 with `Principal` on the response extensions is audited automatically | `app/ehrbase-rest/src/audit.rs:98-115`; convention at `auth/mod.rs:218-220` |
+| Config precedent: standalone `AuditConfig` (`EHRBASE_ATNA_*`), loaded in `main.rs:83`, threaded as `Option<AuditSender>` | `app/ehrbase-audit/src/config.rs`, `main.rs:175-192` |
 | `casbin = "2"` + `cedar-policy = "4"` pinned, unconsumed | root `Cargo.toml:80-81` |
 
 ---
@@ -198,11 +198,11 @@ The seams this design binds to, as the code stands today:
 
 ### 4.1 Crate layout
 
-New workspace crate **`crates/ehrbase-authz`** (application layer, hand-written,
+New workspace crate **`app/ehrbase-authz`** (application layer, hand-written,
 `thiserror`; leaf like `ehrbase-audit` — no `ehrbase-*` deps):
 
 ```
-crates/ehrbase-authz/src/
+app/ehrbase-authz/src/
 ├── lib.rs
 ├── config.rs      # AuthzConfig (figment-compatible serde; EHRBASE_AUTHZ_*)
 ├── roles.rs       # Role model + extraction rules (claim paths → roles)
@@ -231,7 +231,7 @@ the audit `SubjectResolver`). Dependency arrows stay downward:
 
 ### 5.1 Principal extension (prerequisite)
 
-`crates/ehrbase-rest/src/auth/mod.rs`:
+`app/ehrbase-rest/src/auth/mod.rs`:
 
 ```rust
 pub struct Principal {
@@ -369,7 +369,7 @@ pub trait PolicyEngine: Send + Sync + std::fmt::Debug {
   the shipped example policies).
 - Shipped examples reproducing v1's defaults (`has_consent_patient`,
   `has_consent_template`) as commented `.cedar` files under
-  `crates/ehrbase-authz/examples/policies/`.
+  `app/ehrbase-authz/examples/policies/`.
 
 ### 5.7 The patient gate (local, before any engine call)
 
@@ -427,7 +427,7 @@ unresolvable → 403 (fail-closed).
 
 ### 6.4 Query attributes — engine-computed, projection-independent (fixes v1 defect #1)
 
-Two mechanisms, both in `crates/ehrbase/src/aql/`:
+Two mechanisms, both in `app/ehrbase/src/aql/`:
 
 - **Pre-execution scope (cheap, always):** when the caller is patient-scoped
   (patient claim configured), resolve the patient's EHR set is unnecessary —

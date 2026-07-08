@@ -15,7 +15,7 @@ from EHRbase behaviour.
 ## Where we are (2026-07-08, self-host run)
 
 `docs/conformance/RESULTS.md`: **322 identified · 263 implemented · 202 passed ·
-105 findings.** The full CNF framework (`crates/ehrbase-conformance`) is built,
+105 findings.** The full CNF framework (`tools/conformance`) is built,
 server-agnostic (`--base-url` or `--self-host`), and emits the guide's artefacts
 (Test Execution Report + Conformance Statement + certificate). Head-to-head vs
 EHRbase Java: `CNF_COMPARISON.md` (rs column filled; run
@@ -120,7 +120,7 @@ correct the case expectation if it over-asserts.
 Fable owns the hard bespoke logic (the validator hardening in bucket 1, AQL) and
 architecture; fan bucket 3/5 wiring and mechanical edits to Opus `implementer`
 subagents with the exact spec paths. Iterate on the **fast** loop:
-`cargo run -p ehrbase-conformance --features self-host --bin conformance -- run
+`cargo run -p conformance --features self-host --bin conformance -- run
 --self-host --out docs/conformance` after each fix, watch the pass count climb,
 commit per bucket. Do the Docker two-container run + `run.sh java` at the end for
 the official comparison.

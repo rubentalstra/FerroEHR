@@ -94,7 +94,7 @@ EHRbase at the REST/AQL surface — not as a literal 1:1 Java-structure port.**
    `USE_REFERENCE_EHRBASE=1`) is the acceptance instrument.
 
 4. **The real EHRbase v2 schema is reused verbatim.** The 41 Flyway SQL
-   migrations already vendored in `crates/ehrbase/migrations/{ehr,ext}/` are the
+   migrations already vendored in `app/ehrbase/migrations/{ehr,ext}/` are the
    schema, run via `sqlx migrate` — we do not re-author DDL.
 
 5. **Authentication in Stage 1; RBAC in Stage 2.** Basic auth + OAuth2/OIDC

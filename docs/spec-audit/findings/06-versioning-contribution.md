@@ -3,9 +3,9 @@
 ## Summary
 
 Audit of the versioning + contribution + audit model in
-`crates/ehrbase/src/service/` (`vobject.rs`, `versioned.rs`, `contribution.rs`,
+`app/ehrbase/src/service/` (`vobject.rs`, `versioned.rs`, `contribution.rs`,
 `ehr.rs`, `composition.rs`, `directory.rs`) and the schema
-(`crates/ehrbase/migrations/ehr/0001_schema.sql`) against the vendored openEHR
+(`app/ehrbase/migrations/ehr/0001_schema.sql`) against the vendored openEHR
 RM `common.change_control` + `common.generic` packages, the `ehr` package, the
 BASE `identification` package, and the openEHR terminology bundle.
 
@@ -45,8 +45,8 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   Descriptions" → `VERSION` class, attribute `commit_audit: AUDIT_DETAILS`
   cardinality **1..1**; §"Committal and Audits" (every Version records the local
   commit audit).
-- **Code:** `crates/ehrbase/src/service/versioned.rs:80-104`
-  (`original_version`), fed by `crates/ehrbase/src/service/vobject.rs:84-92`
+- **Code:** `app/ehrbase/src/service/versioned.rs:80-104`
+  (`original_version`), fed by `app/ehrbase/src/service/vobject.rs:84-92`
   (`VersionRead`) and `read_version` (`vobject.rs:496-521`).
 - **Problem:** `VERSION.commit_audit` is a mandatory (1..1) attribute of every
   `VERSION`. The `original_version()` builder emits only `uid`, `contribution`,
@@ -74,7 +74,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   `816 restoration`, `817 format conversion`. `change_control` §"Contributions"
   binds the change kinds to codes `249|creation|`, `250|amendment|`,
   `251|modification|`, `523|deleted|`.
-- **Code:** `crates/ehrbase/src/service/contribution.rs:207-236`
+- **Code:** `app/ehrbase/src/service/contribution.rs:207-236`
   (`audit_details`); the stored code strings originate at
   `vobject.rs:54-58` (`change_type` module: `"creation"`/`"modification"`/
   `"deleted"`) and `contribution.rs:27-33` (`Action::change_type`).
@@ -105,7 +105,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   §"Version and its Subtypes" ("knows on which version in the tree it was
   based … Void if it is the first version"). `ORIGINAL_VERSION.
   preceding_version_uid` cardinality 0..1.
-- **Code:** `crates/ehrbase/src/service/versioned.rs:80-104`
+- **Code:** `app/ehrbase/src/service/versioned.rs:80-104`
   (`original_version`).
 - **Problem:** The `ORIGINAL_VERSION` builder never sets
   `preceding_version_uid`. For any version `N > 1` the invariant *requires* it
@@ -128,7 +128,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   §"Logical Deletion" — a deleted version has `lifecycle_state` = `deleted`;
   `VERSION` invariant `Lifecycle_state_valid`. Terminology group
   `version_lifecycle_state` in `openehr_terminology.xml` confirms the five codes.
-- **Code:** `crates/ehrbase/src/service/versioned.rs:93-101` (hardcoded
+- **Code:** `app/ehrbase/src/service/versioned.rs:93-101` (hardcoded
   `value:"complete"`, `code_string:"532"`); schema
   `migrations/ehr/0001_schema.sql:62` (`deleted boolean`, no lifecycle column);
   `vobject.rs:256-280` (`Change::Delete` sets `deleted = true`, no state).
@@ -153,7 +153,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
 - **Spec:** `RM/docs/common/master06-change_control_package.adoc` → class
   `VERSIONED_OBJECT`, attribute `time_created: DV_DATE_TIME` cardinality
   **1..1** ("Time of initial creation of this versioned object").
-- **Code:** `crates/ehrbase/src/service/versioned.rs:65-76`
+- **Code:** `app/ehrbase/src/service/versioned.rs:65-76`
   (`versioned_object`).
 - **Problem:** The `VERSIONED_OBJECT` builder emits `uid` and `owner_id` only.
   `time_created` (1..1) is missing from every `.../versioned_composition`,
@@ -173,7 +173,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   `251|modification|`, attestation ⇒ `666|attestation|`); `ehr`
   §"Versioning Scenarios" Case 1 (local correction sets change type to a
   correction/amendment); full `audit_change_type` group has 9 codes.
-- **Code:** `crates/ehrbase/src/service/vobject.rs:54-58` (only CREATION /
+- **Code:** `app/ehrbase/src/service/vobject.rs:54-58` (only CREATION /
   MODIFICATION / DELETED constants); `contribution.rs:17-34` (`Action` enum has
   only Create/Modify/Delete); `contribution.rs:242-254` (`version_action`
   buckets *any* non-creation/non-deleted code into `Action::Modify`).
@@ -224,7 +224,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
   result should be a root EHR object, an EHR Status object, **and an EHR Access
   object**"); `EHR` class `ehr_access: OBJECT_REF` cardinality **1..1** with
   invariant `Ehr_access_valid: ehr_access.type.is_equal("VERSIONED_EHR_ACCESS")`.
-- **Code:** `crates/ehrbase/src/service/ehr.rs:15-37` (`create_ehr` creates only
+- **Code:** `app/ehrbase/src/service/ehr.rs:15-37` (`create_ehr` creates only
   `EHR_STATUS`); `ehr.rs:82-97` (`ehr_summary` emits `system_id`, `ehr_id`,
   `ehr_status`, `time_created` — no `ehr_access`).
 - **Problem:** No `EHR_ACCESS`/`VERSIONED_EHR_ACCESS` is created at EHR creation,
@@ -247,7 +247,7 @@ Counts: **3 critical, 4 major, 4 minor, 3 info.**
 - **Severity:** minor
 - **Spec:** `RM/docs/ehr/master04-ehr_package.adoc` → `EHR` invariant
   `Ehr_status_valid: ehr_status.type.is_equal("VERSIONED_EHR_STATUS")`.
-- **Code:** `crates/ehrbase/src/service/ehr.rs:86-91`.
+- **Code:** `app/ehrbase/src/service/ehr.rs:86-91`.
 - **Problem:** The EHR summary emits `ehr_status` as an `OBJECT_REF` with
   `type:"EHR_STATUS"` and an `OBJECT_VERSION_ID` id. The RM invariant requires
   the reference `type` to be `VERSIONED_EHR_STATUS` (a reference to the version

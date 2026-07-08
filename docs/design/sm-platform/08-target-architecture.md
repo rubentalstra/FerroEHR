@@ -41,26 +41,29 @@ onto the workspace as:
                         └───────────────────────────────┘
 ```
 
-**Workspace layout (owner ruling, 2026-07-08): the two layers become
-physical.** The application crates move to **`app/*`**; the generated
-openEHR spec layer stays in **`crates/*`**:
+**Workspace layout (owner ruling, 2026-07-08; executed the same day): three
+physical directories.** The application crates live in **`app/*`**; the
+dev/verification tooling — *not part of the shipped application* — lives in
+**`tools/*`**; the generated openEHR spec layer stays in **`crates/*`**:
 
 ```
 crates/   openehr-base  openehr-rm  openehr-am  openehr-term  openehr-lang
           openehr-its   openehr-query  openehr-flat
           openehr-codegen  openehr-derive          # spec layer + its tooling
 app/      ehrbase  ehrbase-sm  ehrbase-rest  ehrbase-compat
-          ehrbase-audit  ehrbase-authz  ehrbase-signing
-          ehrbase-conformance  ehrbase-bench       # the application (ours)
+          ehrbase-audit  ehrbase-authz  ehrbase-signing   # the application
+tools/    conformance  benchmark      # ECC runner + bench harness (not app)
 ```
 
-Root `Cargo.toml`: `members = ["crates/*", "app/*"]`. The move is `git mv`
-(history preserved), then path updates in workspace path-deps, CI workflows,
-scripts (`check-codegen-drift.sh` etc.), `.claude/rules` path scopes, and
-docs. The tree now states the rule the naming implied: `crates/openehr-*` =
-generated from the vendored specs, never hand-edited; `app/ehrbase-*` =
-idiomatic Rust of our own design. Dependencies point one way only:
-`app/* → crates/*`.
+Root `Cargo.toml`: `members = ["crates/*", "app/*", "tools/*"]`. The move was
+`git mv` (history preserved) + path updates in workspace path-deps, CI
+workflows, scripts, docker runners, `.claude/rules` path scopes, and docs;
+`ehrbase-bench` was renamed to **`benchmark`** and `ehrbase-conformance` to
+**`conformance`**. The tree now states the rule the naming implied:
+`crates/openehr-*` = generated from the vendored specs, never hand-edited;
+`app/ehrbase-*` = idiomatic Rust of our own design; `tools/*` = harnesses
+that exercise the app from outside. Dependencies point one way only:
+`tools/* → app/* → crates/*`.
 
 **New crate: `app/ehrbase-sm`** — the native API. Holds the service traits, the
 shared service types (update-version envelope, paging, error enums, summary

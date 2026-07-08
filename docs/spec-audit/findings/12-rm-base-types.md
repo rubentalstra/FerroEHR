@@ -151,7 +151,7 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   `is_first`/`branch_number`/`branch_version` + `FromStr` (branch segments now
   require ≥ 1 per the spec's `Branch_*_valid`). **Migration targets (owned by
   the app-crate agents, F-13-01/W2-B):** the 5 hand-rolled `::`-splitters in
-  `crates/ehrbase`/`ehrbase-rest` should move to
+  `app/ehrbase`/`ehrbase-rest` should move to
   `openehr_base::…::ObjectVersionId::{from_str, object_id, creating_system_id,
   version_tree_id, is_branch}`.)*
 

@@ -192,7 +192,7 @@ dependency of `openehr-rm` (workspace-pinned). Property test: canonical form
 is byte-stable across repeated serialization and independent of the
 `signature` value present on the object.
 
-### 4.2 New crate `crates/ehrbase-signing` (leaf, app layer)
+### 4.2 New crate `app/ehrbase-signing` (leaf, app layer)
 
 ```
 src/
@@ -210,7 +210,7 @@ Deps: `pgp` (rPGP — new workspace pin), `sha2`, `base64`, `secrecy`,
 Boot validation: `pgp` mode without a loadable key = refuse to start
 (fail-closed at boot, the access-control precedent).
 
-### 4.3 Service integration (`crates/ehrbase`)
+### 4.3 Service integration (`app/ehrbase`)
 
 - `vobject` commit path: after the ORIGINAL_VERSION is assembled and before
   persist — `if client_signature { store it } else if signing.enabled {

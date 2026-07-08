@@ -13,9 +13,10 @@ Owner rulings baked in (2026-07-08):
 - SM governs internal decomposition + call semantics; **ITS-REST 1.0.3 + CNF
   remain the wire oracle** (SM is TRIAL/DEVELOPMENT). Conflicts resolve to
   the wire spec with a `// PORT NOTE:` + citation.
-- **Physical two-layer workspace:** the application crates move to
-  **`app/ehrbase-*`**; the generated spec layer stays in
-  **`crates/openehr-*`** (executed as SM-1's opening task; doc 08 §1).
+- **Physical three-directory workspace (executed 2026-07-08):** application
+  crates in **`app/ehrbase-*`**; dev/verification tooling in **`tools/*`**
+  (`conformance` — the ECC runner, `benchmark`; not part of the app); the
+  generated spec layer stays in **`crates/openehr-*`** (doc 08 §1).
 
 ## Reading order
 
