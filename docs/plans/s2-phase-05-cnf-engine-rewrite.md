@@ -50,6 +50,11 @@ legacy corpus, no Robot, no Python.**
       the pinned contract.
 - [ ] `QRY` build-out — AQL 1.1 construct checklist + corpus goldens with a
       rule-named normalizer.
+- [ ] Badge set rewrite (owner, 2026-07-08): four generated badges — total
+      (`badge.json`) + per-profile `badge-core/standard/options.json`, each
+      profile badge driven by the machine verdict (design §6). Implement in
+      `reporting/report.rs` after the CaseMeta-v4 pass lands (avoid
+      colliding with the in-flight implementer).
 - [ ] `SEC` sweeps (RBAC 401/403), JUnit/CTRF output, CI tiers, first
       generated STANDARD-profile statement.
 - [ ] Regenerate `docs/conformance/` with the v4 artifact set (replaces the
