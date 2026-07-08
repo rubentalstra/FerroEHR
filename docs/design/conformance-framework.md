@@ -1,8 +1,19 @@
 # openEHR CNF Conformance Framework — design
 
-- **Status:** designed, **v2 (2026-07-07)** — re-verified against the official
-  GitHub repository and updated for the now-implemented version-signing and
-  access-control subsystems. Ready to implement.
+- **Status:** **implemented + in the hardening loop (2026-07-08).** The runner
+  crate (`crates/ehrbase-conformance`) landed (PR #27): 322-case coverage guard,
+  ~91 passing, all findings tracked. It is now driving **spec-grounded server
+  hardening** — `docs/plans/s2-phase-04-cnf-hardening.md` (the failures in
+  `docs/conformance/RESULTS.md` are being closed against the RM + ITS-REST spec,
+  every fix cited). The `ehrbase-bench` benchmark (PR #28) is a **second finding
+  source** here: driving both ehrbase-rs and EHRbase Java revealed our server
+  accepts payloads EHRbase/the spec reject (e.g. `PARTY_SELF` vs
+  `PARTY_IDENTIFIED`), surfaced as `F-open-42` and folded into the same hardening
+  cluster. The deep root-cause of the largest cluster (a swallowed
+  typed-deserialize in `openehr-rm::validate`) is in `COVERAGE_GAPS.md` §1 and
+  the phase-04 plan.
+- **Design status (v2, 2026-07-07):** re-verified against the official GitHub
+  repository and updated for the version-signing and access-control subsystems.
 - **Stage:** the ADR-008 acceptance instrument (P19, deliberately pulled forward —
   every feature landed before this exists is unverified against the real oracle)
 - **Owner:** —
