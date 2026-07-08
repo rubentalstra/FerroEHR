@@ -125,6 +125,7 @@ I_DEFINITION_ADL14.get_opt-retrieve_fail
 I_DEFINITION_ADL14.get_opt-retrieve_latest_version
 I_DEFINITION_ADL14.get_opt-retrieve_single
 I_DEFINITION_ADL14.get_opt-retrieve_specific_version
+I_DEFINITION_ADL14.get_opts-retrieve_all
 I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts
 I_DEFINITION_ADL14.upload_opt-invalid_opt
 I_DEFINITION_ADL14.upload_opt-valid_opt
@@ -149,6 +150,7 @@ I_EHR_COMPOSITION.create_composition-same_opt_twice
 I_EHR_COMPOSITION.delete_composition-event
 I_EHR_COMPOSITION.delete_composition-non_existent
 I_EHR_COMPOSITION.delete_composition-persistent
+I_EHR_COMPOSITION.get_composition_at_time
 I_EHR_COMPOSITION.get_composition_at_time-bad_composition
 I_EHR_COMPOSITION.get_composition_at_time-bad_ehr
 I_EHR_COMPOSITION.get_composition_at_time-no_time_arg

@@ -95,6 +95,11 @@ pub enum Token {
     Forward,
     #[token("backward", ignore(case))]
     Backward,
+    /// `TIMEWINDOW` — a **legacy** clause keyword: removed from AQL 1.1
+    /// (QUERY `master00-amendment_record.adoc`, SPECQUERY-20) but still driven
+    /// as valid by the CNF query corpus, so the lexer keeps it.
+    #[token("timewindow", ignore(case))]
+    TimeWindow,
     #[token("contains", ignore(case))]
     Contains,
     #[token("and", ignore(case))]
@@ -175,6 +180,12 @@ pub enum Token {
     DoubleDash,
 
     // ── literals & names ────────────────────────────────────────────────────
+    // A legacy `TIMEWINDOW` window literal: an ISO-8601 duration, a `/`, and an
+    // ISO date(-time) anchor (`PT12H/2019-10-24`). Requires the slash + anchor,
+    // so a bare duration in any other position still lexes as an Identifier.
+    #[regex(r"P[0-9YMWDTHMS.]+/[0-9][0-9TZ:+.\-]*", |lex| lex.slice().to_owned())]
+    TimeWindowLiteral(String),
+
     // A `$name` query parameter.
     #[regex(r"\$[a-zA-Z][a-zA-Z0-9_]*", |lex| lex.slice().to_owned())]
     Parameter(String),

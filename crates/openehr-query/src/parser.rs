@@ -627,9 +627,20 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         .then(just(Token::Offset).ignore_then(int).or_not())
         .map(|(limit, offset)| Limit { limit, offset });
 
-    // selectQuery : selectClause fromClause whereClause? orderByClause? limitClause? '--'? EOF
+    // The legacy `TIMEWINDOW <duration>/<anchor>` clause (removed from AQL 1.1 —
+    // SPECQUERY-20 — but driven as valid by the CNF query corpus): the window
+    // text is recorded verbatim on the AST. A bare duration (no `/anchor`)
+    // lexes as an Identifier, so both spellings are admitted here.
+    let time_window = just(Token::TimeWindow).ignore_then(select! {
+        Token::TimeWindowLiteral(s) => s,
+        Token::Identifier(s) => s,
+    });
+
+    // selectQuery : selectClause fromClause timeWindow? whereClause?
+    //               orderByClause? limitClause? '--'? EOF
     select_clause
         .then(just(Token::From).ignore_then(contains))
+        .then(time_window.or_not())
         .then(just(Token::Where).ignore_then(where_expr).or_not())
         .then(
             just(Token::Order)
@@ -645,9 +656,10 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         .then(limit.or_not())
         .then_ignore(just(Token::DoubleDash).or_not())
         .map(
-            |((((select, from), where_), order_by), limit)| SelectQuery {
+            |(((((select, from), time_window), where_), order_by), limit)| SelectQuery {
                 select,
                 from,
+                time_window,
                 where_,
                 order_by: order_by.unwrap_or_default(),
                 limit,

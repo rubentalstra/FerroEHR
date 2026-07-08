@@ -91,8 +91,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .await
         .expect("ehr bookkeeping");
     // ext: 0001_openehr_functions. ehr: 0001_schema + 0002_add_vo_version_signature
-    // (version signing — RM common §"Digital Signature").
-    assert_eq!((applied_ext, applied_ehr), (1, 2));
+    // (version signing — RM common §"Digital Signature") +
+    // 0003_demographic_party_storage (party kinds on the shared vo machinery;
+    // no new tables — the table-list assertion below is unchanged).
+    assert_eq!((applied_ext, applied_ehr), (1, 3));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \

@@ -51,7 +51,7 @@ fn every_schedule_case_is_classified_and_matches_the_snapshot() {
             Registration::Excluded(_) => other += 1,
         }
     }
-    assert_eq!(inventory.len(), 322, "the 322-case identified inventory");
+    assert_eq!(inventory.len(), 324, "the 324-case identified inventory");
     assert_eq!(placeholder, 57, "aaaa (28) + bbbb (29) placeholders");
     assert_eq!(duplicate, 1, "the one CONT-DV_TEXT-validate_open duplicate");
     assert_eq!(
@@ -72,7 +72,7 @@ fn every_schedule_case_is_classified_and_matches_the_snapshot() {
     );
     assert_eq!(
         implemented + placeholder + duplicate + adl2 + not_yet + other,
-        322,
+        324,
         "classification is total"
     );
 
@@ -114,3 +114,4 @@ fn every_schedule_case_is_classified_and_matches_the_snapshot() {
         }
     }
 }
+

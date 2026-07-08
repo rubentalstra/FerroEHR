@@ -616,12 +616,16 @@ fn slot_narrowing() {
         "data": {"_type": "ITEM_TREE", "archetype_node_id": "at0002", "items": []}});
     let msgs = walk_only(&wrong, &eval);
     assert!(
-        msgs.iter().any(|m| m.kind == ValidationKind::WrongType && m.message.contains("not allowed")),
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::WrongType && m.message.contains("not allowed")),
         "expected WrongType for ITEM_TREE in an ITEM_LIST slot, got {msgs:?}"
     );
     let right = json!({"_type": "EVALUATION", "archetype_node_id": "at0001",
         "data": {"_type": "ITEM_LIST", "archetype_node_id": "at0002", "items": []}});
-    assert!(walk_only(&right, &eval).is_empty(), "narrowed subtype accepted");
+    assert!(
+        walk_only(&right, &eval).is_empty(),
+        "narrowed subtype accepted"
+    );
 
     eval.slots[0].rm_type = "ITEM_STRUCTURE".to_owned();
     let any = json!({"_type": "EVALUATION", "archetype_node_id": "at0001",
@@ -652,7 +656,10 @@ fn numeric_list_membership() {
 #[test]
 fn proportion_kind_membership() {
     let mut prop = node("DV_PROPORTION", "/value");
-    prop.inputs = vec![WebTemplateInput::new(WebTemplateInputType::Decimal, Some("numerator"))];
+    prop.inputs = vec![WebTemplateInput::new(
+        WebTemplateInputType::Decimal,
+        Some("numerator"),
+    )];
     prop.proportion_types = vec!["percent".to_owned()];
     let bad = json!({"_type": "DV_PROPORTION", "numerator": 1.0, "denominator": 2.0, "type": 0});
     let msgs = walk_only(&bad, &prop);
@@ -660,7 +667,8 @@ fn proportion_kind_membership() {
         kinds(&msgs).contains(&ValidationKind::CodedValue),
         "expected CodedValue for ratio where percent required, got {msgs:?}"
     );
-    let good = json!({"_type": "DV_PROPORTION", "numerator": 42.0, "denominator": 100.0, "type": 2});
+    let good =
+        json!({"_type": "DV_PROPORTION", "numerator": 42.0, "denominator": 100.0, "type": 2});
     assert!(walk_only(&good, &prop).is_empty());
 }
 
@@ -707,8 +715,11 @@ fn time_pattern_partial_rejected() {
     });
     time.inputs = vec![input];
     assert!(
-        kinds(&walk_only(&json!({"_type": "DV_TIME", "value": "22"}), &time))
-            .contains(&ValidationKind::PatternError)
+        kinds(&walk_only(
+            &json!({"_type": "DV_TIME", "value": "22"}),
+            &time
+        ))
+        .contains(&ValidationKind::PatternError)
     );
     assert!(walk_only(&json!({"_type": "DV_TIME", "value": "22:18:16"}), &time).is_empty());
 }
@@ -728,13 +739,19 @@ fn duration_fields_and_range() {
         max: Some(json!("PT1H")),
     });
     assert!(
-        kinds(&walk_only(&json!({"_type": "DV_DURATION", "value": "P1Y"}), &dur))
-            .contains(&ValidationKind::PatternError),
+        kinds(&walk_only(
+            &json!({"_type": "DV_DURATION", "value": "P1Y"}),
+            &dur
+        ))
+        .contains(&ValidationKind::PatternError),
         "year field forbidden by the pattern"
     );
     assert!(
-        kinds(&walk_only(&json!({"_type": "DV_DURATION", "value": "PT5H"}), &dur))
-            .contains(&ValidationKind::RangeError),
+        kinds(&walk_only(
+            &json!({"_type": "DV_DURATION", "value": "PT5H"}),
+            &dur
+        ))
+        .contains(&ValidationKind::RangeError),
         "PT5H outside [PT0S,PT1H]"
     );
     assert!(walk_only(&json!({"_type": "DV_DURATION", "value": "PT30M"}), &dur).is_empty());
