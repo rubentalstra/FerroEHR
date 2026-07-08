@@ -284,11 +284,28 @@ pub(crate) fn is_valid_iso_duration(s: &str) -> bool {
 // ── the _type → Validate dispatcher ──────────────────────────────────────────
 
 fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantViolation>) {
-    // A node that fails to deserialize into its declared concrete type is a
-    // structural error caught by the codec/schema layer, not an invariant
-    // failure — so we simply run no invariants for it here.
-    if let Ok(v) = serde_json::from_value::<T>(value.clone()) {
-        v.validate_invariants(out);
+    match serde_json::from_value::<T>(value.clone()) {
+        Ok(v) => v.validate_invariants(out),
+        // A node that does not deserialize into its declared concrete RM type is
+        // NOT "caught by the codec/schema layer" on the commit path: the ADR-008
+        // node codec stores the raw canonical-JSON fragment and the ITS-JSON
+        // schema is not enforced at commit, so a missing mandatory attribute
+        // (e.g. `COMPOSITION.composer [1]`) or a wrong nested type (e.g. an
+        // `EHR_STATUS.subject` that is not `PARTY_SELF`) reaches here and nowhere
+        // else. Per ITS-REST `422_COMPOSITION.yaml` ("converts, but does not
+        // validate") this is a validation failure — surface it. (The valid corpus
+        // deserializes cleanly at every node, so this never rejects a valid input;
+        // if it ever did, that would expose a codegen field-optionality bug to fix
+        // in the emitter — see docs/plans/s2-phase-04-cnf-hardening.md.)
+        Err(e) => {
+            let ty = value
+                .get("_type")
+                .and_then(Value::as_str)
+                .unwrap_or("<unknown>");
+            out.push(InvariantViolation::here(format!(
+                "does not conform to RM type {ty}: {e}"
+            )));
+        }
     }
 }
 

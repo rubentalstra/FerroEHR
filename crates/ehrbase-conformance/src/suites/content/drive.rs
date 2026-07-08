@@ -40,6 +40,12 @@ pub enum Base {
     /// `persistent_minimal.en.v1` — a **persistent** COMPOSITION (category `431`),
     /// no context; contains an OBSERVATION → HISTORY → `POINT_EVENT`.
     PersistentMinimal,
+    /// `test_all_types.en.v1` — the all-data-types COMPOSITION: carries a leaf of
+    /// nearly every `DV_*` type (COUNT, DATE, `DATE_TIME`, TIME, DURATION,
+    /// IDENTIFIER, MULTIMEDIA, PARSABLE, PROPORTION, URI, ORDINAL, QUANTITY,
+    /// `CODED_TEXT`, BOOLEAN, TEXT). The committable base for the master17.x
+    /// `validate_open` (RM/Schema-mandatory) rows across every data type.
+    AllTypes,
 }
 
 impl Base {
@@ -48,6 +54,7 @@ impl Base {
         match self {
             Base::EventNested => "nested/nested.opt",
             Base::PersistentMinimal => "minimal_persistent/persistent_minimal.opt",
+            Base::AllTypes => "all_types/Test_all_types.opt",
         }
     }
 
@@ -58,6 +65,7 @@ impl Base {
             Base::PersistentMinimal => {
                 "compositions/CANONICAL_JSON/persistent_minimal.en.v1__full.json"
             }
+            Base::AllTypes => "query/data_load/compositions/all_types.composition.json",
         }
     }
 
