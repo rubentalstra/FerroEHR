@@ -489,7 +489,26 @@ fn run_item_str_any<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         mutate::retarget_template(&mut tree, tid);
         let mut list = base;
         mutate::retarget_template(&mut list, tid);
+        // A bare `_type` swap would leave the ITEM_TREE's CLUSTER items in
+        // place, and RM 1.2.0 `ITEM_LIST.items` is `List<ELEMENT>` (RM
+        // data_structures §ITEM_LIST) — the instance must be RM-valid for the
+        // "any subtype accepted" positive to isolate the archetype slot. Build
+        // the ITEM_LIST from the tree's ELEMENT leaves instead.
+        let elements: Vec<Value> = list
+            .pointer("/content/2/data/items")
+            .and_then(Value::as_array)
+            .map(|clusters| {
+                clusters
+                    .iter()
+                    .filter_map(|c| c.get("items").and_then(Value::as_array))
+                    .flatten()
+                    .filter(|i| i.get("_type").and_then(Value::as_str) == Some("ELEMENT"))
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default();
         mutate::set_pointer(&mut list, "/content/2/data/_type", json!("ITEM_LIST"));
+        mutate::set_pointer(&mut list, "/content/2/data/items", Value::Array(elements));
 
         drive::drive_authored(
             ctx,

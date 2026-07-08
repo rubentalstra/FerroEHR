@@ -1124,10 +1124,14 @@ fn run_dv_duration_fields<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         "cnf_cont_dv_dur_fields",
         "DV_DURATION",
         "Duration",
-        author::c_duration(Some("PT"), None),
+        // AOM 1.4 §C_DURATION: the pattern's letters (before/after `T`) are the
+        // *allowed* fields — `PTHMS` = time-only, so the base `PT30M` conforms
+        // and any date field is forbidden. A bare `PT` allows nothing and would
+        // reject the base row too.
+        author::c_duration(Some("PTHMS"), None),
         11,
         json!("P1Y"),
-        "'P1Y' uses a date field the PT pattern forbids (C_DURATION.pattern)",
+        "'P1Y' uses a date field the PTHMS pattern forbids (C_DURATION.pattern)",
     )
 }
 fn run_dv_duration_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
@@ -1148,7 +1152,9 @@ fn run_dv_duration_fields_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         "cnf_cont_dv_dur_fr",
         "DV_DURATION",
         "Duration",
-        author::c_duration(Some("PTH"), Some(("PT0S", "PT1H"))),
+        // `PTHM` allows hours+minutes (the base `PT30M` conforms); `PT5H` is an
+        // allowed field but exceeds the range.
+        author::c_duration(Some("PTHM"), Some(("PT0S", "PT1H"))),
         11,
         json!("PT5H"),
         "'PT5H' outside [PT0S,PT1H] (C_DURATION.pattern+range)",
@@ -1219,7 +1225,10 @@ fn drive_interval<'a>(
     upper: Value,
 ) -> CaseFuture<'a> {
     Box::pin(async move {
-        let p = leaf_ptr(4, "value");
+        // The whole ELEMENT.value is replaced (`…/items/4/value`), not a datum
+        // inside it — `leaf_ptr(4, "value")` would nest the interval inside the
+        // retyped leaf and the slot would still hold the original type.
+        let p = value_ptr(4);
         drive_leaf_rows(
             ctx,
             tid,
