@@ -125,6 +125,7 @@ fn config() -> RestConfig {
             oidc: None,
             admin_scope: None,
         },
+        admin: ehrbase_rest::AdminConfig::default(),
     }
 }
 
