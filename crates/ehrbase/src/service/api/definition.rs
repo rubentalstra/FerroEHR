@@ -7,11 +7,12 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
+use openehr_flat::{DetailLevel, ExampleType};
 use openehr_its::rest::generated::definition::{
     DefinitionApi, DefinitionQueryListParams, DefinitionQueryStoreYamlParams,
     DefinitionQueryVersionGetParams, DefinitionQueryVersionStoreYamlParams,
-    DefinitionTemplateAdl14GetParams, DefinitionTemplateAdl14ListParams,
-    DefinitionTemplateAdl14UploadParams,
+    DefinitionTemplateAdl14ExampleGetParams, DefinitionTemplateAdl14GetParams,
+    DefinitionTemplateAdl14ListParams, DefinitionTemplateAdl14UploadParams,
 };
 use openehr_its::rest::runtime::ApiError;
 
@@ -49,6 +50,23 @@ impl DefinitionApi for EhrbaseService {
         Ok(Value::String(
             self.get_template_xml(&params.template_id).await?,
         ))
+    }
+
+    async fn definition_template_adl1_4_example_get(
+        &self,
+        params: DefinitionTemplateAdl14ExampleGetParams,
+    ) -> Result<Value, ApiError> {
+        // `type`/`detail_level` are the dev-OAS `example_type`/`example_detail_level`
+        // enums (`definition-validation.openapi.yaml`); an out-of-enum value is a
+        // `400 Bad Request` (the endpoint's `400` response). All three detail
+        // levels are implemented, so no "unsupported level" fallback applies.
+        let level = DetailLevel::from_query(params.detail_level.as_deref())
+            .map_err(ApiError::BadRequest)?;
+        let kind =
+            ExampleType::from_query(params.r#type.as_deref()).map_err(ApiError::BadRequest)?;
+        Ok(self
+            .template_example(&params.template_id, level, kind)
+            .await?)
     }
 
     async fn definition_query_list(
