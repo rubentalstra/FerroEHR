@@ -193,9 +193,19 @@ error.
 - `CATALOG.md` — the full catalogue per area: every case, status, title,
   last outcome. The "full list per category" overview.
 - `CONFORMANCE_STATEMENT.md` — the scoped generated claim: identity, scope,
-  detailed report, deviations (skips by reason). Will carry the machine
-  profile verdict once `model/profile.rs` lands.
-- `badge.json` — shields endpoint (`passed/active-catalogue`).
+  detailed report, the machine profile verdict (per-capability tables for
+  CORE/STANDARD/OPTIONS), deviations (skips by reason).
+- **Badges (four)** — shields endpoint schema, all generated from the run:
+  - `badge.json` — the total: `ECC conformance: <passed>/<active catalogue>`
+    (red on any failure, brightgreen only at full pass, else yellow);
+  - `badge-core.json`, `badge-standard.json`, `badge-options.json` — one per
+    profile, driven by the **machine profile verdict** (`model/profile.rs`):
+    message `PASS (n/n capabilities)` when the all-or-nothing verdict holds,
+    else `k/n capabilities`; brightgreen on pass, red if any required
+    capability has failures/errors, yellow while unevidenced.
+  The README embeds all four, so the public face shows the total *and* the
+  per-profile claim state at a glance — and a badge can never say PASS
+  unless the machine verdict does.
 
 ## 7. Build-out plan (compiling, tested increments)
 
