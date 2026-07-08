@@ -24,10 +24,8 @@ base64 = { workspace = true }
 serde = { workspace = true }
 figment = { workspace = true }
 secrecy = { workspace = true, features = ["serde"] }
-# Errors, tracing, metrics.
+# Errors.
 thiserror = { workspace = true }
-tracing = { workspace = true }
-metrics = { workspace = true }
 
 [dev-dependencies]
 figment = { workspace = true, features = ["test"] }

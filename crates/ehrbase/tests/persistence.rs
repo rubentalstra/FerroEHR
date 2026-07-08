@@ -292,6 +292,8 @@ async fn template_id_is_read_back_from_vo_version() {
     let pool = pg.migrated_pool("authz_template_db").await;
     let (vo, ehr_id) = seed_version(&pool).await;
     // Production sets this on commit (service/vobject.rs); set it directly here.
+    // vo_version.template_id has an FK into template_store — seed the template.
+    seed_template(&pool, "org.openehr::vital_signs.v1").await;
     sqlx::query("UPDATE vo_version SET template_id = $2 WHERE vo_id = $1")
         .bind(vo)
         .bind("org.openehr::vital_signs.v1")
@@ -357,6 +359,8 @@ async fn query_subject_scope_filters_and_collects_projection_independently() {
             .execute(&pool)
             .await
             .expect("set subject");
+        // vo_version.template_id has an FK into template_store — seed first.
+        seed_template(&pool, template).await;
         sqlx::query("UPDATE vo_version SET template_id = $2 WHERE vo_id = $1")
             .bind(vo)
             .bind(template)
@@ -408,6 +412,19 @@ fn row_count(result_set: &Value) -> usize {
 
 /// Creates ehr + audit + contribution + an open v1 `vo_version`; returns
 /// `(vo_id, ehr_id)`.
+/// Seed a `template_store` row so `vo_version.template_id` (FK) can reference
+/// it — production ingests the OPT before any commit can cite it.
+async fn seed_template(pool: &PgPool, template_id: &str) {
+    sqlx::query(
+        "INSERT INTO template_store (template_id, content) VALUES ($1, '<test/>')
+         ON CONFLICT (template_id) DO NOTHING",
+    )
+    .bind(template_id)
+    .execute(pool)
+    .await
+    .expect("seed template_store");
+}
+
 async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     let ehr_id = Uuid::now_v7();
     let vo = Uuid::now_v7();
