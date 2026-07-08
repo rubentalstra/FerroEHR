@@ -1,12 +1,12 @@
 # openEHR CNF — Test Execution Report
 
-- SUT: `http://127.0.0.1:63643/ehrbase/rest/openehr/v1`
+- SUT: `http://127.0.0.1:54408/ehrbase/rest/openehr/v1`
 - RM version: 1.2.0
 - Auth mode: basic (self-host, RBAC off)
 - Corpus: `openEHR/specifications-CNF` @ `33251d2a`
-- Started: 2026-07-07T22:42:52.121563Z
+- Started: 2026-07-08T13:11:04.06602Z
 
-**322 identified cases · 210 implemented · 91 passed · 36 failed.**
+**322 identified cases · 210 implemented · 136 passed · 87 failed.**
 
 ## Per-chapter matrix
 
@@ -16,21 +16,21 @@
 | master05 | 3 | 3 | 0 | 4 | 4 | 7 |
 | master06 | 21 | 21 | 1 | 0 | 0 | 21 |
 | master07 | 28 | 26 | 2 | 3 | 3 | 31 |
-| master08 | 22 | 18 | 4 | 9 | 9 | 31 |
+| master08 | 22 | 20 | 2 | 9 | 9 | 31 |
 | master09 | 11 | 11 | 0 | 26 | 26 | 37 |
 | master10 | 0 | 0 | 0 | 24 | 0 | 24 |
 | master11 | 4 | 3 | 9 | 1 | 0 | 5 |
 | master12 | 0 | 0 | 0 | 18 | 0 | 18 |
 | master13 | 0 | 0 | 0 | 14 | 0 | 14 |
-| master15 | 12 | 0 | 0 | 0 | 0 | 12 |
-| master16 | 26 | 0 | 10 | 0 | 0 | 26 |
-| master17.1 | 5 | 0 | 1 | 0 | 0 | 5 |
-| master17.2 | 5 | 1 | 1 | 1 | 0 | 6 |
-| master17.3 | 47 | 3 | 3 | 0 | 0 | 47 |
-| master17.4 | 13 | 0 | 2 | 0 | 0 | 13 |
+| master15 | 12 | 3 | 9 | 0 | 0 | 12 |
+| master16 | 26 | 13 | 13 | 0 | 0 | 26 |
+| master17.1 | 5 | 5 | 0 | 0 | 0 | 5 |
+| master17.2 | 5 | 4 | 1 | 1 | 0 | 6 |
+| master17.3 | 47 | 10 | 37 | 0 | 0 | 47 |
+| master17.4 | 13 | 4 | 9 | 0 | 0 | 13 |
 | master17.5 | 0 | 0 | 0 | 0 | 0 | 0 |
-| master17.6 | 4 | 0 | 0 | 0 | 0 | 4 |
-| master17.7 | 6 | 0 | 1 | 0 | 0 | 6 |
+| master17.6 | 4 | 2 | 2 | 0 | 0 | 4 |
+| master17.7 | 6 | 6 | 0 | 0 | 0 | 6 |
 
 ## Failures
 
@@ -39,8 +39,6 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix (§4.5).
 - `FIXTURE-I_EHR_SERVICE.create_ehr-invalid_status` (json, master06-func_tc_ehr.adoc §Test Data Sets (INVALID class 2)): 2/11 invalid EHR_STATUS data sets were rejected (the rest were accepted)
 - `I_EHR_COMPOSITION.create_composition-same_opt_twice` (json, I_EHR_COMPOSITION.create_composition-same_opt_twice): expected a negative (4xx) response, got 201
 - `I_EHR_COMPOSITION.update_composition-wrong_template` (json, I_EHR_COMPOSITION.update_composition-wrong_template): expected a negative (4xx) response, got 200
-- `I_EHR_CONTRIBUTION.commit_contribution-invalid_composition` (json, I_EHR_CONTRIBUTION.commit_contribution-invalid_composition): expected a negative (4xx) response, got 201
-- `I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid` (json, I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid): expected a negative (4xx) response, got 201
 - `I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type` (json, I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type): expected a negative (4xx) response, got 201
 - `I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory` (json, I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory): expected a negative (4xx) response, got 201
 - `I_DEFINITION_ADL14.upload_opt-valid_opt` (json, I_DEFINITION_ADL14.upload_opt-valid_opt): valid OPT minimal_evaluation.opt rejected with 409
@@ -54,21 +52,74 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix (§4.5).
 - `QUERY-FIXTURE-A-loaded_db` (json, query/expected_results/loaded_db/A §columns): 0/23 A/loaded_db goldens matched (4 skipped); first divergence: A/100_get_ehrs.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{"name":"#0","path":"/ehr_id/value"}], served=[{"name":"#0"}]
 - `QUERY-FIXTURE-B-loaded_db` (json, query/expected_results/loaded_db/B §columns): 14/18 B/loaded_db goldens matched (6 skipped); first divergence: B/103_get_compositions_within_timewindow.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: invalid AQL: found 'Identifier(\"TIMEWINDOW\")' at 5..6"})
 - `QUERY-FIXTURE-D-loaded_db` (json, query/expected_results/loaded_db/D §columns): 0/9 D/loaded_db goldens matched (17 skipped); first divergence: D/200_select_data_values_from_all_ehrs_contains_composition.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{"name":"#0","path":"/ehr_id/value"},{"name":"#1","path":"/time_created/value"},{"name":"#2","path":"/system_id/value"}], served=[{"name":"#0"},{"name":"#1"},{"name":"#2"}]
-- `CONT-OBS-state_ex_opt-protocol_ex_opt` (json, CONT-OBS-state_ex_opt-protocol_ex_opt): OBSERVATION without data (RM/schema OBSERVATION.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-OBS-state_ex_opt-protocol_ex_mand` (json, CONT-OBS-state_ex_opt-protocol_ex_mand): OBSERVATION without data (RM/schema OBSERVATION.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-OBS-state_ex_mand-protocol_ex_opt` (json, CONT-OBS-state_ex_mand-protocol_ex_opt): OBSERVATION without data (RM/schema OBSERVATION.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-OBS-state_ex_mand-protocol_ex_mand` (json, CONT-OBS-state_ex_mand-protocol_ex_mand): OBSERVATION without data (RM/schema OBSERVATION.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-EVENT-state_ex_opt` (json, CONT-EVENT-state_ex_opt): POINT_EVENT without data (RM/schema POINT_EVENT.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-EVENT-state_ex_mand` (json, CONT-EVENT-state_ex_mand): POINT_EVENT without data (RM/schema POINT_EVENT.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-ITEM_STR-type_item_tree` (json, CONT-ITEM_STR-type_item_tree): ITEM_STRUCTURE ITEM_TREE slot filled with ITEM_LIST (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_1plus-context_any` (json, CONT-COMP-content_card_1plus-context_any): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_opt-context_any` (json, CONT-COMP-content_card_opt-context_any): 3 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_mand-context_any` (json, CONT-COMP-content_card_mand-context_any): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_any-context_mand` (json, CONT-COMP-content_card_any-context_mand): 0 content item(s), no context → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_1plus-context_mand` (json, CONT-COMP-content_card_1plus-context_mand): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_3plus-context_mand` (json, CONT-COMP-content_card_3plus-context_mand): 3 content item(s), no context → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_opt-context_mand` (json, CONT-COMP-content_card_opt-context_mand): 0 content item(s), no context → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_mand-context_mand` (json, CONT-COMP-content_card_mand-context_mand): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-COMP-content_card_3to5-context_mand` (json, CONT-COMP-content_card_3to5-context_mand): 3 content item(s), no context → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-HIST-events_card_opt-summary_ex_opt` (json, CONT-HIST-events_card_opt-summary_ex_opt): 3 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-HIST-events_card_mand-summary_ex_opt` (json, CONT-HIST-events_card_mand-summary_ex_opt): 3 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-HIST-events_card_any-summary_ex_mand` (json, CONT-HIST-events_card_any-summary_ex_mand): 1 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-HIST-events_card_1plus-summary_ex_mand` (json, CONT-HIST-events_card_1plus-summary_ex_mand): 1 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-HIST-events_card_3plus-summary_ex_mand` (json, CONT-HIST-events_card_3plus-summary_ex_mand): 3 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-HIST-events_card_opt-summary_ex_mand` (json, CONT-HIST-events_card_opt-summary_ex_mand): 1 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-HIST-events_card_mand-summary_ex_mand` (json, CONT-HIST-events_card_mand-summary_ex_mand): 1 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-HIST-events_card_3to5-summary_ex_mand` (json, CONT-HIST-events_card_3to5-summary_ex_mand): 3 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-EVENT-type_interval_event` (json, CONT-EVENT-type_interval_event): POINT_EVENT rejected (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-ITEM_STR-type_any` (json, CONT-ITEM_STR-type_any): ITEM_LIST accepted in an open ITEM_STRUCTURE slot (any subtype): expected accepted (composition_create.yaml 201), got 422 ({"message":"2 validation error(s)","validationErrors":["/: does not conform to RM type COMPOSITION: expected _type \"ELEMENT\", found \"CLUSTER\"","/content[2]: does not conform to RM type EVALUATION:)
 - `CONT-ITEM_STR-type_item_list` (json, CONT-ITEM_STR-type_item_list): ITEM_STRUCTURE ITEM_LIST slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
 - `CONT-ITEM_STR-type_item_table` (json, CONT-ITEM_STR-type_item_table): ITEM_STRUCTURE ITEM_TABLE slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
 - `CONT-ITEM_STR-type_item_single` (json, CONT-ITEM_STR-type_item_single): ITEM_STRUCTURE ITEM_SINGLE slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-DV_BOOLEAN-anything_allowed` (json, CONT-DV_BOOLEAN-anything_allowed): DV_BOOLEAN without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-DV_TEXT-validate_open` (json, CONT-DV_TEXT-validate_open): DV_TEXT without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-DV_ORDINAL-validate_open` (json, CONT-DV_ORDINAL-validate_open): DV_ORDINAL without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-DV_COUNT-validate_open` (json, CONT-DV_COUNT-validate_open): DV_COUNT without magnitude (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_CODED_TEXT-validate_ext_term` (json, CONT-DV_CODED_TEXT-validate_ext_term): SNOMED-CT 99999999 not in the external code_list (C_CODE_PHRASE): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_SCALE-validate_constraint` (json, CONT-DV_SCALE-validate_constraint): DV_SCALE value 9.0 not in list {1.0} (C_REAL.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_COUNT-validate_list` (json, CONT-DV_COUNT-validate_list): DV_COUNT magnitude 7 not in the C_INTEGER list {3} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_QUANTITY-validate_property_units_mag` (json, CONT-DV_QUANTITY-validate_property_units_mag): DV_QUANTITY 702.9 mm3 in magnitude range [0,inf) (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/: does not conform to RM type COMPOSITION: missing field `territory`"]})
+- `CONT-DV_PROPORTION-validate_ratio` (json, CONT-DV_PROPORTION-validate_ratio): type 0 (ratio) not in list {0} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_PROPORTION-validate_unitary` (json, CONT-DV_PROPORTION-validate_unitary): type 0 (ratio) not in list {1} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_PROPORTION-validate_percent` (json, CONT-DV_PROPORTION-validate_percent): type 0 (ratio) not in list {2} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_PROPORTION-validate_fraction` (json, CONT-DV_PROPORTION-validate_fraction): type 0 (ratio) not in list {3} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_PROPORTION-validate_integer_fraction` (json, CONT-DV_PROPORTION-validate_integer_fraction): type 0 (ratio) not in list {4} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
 - `CONT-DV_PROPORTION-validate_any_fraction` (json, CONT-DV_PROPORTION-validate_any_fraction): DV_PROPORTION type 0 (ratio) not in list [3,4] (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-DV_DATE_TIME-validate_open` (json, CONT-DV_DATE_TIME-validate_open): DV_DATE_TIME without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_INTERVAL_DV_COUNT-validate_open` (json, CONT-DV_INTERVAL_DV_COUNT-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper` (json, CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list` (json, CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_QUANTITY-validate_open` (json, CONT-DV_INTERVAL_DV_QUANTITY-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower` (json, CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DATE_TIME-validate_open` (json, CONT-DV_INTERVAL_DV_DATE_TIME-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint` (json, CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range` (json, CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DATE-validate_open` (json, CONT-DV_INTERVAL_DV_DATE-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint` (json, CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range` (json, CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_TIME-validate_open` (json, CONT-DV_INTERVAL_DV_TIME-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint` (json, CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range` (json, CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DURATION-validate_open` (json, CONT-DV_INTERVAL_DV_DURATION-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DURATION-validate_constraint` (json, CONT-DV_INTERVAL_DV_DURATION-validate_constraint): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_DURATION-validate_range` (json, CONT-DV_INTERVAL_DV_DURATION-validate_range): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_ORDINAL-validate_open` (json, CONT-DV_INTERVAL_DV_ORDINAL-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint` (json, CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_SCALE-validate_open` (json, CONT-DV_INTERVAL_DV_SCALE-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_SCALE-validate_constraint` (json, CONT-DV_INTERVAL_DV_SCALE-validate_constraint): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_PROPORTION-validate_open` (json, CONT-DV_INTERVAL_DV_PROPORTION-validate_open): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio` (json, CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary` (json, CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage` (json, CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction` (json, CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction` (json, CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range` (json, CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"message":"1 validation error(s)","validationErrors":["/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)
+- `CONT-DV_DURATION-validate_fields` (json, CONT-DV_DURATION-validate_fields): DV_DURATION 'P1Y' uses a date field the PT pattern forbids (C_DURATION.pattern) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_DURATION-validate_range` (json, CONT-DV_DURATION-validate_range): DV_DURATION 'PT5H' outside [PT0S,PT1H] (C_DURATION.range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_DURATION-validate_fields_range` (json, CONT-DV_DURATION-validate_fields_range): DV_DURATION 'PT5H' outside [PT0S,PT1H] (C_DURATION.pattern+range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_TIME-validate_constraint` (json, CONT-DV_TIME-validate_constraint): DV_TIME partial time '22' violates HH:MM:SS (C_TIME.pattern) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_TIME-validate_range` (json, CONT-DV_TIME-validate_range): DV_TIME '23:59:59' outside [00:00:00,23:00:00] (C_TIME.range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_DATE-validate_constraint` (json, CONT-DV_DATE-validate_constraint): DV_DATE partial date '2021' violates yyyy-mm-dd (C_DATE.pattern) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_DATE-validate_range` (json, CONT-DV_DATE-validate_range): DV_DATE '2025-06-01' outside [2021-01-01,2021-12-31] (C_DATE.range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
 - `CONT-DV_DATE_TIME-validate_constraint` (json, CONT-DV_DATE_TIME-validate_constraint): DV_DATE_TIME '2021' missing mandatory month/day/time (C_DATE_TIME validity): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- `CONT-DV_EHR_URI-validate_open` (json, CONT-DV_EHR_URI-validate_open): DV_EHR_URI without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_DATE_TIME-validate_range` (json, CONT-DV_DATE_TIME-validate_range): DV_DATE_TIME '2025-06-01T12:00:00' outside the range (C_DATE_TIME.range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_PARSABLE-validate_value_formalism` (json, CONT-DV_PARSABLE-validate_value_formalism): formalism text/xyz not in list (C_STRING.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- `CONT-DV_MULTIMEDIA-validate_media_type` (json, CONT-DV_MULTIMEDIA-validate_media_type): media_type image/gif not in list (C_CODE_PHRASE): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
