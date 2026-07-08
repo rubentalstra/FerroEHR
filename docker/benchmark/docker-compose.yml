@@ -73,11 +73,14 @@ services:
       DB_PASS_ADMIN: ehrbase
       DB_USER: ehrbase_restricted
       DB_PASS: ehrbase_restricted
-      # Basic auth, matching ehrbase-rs's dev credentials (config parity §3.4).
+      # Basic auth. The clinical user is `ehrbase`/`ehrbase` (what the harness
+      # drives, matching ehrbase-rs's dev credentials — config parity §3.4); the
+      # admin user MUST have a distinct username or EHRbase's in-memory user
+      # store fails to start ("user should not exist").
       SECURITY_AUTHTYPE: BASIC
       SECURITY_AUTHUSER: ehrbase
       SECURITY_AUTHPASSWORD: ehrbase
-      SECURITY_AUTHADMINUSER: ehrbase
+      SECURITY_AUTHADMINUSER: ehrbase-admin
       SECURITY_AUTHADMINPASSWORD: ehrbase
       # Allow template overwrite so repeat runs are idempotent.
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "true"
