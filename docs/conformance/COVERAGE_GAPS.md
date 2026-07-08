@@ -109,7 +109,7 @@ unlock:
   ~62 master17 cases;
 - `HISTORY`/`EVENT`/`ITEM_STRUCTURE`-narrowing OPTs → the master16 block.
 
-Authored OPTs would live under `crates/ehrbase-conformance/fixtures/opts/` with
+Authored OPTs would live under `tools/conformance/fixtures/opts/` with
 a provenance note (marked `RunnerAuthored`, distinct from the vendored corpus —
 `docs/specs/openehr/**` is never edited). Fixing **F-open-41** first also
 unlocks the `DV_COUNT` cases without authoring.

@@ -18,12 +18,12 @@ Statement. Binding design: `docs/design/conformance-framework.md` (v2).
 
 - [x] Access-control (RBAC/ABAC) + version-signing implemented (the STANDARD
       profile's Signing capability is reachable).
-- [x] Seed scaffold `crates/ehrbase-conformance` (Cargo.toml + lib.rs + module
+- [x] Seed scaffold `tools/conformance` (Cargo.toml + lib.rs + module
       seams).
 
 ## Scope
 
-In: the `ehrbase-conformance` crate (case model, schedule parser, registry +
+In: the `conformance` crate (case model, schedule parser, registry +
 coverage guard, SUT client + modes, assertions, report generation, CLI,
 `scripts/conformance.sh`), the transcribed schedule cases (grown
 chapter-by-chapter), the runner-defined `SIGN-*` cases, and the generated
@@ -338,7 +338,7 @@ prove nothing was silently suppressed).
   path *is* specified in the query and is emitted for other column classes, so
   the **asymmetric omission** is the defect (`target_path_string` returns `None`
   for `PathTarget::Ehr`/`PathTarget::Version` in
-  `crates/ehrbase/src/aql/sql.rs`). Impact: every group-A query (EHR selects) and
+  `app/ehrbase/src/aql/sql.rs`). Impact: every group-A query (EHR selects) and
   the group-D EHR-column selects fail the golden column diff (`A/empty_db` 0/27,
   `A/loaded_db` 0/23, and master11 `execute_ad_hoc_query-empty_db` +
   `execute_stored_query-empty_db`); composition/entry projections pass

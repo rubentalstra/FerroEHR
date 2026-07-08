@@ -2,11 +2,11 @@
 
 - Status: in-progress
 - Started: 2026-07-08   Owner: —
-- Consumes: the CNF conformance framework (`crates/ehrbase-conformance`, PR #27)
-  + the benchmark harness (`crates/ehrbase-bench`, PR #28), which between them
+- Consumes: the CNF conformance framework (`tools/conformance`, PR #27)
+  + the benchmark harness (`tools/benchmark`, PR #28), which between them
   surfaced the findings below. The vendored openEHR specs are the oracle.
 - Compile required: yes — compiling, clippy-clean, tested increments; each fix
-  re-verified by the CNF framework (`cargo nextest run -p ehrbase-conformance
+  re-verified by the CNF framework (`cargo nextest run -p conformance
   --features self-host`) and, where relevant, the benchmark's dual-stack run.
 
 ## Why this phase

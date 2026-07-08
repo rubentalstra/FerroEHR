@@ -128,13 +128,13 @@ Fully integrated and tested — no residual TODOs:
   `CedarEngine` golden/validation tests + the Cedar≡RemotePdp differential test.
 - **Patient gate + matrix:** `dispatch::abac` unit tests (subject mismatch denies
   without an engine call, missing-claim 403, the pre/post matrix, uid parsing).
-- **Full ABAC HTTP e2e** (`crates/ehrbase-rest/tests/abac_e2e.rs`): through the
+- **Full ABAC HTTP e2e** (`app/ehrbase-rest/tests/abac_e2e.rs`): through the
   assembled router with a bearer `patient_id` token — a composition **create**
   for another patient's EHR is a pre-check 403 (and the ATNA layer records the
   deny), an own-patient create clears the gate, a composition **read** of another
   patient's EHR is a post-check 403, an own-patient read is served, a missing
   patient claim is 403, and disabling ABAC restores today's behaviour.
-- **Query path** (`crates/ehrbase/tests/persistence.rs`, testcontainers PG18):
+- **Query path** (`app/ehrbase/tests/persistence.rs`, testcontainers PG18):
   the projection-independence regression — subject scope filters rows and the
   touched EHR/template sets are collected even when the query projects neither
   `ehr_id` nor a template path.

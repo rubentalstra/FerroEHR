@@ -55,7 +55,7 @@ Runtime (both files):
 
 `FROM postgres:18.4` + `/docker-entrypoint-initdb.d/` init script(s), mirroring
 what our testcontainers bootstrap does today (**read
-`crates/ehrbase/src/db/` — the image must create exactly what
+`app/ehrbase/src/db/` — the image must create exactly what
 `run_migrations`'s bootstrap expects to already exist or be creatable**):
 
 - role `ehrbase` (login, password via `EHRBASE_DB_PASSWORD` env with a

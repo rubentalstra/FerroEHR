@@ -447,6 +447,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
+name = "benchmark"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "conformance",
+ "ehrbase",
+ "ehrbase-rest",
+ "hdrhistogram",
+ "jiff",
+ "reqwest 0.13.4",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "testcontainers",
+ "testcontainers-modules",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1023,6 +1043,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ca0197aee26d1ae37445ee532fefce43251d24cc7c166799f4d46817f1d3973"
 dependencies = [
  "crossbeam-utils",
+]
+
+[[package]]
+name = "conformance"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "base64 0.22.1",
+ "clap",
+ "ehrbase",
+ "ehrbase-rest",
+ "jiff",
+ "openehr-base",
+ "openehr-flat",
+ "openehr-its",
+ "openehr-rm",
+ "reqwest 0.13.4",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "testcontainers",
+ "testcontainers-modules",
+ "thiserror 2.0.18",
+ "tokio",
+ "tower",
+ "tower-http 0.7.0",
+ "uuid",
 ]
 
 [[package]]
@@ -1639,7 +1687,6 @@ dependencies = [
  "clap",
  "ehrbase-audit",
  "ehrbase-authz",
- "ehrbase-compat",
  "ehrbase-rest",
  "ehrbase-signing",
  "figment",
@@ -1714,62 +1761,6 @@ dependencies = [
  "tokio",
  "tracing",
  "wiremock",
-]
-
-[[package]]
-name = "ehrbase-bench"
-version = "0.1.0"
-dependencies = [
- "clap",
- "ehrbase",
- "ehrbase-conformance",
- "ehrbase-rest",
- "hdrhistogram",
- "jiff",
- "reqwest 0.13.4",
- "serde",
- "serde_json",
- "sysinfo",
- "testcontainers",
- "testcontainers-modules",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
-name = "ehrbase-compat"
-version = "0.1.0"
-dependencies = [
- "ehrbase-rest",
- "openehr-flat",
-]
-
-[[package]]
-name = "ehrbase-conformance"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "axum",
- "base64 0.22.1",
- "clap",
- "ehrbase",
- "ehrbase-rest",
- "jiff",
- "openehr-base",
- "openehr-flat",
- "openehr-its",
- "openehr-rm",
- "reqwest 0.13.4",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "testcontainers",
- "testcontainers-modules",
- "thiserror 2.0.18",
- "tokio",
- "tower",
- "tower-http 0.7.0",
- "uuid",
 ]
 
 [[package]]

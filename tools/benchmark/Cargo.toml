@@ -1,0 +1,49 @@
+[package]
+name = "benchmark"
+version = "0.1.0"
+description = "Honest benchmark harness: ehrbase-rs vs EHRbase (Java) at the openEHR REST surface (docs/design/benchmarking.md)"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[[bin]]
+name = "bench"
+path = "src/bin/bench.rs"
+
+[dependencies]
+# The SUT client is REUSED from the conformance crate so the request path is
+# provably identical for both targets (design §5) — the core fairness guarantee.
+conformance = { path = "../conformance" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+clap = { workspace = true }
+jiff = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+hdrhistogram = { workspace = true }
+sysinfo = { workspace = true }
+
+# `self-host` seeds/drives an in-process ehrbase-rs (testcontainers PG18) so the
+# harness can prove itself against a SUT it controls before comparing to Java
+# (design §9 step 1). Kept optional so the lean CLI drives external SUTs only.
+ehrbase = { path = "../../app/ehrbase", optional = true }
+ehrbase-rest = { path = "../../app/ehrbase-rest", optional = true }
+testcontainers = { workspace = true, optional = true }
+testcontainers-modules = { workspace = true, optional = true }
+
+[features]
+self-host = [
+    "dep:ehrbase",
+    "dep:ehrbase-rest",
+    "dep:testcontainers",
+    "dep:testcontainers-modules",
+    "conformance/self-host",
+]
+
+[lints]
+workspace = true

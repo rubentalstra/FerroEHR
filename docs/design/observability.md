@@ -44,13 +44,33 @@ binary (`ehrbase::telemetry`), and the HTTP surface lives in `ehrbase-rest`
 (`management/` module). No new crate — this is application wiring, not a
 reusable library (contrast `ehrbase-audit`).
 
-```
-                    ┌─ tracing-subscriber (fmt/json) ─▶ stdout ─▶ platform log collector
-tracing spans ──────┤
-                    └─ tracing-opentelemetry ─▶ OTLP/gRPC ─▶ collector ─▶ Tempo/Jaeger
-metrics! macros ────▶ metrics-exporter-prometheus ─▶ GET /management/prometheus ◀─ Prometheus
-                    └─ (optional) opentelemetry-otlp metrics push
-health indicators ──▶ /management/health{,/liveness,/readiness} ◀─ K8s probes / ehrbase healthcheck
+```mermaid
+flowchart LR
+    spans["tracing spans"]
+    sub["tracing-subscriber (fmt/json)"]
+    stdout["stdout"]
+    logcol["platform log collector"]
+    otel["tracing-opentelemetry"]
+    otlp["OTLP/gRPC"]
+    collector["collector"]
+    tempo["Tempo/Jaeger"]
+    spans --> sub --> stdout --> logcol
+    spans --> otel --> otlp --> collector --> tempo
+
+    metrics["metrics! macros"]
+    prom["metrics-exporter-prometheus"]
+    endpoint["GET /management/prometheus"]
+    prometheus["Prometheus"]
+    otlppush["(optional) opentelemetry-otlp metrics push"]
+    metrics --> prom --> endpoint
+    prometheus --> endpoint
+    metrics --> otlppush
+
+    health["health indicators"]
+    healthep["/management/health{,/liveness,/readiness}"]
+    probes["K8s probes / ehrbase healthcheck"]
+    health --> healthep
+    probes --> healthep
 ```
 
 ## 1. Signals
@@ -188,13 +208,13 @@ production can keep it off the public listener entirely.
 ## 4. Module layout & wiring
 
 ```
-crates/ehrbase/src/telemetry/         # binary-owned init (no new crate)
+app/ehrbase/src/telemetry/         # binary-owned init (no new crate)
 ├── mod.rs        # init() -> TelemetryGuard { reload_handle, prometheus_handle, otel shutdown }
 ├── layers.rs     # subscriber assembly: EnvFilter(reload) + fmt(json|pretty) + otel(optional)
 ├── prometheus.rs # recorder install, bucket ladders, build_info gauge
 └── samplers.rs   # background task: db pool gauges (+ tokio runtime gauges when verified)
 
-crates/ehrbase-rest/src/management/
+app/ehrbase-rest/src/management/
 ├── mod.rs          # router builder + access-level layer + per-endpoint gating
 ├── health.rs       # HealthIndicator trait + registry + aggregate/liveness/readiness
 ├── info.rs         # build/spec info (extends the P11 endpoint)

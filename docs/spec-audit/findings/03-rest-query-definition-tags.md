@@ -36,7 +36,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Spec:** `ITS-REST/specifications/operations/definition_query_store.yaml` +
   `responses/200_StoredQuery_stored.yaml` (`200 OK` … `headers: Location`) +
   `headers/Location_Query.yaml`; same for `definition_query_version_store.yaml`.
-- **Code:** `crates/ehrbase-rest/src/dispatch/definition.rs:156-178` (both store
+- **Code:** `app/ehrbase-rest/src/dispatch/definition.rs:156-178` (both store
   arms return `negotiate::empty(StatusCode::NO_CONTENT)`).
 - **Problem:** The spec's only success response for storing a query is `200 OK`
   carrying a `Location` header pointing at the created resource
@@ -58,7 +58,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Spec:** `operations/definition_query_version_store.yaml` →
   `responses/409_StoredQuery_version.yaml` ("`409 Conflict` … when a query with
   the given `qualified_query_name` and `version` already exists").
-- **Code:** `crates/ehrbase/src/service/stored_query.rs:20-33` (`INSERT … ON
+- **Code:** `app/ehrbase/src/service/stored_query.rs:20-33` (`INSERT … ON
   CONFLICT (reverse_domain_name, semantic_id, semver) DO UPDATE`); wired at
   `service/api/definition.rs:82-90`.
 - **Problem:** Re-storing the same name+version silently overwrites the prior
@@ -78,7 +78,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Spec:** `operations/definition_template_adl1.4_upload.yaml` →
   `responses/409_template_already_exists.yaml` ("`409 Conflict` … when a
   template with same `template_id` … already exists").
-- **Code:** `crates/ehrbase/src/service/template.rs:73-87` (`INSERT INTO
+- **Code:** `app/ehrbase/src/service/template.rs:73-87` (`INSERT INTO
   template_store … ON CONFLICT (template_id) DO UPDATE`).
 - **Problem:** Uploading an OPT whose `template_id` already exists silently
   replaces the stored template instead of returning `409`. Templates are
@@ -114,7 +114,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
   / `ehr_status_tags_update` (lines ~821, ~913): "Updates the list of **all**
   ITEM_TAG resources associated with a given target … **Providing an empty list
   will effectively remove all ITEM_TAG** associated with the given target."
-- **Code:** `crates/ehrbase/src/service/item_tag.rs:55-88` (`upsert_tags` only
+- **Code:** `app/ehrbase/src/service/item_tag.rs:55-88` (`upsert_tags` only
   inserts/updates each posted tag; nothing deletes tags absent from the body).
 - **Problem:** `PUT` semantics are "replace the whole tag set for the target".
   The implementation only merges in the posted tags — tags previously present
@@ -135,7 +135,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
   `ItemTag` schema `ehr-codegen.openapi.yaml:3169-3187` (`target:
   ObjectRef`, `owner_id: ObjectRefOfHierObjectId`, `additionalProperties:
   false`, properties = `key,value,target_path,target,owner_id`).
-- **Code:** `crates/ehrbase/src/service/item_tag.rs:111-130` (`tag_json`).
+- **Code:** `app/ehrbase/src/service/item_tag.rs:111-130` (`tag_json`).
 - **Problem:** The emitted object uses `"target": "<uuid>"` and `"owner_id":
   "<uuid>"` as **bare strings**, whereas the schema requires `OBJECT_REF`
   objects (`{ "id": {"_type":"HIER_OBJECT_ID","value":…}, "namespace":…,
@@ -156,7 +156,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
   version (e.g. `1.7.1`), or a pattern as partial prefix, in a form of
   `{major}` or `{major}.{minor}` … the highest (latest) version matching the
   prefix will be considered."
-- **Code:** `crates/ehrbase/src/service/stored_query.rs:44-50` (exact
+- **Code:** `app/ehrbase/src/service/stored_query.rs:44-50` (exact
   `semver = $3` match).
 - **Problem:** `GET …/query/org.openehr::x/1` or `…/1.0` returns `404` instead
   of resolving to the latest `1.x`/`1.0.x`. Only exact triples resolve.
@@ -177,7 +177,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
   stored queries … matched by `qualified_query_name` as **pattern** … when
   empty, treated as wildcard. `GET …/definition/query/org.openehr` will list
   all versions of all queries with names starting with `org.openehr`."
-- **Code:** `crates/ehrbase/src/service/stored_query.rs:67-84`
+- **Code:** `app/ehrbase/src/service/stored_query.rs:67-84`
   (`list_stored_queries` splits on `::` and matches `reverse_domain_name` **and**
   `semantic_id` exactly).
 - **Problem:** A prefix such as `org.openehr` (no `::`) is parsed as a bare
@@ -196,7 +196,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Spec:** `operations/definition_template_adl1.4_upload.yaml` declares only
   `201 / 400 / 409`; `responses/400_invalid_template_content.yaml` = "`400 Bad
   Request` … because of invalid content." There is no `422` on this operation.
-- **Code:** `crates/ehrbase/src/service/template.rs:57-66` maps OPT parse
+- **Code:** `app/ehrbase/src/service/template.rs:57-66` maps OPT parse
   failure + missing `template_id` to `ServiceError::Unprocessable` (→ 422 via
   `service/mod.rs:109`).
 - **Problem:** A malformed OPT XML upload returns `422 Unprocessable Entity`
@@ -211,7 +211,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Spec:** RM `item_tag.adoc` — `Inv_key_valid`: key "may not be empty or
   contain leading or trailing whitespace" (`not key.is_empty and
   key.is_justified`); `Inv_value_valid`: "If set, may not be empty."
-- **Code:** `crates/ehrbase/src/service/item_tag.rs:64-70` (only checks `key`
+- **Code:** `app/ehrbase/src/service/item_tag.rs:64-70` (only checks `key`
   is present as a string; no emptiness/whitespace check on key, none on value).
 - **Problem:** A tag with `key: ""`, `key: " x "`, or `value: ""` is accepted
   and stored, violating the RM invariants (should be `400`/`422`).
@@ -320,7 +320,7 @@ Severity counts: **critical 0, major 9, minor 7, info 4.**
 - **Severity:** info
 - **Spec:** `query.openapi.yaml` execute ops list `200/400/404/408` only — no
   `501`.
-- **Code:** `crates/ehrbase/src/service/api/mod.rs:21` (`impl QueryApi for
+- **Code:** `app/ehrbase/src/service/api/mod.rs:21` (`impl QueryApi for
   EhrbaseService {}`) → generated `NotImplemented` default
   (`openehr-its/.../generated/query.rs:168-210`).
 - **Problem:** None for now — 501 is an honest "not built yet" (better than a

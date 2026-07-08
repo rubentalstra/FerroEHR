@@ -117,7 +117,7 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
-      - run: cargo nextest run -p ehrbase-conformance
+      - run: cargo nextest run -p conformance
 
   # ── Build + tests against PostgreSQL 18.4 ────────────────────────────────────
   test:

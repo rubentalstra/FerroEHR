@@ -47,7 +47,7 @@ re-serializing via the generated `ToXml`.
 ### F-09-01: Duplicate template upload silently overwrites instead of returning 409 Conflict
 - **Severity:** critical
 - **Spec:** `ITS-REST/specifications/operations/definition_template_adl1.4_upload.yaml` (defines the `'409': 409_template_already_exists` response); `ITS-REST/specifications/responses/409_template_already_exists.yaml` ("409 Conflict is returned when a template with same template_id … already exists"); CNF `I_DEFINITION_ADL14/upload_opt/I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict.robot` ("upload same OPT again" → "server rejected OPT with status code 409").
-- **Code:** `crates/ehrbase/src/service/template.rs:73-88` (`store_template` uses `INSERT … ON CONFLICT (template_id) DO UPDATE SET … content = EXCLUDED.content`); `crates/ehrbase/src/service/api/definition.rs:23-34` (upload always yields the stored meta); `crates/ehrbase-rest/src/dispatch/definition.rs:60-70` (always renders `StatusCode::CREATED`).
+- **Code:** `app/ehrbase/src/service/template.rs:73-88` (`store_template` uses `INSERT … ON CONFLICT (template_id) DO UPDATE SET … content = EXCLUDED.content`); `app/ehrbase/src/service/api/definition.rs:23-34` (upload always yields the stored meta); `app/ehrbase-rest/src/dispatch/definition.rs:60-70` (always renders `StatusCode::CREATED`).
 - **Problem:** Re-uploading a template with an existing `template_id` succeeds with `201 Created` and **silently replaces the stored OPT content** (the `DO UPDATE` overwrites `content`, `concept`, `root_archetype`, and resets `created_at`). The ITS-REST contract and the CNF `upload_opt-valid_opt_twice_conflict` case both require `409 Conflict` (the ADL2 "twice without conflict" variant is explicitly tagged `future`/`NOT APPLICABLE FOR ADL 1.4`, so for ADL 1.4 the second upload must be rejected). This is a spec/CNF conformance failure and destroys the prior template version on collision.
 - **Fix:** In `store_template`, detect the pre-existing `template_id` (either a plain `INSERT` that surfaces the unique-violation, or a `SELECT … FOR UPDATE` pre-check) and return a distinct `ServiceError::Conflict` mapped to `409` at the REST edge (add the variant if absent). Only insert when new; never `DO UPDATE` the content for adl1.4. The WebTemplate cache (`web_templates`) should be invalidated for that id when a legitimate replacement path is later added (admin), but on the adl1.4 endpoint the second upload must not mutate state.
 - [x] fixed — `store_template` is now insert-only (`ON CONFLICT (template_id) DO
@@ -98,7 +98,7 @@ re-serializing via the generated `ToXml`.
 ### F-09-04: 201 upload response omits `Location` header and returns JSON metadata instead of the OPT representation
 - **Severity:** minor
 - **Spec:** `ITS-REST/specifications/responses/201_Template_adl1_4_upload.yaml` — "Server assigned `template_id` SHOULD be returned as part of the `Location` response header", "An `ETag` … MAY be present", body per `Prefer` is either empty or the full `application/xml` `OperationalTemplate` representation.
-- **Code:** `crates/ehrbase-rest/src/dispatch/definition.rs:60-70` (`negotiate::respond(h, StatusCode::CREATED, &meta)`); `crates/ehrbase/src/service/api/definition.rs:33` (returns the JSON meta descriptor); no `Location` anywhere in `crates/ehrbase-rest/src`.
+- **Code:** `app/ehrbase-rest/src/dispatch/definition.rs:60-70` (`negotiate::respond(h, StatusCode::CREATED, &meta)`); `app/ehrbase/src/service/api/definition.rs:33` (returns the JSON meta descriptor); no `Location` anywhere in `app/ehrbase-rest/src`.
 - **Problem:** The upload returns a JSON metadata object as the 201 body regardless of `Accept`/`Prefer`, sets no `Location` header (SHOULD), and does not honour `Prefer: return=representation`/`return=minimal` (the CNF conflict suite sets `Prefer=return=representation`). The spec's 201 body content-type is `application/xml` (the OPT) or empty. This is a wire-shape divergence, not a hard MUST, but it fails the representation/`Location` expectations the CNF harness is written around.
 - **Fix:** Set `Location: {base}/definition/template/adl1.4/{template_id}` on 201; honour `Prefer` — empty body for `return=minimal`, the stored OPT XML (`application/xml`) for `return=representation`. Drop the JSON-metadata body from this endpoint.
 - [ ] fixed
@@ -153,11 +153,11 @@ re-serializing via the generated `ToXml`.
 ### F-09-08: `TemplateMetadata.concept`/`archetype_id` emitted as JSON `null`; `version` never emitted
 - **Severity:** minor
 - **Spec:** `ITS-REST/specifications/schemas/definition/TemplateMetadata.yaml` — `template_id`, `concept`, `archetype_id`, `created_timestamp` are all `required` strings; `version` is optional.
-- **Code:** `crates/ehrbase/src/service/template.rs:67-71` (`concept`/`root_archetype` become `None` when empty), `126-137` (`template_json` emits `concept`/`archetype_id` as `null` when absent).
+- **Code:** `app/ehrbase/src/service/template.rs:67-71` (`concept`/`root_archetype` become `None` when empty), `126-137` (`template_json` emits `concept`/`archetype_id` as `null` when absent).
 - **Problem:** If an OPT has an empty `concept` or root archetype id, the list/metadata JSON emits `null` for a field the schema marks as a required string — a schema violation. Also `version` is never populated (acceptable, it is optional). Real conformant OPTs always carry a non-empty concept and root archetype, so this only bites on degenerate input, but the `.then_some(...)` → `null` path is a latent contract break.
 - **Fix:** Emit `""` (or reject the OPT at upload as invalid content, `400`) rather than `null` for the required `concept`/`archetype_id`; an OPT with no concept/root archetype is arguably invalid template content per `400_invalid_template_content`.
 - [ ] fixed — (W3-D note: not addressed in the opt14/codegen wave; the fix
-  lives in `crates/ehrbase/src/service/template.rs`, owned by the app-crate
+  lives in `app/ehrbase/src/service/template.rs`, owned by the app-crate
   work stream, same as F-09-04.)
 
 ## Hygiene notes

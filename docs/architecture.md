@@ -14,10 +14,13 @@ PostgreSQL-18-native internals (ADR-008). Two layers:
    the openEHR specifications as the authority. EHRbase and other CDRs are
    prior art, not an oracle. This is the remaining Stage-1 work.
 
-Authoritative roadmap: `docs/plans/` (phases `00–20, 99`) + `docs/PROGRESS.md`.
+Authoritative roadmap: `docs/plans/` (phases `00–20, 99` + SM phases) +
+`docs/PROGRESS.md`.
 Decisions: `docs/ADRs/ADR-004` (spec codegen), `ADR-005` (ITS codegen),
 `ADR-006` (application philosophy), **`ADR-008` (greenfield storage + AQL +
-conformance target — read first)**.
+conformance target — read first)**, `ADR-010` (SM-aligned service
+architecture + the `app/*`/`crates/*` two-layer workspace layout; design set
+at `docs/design/sm-platform/`).
 
 ## The generated openEHR foundation (done)
 
@@ -80,13 +83,13 @@ CONTAINS chains; `jsonb_path_query_first` + jsonpath item methods +
 document pre-filters) → execute (`sqlx`) → `RESULT_SET` (1.0.3). The feature
 envelope is documented per construct; rejections are explicit typed errors.
 
-## REST surface + auth (`ehrbase-rest`, `ehrbase-compat`, built at P11/P12)
+## REST surface + auth (`ehrbase-rest`, built at P11/P12)
 
 Base path `/ehrbase/rest/openehr/v1`, implementing the generated ITS-REST
 1.0.3 server traits over `axum` with a `tower-http` middleware stack and
 content negotiation (canonical JSON/XML via `openehr-its`). Extensions: admin
 API, `/rest/status`, `/management/*`, item tags, EhrScape compatibility
-(`ehrbase-compat`). **Auth (Stage 1):** Basic + OAuth2/OIDC via
+(a feature-gated `ehrscape` adapter module in `ehrbase-rest`, P17). **Auth (Stage 1):** Basic + OAuth2/OIDC via
 `argon2`/`jsonwebtoken`/`oauth2`/`openidconnect`; RBAC is Stage 2.
 
 ## Templates, validation, FLAT (P13–P15, P17)
@@ -104,9 +107,20 @@ constraints, `RETURNING OLD/NEW`, `JSON_TABLE` + SQL/JSON functions and
 jsonpath item methods (PG 17), B-tree skip scan, async I/O, STORED generated
 columns for hot extractions. See `docs/postgres-features.md`.
 
-## Workspace layout (13 crates)
+## Workspace layout
 
-Dependencies point downward only: app (`ehrbase-*`) → spec (`openehr-*`).
+Three physical directories (ADR-010; move executed 2026-07-08):
+**`app/*`** holds the application crates (`ehrbase`, `ehrbase-sm` [SM-1],
+`ehrbase-rest`, `ehrbase-audit`, `ehrbase-authz`,
+`ehrbase-signing`); **`tools/*`** holds the dev/verification tooling that is
+*not* part of the shipped application (`conformance` — the ECC runner,
+`benchmark`); **`crates/*`** holds the generated openEHR spec layer + its
+tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root workspace
+`members = ["crates/*", "app/*", "tools/*"]`.
+Dependencies point downward only: `tools/* → app/* → crates/openehr-*`. The service seam is the SM-aligned native API
+(`ehrbase-sm`, ADR-010): one trait per SM Platform Service Model interface,
+with `ehrbase-rest` as the ITS-REST protocol adapter — see
+`docs/design/sm-platform/08-target-architecture.md`.
 
 | Crate | Role | Kind |
 |---|---|---|
@@ -120,9 +134,14 @@ Dependencies point downward only: app (`ehrbase-*`) → spec (`openehr-*`).
 | `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`, P16) | tooling |
 | `openehr-derive` | `#[derive(OpenEhrType)]` proc-macro | tooling |
-| `ehrbase-rest` | ITS-REST server (axum) + auth | application |
-| `ehrbase-compat` | EhrScape, admin, WebTemplate/FLAT endpoints | application |
+| `ehrbase-rest` | ITS-REST server (axum) + auth + EhrScape adapter (P17) | application |
+| `ehrbase-sm` | SM native-API traits + shared service types (SM-1) | application |
+| `ehrbase-audit` | IHE ATNA audit (the SM System Log component) | application |
+| `ehrbase-authz` | RBAC/ABAC authorization engine | application |
+| `ehrbase-signing` | Version signing | application |
 | `ehrbase` | Binary: storage, service layer, AQL engine, versioning, CLI | application |
+| `conformance` | ECC conformance runner (`tools/*`) | tooling |
+| `benchmark` | Benchmark harness (`tools/*`) | tooling |
 
 ## Build sequence & stages
 

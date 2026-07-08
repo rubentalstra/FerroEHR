@@ -8,7 +8,7 @@ Layers audited:
 - Runtime: `crates/openehr-its/src/xml/runtime.rs`, `mod.rs`
 - Generated impls: `crates/openehr-its/src/xml/generated/impls.rs`
 - Emitter: `crates/openehr-codegen/src/{emit_xml.rs,xsd.rs}` + `src/emit.rs::xml_types`/`xml_fields`, wired in `src/main.rs::cmd_emit_xml`
-- REST negotiation: `crates/ehrbase-rest/src/negotiate.rs`, `dispatch/ehr.rs`
+- REST negotiation: `app/ehrbase-rest/src/negotiate.rs`, `dispatch/ehr.rs`
 - Gates: `crates/openehr-its/tests/xml_roundtrip.rs`, `xml_ehrbase.rs`, `xml_hash.rs`, `xml_smoke.rs`
 
 ## Summary
@@ -54,7 +54,7 @@ Counts: 1 critical, 2 major, 4 minor, 4 info.
   `Ehr.xsd` defines `EHR_STATUS`/`EHR_ACCESS` as `extension base="LOCATABLE"`.
 - **Code:** `crates/openehr-its/src/xml/generated/impls.rs` — `EhrStatus` (impl at
   :7898, emits `archetype_node_id` as element at :7921), `EhrAccess` (:7788/:7811),
-  and 14 more. Served as XML: `crates/ehrbase-rest/src/dispatch/ehr.rs:98,107,117`
+  and 14 more. Served as XML: `app/ehrbase-rest/src/dispatch/ehr.rs:98,107,117`
   (`respond_rm::<EhrStatus>`). Root cause: `crates/openehr-codegen/src/xsd.rs`
   `RM_FILES_V1` (:216) has no `Ehr.xsd`/`Demographic.xsd` (none exists in the
   1.0.2 `ALL/` bundle); `crates/openehr-codegen/src/emit_xml.rs:114-125` falls
@@ -242,7 +242,7 @@ Counts: 1 critical, 2 major, 4 minor, 4 info.
 - **Spec:** `ALL/Version.xsd` defines `VERSION`, `ORIGINAL_VERSION`,
   `IMPORTED_VERSION` canonical XML; `ORIGINAL_VERSION.data` is `xs:anyType`
   (:20).
-- **Code:** `crates/ehrbase-rest/src/negotiate.rs::respond` (:270-284) returns
+- **Code:** `app/ehrbase-rest/src/negotiate.rs::respond` (:270-284) returns
   `ApiError::NotAcceptable` (406) for XML on VERSION-family/revision-history/
   contribution responses, stating they "have no spec-defined canonical-XML
   shape." They partly do (Version.xsd), but the wrapped `data` maps to

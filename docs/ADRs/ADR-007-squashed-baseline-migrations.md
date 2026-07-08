@@ -13,10 +13,10 @@
 >
 > This ADR's central deliverable — a squashed EHRbase-Flyway baseline
 > (`migrations/{ext,ehr}/0001_baseline.sql`), the verbatim
-> `crates/ehrbase/tests/resources/legacy_schema/` fixture, and the
+> `app/ehrbase/tests/resources/legacy_schema/` fixture, and the
 > `baseline_schema_is_identical_to_legacy_flyway_chain` equality gate — was
 > **replaced by ADR-008 §2** the same day. The tree now ships the greenfield
-> PG18-native schema instead: `crates/ehrbase/migrations/ehr/0001_schema.sql`
+> PG18-native schema instead: `app/ehrbase/migrations/ehr/0001_schema.sql`
 > (unified `node` table + temporal `vo_version` + `ehr`/`audit`/`contribution`/
 > `template_store`/`stored_query`/`item_tag`) and
 > `ext/0001_openehr_functions.sql`. **The `legacy_schema/` fixture and the
@@ -51,7 +51,7 @@ surfaced when P09 implemented that:
 **Ship one clean baseline migration per schema, squashed from the legacy
 chain's end state, and prove equivalence with an executable equality gate.**
 
-1. **Baselines** — `crates/ehrbase/migrations/{ext,ehr}/0001_baseline.sql`,
+1. **Baselines** — `app/ehrbase/migrations/{ext,ehr}/0001_baseline.sql`,
    created with the official CLI (`sqlx migrate add --sequential baseline`).
    Content was derived by applying the full legacy chain to PostgreSQL 18 and
    dumping the result (`pg_dump --schema-only`), then organized for
@@ -69,7 +69,7 @@ chain's end state, and prove equivalence with an executable equality gate.**
    table (mirroring Flyway's two `flyway_schema_history` tables). `ext` runs
    first because `ehr` DDL references its collation.
 3. **Equality gate** — the original 40-file chain is preserved verbatim under
-   `crates/ehrbase/tests/resources/legacy_schema/` (only renamed to sortable
+   `app/ehrbase/tests/resources/legacy_schema/` (only renamed to sortable
    numbers; V15's `.conf` folded into a leading comment). The integration
    test `baseline_schema_is_identical_to_legacy_flyway_chain` applies the
    legacy chain (psql inside the PG 18 testcontainer) and the baseline to two

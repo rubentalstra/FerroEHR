@@ -6,10 +6,10 @@
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-/// The OPT corpus dir (`crates/ehrbase/tests/resources/service`), resolved from
+/// The OPT corpus dir (`app/ehrbase/tests/resources/service`), resolved from
 /// this crate's manifest dir.
 fn corpus_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../ehrbase/tests/resources/service")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../app/ehrbase/tests/resources/service")
 }
 
 /// Recursively collect every `*.opt` file under `dir`.

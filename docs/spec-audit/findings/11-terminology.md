@@ -42,10 +42,10 @@ Counts: **critical 0 · major 4 · minor 3 · info 2**.
   `523` deleted, `666` attestation, `816` restoration, `817` format conversion,
   `253` unknown); RM `common` `AUDIT_DETAILS.change_type: DV_CODED_TEXT` coded
   from that group; a `CODE_PHRASE.code_string` must be the group's **code**.
-- **Code:** `crates/ehrbase/src/service/contribution.rs:213-224` (`audit_details`);
-  callers pass rubric strings — `crates/ehrbase/src/service/vobject.rs:55-57`
+- **Code:** `app/ehrbase/src/service/contribution.rs:213-224` (`audit_details`);
+  callers pass rubric strings — `app/ehrbase/src/service/vobject.rs:55-57`
   (`CREATION="creation"`, `MODIFICATION="modification"`, `DELETED="deleted"`) and
-  `crates/ehrbase/src/service/contribution.rs:29-31`.
+  `app/ehrbase/src/service/contribution.rs:29-31`.
 - **Problem:** `audit_details` sets **both** `change_type.value` and
   `change_type.defining_code.code_string` to the same `change_type` argument,
   which is the human rubric ("creation"/"modification"/"deleted"). So the emitted

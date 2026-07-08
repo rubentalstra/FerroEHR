@@ -27,7 +27,7 @@ done
 
 # Build the harness once (release for realistic client-side cost).
 echo "==> building bench harness"
-( cd "$REPO_ROOT" && cargo build --release -p ehrbase-bench --bin bench )
+( cd "$REPO_ROOT" && cargo build --release -p benchmark --bin bench )
 BENCH="$REPO_ROOT/target/release/bench"
 
 wait_ready() {

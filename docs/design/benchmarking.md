@@ -192,12 +192,12 @@ thermal/cache drift doesn't systematically favour whichever went first.
 
 ## 5. Implementation — a Rust harness, not a shell script
 
-A new workspace crate **`crates/ehrbase-bench`** (a binary; never a dependency
+A new workspace crate **`tools/benchmark`** (a binary; never a dependency
 of the server), reusing the conformance infrastructure so the client path is
 identical to what we already trust:
 
 ```
-crates/ehrbase-bench/src/
+tools/benchmark/src/
 ├── main.rs        # clap CLI: bench run / report / seed
 ├── workload.rs    # the W1..W13 scenarios (pre-registered), from CNF fixtures
 ├── driver.rs      # closed/open-loop drivers over the conformance SutClient
@@ -287,7 +287,7 @@ Numbers with provenance and both directions. Never "ehrbase-rs is faster."
 
 ## 9. Implementation plan
 
-1. `crates/ehrbase-bench` scaffold: CLI, `Target`, the `SutClient` reuse, the
+1. `tools/benchmark` scaffold: CLI, `Target`, the `SutClient` reuse, the
    deterministic seeder (empty→1M), HdrHistogram measurement with
    coordinated-omission correction. Prove it against the self-hosted ehrbase-rs.
 2. Workload W1–W13 from the CNF fixtures; the pre-flight conformance gate;
