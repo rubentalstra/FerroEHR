@@ -1,6 +1,6 @@
 {
   "sut": {
-    "base_url": "http://127.0.0.1:63643/ehrbase/rest/openehr/v1",
+    "base_url": "http://127.0.0.1:54408/ehrbase/rest/openehr/v1",
     "rm_version": "1.2.0",
     "auth_mode": "basic (self-host, RBAC off)"
   },
@@ -8,7 +8,7 @@
     "repo": "openEHR/specifications-CNF",
     "commit": "33251d2a"
   },
-  "started": "2026-07-07T22:42:52.121563Z",
+  "started": "2026-07-08T13:11:04.06602Z",
   "selection": {
     "filter": null,
     "profile": null,
@@ -32,7 +32,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.has_ehr-existing_ehr_id",
-      "duration_ms": 182
+      "duration_ms": 204
     },
     {
       "id": "I_EHR_SERVICE.has_ehr-existing_subject_id",
@@ -49,7 +49,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.has_ehr-existing_subject_id",
-      "duration_ms": 138
+      "duration_ms": 156
     },
     {
       "id": "I_EHR_SERVICE.has_ehr-non_existing_ehr_id",
@@ -66,7 +66,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.has_ehr-non_existing_ehr_id",
-      "duration_ms": 59
+      "duration_ms": 57
     },
     {
       "id": "I_EHR_SERVICE.has_ehr-non_existing_subject_id",
@@ -83,7 +83,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.has_ehr-non_existing_subject_id",
-      "duration_ms": 59
+      "duration_ms": 71
     },
     {
       "id": "I_EHR_SERVICE.create_ehr-main",
@@ -100,7 +100,7 @@
       "total_data_sets": 16,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.create_ehr-main",
-      "duration_ms": 2182
+      "duration_ms": 2189
     },
     {
       "id": "I_EHR_SERVICE.create_ehr-same_ehr_twice",
@@ -117,7 +117,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.create_ehr-same_ehr_twice",
-      "duration_ms": 127
+      "duration_ms": 380
     },
     {
       "id": "I_EHR_SERVICE.create_ehr-two_ehrs_same_patient",
@@ -134,7 +134,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.create_ehr-two_ehrs_same_patient",
-      "duration_ms": 135
+      "duration_ms": 496
     },
     {
       "id": "I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id",
@@ -151,7 +151,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id",
-      "duration_ms": 131
+      "duration_ms": 207
     },
     {
       "id": "I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id",
@@ -168,7 +168,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id",
-      "duration_ms": 128
+      "duration_ms": 143
     },
     {
       "id": "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id",
@@ -185,7 +185,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id",
-      "duration_ms": 57
+      "duration_ms": 56
     },
     {
       "id": "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id",
@@ -202,7 +202,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id",
-      "duration_ms": 57
+      "duration_ms": 68
     },
     {
       "id": "I_EHR_STATUS.get_ehr_status-get_by_ehr_id",
@@ -219,7 +219,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.get_ehr_status-get_by_ehr_id",
-      "duration_ms": 131
+      "duration_ms": 145
     },
     {
       "id": "I_EHR_STATUS.get_ehr_status-bad_ehr",
@@ -236,7 +236,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.get_ehr_status-bad_ehr",
-      "duration_ms": 58
+      "duration_ms": 56
     },
     {
       "id": "I_EHR_STATUS.set_ehr_queryable-existing_ehr",
@@ -253,7 +253,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.set_ehr_queryable-existing_ehr",
-      "duration_ms": 258
+      "duration_ms": 281
     },
     {
       "id": "I_EHR_STATUS.set_ehr_queryable-bad_ehr",
@@ -270,7 +270,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.set_ehr_queryable-bad_ehr",
-      "duration_ms": 59
+      "duration_ms": 63
     },
     {
       "id": "I_EHR_STATUS.set_ehr_modifiable-existing_ehr",
@@ -287,7 +287,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.set_ehr_modifiable-existing_ehr",
-      "duration_ms": 259
+      "duration_ms": 275
     },
     {
       "id": "I_EHR_STATUS.set_ehr_modifiable-bad_ehr",
@@ -304,7 +304,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.set_ehr_modifiable-bad_ehr",
-      "duration_ms": 59
+      "duration_ms": 57
     },
     {
       "id": "I_EHR_STATUS.clear_ehr_queryable-existing_ehr",
@@ -321,7 +321,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.clear_ehr_queryable-existing_ehr",
-      "duration_ms": 257
+      "duration_ms": 277
     },
     {
       "id": "I_EHR_STATUS.clear_ehr_queryable-bad_ehr",
@@ -338,7 +338,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.clear_ehr_queryable-bad_ehr",
-      "duration_ms": 57
+      "duration_ms": 56
     },
     {
       "id": "I_EHR_STATUS.clear_ehr_modifiable-existing_ehr",
@@ -355,7 +355,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.clear_ehr_modifiable-existing_ehr",
-      "duration_ms": 256
+      "duration_ms": 271
     },
     {
       "id": "I_EHR_STATUS.clear_ehr_modifiable-bad_ehr",
@@ -372,7 +372,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_STATUS.clear_ehr_modifiable-bad_ehr",
-      "duration_ms": 58
+      "duration_ms": 63
     },
     {
       "id": "FIXTURE-I_EHR_SERVICE.create_ehr-invalid_status",
@@ -389,7 +389,7 @@
       "total_data_sets": 0,
       "message": "2/11 invalid EHR_STATUS data sets were rejected (the rest were accepted)",
       "schedule_ref": "master06-func_tc_ehr.adoc §Test Data Sets (INVALID class 2)",
-      "duration_ms": 746
+      "duration_ms": 809
     },
     {
       "id": "I_EHR_COMPOSITION.create_composition-event",
@@ -406,7 +406,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.create_composition-event",
-      "duration_ms": 213
+      "duration_ms": 233
     },
     {
       "id": "I_EHR_COMPOSITION.create_composition-persistent",
@@ -423,7 +423,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.create_composition-persistent",
-      "duration_ms": 205
+      "duration_ms": 213
     },
     {
       "id": "I_EHR_COMPOSITION.create_composition-same_opt_twice",
@@ -440,7 +440,7 @@
       "total_data_sets": 0,
       "message": "expected a negative (4xx) response, got 201",
       "schedule_ref": "I_EHR_COMPOSITION.create_composition-same_opt_twice",
-      "duration_ms": 327
+      "duration_ms": 340
     },
     {
       "id": "I_EHR_COMPOSITION.create_composition-invalid_event",
@@ -457,7 +457,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.create_composition-invalid_event",
-      "duration_ms": 192
+      "duration_ms": 206
     },
     {
       "id": "I_EHR_COMPOSITION.create_composition-invalid_persistent",
@@ -474,7 +474,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.create_composition-invalid_persistent",
-      "duration_ms": 191
+      "duration_ms": 208
     },
     {
       "id": "I_EHR_COMPOSITION.create_composition-event_bad_opt",
@@ -491,7 +491,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.create_composition-event_bad_opt",
-      "duration_ms": 139
+      "duration_ms": 138
     },
     {
       "id": "I_EHR_COMPOSITION.create_composition-event_bad_ehr",
@@ -508,7 +508,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.create_composition-event_bad_ehr",
-      "duration_ms": 123
+      "duration_ms": 150
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_latest",
@@ -525,7 +525,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_latest",
-      "duration_ms": 271
+      "duration_ms": 277
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_latest-bad_composition",
@@ -559,7 +559,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_latest-bad_ehr",
-      "duration_ms": 60
+      "duration_ms": 64
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_at_time-no_time_arg",
@@ -576,7 +576,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_at_time-no_time_arg",
-      "duration_ms": 270
+      "duration_ms": 279
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_at_time-bad_composition",
@@ -593,7 +593,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_at_time-bad_composition",
-      "duration_ms": 130
+      "duration_ms": 127
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_at_time-bad_ehr",
@@ -610,7 +610,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_at_time-bad_ehr",
-      "duration_ms": 60
+      "duration_ms": 79
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_at_times",
@@ -627,7 +627,7 @@
       "total_data_sets": 3,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_at_times",
-      "duration_ms": 639
+      "duration_ms": 668
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_version",
@@ -644,7 +644,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_version",
-      "duration_ms": 270
+      "duration_ms": 297
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_version-bad_version",
@@ -678,7 +678,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_version-bad_ehr",
-      "duration_ms": 60
+      "duration_ms": 57
     },
     {
       "id": "I_EHR_COMPOSITION.get_composition_versions",
@@ -695,7 +695,7 @@
       "total_data_sets": 2,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_composition_versions",
-      "duration_ms": 462
+      "duration_ms": 494
     },
     {
       "id": "I_EHR_COMPOSITION.get_versioned_composition",
@@ -712,7 +712,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_versioned_composition",
-      "duration_ms": 269
+      "duration_ms": 278
     },
     {
       "id": "I_EHR_COMPOSITION.get_versioned_composition-non_existent",
@@ -729,7 +729,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_versioned_composition-non_existent",
-      "duration_ms": 128
+      "duration_ms": 153
     },
     {
       "id": "I_EHR_COMPOSITION.get_versioned_composition-bad_ehr",
@@ -746,7 +746,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.get_versioned_composition-bad_ehr",
-      "duration_ms": 59
+      "duration_ms": 58
     },
     {
       "id": "I_EHR_COMPOSITION.update_composition-event",
@@ -763,7 +763,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.update_composition-event",
-      "duration_ms": 282
+      "duration_ms": 291
     },
     {
       "id": "I_EHR_COMPOSITION.update_composition-persistent",
@@ -780,7 +780,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.update_composition-persistent",
-      "duration_ms": 265
+      "duration_ms": 283
     },
     {
       "id": "I_EHR_COMPOSITION.update_composition-non_existent",
@@ -797,7 +797,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.update_composition-non_existent",
-      "duration_ms": 184
+      "duration_ms": 198
     },
     {
       "id": "I_EHR_COMPOSITION.update_composition-wrong_template",
@@ -814,7 +814,7 @@
       "total_data_sets": 0,
       "message": "expected a negative (4xx) response, got 200",
       "schedule_ref": "I_EHR_COMPOSITION.update_composition-wrong_template",
-      "duration_ms": 341
+      "duration_ms": 371
     },
     {
       "id": "I_EHR_COMPOSITION.delete_composition-event",
@@ -831,7 +831,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.delete_composition-event",
-      "duration_ms": 270
+      "duration_ms": 285
     },
     {
       "id": "I_EHR_COMPOSITION.delete_composition-persistent",
@@ -848,7 +848,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.delete_composition-persistent",
-      "duration_ms": 263
+      "duration_ms": 284
     },
     {
       "id": "I_EHR_COMPOSITION.delete_composition-non_existent",
@@ -865,7 +865,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_COMPOSITION.delete_composition-non_existent",
-      "duration_ms": 128
+      "duration_ms": 130
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-valid_composition",
@@ -882,7 +882,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-valid_composition",
-      "duration_ms": 209
+      "duration_ms": 213
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-invalid_composition",
@@ -894,12 +894,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "expected a negative (4xx) response, got 201",
+      "status": "passed",
+      "passed_data_sets": 1,
+      "total_data_sets": 1,
+      "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-invalid_composition",
-      "duration_ms": 201
+      "duration_ms": 202
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-empty",
@@ -916,7 +916,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-empty",
-      "duration_ms": 130
+      "duration_ms": 141
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions",
@@ -933,7 +933,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions",
-      "duration_ms": 258
+      "duration_ms": 271
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt",
@@ -950,7 +950,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt",
-      "duration_ms": 136
+      "duration_ms": 135
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-event_composition",
@@ -967,7 +967,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-event_composition",
-      "duration_ms": 280
+      "duration_ms": 304
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-persistent_composition",
@@ -984,7 +984,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-persistent_composition",
-      "duration_ms": 276
+      "duration_ms": 296
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-delete",
@@ -1001,7 +1001,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-delete",
-      "duration_ms": 267
+      "duration_ms": 281
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid",
@@ -1013,12 +1013,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "expected a negative (4xx) response, got 201",
+      "status": "passed",
+      "passed_data_sets": 1,
+      "total_data_sets": 1,
+      "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid",
-      "duration_ms": 268
+      "duration_ms": 285
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation",
@@ -1035,7 +1035,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation",
-      "duration_ms": 256
+      "duration_ms": 266
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status",
@@ -1052,7 +1052,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status",
-      "duration_ms": 198
+      "duration_ms": 211
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status",
@@ -1069,7 +1069,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status",
-      "duration_ms": 197
+      "duration_ms": 211
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type",
@@ -1103,7 +1103,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-invalid_ehr_status",
-      "duration_ms": 187
+      "duration_ms": 200
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-valid_directory",
@@ -1120,7 +1120,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-valid_directory",
-      "duration_ms": 137
+      "duration_ms": 133
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory",
@@ -1137,7 +1137,7 @@
       "total_data_sets": 0,
       "message": "expected a negative (4xx) response, got 201",
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory",
-      "duration_ms": 200
+      "duration_ms": 191
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory",
@@ -1154,7 +1154,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory",
-      "duration_ms": 129
+      "duration_ms": 139
     },
     {
       "id": "I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory",
@@ -1171,7 +1171,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory",
-      "duration_ms": 202
+      "duration_ms": 211
     },
     {
       "id": "I_EHR_CONTRIBUTION.get_contribution-existing",
@@ -1188,7 +1188,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.get_contribution-existing",
-      "duration_ms": 263
+      "duration_ms": 272
     },
     {
       "id": "I_EHR_CONTRIBUTION.get_contribution-empty_ehr",
@@ -1205,7 +1205,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.get_contribution-empty_ehr",
-      "duration_ms": 128
+      "duration_ms": 129
     },
     {
       "id": "I_EHR_CONTRIBUTION.get_contribution-bad_ehr",
@@ -1222,7 +1222,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.get_contribution-bad_ehr",
-      "duration_ms": 57
+      "duration_ms": 67
     },
     {
       "id": "I_EHR_CONTRIBUTION.get_contribution-bad_contribution",
@@ -1239,7 +1239,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_CONTRIBUTION.get_contribution-bad_contribution",
-      "duration_ms": 260
+      "duration_ms": 280
     },
     {
       "id": "I_EHR_DIRECTORY.create_directory-empty_ehr",
@@ -1255,7 +1255,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.create_directory-empty_ehr",
-      "duration_ms": 138
+      "duration_ms": 137
     },
     {
       "id": "I_EHR_DIRECTORY.create_directory-ehr_with_directory",
@@ -1271,7 +1271,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.create_directory-ehr_with_directory",
-      "duration_ms": 195
+      "duration_ms": 211
     },
     {
       "id": "I_EHR_DIRECTORY.create_directory-bad_ehr",
@@ -1287,7 +1287,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.create_directory-bad_ehr",
-      "duration_ms": 58
+      "duration_ms": 60
     },
     {
       "id": "I_EHR_DIRECTORY.get_directory-ehr_root_directory",
@@ -1303,7 +1303,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.get_directory-ehr_root_directory",
-      "duration_ms": 196
+      "duration_ms": 210
     },
     {
       "id": "I_EHR_DIRECTORY.get_directory-bad_ehr",
@@ -1319,7 +1319,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.get_directory-bad_ehr",
-      "duration_ms": 71
+      "duration_ms": 57
     },
     {
       "id": "I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory",
@@ -1335,7 +1335,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory",
-      "duration_ms": 204
+      "duration_ms": 212
     },
     {
       "id": "I_EHR_DIRECTORY.get_directory_at_time-bad_ehr",
@@ -1351,7 +1351,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.get_directory_at_time-bad_ehr",
-      "duration_ms": 58
+      "duration_ms": 62
     },
     {
       "id": "I_EHR_DIRECTORY.update_directory-ehr_with_directory",
@@ -1367,7 +1367,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.update_directory-ehr_with_directory",
-      "duration_ms": 203
+      "duration_ms": 202
     },
     {
       "id": "I_EHR_DIRECTORY.update_directory-bad_ehr",
@@ -1383,7 +1383,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.update_directory-bad_ehr",
-      "duration_ms": 58
+      "duration_ms": 66
     },
     {
       "id": "I_EHR_DIRECTORY.delete_directory-ehr_with_directory",
@@ -1399,7 +1399,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.delete_directory-ehr_with_directory",
-      "duration_ms": 199
+      "duration_ms": 207
     },
     {
       "id": "I_EHR_DIRECTORY.delete_directory-bad_ehr",
@@ -1415,7 +1415,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_EHR_DIRECTORY.delete_directory-bad_ehr",
-      "duration_ms": 59
+      "duration_ms": 97
     },
     {
       "id": "I_DEFINITION_ADL14.upload_opt-valid_opt",
@@ -1432,7 +1432,7 @@
       "total_data_sets": 0,
       "message": "valid OPT minimal_evaluation.opt rejected with 409",
       "schedule_ref": "I_DEFINITION_ADL14.upload_opt-valid_opt",
-      "duration_ms": 64
+      "duration_ms": 65
     },
     {
       "id": "I_DEFINITION_ADL14.upload_opt-invalid_opt",
@@ -1449,7 +1449,7 @@
       "total_data_sets": 0,
       "message": "12/18 invalid OPTs were rejected (the rest were accepted)",
       "schedule_ref": "I_DEFINITION_ADL14.upload_opt-invalid_opt",
-      "duration_ms": 1106
+      "duration_ms": 1174
     },
     {
       "id": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
@@ -1466,7 +1466,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
-      "duration_ms": 60
+      "duration_ms": 62
     },
     {
       "id": "I_DEFINITION_QUERY.valid_query-valid",
@@ -1482,7 +1482,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_DEFINITION_QUERY.valid_query-valid",
-      "duration_ms": 62
+      "duration_ms": 68
     },
     {
       "id": "I_DEFINITION_QUERY.list_queries-non_empty",
@@ -1498,7 +1498,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_DEFINITION_QUERY.list_queries-non_empty",
-      "duration_ms": 122
+      "duration_ms": 134
     },
     {
       "id": "I_DEFINITION_QUERY.has_query-xxx",
@@ -1514,7 +1514,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_DEFINITION_QUERY.has_query-xxx",
-      "duration_ms": 117
+      "duration_ms": 119
     },
     {
       "id": "I_QUERY_SERVICE.smoke_test",
@@ -1530,7 +1530,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_QUERY_SERVICE.smoke_test",
-      "duration_ms": 61
+      "duration_ms": 67
     },
     {
       "id": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db",
@@ -1546,7 +1546,7 @@
       "total_data_sets": 0,
       "message": "adhoc empty_db golden mismatch (suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{\"name\":\"#0\",\"path\":\"/ehr_id/value\"}], served=[{\"name\":\"#0\"}]",
       "schedule_ref": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db",
-      "duration_ms": 64
+      "duration_ms": 67
     },
     {
       "id": "I_QUERY_SERVICE.execute_stored_query-empty_db",
@@ -1578,7 +1578,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db",
-      "duration_ms": 263
+      "duration_ms": 281
     },
     {
       "id": "QUERY-FIXTURE-invalid",
@@ -1594,7 +1594,7 @@
       "total_data_sets": 2,
       "message": null,
       "schedule_ref": "query/aql_queries_invalid/** §rejected",
-      "duration_ms": 118
+      "duration_ms": 132
     },
     {
       "id": "QUERY-FIXTURE-A-empty_db",
@@ -1610,7 +1610,7 @@
       "total_data_sets": 0,
       "message": "0/27 A/empty_db goldens matched (0 skipped); first divergence: A/100_get_ehrs.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{\"name\":\"#0\",\"path\":\"/ehr_id/value\"}], served=[{\"name\":\"#0\"}]",
       "schedule_ref": "query/expected_results/empty_db/A §columns/full",
-      "duration_ms": 1739
+      "duration_ms": 1796
     },
     {
       "id": "QUERY-FIXTURE-B-empty_db",
@@ -1626,7 +1626,7 @@
       "total_data_sets": 0,
       "message": "17/18 B/empty_db goldens matched (3 skipped); first divergence: B/103_get_compositions_within_timewindow.json: valid query rejected with status 400 (body: {\"error\":\"Bad Request\",\"message\":\"bad request: invalid AQL: found 'Identifier(\\\"TIMEWINDOW\\\")' at 5..6\"})",
       "schedule_ref": "query/expected_results/empty_db/B §columns/full",
-      "duration_ms": 1385
+      "duration_ms": 1372
     },
     {
       "id": "QUERY-FIXTURE-C-empty_db",
@@ -1642,7 +1642,7 @@
       "total_data_sets": 0,
       "message": "10/11 C/empty_db goldens matched (0 skipped); first divergence: C/103_get_entries_empty_db.json: valid query rejected with status 400 (body: {\"error\":\"Bad Request\",\"message\":\"bad request: invalid AQL: found 'Identifier(\\\"TIMEWINDOW\\\")' at 18..19\"})",
       "schedule_ref": "query/expected_results/empty_db/C §columns/full",
-      "duration_ms": 718
+      "duration_ms": 741
     },
     {
       "id": "QUERY-FIXTURE-D-empty_db",
@@ -1658,7 +1658,7 @@
       "total_data_sets": 0,
       "message": "7/18 D/empty_db goldens matched (8 skipped); first divergence: D/200_select_data_values_from_all_ehrs_contains_composition.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{\"name\":\"#0\",\"path\":\"/ehr_id/value\"},{\"name\":\"#1\",\"path\":\"/time_created/value\"},{\"name\":\"#2\",\"path\":\"/system_id/value\"}], served=[{\"name\":\"#0\"},{\"name\":\"#1\"},{\"name\":\"#2\"}]",
       "schedule_ref": "query/expected_results/empty_db/D §columns/full",
-      "duration_ms": 1180
+      "duration_ms": 1226
     },
     {
       "id": "QUERY-FIXTURE-A-loaded_db",
@@ -1674,7 +1674,7 @@
       "total_data_sets": 0,
       "message": "0/23 A/loaded_db goldens matched (4 skipped); first divergence: A/100_get_ehrs.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{\"name\":\"#0\",\"path\":\"/ehr_id/value\"}], served=[{\"name\":\"#0\"}]",
       "schedule_ref": "query/expected_results/loaded_db/A §columns",
-      "duration_ms": 1450
+      "duration_ms": 1501
     },
     {
       "id": "QUERY-FIXTURE-B-loaded_db",
@@ -1690,7 +1690,7 @@
       "total_data_sets": 0,
       "message": "14/18 B/loaded_db goldens matched (6 skipped); first divergence: B/103_get_compositions_within_timewindow.json: valid query rejected with status 400 (body: {\"error\":\"Bad Request\",\"message\":\"bad request: invalid AQL: found 'Identifier(\\\"TIMEWINDOW\\\")' at 5..6\"})",
       "schedule_ref": "query/expected_results/loaded_db/B §columns",
-      "duration_ms": 1394
+      "duration_ms": 1327
     },
     {
       "id": "QUERY-FIXTURE-C-loaded_db",
@@ -1706,7 +1706,7 @@
       "total_data_sets": 0,
       "message": "all 11 C/loaded_db goldens require id-substitution/binds (unrunnable verbatim)",
       "schedule_ref": "query/expected_results/loaded_db/C §columns",
-      "duration_ms": 19
+      "duration_ms": 14
     },
     {
       "id": "QUERY-FIXTURE-D-loaded_db",
@@ -1722,7 +1722,7 @@
       "total_data_sets": 0,
       "message": "0/9 D/loaded_db goldens matched (17 skipped); first divergence: D/200_select_data_values_from_all_ehrs_contains_composition.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{\"name\":\"#0\",\"path\":\"/ehr_id/value\"},{\"name\":\"#1\",\"path\":\"/time_created/value\"},{\"name\":\"#2\",\"path\":\"/system_id/value\"}], served=[{\"name\":\"#0\"},{\"name\":\"#1\"},{\"name\":\"#2\"}]",
       "schedule_ref": "query/expected_results/loaded_db/D §columns",
-      "duration_ms": 589
+      "duration_ms": 596
     },
     {
       "id": "CONT-COMP-content_card_any-context_any",
@@ -1734,12 +1734,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 6,
+      "total_data_sets": 6,
+      "message": null,
       "schedule_ref": "CONT-COMP-content_card_any-context_any",
-      "duration_ms": 0
+      "duration_ms": 1229
     },
     {
       "id": "CONT-COMP-content_card_1plus-context_any",
@@ -1751,12 +1751,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_1plus-context_any",
-      "duration_ms": 0
+      "duration_ms": 1248
     },
     {
       "id": "CONT-COMP-content_card_3plus-context_any",
@@ -1768,12 +1768,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 6,
+      "total_data_sets": 6,
+      "message": null,
       "schedule_ref": "CONT-COMP-content_card_3plus-context_any",
-      "duration_ms": 0
+      "duration_ms": 1195
     },
     {
       "id": "CONT-COMP-content_card_opt-context_any",
@@ -1785,12 +1785,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "3 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_opt-context_any",
-      "duration_ms": 0
+      "duration_ms": 1223
     },
     {
       "id": "CONT-COMP-content_card_mand-context_any",
@@ -1802,12 +1802,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_mand-context_any",
-      "duration_ms": 0
+      "duration_ms": 1238
     },
     {
       "id": "CONT-COMP-content_card_3to5-context_any",
@@ -1819,12 +1819,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 6,
+      "total_data_sets": 6,
+      "message": null,
       "schedule_ref": "CONT-COMP-content_card_3to5-context_any",
-      "duration_ms": 0
+      "duration_ms": 1191
     },
     {
       "id": "CONT-COMP-content_card_any-context_mand",
@@ -1836,12 +1836,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "0 content item(s), no context → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_any-context_mand",
-      "duration_ms": 0
+      "duration_ms": 1260
     },
     {
       "id": "CONT-COMP-content_card_1plus-context_mand",
@@ -1853,12 +1853,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_1plus-context_mand",
-      "duration_ms": 0
+      "duration_ms": 1241
     },
     {
       "id": "CONT-COMP-content_card_3plus-context_mand",
@@ -1870,12 +1870,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "3 content item(s), no context → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_3plus-context_mand",
-      "duration_ms": 0
+      "duration_ms": 1217
     },
     {
       "id": "CONT-COMP-content_card_opt-context_mand",
@@ -1887,12 +1887,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "0 content item(s), no context → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_opt-context_mand",
-      "duration_ms": 0
+      "duration_ms": 1255
     },
     {
       "id": "CONT-COMP-content_card_mand-context_mand",
@@ -1904,12 +1904,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_mand-context_mand",
-      "duration_ms": 0
+      "duration_ms": 1232
     },
     {
       "id": "CONT-COMP-content_card_3to5-context_mand",
@@ -1921,12 +1921,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'COMPOSITION.content cardinality / COMPOSITION.context occurrences' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "3 content item(s), no context → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-COMP-content_card_3to5-context_mand",
-      "duration_ms": 0
+      "duration_ms": 1185
     },
     {
       "id": "CONT-OBS-state_ex_opt-protocol_ex_opt",
@@ -1938,12 +1938,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "OBSERVATION without data (RM/schema OBSERVATION.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-OBS-state_ex_opt-protocol_ex_opt",
-      "duration_ms": 485
+      "duration_ms": 408
     },
     {
       "id": "CONT-OBS-state_ex_opt-protocol_ex_mand",
@@ -1955,12 +1955,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "OBSERVATION without data (RM/schema OBSERVATION.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-OBS-state_ex_opt-protocol_ex_mand",
-      "duration_ms": 524
+      "duration_ms": 398
     },
     {
       "id": "CONT-OBS-state_ex_mand-protocol_ex_opt",
@@ -1972,12 +1972,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "OBSERVATION without data (RM/schema OBSERVATION.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-OBS-state_ex_mand-protocol_ex_opt",
-      "duration_ms": 673
+      "duration_ms": 398
     },
     {
       "id": "CONT-OBS-state_ex_mand-protocol_ex_mand",
@@ -1989,12 +1989,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "OBSERVATION without data (RM/schema OBSERVATION.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-OBS-state_ex_mand-protocol_ex_mand",
-      "duration_ms": 436
+      "duration_ms": 409
     },
     {
       "id": "CONT-HIST-events_card_any-summary_ex_opt",
@@ -2006,12 +2006,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 3,
+      "total_data_sets": 3,
+      "message": null,
       "schedule_ref": "CONT-HIST-events_card_any-summary_ex_opt",
-      "duration_ms": 0
+      "duration_ms": 629
     },
     {
       "id": "CONT-HIST-events_card_1plus-summary_ex_opt",
@@ -2023,12 +2023,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 3,
+      "total_data_sets": 3,
+      "message": null,
       "schedule_ref": "CONT-HIST-events_card_1plus-summary_ex_opt",
-      "duration_ms": 0
+      "duration_ms": 717
     },
     {
       "id": "CONT-HIST-events_card_3plus-summary_ex_opt",
@@ -2040,12 +2040,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 3,
+      "total_data_sets": 3,
+      "message": null,
       "schedule_ref": "CONT-HIST-events_card_3plus-summary_ex_opt",
-      "duration_ms": 0
+      "duration_ms": 636
     },
     {
       "id": "CONT-HIST-events_card_opt-summary_ex_opt",
@@ -2057,12 +2057,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "3 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-HIST-events_card_opt-summary_ex_opt",
-      "duration_ms": 0
+      "duration_ms": 605
     },
     {
       "id": "CONT-HIST-events_card_mand-summary_ex_opt",
@@ -2074,12 +2074,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "3 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-HIST-events_card_mand-summary_ex_opt",
-      "duration_ms": 0
+      "duration_ms": 612
     },
     {
       "id": "CONT-HIST-events_card_3to5-summary_ex_opt",
@@ -2091,12 +2091,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 3,
+      "total_data_sets": 3,
+      "message": null,
       "schedule_ref": "CONT-HIST-events_card_3to5-summary_ex_opt",
-      "duration_ms": 0
+      "duration_ms": 614
     },
     {
       "id": "CONT-HIST-events_card_any-summary_ex_mand",
@@ -2108,12 +2108,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "1 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-HIST-events_card_any-summary_ex_mand",
-      "duration_ms": 0
+      "duration_ms": 612
     },
     {
       "id": "CONT-HIST-events_card_1plus-summary_ex_mand",
@@ -2125,12 +2125,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "1 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-HIST-events_card_1plus-summary_ex_mand",
-      "duration_ms": 0
+      "duration_ms": 606
     },
     {
       "id": "CONT-HIST-events_card_3plus-summary_ex_mand",
@@ -2142,12 +2142,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "3 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-HIST-events_card_3plus-summary_ex_mand",
-      "duration_ms": 0
+      "duration_ms": 610
     },
     {
       "id": "CONT-HIST-events_card_opt-summary_ex_mand",
@@ -2159,12 +2159,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "1 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-HIST-events_card_opt-summary_ex_mand",
-      "duration_ms": 0
+      "duration_ms": 619
     },
     {
       "id": "CONT-HIST-events_card_mand-summary_ex_mand",
@@ -2176,12 +2176,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "1 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-HIST-events_card_mand-summary_ex_mand",
-      "duration_ms": 0
+      "duration_ms": 598
     },
     {
       "id": "CONT-HIST-events_card_3to5-summary_ex_mand",
@@ -2193,12 +2193,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'HISTORY.events cardinality / HISTORY.summary existence' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "3 event(s), summary absent → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-HIST-events_card_3to5-summary_ex_mand",
-      "duration_ms": 0
+      "duration_ms": 611
     },
     {
       "id": "CONT-EVENT-state_ex_opt",
@@ -2210,12 +2210,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "POINT_EVENT without data (RM/schema POINT_EVENT.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-EVENT-state_ex_opt",
-      "duration_ms": 405
+      "duration_ms": 404
     },
     {
       "id": "CONT-EVENT-state_ex_mand",
@@ -2227,12 +2227,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "POINT_EVENT without data (RM/schema POINT_EVENT.data existence.lower): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-EVENT-state_ex_mand",
-      "duration_ms": 414
+      "duration_ms": 420
     },
     {
       "id": "CONT-EVENT-type_any",
@@ -2244,12 +2244,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'EVENT type narrowing (POINT_EVENT / INTERVAL_EVENT)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 1,
+      "total_data_sets": 1,
+      "message": null,
       "schedule_ref": "CONT-EVENT-type_any",
-      "duration_ms": 0
+      "duration_ms": 224
     },
     {
       "id": "CONT-EVENT-type_point_event",
@@ -2261,12 +2261,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'EVENT type narrowing (POINT_EVENT / INTERVAL_EVENT)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-EVENT-type_point_event",
-      "duration_ms": 0
+      "duration_ms": 403
     },
     {
       "id": "CONT-EVENT-type_interval_event",
@@ -2278,12 +2278,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'EVENT type narrowing (POINT_EVENT / INTERVAL_EVENT)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "POINT_EVENT rejected (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-EVENT-type_interval_event",
-      "duration_ms": 0
+      "duration_ms": 426
     },
     {
       "id": "CONT-ITEM_STR-type_any",
@@ -2295,12 +2295,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'ITEM_STRUCTURE type narrowing (ITEM_TREE/LIST/TABLE/SINGLE)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "ITEM_LIST accepted in an open ITEM_STRUCTURE slot (any subtype): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"2 validation error(s)\",\"validationErrors\":[\"/: does not conform to RM type COMPOSITION: expected _type \\\"ELEMENT\\\", found \\\"CLUSTER\\\"\",\"/content[2]: does not conform to RM type EVALUATION:)",
       "schedule_ref": "CONT-ITEM_STR-type_any",
-      "duration_ms": 0
+      "duration_ms": 445
     },
     {
       "id": "CONT-ITEM_STR-type_item_tree",
@@ -2312,12 +2312,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "ITEM_STRUCTURE ITEM_TREE slot filled with ITEM_LIST (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-ITEM_STR-type_item_tree",
-      "duration_ms": 463
+      "duration_ms": 454
     },
     {
       "id": "CONT-ITEM_STR-type_item_list",
@@ -2334,7 +2334,7 @@
       "total_data_sets": 0,
       "message": "ITEM_STRUCTURE ITEM_LIST slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-ITEM_STR-type_item_list",
-      "duration_ms": 446
+      "duration_ms": 452
     },
     {
       "id": "CONT-ITEM_STR-type_item_table",
@@ -2368,7 +2368,7 @@
       "total_data_sets": 0,
       "message": "ITEM_STRUCTURE ITEM_SINGLE slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-ITEM_STR-type_item_single",
-      "duration_ms": 463
+      "duration_ms": 461
     },
     {
       "id": "CONT-DV_BOOLEAN-anything_allowed",
@@ -2380,12 +2380,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "DV_BOOLEAN without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_BOOLEAN-anything_allowed",
-      "duration_ms": 411
+      "duration_ms": 483
     },
     {
       "id": "CONT-DV_BOOLEAN-only_true_allowed",
@@ -2397,12 +2397,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_BOOLEAN-only_true_allowed",
-      "duration_ms": 0
+      "duration_ms": 479
     },
     {
       "id": "CONT-DV_BOOLEAN-only_false_allowed",
@@ -2414,12 +2414,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_BOOLEAN-only_false_allowed",
-      "duration_ms": 0
+      "duration_ms": 483
     },
     {
       "id": "CONT-DV_IDENTIFIER-validate_all_pattern",
@@ -2431,12 +2431,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_IDENTIFIER-validate_all_pattern",
-      "duration_ms": 0
+      "duration_ms": 502
     },
     {
       "id": "CONT-DV_IDENTIFIER-validate_all_list",
@@ -2448,12 +2448,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_IDENTIFIER-validate_all_list",
-      "duration_ms": 0
+      "duration_ms": 523
     },
     {
       "id": "CONT-DV_TEXT-validate_open",
@@ -2465,12 +2465,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "DV_TEXT without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_TEXT-validate_open",
-      "duration_ms": 396
+      "duration_ms": 474
     },
     {
       "id": "CONT-DV_TEXT-validate_list",
@@ -2482,12 +2482,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_TEXT-validate_list",
-      "duration_ms": 0
+      "duration_ms": 499
     },
     {
       "id": "CONT-DV_CODED_TEXT-validate_open",
@@ -2499,12 +2499,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_CODED_TEXT leaf; RM/schema mandatory-defining_code row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_CODED_TEXT-validate_open",
-      "duration_ms": 0
+      "duration_ms": 503
     },
     {
       "id": "CONT-DV_CODED_TEXT-validate_local_codes",
@@ -2521,7 +2521,7 @@
       "total_data_sets": 2,
       "message": null,
       "schedule_ref": "CONT-DV_CODED_TEXT-validate_local_codes",
-      "duration_ms": 470
+      "duration_ms": 477
     },
     {
       "id": "CONT-DV_CODED_TEXT-validate_ext_term",
@@ -2533,12 +2533,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "SNOMED-CT 99999999 not in the external code_list (C_CODE_PHRASE): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_CODED_TEXT-validate_ext_term",
-      "duration_ms": 0
+      "duration_ms": 525
     },
     {
       "id": "CONT-DV_ORDINAL-validate_open",
@@ -2550,12 +2550,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "DV_ORDINAL without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_ORDINAL-validate_open",
-      "duration_ms": 396
+      "duration_ms": 478
     },
     {
       "id": "CONT-DV_ORDINAL-validate_constraint",
@@ -2572,7 +2572,7 @@
       "total_data_sets": 2,
       "message": null,
       "schedule_ref": "CONT-DV_ORDINAL-validate_constraint",
-      "duration_ms": 463
+      "duration_ms": 460
     },
     {
       "id": "CONT-DV_SCALE-validate_open",
@@ -2584,12 +2584,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_SCALE leaf; RM/schema mandatory-value row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_SCALE-validate_open",
-      "duration_ms": 0
+      "duration_ms": 498
     },
     {
       "id": "CONT-DV_SCALE-validate_constraint",
@@ -2601,12 +2601,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_SCALE value 9.0 not in list {1.0} (C_REAL.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_SCALE-validate_constraint",
-      "duration_ms": 0
+      "duration_ms": 593
     },
     {
       "id": "CONT-DV_COUNT-validate_open",
@@ -2618,12 +2618,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "DV_COUNT without magnitude (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_COUNT-validate_open",
-      "duration_ms": 396
+      "duration_ms": 476
     },
     {
       "id": "CONT-DV_COUNT-validate_range",
@@ -2635,12 +2635,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_COUNT-validate_range",
-      "duration_ms": 0
+      "duration_ms": 499
     },
     {
       "id": "CONT-DV_COUNT-validate_list",
@@ -2652,12 +2652,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_COUNT magnitude 7 not in the C_INTEGER list {3} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_COUNT-validate_list",
-      "duration_ms": 0
+      "duration_ms": 532
     },
     {
       "id": "CONT-DV_QUANTITY-validate_open",
@@ -2669,12 +2669,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_QUANTITY leaf; RM/schema mandatory-magnitude row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_QUANTITY-validate_open",
-      "duration_ms": 0
+      "duration_ms": 468
     },
     {
       "id": "CONT-DV_QUANTITY-validate_property",
@@ -2686,12 +2686,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_QUANTITY-validate_property",
-      "duration_ms": 0
+      "duration_ms": 468
     },
     {
       "id": "CONT-DV_QUANTITY-validate_property_units",
@@ -2708,7 +2708,7 @@
       "total_data_sets": 2,
       "message": null,
       "schedule_ref": "CONT-DV_QUANTITY-validate_property_units",
-      "duration_ms": 445
+      "duration_ms": 462
     },
     {
       "id": "CONT-DV_QUANTITY-validate_property_units_mag",
@@ -2720,12 +2720,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "passed",
-      "passed_data_sets": 3,
-      "total_data_sets": 3,
-      "message": null,
+      "status": "failed",
+      "passed_data_sets": 0,
+      "total_data_sets": 0,
+      "message": "DV_QUANTITY 702.9 mm3 in magnitude range [0,inf) (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/: does not conform to RM type COMPOSITION: missing field `territory`\"]})",
       "schedule_ref": "CONT-DV_QUANTITY-validate_property_units_mag",
-      "duration_ms": 577
+      "duration_ms": 611
     },
     {
       "id": "CONT-DV_PROPORTION-validate_open",
@@ -2737,12 +2737,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_PROPORTION leaf; RM/schema mandatory-numerator row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_PROPORTION-validate_open",
-      "duration_ms": 0
+      "duration_ms": 468
     },
     {
       "id": "CONT-DV_PROPORTION-validate_ratio",
@@ -2754,12 +2754,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "type 0 (ratio) not in list {0} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_PROPORTION-validate_ratio",
-      "duration_ms": 0
+      "duration_ms": 516
     },
     {
       "id": "CONT-DV_PROPORTION-validate_unitary",
@@ -2771,12 +2771,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "type 0 (ratio) not in list {1} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_PROPORTION-validate_unitary",
-      "duration_ms": 0
+      "duration_ms": 531
     },
     {
       "id": "CONT-DV_PROPORTION-validate_percent",
@@ -2788,12 +2788,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "type 0 (ratio) not in list {2} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_PROPORTION-validate_percent",
-      "duration_ms": 0
+      "duration_ms": 506
     },
     {
       "id": "CONT-DV_PROPORTION-validate_fraction",
@@ -2805,12 +2805,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "type 0 (ratio) not in list {3} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_PROPORTION-validate_fraction",
-      "duration_ms": 0
+      "duration_ms": 515
     },
     {
       "id": "CONT-DV_PROPORTION-validate_integer_fraction",
@@ -2822,12 +2822,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "type 0 (ratio) not in list {4} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_PROPORTION-validate_integer_fraction",
-      "duration_ms": 0
+      "duration_ms": 508
     },
     {
       "id": "CONT-DV_PROPORTION-validate_any_fraction",
@@ -2844,7 +2844,7 @@
       "total_data_sets": 0,
       "message": "DV_PROPORTION type 0 (ratio) not in list [3,4] (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_PROPORTION-validate_any_fraction",
-      "duration_ms": 395
+      "duration_ms": 427
     },
     {
       "id": "CONT-DV_PROPORTION-validate_ratio_range",
@@ -2856,12 +2856,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_PROPORTION-validate_ratio_range",
-      "duration_ms": 0
+      "duration_ms": 482
     },
     {
       "id": "CONT-DV_INTERVAL_DV_COUNT-validate_open",
@@ -2873,12 +2873,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_COUNT-validate_open",
-      "duration_ms": 0
+      "duration_ms": 463
     },
     {
       "id": "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper",
@@ -2890,12 +2890,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper",
-      "duration_ms": 0
+      "duration_ms": 457
     },
     {
       "id": "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list",
@@ -2907,12 +2907,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list",
-      "duration_ms": 0
+      "duration_ms": 462
     },
     {
       "id": "CONT-DV_INTERVAL_DV_QUANTITY-validate_open",
@@ -2924,12 +2924,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_QUANTITY-validate_open",
-      "duration_ms": 0
+      "duration_ms": 458
     },
     {
       "id": "CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower",
@@ -2941,12 +2941,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower",
-      "duration_ms": 0
+      "duration_ms": 472
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_open",
@@ -2958,12 +2958,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_open",
-      "duration_ms": 0
+      "duration_ms": 521
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint",
@@ -2975,12 +2975,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint",
-      "duration_ms": 0
+      "duration_ms": 461
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range",
@@ -2992,12 +2992,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range",
-      "duration_ms": 0
+      "duration_ms": 449
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DATE-validate_open",
@@ -3009,12 +3009,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DATE-validate_open",
-      "duration_ms": 0
+      "duration_ms": 468
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint",
@@ -3026,12 +3026,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint",
-      "duration_ms": 0
+      "duration_ms": 463
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range",
@@ -3043,12 +3043,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range",
-      "duration_ms": 0
+      "duration_ms": 474
     },
     {
       "id": "CONT-DV_INTERVAL_DV_TIME-validate_open",
@@ -3060,12 +3060,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_TIME-validate_open",
-      "duration_ms": 0
+      "duration_ms": 465
     },
     {
       "id": "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint",
@@ -3077,12 +3077,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint",
-      "duration_ms": 0
+      "duration_ms": 462
     },
     {
       "id": "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range",
@@ -3094,12 +3094,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range",
-      "duration_ms": 0
+      "duration_ms": 447
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DURATION-validate_open",
@@ -3111,12 +3111,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DURATION-validate_open",
-      "duration_ms": 0
+      "duration_ms": 456
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DURATION-validate_constraint",
@@ -3128,12 +3128,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DURATION-validate_constraint",
-      "duration_ms": 0
+      "duration_ms": 462
     },
     {
       "id": "CONT-DV_INTERVAL_DV_DURATION-validate_range",
@@ -3145,12 +3145,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_DURATION-validate_range",
-      "duration_ms": 0
+      "duration_ms": 464
     },
     {
       "id": "CONT-DV_INTERVAL_DV_ORDINAL-validate_open",
@@ -3162,12 +3162,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_ORDINAL-validate_open",
-      "duration_ms": 0
+      "duration_ms": 459
     },
     {
       "id": "CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint",
@@ -3179,12 +3179,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint",
-      "duration_ms": 0
+      "duration_ms": 460
     },
     {
       "id": "CONT-DV_INTERVAL_DV_SCALE-validate_open",
@@ -3196,12 +3196,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_SCALE-validate_open",
-      "duration_ms": 0
+      "duration_ms": 561
     },
     {
       "id": "CONT-DV_INTERVAL_DV_SCALE-validate_constraint",
@@ -3213,12 +3213,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_SCALE-validate_constraint",
-      "duration_ms": 0
+      "duration_ms": 506
     },
     {
       "id": "CONT-DV_INTERVAL_DV_PROPORTION-validate_open",
@@ -3230,12 +3230,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_PROPORTION-validate_open",
-      "duration_ms": 0
+      "duration_ms": 533
     },
     {
       "id": "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio",
@@ -3247,12 +3247,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio",
-      "duration_ms": 0
+      "duration_ms": 533
     },
     {
       "id": "CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary",
@@ -3264,12 +3264,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary",
-      "duration_ms": 0
+      "duration_ms": 476
     },
     {
       "id": "CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage",
@@ -3281,12 +3281,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage",
-      "duration_ms": 0
+      "duration_ms": 505
     },
     {
       "id": "CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction",
@@ -3298,12 +3298,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction",
-      "duration_ms": 0
+      "duration_ms": 475
     },
     {
       "id": "CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction",
@@ -3315,12 +3315,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction",
-      "duration_ms": 0
+      "duration_ms": 460
     },
     {
       "id": "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range",
@@ -3332,12 +3332,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-OBSERVATION.test_all_types.v1]/data[at0001]/events[at0002]/data[at0003]/items[at0008]/value: expected RM type conforming to)",
       "schedule_ref": "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range",
-      "duration_ms": 0
+      "duration_ms": 452
     },
     {
       "id": "CONT-DV_DURATION-validate_open",
@@ -3349,12 +3349,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_DURATION leaf; RM/schema mandatory-value row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_DURATION-validate_open",
-      "duration_ms": 0
+      "duration_ms": 480
     },
     {
       "id": "CONT-DV_DURATION-validate_fields",
@@ -3366,12 +3366,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_DURATION 'P1Y' uses a date field the PT pattern forbids (C_DURATION.pattern) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_DURATION-validate_fields",
-      "duration_ms": 0
+      "duration_ms": 520
     },
     {
       "id": "CONT-DV_DURATION-validate_range",
@@ -3383,12 +3383,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_DURATION 'PT5H' outside [PT0S,PT1H] (C_DURATION.range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_DURATION-validate_range",
-      "duration_ms": 0
+      "duration_ms": 527
     },
     {
       "id": "CONT-DV_DURATION-validate_fields_range",
@@ -3400,12 +3400,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_DURATION 'PT5H' outside [PT0S,PT1H] (C_DURATION.pattern+range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_DURATION-validate_fields_range",
-      "duration_ms": 0
+      "duration_ms": 509
     },
     {
       "id": "CONT-DV_TIME-validate_open",
@@ -3417,12 +3417,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_TIME leaf; RM/schema mandatory-value row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_TIME-validate_open",
-      "duration_ms": 0
+      "duration_ms": 468
     },
     {
       "id": "CONT-DV_TIME-validate_constraint",
@@ -3434,12 +3434,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_TIME partial time '22' violates HH:MM:SS (C_TIME.pattern) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_TIME-validate_constraint",
-      "duration_ms": 0
+      "duration_ms": 516
     },
     {
       "id": "CONT-DV_TIME-validate_range",
@@ -3451,12 +3451,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_TIME '23:59:59' outside [00:00:00,23:00:00] (C_TIME.range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_TIME-validate_range",
-      "duration_ms": 0
+      "duration_ms": 533
     },
     {
       "id": "CONT-DV_DATE-validate_open",
@@ -3468,12 +3468,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_DATE leaf; RM/schema mandatory-value row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_DATE-validate_open",
-      "duration_ms": 0
+      "duration_ms": 468
     },
     {
       "id": "CONT-DV_DATE-validate_constraint",
@@ -3485,12 +3485,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_DATE partial date '2021' violates yyyy-mm-dd (C_DATE.pattern) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_DATE-validate_constraint",
-      "duration_ms": 0
+      "duration_ms": 510
     },
     {
       "id": "CONT-DV_DATE-validate_range",
@@ -3502,12 +3502,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_DATE '2025-06-01' outside [2021-01-01,2021-12-31] (C_DATE.range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_DATE-validate_range",
-      "duration_ms": 0
+      "duration_ms": 533
     },
     {
       "id": "CONT-DV_DATE_TIME-validate_open",
@@ -3519,12 +3519,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "DV_DATE_TIME without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_DATE_TIME-validate_open",
-      "duration_ms": 388
+      "duration_ms": 476
     },
     {
       "id": "CONT-DV_DATE_TIME-validate_constraint",
@@ -3541,7 +3541,7 @@
       "total_data_sets": 0,
       "message": "DV_DATE_TIME '2021' missing mandatory month/day/time (C_DATE_TIME validity): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_DATE_TIME-validate_constraint",
-      "duration_ms": 454
+      "duration_ms": 516
     },
     {
       "id": "CONT-DV_DATE_TIME-validate_range",
@@ -3553,12 +3553,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "DV_DATE_TIME '2025-06-01T12:00:00' outside the range (C_DATE_TIME.range) (rejected): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_DATE_TIME-validate_range",
-      "duration_ms": 0
+      "duration_ms": 519
     },
     {
       "id": "CONT-DV_PARSABLE-validate_open",
@@ -3570,12 +3570,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_PARSABLE leaf; RM/schema mandatory-value row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_PARSABLE-validate_open",
-      "duration_ms": 0
+      "duration_ms": 454
     },
     {
       "id": "CONT-DV_PARSABLE-validate_value_formalism",
@@ -3587,12 +3587,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "formalism text/xyz not in list (C_STRING.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_PARSABLE-validate_value_formalism",
-      "duration_ms": 0
+      "duration_ms": 634
     },
     {
       "id": "CONT-DV_MULTIMEDIA-validate_open",
@@ -3604,12 +3604,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_MULTIMEDIA leaf; RM/schema mandatory-media_type row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_MULTIMEDIA-validate_open",
-      "duration_ms": 0
+      "duration_ms": 466
     },
     {
       "id": "CONT-DV_MULTIMEDIA-validate_media_type",
@@ -3621,12 +3621,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
+      "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "message": "media_type image/gif not in list (C_CODE_PHRASE): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "schedule_ref": "CONT-DV_MULTIMEDIA-validate_media_type",
-      "duration_ms": 0
+      "duration_ms": 515
     },
     {
       "id": "CONT-DV_URI-validate_open",
@@ -3638,12 +3638,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "no committable base composition in the vendored corpus carries a DV_URI leaf; RM/schema mandatory-value row not drivable",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_URI-validate_open",
-      "duration_ms": 0
+      "duration_ms": 464
     },
     {
       "id": "CONT-DV_URI-validate_pattern",
@@ -3655,12 +3655,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_URI-validate_pattern",
-      "duration_ms": 0
+      "duration_ms": 496
     },
     {
       "id": "CONT-DV_URI-validate_list",
@@ -3672,12 +3672,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_URI-validate_list",
-      "duration_ms": 0
+      "duration_ms": 556
     },
     {
       "id": "CONT-DV_EHR_URI-validate_open",
@@ -3689,12 +3689,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "failed",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "DV_EHR_URI without value (RM/Schema mandatory): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_EHR_URI-validate_open",
-      "duration_ms": 399
+      "duration_ms": 482
     },
     {
       "id": "CONT-DV_EHR_URI-validate_pattern",
@@ -3706,12 +3706,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_EHR_URI-validate_pattern",
-      "duration_ms": 0
+      "duration_ms": 497
     },
     {
       "id": "CONT-DV_EHR_URI-validate_list",
@@ -3723,12 +3723,12 @@
       ],
       "provenance": "Schedule",
       "format": "json",
-      "status": "skipped",
-      "passed_data_sets": 0,
-      "total_data_sets": 0,
-      "message": "archetype-constraint case: 'DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / range / list / pattern / DV_INTERVAL bounds)' requires a constraint-expressing OPT not in the vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes are to be generated); table transcribed + cited, not executable as specified",
+      "status": "passed",
+      "passed_data_sets": 2,
+      "total_data_sets": 2,
+      "message": null,
       "schedule_ref": "CONT-DV_EHR_URI-validate_list",
-      "duration_ms": 0
+      "duration_ms": 500
     },
     {
       "id": "SIGN-digest-present",
@@ -3744,7 +3744,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "version-signing.md §3.2 (digest default-on); §4.4 (rides every VERSION read)",
-      "duration_ms": 262
+      "duration_ms": 285
     },
     {
       "id": "SIGN-digest-recomputes",
@@ -3760,7 +3760,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "version-signing.md §3.1 (canonical_form RFC 8785) + §6.3",
-      "duration_ms": 261
+      "duration_ms": 291
     },
     {
       "id": "SIGN-all-kinds",
@@ -3776,7 +3776,7 @@
       "total_data_sets": 4,
       "message": null,
       "schedule_ref": "version-signing.md §3.3 (all object kinds via the shared vobject commit path)",
-      "duration_ms": 642
+      "duration_ms": 683
     },
     {
       "id": "SIGN-client-verbatim",
@@ -3792,7 +3792,7 @@
       "total_data_sets": 1,
       "message": null,
       "schedule_ref": "version-signing.md §3.3 (client-supplied signatures win, stored verbatim)",
-      "duration_ms": 257
+      "duration_ms": 278
     },
     {
       "id": "SIGN-pgp-verifies",
