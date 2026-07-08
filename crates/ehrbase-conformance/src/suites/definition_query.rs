@@ -5,8 +5,8 @@
 //! vendored `query/aql_queries_valid` corpus. Assertions concretize the stored
 //! query contract (`200` store with `Location`; `200` list).
 //!
-//! The negative `valid_query-invalid`/`-bad_formalism` cases depend on store-time
-//! AQL validation semantics and stay `NotYetTranscribed` until specified.
+//! The negative `valid_query-invalid`/`-bad_formalism` cases assert store-time AQL
+//! validation (`400`/`422`); `list_queries` is realized via `GET /definition/query`.
 
 use uuid::Uuid;
 
@@ -26,6 +26,18 @@ pub fn entries() -> Vec<CaseEntry> {
             run_list_non_empty,
         ),
         entry("I_DEFINITION_QUERY.has_query-xxx", run_has_query),
+        // list_queries — GET /definition/query (the stored-query list).
+        entry("I_DEFINITION_QUERY.list_queries-empty", run_list_all),
+        entry(
+            "I_DEFINITION_QUERY.list_queries-select_items",
+            run_list_after_store,
+        ),
+        // valid_query negatives — store-time AQL validation → 400/422.
+        entry(
+            "I_DEFINITION_QUERY.valid_query-bad_formalism",
+            run_store_bad_formalism,
+        ),
+        entry("I_DEFINITION_QUERY.valid_query-invalid", run_store_invalid),
     ]
 }
 
@@ -110,5 +122,69 @@ fn run_has_query<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             .await?;
         assert::status(&resp, 200)?;
         Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// A store attempt with a bad query body; returns the status.
+async fn store_bad(ctx: &RunContext<'_>, aql: &str) -> Result<u16, CaseError> {
+    let name = format!("org.conformance::bad{}", Uuid::new_v4().simple());
+    let resp = ctx
+        .send(
+            HttpRequest::put(format!("/definition/query/{name}/1.0.0"))
+                .text_body(aql.to_owned(), "text/plain")
+                .header("accept", "application/json"),
+        )
+        .await?;
+    Ok(resp.status)
+}
+
+/// `list_queries` — GET /definition/query returns the stored-query list (200).
+fn run_list_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let resp = ctx
+            .send(HttpRequest::get("/definition/query").header("accept", "application/json"))
+            .await?;
+        assert::status(&resp, 200)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// `list_queries` after storing one → 200 (the list is non-empty / selectable).
+fn run_list_after_store<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        store_query(ctx).await?;
+        let resp = ctx
+            .send(HttpRequest::get("/definition/query").header("accept", "application/json"))
+            .await?;
+        assert::status(&resp, 200)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// valid_query-bad_formalism — a non-AQL body is rejected at store time (400/422).
+fn run_store_bad_formalism<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let status = store_bad(ctx, "SELECT * FROM patients; -- SQL, not AQL").await?;
+        if matches!(status, 400 | 422) {
+            Ok(DataSetReport::SINGLE)
+        } else {
+            Err(CaseError::Assertion(format!(
+                "expected 400/422 for a non-AQL query, got {status}"
+            )))
+        }
+    })
+}
+
+/// valid_query-invalid — malformed AQL is rejected at store time (400/422).
+fn run_store_invalid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let status = store_bad(ctx, "SELECT FROM WHERE {{{ not valid aql").await?;
+        if matches!(status, 400 | 422) {
+            Ok(DataSetReport::SINGLE)
+        } else {
+            Err(CaseError::Assertion(format!(
+                "expected 400/422 for malformed AQL, got {status}"
+            )))
+        }
     })
 }
