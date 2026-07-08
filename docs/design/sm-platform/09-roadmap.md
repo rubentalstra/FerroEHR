@@ -15,11 +15,17 @@ the new seam); SM-2…SM-6 add components and can proceed in parallel with
 P18–P20 wherever they don't touch the conformance-gated wire. P17 absorbs
 the SIM-B/SDF audit (it is FLAT work).
 
-## SM-1 — the native-API crate + EHR-core completion
+## SM-1 — repo layout + the native-API crate + EHR-core completion
 
 *The structural move; behaviour-preserving except listed additions.*
 
-- [ ] `crates/ehrbase-sm`: create crate; move the `Backend` trait family out
+- [ ] **Workspace layout (owner ruling):** `git mv` all `ehrbase-*` crates
+      from `crates/` to **`app/`**; `openehr-*` (spec layer + codegen
+      tooling) stays in `crates/`. Root `Cargo.toml` members =
+      `["crates/*", "app/*"]`; update workspace path-deps, CI workflows,
+      scripts, `.claude/rules` path scopes, `CLAUDE.md` repo map,
+      `docs/architecture.md`. One mechanical commit, workspace green.
+- [ ] `app/ehrbase-sm`: create crate; move the `Backend` trait family out
       of `ehrbase-rest::backend`, split the EHR mega-trait into
       `EhrService`/`EhrStatusService`/`EhrDirectoryService`/
       `EhrCompositionService`/`EhrContributionService`; `Backend` = alias.
