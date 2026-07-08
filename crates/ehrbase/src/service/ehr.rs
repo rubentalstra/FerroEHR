@@ -28,6 +28,11 @@ impl EhrbaseService {
         ehr_id: Uuid,
         status: Value,
     ) -> Result<ServiceResponse, ServiceError> {
+        // The supplied EHR_STATUS must be a structurally valid RM instance before
+        // the EHR is created (CNF master06 §Test Data Sets INVALID class 2 —
+        // every malformed EHR_STATUS is rejected 4xx).
+        validate_ehr_status(&status)?;
+
         let mut tx = self.pool.begin().await?;
 
         let inserted = sqlx::query("INSERT INTO ehr (id) VALUES ($1) ON CONFLICT DO NOTHING")
@@ -43,7 +48,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::CREATION, "EHR creation");
         vobject::commit_contribution(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             &audit,
             vec![
                 (
@@ -179,7 +184,7 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
         Ok(self.version_response(ehr_id, vo_id, read))
     }
@@ -192,6 +197,11 @@ impl EhrbaseService {
         body: Value,
         if_match: &str,
     ) -> Result<ServiceResponse, ServiceError> {
+        // A modified EHR_STATUS must remain a structurally valid RM instance
+        // (RM ehr §EHR_STATUS: mandatory subject / is_queryable / is_modifiable /
+        // name / archetype_node_id).
+        validate_ehr_status(&body)?;
+
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
@@ -202,7 +212,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");
         vobject::update(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             vo_id,
             Kind::EhrStatus,
             body,
@@ -250,7 +260,7 @@ impl EhrbaseService {
     ) -> Result<Value, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
         self.original_version(&read)
     }
@@ -447,6 +457,116 @@ pub(super) fn committer() -> Value {
     }
 }
 
+/// Structurally validate an `EHR_STATUS` before it is committed (on EHR create,
+/// `EHR_STATUS` update, or a CONTRIBUTION). Rejects every malformed data set the
+/// CNF `master06 §Test Data Sets (INVALID class 2)` enumerates with a `422`.
+///
+/// Rules — RM ehr §`EHR_STATUS` + inherited `LOCATABLE`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_status.adoc`,
+/// `…rm.common.locatable.adoc`):
+/// - `_type` present and equal to `EHR_STATUS` (the concrete versioned-object
+///   root the endpoint commits);
+/// - `name` present (`LOCATABLE.name 1..1`);
+/// - `archetype_node_id` present and non-empty (`Archetype_node_id_valid`);
+/// - `is_queryable` / `is_modifiable` present booleans (both `1..1`);
+/// - `subject` present (`EHR_STATUS.subject 1..1 PARTY_SELF`) and identifiable —
+///   it must carry a `_type` (its concrete `PARTY_PROXY` subtype) **or** an
+///   `external_ref` (an empty `{}` subject is neither);
+/// - when `subject.external_ref` is present it is a valid `PARTY_REF`
+///   (`OBJECT_REF`): a non-empty `id.value` (`Id_exists`) and a non-empty
+///   `namespace` (`Namespace_valid`). A `NULL` `external_ref` is permitted (CNF
+///   master08 `EHR_STATUS` combinations accept `subject.external_ref = NULL`).
+pub(super) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
+    let unproc = |m: String| ServiceError::Unprocessable(m);
+    let obj = status
+        .as_object()
+        .ok_or_else(|| unproc("EHR_STATUS must be a JSON object".to_owned()))?;
+
+    match obj.get("_type").and_then(Value::as_str) {
+        Some("EHR_STATUS") => {}
+        Some(other) => {
+            return Err(unproc(format!(
+                "EHR_STATUS _type must be \"EHR_STATUS\", got {other:?}"
+            )));
+        }
+        None => {
+            return Err(unproc(
+                "EHR_STATUS is missing its _type discriminator".to_owned(),
+            ));
+        }
+    }
+
+    if !obj.contains_key("name") {
+        return Err(unproc(
+            "EHR_STATUS.name is mandatory (LOCATABLE.name 1..1)".to_owned(),
+        ));
+    }
+    match obj.get("archetype_node_id").and_then(Value::as_str) {
+        Some(s) if !s.is_empty() => {}
+        _ => {
+            return Err(unproc(
+                "EHR_STATUS.archetype_node_id is mandatory and non-empty \
+                 (LOCATABLE.Archetype_node_id_valid)"
+                    .to_owned(),
+            ));
+        }
+    }
+    if !obj.get("is_queryable").is_some_and(Value::is_boolean) {
+        return Err(unproc(
+            "EHR_STATUS.is_queryable is mandatory (1..1 Boolean)".to_owned(),
+        ));
+    }
+    if !obj.get("is_modifiable").is_some_and(Value::is_boolean) {
+        return Err(unproc(
+            "EHR_STATUS.is_modifiable is mandatory (1..1 Boolean)".to_owned(),
+        ));
+    }
+
+    let subject = obj
+        .get("subject")
+        .and_then(Value::as_object)
+        .ok_or_else(|| unproc("EHR_STATUS.subject is mandatory (1..1 PARTY_SELF)".to_owned()))?;
+    let has_type = subject.get("_type").and_then(Value::as_str).is_some();
+    let external_ref = subject.get("external_ref").filter(|v| !v.is_null());
+    if !has_type && external_ref.is_none() {
+        return Err(unproc(
+            "EHR_STATUS.subject must be an identifiable PARTY_PROXY (carry a _type or \
+             an external_ref)"
+                .to_owned(),
+        ));
+    }
+    if let Some(external_ref) = external_ref {
+        let ext = external_ref.as_object().ok_or_else(|| {
+            unproc("EHR_STATUS.subject.external_ref must be a PARTY_REF object".to_owned())
+        })?;
+        match ext.get("id").and_then(Value::as_object) {
+            Some(id)
+                if id
+                    .get("value")
+                    .and_then(Value::as_str)
+                    .is_some_and(|v| !v.is_empty()) => {}
+            _ => {
+                return Err(unproc(
+                    "EHR_STATUS.subject.external_ref.id.value is mandatory and non-empty \
+                     (OBJECT_REF.Id_exists)"
+                        .to_owned(),
+                ));
+            }
+        }
+        match ext.get("namespace").and_then(Value::as_str) {
+            Some(ns) if !ns.is_empty() => {}
+            _ => {
+                return Err(unproc(
+                    "EHR_STATUS.subject.external_ref.namespace is mandatory and non-empty \
+                     (OBJECT_REF.Namespace_valid)"
+                        .to_owned(),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -457,5 +577,55 @@ mod tests {
         let rows = crate::storage::decompose(default_ehr_status()).expect("decompose");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].rm_type, "EHR_STATUS");
+    }
+
+    #[test]
+    fn default_and_typical_ehr_status_are_accepted() {
+        // The server's own default and a fully-identified subject both validate.
+        validate_ehr_status(&default_ehr_status()).expect("default EHR_STATUS");
+        let identified = json!({
+            "_type": "EHR_STATUS",
+            "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+            "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+            "subject": {
+                "_type": "PARTY_IDENTIFIED",
+                "external_ref": {
+                    "_type": "PARTY_REF",
+                    "namespace": "conformance",
+                    "type": "PERSON",
+                    "id": { "_type": "GENERIC_ID", "value": "subj-1", "scheme": "id_scheme" }
+                }
+            },
+            "is_queryable": true,
+            "is_modifiable": false
+        });
+        validate_ehr_status(&identified).expect("identified EHR_STATUS");
+    }
+
+    /// Every vendored invalid EHR_STATUS data set (CNF master06 §Test Data Sets,
+    /// INVALID class 2) must be rejected. Posted verbatim (unadapted), exactly as
+    /// the conformance runner drives them.
+    #[test]
+    fn every_invalid_ehr_status_fixture_is_rejected() {
+        let dir = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/ehr/invalid"
+        );
+        let mut checked = 0u32;
+        for entry in std::fs::read_dir(dir).expect("read ehr/invalid") {
+            let path = entry.expect("dir entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).expect("read fixture");
+            let status: Value = serde_json::from_str(&text).expect("parse fixture");
+            assert!(
+                validate_ehr_status(&status).is_err(),
+                "invalid EHR_STATUS fixture was accepted: {}",
+                path.display()
+            );
+            checked += 1;
+        }
+        assert_eq!(checked, 11, "expected 11 invalid EHR_STATUS fixtures");
     }
 }

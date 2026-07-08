@@ -183,6 +183,31 @@ pub fn remove_pointer(root: &mut Value, pointer: &str) -> bool {
     }
 }
 
+/// Retarget every `archetype_details.template_id.value` in a composition (root and
+/// every nested archetype root) to `template_id`, so an instance references an
+/// **authored** template (the `WebTemplate` the SUT builds is keyed by the root
+/// `template_id`; the nested ids are retargeted for internal consistency).
+pub fn retarget_template(v: &mut Value, template_id: &str) {
+    match v {
+        Value::Object(map) => {
+            if let Some(Value::Object(ad)) = map.get_mut("archetype_details")
+                && let Some(Value::Object(t)) = ad.get_mut("template_id")
+            {
+                t.insert("value".to_owned(), Value::String(template_id.to_owned()));
+            }
+            for child in map.values_mut() {
+                retarget_template(child, template_id);
+            }
+        }
+        Value::Array(items) => {
+            for it in items {
+                retarget_template(it, template_id);
+            }
+        }
+        _ => {}
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

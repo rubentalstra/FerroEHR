@@ -1,116 +1,71 @@
-//! The total-coverage guard (design §4.2, the house pattern's third use).
+//! The ECC catalogue guard (design v4): the framework's own coverage
+//! discipline.
 //!
-//! Parses the vendored schedule, classifies every identified case through the
-//! registry, and asserts:
-//!
-//! 1. every case is classified (no unclassifiable id);
-//! 2. the full inventory of classification keys matches the committed snapshot
-//!    `inventory/schedule-cases.txt` — so an upstream/re-vendor change fails the
-//!    build until triaged;
-//! 3. every registry id is in the inventory (no phantom implemented cases).
-//!
-//! Regenerate the snapshot after an intentional inventory change with
-//! `REGEN_INVENTORY=1 cargo test -p ehrbase-conformance --test coverage` and
-//! review the diff before committing.
+//! Every registered case must have an allocated `ECC-<AREA>-<NNN>` number in
+//! the committed catalogue (`inventory/ecc-catalog.tsv`); numbers are never
+//! reused; every `active` line maps back to a live registry entry. Allocate
+//! numbers for newly registered cases with
+//! `REGEN_CATALOG=1 cargo test -p ehrbase-conformance --test coverage` and
+//! review the appended lines before committing. Lines are never deleted — a
+//! case removed from the registry flips to `retired`.
 #![allow(clippy::expect_used)]
 
-use std::collections::BTreeSet;
-use std::path::PathBuf;
-
-use ehrbase_conformance::case::Provenance;
-use ehrbase_conformance::registry::{ExclusionReason, Registration, registry};
-use ehrbase_conformance::schedule::parse_default;
-
-fn snapshot_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("inventory/schedule-cases.txt")
-}
+use ehrbase_conformance::catalog::{CATALOG_PATH, Catalog, EccStatus};
+use ehrbase_conformance::registry::registry;
 
 #[test]
-fn every_schedule_case_is_classified_and_matches_the_snapshot() {
-    let schedule = parse_default().expect("parse vendored schedule");
-    let inventory = schedule.inventory().expect("classify inventory");
+fn every_registry_case_has_an_ecc_number() {
     let reg = registry();
+    let mut catalog = Catalog::load_default().expect("load inventory/ecc-catalog.tsv");
 
-    // (1) Every case classifies; tally the structural reasons for a sanity check.
-    let mut implemented = 0usize;
-    let mut placeholder = 0usize;
-    let mut duplicate = 0usize;
-    let mut adl2 = 0usize;
-    let mut not_yet = 0usize;
-    let mut other = 0usize;
-    for item in &inventory {
-        match reg.classify(item) {
-            Registration::Implemented(entry) => {
-                assert_eq!(entry.meta.id, item.key, "implemented entry keyed by id");
-                implemented += 1;
-            }
-            Registration::Excluded(ExclusionReason::UpstreamPlaceholder) => placeholder += 1,
-            Registration::Excluded(ExclusionReason::UpstreamDuplicate) => duplicate += 1,
-            Registration::Excluded(ExclusionReason::Adl2Returns501) => adl2 += 1,
-            Registration::Excluded(ExclusionReason::NotYetTranscribed) => not_yet += 1,
-            Registration::Excluded(_) => other += 1,
-        }
-    }
-    assert_eq!(inventory.len(), 322, "the 322-case identified inventory");
-    assert_eq!(placeholder, 57, "aaaa (28) + bbbb (29) placeholders");
-    assert_eq!(duplicate, 1, "the one CONT-DV_TEXT-validate_open duplicate");
-    assert_eq!(
-        adl2, 0,
-        "no I_DEFINITION_ADL2 cases in the current vendored schedule"
-    );
-    // Only Schedule-provenance entries appear in the 322 inventory; the
-    // supplementary FixtureDerived / RunnerDefined cases (design §3.4, §4.6) sit
-    // outside it by design.
-    let schedule_impl = reg
+    let missing: Vec<_> = reg
         .entries()
         .iter()
-        .filter(|e| e.meta.provenance == Provenance::Schedule)
-        .count();
-    assert_eq!(
-        implemented, schedule_impl,
-        "implemented (in-inventory) count equals the schedule-provenance registry size"
-    );
-    assert_eq!(
-        implemented + placeholder + duplicate + adl2 + not_yet + other,
-        322,
-        "classification is total"
-    );
+        .filter(|e| catalog.by_primary_ref(e.meta.id).is_none())
+        .collect();
 
-    // (2) The inventory of classification keys matches the committed snapshot.
-    let keys: BTreeSet<&str> = inventory.iter().map(|i| i.key.as_str()).collect();
-    assert_eq!(keys.len(), inventory.len(), "keys are unique");
-    let rendered = {
-        let mut s: String = keys.iter().fold(String::new(), |mut acc, k| {
-            acc.push_str(k);
-            acc.push('\n');
-            acc
-        });
-        s.shrink_to_fit();
-        s
-    };
-    let path = snapshot_path();
-    if std::env::var_os("REGEN_INVENTORY").is_some() {
-        std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir inventory");
-        std::fs::write(&path, &rendered).expect("write snapshot");
+    if std::env::var_os("REGEN_CATALOG").is_some() {
+        for entry in &missing {
+            catalog
+                .allocate(entry.meta.area, entry.meta.id, entry.meta.title)
+                .expect("allocate ECC number");
+        }
+        catalog
+            .save(std::path::Path::new(CATALOG_PATH))
+            .expect("save catalogue");
     } else {
-        let committed = std::fs::read_to_string(&path).expect(
-            "read inventory/schedule-cases.txt — regenerate with REGEN_INVENTORY=1 if intended",
-        );
-        assert_eq!(
-            rendered, committed,
-            "the schedule inventory changed; review and regenerate the snapshot with REGEN_INVENTORY=1"
+        assert!(
+            missing.is_empty(),
+            "{} registered case(s) have no ECC number — allocate with REGEN_CATALOG=1 \
+             and review the appended lines: {:?}",
+            missing.len(),
+            missing.iter().map(|e| e.meta.id).collect::<Vec<_>>()
         );
     }
 
-    // (3) No phantom schedule cases: every Schedule-provenance registry id is in
-    // the inventory. FixtureDerived / RunnerDefined ids are intentionally not.
-    for entry in reg.entries() {
-        if entry.meta.provenance == Provenance::Schedule {
+    // Every active line maps to a live registry entry; retired/planned may not.
+    for line in catalog.entries() {
+        if line.status == EccStatus::Active {
             assert!(
-                keys.contains(entry.meta.id),
-                "schedule-provenance registry id {:?} is not in the inventory (phantom case)",
-                entry.meta.id
+                reg.entries().iter().any(|e| e.meta.id == line.primary_ref),
+                "catalogue line {} is active but its primary_ref {:?} has no registry entry — \
+                 retire it (never delete)",
+                line.ecc_id,
+                line.primary_ref
             );
         }
+    }
+
+    // Area stability: the catalogue's area matches the case's declared area
+    // (numbers are permanent; an area remap means retire + reallocate).
+    for entry in reg.entries() {
+        let line = catalog
+            .by_primary_ref(entry.meta.id)
+            .expect("guarded above (or REGEN just allocated)");
+        assert_eq!(
+            line.area, entry.meta.area,
+            "{}: catalogue area diverges from the case's declared area",
+            line.ecc_id
+        );
     }
 }

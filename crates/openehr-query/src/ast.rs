@@ -448,3 +448,130 @@ pub enum Primitive {
     /// `NULL`.
     Null,
 }
+
+// ── path text rendering (RESULT_SET column `path`) ─────────────────────────────
+//
+// ITS-REST 1.0.3 RESULT_SET columns carry the SELECT expression's path
+// (`{"name": "#0", "path": "/ehr_id/value"}`); the CNF query goldens compare it
+// verbatim, so the renderer reproduces the path exactly as written in the query
+// (minus the root variable) rather than a normalized reconstruction.
+
+use std::fmt;
+
+impl IdentifiedPath {
+    /// The `RESULT_SET` column-path text of this select expression: the trailing
+    /// object path (with predicates) as written, `/`-prefixed; a bare variable
+    /// (whole-object select) renders as `"/"`.
+    #[must_use]
+    pub fn column_path_text(&self) -> String {
+        match &self.path {
+            None => "/".to_owned(),
+            Some(p) => format!("/{p}"),
+        }
+    }
+}
+
+impl fmt::Display for ObjectPath {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (i, part) in self.parts.iter().enumerate() {
+            if i > 0 {
+                f.write_str("/")?;
+            }
+            write!(f, "{part}")?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for PathPart {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.name)?;
+        if let Some(p) = &self.predicate {
+            write!(f, "[{p}]")?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for PathPredicate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PathPredicate::Standard(s) => write!(f, "{s}"),
+            PathPredicate::Archetype(ArchetypePredicate::Hrid(h)) => f.write_str(h),
+            PathPredicate::Archetype(ArchetypePredicate::Parameter(p)) => f.write_str(p),
+            PathPredicate::Node(n) => write!(f, "{n}"),
+        }
+    }
+}
+
+impl fmt::Display for StandardPredicate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}{}", self.path, comp_op_text(self.op), self.operand)
+    }
+}
+
+/// The AQL surface symbol of a comparison operator.
+#[must_use]
+pub fn comp_op_text(op: CompOp) -> &'static str {
+    match op {
+        CompOp::Eq => "=",
+        CompOp::Ne => "!=",
+        CompOp::Gt => ">",
+        CompOp::Ge => ">=",
+        CompOp::Lt => "<",
+        CompOp::Le => "<=",
+    }
+}
+
+impl fmt::Display for NodePredicate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NodePredicate::Code { code, name } | NodePredicate::Archetype { hrid: code, name } => {
+                f.write_str(code)?;
+                if let Some(n) = name {
+                    write!(f, ",{n}")?;
+                }
+                Ok(())
+            }
+            NodePredicate::Parameter(p) => f.write_str(p),
+            NodePredicate::Standard(s) => write!(f, "{s}"),
+            NodePredicate::MatchesRegex { path, regex } => {
+                write!(f, "{path} matches {regex}")
+            }
+            NodePredicate::And(a, b) => write!(f, "{a} and {b}"),
+            NodePredicate::Or(a, b) => write!(f, "{a} or {b}"),
+        }
+    }
+}
+
+impl fmt::Display for NodeNameConstraint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NodeNameConstraint::String(s) => write!(f, "'{s}'"),
+            NodeNameConstraint::Parameter(p) | NodeNameConstraint::Code(p) => f.write_str(p),
+            NodeNameConstraint::TermCode(t) => f.write_str(t),
+        }
+    }
+}
+
+impl fmt::Display for PathPredicateOperand {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PathPredicateOperand::Primitive(p) => write!(f, "{p}"),
+            PathPredicateOperand::Path(p) => write!(f, "{p}"),
+            PathPredicateOperand::Parameter(p) | PathPredicateOperand::Code(p) => f.write_str(p),
+        }
+    }
+}
+
+impl fmt::Display for Primitive {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Primitive::String(s) => write!(f, "'{s}'"),
+            Primitive::Integer(i) => write!(f, "{i}"),
+            Primitive::Real(r) => write!(f, "{r}"),
+            Primitive::Boolean(b) => write!(f, "{b}"),
+            Primitive::Null => f.write_str("NULL"),
+        }
+    }
+}

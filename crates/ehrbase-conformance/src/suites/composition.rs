@@ -1,6 +1,7 @@
 //! master07 — COMPOSITION cases (design §4.1: `suites/composition.rs`).
 //!
-//! Transcribed from `master07-func_tc_ehr_composition.adoc`, driving the ITS-REST
+//! Our own ECC COMPOSITION cases (reference: `master07-func_tc_ehr_composition.adoc`,
+//! design-time reading), driving the ITS-REST
 //! `/ehr/{ehr_id}/composition` + `/versioned_composition` surface. Positive cases
 //! commit the vendored canonical compositions
 //! (`compositions/CANONICAL_JSON` + `CANONICAL_XML`) after uploading the OPT they
@@ -18,10 +19,10 @@
 //! (design: "run both `Format::Json` and `Format::Xml` where the case warrants");
 //! the negatives, multi-version, update, and delete flows run JSON-only.
 //!
-//! The `has_composition{,-bad_composition,-bad_ehr}` schedule cases have no
-//! dedicated ITS-REST endpoint on our surface (the API exposes GET
-//! `composition/versioned_composition`, not a boolean `has`), so they stay
-//! `NotYetTranscribed`.
+//! The `has_composition-*` cases are realized via `GET /composition/{uid}` (the
+//! `200`/`404` is the SM boolean) per the CNF guide's abstract-call → REST
+//! mapping — the API exposes no boolean `has` verb, so the GET's status is the
+//! conformance point.
 
 use jiff::Timestamp;
 use serde_json::Value;
@@ -30,7 +31,8 @@ use uuid::Uuid;
 use openehr_rm::prelude::Composition;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{
     CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
@@ -44,127 +46,204 @@ pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── create ───────────────────────────────────────────────────────────
         entry_fmt(
-            "I_EHR_COMPOSITION.create_composition-event",
+            "com/create-composition-event",
+            "Create composition — event",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             BOTH,
             run_create_event,
         ),
         entry_fmt(
-            "I_EHR_COMPOSITION.create_composition-persistent",
+            "com/create-composition-persistent",
+            "Create composition — persistent",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             BOTH,
             run_create_persistent,
         ),
         entry(
-            "I_EHR_COMPOSITION.create_composition-same_opt_twice",
+            "com/create-composition-same-opt-twice",
+            "Create composition — same OPT twice",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_create_same_opt_twice,
         ),
         entry(
-            "I_EHR_COMPOSITION.create_composition-invalid_event",
+            "com/create-composition-invalid-event",
+            "Create composition — invalid event",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_create_invalid_event,
         ),
         entry(
-            "I_EHR_COMPOSITION.create_composition-invalid_persistent",
+            "com/create-composition-invalid-persistent",
+            "Create composition — invalid persistent",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_create_invalid_persistent,
         ),
         entry(
-            "I_EHR_COMPOSITION.create_composition-event_bad_opt",
+            "com/create-composition-event-bad-opt",
+            "Create composition — event bad OPT",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_create_event_bad_opt,
         ),
         entry(
-            "I_EHR_COMPOSITION.create_composition-event_bad_ehr",
+            "com/create-composition-event-bad-ehr",
+            "Create composition — event bad EHR",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_create_event_bad_ehr,
         ),
         // ── get latest ───────────────────────────────────────────────────────
         entry_fmt(
-            "I_EHR_COMPOSITION.get_composition_latest",
+            "com/get-composition-latest",
+            "Get latest composition",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             BOTH,
             run_get_latest,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_composition_latest-bad_composition",
+            "com/get-composition-latest-bad-composition",
+            "Get latest composition — bad composition",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_latest_bad_composition,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_composition_latest-bad_ehr",
+            "com/get-composition-latest-bad-ehr",
+            "Get latest composition — bad EHR",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_latest_bad_ehr,
+        ),
+        // has_composition — the SM boolean realized via GET /composition/{uid}
+        // (200 has / 404 not), per the CNF guide's abstract-call → REST mapping.
+        entry(
+            "com/has-composition-bad-composition",
+            "Composition existence check — bad composition",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+            run_has_composition_bad_composition,
+        ),
+        entry(
+            "com/has-composition-bad-ehr",
+            "Composition existence check — bad EHR",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+            run_has_composition_bad_ehr,
         ),
         // ── get at time ──────────────────────────────────────────────────────
         entry_fmt(
-            "I_EHR_COMPOSITION.get_composition_at_time-no_time_arg",
+            "com/get-composition-at-time",
+            "Get composition at time",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+            BOTH,
+            run_get_at_time,
+        ),
+        entry_fmt(
+            "com/get-composition-at-time-no-time-arg",
+            "Get composition at time — no time arg",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             BOTH,
             run_get_at_time_no_arg,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_composition_at_time-bad_composition",
+            "com/get-composition-at-time-bad-composition",
+            "Get composition at time — bad composition",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_at_time_bad_composition,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_composition_at_time-bad_ehr",
+            "com/get-composition-at-time-bad-ehr",
+            "Get composition at time — bad EHR",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_at_time_bad_ehr,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_composition_at_times",
+            "com/get-composition-at-times",
+            "Get composition at multiple times",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_at_times,
         ),
         // ── get version ──────────────────────────────────────────────────────
         entry_fmt(
-            "I_EHR_COMPOSITION.get_composition_version",
+            "com/get-composition-version",
+            "Get composition version",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             BOTH,
             run_get_version,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_composition_version-bad_version",
+            "com/get-composition-version-bad-version",
+            "Get composition version — bad version",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_version_bad_version,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_composition_version-bad_ehr",
+            "com/get-composition-version-bad-ehr",
+            "Get composition version — bad EHR",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_version_bad_ehr,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_composition_versions",
+            "com/get-composition-versions",
+            "Get composition versions",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_versions,
         ),
         // ── versioned composition ────────────────────────────────────────────
         entry_fmt(
-            "I_EHR_COMPOSITION.get_versioned_composition",
+            "com/get-versioned-composition",
+            "Get versioned composition",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             BOTH,
             run_get_versioned,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_versioned_composition-non_existent",
+            "com/get-versioned-composition-non-existent",
+            "Get versioned composition — non existent",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_versioned_non_existent,
         ),
         entry(
-            "I_EHR_COMPOSITION.get_versioned_composition-bad_ehr",
+            "com/get-versioned-composition-bad-ehr",
+            "Get versioned composition — bad EHR",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_get_versioned_bad_ehr,
         ),
         // ── update ───────────────────────────────────────────────────────────
         entry(
-            "I_EHR_COMPOSITION.update_composition-event",
+            "com/update-composition-event",
+            "Update composition — event",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_update_event,
         ),
         entry(
-            "I_EHR_COMPOSITION.update_composition-persistent",
+            "com/update-composition-persistent",
+            "Update composition — persistent",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_update_persistent,
         ),
         entry(
-            "I_EHR_COMPOSITION.update_composition-non_existent",
+            "com/update-composition-non-existent",
+            "Update composition — non existent",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_update_non_existent,
         ),
         entry(
-            "I_EHR_COMPOSITION.update_composition-wrong_template",
+            "com/update-composition-wrong-template",
+            "Update composition — wrong template",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_update_wrong_template,
         ),
         // ── delete ───────────────────────────────────────────────────────────
         entry(
-            "I_EHR_COMPOSITION.delete_composition-event",
+            "com/delete-composition-event",
+            "Delete composition — event",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_delete_event,
         ),
         entry(
-            "I_EHR_COMPOSITION.delete_composition-persistent",
+            "com/delete-composition-persistent",
+            "Delete composition — persistent",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_delete_persistent,
         ),
         entry(
-            "I_EHR_COMPOSITION.delete_composition-non_existent",
+            "com/delete-composition-non-existent",
+            "Delete composition — non existent",
+            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
             run_delete_non_existent,
         ),
     ]
@@ -176,22 +255,27 @@ const JSON: &[Format] = &[Format::Json];
 const BOTH: &[Format] = &[Format::Json, Format::Xml];
 
 /// A JSON-only schedule-provenance master07 case.
-fn entry(id: &'static str, run: CaseRun) -> CaseEntry {
-    entry_fmt(id, JSON, run)
+fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
+    entry_fmt(id, title, citation, JSON, run)
 }
 
-/// A schedule-provenance master07 case with the given formats.
-fn entry_fmt(id: &'static str, formats: &'static [Format], run: CaseRun) -> CaseEntry {
+/// A COMPOSITION-area case with the given formats.
+fn entry_fmt(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    formats: &'static [Format],
+    run: CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master07,
+            title,
+            area: Area::Com,
             capability: Capability::CompositionOps,
             profiles: &[Profile::Core, Profile::Standard],
             formats,
-            provenance: Provenance::Schedule,
-            schedule_ref: id,
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,
@@ -497,6 +581,31 @@ fn run_get_latest_bad_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 // ── get at time ──────────────────────────────────────────────────────────────
+
+/// master07 `I_EHR_COMPOSITION.get_composition_at_time` (the base case — its
+/// upstream heading carries a double space after `====`): a GET at the
+/// **current** time must return the latest version of the matching COMPOSITION
+/// with the committed content ("When requesting a COMPOSITION at time using the
+/// current time, the last version of the matching composition, if it exists,
+/// should be retrieved").
+fn run_get_at_time<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let (ehr_id, uid) = setup(ctx, Kind::Event).await?;
+        let object = support::object_uid(&uid).to_owned();
+        let now = jiff::Timestamp::now();
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!(
+                    "/ehr/{ehr_id}/composition/{object}?version_at_time={now}"
+                ))
+                .header("accept", ctx.format.media_type()),
+            )
+            .await?;
+        assert::status(&resp, 200)?;
+        check_composition(ctx, &resp)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
 
 fn run_get_at_time_no_arg<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
@@ -841,6 +950,38 @@ fn run_delete_non_existent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             ))
             .await?;
         assert::status_in(&resp, &[404, 409, 412])?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+// has_composition — SM boolean realized via GET /composition/{uid} (200/404).
+fn run_has_composition_bad_composition<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!("/ehr/{ehr_id}/composition/{}", Uuid::new_v4()))
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 404)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+fn run_has_composition_bad_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!(
+                    "/ehr/{}/composition/{}",
+                    Uuid::new_v4(),
+                    Uuid::new_v4()
+                ))
+                .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 404)?;
         Ok(DataSetReport::SINGLE)
     })
 }

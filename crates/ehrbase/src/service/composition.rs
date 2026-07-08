@@ -19,6 +19,8 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
         self.validate_composition_for_commit(&composition).await?;
+        self.reject_duplicate_persistent(ehr_id, &composition)
+            .await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::CREATION, "COMPOSITION creation");
@@ -26,7 +28,7 @@ impl EhrbaseService {
         // template_store (the column is an FK to it).
         let committed = vobject::create(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             Kind::Composition,
             composition,
             None,
@@ -58,7 +60,7 @@ impl EhrbaseService {
             Some(v) => vobject::read_version(&self.pool, vo_id, v).await?,
             None => vobject::read_current(&self.pool, vo_id).await?,
         }
-        .filter(|r| r.ehr_id == ehr_id)
+        .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
 
         if read.deleted() {
@@ -77,7 +79,7 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::version_at(&self.pool, vo_id, at)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
@@ -91,11 +93,11 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
     ) -> Result<Value, ServiceError> {
-        let read = vobject::read_current(&self.pool, vo_id)
+        let _read = vobject::read_current(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
-        self.versioned_object(vo_id, read.ehr_id).await
+        self.versioned_object(vo_id, ehr_id).await
     }
 
     /// An `ORIGINAL_VERSION` of a COMPOSITION at a specific version.
@@ -107,7 +109,7 @@ impl EhrbaseService {
     ) -> Result<Value, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} v{version}")))?;
         self.original_version(&read)
     }
@@ -130,7 +132,7 @@ impl EhrbaseService {
             Some(at) => vobject::version_at(&self.pool, vo_id, at).await?,
             None => vobject::read_current(&self.pool, vo_id).await?,
         }
-        .filter(|r| r.ehr_id == ehr_id)
+        .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} version at time")))?;
         let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
         let ov = self.original_version(&read)?;
@@ -146,14 +148,38 @@ impl EhrbaseService {
         composition: Value,
         expected: Option<i32>,
     ) -> Result<ServiceResponse, ServiceError> {
-        self.ensure_composition_in_ehr(ehr_id, vo_id).await?;
+        let current = vobject::read_current(&self.pool, vo_id)
+            .await?
+            .filter(|r| r.ehr_id == Some(ehr_id))
+            .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
+        if current.deleted() {
+            return Err(ServiceError::NotFound(format!(
+                "COMPOSITION {vo_id} is deleted"
+            )));
+        }
+        // Reject an update whose body declares a *different* template than the
+        // stored composition it supersedes (CNF master07
+        // `update_composition-wrong_template`). ITS-REST `422_COMPOSITION`
+        // ("could be converted … but there are semantic validation errors") is
+        // the fit — a template change is not a syntactic (400) or
+        // precondition (412) failure.
+        if let (Some(stored), Some(incoming)) = (
+            composition_template_id(&current.canonical),
+            composition_template_id(&composition),
+        ) && stored != incoming
+        {
+            return Err(ServiceError::Unprocessable(format!(
+                "update COMPOSITION references template {incoming}, but the stored \
+                 composition was committed against template {stored} (template_id mismatch)"
+            )));
+        }
         self.validate_composition_for_commit(&composition).await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "COMPOSITION update");
         let committed = vobject::update(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             vo_id,
             Kind::Composition,
             composition,
@@ -180,7 +206,7 @@ impl EhrbaseService {
     ) -> Result<Option<ResourceMeta>, ServiceError> {
         let Some(read) = vobject::read_current(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
         else {
             return Ok(None);
         };
@@ -233,7 +259,7 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_current(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
         if read.deleted() {
             return Err(ServiceError::BadRequest(format!(
@@ -253,7 +279,7 @@ impl EhrbaseService {
         // check above and the commit is caught atomically.
         let committed = vobject::delete(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             vo_id,
             Kind::Composition,
             Some(expected),
@@ -283,20 +309,53 @@ impl EhrbaseService {
         }
     }
 
-    /// Confirm a live COMPOSITION with `vo_id` belongs to `ehr_id`.
-    async fn ensure_composition_in_ehr(
+    /// Enforce the CNF persistent-COMPOSITION uniqueness convention: an EHR may
+    /// hold only one *live* persistent COMPOSITION per template, so a second
+    /// `create` for the same persistent OPT must be rejected (CNF master07
+    /// `create_composition-same_opt_twice`: "only one 'create' is allowed for
+    /// persistent COMPOSITIONs, the next operations … should be modifications").
+    ///
+    /// PORT NOTE: the openEHR RM does **not** define this cardinality — the CNF
+    /// schedule itself records it as "under debate in the openEHR SEC … due to
+    /// the lack of information in the openEHR specifications"
+    /// (`docs/specs/openehr/CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
+    /// We adopt the CNF criterion. Only persistent COMPOSITIONs with a declared
+    /// template are constrained; event/episodic COMPOSITIONs are unbounded.
+    async fn reject_duplicate_persistent(
         &self,
         ehr_id: Uuid,
-        vo_id: Uuid,
+        composition: &Value,
     ) -> Result<(), ServiceError> {
-        let read = vobject::read_current(&self.pool, vo_id)
-            .await?
-            .filter(|r| r.ehr_id == ehr_id)
-            .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
-        if read.deleted() {
-            return Err(ServiceError::NotFound(format!(
-                "COMPOSITION {vo_id} is deleted"
-            )));
+        if !is_persistent(composition) {
+            return Ok(());
+        }
+        let Some(template_id) = composition_template_id(composition) else {
+            return Ok(());
+        };
+        // PERF(port): the OPT `template_id` is not promoted onto `vo_version`, so
+        // this scans the EHR's live COMPOSITIONs and reassembles each to read its
+        // category + template. An EHR holds few persistent compositions; if this
+        // ever shows on a hot path, populate `vo_version.template_id` and filter
+        // in SQL.
+        let vo_ids: Vec<Uuid> = sqlx::query_scalar(
+            "SELECT vo_id FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
+             AND upper_inf(sys_period) AND lifecycle_state <> $2",
+        )
+        .bind(ehr_id)
+        .bind(super::codes::lifecycle::DELETED)
+        .fetch_all(&self.pool)
+        .await?;
+        for vo_id in vo_ids {
+            if let Some(read) = vobject::read_current(&self.pool, vo_id).await?
+                && is_persistent(&read.canonical)
+                && composition_template_id(&read.canonical) == Some(template_id)
+            {
+                return Err(ServiceError::Conflict(format!(
+                    "EHR {ehr_id} already has a persistent COMPOSITION for template \
+                     {template_id}; only one create is allowed (subsequent commits must \
+                     be modifications)"
+                )));
+            }
         }
         Ok(())
     }
@@ -390,7 +449,33 @@ impl EhrbaseService {
     ) -> Result<(), ServiceError> {
         match kind {
             Kind::Composition => self.validate_composition_for_commit(data).await,
-            Kind::EhrStatus | Kind::EhrAccess | Kind::Folder => Ok(()),
+            // An EHR_STATUS committed via a CONTRIBUTION is validated exactly as
+            // one supplied on EHR create (CNF master08
+            // `commit_contribution-invalid_ehr_status`).
+            Kind::EhrStatus => super::ehr::validate_ehr_status(data),
+            Kind::EhrAccess | Kind::Folder => Ok(()),
+            // Demographic party roots validate structurally (typed deserialize +
+            // PARTY invariants) via the demographic module.
+            Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
+                self.validate_party_kind_for_commit(kind, data)
+            }
         }
     }
+}
+
+/// The OPT `template_id` a COMPOSITION declares
+/// (`archetype_details.template_id.value`), if any.
+fn composition_template_id(composition: &Value) -> Option<&str> {
+    composition
+        .pointer("/archetype_details/template_id/value")
+        .and_then(Value::as_str)
+}
+
+/// Whether a COMPOSITION is `431|persistent|` (RM composition, COMPOSITION.category
+/// / `is_persistent()`), read from its `category.defining_code.code_string`.
+fn is_persistent(composition: &Value) -> bool {
+    composition
+        .pointer("/category/defining_code/code_string")
+        .and_then(Value::as_str)
+        == Some("431")
 }

@@ -100,6 +100,17 @@ fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
 /// deliberately omit `archetype_details` on nested archetype-root entries, which
 /// the RM `Is_archetype_root` invariant — surfaced from `openehr-rm` — correctly
 /// flags; those are excluded here, not silently tolerated.)
+///
+/// The vendored corpus mixes openEHR reference data with **EHRbase-SDK** data,
+/// and EHRbase is *lenient*: some SDK fixtures omit RM-mandatory attributes that
+/// a strict validator rightly rejects. Per ADR-008 (openEHR spec conformance,
+/// not EHRbase parity) we do **not** tolerate that leniency, so such fixtures are
+/// excluded here with the exact spec violation named — they are not a valid
+/// oracle for "validates clean". Excluded on those grounds:
+/// - `rawdb_composition.json` — its `composer.external_ref` is a `PARTY_REF`
+///   missing the mandatory `type` (`PARTY_REF.type [1]`, RM support) whose `id`
+///   is a `GENERIC_ID` missing the mandatory `value` (`OBJECT_ID.value [1]`, RM
+///   support). Strict typed validation surfaces both (phase S2-04, T1).
 const CLEAN_COMPOSITIONS: &[&str] = &[
     "all_types_no_multimedia.json",
     "choice_validation_test.json",
@@ -116,7 +127,6 @@ const CLEAN_COMPOSITIONS: &[&str] = &[
     "nested.en.v1.json",
     "other_participations.json",
     "participation_no_content.json",
-    "rawdb_composition.json",
     "virology_finding_with_specimen_no_update.json",
 ];
 
@@ -140,6 +150,37 @@ fn valid_corpus_compositions_validate_clean() {
         failures.is_empty(),
         "expected these vendored valid compositions to validate clean:\n{}",
         failures.join("\n")
+    );
+}
+
+/// Strict mandatory-attribute enforcement (phase S2-04, T1, finding F-open-3):
+/// removing the mandatory `COMPOSITION.composer [1]` must be rejected. The
+/// ADR-008 node codec stores raw canonical JSON with no schema enforcement at
+/// commit, so before this fix `openehr-rm::validate::run` silently swallowed the
+/// typed-deserialize failure and the composition committed 201; now it surfaces
+/// the failure → 422.
+#[test]
+fn missing_mandatory_composer_is_rejected() {
+    let wts = web_templates();
+    let mut c = composition("nested.en.v1.json");
+    let tid = template_id(&c);
+    let wt = wts.get(&tid).expect("WebTemplate for nested.en.v1");
+    assert!(
+        openehr_flat::validate_composition(&c, wt).is_empty(),
+        "baseline nested.en.v1 must validate clean"
+    );
+    c.as_object_mut()
+        .expect("composition object")
+        .remove("composer");
+    let msgs = openehr_flat::validate_composition(&c, wt);
+    assert!(
+        !msgs.is_empty(),
+        "a COMPOSITION with no composer must be rejected (F-open-3)"
+    );
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.to_lowercase().contains("composer") || m.path == "/"),
+        "the violation should reference the missing mandatory composer: {msgs:?}"
     );
 }
 

@@ -95,6 +95,12 @@ pub enum Token {
     Forward,
     #[token("backward", ignore(case))]
     Backward,
+    // NOTE: `TIMEWINDOW` is deliberately NOT a token. AQL 1.1 removed the
+    // clause from the grammar (QUERY `master00-amendment_record.adoc`,
+    // SPECQUERY-20); a query using it is invalid AQL 1.1 and must fail to
+    // parse. The CNF query corpus predates the removal — the conformance
+    // runner encodes the documented corpus-override (rejection expected), the
+    // parser never resurrects removed grammar.
     #[token("contains", ignore(case))]
     Contains,
     #[token("and", ignore(case))]

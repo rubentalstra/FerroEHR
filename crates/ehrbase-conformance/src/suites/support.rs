@@ -68,6 +68,38 @@ pub async fn ensure_opt(ctx: &RunContext<'_>, opt_rel: &str) -> Result<(), CaseE
     }
 }
 
+/// Upload an **in-memory** OPT (already-serialized ADL 1.4 XML) to the definition
+/// endpoint, tolerating a re-upload (`2xx` or `409` already-present) exactly like
+/// [`ensure_opt`].
+///
+/// This is the provisioning path for **authored** constraint templates (the
+/// vendored corpus ships no OPT per archetype-constraint variant; master15–17
+/// §Implementation notes: the archetypes "should be generated") — the suite
+/// tightens a base OPT programmatically (`super::content::author`) and provisions
+/// the result here, so a constraint case is executable *as specified* instead of
+/// skipped.
+///
+/// # Errors
+/// [`CaseError`] on a transport failure or an upload that is neither a success
+/// nor an already-present conflict.
+pub async fn ensure_opt_xml(ctx: &RunContext<'_>, xml: &str) -> Result<(), CaseError> {
+    let resp = ctx
+        .send(
+            HttpRequest::post("/definition/template/adl1.4")
+                .text_body(xml.to_owned(), "application/xml")
+                .header("accept", "application/json"),
+        )
+        .await?;
+    if (200..300).contains(&resp.status) || resp.status == 409 {
+        Ok(())
+    } else {
+        Err(CaseError::Assertion(format!(
+            "authored OPT upload returned {} (expected 2xx or 409 already-present)",
+            resp.status
+        )))
+    }
+}
+
 /// The version uid (`OBJECT_VERSION_ID`) a versioned-object write returns — the
 /// `ETag` (ITS-REST `headers/ETag_*.yaml`, double-quoted) preferred (works
 /// regardless of `Prefer`/wire format), else the representation body's

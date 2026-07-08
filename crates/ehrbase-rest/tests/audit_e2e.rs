@@ -87,6 +87,8 @@ impl EhrService for MockBackend {
 impl openehr_its::rest::generated::definition::DefinitionApi for MockBackend {}
 impl ehrbase_rest::WebTemplateService for MockBackend {}
 impl ehrbase_rest::QueryService for MockBackend {}
+impl ehrbase_rest::DemographicService for MockBackend {}
+impl ehrbase_rest::AdminService for MockBackend {}
 
 // ── harness ──────────────────────────────────────────────────────────────────
 

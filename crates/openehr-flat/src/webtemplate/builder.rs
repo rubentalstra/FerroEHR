@@ -27,8 +27,8 @@ use openehr_its::opt14::{
 
 use super::inputs::{self, Labels};
 use super::model::{
-    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateExistence,
-    WebTemplateInput, WebTemplateInputType, WebTemplateNode,
+    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateCodeList,
+    WebTemplateExistence, WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateSlot,
 };
 
 const CURRENT_VERSION: &str = "2.3";
@@ -330,9 +330,11 @@ fn build_children(ctx: &Ctx, co: &CObject, node: &mut WebTemplateNode, arch_id: 
         let (built, ptypes) = inputs::build_inputs(&node.rm_type, co, &labels);
         node.inputs = built;
         node.proportion_types = ptypes;
+        capture_leaf_constraints(co, node);
     }
 
     node.cardinalities = cardinalities(co, &node.aql_path);
+    node.card_all = all_cardinalities(co, &node.aql_path);
     // Existence is captured only for structural (attribute-recursing) nodes; a
     // DATA_VALUE leaf's constraints (`magnitude`, `is_integral`, `value`, …) are
     // handled by `inputs`/leaf checks, not attribute navigation (F-07-04).
@@ -428,9 +430,17 @@ fn post_process_observation(node: &mut WebTemplateNode) {
 fn compact(mut node: WebTemplateNode, depth: usize) -> Option<WebTemplateNode> {
     // Medium: hoist ALWAYS/SINGLE-compactable wrapper children into this node.
     let children = std::mem::take(&mut node.children);
-    let mut existence = std::mem::take(&mut node.existence);
-    node.children = get_compacted(children, &mut node.cardinalities, &mut existence);
-    node.existence = existence;
+    let mut hoisted = Hoisted {
+        cardinalities: std::mem::take(&mut node.cardinalities),
+        existence: std::mem::take(&mut node.existence),
+        card_all: std::mem::take(&mut node.card_all),
+        slots: std::mem::take(&mut node.slots),
+    };
+    node.children = get_compacted(children, &mut hoisted);
+    node.cardinalities = hoisted.cardinalities;
+    node.existence = hoisted.existence;
+    node.card_all = hoisted.card_all;
+    node.slots = hoisted.slots;
     // Recurse into the (post-hoist) children.
     let children = std::mem::take(&mut node.children);
     node.children = children
@@ -440,11 +450,16 @@ fn compact(mut node: WebTemplateNode, depth: usize) -> Option<WebTemplateNode> {
     process_children(node, depth)
 }
 
-fn get_compacted(
-    children: Vec<WebTemplateNode>,
-    parent_cardinalities: &mut Vec<WebTemplateCardinality>,
-    parent_existence: &mut Vec<WebTemplateExistence>,
-) -> Vec<WebTemplateNode> {
+/// The constraint sets a hoisted wrapper re-homes onto its parent (all keyed by
+/// absolute archetype paths, so they stay valid after the hoist — F-07-04).
+struct Hoisted {
+    cardinalities: Vec<WebTemplateCardinality>,
+    existence: Vec<WebTemplateExistence>,
+    card_all: Vec<WebTemplateCardinality>,
+    slots: Vec<WebTemplateSlot>,
+}
+
+fn get_compacted(children: Vec<WebTemplateNode>, parent: &mut Hoisted) -> Vec<WebTemplateNode> {
     let originals: Vec<(String, i32)> = children
         .iter()
         .map(|c| (c.rm_type.clone(), c.max))
@@ -452,17 +467,30 @@ fn get_compacted(
     let mut out = Vec::new();
     for mut child in children {
         if is_compactable(&child, &originals) {
-            parent_cardinalities.append(&mut child.cardinalities.clone());
-            // A hoisted wrapper's existence constraints (on its own attributes,
-            // e.g. HISTORY.events) reference absolute archetype paths, so they
-            // stay valid when re-homed on the parent — mirror the cardinality
-            // propagation so the walk still enforces them (F-07-04).
-            parent_existence.append(&mut std::mem::take(&mut child.existence));
-            out.extend(get_compacted(
-                child.children,
-                parent_cardinalities,
-                parent_existence,
-            ));
+            parent
+                .cardinalities
+                .append(&mut child.cardinalities.clone());
+            // A hoisted wrapper's existence/cardinality constraints (on its own
+            // attributes, e.g. HISTORY.events) reference absolute archetype
+            // paths, so they stay valid when re-homed on the parent — the walk
+            // still enforces them (F-07-04).
+            parent
+                .existence
+                .append(&mut std::mem::take(&mut child.existence));
+            parent
+                .card_all
+                .append(&mut std::mem::take(&mut child.card_all));
+            parent.slots.append(&mut std::mem::take(&mut child.slots));
+            // The hoisted wrapper's own RM type is an archetype constraint the
+            // compacted tree would otherwise lose: record it as a slot so the
+            // walk still rejects a sibling subtype in a narrowed
+            // ITEM_STRUCTURE/EVENT slot (AOM 1.4 type conformance,
+            // master16 §ITEM_STRUCTURE/§EVENT "Class not allowed").
+            parent.slots.push(WebTemplateSlot {
+                path: child.aql_path.clone(),
+                rm_type: child.rm_type.clone(),
+            });
+            out.extend(get_compacted(child.children, parent));
         } else {
             out.push(child);
         }
@@ -641,6 +669,12 @@ fn copy_values(from: &WebTemplateNode, to: &mut WebTemplateNode) {
     for (k, v) in &from.term_bindings {
         to.term_bindings.insert(k.clone(), v.clone());
     }
+    // Validation-only constraint sets survive the promotion (absolute paths; a
+    // path that is not a descendant of the promoted node's own aql path is
+    // neutralised by the walk's prefix-strip).
+    to.existence.extend(from.existence.iter().cloned());
+    to.card_all.extend(from.card_all.iter().cloned());
+    to.slots.extend(from.slots.iter().cloned());
 }
 
 // ── cardinalities ────────────────────────────────────────────────────────────
@@ -661,6 +695,101 @@ fn cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
         }
     }
     out
+}
+
+/// Capture **every** constraining multiple-attribute cardinality for the
+/// validation walk (AOM 1.4 `master04-constraint_model_package.adoc`
+/// §cardinality): any interval with a lower bound `>= 1` or a bounded upper
+/// bound constrains the container. This is the superset of the Better-filtered
+/// [`requires_cardinality`] selection, which drops `0..1`/`1..1`/`1..*` — those
+/// intervals are still real archetype constraints (master15/16 truth tables)
+/// and are enforced from [`WebTemplateNode::card_all`], never serialized.
+fn all_cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
+    let mut out = Vec::new();
+    for attr in inputs::attributes(co) {
+        if let openehr_its::opt14::CAttribute::CMultipleAttribute(m) = attr {
+            let (min, max) = occurrences(&m.cardinality.interval);
+            if min.unwrap_or(0) >= 1 || max != -1 {
+                out.push(WebTemplateCardinality {
+                    min,
+                    max,
+                    ids: None,
+                    path: format!("{node_path}/{}", m.rm_attribute_name),
+                });
+            }
+        }
+    }
+    out
+}
+
+/// Capture the leaf value constraints the Better `inputs` mapping does not
+/// carry, onto the node's validation-only fields:
+///
+/// - `C_INTEGER.list` / `C_REAL.list` on a numeric datum (`magnitude`, `value`)
+///   → [`WebTemplateNode::numeric_lists`] (AOM 1.4 §`C_INTEGER/§C_REAL`);
+/// - `C_DURATION.range` on `value` → [`WebTemplateNode::duration_range`]
+///   (AOM 1.4 §`C_DURATION`);
+/// - `C_CODE_PHRASE` code lists on coded attributes other than
+///   `defining_code` (e.g. `DV_MULTIMEDIA.media_type`) →
+///   [`WebTemplateNode::code_lists`] (AOM 1.4 §`C_CODE_PHRASE`).
+fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
+    for datum in ["magnitude", "value", "numerator", "denominator"] {
+        match inputs::primitive_under(co, datum) {
+            Some(CPrimitive::CInteger(ci)) if !ci.list.is_empty() => {
+                node.numeric_lists.push((
+                    datum.to_owned(),
+                    ci.list.iter().map(|v| f64::from(*v)).collect(),
+                ));
+            }
+            Some(CPrimitive::CReal(cr)) if !cr.list.is_empty() => {
+                node.numeric_lists.push((datum.to_owned(), cr.list.clone()));
+            }
+            _ => {}
+        }
+    }
+    if let Some(CPrimitive::CDuration(d)) = inputs::primitive_under(co, "value")
+        && let Some(range) = &d.range
+    {
+        let min = if range.lower_unbounded {
+            None
+        } else {
+            range.lower.clone()
+        };
+        let max = if range.upper_unbounded {
+            None
+        } else {
+            range.upper.clone()
+        };
+        if min.is_some() || max.is_some() {
+            node.duration_range = Some(super::model::WebTemplateRange {
+                min_op: min.as_ref().map(|_| ">=".to_owned()),
+                min: min.map(serde_json::Value::String),
+                max_op: max.as_ref().map(|_| "<=".to_owned()),
+                max: max.map(serde_json::Value::String),
+            });
+        }
+    }
+    for attr in inputs::attributes(co) {
+        let attr_name = inputs::attribute_name(attr);
+        if attr_name == "defining_code" {
+            continue; // Modelled by the coded-text `inputs`.
+        }
+        for child in inputs::attribute_children(attr) {
+            if let CObject::CCodePhrase(cp) = child
+                && !cp.code_list.is_empty()
+            {
+                node.code_lists.push(WebTemplateCodeList {
+                    attr: attr_name.to_owned(),
+                    terminology: cp
+                        .terminology_id
+                        .as_ref()
+                        .map(|t| t.value.clone())
+                        .filter(|t| !t.is_empty()),
+                    codes: cp.code_list.clone(),
+                });
+            }
+        }
+    }
 }
 
 // ── existence (AOM 1.4 C_ATTRIBUTE.existence) ─────────────────────────────────
@@ -689,15 +818,19 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
         };
         let (min, max) = occurrences(&s.existence);
         let min = min.unwrap_or(0);
-        // Require at least one non-primitive (object-valued) constraint child:
+        // Require at least one non-primitive (object-valued) constraint child —
         // this targets real structural attributes (`value`, `language`, `data`,
         // `events`, `items`, …) and excludes function/primitive constraints
         // (`is_integral`, `lower_included`, …) that never appear as navigable
-        // instance attributes.
-        let object_valued = s
-            .children
-            .iter()
-            .any(|c| !matches!(c, CObject::CPrimitiveObject(_)));
+        // instance attributes. A **childless** mandatory attribute also counts:
+        // AOM 1.4 (`master04-constraint_model_package.adoc` §existence) lets an
+        // archetype demand an attribute's presence without constraining its
+        // value (a bare `C_SINGLE_ATTRIBUTE` with existence `1..1`, e.g. a
+        // mandatory `COMPOSITION.context` or `HISTORY.summary`).
+        let object_valued = s.children.is_empty()
+            || s.children
+                .iter()
+                .any(|c| !matches!(c, CObject::CPrimitiveObject(_)));
         if min >= 1
             && s.rm_attribute_name != "name"
             && object_valued

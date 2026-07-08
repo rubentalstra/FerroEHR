@@ -9,6 +9,22 @@ use crate::storage::StorageError;
 /// granularity — the P10 spike decision). LOCATABLE content types plus
 /// `EVENT_CONTEXT` and `FEEDER_AUDIT`, which AQL can address although the RM
 /// does not make them LOCATABLE.
+///
+/// The five concrete demographic **party roots** (PERSON/ORGANISATION/GROUP/
+/// AGENT/ROLE) are structure roots so `decompose` accepts a party as a
+/// versioned object (ADR-008 — parties reuse the `node`/`vo_version`
+/// machinery). PORT NOTE: the demographic *container* classes nested inside a
+/// party (`PARTY_IDENTITY`, `CONTACT`, `ADDRESS`, `CAPABILITY`,
+/// `PARTY_RELATIONSHIP`) are deliberately **not** structure types. They are
+/// reached only through non-structure array attributes (`identities`,
+/// `contacts`, `relationships`, `capabilities`), which the codec keeps inline
+/// verbatim (see [`prune_children`]); an `ITEM_TREE`/`ITEM_STRUCTURE` nested
+/// inside such a container therefore stays inside the party's own JSON fragment
+/// and round-trips losslessly, without being split into its own row. The
+/// party's own top-level `details: ITEM_STRUCTURE` (a *direct* structure child)
+/// is pruned normally. Demographic content is not AQL-addressable in Stage 1
+/// (CNF master10 is TBD), so leaving these containers inline is both lossless
+/// and the simpler design (fewer rows, no promotion needed).
 const STRUCTURE_TYPES: &[&str] = &[
     "COMPOSITION",
     "EHR_STATUS",
@@ -33,6 +49,12 @@ const STRUCTURE_TYPES: &[&str] = &[
     "CLUSTER",
     "ELEMENT",
     "FEEDER_AUDIT",
+    // demographic party roots (ADR-008)
+    "PERSON",
+    "ORGANISATION",
+    "GROUP",
+    "AGENT",
+    "ROLE",
 ];
 
 /// Whether an RM `_type` gets its own `node` row.
@@ -376,6 +398,170 @@ mod tests {
     #[test]
     fn reassembles_out_of_order_rows() {
         let original = sample();
+        let mut rows = decompose(original.clone()).unwrap();
+        rows.reverse();
+        assert_eq!(reassemble(&rows).unwrap(), original);
+    }
+
+    /// A realistic PERSON with `identities` (each carrying a nested
+    /// `details: ITEM_TREE` inside its `PARTY_IDENTITY`), `contacts` (with an
+    /// `ADDRESS.details: ITEM_TREE`), a top-level `details: ITEM_TREE`,
+    /// `languages`, and `roles` refs.
+    fn person() -> Value {
+        json!({
+            "_type": "PERSON",
+            "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+            "name": {"_type": "DV_TEXT", "value": "person"},
+            "uid": {"_type": "HIER_OBJECT_ID", "value": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"},
+            "identities": [{
+                "_type": "PARTY_IDENTITY",
+                "archetype_node_id": "at0001",
+                "name": {"_type": "DV_TEXT", "value": "legal name"},
+                "details": {
+                    "_type": "ITEM_TREE",
+                    "archetype_node_id": "at0002",
+                    "name": {"_type": "DV_TEXT", "value": "structure"},
+                    "items": [{
+                        "_type": "ELEMENT",
+                        "archetype_node_id": "at0003",
+                        "name": {"_type": "DV_TEXT", "value": "family name"},
+                        "value": {"_type": "DV_TEXT", "value": "Doe"}
+                    }]
+                }
+            }],
+            "contacts": [{
+                "_type": "CONTACT",
+                "archetype_node_id": "at0010",
+                "name": {"_type": "DV_TEXT", "value": "home"},
+                "addresses": [{
+                    "_type": "ADDRESS",
+                    "archetype_node_id": "at0011",
+                    "name": {"_type": "DV_TEXT", "value": "postal"},
+                    "details": {
+                        "_type": "ITEM_TREE",
+                        "archetype_node_id": "at0012",
+                        "name": {"_type": "DV_TEXT", "value": "address"},
+                        "items": [{
+                            "_type": "ELEMENT",
+                            "archetype_node_id": "at0013",
+                            "name": {"_type": "DV_TEXT", "value": "city"},
+                            "value": {"_type": "DV_TEXT", "value": "Amsterdam"}
+                        }]
+                    }
+                }]
+            }],
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0020",
+                "name": {"_type": "DV_TEXT", "value": "details"},
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0021",
+                    "name": {"_type": "DV_TEXT", "value": "note"},
+                    "value": {"_type": "DV_TEXT", "value": "vip"}
+                }]
+            },
+            "languages": [{"_type": "DV_TEXT", "value": "en"}],
+            "roles": [{
+                "_type": "PARTY_REF",
+                "namespace": "demographic",
+                "type": "ROLE",
+                "id": {"_type": "HIER_OBJECT_ID", "value": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}
+            }]
+        })
+    }
+
+    /// A ROLE with a `performer` PARTY_REF and `capabilities` (each carrying a
+    /// nested `credentials: ITEM_TREE`).
+    fn role() -> Value {
+        json!({
+            "_type": "ROLE",
+            "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+            "name": {"_type": "DV_TEXT", "value": "role"},
+            "identities": [{
+                "_type": "PARTY_IDENTITY",
+                "archetype_node_id": "at0001",
+                "name": {"_type": "DV_TEXT", "value": "role name"},
+                "details": {
+                    "_type": "ITEM_TREE",
+                    "archetype_node_id": "at0002",
+                    "name": {"_type": "DV_TEXT", "value": "structure"},
+                    "items": []
+                }
+            }],
+            "performer": {
+                "_type": "PARTY_REF",
+                "namespace": "demographic",
+                "type": "PERSON",
+                "id": {"_type": "HIER_OBJECT_ID", "value": "cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+            },
+            "capabilities": [{
+                "_type": "CAPABILITY",
+                "archetype_node_id": "at0030",
+                "name": {"_type": "DV_TEXT", "value": "prescribing"},
+                "credentials": {
+                    "_type": "ITEM_TREE",
+                    "archetype_node_id": "at0031",
+                    "name": {"_type": "DV_TEXT", "value": "credentials"},
+                    "items": [{
+                        "_type": "ELEMENT",
+                        "archetype_node_id": "at0032",
+                        "name": {"_type": "DV_TEXT", "value": "licence"},
+                        "value": {"_type": "DV_TEXT", "value": "GMC-12345"}
+                    }]
+                }
+            }]
+        })
+    }
+
+    #[test]
+    fn party_roots_are_structure_roots() {
+        for t in ["PERSON", "ORGANISATION", "GROUP", "AGENT", "ROLE"] {
+            assert!(is_structure_type(t), "{t} must be a structure root");
+        }
+    }
+
+    #[test]
+    fn person_round_trips_losslessly() {
+        let original = person();
+        let rows = decompose(original.clone()).unwrap();
+        // Only the top-level `details: ITEM_TREE` is a direct structure child,
+        // so it and its ELEMENT children are split out; the identities/contacts
+        // arrays (with their own nested ITEM_TREEs) stay inline in the PERSON
+        // fragment.
+        assert_eq!(rows[0].rm_type, "PERSON");
+        assert!(
+            rows[0].data.get("identities").is_some(),
+            "identities inline"
+        );
+        assert!(rows[0].data.get("contacts").is_some(), "contacts inline");
+        assert!(
+            rows[0].data.get("details").is_none(),
+            "top-level details pruned"
+        );
+        assert!(
+            rows.iter().any(|r| r.path == "details."),
+            "top-level ITEM_TREE promoted to its own node"
+        );
+        assert_eq!(reassemble(&rows).unwrap(), original);
+    }
+
+    #[test]
+    fn role_round_trips_losslessly() {
+        let original = role();
+        let rows = decompose(original.clone()).unwrap();
+        assert_eq!(rows[0].rm_type, "ROLE");
+        // performer + capabilities (with nested credentials ITEM_TREE) stay
+        // inline; ROLE has no direct structure child, so a single row.
+        assert_eq!(rows.len(), 1, "ROLE has no direct structure child");
+        assert!(rows[0].data.get("capabilities").is_some());
+        assert!(rows[0].data.get("performer").is_some());
+        assert_eq!(reassemble(&rows).unwrap(), original);
+    }
+
+    #[test]
+    fn party_round_trips_out_of_order() {
+        let original = person();
         let mut rows = decompose(original.clone()).unwrap();
         rows.reverse();
         assert_eq!(reassemble(&rows).unwrap(), original);

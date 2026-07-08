@@ -86,33 +86,54 @@ fn has_key(tags: &[Value], k: &str) -> bool {
         .any(|t| t.get("key").and_then(Value::as_str) == Some(k))
 }
 
+/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
+/// `composer` are all `1..1` (RM ehr, COMPOSITION class), so the typed RM
+/// validation rejects a fixture without them.
 fn composition(name: &str) -> Value {
     json!({
         "_type": "COMPOSITION",
         "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "name": { "_type": "DV_TEXT", "value": name }
-    })
-}
-
-/// A COMPOSITION with **no** `template_id` but a terminology-invalid `category`
-/// code (`openehr::9999` is not in the `composition_category` group) — used to
-/// prove templateless compositions still get RM/terminology validation
-/// (F-07-01/F-07-02).
-fn composition_with_bad_category() -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "name": { "_type": "DV_TEXT", "value": "Bad category" },
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+                "_type": "ARCHETYPE_ID",
+                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+            },
+            "rm_version": "1.2.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+            "code_string": "en"
+        },
+        "territory": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+            "code_string": "NL"
+        },
         "category": {
             "_type": "DV_CODED_TEXT",
             "value": "event",
             "defining_code": {
                 "_type": "CODE_PHRASE",
                 "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "9999"
+                "code_string": "433"
             }
-        }
+        },
+        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
     })
+}
+
+/// A COMPOSITION with **no** `template_id` but a terminology-invalid `category`
+/// code (`openehr::9999` is not in the `composition_category` group) — used to
+/// prove templateless compositions still get RM/terminology validation
+/// (F-07-01/F-07-02). Every other mandatory attribute is valid, so the category
+/// code is the only defect.
+fn composition_with_bad_category() -> Value {
+    let mut c = composition("Bad category");
+    c["category"]["defining_code"]["code_string"] = json!("9999");
+    c
 }
 
 #[tokio::test]

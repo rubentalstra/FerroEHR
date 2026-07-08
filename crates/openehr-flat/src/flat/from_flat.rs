@@ -54,6 +54,13 @@ fn is_multiple(attr: &str) -> bool {
 /// `ctx/…` context is present (nothing to build).
 pub fn from_flat(flat: &Map<String, Value>, wt: &WebTemplate) -> Result<Value, FlatError> {
     let root_id = &wt.tree.id;
+    // Root-level composition attributes addressed by path (`<root>/territory|
+    // code`, `<root>/language|code`, `<root>/composer|name`, `<root>/category|
+    // code`, …) are the path-form spelling of the `ctx/…` shortcuts (SDT /
+    // Better accept either). The compacted tree carries no node for these
+    // in-context attributes, so map them onto the corresponding ctx key (an
+    // explicit `ctx/…` key wins) and let `apply_ctx` build the RM values.
+    let flat = &synthesize_root_ctx(flat, root_id);
     let mut entries: Vec<Entry> = Vec::new();
     for (key, value) in flat {
         if key == "ctx" || key.starts_with("ctx/") {
@@ -80,6 +87,9 @@ pub fn from_flat(flat: &Map<String, Value>, wt: &WebTemplate) -> Result<Value, F
     // template id; the root must carry it (self-describing composition).
     ensure_template_id(&mut comp, &wt.tree, &wt.template_id);
     context::apply_ctx(flat, &mut comp);
+    if let Some(cat) = root_category(flat, root_id) {
+        comp.entry("category".to_owned()).or_insert(cat);
+    }
     ensure_category(&mut comp);
     let mut value = Value::Object(comp);
     // Final structural pass: fill the RM-mandatory fields FLAT never surfaces
@@ -90,6 +100,58 @@ pub fn from_flat(flat: &Map<String, Value>, wt: &WebTemplate) -> Result<Value, F
     // datum-driven value, so the round-trip stays stable.
     complete_tree(&mut value);
     Ok(value)
+}
+
+/// Map root-level in-context attribute keys (`<root>/territory|code`, …) onto
+/// their `ctx/…` equivalents so [`context::apply_ctx`] builds the RM values.
+/// An explicit `ctx/…` key always wins; the root keys are left in place (they
+/// route to no tree node and are ignored by `build`).
+fn synthesize_root_ctx(flat: &Map<String, Value>, root_id: &str) -> Map<String, Value> {
+    const MAP: [(&str, &str); 6] = [
+        ("language|code", "ctx/language"),
+        ("territory|code", "ctx/territory"),
+        ("composer|name", "ctx/composer_name"),
+        ("composer|id", "ctx/composer_id"),
+        ("composer|id_namespace", "ctx/id_namespace"),
+        ("composer|id_scheme", "ctx/id_scheme"),
+    ];
+    let mut out = flat.clone();
+    for (root_key, ctx_key) in MAP {
+        if let Some(v) = flat.get(&format!("{root_id}/{root_key}"))
+            && !out.contains_key(ctx_key)
+        {
+            out.insert(ctx_key.to_owned(), v.clone());
+        }
+    }
+    out
+}
+
+/// `COMPOSITION.category` from the root-level `<root>/category|code` /
+/// `|value` / `|terminology` keys, when present.
+fn root_category(flat: &Map<String, Value>, root_id: &str) -> Option<Value> {
+    let code = flat
+        .get(&format!("{root_id}/category|code"))?
+        .as_str()?
+        .to_owned();
+    let value = flat
+        .get(&format!("{root_id}/category|value"))
+        .and_then(Value::as_str)
+        .unwrap_or("event")
+        .to_owned();
+    let term = flat
+        .get(&format!("{root_id}/category|terminology"))
+        .and_then(Value::as_str)
+        .unwrap_or("openehr")
+        .to_owned();
+    Some(json!({
+        "_type": "DV_CODED_TEXT",
+        "value": value,
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {"_type": "TERMINOLOGY_ID", "value": term},
+            "code_string": code,
+        },
+    }))
 }
 
 /// Recursively fill each node's RM-mandatory structural fields (see

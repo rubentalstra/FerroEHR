@@ -26,6 +26,25 @@ pub struct RestConfig {
     /// Authentication configuration.
     #[serde(default)]
     pub auth: AuthConfig,
+    /// ADMIN API configuration (physical EHR delete, SM `I_ADMIN_SERVICE`).
+    /// Disabled by default — the admin routes answer `404` unless enabled.
+    #[serde(default)]
+    pub admin: AdminConfig,
+}
+
+/// Configuration of the ADMIN API group (SM `I_ADMIN_SERVICE`; ITS-REST admin
+/// API, dev-branch only).
+///
+/// PORT NOTE: gating the admin surface behind an opt-in flag mirrors `EHRbase`'s
+/// `ADMINAPI_ACTIVE` prior art — when inactive, the admin controllers are simply
+/// not registered, so the routes are absent (a `404`), never a `403`. Physical,
+/// irreversible deletion is dangerous, so the group stays off by default.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AdminConfig {
+    /// Whether the ADMIN API group is active. When `false`, every admin route
+    /// answers `404` without touching the backend.
+    #[serde(default)]
+    pub enabled: bool,
 }
 
 impl Default for RestConfig {
@@ -36,6 +55,7 @@ impl Default for RestConfig {
             swagger_ui: true,
             cors_permissive: false,
             auth: AuthConfig::default(),
+            admin: AdminConfig::default(),
         }
     }
 }
@@ -100,8 +120,21 @@ mod tests {
         let c = RestConfig::default();
         assert_eq!(c.base_path, "/ehrbase/rest/openehr/v1");
         assert!(c.auth.enabled);
+        // The ADMIN API is opt-in: off unless explicitly enabled.
+        assert!(!c.admin.enabled);
         assert_eq!(c.swagger_ui_path(), "/ehrbase/rest/swagger-ui");
         assert_eq!(c.openapi_json_path(), "/ehrbase/rest/api-docs/openapi.json");
+    }
+
+    #[test]
+    #[allow(clippy::result_large_err)] // figment::Jail closure signature
+    fn admin_enabled_via_env() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EHRBASE_REST_ADMIN__ENABLED", "true");
+            let c = RestConfig::load().expect("load");
+            assert!(c.admin.enabled);
+            Ok(())
+        });
     }
 
     #[test]

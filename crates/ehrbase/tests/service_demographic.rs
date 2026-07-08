@@ -1,0 +1,370 @@
+//! End-to-end DEMOGRAPHIC service tests against a real PostgreSQL 18
+//! (testcontainers): the party CRUD + versioning + VERSIONED_PARTY +
+//! contribution + tags lifecycle, driven through the `DemographicService`
+//! envelope seam exactly as the REST layer calls it. Verifies the 0003 party
+//! migration applies cleanly (the harness runs migrations) and that parties
+//! version with no EHR scope (ADR-008).
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::too_many_lines,
+    clippy::doc_markdown
+)]
+
+use serde_json::{Value, json};
+use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
+use testcontainers::runners::AsyncRunner;
+use testcontainers::{ContainerAsync, ImageExt};
+use testcontainers_modules::postgres::Postgres;
+
+use ehrbase::db::{self, DbSettings};
+use ehrbase::service::EhrbaseService;
+use ehrbase_rest::backend::{DemographicService, PartyKind};
+use openehr_its::rest::runtime::ApiError;
+
+struct Pg {
+    #[allow(dead_code)]
+    container: ContainerAsync<Postgres>,
+    host: String,
+    port: u16,
+}
+
+impl Pg {
+    async fn start() -> Self {
+        let container = Postgres::default()
+            .with_tag("18")
+            .start()
+            .await
+            .expect("start postgres:18 (is Docker running?)");
+        let host = container.get_host().await.expect("host").to_string();
+        let port = container.get_host_port_ipv4(5432).await.expect("port");
+        Self {
+            container,
+            host,
+            port,
+        }
+    }
+
+    async fn migrated_pool(&self, name: &str) -> PgPool {
+        let admin = format!(
+            "postgres://postgres:postgres@{}:{}/postgres",
+            self.host, self.port
+        );
+        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
+        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
+            .execute(&mut conn)
+            .await
+            .expect("create db");
+        let settings = DbSettings::new(format!(
+            "postgres://postgres:postgres@{}:{}/{name}",
+            self.host, self.port
+        ));
+        let pool = db::connect(&settings).await.expect("pool");
+        // Runs every migration including 0003 (the party storage migration) —
+        // a bad constraint name would fail here.
+        db::run_migrations(&pool).await.expect("migrate");
+        pool
+    }
+}
+
+/// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
+fn ovid(v: &Value) -> &str {
+    v["uid"]["value"].as_str().expect("uid.value")
+}
+
+/// The bare versioned-object UUID from an `OBJECT_VERSION_ID`.
+fn vo_uuid(v: &Value) -> String {
+    ovid(v).split("::").next().expect("vo uuid").to_owned()
+}
+
+fn person(name: &str) -> Value {
+    json!({
+        "_type": "PERSON",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "family" },
+                    "value": { "_type": "DV_TEXT", "value": name }
+                }]
+            }
+        }]
+    })
+}
+
+fn role(name: &str) -> Value {
+    json!({
+        "_type": "ROLE",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": name },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": []
+            }
+        }],
+        "performer": {
+            "_type": "PARTY_REF",
+            "namespace": "demographic",
+            "type": "PERSON",
+            "id": { "_type": "HIER_OBJECT_ID", "value": "cccccccc-cccc-4ccc-8ccc-cccccccccccc" }
+        },
+        "capabilities": []
+    })
+}
+
+#[tokio::test]
+async fn person_lifecycle_end_to_end() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("demographic_person").await);
+
+    // create → v1
+    let created = svc
+        .party_create(PartyKind::Person, person("Jane"))
+        .await
+        .expect("create person");
+    assert_eq!(created.body["_type"], "PERSON");
+    let ovid_v1 = ovid(&created.body).to_owned();
+    let vo = vo_uuid(&created.body);
+    assert!(ovid_v1.ends_with("::1"), "first version, got {ovid_v1}");
+    assert_eq!(
+        created.meta.as_ref().expect("meta").ehr_id,
+        "",
+        "a party has no EHR scope"
+    );
+
+    // get current (bare HIER_OBJECT_ID)
+    let got = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("get person");
+    assert_eq!(got.body["name"]["value"], "Jane");
+
+    // get by OBJECT_VERSION_ID (that specific version)
+    let by_ovid = svc
+        .party_get(PartyKind::Person, ovid_v1.clone(), None)
+        .await
+        .expect("get by ovid");
+    assert_eq!(ovid(&by_ovid.body), ovid_v1);
+
+    // time-travel: capture a time inside v1, then update to v2
+    let t_v1 = jiff::Timestamp::now();
+    tokio::time::sleep(std::time::Duration::from_millis(15)).await;
+
+    // update (If-Match = current OVID) → v2
+    let updated = svc
+        .party_update(
+            PartyKind::Person,
+            vo.clone(),
+            ovid_v1.clone(),
+            person("Jane Roe"),
+        )
+        .await
+        .expect("update person");
+    let ovid_v2 = ovid(&updated.body).to_owned();
+    assert!(ovid_v2.ends_with("::2"), "second version, got {ovid_v2}");
+
+    // at-time read returns v1
+    let at_v1 = svc
+        .party_get(PartyKind::Person, vo.clone(), Some(t_v1.to_string()))
+        .await
+        .expect("at-time");
+    assert_eq!(at_v1.body["name"]["value"], "Jane");
+
+    // stale If-Match → precondition failed (412)
+    let stale = svc
+        .party_update(
+            PartyKind::Person,
+            vo.clone(),
+            ovid_v1.clone(),
+            person("stale"),
+        )
+        .await;
+    assert!(
+        matches!(stale, Err(ApiError::PreconditionFailed(_))),
+        "stale update, got {stale:?}"
+    );
+
+    // wrong-kind route → NotFound
+    let wrong = svc.party_get(PartyKind::Role, vo.clone(), None).await;
+    assert!(
+        matches!(wrong, Err(ApiError::NotFound(_))),
+        "person under role route is 404, got {wrong:?}"
+    );
+
+    // VERSIONED_PARTY + revision history + version-by-id
+    let vp = svc
+        .versioned_party_get(vo.clone())
+        .await
+        .expect("versioned_party");
+    assert_eq!(vp.body["_type"], "VERSIONED_PARTY");
+    let rh = svc
+        .versioned_party_revision_history(vo.clone())
+        .await
+        .expect("revision_history");
+    assert_eq!(rh.body["items"].as_array().expect("items").len(), 2);
+    let ov = svc
+        .versioned_party_version_get_by_id(vo.clone(), ovid_v1.clone())
+        .await
+        .expect("version by id");
+    assert_eq!(ov.body["_type"], "ORIGINAL_VERSION");
+
+    // delete (mandatory OBJECT_VERSION_ID) → deleted; subsequent get → 204 (Null)
+    let deleted = svc
+        .party_delete(PartyKind::Person, ovid_v2.clone())
+        .await
+        .expect("delete");
+    assert!(deleted.is_empty());
+    let after = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("get after delete");
+    assert!(after.is_empty(), "deleted current read is 204 (Null body)");
+}
+
+#[tokio::test]
+async fn role_create_and_get() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("demographic_role").await);
+
+    let created = svc
+        .party_create(PartyKind::Role, role("Clinician"))
+        .await
+        .expect("create role");
+    assert_eq!(created.body["_type"], "ROLE");
+    let vo = vo_uuid(&created.body);
+    let got = svc
+        .party_get(PartyKind::Role, vo, None)
+        .await
+        .expect("get role");
+    assert_eq!(got.body["name"]["value"], "Clinician");
+    assert_eq!(got.body["performer"]["type"], "PERSON");
+}
+
+#[tokio::test]
+async fn demographic_contribution_multi_version() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("demographic_contribution").await);
+
+    let body = json!({
+        "_type": "CONTRIBUTION",
+        "versions": [
+            {
+                "_type": "ORIGINAL_VERSION",
+                "commit_audit": {
+                    "change_type": {
+                        "_type": "DV_CODED_TEXT",
+                        "value": "creation",
+                        "defining_code": {
+                            "_type": "CODE_PHRASE",
+                            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                            "code_string": "249"
+                        }
+                    }
+                },
+                "data": person("Alice")
+            },
+            {
+                "_type": "ORIGINAL_VERSION",
+                "commit_audit": {
+                    "change_type": {
+                        "_type": "DV_CODED_TEXT",
+                        "value": "creation",
+                        "defining_code": {
+                            "_type": "CODE_PHRASE",
+                            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                            "code_string": "249"
+                        }
+                    }
+                },
+                "data": role("Nurse")
+            }
+        ],
+        "audit": {
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "tester" }
+        }
+    });
+
+    let created = svc
+        .demographic_contribution_create(body)
+        .await
+        .expect("create contribution");
+    assert_eq!(created.body["_type"], "CONTRIBUTION");
+    let uid = created.body["uid"]["value"]
+        .as_str()
+        .expect("uid")
+        .to_owned();
+    assert_eq!(
+        created.body["versions"].as_array().expect("versions").len(),
+        2
+    );
+
+    let got = svc
+        .demographic_contribution_get(uid)
+        .await
+        .expect("get contribution");
+    assert_eq!(got.body["versions"].as_array().expect("versions").len(), 2);
+}
+
+#[tokio::test]
+async fn party_tags_crud() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("demographic_tags").await);
+
+    let created = svc
+        .party_create(PartyKind::Person, person("Tagged"))
+        .await
+        .expect("create person");
+    let vo = vo_uuid(&created.body);
+
+    // PUT a tag collection
+    let tags = svc
+        .party_tags_update(
+            PartyKind::Person,
+            vo.clone(),
+            vec![json!({ "key": "priority", "value": "high" })],
+        )
+        .await
+        .expect("put tags");
+    let arr = tags.body.as_array().expect("tags array");
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["key"], "priority");
+
+    // GET tags on the party
+    let got = svc
+        .party_tags_get(PartyKind::Person, vo.clone())
+        .await
+        .expect("get tags");
+    assert_eq!(got.body.as_array().expect("arr").len(), 1);
+
+    // demographic tags (ehr-less scope) sees it
+    let all = svc
+        .demographic_tags_get(None, None, None)
+        .await
+        .expect("all demographic tags");
+    assert_eq!(all.body.as_array().expect("arr").len(), 1);
+
+    // DELETE the tag
+    svc.party_tags_delete(PartyKind::Person, vo.clone(), "priority".to_owned())
+        .await
+        .expect("delete tag");
+    let empty = svc
+        .party_tags_get(PartyKind::Person, vo)
+        .await
+        .expect("get tags after delete");
+    assert!(empty.body.as_array().expect("arr").is_empty());
+}
