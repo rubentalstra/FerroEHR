@@ -15,9 +15,10 @@
 //! (`contribution_create.yaml` 201/400/404/409 — the schedule's "negative
 //! response" is a `4xx`; `contribution_get.yaml` 200/404).
 //!
-//! The `has_contribution-*` and `list_contributions-*` schedule cases have no
-//! dedicated ITS-REST endpoint on our surface (only commit + get-by-uid), so
-//! they stay `NotYetTranscribed`.
+//! `has_contribution-*` is realized via `GET /contribution/{uid}` (200 has / 404
+//! not), reusing the get-by-uid runners; `list_contributions-*` via
+//! `GET /ehr/{id}/contribution` (the collection) — a missing list endpoint
+//! surfaces as a finding, never a skip (CNF guide: abstract op → REST realization).
 
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -120,6 +121,45 @@ pub fn entries() -> Vec<CaseEntry> {
         entry(
             "I_EHR_CONTRIBUTION.get_contribution-bad_contribution",
             run_get_bad_contribution,
+        ),
+        // has_contribution — SM boolean realized via GET /contribution/{uid}
+        // (200 has / 404 not); reuses the get_contribution runners.
+        entry(
+            "I_EHR_CONTRIBUTION.has_contribution-existing",
+            run_get_existing,
+        ),
+        entry(
+            "I_EHR_CONTRIBUTION.has_contribution-bad_contribution",
+            run_get_bad_contribution,
+        ),
+        entry(
+            "I_EHR_CONTRIBUTION.has_contribution-bad_ehr",
+            run_get_bad_ehr,
+        ),
+        entry(
+            "I_EHR_CONTRIBUTION.has_contribution-empty_ehr",
+            run_get_empty_ehr,
+        ),
+        // list_contributions — GET /ehr/{id}/contribution (the contribution list).
+        entry(
+            "I_EHR_CONTRIBUTION.list_contributions-empty",
+            run_list_empty,
+        ),
+        entry(
+            "I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr",
+            run_list_bad_ehr,
+        ),
+        entry(
+            "I_EHR_CONTRIBUTION.list_contributions-post_commit",
+            run_list_post_commit,
+        ),
+        entry(
+            "I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory",
+            run_list_with_directory,
+        ),
+        entry(
+            "I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status",
+            run_list_with_status,
         ),
     ]
 }
@@ -680,6 +720,94 @@ fn run_get_bad_contribution<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             )
             .await?;
         assert::status(&resp, 404)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+// list_contributions — GET /ehr/{id}/contribution (the contribution list). The
+// abstract I_EHR_CONTRIBUTION.list_contributions realized as a collection GET;
+// a fresh EHR already has its EHR_STATUS contribution, so the list is non-empty.
+fn run_list_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!("/ehr/{ehr_id}/contribution"))
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 200)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+fn run_list_bad_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!("/ehr/{}/contribution", uuid::Uuid::new_v4()))
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 404)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+fn run_list_post_commit<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        support::ensure_opt(ctx, "minimal/minimal_evaluation.opt").await?;
+        let ehr_id = support::create_ehr(ctx).await?;
+        let body =
+            contribution("contributions/valid/minimal/minimal_evaluation.contribution.json")?;
+        let committed = commit(ctx, &ehr_id, &body).await?;
+        assert::status(&committed, 201)?;
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!("/ehr/{ehr_id}/contribution"))
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 200)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+fn run_list_with_directory<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        let folder = crate::fixtures::read_json("directory/subfolders_in_directory.json")
+            .map_err(|e| CaseError::Codec(e.to_string()))?;
+        let dir = ctx
+            .send(
+                HttpRequest::post(format!("/ehr/{ehr_id}/directory"))
+                    .json_body(&folder)?
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&dir, 201)?;
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!("/ehr/{ehr_id}/contribution"))
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 200)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+fn run_list_with_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        // A fresh EHR carries its initial EHR_STATUS contribution.
+        let ehr_id = support::create_ehr(ctx).await?;
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!("/ehr/{ehr_id}/contribution"))
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 200)?;
         Ok(DataSetReport::SINGLE)
     })
 }
