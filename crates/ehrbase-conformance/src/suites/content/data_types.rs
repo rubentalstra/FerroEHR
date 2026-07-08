@@ -123,10 +123,22 @@ pub fn entries() -> Vec<CaseEntry> {
     let mut all = vec![
         // ── 17.1 basic ────────────────────────────────────────────────────────
         open("CONT-DV_BOOLEAN-anything_allowed", c, open_dv_boolean),
-        skip("CONT-DV_BOOLEAN-only_true_allowed", c),
-        skip("CONT-DV_BOOLEAN-only_false_allowed", c),
-        skip("CONT-DV_IDENTIFIER-validate_all_pattern", c),
-        skip("CONT-DV_IDENTIFIER-validate_all_list", c),
+        open("CONT-DV_BOOLEAN-only_true_allowed", c, run_dv_boolean_true),
+        open(
+            "CONT-DV_BOOLEAN-only_false_allowed",
+            c,
+            run_dv_boolean_false,
+        ),
+        open(
+            "CONT-DV_IDENTIFIER-validate_all_pattern",
+            c,
+            run_dv_identifier_pattern,
+        ),
+        open(
+            "CONT-DV_IDENTIFIER-validate_all_list",
+            c,
+            run_dv_identifier_list,
+        ),
     ];
 
     // ── 17.2 text ──────────────────────────────────────────────────────────────
@@ -175,11 +187,31 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         open_dv_proportion,
     ));
-    all.push(skip("CONT-DV_PROPORTION-validate_ratio", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_unitary", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_percent", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_fraction", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_integer_fraction", c));
+    all.push(open(
+        "CONT-DV_PROPORTION-validate_ratio",
+        c,
+        run_dv_proportion_ratio,
+    ));
+    all.push(open(
+        "CONT-DV_PROPORTION-validate_unitary",
+        c,
+        run_dv_proportion_unitary,
+    ));
+    all.push(open(
+        "CONT-DV_PROPORTION-validate_percent",
+        c,
+        run_dv_proportion_percent,
+    ));
+    all.push(open(
+        "CONT-DV_PROPORTION-validate_fraction",
+        c,
+        run_dv_proportion_fraction,
+    ));
+    all.push(open(
+        "CONT-DV_PROPORTION-validate_integer_fraction",
+        c,
+        run_dv_proportion_integer_fraction,
+    ));
     all.push(open(
         "CONT-DV_PROPORTION-validate_any_fraction",
         c,
@@ -254,7 +286,11 @@ pub fn entries() -> Vec<CaseEntry> {
     // ── 17.6 encapsulated ──────────────────────────────────────────────────────
     let c = Chapter::Master17_6;
     all.push(open("CONT-DV_PARSABLE-validate_open", c, open_dv_parsable));
-    all.push(skip("CONT-DV_PARSABLE-validate_value_formalism", c));
+    all.push(open(
+        "CONT-DV_PARSABLE-validate_value_formalism",
+        c,
+        run_dv_parsable_formalism,
+    ));
     all.push(open(
         "CONT-DV_MULTIMEDIA-validate_open",
         c,
@@ -645,4 +681,263 @@ fn run_dv_count_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         )
         .await
     })
+}
+
+/// A flexible authored-leaf driver: author `constrain` into the `all_types` OPT,
+/// then commit one composition per `rows` entry — each a clone of the base with the
+/// listed `(pointer, value)` mutations applied — asserting its `Expected`. Handles
+/// cases whose accepted instance itself needs a mutation (e.g. `DV_BOOLEAN`
+/// only-false, `DV_PROPORTION` kinds whose valid instance differs from the base).
+async fn drive_leaf_rows(
+    ctx: &RunContext<'_>,
+    tid: &'static str,
+    constrain: impl FnOnce(&mut OperationalTemplate) -> bool,
+    rows: Vec<(String, Vec<(String, Value)>, Expected)>,
+) -> Result<DataSetReport, CaseError> {
+    let mut opt = author::parse_base(ALL_TYPES_OPT)?;
+    author::set_template_id(&mut opt, tid);
+    if !constrain(&mut opt) {
+        return Err(CaseError::Assertion(format!(
+            "authoring the constraint for {tid} matched no leaf in the all_types OPT"
+        )));
+    }
+    let xml = author::to_xml(&opt)?;
+    let base = fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+    let mut drows: Vec<(String, Value, Expected)> = Vec::new();
+    for (label, muts, expected) in rows {
+        let mut c = base.clone();
+        mutate::retarget_template(&mut c, tid);
+        for (ptr, val) in muts {
+            mutate::set_pointer(&mut c, &ptr, val);
+        }
+        drows.push((label, c, expected));
+    }
+    drive::drive_authored(ctx, &xml, drows).await
+}
+
+// ── DV_BOOLEAN (master17.1) — C_BOOLEAN true-only / false-only ────────────────
+
+/// CONT-DV_BOOLEAN-only_true_allowed: `C_BOOLEAN {true}` — `value=true` accepted,
+/// `value=false` rejected.
+fn run_dv_boolean_true<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(10, "value");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_boolean_true",
+            |opt| author::constrain_leaf_boolean(opt, "DV_BOOLEAN", "value", true, false),
+            vec![
+                (
+                    "value true allowed (C_BOOLEAN true-only)".to_owned(),
+                    vec![(p.clone(), json!(true))],
+                    Expected::Accepted,
+                ),
+                (
+                    "value false not allowed (C_BOOLEAN true-only)".to_owned(),
+                    vec![(p, json!(false))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+/// CONT-DV_BOOLEAN-only_false_allowed: `C_BOOLEAN {false}` — `value=false`
+/// accepted, `value=true` rejected.
+fn run_dv_boolean_false<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(10, "value");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_boolean_false",
+            |opt| author::constrain_leaf_boolean(opt, "DV_BOOLEAN", "value", false, true),
+            vec![
+                (
+                    "value false allowed (C_BOOLEAN false-only)".to_owned(),
+                    vec![(p.clone(), json!(false))],
+                    Expected::Accepted,
+                ),
+                (
+                    "value true not allowed (C_BOOLEAN false-only)".to_owned(),
+                    vec![(p, json!(true))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── DV_PARSABLE (master17.6) — C_STRING on formalism ──────────────────────────
+
+/// CONT-DV_PARSABLE-validate_value_formalism: constrain `DV_PARSABLE.formalism` to
+/// the `{ISO8601}` list — base `ISO8601` accepted, `text/xyz` rejected.
+fn run_dv_parsable_formalism<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(13, "formalism");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_parsable_formalism",
+            |opt| {
+                author::constrain_leaf_string(
+                    opt,
+                    "DV_PARSABLE",
+                    "formalism",
+                    None,
+                    vec!["ISO8601".to_owned()],
+                )
+            },
+            vec![
+                (
+                    "formalism ISO8601 in list (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "formalism text/xyz not in list (C_STRING.list)".to_owned(),
+                    vec![(p, json!("text/xyz"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── DV_IDENTIFIER (master17.1) — C_STRING pattern / list on id ────────────────
+
+/// CONT-DV_IDENTIFIER-validate_all_pattern: constrain `DV_IDENTIFIER.id` to the
+/// digit pattern `[0-9]+` — base `54480987` accepted, `ABC` rejected.
+fn run_dv_identifier_pattern<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(14, "id");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_identifier_pattern",
+            |opt| author::constrain_leaf_string(opt, "DV_IDENTIFIER", "id", Some("[0-9]+"), vec![]),
+            vec![
+                (
+                    "id 54480987 matches [0-9]+ (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "id ABC does not match [0-9]+ (C_STRING.pattern)".to_owned(),
+                    vec![(p, json!("ABC"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+/// CONT-DV_IDENTIFIER-validate_all_list: constrain `DV_IDENTIFIER.id` to the list
+/// `{54480987}` — base accepted, `99999999` rejected.
+fn run_dv_identifier_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(14, "id");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_identifier_list",
+            |opt| {
+                author::constrain_leaf_string(
+                    opt,
+                    "DV_IDENTIFIER",
+                    "id",
+                    None,
+                    vec!["54480987".to_owned()],
+                )
+            },
+            vec![
+                (
+                    "id 54480987 in list (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "id 99999999 not in list (C_STRING.list)".to_owned(),
+                    vec![(p, json!("99999999"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── DV_PROPORTION kinds (master17.3) — C_INTEGER on type + RM kind validity ────
+
+/// Drive one `DV_PROPORTION` `type`-kind case: constrain `DV_PROPORTION.type` to the
+/// single kind code `kind`, commit an accepted instance (that kind with RM-valid
+/// numerator/denominator) and a rejected instance (`type=0` ratio, off the list).
+/// `den` sets the accepted instance's denominator to satisfy the kind's RM
+/// `Proportion` invariant (unitary ⇒ 1, percent ⇒ 100, `fraction/integer_fraction` ⇒
+/// integer parts). `num` sets the numerator likewise.
+fn drive_proportion_kind<'a>(
+    ctx: &'a RunContext<'a>,
+    tid: &'static str,
+    kind: i32,
+    num: Value,
+    den: Value,
+) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let ty = leaf_ptr(15, "type");
+        let n = leaf_ptr(15, "numerator");
+        let d = leaf_ptr(15, "denominator");
+        drive_leaf_rows(
+            ctx,
+            tid,
+            move |opt| {
+                author::constrain_leaf_integer(opt, "DV_PROPORTION", "type", None, vec![kind])
+            },
+            vec![
+                (
+                    format!("type {kind} in list {{{kind}}} with RM-valid num/den (accepted)"),
+                    vec![(ty.clone(), json!(kind)), (n, num), (d, den)],
+                    Expected::Accepted,
+                ),
+                (
+                    format!("type 0 (ratio) not in list {{{kind}}} (C_INTEGER.list)"),
+                    vec![(ty, json!(0))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_proportion_ratio<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // ratio (0): any numerator/denominator (denominator != 0).
+    drive_proportion_kind(ctx, "cnf_cont_dv_prop_ratio", 0, json!(398.5), json!(209.2))
+}
+fn run_dv_proportion_unitary<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // unitary (1): denominator must be 1.
+    drive_proportion_kind(ctx, "cnf_cont_dv_prop_unitary", 1, json!(5.0), json!(1.0))
+}
+fn run_dv_proportion_percent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // percent (2): denominator must be 100.
+    drive_proportion_kind(
+        ctx,
+        "cnf_cont_dv_prop_percent",
+        2,
+        json!(42.0),
+        json!(100.0),
+    )
+}
+fn run_dv_proportion_fraction<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // fraction (3): integer numerator/denominator.
+    drive_proportion_kind(ctx, "cnf_cont_dv_prop_fraction", 3, json!(3.0), json!(4.0))
+}
+fn run_dv_proportion_integer_fraction<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // integer_fraction (4): integer numerator/denominator.
+    drive_proportion_kind(
+        ctx,
+        "cnf_cont_dv_prop_int_fraction",
+        4,
+        json!(3.0),
+        json!(4.0),
+    )
 }

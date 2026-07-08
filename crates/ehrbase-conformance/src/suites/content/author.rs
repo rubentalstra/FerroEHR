@@ -21,7 +21,8 @@
 //! is the server's genuine validation decision.
 
 use openehr_its::opt14::{
-    self, CArchetypeRoot, CAttribute, CInteger, CObject, CPrimitive, CPrimitiveObject, CSingleAttribute, CString, Intervalofinteger, OperationalTemplate,
+    self, CArchetypeRoot, CAttribute, CBoolean, CInteger, CObject, CPrimitive, CPrimitiveObject,
+    CReal, CSingleAttribute, CString, Intervalofinteger, Intervalofreal, OperationalTemplate,
 };
 
 use crate::harness::CaseError;
@@ -485,6 +486,57 @@ pub fn constrain_leaf_integer(
         CPrimitive::CInteger(CInteger {
             list,
             range: range.map(|(lo, hi)| closed_interval(lo, hi)),
+            assumed_value: None,
+        }),
+    )
+}
+
+/// Constrain a DV_* leaf's real `value_attr` with a `C_REAL` `range` and/or `list`
+/// (e.g. `DV_PROPORTION.numerator`). Returns `true` if applied.
+pub fn constrain_leaf_real(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    value_attr: &str,
+    range: Option<(f64, f64)>,
+    list: Vec<f64>,
+) -> bool {
+    constrain_leaf_primitive(
+        opt,
+        host,
+        value_attr,
+        "Real",
+        CPrimitive::CReal(CReal {
+            list,
+            range: range.map(|(lo, hi)| Intervalofreal {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(lo),
+                upper: Some(hi),
+            }),
+            assumed_value: None,
+        }),
+    )
+}
+
+/// Constrain a DV_* leaf's boolean `value_attr` with a `C_BOOLEAN` (e.g.
+/// `DV_BOOLEAN.value` = only-true / only-false). Returns `true` if applied.
+pub fn constrain_leaf_boolean(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    value_attr: &str,
+    true_valid: bool,
+    false_valid: bool,
+) -> bool {
+    constrain_leaf_primitive(
+        opt,
+        host,
+        value_attr,
+        "Boolean",
+        CPrimitive::CBoolean(CBoolean {
+            true_valid,
+            false_valid,
             assumed_value: None,
         }),
     )
