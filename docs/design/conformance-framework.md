@@ -1,472 +1,274 @@
-# openEHR CNF Conformance Framework — design
+# The ehrbase-rs Conformance Catalogue (ECC) — design v4 (our own framework)
 
-- **Status:** designed, **v2 (2026-07-07)** — re-verified against the official
-  GitHub repository and updated for the now-implemented version-signing and
-  access-control subsystems. Ready to implement.
-- **Stage:** the ADR-008 acceptance instrument (P19, deliberately pulled forward —
-  every feature landed before this exists is unverified against the real oracle)
-- **Owner:** —
-- **Sources (all verified 2026-07-07):** the vendored CNF corpus at
-  `docs/specs/openehr/CNF/` (upstream `openEHR/specifications-CNF` @ `33251d2a`,
-  946 files) — **confirmed identical to the live upstream `master` HEAD**
-  (compare API: 0 ahead / 0 behind; last upstream commit 2024-08-06; the three
-  open issues/PRs are 2017–2023 stale). The upstream `development` branch
-  (2 commits, 2026-05-04) was also diffed: it is purely an **Antora
-  documentation-toolchain migration** — every schedule/profile/certificate
-  page is a rename plus `include::partial$…` headers; **zero test-case
-  content changes** (master11/17.5 still stubs there too). Consequence: the
-  CNF *content* is a frozen target, but the *file layout* will move to
-  `modules/<book>/pages/*.adoc` if development merges — the §4.2 coverage
-  guard therefore keys on the test-case **heading regexes over a configured
-  glob**, never on hard-coded `docs/…/masterNN` paths, and a future re-vendor
-  is a path-glob update, not a parser rewrite. Also: the P19 phase file, the `/run-conformance` skill contract, the
-  existing e2e/compose harnesses, and the excluded upstream `.py` helpers
-  (fetched and assessed 2026-07-07 — see §2.2a).
-- **Related:** `docs/enterprise/atna-audit.md` + `docs/enterprise/access-control.md`
-  (implemented) + `docs/design/version-signing.md` (implemented — closes the
-  STANDARD Signing gap this design's v1 flagged), `docs/spec-audit/SPEC_AUDIT.md`
-  (the `F-AA-NN` findings register failures feed).
+- **Status:** v4 accepted 2026-07-08 (owner directive: complete clean rewrite,
+  our own framework); engine core implemented on `claude/cnf-hardening`
+  (`docs/plans/s2-phase-05-cnf-engine-rewrite.md`).
+- **Supersedes:** v1–v3 of this document. v3.1's "trace every legacy unit"
+  model is **retired**: there is no runtime mapping to the legacy CNF corpus
+  anywhere in the framework.
+- **Related:** `docs/design/version-signing.md`,
+  `docs/enterprise/access-control.md`, `docs/plans/s2-phase-04-cnf-hardening.md`
+  (findings backlog), `docs/spec-audit/SPEC_AUDIT.md`.
 
 ---
 
-## 1. Goal
+## 1. The idea
 
-Make the sentence *"EHRbase-rs is conformant to the openEHR platform
-specifications"* *provable, reproducible, and public*: a runner that executes
-the official **openEHR Platform Conformance Test Schedule** against a running
-server, a committed per-test-case results matrix, and a published **Conformance
-Statement** scoped exactly the way the CNF framework defines claims (profile ×
-capability × protocol × data format). No hand-waving: the claim is generated
-from the run, and a failing case is a tracked finding — never a skipped test.
+We build **our own, modern conformance framework** for openEHR CDRs — the
+best available testing engine for proving a server conforms to the openEHR
+platform specifications. It is not a port, transcription, or mapping of the
+official openEHR CNF corpus. That corpus (vendored at
+`docs/specs/openehr/CNF/`) is **design-time reference reading**: upstream is
+frozen since 2024, five of its chapters were never finished, its executable
+layer is a 2019-era EHRbase Robot/Python harness, and its data sets predate
+RM 1.2.0. We studied all of it exhaustively (2026-07-08 inventories: 324
+schedule headings, ~1,371 truth-table rows, 464 robot cases, fixture corpus),
+took what is good — the *ideas*: profile-scoped claims, data-set-driven
+validation cases, a certificate-shaped report — and built better, from the
+**current pinned specifications** we actually implement.
 
-## 2. What the CNF corpus actually is (inventory summary)
+> A conformance claim is a pure function of a run over **our own enumerated
+> catalogue**. Nothing hand-counted, nothing hand-asserted, nothing inherited
+> from an unmaintained corpus.
 
-Full inventory in the 2026-07-07 investigation; the load-bearing facts:
+## 2. Principles (what "better" means, concretely)
 
-### 2.1 The normative layer — `CNF/docs/` (this is the oracle)
+1. **Spec-first universe.** The case base derives from the living pinned
+   specs: every ITS-REST 1.0.3 operation and documented status code, every
+   AQL 1.1 language construct, every RM 1.2.0 data-type constraint semantic,
+   plus the capabilities the specs imply but never got tests upstream
+   (version signing, security behaviour, `ALL_VERSIONS`). Coverage is a
+   property of the design, not of what someone typed in 2019.
+2. **Our identity system.** Every case is `ECC-<AREA>-<NNN>` (optionally
+   `.<VV>` for a data-set variant) — allocated once in a committed catalogue
+   file, never reused, grouped in a clean area taxonomy (§4). Industry-style
+   test-catalogue numbering; no legacy ids anywhere.
+3. **Generated data sets, not copied fixtures.** Validation cases get their
+   accept/reject matrices from **generators** (boundary values, cardinality
+   grids, presence/absence, type substitution, constraint mutation over our
+   own authored OPTs) — systematically more combinations than the old
+   hand-written tables, and regenerable when the RM version moves. Vendored
+   fixtures are reused only as convenient *input payloads* (`testdata`),
+   never as framework structure.
+4. **Declarative scenarios.** Cases read as flows, not hand-rolled HTTP
+   plumbing: a small typed step API (given/when/expect) over the transport,
+   so a failure reports "step 3/5: PUT …/composition expected 412, got 200"
+   and a reviewer can read a case top-to-bottom like prose.
+5. **Version-aware.** The specification versions under test
+   ([`SpecVersions`]: RM, ITS-REST, AQL, TERM) are a first-class dimension of
+   the model, the run config, and the claim. **Today exactly one set is
+   supported — the latest published of each (RM 1.2.0, ITS-REST 1.0.3,
+   AQL 1.1.0, TERM 3.1.0).** Supporting another set later is additive, not a
+   rewrite.
+6. **Machine-enforced claims.** Profile verdicts (CORE/STANDARD/OPTIONS) are
+   computed all-or-nothing per capability from the run; the statement's claim
+   line is generated from that verdict only. Failures become findings
+   (`F-AA-NN`), never exclusions; skips carry stated reasons and appear in
+   the deviations section.
+7. **Clean, layered, boring engineering.** One responsibility per layer,
+   committed data files for anything durable, guards that break the build on
+   inconsistency, zero Python, zero runtime dependence on
+   `docs/specs/openehr/CNF/`.
 
-- **Conformance Guide** (`docs/guide/`): conformance is assessed against a
-  *deployed real system* (the SUT) at a concrete technology binding (REST +
-  JSON/XML). Two aspects: **API conformance** (call-in test cases vs reference
-  results) and **data-validation conformance** (variable data sets vs reference
-  validity). The result artefacts are a **Test Execution Report**, a
-  **Conformance Statement** (vendor-published), and a **Conformance
-  Certificate** (issued by an assessment agency). The guide's
-  Statement/Report/Tooling sections are literally `TBD` — the only concrete
-  template is the Certificate.
-- **Profiles** (`docs/profiles/master03-profiles.adoc`): claims are made per
-  **profile**, composed of **capabilities**:
-  - **CORE** — ADL 1.4 archetype + OPT 1.4 provisioning; EHR operations,
-    EHR_STATUS, COMPOSITION operations, change sets, versioning, archetype
-    validation; DEFINITION + EHR REST APIs; anonymous EHRs. *All capabilities
-    must pass — all-or-nothing.*
-  - **STANDARD** — CORE **plus** query provisioning, directory operations,
-    AQL basic, the QUERY API, and **Signing**.
-  - **OPTIONS** — any optional capability (demographic, admin, messaging,
-    ADL2/OPT2, AQL advanced, terminology-integrated AQL) reported
-    individually.
-- **Certificate template** (`docs/certificate/master03-certificate.adoc`):
-  the claim tables — SUT identity; scope (profiles, security, data formats);
-  a **Detailed Test Report** (`conformance point × test case × protocol →
-  pass/FAIL`); a **Profile Report** (`capability × required-in-profile →
-  result`). This is the schema our generated report mirrors.
-- **Platform Conformance Test Schedule** (`docs/platform_test_schedule/`):
-  **322 identified test cases** across two families:
+## 3. What we keep from the old CNF (ideas only) — and what we discard
 
-  | Chapters | Family | Cases | Test-case id form |
-  |---|---|---|---|
-  | master04–13 | functional (API) | 203 | `I_<SERVICE>.<operation>-<variant>` |
-  | master15–17.x | content (data validation) | 119 | `CONT-<CLASS>-<variant>` |
+| Kept (as an idea, reimplemented)                                                                                        | Discarded                                            |
+|-------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
+| Profile-scoped claims (CORE / STANDARD / OPTIONS) and the capability matrix (§8)                                        | The masterNN chapter structure and its ids           |
+| "A test = case × data set" and accept/reject truth matrices                                                             | The hand-written 2019 truth tables (we generate)     |
+| Certificate-shaped generated statement + execution report                                                               | The Robot/Python harness, entirely                   |
+| The functional service walk (EHR → status → composition → contribution → directory → templates → queries) as area seeds | Runtime mapping/tracing to legacy case ids           |
+| Reusable input payloads (OPTs, compositions, AQL queries + goldens) as plain test data                                  | Schedule/robot/OAS extractors as framework machinery |
+| The ISO 18308 requirements lens (vendored statement, `docs/specs/openehr/REQUIREMENTS/`) as a reporting rollup          | Legacy inventory snapshots and classification enums  |
 
-  Functional chapters carry **normative test-data-set tables** (e.g. the 16
-  valid EHR_STATUS combinations for `create_ehr`); a "test" = one case × one
-  data set. Content chapters embed truth tables (`value → accepted/rejected +
-  constraint violated`). Expected results are prose ("positive/negative
-  response"); exact status codes come from the ITS-REST spec (which we already
-  treat as the wire oracle). Known holes **in the schedule itself**: the QUERY
-  chapter (master11) is mostly `TBD` stubs, master17.5 (time specification) is
-  empty, and there is no master14.
-- **RM version rule** (schedule overview): minimum RM 1.0.2; *"the supported
-  RM version(s) … should be stated in the Conformance Statement, because this
-  will determine some variations on the data sets used for testing."* We run
-  RM 1.2.0 — a declared property of the claim, not a deviation.
+The one-time human-reviewed completeness check ("did our catalogue cover
+every behaviour the old corpus tested?") lives in the phase plan as a design
+review step — a checklist for authors, not machinery.
 
-### 2.2 The executable layer — `CNF/tests/platform/robot/` (prior art + fixtures, NOT the oracle)
+## 4. The catalogue
 
-~207 Robot Framework suites, one per functional case, named by case id. Facts
-that disqualify it as our primary instrument:
-
-1. It is **EHRbase's own harness** re-hosted (`_resources/README.txt`: "From
-   ehrbase commit 157a0607"; vitasystems copyright): direct Postgres backdoors
-   into EHRbase's schema (`db_keywords.robot`), `java -jar` server lifecycle,
-   EHRbase-specific error-message assertions and node names.
-2. It is **not executable as vendored**: our vendoring excludes `.py`, so
-   `variables/sut_config.py` and all four Python helper libraries are absent;
-   upstream pins a 2021-era stack (Robot 4.0.3, pyjwt 1.7, psycopg2).
-3. Its **coverage doesn't match the schedule**: no robots for demographic
-   (24 cases), messaging (14), or any content chapter (119 — upstream validated
-   those through a missing Python lib); conversely `I_QUERY_SERVICE` has real
-   robots + a huge fixture corpus backing a schedule chapter that is `TBD`.
-
-What it *is* good for — **fixtures and expected-behaviour prior art**, directly
-reusable by our runner:
-
-- 52 `.opt` templates (valid + invalid classes: alien tags, removed mandatory
-  elements, removed template id, empty file …)
-- compositions in 6 formats (canonical JSON 10, canonical XML 7, FLAT 27,
-  STRUCTURED 4, TDD 6, valid 4), contributions, EHRs, directory trees
-- the **AQL corpus**: ~119 valid queries in groups A–D, invalid queries, data
-  loads, and **golden `expected_results` for empty and loaded DBs**
-- suite-layout YAML maps and the keyword files as a readable record of the
-  exact HTTP sequences EHRbase's harness performed per case.
-
-### 2.2a The excluded upstream `.py` helpers (fetched from GitHub, assessed — do NOT vendor)
-
-Our vendoring excludes `*.py`; the five missing files were fetched from the
-official repo and assessed. Verdict: **keep them un-vendored** — three are pure
-EHRbase/Keycloak/docker plumbing (`sut_config.py`, `dockerlib.py`,
-`token_decoder.py`), but two carry ideas this design adopts natively:
-
-- **`jsonlib.py` (the response-assertion engine, ~340 LoC, DeepDiff):** its
-  comparison modes are the semantic our `assert.rs` mirrors — (a)
-  **exact match**, (b) **superset match** (the response may carry more than the
-  expected fixture — used where servers legitimately add fields), and (c)
-  **ignore-sets** for RM `_type`/metadata/path keys when diffing. Each
-  registry case declares which comparison mode its payload assertion uses.
-- **`composition_validation_lib.py` (~90 LoC):** the content-chapter fixtures
-  are generated by two mutators — set a high-level field
-  (`language`/`territory`/`category`/`composer`) to `exist` / `not_exist` /
-  `invalid` (e.g. corrupt its `_type`), and pad/trim array items to a target
-  count. Our content suites (§4.1 `suites/content/`) implement these as
-  **typed Rust fixture mutators** over the vendored base compositions instead
-  of hand-maintaining hundreds of static variants.
-
-Also confirmed upstream: the Robot invocation (`run_local_tests.sh`,
-`Taskfile.yml`) is an EHRbase harness artifact (RF 4.0.3, `ehrbase/ehrbase:13.3`
-docker), **not** a spec-defined runner. The one convention worth honoring is the
-**tag taxonomy**: upstream excludes `future`, `obsolete`, `TODO`, `not-ready`
-suites from scoring — our registry records the upstream tags per transcribed
-case (in `CaseMeta`) so provenance-aware filtering matches upstream's own
-notion of "stable".
-
-### 2.3 Design consequence
-
-**The Test Schedule is normative; the Robot suite is data.** Our runner
-implements the schedule's identified cases natively in Rust, reuses the
-fixture corpus, and cites the schedule (not EHRbase's harness) as the
-authority — exactly the ADR-008 posture. Running upstream's Robot verbatim is
-neither possible (missing files) nor desirable (EHRbase-specific), and is
-**not** what a conformance claim requires: the guide requires executing the
-*test schedule* against the SUT and publishing the results.
-
-## 3. The claim we are building toward (honest scoping)
-
-Target public claim, generated — never hand-written — from a run:
-
-> **EHRbase-rs `<version>` conforms to the openEHR STANDARD profile**
-> (REST API binding; canonical JSON and XML; RM 1.2.0), evidenced by the
-> attached Test Execution Report over the openEHR Platform Conformance Test
-> Schedule (`specifications-CNF` @ `33251d2a`), with the deviations register
-> below.
-
-Scoping decisions (each visible in the generated report):
-
-1. **Profile target: STANDARD** (= CORE + query provisioning + directory +
-   AQL basic + QUERY API + Signing). **Signing is now implemented**
-   (`docs/design/version-signing.md`: `VERSION.signature`, digest default-on +
-   OpenPGP RFC 4880 mode, `canonical_form()` per RFC 8785) — the full
-   STANDARD claim is reachable. Upstream ships **zero** test material for the
-   Signing capability (verified against HEAD: the only signature hits are
-   Keycloak crypto config and a clinical coded-text value), so *our*
-   runner-defined `SIGN-*` cases (§4.6) are the capability's entire evidence
-   base, declared as such in the statement.
-2. **OPTIONS capabilities we run anyway** (we implement them): ADMIN API
-   (master12 subset), DEMOGRAPHIC API (master10 — we mount the generated
-   demographic group). Reported as OPTIONS passes; never blended into the
-   CORE/STANDARD claim.
-3. **Excluded, with reasons in the deviations register**: ADL2/OPT2 (explicit
-   501, OPTIONS-only per profiles), MESSAGING (master13 — not implemented,
-   OPTIONS-only), FLAT/STRUCTURED fixtures (EhrScape interop layer —
-   explicitly not CNF-gated; they stay in the `openehr-flat` test suite).
-4. **Schedule holes handled honestly**: master11 (QUERY) being `TBD` prose is
-   supplemented by the **AQL fixture corpus as runner-defined cases**
-   (`QUERY-FIXTURE-<group>-<name>` ids, provenance-tagged as
-   "fixture-derived, schedule chapter TBD upstream"); master17.5 (0 cases)
-   reported as "no normative cases published". Re-verified 2026-07-07: both
-   remain stubs at upstream HEAD, and upstream is dormant — these fills are
-   long-lived, not temporary.
-5. **Security scope — now claimable.** With RBAC + ABAC implemented
-   (`docs/enterprise/access-control.md`), the CNF `SECURITY_TESTS` intent
-   (Basic + OAuth2/Keycloak flows, 401/403 behaviour, role-gated admin) is in
-   scope: the runner parameterizes auth (Basic user + admin credentials;
-   Bearer via the compose stack's existing Keycloak service + realm import)
-   and runs the functional chapters under **RBAC enabled** — master12 admin
-   cases require the ADMIN role, which is itself part of what's being proven.
-   The declared run configuration in the statement: **RBAC on, ABAC off**
-   (ABAC models deployment-specific policy, which CNF does not test; it stays
-   config-off exactly as a fresh install ships).
-6. **RM 1.2.0 declared** in the statement. Fixture payloads authored in the
-   RM 1.0.x era are adapted where the wire shape legitimately changed, each
-   adaptation recorded in the fixtures' provenance file (see §6).
-
-## 4. Architecture
-
-One new workspace crate + one thin shell entrypoint + one CI job + one
-generated report set.
-
-### 4.1 Crate: `crates/ehrbase-conformance`
-
-An application-layer crate (test harness; never a dependency of the server —
-no crate depends on it). Library + CLI binary:
+### 4.1 Identity
 
 ```
-crates/ehrbase-conformance/src/
-├── lib.rs
-├── case.rs        # TestCase model: id, chapter, capability, profile, protocol,
-│                  #   format, provenance (Schedule | FixtureDerived), run fn
-├── registry.rs    # the static registry of all cases, keyed by CNF id
-├── client.rs      # SUT client: reqwest (rustls) + auth (Basic/Bearer) + the
-│                  #   canonical JSON/XML codecs from openehr-its for assertions
-├── sut.rs         # SUT lifecycle: External (BASE_URL) | SelfHosted (in-process
-│                  #   serve_with + testcontainers PG18)
-├── assert.rs      # response assertions: status, headers (ETag/Location/…),
-│                  #   payload comparison in the upstream jsonlib semantics —
-│                  #   Exact | Superset | IgnoreSet(RM _type/meta/path keys) —
-│                  #   declared per case; RESULT_SET diffing against goldens
-├── fixtures.rs    # typed access to docs/specs/openehr/CNF/tests/…/_resources
-│                  #   + our adapted fixture overlay (see §6)
-├── suites/        # the transcribed cases, one module per schedule chapter
-│   ├── ehr.rs             # master06 → I_EHR_SERVICE.* + I_EHR_STATUS.*
-│   ├── composition.rs     # master07
-│   ├── contribution.rs    # master08
-│   ├── directory.rs       # master09
-│   ├── definition_adl14.rs# master04 (ADL 1.4 half)
-│   ├── definition_query.rs# master05
-│   ├── query.rs           # master11 stubs + QUERY-FIXTURE-* corpus cases
-│   ├── admin.rs           # master12 (OPTIONS)
-│   ├── demographic.rs     # master10 (OPTIONS)
-│   └── content/           # master15/16/17.x — validation truth tables
-│       ├── mutate.rs      #   typed fixture mutators (the upstream
-│       │                  #   composition_validation_lib catalogue: field →
-│       │                  #   Exist|NotExist|Invalid, array count pad/trim)
-│       ├── composition.rs #   (commit mutated variant → expect accepted/rejected)
-│       ├── entry.rs
-│       └── data_types.rs  #   17.1–17.7, table-driven
-├── sign.rs        # the runner-defined SIGN-* capability cases (§4.6)
-└── report.rs      # results.json + RESULTS.md + CONFORMANCE_STATEMENT.md +
-                   #   badge JSON (shields endpoint schema)
-└── bin/conformance.rs     # the CLI (clap)
+ECC-<AREA>-<NNN>        a case            (ECC-EHR-005, ECC-QRY-118)
+ECC-<AREA>-<NNN>.<VV>   a data-set variant (ECC-VAL-042.07)
 ```
 
-Dependencies (all already in `[workspace.dependencies]`): `reqwest`, `serde`/
-`serde_json`, `quick-xml` (via `openehr-its` codecs), `openehr-its` +
-`openehr-rm` (typed payload assertions), `openehr-query` (AQL corpus parse
-checks), `clap`, `jiff`, `thiserror`, `tracing`; dev/self-host mode:
-`testcontainers`, `ehrbase` + `ehrbase-rest` (to boot the real app
-in-process). The self-host path lives behind a `self-host` cargo feature so
-the CLI can also be built lean for external-SUT-only use.
+Allocation lives in `crates/ehrbase-conformance/inventory/ecc-catalog.tsv`
+(committed): `ecc_id · area · status(active|retired|planned) · registration
+key · title`. Numbers are allocated once (next-free per area, in registry
+order via `REGEN_CATALOG=1`) and never reused — a removed case is `retired`,
+keeping its number burned. The coverage guard (`tests/coverage.rs`) enforces:
+every registered case has a number; every `active` line has a live case; the
+area derivation is stable.
 
-### 4.2 The case model (the heart of the design)
+### 4.2 Areas (the category taxonomy)
 
-```rust
-pub struct CaseMeta {
-    pub id: &'static str,            // "I_EHR_SERVICE.create_ehr-main" | "CONT-DV_ORDINAL-validate_open"
-    pub chapter: Chapter,            // Master06, … Master17_7 — book provenance
-    pub capability: Capability,      // EhrOperations | CompositionOps | AqlBasic | … (profiles doc)
-    pub profiles: &'static [Profile],// which profiles require this capability (Core/Standard/Options)
-    pub formats: &'static [Format],  // Json, Xml — a case runs once per claimed format where applicable
-    pub provenance: Provenance,      // Schedule | FixtureDerived | RunnerDefined (§3.4, §4.6)
-    pub schedule_ref: &'static str,  // "master06-func_tc_ehr.adoc §Test Case I_EHR_SERVICE.create_ehr-main"
-    pub upstream_tags: &'static [&'static str], // the Robot suite's tags where one exists
-                                     // ("refactor", "not-ready", "future", …) — upstream's own
-                                     // stability signal, reportable and filterable (§2.2a)
-    pub compare: Compare,            // Exact | Superset | IgnoreSet — the jsonlib semantics (§2.2a)
-}
-```
+| Area   | Scope                                                   |
+|--------|---------------------------------------------------------|
+| `EHR`  | EHR service operations                                  |
+| `STA`  | EHR_STATUS operations                                   |
+| `COM`  | COMPOSITION operations                                  |
+| `CTB`  | CONTRIBUTION change sets                                |
+| `DIR`  | Directory (FOLDER) operations                           |
+| `TPL`  | Template / OPT provisioning                             |
+| `SQR`  | Stored-query provisioning                               |
+| `QRY`  | AQL execution                                           |
+| `VAL`  | Content / archetype validation (data types, structures) |
+| `REST` | ITS-REST operation × status matrix                      |
+| `DEM`  | Demographic service                                     |
+| `ADM`  | Admin service                                           |
+| `SEC`  | Security / authorization                                |
+| `SIG`  | Version signing                                         |
+| `MSG`  | Messaging (when implemented)                            |
 
-- Each schedule case becomes one registry entry whose run function executes
-  the case's Flow steps over the SUT client and asserts per the ITS-REST spec
-  (status codes, headers, payload shapes) — the schedule's prose
-  ("positive/negative response") is concretized by citing the ITS-REST
-  section in the assertion message, the same dual-citation discipline the
-  spec-audit uses.
-- **Data-set expansion**: the normative data-set tables (e.g. the 16
-  EHR_STATUS combinations) are encoded as const tables; the case iterates
-  them, so the report can say "case passed, 16/16 data sets".
-- **Total-coverage guard** (the house pattern, third use): a unit test parses
-  `docs/specs/openehr/CNF/docs/platform_test_schedule/*.adoc` for the two
-  test-case heading regexes and asserts every extracted id is either in the
-  registry or in the explicit `EXCLUDED` list with a reason enum
-  (`NotImplemented(Messaging)`, `Adl2Returns501`, `UpstreamTbd`,
-  `UpstreamEmpty`) — a schedule change on re-vendor breaks the build until
-  triaged. The 322-case inventory above is thereby *enforced*, not aspirational.
+### 4.3 The case universe (build-out plan, ≥2,000 executable tests)
 
-### 4.3 SUT modes (both required)
+| Area group                                        | Source of truth                                                  | Target size                                                                         |
+|---------------------------------------------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| Functional services (EHR/STA/COM/CTB/DIR/TPL/SQR) | SM interfaces + ITS-REST 1.0.3 semantics                         | ~300 cases (positive, negative, versioning, time-travel, concurrency preconditions) |
+| `REST` matrix                                     | every ITS-REST operation × documented status                     | ~350–400                                                                            |
+| `VAL` generated matrices                          | RM 1.2.0 data-type + structure constraints × generator grids     | **1,000+** variants (systematically exceeds the old 1,371 hand rows)                |
+| `QRY`                                             | AQL 1.1 construct checklist + our corpus with golden result sets | ~250                                                                                |
+| `SEC`/`SIG`/`ADM`/`DEM`                           | our implemented capabilities (access-control, signing designs)   | ~100                                                                                |
 
-- **External** (`--base-url … --auth basic:user:pass|bearer:… [--admin-auth …]`):
-  the guide's own model — assess a *deployed real system*. This is what runs
-  against the compose stack / published GHCR images and what a
-  certification-grade report uses. Two credential slots: a regular clinical
-  user and an ADMIN-role credential (master12 admin cases run under the
-  latter; a deliberate USER-role attempt asserting 403 is part of the
-  security evidence). Bearer mode targets the compose stack's existing
-  Keycloak service (realm import already in `docker/keycloak/`). The SUT is
-  expected to run with **RBAC enabled, ABAC off** (§3.5) — the runner records
-  the SUT's auth mode in `results.json`. No DB access, no lifecycle control:
-  the runner is a pure API client (unlike EHRbase's harness, we do not reach
-  into the database — cases are written to be self-contained through the API,
-  using fresh EHRs per case rather than DB cleans).
-- **SelfHosted** (`--self-host`, feature-gated): boots testcontainers PG18 +
-  `EhrbaseService::new(pool)` + `ehrbase_rest::serve_with` on an ephemeral
-  port — the fast inner loop for development and the PR-time CI subset.
-  Reuses the `Pg` helper pattern from `crates/ehrbase/tests/service_ehr.rs`
-  (extracted into the crate, not duplicated a seventh time).
-
-### 4.4 CLI + `scripts/conformance.sh` (the `/run-conformance` contract)
+## 5. Architecture (crate `ehrbase-conformance`)
 
 ```
-conformance run   [--base-url URL | --self-host] [--filter SUBSTR] [--profile core|standard|options]
-                  [--format json|xml|both] [--out docs/conformance/]
-conformance list  [--filter …]        # print registry with metadata
-conformance report --from results.json # regenerate MD artifacts without a run
+src/
+├── lib.rs           # facade: flat public paths over the layered tree
+├── model/           # the domain
+│   ├── case.rs      #   CaseMeta, Capability, Profile, Format
+│   ├── catalog.rs   #   Area, EccEntry, allocation, TSV persistence
+│   └── version.rs   #   SpecVersions (latest-only today; additive later)
+├── testdata/        # typed access to input payloads
+│   └── fixtures.rs  #   vendored OPTs/compositions as data + RM-1.2.0 adaptation
+├── engine/          # execution
+│   ├── harness.rs   #   Transport, HttpRequest/Response, CaseError, RunContext
+│   ├── client.rs    #   reqwest SUT client (Basic/Bearer, admin slot)
+│   ├── sut.rs       #   External | SelfHosted (testcontainers PG18 + in-process app)
+│   ├── assert.rs    #   status/header/payload assertions (exact/superset/ignore-set)
+│   ├── registry.rs  #   the registered ECC case set
+│   └── run.rs       #   RunConfig (+SpecVersions), executor → RunResults
+├── reporting/
+│   ├── results.rs   #   serializable outcomes (ECC ids first-class)
+│   └── report.rs    #   RESULTS.md, CATALOG.md, CONFORMANCE_STATEMENT.md, badge
+└── suites/          # the case implementations, one module per area
 ```
 
-Exit codes: `0` all selected cases pass · `1` failures (report still written)
-· `2` runner/SUT error. `scripts/conformance.sh` is a thin wrapper satisfying
-the skill contract (one optional filter arg): brings up the compose stack
-(reusing `docker/smoke-test.sh`'s wait-healthy logic), runs
-`cargo run -p ehrbase-conformance --features self-host -- run …` against it,
-tears down. Filter argument maps to `--filter`.
+Planned additions in this layout (build-out steps, §7): `engine/flow.rs`
+(the declarative step API), `testdata/generate.rs` (the VAL generators),
+`model/profile.rs` (the capability matrix + machine verdict), JUnit/CTRF
+output in `reporting`.
 
-### 4.5 Reports (committed, generated — the public face)
+### 5.1 SUT modes
 
-Written to `docs/conformance/`:
+- **External** (`--base-url`, `--auth basic:u:p|bearer:t`, `--admin-auth`):
+  a deployed real system; pure API client, no DB access, self-contained
+  cases (fresh EHR per case).
+- **Self-hosted** (`--self-host`, feature `self-host`): testcontainers PG18 +
+  the real app in-process on an ephemeral port — the fast inner loop and the
+  PR CI tier.
 
-- **`results.json`** — machine-readable: per case id → pass/fail/excluded ×
-  format, data-set counts, durations, SUT identity (version, git sha, RM
-  version), corpus pin (`specifications-CNF` commit).
-- **`RESULTS.md`** — the per-chapter matrix (the P19/next-session contract):
-  chapter → cases passed/failed/excluded, with failure links.
-- **`CONFORMANCE_STATEMENT.md`** — generated following the **Certificate
-  template's** table structure (SUT identity, Scope of Test, Detailed Test
-  Report, Profile Report) + the RM-version declaration and the deviations
-  register (§3's exclusions, each with reason + spec citation). Regenerated
-  per release; committed so the README can link it.
-- **`badge.json`** — shields.io endpoint schema (e.g.
-  `openEHR CNF: 289/301 · CORE ✓`), so the README badge the owner wants is
-  data-driven: `![CNF](https://img.shields.io/endpoint?url=…badge.json)` via
-  raw.githubusercontent. The badge never says "100%" unless the run does.
+### 5.2 CLI (contract for `scripts/conformance.sh` and `/run-conformance`)
 
-Failure workflow (binding): every failing case gets a spec-audit-style finding
-(`F-AA-NN` in `docs/spec-audit/findings/`, citing both the CNF case id and the
-ITS-REST/RM clause) before or alongside the fix; the runner's failure output
-prints the template to make that a copy-paste. **Never** move a failing case
-to `EXCLUDED` to green a run — exclusion reasons are structural
-(not-implemented/upstream-TBD), not "currently failing".
+```
+conformance run    [--base-url URL | --self-host] [--filter S]
+                   [--profile core|standard|options] [--format json|xml|both]
+                   [--out docs/conformance/] [--auth …] [--admin-auth …]
+conformance list   [--filter S]          # catalogue with per-area totals
+conformance report --from results.json   # regenerate artifacts without a run
+```
 
-### 4.6 The `SIGN-*` capability cases (runner-defined; the STANDARD Signing evidence)
+Exit codes: `0` pass · `1` failures (report still written) · `2` runner/SUT
+error.
 
-Upstream has zero Signing test material (§3.1), so these runner-defined cases
-— specified against the implemented behaviour in
-`docs/design/version-signing.md` — are the capability's entire evidence base
-(`provenance: RunnerDefined`, declared in the statement):
+## 6. Reports (`docs/conformance/`, regenerated per run)
 
-| Id | Asserts |
-|---|---|
-| `SIGN-digest-present` | committed composition's VERSION read (JSON + XML) carries `signature` matching `sha256:<base64>` |
-| `SIGN-digest-recomputes` | the digest recomputes from the **served** VERSION's canonical form (RFC 8785 over the signature-voided object) — commit-time and read-time object identity |
-| `SIGN-all-kinds` | EHR_STATUS update, FOLDER write, and a multi-version CONTRIBUTION all yield signed versions |
-| `SIGN-client-verbatim` | a CONTRIBUTION `UPDATE_VERSION` with a client-supplied signature is stored and served verbatim (never re-signed) |
-| `SIGN-pgp-verifies` | with the SUT in `pgp` mode (self-hosted tier only — needs key config), the served ASCII-armored RFC 4880 detached signature verifies against the server's public key |
+Deliberately few artifacts — one machine record, two markdown documents
+with distinct jobs, four badges (owner directive: no report sprawl):
 
-`SIGN-pgp-verifies` runs only where the runner controls SUT config (self-host /
-compose with a test key); external-SUT runs report it `SKIPPED(SutConfig)` with
-the digest cases still proving the capability.
+- `results.json` — the single machine record: outcomes (ECC id, title,
+  capability, profiles, format, status, data sets, duration, citation), SUT
+  identity incl. `SpecVersions`, run selection.
+- `CONFORMANCE_REPORT.md` — **the run**, one document: identity + scope,
+  per-area execution matrix, detailed per-case table, the machine profile
+  verdicts (per-capability tables for CORE/STANDARD/OPTIONS), failures
+  (each → finding), deviations (skips by reason).
+- `CATALOG.md` — **the catalogue**: the full per-category test list (every
+  case, status, title, last outcome) — kept separate because it grows to
+  2,000+ rows.
+- **Badges (four)** — shields endpoint schema, all generated from the run:
+  - `badge.json` — the total: `ECC conformance: <passed>/<active catalogue>`
+    (red on any failure, brightgreen only at full pass, else yellow);
+  - `badge-core.json`, `badge-standard.json`, `badge-options.json` — one per
+    profile, driven by the **machine profile verdict** (`model/profile.rs`):
+    message `PASS (n/n capabilities)` when the all-or-nothing verdict holds,
+    else `k/n capabilities`; brightgreen on pass, red if any required
+    capability has failures/errors, yellow while unevidenced.
+  The README embeds all four, so the public face shows the total *and* the
+  per-profile claim state at a glance — and a badge can never say PASS
+  unless the machine verdict does.
 
-## 5. CI integration
+## 7. Build-out plan (compiling, tested increments)
 
-Two tiers (mirroring how cheap/expensive the modes are):
+1. ✅ **Engine core v4** (this change): layered layout, ECC catalogue +
+   guards, version dimension, catalogue-driven runner/reports; legacy
+   mapping machinery deleted.
+2. **Re-title + re-key the existing ~310 cases** as native ECC cases (proper
+   titles in the catalogue; registration keys become `own:` descriptive
+   slugs), area by area — plus the one-time design-review checklist against
+   the old corpus (nothing it tested left uncovered by design).
+3. **`engine/flow.rs`** (declarative steps) and migrate one area (EHR) to it
+   as the pattern.
+4. **`model/profile.rs`** — the capability matrix (§8) + all-or-nothing
+   machine verdict wired into the statement.
+5. **`VAL` generators** (`testdata/generate.rs`): cardinality grids,
+   presence/absence, boundary values, type substitution over authored OPTs —
+   the 1,000+ variant build-out with per-variant outcomes (`ECC-VAL-nnn.vv`).
+6. **`REST` matrix area** from the pinned ITS-REST contract (same source
+   `emit-rest` consumes).
+7. **`QRY` build-out**: AQL 1.1 construct checklist + corpus goldens with a
+   rule-named normalizer.
+8. **`SEC` sweeps** (401/403 under RBAC), JUnit/CTRF report output, CI tiers
+   (PR: self-host CORE smoke · full: compose stack, both formats), first
+   generated STANDARD-profile statement.
 
-1. **PR tier (ci.yml, new `conformance-smoke` job)**: self-hosted mode,
-   `--profile core --format json`, the functional chapters only (minutes, same
-   PG18 service-container pattern as the `test` job). Required check — a PR
-   cannot regress CORE.
-2. **Full tier (containers.yml, after `smoke`)**: external mode against the
-   freshly pushed GHCR images via compose — the full registry, both formats,
-   all profiles. Uploads `docs/conformance/` artifacts; on `develop` pushes a
-   commit updating `docs/conformance/` is proposed (or artifact-only, owner's
-   choice at implementation; recommend artifact + weekly refresh commit to
-   avoid badge churn per push).
+## 8. Appendix — capability → profile matrix (ours)
 
-## 6. Fixture + RM-version policy
+Adopted from the openEHR profiles idea (reference:
+`docs/specs/openehr/CNF/docs/profiles/master03-profiles.adoc`), curated to
+our capability names; `model/profile.rs` encodes this table.
 
-- The vendored `_resources/test_data_sets/**` are consumed **read-only in
-  place** (path-resolved from the workspace root). Where a payload's wire
-  shape is RM-version-sensitive (RM 1.0.x-era fixtures vs our RM 1.2.0 — e.g.
-  DV_SCALE availability, `_type` sets, number formatting), the runner uses an
-  **overlay directory** `crates/ehrbase-conformance/fixtures/` containing the
-  adapted copy plus a `PROVENANCE.md` line per file: source fixture, what
-  changed, why (spec citation). The overlay is consulted first; unmodified
-  fixtures come from the vendored tree. Never edit `docs/specs/openehr/**`.
-- AQL golden results (`expected_results/{empty_db,loaded_db}/{A–D}`): diffed
-  through a documented normalizer (RESULT_SET envelope fields that are
-  legitimately SUT-specific: generator ids, timestamps; RM-version formatting
-  differences), with the normalizer's rules unit-tested — a diff suppressed by
-  the normalizer must name its rule.
-- **Signature-aware normalization:** our SUT signs versions by default
-  (`docs/design/version-signing.md` §3.4), so VERSION payloads carry a
-  `signature` the RM-1.0.x-era fixtures lack. The comparison layer treats
-  `signature` as a named ignore-set entry when diffing against upstream
-  fixtures (rule `SignatureDefaultOn`), while the `SIGN-*` cases assert it
-  positively — never both on the same field silently.
-- Content-chapter truth tables (master15–17) are transcribed as const tables
-  with the schedule file+row cited per entry; they run against the validation
-  OPTs from the fixture set.
+| Capability                               | Areas       |          CORE           | STANDARD | OPTIONS |
+|------------------------------------------|-------------|:-----------------------:|:--------:|:-------:|
+| OPT 1.4 provisioning                     | TPL         |            ✔            |    ✔     |         |
+| EHR operations                           | EHR         |            ✔            |    ✔     |         |
+| EHR_STATUS                               | STA         |            ✔            |    ✔     |         |
+| Composition operations                   | COM         |            ✔            |    ✔     |         |
+| Change sets                              | CTB         |            ✔            |    ✔     |         |
+| Versioning (incl. `ALL_VERSIONS`)        | EHR/COM/DIR |            ✔            |    ✔     |         |
+| Archetype validation                     | VAL         |            ✔            |    ✔     |         |
+| Anonymous EHRs                           | EHR         |            ✔            |    ✔     |         |
+| REST contract (DEFINITION + EHR APIs)    | REST        |            ✔            |    ✔     |         |
+| Directory operations                     | DIR         |                         |    ✔     |         |
+| Query provisioning                       | SQR         |                         |    ✔     |         |
+| AQL basic + QUERY API                    | QRY         |                         |    ✔     |         |
+| Version signing                          | SIG         |                         |    ✔     |         |
+| Data formats: JSON + XML                 | all         |            ✔            |    ✔     |         |
+| Demographic / Admin / Messaging          | DEM/ADM/MSG |                         |          |    ✔    |
+| ADL2/OPT2, AQL advanced, AQL×terminology | TPL/QRY     |                         |          |    ✔    |
+| Security behaviour (RBAC 401/403)        | SEC         | reported with the claim |          |         |
 
-## 7. What this is not
+ISO 18308 rollup: cases may cite `iso18308:<section>`
+(`docs/specs/openehr/REQUIREMENTS/iso18308_conformance.pdf`) so reports can
+also present a requirements-level view (structure, privacy & security,
+medico-legal, version control).
 
-- **Not a Robot Framework port.** No Python enters the repo. If a future
-  certification agency insists on upstream's harness, the external-SUT mode +
-  a re-fetched upstream checkout can host that exercise out-of-tree; nothing
-  in this design blocks it.
-- **Not the EhrScape/FLAT test bed** — that is `openehr-flat`'s suite and the
-  P17 work; CNF does not gate it.
-- **Not a benchmark** — performance is P20; the runner records durations as
+## 9. What this is not
+
+- **Not a Robot/Python port and not a mapper** — no legacy corpus machinery
+  exists at runtime; the vendored CNF is reading material and input payloads.
+- **Not the EhrScape/FLAT test bed** (that is `openehr-flat`'s suite, P17).
+- **Not a benchmark** (`ehrbase-bench` owns performance); durations are
   telemetry only.
-
-## 8. Implementation plan (for the implementer, after access control)
-
-Ordered, compiling+tested increments on `claude/s2-conformance` (or the P19
-branch when reached); each step cites its section. The registry grows
-chapter-by-chapter — the framework is valuable from step 3 onward, long before
-all 322 cases are in.
-
-1. **Crate scaffold + case model + registry + coverage guard** (§4.1, §4.2):
-   the guard initially maps every schedule id to `EXCLUDED(NotYetTranscribed)`
-   — the honest zero state; the report generator works from day one and shows
-   0/322, which is the point: the backlog is now enforced and visible.
-2. **SUT client + modes + CLI + `scripts/conformance.sh`** (§4.3, §4.4):
-   prove both modes with one hand-picked case (`I_EHR_SERVICE.create_ehr-main`)
-   end-to-end incl. RESULTS.md/badge output.
-3. **master06 (EHR + EHR_STATUS, 21 cases)** — the CORE heart; then
-   **master07 (COMPOSITION, 31)** with both formats.
-4. **master04/05 (DEFINITION, 22)** and **master08 (CONTRIBUTION, 31)**.
-5. **master09 (DIRECTORY, 37)** — completes the CORE+directory surface.
-6. **Query** (§3.4): master11's real cases + the `QUERY-FIXTURE-*` corpus
-   with golden-result diffing (§6).
-7. **Content chapters (master15–17, 119)** — table-driven; large but
-   mechanical against the validation service.
-8. **OPTIONS chapters we implement** (master12 admin subset — run under the
-   ADMIN credential with a USER-role 403 assertion, master10 demographic) +
-   the **`SIGN-*` capability cases** (§4.6); wire the two CI tiers (§5);
-   first committed `docs/conformance/` + README badge.
-9. **The first STANDARD-profile statement** — with Signing implemented and
-   evidenced by §4.6, generate and commit the first
-   `CONFORMANCE_STATEMENT.md` claiming the full STANDARD profile (REST,
-   JSON + XML, RM 1.2.0; RBAC on, ABAC off; deviations register per §3).
-
-Discipline throughout: failures are findings, not skips (§4.5); fixture
-adaptations carry provenance (§6); every case cites schedule + ITS-REST
-sections; no test weakening, ever — the phase-19 exit criteria ("CNF schedule
-passes with documented exceptions only; deviation register complete") are the
-finish line.

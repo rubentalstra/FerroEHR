@@ -582,7 +582,13 @@ impl<'a> Builder<'a> {
         let name = col.alias.clone().unwrap_or_else(|| format!("#{i}"));
         match &col.value {
             SelectValue::Path(PathTarget::Data(leaf)) if leaf.is_whole_object() => {
-                self.emit_whole_object(i, name, leaf)
+                let mut spec = self.emit_whole_object(i, name, leaf)?;
+                // Prefer the query's own path text (the CNF goldens compare it
+                // verbatim; `"/"` for a bare variable).
+                if col.path.is_some() {
+                    spec.path.clone_from(&col.path);
+                }
+                Ok(spec)
             }
             SelectValue::Path(target) => {
                 let expr = self.value_expr(target, ValueMode::Projection)?;
@@ -590,7 +596,7 @@ impl<'a> Builder<'a> {
                 self.q.expr_as(to_jsonb(expr), Alias::new(sql_col.as_str()));
                 Ok(ColumnSpec {
                     name,
-                    path: target_path_string(target),
+                    path: col.path.clone().or_else(|| target_path_string(target)),
                     kind: CellKind::Scalar,
                     sql_cols: vec![sql_col],
                 })

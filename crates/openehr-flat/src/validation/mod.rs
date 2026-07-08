@@ -229,6 +229,51 @@ impl Validator {
 
         self.check_cardinalities(instance, wt);
         self.check_existence(instance, wt);
+        self.check_slots(instance, wt);
+    }
+
+    /// Type-conformance check for wrapper constraints the compactor hoisted
+    /// away (`ITEM_*` / `HISTORY` / single `EVENT` — AOM 1.4 type conformance;
+    /// master16 §`ITEM_STRUCTURE`/§EVENT "Class not allowed"): an instance node
+    /// matched at a recorded slot path must conform to one of the RM types the
+    /// same-path slot alternatives allow. An abstract recorded type
+    /// (`ITEM_STRUCTURE`, `EVENT`) admits every concrete subtype via
+    /// [`subtype::conforms`].
+    fn check_slots(&mut self, instance: &Value, wt: &WebTemplateNode) {
+        let mut groups: IndexMap<&str, Vec<&str>> = IndexMap::new();
+        for slot in &wt.slots {
+            groups
+                .entry(slot.path.as_str())
+                .or_default()
+                .push(slot.rm_type.as_str());
+        }
+        for (path, allowed) in groups {
+            let Some(rel) = path.strip_prefix(&wt.aql_path) else {
+                continue;
+            };
+            let segments = path::parse(rel);
+            let Some((last, intermediate)) = segments.split_last() else {
+                continue;
+            };
+            let containers = path::navigate(&[instance], intermediate);
+            for container in &containers {
+                for node in select_children(container, last) {
+                    let Some(it) = node.get("_type").and_then(Value::as_str) else {
+                        continue;
+                    };
+                    if !allowed.iter().any(|a| subtype::conforms(it, a)) {
+                        self.push(
+                            path,
+                            format!(
+                                "class {it} not allowed: the slot is constrained to [{}]",
+                                allowed.join(", ")
+                            ),
+                            ValidationKind::WrongType,
+                        );
+                    }
+                }
+            }
+        }
     }
 
     /// AOM 1.4 `C_ATTRIBUTE.existence` check (F-07-04): for each mandatory plain
@@ -391,10 +436,13 @@ impl Validator {
         }
     }
 
-    /// Container-cardinality check: for each cardinality on this node, count the
-    /// children under the constrained attribute path and compare to `min`/`max`.
+    /// Container-cardinality check: for each constraining cardinality on this
+    /// node, count the children under the constrained attribute path and compare
+    /// to `min`/`max`. Iterates [`WebTemplateNode::card_all`] — the full AOM 1.4
+    /// §cardinality set (`0..1`/`1..1`/`1..*` included), a superset of the
+    /// Better-filtered serialized `cardinalities`.
     fn check_cardinalities(&mut self, instance: &Value, wt: &WebTemplateNode) {
-        for card in &wt.cardinalities {
+        for card in &wt.card_all {
             let Some(rel) = card.path.strip_prefix(&wt.aql_path) else {
                 continue;
             };
@@ -404,8 +452,18 @@ impl Validator {
             };
             // Navigate all but the last segment to the container, then count the
             // last attribute's children (cardinality is over the whole set).
+            //
+            // AOM 1.4 §cardinality vs §existence: cardinality constrains the
+            // container's membership **when the attribute is present**; whether
+            // the attribute may be absent at all is the C_ATTRIBUTE.existence
+            // constraint. An absent (or null) attribute field is therefore not
+            // a cardinality violation — an explicitly present empty container
+            // (`"content": []`) is.
             let containers = path::navigate(&[instance], intermediate);
             for container in &containers {
+                if matches!(container.get(&last.attribute), None | Some(Value::Null)) {
+                    continue;
+                }
                 let count =
                     i32::try_from(select_children(container, last).len()).unwrap_or(i32::MAX);
                 let min = card.min.unwrap_or(0).max(0);

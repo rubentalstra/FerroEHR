@@ -7,11 +7,10 @@
 //! range/list, `C_QUANTITY` property/units, class-narrowing) — the upstream
 //! schedule itself says these archetypes/templates "should be generated"
 //! (master15 §Implementation notes) and ships **none** in the vendored corpus.
-//! Without the constraint-expressing OPT the SUT correctly accepts data that no
-//! uploaded template forbids, so those cases are **not executable as specified**:
-//! they are transcribed + cited but return [`skip_archetype`] — an honest
-//! `Skipped`, never a fabricated pass and never a masked failure (design §4.5:
-//! failures are findings, non-executability is a skip).
+//! Historically those cases were skipped for lack of a constraint-expressing
+//! OPT; the suite now **authors** the constraint OPT per case ([`super::author`])
+//! so every one is driven — never a fabricated pass and never a masked failure
+//! (design §4.5: failures are findings).
 //!
 //! What **is** drivable with the vendored corpus is the subset the truth tables
 //! mark **"(RM/schema constraint)"** / **"RM/Schema mandatory"** — a mandatory RM
@@ -23,7 +22,8 @@
 
 use serde_json::Value;
 
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
 use crate::harness::{CaseError, DataSetReport, HttpRequest, HttpResponse, RunContext};
 use crate::suites::support;
@@ -35,29 +35,33 @@ use super::mutate;
 /// base and re-commit.
 #[derive(Clone, Copy)]
 pub enum Base {
-    /// `nested.en.v1` — an **event** COMPOSITION (category `433`), has context.
-    EventNested,
     /// `persistent_minimal.en.v1` — a **persistent** COMPOSITION (category `431`),
     /// no context; contains an OBSERVATION → HISTORY → `POINT_EVENT`.
     PersistentMinimal,
+    /// `test_all_types.en.v1` — the all-data-types COMPOSITION: carries a leaf of
+    /// nearly every `DV_*` type (COUNT, DATE, `DATE_TIME`, TIME, DURATION,
+    /// IDENTIFIER, MULTIMEDIA, PARSABLE, PROPORTION, URI, ORDINAL, QUANTITY,
+    /// `CODED_TEXT`, BOOLEAN, TEXT). The committable base for the master17.x
+    /// `validate_open` (RM/Schema-mandatory) rows across every data type.
+    AllTypes,
 }
 
 impl Base {
     /// The OPT to provision (relative to `valid_templates/`).
     fn opt(self) -> &'static str {
         match self {
-            Base::EventNested => "nested/nested.opt",
             Base::PersistentMinimal => "minimal_persistent/persistent_minimal.opt",
+            Base::AllTypes => "all_types/Test_all_types.opt",
         }
     }
 
     /// The canonical-JSON `__full` fixture path.
     fn json_fixture(self) -> &'static str {
         match self {
-            Base::EventNested => "compositions/CANONICAL_JSON/nested.en.v1__full.json",
             Base::PersistentMinimal => {
                 "compositions/CANONICAL_JSON/persistent_minimal.en.v1__full.json"
             }
+            Base::AllTypes => "query/data_load/compositions/all_types.composition.json",
         }
     }
 
@@ -170,6 +174,52 @@ pub enum Expected {
     /// `rejected` — the server refuses it as invalid
     /// (`composition_create.yaml` `422`, ITS-REST validation).
     Rejected,
+}
+
+/// Provision an **authored** OPT (in-memory ADL 1.4 XML, idempotent), create a
+/// fresh EHR, and commit `comp`.
+async fn commit_authored(
+    ctx: &RunContext<'_>,
+    opt_xml: &str,
+    comp: &Value,
+) -> Result<HttpResponse, CaseError> {
+    support::ensure_opt_xml(ctx, opt_xml).await?;
+    let ehr_id = support::create_ehr(ctx).await?;
+    ctx.send(
+        HttpRequest::post(format!("/ehr/{ehr_id}/composition"))
+            .json_body(comp)?
+            .header("accept", "application/json"),
+    )
+    .await
+}
+
+/// Drive a set of `(row-label, composition, expected)` data sets against an
+/// **authored** constraint OPT (provisioned once per row, idempotently). Identical
+/// row semantics to [`drive_rows`]/[`drive_constraint_base`] but the OPT is an
+/// in-memory string authored by [`super::author`] rather than a corpus fixture —
+/// the provisioning path for the master15–17 archetype-constraint truth tables the
+/// vendored corpus ships no template for. Any wrong outcome fails the whole case (a
+/// finding, design §4.5), naming the first diverging row.
+pub async fn drive_authored(
+    ctx: &RunContext<'_>,
+    opt_xml: &str,
+    rows: Vec<(String, Value, Expected)>,
+) -> Result<DataSetReport, CaseError> {
+    let total = u32::try_from(rows.len()).unwrap_or(u32::MAX);
+    let mut passed = 0u32;
+    let mut first_failure: Option<CaseError> = None;
+    for (label, comp, expected) in rows {
+        let resp = commit_authored(ctx, opt_xml, &comp).await?;
+        match check(&resp, expected, &label) {
+            Ok(()) => passed += 1,
+            Err(e) if first_failure.is_none() => first_failure = Some(e),
+            Err(_) => {}
+        }
+    }
+    if let Some(e) = first_failure {
+        return Err(e);
+    }
+    Ok(DataSetReport { passed, total })
 }
 
 /// Provision `base`'s OPT (idempotent), create a fresh EHR, and commit `comp`.
@@ -332,37 +382,22 @@ pub async fn data_type_mandatory(
     .await
 }
 
-/// The honest non-executability outcome for an **archetype-constraint** case: the
-/// constraint (cardinality / `C_STRING` / `C_INTEGER` / class-narrowing / …)
-/// needs a constraint-expressing OPT the vendored corpus does not contain and
-/// that the framework does not generate (design §2.2a). The truth table is
-/// transcribed + cited in the registry (`schedule_ref`); running it would require
-/// the archetype. Returns `Skipped`, never a fabricated pass.
-pub fn skip_archetype(constraint: &str) -> Result<DataSetReport, CaseError> {
-    Err(CaseError::Skipped(format!(
-        "archetype-constraint case: '{constraint}' requires a constraint-expressing OPT not in the \
-         vendored CNF corpus (upstream ships none — master15 §Implementation notes says archetypes \
-         are to be generated); table transcribed + cited, not executable as specified"
-    )))
-}
-
 // ── the shared CaseMeta builder for content cases ─────────────────────────────
 
-/// Build a content [`CaseMeta`] (design §4.2): capability
+/// Build a content [`CaseMeta`] (design §4.2): area [`Area::Val`], capability
 /// [`Capability::ArchetypeValidation`], required by CORE + STANDARD, JSON format
-/// (canonical-JSON validation is the wire path these cases exercise),
-/// [`Provenance::Schedule`], `schedule_ref` = the chapter file + case id.
+/// (canonical-JSON validation is the wire path these cases exercise), with the
+/// registration slug `id`, human `title`, and spec `citation`.
 #[must_use]
-pub fn meta(id: &'static str, chapter: Chapter, schedule_ref: &'static str) -> CaseMeta {
+pub fn meta(id: &'static str, title: &'static str, citation: &'static str) -> CaseMeta {
     CaseMeta {
         id,
-        chapter,
+        title,
+        area: Area::Val,
         capability: Capability::ArchetypeValidation,
         profiles: &[Profile::Core, Profile::Standard],
         formats: &[Format::Json],
-        provenance: Provenance::Schedule,
-        schedule_ref,
-        upstream_tags: &[],
+        citation,
         compare: Compare::Superset,
     }
 }

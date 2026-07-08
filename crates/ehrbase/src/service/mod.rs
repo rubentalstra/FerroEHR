@@ -21,11 +21,13 @@
 //! node inserts use `sqlx::QueryBuilder`. `sea-query` is reserved for the AQL
 //! engine (P16).
 
+mod admin;
 mod api;
 mod aql_query;
 mod codes;
 mod composition;
 mod contribution;
+mod demographic;
 mod directory;
 mod ehr;
 mod item_tag;

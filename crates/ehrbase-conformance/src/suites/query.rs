@@ -6,10 +6,8 @@
 //! execute_ad_hoc_query-empty_db, execute_ad_hoc_query-loaded_db}`); its Flow
 //! cells are `xx`. The real query evidence is the vendored AQL corpus
 //! (`query/aql_queries_{valid,invalid}` + the `expected_results/{empty_db,
-//! loaded_db}` golden `RESULT_SET`s), driven as `QUERY-FIXTURE-<group>-<db>`
-//! `FixtureDerived` cases that sit **outside** the 322-case schedule inventory
-//! (design §3.4, §4.2) — the coverage guard's Schedule-provenance-subset
-//! invariant is unaffected.
+//! loaded_db}` golden `RESULT_SET`s), driven as our own `qry/corpus-*` cases
+//! (reference: the CNF query corpus, design-time reading only; design §3.4, §4.2).
 //!
 //! ## What is diffed, and why not verbatim
 //!
@@ -35,11 +33,18 @@
 //!
 //! Invalid queries (`aql_queries_invalid/**`) are load-bearing negatives: the
 //! server must reject them (`400`/`422` per ITS-REST `400_QUERY.yaml`).
+//!
+//! **Corpus-override:** the corpus's `TIMEWINDOW` fixtures predate AQL 1.1,
+//! which removed the clause from the grammar (SPECQUERY-20). The pinned spec
+//! wins over the corpus classification: those queries are driven expecting a
+//! `4xx` rejection instead of their (void) goldens — see
+//! [`uses_removed_timewindow`].
 
 use uuid::Uuid;
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures::{self, Fixture};
 use crate::harness::{CaseError, CaseFuture, DataSetReport, HttpRequest, HttpResponse, RunContext};
 use crate::registry::CaseEntry;
@@ -53,106 +58,133 @@ const GROUPS: [&str; 4] = ["A", "B", "C", "D"];
 /// The implemented master11 + `QUERY-FIXTURE-*` case entries.
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
+    const SVC: &str =
+        "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1";
+    const CORPUS: &str = "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)";
     let mut v = vec![
-        // ── master11 real cases (Schedule provenance) ────────────────────────
-        schedule("I_QUERY_SERVICE.smoke_test", run_smoke_test),
+        // ── QUERY API execution cases ────────────────────────────────────────
         schedule(
-            "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db",
+            "qry/smoke-test",
+            "Query service smoke test",
+            SVC,
+            run_smoke_test,
+        ),
+        schedule(
+            "qry/execute-ad-hoc-query-empty-db",
+            "Execute ad-hoc AQL query — empty db",
+            SVC,
             run_adhoc_empty_db,
         ),
         schedule(
-            "I_QUERY_SERVICE.execute_stored_query-empty_db",
+            "qry/execute-stored-query-empty-db",
+            "Execute stored AQL query — empty db",
+            SVC,
             run_stored_empty_db,
         ),
         schedule(
-            "I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db",
+            "qry/execute-ad-hoc-query-loaded-db",
+            "Execute ad-hoc AQL query — loaded db",
+            SVC,
             run_adhoc_loaded_db,
         ),
-        // ── fixture-derived: invalid queries must be rejected ────────────────
+        // ── AQL corpus: invalid queries must be rejected ─────────────────────
         fixture_derived(
-            "QUERY-FIXTURE-invalid",
-            "query/aql_queries_invalid/** §rejected",
+            "qry/corpus-invalid",
+            "AQL corpus — invalid queries rejected",
+            CORPUS,
             run_invalid_queries,
         ),
     ];
-    // ── fixture-derived: golden diffs, per group × DB state ──────────────────
+    // ── AQL corpus: golden diffs, per group × DB state ───────────────────────
     v.push(fixture_derived(
-        "QUERY-FIXTURE-A-empty_db",
-        "query/expected_results/empty_db/A §columns/full",
+        "qry/corpus-a-empty-db",
+        "AQL corpus — A empty db",
+        CORPUS,
         run_a_empty,
     ));
     v.push(fixture_derived(
-        "QUERY-FIXTURE-B-empty_db",
-        "query/expected_results/empty_db/B §columns/full",
+        "qry/corpus-b-empty-db",
+        "AQL corpus — B empty db",
+        CORPUS,
         run_b_empty,
     ));
     v.push(fixture_derived(
-        "QUERY-FIXTURE-C-empty_db",
-        "query/expected_results/empty_db/C §columns/full",
+        "qry/corpus-c-empty-db",
+        "AQL corpus — C empty db",
+        CORPUS,
         run_c_empty,
     ));
     v.push(fixture_derived(
-        "QUERY-FIXTURE-D-empty_db",
-        "query/expected_results/empty_db/D §columns/full",
+        "qry/corpus-d-empty-db",
+        "AQL corpus — D empty db",
+        CORPUS,
         run_d_empty,
     ));
     v.push(fixture_derived(
-        "QUERY-FIXTURE-A-loaded_db",
-        "query/expected_results/loaded_db/A §columns",
+        "qry/corpus-a-loaded-db",
+        "AQL corpus — A loaded db",
+        CORPUS,
         run_a_loaded,
     ));
     v.push(fixture_derived(
-        "QUERY-FIXTURE-B-loaded_db",
-        "query/expected_results/loaded_db/B §columns",
+        "qry/corpus-b-loaded-db",
+        "AQL corpus — B loaded db",
+        CORPUS,
         run_b_loaded,
     ));
     v.push(fixture_derived(
-        "QUERY-FIXTURE-C-loaded_db",
-        "query/expected_results/loaded_db/C §columns",
+        "qry/corpus-c-loaded-db",
+        "AQL corpus — C loaded db",
+        CORPUS,
         run_c_loaded,
     ));
     v.push(fixture_derived(
-        "QUERY-FIXTURE-D-loaded_db",
-        "query/expected_results/loaded_db/D §columns",
+        "qry/corpus-d-loaded-db",
+        "AQL corpus — D loaded db",
+        CORPUS,
         run_d_loaded,
     ));
     v
 }
 
-/// A master11 Schedule-provenance case (`AqlBasic`, STANDARD, JSON).
-fn schedule(id: &'static str, run: for<'a> fn(&'a RunContext<'a>) -> CaseFuture<'a>) -> CaseEntry {
-    CaseEntry {
-        meta: CaseMeta {
-            id,
-            chapter: Chapter::Master11,
-            capability: Capability::AqlBasic,
-            profiles: &[Profile::Standard],
-            formats: &[Format::Json],
-            provenance: Provenance::Schedule,
-            schedule_ref: id,
-            upstream_tags: &[],
-            compare: Compare::IgnoreSet,
-        },
-        run,
-    }
+/// An AQL-execution case realized against the QUERY API (`AqlBasic`, STANDARD,
+/// JSON).
+fn schedule(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    run: for<'a> fn(&'a RunContext<'a>) -> CaseFuture<'a>,
+) -> CaseEntry {
+    query_case(id, title, citation, run)
 }
 
-/// A `QUERY-FIXTURE-*` `FixtureDerived` case (outside the 322 inventory, §3.4).
+/// An AQL-corpus case driven from the vendored golden result sets (reference:
+/// CNF query corpus, design-time reading only).
 fn fixture_derived(
     id: &'static str,
-    schedule_ref: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    run: for<'a> fn(&'a RunContext<'a>) -> CaseFuture<'a>,
+) -> CaseEntry {
+    query_case(id, title, citation, run)
+}
+
+/// The shared QUERY-area case builder.
+fn query_case(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
     run: for<'a> fn(&'a RunContext<'a>) -> CaseFuture<'a>,
 ) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master11,
+            title,
+            area: Area::Qry,
             capability: Capability::AqlBasic,
             profiles: &[Profile::Standard],
             formats: &[Format::Json],
-            provenance: Provenance::FixtureDerived,
-            schedule_ref,
-            upstream_tags: &[],
+            citation,
             compare: Compare::IgnoreSet,
         },
         run,
@@ -190,6 +222,19 @@ fn unrunnable(aql: &str) -> bool {
     aql.contains("__MODIFY_") || aql.contains('$')
 }
 
+/// **Corpus-override (spec supersedes corpus):** whether a query uses the
+/// `TIMEWINDOW` clause. The corpus classifies these fixtures (`A/109`,
+/// `B/103`, `C/103`) as *valid*, but AQL 1.1 removed `TIMEWINDOW` from the
+/// grammar (QUERY `master00-amendment_record.adoc`, SPECQUERY-20 — "remove
+/// `TIMEWINDOW`"); it appears nowhere in the current grammar. Per the pinned
+/// spec such a query is invalid AQL and the SUT must reject it (ITS-REST
+/// `400_QUERY.yaml`), so the expectation is inverted: a `4xx` passes, an
+/// acceptance is the finding. The rejection is id-independent, so even the
+/// `__MODIFY_…__` variant is driven verbatim rather than skipped.
+fn uses_removed_timewindow(aql: &str) -> bool {
+    aql.to_ascii_uppercase().contains(" TIMEWINDOW ")
+}
+
 /// The query text for a golden of `name` in `group` (paired by identical base
 /// name under `aql_queries_valid/<group>/<name>`), or `None` when the paired
 /// query fixture is absent.
@@ -220,6 +265,24 @@ async fn run_golden_group(
         let Some(aql) = paired_query(group, &gold.name) else {
             continue; // a golden with no paired query fixture
         };
+        if uses_removed_timewindow(&aql) {
+            // Spec override: AQL 1.1 removed TIMEWINDOW (SPECQUERY-20) — the
+            // query must be *rejected*, its golden is void. See
+            // [`uses_removed_timewindow`].
+            total += 1;
+            let resp = adhoc(ctx, &aql).await?;
+            if (400..500).contains(&resp.status) {
+                passed += 1;
+            } else {
+                first_fail.get_or_insert(format!(
+                    "{}/{}: TIMEWINDOW was removed from AQL 1.1 \
+                     (master00-amendment_record.adoc, SPECQUERY-20) — expected a \
+                     4xx rejection, got {}",
+                    group, gold.name, resp.status
+                ));
+            }
+            continue;
+        }
         if unrunnable(&aql) {
             skipped += 1;
             continue;

@@ -10,8 +10,9 @@ mod inputs;
 mod model;
 
 pub use builder::build_web_template;
+pub(crate) use inputs::PROPORTION_KINDS;
 pub use model::{
-    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateCodedValue,
-    WebTemplateExistence, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
-    WebTemplateRange, WebTemplateValidation,
+    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateCodeList,
+    WebTemplateCodedValue, WebTemplateExistence, WebTemplateInput, WebTemplateInputType,
+    WebTemplateNode, WebTemplateRange, WebTemplateSlot, WebTemplateValidation,
 };

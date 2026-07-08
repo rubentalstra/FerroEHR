@@ -36,135 +36,376 @@
 //!   canonical composition (`type=3`, accepted); `type=0` is off the list
 //!   (rejected).
 //!
-//! The remaining non-`validate_open` cases stay `Skipped`
-//! ([`drive::skip_archetype`]): no vendored OPT both constrains the relevant leaf
-//! *and* ships any committable instance our stack can provision —
-//! `DV_COUNT` range/list is constrained **only** by `ehrn_vital_signs.v2.opt`,
-//! which our `opt14` parser rejects (`xml parse error: missing element type`), so
-//! that template cannot be provisioned on the SUT at all and its FLAT instance
-//! cannot be converted (F-open-41); the other `DV_PROPORTION` kind cases
-//! (`validate_ratio/unitary/percent/fraction/integer_fraction`) live only in
-//! `proportion.opt`, which parses but ships **no** instance (canonical or FLAT);
-//! `DV_SCALE`, `DV_DATE/DV_TIME` constraints, `DV_BOOLEAN` & `DV_IDENTIFIER` patterns, and
-//! `DV_MULTIMEDIA` media-type lists have no constrained committable canonical leaf.
+//! **All other value-constraint cases are driven via authored OPTs**
+//! ([`super::author`]): where no vendored OPT constrains the leaf, the case tightens
+//! the constraint into the `all_types` OPT (`C_STRING/C_INTEGER/C_REAL/C_BOOLEAN`/
+//! `C_DATE/TIME/DATE_TIME/DURATION/C_DV_QUANTITY.property/C_CODE_PHRASE`) or, for a
+//! type the base composition does not carry (`DV_URI`/`DV_EHR_URI`/`DV_SCALE`/
+//! `DV_INTERVAL<T>`), **slot-retypes** a scratch leaf to that type
+//! ([`author::retype_leaf`]) and commits a whole-value instance. Every master17
+//! case is a real endpoint test — **none are skipped**. Constraints the validator
+//! enforces PASS; the rest are recorded findings (temporal ranges, integer/real
+//! lists, `DV_INTERVAL` bounds, external terminology), never masked as skips.
 
+use openehr_its::opt14::{CPrimitive, OperationalTemplate};
 use serde_json::{Value, json};
 
-use crate::case::Chapter;
 use crate::fixtures;
-use crate::harness::{CaseError, CaseFuture, CaseRun, RunContext};
+use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, RunContext};
 use crate::registry::CaseEntry;
 
+use super::author;
 use super::drive::{self, Base, Constraint, Expected, meta};
 use super::mutate;
+
+/// The `all_types` base OPT + composition (a leaf of nearly every `DV_*` type at
+/// fixed `items` indices) — the authored-constraint base for master17 leaf cases.
+const ALL_TYPES_OPT: &str = "all_types/Test_all_types.opt";
+const ALL_TYPES_COMP: &str = "query/data_load/compositions/all_types.composition.json";
+
+/// Drive a master17 leaf value-constraint case by **authoring** the constraint into
+/// the `all_types` OPT (the vendored corpus ships no OPT constraining these leaves),
+/// then committing the base composition (its vendored leaf value satisfies the
+/// constraint → accepted) and a copy with the leaf value pushed out of the
+/// constraint (rejected). The accept/reject is the SUT's genuine validation of a
+/// real authored template (design §4.5), not a fabricated pass.
+async fn drive_leaf(
+    ctx: &RunContext<'_>,
+    tid: &'static str,
+    constrain: impl FnOnce(&mut OperationalTemplate) -> bool,
+    accepted_label: &str,
+    rejected_label: String,
+    invalid_pointer: &str,
+    invalid_value: Value,
+) -> Result<DataSetReport, CaseError> {
+    let mut opt = author::parse_base(ALL_TYPES_OPT)?;
+    author::set_template_id(&mut opt, tid);
+    if !constrain(&mut opt) {
+        return Err(CaseError::Assertion(format!(
+            "authoring the leaf constraint for {tid} found no matching leaf in the all_types OPT"
+        )));
+    }
+    let xml = author::to_xml(&opt)?;
+
+    let base = fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+    let mut accepted = base.clone();
+    mutate::retarget_template(&mut accepted, tid);
+    let mut rejected = base;
+    mutate::retarget_template(&mut rejected, tid);
+    if !mutate::set_pointer(&mut rejected, invalid_pointer, invalid_value) {
+        return Err(CaseError::Assertion(format!(
+            "invalid-value pointer {invalid_pointer} did not resolve in the all_types composition"
+        )));
+    }
+    drive::drive_authored(
+        ctx,
+        &xml,
+        vec![
+            (accepted_label.to_owned(), accepted, Expected::Accepted),
+            (rejected_label, rejected, Expected::Rejected),
+        ],
+    )
+    .await
+}
+
+/// The canonical-JSON pointer to the value of the `items[idx]` leaf in the
+/// `all_types` OBSERVATION (`content[0]/data/events[0]/data/items[idx]/value`).
+fn leaf_ptr(idx: usize, suffix: &str) -> String {
+    format!("/content/0/data/events/0/data/items/{idx}/value/{suffix}")
+}
 
 /// The implemented master17.x case entries.
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
-    let c = Chapter::Master17_1;
     let mut all = vec![
         // ── 17.1 basic ────────────────────────────────────────────────────────
-        open("CONT-DV_BOOLEAN-anything_allowed", c, open_dv_boolean),
-        skip("CONT-DV_BOOLEAN-only_true_allowed", c),
-        skip("CONT-DV_BOOLEAN-only_false_allowed", c),
-        skip("CONT-DV_IDENTIFIER-validate_all_pattern", c),
-        skip("CONT-DV_IDENTIFIER-validate_all_list", c),
+        open(
+            "val/dv-boolean-anything-allowed",
+            "Validate DV_BOOLEAN — anything allowed",
+            "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            open_dv_boolean,
+        ),
+        open(
+            "val/dv-boolean-only-true-allowed",
+            "Validate DV_BOOLEAN — only true allowed",
+            "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            run_dv_boolean_true,
+        ),
+        open(
+            "val/dv-boolean-only-false-allowed",
+            "Validate DV_BOOLEAN — only false allowed",
+            "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            run_dv_boolean_false,
+        ),
+        open(
+            "val/dv-identifier-all-pattern",
+            "Validate DV_IDENTIFIER — all pattern",
+            "RM 1.2.0 data_types §DV_IDENTIFIER; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            run_dv_identifier_pattern,
+        ),
+        open(
+            "val/dv-identifier-all-list",
+            "Validate DV_IDENTIFIER — all list",
+            "RM 1.2.0 data_types §DV_IDENTIFIER; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            run_dv_identifier_list,
+        ),
     ];
 
     // ── 17.2 text ──────────────────────────────────────────────────────────────
-    let c = Chapter::Master17_2;
-    all.push(open("CONT-DV_TEXT-validate_open", c, open_dv_text));
-    all.push(skip("CONT-DV_TEXT-validate_list", c));
+    all.push(open("val/dv-text-open", "Validate DV_TEXT — open", "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_text));
+    all.push(open("val/dv-text-list", "Validate DV_TEXT — list", "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_text_list));
     all.push(open(
-        "CONT-DV_CODED_TEXT-validate_open",
-        c,
+        "val/dv-coded-text-open", "Validate DV_CODED_TEXT — open", "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_coded_text,
     ));
     all.push(open(
-        "CONT-DV_CODED_TEXT-validate_local_codes",
-        c,
+        "val/dv-coded-text-local-codes", "Validate DV_CODED_TEXT — local codes", "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_coded_local,
     ));
-    all.push(skip("CONT-DV_CODED_TEXT-validate_ext_term", c));
+    all.push(open(
+        "val/dv-coded-text-ext-term", "Validate DV_CODED_TEXT — ext term", "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_coded_ext_term,
+    ));
 
     // ── 17.3 quantity ──────────────────────────────────────────────────────────
-    let c = Chapter::Master17_3;
-    all.push(open("CONT-DV_ORDINAL-validate_open", c, open_dv_ordinal));
+    all.push(open("val/dv-ordinal-open", "Validate DV_ORDINAL — open", "RM 1.2.0 data_types §DV_ORDINAL; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_ordinal));
     all.push(open(
-        "CONT-DV_ORDINAL-validate_constraint",
-        c,
+        "val/dv-ordinal-constraint", "Validate DV_ORDINAL — constraint", "RM 1.2.0 data_types §DV_ORDINAL; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_ordinal_constraint,
     ));
-    all.push(open("CONT-DV_SCALE-validate_open", c, open_dv_scale));
-    all.push(skip("CONT-DV_SCALE-validate_constraint", c));
-    all.push(open("CONT-DV_COUNT-validate_open", c, open_dv_count));
-    all.push(skip("CONT-DV_COUNT-validate_range", c));
-    all.push(skip("CONT-DV_COUNT-validate_list", c));
-    all.push(open("CONT-DV_QUANTITY-validate_open", c, open_dv_quantity));
-    all.push(skip("CONT-DV_QUANTITY-validate_property", c));
+    all.push(open("val/dv-scale-open", "Validate DV_SCALE — open", "RM 1.2.0 data_types §DV_SCALE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_scale_open));
     all.push(open(
-        "CONT-DV_QUANTITY-validate_property_units",
-        c,
+        "val/dv-scale-constraint", "Validate DV_SCALE — constraint", "RM 1.2.0 data_types §DV_SCALE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_scale_constraint,
+    ));
+    all.push(open("val/dv-count-open", "Validate DV_COUNT — open", "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_count));
+    all.push(open("val/dv-count-range", "Validate DV_COUNT — range", "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_count_range));
+    all.push(open("val/dv-count-list", "Validate DV_COUNT — list", "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_count_list));
+    all.push(open("val/dv-quantity-open", "Validate DV_QUANTITY — open", "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_quantity));
+    all.push(open(
+        "val/dv-quantity-property", "Validate DV_QUANTITY — property", "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_quantity_property,
+    ));
+    all.push(open(
+        "val/dv-quantity-property-units", "Validate DV_QUANTITY — property units", "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_quantity_units,
     ));
     all.push(open(
-        "CONT-DV_QUANTITY-validate_property_units_mag",
-        c,
+        "val/dv-quantity-property-units-mag", "Validate DV_QUANTITY — property units mag", "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_quantity_units_mag,
     ));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_open",
-        c,
+        "val/dv-proportion-open", "Validate DV_PROPORTION — open", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_proportion,
     ));
-    all.push(skip("CONT-DV_PROPORTION-validate_ratio", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_unitary", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_percent", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_fraction", c));
-    all.push(skip("CONT-DV_PROPORTION-validate_integer_fraction", c));
     all.push(open(
-        "CONT-DV_PROPORTION-validate_any_fraction",
-        c,
+        "val/dv-proportion-ratio", "Validate DV_PROPORTION — ratio", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_proportion_ratio,
+    ));
+    all.push(open(
+        "val/dv-proportion-unitary", "Validate DV_PROPORTION — unitary", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_proportion_unitary,
+    ));
+    all.push(open(
+        "val/dv-proportion-percent", "Validate DV_PROPORTION — percent", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_proportion_percent,
+    ));
+    all.push(open(
+        "val/dv-proportion-fraction", "Validate DV_PROPORTION — fraction", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_proportion_fraction,
+    ));
+    all.push(open(
+        "val/dv-proportion-integer-fraction", "Validate DV_PROPORTION — integer fraction", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_proportion_integer_fraction,
+    ));
+    all.push(open(
+        "val/dv-proportion-any-fraction", "Validate DV_PROPORTION — any fraction", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_proportion_any_fraction,
     ));
-    all.push(skip("CONT-DV_PROPORTION-validate_ratio_range", c));
-    // DV_INTERVAL<T> cases — interval bound constraints, no committable leaf.
-    for id in [
-        "CONT-DV_INTERVAL_DV_COUNT-validate_open",
-        "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper",
-        "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list",
-        "CONT-DV_INTERVAL_DV_QUANTITY-validate_open",
-        "CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower",
-        "CONT-DV_INTERVAL_DV_DATE_TIME-validate_open",
-        "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint",
-        "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range",
-        "CONT-DV_INTERVAL_DV_DATE-validate_open",
-        "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint",
-        "CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range",
-        "CONT-DV_INTERVAL_DV_TIME-validate_open",
-        "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint",
-        "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range",
-        "CONT-DV_INTERVAL_DV_DURATION-validate_open",
-        "CONT-DV_INTERVAL_DV_DURATION-validate_constraint",
-        "CONT-DV_INTERVAL_DV_DURATION-validate_range",
-        "CONT-DV_INTERVAL_DV_ORDINAL-validate_open",
-        "CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint",
-        "CONT-DV_INTERVAL_DV_SCALE-validate_open",
-        "CONT-DV_INTERVAL_DV_SCALE-validate_constraint",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_open",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction",
-        "CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range",
-    ] {
-        all.push(skip(id, c));
+    all.push(open(
+        "val/dv-proportion-ratio-range", "Validate DV_PROPORTION — ratio range", "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_proportion_ratio_range,
+    ));
+    // DV_INTERVAL<T> cases — driven by slot-retyping a scratch leaf to an open
+    // DV_INTERVAL and asserting the RM Interval invariant (drive_interval); the
+    // per-variant bound constraints need DV_INTERVAL constraint support the
+    // validator lacks, so most record as findings — driven, never skipped.
+    let interval: &[(&str, &str, &str, CaseRun)] = &[
+        (
+            "val/dv-interval-dv-count-open",
+            "Validate DV_INTERVAL<DV_COUNT> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivc_open,
+        ),
+        (
+            "val/dv-interval-dv-count-lower-upper",
+            "Validate DV_INTERVAL<DV_COUNT> — lower upper",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivc_lu,
+        ),
+        (
+            "val/dv-interval-dv-count-lower-upper-list",
+            "Validate DV_INTERVAL<DV_COUNT> — lower upper list",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivc_lul,
+        ),
+        (
+            "val/dv-interval-dv-quantity-open",
+            "Validate DV_INTERVAL<DV_QUANTITY> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivq_open,
+        ),
+        (
+            "val/dv-interval-dv-quantity-upper-lower",
+            "Validate DV_INTERVAL<DV_QUANTITY> — upper lower",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivq_ul,
+        ),
+        (
+            "val/dv-interval-dv-date-time-open",
+            "Validate DV_INTERVAL<DV_DATE_TIME> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdt_open,
+        ),
+        (
+            "val/dv-interval-dv-date-time-lower-upper-constraint",
+            "Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdt_luc,
+        ),
+        (
+            "val/dv-interval-dv-date-time-lower-upper-range",
+            "Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdt_lur,
+        ),
+        (
+            "val/dv-interval-dv-date-open",
+            "Validate DV_INTERVAL<DV_DATE> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivd_open,
+        ),
+        (
+            "val/dv-interval-dv-date-lower-upper-constraint",
+            "Validate DV_INTERVAL<DV_DATE> — lower upper constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivd_luc,
+        ),
+        (
+            "val/dv-interval-dv-date-lower-upper-range",
+            "Validate DV_INTERVAL<DV_DATE> — lower upper range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivd_lur,
+        ),
+        (
+            "val/dv-interval-dv-time-open",
+            "Validate DV_INTERVAL<DV_TIME> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivt_open,
+        ),
+        (
+            "val/dv-interval-dv-time-lower-upper-constraint",
+            "Validate DV_INTERVAL<DV_TIME> — lower upper constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivt_luc,
+        ),
+        (
+            "val/dv-interval-dv-time-lower-upper-range",
+            "Validate DV_INTERVAL<DV_TIME> — lower upper range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivt_lur,
+        ),
+        (
+            "val/dv-interval-dv-duration-open",
+            "Validate DV_INTERVAL<DV_DURATION> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdu_open,
+        ),
+        (
+            "val/dv-interval-dv-duration-constraint",
+            "Validate DV_INTERVAL<DV_DURATION> — constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdu_c,
+        ),
+        (
+            "val/dv-interval-dv-duration-range",
+            "Validate DV_INTERVAL<DV_DURATION> — range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivdu_r,
+        ),
+        (
+            "val/dv-interval-dv-ordinal-open",
+            "Validate DV_INTERVAL<DV_ORDINAL> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivo_open,
+        ),
+        (
+            "val/dv-interval-dv-ordinal-constraint",
+            "Validate DV_INTERVAL<DV_ORDINAL> — constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivo_c,
+        ),
+        (
+            "val/dv-interval-dv-scale-open",
+            "Validate DV_INTERVAL<DV_SCALE> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivs_open,
+        ),
+        (
+            "val/dv-interval-dv-scale-constraint",
+            "Validate DV_INTERVAL<DV_SCALE> — constraint",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivs_c,
+        ),
+        (
+            "val/dv-interval-dv-proportion-open",
+            "Validate DV_INTERVAL<DV_PROPORTION> — open",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_open,
+        ),
+        (
+            "val/dv-interval-dv-proportion-ratio",
+            "Validate DV_INTERVAL<DV_PROPORTION> — ratio",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_ratio,
+        ),
+        (
+            "val/dv-interval-dv-proportion-unitary",
+            "Validate DV_INTERVAL<DV_PROPORTION> — unitary",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_unitary,
+        ),
+        (
+            "val/dv-interval-dv-proportion-percentage",
+            "Validate DV_INTERVAL<DV_PROPORTION> — percentage",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_percent,
+        ),
+        (
+            "val/dv-interval-dv-proportion-fraction",
+            "Validate DV_INTERVAL<DV_PROPORTION> — fraction",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_fraction,
+        ),
+        (
+            "val/dv-interval-dv-proportion-integer-fraction",
+            "Validate DV_INTERVAL<DV_PROPORTION> — integer fraction",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_intfrac,
+        ),
+        (
+            "val/dv-interval-dv-proportion-ratio-range",
+            "Validate DV_INTERVAL<DV_PROPORTION> — ratio range",
+            "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+            ivp_ratiorange,
+        ),
+    ];
+    for &(id, title, cit, run) in interval {
+        all.push(open(id, title, cit, run));
     }
 
     // ── 17.4 date_time ─────────────────────────────────────────────────────────
-    let c = Chapter::Master17_4;
-    all.push(open("CONT-DV_DURATION-validate_open", c, open_dv_duration));
+    all.push(open("val/dv-duration-open", "Validate DV_DURATION — open", "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_duration));
     // No committable canonical-JSON composition carries a `C_DURATION`-constrained
     // DV_DURATION: all_types `items[at0018]` DV_DURATION is unconstrained; the
     // `obs_inst`/`ehrn_vital_signs` OPTs do constrain it (pattern `PDTH` / a
@@ -172,77 +413,85 @@ pub fn entries() -> Vec<CaseEntry> {
     // only instance is a CONTRIBUTION whose COMPOSITION omits `archetype_details`
     // on its content ENTRYs (fails the `Is_archetypeRoot` RM invariant as a bare
     // commit), and `ehrn_vital_signs` ships only a FLAT instance. Not drivable.
-    all.push(skip("CONT-DV_DURATION-validate_fields", c));
-    all.push(skip("CONT-DV_DURATION-validate_range", c));
-    all.push(skip("CONT-DV_DURATION-validate_fields_range", c));
-    all.push(open("CONT-DV_TIME-validate_open", c, open_dv_time));
-    all.push(skip("CONT-DV_TIME-validate_constraint", c));
-    all.push(skip("CONT-DV_TIME-validate_range", c));
-    all.push(open("CONT-DV_DATE-validate_open", c, open_dv_date));
-    all.push(skip("CONT-DV_DATE-validate_constraint", c));
-    all.push(skip("CONT-DV_DATE-validate_range", c));
     all.push(open(
-        "CONT-DV_DATE_TIME-validate_open",
-        c,
+        "val/dv-duration-fields", "Validate DV_DURATION — fields", "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_duration_fields,
+    ));
+    all.push(open(
+        "val/dv-duration-range", "Validate DV_DURATION — range", "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_duration_range,
+    ));
+    all.push(open(
+        "val/dv-duration-fields-range", "Validate DV_DURATION — fields range", "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_duration_fields_range,
+    ));
+    all.push(open("val/dv-time-open", "Validate DV_TIME — open", "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_time));
+    all.push(open(
+        "val/dv-time-constraint", "Validate DV_TIME — constraint", "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_time_constraint,
+    ));
+    all.push(open("val/dv-time-range", "Validate DV_TIME — range", "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_time_range));
+    all.push(open("val/dv-date-open", "Validate DV_DATE — open", "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_date));
+    all.push(open(
+        "val/dv-date-constraint", "Validate DV_DATE — constraint", "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_date_constraint,
+    ));
+    all.push(open("val/dv-date-range", "Validate DV_DATE — range", "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_date_range));
+    all.push(open(
+        "val/dv-date-time-open", "Validate DV_DATE_TIME — open", "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_date_time,
     ));
     all.push(open(
-        "CONT-DV_DATE_TIME-validate_constraint",
-        c,
+        "val/dv-date-time-constraint", "Validate DV_DATE_TIME — constraint", "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         run_dv_date_time_constraint,
     ));
-    all.push(skip("CONT-DV_DATE_TIME-validate_range", c));
+    all.push(open(
+        "val/dv-date-time-range", "Validate DV_DATE_TIME — range", "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_date_time_range,
+    ));
 
     // ── 17.6 encapsulated ──────────────────────────────────────────────────────
-    let c = Chapter::Master17_6;
-    all.push(open("CONT-DV_PARSABLE-validate_open", c, open_dv_parsable));
-    all.push(skip("CONT-DV_PARSABLE-validate_value_formalism", c));
+    all.push(open("val/dv-parsable-open", "Validate DV_PARSABLE — open", "RM 1.2.0 data_types §DV_PARSABLE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_parsable));
     all.push(open(
-        "CONT-DV_MULTIMEDIA-validate_open",
-        c,
+        "val/dv-parsable-value-formalism", "Validate DV_PARSABLE — value formalism", "RM 1.2.0 data_types §DV_PARSABLE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_parsable_formalism,
+    ));
+    all.push(open(
+        "val/dv-multimedia-open", "Validate DV_MULTIMEDIA — open", "RM 1.2.0 data_types §DV_MULTIMEDIA; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_multimedia,
     ));
-    all.push(skip("CONT-DV_MULTIMEDIA-validate_media_type", c));
+    all.push(open(
+        "val/dv-multimedia-media-type", "Validate DV_MULTIMEDIA — media type", "RM 1.2.0 data_types §DV_MULTIMEDIA; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_multimedia_media_type,
+    ));
 
     // ── 17.7 uri ───────────────────────────────────────────────────────────────
-    let c = Chapter::Master17_7;
-    all.push(open("CONT-DV_URI-validate_open", c, open_dv_uri));
-    all.push(skip("CONT-DV_URI-validate_pattern", c));
-    all.push(skip("CONT-DV_URI-validate_list", c));
-    all.push(open("CONT-DV_EHR_URI-validate_open", c, open_dv_ehr_uri));
-    all.push(skip("CONT-DV_EHR_URI-validate_pattern", c));
-    all.push(skip("CONT-DV_EHR_URI-validate_list", c));
+    all.push(open("val/dv-uri-open", "Validate DV_URI — open", "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", open_dv_uri));
+    all.push(open("val/dv-uri-pattern", "Validate DV_URI — pattern", "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_uri_pattern));
+    all.push(open("val/dv-uri-list", "Validate DV_URI — list", "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_uri_list));
+    all.push(open(
+        "val/dv-ehr-uri-open", "Validate DV_EHR_URI — open", "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_ehr_uri_open,
+    ));
+    all.push(open(
+        "val/dv-ehr-uri-pattern", "Validate DV_EHR_URI — pattern", "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_ehr_uri_pattern,
+    ));
+    all.push(open(
+        "val/dv-ehr-uri-list", "Validate DV_EHR_URI — list", "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
+        run_dv_ehr_uri_list,
+    ));
 
     all
 }
 
 /// A `validate_open` case: driven via [`drive::data_type_mandatory`] (auto-skips
 /// when the corpus has no committable leaf of the type).
-fn open(id: &'static str, chapter: Chapter, run: CaseRun) -> CaseEntry {
+fn open(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
-        meta: meta(id, chapter, id),
+        meta: meta(id, title, citation),
         run,
     }
-}
-
-/// An archetype-constraint case: transcribed + cited, skipped at run time.
-fn skip(id: &'static str, chapter: Chapter) -> CaseEntry {
-    CaseEntry {
-        meta: meta(id, chapter, id),
-        run: run_skip,
-    }
-}
-
-/// The shared archetype-constraint skip (the specific constraint — `C_STRING` /
-/// `C_INTEGER` / `C_CODE_PHRASE` / range / list / pattern / interval bounds — is
-/// identified by the case id / `schedule_ref`).
-fn run_skip<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    Box::pin(async move {
-        drive::skip_archetype(
-            "DATA_VALUE archetype constraint (C_STRING / C_INTEGER / C_CODE_PHRASE / \
-             range / list / pattern / DV_INTERVAL bounds)",
-        )
-    })
 }
 
 /// Generate a `validate_open` run fn: drive the value type's mandatory field on a
@@ -255,51 +504,40 @@ macro_rules! dt_open {
     };
 }
 
-// Drivable with a vendored committable base leaf:
-dt_open!(open_dv_text, Base::PersistentMinimal, "DV_TEXT", "value");
-dt_open!(open_dv_count, Base::EventNested, "DV_COUNT", "magnitude");
-dt_open!(
-    open_dv_date_time,
-    Base::PersistentMinimal,
-    "DV_DATE_TIME",
-    "value"
-);
-// Self-skipping (no committable leaf of the type in the corpus) but expressed as
-// the same mandatory-field driver so a future fixture makes them drive without a
-// code change:
-dt_open!(open_dv_boolean, Base::EventNested, "DV_BOOLEAN", "value");
+// Driven against `Base::AllTypes` (the `test_all_types.en.v1` composition), which
+// carries a committable leaf of nearly every `DV_*` type — so every `validate_open`
+// (RM/Schema-mandatory) row drives through the `/composition` endpoint. The two
+// types `all_types` does not carry (`DV_SCALE`, `DV_EHR_URI`) auto-skip via
+// `data_type_mandatory`'s leaf-presence guard (never a fabricated pass).
+dt_open!(open_dv_text, Base::AllTypes, "DV_TEXT", "value");
+dt_open!(open_dv_count, Base::AllTypes, "DV_COUNT", "magnitude");
+dt_open!(open_dv_date_time, Base::AllTypes, "DV_DATE_TIME", "value");
+dt_open!(open_dv_boolean, Base::AllTypes, "DV_BOOLEAN", "value");
 dt_open!(
     open_dv_coded_text,
-    Base::EventNested,
+    Base::AllTypes,
     "DV_CODED_TEXT",
     "defining_code"
 );
-dt_open!(open_dv_ordinal, Base::EventNested, "DV_ORDINAL", "value");
-dt_open!(open_dv_scale, Base::EventNested, "DV_SCALE", "value");
-dt_open!(
-    open_dv_quantity,
-    Base::EventNested,
-    "DV_QUANTITY",
-    "magnitude"
-);
+dt_open!(open_dv_ordinal, Base::AllTypes, "DV_ORDINAL", "value");
+dt_open!(open_dv_quantity, Base::AllTypes, "DV_QUANTITY", "magnitude");
 dt_open!(
     open_dv_proportion,
-    Base::EventNested,
+    Base::AllTypes,
     "DV_PROPORTION",
     "numerator"
 );
-dt_open!(open_dv_date, Base::EventNested, "DV_DATE", "value");
-dt_open!(open_dv_time, Base::EventNested, "DV_TIME", "value");
-dt_open!(open_dv_duration, Base::EventNested, "DV_DURATION", "value");
-dt_open!(open_dv_parsable, Base::EventNested, "DV_PARSABLE", "value");
+dt_open!(open_dv_date, Base::AllTypes, "DV_DATE", "value");
+dt_open!(open_dv_time, Base::AllTypes, "DV_TIME", "value");
+dt_open!(open_dv_duration, Base::AllTypes, "DV_DURATION", "value");
+dt_open!(open_dv_parsable, Base::AllTypes, "DV_PARSABLE", "value");
 dt_open!(
     open_dv_multimedia,
-    Base::EventNested,
+    Base::AllTypes,
     "DV_MULTIMEDIA",
     "media_type"
 );
-dt_open!(open_dv_uri, Base::EventNested, "DV_URI", "value");
-dt_open!(open_dv_ehr_uri, Base::EventNested, "DV_EHR_URI", "value");
+dt_open!(open_dv_uri, Base::AllTypes, "DV_URI", "value");
 
 // ── constraint-OPT driven data-type cases (the full constraint corpus, §4.5) ──
 //
@@ -515,6 +753,1059 @@ fn run_dv_date_time_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                 }),
                 Expected::Rejected,
             )],
+        )
+        .await
+    })
+}
+
+// ── authored leaf value-constraint cases (master17, via `all_types`) ──────────
+//
+// The vendored corpus ships no OPT constraining these leaves, so the case authors
+// the constraint into the `all_types` OPT and drives the base (which satisfies it)
+// + an out-of-constraint copy. Limited to leaves the `all_types` composition
+// carries (`DV_TEXT` items[0], `DV_COUNT` items[4]); the string/integer
+// `pattern`/`list`/`range` constraints these use are surfaced into the leaf input
+// by the WebTemplate builder and enforced by `validation::leaf`.
+
+/// master17.2 CONT-DV_TEXT-validate_list: author a `C_STRING` `list` on
+/// `DV_TEXT.value` that includes the base value (accepted), then commit a value off
+/// the list (rejected).
+fn run_dv_text_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let base =
+            fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+        let ptr = leaf_ptr(0, "value");
+        let Some(base_val) = base
+            .pointer(&ptr)
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+        else {
+            return Err(CaseError::Skipped(
+                "all_types composition has no DV_TEXT value leaf to constrain".to_owned(),
+            ));
+        };
+        let list = vec![base_val, "cnf-allowed-alternate".to_owned()];
+        drive_leaf(
+            ctx,
+            "cnf_cont_dv_text_list",
+            move |opt| author::constrain_leaf_string(opt, "DV_TEXT", "value", None, list),
+            "DV_TEXT value in the C_STRING list (accepted)",
+            "DV_TEXT value not in the C_STRING list (C_STRING.list)".to_owned(),
+            &ptr,
+            json!("cnf-not-in-list-value"),
+        )
+        .await
+    })
+}
+
+/// master17.3 CONT-DV_COUNT-validate_range: author a `C_INTEGER` `range` `[0,10]` on
+/// `DV_COUNT.magnitude` (base `3` is in range → accepted), then commit `999`
+/// (rejected).
+fn run_dv_count_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        drive_leaf(
+            ctx,
+            "cnf_cont_dv_count_range",
+            |opt| {
+                author::constrain_leaf_integer(opt, "DV_COUNT", "magnitude", Some((0, 10)), vec![])
+            },
+            "DV_COUNT magnitude 3 in range [0,10] (accepted)",
+            "DV_COUNT magnitude 999 outside range [0,10] (C_INTEGER.range)".to_owned(),
+            &leaf_ptr(4, "magnitude"),
+            json!(999),
+        )
+        .await
+    })
+}
+
+/// master17.3 CONT-DV_COUNT-validate_list: author a `C_INTEGER` `list` `{3}` on
+/// `DV_COUNT.magnitude` (base `3` is in the list → accepted), then commit `7`
+/// (rejected).
+fn run_dv_count_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        drive_leaf(
+            ctx,
+            "cnf_cont_dv_count_list",
+            |opt| author::constrain_leaf_integer(opt, "DV_COUNT", "magnitude", None, vec![3]),
+            "DV_COUNT magnitude 3 in the C_INTEGER list {3} (accepted)",
+            "DV_COUNT magnitude 7 not in the C_INTEGER list {3} (C_INTEGER.list)".to_owned(),
+            &leaf_ptr(4, "magnitude"),
+            json!(7),
+        )
+        .await
+    })
+}
+
+/// A flexible authored-leaf driver: author `constrain` into the `all_types` OPT,
+/// then commit one composition per `rows` entry — each a clone of the base with the
+/// listed `(pointer, value)` mutations applied — asserting its `Expected`. Handles
+/// cases whose accepted instance itself needs a mutation (e.g. `DV_BOOLEAN`
+/// only-false, `DV_PROPORTION` kinds whose valid instance differs from the base).
+/// One leaf-table row: `(label, [(path, value)], expected)`.
+type LeafRow = (String, Vec<(String, Value)>, Expected);
+
+async fn drive_leaf_rows(
+    ctx: &RunContext<'_>,
+    tid: &'static str,
+    constrain: impl FnOnce(&mut OperationalTemplate) -> bool,
+    rows: Vec<LeafRow>,
+) -> Result<DataSetReport, CaseError> {
+    let mut opt = author::parse_base(ALL_TYPES_OPT)?;
+    author::set_template_id(&mut opt, tid);
+    if !constrain(&mut opt) {
+        return Err(CaseError::Assertion(format!(
+            "authoring the constraint for {tid} matched no leaf in the all_types OPT"
+        )));
+    }
+    let xml = author::to_xml(&opt)?;
+    let base = fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+    let mut drows: Vec<(String, Value, Expected)> = Vec::new();
+    for (label, muts, expected) in rows {
+        let mut c = base.clone();
+        mutate::retarget_template(&mut c, tid);
+        for (ptr, val) in muts {
+            mutate::set_pointer(&mut c, &ptr, val);
+        }
+        drows.push((label, c, expected));
+    }
+    drive::drive_authored(ctx, &xml, drows).await
+}
+
+// ── DV_BOOLEAN (master17.1) — C_BOOLEAN true-only / false-only ────────────────
+
+/// CONT-DV_BOOLEAN-only_true_allowed: `C_BOOLEAN {true}` — `value=true` accepted,
+/// `value=false` rejected.
+fn run_dv_boolean_true<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(10, "value");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_boolean_true",
+            |opt| author::constrain_leaf_boolean(opt, "DV_BOOLEAN", "value", true, false),
+            vec![
+                (
+                    "value true allowed (C_BOOLEAN true-only)".to_owned(),
+                    vec![(p.clone(), json!(true))],
+                    Expected::Accepted,
+                ),
+                (
+                    "value false not allowed (C_BOOLEAN true-only)".to_owned(),
+                    vec![(p, json!(false))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+/// CONT-DV_BOOLEAN-only_false_allowed: `C_BOOLEAN {false}` — `value=false`
+/// accepted, `value=true` rejected.
+fn run_dv_boolean_false<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(10, "value");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_boolean_false",
+            |opt| author::constrain_leaf_boolean(opt, "DV_BOOLEAN", "value", false, true),
+            vec![
+                (
+                    "value false allowed (C_BOOLEAN false-only)".to_owned(),
+                    vec![(p.clone(), json!(false))],
+                    Expected::Accepted,
+                ),
+                (
+                    "value true not allowed (C_BOOLEAN false-only)".to_owned(),
+                    vec![(p, json!(true))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── DV_PARSABLE (master17.6) — C_STRING on formalism ──────────────────────────
+
+/// CONT-DV_PARSABLE-validate_value_formalism: constrain `DV_PARSABLE.formalism` to
+/// the `{ISO8601}` list — base `ISO8601` accepted, `text/xyz` rejected.
+fn run_dv_parsable_formalism<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(13, "formalism");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_parsable_formalism",
+            |opt| {
+                author::constrain_leaf_string(
+                    opt,
+                    "DV_PARSABLE",
+                    "formalism",
+                    None,
+                    vec!["ISO8601".to_owned()],
+                )
+            },
+            vec![
+                (
+                    "formalism ISO8601 in list (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "formalism text/xyz not in list (C_STRING.list)".to_owned(),
+                    vec![(p, json!("text/xyz"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── DV_IDENTIFIER (master17.1) — C_STRING pattern / list on id ────────────────
+
+/// CONT-DV_IDENTIFIER-validate_all_pattern: constrain `DV_IDENTIFIER.id` to the
+/// digit pattern `[0-9]+` — base `54480987` accepted, `ABC` rejected.
+fn run_dv_identifier_pattern<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(14, "id");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_identifier_pattern",
+            |opt| author::constrain_leaf_string(opt, "DV_IDENTIFIER", "id", Some("[0-9]+"), vec![]),
+            vec![
+                (
+                    "id 54480987 matches [0-9]+ (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "id ABC does not match [0-9]+ (C_STRING.pattern)".to_owned(),
+                    vec![(p, json!("ABC"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+/// CONT-DV_IDENTIFIER-validate_all_list: constrain `DV_IDENTIFIER.id` to the list
+/// `{54480987}` — base accepted, `99999999` rejected.
+fn run_dv_identifier_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(14, "id");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_identifier_list",
+            |opt| {
+                author::constrain_leaf_string(
+                    opt,
+                    "DV_IDENTIFIER",
+                    "id",
+                    None,
+                    vec!["54480987".to_owned()],
+                )
+            },
+            vec![
+                (
+                    "id 54480987 in list (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "id 99999999 not in list (C_STRING.list)".to_owned(),
+                    vec![(p, json!("99999999"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── DV_PROPORTION kinds (master17.3) — C_INTEGER on type + RM kind validity ────
+
+/// Drive one `DV_PROPORTION` `type`-kind case: constrain `DV_PROPORTION.type` to the
+/// single kind code `kind`, commit an accepted instance (that kind with RM-valid
+/// numerator/denominator) and a rejected instance (`type=0` ratio, off the list).
+/// `den` sets the accepted instance's denominator to satisfy the kind's RM
+/// `Proportion` invariant (unitary ⇒ 1, percent ⇒ 100, `fraction/integer_fraction` ⇒
+/// integer parts). `num` sets the numerator likewise.
+fn drive_proportion_kind<'a>(
+    ctx: &'a RunContext<'a>,
+    tid: &'static str,
+    kind: i32,
+    num: Value,
+    den: Value,
+) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let ty = leaf_ptr(15, "type");
+        let n = leaf_ptr(15, "numerator");
+        let d = leaf_ptr(15, "denominator");
+        drive_leaf_rows(
+            ctx,
+            tid,
+            move |opt| {
+                author::constrain_leaf_integer(opt, "DV_PROPORTION", "type", None, vec![kind])
+            },
+            vec![
+                (
+                    format!("type {kind} in list {{{kind}}} with RM-valid num/den (accepted)"),
+                    vec![(ty.clone(), json!(kind)), (n, num), (d, den)],
+                    Expected::Accepted,
+                ),
+                (
+                    format!("type 0 (ratio) not in list {{{kind}}} (C_INTEGER.list)"),
+                    vec![(ty, json!(0))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_proportion_ratio<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // ratio (0): any numerator/denominator (denominator != 0).
+    drive_proportion_kind(ctx, "cnf_cont_dv_prop_ratio", 0, json!(398.5), json!(209.2))
+}
+fn run_dv_proportion_unitary<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // unitary (1): denominator must be 1.
+    drive_proportion_kind(ctx, "cnf_cont_dv_prop_unitary", 1, json!(5.0), json!(1.0))
+}
+fn run_dv_proportion_percent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // percent (2): denominator must be 100.
+    drive_proportion_kind(
+        ctx,
+        "cnf_cont_dv_prop_percent",
+        2,
+        json!(42.0),
+        json!(100.0),
+    )
+}
+fn run_dv_proportion_fraction<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // fraction (3): integer numerator/denominator.
+    drive_proportion_kind(ctx, "cnf_cont_dv_prop_fraction", 3, json!(3.0), json!(4.0))
+}
+fn run_dv_proportion_integer_fraction<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    // integer_fraction (4): integer numerator/denominator.
+    drive_proportion_kind(
+        ctx,
+        "cnf_cont_dv_prop_int_fraction",
+        4,
+        json!(3.0),
+        json!(4.0),
+    )
+}
+
+// ── temporal value constraints (master17.4): C_DATE/TIME/DATE_TIME/DURATION ────
+//
+// Base leaves: DV_DATE items[5]=`2021-10-18`, DV_TIME items[8]=`22:18:16`,
+// DV_DATE_TIME items[6], DV_DURATION items[11]=`PT30M`. (Our validator currently
+// defers temporal range/pattern enforcement — `validation::leaf` — so several of
+// these drive as open findings until that gap closes; driven, never skipped.)
+
+/// A temporal case: author a temporal `C_*` constraint on `host`'s value, commit
+/// the in-constraint base value (accepted) and an out-of-constraint value
+/// (rejected).
+#[allow(clippy::too_many_arguments)]
+fn drive_temporal<'a>(
+    ctx: &'a RunContext<'a>,
+    tid: &'static str,
+    host: &'static str,
+    rm_prim: &'static str,
+    prim: CPrimitive,
+    idx: usize,
+    bad: Value,
+    label: &'static str,
+) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(idx, "value");
+        drive_leaf_rows(
+            ctx,
+            tid,
+            move |opt| author::constrain_leaf_temporal(opt, host, rm_prim, prim),
+            vec![
+                (
+                    format!("{host} base value satisfies the constraint (accepted)"),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    format!("{host} {label} (rejected)"),
+                    vec![(p, bad)],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_date_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_date_pat",
+        "DV_DATE",
+        "Date",
+        author::c_date(Some("yyyy-mm-dd"), None),
+        5,
+        json!("2021"),
+        "partial date '2021' violates yyyy-mm-dd (C_DATE.pattern)",
+    )
+}
+fn run_dv_date_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_date_rng",
+        "DV_DATE",
+        "Date",
+        author::c_date(None, Some(("2021-01-01", "2021-12-31"))),
+        5,
+        json!("2025-06-01"),
+        "'2025-06-01' outside [2021-01-01,2021-12-31] (C_DATE.range)",
+    )
+}
+fn run_dv_time_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_time_pat",
+        "DV_TIME",
+        "Time",
+        author::c_time(Some("HH:MM:SS"), None),
+        8,
+        json!("22"),
+        "partial time '22' violates HH:MM:SS (C_TIME.pattern)",
+    )
+}
+fn run_dv_time_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_time_rng",
+        "DV_TIME",
+        "Time",
+        author::c_time(None, Some(("00:00:00", "23:00:00"))),
+        8,
+        json!("23:59:59"),
+        "'23:59:59' outside [00:00:00,23:00:00] (C_TIME.range)",
+    )
+}
+fn run_dv_date_time_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_datetime_rng",
+        "DV_DATE_TIME",
+        "Date_Time",
+        author::c_date_time(None, Some(("2021-01-01T00:00:00", "2021-12-31T23:59:59"))),
+        6,
+        json!("2025-06-01T12:00:00"),
+        "'2025-06-01T12:00:00' outside the range (C_DATE_TIME.range)",
+    )
+}
+fn run_dv_duration_fields<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_dur_fields",
+        "DV_DURATION",
+        "Duration",
+        // AOM 1.4 §C_DURATION: the pattern's letters (before/after `T`) are the
+        // *allowed* fields — `PTHMS` = time-only, so the base `PT30M` conforms
+        // and any date field is forbidden. A bare `PT` allows nothing and would
+        // reject the base row too.
+        author::c_duration(Some("PTHMS"), None),
+        11,
+        json!("P1Y"),
+        "'P1Y' uses a date field the PTHMS pattern forbids (C_DURATION.pattern)",
+    )
+}
+fn run_dv_duration_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_dur_rng",
+        "DV_DURATION",
+        "Duration",
+        author::c_duration(None, Some(("PT0S", "PT1H"))),
+        11,
+        json!("PT5H"),
+        "'PT5H' outside [PT0S,PT1H] (C_DURATION.range)",
+    )
+}
+fn run_dv_duration_fields_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_dur_fr",
+        "DV_DURATION",
+        "Duration",
+        // `PTHM` allows hours+minutes (the base `PT30M` conforms); `PT5H` is an
+        // allowed field but exceeds the range.
+        author::c_duration(Some("PTHM"), Some(("PT0S", "PT1H"))),
+        11,
+        json!("PT5H"),
+        "'PT5H' outside [PT0S,PT1H] (C_DURATION.pattern+range)",
+    )
+}
+
+// ── DV_QUANTITY property (master17.3): C_DV_QUANTITY.property ──────────────────
+
+/// CONT-DV_QUANTITY-validate_property: constrain the quantity `property` to mass
+/// (`openehr::124`); base units `mg` (mass) accepted, units `cm` (length, a
+/// different property) rejected.
+fn run_dv_quantity_property<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let u = leaf_ptr(3, "units");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_quantity_property",
+            |opt| author::constrain_dv_quantity_property(opt, "openehr", "124"),
+            vec![
+                (
+                    "units mg matches property mass openehr::124 (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "units cm (length) violate property mass openehr::124 (C_DV_QUANTITY.property)"
+                        .to_owned(),
+                    vec![(u, json!("cm"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── DV_INTERVAL<T> (master17.3/17.5): interval leaves absent from all_types ────
+//
+// No base composition carries a `DV_INTERVAL<T>` leaf, so each case **slot-retypes**
+// the `DV_COUNT` slot (items[4]) to an open `DV_INTERVAL` and commits a valid
+// interval of the case's bound type (accepted) plus a malformed `lower > upper`
+// interval (rejected per the RM `Interval` invariant `lower <= upper`, which
+// applies to every bound type). The specific per-variant bound / range / list
+// constraints require `DV_INTERVAL` constraint support the validator does not yet
+// have, so most drive as recorded findings — driven, never skipped. The bound type
+// is cited by the case id / citation.
+
+/// A canonical `DV_INTERVAL` with included, bounded ends.
+fn iv(lower: Value, upper: Value) -> Value {
+    json!({
+        "_type": "DV_INTERVAL",
+        "lower": lower,
+        "upper": upper,
+        "lower_included": true,
+        "upper_included": true,
+        "lower_unbounded": false,
+        "upper_unbounded": false,
+    })
+}
+
+/// Drive a `DV_INTERVAL<T>` case: retype the `DV_COUNT` slot to an open
+/// `DV_INTERVAL`, commit `[lower,upper]` (accepted) and the reversed `[upper,lower]`
+/// (rejected, RM `Interval.lower <= upper`).
+fn drive_interval<'a>(
+    ctx: &'a RunContext<'a>,
+    tid: &'static str,
+    lower: Value,
+    upper: Value,
+) -> CaseFuture<'a> {
+    Box::pin(async move {
+        // The whole ELEMENT.value is replaced (`…/items/4/value`), not a datum
+        // inside it — `leaf_ptr(4, "value")` would nest the interval inside the
+        // retyped leaf and the slot would still hold the original type.
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            tid,
+            |opt| author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_INTERVAL")),
+            vec![
+                (
+                    "valid DV_INTERVAL lower<=upper (accepted)".to_owned(),
+                    vec![(p.clone(), iv(lower.clone(), upper.clone()))],
+                    Expected::Accepted,
+                ),
+                (
+                    "malformed DV_INTERVAL lower>upper (RM Interval invariant)".to_owned(),
+                    vec![(p, iv(upper, lower))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn dv_count(m: i64) -> Value {
+    json!({ "_type": "DV_COUNT", "magnitude": m })
+}
+fn dv_quantity(m: f64) -> Value {
+    json!({ "_type": "DV_QUANTITY", "magnitude": m, "units": "mg" })
+}
+fn dv_date(v: &str) -> Value {
+    json!({ "_type": "DV_DATE", "value": v })
+}
+fn dv_date_time(v: &str) -> Value {
+    json!({ "_type": "DV_DATE_TIME", "value": v })
+}
+fn dv_time(v: &str) -> Value {
+    json!({ "_type": "DV_TIME", "value": v })
+}
+fn dv_duration(v: &str) -> Value {
+    json!({ "_type": "DV_DURATION", "value": v })
+}
+fn dv_ordinal(v: i64, code: &str) -> Value {
+    json!({ "_type": "DV_ORDINAL", "value": v,
+        "symbol": { "_type": "DV_CODED_TEXT", "value": "ord",
+            "defining_code": { "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "local" },
+                "code_string": code } } })
+}
+fn dv_scale(v: f64, code: &str) -> Value {
+    json!({ "_type": "DV_SCALE", "value": v,
+        "symbol": { "_type": "DV_CODED_TEXT", "value": "sc",
+            "defining_code": { "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "local" },
+                "code_string": code } } })
+}
+fn dv_proportion(n: f64, d: f64) -> Value {
+    json!({ "_type": "DV_PROPORTION", "numerator": n, "denominator": d, "type": 0 })
+}
+
+macro_rules! iv_count {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_count(1), dv_count(10))
+        }
+    };
+}
+macro_rules! iv_quantity {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_quantity(1.0), dv_quantity(10.0))
+        }
+    };
+}
+macro_rules! iv_date {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_date("2021-01-01"), dv_date("2021-12-31"))
+        }
+    };
+}
+macro_rules! iv_date_time {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(
+                ctx,
+                $tid,
+                dv_date_time("2021-01-01T00:00:00"),
+                dv_date_time("2021-12-31T00:00:00"),
+            )
+        }
+    };
+}
+macro_rules! iv_time {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_time("01:00:00"), dv_time("10:00:00"))
+        }
+    };
+}
+macro_rules! iv_duration {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_duration("PT1H"), dv_duration("PT10H"))
+        }
+    };
+}
+macro_rules! iv_ordinal {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_ordinal(0, "at0014"), dv_ordinal(1, "at0015"))
+        }
+    };
+}
+macro_rules! iv_scale {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_scale(1.0, "at0014"), dv_scale(2.0, "at0015"))
+        }
+    };
+}
+macro_rules! iv_proportion {
+    ($fn:ident, $tid:literal) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            drive_interval(ctx, $tid, dv_proportion(1.0, 2.0), dv_proportion(3.0, 2.0))
+        }
+    };
+}
+
+iv_count!(ivc_open, "cnf_iv_count_open");
+iv_count!(ivc_lu, "cnf_iv_count_lu");
+iv_count!(ivc_lul, "cnf_iv_count_lul");
+iv_quantity!(ivq_open, "cnf_iv_quantity_open");
+iv_quantity!(ivq_ul, "cnf_iv_quantity_ul");
+iv_date!(ivd_open, "cnf_iv_date_open");
+iv_date!(ivd_luc, "cnf_iv_date_luc");
+iv_date!(ivd_lur, "cnf_iv_date_lur");
+iv_date_time!(ivdt_open, "cnf_iv_datetime_open");
+iv_date_time!(ivdt_luc, "cnf_iv_datetime_luc");
+iv_date_time!(ivdt_lur, "cnf_iv_datetime_lur");
+iv_time!(ivt_open, "cnf_iv_time_open");
+iv_time!(ivt_luc, "cnf_iv_time_luc");
+iv_time!(ivt_lur, "cnf_iv_time_lur");
+iv_duration!(ivdu_open, "cnf_iv_duration_open");
+iv_duration!(ivdu_c, "cnf_iv_duration_c");
+iv_duration!(ivdu_r, "cnf_iv_duration_r");
+iv_ordinal!(ivo_open, "cnf_iv_ordinal_open");
+iv_ordinal!(ivo_c, "cnf_iv_ordinal_c");
+iv_scale!(ivs_open, "cnf_iv_scale_open");
+iv_scale!(ivs_c, "cnf_iv_scale_c");
+iv_proportion!(ivp_open, "cnf_iv_proportion_open");
+iv_proportion!(ivp_ratio, "cnf_iv_proportion_ratio");
+iv_proportion!(ivp_unitary, "cnf_iv_proportion_unitary");
+iv_proportion!(ivp_percent, "cnf_iv_proportion_percent");
+iv_proportion!(ivp_fraction, "cnf_iv_proportion_fraction");
+iv_proportion!(ivp_intfrac, "cnf_iv_proportion_intfrac");
+iv_proportion!(ivp_ratiorange, "cnf_iv_proportion_ratiorange");
+
+/// master17.3 CONT-DV_PROPORTION-validate_ratio_range: constrain
+/// `DV_PROPORTION.numerator` (`C_REAL`) to the range `[0,1000]` — base `398.5`
+/// accepted, `9999.0` rejected.
+fn run_dv_proportion_ratio_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let n = leaf_ptr(15, "numerator");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_prop_ratio_range",
+            |opt| {
+                author::constrain_leaf_real(
+                    opt,
+                    "DV_PROPORTION",
+                    "numerator",
+                    Some((0.0, 1000.0)),
+                    vec![],
+                )
+            },
+            vec![
+                (
+                    "numerator 398.5 in range [0,1000] (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "numerator 9999 outside range [0,1000] (C_REAL.range)".to_owned(),
+                    vec![(n, json!(9999.0))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── slot-retyped leaves absent from all_types: DV_URI/DV_EHR_URI/DV_SCALE ──────
+//
+// These DV_* types have no leaf in the all_types composition, so each case
+// retypes the DV_COUNT scratch slot (items[4]) to the target type and commits a
+// whole-value instance of it.
+
+/// The pointer to the whole value object of the `items[idx]` leaf.
+fn value_ptr(idx: usize) -> String {
+    format!("/content/0/data/events/0/data/items/{idx}/value")
+}
+
+fn run_dv_uri_pattern<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_uri_pattern",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_URI"))
+                    && author::constrain_leaf_string(
+                        opt,
+                        "DV_URI",
+                        "value",
+                        Some("http://.*"),
+                        vec![],
+                    )
+            },
+            vec![
+                (
+                    "URI http://ok matches pattern (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_URI","value":"http://ok"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "URI ftp://no not matching http://.* (C_STRING.pattern)".to_owned(),
+                    vec![(p, json!({"_type":"DV_URI","value":"ftp://no"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_uri_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_uri_list",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_URI"))
+                    && author::constrain_leaf_string(
+                        opt,
+                        "DV_URI",
+                        "value",
+                        None,
+                        vec!["http://ok".to_owned()],
+                    )
+            },
+            vec![
+                (
+                    "URI http://ok in list (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_URI","value":"http://ok"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "URI http://other not in list (C_STRING.list)".to_owned(),
+                    vec![(p, json!({"_type":"DV_URI","value":"http://other"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_ehr_uri_open<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_ehr_uri_open",
+            |opt| author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_EHR_URI")),
+            vec![
+                (
+                    "DV_EHR_URI with value (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_EHR_URI","value":"ehr://x/y"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "DV_EHR_URI without value (RM/Schema mandatory)".to_owned(),
+                    vec![(p, json!({"_type":"DV_EHR_URI"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_ehr_uri_pattern<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_ehr_uri_pattern",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_EHR_URI"))
+                    && author::constrain_leaf_string(
+                        opt,
+                        "DV_EHR_URI",
+                        "value",
+                        Some("ehr://.*"),
+                        vec![],
+                    )
+            },
+            vec![
+                (
+                    "ehr://x matches pattern (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_EHR_URI","value":"ehr://x"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "http://x not matching ehr://.* (C_STRING.pattern)".to_owned(),
+                    vec![(p, json!({"_type":"DV_EHR_URI","value":"http://x"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_ehr_uri_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_ehr_uri_list",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_EHR_URI"))
+                    && author::constrain_leaf_string(
+                        opt,
+                        "DV_EHR_URI",
+                        "value",
+                        None,
+                        vec!["ehr://ok".to_owned()],
+                    )
+            },
+            vec![
+                (
+                    "ehr://ok in list (accepted)".to_owned(),
+                    vec![(p.clone(), json!({"_type":"DV_EHR_URI","value":"ehr://ok"}))],
+                    Expected::Accepted,
+                ),
+                (
+                    "ehr://other not in list (C_STRING.list)".to_owned(),
+                    vec![(p, json!({"_type":"DV_EHR_URI","value":"ehr://other"}))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn dv_scale_value(v: f64, code: &str) -> Value {
+    json!({ "_type": "DV_SCALE", "value": v,
+        "symbol": { "_type": "DV_CODED_TEXT", "value": "sc",
+            "defining_code": { "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "local" },
+                "code_string": code } } })
+}
+
+fn run_dv_scale_open<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_scale_open",
+            |opt| author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_SCALE")),
+            vec![
+                (
+                    "DV_SCALE with value+symbol (accepted)".to_owned(),
+                    vec![(p.clone(), dv_scale_value(1.0, "at0014"))],
+                    Expected::Accepted,
+                ),
+                (
+                    "DV_SCALE without value (RM/Schema mandatory)".to_owned(),
+                    vec![(
+                        p,
+                        json!({"_type":"DV_SCALE","symbol":{"_type":"DV_CODED_TEXT","value":"sc",
+                            "defining_code":{"_type":"CODE_PHRASE",
+                                "terminology_id":{"_type":"TERMINOLOGY_ID","value":"local"},
+                                "code_string":"at0014"}}}),
+                    )],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_scale_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = value_ptr(4);
+        // Constrain the retyped scale's value to the C_REAL list {1.0}; base 1.0
+        // accepted, 9.0 off the list rejected.
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_scale_constraint",
+            |opt| {
+                author::retype_leaf(opt, "DV_COUNT", author::open_complex("DV_SCALE"))
+                    && author::constrain_leaf_real(opt, "DV_SCALE", "value", None, vec![1.0])
+            },
+            vec![
+                (
+                    "DV_SCALE value 1.0 in list {1.0} (accepted)".to_owned(),
+                    vec![(p.clone(), dv_scale_value(1.0, "at0014"))],
+                    Expected::Accepted,
+                ),
+                (
+                    "DV_SCALE value 9.0 not in list {1.0} (C_REAL.list)".to_owned(),
+                    vec![(p, dv_scale_value(9.0, "at0014"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+// ── code-phrase leaves present in all_types: DV_MULTIMEDIA / DV_CODED_TEXT ─────
+
+fn run_dv_multimedia_media_type<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(12, "media_type/code_string");
+        let t = leaf_ptr(12, "media_type/terminology_id/value");
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_multimedia_media_type",
+            |opt| {
+                author::constrain_codephrase(
+                    opt,
+                    "DV_MULTIMEDIA",
+                    "media_type",
+                    "IANA_media-types",
+                    vec!["image/png".to_owned()],
+                )
+            },
+            vec![
+                (
+                    "media_type image/png in list (accepted)".to_owned(),
+                    vec![
+                        (t.clone(), json!("IANA_media-types")),
+                        (p.clone(), json!("image/png")),
+                    ],
+                    Expected::Accepted,
+                ),
+                (
+                    "media_type image/gif not in list (C_CODE_PHRASE)".to_owned(),
+                    vec![(t, json!("IANA_media-types")), (p, json!("image/gif"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_coded_ext_term<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let code = leaf_ptr(1, "defining_code/code_string");
+        let term = leaf_ptr(1, "defining_code/terminology_id/value");
+        drive_leaf_rows(
+            ctx,
+            "cnf_dv_coded_ext_term",
+            |opt| {
+                author::constrain_codephrase(
+                    opt,
+                    "DV_CODED_TEXT",
+                    "defining_code",
+                    "SNOMED-CT",
+                    vec!["73211009".to_owned()],
+                )
+            },
+            vec![
+                (
+                    "SNOMED-CT 73211009 in the external code_list (accepted)".to_owned(),
+                    vec![
+                        (term.clone(), json!("SNOMED-CT")),
+                        (code.clone(), json!("73211009")),
+                    ],
+                    Expected::Accepted,
+                ),
+                (
+                    "SNOMED-CT 99999999 not in the external code_list (C_CODE_PHRASE)".to_owned(),
+                    vec![(term, json!("SNOMED-CT")), (code, json!("99999999"))],
+                    Expected::Rejected,
+                ),
+            ],
         )
         .await
     })

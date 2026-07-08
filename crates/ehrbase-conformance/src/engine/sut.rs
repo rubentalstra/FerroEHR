@@ -201,6 +201,9 @@ mod self_host {
             "bind": "127.0.0.1:0",
             "base_path": "/ehrbase/rest/openehr/v1",
             "swagger_ui": false,
+            // Enable the ADMIN API group so the master12 ADMIN-* cases exercise
+            // the active surface (physical EHR delete); default is off (404).
+            "admin": { "enabled": true },
             "auth": {
                 "enabled": true,
                 "basic": {

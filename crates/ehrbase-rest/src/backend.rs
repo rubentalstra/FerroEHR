@@ -19,11 +19,11 @@
 //! for the whole EHR group, returning a [`ServiceResponse`] (RM payload +
 //! typed [`ResourceMeta`]) from which the HTTP edge derives those headers.
 //!
-//! The generated `DemographicApi` / `QueryApi` / `AdminApi` groups have **no
-//! implemented operations yet** (demographic: a future RM phase; query/AQL:
-//! P16; admin: later), so they are not part of the seam — their routes answer
-//! through the generic not-implemented dispatcher (F-13-03). Each trait joins
-//! `Backend` in the phase that first implements it.
+//! The demographic and admin groups are served through their own seams
+//! ([`DemographicService`], [`AdminService`]) rather than the generated
+//! `DemographicApi`/`AdminApi` traits, for the same reason [`EhrService`]
+//! supersedes `EhrApi`: the generated traits exchange bare `Value`s and cannot
+//! carry `ETag`/`Location` or drive `Prefer`.
 
 use std::sync::Arc;
 
@@ -429,6 +429,83 @@ pub trait EhrService: Send + Sync {
     }
 }
 
+/// The concrete PARTY resource families of the DEMOGRAPHIC API group (the five
+/// concrete `ACTOR`/`PARTY` leaves the routes are keyed by).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PartyKind {
+    /// `AGENT` (`/demographic/agent`).
+    Agent,
+    /// `GROUP` (`/demographic/group`).
+    Group,
+    /// `ORGANISATION` (`/demographic/organisation`).
+    Organisation,
+    /// `PERSON` (`/demographic/person`).
+    Person,
+    /// `ROLE` (`/demographic/role`).
+    Role,
+}
+
+impl PartyKind {
+    /// The RM `_type` this resource family stores (`PERSON`, `ROLE`, …).
+    #[must_use]
+    pub fn rm_type(self) -> &'static str {
+        match self {
+            PartyKind::Agent => "AGENT",
+            PartyKind::Group => "GROUP",
+            PartyKind::Organisation => "ORGANISATION",
+            PartyKind::Person => "PERSON",
+            PartyKind::Role => "ROLE",
+        }
+    }
+
+    /// The URL path segment of this resource family (`agent`, `person`, …).
+    #[must_use]
+    pub fn segment(self) -> &'static str {
+        match self {
+            PartyKind::Agent => "agent",
+            PartyKind::Group => "group",
+            PartyKind::Organisation => "organisation",
+            PartyKind::Person => "person",
+            PartyKind::Role => "role",
+        }
+    }
+}
+
+/// The ADMIN group's application seam (SM `I_ADMIN_SERVICE.physical_ehr_delete`,
+/// requirement level 0..1 — an optional platform capability).
+///
+/// PORT NOTE: the ADMIN API is dev-branch only in ITS-REST (no vendored OAS;
+/// CNF master12 is all TBD). The normative core is SM
+/// `i_admin_service.adoc`: **physical** deletion of an EHR (precondition
+/// `has_ehr`, error `ehr_id_does_not_exist`); the CNF Robot prior art
+/// (`I_ADMIN_SERVICE/001-EHR.robot`) expects `204` and a full cascade (EHR,
+/// `EHR_STATUS`, `EHR_ACCESS`, compositions, directory, contributions, audits all
+/// physically gone). Unknown EHR → 404 (inferred HTTP mapping of
+/// `ehr_id_does_not_exist`).
+///
+/// Every method defaults to `NotImplemented`, so [`StubBackend`] (and any
+/// partial backend) inherits a `501` until the real service overrides it.
+#[async_trait]
+pub trait AdminService: Send + Sync {
+    /// `DELETE /admin/ehr/{ehr_id}` — physically delete one EHR and every trace
+    /// of it. `204`; unknown EHR → 404.
+    async fn admin_ehr_delete(&self, _ehr_id: String) -> Result<(), ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /admin/ehr/all{?ehr_id*}` — physically delete a **set** of EHRs.
+    ///
+    /// PORT NOTE: this operation has no spec at all (not in the SM, not in any
+    /// OAS; the generated param under-models the RFC 6570 `ehr_id*` list as one
+    /// optional string). Our design: `ehr_id` carries a comma-separated id list
+    /// and only those EHRs are deleted; an absent/empty list deletes **nothing**
+    /// and is a 400 (refusing an implicit delete-everything). Returns the number
+    /// of EHRs actually deleted.
+    async fn admin_ehr_delete_all(&self, _ehr_ids: Vec<String>) -> Result<u64, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+}
+
 /// A normalized AQL query request: the paging window, the single-EHR scope, and
 /// the `$parameter` bindings, gathered from the query string or the request body
 /// (`AdhocQueryExecute` / `Query`) by the dispatch layer (ITS-REST query
@@ -509,16 +586,187 @@ pub trait QueryService: Send + Sync {
     }
 }
 
+/// The DEMOGRAPHIC API group's application seam.
+///
+/// ITS-REST 1.0.3 defines **no** demographic wire contract (the SM demographic
+/// service is abstract; the CNF demographic schedule — master10 — is all TBD;
+/// the CNF profiles table lists demographic as OPTIONS-profile only). This seam
+/// is therefore our own design **by analogy with the EHR group** (ADR-008):
+/// parties are versioned objects on the same machinery with no EHR scope, and
+/// the status codes / `ETag` / `Location` / `Prefer` / `If-Match` behaviour
+/// mirrors the EHR group. Each method returns a [`ServiceResponse`] (RM payload
+/// + typed [`ResourceMeta`]) from which the HTTP edge derives the headers; a
+/// demographic [`ResourceMeta`] carries an **empty** `ehr_id` (parties are not
+/// EHR-scoped), so the dispatcher builds a `/demographic/…` `Location` without
+/// one. Every method defaults to `NotImplemented`.
+#[async_trait]
+pub trait DemographicService: Send + Sync {
+    /// `POST /demographic/{kind}` — create a party. `201` + `ETag`(version
+    /// uid)/`Location`; body per `Prefer`.
+    async fn party_create(
+        &self,
+        _kind: PartyKind,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/{kind}/{uid_based_id}` — retrieve a party (current,
+    /// at-time, or a specific version). `200` + `ETag`/`Location`; a deleted
+    /// current version → `Null` body (→ `204`).
+    async fn party_get(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+        _version_at_time: Option<String>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /demographic/{kind}/{uid_based_id}` — commit a new party version.
+    /// `If-Match` carries the preceding `OBJECT_VERSION_ID`; `200`/`204` per
+    /// `Prefer`; `ETag`/`Location` on both.
+    async fn party_update(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+        _if_match: String,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete. The
+    /// `uid_based_id` MUST be an `OBJECT_VERSION_ID` (the preceding version).
+    /// `204` + `ETag`/`Location` of the deleted version.
+    async fn party_delete(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/versioned_party/{versioned_object_uid}` — the
+    /// `VERSIONED_PARTY`. `200` (plain).
+    async fn versioned_party_get(
+        &self,
+        _versioned_object_uid: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/versioned_party/{versioned_object_uid}/revision_history`.
+    async fn versioned_party_revision_history(
+        &self,
+        _versioned_object_uid: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/versioned_party/{versioned_object_uid}/version` — the
+    /// VERSION extant at a time (or the latest). `ETag`(version uid)/`Location`.
+    async fn versioned_party_version_get_at_time(
+        &self,
+        _versioned_object_uid: String,
+        _version_at_time: Option<String>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`
+    /// — the `ORIGINAL_VERSION`. `200` (plain).
+    async fn versioned_party_version_get_by_id(
+        &self,
+        _versioned_object_uid: String,
+        _version_uid: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `POST /demographic/contribution` — commit a demographic CONTRIBUTION
+    /// (ehr-less; its versions reference party objects). `201` +
+    /// `ETag`(contribution uid)/`Location`; body per `Prefer`.
+    async fn demographic_contribution_create(
+        &self,
+        _body: Value,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/contribution/{contribution_uid}` — a demographic
+    /// (ehr-less) CONTRIBUTION. `200` (plain).
+    async fn demographic_contribution_get(
+        &self,
+        _contribution_uid: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/tags` — all demographic item tags (ehr-less).
+    async fn demographic_tags_get(
+        &self,
+        _tag_key: Option<String>,
+        _tag_value: Option<String>,
+        _tag_target_path: Option<String>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `GET /demographic/{kind}/{uid_based_id}/tags`.
+    async fn party_tags_get(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `PUT /demographic/{kind}/{uid_based_id}/tags`.
+    async fn party_tags_update(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+        _body: Vec<Value>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `DELETE /demographic/{kind}/{uid_based_id}/tags/{key}`.
+    async fn party_tags_delete(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+        _key: String,
+    ) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// The current party version metadata, for the latest `version_uid` the
+    /// spec-analogous `412` precondition failure echoes in `ETag`/`Location`.
+    /// `None` if the party is unknown.
+    async fn demographic_latest_meta(
+        &self,
+        _kind: PartyKind,
+        _uid_based_id: String,
+    ) -> Result<Option<ResourceMeta>, ApiError> {
+        Ok(None)
+    }
+}
+
 /// The full server backend: everything the ITS-REST surface dispatches to.
 /// Implemented once, on the application's service (or on [`StubBackend`]).
-/// Groups with no implemented operations (demographic / admin) are deliberately
-/// absent — their routes answer 501 without touching the backend (F-13-03); each
+/// Groups with no implemented operations (admin) are deliberately absent —
+/// their routes answer 501 without touching the backend (F-13-03); each
 /// generated trait joins this union in the phase that first implements it.
 pub trait Backend:
     EhrService
+    + DemographicService
     + DefinitionApi
     + WebTemplateService
     + QueryService
+    + DemographicService
+    + AdminService
     + Send
     + Sync
     + std::fmt::Debug
@@ -528,9 +776,12 @@ pub trait Backend:
 
 impl<T> Backend for T where
     T: EhrService
+        + DemographicService
         + DefinitionApi
         + WebTemplateService
         + QueryService
+        + DemographicService
+        + AdminService
         + Send
         + Sync
         + std::fmt::Debug
@@ -551,3 +802,5 @@ impl EhrService for StubBackend {}
 impl DefinitionApi for StubBackend {}
 impl WebTemplateService for StubBackend {}
 impl QueryService for StubBackend {}
+impl DemographicService for StubBackend {}
+impl AdminService for StubBackend {}

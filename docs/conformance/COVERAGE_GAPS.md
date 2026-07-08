@@ -42,10 +42,39 @@ failures → passes with no new fixtures. Full detail in
 | **F-open-41** | `opt14` parser rejects `ehrn_vital_signs.v2.opt` ("missing element type") — blocks provisioning that template, which is the **only** vendored one constraining a committable `DV_COUNT` | blocks ~3 (see §2) | medium — an ITS/opt14 reader bug, also unlocks §2 cases |
 | **F-open-5** | 2nd persistent `create` for the same OPT accepted — **spec-ambiguous**, recorded honestly, not necessarily a defect | 1 | low / review |
 | **F-open-21** | `TIMEWINDOW` query rejected — **spec-correct** (removed from AQL); a corpus artifact, **NOT a defect** | 0 | none (documented) |
+| **F-open-42** (SUT-strictness, from the benchmark) | `EHR_STATUS.subject` accepts `PARTY_IDENTIFIED` where the RM types it `PARTY_SELF [1]` (RM ehr) — EHRbase Java rejects it with 400; ehrbase-rs commits it | benchmark + invalid-status cases | high (same root cause as F-open-3/9) |
 
-**The single highest-leverage fix is F-open-3/F-open-9:** typed mandatory-presence
-validation at commit time. It is the root cause behind the large block of
-master16/17 content failures and the composition/contribution create failures.
+### Root-cause analysis (2026-07-08, deep dive)
+
+F-open-3, F-open-9, F-open-42, and much of F-open-1 share **one** defect, found
+by reading the commit-time validation path against the RM + ITS-REST spec:
+
+> **`crates/openehr-rm/src/validate.rs::run<T>` silently swallows
+> `serde_json::from_value` failures.** It runs a node's RM class invariants only
+> when the node deserializes into its declared concrete type, and drops a failed
+> deserialize on the comment's assumption that it is "caught by the codec/schema
+> layer." **That is false on the commit path** — a versioned object is stored as
+> its raw canonical-JSON fragment (ADR-008 node codec) and the ITS-JSON schema is
+> never enforced at commit. So a COMPOSITION missing mandatory `composer` [1], or
+> an `EHR_STATUS.subject` typed `PARTY_IDENTIFIED` (RM types it `PARTY_SELF [1]`),
+> **fails to deserialize → is swallowed → committed 201** (must be 422). Worse,
+> `EHR_STATUS`/`EHR_ACCESS` are not even in the `validate_rm_value` dispatch
+> table, so they get no typed validation at all.
+
+**Spec:** `RM/docs/ehr/` (`COMPOSITION.composer [1]`, `EHR_STATUS.subject:
+PARTY_SELF [1]`; mandatory existence = BMM `is_mandatory`, exposed by
+`openehr_rm::model`); `ITS-REST/.../responses/422_COMPOSITION.yaml` ("converts,
+but does not validate" → 422).
+
+**Fix (spec-grounded, in the hand-written `validate.rs` — not generated):**
+`run<T>` surfaces the deserialize `Err` as an `InvariantViolation`; add
+`EHR_STATUS`/`EHR_ACCESS` to the dispatch table; route the EHR_STATUS + FOLDER
+commit paths through `validate_rm_and_terminology`. **Verification guard:** the
+valid corpus (`openehr-its/tests/corpus.rs`) must still deserialize + pass — if
+any *valid* case newly fails, it exposes a codegen field-optionality bug (a
+spec-optional attribute emitted as non-`Option`), which is fixed in the
+**emitter**, not the validator. Full plan + ordering:
+`docs/plans/s2-phase-04-cnf-hardening.md`.
 
 ## 2. Skipped — the vendored-corpus ceiling (kind B, deferred by owner decision)
 

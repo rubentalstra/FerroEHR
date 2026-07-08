@@ -363,7 +363,7 @@ fn duration_allowed_fields(pattern: Option<&str>) -> Vec<&'static str> {
 
 // ── DV_PROPORTION ────────────────────────────────────────────────────────────
 
-const PROPORTION_KINDS: [&str; 5] = [
+pub(crate) const PROPORTION_KINDS: [&str; 5] = [
     "ratio",
     "unitary",
     "percent",

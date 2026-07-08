@@ -105,6 +105,8 @@ impl WebTemplateService for MockBackend {
     }
 }
 impl ehrbase_rest::QueryService for MockBackend {}
+impl ehrbase_rest::DemographicService for MockBackend {}
+impl ehrbase_rest::AdminService for MockBackend {}
 
 fn config() -> RestConfig {
     RestConfig {
@@ -118,6 +120,7 @@ fn config() -> RestConfig {
             oidc: None,
             admin_scope: None,
         },
+        admin: ehrbase_rest::AdminConfig::default(),
     }
 }
 

@@ -34,10 +34,10 @@ mod status;
 pub use auth::{AuthMethod, Authenticator, Principal};
 pub use authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
 pub use backend::{
-    AqlQueryRequest, Backend, EhrService, QueryOutcome, QueryService, StubBackend,
-    WebTemplateService,
+    AdminService, AqlQueryRequest, Backend, DemographicService, EhrService, PartyKind,
+    QueryOutcome, QueryService, StubBackend, WebTemplateService,
 };
-pub use config::RestConfig;
+pub use config::{AdminConfig, RestConfig};
 pub use error::RestError;
 pub use management::{ManagementConfig, Observability};
 pub use response::{ResourceMeta, ServiceResponse};

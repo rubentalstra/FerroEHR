@@ -21,7 +21,7 @@ use ehrbase_audit::{AuditConfig, AuditSender, Transport};
 use ehrbase_authz::AuthzConfig;
 use ehrbase_rest::auth::AuthConfig;
 use ehrbase_rest::auth::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
-use ehrbase_rest::{AuthzHandle, RestConfig, StubBackend};
+use ehrbase_rest::{AdminConfig, AuthzHandle, RestConfig, StubBackend};
 use http::{Request, StatusCode};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::{Value, json};
@@ -72,6 +72,10 @@ fn rest_config() -> RestConfig {
             admin_scope: None,
         },
         swagger_ui: false,
+        // The admin group must be reachable so the RBAC gate is what decides
+        // access (the admin tests assert 403 for USER / 501 for ADMIN at the
+        // dispatcher, not the config gate's 404).
+        admin: AdminConfig { enabled: true },
         ..RestConfig::default()
     }
 }

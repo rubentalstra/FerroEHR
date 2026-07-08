@@ -134,6 +134,40 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub existence: Vec<WebTemplateExistence>,
 
+    /// **Every** constraining `C_MULTIPLE_ATTRIBUTE.cardinality` on this node
+    /// (AOM 1.4 `master04-constraint_model_package.adoc` §cardinality) — a
+    /// superset of the serialized Better `cardinalities`, which keeps only the
+    /// intervals Better surfaces in the interop JSON. The validation walk
+    /// enforces this set so `0..1`/`1..1`/`1..*` container bounds are checked
+    /// too. `#[serde(skip)]` — validation-only.
+    #[serde(skip)]
+    pub card_all: Vec<WebTemplateCardinality>,
+
+    /// RM-type narrowings of wrapper constraints the compactor hoisted away
+    /// (`ITEM_*`/`HISTORY`/single `EVENT`): an instance node matched at `path`
+    /// must conform to one of the recorded types (AOM 1.4 type conformance —
+    /// "Class not allowed"). `#[serde(skip)]` — validation-only.
+    #[serde(skip)]
+    pub slots: Vec<WebTemplateSlot>,
+
+    /// `C_INTEGER.list`/`C_REAL.list` constraints on a leaf's numeric datum
+    /// (`magnitude`, `value`, …), keyed by RM attribute name — the Better input
+    /// JSON does not carry these lists, so they are validation-only.
+    #[serde(skip)]
+    pub numeric_lists: Vec<(String, Vec<f64>)>,
+
+    /// `C_DURATION.range` (ISO-8601 duration bounds) on a `DV_DURATION` leaf's
+    /// `value` — Better encodes only the allowed-field split into per-field
+    /// inputs, so the range is validation-only.
+    #[serde(skip)]
+    pub duration_range: Option<WebTemplateRange>,
+
+    /// `C_CODE_PHRASE` code lists on coded RM attributes the `inputs` mapping
+    /// does not model (e.g. `DV_MULTIMEDIA.media_type`). `defining_code` is
+    /// excluded (already covered by the coded-text `inputs`).
+    #[serde(skip)]
+    pub code_lists: Vec<WebTemplateCodeList>,
+
     // ── build-time scratch (never serialized) ────────────────────────────────
     /// Full `parent/segment` id chain, used to scope dedup and cardinality ids.
     #[serde(skip)]
@@ -169,6 +203,11 @@ impl WebTemplateNode {
             cardinalities: Vec::new(),
             children: Vec::new(),
             existence: Vec::new(),
+            card_all: Vec::new(),
+            slots: Vec::new(),
+            numeric_lists: Vec::new(),
+            duration_range: None,
+            code_lists: Vec::new(),
             full_id: String::new(),
             alt_json_id: None,
             name_code: None,
@@ -336,6 +375,30 @@ pub struct WebTemplateExistence {
     pub min: i32,
     pub max: i32,
     pub path: String,
+}
+
+/// A hoisted-wrapper type narrowing (validation-only, never serialized): the
+/// instance node(s) matched at the absolute archetype `path` must conform to
+/// `rm_type` (or to one of the types when several same-path alternatives were
+/// hoisted — the walk groups by path).
+#[derive(Debug, Clone)]
+pub struct WebTemplateSlot {
+    /// Absolute archetype path of the hoisted wrapper constraint.
+    pub path: String,
+    /// The wrapper's constrained RM type (`ITEM_LIST`, `POINT_EVENT`, …; an
+    /// abstract type such as `ITEM_STRUCTURE` admits every concrete subtype).
+    pub rm_type: String,
+}
+
+/// A `C_CODE_PHRASE` code-list constraint on a coded RM attribute of a leaf
+/// (validation-only, never serialized): `attr` is the RM attribute name (e.g.
+/// `media_type`), `terminology` the constrained terminology id (`None` =
+/// `local`), `codes` the allowed `code_string`s.
+#[derive(Debug, Clone)]
+pub struct WebTemplateCodeList {
+    pub attr: String,
+    pub terminology: Option<String>,
+    pub codes: Vec<String>,
 }
 
 /// A container cardinality: `{min, max, ids}`. `path` is build-time scratch used

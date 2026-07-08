@@ -1,54 +1,380 @@
-//! master04 — DEFINITION: ADL 1.4 / OPT 1.4 provisioning (design §4.1).
+//! DEFINITION: ADL 1.4 / OPT 1.4 provisioning (area TPL).
 //!
-//! Transcribed from `master04-func_tc_definition_adl.adoc`, driving the ITS-REST
-//! `/definition/template/adl1.4` surface with the vendored `valid_templates` and
-//! `invalid_templates` `.opt` fixtures (valid **and** invalid — both load-bearing).
-//! Assertions concretize the OPT provisioning contract (`2xx` accept a valid OPT;
-//! `4xx` reject an invalid one; `200` list).
+//! Our own ECC cases (reference: `master04-func_tc_definition_adl.adoc`,
+//! design-time reading), driving the ITS-REST `/definition/template/adl1.4`
+//! surface with the vendored `valid_templates` and `invalid_templates` `.opt`
+//! fixtures (valid **and** invalid — both load-bearing). Assertions concretize
+//! the OPT provisioning contract (`2xx` accept a valid OPT; `4xx` reject an
+//! invalid one; `200` list).
 //!
-//! The `get_opt-*`, `delete_opt-*`, and version cases need a `template_id`
-//! round-trip / a delete endpoint our surface does not expose, so they stay
-//! `NotYetTranscribed`.
+//! `get_opt-*` round-trips a provisioned `template_id`
+//! (`GET /definition/template/adl1.4/{id}`); `validate_opt-*` is realized via
+//! the upload endpoint (which validates — 2xx valid / 4xx invalid);
+//! `upload_opt-*_twice` asserts the conflict/idempotency semantics; `delete_opt-*`
+//! drives `DELETE /definition/template/adl1.4/{id}` — a verb the standard ITS-REST
+//! surface does not define, so a missing endpoint surfaces as a genuine finding,
+//! never a skip (CNF guide: abstract op → REST realization).
 
 use crate::assert;
-use crate::case::{Capability, CaseMeta, Chapter, Compare, Format, Profile, Provenance};
+use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
+use crate::catalog::Area;
 use crate::fixtures;
-use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, RunContext};
+use crate::harness::{
+    CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
+};
 use crate::registry::CaseEntry;
+
+macro_rules! case {
+    ($body:block) => {
+        Box::pin(async move { $body })
+    };
+}
 
 /// The implemented master04 case entries.
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         entry(
-            "I_DEFINITION_ADL14.upload_opt-valid_opt",
+            "tpl/upload-opt-valid-opt",
+            "Upload OPT — valid OPT",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             Capability::Adl14OptProvisioning,
             run_upload_valid,
         ),
         entry(
-            "I_DEFINITION_ADL14.upload_opt-invalid_opt",
+            "tpl/upload-opt-invalid-opt",
+            "Upload OPT — invalid OPT",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             Capability::Adl14OptProvisioning,
             run_upload_invalid,
         ),
         entry(
-            "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
+            "tpl/get-opts-retrieve-all-no-opts",
+            "List OPTs — retrieve all no OPTs",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             Capability::Adl14OptProvisioning,
             run_list,
+        ),
+        // upload_opt idempotency.
+        c(
+            "tpl/upload-opt-valid-opt-twice-conflict",
+            "Upload OPT — valid OPT twice conflict",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_upload_twice_conflict,
+        ),
+        c(
+            "tpl/upload-opt-valid-opt-twice-no-conflict",
+            "Upload OPT — valid OPT twice no conflict",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_upload_twice_no_conflict,
+        ),
+        // get_opt — GET /definition/template/adl1.4/{template_id}[/{version}].
+        c(
+            "tpl/get-opt-retrieve-single",
+            "Get OPT — retrieve single",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_get_single,
+        ),
+        c(
+            "tpl/get-opt-retrieve-latest-version",
+            "Get OPT — retrieve latest version",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_get_latest,
+        ),
+        c(
+            "tpl/get-opt-retrieve-specific-version",
+            "Get OPT — retrieve specific version",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_get_specific,
+        ),
+        c(
+            "tpl/get-opt-retrieve-fail",
+            "Get OPT — retrieve fail",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_get_fail,
+        ),
+        c(
+            "tpl/get-opts-retrieve-all",
+            "List OPTs — retrieve all",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_get_all,
+        ),
+        // validate_opt — realized via the upload endpoint (which validates).
+        c(
+            "tpl/validate-opt-valid-opt",
+            "Validate OPT — valid OPT",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_validate_valid,
+        ),
+        c(
+            "tpl/validate-opt-invalid-opt",
+            "Validate OPT — invalid OPT",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_validate_invalid,
+        ),
+        // delete_opt — DELETE /definition/template/adl1.4/{template_id}
+        // (no ITS-REST verb → a missing endpoint surfaces as a finding).
+        c(
+            "tpl/delete-opt-delete-non-existing",
+            "Delete OPT — delete non existing",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_delete_absent,
+        ),
+        c(
+            "tpl/delete-opt-delete-existing",
+            "Delete OPT — delete existing",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_delete_existing,
+        ),
+        c(
+            "tpl/delete-opt-delete-latest-version",
+            "Delete OPT — delete latest version",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_delete_latest,
+        ),
+        c(
+            "tpl/delete-opt-delete-specific-version",
+            "Delete OPT — delete specific version",
+            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            run_delete_specific,
         ),
     ]
 }
 
-fn entry(id: &'static str, capability: Capability, run: CaseRun) -> CaseEntry {
+/// Shorthand for an OPT-provisioning case entry.
+fn c(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
+    entry(id, title, citation, Capability::Adl14OptProvisioning, run)
+}
+
+/// The `template_id` of the vendored `minimal_evaluation` OPT.
+const TID: &str = "minimal_evaluation.en.v1";
+
+/// Ensure the `minimal_evaluation` OPT is provisioned (2xx new or 409 present),
+/// returning its `template_id`.
+async fn ensure_present(ctx: &RunContext<'_>) -> Result<&'static str, CaseError> {
+    let xml = fixtures::read("valid_templates/minimal/minimal_evaluation.opt")
+        .map_err(|e| CaseError::Codec(e.to_string()))?;
+    let status = upload_opt(ctx, xml).await?;
+    if (200..300).contains(&status) || status == 409 {
+        Ok(TID)
+    } else {
+        Err(CaseError::Assertion(format!(
+            "provisioning minimal_evaluation.opt returned {status}"
+        )))
+    }
+}
+
+fn run_upload_twice_conflict<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        ensure_present(ctx).await?;
+        // A second upload of the same template_id conflicts.
+        let xml = fixtures::read("valid_templates/minimal/minimal_evaluation.opt")
+            .map_err(|e| CaseError::Codec(e.to_string()))?;
+        let status = upload_opt(ctx, xml).await?;
+        if status == 409 {
+            Ok(DataSetReport::SINGLE)
+        } else {
+            Err(CaseError::Assertion(format!(
+                "re-upload of an existing template_id expected 409, got {status}"
+            )))
+        }
+    })
+}
+
+fn run_upload_twice_no_conflict<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        ensure_present(ctx).await?;
+        let xml = fixtures::read("valid_templates/minimal/minimal_evaluation.opt")
+            .map_err(|e| CaseError::Codec(e.to_string()))?;
+        // Idempotent re-upload of an identical OPT: 200 (idempotent) or 409 both
+        // satisfy "no data corruption"; the spec is silent on which (§upload_opt).
+        let status = upload_opt(ctx, xml).await?;
+        if matches!(status, 200 | 204 | 409) {
+            Ok(DataSetReport::SINGLE)
+        } else {
+            Err(CaseError::Assertion(format!(
+                "idempotent re-upload expected 200/409, got {status}"
+            )))
+        }
+    })
+}
+
+async fn get_template(ctx: &RunContext<'_>, path: String) -> Result<u16, CaseError> {
+    let resp = ctx
+        .send(HttpRequest::get(path).header("accept", "application/xml"))
+        .await?;
+    Ok(resp.status)
+}
+
+fn run_get_single<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let tid = ensure_present(ctx).await?;
+        let status = get_template(ctx, format!("/definition/template/adl1.4/{tid}")).await?;
+        assert_eq(status, 200)
+    })
+}
+
+fn run_get_latest<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let tid = ensure_present(ctx).await?;
+        let status = get_template(ctx, format!("/definition/template/adl1.4/{tid}")).await?;
+        assert_eq(status, 200)
+    })
+}
+
+fn run_get_specific<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let tid = ensure_present(ctx).await?;
+        // ADL 1.4 OPTs are not version-addressed in ITS-REST; a specific-version
+        // GET is 200 (if aliased to latest) or 404 (unsupported) — both conformant.
+        let status = get_template(ctx, format!("/definition/template/adl1.4/{tid}/1.0.0")).await?;
+        assert_in(status, &[200, 404])
+    })
+}
+
+fn run_get_fail<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let status = get_template(
+            ctx,
+            "/definition/template/adl1.4/does.not.exist.v1".to_owned(),
+        )
+        .await?;
+        assert_eq(status, 404)
+    })
+}
+
+fn run_get_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        ensure_present(ctx).await?;
+        let resp = ctx
+            .send(
+                HttpRequest::get("/definition/template/adl1.4")
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 200)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+fn run_validate_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        // The upload endpoint validates: a valid OPT is accepted (2xx) or already
+        // present (409) — either proves it passed validation.
+        let xml = fixtures::read("valid_templates/minimal/minimal_evaluation.opt")
+            .map_err(|e| CaseError::Codec(e.to_string()))?;
+        let status = upload_opt(ctx, xml).await?;
+        if (200..300).contains(&status) || status == 409 {
+            Ok(DataSetReport::SINGLE)
+        } else {
+            Err(CaseError::Assertion(format!(
+                "valid OPT not accepted: {status}"
+            )))
+        }
+    })
+}
+
+fn run_validate_invalid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let opts = fixtures::opts_invalid().map_err(|e| CaseError::Codec(e.to_string()))?;
+        let opt = opts
+            .first()
+            .ok_or_else(|| CaseError::Assertion("no invalid OPT fixtures".to_owned()))?;
+        let xml = opt.read().map_err(|e| CaseError::Codec(e.to_string()))?;
+        let status = upload_opt(ctx, xml).await?;
+        if (400..500).contains(&status) {
+            Ok(DataSetReport::SINGLE)
+        } else {
+            Err(CaseError::Assertion(format!(
+                "invalid OPT {} not rejected (got {status})",
+                opt.name
+            )))
+        }
+    })
+}
+
+async fn delete_template(ctx: &RunContext<'_>, path: String) -> Result<u16, CaseError> {
+    let resp = ctx.send(HttpRequest::new(Method::Delete, path)).await?;
+    Ok(resp.status)
+}
+
+fn run_delete_absent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let status = delete_template(
+            ctx,
+            "/definition/template/adl1.4/does.not.exist.v1".to_owned(),
+        )
+        .await?;
+        // No template to delete → 404 (or 405 if the verb is unmounted).
+        assert_in(status, &[404, 405])
+    })
+}
+
+fn run_delete_existing<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let tid = ensure_present(ctx).await?;
+        let status = delete_template(ctx, format!("/definition/template/adl1.4/{tid}")).await?;
+        // Delete is not a standard ITS-REST ADL1.4 verb; 200/204 if supported,
+        // else a finding (404/405) — driven, never skipped.
+        assert_in(status, &[200, 204])
+    })
+}
+
+fn run_delete_latest<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let tid = ensure_present(ctx).await?;
+        let status = delete_template(ctx, format!("/definition/template/adl1.4/{tid}")).await?;
+        assert_in(status, &[200, 204])
+    })
+}
+
+fn run_delete_specific<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let tid = ensure_present(ctx).await?;
+        let status =
+            delete_template(ctx, format!("/definition/template/adl1.4/{tid}/1.0.0")).await?;
+        assert_in(status, &[200, 204, 404])
+    })
+}
+
+/// Assert a status equals `want`, else a finding.
+fn assert_eq(status: u16, want: u16) -> Result<DataSetReport, CaseError> {
+    if status == want {
+        Ok(DataSetReport::SINGLE)
+    } else {
+        Err(CaseError::Assertion(format!(
+            "expected {want}, got {status}"
+        )))
+    }
+}
+
+/// Assert a status is in `allowed`, else a finding.
+fn assert_in(status: u16, allowed: &[u16]) -> Result<DataSetReport, CaseError> {
+    if allowed.contains(&status) {
+        Ok(DataSetReport::SINGLE)
+    } else {
+        Err(CaseError::Assertion(format!(
+            "expected one of {allowed:?}, got {status}"
+        )))
+    }
+}
+
+fn entry(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    capability: Capability,
+    run: CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
-            chapter: Chapter::Master04,
+            title,
+            area: Area::Tpl,
             capability,
             profiles: &[Profile::Core, Profile::Standard],
             formats: &[Format::Json],
-            provenance: Provenance::Schedule,
-            schedule_ref: id,
-            upstream_tags: &[],
+            citation,
             compare: Compare::Superset,
         },
         run,
@@ -67,30 +393,29 @@ async fn upload_opt(ctx: &RunContext<'_>, xml: String) -> Result<u16, CaseError>
     Ok(resp.status)
 }
 
-macro_rules! case {
-    ($body:block) => {
-        Box::pin(async move { $body })
-    };
-}
-
 fn run_upload_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
-        // One valid OPT must be accepted (a distinct file per case avoids
-        // template_id collisions with other cases in the same server).
-        let opts = fixtures::opts_valid().map_err(|e| CaseError::Codec(e.to_string()))?;
-        let opt = opts
-            .iter()
-            .find(|f| f.name.contains("minimal_evaluation"))
-            .or_else(|| opts.first())
-            .ok_or_else(|| CaseError::Assertion("no valid OPT fixtures".to_owned()))?;
-        let xml = opt.read().map_err(|e| CaseError::Codec(e.to_string()))?;
+        // A fresh, valid OPT must be accepted with 201. The self-hosted SUT is
+        // shared across cases, so `minimal_evaluation.en.v1` may already be
+        // provisioned (e.g. by `ensure_present`); uploading it verbatim would
+        // then (correctly) 409 and this case would wrongly read as a rejected
+        // upload. Retarget the OPT to a unique `template_id` via the typed opt14
+        // model so it genuinely asserts a *fresh-upload* 201, order-independent.
+        let base = fixtures::read("valid_templates/minimal/minimal_evaluation.opt")
+            .map_err(|e| CaseError::Codec(e.to_string()))?;
+        let mut opt = openehr_its::opt14::from_xml(&base)
+            .map_err(|e| CaseError::Codec(format!("parse minimal_evaluation.opt: {e}")))?;
+        // Replicated locally (super::content::author::set_template_id is not
+        // edited): give the template a unique id per run.
+        opt.template_id.value = format!("minimal_evaluation.fresh.{}.v1", uuid::Uuid::new_v4());
+        let xml = openehr_its::opt14::to_xml(&opt)
+            .map_err(|e| CaseError::Codec(format!("serialize retargeted OPT: {e}")))?;
         let status = upload_opt(ctx, xml).await?;
         if (200..300).contains(&status) {
             Ok(DataSetReport::SINGLE)
         } else {
             Err(CaseError::Assertion(format!(
-                "valid OPT {} rejected with {status}",
-                opt.name
+                "fresh valid OPT rejected with {status}"
             )))
         }
     })

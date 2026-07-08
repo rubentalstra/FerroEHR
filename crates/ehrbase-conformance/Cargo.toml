@@ -31,6 +31,7 @@ uuid = { workspace = true }
 sha2 = { workspace = true }
 base64 = { workspace = true }
 
+openehr-base = { path = "../openehr-base" }
 openehr-its = { path = "../openehr-its" }
 openehr-rm = { path = "../openehr-rm" }
 # FLAT→canonical conversion for content cases whose ONLY constraining template
