@@ -122,6 +122,26 @@ Dependencies point downward only: `tools/* → app/* → crates/openehr-*`. The 
 with `ehrbase-rest` as the ITS-REST protocol adapter — see
 `docs/design/sm-platform/08-target-architecture.md`.
 
+### SM platform component map
+
+The service layer realizes the openEHR **SM Platform Service Model**
+(ADR-010; spec `docs/specs/openehr/SM/docs/openehr_platform/`; design set
+`docs/design/sm-platform/`). One trait per SM interface in `ehrbase-sm`:
+
+| SM component | SM interface(s) | Native trait(s) (`ehrbase-sm`) | Status |
+|---|---|---|---|
+| EHR | `I_EHR_SERVICE`, `I_EHR_STATUS`, `I_EHR_COMPOSITION`, `I_EHR_DIRECTORY`, `I_EHR_CONTRIBUTION` | `EhrService`, `EhrStatusService`, `EhrCompositionService`, `EhrDirectoryService`, `EhrContributionService` | implemented (SM-1) |
+| Definitions | `I_DEFINITION_ADL14`/`ADL2`/`QUERY` | generated `DefinitionApi` (split at SM-2) | partial |
+| Demographic | `I_DEMOGRAPHIC_SERVICE`, `I_PARTY` (+`I_PARTY_RELATIONSHIP` at SM-3) | `DemographicService` | partial |
+| Query | `I_QUERY_SERVICE` | `QueryService` | implemented |
+| Validity checking | `I_VALIDITY_CHECKER` | `ValidityChecker` | implemented (SM-1) |
+| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `SystemLog` marker → `ehrbase-audit` | implemented |
+| Admin | `I_ADMIN_SERVICE` (+archive/dump-load at SM-4) | `AdminService` | partial |
+| EHR Index | `I_EHR_INDEX` | SM-3 | planned |
+| Terminology | `I_TERMINOLOGY_SERVICE` | SM-4 | planned |
+| Message | `I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`, `I_TDD_SERVICE` | SM-5 | planned |
+| Subject Proxy | `I_SUBJECT_PROXY_SERVICE`, `I_DATA_BINDING` | SM-6 | planned |
+
 | Crate | Role | Kind |
 |---|---|---|
 | `openehr-base` | BASE 1.3.0 | generated |
