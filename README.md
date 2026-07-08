@@ -127,41 +127,67 @@ the design is documented in [`docs/design/observability.md`](docs/design/observa
 
 ## Architecture
 
-The workspace has two layers with a strict one-way dependency: the application
-builds on the specification, never the reverse.
+The workspace has three directories with a strict one-way dependency
+(`tools/* → app/* → crates/*`): the application builds on the specification,
+never the reverse, and the verification tooling sits outside the application.
+Internally the service layer follows the **openEHR SM Platform Service
+Model** — the standard's own decomposition of a CDR platform — with the
+REST server as one protocol adapter over a native service API.
 
-```
-                        ┌──────────────────────────────────────────────┐
-  openEHR machine-      │  openehr-*  ·  the specification layer       │
-  readable specs   ───► │  Reference Model, canonical JSON/XML, REST   │
-  (BMM · XSD · OpenAPI) │  contract — generated, never hand-edited;    │
-                        │  AQL parser and SDT formats hand-written     │
-                        └──────────────────────▲───────────────────────┘
-                                               │
-                        ┌──────────────────────┴───────────────────────┐
-                        │  ehrbase-*  ·  the application layer         │
-                        │  axum REST server, auth, services,           │
-                        │  node-based temporal storage, AQL→SQL        │
-                        │  engine, ATNA audit — our own design         │
-                        └──────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    specs["openEHR machine-readable specs<br/>(BMM · XSD · OpenAPI — vendored + pinned)"]
+
+    subgraph crates ["crates/* — the specification layer (generated, never hand-edited)"]
+        openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang<br/>openehr-its (canonical JSON/XML + ITS-REST contract)<br/>openehr-query (AQL parser) · openehr-flat (SDT formats)"]
+    end
+
+    subgraph app ["app/* — the application layer (our own design)"]
+        rest["ehrbase-rest<br/>ITS-REST 1.0.3 adapter (axum) + auth<br/>+ EhrScape adapter module"]
+        sm["ehrbase-sm<br/>SM native API<br/>(one trait per platform service)"]
+        core["ehrbase<br/>storage · services · AQL→SQL engine · binary"]
+        audit["ehrbase-audit<br/>IHE ATNA<br/>(SM System Log)"]
+        authz["ehrbase-authz"]
+        signing["ehrbase-signing"]
+    end
+
+    subgraph tools ["tools/* — verification tooling (not part of the app)"]
+        conf["conformance<br/>(ECC runner)"]
+        bench["benchmark"]
+    end
+
+    specs -- "openehr-codegen (deterministic, drift-checked in CI)" --> crates
+    rest --> sm
+    core --> sm
+    core --> audit
+    core --> authz
+    core --> signing
+    app --> crates
+    tools --> app
 ```
 
 | Crate | Role |
 |---|---|
-| `openehr-base` · `openehr-rm` · `openehr-am` · `openehr-lang` | the openEHR type system, generated from the BMM meta-model |
-| `openehr-term` | the openEHR terminology bundle |
-| `openehr-its` | canonical JSON/XML serialization + the generated ITS-REST contract |
-| `openehr-query` | the AQL lexer/parser (`logos` + `chumsky`, no ANTLR) |
-| `openehr-flat` | WebTemplate / FLAT / STRUCTURED formats |
-| `openehr-codegen` · `openehr-derive` | the spec-to-Rust generator and its proc-macro |
-| `ehrbase-rest` | the axum REST server and authentication |
-| `ehrbase-audit` | the IHE ATNA audit trail |
-| `ehrbase` | the server binary: storage, services, and the AQL engine |
+| `crates/openehr-base` · `openehr-rm` · `openehr-am` · `openehr-lang` | the openEHR type system, generated from the BMM meta-model |
+| `crates/openehr-term` | the openEHR terminology bundle |
+| `crates/openehr-its` | canonical JSON/XML serialization + the generated ITS-REST contract |
+| `crates/openehr-query` | the AQL lexer/parser (`logos` + `chumsky`, no ANTLR) |
+| `crates/openehr-flat` | WebTemplate / FLAT / STRUCTURED formats |
+| `crates/openehr-codegen` · `openehr-derive` | the spec-to-Rust generator and its proc-macro |
+| `app/ehrbase-sm` | the SM Platform Service Model native API — one trait per platform service |
+| `app/ehrbase-rest` | the axum REST server (ITS-REST adapter), authentication, EhrScape |
+| `app/ehrbase-audit` | the IHE ATNA audit trail (the SM System Log component) |
+| `app/ehrbase-authz` | role- and attribute-based authorization |
+| `app/ehrbase-signing` | version signing |
+| `app/ehrbase` | the server binary: storage, services, and the AQL engine |
+| `tools/conformance` | the ECC conformance runner (verification, not shipped) |
+| `tools/benchmark` | the benchmark harness (verification, not shipped) |
 
 A CI drift check regenerates the specification layer on every commit and fails
 if it differs from the vendored specs — the generated code can never silently
 diverge from the standard. The full design is described in
-[`docs/architecture.md`](docs/architecture.md).
+[`docs/architecture.md`](docs/architecture.md) and the SM-alignment design set
+in [`docs/design/sm-platform/`](docs/design/sm-platform/README.md).
 
 ## Tech stack
 
@@ -193,10 +219,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete developer workflow.
 
 The core CDR is functional today: the REST API, versioned storage, templates,
 validation, simplified formats, the AQL engine, authentication, auditing, and
-the container images all work and are covered by the test suite. Before a first
-stable release the project will complete EhrScape compatibility, certification
-against the official openEHR conformance test suite, and a performance pass.
-Detailed progress lives in [`docs/PROGRESS.md`](docs/PROGRESS.md).
+the container images all work and are covered by the test suite. The service
+layer is being aligned to the **openEHR SM Platform Service Model** with full
+platform coverage — including EHR Extract, TDD import, the EHR Index,
+Terminology and Subject Proxy services, and the complete Admin set
+([`docs/design/sm-platform/`](docs/design/sm-platform/README.md)). Before a
+first stable release the project will complete that alignment, EhrScape
+compatibility, certification against the official openEHR conformance test
+suite, and a performance pass. Detailed progress lives in
+[`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ## Documentation
 
