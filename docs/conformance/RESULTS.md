@@ -1,26 +1,26 @@
 # openEHR CNF — Test Execution Report
 
-- SUT: `http://127.0.0.1:54408/ehrbase/rest/openehr/v1`
+- SUT: `http://127.0.0.1:55326/ehrbase/rest/openehr/v1`
 - RM version: 1.2.0
 - Auth mode: basic (self-host, RBAC off)
 - Corpus: `openEHR/specifications-CNF` @ `33251d2a`
-- Started: 2026-07-08T13:11:04.06602Z
+- Started: 2026-07-08T14:22:46.508717Z
 
-**322 identified cases · 210 implemented · 136 passed · 87 failed.**
+**322 identified cases · 263 implemented · 202 passed · 105 failed.**
 
 ## Per-chapter matrix
 
 | Chapter | Implemented | Passed | Failed | Excluded | Not-yet | Total |
 |---|--:|--:|--:|--:|--:|--:|
-| master04 | 3 | 1 | 2 | 12 | 12 | 15 |
-| master05 | 3 | 3 | 0 | 4 | 4 | 7 |
+| master04 | 15 | 12 | 4 | 0 | 0 | 15 |
+| master05 | 7 | 3 | 4 | 0 | 0 | 7 |
 | master06 | 21 | 21 | 1 | 0 | 0 | 21 |
-| master07 | 28 | 26 | 2 | 3 | 3 | 31 |
-| master08 | 22 | 20 | 2 | 9 | 9 | 31 |
-| master09 | 11 | 11 | 0 | 26 | 26 | 37 |
-| master10 | 0 | 0 | 0 | 24 | 0 | 24 |
+| master07 | 30 | 28 | 2 | 1 | 1 | 31 |
+| master08 | 31 | 24 | 7 | 0 | 0 | 31 |
+| master09 | 37 | 36 | 1 | 0 | 0 | 37 |
+| master10 | 0 | 18 | 6 | 24 | 0 | 24 |
 | master11 | 4 | 3 | 9 | 1 | 0 | 5 |
-| master12 | 0 | 0 | 0 | 18 | 0 | 18 |
+| master12 | 0 | 6 | 0 | 18 | 0 | 18 |
 | master13 | 0 | 0 | 0 | 14 | 0 | 14 |
 | master15 | 12 | 3 | 9 | 0 | 0 | 12 |
 | master16 | 26 | 13 | 13 | 0 | 0 | 26 |
@@ -41,8 +41,20 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix (§4.5).
 - `I_EHR_COMPOSITION.update_composition-wrong_template` (json, I_EHR_COMPOSITION.update_composition-wrong_template): expected a negative (4xx) response, got 200
 - `I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type` (json, I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type): expected a negative (4xx) response, got 201
 - `I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory` (json, I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory): expected a negative (4xx) response, got 201
+- `I_EHR_CONTRIBUTION.list_contributions-empty` (json, I_EHR_CONTRIBUTION.list_contributions-empty): expected status 200, got 405 (body: )
+- `I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr` (json, I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr): expected status 404, got 405 (body: )
+- `I_EHR_CONTRIBUTION.list_contributions-post_commit` (json, I_EHR_CONTRIBUTION.list_contributions-post_commit): expected status 200, got 405 (body: )
+- `I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory` (json, I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory): expected status 200, got 405 (body: )
+- `I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status` (json, I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status): expected status 200, got 405 (body: )
+- `I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions` (json, I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions): expected status 200, got 404 (body: )
 - `I_DEFINITION_ADL14.upload_opt-valid_opt` (json, I_DEFINITION_ADL14.upload_opt-valid_opt): valid OPT minimal_evaluation.opt rejected with 409
 - `I_DEFINITION_ADL14.upload_opt-invalid_opt` (json, I_DEFINITION_ADL14.upload_opt-invalid_opt): 12/18 invalid OPTs were rejected (the rest were accepted)
+- `I_DEFINITION_ADL14.delete_opt-delete_existing` (json, I_DEFINITION_ADL14.delete_opt-delete_existing): expected one of [200, 204], got 405
+- `I_DEFINITION_ADL14.delete_opt-delete_latest_version` (json, I_DEFINITION_ADL14.delete_opt-delete_latest_version): expected one of [200, 204], got 405
+- `I_DEFINITION_QUERY.list_queries-empty` (json, I_DEFINITION_QUERY.list_queries-empty): expected status 200, got 404 (body: )
+- `I_DEFINITION_QUERY.list_queries-select_items` (json, I_DEFINITION_QUERY.list_queries-select_items): expected status 200, got 404 (body: )
+- `I_DEFINITION_QUERY.valid_query-bad_formalism` (json, I_DEFINITION_QUERY.valid_query-bad_formalism): expected 400/422 for a non-AQL query, got 200
+- `I_DEFINITION_QUERY.valid_query-invalid` (json, I_DEFINITION_QUERY.valid_query-invalid): expected 400/422 for malformed AQL, got 200
 - `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db` (json, I_QUERY_SERVICE.execute_ad_hoc_query-empty_db): adhoc empty_db golden mismatch (suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{"name":"#0","path":"/ehr_id/value"}], served=[{"name":"#0"}]
 - `I_QUERY_SERVICE.execute_stored_query-empty_db` (json, I_QUERY_SERVICE.execute_stored_query-empty_db): stored empty_db golden mismatch (suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{"name":"#0","path":"/ehr_id/value"}], served=[{"name":"#0"}]
 - `QUERY-FIXTURE-A-empty_db` (json, query/expected_results/empty_db/A §columns/full): 0/27 A/empty_db goldens matched (0 skipped); first divergence: A/100_get_ehrs.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{"name":"#0","path":"/ehr_id/value"}], served=[{"name":"#0"}]
@@ -52,6 +64,12 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix (§4.5).
 - `QUERY-FIXTURE-A-loaded_db` (json, query/expected_results/loaded_db/A §columns): 0/23 A/loaded_db goldens matched (4 skipped); first divergence: A/100_get_ehrs.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{"name":"#0","path":"/ehr_id/value"}], served=[{"name":"#0"}]
 - `QUERY-FIXTURE-B-loaded_db` (json, query/expected_results/loaded_db/B §columns): 14/18 B/loaded_db goldens matched (6 skipped); first divergence: B/103_get_compositions_within_timewindow.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: invalid AQL: found 'Identifier(\"TIMEWINDOW\")' at 5..6"})
 - `QUERY-FIXTURE-D-loaded_db` (json, query/expected_results/loaded_db/D §columns): 0/9 D/loaded_db goldens matched (17 skipped); first divergence: D/200_select_data_values_from_all_ehrs_contains_composition.json (ColumnsOnly, suppressed via [meta_envelope_ignored,query_echo_ignored]): columns differ: golden=[{"name":"#0","path":"/ehr_id/value"},{"name":"#1","path":"/time_created/value"},{"name":"#2","path":"/system_id/value"}], served=[{"name":"#0"},{"name":"#1"},{"name":"#2"}]
+- `DEMO-person-delete` (json, master10-func_tc_demographic.adoc (upstream placeholder) — runner-defined vs SM I_DEMOGRAPHIC_SERVICE + ITS-REST demographic API): expected status in [200, 204], got 400
+- `DEMO-person-get_deleted` (json, master10-func_tc_demographic.adoc (upstream placeholder) — runner-defined vs SM I_DEMOGRAPHIC_SERVICE + ITS-REST demographic API): expected status in [204, 404], got 200
+- `DEMO-agent-delete` (json, master10-func_tc_demographic.adoc (upstream placeholder) — runner-defined vs SM I_DEMOGRAPHIC_SERVICE + ITS-REST demographic API): expected status in [200, 204], got 400
+- `DEMO-group-delete` (json, master10-func_tc_demographic.adoc (upstream placeholder) — runner-defined vs SM I_DEMOGRAPHIC_SERVICE + ITS-REST demographic API): expected status in [200, 204], got 400
+- `DEMO-organisation-delete` (json, master10-func_tc_demographic.adoc (upstream placeholder) — runner-defined vs SM I_DEMOGRAPHIC_SERVICE + ITS-REST demographic API): expected status in [200, 204], got 400
+- `DEMO-role-delete` (json, master10-func_tc_demographic.adoc (upstream placeholder) — runner-defined vs SM I_DEMOGRAPHIC_SERVICE + ITS-REST demographic API): expected status in [200, 204], got 400
 - `CONT-COMP-content_card_1plus-context_any` (json, CONT-COMP-content_card_1plus-context_any): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
 - `CONT-COMP-content_card_opt-context_any` (json, CONT-COMP-content_card_opt-context_any): 3 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
 - `CONT-COMP-content_card_mand-context_any` (json, CONT-COMP-content_card_mand-context_any): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
