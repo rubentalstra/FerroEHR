@@ -18,10 +18,10 @@
 //! (design: "run both `Format::Json` and `Format::Xml` where the case warrants");
 //! the negatives, multi-version, update, and delete flows run JSON-only.
 //!
-//! The `has_composition{,-bad_composition,-bad_ehr}` schedule cases have no
-//! dedicated ITS-REST endpoint on our surface (the API exposes GET
-//! `composition/versioned_composition`, not a boolean `has`), so they stay
-//! `NotYetTranscribed`.
+//! The `has_composition-*` cases are realized via `GET /composition/{uid}` (the
+//! `200`/`404` is the SM boolean) per the CNF guide's abstract-call → REST
+//! mapping — the API exposes no boolean `has` verb, so the GET's status is the
+//! conformance point.
 
 use jiff::Timestamp;
 use serde_json::Value;
@@ -86,6 +86,16 @@ pub fn entries() -> Vec<CaseEntry> {
         entry(
             "I_EHR_COMPOSITION.get_composition_latest-bad_ehr",
             run_get_latest_bad_ehr,
+        ),
+        // has_composition — the SM boolean realized via GET /composition/{uid}
+        // (200 has / 404 not), per the CNF guide's abstract-call → REST mapping.
+        entry(
+            "I_EHR_COMPOSITION.has_composition-bad_composition",
+            run_has_composition_bad_composition,
+        ),
+        entry(
+            "I_EHR_COMPOSITION.has_composition-bad_ehr",
+            run_has_composition_bad_ehr,
         ),
         // ── get at time ──────────────────────────────────────────────────────
         entry_fmt(
@@ -841,6 +851,38 @@ fn run_delete_non_existent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             ))
             .await?;
         assert::status_in(&resp, &[404, 409, 412])?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+// has_composition — SM boolean realized via GET /composition/{uid} (200/404).
+fn run_has_composition_bad_composition<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!("/ehr/{ehr_id}/composition/{}", Uuid::new_v4()))
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 404)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+fn run_has_composition_bad_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let resp = ctx
+            .send(
+                HttpRequest::get(format!(
+                    "/ehr/{}/composition/{}",
+                    Uuid::new_v4(),
+                    Uuid::new_v4()
+                ))
+                .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 404)?;
         Ok(DataSetReport::SINGLE)
     })
 }
