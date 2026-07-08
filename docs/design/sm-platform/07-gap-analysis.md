@@ -84,10 +84,12 @@ FHIR-terminology adapter later — same trait).
 ### 1.7 Message service (`I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`, `I_TDD_SERVICE`)
 
 **Whole component gap — in scope (owner decision).**
-- `I_EHR_EXTRACT_SERVICE`: requires the RM `ehr_extract` package
-  (generate from BMM — currently not emitted) + export (whole-EHR,
-  spec-driven extract) and import (whole-EHR with fixed id, extract-into-
-  existing-EHR) over the existing `vobject` machinery.
+- `I_EHR_EXTRACT_SERVICE`: the RM `ehr_extract` types (`EXTRACT`,
+  `EXTRACT_SPEC`, `X_VERSIONED_*`, …) are **already generated** in
+  `openehr-rm` with canonical JSON + XML (verified 2026-07-09, review F1) —
+  the gap is only the service: export (whole-EHR, spec-driven extract) and
+  import (whole-EHR with fixed id, extract-into-existing-EHR) over the
+  existing `vobject` machinery.
 - `I_TDD_SERVICE`: TDD import = template-data-document → COMPOSITION commit;
   builds on OPT + WebTemplate assets.
 - `I_MESSAGE_SERVICE` is a spec stub — the design fills it as the umbrella

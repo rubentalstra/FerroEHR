@@ -59,7 +59,11 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
       `WebTemplateService` + generated `DefinitionApi` bound into the alias
       from `ehrbase-sm`
 - [ ] `UpdateVersion<T>` + `UpdateAudit` types; `vobject` constructors take
-      them; ITS-REST adapter builds them from body + headers
+      them; ITS-REST adapter builds them from body + headers. Honour the
+      three wire divergences per design 08 §3 (review F2): `commit_audit`
+      field name, partial `UpdateAttestation` items, `signature` field —
+      each with a `// PORT NOTE:` citing
+      `ITS-REST/specifications/schemas/common/UpdateVersion.yaml`
 - [ ] `ValidityChecker` trait over the existing validation choke points
 - [ ] `SystemLog` facade naming `ehrbase-audit` as the SM component
 - [ ] `EhrSummary` gains `contribution_count`/`composition_count`
