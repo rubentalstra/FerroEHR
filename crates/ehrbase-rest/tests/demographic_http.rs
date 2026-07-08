@@ -112,6 +112,7 @@ impl EhrService for MockBackend {}
 impl DefinitionApi for MockBackend {}
 impl WebTemplateService for MockBackend {}
 impl ehrbase_rest::QueryService for MockBackend {}
+impl ehrbase_rest::AdminService for MockBackend {}
 
 fn config() -> RestConfig {
     RestConfig {
@@ -119,6 +120,7 @@ fn config() -> RestConfig {
         base_path: BASE.to_owned(),
         swagger_ui: false,
         cors_permissive: false,
+        admin: ehrbase_rest::AdminConfig::default(),
         auth: AuthConfig {
             enabled: false,
             basic: None,
