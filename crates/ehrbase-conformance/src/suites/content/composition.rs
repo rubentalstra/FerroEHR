@@ -23,7 +23,7 @@
 //! missing `context` is RM-accepted and only the authored OPT's `context`
 //! existence governs it, isolating the occurrences constraint.)
 
-use serde_json::{Value, json};
+use serde_json::Value;
 
 use crate::case::Chapter;
 use crate::fixtures;
@@ -52,37 +52,12 @@ fn content_ok(card: Card, count: usize) -> bool {
     }
 }
 
-/// Retarget every `archetype_details.template_id` in a composition to `tid` so the
-/// instance references the authored template (the `WebTemplate` the SUT builds is
-/// keyed by the root `template_id`; the nested ones are retargeted for internal
-/// consistency).
-fn retarget(v: &mut Value, tid: &str) {
-    match v {
-        Value::Object(map) => {
-            if let Some(Value::Object(ad)) = map.get_mut("archetype_details")
-                && let Some(Value::Object(t)) = ad.get_mut("template_id")
-            {
-                t.insert("value".to_owned(), json!(tid));
-            }
-            for child in map.values_mut() {
-                retarget(child, tid);
-            }
-        }
-        Value::Array(items) => {
-            for it in items {
-                retarget(it, tid);
-            }
-        }
-        _ => {}
-    }
-}
-
 /// Build one data-set instance: a clone of `base` retargeted to `tid`, with the
 /// content array resized to `count` copies of the base content item and `context`
 /// removed when `context_present` is false.
 fn instance(base: &Value, tid: &str, count: usize, context_present: bool) -> Value {
     let mut c = base.clone();
-    retarget(&mut c, tid);
+    mutate::retarget_template(&mut c, tid);
     mutate::set_array_count(&mut c, "content", count);
     if !context_present {
         mutate::remove_context(&mut c);
