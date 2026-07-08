@@ -21,8 +21,10 @@
 //! is the server's genuine validation decision.
 
 use openehr_its::opt14::{
-    self, CArchetypeRoot, CAttribute, CBoolean, CInteger, CObject, CPrimitive, CPrimitiveObject,
-    CReal, CSingleAttribute, CString, Intervalofinteger, Intervalofreal, OperationalTemplate,
+    self, CArchetypeRoot, CAttribute, CBoolean, CDate, CDateTime, CDuration, CInteger, CObject,
+    CPrimitive, CPrimitiveObject, CReal, CSingleAttribute, CString, CTime, Intervalofdate,
+    Intervalofdatetime, Intervalofduration, Intervalofinteger, Intervalofreal, Intervaloftime,
+    OperationalTemplate,
 };
 
 use crate::harness::CaseError;
@@ -540,4 +542,155 @@ pub fn constrain_leaf_boolean(
             assumed_value: None,
         }),
     )
+}
+
+/// Constrain a `DV_DATE`/`DV_TIME`/`DV_DATE_TIME`/`DV_DURATION` leaf's `value` with
+/// a temporal `C_*` primitive (`rm_type` = `"Date"`/`"Time"`/`"Date_Time"`/
+/// `"Duration"`; build `prim` with [`c_date`]/[`c_time`]/[`c_date_time`]/
+/// [`c_duration`]). Returns `true` if applied.
+pub fn constrain_leaf_temporal(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    rm_type: &str,
+    prim: CPrimitive,
+) -> bool {
+    constrain_leaf_primitive(opt, host, "value", rm_type, prim)
+}
+
+/// A `C_DATE` with optional `pattern` and ISO-date `range`.
+#[must_use]
+pub fn c_date(pattern: Option<&str>, range: Option<(&str, &str)>) -> CPrimitive {
+    CPrimitive::CDate(CDate {
+        pattern: pattern.map(str::to_owned),
+        timezone_validity: None,
+        range: range.map(|(lo, hi)| Intervalofdate {
+            lower_included: Some(true),
+            upper_included: Some(true),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower: Some(lo.to_owned()),
+            upper: Some(hi.to_owned()),
+        }),
+        assumed_value: None,
+    })
+}
+
+/// A `C_TIME` with optional `pattern` and ISO-time `range`.
+#[must_use]
+pub fn c_time(pattern: Option<&str>, range: Option<(&str, &str)>) -> CPrimitive {
+    CPrimitive::CTime(CTime {
+        pattern: pattern.map(str::to_owned),
+        timezone_validity: None,
+        range: range.map(|(lo, hi)| Intervaloftime {
+            lower_included: Some(true),
+            upper_included: Some(true),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower: Some(lo.to_owned()),
+            upper: Some(hi.to_owned()),
+        }),
+        assumed_value: None,
+    })
+}
+
+/// A `C_DATE_TIME` with optional `pattern` and ISO-datetime `range`.
+#[must_use]
+pub fn c_date_time(pattern: Option<&str>, range: Option<(&str, &str)>) -> CPrimitive {
+    CPrimitive::CDateTime(CDateTime {
+        pattern: pattern.map(str::to_owned),
+        timezone_validity: None,
+        range: range.map(|(lo, hi)| Intervalofdatetime {
+            lower_included: Some(true),
+            upper_included: Some(true),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower: Some(lo.to_owned()),
+            upper: Some(hi.to_owned()),
+        }),
+        assumed_value: None,
+    })
+}
+
+/// A `C_DURATION` with optional `pattern` (allowed fields, e.g. `PYMD`) and ISO
+/// `range`.
+#[must_use]
+pub fn c_duration(pattern: Option<&str>, range: Option<(&str, &str)>) -> CPrimitive {
+    CPrimitive::CDuration(CDuration {
+        pattern: pattern.map(str::to_owned),
+        range: range.map(|(lo, hi)| Intervalofduration {
+            lower_included: Some(true),
+            upper_included: Some(true),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower: Some(lo.to_owned()),
+            upper: Some(hi.to_owned()),
+        }),
+        assumed_value: None,
+    })
+}
+
+/// Constrain a `DV_QUANTITY` leaf's `property` (`C_DV_QUANTITY.property`) to
+/// `terminology::code`, locating the `C_DV_QUANTITY` domain object directly.
+/// Returns `true` if applied.
+pub fn constrain_dv_quantity_property(
+    opt: &mut OperationalTemplate,
+    terminology: &str,
+    code: &str,
+) -> bool {
+    visit_objects(&mut opt.definition, &mut |obj| {
+        if let CObject::CDvQuantity(q) = obj {
+            q.property = Some(openehr_base::prelude::CodePhrase {
+                terminology_id: openehr_base::prelude::TerminologyId {
+                    value: terminology.to_owned(),
+                },
+                code_string: code.to_owned(),
+                preferred_term: None,
+            });
+            true
+        } else {
+            false
+        }
+    })
+}
+
+/// Replace the constraint object under a DV_* leaf whose current value type is
+/// `current_type` with a fresh object `new_obj` — the "slot-retype" used to test a
+/// type the base composition does not carry (e.g. reuse the `DV_TEXT` slot for
+/// `DV_URI`). Finds the first single/multiple-attribute child whose
+/// `rm_type_name == current_type` and replaces it. Returns `true` if applied.
+pub fn retype_leaf(opt: &mut OperationalTemplate, current_type: &str, new_obj: CObject) -> bool {
+    let mut new_obj = Some(new_obj);
+    visit_objects(&mut opt.definition, &mut |obj| {
+        let Some(attrs) = object_attributes_mut(obj) else {
+            return false;
+        };
+        for a in attrs {
+            let children = match a {
+                CAttribute::CSingleAttribute(s) => &mut s.children,
+                CAttribute::CMultipleAttribute(m) => &mut m.children,
+            };
+            for ch in children.iter_mut() {
+                if object_rm_type(ch) == Some(current_type)
+                    && let Some(replacement) = new_obj.take()
+                {
+                    *ch = replacement;
+                    return true;
+                }
+            }
+        }
+        false
+    })
+}
+
+/// A minimal `C_COMPLEX_OBJECT` for a leaf of `rm_type` with no inner attribute
+/// constraints (any RM-valid instance accepted) — the base for a slot-retype to a
+/// type absent from the base composition.
+#[must_use]
+pub fn open_complex(rm_type: &str) -> CObject {
+    CObject::CComplexObject(openehr_its::opt14::CComplexObject {
+        rm_type_name: rm_type.to_owned(),
+        occurrences: closed_interval(1, 1),
+        node_id: String::new(),
+        attributes: Vec::new(),
+    })
 }

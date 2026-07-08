@@ -48,7 +48,7 @@
 //! `DV_SCALE`, `DV_DATE/DV_TIME` constraints, `DV_BOOLEAN` & `DV_IDENTIFIER` patterns, and
 //! `DV_MULTIMEDIA` media-type lists have no constrained committable canonical leaf.
 
-use openehr_its::opt14::OperationalTemplate;
+use openehr_its::opt14::{CPrimitive, OperationalTemplate};
 use serde_json::{Value, json};
 
 use crate::case::Chapter;
@@ -171,7 +171,11 @@ pub fn entries() -> Vec<CaseEntry> {
     all.push(open("CONT-DV_COUNT-validate_range", c, run_dv_count_range));
     all.push(open("CONT-DV_COUNT-validate_list", c, run_dv_count_list));
     all.push(open("CONT-DV_QUANTITY-validate_open", c, open_dv_quantity));
-    all.push(skip("CONT-DV_QUANTITY-validate_property", c));
+    all.push(open(
+        "CONT-DV_QUANTITY-validate_property",
+        c,
+        run_dv_quantity_property,
+    ));
     all.push(open(
         "CONT-DV_QUANTITY-validate_property_units",
         c,
@@ -262,15 +266,35 @@ pub fn entries() -> Vec<CaseEntry> {
     // only instance is a CONTRIBUTION whose COMPOSITION omits `archetype_details`
     // on its content ENTRYs (fails the `Is_archetypeRoot` RM invariant as a bare
     // commit), and `ehrn_vital_signs` ships only a FLAT instance. Not drivable.
-    all.push(skip("CONT-DV_DURATION-validate_fields", c));
-    all.push(skip("CONT-DV_DURATION-validate_range", c));
-    all.push(skip("CONT-DV_DURATION-validate_fields_range", c));
+    all.push(open(
+        "CONT-DV_DURATION-validate_fields",
+        c,
+        run_dv_duration_fields,
+    ));
+    all.push(open(
+        "CONT-DV_DURATION-validate_range",
+        c,
+        run_dv_duration_range,
+    ));
+    all.push(open(
+        "CONT-DV_DURATION-validate_fields_range",
+        c,
+        run_dv_duration_fields_range,
+    ));
     all.push(open("CONT-DV_TIME-validate_open", c, open_dv_time));
-    all.push(skip("CONT-DV_TIME-validate_constraint", c));
-    all.push(skip("CONT-DV_TIME-validate_range", c));
+    all.push(open(
+        "CONT-DV_TIME-validate_constraint",
+        c,
+        run_dv_time_constraint,
+    ));
+    all.push(open("CONT-DV_TIME-validate_range", c, run_dv_time_range));
     all.push(open("CONT-DV_DATE-validate_open", c, open_dv_date));
-    all.push(skip("CONT-DV_DATE-validate_constraint", c));
-    all.push(skip("CONT-DV_DATE-validate_range", c));
+    all.push(open(
+        "CONT-DV_DATE-validate_constraint",
+        c,
+        run_dv_date_constraint,
+    ));
+    all.push(open("CONT-DV_DATE-validate_range", c, run_dv_date_range));
     all.push(open(
         "CONT-DV_DATE_TIME-validate_open",
         c,
@@ -281,7 +305,11 @@ pub fn entries() -> Vec<CaseEntry> {
         c,
         run_dv_date_time_constraint,
     ));
-    all.push(skip("CONT-DV_DATE_TIME-validate_range", c));
+    all.push(open(
+        "CONT-DV_DATE_TIME-validate_range",
+        c,
+        run_dv_date_time_range,
+    ));
 
     // ── 17.6 encapsulated ──────────────────────────────────────────────────────
     let c = Chapter::Master17_6;
@@ -940,4 +968,174 @@ fn run_dv_proportion_integer_fraction<'a>(ctx: &'a RunContext<'a>) -> CaseFuture
         json!(3.0),
         json!(4.0),
     )
+}
+
+// ── temporal value constraints (master17.4): C_DATE/TIME/DATE_TIME/DURATION ────
+//
+// Base leaves: DV_DATE items[5]=`2021-10-18`, DV_TIME items[8]=`22:18:16`,
+// DV_DATE_TIME items[6], DV_DURATION items[11]=`PT30M`. (Our validator currently
+// defers temporal range/pattern enforcement — `validation::leaf` — so several of
+// these drive as open findings until that gap closes; driven, never skipped.)
+
+/// A temporal case: author a temporal `C_*` constraint on `host`'s value, commit
+/// the in-constraint base value (accepted) and an out-of-constraint value
+/// (rejected).
+fn drive_temporal<'a>(
+    ctx: &'a RunContext<'a>,
+    tid: &'static str,
+    host: &'static str,
+    rm_prim: &'static str,
+    prim: CPrimitive,
+    idx: usize,
+    bad: Value,
+    label: &'static str,
+) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let p = leaf_ptr(idx, "value");
+        drive_leaf_rows(
+            ctx,
+            tid,
+            move |opt| author::constrain_leaf_temporal(opt, host, rm_prim, prim),
+            vec![
+                (
+                    format!("{host} base value satisfies the constraint (accepted)"),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    format!("{host} {label} (rejected)"),
+                    vec![(p, bad)],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
+}
+
+fn run_dv_date_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_date_pat",
+        "DV_DATE",
+        "Date",
+        author::c_date(Some("yyyy-mm-dd"), None),
+        5,
+        json!("2021"),
+        "partial date '2021' violates yyyy-mm-dd (C_DATE.pattern)",
+    )
+}
+fn run_dv_date_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_date_rng",
+        "DV_DATE",
+        "Date",
+        author::c_date(None, Some(("2021-01-01", "2021-12-31"))),
+        5,
+        json!("2025-06-01"),
+        "'2025-06-01' outside [2021-01-01,2021-12-31] (C_DATE.range)",
+    )
+}
+fn run_dv_time_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_time_pat",
+        "DV_TIME",
+        "Time",
+        author::c_time(Some("HH:MM:SS"), None),
+        8,
+        json!("22"),
+        "partial time '22' violates HH:MM:SS (C_TIME.pattern)",
+    )
+}
+fn run_dv_time_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_time_rng",
+        "DV_TIME",
+        "Time",
+        author::c_time(None, Some(("00:00:00", "23:00:00"))),
+        8,
+        json!("23:59:59"),
+        "'23:59:59' outside [00:00:00,23:00:00] (C_TIME.range)",
+    )
+}
+fn run_dv_date_time_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_datetime_rng",
+        "DV_DATE_TIME",
+        "Date_Time",
+        author::c_date_time(None, Some(("2021-01-01T00:00:00", "2021-12-31T23:59:59"))),
+        6,
+        json!("2025-06-01T12:00:00"),
+        "'2025-06-01T12:00:00' outside the range (C_DATE_TIME.range)",
+    )
+}
+fn run_dv_duration_fields<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_dur_fields",
+        "DV_DURATION",
+        "Duration",
+        author::c_duration(Some("PT"), None),
+        11,
+        json!("P1Y"),
+        "'P1Y' uses a date field the PT pattern forbids (C_DURATION.pattern)",
+    )
+}
+fn run_dv_duration_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_dur_rng",
+        "DV_DURATION",
+        "Duration",
+        author::c_duration(None, Some(("PT0S", "PT1H"))),
+        11,
+        json!("PT5H"),
+        "'PT5H' outside [PT0S,PT1H] (C_DURATION.range)",
+    )
+}
+fn run_dv_duration_fields_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    drive_temporal(
+        ctx,
+        "cnf_cont_dv_dur_fr",
+        "DV_DURATION",
+        "Duration",
+        author::c_duration(Some("PTH"), Some(("PT0S", "PT1H"))),
+        11,
+        json!("PT5H"),
+        "'PT5H' outside [PT0S,PT1H] (C_DURATION.pattern+range)",
+    )
+}
+
+// ── DV_QUANTITY property (master17.3): C_DV_QUANTITY.property ──────────────────
+
+/// CONT-DV_QUANTITY-validate_property: constrain the quantity `property` to mass
+/// (`openehr::124`); base units `mg` (mass) accepted, units `cm` (length, a
+/// different property) rejected.
+fn run_dv_quantity_property<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let u = leaf_ptr(3, "units");
+        drive_leaf_rows(
+            ctx,
+            "cnf_cont_dv_quantity_property",
+            |opt| author::constrain_dv_quantity_property(opt, "openehr", "124"),
+            vec![
+                (
+                    "units mg matches property mass openehr::124 (accepted)".to_owned(),
+                    vec![],
+                    Expected::Accepted,
+                ),
+                (
+                    "units cm (length) violate property mass openehr::124 (C_DV_QUANTITY.property)"
+                        .to_owned(),
+                    vec![(u, json!("cm"))],
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
+    })
 }
