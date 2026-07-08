@@ -27,7 +27,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::CREATION, "DIRECTORY creation");
         let committed = vobject::create(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             Kind::Folder,
             folder,
             None,
@@ -53,7 +53,7 @@ impl EhrbaseService {
             Some(at) => vobject::version_at(&self.pool, vo_id, at).await?,
             None => vobject::read_current(&self.pool, vo_id).await?,
         }
-        .filter(|r| r.ehr_id == ehr_id)
+        .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))?;
         if read.deleted() {
             // Deleted → 204 (directory_get_at_time.yaml 204_because_deleted_at_time).
@@ -78,7 +78,7 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("directory {vo_id} v{version}")))?;
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
@@ -100,7 +100,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::MODIFICATION, "DIRECTORY update");
         vobject::update(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             vo_id,
             Kind::Folder,
             folder,
@@ -128,7 +128,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::DELETED, "DIRECTORY delete");
         vobject::delete(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             vo_id,
             Kind::Folder,
             expected,
@@ -157,7 +157,7 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_current(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))?;
         if read.deleted() {
             return Err(ServiceError::NotFound(format!(

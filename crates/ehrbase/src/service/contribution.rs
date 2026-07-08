@@ -134,13 +134,40 @@ impl EhrbaseService {
     /// created CONTRIBUTION. Each version's storage action and preserved audit
     /// change-type code come from [`classify`]; the object kind from the payload
     /// `_type` (create) or the stored object (modify/delete).
-    #[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
     pub(super) async fn create_contribution(
         &self,
         ehr_id: Uuid,
         body: Value,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
+        // party_only = false: an EHR CONTRIBUTION carries clinical versioned
+        // objects, never demographic parties.
+        let contribution_id = self.commit_version_set(Some(ehr_id), &body, false).await?;
+        let body = self.get_contribution(ehr_id, contribution_id).await?;
+        // 201_CONTRIBUTION: ETag(contribution_uid) + Location.
+        let meta = ResourceMeta::new(ehr_id.to_string(), contribution_id.to_string());
+        Ok(ServiceResponse::new(body, meta))
+    }
+
+    /// Commit a CONTRIBUTION's version set atomically under one contribution +
+    /// audit, returning the new contribution id. Shared by the EHR-scoped
+    /// [`create_contribution`](Self::create_contribution) (`ehr_id = Some`,
+    /// `party_only = false`) and the demographic contribution path
+    /// (`ehr_id = None`, `party_only = true`). Each version's storage action and
+    /// preserved audit change-type code come from [`classify`]; the object kind
+    /// from the payload `_type` (create) or the stored object (modify/delete).
+    ///
+    /// `party_only` gates the version kinds: a demographic contribution may only
+    /// carry party objects (PERSON/…/ROLE), and an EHR contribution may not —
+    /// a mismatch is `422` (the analogue of the EHR-group contribution rejecting
+    /// bad content).
+    #[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
+    pub(super) async fn commit_version_set(
+        &self,
+        ehr_id: Option<Uuid>,
+        body: &Value,
+        party_only: bool,
+    ) -> Result<Uuid, ServiceError> {
         let versions = body
             .get("versions")
             .and_then(Value::as_array)
@@ -177,6 +204,7 @@ impl EhrbaseService {
                         ServiceError::Unprocessable("creation version needs data".to_owned())
                     })?;
                     let kind = data_kind(&data)?;
+                    check_kind_scope(kind, party_only)?;
                     // A CONTRIBUTION commit is a full commit route: its versions
                     // are validated exactly as a direct create/update (F-07-01).
                     self.validate_for_commit(kind, &data).await?;
@@ -193,6 +221,7 @@ impl EhrbaseService {
                     })?;
                     let (vo_id, expected) = parse_preceding(version)?;
                     let kind = self.require_kind(vo_id).await?;
+                    check_kind_scope(kind, party_only)?;
                     self.validate_for_commit(kind, &data).await?;
                     Change::Modify {
                         vo_id,
@@ -206,6 +235,7 @@ impl EhrbaseService {
                 Action::Delete => {
                     let (vo_id, expected) = parse_preceding(version)?;
                     let kind = self.require_kind(vo_id).await?;
+                    check_kind_scope(kind, party_only)?;
                     Change::Delete {
                         vo_id,
                         kind,
@@ -251,10 +281,7 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        let body = self.get_contribution(ehr_id, contribution_id).await?;
-        // 201_CONTRIBUTION: ETag(contribution_uid) + Location.
-        let meta = ResourceMeta::new(ehr_id.to_string(), contribution_id.to_string());
-        Ok(ServiceResponse::new(body, meta))
+        Ok(contribution_id)
     }
 
     /// The stored kind of an existing object, or `NotFound`.
@@ -396,6 +423,26 @@ fn aggregate_change_type(version_codes: &[String]) -> String {
         Some((first, rest)) if rest.iter().all(|c| c == first) => first.clone(),
         _ => change_type::MODIFICATION.to_owned(),
     }
+}
+
+/// Enforce that a version's object kind matches the contribution's scope: a
+/// demographic contribution (`party_only`) may carry only party roots, and an
+/// EHR contribution may carry only clinical versioned objects. A mismatch is
+/// `422` — the analogue of the EHR-group contribution rejecting bad content.
+fn check_kind_scope(kind: Kind, party_only: bool) -> Result<(), ServiceError> {
+    if party_only && !kind.is_party() {
+        return Err(ServiceError::Unprocessable(format!(
+            "a demographic CONTRIBUTION may only contain party versions, got {}",
+            kind.as_str()
+        )));
+    }
+    if !party_only && kind.is_party() {
+        return Err(ServiceError::Unprocessable(format!(
+            "an EHR CONTRIBUTION may not contain demographic party versions, got {}",
+            kind.as_str()
+        )));
+    }
+    Ok(())
 }
 
 /// The change-type code of a `DV_CODED_TEXT`: its `defining_code.code_string`

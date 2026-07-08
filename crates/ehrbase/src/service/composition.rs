@@ -26,7 +26,7 @@ impl EhrbaseService {
         // template_store (the column is an FK to it).
         let committed = vobject::create(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             Kind::Composition,
             composition,
             None,
@@ -58,7 +58,7 @@ impl EhrbaseService {
             Some(v) => vobject::read_version(&self.pool, vo_id, v).await?,
             None => vobject::read_current(&self.pool, vo_id).await?,
         }
-        .filter(|r| r.ehr_id == ehr_id)
+        .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
 
         if read.deleted() {
@@ -77,7 +77,7 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::version_at(&self.pool, vo_id, at)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
@@ -91,11 +91,11 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
     ) -> Result<Value, ServiceError> {
-        let read = vobject::read_current(&self.pool, vo_id)
+        let _read = vobject::read_current(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
-        self.versioned_object(vo_id, read.ehr_id).await
+        self.versioned_object(vo_id, ehr_id).await
     }
 
     /// An `ORIGINAL_VERSION` of a COMPOSITION at a specific version.
@@ -107,7 +107,7 @@ impl EhrbaseService {
     ) -> Result<Value, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} v{version}")))?;
         self.original_version(&read)
     }
@@ -130,7 +130,7 @@ impl EhrbaseService {
             Some(at) => vobject::version_at(&self.pool, vo_id, at).await?,
             None => vobject::read_current(&self.pool, vo_id).await?,
         }
-        .filter(|r| r.ehr_id == ehr_id)
+        .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} version at time")))?;
         let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
         let ov = self.original_version(&read)?;
@@ -153,7 +153,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::MODIFICATION, "COMPOSITION update");
         let committed = vobject::update(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             vo_id,
             Kind::Composition,
             composition,
@@ -180,7 +180,7 @@ impl EhrbaseService {
     ) -> Result<Option<ResourceMeta>, ServiceError> {
         let Some(read) = vobject::read_current(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
         else {
             return Ok(None);
         };
@@ -233,7 +233,7 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_current(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
         if read.deleted() {
             return Err(ServiceError::BadRequest(format!(
@@ -253,7 +253,7 @@ impl EhrbaseService {
         // check above and the commit is caught atomically.
         let committed = vobject::delete(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             vo_id,
             Kind::Composition,
             Some(expected),
@@ -291,7 +291,7 @@ impl EhrbaseService {
     ) -> Result<(), ServiceError> {
         let read = vobject::read_current(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
         if read.deleted() {
             return Err(ServiceError::NotFound(format!(
@@ -391,6 +391,11 @@ impl EhrbaseService {
         match kind {
             Kind::Composition => self.validate_composition_for_commit(data).await,
             Kind::EhrStatus | Kind::EhrAccess | Kind::Folder => Ok(()),
+            // Demographic party roots validate structurally (typed deserialize +
+            // PARTY invariants) via the demographic module.
+            Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
+                self.validate_party_kind_for_commit(kind, data)
+            }
         }
     }
 }
