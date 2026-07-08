@@ -34,8 +34,8 @@ onto the workspace as:
 ┌──────────────────┐    │  ehrbase-sm (trait layer)     │  ┌────────────────┐
 │ ehrbase-rest     │───▶│   EhrService      Definitions │◀─│ ehrbase        │
 │  (ITS-REST 1.0.3)│    │   Demographic     Query       │  │  EhrbaseService│
-│ ehrbase-compat   │───▶│   EhrIndex        Terminology │  │  (PG18 storage,│
-│  (EhrScape/FLAT) │    │   Message         SubjectProxy│  │   vobject, AQL)│
+│  + `ehrscape`    │    │   EhrIndex        Terminology │  │  (PG18 storage,│
+│    feature module│    │   Message         SubjectProxy│  │   vobject, AQL)│
 │ mgmt/admin HTTP  │───▶│   Admin           SystemLog   │  └────────────────┘
 └──────────────────┘    │   ValidityChecker             │
                         └───────────────────────────────┘
@@ -50,10 +50,25 @@ dev/verification tooling — *not part of the shipped application* — lives in
 crates/   openehr-base  openehr-rm  openehr-am  openehr-term  openehr-lang
           openehr-its   openehr-query  openehr-flat
           openehr-codegen  openehr-derive          # spec layer + its tooling
-app/      ehrbase  ehrbase-sm  ehrbase-rest  ehrbase-compat
+app/      ehrbase  ehrbase-sm  ehrbase-rest
           ehrbase-audit  ehrbase-authz  ehrbase-signing   # the application
 tools/    conformance  benchmark      # ECC runner + bench harness (not app)
 ```
+
+**App-crate set rationale (owner review, 2026-07-09).** Six application
+crates, each one architectural role — nothing speculative:
+`ehrbase` (the component: storage, services, AQL, binary), `ehrbase-sm`
+(the native API), `ehrbase-rest` (protocol adapter — ITS-REST plus the
+EhrScape legacy API as a feature-gated `ehrscape` module at P17),
+`ehrbase-audit` (the SM System Log component), `ehrbase-authz`
+(authorization), `ehrbase-signing` (version signing). The **`ehrbase-compat`
+crate was deleted (2026-07-09)**: it was an empty scaffold whose planned
+FLAT/STRUCTURED surface had already landed inside `ehrbase-rest` at P14, and
+EhrScape is just a second wire dialect over the same native API — a module
+in the adapter crate, not a crate of its own. Considered and rejected:
+splitting `ehrbase` into storage/service/aql crates (no consumer needs them
+separately; the SM trait layer already provides the internal seams; revisit
+only if compile times demand it).
 
 Root `Cargo.toml`: `members = ["crates/*", "app/*", "tools/*"]`. The move was
 `git mv` (history preserved) + path updates in workspace path-deps, CI

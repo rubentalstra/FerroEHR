@@ -156,7 +156,6 @@ builds on the specification, never the reverse.
 | `openehr-codegen` · `openehr-derive` | the spec-to-Rust generator and its proc-macro |
 | `ehrbase-rest` | the axum REST server and authentication |
 | `ehrbase-audit` | the IHE ATNA audit trail |
-| `ehrbase-compat` | EhrScape and administrative compatibility surface |
 | `ehrbase` | the server binary: storage, services, and the AQL engine |
 
 A CI drift check regenerates the specification layer on every commit and fails

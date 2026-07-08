@@ -1687,7 +1687,6 @@ dependencies = [
  "clap",
  "ehrbase-audit",
  "ehrbase-authz",
- "ehrbase-compat",
  "ehrbase-rest",
  "ehrbase-signing",
  "figment",
@@ -1762,14 +1761,6 @@ dependencies = [
  "tokio",
  "tracing",
  "wiremock",
-]
-
-[[package]]
-name = "ehrbase-compat"
-version = "0.1.0"
-dependencies = [
- "ehrbase-rest",
- "openehr-flat",
 ]
 
 [[package]]

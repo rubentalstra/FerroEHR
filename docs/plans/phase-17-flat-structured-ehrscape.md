@@ -3,7 +3,7 @@
 > **Rescoped (2026-07-06):** WebTemplate + FLAT (simSDT) + STRUCTURED (structSDT)
 > conversion moved into **P14** (built there, full Better parity). P17 now covers
 > only the **EhrScape (`/rest/ecis/v1/*`) + admin** compatibility endpoints in
-> `ehrbase-compat`, reusing the `openehr-flat` converters P14 delivered.
+> `ehrbase-rest` (feature-gated `ehrscape` module — the `ehrbase-compat` crate was deleted 2026-07-09, ADR-010), reusing the `openehr-flat` converters P14 delivered.
 
 - Status: not-started (Stage-1 app build, step 9 of 13)
 - Consumes: `openehr-flat` (WebTemplate/FLAT/STRUCTURED, P14), P15 (validation), P12 (service)
@@ -13,7 +13,7 @@
 ## Objectives
 
 The EhrScape compatibility surface: the EhrScape (`/rest/ecis/v1/*`) + admin
-endpoints in `ehrbase-compat`, reusing the `openehr-flat` FLAT/STRUCTURED/
+endpoints in `ehrbase-rest`'s feature-gated `ehrscape` module, reusing the `openehr-flat` FLAT/STRUCTURED/
 WebTemplate conversion built in P14. Target Better's `web-template` semantics;
 `|unit` is singular (no `|units` divergence — see the serialization rule);
 genuine Better extras (`|unit_system`/`|unit_display_name`) live behind the
@@ -28,7 +28,7 @@ not CNF-conformance-gated.
 
 **In:** FLAT ↔ RM and STRUCTURED ↔ RM conversion driven by the WebTemplate
 (`openehr-flat`); MIME types (`application/openehr.wt.flat+json`,
-`…wt.structured+json`); EhrScape endpoints + admin API (`ehrbase-compat`);
+`…wt.structured+json`); EhrScape endpoints + admin API (`ehrbase-rest::ehrscape`, feature-gated);
 `ehrbase-quirks` flag. **Out:** anything AQL (P16); the canonical JSON/XML
 formats (done, `openehr-its`).
 
@@ -36,7 +36,7 @@ formats (done, `openehr-its`).
 
 - [ ] FLAT (simSDT) ↔ RM via WebTemplate (`openehr-flat`)
 - [ ] STRUCTURED (structSDT) ↔ RM
-- [ ] EhrScape + admin endpoints (`ehrbase-compat`), MIME negotiation
+- [ ] EhrScape + admin endpoints (`ehrbase-rest::ehrscape`, feature-gated), MIME negotiation
 - [ ] `ehrbase-quirks` flag; tests vs Better `web-template-tests`
 
 ## Exit criteria

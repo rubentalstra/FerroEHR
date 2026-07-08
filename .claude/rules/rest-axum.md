@@ -1,5 +1,5 @@
 ---
-paths: ["app/ehrbase-rest/**", "app/ehrbase-compat/**", "app/ehrbase/src/application/**"]
+paths: ["app/ehrbase-rest/**", "app/ehrbase/src/application/**"]
 ---
 
 # REST server (axum) — P11, P17
@@ -44,7 +44,7 @@ prose feels ambiguous, the CNF test case wins. Cite sections
   vendored upstream OAS — a drift signal, never the source of truth (the
   vendored OAS is authoritative, ADR-005). Serve Swagger UI.
 - **EhrScape / admin** (`/rest/ecis/v1/*`, `/rest/admin`) live in
-  `ehrbase-compat` (P17), reusing the same service layer + `openehr-flat`.
+  `ehrbase-rest` as a feature-gated adapter module (`ehrscape`, P17), reusing the same service layer + `openehr-flat` (the `ehrbase-compat` crate was removed 2026-07-09 — ADR-010).
 
 Behaviour is verified by the CNF conformance suite (P19), not by mirroring another server's
 Java controller structure. Build compiling + tested (`rust-style.md`).

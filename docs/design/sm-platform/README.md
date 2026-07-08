@@ -29,7 +29,7 @@ Owner rulings baked in (2026-07-08):
 | [05-simplified-im.md](05-simplified-im.md) | SIM-B: simplification principles, every `S_*` class, `APP_CONTEXT` (the `ctx/` vocabulary), transformation rules, documented lossiness |
 | [06-serial-data-formats.md](06-serial-data-formats.md) | SDF: normative leaf-value/interval encodings, EhrScape variants, and the load-bearing absences (no path syntax, no MIME, `TBD` parser) |
 | [07-gap-analysis.md](07-gap-analysis.md) | Every SM component vs the current service layer, per-call |
-| [08-target-architecture.md](08-target-architecture.md) | The design: `ehrbase-sm` native-API crate, trait-per-SM-interface, shared types, new component designs (EHR Index, Terminology, Message/Extract/TDD, Subject Proxy, Admin), unified error table, wire exposure |
+| [08-target-architecture.md](08-target-architecture.md) | The design: app-crate map (`ehrbase-compat` deleted; EhrScape = `ehrbase-rest` feature module), `ehrbase-sm` native-API crate, trait-per-SM-interface, shared types, new component designs (EHR Index, Terminology, Message/Extract/TDD, Subject Proxy, Admin), unified error table, wire exposure |
 | [09-roadmap.md](09-roadmap.md) | Build order SM-1…SM-6 interleaved with P17–P20, verification gates |
 
 Decision record: `docs/ADRs/ADR-010-sm-aligned-service-architecture.md`.

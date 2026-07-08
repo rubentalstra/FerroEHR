@@ -53,7 +53,10 @@ and the full Admin set, all Stage-1 scope.
 2. **Physical three-directory workspace layout (executed 2026-07-08).** The
    ADR-004/008 naming split becomes directory structure: the application
    crates move to **`app/*`** (`ehrbase`, `ehrbase-sm`, `ehrbase-rest`,
-   `ehrbase-compat`, `ehrbase-audit`, `ehrbase-authz`, `ehrbase-signing`);
+   `ehrbase-audit`, `ehrbase-authz`, `ehrbase-signing` — the empty
+   `ehrbase-compat` scaffold was deleted 2026-07-09: its FLAT/STRUCTURED
+   surface already lives in `ehrbase-rest`, and EhrScape becomes a
+   feature-gated `ehrscape` adapter module there at P17);
    the dev/verification tooling — not part of the shipped application —
    moves to **`tools/*`** with renames: `ehrbase-conformance` →
    **`tools/conformance`** (the ECC runner) and `ehrbase-bench` →
