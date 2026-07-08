@@ -60,21 +60,28 @@ conformance runner adds runner-defined `SIGN-*` cases (§7).
 
 ## 2. Design at a glance
 
-```
-commit (vobject, one tx)                          read (reassemble)
-─────────────────────────                         ─────────────────
-build ORIGINAL_VERSION (signature = None)         SELECT … , signature
-        │                                         ORIGINAL_VERSION.signature = row
-        ▼                                                 │
-canonical_form()  ← openehr-rm *_impl.rs                  ▼ (opt-in)
-        │                                         verify_on_read: Off | Warn | Strict
-        ▼
-ehrbase-signing::Signer
-  ├─ Digest  : SHA-256 → radix-64
-  └─ Pgp     : RFC 4880 detached sig (rPGP) → ASCII armor
-        │
-        ▼
-INSERT vo_version(…, signature)
+```mermaid
+flowchart TB
+    subgraph commit["commit (vobject, one tx)"]
+        direction TB
+        c1["build ORIGINAL_VERSION (signature = None)"]
+        c2["canonical_form() ← openehr-rm *_impl.rs"]
+        c3["ehrbase-signing::Signer"]
+        cd["Digest : SHA-256 → radix-64"]
+        cp["Pgp : RFC 4880 detached sig (rPGP) → ASCII armor"]
+        c4["INSERT vo_version(…, signature)"]
+        c1 --> c2 --> c3
+        c3 --> cd --> c4
+        c3 --> cp --> c4
+    end
+    subgraph read["read (reassemble)"]
+        direction TB
+        r1["SELECT … , signature"]
+        r2["ORIGINAL_VERSION.signature = row"]
+        r3["verify_on_read: Off | Warn | Strict"]
+        r1 --> r2
+        r2 -->|opt-in| r3
+    end
 ```
 
 - **`canonical_form()` is an RM spec function** → hand-written in the spec

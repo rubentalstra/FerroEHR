@@ -171,17 +171,41 @@ The seams this design binds to, as the code stands today:
 
 ## 4. Architecture overview
 
-```
-                 ┌────────────────────────────── ehrbase-rest ─────────────────────────────┐
- request ──► ATNA audit layer ──► auth middleware ──► [RBAC gate] ──► dispatch mount ──► handler
-                 ▲                  (Principal+roles)     │              │ [ABAC pre-check]     │
-                 │ observes 403/401                       │              │        │             ▼
-                 │                                        │              │        │      ServiceResponse
-                 └── deny = 403 + Principal on resp ◄─────┴──────────────┴────────┤ [ABAC post-check]
-                                                                                  ▼
-                                                                     ehrbase-authz::PolicyEngine
-                                                                     ├─ CedarEngine (embedded)
-                                                                     └─ RemotePdp   (v1 wire contract)
+```mermaid
+flowchart LR
+    request["request"]
+    subgraph rest["ehrbase-rest"]
+        direction LR
+        atna["ATNA audit layer"]
+        auth["auth middleware<br/>(Principal+roles)"]
+        rbac["[RBAC gate]"]
+        dispatch["dispatch mount"]
+        pre["[ABAC pre-check]"]
+        handler["handler"]
+        sr["ServiceResponse"]
+        post["[ABAC post-check]"]
+        deny["deny = 403 + Principal on resp"]
+    end
+    engine["ehrbase-authz::PolicyEngine"]
+    cedar["CedarEngine (embedded)"]
+    remote["RemotePdp (v1 wire contract)"]
+
+    request --> atna
+    atna --> auth
+    auth --> rbac
+    rbac --> dispatch
+    dispatch --> pre
+    pre --> handler
+    handler --> sr
+    sr --> post
+    rbac -->|deny| deny
+    pre -->|deny| deny
+    post -->|deny| deny
+    deny -->|"observes 403/401"| atna
+    pre --> engine
+    post --> engine
+    engine --> cedar
+    engine --> remote
 ```
 
 - **RBAC gate** runs inside the auth middleware (it already has the Principal
