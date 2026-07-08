@@ -43,7 +43,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::CREATION, "EHR creation");
         vobject::commit_contribution(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             &audit,
             vec![
                 (
@@ -179,7 +179,7 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
         Ok(self.version_response(ehr_id, vo_id, read))
     }
@@ -202,7 +202,7 @@ impl EhrbaseService {
         let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");
         vobject::update(
             &mut tx,
-            ehr_id,
+            Some(ehr_id),
             vo_id,
             Kind::EhrStatus,
             body,
@@ -250,7 +250,7 @@ impl EhrbaseService {
     ) -> Result<Value, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
-            .filter(|r| r.ehr_id == ehr_id)
+            .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
         self.original_version(&read)
     }

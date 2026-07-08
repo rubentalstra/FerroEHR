@@ -33,6 +33,14 @@ pub(super) enum Kind {
     /// (RM ehr §"EHR Access").
     EhrAccess,
     Folder,
+    // Demographic party roots (ADR-008). These are versioned objects with no
+    // EHR scope: they use the same `vo_version`/`node` machinery with a NULL
+    // `ehr_id`.
+    Agent,
+    Group,
+    Organisation,
+    Person,
+    Role,
 }
 
 impl Kind {
@@ -42,7 +50,20 @@ impl Kind {
             Kind::EhrStatus => "EHR_STATUS",
             Kind::EhrAccess => "EHR_ACCESS",
             Kind::Folder => "FOLDER",
+            Kind::Agent => "AGENT",
+            Kind::Group => "GROUP",
+            Kind::Organisation => "ORGANISATION",
+            Kind::Person => "PERSON",
+            Kind::Role => "ROLE",
         }
+    }
+
+    /// Whether this kind is a demographic party root (no EHR scope).
+    pub(super) fn is_party(self) -> bool {
+        matches!(
+            self,
+            Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role
+        )
     }
 
     /// The versioned-object kind for an RM `_type`, if it is a versioned root.
@@ -52,6 +73,11 @@ impl Kind {
             "EHR_STATUS" => Some(Kind::EhrStatus),
             "EHR_ACCESS" => Some(Kind::EhrAccess),
             "FOLDER" => Some(Kind::Folder),
+            "AGENT" => Some(Kind::Agent),
+            "GROUP" => Some(Kind::Group),
+            "ORGANISATION" => Some(Kind::Organisation),
+            "PERSON" => Some(Kind::Person),
+            "ROLE" => Some(Kind::Role),
             _ => None,
         }
     }
@@ -98,7 +124,9 @@ pub(super) struct Committed {
 #[derive(Debug, Clone)]
 pub(super) struct VersionRead {
     pub(super) vo_id: Uuid,
-    pub(super) ehr_id: Uuid,
+    /// The owning EHR, or `None` for a demographic party (no EHR scope —
+    /// ADR-008). EHR-scoped callers compare against `Some(ehr_id)`.
+    pub(super) ehr_id: Option<Uuid>,
     pub(super) sys_version: i32,
     /// The version's lifecycle-state numeric code (`version_lifecycle_state`
     /// group: `532` complete, `523` deleted, …).
@@ -193,9 +221,10 @@ async fn insert_audit(
 }
 
 /// Insert a `contribution` row referencing its audit, returning its id.
+/// `ehr_id` is `None` for a demographic CONTRIBUTION (no EHR scope).
 async fn insert_contribution(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     audit_id: Uuid,
 ) -> Result<Uuid, ServiceError> {
     Ok(sqlx::query_scalar(
@@ -212,7 +241,7 @@ async fn insert_contribution(
 /// version's `commit_audit`, which is signed).
 async fn write_contribution(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     audit: &AuditInput,
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), ServiceError> {
     let (audit_id, time_committed) = insert_audit(tx, audit).await?;
@@ -225,7 +254,7 @@ async fn insert_nodes(
     tx: &mut PgConnection,
     vo_id: Uuid,
     sys_version: i32,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     rows: &[NodeRow],
 ) -> Result<(), ServiceError> {
     if rows.is_empty() {
@@ -340,7 +369,7 @@ fn sign_version(
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)] // the three change arms + commit context
 async fn apply_change(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     contribution_id: Uuid,
     audit_id: Uuid,
     audit: &AuditInput,
@@ -355,7 +384,9 @@ async fn apply_change(
             template_id,
             signature,
         } => {
-            if kind == Kind::EhrStatus {
+            if kind == Kind::EhrStatus
+                && let Some(ehr_id) = ehr_id
+            {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
             }
             let rows = decompose(canonical)?;
@@ -403,7 +434,9 @@ async fn apply_change(
             template_id,
             signature,
         } => {
-            if kind == Kind::EhrStatus {
+            if kind == Kind::EhrStatus
+                && let Some(ehr_id) = ehr_id
+            {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
             }
             let rows = decompose(canonical)?;
@@ -551,15 +584,17 @@ async fn sync_ehr_subject(
 /// and return the next version number. Locks the current row `FOR UPDATE`.
 async fn next_version(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     vo_id: Uuid,
     kind: Kind,
     expected: Option<i32>,
 ) -> Result<i32, ServiceError> {
     let (owner, current) = current_version(&mut *tx, vo_id, kind).await?;
+    // For an EHR-scoped object, the stored owner must match; for a demographic
+    // party both stored and expected owner are `None`, which compares equal.
     if owner != ehr_id {
         return Err(ServiceError::NotFound(format!(
-            "{} {vo_id} in EHR {ehr_id}",
+            "{} {vo_id} in EHR {ehr_id:?}",
             kind.as_str()
         )));
     }
@@ -579,7 +614,7 @@ async fn insert_vo_version(
     tx: &mut PgConnection,
     vo_id: Uuid,
     kind: Kind,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     sys_version: i32,
     lifecycle_state: &str,
     contribution_id: Uuid,
@@ -610,7 +645,7 @@ async fn insert_vo_version(
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(super) async fn create(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     kind: Kind,
     canonical: serde_json::Value,
     template_id: Option<&str>,
@@ -640,7 +675,7 @@ pub(super) async fn create(
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(super) async fn update(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     vo_id: Uuid,
     kind: Kind,
     canonical: serde_json::Value,
@@ -673,7 +708,7 @@ pub(super) async fn update(
 /// Logically delete an object under its own contribution.
 pub(super) async fn delete(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     vo_id: Uuid,
     kind: Kind,
     expected: Option<i32>,
@@ -703,7 +738,7 @@ pub(super) async fn delete(
 /// is the CONTRIBUTION's own audit; each change carries its VERSION `commit_audit`.
 pub(super) async fn commit_contribution(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     contribution_audit: &AuditInput,
     changes: Vec<(AuditInput, Change)>,
     ctx: &SigningCtx<'_>,
@@ -736,7 +771,7 @@ async fn current_version(
     tx: &mut PgConnection,
     vo_id: Uuid,
     kind: Kind,
-) -> Result<(Uuid, i32), ServiceError> {
+) -> Result<(Option<Uuid>, i32), ServiceError> {
     let row = sqlx::query(
         "SELECT ehr_id, sys_version FROM vo_version \
          WHERE vo_id = $1 AND kind = $2 AND upper_inf(sys_period) FOR UPDATE",
