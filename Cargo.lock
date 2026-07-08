@@ -1754,6 +1754,7 @@ dependencies = [
  "ehrbase",
  "ehrbase-rest",
  "jiff",
+ "openehr-base",
  "openehr-flat",
  "openehr-its",
  "openehr-rm",
