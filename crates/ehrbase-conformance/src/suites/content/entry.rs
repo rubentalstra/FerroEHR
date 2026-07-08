@@ -29,11 +29,31 @@
 use serde_json::{Value, json};
 
 use crate::case::Chapter;
-use crate::harness::{CaseFuture, CaseRun, RunContext};
+use crate::fixtures;
+use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, RunContext};
 use crate::registry::CaseEntry;
 
+use super::author::{self, Card};
 use super::drive::{self, Constraint, Expected, meta};
 use super::mutate;
+
+/// The persistent base composition (a persistent COMPOSITION carrying
+/// OBSERVATION → HISTORY → `POINT_EVENT`) — corpus-root-relative.
+const PERSIST_COMP: &str = "compositions/CANONICAL_JSON/persistent_minimal.en.v1__full.json";
+/// The persistent base OPT (relative to `valid_templates/`).
+const PERSIST_OPT: &str = "minimal_persistent/persistent_minimal.opt";
+
+/// Whether an events count `n` satisfies a cardinality interval (master16 HISTORY).
+fn events_ok(card: Card, count: usize) -> bool {
+    match card {
+        Card::Any => true,
+        Card::OnePlus => count >= 1,
+        Card::ThreePlus => count >= 3,
+        Card::Opt => count <= 1,
+        Card::Mand => count == 1,
+        Card::ThreeToFive => (3..=5).contains(&count),
+    }
+}
 
 /// The implemented master16 case entries (26 CONT cases).
 #[must_use]
@@ -50,29 +70,43 @@ pub fn entries() -> Vec<CaseEntry> {
         all.push(entry(id, run_obs_data));
     }
 
-    // ── HISTORY (12) — archetype: events cardinality + summary existence ──────
-    for id in [
-        "CONT-HIST-events_card_any-summary_ex_opt",
-        "CONT-HIST-events_card_1plus-summary_ex_opt",
-        "CONT-HIST-events_card_3plus-summary_ex_opt",
-        "CONT-HIST-events_card_opt-summary_ex_opt",
-        "CONT-HIST-events_card_mand-summary_ex_opt",
-        "CONT-HIST-events_card_3to5-summary_ex_opt",
-        "CONT-HIST-events_card_any-summary_ex_mand",
-        "CONT-HIST-events_card_1plus-summary_ex_mand",
-        "CONT-HIST-events_card_3plus-summary_ex_mand",
-        "CONT-HIST-events_card_opt-summary_ex_mand",
-        "CONT-HIST-events_card_mand-summary_ex_mand",
-        "CONT-HIST-events_card_3to5-summary_ex_mand",
-    ] {
-        all.push(entry(id, run_skip_hist));
+    // ── HISTORY (12) — driven against authored HISTORY.events cardinality +
+    //    HISTORY.summary existence OPTs (the summary-absent half of each truth
+    //    table: events cardinality {0..*,1..*,3..*,0..1,1..1,3..5} × summary
+    //    existence {0..1,1..1}). The base persistent composition carries no
+    //    HISTORY.summary, so the summary-absent rows exercise both the events
+    //    cardinality (via the committed events count) and the summary existence
+    //    (a mandatory summary is violated by its absence) constraints without
+    //    fabricating extra RM data. ──
+    const HIST: &[(&str, crate::harness::CaseRun)] = &[
+        ("CONT-HIST-events_card_any-summary_ex_opt", h_any_opt),
+        ("CONT-HIST-events_card_1plus-summary_ex_opt", h_1plus_opt),
+        ("CONT-HIST-events_card_3plus-summary_ex_opt", h_3plus_opt),
+        ("CONT-HIST-events_card_opt-summary_ex_opt", h_opt_opt),
+        ("CONT-HIST-events_card_mand-summary_ex_opt", h_mand_opt),
+        ("CONT-HIST-events_card_3to5-summary_ex_opt", h_3to5_opt),
+        ("CONT-HIST-events_card_any-summary_ex_mand", h_any_mand),
+        ("CONT-HIST-events_card_1plus-summary_ex_mand", h_1plus_mand),
+        ("CONT-HIST-events_card_3plus-summary_ex_mand", h_3plus_mand),
+        ("CONT-HIST-events_card_opt-summary_ex_mand", h_opt_mand),
+        ("CONT-HIST-events_card_mand-summary_ex_mand", h_mand_mand),
+        ("CONT-HIST-events_card_3to5-summary_ex_mand", h_3to5_mand),
+    ];
+    for &(id, run) in HIST {
+        all.push(entry(id, run));
     }
 
-    // ── EVENT (5) — data existence driven; type narrowing archetype ──────────
+    // ── EVENT (5) — data existence driven; type narrowing driven via authored
+    //    OPTs. `type_any`: the persistent base narrows HISTORY.events only to the
+    //    abstract EVENT, so committing the base POINT_EVENT is the "any subtype
+    //    accepted" positive. `type_point_event`: author a POINT_EVENT narrowing —
+    //    base accepted, a sibling (_type→INTERVAL_EVENT) rejected. `type_interval_
+    //    event` needs a valid INTERVAL_EVENT the corpus does not carry (mandatory
+    //    `width`/`math_function`) → honest skip. ──
     all.push(entry("CONT-EVENT-state_ex_opt", run_event_data));
     all.push(entry("CONT-EVENT-state_ex_mand", run_event_data));
-    all.push(entry("CONT-EVENT-type_any", run_skip_event_type));
-    all.push(entry("CONT-EVENT-type_point_event", run_skip_event_type));
+    all.push(entry("CONT-EVENT-type_any", run_event_any));
+    all.push(entry("CONT-EVENT-type_point_event", run_event_point));
     all.push(entry("CONT-EVENT-type_interval_event", run_skip_event_type));
 
     // ── ITEM_STRUCTURE (5) — type narrowing, driven via clinical_content_validation ─
@@ -162,16 +196,211 @@ fn run_event_data<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move { drive::entry_data_existence(ctx, "POINT_EVENT").await })
 }
 
-fn run_skip_hist<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+/// Drive one CONT-HIST case: author a `persistent_minimal` OPT tightening
+/// `HISTORY.events` cardinality (+ a mandatory `HISTORY.summary` for the
+/// `summary_ex_mand` cases), then commit {0,1,3}-event persistent compositions
+/// (summary absent) and assert per the master16 HISTORY truth tables.
+async fn drive_hist_case(
+    ctx: &RunContext<'_>,
+    tid: &'static str,
+    card: Card,
+    summary_mand: bool,
+) -> Result<DataSetReport, CaseError> {
+    let mut opt = author::parse_base(PERSIST_OPT)?;
+    author::set_template_id(&mut opt, tid);
+    if !author::constrain_nested_multiple(&mut opt, "HISTORY", "events", card.interval()) {
+        return Err(CaseError::Assertion(
+            "base OPT has no HISTORY.events multiple attribute to constrain".to_owned(),
+        ));
+    }
+    if summary_mand {
+        author::constrain_nested_single_mandatory(&mut opt, "HISTORY", "summary");
+    }
+    let xml = author::to_xml(&opt)?;
+    let base = fixtures::read_json(PERSIST_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+
+    let mut rows: Vec<(String, Value, Expected)> = Vec::new();
+    for &count in &[0usize, 1, 3] {
+        let mut c = base.clone();
+        mutate::retarget_template(&mut c, tid);
+        if let Some(h) = mutate::first_node_mut(&mut c, "HISTORY") {
+            mutate::set_array_count(h, "events", count);
+            mutate::remove_field(h, "summary");
+        }
+        let accepted = events_ok(card, count) && !summary_mand;
+        let label = format!(
+            "{count} event(s), summary absent → {}",
+            if accepted { "accepted" } else { "rejected" }
+        );
+        rows.push((
+            label,
+            c,
+            if accepted {
+                Expected::Accepted
+            } else {
+                Expected::Rejected
+            },
+        ));
+    }
+    drive::drive_authored(ctx, &xml, rows).await
+}
+
+/// Generate a per-case HISTORY run function (the `CaseRun` fn-pointer carries no
+/// case id, so each case's cardinality/summary is bound in a distinct function).
+macro_rules! hist {
+    ($fn:ident, $tid:literal, $card:expr, $summary_mand:expr) => {
+        fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            Box::pin(async move { drive_hist_case(ctx, $tid, $card, $summary_mand).await })
+        }
+    };
+}
+
+hist!(
+    h_any_opt,
+    "cnf_cont_hist_events_any_summary_opt",
+    Card::Any,
+    false
+);
+hist!(
+    h_1plus_opt,
+    "cnf_cont_hist_events_1plus_summary_opt",
+    Card::OnePlus,
+    false
+);
+hist!(
+    h_3plus_opt,
+    "cnf_cont_hist_events_3plus_summary_opt",
+    Card::ThreePlus,
+    false
+);
+hist!(
+    h_opt_opt,
+    "cnf_cont_hist_events_opt_summary_opt",
+    Card::Opt,
+    false
+);
+hist!(
+    h_mand_opt,
+    "cnf_cont_hist_events_mand_summary_opt",
+    Card::Mand,
+    false
+);
+hist!(
+    h_3to5_opt,
+    "cnf_cont_hist_events_3to5_summary_opt",
+    Card::ThreeToFive,
+    false
+);
+hist!(
+    h_any_mand,
+    "cnf_cont_hist_events_any_summary_mand",
+    Card::Any,
+    true
+);
+hist!(
+    h_1plus_mand,
+    "cnf_cont_hist_events_1plus_summary_mand",
+    Card::OnePlus,
+    true
+);
+hist!(
+    h_3plus_mand,
+    "cnf_cont_hist_events_3plus_summary_mand",
+    Card::ThreePlus,
+    true
+);
+hist!(
+    h_opt_mand,
+    "cnf_cont_hist_events_opt_summary_mand",
+    Card::Opt,
+    true
+);
+hist!(
+    h_mand_mand,
+    "cnf_cont_hist_events_mand_summary_mand",
+    Card::Mand,
+    true
+);
+hist!(
+    h_3to5_mand,
+    "cnf_cont_hist_events_3to5_summary_mand",
+    Card::ThreeToFive,
+    true
+);
+
+/// EVENT `type_any`: the persistent base's `HISTORY.events` slot is constrained
+/// only to the abstract `EVENT`, so committing the base `POINT_EVENT` exercises
+/// "any concrete subtype accepted" (master16 §EVENT). Provisioned via the base OPT
+/// (no authoring needed — the slot is already open).
+fn run_event_any<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move {
-        drive::skip_archetype("HISTORY.events cardinality / HISTORY.summary existence")
+        let base =
+            fixtures::read_json(PERSIST_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+        drive::drive_constraint_base(
+            ctx,
+            PERSIST_OPT,
+            base,
+            "POINT_EVENT accepted in an open EVENT slot",
+            vec![],
+        )
+        .await
+    })
+}
+
+/// EVENT `type_point_event`: author a `persistent_minimal` OPT narrowing
+/// `HISTORY.events` to `POINT_EVENT`; the base `POINT_EVENT` is accepted and a copy
+/// whose event `_type` is swapped to the sibling `INTERVAL_EVENT` is rejected
+/// ("Class not allowed" — master16 §EVENT).
+fn run_event_point<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        let tid = "cnf_cont_event_point_event";
+        let mut opt = author::parse_base(PERSIST_OPT)?;
+        author::set_template_id(&mut opt, tid);
+        if !author::narrow_nested_child_type(&mut opt, "HISTORY", "events", "POINT_EVENT") {
+            return Err(CaseError::Assertion(
+                "base OPT has no HISTORY.events child object to narrow".to_owned(),
+            ));
+        }
+        let xml = author::to_xml(&opt)?;
+        let base =
+            fixtures::read_json(PERSIST_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+
+        let mut accepted = base.clone();
+        mutate::retarget_template(&mut accepted, tid);
+
+        let mut rejected = base.clone();
+        mutate::retarget_template(&mut rejected, tid);
+        if let Some(e) = mutate::first_node_mut(&mut rejected, "POINT_EVENT") {
+            mutate::set_field(e, "_type", json!("INTERVAL_EVENT"));
+        }
+
+        drive::drive_authored(
+            ctx,
+            &xml,
+            vec![
+                (
+                    "POINT_EVENT accepted (events narrowed to POINT_EVENT)".to_owned(),
+                    accepted,
+                    Expected::Accepted,
+                ),
+                (
+                    "INTERVAL_EVENT rejected (Class not allowed)".to_owned(),
+                    rejected,
+                    Expected::Rejected,
+                ),
+            ],
+        )
+        .await
     })
 }
 
 fn run_skip_event_type<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    Box::pin(
-        async move { drive::skip_archetype("EVENT type narrowing (POINT_EVENT / INTERVAL_EVENT)") },
-    )
+    Box::pin(async move {
+        drive::skip_archetype(
+            "EVENT narrowing to INTERVAL_EVENT (needs a valid INTERVAL_EVENT instance — mandatory \
+             width/math_function — absent from the vendored corpus)",
+        )
+    })
 }
 
 fn run_skip_item_str<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {

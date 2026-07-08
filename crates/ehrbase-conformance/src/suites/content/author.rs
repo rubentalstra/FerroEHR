@@ -331,3 +331,48 @@ pub fn with_nested_attribute(
         false
     })
 }
+
+/// The `rm_type_name` of a `C_OBJECT`, mutable where it has one.
+fn object_rm_type_mut(obj: &mut CObject) -> Option<&mut String> {
+    match obj {
+        CObject::CArchetypeRoot(r) => Some(&mut r.rm_type_name),
+        CObject::CComplexObject(c) => Some(&mut c.rm_type_name),
+        CObject::CDefinedObject(o) => Some(&mut o.rm_type_name),
+        CObject::CPrimitiveObject(o) => Some(&mut o.rm_type_name),
+        CObject::CCodePhrase(o) => Some(&mut o.rm_type_name),
+        CObject::CCodeReference(o) => Some(&mut o.rm_type_name),
+        CObject::CDvOrdinal(o) => Some(&mut o.rm_type_name),
+        CObject::CDvQuantity(o) => Some(&mut o.rm_type_name),
+        CObject::CDvState(o) => Some(&mut o.rm_type_name),
+        CObject::ArchetypeInternalRef(_)
+        | CObject::ArchetypeSlot(_)
+        | CObject::ConstraintRef(_)
+        | CObject::TComplexObject(_) => None,
+    }
+}
+
+/// Narrow the **type** of every child object of `host`'s `attr` to `rm_type` (a
+/// concrete descendant), e.g. `HISTORY.events` → `POINT_EVENT`. The `WebTemplate` the
+/// SUT builds then constrains the slot to that concrete class, so an instance of a
+/// sibling subtype is rejected ("Class not allowed"). Returns `true` if applied.
+pub fn narrow_nested_child_type(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    attr: &str,
+    rm_type: &str,
+) -> bool {
+    let mut narrowed = false;
+    with_nested_attribute(opt, host, attr, |a| {
+        let children = match a {
+            CAttribute::CMultipleAttribute(m) => &mut m.children,
+            CAttribute::CSingleAttribute(s) => &mut s.children,
+        };
+        for ch in children {
+            if let Some(t) = object_rm_type_mut(ch) {
+                *t = rm_type.to_owned();
+                narrowed = true;
+            }
+        }
+    });
+    narrowed
+}
