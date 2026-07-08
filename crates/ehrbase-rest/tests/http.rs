@@ -302,18 +302,45 @@ async fn unimplemented_groups_answer_501_with_the_standard_error_body() {
     // not-implemented dispatcher; the wire behaviour must be identical to the
     // old per-operation arms forwarding to a `NotImplemented` backend — 501 +
     // the standard `{ error, message }` JSON body.
+    // The POST case carries a well-formed JSON body: body deserialization runs
+    // before dispatch, so a malformed/empty body is (correctly) a 400 and would
+    // never reach the not-implemented arm this test exercises.
     let cases = [
-        ("GET", format!("{BASE}/demographic/agent/abc"), "openid"),
-        ("POST", format!("{BASE}/demographic/agent"), "openid"),
-        ("GET", format!("{BASE}/query/aql?q=SELECT%20c"), "openid"),
-        ("DELETE", format!("{BASE}/admin/ehr/abc"), "ehrbase:admin"),
+        (
+            "GET",
+            format!("{BASE}/demographic/agent/abc"),
+            "openid",
+            None,
+        ),
+        (
+            "POST",
+            format!("{BASE}/demographic/agent"),
+            "openid",
+            Some(r#"{"_type": "AGENT"}"#),
+        ),
+        (
+            "GET",
+            format!("{BASE}/query/aql?q=SELECT%20c"),
+            "openid",
+            None,
+        ),
+        (
+            "DELETE",
+            format!("{BASE}/admin/ehr/abc"),
+            "ehrbase:admin",
+            None,
+        ),
     ];
-    for (method, uri, scope) in cases {
-        let req = Request::builder()
+    for (method, uri, scope, body) in cases {
+        let mut builder = Request::builder()
             .method(method)
             .uri(&uri)
-            .header(header::AUTHORIZATION, bearer(scope))
-            .body(Body::empty())
+            .header(header::AUTHORIZATION, bearer(scope));
+        if body.is_some() {
+            builder = builder.header(header::CONTENT_TYPE, "application/json");
+        }
+        let req = builder
+            .body(body.map_or_else(Body::empty, Body::from))
             .unwrap();
         let (status, headers, body) = send(app(true), req).await;
         assert_eq!(status, StatusCode::NOT_IMPLEMENTED, "{method} {uri}");
