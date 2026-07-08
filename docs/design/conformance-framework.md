@@ -331,7 +331,52 @@ SUT genuinely lacks the surface (then it's a finding, not a skip).
 Each step: clippy-clean, `cargo nextest run -p ehrbase-conformance`
 (+ `--features self-host` e2e), guards green, phase checkbox ticked.
 
-## 9. What this is not
+## 9. Appendix — the official capability → profile matrix
+
+Transcribed from `docs/specs/openehr/CNF/docs/profiles/master03-profiles.adoc`
+("Default Profiles"; ✔ = required by the profile). This is the table
+`profile.rs` encodes and the all-or-nothing verdict is computed from — kept
+here as the human-readable overview; the machine copy in code cites this
+section and the source file.
+
+**Profiles:** **CORE** = minimal functional platform (storage + retrieval of
+EHR data), all capabilities all-or-nothing. **STANDARD** = CORE + AQL
+querying + logging. **OPTIONS** = catch-all for everything else, reported
+per-capability.
+
+| Component | Capability | CORE | STANDARD | OPTIONS |
+|---|---|:-:|:-:|:-:|
+| Definitions | ADL 1.4 Archetype provisioning | ✔ | ✔ | |
+| | ADL 1.4 OPT provisioning | ✔ | ✔ | |
+| | ADL 2 Archetype provisioning | | | ✔ |
+| | ADL 2 OPT provisioning | | | ✔ |
+| | Query provisioning | | ✔ | |
+| EHR Persistence | EHR Operations | ✔ | ✔ | |
+| | EHR Status | ✔ | ✔ | |
+| | Composition Operations | ✔ | ✔ | |
+| | Directory Operations | | ✔ | |
+| | Change sets | ✔ | ✔ | |
+| | Versioning | ✔ | ✔ | |
+| | Archetype Validation | ✔ | ✔ | |
+| Demographic | Party / Party Relationship / Archetype validation | | | ✔ |
+| Querying | AQL basic | | ✔ | |
+| | AQL advanced; AQL & terminology | | | ✔ |
+| Admin | Activity Report, Physical Deletion, EHR Dump/Load, Bulk EHR load, EHR Archive, Demographic Archive | | | ✔ |
+| Messaging | EHR Extract, TDS | | | ✔ |
+| REST APIs | DEFINITION API, EHR API | ✔ | ✔ | |
+| | QUERY API | | ✔ | |
+| | DEMOGRAPHIC / ADMIN / MESSAGE API | | | ✔ |
+| Security & Privacy (non-functional) | Signing | | ✔ | |
+| | Anonymous EHRs | ✔ | ✔ | |
+| External Data Formats | XML, JSON | ✔ | ✔ | |
+
+Chapter mapping: CORE/STANDARD ≈ master04 (ADL 1.4 half), 06, 07, 08
+(change sets/versioning), 15–17.x (archetype validation); STANDARD adds
+master05 + master09 (directory) + master11/AQL + Signing; master10/12/13 and
+ADL2 are OPTIONS — consistent with exactly those chapters being upstream
+stubs.
+
+## 10. What this is not
 
 Unchanged from v2: not a Robot/Python port (native Rust only); not the
 EhrScape/FLAT test bed; not a benchmark. And explicitly: not a re-vendor —
