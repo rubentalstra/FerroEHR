@@ -54,6 +54,10 @@ struct RunArgs {
     /// Fast smoke config (proves the harness, not publishable numbers).
     #[arg(long)]
     smoke: bool,
+    /// Merge this run's results into an existing `out/results.json` (keeping the
+    /// other target's rows) so a two-server comparison lands in one report.
+    #[arg(long)]
+    merge: bool,
     /// Output directory.
     #[arg(long, default_value = "docs/benchmarks")]
     out: PathBuf,
@@ -177,6 +181,19 @@ async fn cmd_run(args: RunArgs) -> i32 {
     };
 
     let mut results: Vec<ScenarioResult> = Vec::new();
+
+    // Merge: keep the other target's rows from a prior run so a two-server
+    // comparison lands in one report (this run's label overwrites its own).
+    if args.merge {
+        let existing = args.out.join("results.json");
+        if let Ok(text) = std::fs::read_to_string(&existing)
+            && let Ok(prior) = serde_json::from_str::<BenchReport>(&text)
+        {
+            let this = target.label();
+            results.extend(prior.results.into_iter().filter(|r| r.target != this));
+        }
+    }
+
     for s in scenarios {
         eprintln!(
             "running {} ({}) against {}",
