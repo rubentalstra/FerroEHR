@@ -33,11 +33,14 @@ BENCH="$REPO_ROOT/target/release/bench"
 wait_ready() {
   local url="$1" name="$2"
   echo "==> waiting for $name at $url"
-  for _ in $(seq 1 60); do
-    if curl -fsS -o /dev/null "$url"; then echo "    $name is up"; return 0; fi
+  for _ in $(seq 1 90); do
+    # Probe with Basic auth: ehrbase-rs's /rest/status is public (auth ignored),
+    # EHRbase Java protects it (needs auth). A 2xx means fully up + DB-migrated.
+    code=$(curl -s -o /dev/null -w '%{http_code}' -u ehrbase:ehrbase "$url" || echo 000)
+    if [[ "$code" == "200" ]]; then echo "    $name is up (200)"; return 0; fi
     sleep 5
   done
-  echo "::error:: $name did not become ready" >&2
+  echo "::error:: $name did not become ready (last HTTP $code)" >&2
   return 1
 }
 
