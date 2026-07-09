@@ -31,23 +31,18 @@ use uuid::Uuid;
 
 use openehr_base::prelude::ObjectVersionId;
 use openehr_flat::WebTemplate;
-use openehr_its::rest::generated::definition::{
-    DefinitionApi, DefinitionTemplateAdl2ListParams, DefinitionTemplateAdl2UploadParams,
-    DefinitionTemplateAdl14ExampleGetParams, DefinitionTemplateAdl14GetParams,
-};
-use openehr_its::rest::runtime::ApiError;
 
 use ehrbase_sm::services::{
-    AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
+    AdminArchive, AdminService, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
     DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
     EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, ItemTagAdapter,
-    PartyRelationshipService, QueryService, TerminologyService, VersionMetaAdapter,
+    PartyRelationshipService, QueryService, SystemLog, TerminologyService, VersionMetaAdapter,
     WebTemplateService,
 };
 use ehrbase_sm::types::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
 };
-use ehrbase_sm::{CallStatusType, SmError};
+use ehrbase_sm::{AuditEvent, CallStatusType, EmitOutcome, SmError};
 
 /// A `501 Not Implemented` SM error — the un-hooked default (old `StubBackend`).
 fn not_impl() -> SmError {
@@ -89,14 +84,15 @@ type PartyMeta =
 type RelCreate = Arc<dyn Fn(Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
 type RelGet = Arc<dyn Fn(String, Option<String>) -> Result<ServiceResponse, SmError> + Send + Sync>;
 
-type Adl14Get =
-    Arc<dyn Fn(DefinitionTemplateAdl14GetParams) -> Result<Value, ApiError> + Send + Sync>;
-type Adl14Example =
-    Arc<dyn Fn(DefinitionTemplateAdl14ExampleGetParams) -> Result<Value, ApiError> + Send + Sync>;
-type Adl2Upload =
-    Arc<dyn Fn(DefinitionTemplateAdl2UploadParams, Value) -> Result<Value, ApiError> + Send + Sync>;
-type Adl2List =
-    Arc<dyn Fn(DefinitionTemplateAdl2ListParams) -> Result<Vec<Value>, ApiError> + Send + Sync>;
+// DEFINITION wire-op hooks — all native (SmError), matching the post-ADR-011
+// dispatch: OPT retrieval via the SM `get_opt` seam; list/upload/example/query
+// via the wire-shaped `DefinitionAdapter`.
+type GetOpt = Arc<dyn Fn(String) -> Result<String, SmError> + Send + Sync>;
+type TemplateExample =
+    Arc<dyn Fn(String, Option<String>, Option<String>) -> Result<Value, SmError> + Send + Sync>;
+type ValueListHook = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
+type TemplateUploadHook = Arc<dyn Fn(String) -> Result<Value, SmError> + Send + Sync>;
+type QueryListHook = Arc<dyn Fn(String) -> Result<Vec<Value>, SmError> + Send + Sync>;
 
 /// The per-test override closures. Every field defaults to `None` (→ the
 /// `501`/trait-default behaviour); a test populates only what it exercises.
@@ -133,11 +129,13 @@ pub struct Hooks {
     pub demographic_latest_meta: Option<PartyMeta>,
     pub party_relationship_create: Option<RelCreate>,
     pub party_relationship_get: Option<RelGet>,
-    // generated DefinitionApi (ApiError)
-    pub definition_template_adl1_4_get: Option<Adl14Get>,
-    pub definition_template_adl1_4_example_get: Option<Adl14Example>,
-    pub definition_template_adl2_upload: Option<Adl2Upload>,
-    pub definition_template_adl2_list: Option<Adl2List>,
+    // DEFINITION wire ops (SM I_DEFINITION_* + DefinitionAdapter)
+    pub get_opt: Option<GetOpt>,
+    pub template_adl14_list: Option<ValueListHook>,
+    pub template_adl14_upload: Option<TemplateUploadHook>,
+    pub template_adl14_example: Option<TemplateExample>,
+    pub template_adl2_list: Option<ValueListHook>,
+    pub query_list: Option<QueryListHook>,
 }
 
 /// The shared mock platform. Cheap to clone (the hooks live behind an `Arc`).
@@ -589,50 +587,19 @@ impl PartyRelationshipService for Mock {
 
 impl EhrIndexService for Mock {}
 
-// ── definition (generated DefinitionApi = ApiError; SM-native = defaults) ─────
+// ── definition (SM I_DEFINITION_* + wire-shaped DefinitionAdapter; ADR-011) ───
 
+// OPT 1.4 retrieval is the SM `get_opt` seam (the dispatcher's adl1.4 GET);
+// other SM `I_DEFINITION_ADL14` calls keep the trait defaults (501).
 #[async_trait]
-impl DefinitionApi for Mock {
-    async fn definition_template_adl1_4_get(
-        &self,
-        params: DefinitionTemplateAdl14GetParams,
-    ) -> Result<Value, ApiError> {
-        match &self.h.definition_template_adl1_4_get {
-            Some(f) => f(params),
-            None => Err(ApiError::NotImplemented),
-        }
-    }
-    async fn definition_template_adl1_4_example_get(
-        &self,
-        params: DefinitionTemplateAdl14ExampleGetParams,
-    ) -> Result<Value, ApiError> {
-        match &self.h.definition_template_adl1_4_example_get {
-            Some(f) => f(params),
-            None => Err(ApiError::NotImplemented),
-        }
-    }
-    async fn definition_template_adl2_upload(
-        &self,
-        params: DefinitionTemplateAdl2UploadParams,
-        body: Value,
-    ) -> Result<Value, ApiError> {
-        match &self.h.definition_template_adl2_upload {
-            Some(f) => f(params, body),
-            None => Err(ApiError::NotImplemented),
-        }
-    }
-    async fn definition_template_adl2_list(
-        &self,
-        params: DefinitionTemplateAdl2ListParams,
-    ) -> Result<Vec<Value>, ApiError> {
-        match &self.h.definition_template_adl2_list {
-            Some(f) => f(params),
-            None => Err(ApiError::NotImplemented),
+impl DefinitionAdl14Service for Mock {
+    async fn get_opt(&self, an_opt_id: String) -> Result<String, SmError> {
+        match &self.h.get_opt {
+            Some(f) => f(an_opt_id),
+            None => Err(not_impl()),
         }
     }
 }
-
-impl DefinitionAdl14Service for Mock {}
 
 #[async_trait]
 impl DefinitionAdl2Service for Mock {
@@ -645,6 +612,78 @@ impl DefinitionAdl2Service for Mock {
 }
 
 impl DefinitionQueryService for Mock {}
+
+// The wire-shaped adapter (no trait defaults — every method is implemented).
+#[async_trait]
+impl DefinitionAdapter for Mock {
+    async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError> {
+        match &self.h.template_adl14_upload {
+            Some(f) => f(opt_xml),
+            None => Err(not_impl()),
+        }
+    }
+    async fn template_adl14_list(&self) -> Result<Vec<Value>, SmError> {
+        match &self.h.template_adl14_list {
+            Some(f) => f(),
+            None => Err(not_impl()),
+        }
+    }
+    async fn template_adl14_example(
+        &self,
+        template_id: String,
+        detail_level: Option<String>,
+        kind: Option<String>,
+    ) -> Result<Value, SmError> {
+        match &self.h.template_adl14_example {
+            Some(f) => f(template_id, detail_level, kind),
+            None => Err(not_impl()),
+        }
+    }
+    async fn template_adl2_upload(&self, _source: String) -> Result<String, SmError> {
+        Err(not_impl())
+    }
+    async fn template_adl2_list(&self) -> Result<Vec<Value>, SmError> {
+        match &self.h.template_adl2_list {
+            Some(f) => f(),
+            None => Err(not_impl()),
+        }
+    }
+    async fn query_list(&self, qualified_query_name: String) -> Result<Vec<Value>, SmError> {
+        match &self.h.query_list {
+            Some(f) => f(qualified_query_name),
+            None => Err(not_impl()),
+        }
+    }
+    async fn query_version_get(
+        &self,
+        _qualified_query_name: String,
+        _version: String,
+    ) -> Result<Value, SmError> {
+        Err(not_impl())
+    }
+    async fn query_store(
+        &self,
+        _qualified_query_name: String,
+        _version: Option<String>,
+        _body: String,
+    ) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+}
+
+// SM System Log — the mock has no audit sink, so auditing is disabled (the
+// middleware early-returns) and `emit` is a no-op drop.
+impl SystemLog for Mock {
+    fn emit(&self, _event: AuditEvent) -> EmitOutcome {
+        EmitOutcome::Dropped
+    }
+    fn audit_enabled(&self) -> bool {
+        false
+    }
+    fn suppress_login_events(&self) -> bool {
+        false
+    }
+}
 
 #[async_trait]
 impl WebTemplateService for Mock {
