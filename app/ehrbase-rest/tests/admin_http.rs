@@ -67,6 +67,8 @@ impl DefinitionApi for MockBackend {}
 impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
 impl ehrbase_rest::DefinitionAdl2Service for MockBackend {}
 impl ehrbase_rest::DefinitionQueryService for MockBackend {}
+impl ehrbase_rest::PartyRelationshipService for MockBackend {}
+impl ehrbase_rest::EhrIndexService for MockBackend {}
 impl WebTemplateService for MockBackend {}
 impl QueryService for MockBackend {}
 impl DemographicService for MockBackend {}

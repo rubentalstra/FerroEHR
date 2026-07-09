@@ -59,8 +59,19 @@ impl EhrbaseService {
             // Deleted → 204 (directory_get_at_time.yaml 204_because_deleted_at_time).
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
-        let folder = self.with_uid(read.canonical, vo_id, read.sys_version);
+        let meta = self.version_meta(
+            ehr_id,
+            vo_id,
+            &read.creating_system_id,
+            read.sys_version,
+            read.time_committed,
+        );
+        let folder = self.with_uid(
+            read.canonical,
+            vo_id,
+            &read.creating_system_id,
+            read.sys_version,
+        );
         match path.map(str::trim).filter(|p| !p.is_empty() && *p != "/") {
             None => Ok(ServiceResponse::new(folder, meta)),
             Some(path) => select_subfolder(&folder, path)

@@ -63,6 +63,24 @@ pub(super) fn change_type_code(token: &str) -> Option<String> {
         .map(|c| c.id.clone())
 }
 
+/// Resolve an inbound `lifecycle_state` token — either a numeric group code
+/// (`"553"`) or a rubric (`"incomplete"`) — to its canonical numeric
+/// `version_lifecycle_state` group code. `None` when the token is not a member
+/// of the group (`ORIGINAL_VERSION.Lifecycle_state_valid` — callers must
+/// reject, never store, an out-of-group lifecycle state; RM common master06
+/// §"Version Lifecycle": the five values are `532|complete|`, `553|incomplete|`,
+/// `523|deleted|`, `800|inactive|`, `801|abandoned|`).
+pub(super) fn lifecycle_state_code(token: &str) -> Option<String> {
+    let t = openehr();
+    if t.is_valid_version_lifecycle_state(token) {
+        return Some(token.to_owned());
+    }
+    t.concepts_in_group(VERSION_LIFECYCLE_STATE)
+        .iter()
+        .find(|c| c.rubric.eq_ignore_ascii_case(token))
+        .map(|c| c.id.clone())
+}
+
 /// The rubric (English display text) for an `audit_change_type` code; falls back
 /// to the code itself if the code is unknown to the bundle.
 pub(super) fn change_type_rubric(code: &str) -> String {
@@ -112,6 +130,21 @@ mod tests {
         // SPECPR-51: version lifecycle 532 → "complete" (not "completed").
         assert_eq!(lifecycle_rubric(lifecycle::COMPLETE), "complete");
         assert_eq!(lifecycle_rubric(lifecycle::DELETED), "deleted");
+    }
+
+    #[test]
+    fn lifecycle_state_code_accepts_code_or_rubric_and_rejects_non_members() {
+        // All five normative states (master06 §Version Lifecycle) resolve, by
+        // code and by rubric.
+        assert_eq!(lifecycle_state_code("532").as_deref(), Some("532"));
+        assert_eq!(lifecycle_state_code("complete").as_deref(), Some("532"));
+        assert_eq!(lifecycle_state_code("incomplete").as_deref(), Some("553"));
+        assert_eq!(lifecycle_state_code("Deleted").as_deref(), Some("523"));
+        assert_eq!(lifecycle_state_code("inactive").as_deref(), Some("800"));
+        assert_eq!(lifecycle_state_code("abandoned").as_deref(), Some("801"));
+        // Out-of-group tokens are rejected (ORIGINAL_VERSION.Lifecycle_state_valid).
+        assert_eq!(lifecycle_state_code("not-a-state"), None);
+        assert_eq!(lifecycle_state_code("249"), None); // change-type code, wrong group
     }
 
     #[test]

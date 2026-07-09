@@ -77,6 +77,8 @@ impl ehrbase_rest::DemographicService for MockBackend {}
 impl ehrbase_rest::AdminService for MockBackend {}
 impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
 impl ehrbase_rest::DefinitionQueryService for MockBackend {}
+impl ehrbase_rest::PartyRelationshipService for MockBackend {}
+impl ehrbase_rest::EhrIndexService for MockBackend {}
 
 fn config() -> RestConfig {
     RestConfig {

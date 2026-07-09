@@ -213,6 +213,25 @@ impl EhrbaseService {
                 ServiceError::Unprocessable("contribution must contain versions".to_owned())
             })?;
 
+        // master06 §Committal (m4): "these three attributes (system_id, committer,
+        // time_committed of AUDIT_DETAILS) should be copied into the corresponding
+        // attributes of the commit_audit of each VERSION included in the
+        // CONTRIBUTION". We therefore default each version's committer/system_id
+        // from the CONTRIBUTION's own audit (below), not merely from the request
+        // principal. time_committed is always the server commit-act time (§Committal
+        // "computed on the server"). The contribution audit committer/system_id
+        // themselves default to the principal / service system id.
+        let contrib_committer = body
+            .get("audit")
+            .and_then(|a| a.get("committer"))
+            .cloned()
+            .unwrap_or_else(super::ehr::committer);
+        let contrib_system_id = body
+            .get("audit")
+            .and_then(|a| a.get("system_id"))
+            .and_then(Value::as_str)
+            .map_or_else(|| self.system_id.clone(), str::to_owned);
+
         let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(versions.len());
         // 666 attestations of existing versions (added to the same CONTRIBUTION,
         // but committing no new version — RM change_control §Contributions).
@@ -257,7 +276,22 @@ impl EhrbaseService {
                 continue;
             }
 
-            let version_audit = self.parse_audit(version.get("commit_audit"), code);
+            // m4: default committer/system_id from the CONTRIBUTION audit when the
+            // version item omits them (master06 §Committal). A version item that
+            // *does* supply distinct committer/system_id keeps them verbatim —
+            // the spec wording is "should be copied", so an explicit per-version
+            // value is honoured (PORT NOTE: a deliberate SHOULD, not MUST).
+            let version_audit = Self::parse_version_audit(
+                version.get("commit_audit"),
+                code,
+                &contrib_committer,
+                &contrib_system_id,
+            );
+            // UPDATE_VERSION.lifecycle_state (RM common master06 §Version
+            // Lifecycle) — a TerminologyCode {terminology_id, code_string};
+            // absent → 532|complete| (default). Validated + resolved in the
+            // shared commit path (`vobject::apply_change`).
+            let lifecycle_state = lifecycle_of(version);
             // A client-supplied UPDATE_VERSION.signature (RM common §"Digital
             // Signature") is stored verbatim; absent, the server signs (§3.3).
             let signature = version
@@ -292,6 +326,7 @@ impl EhrbaseService {
                         canonical: data,
                         template_id: None,
                         signature,
+                        lifecycle_state,
                         attestations: accompanying,
                     }
                 }
@@ -310,6 +345,7 @@ impl EhrbaseService {
                         expected: Some(expected),
                         template_id: None,
                         signature,
+                        lifecycle_state,
                         attestations: accompanying,
                     }
                 }
@@ -425,6 +461,40 @@ impl EhrbaseService {
             committer,
         }
     }
+
+    /// Build an [`AuditInput`] for a VERSION's `commit_audit`. Unlike
+    /// [`parse_audit`](Self::parse_audit) (which defaults to the request
+    /// principal / service system id), the `committer` and `system_id` here
+    /// default from the enclosing CONTRIBUTION's audit when the version item
+    /// omits them — realizing the master06 §Committal copy rule (m4). A version
+    /// item that supplies its own `committer`/`system_id` keeps them verbatim.
+    fn parse_version_audit(
+        audit: Option<&Value>,
+        change_type: String,
+        fallback_committer: &Value,
+        fallback_system_id: &str,
+    ) -> AuditInput {
+        let description = audit
+            .and_then(|a| a.get("description"))
+            .and_then(|d| d.get("value"))
+            .and_then(Value::as_str)
+            .map(str::to_owned);
+        let committer = audit
+            .and_then(|a| a.get("committer"))
+            .cloned()
+            .unwrap_or_else(|| fallback_committer.clone());
+        let system_id = audit
+            .and_then(|a| a.get("system_id"))
+            .and_then(Value::as_str)
+            .map_or_else(|| fallback_system_id.to_owned(), str::to_owned);
+        AuditInput {
+            system_id,
+            change_type,
+            description,
+            committer,
+        }
+    }
+
     /// Retrieve a CONTRIBUTION by id (scoped to the EHR), with its audit and the
     /// `OBJECT_REFs` of the versions it committed.
     pub(super) async fn get_contribution(
@@ -458,9 +528,10 @@ impl EhrbaseService {
         // duplicate OBJECT_REF for a version that was both written and attested
         // in the same contribution).
         let version_rows = sqlx::query(
-            "SELECT vo_id, sys_version, kind FROM vo_version WHERE contribution_id = $1 \
+            "SELECT vo_id, sys_version, creating_system_id, kind FROM vo_version \
+             WHERE contribution_id = $1 \
              UNION \
-             SELECT v.vo_id, v.sys_version, v.kind FROM vo_version v \
+             SELECT v.vo_id, v.sys_version, v.creating_system_id, v.kind FROM vo_version v \
              JOIN vo_attestation att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
              WHERE att.contribution_id = $1 \
              ORDER BY vo_id",
@@ -474,6 +545,7 @@ impl EhrbaseService {
             .map(|row| -> Result<Value, ServiceError> {
                 let vo_id: Uuid = row.try_get("vo_id")?;
                 let sys_version: i32 = row.try_get("sys_version")?;
+                let creating_system_id: String = row.try_get("creating_system_id")?;
                 let kind: String = row.try_get("kind")?;
                 Ok(json!({
                     "_type": "OBJECT_REF",
@@ -481,7 +553,7 @@ impl EhrbaseService {
                     "type": kind,
                     "id": {
                         "_type": "OBJECT_VERSION_ID",
-                        "value": self.object_version_id(vo_id, sys_version)
+                        "value": self.object_version_id(vo_id, &creating_system_id, sys_version)
                     }
                 }))
             })
@@ -610,15 +682,17 @@ fn aggregate_change_type(version_codes: &[String]) -> String {
 /// EHR contribution may carry only clinical versioned objects. A mismatch is
 /// `422` — the analogue of the EHR-group contribution rejecting bad content.
 fn check_kind_scope(kind: Kind, party_only: bool) -> Result<(), ServiceError> {
-    if party_only && !kind.is_party() {
+    // A demographic CONTRIBUTION carries the ehr-less demographic kinds (the five
+    // party roots + PARTY_RELATIONSHIP); an EHR CONTRIBUTION carries neither.
+    if party_only && !kind.is_demographic() {
         return Err(ServiceError::Unprocessable(format!(
-            "a demographic CONTRIBUTION may only contain party versions, got {}",
+            "a demographic CONTRIBUTION may only contain demographic versions, got {}",
             kind.as_str()
         )));
     }
-    if !party_only && kind.is_party() {
+    if !party_only && kind.is_demographic() {
         return Err(ServiceError::Unprocessable(format!(
-            "an EHR CONTRIBUTION may not contain demographic party versions, got {}",
+            "an EHR CONTRIBUTION may not contain demographic versions, got {}",
             kind.as_str()
         )));
     }
@@ -632,6 +706,29 @@ fn coded_value(dv: &Value) -> Option<String> {
         .and_then(|c| c.get("code_string"))
         .and_then(Value::as_str)
         .or_else(|| dv.get("value").and_then(Value::as_str))
+        .map(str::to_owned)
+}
+
+/// Extract a VERSION item's `lifecycle_state` token (RM common master06
+/// §Version Lifecycle), if present. `UPDATE_VERSION.lifecycle_state` is a
+/// `TerminologyCode {terminology_id, code_string}` on the wire, so the code is
+/// `lifecycle_state.code_string`; we also accept a `DV_CODED_TEXT`
+/// (`defining_code.code_string`), a bare `{value}`, or a plain string, matching
+/// the leniency of [`coded_value`]. `None` → the shared commit path defaults to
+/// `532|complete|`.
+fn lifecycle_of(version: &Value) -> Option<String> {
+    let ls = version.get("lifecycle_state")?;
+    if let Some(s) = ls.as_str() {
+        return Some(s.to_owned());
+    }
+    ls.get("code_string")
+        .and_then(Value::as_str)
+        .or_else(|| {
+            ls.get("defining_code")
+                .and_then(|c| c.get("code_string"))
+                .and_then(Value::as_str)
+        })
+        .or_else(|| ls.get("value").and_then(Value::as_str))
         .map(str::to_owned)
 }
 

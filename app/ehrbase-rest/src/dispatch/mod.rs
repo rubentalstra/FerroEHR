@@ -77,6 +77,12 @@ pub(crate) fn api_router() -> Router<AppState> {
     Router::new()
         .merge(mount(g::ehr::ROUTES, ehr::dispatch))
         .merge(mount(g::demographic::ROUTES, demographic::dispatch))
+        // Our-own-design PARTY_RELATIONSHIP extension routes (no ITS-REST
+        // contract; SM-3), served by the same demographic dispatcher.
+        .merge(mount(
+            demographic::RELATIONSHIP_ROUTES,
+            demographic::dispatch,
+        ))
         .merge(mount(g::definition::ROUTES, definition::dispatch))
         .merge(mount(g::query::ROUTES, query::dispatch))
         .merge(mount(g::admin::ROUTES, admin::dispatch))
