@@ -34,6 +34,8 @@ state (DONE/PARTIAL/MISSING with file:line evidence) → ordered remaining work
 - `docs/plans/current-phase.md` — the live phase pointer under this blueprint
 - `docs/ADRs/ADR-008` (greenfield storage), `ADR-010`/`ADR-011` (SM native API)
 - `docs/design/sm-platform/` — the SM design set (SM-5/6 designs live here)
+- `docs/terminology-validation.md` + `docs/design/terminology-server-integration.md`
+  — the terminology client + the self-hostable Docker TS to point it at (B4)
 - `docs/spec-audit/SPEC_AUDIT.md` — the 2026-07-06 finding-level audit (82 open)
 
 ## Maintenance
