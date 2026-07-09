@@ -16,9 +16,9 @@ use std::time::Duration;
 use async_trait::async_trait;
 use serde_json::{Map, Value};
 
-use crate::config::{AbacConfig, AbacParam, PolicyRule};
-use crate::engine::{AuthzError, PolicyEngine};
-use crate::request::{AuthzRequest, Combination, Decision};
+use crate::authz::config::{AbacConfig, AbacParam, PolicyRule};
+use crate::authz::engine::{AuthzError, PolicyEngine};
+use crate::authz::request::{AuthzRequest, Combination, Decision};
 
 /// `metrics` counter incremented once per PDP HTTP call (`result` = permit/deny).
 pub const METRIC_REMOTE_CALLS: &str = "authz_remote_pdp_calls_total";
@@ -31,7 +31,7 @@ pub struct RemotePdp {
     server: String,
     /// Per-resource-kind policy bindings, keyed by [`ResourceKind::config_key`].
     ///
-    /// [`ResourceKind::config_key`]: crate::request::ResourceKind::config_key
+    /// [`ResourceKind::config_key`]: crate::authz::request::ResourceKind::config_key
     policies: BTreeMap<String, PolicyRule>,
 }
 

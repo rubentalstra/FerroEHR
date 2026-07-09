@@ -21,8 +21,6 @@ openehr-flat = { path = "../../crates/openehr-flat" }
 # tower layer emits through the platform's SM `SystemLog` component; the ATNA
 # event model + `EmitOutcome` come from here (ADR-011, ehrbase-audit dissolved).
 ehrbase-sm = { path = "../ehrbase-sm" }
-# Access control (RBAC): operation classification + role model + gate decision.
-ehrbase-authz = { path = "../ehrbase-authz" }
 
 # Web framework & HTTP core.
 axum = { workspace = true }
@@ -63,6 +61,14 @@ argon2 = { workspace = true }
 openidconnect = { workspace = true }
 moka = { workspace = true }
 
+# Authorization (RBAC + ABAC), folded in from the former ehrbase-authz crate
+# (ADR-011): the embedded Cedar policy engine, the v1-compatible remote-PDP
+# HTTP client, and the hot-reload policy swap. (`serde`/`serde_json`/`figment`/
+# `thiserror`/`tracing`/`metrics`/`async-trait`/`tokio` are already deps above.)
+cedar-policy = { workspace = true }
+reqwest = { workspace = true }
+arc-swap = { workspace = true }
+
 # OpenAPI / Swagger UI (a drift-check against the vendored OAS, not the source).
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
@@ -80,6 +86,9 @@ argon2 = { workspace = true }
 metrics-exporter-prometheus = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+# ABAC engine tests (moved from ehrbase-authz): the RemotePdp wire-contract
+# suite + the Cedar/remote differential suite.
+wiremock = { workspace = true }
 
 [features]
 admin-api = []

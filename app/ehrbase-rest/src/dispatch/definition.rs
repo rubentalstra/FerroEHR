@@ -34,7 +34,10 @@ use openehr_its::rest::generated::definition::{
 
 use super::{BoxResponse, RequestParts};
 use crate::error::RestError;
-use ehrbase_sm::{DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service, Platform};
+// `DefinitionAdapter` + the SM `I_DEFINITION_*` methods called below resolve
+// through the `Platform` supertrait bound (their methods are reachable with
+// `Platform` in scope), so only `Platform` needs importing here.
+use ehrbase_sm::Platform;
 
 use crate::state::AppState;
 use crate::{negotiate, params};

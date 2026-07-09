@@ -37,8 +37,8 @@ use cedar_policy::{
     Request, RestrictedExpression, Schema, ValidationMode, Validator,
 };
 
-use crate::engine::{AuthzError, PolicyEngine};
-use crate::request::{AccessMode, AuthzRequest, Combination, Decision, ResourceKind};
+use crate::authz::engine::{AuthzError, PolicyEngine};
+use crate::authz::request::{AccessMode, AuthzRequest, Combination, Decision, ResourceKind};
 
 /// `metrics` counter incremented once per Cedar decision (`result` = permit/deny).
 pub const METRIC_CEDAR_DECISIONS: &str = "authz_cedar_decisions_total";
@@ -320,7 +320,7 @@ fn spawn_reload(dir: PathBuf, schema: Arc<Schema>, policies: Arc<ArcSwap<PolicyS
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::request::Attr;
+    use crate::authz::request::Attr;
 
     fn req<'a>(patient: Option<Attr>, template: Option<Attr>) -> AuthzRequest<'a> {
         AuthzRequest {

@@ -13,8 +13,8 @@ use ehrbase_sm::AuditEvent;
 
 use crate::system_log::AuditError;
 use crate::system_log::codes::{
-    self, AtnaCodes, Code, NETWORK_ACCESS_POINT_IP, OBJECT_ROLE_PATIENT, OBJECT_ROLE_QUERY,
-    OBJECT_TYPE_PERSON, OBJECT_TYPE_SYSTEM,
+    self, AtnaAction, AtnaObject, AtnaOutcome, Code, NETWORK_ACCESS_POINT_IP, OBJECT_ROLE_PATIENT,
+    OBJECT_ROLE_QUERY, OBJECT_TYPE_PERSON, OBJECT_TYPE_SYSTEM,
 };
 
 /// The server-side identity shared by every emitted record (the destination

@@ -9,7 +9,7 @@
 //! **all-must-permit** (v1 parity, §2.1).
 
 /// The resource family a clinical operation acts on (§5.3). Derived from the
-/// operation-id prefix by [`crate::classify::kind_of`].
+/// operation-id prefix by [`crate::authz::classify::kind_of`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceKind {
     /// An EHR (create / get / get-by-subject).
@@ -86,7 +86,7 @@ pub enum Attr {
 
 /// The fully-resolved authorization request handed to a [`PolicyEngine`].
 ///
-/// [`PolicyEngine`]: crate::engine::PolicyEngine
+/// [`PolicyEngine`]: crate::authz::engine::PolicyEngine
 #[derive(Debug, Clone)]
 pub struct AuthzRequest<'a> {
     /// The generated operation id (retained for logging/diagnostics).

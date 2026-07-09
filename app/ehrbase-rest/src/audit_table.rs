@@ -21,6 +21,11 @@ pub enum Classification {
         object: ObjectClass,
     },
     /// The operation is deliberately not audited (non-clinical or out of §2 scope).
+    // Total-coverage seam: the audit table currently classifies every generated
+    // operation as `Audited` (the coverage guard asserts the `UNAUDITED`
+    // allowlist is empty), so this variant is never constructed today — it is
+    // kept as the explicit opt-out any future non-clinical route would use.
+    #[allow(dead_code)]
     Unaudited,
 }
 

@@ -8,8 +8,8 @@
 
 use serde_json::{Map, Value};
 
-use crate::classify::OperationClass;
-use crate::config::{ManagementAccess, RbacConfig};
+use crate::authz::classify::OperationClass;
+use crate::authz::config::{ManagementAccess, RbacConfig};
 
 /// The default RBAC role-claim paths (Keycloak `realm_access.roles` + the
 /// `OAuth2` `scope` claim), matching the v1 authorities converter (§2.4).
