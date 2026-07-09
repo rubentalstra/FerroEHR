@@ -226,7 +226,7 @@ mod tests {
         }
         assert!(
             unclassified.is_empty(),
-            "unclassified ITS-REST operations (add to app/ehrbase-authz/src/classify.rs): {unclassified:?}"
+            "unclassified ITS-REST operations (add to app/ehrbase-rest/src/access/authz/classify.rs): {unclassified:?}"
         );
     }
 
