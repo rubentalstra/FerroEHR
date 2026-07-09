@@ -137,3 +137,8 @@ system log", master02) — not a crate of its own:
       generic (impossible pre-ADR-011: dependency cycle)
 - [ ] Delete `app/ehrbase-audit`; docs swept (atna-audit.md, architecture,
       CLAUDE.md crate lists)
+- [ ] Same for `app/ehrbase-signing` (owner ruling): version signing is RM
+      common §Digital Signature — core change-control behaviour already
+      called from `vobject`'s commit path. Move the crate's content into
+      `ehrbase` (module `signing`), rewire `EhrbaseService`/binary, delete
+      the crate; docs swept (version-signing.md, architecture, CLAUDE.md)
