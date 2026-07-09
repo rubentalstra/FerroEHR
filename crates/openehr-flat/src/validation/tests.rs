@@ -122,6 +122,124 @@ fn cardinality_violation() {
     );
 }
 
+// ── incomplete-lifecycle (553) relaxation ────────────────────────────────────────
+// RM common master06 §"Incomplete Content": existence/occurrences/cardinality
+// lower limits treated as zero; upper limits and value/type constraints stay.
+
+/// Run the archetype-conformance pass with the `553|incomplete|` relaxation.
+fn walk_incomplete(instance: &Value, root: &WebTemplateNode) -> Vec<ValidationMessage> {
+    let mut v = Validator {
+        relax_lower_bounds: true,
+        ..Validator::default()
+    };
+    v.walk(instance, root);
+    v.out
+}
+
+#[test]
+fn incomplete_suppresses_required_missing_occurrences() {
+    let mut root = node("COMPOSITION", "");
+    let mut sec = node("SECTION", "/content[at0001]");
+    sec.min = Some(1);
+    sec.max = 1;
+    root.children = vec![sec];
+
+    let inst = json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": []});
+    // Strict: a mandatory node is missing.
+    assert!(kinds(&walk_only(&inst, &root)).contains(&ValidationKind::Required));
+    // Incomplete: the lower bound is zeroed, so nothing is emitted.
+    assert!(
+        walk_incomplete(&inst, &root).is_empty(),
+        "incomplete commit must tolerate a missing mandatory node"
+    );
+}
+
+#[test]
+fn incomplete_suppresses_too_few_but_keeps_too_many() {
+    // too few (min 2, one present) → suppressed under incomplete.
+    let mut root = node("COMPOSITION", "");
+    let mut sec = node("SECTION", "/content[at0001]");
+    sec.min = Some(2);
+    sec.max = 3;
+    root.children = vec![sec];
+    let one = json!({"_type": "SECTION", "archetype_node_id": "at0001",
+                     "name": {"_type": "DV_TEXT", "value": "s"}});
+    let too_few = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "x", "content": [one.clone()]
+    });
+    assert!(
+        walk_incomplete(&too_few, &root).is_empty(),
+        "incomplete commit must tolerate too-few occurrences"
+    );
+
+    // too many (three present, max 3 ok; four exceeds) → still enforced (upper
+    // bound is not relaxed: missing is tolerated, wrong is not).
+    let too_many = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "x",
+        "content": [one.clone(), one.clone(), one.clone(), one]
+    });
+    assert!(
+        walk_incomplete(&too_many, &root)
+            .iter()
+            .any(|m| m.kind == ValidationKind::Occurrences && m.message.contains("too many")),
+        "incomplete commit must still reject too-many occurrences"
+    );
+}
+
+#[test]
+fn incomplete_suppresses_cardinality_lower_but_keeps_upper() {
+    // Lower-bound cardinality violation → suppressed.
+    let mut low = node("COMPOSITION", "");
+    low.card_all = vec![WebTemplateCardinality {
+        min: Some(2),
+        max: -1,
+        ids: None,
+        path: "/content".to_owned(),
+    }];
+    let entry = json!({"_type": "OBSERVATION", "archetype_node_id": "a"});
+    let one_child = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "x", "content": [entry.clone()]
+    });
+    assert!(
+        walk_incomplete(&one_child, &low).is_empty(),
+        "incomplete commit must tolerate a below-minimum container"
+    );
+
+    // Upper-bound cardinality violation → still enforced.
+    let mut high = node("COMPOSITION", "");
+    high.card_all = vec![WebTemplateCardinality {
+        min: Some(1),
+        max: 2,
+        ids: None,
+        path: "/content".to_owned(),
+    }];
+    let three = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "x",
+        "content": [entry.clone(), entry.clone(), entry]
+    });
+    assert!(
+        kinds(&walk_incomplete(&three, &high)).contains(&ValidationKind::Cardinality),
+        "incomplete commit must still reject an over-maximum container"
+    );
+}
+
+#[test]
+fn incomplete_suppresses_existence() {
+    let mut root = node("COMPOSITION", "");
+    root.existence = vec![WebTemplateExistence {
+        min: 1,
+        max: 1,
+        path: "/context".to_owned(),
+    }];
+    // The mandatory `context` field is absent.
+    let inst = json!({"_type": "COMPOSITION", "archetype_node_id": "x"});
+    assert!(kinds(&walk_only(&inst, &root)).contains(&ValidationKind::Required));
+    assert!(
+        walk_incomplete(&inst, &root).is_empty(),
+        "incomplete commit must tolerate a missing mandatory attribute (existence)"
+    );
+}
+
 // ── numeric range ────────────────────────────────────────────────────────────────
 
 fn count_node_range(min: i64, max: i64) -> WebTemplateNode {
@@ -802,4 +920,273 @@ fn media_type_code_list() {
     let good = json!({"_type": "DV_MULTIMEDIA", "size": 1, "media_type": {
         "terminology_id": {"value": "IANA_media-types"}, "code_string": "image/png"}});
     assert!(walk_only(&good, &mm).is_empty());
+}
+
+// ── closed-archetype walk (ADR-012 / F-07-05) ────────────────────────────────
+
+use crate::webtemplate::{WebTemplateArchetypeSlot, WebTemplateClosedAttribute};
+
+/// A COMPOSITION whose `content` is closed to `openEHR-EHR-SECTION.x.v1`: the
+/// defined section is accepted, a foreign OBSERVATION is rejected as unexpected
+/// (ADR-012 rule 1).
+#[test]
+fn closed_world_rejects_foreign_content() {
+    let mut root = node("COMPOSITION", "");
+    root.closed_attributes = vec![WebTemplateClosedAttribute {
+        path: "/content".to_owned(),
+        allowed_ids: vec!["openEHR-EHR-SECTION.x.v1".to_owned()],
+        slots: vec![],
+    }];
+    let inst = json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": [
+        {"_type": "SECTION", "archetype_node_id": "openEHR-EHR-SECTION.x.v1",
+         "name": {"_type": "DV_TEXT", "value": "s"}},
+        {"_type": "OBSERVATION", "archetype_node_id": "openEHR-EHR-OBSERVATION.foreign.v1",
+         "name": {"_type": "DV_TEXT", "value": "o"}}
+    ]});
+    let msgs = walk_only(&inst, &root);
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Unexpected
+            && m.message.contains("openEHR-EHR-OBSERVATION.foreign.v1")),
+        "expected an Unexpected violation for the foreign OBSERVATION, got {msgs:?}"
+    );
+    let ok = json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": [
+        {"_type": "SECTION", "archetype_node_id": "openEHR-EHR-SECTION.x.v1",
+         "name": {"_type": "DV_TEXT", "value": "s"}}]});
+    assert!(
+        walk_only(&ok, &root).is_empty(),
+        "the defined section is admitted"
+    );
+}
+
+/// A metadata value (no `archetype_node_id`, i.e. non-LOCATABLE) under a closed
+/// attribute is never flagged (ADR-012 rule 2 — the archetype_node_id
+/// discriminator).
+#[test]
+fn closed_world_ignores_metadata_values() {
+    let mut root = node("ELEMENT", "/items[at0001]");
+    root.closed_attributes = vec![WebTemplateClosedAttribute {
+        path: "/items[at0001]/value".to_owned(),
+        allowed_ids: vec!["at9999".to_owned()],
+        slots: vec![],
+    }];
+    let inst = json!({"_type": "ELEMENT", "archetype_node_id": "at0001",
+        "name": {"_type": "DV_TEXT", "value": "e"},
+        "value": {"_type": "DV_QUANTITY", "magnitude": 1.0, "units": "kg"}});
+    assert!(
+        walk_only(&inst, &root).is_empty(),
+        "a DATA_VALUE with no archetype_node_id must not be flagged by closure"
+    );
+}
+
+// ── ARCHETYPE_SLOT enforcement (F-07-10) ─────────────────────────────────────
+
+fn obs_slot(includes: &[&str], excludes: &[&str], min: i32, max: i32) -> WebTemplateNode {
+    let mut root = node("COMPOSITION", "");
+    root.closed_attributes = vec![WebTemplateClosedAttribute {
+        path: "/content".to_owned(),
+        allowed_ids: vec![],
+        slots: vec![WebTemplateArchetypeSlot {
+            rm_type: "OBSERVATION".to_owned(),
+            min,
+            max,
+            includes: includes.iter().map(|s| (*s).to_owned()).collect(),
+            excludes: excludes.iter().map(|s| (*s).to_owned()).collect(),
+        }],
+    }];
+    root
+}
+
+fn content_obs(archetype_id: &str, rm_type: &str) -> Value {
+    json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": [
+        {"_type": rm_type, "archetype_node_id": archetype_id,
+         "name": {"_type": "DV_TEXT", "value": "o"}}]})
+}
+
+#[test]
+fn slot_admits_include_rejects_others() {
+    let root = obs_slot(&[r"openEHR-EHR-OBSERVATION\..*"], &[], 0, -1);
+    assert!(
+        walk_only(
+            &content_obs("openEHR-EHR-OBSERVATION.bp.v1", "OBSERVATION"),
+            &root
+        )
+        .is_empty(),
+        "an include-matching filler is admitted"
+    );
+    let msgs = walk_only(
+        &content_obs("openEHR-EHR-EVALUATION.x.v1", "EVALUATION"),
+        &root,
+    );
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Unexpected),
+        "a wrong-rm-type filler is rejected, got {msgs:?}"
+    );
+}
+
+#[test]
+fn slot_exclude_rejects_matching_filler() {
+    let root = obs_slot(
+        &[r"openEHR-EHR-OBSERVATION\..*"],
+        &[r"openEHR-EHR-OBSERVATION\.secret\..*"],
+        0,
+        -1,
+    );
+    let msgs = walk_only(
+        &content_obs("openEHR-EHR-OBSERVATION.secret.v1", "OBSERVATION"),
+        &root,
+    );
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Unexpected),
+        "an exclude-matching filler is rejected, got {msgs:?}"
+    );
+}
+
+#[test]
+fn slot_blanket_exclude_ignored_when_includes_present() {
+    // ADL 1.4 closed-slot idiom: specific include + a blanket `.*` exclude. The
+    // specific include wins (AOM 1.4 has no is_closed) — the filler passes.
+    let root = obs_slot(&[r"openEHR-EHR-OBSERVATION\.bp\.v1"], &[".*"], 0, -1);
+    assert!(
+        walk_only(
+            &content_obs("openEHR-EHR-OBSERVATION.bp.v1", "OBSERVATION"),
+            &root
+        )
+        .is_empty(),
+        "a specific include overrides a blanket `.*` exclude"
+    );
+}
+
+#[test]
+fn slot_occurrences_min_and_max() {
+    let root = obs_slot(&[r"openEHR-EHR-OBSERVATION\..*"], &[], 1, 1);
+    let empty = json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": []});
+    assert!(
+        walk_only(&empty, &root)
+            .iter()
+            .any(|m| m.kind == ValidationKind::Required),
+        "an unfilled mandatory slot is Required"
+    );
+    let two = json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": [
+        {"_type": "OBSERVATION", "archetype_node_id": "openEHR-EHR-OBSERVATION.a.v1",
+         "name": {"_type": "DV_TEXT", "value": "a"}},
+        {"_type": "OBSERVATION", "archetype_node_id": "openEHR-EHR-OBSERVATION.b.v1",
+         "name": {"_type": "DV_TEXT", "value": "b"}}]});
+    assert!(
+        walk_only(&two, &root)
+            .iter()
+            .any(|m| m.kind == ValidationKind::Occurrences),
+        "too many slot fillers is Occurrences"
+    );
+}
+
+// ── DV_ORDINAL / DV_SCALE (symbol, value) pairing (F-07-06) ──────────────────
+
+fn ordinal_node(rm: &str, scale: bool) -> WebTemplateNode {
+    let mut n = node(rm, "/value");
+    let mut input = WebTemplateInput::new(WebTemplateInputType::CodedText, None);
+    let mk = |code: &str, v: i32| {
+        let mut cv = WebTemplateCodedValue::new(code, None);
+        if scale {
+            cv.scale = Some(f64::from(v));
+        } else {
+            cv.ordinal = Some(v);
+        }
+        cv
+    };
+    input.list = vec![mk("at0014", 0), mk("at0015", 1)];
+    n.inputs = vec![input];
+    n
+}
+
+fn ordinal_value(rm: &str, v: Value, code: &str) -> Value {
+    json!({"_type": rm, "value": v, "symbol": {"_type": "DV_CODED_TEXT",
+        "value": "s", "defining_code": {"_type": "CODE_PHRASE",
+        "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"}, "code_string": code}}})
+}
+
+#[test]
+fn ordinal_pair_must_match() {
+    let n = ordinal_node("DV_ORDINAL", false);
+    assert!(walk_only(&ordinal_value("DV_ORDINAL", json!(0), "at0014"), &n).is_empty());
+    assert!(
+        kinds(&walk_only(
+            &ordinal_value("DV_ORDINAL", json!(1), "at0014"),
+            &n
+        ))
+        .contains(&ValidationKind::CodedValue),
+        "value 1 does not pair with symbol at0014"
+    );
+    assert!(
+        kinds(&walk_only(
+            &ordinal_value("DV_ORDINAL", json!(0), "at0666"),
+            &n
+        ))
+        .contains(&ValidationKind::CodedValue),
+        "symbol at0666 is off the list"
+    );
+}
+
+#[test]
+fn scale_pair_must_match() {
+    let n = ordinal_node("DV_SCALE", true);
+    assert!(walk_only(&ordinal_value("DV_SCALE", json!(0.0), "at0014"), &n).is_empty());
+    assert!(
+        kinds(&walk_only(
+            &ordinal_value("DV_SCALE", json!(1.0), "at0014"),
+            &n
+        ))
+        .contains(&ValidationKind::CodedValue),
+        "scale 1.0 does not pair with symbol at0014"
+    );
+}
+
+// ── C_STRING fail-closed with fancy-regex fallback (F-07-11) ─────────────────
+
+#[test]
+fn c_string_backreference_is_enforced() {
+    // `(a)\1` uses a backreference the `regex` crate rejects; `fancy-regex`
+    // compiles it, so the pattern is enforced instead of silently passing.
+    let mut n = node("DV_TEXT", "/text");
+    let mut input = WebTemplateInput::new(WebTemplateInputType::Text, None);
+    input.validation = Some(WebTemplateValidation {
+        pattern: Some(r"(a)\1".to_owned()),
+        ..Default::default()
+    });
+    n.inputs = vec![input];
+    assert!(
+        kinds(&walk_only(&json!({"_type": "DV_TEXT", "value": "ab"}), &n))
+            .contains(&ValidationKind::PatternError),
+        "`ab` fails the backreference pattern (was silently passing before F-07-11)"
+    );
+    assert!(walk_only(&json!({"_type": "DV_TEXT", "value": "aa"}), &n).is_empty());
+}
+
+// ── C_TIME / C_DATE_TIME timezone_validity (F-07 temporal) ───────────────────
+
+#[test]
+fn timezone_validity_mandatory_and_disallowed() {
+    let mut n = node("DV_TIME", "/value");
+    n.inputs = vec![WebTemplateInput::new(WebTemplateInputType::Time, None)];
+    // 1001 = mandatory timezone.
+    n.tz_validity = Some(1001);
+    assert!(
+        kinds(&walk_only(
+            &json!({"_type": "DV_TIME", "value": "10:30:00"}),
+            &n
+        ))
+        .contains(&ValidationKind::PatternError),
+        "a missing mandatory timezone is rejected"
+    );
+    assert!(walk_only(&json!({"_type": "DV_TIME", "value": "10:30:00Z"}), &n).is_empty());
+    // 1003 = disallowed timezone.
+    n.tz_validity = Some(1003);
+    assert!(
+        kinds(&walk_only(
+            &json!({"_type": "DV_TIME", "value": "10:30:00+01:00"}),
+            &n
+        ))
+        .contains(&ValidationKind::PatternError),
+        "a present disallowed timezone is rejected"
+    );
+    assert!(walk_only(&json!({"_type": "DV_TIME", "value": "10:30:00"}), &n).is_empty());
 }

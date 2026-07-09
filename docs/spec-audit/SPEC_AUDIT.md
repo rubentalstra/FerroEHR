@@ -40,11 +40,11 @@ Branch: `claude/spec-audit-full`.
 | 09 | Templates: OPT 1.4 / AOM 1.4                       | [findings/09-templates-opt14.md](findings/09-templates-opt14.md)                                                   | audited | 1    | 1     | 6     | 0    |
 | 10 | WebTemplate / FLAT / STRUCTURED (SDT)              | [findings/10-webtemplate-flat-sdt.md](findings/10-webtemplate-flat-sdt.md)                                         | audited | 0    | 1     | 8     | 6    |
 | 11 | Terminology (TERM 3.1.0)                           | [findings/11-terminology.md](findings/11-terminology.md)                                                           | audited | 0    | 4     | 3     | 2    |
-| 12 | RM/BASE types + spec functions/invariants          | [findings/12-rm-base-types.md](findings/12-rm-base-types.md)                                                       | audited | 0    | 5     | 6     | 3    |
+| 12 | RM/BASE types + spec functions/invariants          | [findings/12-rm-base-types.md](findings/12-rm-base-types.md)                                                       | audited | 0    | 5     | 7     | 3    |
 | 13 | Architecture / duplication / hygiene               | [findings/13-architecture-hygiene.md](findings/13-architecture-hygiene.md)                                         | audited | 0    | 13    | 13    | 4    |
-| **Σ** |                                                 |                                                                                                                      |         | **8** | **59** | **76** | **37** |
+| **Σ** |                                                 |                                                                                                                      |         | **8** | **59** | **77** | **37** |
 
-Total: **180 findings**.
+Total: **181 findings**.
 
 ## Triage summary — cross-cutting themes
 

@@ -14,7 +14,8 @@ use serde_json::Value;
 
 use super::{ValidationKind, Validator};
 use crate::webtemplate::{
-    WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
+    WebTemplateCodedValue, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
+    WebTemplateRange,
 };
 
 pub(super) fn check_inputs(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
@@ -129,23 +130,80 @@ fn check_code_phrase(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) 
     check_code_membership(v, wt, code_input, code, terminology);
 }
 
+/// `DV_ORDINAL` / `DV_SCALE` against a `C_DV_ORDINAL` / `C_DV_SCALE` list
+/// (F-07-06). The constraint is a list of `ORDINAL{symbol: CODE_PHRASE, value:
+/// Integer}` (Real for `DV_SCALE`) entries, and validity requires the instance's
+/// **(symbol, value) PAIR** to match one entry — not the symbol alone nor the
+/// value alone (AOM 1.4 `AM/docs/UML/classes/org.openehr.am.aom14.ordinal.adoc`
+/// §ORDINAL / §C_ORDINAL; the pairing is normative per
+/// `AOM2/master04.3-constraint_model-second_order.adoc` §Tuple Constraints L19-21
+/// — "as pairs not just as allowable alternatives … which would incorrectly
+/// allow any mixing of the Integer and code values"; CNF
+/// `master17.3-content_tc_data_types-quantity.adoc` CONT-DV_ORDINAL/DV_SCALE-
+/// validate_constraint: a right symbol with a wrong value, or a right value with
+/// a wrong symbol, both reject). The `WebTemplate` `ordinal_input` carries each
+/// entry as a coded value whose `value` is the symbol code and whose `ordinal`
+/// (or `scale`) is the paired numeric value.
 fn check_ordinal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
     let Some(input) = wt.inputs.first() else {
         return;
     };
+    if input.list.is_empty() || input.list_open == Some(true) {
+        return;
+    }
     // DV_ORDINAL/DV_SCALE encode their coded symbol under `symbol/defining_code`.
-    let code = instance
-        .get("symbol")
-        .and_then(|s| s.get("defining_code"))
+    let defining_code = instance.get("symbol").and_then(|s| s.get("defining_code"));
+    let code = defining_code
         .and_then(|c| c.get("code_string"))
         .and_then(Value::as_str);
-    let terminology = instance
-        .get("symbol")
-        .and_then(|s| s.get("defining_code"))
+    let terminology = defining_code
         .and_then(|c| c.get("terminology_id"))
         .and_then(|t| t.get("value"))
         .and_then(Value::as_str);
-    check_code_membership(v, wt, input, code, terminology);
+    if !terminology_matches(input.terminology.as_deref(), terminology) {
+        return;
+    }
+    let Some(code) = code else { return };
+
+    // Entries whose symbol matches the instance code.
+    let same_symbol: Vec<&WebTemplateCodedValue> =
+        input.list.iter().filter(|cv| cv.value == code).collect();
+    if same_symbol.is_empty() {
+        v.push(
+            &wt.aql_path,
+            format!("ordinal symbol '{code}' is not in the constrained value set"),
+            ValidationKind::CodedValue,
+        );
+        return;
+    }
+    // The symbol is known; require the (symbol, value) pair to match one entry.
+    let is_scale = wt.rm_type.starts_with("DV_SCALE");
+    let Some(inst_value) = instance.get("value") else {
+        return; // value absent — the RM-invariant pass owns structural presence.
+    };
+    let pair_ok = same_symbol.iter().any(|cv| {
+        if is_scale {
+            match (cv.scale, inst_value.as_f64()) {
+                (Some(s), Some(iv)) => (s - iv).abs() < 1e-9,
+                _ => false,
+            }
+        } else {
+            match (cv.ordinal, inst_value.as_i64()) {
+                (Some(o), Some(iv)) => i64::from(o) == iv,
+                _ => false,
+            }
+        }
+    });
+    if !pair_ok {
+        v.push(
+            &wt.aql_path,
+            format!(
+                "ordinal (symbol '{code}', value {inst_value}) does not match a \
+                 constrained (symbol, value) pair"
+            ),
+            ValidationKind::CodedValue,
+        );
+    }
 }
 
 /// Report a coded value that is not among the constrained options. Checked for
@@ -350,30 +408,66 @@ fn check_parsable(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
 /// §"Constraints on dates and times") and the ISO range, both surfaced in the
 /// leaf input's `validation` by the `WebTemplate` builder.
 fn check_temporal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
-    let Some(validation) = wt.inputs.first().and_then(|i| i.validation.as_ref()) else {
-        return;
-    };
     let Some(value) = instance.get("value").and_then(Value::as_str) else {
         return;
     };
-    if let Some(pattern) = &validation.pattern
-        && !temporal_pattern_ok(pattern, value)
-    {
-        v.push(
+    if let Some(validation) = wt.inputs.first().and_then(|i| i.validation.as_ref()) {
+        if let Some(pattern) = &validation.pattern
+            && !temporal_pattern_ok(pattern, value)
+        {
+            v.push(
+                &wt.aql_path,
+                format!("temporal value '{value}' does not satisfy the pattern '{pattern}'"),
+                ValidationKind::PatternError,
+            );
+        }
+        if let Some(range) = &validation.range
+            && !temporal_in_range(value, range)
+        {
+            v.push(
+                &wt.aql_path,
+                format!("temporal value '{value}' is outside the constrained range"),
+                ValidationKind::RangeError,
+            );
+        }
+    }
+    check_timezone_validity(v, wt, value);
+}
+
+/// `C_TIME`/`C_DATE_TIME` `timezone_validity` (`VALIDITY_KIND`): the instance's
+/// timezone designator must be present (`1001` mandatory), may be present
+/// (`1002` optional — no check), or must be absent (`1003` disallowed). Normative
+/// and CNF-tested (CNF `master17.4-content_tc_data_types-date_time.adoc`
+/// CONT-DV_TIME-validate_constraint; AOM 1.4
+/// `AM/docs/UML/classes/org.openehr.am.aom14.c_time.adoc`/`…c_date_time.adoc`).
+fn check_timezone_validity(v: &mut Validator, wt: &WebTemplateNode, value: &str) {
+    let Some(tzv) = wt.tz_validity else { return };
+    let has_tz = has_timezone(value);
+    match tzv {
+        1001 if !has_tz => v.push(
             &wt.aql_path,
-            format!("temporal value '{value}' does not satisfy the pattern '{pattern}'"),
+            format!("temporal value '{value}' is missing a mandatory timezone"),
             ValidationKind::PatternError,
-        );
-    }
-    if let Some(range) = &validation.range
-        && !temporal_in_range(value, range)
-    {
-        v.push(
+        ),
+        1003 if has_tz => v.push(
             &wt.aql_path,
-            format!("temporal value '{value}' is outside the constrained range"),
-            ValidationKind::RangeError,
-        );
+            format!("temporal value '{value}' carries a timezone the constraint disallows"),
+            ValidationKind::PatternError,
+        ),
+        _ => {}
     }
+}
+
+/// Whether an ISO-8601 date-time / time value carries a timezone designator
+/// (`Z`, or a `+hh:mm` / `-hh:mm` offset on the time part — the date part's `-`
+/// separators are never a timezone).
+fn has_timezone(value: &str) -> bool {
+    let time = match value.split_once('T') {
+        Some((_, t)) => t,
+        None if value.contains(':') => value, // a bare DV_TIME
+        None => return false,
+    };
+    time.ends_with('Z') || time.ends_with('z') || time.rfind(['+', '-']).is_some()
 }
 
 /// `DV_DURATION`: the `C_DURATION` pattern (allowed fields — encoded by the
@@ -649,17 +743,37 @@ fn check_string_constraints(
 }
 
 /// Whether `value` matches an archetype `C_STRING` regex. ADL delimits regexes
-/// with `/`…`/`; the match is full-string (anchored). A pattern that does not
-/// compile is skipped (returns `true`) rather than reported, since we cannot be
-/// sure of its intended semantics.
-fn matches_pattern(pattern: &str, value: &str) -> bool {
+/// with `/`…`/`; the match is full-string (anchored).
+///
+/// AOM 1.4 `C_STRING.valid_value` (`AM/docs/UML/classes/org.openehr.am.aom14.c_string.adoc`
+/// §valid_value; `master04-constraint_model_package.adoc` §Valid_value L60-62) is
+/// affirmative — a value is valid **iff** it matches the pattern, so a non-match
+/// must be reported (F-07-11: the former code returned `true` on a *compile*
+/// failure, silently accepting a value against a pattern it never evaluated).
+/// The ADL regex dialect is a proper subset of Perl (`ADL1.4/master05-cadl.adoc`
+/// §Regular Expression L687) — the Rust `regex` crate covers it; the
+/// `fancy-regex` PCRE engine is the fallback for real-world patterns using
+/// features `regex` rejects (e.g. backreferences).
+///
+/// PORT NOTE (F-07-11): fail-closed is spec-mandated for a *non-match*, but a
+/// pattern **neither** engine can compile cannot be evaluated at all. Rather
+/// than reject a value against an uninterpretable constraint (which would
+/// over-reject valid data on an engine limitation, not a spec violation), such a
+/// pattern is skipped — the residual gap is limited to patterns outside both the
+/// Rust-regex and PCRE dialects, and is caught by the corpus round-trip gate.
+pub(super) fn matches_pattern(pattern: &str, value: &str) -> bool {
     let body = pattern
         .strip_prefix('/')
         .and_then(|p| p.strip_suffix('/'))
         .unwrap_or(pattern);
     let anchored = format!("^(?:{body})$");
-    match regex::Regex::new(&anchored) {
-        Ok(re) => re.is_match(value),
+    if let Ok(re) = regex::Regex::new(&anchored) {
+        return re.is_match(value);
+    }
+    // The Rust `regex` crate rejected the pattern (e.g. a backreference); try the
+    // PCRE-capable `fancy-regex` before giving up.
+    match fancy_regex::Regex::new(&anchored) {
+        Ok(re) => re.is_match(value).unwrap_or(true),
         Err(_) => true,
     }
 }

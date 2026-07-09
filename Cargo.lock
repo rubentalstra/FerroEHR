@@ -3710,6 +3710,7 @@ dependencies = [
 name = "openehr-flat"
 version = "0.1.0"
 dependencies = [
+ "fancy-regex",
  "indexmap 2.14.0",
  "insta",
  "moka",
