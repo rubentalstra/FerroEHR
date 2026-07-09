@@ -100,9 +100,12 @@ fn app(store: &Store) -> Router {
                 )
             })
         })),
-        // The adl1.4 GET routes through the SM `get_opt` seam now (returns the
-        // stored OPT XML as a String; ADR-011).
-        get_opt: Some(Arc::new(|_id| Ok(opt_xml()))),
+        // The adl1.4 GET routes through the wire-shaped
+        // `DefinitionAdapter::template_adl14_get` (template_id-keyed; ADR-011 —
+        // the SM `get_opt` is UUID-keyed per SM `i_definition_adl14.adoc`
+        // `get_opt(an_opt_id: UUID)`, so the wire's string template id cannot
+        // be served through it).
+        template_adl14_get: Some(Arc::new(|_id| Ok(opt_xml()))),
         web_template: Some(Arc::new(|_id| Ok(Arc::new(web_template())))),
         ..Default::default()
     };

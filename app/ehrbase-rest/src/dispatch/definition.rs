@@ -94,12 +94,17 @@ async fn run<S: Platform>(
         "definition_template_adl1.4_get" => {
             let p = params::build::<DefinitionTemplateAdl14GetParams>(&parts.path, q, h)?;
             let template_id = p.template_id.clone();
-            // The SM `get_opt` seam returns the stored OPT XML (an unknown
-            // template → 404, so it runs first). For a Better `wt+json` Accept,
-            // serve the service-owned WebTemplate (the one cache, shared with
-            // validation + FLAT — W2-K/F-13-02); otherwise serve the OPT XML
-            // verbatim (the canonical artifact).
-            let xml = state.backend().get_opt(template_id.clone()).await?;
+            // The wire addresses the OPT by its `template_id` string, so this
+            // runs through the adapter's `template_adl14_get` (the SM `get_opt`
+            // is UUID-keyed — see the trait PORT NOTE). An unknown template →
+            // 404, so it runs first. For a Better `wt+json` Accept, serve the
+            // service-owned WebTemplate (the one cache, shared with validation +
+            // FLAT — W2-K/F-13-02); otherwise serve the OPT XML verbatim (the
+            // canonical artifact).
+            let xml = state
+                .backend()
+                .template_adl14_get(template_id.clone())
+                .await?;
             if negotiate::wants_web_template(h) {
                 web_template_response(&state, &template_id).await
             } else {

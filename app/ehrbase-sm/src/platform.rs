@@ -15,7 +15,8 @@
 //! extension, so this crate carries no `openehr-its` types.
 
 use crate::services::{
-    AdminArchive, AdminService, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
+    AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
+    DefinitionAdl14Service,
     DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
     EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, ItemTagAdapter,
     PartyRelationshipService, QueryService, SystemLog, TerminologyService, VersionMetaAdapter,
@@ -30,6 +31,7 @@ pub trait Platform:
     + EhrCompositionService
     + EhrDirectoryService
     + EhrContributionService
+    + ContributionAdapter
     + VersionMetaAdapter
     + ItemTagAdapter
     + DemographicService
@@ -58,6 +60,7 @@ impl<T> Platform for T where
         + EhrCompositionService
         + EhrDirectoryService
         + EhrContributionService
+    + ContributionAdapter
         + VersionMetaAdapter
         + ItemTagAdapter
         + DemographicService
