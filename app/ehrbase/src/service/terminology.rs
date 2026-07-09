@@ -320,7 +320,10 @@ mod tests {
 
         assert!(matches!(
             terminology_description("bogus"),
-            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
         ));
     }
 
@@ -347,12 +350,18 @@ mod tests {
     fn get_term_unknown_code_is_not_found() {
         assert!(matches!(
             get_term("openehr", "not-a-code"),
-            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
         ));
         // Unknown terminology → NotFound (Pre_has_terminology) on has_term too.
         assert!(matches!(
             has_term("bogus", "249"),
-            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
         ));
     }
 
@@ -372,7 +381,10 @@ mod tests {
         assert!(!subsumes("openehr", "249", "250").unwrap());
         assert!(matches!(
             subsumes("bogus", "a", "a"),
-            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
         ));
     }
 
@@ -392,7 +404,10 @@ mod tests {
         assert!(!has_value_set("openehr", "no_such_group"));
         assert!(matches!(
             get_value_set("openehr", "no_such_group"),
-            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
         ));
         // value_set_validate against an unknown value set → false (no precondition).
         assert!(!value_set_validate("openehr", "no_such_group", "249").unwrap());

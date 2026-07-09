@@ -120,3 +120,20 @@ every interface's verbatim call set with citations; the `.adoc` files under
       catalog directly (api/* delegation dissolved)
 - [ ] Gates: workspace green (build/nextest/clippy/fmt) — **ECC suspended during the rebuild (owner ruling 2026-07-09)**; conformance re-converges at P19; in-repo tests stay green (spec-justified expectation changes allowed, cited + listed, never deleted)
 - [ ] Then wave 3: dump/load (unchanged scope)
+
+## Wave 2c — dissolve `ehrbase-audit` (owner ruling 2026-07-09; after 2-convergence)
+
+The System Log is an SM component (`I_SYSTEM_LOG`; "IHE ATNA-compliant
+system log", master02) — not a crate of its own:
+
+- [ ] `ehrbase-sm::SystemLog` becomes the real component trait (event model
+      + `emit`), replacing the marker; joins `Platform`
+- [ ] The ATNA implementation (AuditMessage building, syslog transports,
+      config, fail modes) moves into `ehrbase` (module `system_log`),
+      implementing the trait; binary wiring updated
+- [ ] Adapter-side stays in `ehrbase-rest`: the middleware + the ITS-REST
+      op-id→event classification table (wire knowledge); the old
+      `ehrbase-rest → ehrbase-audit` dep dissolves via the `S: Platform`
+      generic (impossible pre-ADR-011: dependency cycle)
+- [ ] Delete `app/ehrbase-audit`; docs swept (atna-audit.md, architecture,
+      CLAUDE.md crate lists)
