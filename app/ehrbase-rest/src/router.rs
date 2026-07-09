@@ -17,6 +17,8 @@ use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
+use ehrbase_sm::Platform;
+
 use crate::auth::{self, Authenticator};
 use crate::management::{self, ManagementState};
 use crate::state::AppState;
@@ -33,7 +35,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 ///
 /// `NormalizePathLayer` is applied at serve time (it must wrap the router to run
 /// before routing); see [`crate::serve`].
-pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
+pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>) -> Router {
     let cfg = state.config().clone();
     let observability = state.observability().clone();
     let rest_root = cfg
@@ -47,7 +49,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // rejections) · HTTP metrics (§1.2) · root span (§1.1, outermost so the span
     // and metrics cover the whole request incl. auth). The metrics/span layers
     // sit on the API router so `MatchedPath` resolves to the route template.
-    let api = dispatch::api_router().layer(from_fn_with_state(
+    let api = dispatch::api_router::<S>().layer(from_fn_with_state(
         auth::AuthLayer {
             authenticator: authenticator.clone(),
             authz: state.authz(),
@@ -114,7 +116,10 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
 
 /// Build the standalone management router (separate-port mode). The binary
 /// serves this on the management listener when `management.port` is set.
-pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) -> Router {
+pub fn management_router<S: Platform>(
+    state: &AppState<S>,
+    authenticator: Arc<Authenticator>,
+) -> Router {
     management::router(ManagementState::from_observability(
         state.observability().clone(),
         authenticator,

@@ -4,6 +4,7 @@
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{Json, Router};
+use ehrbase_sm::Platform;
 use http::StatusCode;
 use serde::Serialize;
 
@@ -38,7 +39,7 @@ async fn health() -> impl IntoResponse {
 /// (`/ehrbase/rest`). This is the product probe surface; the ops surface
 /// (`/management/*`, including `info`) lives in [`crate::management`] and is
 /// off by default.
-pub(crate) fn router(rest_root: &str) -> Router<AppState> {
+pub(crate) fn router<S: Platform>(rest_root: &str) -> Router<AppState<S>> {
     Router::new()
         .route(&format!("{rest_root}/status"), get(status))
         .route("/health", get(health))

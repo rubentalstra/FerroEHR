@@ -1,5 +1,5 @@
 //! HTTP dispatch for the `admin` API group (physical EHR delete) over the
-//! [`AdminService`](crate::backend::AdminService) seam.
+//! [`AdminService`](ehrbase_sm::services::AdminService) seam.
 //!
 //! Spec grounding: SM `I_ADMIN_SERVICE.physical_ehr_delete`
 //! (`docs/specs/openehr/SM/docs/UML/classes/i_admin_service.adoc`) —
@@ -22,10 +22,16 @@ use openehr_its::rest::runtime::ApiError;
 
 use super::{BoxResponse, RequestParts};
 use crate::error::RestError;
+use ehrbase_sm::Platform;
+
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
+pub(super) fn dispatch<S: Platform>(
+    state: AppState<S>,
+    op: &'static str,
+    parts: RequestParts,
+) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -33,8 +39,8 @@ pub(super) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -
     })
 }
 
-async fn run(
-    state: AppState,
+async fn run<S: Platform>(
+    state: AppState<S>,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

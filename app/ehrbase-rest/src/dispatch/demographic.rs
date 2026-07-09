@@ -28,13 +28,19 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Agent, Group, Organisation, PartyRelationship, Person, Role};
 
 use super::{BoxResponse, RequestParts};
-use crate::backend::PartyKind;
 use crate::error::RestError;
-use crate::response::{ResourceMeta, ServiceResponse};
+use ehrbase_sm::Platform;
+use ehrbase_sm::types::PartyKind;
+use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
+
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
+pub(super) fn dispatch<S: Platform>(
+    state: AppState<S>,
+    op: &'static str,
+    parts: RequestParts,
+) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -62,8 +68,8 @@ fn parse_party_op(op: &str) -> Option<(PartyKind, &str)> {
     None
 }
 
-async fn run(
-    state: AppState,
+async fn run<S: Platform>(
+    state: AppState<S>,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -85,8 +91,8 @@ fn is_precondition(e: &ApiError) -> bool {
 }
 
 /// The per-kind CRUD + tag operations (`{kind}_{action}`).
-async fn run_party(
-    state: AppState,
+async fn run_party<S: Platform>(
+    state: AppState<S>,
     kind: PartyKind,
     action: &str,
     parts: RequestParts,
@@ -191,8 +197,8 @@ async fn run_party(
 
 /// The kind-agnostic operations: `versioned_party_*`, `contribution_*`,
 /// `demographic_tags_get`.
-async fn run_shared(
-    state: AppState,
+async fn run_shared<S: Platform>(
+    state: AppState<S>,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -329,8 +335,8 @@ pub(crate) const RELATIONSHIP_ROUTES: &[(&str, &str, &str)] = &[
 /// routes, one fixed `party_relationship` segment (SM `I_PARTY_RELATIONSHIP` /
 /// `i_demographic_service.adoc create_party_relationship`; our own wire design).
 #[allow(clippy::too_many_lines)] // one arm per relationship op, like `run_party`/`run_shared`
-async fn run_relationship(
-    state: AppState,
+async fn run_relationship<S: Platform>(
+    state: AppState<S>,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

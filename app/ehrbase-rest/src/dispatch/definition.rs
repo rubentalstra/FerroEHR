@@ -31,10 +31,16 @@ use openehr_its::rest::generated::definition::{
 
 use super::{BoxResponse, RequestParts};
 use crate::error::RestError;
+use ehrbase_sm::Platform;
+
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
+pub(super) fn dispatch<S: Platform>(
+    state: AppState<S>,
+    op: &'static str,
+    parts: RequestParts,
+) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -43,8 +49,8 @@ pub(super) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -
 }
 
 #[allow(clippy::too_many_lines)] // one arm per operation; a flat match is clearest
-async fn run(
-    state: AppState,
+async fn run<S: Platform>(
+    state: AppState<S>,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -337,7 +343,11 @@ fn example_accept_supported(headers: &HeaderMap) -> bool {
 /// the highest. `None` when the lookup fails or finds nothing — the store
 /// itself already succeeded, so the response degrades to Location-less rather
 /// than failing the request.
-async fn stored_version_of(state: &AppState, name: &str, headers: &HeaderMap) -> Option<String> {
+async fn stored_version_of<S: Platform>(
+    state: &AppState<S>,
+    name: &str,
+    headers: &HeaderMap,
+) -> Option<String> {
     let list = state
         .backend()
         .definition_query_list(DefinitionQueryListParams {
@@ -358,11 +368,14 @@ async fn stored_version_of(state: &AppState, name: &str, headers: &HeaderMap) ->
 
 /// Serve the service-owned Better `WebTemplate` for `template_id` as
 /// `application/openehr.wt+json` (single resolution seam:
-/// [`crate::backend::WebTemplateService`] — W2-K/F-13-02).
+/// [`ehrbase_sm::services::WebTemplateService`] — W2-K/F-13-02).
 ///
 /// Serving `wt+json` on the spec `adl1.4/{id}` GET endpoint is a deliberate
 /// EHRbase-compatible extension (openEHR ITS-REST returns only the OPT itself).
-async fn web_template_response(state: &AppState, template_id: &str) -> Result<Response, RestError> {
+async fn web_template_response<S: Platform>(
+    state: &AppState<S>,
+    template_id: &str,
+) -> Result<Response, RestError> {
     let built = state
         .backend()
         .web_template(template_id)

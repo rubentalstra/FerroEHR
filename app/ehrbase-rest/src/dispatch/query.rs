@@ -19,12 +19,18 @@ use openehr_its::rest::generated::query::{
 use openehr_its::rest::runtime::ApiError;
 
 use super::{BoxResponse, RequestParts};
-use crate::backend::AqlQueryRequest;
 use crate::error::RestError;
+use ehrbase_sm::Platform;
+use ehrbase_sm::types::AqlQueryRequest;
+
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
+pub(super) fn dispatch<S: Platform>(
+    state: AppState<S>,
+    op: &'static str,
+    parts: RequestParts,
+) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -32,8 +38,8 @@ pub(super) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -
     })
 }
 
-async fn run(
-    state: AppState,
+async fn run<S: Platform>(
+    state: AppState<S>,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

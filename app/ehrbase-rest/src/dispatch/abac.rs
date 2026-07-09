@@ -33,6 +33,8 @@ use super::RequestParts;
 use crate::auth::{Principal, current_principal};
 use crate::authz::AbacGate;
 use crate::error::RestError;
+use ehrbase_sm::Platform;
+
 use crate::state::AppState;
 use crate::{negotiate, params};
 
@@ -69,8 +71,8 @@ fn mode_of(op: &str) -> Mode {
 /// to thread into the SQL, and whether the executor should collect the touched
 /// EHR/template sets for the post-check. `Ok((None, false))` when ABAC is off.
 /// `Err(response)` is a ready 403 (a missing configured patient claim).
-pub(super) fn query_pre(
-    state: &AppState,
+pub(super) fn query_pre<S: Platform>(
+    state: &AppState<S>,
     op: &'static str,
 ) -> Result<(Option<String>, bool), Response> {
     let Some(handle) = state.authz() else {
@@ -93,10 +95,10 @@ pub(super) fn query_pre(
 /// touched template set. An empty result permits (v1 parity). The patient gate
 /// is already enforced by the subject-scope pre-filter (rows outside the
 /// caller's patient are never fetched), so it is not re-run per EHR here.
-pub(super) async fn query_post(
-    state: &AppState,
+pub(super) async fn query_post<S: Platform>(
+    state: &AppState<S>,
     op: &'static str,
-    outcome: &crate::backend::QueryOutcome,
+    outcome: &ehrbase_sm::types::QueryOutcome,
 ) -> Result<(), Response> {
     let Some(handle) = state.authz() else {
         return Ok(());
@@ -128,8 +130,8 @@ pub(super) async fn query_post(
 
 /// Pre-check the request. `Err(response)` short-circuits the dispatch with a
 /// ready 403/500; `Ok(())` lets it proceed.
-pub(super) async fn pre_check(
-    state: &AppState,
+pub(super) async fn pre_check<S: Platform>(
+    state: &AppState<S>,
     op: &'static str,
     parts: &RequestParts,
 ) -> Result<(), Response> {
@@ -182,7 +184,11 @@ pub(super) async fn pre_check(
 }
 
 /// Post-check a successful response using the resource ids the dispatch recorded.
-pub(super) async fn post_check(state: &AppState, op: &'static str, resp: Response) -> Response {
+pub(super) async fn post_check<S: Platform>(
+    state: &AppState<S>,
+    op: &'static str,
+    resp: Response,
+) -> Response {
     if !resp.status().is_success() {
         return resp;
     }

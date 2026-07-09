@@ -63,6 +63,15 @@ impl From<VersionIdError> for ServiceError {
     }
 }
 
+impl From<VersionIdError> for ehrbase_sm::SmError {
+    /// A malformed version id in an SM catalog argument is an argument-validity
+    /// precondition failure (→ `400` at the wire, matching the
+    /// [`From<VersionIdError> for ApiError`] `BadRequest` row).
+    fn from(e: VersionIdError) -> Self {
+        ehrbase_sm::SmError::precondition(e.to_string())
+    }
+}
+
 /// Parse a full `OBJECT_VERSION_ID` (`{object_id}::{creating_system_id}::{version_tree_id}`)
 /// into the storage key pair (`vo_id`, trunk version).
 pub(super) fn parse_version_uid(raw: &str) -> Result<(Uuid, i32), VersionIdError> {
@@ -81,6 +90,26 @@ pub(super) fn parse_version_uid(raw: &str) -> Result<(Uuid, i32), VersionIdError
         .trunk_version()
         .parse()
         .map_err(|_| VersionIdError::OutOfRange(raw.to_owned()))?;
+    Ok((object_id.value, version))
+}
+
+/// Decompose an already-parsed [`ObjectVersionId`] (the SM catalog's native
+/// version-id argument, ADR-011) into the storage key pair (`vo_id`, trunk
+/// version) — the ObjectVersionId-typed analogue of [`parse_version_uid`], used
+/// by the SM service impls that receive a typed `OBJECT_VERSION_ID`.
+pub(super) fn components(ovid: &ObjectVersionId) -> Result<(Uuid, i32), VersionIdError> {
+    let raw = ovid.value.clone();
+    let Uid::Uuid(object_id) = ovid.object_id() else {
+        return Err(VersionIdError::NotAUuid(raw));
+    };
+    let tree = ovid.version_tree_id();
+    if tree.is_branch() {
+        return Err(VersionIdError::Branch(raw));
+    }
+    let version: i32 = tree
+        .trunk_version()
+        .parse()
+        .map_err(|_| VersionIdError::OutOfRange(raw))?;
     Ok((object_id.value, version))
 }
 

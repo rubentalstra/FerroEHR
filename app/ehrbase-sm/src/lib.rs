@@ -13,17 +13,17 @@
 //! the CNF/ECC schedule govern the wire** — divergences are recorded at the
 //! declaration with `PORT NOTE`s. Design set: `docs/design/sm-platform/`.
 
-pub mod backend;
 pub mod ehr_handle;
 pub mod error;
+pub mod platform;
 pub mod services;
 pub mod types;
 
-pub use backend::Platform;
 pub use ehr_handle::{
     EhrCompositionHandle, EhrContributionHandle, EhrDirectoryHandle, EhrStatusHandle, IEhr,
 };
 pub use error::{CallStatus, CallStatusType, SmError};
+pub use platform::Platform;
 pub use services::{
     AdminArchive, AdminService, DefinedTerm, DefinitionAdl2Service, DefinitionAdl14Service,
     DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,

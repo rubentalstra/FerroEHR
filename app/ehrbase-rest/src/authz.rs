@@ -31,7 +31,7 @@ pub type ResolverFuture<T> = Pin<Box<dyn Future<Output = Result<T, ResolveError>
 pub type SubjectFn = Arc<dyn Fn(String) -> ResolverFuture<Option<String>> + Send + Sync>;
 
 /// `(vo_id, version) → template_id` (`vo_version.template_id`, read back via
-/// [`crate::backend`] in the binary). `version = None` = the current version.
+/// [`ehrbase_sm`] in the binary). `version = None` = the current version.
 pub type TemplateOfVersionFn =
     Arc<dyn Fn(String, Option<i32>) -> ResolverFuture<Option<String>> + Send + Sync>;
 

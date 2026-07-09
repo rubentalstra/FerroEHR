@@ -1785,6 +1785,7 @@ dependencies = [
  "metrics",
  "metrics-exporter-prometheus",
  "moka",
+ "openehr-base",
  "openehr-flat",
  "openehr-its",
  "openehr-rm",
@@ -1801,6 +1802,7 @@ dependencies = [
  "tracing-subscriber",
  "utoipa",
  "utoipa-swagger-ui",
+ "uuid",
 ]
 
 [[package]]

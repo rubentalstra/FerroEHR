@@ -29,6 +29,7 @@ use axum::extract::{RawPathParams, RawQuery, State};
 use axum::response::Response;
 use axum::routing::{MethodFilter, MethodRouter};
 use bytes::Bytes;
+use ehrbase_sm::Platform;
 use http::HeaderMap;
 use indexmap::IndexMap;
 
@@ -38,7 +39,7 @@ use crate::state::AppState;
 type BoxResponse = Pin<Box<dyn Future<Output = Response> + Send>>;
 
 /// A group dispatcher: `(state, operation_id, request parts) → response`.
-type Dispatcher = fn(AppState, &'static str, RequestParts) -> BoxResponse;
+type Dispatcher<S> = fn(AppState<S>, &'static str, RequestParts) -> BoxResponse;
 
 /// The raw request sources a dispatcher needs to rebuild a `*Params` struct and
 /// decode a body.
@@ -71,29 +72,29 @@ impl RequestParts {
 
 /// Build the API router covering every ITS-REST route (group-relative paths;
 /// nest under the configured base path). State is applied by the caller.
-pub(crate) fn api_router() -> Router<AppState> {
+pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
     use openehr_its::rest::generated as g;
 
     Router::new()
-        .merge(mount(g::ehr::ROUTES, ehr::dispatch))
-        .merge(mount(g::demographic::ROUTES, demographic::dispatch))
+        .merge(mount(g::ehr::ROUTES, ehr::dispatch::<S>))
+        .merge(mount(g::demographic::ROUTES, demographic::dispatch::<S>))
         // Our-own-design PARTY_RELATIONSHIP extension routes (no ITS-REST
         // contract; SM-3), served by the same demographic dispatcher.
         .merge(mount(
             demographic::RELATIONSHIP_ROUTES,
-            demographic::dispatch,
+            demographic::dispatch::<S>,
         ))
-        .merge(mount(g::definition::ROUTES, definition::dispatch))
-        .merge(mount(g::query::ROUTES, query::dispatch))
-        .merge(mount(g::admin::ROUTES, admin::dispatch))
+        .merge(mount(g::definition::ROUTES, definition::dispatch::<S>))
+        .merge(mount(g::query::ROUTES, query::dispatch::<S>))
+        .merge(mount(g::admin::ROUTES, admin::dispatch::<S>))
 }
 
 /// Mount one API group's routes onto a router, grouping methods that share a
 /// path into a single `MethodRouter`.
-fn mount(
+fn mount<S: Platform>(
     routes: &'static [(&'static str, &'static str, &'static str)],
-    dispatch: Dispatcher,
-) -> Router<AppState> {
+    dispatch: Dispatcher<S>,
+) -> Router<AppState<S>> {
     let mut by_path: IndexMap<String, Vec<(MethodFilter, &'static str)>> = IndexMap::new();
     for (method, path, op) in routes {
         let filter = method_filter(method)
@@ -106,14 +107,14 @@ fn mount(
 
     let mut group_router = Router::new();
     for (path, ops) in by_path {
-        let mut method_router: MethodRouter<AppState> = MethodRouter::new();
+        let mut method_router: MethodRouter<AppState<S>> = MethodRouter::new();
         for (filter, op) in ops {
             method_router = method_router.on(
                 filter,
                 move |raw_path: RawPathParams,
                       RawQuery(query): RawQuery,
                       headers: HeaderMap,
-                      State(state): State<AppState>,
+                      State(state): State<AppState<S>>,
                       body: Bytes| async move {
                     let parts = RequestParts::new(&raw_path, query, headers, body);
                     // ABAC (§7): pre-check short-circuits before the backend on a

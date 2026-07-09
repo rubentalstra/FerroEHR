@@ -6,6 +6,7 @@
 //! the vendored spec. It is not the source of truth.
 
 use axum::Router;
+use ehrbase_sm::Platform;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -25,7 +26,7 @@ use crate::state::AppState;
 pub struct ApiDoc;
 
 /// Build the Swagger UI router (serves the UI and the `OpenAPI` JSON).
-pub(crate) fn swagger_router(ui_path: &str, json_path: &str) -> Router<AppState> {
+pub(crate) fn swagger_router<S: Platform>(ui_path: &str, json_path: &str) -> Router<AppState<S>> {
     Router::new()
         .merge(SwaggerUi::new(ui_path.to_owned()).url(json_path.to_owned(), ApiDoc::openapi()))
 }

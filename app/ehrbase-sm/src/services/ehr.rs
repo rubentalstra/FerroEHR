@@ -7,7 +7,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::error::SmError;
-use crate::types::{EhrSummary, SubjectRef, UpdateVersion};
+use crate::types::{EhrSummary, SubjectRef};
 
 /// `I_EHR_SERVICE : I_STATUS` — "Primary interface to `EHR_SERVICE` persistent
 /// repository" (`i_ehr_service.adoc`). The per-EHR accessor `I_EHR` is realized
