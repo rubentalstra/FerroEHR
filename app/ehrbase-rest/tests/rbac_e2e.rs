@@ -11,23 +11,22 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
-use ehrbase_audit::{AuditConfig, AuditSender, Transport};
 use ehrbase_rest::access::authn::AuthConfig;
 use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
 use ehrbase_rest::access::authz::AuthzConfig;
 use ehrbase_rest::{AdminConfig, AuthzHandle, RestConfig};
 
 mod common;
+use common::AuditSink;
+use ehrbase_sm::{EventOutcome, ObjectClass};
 use http::{Request, StatusCode};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::{Value, json};
-use tokio::net::UdpSocket;
 use tower::ServiceExt;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
@@ -88,11 +87,16 @@ fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
     AuthzHandle::from_config(&cfg, &rest_config().base_path).map(Arc::new)
 }
 
-fn app(rbac_enabled: bool, audit: Option<AuditSender>) -> Router {
+fn app(rbac_enabled: bool, audit: Option<AuditSink>) -> Router {
+    // The ATNA audit emitter now lives in the backend's SM `SystemLog` (ADR-011);
+    // an in-memory sink on the mock records emitted events for assertions.
+    let backend = common::Mock::with(common::Hooks {
+        audit,
+        ..common::Hooks::default()
+    });
     ehrbase_rest::build_full(
         rest_config(),
-        Arc::new(common::Mock::new()),
-        audit,
+        Arc::new(backend),
         authz(rbac_enabled),
         ehrbase_rest::Observability::default(),
     )
@@ -234,10 +238,13 @@ async fn admin_scope_alias_migrates_via_scope_role() {
 #[tokio::test]
 async fn rbac_deny_is_audited() {
     // A 403 from the RBAC gate carries the Principal on the response, so the
-    // outer ATNA layer records a failure audit for the denied caller (§7).
-    let (sock, port) = udp_listener().await;
-    let sender = audit_sender(port).await;
-    let app = app(true, Some(sender));
+    // ATNA audit layer records a failure audit for the denied caller (§7). The
+    // emitter now lives in the backend's SM `SystemLog` (ADR-011), so we assert
+    // on the recorded `AuditEvent` (a minor-failure outcome attributed to the
+    // caller); the DICOM `EventOutcomeIndicator="4"` / `UserID` rendering is
+    // covered by the `ehrbase::system_log` message tests.
+    let sink = AuditSink::recording();
+    let app = app(true, Some(sink.clone()));
 
     let s = status(
         &app,
@@ -246,56 +253,21 @@ async fn rbac_deny_is_audited() {
     .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
 
-    let record = recv_record(&sock).await.expect("expected an audit record");
-    assert_eq!(
-        attr(&record, "EventOutcomeIndicator"),
-        Some("4"),
-        "{record}"
+    // The auth/RBAC 403 emits an Application-Activity failure record for `user`
+    // (the deny happens in the auth middleware before dispatch, so there is no
+    // operation record — only the auth-failure one).
+    let events = sink.events();
+    assert!(
+        events
+            .iter()
+            .any(|e| e.outcome == EventOutcome::MinorFailure
+                && e.object == ObjectClass::ApplicationActivity
+                && e.user_id == "user"),
+        "expected an Application-Activity minor-failure audit for `user`, got {events:?}"
     );
-    assert_eq!(attr(&record, "UserID"), Some("user"), "{record}");
 }
 
-// ── audit + base64 helpers ────────────────────────────────────────────────────
-
-async fn udp_listener() -> (UdpSocket, u16) {
-    let sock = UdpSocket::bind(("127.0.0.1", 0)).await.expect("bind udp");
-    let port = sock.local_addr().expect("addr").port();
-    (sock, port)
-}
-
-async fn audit_sender(port: u16) -> AuditSender {
-    let config = AuditConfig {
-        enabled: true,
-        transport: Transport::Udp,
-        repository_host: "127.0.0.1".to_owned(),
-        repository_port: port,
-        // Emit the login/auth records so the deny surfaces on the listener.
-        suppress_login_events: true,
-        queue_capacity: 64,
-        ..AuditConfig::default()
-    };
-    let (sender, handle) = ehrbase_audit::start(config, None)
-        .await
-        .expect("start audit");
-    std::mem::forget(handle);
-    sender
-}
-
-async fn recv_record(sock: &UdpSocket) -> Option<String> {
-    let mut buf = vec![0u8; 65536];
-    match tokio::time::timeout(Duration::from_secs(2), sock.recv(&mut buf)).await {
-        Ok(Ok(n)) => Some(String::from_utf8_lossy(&buf[..n]).into_owned()),
-        _ => None,
-    }
-}
-
-fn attr<'a>(record: &'a str, name: &str) -> Option<&'a str> {
-    let needle = format!("{name}=\"");
-    let start = record.find(&needle)? + needle.len();
-    let rest = &record[start..];
-    let end = rest.find('"')?;
-    Some(&rest[..end])
-}
+// ── base64 helper ─────────────────────────────────────────────────────────────
 
 fn base64_encode(bytes: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

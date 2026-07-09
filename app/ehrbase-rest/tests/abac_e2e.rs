@@ -13,12 +13,10 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
-use ehrbase_audit::{AuditConfig, AuditSender, Transport};
 use ehrbase_rest::access::authn::AuthConfig;
 use ehrbase_rest::access::authn::config::{OidcConfig, Redacted};
 use ehrbase_rest::access::authz::AuthzConfig;
@@ -27,14 +25,14 @@ use ehrbase_rest::access::authz::request::{AuthzRequest, Decision};
 use ehrbase_rest::{
     AuthzHandle, AuthzResolvers, Observability, ResolveError, RestConfig, build_full,
 };
+use ehrbase_sm::EventOutcome;
 use http::{Request, StatusCode};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::json;
-use tokio::net::UdpSocket;
 use tower::ServiceExt;
 
 mod common;
-use common::{Hooks, Mock};
+use common::{AuditSink, Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const HMAC_SECRET: &str = "abac-test-secret";
@@ -132,11 +130,14 @@ fn authz(abac_enabled: bool) -> Option<Arc<AuthzHandle>> {
     AuthzHandle::build(&cfg, &rest_config().base_path, engine, resolvers()).map(Arc::new)
 }
 
-fn app(abac_enabled: bool, audit: Option<AuditSender>) -> Router {
+fn app(abac_enabled: bool, audit: Option<AuditSink>) -> Router {
+    // ATNA audit now emits through the backend's SM `SystemLog` (ADR-011); the
+    // in-memory sink on the mock records events for assertions.
+    let mut h = hooks();
+    h.audit = audit;
     build_full(
         rest_config(),
-        Arc::new(Mock::with(hooks())),
-        audit,
+        Arc::new(Mock::with(h)),
         authz(abac_enabled),
         Observability::default(),
     )
@@ -291,10 +292,12 @@ async fn abac_disabled_restores_behaviour() {
 #[tokio::test]
 async fn abac_deny_is_audited() {
     // A 403 from the ABAC gate carries the Principal, so the ATNA layer records
-    // a failure audit for the denied caller (§7).
-    let (sock, port) = udp_listener().await;
-    let sender = audit_sender(port).await;
-    let app = app(true, Some(sender));
+    // a failure audit for the denied caller (§7). The emitter now lives in the
+    // backend's SM `SystemLog` (ADR-011), so we assert the recorded `AuditEvent`
+    // (a minor-failure attributed to `svc`); the DICOM rendering is covered by
+    // the `ehrbase::system_log` message tests.
+    let sink = AuditSink::recording();
+    let app = app(true, Some(sink.clone()));
 
     let s = status(
         &app,
@@ -307,52 +310,14 @@ async fn abac_deny_is_audited() {
     .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
 
-    let record = recv_record(&sock).await.expect("expected an audit record");
-    assert_eq!(
-        attr(&record, "EventOutcomeIndicator"),
-        Some("4"),
-        "{record}"
+    // The ABAC deny fires in the dispatcher, so both the operation record and
+    // the auth-failure Application-Activity record are minor-failures for `svc`;
+    // assert (faithful to the original) that a failure is audited for the caller.
+    let events = sink.events();
+    assert!(
+        events
+            .iter()
+            .any(|e| e.outcome == EventOutcome::MinorFailure && e.user_id == "svc"),
+        "expected a minor-failure audit for `svc`, got {events:?}"
     );
-    assert_eq!(attr(&record, "UserID"), Some("svc"), "{record}");
-}
-
-// ── audit helpers (mirrors rbac_e2e) ──────────────────────────────────────────
-
-async fn udp_listener() -> (UdpSocket, u16) {
-    let sock = UdpSocket::bind(("127.0.0.1", 0)).await.expect("bind udp");
-    let port = sock.local_addr().expect("addr").port();
-    (sock, port)
-}
-
-async fn audit_sender(port: u16) -> AuditSender {
-    let config = AuditConfig {
-        enabled: true,
-        transport: Transport::Udp,
-        repository_host: "127.0.0.1".to_owned(),
-        repository_port: port,
-        suppress_login_events: true,
-        queue_capacity: 64,
-        ..AuditConfig::default()
-    };
-    let (sender, handle) = ehrbase_audit::start(config, None)
-        .await
-        .expect("start audit");
-    std::mem::forget(handle);
-    sender
-}
-
-async fn recv_record(sock: &UdpSocket) -> Option<String> {
-    let mut buf = vec![0u8; 65536];
-    match tokio::time::timeout(Duration::from_secs(2), sock.recv(&mut buf)).await {
-        Ok(Ok(n)) => Some(String::from_utf8_lossy(&buf[..n]).into_owned()),
-        _ => None,
-    }
-}
-
-fn attr<'a>(record: &'a str, name: &str) -> Option<&'a str> {
-    let needle = format!("{name}=\"");
-    let start = record.find(&needle)? + needle.len();
-    let rest = &record[start..];
-    let end = rest.find('"')?;
-    Some(&rest[..end])
 }
