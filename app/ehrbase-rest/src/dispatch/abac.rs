@@ -25,7 +25,7 @@
 
 use axum::response::{IntoResponse, Response};
 
-use ehrbase_authz::{AccessMode, Attr, AuthzRequest, Decision, ResourceKind, access_of, kind_of};
+use crate::authz::{AccessMode, Attr, AuthzRequest, Decision, ResourceKind, access_of, kind_of};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
@@ -255,7 +255,7 @@ fn resolve_patient_claim(
     let Some(claim) = &abac.patient_claim else {
         return Ok(None);
     };
-    match ehrbase_authz::claim_string(&principal.claims, claim) {
+    match crate::authz::claim_string(&principal.claims, claim) {
         Some(v) => Ok(Some(v)),
         None => Err(forbidden(
             principal,
@@ -268,7 +268,7 @@ fn resolve_patient_claim(
 fn organization(abac: &AbacGate, principal: &Principal) -> Option<String> {
     abac.organization_claim
         .as_ref()
-        .and_then(|c| ehrbase_authz::claim_string(&principal.claims, c))
+        .and_then(|c| crate::authz::claim_string(&principal.claims, c))
 }
 
 /// The full pre-check patient gate (§5.7): the subject match for target-EHR ops,
@@ -483,8 +483,8 @@ mod tests {
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
+    use crate::authz::engine::{AuthzError, PolicyEngine};
     use async_trait::async_trait;
-    use ehrbase_authz::engine::{AuthzError, PolicyEngine};
     use http::StatusCode;
 
     use super::*;

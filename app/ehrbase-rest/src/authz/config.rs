@@ -360,7 +360,7 @@ mod defaults {
         "USER".to_owned()
     }
     pub(super) fn role_claims() -> Vec<String> {
-        crate::roles::default_role_claims()
+        crate::authz::roles::default_role_claims()
     }
     pub(super) fn organization_claim() -> String {
         "organization_id".to_owned()

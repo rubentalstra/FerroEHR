@@ -70,7 +70,6 @@ openehr-flat = { path = "../../crates/openehr-flat" }
 openehr-query = { path = "../../crates/openehr-query" }
 ehrbase-rest = { path = "../ehrbase-rest" }
 ehrbase-sm = { path = "../ehrbase-sm" }
-ehrbase-authz = { path = "../ehrbase-authz" }
 
 [dev-dependencies]
 figment = { workspace = true, features = ["test"] }

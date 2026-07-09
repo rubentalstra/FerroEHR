@@ -97,49 +97,44 @@ pub const OBJECT_ROLE_QUERY: &str = "24";
 // ── ATNA rendering of the SM event enums ─────────────────────────────────────
 // The SM `System Log` event model (`ehrbase_sm::{EventActionCode, EventOutcome,
 // ObjectClass}`) is a pure, transport-agnostic model with no methods. The DICOM
-// / RFC-3881 renderings live here, in the ATNA layer, as an extension trait so
-// the `message` serializer's call sites (`event.action.as_char()`,
-// `event.object.event_id()`, …) resolve through the trait.
+// / RFC-3881 renderings live here, in the ATNA layer, as three focused extension
+// traits — one per enum — so the `message` serializer's call sites
+// (`event.action.as_char()`, `event.outcome.as_i32()`, `event.object.event_id()`)
+// resolve through them. One trait per type (rather than a single umbrella trait)
+// keeps every method meaningful for its receiver: no empty/`unreachable!` stubs.
 
 use ehrbase_sm::{EventActionCode, EventOutcome, ObjectClass};
 
-/// The ATNA (DICOM / RFC-3881) rendering of the SM System Log event enums.
-pub(crate) trait AtnaCodes {
+/// ATNA (DICOM PS3.15 §A.5.1) rendering of an [`EventActionCode`].
+pub(crate) trait AtnaAction {
     /// The single-character DICOM `EventActionCode`.
-    fn as_char(&self) -> char {
-        unreachable!()
-    }
+    fn as_char(&self) -> char;
     /// The DICOM `ParticipantObjectDataLifeCycle` most fitting for the action.
-    fn data_life_cycle(&self) -> &'static str {
-        unreachable!()
-    }
-    /// The numeric DICOM `EventOutcomeIndicator`.
-    fn as_i32(&self) -> i32 {
-        unreachable!()
-    }
-    /// The `EventOutcomeDescription` text.
-    fn description(&self) -> &'static str {
-        unreachable!()
-    }
-    /// The DICOM `EventID` `(csd-code, originalText)` for this object class.
-    fn event_id(&self) -> (&'static str, &'static str) {
-        unreachable!()
-    }
-    /// Whether this class carries a patient (Patient-Number) participant object.
-    fn is_patient_centric(&self) -> bool {
-        unreachable!()
-    }
-    /// Whether this class carries an object-URI participant.
-    fn has_object_uri(&self) -> bool {
-        unreachable!()
-    }
-    /// Whether this class renders a Search-Criteria (query) participant.
-    fn is_query(&self) -> bool {
-        unreachable!()
-    }
+    fn data_life_cycle(&self) -> &'static str;
 }
 
-impl AtnaCodes for EventActionCode {
+/// ATNA (DICOM PS3.15 §A.5.1) rendering of an [`EventOutcome`].
+pub(crate) trait AtnaOutcome {
+    /// The numeric DICOM `EventOutcomeIndicator`.
+    fn as_i32(&self) -> i32;
+    /// The `EventOutcomeDescription` text.
+    fn description(&self) -> &'static str;
+}
+
+/// ATNA (DICOM / RFC-3881) rendering of an [`ObjectClass`] — the `EventID` and
+/// the participant-object shape (binding doc §3 field mapping).
+pub(crate) trait AtnaObject {
+    /// The DICOM `EventID` `(csd-code, originalText)` for this object class.
+    fn event_id(&self) -> (&'static str, &'static str);
+    /// Whether this class carries a patient (Patient-Number) participant object.
+    fn is_patient_centric(&self) -> bool;
+    /// Whether this class carries an object-URI participant.
+    fn has_object_uri(&self) -> bool;
+    /// Whether this class renders a Search-Criteria (query) participant.
+    fn is_query(&self) -> bool;
+}
+
+impl AtnaAction for EventActionCode {
     /// `C`/`R`/`U`/`D`/`E` (DICOM PS3.15 §A.5.1).
     fn as_char(&self) -> char {
         match self {
@@ -164,7 +159,7 @@ impl AtnaCodes for EventActionCode {
     }
 }
 
-impl AtnaCodes for EventOutcome {
+impl AtnaOutcome for EventOutcome {
     /// The numeric DICOM indicator (`0`/`4`/`8`/`12`).
     fn as_i32(&self) -> i32 {
         match self {
@@ -184,7 +179,7 @@ impl AtnaCodes for EventOutcome {
     }
 }
 
-impl AtnaCodes for ObjectClass {
+impl AtnaObject for ObjectClass {
     /// The DICOM `EventID` `(csd-code, originalText)` for this class (§3).
     fn event_id(&self) -> (&'static str, &'static str) {
         match self {

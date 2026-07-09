@@ -1686,7 +1686,6 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "clap",
- "ehrbase-authz",
  "ehrbase-rest",
  "ehrbase-sm",
  "figment",
@@ -1734,33 +1733,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "ehrbase-authz"
-version = "0.1.0"
-dependencies = [
- "arc-swap",
- "async-trait",
- "cedar-policy",
- "figment",
- "metrics",
- "openehr-its",
- "reqwest 0.13.4",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "wiremock",
-]
-
-[[package]]
 name = "ehrbase-rest"
 version = "0.1.0"
 dependencies = [
+ "arc-swap",
  "argon2",
  "async-trait",
  "axum",
  "bytes",
- "ehrbase-authz",
+ "cedar-policy",
  "ehrbase-sm",
  "figment",
  "http",
@@ -1777,6 +1758,7 @@ dependencies = [
  "openehr-rm",
  "openidconnect",
  "opentelemetry",
+ "reqwest 0.13.4",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -1789,6 +1771,7 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
+ "wiremock",
 ]
 
 [[package]]

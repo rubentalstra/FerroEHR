@@ -15,10 +15,10 @@ mod jwt;
 
 use std::sync::Arc;
 
+use crate::authz::RbacDecision;
 use axum::extract::{FromRequestParts, MatchedPath, Request, State};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use ehrbase_authz::RbacDecision;
 use http::request::Parts;
 use http::{HeaderValue, StatusCode, header};
 
@@ -113,7 +113,7 @@ impl Authenticator {
     /// # Errors
     /// Returns a message if the OIDC key material/algorithms are invalid.
     pub fn new(config: AuthConfig) -> Result<Arc<Self>, String> {
-        Self::with_role_claims(config, ehrbase_authz::roles::default_role_claims())
+        Self::with_role_claims(config, crate::authz::roles::default_role_claims())
     }
 
     /// Build from configuration with explicit RBAC role-claim paths (§5.1 —

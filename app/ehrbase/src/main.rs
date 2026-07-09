@@ -13,7 +13,7 @@ use anyhow::Context as _;
 use clap::{Parser, Subcommand};
 use ehrbase::signing::{Signer, SigningConfig};
 use ehrbase::system_log::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
-use ehrbase_authz::AuthzConfig;
+use ehrbase_rest::authz::AuthzConfig;
 use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry, ManagementConfig};
 use ehrbase_rest::{AuthzHandle, Observability};
 use sqlx::PgPool;
