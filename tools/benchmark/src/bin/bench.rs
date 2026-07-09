@@ -1,7 +1,7 @@
 //! `bench` CLI — the benchmark harness entry point (docs/design/benchmarking.md).
 //!
-//! `bench run` drives the pre-registered workload against a SUT (external URL or,
-//! under `--features self-host`, an in-process ehrbase-rs) and writes the
+//! `bench run` drives the pre-registered workload against a SUT (external URL,
+//! e.g. the Docker-composed server) and writes the
 //! generated report to `--out`. `bench seed` bulk-loads a SUT for the scale
 //! ladder. `bench report --from results.json` re-renders the markdown.
 
@@ -36,12 +36,9 @@ enum Command {
 
 #[derive(Parser)]
 struct RunArgs {
-    /// SUT base URL (…/ehrbase/rest/openehr/v1). Omit with --self-host.
+    /// SUT base URL (…/ehrbase/rest/openehr/v1).
     #[arg(long)]
     base_url: Option<String>,
-    /// Boot an in-process ehrbase-rs (requires --features self-host).
-    #[arg(long)]
-    self_host: bool,
     /// Which implementation the SUT is (labels the report).
     #[arg(long, default_value = "ehrbase-rs")]
     implementation: String,
@@ -72,8 +69,6 @@ struct SeedArgs {
     #[arg(long)]
     base_url: Option<String>,
     #[arg(long)]
-    self_host: bool,
-    #[arg(long)]
     auth: Option<String>,
     #[arg(long, default_value_t = 10)]
     ehrs: u32,
@@ -102,44 +97,15 @@ async fn main() {
     std::process::exit(code);
 }
 
-/// Resolve a target (external or self-hosted). Returns the target and an
-/// optional keep-alive guard (the self-hosted SUT, whose Drop stops the server).
-// `async` is load-bearing under `--features self-host` (awaits container boot);
-// without the feature there is no await, which is expected.
-#[cfg_attr(not(feature = "self-host"), allow(clippy::unused_async))]
-async fn resolve_target(
+/// Resolve the external SUT target from `--base-url` + `--auth`.
+fn resolve_target(
     base_url: Option<String>,
-    self_host: bool,
     implementation: Implementation,
     auth: Option<String>,
-) -> Result<(Target, Option<Box<dyn std::any::Any>>), String> {
-    if self_host {
-        #[cfg(feature = "self-host")]
-        {
-            let sut = conformance::sut::Sut::self_hosted()
-                .await
-                .map_err(|e| format!("self-host boot: {e}"))?;
-            let base = sut.base_url();
-            // The dev Basic user the self-hosted app is configured with.
-            let cred = Credential::Basic {
-                user: "ehrbase".to_owned(),
-                pass: "ehrbase".to_owned(),
-            };
-            let target = Target::new(implementation, base, Some(cred.clone()), Some(cred))
-                .map_err(|e| e.to_string())?;
-            return Ok((target, Some(Box::new(sut) as Box<dyn std::any::Any>)));
-        }
-        #[cfg(not(feature = "self-host"))]
-        {
-            let _ = implementation;
-            return Err("--self-host requires building with `--features self-host`".to_owned());
-        }
-    }
-    let base = base_url.ok_or_else(|| "one of --base-url or --self-host is required".to_owned())?;
+) -> Result<Target, String> {
+    let base = base_url.ok_or_else(|| "--base-url is required".to_owned())?;
     let cred = auth.as_deref().map(Credential::parse).transpose()?;
-    let target =
-        Target::new(implementation, base, cred.clone(), cred).map_err(|e| e.to_string())?;
-    Ok((target, None))
+    Target::new(implementation, base, cred.clone(), cred).map_err(|e| e.to_string())
 }
 
 async fn cmd_run(args: RunArgs) -> i32 {
@@ -150,14 +116,13 @@ async fn cmd_run(args: RunArgs) -> i32 {
             return 2;
         }
     };
-    let (target, _keep_alive) =
-        match resolve_target(args.base_url, args.self_host, implementation, args.auth).await {
-            Ok(t) => t,
-            Err(e) => {
-                eprintln!("error: {e}");
-                return 2;
-            }
-        };
+    let target = match resolve_target(args.base_url, implementation, args.auth) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
 
     let cfg = if args.smoke {
         DriverConfig::smoke()
@@ -229,14 +194,7 @@ async fn cmd_run(args: RunArgs) -> i32 {
 }
 
 async fn cmd_seed(args: SeedArgs) -> i32 {
-    let (target, _keep_alive) = match resolve_target(
-        args.base_url,
-        args.self_host,
-        Implementation::EhrbaseRs,
-        args.auth,
-    )
-    .await
-    {
+    let target = match resolve_target(args.base_url, Implementation::EhrbaseRs, args.auth) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("error: {e}");

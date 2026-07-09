@@ -126,8 +126,9 @@ acceptance instrument; design `docs/design/conformance-framework.md`): our own
 case universe with stable `ECC-<AREA>-<NNN>` ids allocated in
 `tools/conformance/inventory/ecc-catalog.tsv` (314 lines, 310 allocations, 0
 retired/planned), executed by `scripts/conformance.sh` /
-`tools/conformance/src/bin/conformance.rs` against a self-hosted or external
-SUT. Latest committed run (2026-07-09, `docs/conformance/results.json` +
+`tools/conformance/src/bin/conformance.rs` against an external SUT — the
+Docker-composed server built from the current sources (the in-process
+self-host mode was removed 2026-07-09; owner ruling, one mode / real artefact). Latest committed run (2026-07-09, `docs/conformance/results.json` +
 `CONFORMANCE_REPORT.md`): **318 case×format executions · 211 passed · 106
 failed · 1 skipped**. Blueprint §2.2 marks ArchetypeValidation
 (81 failures) as the one big rock (built at B2); the blueprint also records ECC
@@ -198,9 +199,9 @@ Per requirement:
   **Certificate** document per the `certificate/master03-certificate.adoc`
   template (per-conformance-point table, profile report) — the report §4
   verdict tables are the raw material.
-- **R11 (test environment)** — **DONE.** Self-host harness (`engine/sut.rs`,
-  `tests/self_host.rs`, testcontainers PG18) + external SUT
-  (`--base-url`, `bin/conformance.rs:49`); Basic/none auth modes; the SUT is
+- **R11 (test environment)** — **DONE.** External SUT harness (`engine/sut.rs`,
+  `--base-url`) driven against the Docker-composed server
+  (`scripts/conformance.sh`); Basic/none auth modes; the SUT is
   driven exclusively through the REST surface.
 
 ---

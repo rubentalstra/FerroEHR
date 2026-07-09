@@ -164,6 +164,25 @@ impl EhrbaseService {
             })
     }
 
+    /// The OPT 1.4 canonical XML addressed by its `template_id` string (the
+    /// ITS-REST wire address, unlike the SM's UUID-keyed [`opt_get`](Self::opt_get));
+    /// absent → `artefact_does_not_exist` (`404`).
+    pub(super) async fn opt_get_by_template_id(
+        &self,
+        template_id: &str,
+    ) -> Result<String, ServiceError> {
+        sqlx::query_scalar::<_, String>("SELECT content FROM template_store WHERE template_id = $1")
+            .bind(template_id)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::ArtefactDoesNotExist,
+                    format!("OPT template_id {template_id}"),
+                )
+            })
+    }
+
     /// The ids (`UUID`s) of all stored OPTs, oldest first (`list_opts`).
     pub(super) async fn opt_list(&self, page: Page) -> Result<Vec<String>, ServiceError> {
         let (offset, limit) = page_bounds(page);

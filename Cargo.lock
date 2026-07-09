@@ -452,16 +452,12 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "conformance",
- "ehrbase",
- "ehrbase-rest",
  "hdrhistogram",
  "jiff",
  "reqwest 0.13.4",
  "serde",
  "serde_json",
  "sysinfo",
- "testcontainers",
- "testcontainers-modules",
  "thiserror 2.0.18",
  "tokio",
 ]
@@ -1050,11 +1046,8 @@ name = "conformance"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum",
  "base64 0.22.1",
  "clap",
- "ehrbase",
- "ehrbase-rest",
  "jiff",
  "openehr-base",
  "openehr-flat",
@@ -1064,12 +1057,8 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.11.0",
- "testcontainers",
- "testcontainers-modules",
  "thiserror 2.0.18",
  "tokio",
- "tower",
- "tower-http 0.7.0",
  "uuid",
 ]
 
