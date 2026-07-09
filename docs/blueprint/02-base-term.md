@@ -4,7 +4,7 @@ Component scope: BASE 1.3.0 foundation/base types (`docs/specs/openehr/BASE/docs
 and TERM 3.1.0 (`docs/specs/openehr/TERM/`). Oracle = the vendored spec text; all
 citations below are repo-relative paths into it. Codebase state verified by
 reading/grepping `crates/openehr-base`, `crates/openehr-rm`, `crates/openehr-term`,
-`crates/openehr-flat`, `app/*`, plus `docs/GAP_REGISTER.md` and
+`crates/openehr-flat`, `app/*`, plus the blueprint §2 gap surface and
 `docs/spec-audit/SPEC_AUDIT.md` (+ `findings/11-terminology.md`,
 `findings/12-rm-base-types.md`). Date: 2026-07-09.
 
@@ -192,14 +192,14 @@ Legend: **DONE** (evidence) / **PARTIAL** (what is missing) / **MISSING**.
 | R3 UID grammar | **DONE** | `lexical.rs` (`all_digits`, `is_positive_int`, `is_oid`) + `internet_id_impl.rs`/`iso_oid_impl.rs` format invariants; strict `FromStr` per SPEC_AUDIT F-12-03 (fixed 2026-07-06 W2-L). |
 | R4 OBJECT_ID hierarchy | **DONE** | All 16 identification classes generated (incl. `access_group_ref.rs`, `template_id.rs`, `generic_id.rs`); `uid_based_id.rs`/`object_id.rs` as closed enums. |
 | R5 root/extension | **DONE** | `uid_based_id_impl.rs`: `root`/`extension`/`has_extension` on HIER_OBJECT_ID, OBJECT_VERSION_ID and the `UidBasedId` enum (F-12-03 fix note). |
-| R6 OBJECT_VERSION_ID | **DONE** | `object_version_id_impl.rs`: `object_id`/`creating_system_id`/`version_tree_id`/`is_branch`, strict three-part `FromStr`, `Value_format_valid` invariant wired into `validate_rm_value` (F-12-03 ✅). App consolidated onto it: `ehrbase::service::version_id` over `openehr_base::ObjectVersionId` (SPEC_AUDIT W2-B, "malformed `::` shapes now rejected"); per-version `creating_system_id` proven in storage (GAP_REGISTER §1, PR #33). |
+| R6 OBJECT_VERSION_ID | **DONE** | `object_version_id_impl.rs`: `object_id`/`creating_system_id`/`version_tree_id`/`is_branch`, strict three-part `FromStr`, `Value_format_valid` invariant wired into `validate_rm_value` (F-12-03 ✅). App consolidated onto it: `ehrbase::service::version_id` over `openehr_base::ObjectVersionId` (SPEC_AUDIT W2-B, "malformed `::` shapes now rejected"); per-version `creating_system_id` proven in storage (blueprint §2.1, PR #33). |
 | R7 VERSION_TREE_ID | **DONE** | `version_tree_id_impl.rs`: format invariant + `trunk_version`/`is_branch`/`is_first`/`branch_number`/`branch_version` + `FromStr`, branch segments ≥ 1 per `Branch_*_valid` (F-12-03 fix note). |
 | R8 ARCHETYPE_ID | **DONE** | `archetype_id_impl.rs`: `qualified_rm_entity`/`domain_concept`/`rm_originator`/`rm_name`/`rm_entity`/`specialisation`/`version_id` + strict `FromStr` (F-12-07 ✅). |
 | R9 TERMINOLOGY_ID | **DONE** | `terminology_id_impl.rs`: `name`/`version_id` (F-12-07 ✅). Note: AQL front end once could not lex hyphenated terminology ids (SPEC_AUDIT summary item 9) — front-end concern, tracked there. |
 | R10 Identifier case rules | **PARTIAL** | Case-*preserving*: yes (identifiers are opaque `value: String`, never re-cased). Case-*insensitive equality*: **missing** — `grep -rn "eq_ignore\|to_lower" crates/openehr-base/src/base_types/identification/` matches nothing but a doc comment; all comparisons are derived `PartialEq` (byte-exact). Two `OBJECT_VERSION_ID`s differing only in UUID hex case (`…4E3D…` vs `…4e3d…`) compare unequal and would miss on lookup. No SPEC_AUDIT finding covers this. |
 | R11 OBJECT_REF family | **DONE** | `object_ref_impl.rs`, `party_ref_impl.rs`, `locatable_ref_impl.rs` (`as_uri`, F-12-07 ✅). |
 | R12 Interval invariants + functions | **PARTIAL** | `proper_interval_impl.rs` enforces `Lower/Upper_included_valid` **and** `Limits_consistent` (via `PartialOrd`, lines 19–37); `point_interval_impl.rs` present. RM-side `DV_INTERVAL` enforces `Limits_consistent` over DV_ORDERED magnitudes and provides `has()`; `REFERENCE_RANGE.is_in_range()` exists (F-12-04 ✅, `dv_ordered_impl.rs` + `dv_interval_impl.rs`). **Missing:** `has`/`intersects`/`contains`/`is_equal` on the BASE `Interval`/`Point_interval`/`Proper_interval` types themselves (grep: no such fns in `point_interval_impl.rs`; 6 fns total in `proper_interval_impl.rs`, all invariant plumbing). |
-| R13 Multiplicity_interval / Cardinality | **PARTIAL** | Generated (`multiplicity_interval.rs`, `cardinality.rs`) but **no `*_impl.rs`** — none of their functions (`is_open`, `is_optional`, occurrence math) exist. These are the constraint-evaluation primitives for the **81 failing ArchetypeValidation ECC cases** (GAP_REGISTER §2.1). |
+| R13 Multiplicity_interval / Cardinality | **PARTIAL** | Generated (`multiplicity_interval.rs`, `cardinality.rs`) but **no `*_impl.rs`** — none of their functions (`is_open`, `is_optional`, occurrence math) exist. These are the constraint-evaluation primitives for the **81 failing ArchetypeValidation ECC cases** (blueprint §2.2), built at B2. |
 | R14 ISO 8601 types | **DONE** (by policy) | Foundation `Iso8601_*` types generated as bare `{value: String}`; the wire carries strings validated by hand-written helpers in `crates/openehr-rm/src/validate.rs`. Recorded as a known non-gap in SPEC_AUDIT F-12-11 ✅ ("near-zero fidelity impact"). |
 | R15 Extended + compact | **DONE** | `validate.rs:139 is_valid_iso_date` accepts `YYYY[-MM[-DD]]` and `YYYYMMDD`/`YYYYMM`; `is_valid_time_core` accepts `HH:MM:SS` and `HHMMSS` forms (lines 175–205). |
 | R16 Partial dates | **PARTIAL** | Partials `YYYY`/`YYYY-MM` accepted; `Partial_validity` holds structurally; `Month_valid` enforced (1–12). **`Day_valid` is not calendar-exact**: day only range-checked 1–31 (`validate.rs:144`), so `2021-02-31` passes, violating `valid_day(year, month, day)` (iso8601_date.adoc line 107). Wired into DV_DATE/DV_DATE_TIME `Value_valid` (`dv_date_impl.rs`). |
@@ -212,13 +212,13 @@ Legend: **DONE** (evidence) / **PARTIAL** (what is missing) / **MISSING**.
 | R23 XML as computable form | **DONE** | Assets `crates/openehr-term/assets/{en,es,ja,pt,zh}/openehr_terminology.xml` + `openehr_external_terminologies.xml` + `PropertyUnitData.xml` + `schema/`; single parser path (the FHIR mirror deliberately not consumed — findings/11 hygiene note). |
 | R24 Group-scoped rubric incl. SPECPR-51 | **DONE** | `bundle.rs:253 rubric(group_id, code, lang)`; the id=532 dual-rubric quirk proven by test `version_lifecycle_state_specpr51_quirk`; service emits the group-correct rubric ("complete" for `ORIGINAL_VERSION.lifecycle_state` 532 in `versioned.rs`) — findings/11 Summary. Code validity resolved against canonical `en` only (language-independent), rubrics per-language. |
 | R25 Codes not rubrics on the wire | **DONE** | F-11-01 (audit `change_type` emitted rubric as `code_string`) **fixed** — numeric group codes stored/emitted, rubric as `value` (findings/11, checked box). Terminology-bound RM invariants now validated: `DV_TEXT.language/encoding` (F-11-02 ✅), `ISM_TRANSITION.transition` (F-11-03 ✅), `TERM_MAPPING.purpose` (F-11-04 ✅), `DV_ORDERED.normal_status` + `PARTY_RELATED.relationship` (F-11-05 ✅) — all in `crates/openehr-flat/src/validation/terminology.rs`. |
-| R26 Terminology service interfaces | **PARTIAL** | The SM native-API trait exists: `app/ehrbase-sm/src/services/terminology.rs` (`trait TerminologyService`, line 237, mirroring `i_terminology_service.adoc`, with `TerminologyDescription`/`TermCode`/`DefinedTerm` extract model). The bundle's flat `OpenehrTerminology` API is an accepted structural deviation (ADR-006/008; findings/11 Summary "every spec operation has a semantic equivalent"). **Missing:** wire exposure — "EHR Index / Terminology wire exposure (extension OAS)" is *designed, not built* (GAP_REGISTER §2.3, design `docs/design/sm-platform/08-target-architecture.md` §7). Spec identifier constants (`Terminology_id_openehr`, `Group_id_*`, `Code_set_id_*`) not exposed; consumers hardcode `"openehr"` etc. — **F-11-07 open**. Internal code-set membership is an O(n) scan (`bundle.rs:382`) — **F-11-06 open** (hygiene). |
+| R26 Terminology service interfaces | **PARTIAL** | The SM native-API trait exists: `app/ehrbase-sm/src/services/terminology.rs` (`trait TerminologyService`, line 237, mirroring `i_terminology_service.adoc`, with `TerminologyDescription`/`TermCode`/`DefinedTerm` extract model). The bundle's flat `OpenehrTerminology` API is an accepted structural deviation (ADR-006/008; findings/11 Summary "every spec operation has a semantic equivalent"). **Missing:** wire exposure — "EHR Index / Terminology wire exposure (extension OAS)" is designed and built at B4 (design `docs/design/sm-platform/08-target-architecture.md` §7). Spec identifier constants (`Terminology_id_openehr`, `Group_id_*`, `Code_set_id_*`) not exposed; consumers hardcode `"openehr"` etc. — **F-11-07 open**. Internal code-set membership is an O(n) scan (`bundle.rs:382`) — **F-11-06 open** (hygiene). |
 | R27 Internal shape free | **DONE** | By construction (own struct set `terminology/{terminology,code_set,code,terminology_group,terminology_concept,terminology_status}.rs` mirroring the TERM model classes of master04-representation.adoc). |
 
-Cross-cutting, verified adjacent state: version **branching** is deliberately
-trunk-only (`is_branch` parses correctly but the CDR never creates branches) —
-deliberate deferral, GAP_REGISTER §2.4 ("Version branching (trunk-only,
-F-06-09) + version merging out of scope"). The emitter inconsistency on
+Cross-cutting, verified adjacent state: version **branching** is trunk-only
+today (`is_branch` parses correctly but the CDR never creates branches) —
+version branching (F-06-09) and merging are ordered work at B3, landing with
+distributed EHR-Extract import. The emitter inconsistency on
 `DV_ORDERED.normal_range` monomorphisation (**F-12-08 open**, info) and the
 single `serde_json::Value` degradation in experimental `ehr_extract`
 (**F-12-09 open**, minor) are the only structural blemishes in generated
@@ -239,7 +239,7 @@ BASE/RM (zero `Value` fallbacks in generated BASE — findings/12 Summary).
 2. **`Multiplicity_interval`/`Cardinality` function impls (R13)** — write
    `multiplicity_interval_impl.rs` + `cardinality_impl.rs` (`is_open`,
    `is_optional`, `has`, upper-unbounded handling). Do this **inside the
-   ArchetypeValidation push** (GAP_REGISTER §2.1: 81 failing ECC cases —
+   ArchetypeValidation push at B2** (blueprint §2.2: 81 failing ECC cases —
    occurrence/cardinality evaluation is exactly this type's job).
 3. **Calendar-exact `Day_valid` (R16)** — tighten
    `openehr-rm/src/validate.rs::is_valid_iso_date` to
@@ -253,8 +253,7 @@ BASE/RM (zero `Value` fallbacks in generated BASE — findings/12 Summary).
 5. **Index internal code sets (F-11-06)** — `HashSet` index for
    `normal_statuses` etc., mirroring `external_codes`.
 6. **Terminology wire exposure** — build the designed extension-OAS surface
-   over the `TerminologyService` trait (GAP_REGISTER §2.3; design 08 §7).
-   Sequenced with SM close, before/at P19.
+   over the `TerminologyService` trait (B4; design 08 §7).
 7. **BASE `Interval` function surface (R12)** — `has`/`intersects`/`contains`
    on `Proper_interval`/`Point_interval` when a consumer appears (likely the
    same ArchetypeValidation push as item 2); note the defective spec

@@ -129,9 +129,10 @@ retired/planned), executed by `scripts/conformance.sh` /
 `tools/conformance/src/bin/conformance.rs` against a self-hosted or external
 SUT. Latest committed run (2026-07-09, `docs/conformance/results.json` +
 `CONFORMANCE_REPORT.md`): **318 case×format executions · 211 passed · 106
-failed · 1 skipped**. `docs/GAP_REGISTER.md` §2.1 marks ArchetypeValidation
-(81 failures) as "the one big gap"; note the register also records ECC as
-*"suspended during the ADR-011 rebuild, re-converges at P19"*.
+failed · 1 skipped**. Blueprint §2.2 marks ArchetypeValidation
+(81 failures) as the one big rock (built at B2); the blueprint also records ECC
+as *"suspended during the ADR-011 rebuild, re-converges at B1/P19"* (§4.4 gate
+policy).
 
 Per requirement:
 
@@ -161,7 +162,7 @@ Per requirement:
   `SECURITY_TESTS/I_OAuth2_Keycloak` with no ECC counterpart).
 - **R5 (content validation)** — **PARTIAL.** 118 VAL cases registered; run
   state 37 pass / 81 fail — the failures are server-side validation depth
-  (occurrence/cardinality/value constraints; `docs/GAP_REGISTER.md` §2.1,
+  (occurrence/cardinality/value constraints; blueprint §2.2,
   F-open-3/9/31/40/30 in `docs/conformance/COVERAGE_GAPS.md` §1), not missing
   cases. master17.5 (time-spec) has zero upstream cases to transcribe.
 - **R6/R7 (profiles + matrix)** — **PARTIAL.** `required_capabilities()`
@@ -339,7 +340,7 @@ not server defects.
    no-body `POST /ehr` path already exists); decide + document
    `Adl14ArchetypeProvisioning` evidencing.
 5. **The ArchetypeValidation push (81 failures)** — the single
-   highest-leverage server work item (`GAP_REGISTER.md` §2.1): occurrence/
+   highest-leverage server work item (blueprint §2.2, built at B2): occurrence/
    cardinality/value-constraint enforcement depth in the P15 validator;
    reconcile with the open spec-audit findings (82 open,
    `docs/spec-audit/SPEC_AUDIT.md`).
