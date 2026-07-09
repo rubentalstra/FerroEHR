@@ -25,11 +25,13 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
+use openehr_base::prelude::TerminologyCode;
+use openehr_rm::prelude::PartyProxy;
+
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{EhrCompositionService, EhrService};
-use openehr_its::rest::generated::definition::DefinitionApi;
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{CallStatusType, DefinitionAdapter, EhrCompositionService, EhrService, SmError};
 
 struct Pg {
     #[allow(dead_code)]
@@ -74,8 +76,33 @@ impl Pg {
     }
 }
 
-fn params<P: serde::de::DeserializeOwned>(v: Value) -> P {
-    serde_json::from_value(v).expect("params")
+/// An `openehr` terminology code (audit change type / lifecycle state).
+fn term(code: &str) -> TerminologyCode {
+    TerminologyCode {
+        terminology_id: "openehr".to_owned(),
+        terminology_version: None,
+        code_string: code.to_owned(),
+        uri: None,
+    }
+}
+
+/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
+fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+    UpdateVersion {
+        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
+        lifecycle_state: term("532"),
+        attestations: None,
+        data,
+        audit: UpdateAudit {
+            change_type: term(change_code),
+            description: None,
+            committer: serde_json::from_value::<PartyProxy>(
+                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            )
+            .expect("committer"),
+        },
+        signature: None,
+    }
 }
 
 /// Read a workspace fixture relative to this crate's manifest dir.
@@ -108,39 +135,27 @@ async fn composition_validation_gates_persistence() {
     let svc = EhrbaseService::new(pool.clone());
 
     // Ingest the IPS operational template (the validation target).
-    svc.definition_template_adl1_4_upload(params(json!({})), Value::String(fixture(IPS_OPT)))
+    svc.template_adl14_upload(fixture(IPS_OPT))
         .await
         .expect("upload IPS OPT");
 
-    let ehr = svc
-        .ehr_create(params(json!({})), None)
-        .await
-        .expect("ehr_create");
-    let ehr_id = ehr.body["ehr_id"]["value"]
-        .as_str()
-        .expect("ehr_id")
-        .to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("create_ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     // ── valid composition → committed and retrievable ────────────────────────
-    let created = svc
-        .composition_create(
-            params(json!({ "ehr_id": ehr_id })),
-            composition("ips_canonical.json"),
-        )
+    // PORT NOTE (ADR-011): `create_composition` returns the new version_uid.
+    let ovid = svc
+        .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
         .expect("valid composition accepted (201)");
-    let ovid = created.body["uid"]["value"]
-        .as_str()
-        .expect("uid")
-        .to_owned();
     let vo_id = ovid.split("::").next().unwrap().to_owned();
 
     let fetched = svc
-        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .get_composition_latest(ehr_uuid, vo_id.parse().expect("vo uuid"))
         .await
         .expect("valid composition persisted");
     assert_eq!(
-        fetched.body["uid"]["value"], ovid,
+        fetched["uid"]["value"], ovid,
         "persisted composition round-trips"
     );
     assert_eq!(
@@ -151,22 +166,29 @@ async fn composition_validation_gates_persistence() {
 
     // ── invalid composition → 422 with per-path violations, NOT persisted ─────
     let err = svc
-        .composition_create(
-            params(json!({ "ehr_id": ehr_id })),
-            composition("ips_invalid.json"),
-        )
+        .create_composition(ehr_uuid, uv(composition("ips_invalid.json"), "249", None))
         .await
         .expect_err("invalid composition rejected");
-    match err {
-        ApiError::ValidationFailed(violations) => {
-            assert!(!violations.is_empty(), "422 body carries the violations");
-            assert!(
-                violations.iter().all(|v| !v.path.is_empty()),
-                "every violation is keyed by an RM path: {violations:?}"
-            );
-        }
-        other => panic!("expected ValidationFailed (422), got {other:?}"),
-    }
+    // PORT NOTE (ADR-011): the SM boundary flattens `ServiceError::ValidationFailed`
+    // to `SmError { status: ContentInvalid, message }`, the per-path violations
+    // joined into `message` ("path: msg; …"). The structured per-path list is now
+    // built at the protocol adapter's 422 body (`ehrbase-rest`); here we assert the
+    // status + that the message carries the RM paths, preserving the intent.
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "expected content_invalid (422), got {err:?}"
+    );
+    assert!(
+        err.message.contains('/'),
+        "422 message carries the RM-path-keyed violations: {}",
+        err.message
+    );
     // Validation runs before the write transaction, so nothing was persisted.
     assert_eq!(
         composition_versions(&pool).await,
@@ -179,18 +201,26 @@ async fn composition_validation_gates_persistence() {
     unknown["archetype_details"]["template_id"]["value"] =
         Value::String("no.such.template.v0".to_owned());
     let err = svc
-        .composition_create(params(json!({ "ehr_id": ehr_id })), unknown)
+        .create_composition(ehr_uuid, uv(unknown, "249", None))
         .await
         .expect_err("unknown template rejected");
-    match err {
-        ApiError::Unprocessable(msg) => {
-            assert!(
-                msg.contains("not known"),
-                "422 message names the cause: {msg}"
-            );
-        }
-        other => panic!("expected Unprocessable (422) for unknown template, got {other:?}"),
-    }
+    // PORT NOTE (ADR-011): `ServiceError::Unprocessable` → `ContentInvalid`; the
+    // cause still rides in the message.
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "expected content_invalid (422) for unknown template, got {err:?}"
+    );
+    assert!(
+        err.message.contains("not known"),
+        "422 message names the cause: {}",
+        err.message
+    );
     assert_eq!(
         composition_versions(&pool).await,
         1,
@@ -204,49 +234,49 @@ async fn composition_update_is_validated() {
     let pool = pg.migrated_pool("validation_update").await;
     let svc = EhrbaseService::new(pool.clone());
 
-    svc.definition_template_adl1_4_upload(params(json!({})), Value::String(fixture(IPS_OPT)))
+    svc.template_adl14_upload(fixture(IPS_OPT))
         .await
         .expect("upload IPS OPT");
-    let ehr = svc
-        .ehr_create(params(json!({})), None)
-        .await
-        .expect("ehr_create");
-    let ehr_id = ehr.body["ehr_id"]["value"]
-        .as_str()
-        .expect("ehr_id")
-        .to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("create_ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     // Seed a valid v1.
-    let v1 = svc
-        .composition_create(
-            params(json!({ "ehr_id": ehr_id })),
-            composition("ips_canonical.json"),
-        )
+    let ovid_v1 = svc
+        .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
         .expect("valid v1");
-    let ovid_v1 = v1.body["uid"]["value"].as_str().expect("uid").to_owned();
     let vo_id = ovid_v1.split("::").next().unwrap().to_owned();
+    let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
 
     // An update whose body fails template validation is rejected (422) and the
     // stored current version stays at v1.
     let err = svc
-        .composition_update(
-            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id, "If-Match": ovid_v1 })),
-            composition("ips_invalid.json"),
+        .update_composition(
+            ehr_uuid,
+            vo_uuid,
+            uv(composition("ips_invalid.json"), "251", Some(&ovid_v1)),
         )
         .await
         .expect_err("invalid update rejected");
+    // PORT NOTE (ADR-011): ValidationFailed → `ContentInvalid` with the violations
+    // in `message`.
     assert!(
-        matches!(err, ApiError::ValidationFailed(ref v) if !v.is_empty()),
-        "expected ValidationFailed (422), got {err:?}"
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ) && !err.message.is_empty(),
+        "expected content_invalid (422), got {err:?}"
     );
 
     let current = svc
-        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .get_composition_latest(ehr_uuid, vo_uuid)
         .await
         .expect("current still readable");
     assert_eq!(
-        current.body["uid"]["value"], ovid_v1,
+        current["uid"]["value"], ovid_v1,
         "the rejected update did not advance the version"
     );
 }

@@ -9,7 +9,9 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use ehrbase_signing::{KeyError, Mode, Signer, SigningConfig, SigningError, Verdict, VerifyOnRead};
+use ehrbase::signing::{
+    KeyError, Mode, Signer, SigningConfig, SigningError, Verdict, VerifyOnRead,
+};
 use pgp::composed::{ArmorOptions, KeyType, SecretKeyParamsBuilder, SignedSecretKey};
 use rand::rngs::OsRng;
 use secrecy::SecretString;

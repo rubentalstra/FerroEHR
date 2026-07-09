@@ -466,7 +466,7 @@ impl EhrbaseService {
             // Demographic party roots validate structurally (typed deserialize +
             // PARTY invariants) via the demographic module.
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
-                self.validate_party_kind_for_commit(kind, data)
+                Self::validate_party_kind_for_commit(kind, data)
             }
             // PARTY_RELATIONSHIP validates structurally (typed deserialize +
             // source/target present) via the relationship module.

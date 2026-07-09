@@ -533,8 +533,17 @@ impl EhrContributionService for EhrbaseService {
         // `{ versions: [ { commit_audit, data, preceding_version_uid,
         // lifecycle_state, attestations, signature } … ], audit }`. The typed
         // `UpdateVersion`/`UpdateAudit` serialize to exactly those field names
-        // (`commit_audit` is the serde-renamed audit field), so the round-trip is
-        // faithful.
+        // (`commit_audit` is the serde-renamed audit field).
+        //
+        // PORT NOTE: this typed → wire-JSON → re-parse round-trip through
+        // `commit_version_set` is a known glue seam. The typed shapes differ from
+        // the raw wire in two ways `commit_version_set` now tolerates explicitly:
+        // `preceding_version_uid: None` serializes to JSON `null` (not absent),
+        // and `change_type` is a `Terminology_code` (`{terminology_id,
+        // code_string}`), not a `DV_CODED_TEXT` (see the PORT NOTEs in
+        // `service/contribution.rs` `coded_value`/`classify`). A future cleanup
+        // would give the contribution commit a native typed path that skips the
+        // JSON round-trip entirely; do not refactor it here.
         let versions_json =
             serde_json::to_value(&versions).map_err(|e| SmError::exception(e.to_string()))?;
         let audit_json =

@@ -19,13 +19,17 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
+use openehr_base::prelude::TerminologyCode;
+use openehr_rm::prelude::PartyProxy;
+
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::backend::{DemographicService, PartyKind, PartyRelationshipService};
-use ehrbase_rest::{
-    AdminArchive, AdminService, EhrDirectoryService, EhrService, EhrStatusService, PlatformService,
+use ehrbase_sm::services::PartyRelationshipService;
+use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{
+    AdminArchive, AdminService, CallStatusType, DemographicService, EhrDirectoryService,
+    EhrService, EhrStatusService, ItemTagAdapter, PartyKind, PlatformService, SmError,
 };
-use openehr_its::rest::runtime::ApiError;
 
 struct Pg {
     #[allow(dead_code)]
@@ -70,13 +74,38 @@ impl Pg {
     }
 }
 
-fn params<P: serde::de::DeserializeOwned>(v: Value) -> P {
-    serde_json::from_value(v).expect("params")
-}
-
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
+}
+
+/// An `openehr` terminology code (audit change type / lifecycle state).
+fn term(code: &str) -> TerminologyCode {
+    TerminologyCode {
+        terminology_id: "openehr".to_owned(),
+        terminology_version: None,
+        code_string: code.to_owned(),
+        uri: None,
+    }
+}
+
+/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
+fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+    UpdateVersion {
+        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
+        lifecycle_state: term("532"),
+        attestations: None,
+        data,
+        audit: UpdateAudit {
+            change_type: term(change_code),
+            description: None,
+            committer: serde_json::from_value::<PartyProxy>(
+                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            )
+            .expect("committer"),
+        },
+        signature: None,
+    }
 }
 
 /// Row counts scoped to one EHR across every table a physical delete must clear.
@@ -156,42 +185,44 @@ async fn ehr_rows(pool: &PgPool, ehr_id: Uuid) -> EhrRows {
 /// populate the same `vo_version`/`node`/`contribution`/`audit`/`item_tag`
 /// tables, so the cascade contract is fully covered without COMPOSITION.
 async fn seed_full_ehr(svc: &EhrbaseService) -> Uuid {
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
     // A second EHR_STATUS version (create → update): a multi-version vo.
-    let status = svc
-        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+    let mut updated = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
         .await
         .expect("status get");
-    let status_ovid = uid(&status.body).to_owned();
+    let status_ovid = uid(&updated).to_owned();
     let status_vo = status_ovid.split("::").next().unwrap().to_owned();
-    let mut updated = status.body.clone();
+    updated.as_object_mut().expect("status obj").remove("uid");
     updated["is_modifiable"] = json!(false);
-    svc.ehr_status_update(
-        params(json!({ "ehr_id": ehr_id, "If-Match": status_ovid })),
-        updated,
-    )
-    .await
-    .expect("status update");
+    svc.replace_ehr_status(ehr_uuid, uv(updated, "251", Some(&status_ovid)))
+        .await
+        .expect("status update");
 
     // An item tag on the EHR_STATUS.
-    svc.ehr_status_tags_update(
-        params(json!({ "ehr_id": ehr_id, "uid_based_id": status_vo })),
+    svc.target_tags_replace(
+        ehr_uuid,
+        status_vo,
+        "EHR_STATUS",
         vec![json!({ "key": "priority", "value": "high" })],
     )
     .await
     .expect("tag");
 
     // A directory FOLDER (another versioned-object kind through the cascade).
-    svc.directory_create(
-        params(json!({ "ehr_id": ehr_id })),
-        json!({ "_type": "FOLDER", "name": { "_type": "DV_TEXT", "value": "root" } }),
+    svc.create_directory(
+        ehr_uuid,
+        uv(
+            json!({ "_type": "FOLDER", "name": { "_type": "DV_TEXT", "value": "root" } }),
+            "249",
+            None,
+        ),
     )
     .await
     .expect("directory");
 
-    Uuid::parse_str(&ehr_id).unwrap()
+    ehr_uuid
 }
 
 #[tokio::test]
@@ -241,14 +272,26 @@ async fn admin_delete_unknown_ehr_is_not_found() {
     let missing = Uuid::now_v7().to_string();
     let res = svc.admin_ehr_delete(missing).await;
     assert!(
-        matches!(res, Err(ApiError::NotFound(_))),
+        matches!(
+            res,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
         "unknown EHR must be NotFound, got {res:?}"
     );
 
     // A malformed id is a 400.
     let bad = svc.admin_ehr_delete("not-a-uuid".to_owned()).await;
     assert!(
-        matches!(bad, Err(ApiError::BadRequest(_))),
+        matches!(
+            bad,
+            Err(SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            })
+        ),
         "malformed id must be BadRequest, got {bad:?}"
     );
 }
@@ -287,7 +330,13 @@ async fn admin_delete_all_deletes_present_and_skips_missing() {
         .admin_ehr_delete_all(vec![d.to_string(), "not-a-uuid".to_owned()])
         .await;
     assert!(
-        matches!(res, Err(ApiError::BadRequest(_))),
+        matches!(
+            res,
+            Err(SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            })
+        ),
         "a malformed id must be BadRequest, got {res:?}"
     );
 }
@@ -481,7 +530,13 @@ async fn admin_statistics_per_service_and_time_range() {
         )
         .await;
     assert!(
-        matches!(bad, Err(ApiError::BadRequest(_))),
+        matches!(
+            bad,
+            Err(SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            })
+        ),
         "invalid ISO bound must be BadRequest, got {bad:?}"
     );
 }
@@ -591,13 +646,25 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
     // An unknown party id → 404 (party_id_does_not_exist).
     let unknown = svc.physical_party_delete(Uuid::now_v7().to_string()).await;
     assert!(
-        matches!(unknown, Err(ApiError::NotFound(_))),
+        matches!(
+            unknown,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
         "unknown party must be NotFound, got {unknown:?}"
     );
 
     // A malformed id → 400.
     let bad = svc.physical_party_delete("not-a-uuid".to_owned()).await;
-    assert!(matches!(bad, Err(ApiError::BadRequest(_))));
+    assert!(matches!(
+        bad,
+        Err(SmError {
+            status: CallStatusType::PreconditionViolation,
+            ..
+        })
+    ));
 }
 
 #[tokio::test]
@@ -655,10 +722,10 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
     // Reads are UNCHANGED after archival (zero wire drift): the EHR_STATUS and
     // the party still serve their content.
     let status = svc
-        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr.to_string() })))
+        .get_ehr_status_at_time(ehr, None)
         .await
         .expect("status still readable after archive");
-    assert_eq!(status.body["_type"], "EHR_STATUS");
+    assert_eq!(status["_type"], "EHR_STATUS");
     let party = svc
         .party_get(PartyKind::Person, person.clone(), None)
         .await
@@ -676,7 +743,13 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
         .archive_ehrs(vec![fresh.to_string(), Uuid::now_v7().to_string()])
         .await;
     assert!(
-        matches!(res, Err(ApiError::NotFound(_))),
+        matches!(
+            res,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
         "an unknown EHR aborts the batch, got {res:?}"
     );
     let after: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
@@ -687,5 +760,11 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
 
     // Unknown party → 404.
     let bad_party = svc.archive_parties(vec![Uuid::now_v7().to_string()]).await;
-    assert!(matches!(bad_party, Err(ApiError::NotFound(_))));
+    assert!(matches!(
+        bad_party,
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
+    ));
 }

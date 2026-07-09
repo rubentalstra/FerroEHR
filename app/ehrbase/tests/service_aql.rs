@@ -33,10 +33,16 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
+use openehr_base::prelude::TerminologyCode;
+use openehr_rm::prelude::PartyProxy;
+use uuid::Uuid;
+
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{
-    AqlQueryRequest, EhrCompositionService, EhrService, EhrStatusService, QueryService,
+use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{
+    AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, EhrStatusService,
+    QueryService, SmError,
 };
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
@@ -86,8 +92,35 @@ impl Pg {
     }
 }
 
-fn params<P: serde::de::DeserializeOwned>(v: Value) -> P {
-    serde_json::from_value(v).expect("params")
+/// An `openehr` terminology code (audit change type / lifecycle state).
+fn term(code: &str) -> TerminologyCode {
+    TerminologyCode {
+        terminology_id: "openehr".to_owned(),
+        terminology_version: None,
+        code_string: code.to_owned(),
+        uri: None,
+    }
+}
+
+/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write, mirroring the
+/// adapter's `mk_update_version` (the RM object is the `data`, `If-Match` is the
+/// `preceding_version_uid`, and the audit carries the change type + committer).
+fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+    UpdateVersion {
+        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
+        lifecycle_state: term("532"),
+        attestations: None,
+        data,
+        audit: UpdateAudit {
+            change_type: term(change_code),
+            description: None,
+            committer: serde_json::from_value::<PartyProxy>(
+                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            )
+            .expect("committer"),
+        },
+        signature: None,
+    }
 }
 
 /// The base composition with its template stripped and a `DV_QUANTITY` leaf.
@@ -129,29 +162,23 @@ fn composition(name: &str, magnitude: f64) -> Value {
 }
 
 async fn create_ehr(svc: &EhrbaseService) -> String {
-    let ehr = svc
-        .ehr_create(params(json!({})), None)
-        .await
-        .expect("ehr_create");
-    ehr.body["ehr_id"]["value"]
-        .as_str()
-        .expect("ehr_id")
-        .to_owned()
+    // PORT NOTE (ADR-011): the SM `create_ehr` returns the new `UUID`, not the
+    // old `ServiceResponse` RM `EHR` envelope; the EHR's `ehr_id.value` is that
+    // uuid, so the string form is the same id the old test read from `.body`.
+    svc.create_ehr(None).await.expect("create_ehr").to_string()
 }
 
 /// Create a composition in `ehr_id`, returning its `OBJECT_VERSION_ID`.
 async fn create_comp(svc: &EhrbaseService, ehr_id: &str, name: &str, magnitude: f64) -> String {
-    let created = svc
-        .composition_create(
-            params(json!({ "ehr_id": ehr_id })),
-            composition(name, magnitude),
-        )
-        .await
-        .unwrap_or_else(|e| panic!("composition_create ({name}, {magnitude}): {e:?}"));
-    created.body["uid"]["value"]
-        .as_str()
-        .expect("uid")
-        .to_owned()
+    // PORT NOTE (ADR-011): the SM `create_composition` returns the new
+    // `version_uid` directly (what the old test extracted from `.body.uid.value`
+    // / `.meta.uid`).
+    svc.create_composition(
+        ehr_id.parse().expect("ehr_id uuid"),
+        uv(composition(name, magnitude), "249", None),
+    )
+    .await
+    .unwrap_or_else(|e| panic!("create_composition ({name}, {magnitude}): {e:?}"))
 }
 
 async fn run_aql(svc: &EhrbaseService, aql: &str, request: AqlQueryRequest) -> Value {
@@ -167,24 +194,21 @@ async fn run_aql(svc: &EhrbaseService, aql: &str, request: AqlQueryRequest) -> V
 async fn set_not_queryable(svc: &EhrbaseService, ehr_id: &str) {
     // Read the current EHR_STATUS — its body carries the `uid` we need for the
     // optimistic-concurrency precondition, plus the mandatory RM fields we keep.
-    let current = svc
-        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+    let ehr_uuid: Uuid = ehr_id.parse().expect("ehr_id uuid");
+    let mut body = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
         .await
-        .expect("ehr_status_get_at_time");
-    let if_match = current.body["uid"]["value"]
+        .expect("get_ehr_status_at_time");
+    let if_match = body["uid"]["value"]
         .as_str()
         .expect("EHR_STATUS uid")
         .to_owned();
-    let mut body = current.body.clone();
     let obj = body.as_object_mut().expect("EHR_STATUS object");
     obj.remove("uid");
     obj.insert("is_queryable".to_owned(), json!(false));
-    svc.ehr_status_update(
-        params(json!({ "ehr_id": ehr_id, "If-Match": if_match })),
-        body,
-    )
-    .await
-    .expect("ehr_status_update is_queryable=false");
+    svc.replace_ehr_status(ehr_uuid, uv(body, "251", Some(&if_match)))
+        .await
+        .expect("replace_ehr_status is_queryable=false");
 }
 
 fn rows(result: &Value) -> &Vec<Value> {
@@ -337,9 +361,18 @@ async fn aql_acceptance_set() {
         .query_execute_adhoc(aql, req)
         .await
         .expect_err("fetch + AQL LIMIT must conflict");
+    // PORT NOTE (ADR-011): the paging conflict is now the SM
+    // `precondition_violation` (`SmError::precondition`), which the adapter maps
+    // to the same wire `400` the old `ApiError::BadRequest` produced.
     assert!(
-        matches!(err, openehr_its::rest::runtime::ApiError::BadRequest(_)),
-        "paging conflict is 400, got {err:?}"
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
+        "paging conflict is precondition_violation, got {err:?}"
     );
 
     // ── NOT CONTAINS (none contain a different archetype) ──────────────────────
@@ -387,12 +420,15 @@ async fn aql_acceptance_set() {
     assert_eq!(rows(&r).len(), 1, "one composition in the single-comp EHR");
     let queried = &rows(&r)[0][0];
     let fetched = svc
-        .composition_get(params(json!({ "ehr_id": single, "uid_based_id": vo_id })))
+        .get_composition_latest(
+            single.parse().expect("ehr uuid"),
+            vo_id.parse().expect("vo uuid"),
+        )
         .await
-        .expect("composition_get");
+        .expect("get_composition_latest");
     // The query reassembles the stored canonical JSON (no injected uid); compare
     // against the fetched body with its service-injected uid removed.
-    let mut expected = fetched.body.clone();
+    let mut expected = fetched.clone();
     expected.as_object_mut().unwrap().remove("uid");
     assert_eq!(
         queried, &expected,
@@ -412,20 +448,20 @@ async fn latest_versus_all_versions() {
 
     // Update the composition twice → sys_version 2 and 3. Each update supplies
     // the current version_uid as `If-Match` (optimistic concurrency).
+    let ehr_uuid: Uuid = ehr_id.parse().expect("ehr_id uuid");
+    let vo_uuid: Uuid = vo_id.parse().expect("vo_id uuid");
     let mut current = ovid.clone();
     for magnitude in [20.0, 30.0] {
-        let resp = svc
-            .composition_update(
-                params(json!({
-                    "ehr_id": ehr_id,
-                    "uid_based_id": vo_id,
-                    "If-Match": current,
-                })),
-                composition("v", magnitude),
+        // PORT NOTE (ADR-011): the SM `update_composition` returns the new
+        // `version_uid` directly (the old `.meta.uid`).
+        current = svc
+            .update_composition(
+                ehr_uuid,
+                vo_uuid,
+                uv(composition("v", magnitude), "251", Some(&current)),
             )
             .await
-            .unwrap_or_else(|e| panic!("composition_update {magnitude}: {e:?}"));
-        current = resp.meta.expect("update meta").uid;
+            .unwrap_or_else(|e| panic!("update_composition {magnitude}: {e:?}"));
     }
 
     // LATEST_VERSION (the default) sees one version.
