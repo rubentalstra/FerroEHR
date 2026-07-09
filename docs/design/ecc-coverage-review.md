@@ -1,5 +1,13 @@
 # ECC coverage review — the one-time checklist against the legacy CNF corpus
 
+> **Blueprint anchor:** the live CNF/conformance authority is blueprint chapter
+> [`07-cnf.md`](../blueprint/07-cnf.md) (framework state + runner audit). This file
+> is a **completed one-time design review** (2026-07-08) proving the ECC
+> catalogue covers every behaviour the legacy CNF corpus tested — kept as
+> verification evidence, not a live tracker. Its `▶ build-out` items are now
+> ordered work in the blueprint build order (B2–B6). Revisit only if the
+> vendored reference corpus is re-vendored.
+
 Design v4 §3 requires a **human design review** (not machinery): every
 behaviour the legacy openEHR CNF corpus tested must be covered by the ECC
 catalogue *by design* — as existing cases or as a named build-out item in

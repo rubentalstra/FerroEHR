@@ -15,9 +15,9 @@ PostgreSQL-18-native internals (ADR-008). Two layers:
    prior art, not an oracle. This is the remaining Stage-1 work.
 
 Authoritative roadmap: **`docs/blueprint/00-THE-BLUEPRINT.md`** (where the
-project is going + why), with `docs/plans/` (active + future phases) +
-`docs/PROGRESS.md` (per-phase record) and `docs/GAP_REGISTER.md` (the
-consolidated spec-gap surface) under it.
+project is going + why; §2 is the consolidated spec-gap surface), with
+`docs/plans/` (active + future phases) + `docs/PROGRESS.md` (per-phase record)
+under it.
 Decisions: `docs/ADRs/ADR-004` (spec codegen), `ADR-005` (ITS codegen),
 `ADR-006` (application philosophy), **`ADR-008` (greenfield storage + AQL +
 conformance target — read first)**, `ADR-010` (SM-aligned service

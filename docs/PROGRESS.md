@@ -70,7 +70,7 @@ partially superseded. Phase files 10/16/19 re-scoped.
 |---|---|
 | PR #33 (2026-07-09) | Storage change-control audit wave: persistence verified 1:1 vs RM common master06; all 7 findings fixed (five-state lifecycle, `creating_system_id`, audit copy rule, full-corpus jsonb round-trip, invariant CHECKs, scope PORT NOTEs) |
 | ADR-011 (2026-07-09) | App-crate redesign accepted: three app crates, protocol-free SM native API, `Platform` generics, no `dyn Backend`/stub |
-| PR #34 (2026-07-09) | ADR-011 rebuild in progress — SM-4 closing waves executing the structural + purity refactor; ECC suspended, re-converges at P19. Consolidated gap surface now in `docs/GAP_REGISTER.md`; roadmap in `docs/blueprint/` |
+| PR #34 (2026-07-09) | ADR-011 rebuild in progress — SM-4 closing waves executing the structural + purity refactor; ECC suspended, re-converges at P19. Roadmap + consolidated gap surface now in `docs/blueprint/` (00-THE-BLUEPRINT §2) |
 
 **Stage 2** (after P19 conformance holds): RBAC/attribute authz (the
 `ehrbase-rest::access` module, already implemented ahead of schedule), plugin
