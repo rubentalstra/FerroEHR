@@ -97,17 +97,27 @@ SM-3 merged (PR #33, develop 327dcb7b7). Branch
 `claude/sm-phase-04-terminology-admin`. Both governing interfaces read
 2026-07-09; design decisions fixed above.
 
-## Wave 2 — app-crate redesign (ADR-011, owner priority; BEFORE dump/load + SM-5)
+## Wave 2 — app-crate redesign (ADR-011 as amended 2026-07-09: the LITERAL SM catalog)
 
-- [ ] Structural: remove all default `NotImplemented` trait bodies; delete
-      `StubBackend`; rename `Backend` → `Platform`; `AppState<S: Platform>`
-      generics through the router/dispatchers (no `Arc<dyn>`); delete the
-      `ehrbase-rest::{backend,response}` shims; consolidate the nine test
-      mocks into one shared test-support mock; dissolve pure-delegation
-      `service/api/*` modules (impls live beside their service logic)
-- [ ] Purity: `SmError` (CallStatusType-based) + SM-native params replace
-      `ApiError`/generated `*Params` in every `ehrbase-sm` signature; the
-      wire↔native mapping lives wholly in `ehrbase-rest`
+Owner ruling: the SM specs are the shape — internal behaviour preservation
+is not a constraint (greenfield; everything may break EXCEPT the ITS-REST
+wire, which is what a protocol adapter is — ECC zero-drift 211/318 stays
+the gate). Spec sources: the digests `docs/design/sm-platform/01..04` carry
+every interface's verbatim call set with citations; the `.adoc` files under
+`docs/specs/openehr/SM/docs/UML/classes/` are the oracle.
+
+- [ ] `ehrbase-sm` rebuilt as the transcribed SM catalog: exact call names/
+      params/returns per interface; `SmError` over `CallStatusType`
+      (I_STATUS realization); `UpdateVersion<T>` as the commit envelope
+      parameter; `Page` for the cursor; `I_EHR` as a generic handle; zero
+      `openehr_its::rest` imports; adapter-support calls (latest_meta,
+      tags) segregated into an `adapter`-extension trait with PORT NOTEs
+- [ ] No default bodies anywhere; `StubBackend` deleted; `Backend` →
+      `Platform`; `AppState<S: Platform>` generics (no `Arc<dyn>`); shims
+      deleted; nine test mocks → one shared test-support mock
+- [ ] `ehrbase-rest` = the full wire↔SM mapping (params decoding, Prefer/
+      ETag/Location, the SmError→HTTP table); `ehrbase` implements the
+      catalog directly (api/* delegation dissolved)
 - [ ] Gates: workspace green; ECC zero-drift 211/318 (wire byte-identical);
-      wave-1 verification (terminology + admin tests) folded into the run
+      wave-1 (terminology/admin) verification folded in
 - [ ] Then wave 3: dump/load (unchanged scope)

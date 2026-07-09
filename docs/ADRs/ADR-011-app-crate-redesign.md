@@ -36,14 +36,29 @@ structural smells, all real:
 
 ## Decision
 
-1. **`ehrbase-sm` becomes pure SM.** Trait signatures exchange only
-   SM-native types: the existing `CallStatusType`-based error (a new
-   `SmError { status: CallStatusType, message }` replaces `ApiError` in
-   every signature) and plain/native parameter types (no generated
-   `*Params`). The ITS-REST adapter (`ehrbase-rest`) owns the whole
-   wire↔native mapping: params decoding, `ApiError` construction (via the
-   one SM→HTTP table), headers. `ehrbase-sm` keeps zero `openehr-its::rest`
-   imports.
+1. **`ehrbase-sm` becomes the SM interface catalog, transcribed literally**
+   (owner ruling 2026-07-09: the specs are the shape; internal behaviour
+   preservation is NOT a constraint — greenfield). Every trait carries its
+   SM interface's **exact call set**: spec call names (`create_ehr_with_id`,
+   `get_composition_latest`, `commit_contribution`,
+   `get_party_relationship_at_time`, …), spec parameter names and types
+   (`UUID`→`uuid::Uuid`, `Iso8601_date_time`, `PARTY_REF`,
+   `UPDATE_VERSION<T>` as the commit envelope, the
+   `item_offset`/`items_to_fetch` cursor = `Page`), spec returns
+   (`EHR_SUMMARY`, RM objects / canonical values, `RESULT_SET`), spec
+   pre/post-conditions in doc-comments, and a new `SmError` over
+   `CallStatusType` realizing the `I_STATUS` protocol. Zero
+   `openehr_its::rest` imports. The SM's `I_EHR` accessor is realized as a
+   generic handle (`i_ehr(ehr_id) -> IEhr<'_, S>` exposing
+   `ehr_status()/directory()/compositions()/contributions()` sub-handles) —
+   the literal shape, and good Rust. Adapter-support calls that the SM does
+   not define (`*_latest_meta` for 412 decoration, tag CRUD) move to a
+   clearly-separated `adapter` extension trait, PORT-NOTEd (ITS-REST
+   extensions, not SM calls).
+   **The one preserved behaviour is the wire**: the ITS-REST adapter must
+   still speak ITS-REST 1.0.3 exactly (that is what a protocol adapter *is*
+   per master02) — the ECC zero-drift gate (211/318) remains the invariant
+   while every internal signature breaks freely.
 2. **Compile-time completeness.** All default method bodies are removed:
    implementing a service trait requires implementing every method.
    `StubBackend` is deleted. A missing method is a build error, never a
