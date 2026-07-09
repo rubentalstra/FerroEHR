@@ -9,9 +9,9 @@ decision wins** (ADR-011 > ADR-010 > … ; the blueprint > the historical plan).
 
 | Path | What it is | Authoritative for |
 |---|---|---|
-| **`blueprint/00-THE-BLUEPRINT.md`** | Where the project is going and why | the trajectory / priorities |
+| **`blueprint/00-THE-BLUEPRINT.md`** | The single driving document: mission, the consolidated gap ledger (§2 — proven foundations + ECC breakdown + spec-area map), the numbered build order (B1–B6), standing rules | the trajectory, priorities, **and the whole spec-gap surface** ("what's the state, what's next") |
+| `blueprint/01-rm.md … 07-cnf.md` | Per-component chapters: spec-cited requirements → verified state → ordered remaining work | the per-component compliance detail |
 | `plans/current-phase.md` | Live pointer to the active work | what's active right now |
-| `GAP_REGISTER.md` | Consolidated spec-gap surface (proven vs known-missing), prioritized | "what's the state, what's next" |
 | `PROGRESS.md` | One row per phase + rebuild checkpoints | the historical record of what shipped |
 
 ## Decisions
@@ -53,6 +53,9 @@ decision wins** (ADR-011 > ADR-010 > … ; the blueprint > the historical plan).
 - `design/benchmarking.md` — the benchmark harness (`tools/benchmark`).
 - `design/conformance-framework.md` + `design/ecc-coverage-review.md` — the ECC
   (own conformance framework) design + coverage review.
+- `design/terminology-server-integration.md` — which self-hostable terminology
+  server to run in Docker (Snowstorm / HAPI FHIR) and how to point the CDR + the
+  conformance runner at it by URL. Built at B4.
 
 ## Enterprise (live behaviour docs)
 
@@ -65,9 +68,11 @@ decision wins** (ADR-011 > ADR-010 > … ; the blueprint > the historical plan).
 
 - `spec-audit/SPEC_AUDIT.md` + `spec-audit/findings/*.md` — the 2026-07-06
   whole-codebase audit; the **per-finding** detail record (82 open / 109 fixed),
-  each with spec citations + checkboxes. The consolidated view is
-  `GAP_REGISTER.md`.
-- `terminology-validation.md` — terminology binding + validation notes.
+  each with spec citations + checkboxes. The consolidated view is the
+  blueprint §2.
+- `terminology-validation.md` — the external FHIR-R4 terminology-*client* design
+  (how the CDR validates coded values against a terminology server); pairs with
+  `design/terminology-server-integration.md` (which server to run). Built at B4.
 
 ## Platform + verification
 

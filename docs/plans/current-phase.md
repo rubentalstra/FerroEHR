@@ -3,7 +3,8 @@
 **The roadmap is `docs/blueprint/00-THE-BLUEPRINT.md`** — read it first. It is
 the single source of truth for the trajectory toward "first fully
 spec-compliant openEHR CDR". This file is the live pointer under it; the
-consolidated gap surface is `docs/GAP_REGISTER.md`.
+consolidated gap surface is the blueprint §2 (proven foundations + ECC
+breakdown + spec-area map).
 
 ## Active work — the ADR-011 rebuild convergence
 
@@ -21,7 +22,7 @@ re-converges at P19).
 Current app layout (3 crates + tools): `app/{ehrbase, ehrbase-rest,
 ehrbase-sm}`, `tools/{conformance, benchmark}`, `crates/openehr-*`.
 
-## Priority order (from GAP_REGISTER §3)
+## Priority order (from the blueprint build order, §3)
 
 1. **Finish the ADR-011 rebuild** — green workspace, ECC re-converged.
 2. **ArchetypeValidation depth** — the single biggest gap (81 failing ECC
