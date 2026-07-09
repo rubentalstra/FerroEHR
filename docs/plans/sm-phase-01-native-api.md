@@ -99,25 +99,44 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
       `is_queryable = true` (`i_query_service.adoc`); e2e test + RESULT_SET
       shape audit vs the ITS-REST schemas; persistence fixture made
       spec-realistic (every EHR seeds a queryable EHR_STATUS)
-- [ ] `docs/architecture.md`: add the SM component map, the `app/*` vs
-      `crates/*` layout, and the `ehrbase-sm` crate row
+- [x] `docs/architecture.md`: SM component map (interface → trait → status)
+      + layout + `ehrbase-sm` row — done 2026-07-09
 
 ## Exit criteria
 
-- [ ] Workspace green: build, `cargo nextest run --workspace`, clippy, fmt
+- [x] Workspace green: build (0 warnings), `cargo nextest run --workspace`
+      **824/824 passed**, clippy-neutral, fmt clean (2026-07-09)
 - [ ] ECC conformance run: identical pass set to the pre-phase baseline
-      (zero wire drift), except new passes from attestation support
-- [ ] `ehrbase-rest` contains no service-trait definitions (adapter only)
-- [ ] Every `ehrbase-sm` trait method doc-comment cites its SM call
+      (zero wire drift), except new passes from attestation support —
+      **BLOCKED 2026-07-09 on Docker registry timeouts** (`DeadlineExceeded`
+      pulling base-image metadata; no local `rust` base image). NOTE: a
+      first run against a **stale 2-day-old image** produced a garbage
+      verdict (138/310) — artifacts reverted, `scripts/conformance.sh` now
+      builds before `up` (SKIP_BUILD=1 opts out). Rerun when the registry
+      cooperates; baseline to beat: **211 passed / 318 executions**.
+- [x] `ehrbase-rest` contains no service-trait definitions (adapter only —
+      `backend.rs`/`response.rs` are re-export shims)
+- [x] Every `ehrbase-sm` trait method doc-comment cites its SM call
       (file + section)
 
 ## Decisions made this phase
 
 - ADR-010 (phase-opening decision)
+- `Action::Attest` routes through a `PendingAttest` path, not a `Change`
+  variant (no orphan audit row — the ATTESTATION *is* the audit, stored
+  verbatim in `vo_attestation.data`)
+- The population gate keys off `ctx.ehr_id.is_none()`; a future
+  multi-`ehr_ids` scope must count as "scope supplied" (not gated)
+- `get_ehr_summary` trait-method naming (avoids colliding with the inherent
+  wire-EHR builder `ehr_summary`)
 
 ## Handoff for next session
 
-Design complete on `claude/sm-platform-design` (design set + ADR-010 + this
-plan). Next action: start the first task (`ehrbase-sm` scaffold) on
-`claude/sm-phase-01-*`, or continue P17 first — owner's call on ordering
-(doc 09 allows either).
+All implementation tasks done on `claude/sm-phase-01-native-api` (824/824
+tests; one task deliberately partial: the full `UpdateVersion<T>` internal
+rewiring of `vobject`/adapter — types + PORT NOTEs + wire-shape test are
+landed; swapping the internal carriers risks ECC-tested error messages for
+no wire benefit, revisit at SM-2). **The only open exit criterion is the
+fresh-image ECC run** (blocked on registry timeouts; see above — run
+`bash scripts/conformance.sh`, compare vs 211/318). If the pass set holds,
+run `/phase-done` and open the PR to `develop`.
