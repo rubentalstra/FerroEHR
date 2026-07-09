@@ -395,7 +395,7 @@ async fn upload_opt(ctx: &RunContext<'_>, xml: String) -> Result<u16, CaseError>
 
 fn run_upload_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
-        // A fresh, valid OPT must be accepted with 201. The self-hosted SUT is
+        // A fresh, valid OPT must be accepted with 201. The SUT is
         // shared across cases, so `minimal_evaluation.en.v1` may already be
         // provisioned (e.g. by `ensure_present`); uploading it verbatim would
         // then (correctly) 409 and this case would wrongly read as a rejected

@@ -29,7 +29,7 @@ pub mod terminology;
 pub mod validity;
 pub mod web_template;
 
-pub use adapter::{DefinitionAdapter, ItemTagAdapter, VersionMetaAdapter};
+pub use adapter::{ContributionAdapter, DefinitionAdapter, ItemTagAdapter, VersionMetaAdapter};
 pub use admin::{AdminArchive, AdminService, StatTimeRange};
 pub use composition::EhrCompositionService;
 pub use contribution::{EhrContributionService, TimeRange};

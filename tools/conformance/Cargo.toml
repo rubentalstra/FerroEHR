@@ -40,28 +40,5 @@ openehr-rm = { path = "../../crates/openehr-rm" }
 # endpoint uses (design §4.5), then commits the canonical result + a mutated copy.
 openehr-flat = { path = "../../crates/openehr-flat" }
 
-# `self-host` mode: boot the real application (testcontainers PG18 + the axum
-# app) in-process, so the runner can drive a SUT it controls end to end without
-# an external deployment. Kept optional so the CLI can be built lean for
-# external-SUT-only use (design §4.1, §4.3).
-ehrbase = { path = "../../app/ehrbase", optional = true }
-ehrbase-rest = { path = "../../app/ehrbase-rest", optional = true }
-testcontainers = { workspace = true, optional = true }
-testcontainers-modules = { workspace = true, optional = true }
-axum = { workspace = true, optional = true }
-tower = { workspace = true, optional = true }
-tower-http = { workspace = true, optional = true }
-
-[features]
-self-host = [
-    "dep:ehrbase",
-    "dep:ehrbase-rest",
-    "dep:testcontainers",
-    "dep:testcontainers-modules",
-    "dep:axum",
-    "dep:tower",
-    "dep:tower-http",
-]
-
 [lints]
 workspace = true

@@ -40,7 +40,7 @@ pub fn uid_of(body: &Value) -> Result<String, CaseError> {
 }
 
 /// Upload an OPT (path relative to the corpus `valid_templates/`) to the ADL 1.4
-/// definition endpoint, tolerating a re-upload: the self-hosted SUT is shared
+/// definition endpoint, tolerating a re-upload: the SUT is shared
 /// across cases, so `2xx` = newly loaded and `409` = already present are both a
 /// success (the OPT is provisioned either way — master07/08 preconditions
 /// "the OPT … should exist on the server"). Any other status is a real failure.

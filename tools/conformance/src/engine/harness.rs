@@ -4,10 +4,9 @@
 //!
 //! A transcribed case is a plain async function over a [`RunContext`]; it builds
 //! [`HttpRequest`]s, sends them through the context's [`Transport`], and asserts
-//! on the [`HttpResponse`]. The concrete transports — an external reqwest client
-//! and the in-process self-hosted app — live in [`crate::client`] and
-//! [`crate::sut`]; cases never depend on either directly, so the same case runs
-//! against a deployed SUT or the self-hosted one unchanged (design §4.3).
+//! on the [`HttpResponse`]. The concrete transport — the external reqwest client
+//! — lives in [`crate::client`] / [`crate::sut`]; cases never depend on it
+//! directly, so a case runs against any deployed SUT unchanged (design §4.3).
 
 use std::future::Future;
 use std::pin::Pin;
@@ -199,7 +198,7 @@ pub enum CaseError {
 }
 
 /// The transport a case drives: send a request, get a response. Implemented by
-/// the external reqwest client and the in-process self-hosted app.
+/// the external reqwest client.
 #[async_trait::async_trait]
 pub trait Transport: Send + Sync {
     /// Send `request` and return the response.
