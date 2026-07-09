@@ -54,6 +54,14 @@ partially superseded. Phase files 10/16/19 re-scoped.
 | 12 | 20 | Optimization | not-started | PG18 AIO, pipelining, `JSON_TABLE` |
 | 13 | 99 | Cutover | not-started | delete residual Java/Maven; tag release |
 
+## SM track (ADR-010, interleaved with P17–P20)
+
+| Phase | Title | Status |
+|---|---|---|
+| SM-1 | `app/*`+`tools/*` layout, `ehrbase-sm` native API (trait per SM interface, call-status table, UPDATE_VERSION envelope), ATTESTATION support, `is_queryable` population gate (conformance gap fixed), contribution list/count, EHR_SUMMARY | **done (2026-07-09, PR #31)** — ECC exit gate 211/318 zero-drift |
+| SM-2 | Definitions completion: ADL 1.4 archetype store + OPT completion, `DefinitionAdl2Service` + `adl2_artefact` store + wire adl2 upload/list/get (retires the P13 `adl2 = 501`), stored-query calls (valid/delete/count, QUERY_DESCRIPTOR) | **done (2026-07-09)** — 842/842 tests; ECC 211/318 zero-drift |
+| SM-3…SM-6 | PARTY_RELATIONSHIP + EHR Index; Terminology surface + Admin completion; Message (EXTRACT + TDD); Subject Proxy | not-started (`docs/design/sm-platform/09-roadmap.md`) |
+
 **Stage 2** (after P19 conformance holds): RBAC/attribute authz, plugin system,
 multi-tenancy — see `PORT_MASTER_PLAN §11`.
 

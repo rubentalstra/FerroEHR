@@ -1710,6 +1710,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "quick-xml",
+ "regex",
  "reqwest 0.13.4",
  "sea-query",
  "sea-query-sqlx",
