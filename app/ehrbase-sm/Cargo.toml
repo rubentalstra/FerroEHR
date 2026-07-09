@@ -19,7 +19,6 @@ uuid.workspace = true
 
 openehr-base = { path = "../../crates/openehr-base" }
 openehr-rm = { path = "../../crates/openehr-rm" }
-openehr-its = { path = "../../crates/openehr-its" }
 openehr-flat = { path = "../../crates/openehr-flat" }
 
 [lints]

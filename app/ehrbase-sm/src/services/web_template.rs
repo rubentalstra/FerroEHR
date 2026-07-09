@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use openehr_flat::WebTemplate;
 use crate::error::{CallStatusType, SmError};
+use openehr_flat::WebTemplate;
 
 /// The single `WebTemplate` resolution seam (W2-K / finding F-13-02).
 ///
@@ -26,6 +26,9 @@ pub trait WebTemplateService: Send + Sync {
     /// Resolve the (service-cached) [`WebTemplate`] for a stored operational
     /// template.
     async fn web_template(&self, _template_id: &str) -> Result<Arc<WebTemplate>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 }

@@ -34,7 +34,10 @@ pub trait DemographicService: Send + Sync {
         _kind: PartyKind,
         _body: Value,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/{kind}/{uid_based_id}` — retrieve a party (current,
@@ -46,7 +49,10 @@ pub trait DemographicService: Send + Sync {
         _uid_based_id: String,
         _version_at_time: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `PUT /demographic/{kind}/{uid_based_id}` — commit a new party version.
@@ -59,7 +65,10 @@ pub trait DemographicService: Send + Sync {
         _if_match: String,
         _body: Value,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete. The
@@ -70,7 +79,10 @@ pub trait DemographicService: Send + Sync {
         _kind: PartyKind,
         _uid_based_id: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party/{versioned_object_uid}` — the
@@ -79,7 +91,10 @@ pub trait DemographicService: Send + Sync {
         &self,
         _versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party/{versioned_object_uid}/revision_history`.
@@ -87,7 +102,10 @@ pub trait DemographicService: Send + Sync {
         &self,
         _versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version` — the
@@ -97,7 +115,10 @@ pub trait DemographicService: Send + Sync {
         _versioned_object_uid: String,
         _version_at_time: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`
@@ -107,7 +128,10 @@ pub trait DemographicService: Send + Sync {
         _versioned_object_uid: String,
         _version_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `POST /demographic/contribution` — commit a demographic CONTRIBUTION
@@ -117,7 +141,10 @@ pub trait DemographicService: Send + Sync {
         &self,
         _body: Value,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/contribution/{contribution_uid}` — a demographic
@@ -126,7 +153,10 @@ pub trait DemographicService: Send + Sync {
         &self,
         _contribution_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/tags` — all demographic item tags (ehr-less).
@@ -136,7 +166,10 @@ pub trait DemographicService: Send + Sync {
         _tag_value: Option<String>,
         _tag_target_path: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/{kind}/{uid_based_id}/tags`.
@@ -145,7 +178,10 @@ pub trait DemographicService: Send + Sync {
         _kind: PartyKind,
         _uid_based_id: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `PUT /demographic/{kind}/{uid_based_id}/tags`.
@@ -155,7 +191,10 @@ pub trait DemographicService: Send + Sync {
         _uid_based_id: String,
         _body: Vec<Value>,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `DELETE /demographic/{kind}/{uid_based_id}/tags/{key}`.
@@ -165,7 +204,10 @@ pub trait DemographicService: Send + Sync {
         _uid_based_id: String,
         _key: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// The current party version metadata, for the latest `version_uid` the

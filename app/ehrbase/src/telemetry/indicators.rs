@@ -3,8 +3,8 @@
 //! [`HealthIndicator`] trait `ehrbase-rest` defines, and are registered into
 //! its [`HealthRegistry`] at boot.
 
+use crate::system_log::AuditSender;
 use async_trait::async_trait;
-use ehrbase_audit::AuditSender;
 use ehrbase_rest::management::{Health, HealthIndicator};
 use sqlx::PgPool;
 

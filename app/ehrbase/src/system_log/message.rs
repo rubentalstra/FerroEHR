@@ -9,12 +9,13 @@
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::writer::Writer;
 
-use crate::AuditError;
-use crate::codes::{
-    self, Code, NETWORK_ACCESS_POINT_IP, OBJECT_ROLE_PATIENT, OBJECT_ROLE_QUERY,
+use ehrbase_sm::AuditEvent;
+
+use crate::system_log::AuditError;
+use crate::system_log::codes::{
+    self, AtnaCodes, Code, NETWORK_ACCESS_POINT_IP, OBJECT_ROLE_PATIENT, OBJECT_ROLE_QUERY,
     OBJECT_TYPE_PERSON, OBJECT_TYPE_SYSTEM,
 };
-use crate::event::AuditEvent;
 
 /// The server-side identity shared by every emitted record (the destination
 /// node + audit source). Built once by the sender from [`crate::AuditConfig`].
@@ -273,7 +274,7 @@ fn nonempty(value: &str, fallback: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::event::{EventActionCode, EventOutcome, ObjectClass};
+    use ehrbase_sm::{EventActionCode, EventOutcome, ObjectClass};
     use jiff::Timestamp;
 
     fn ctx() -> AuditContext {

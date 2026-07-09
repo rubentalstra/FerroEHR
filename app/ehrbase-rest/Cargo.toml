@@ -17,10 +17,10 @@ openehr-its = { path = "../../crates/openehr-its" }
 # WebTemplate (Better wt+json) builder + cache for the ADL1.4 template endpoint.
 openehr-flat = { path = "../../crates/openehr-flat" }
 # The SM Platform Service Model native API (ADR-010): the service traits +
-# response/query types this crate dispatches to (moved here at SM-1).
+# response/query types this crate dispatches to (moved here at SM-1). The audit
+# tower layer emits through the platform's SM `SystemLog` component; the ATNA
+# event model + `EmitOutcome` come from here (ADR-011, ehrbase-audit dissolved).
 ehrbase-sm = { path = "../ehrbase-sm" }
-# IHE ATNA audit trail (DICOM AuditMessage over syslog) — the audit tower layer.
-ehrbase-audit = { path = "../ehrbase-audit" }
 # Access control (RBAC): operation classification + role model + gate decision.
 ehrbase-authz = { path = "../ehrbase-authz" }
 

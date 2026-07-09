@@ -14,8 +14,8 @@
 
 use pgp::composed::{Deserializable as _, DetachedSignature};
 
-use crate::key::PgpVerdict;
-use crate::signer::{DIGEST_PREFIX, SignerMode, digest_signature};
+use crate::signing::key::PgpVerdict;
+use crate::signing::signer::{DIGEST_PREFIX, SignerMode, digest_signature};
 
 /// The verification outcome for a stored signature against a served Version's
 /// `canonical_form` (design §3.5).

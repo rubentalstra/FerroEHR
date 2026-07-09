@@ -28,7 +28,10 @@ pub trait QueryService: Send + Sync {
         _aql: String,
         _request: AqlQueryRequest,
     ) -> Result<QueryOutcome, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `POST/GET /query/{qualified_query_name}[/{version}]` — execute a stored
@@ -40,6 +43,9 @@ pub trait QueryService: Send + Sync {
         _version: Option<String>,
         _request: AqlQueryRequest,
     ) -> Result<QueryOutcome, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 }

@@ -15,7 +15,7 @@
 //! The single SM → HTTP table lives with the protocol adapter
 //! (`ehrbase-rest::error::sm_api_error`, `docs/design/sm-platform/
 //! 08-target-architecture.md` §5) — ADR-011: this crate is protocol-free and
-//! carries **no** `openehr_its::rest` dependency. ITS-REST 1.0.3 + the CNF/ECC
+//! carries **no** ITS-REST dependency. ITS-REST 1.0.3 + the CNF/ECC
 //! schedule remain the wire oracle (ADR-010): where the SM name and the wire
 //! disagree, the wire's status code wins in that adapter table.
 
@@ -166,7 +166,7 @@ impl CallStatusType {
 /// (`master02-overview.adoc` §Functional Style). Every catalog trait returns
 /// `Result<T, SmError>`; the protocol adapter (`ehrbase-rest`) owns the single
 /// SM → HTTP mapping ([`CallStatusType::api_error`]) — so this type carries
-/// **no** `openehr_its::rest` dependency.
+/// **no** ITS-REST dependency.
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("{message}")]
 pub struct SmError {

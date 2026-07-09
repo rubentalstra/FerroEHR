@@ -2,8 +2,8 @@
 //! interface, transcribed literally (ADR-011): each trait carries its
 //! interface's exact SM call names, parameter names and types, spec returns,
 //! and pre/post-conditions (in the per-method doc-comments). Native errors are
-//! [`SmError`](crate::error::SmError) over `CALL_STATUS_TYPE` — **no**
-//! `openehr_its::rest` types in the EHR-core catalog.
+//! [`SmError`](crate::error::SmError) over `CALL_STATUS_TYPE` — **no** ITS-REST
+//! types in the EHR-core catalog.
 //!
 //! The EHR mega-service is split along the SM's own interface boundaries
 //! (`I_EHR_SERVICE` / `I_EHR_STATUS` / `I_EHR_COMPOSITION` / `I_EHR_DIRECTORY`
@@ -29,7 +29,7 @@ pub mod terminology;
 pub mod validity;
 pub mod web_template;
 
-pub use adapter::{ItemTagAdapter, VersionMetaAdapter};
+pub use adapter::{DefinitionAdapter, ItemTagAdapter, VersionMetaAdapter};
 pub use admin::{AdminArchive, AdminService, StatTimeRange};
 pub use composition::EhrCompositionService;
 pub use contribution::{EhrContributionService, TimeRange};
@@ -41,7 +41,9 @@ pub use ehr_index::EhrIndexService;
 pub use ehr_status::EhrStatusService;
 pub use query::QueryService;
 pub use relationship::PartyRelationshipService;
-pub use system_log::SystemLog;
+pub use system_log::{
+    AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, SystemLog,
+};
 pub use terminology::{
     DefinedTerm, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
     TerminologyRelation, TerminologyRelationError, TerminologyService,

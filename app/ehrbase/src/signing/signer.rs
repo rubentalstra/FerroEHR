@@ -6,9 +6,9 @@
 use base64::Engine as _;
 use sha2::{Digest as _, Sha256};
 
-use crate::config::{Mode as ConfigMode, SigningConfig, VerifyOnRead};
-use crate::key::{KeyError, PgpKey, PgpSignError};
-use crate::verify::{self, Verdict};
+use crate::signing::config::{Mode as ConfigMode, SigningConfig, VerifyOnRead};
+use crate::signing::key::{KeyError, PgpKey, PgpSignError};
+use crate::signing::verify::{self, Verdict};
 
 /// The self-describing prefix stamped on a digest signature so a bare radix-64
 /// hash is not ambiguous (design §3.2 — our documented concretization of the

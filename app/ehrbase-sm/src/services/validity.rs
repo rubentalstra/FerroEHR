@@ -16,13 +16,19 @@ pub trait ValidityChecker: Send + Sync {
     /// and template identifiers) in `a_content` are known in the local
     /// definitions service.
     async fn definitions_valid(&self, _a_content: &Value) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
     /// `content_valid` — True if the content structure is a valid instance
     /// of the relevant RM classes. (The SM precondition spelling
     /// `valid_content(...)` names the same check — source inconsistency,
     /// digest 01 §4.5.)
     async fn content_valid(&self, _a_content: &Value) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 }

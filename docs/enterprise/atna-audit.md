@@ -1,5 +1,20 @@
 # ATNA Audit Trail — Rust-native design
 
+> **AMENDMENT (2026-07-09, ADR-011 crate consolidation):** the former leaf
+> crate `ehrbase-audit` has been dissolved. The SM `I_SYSTEM_LOG` component is
+> now the **`ehrbase_sm::SystemLog`** trait (event model — `AuditEvent`,
+> `EventActionCode`, `EventOutcome`, `ObjectClass`, `EmitOutcome` — + the
+> `emit`/`audit_enabled`/`suppress_login_events` contract; the SM interface is a
+> spec stub, so the contract is our design). The ATNA implementation (DICOM
+> `AuditMessage`, syslog transports, bounded-mpsc sender, DCM codes, config)
+> moved into the `ehrbase` platform crate as the module **`ehrbase::system_log`**,
+> which implements `SystemLog` on `EhrbaseService`. The op-id → classification
+> table (wire knowledge) moved into `ehrbase-rest` (`audit_table.rs`); the audit
+> tower middleware there reaches the emitter through the `S: Platform` generic
+> (`SystemLog` is a `Platform` supertrait). References below to the
+> `ehrbase-audit` *crate* now read as those module paths; ATNA wire output is
+> unchanged.
+
 - **Status:** implemented, **total coverage** (2026-07-06) — `app/ehrbase-audit`
   (DICOM AuditMessage + RFC 5424/5425/5426 syslog + bounded-mpsc sender), the
   `ehrbase-rest` audit tower layer, and the `ehrbase` binary wiring (sender boot,

@@ -128,8 +128,7 @@ fn committer_proxy() -> PartyProxy {
         }
         None => json!({ "_type": "PARTY_IDENTIFIED", "name": "ehrbase-rs.local" }),
     };
-    serde_json::from_value(value)
-        .unwrap_or(PartyProxy::PartySelf(PartySelf { external_ref: None }))
+    serde_json::from_value(value).unwrap_or(PartyProxy::PartySelf(PartySelf { external_ref: None }))
 }
 
 /// Synthesize the SM `UPDATE_VERSION` commit envelope for a bare-RM-body write
