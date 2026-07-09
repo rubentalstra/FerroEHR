@@ -70,3 +70,28 @@
 SM-2 merged (PR #32, develop 9ed6a3e29). Branch
 `claude/sm-phase-03-demographic-index` created. Specs for both interfaces
 read 2026-07-09; design decisions fixed above.
+
+## Storage-semantics audit wave (added 2026-07-09 — owner request "spec-1:1 storage")
+
+Full audit of the persistence semantics vs RM common master06 + UML classes
+ran 2026-07-09: **no blockers; core change-control engine verified faithful**
+(indelibility, logical delete, contribution atomicity, EHR creation,
+change_type preservation, attestations, signatures, revision history — all
+confirmed with citations). Fixes for the findings, in this phase:
+
+- [ ] **M1** Honor the client-supplied `lifecycle_state` on create/modify
+      (all five normative codes: 532/553/523/800/801; force only the
+      delete path to 523) — `master06` §Version Lifecycle; check CNF for
+      incomplete/inactive cases; e2e tests per state
+- [ ] **M2** Persist `creating_system_id` per version (migration on
+      `vo_version`) and reconstruct `OBJECT_VERSION_ID`s + signatures from
+      the stored value, never live config — `master06` §Distributed
+      Versioning
+- [ ] **m4** Contribution→version audit copy rule ("should be copied"):
+      default per-version committer/system_id from the contribution audit;
+      PORT NOTE the divergence when a client supplies distinct values
+- [ ] **m5** Extend the through-`jsonb` round-trip test to the full corpus
+- [ ] **m6** `CHECK (system_id <> '')` on `audit` (AUDIT_DETAILS
+      System_id_valid)
+- [ ] **m3/m7** PORT NOTEs: version merging out of scope (`master06`
+      §Version Merging); admin-cascade vs indelibility design note
