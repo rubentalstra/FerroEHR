@@ -149,6 +149,11 @@ pub(super) struct VersionRead {
     /// (a logical delete stores no node rows — RM `change_control` §"Logical
     /// Deletion").
     pub(super) canonical: serde_json::Value,
+    /// The `ATTESTATION`s attached to this version, in commit order (RM common
+    /// master06 §Attestation). Surfaced as `ORIGINAL_VERSION.attestations` on
+    /// the read path (appended **after** signature verification — attestations
+    /// arrive after committal and are not part of the signed canonical form).
+    pub(super) attestations: Vec<serde_json::Value>,
 }
 
 impl VersionRead {
@@ -174,6 +179,7 @@ async fn version_read(
     } else {
         read_nodes(pool, vo_id, sys_version).await?
     };
+    let attestations = read_attestations(pool, vo_id, sys_version).await?;
     Ok(VersionRead {
         vo_id,
         ehr_id: row.try_get("ehr_id")?,
@@ -192,7 +198,30 @@ async fn version_read(
         template_id: row.try_get("template_id")?,
         signature: row.try_get("signature")?,
         canonical,
+        attestations,
     })
+}
+
+/// Load the `ATTESTATION`s attached to one version, in commit order (RM common
+/// master06 §Attestation). Ordered by `time_committed, id`: attestations
+/// committed in the same transaction share `now()` (`transaction_timestamp`),
+/// so the `uuidv7()` `id` breaks ties in insertion order.
+async fn read_attestations(
+    pool: &PgPool,
+    vo_id: Uuid,
+    sys_version: i32,
+) -> Result<Vec<serde_json::Value>, ServiceError> {
+    let rows = sqlx::query(
+        "SELECT data FROM vo_attestation WHERE vo_id = $1 AND sys_version = $2 \
+         ORDER BY time_committed, id",
+    )
+    .bind(vo_id)
+    .bind(sys_version)
+    .fetch_all(pool)
+    .await?;
+    rows.iter()
+        .map(|row| Ok(row.try_get::<serde_json::Value, _>("data")?))
+        .collect()
 }
 
 /// Insert an `audit` row, returning its id **and** the DB-assigned
@@ -296,6 +325,11 @@ pub(super) enum Change {
         canonical: serde_json::Value,
         template_id: Option<String>,
         signature: Option<String>,
+        /// Wire `UPDATE_VERSION.attestations` committed with this version
+        /// (partial `UPDATE_ATTESTATION`s; completed + stored after the
+        /// version write, RM common master06 §Attestation "Signing content
+        /// at committal"). Empty for the direct (non-CONTRIBUTION) writes.
+        attestations: Vec<serde_json::Value>,
     },
     /// Commit a new version of an existing object.
     Modify {
@@ -305,6 +339,8 @@ pub(super) enum Change {
         expected: Option<i32>,
         template_id: Option<String>,
         signature: Option<String>,
+        /// See [`Change::Create::attestations`].
+        attestations: Vec<serde_json::Value>,
     },
     /// Logically delete an object (a content-less `deleted` version).
     Delete {
@@ -313,6 +349,21 @@ pub(super) enum Change {
         expected: Option<i32>,
         signature: Option<String>,
     },
+}
+
+/// A `666|attestation|` of an **existing** `ORIGINAL_VERSION` committed within
+/// a CONTRIBUTION (RM common master06 §Change Control: "a new ATTESTATION is
+/// added to the attestations list of an existing `ORIGINAL_VERSION`" — adds no
+/// new version). Carried alongside the [`Change`] set so it commits in the
+/// same transaction / CONTRIBUTION.
+pub(super) struct PendingAttest {
+    pub(super) vo_id: Uuid,
+    pub(super) kind: Kind,
+    /// The target trunk version to attest (from `preceding_version_uid`).
+    pub(super) expected: i32,
+    /// The wire `UPDATE_ATTESTATION` partial (the version item's commit audit),
+    /// completed into a full RM `ATTESTATION` at commit time.
+    pub(super) partial: serde_json::Value,
 }
 
 /// Compute the `VERSION.signature` for a version about to be persisted
@@ -375,6 +426,7 @@ async fn apply_change(
     audit: &AuditInput,
     time_committed: jiff::Timestamp,
     ctx: &SigningCtx<'_>,
+    committer_fallback: &serde_json::Value,
     change: Change,
 ) -> Result<Committed, ServiceError> {
     match change {
@@ -383,6 +435,7 @@ async fn apply_change(
             canonical,
             template_id,
             signature,
+            attestations,
         } => {
             if kind == Kind::EhrStatus
                 && let Some(ehr_id) = ehr_id
@@ -419,6 +472,17 @@ async fn apply_change(
             )
             .await?;
             insert_nodes(tx, vo_id, 1, ehr_id, &rows).await?;
+            insert_accompanying_attestations(
+                tx,
+                vo_id,
+                1,
+                contribution_id,
+                ctx.system_id,
+                committer_fallback,
+                time_committed,
+                &attestations,
+            )
+            .await?;
             record_composition_commit(kind, "creation");
             Ok(Committed {
                 vo_id,
@@ -433,6 +497,7 @@ async fn apply_change(
             expected,
             template_id,
             signature,
+            attestations,
         } => {
             if kind == Kind::EhrStatus
                 && let Some(ehr_id) = ehr_id
@@ -468,6 +533,17 @@ async fn apply_change(
             )
             .await?;
             insert_nodes(tx, vo_id, next, ehr_id, &rows).await?;
+            insert_accompanying_attestations(
+                tx,
+                vo_id,
+                next,
+                contribution_id,
+                ctx.system_id,
+                committer_fallback,
+                time_committed,
+                &attestations,
+            )
+            .await?;
             record_composition_commit(kind, "modification");
             Ok(Committed {
                 vo_id,
@@ -518,6 +594,105 @@ async fn apply_change(
             })
         }
     }
+}
+
+/// Insert one `ATTESTATION` row for a version (RM common master06 §Change
+/// Control). Stores the completed canonical `ATTESTATION` verbatim in `data`
+/// (ADR-008: no synthetic fields); `vo_attestation.time_committed` takes the
+/// transaction timestamp (`now()`), which equals the `data.time_committed`
+/// stamped by [`super::contribution::complete_attestation`] with the same
+/// commit-act time.
+async fn insert_attestation(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+    sys_version: i32,
+    contribution_id: Uuid,
+    data: &serde_json::Value,
+) -> Result<(), ServiceError> {
+    sqlx::query(
+        "INSERT INTO vo_attestation (vo_id, sys_version, contribution_id, data) \
+         VALUES ($1, $2, $3, $4)",
+    )
+    .bind(vo_id)
+    .bind(sys_version)
+    .bind(contribution_id)
+    .bind(data)
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
+}
+
+/// Complete + persist the attestations committed together with a NEW version
+/// (`UPDATE_VERSION.attestations`; RM common master06 §Attestation "Signing
+/// content at committal"). Each partial `UPDATE_ATTESTATION` is completed into
+/// a full RM `ATTESTATION` and attached to the just-written version — same
+/// transaction, so the version + its attestations commit atomically.
+#[allow(clippy::too_many_arguments)] // the parts of an ATTESTATION + its target version
+async fn insert_accompanying_attestations(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+    sys_version: i32,
+    contribution_id: Uuid,
+    system_id: &str,
+    committer_fallback: &serde_json::Value,
+    now: jiff::Timestamp,
+    partials: &[serde_json::Value],
+) -> Result<(), ServiceError> {
+    for partial in partials {
+        let full =
+            super::contribution::complete_attestation(partial, system_id, committer_fallback, now)?;
+        insert_attestation(tx, vo_id, sys_version, contribution_id, &full).await?;
+    }
+    Ok(())
+}
+
+/// Attach an `ATTESTATION` to an **existing** `ORIGINAL_VERSION` (a
+/// `666|attestation|` version item of a CONTRIBUTION; RM common master06
+/// §Change Control: "a new ATTESTATION is added to the attestations list of an
+/// existing `ORIGINAL_VERSION`" — no new version, `sys_period` untouched).
+///
+/// Realizes `VERSIONED_OBJECT.commit_attestation` precondition `has_version_id`
+/// (`versioned_object.adoc`): the target `(vo_id, sys_version)` must exist and
+/// belong to `ehr_id`, else [`ServiceError::NotFound`] naming the version uid.
+/// `attestation` is the already-completed full RM `ATTESTATION`.
+async fn attest(
+    tx: &mut PgConnection,
+    ehr_id: Option<Uuid>,
+    vo_id: Uuid,
+    kind: Kind,
+    expected_version: i32,
+    attestation: &serde_json::Value,
+    contribution_id: Uuid,
+) -> Result<Committed, ServiceError> {
+    let row = sqlx::query(
+        "SELECT ehr_id FROM vo_version WHERE vo_id = $1 AND sys_version = $2 AND kind = $3",
+    )
+    .bind(vo_id)
+    .bind(expected_version)
+    .bind(kind.as_str())
+    .fetch_optional(&mut *tx)
+    .await?;
+    let owner: Option<Uuid> = match row {
+        Some(r) => r.try_get("ehr_id")?,
+        None => {
+            return Err(ServiceError::NotFound(format!(
+                "{} version {vo_id}::{expected_version}",
+                kind.as_str()
+            )));
+        }
+    };
+    if owner != ehr_id {
+        return Err(ServiceError::NotFound(format!(
+            "{} version {vo_id}::{expected_version} in EHR {ehr_id:?}",
+            kind.as_str()
+        )));
+    }
+    insert_attestation(tx, vo_id, expected_version, contribution_id, attestation).await?;
+    Ok(Committed {
+        vo_id,
+        sys_version: expected_version,
+        contribution_id,
+    })
 }
 
 /// Record a committed COMPOSITION for the `compositions_committed_total`
@@ -661,11 +836,13 @@ pub(super) async fn create(
         audit,
         time_committed,
         ctx,
+        &audit.committer,
         Change::Create {
             kind,
             canonical,
             template_id: template_id.map(str::to_owned),
             signature: None,
+            attestations: Vec::new(),
         },
     )
     .await
@@ -693,6 +870,7 @@ pub(super) async fn update(
         audit,
         time_committed,
         ctx,
+        &audit.committer,
         Change::Modify {
             vo_id,
             kind,
@@ -700,6 +878,7 @@ pub(super) async fn update(
             expected,
             template_id: template_id.map(str::to_owned),
             signature: None,
+            attestations: Vec::new(),
         },
     )
     .await
@@ -724,6 +903,7 @@ pub(super) async fn delete(
         audit,
         time_committed,
         ctx,
+        &audit.committer,
         Change::Delete {
             vo_id,
             kind,
@@ -736,16 +916,27 @@ pub(super) async fn delete(
 
 /// Commit a set of changes atomically under one CONTRIBUTION. `contribution_audit`
 /// is the CONTRIBUTION's own audit; each change carries its VERSION `commit_audit`.
+///
+/// `attests` are `666|attestation|` items — new `ATTESTATION`s attached to
+/// **existing** versions (RM common master06 §Change Control), committed in the
+/// same transaction / CONTRIBUTION as the version changes but adding no new
+/// version (and therefore no version audit row: the attestation *is* an
+/// `AUDIT_DETAILS` subtype, stored verbatim in `vo_attestation.data`). The
+/// committer of each attestation defaults to the CONTRIBUTION's committer when
+/// the wire partial omits one (master06 §Committal: `system_id`/`committer`/
+/// `time_committed` copied from the contribution act).
 pub(super) async fn commit_contribution(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     contribution_audit: &AuditInput,
     changes: Vec<(AuditInput, Change)>,
+    attests: Vec<PendingAttest>,
     ctx: &SigningCtx<'_>,
 ) -> Result<(Uuid, Vec<Committed>), ServiceError> {
-    let (contribution_audit_id, _) = insert_audit(tx, contribution_audit).await?;
+    let (contribution_audit_id, contribution_time) = insert_audit(tx, contribution_audit).await?;
     let contribution_id = insert_contribution(tx, ehr_id, contribution_audit_id).await?;
-    let mut committed = Vec::with_capacity(changes.len());
+    let committer_fallback = &contribution_audit.committer;
+    let mut committed = Vec::with_capacity(changes.len() + attests.len());
     for (version_audit, change) in changes {
         let (audit_id, time_committed) = insert_audit(tx, &version_audit).await?;
         committed.push(
@@ -757,7 +948,30 @@ pub(super) async fn commit_contribution(
                 &version_audit,
                 time_committed,
                 ctx,
+                committer_fallback,
                 change,
+            )
+            .await?,
+        );
+    }
+    // Standalone 666 attestations of existing versions (no new version, no
+    // version audit row) — completed with the contribution's commit-act time.
+    for attest_item in attests {
+        let full = super::contribution::complete_attestation(
+            &attest_item.partial,
+            ctx.system_id,
+            committer_fallback,
+            contribution_time,
+        )?;
+        committed.push(
+            attest(
+                tx,
+                ehr_id,
+                attest_item.vo_id,
+                attest_item.kind,
+                attest_item.expected,
+                &full,
+                contribution_id,
             )
             .await?,
         );

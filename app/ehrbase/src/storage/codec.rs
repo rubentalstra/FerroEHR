@@ -471,7 +471,7 @@ mod tests {
         })
     }
 
-    /// A ROLE with a `performer` PARTY_REF and `capabilities` (each carrying a
+    /// A ROLE with a `performer` `PARTY_REF` and `capabilities` (each carrying a
     /// nested `credentials: ITEM_TREE`).
     fn role() -> Value {
         json!({

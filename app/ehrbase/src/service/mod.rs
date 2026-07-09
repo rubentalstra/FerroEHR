@@ -213,9 +213,9 @@ impl From<ServiceError> for ApiError {
             ServiceError::Storage(e) => ApiError::Internal(e.to_string()),
             ServiceError::Database(e) => ApiError::Internal(e.to_string()),
             ServiceError::Json(e) => ApiError::BadRequest(e.to_string()),
-            // A signing/integrity failure is a server-side fault (5xx).
-            ServiceError::Signing(m) => ApiError::Internal(m),
-            ServiceError::Internal(m) => ApiError::Internal(m),
+            // Signing/integrity failures and generic faults are server-side
+            // (5xx).
+            ServiceError::Signing(m) | ServiceError::Internal(m) => ApiError::Internal(m),
         }
     }
 }

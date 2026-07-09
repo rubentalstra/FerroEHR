@@ -93,8 +93,9 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // ext: 0001_openehr_functions. ehr: 0001_schema + 0002_add_vo_version_signature
     // (version signing — RM common §"Digital Signature") +
     // 0003_demographic_party_storage (party kinds on the shared vo machinery;
-    // no new tables — the table-list assertion below is unchanged).
-    assert_eq!((applied_ext, applied_ehr), (1, 3));
+    // no new tables) + 0004_vo_attestation (ATTESTATION storage — RM common
+    // master06 §Change Control; adds the `vo_attestation` table below).
+    assert_eq!((applied_ext, applied_ehr), (1, 4));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -113,6 +114,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "node",
             "stored_query",
             "template_store",
+            "vo_attestation",
             "vo_version",
         ]
     );
@@ -462,6 +464,33 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     .execute(pool)
     .await
     .expect("vo_version row");
+    // Every EHR has an EHR_STATUS from creation (RM ehr §"EHR Creation");
+    // the AQL population gate keys off its `is_queryable` flag
+    // (`i_query_service.adoc`), so a spec-realistic fixture must seed one —
+    // a bare `ehr` row without a status is not a state the service can
+    // produce.
+    let status_vo = Uuid::now_v7();
+    sqlx::query(
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id)
+         VALUES ($1, 'EHR_STATUS', $2, 1, tstzrange(now(), NULL), $3, $4)",
+    )
+    .bind(status_vo)
+    .bind(ehr_id)
+    .bind(contribution_id)
+    .bind(audit_id)
+    .execute(pool)
+    .await
+    .expect("ehr_status vo_version row");
+    sqlx::query(
+        "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, rm_type, ehr_id, path, data)
+         VALUES ($1, 1, 0, 0, 0, 'EHR_STATUS', $2, '',
+                 '{\"_type\":\"EHR_STATUS\",\"is_queryable\":true,\"is_modifiable\":true}'::jsonb)",
+    )
+    .bind(status_vo)
+    .bind(ehr_id)
+    .execute(pool)
+    .await
+    .expect("ehr_status root node");
     (vo, ehr_id)
 }
 

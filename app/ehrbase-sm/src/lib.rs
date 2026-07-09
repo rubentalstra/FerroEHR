@@ -3,7 +3,7 @@
 //! One Rust trait per SM platform-service interface, the shared service
 //! types, and the call-status error model — the seam between the platform
 //! component (`ehrbase`) and every protocol adapter (`ehrbase-rest` for
-//! ITS-REST 1.0.3, EhrScape, management HTTP, …), exactly the architecture
+//! ITS-REST 1.0.3, `EhrScape`, management HTTP, …), exactly the architecture
 //! the SM assumes (`docs/specs/openehr/SM/docs/openehr_platform/
 //! master02-overview.adoc` §General Assumptions: a nominal *native API*
 //! reached through protocol adapters).

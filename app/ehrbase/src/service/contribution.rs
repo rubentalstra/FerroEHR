@@ -18,7 +18,7 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use super::codes::{self, change_type};
-use super::vobject::{self, AuditInput, Change, Kind};
+use super::vobject::{self, AuditInput, Change, Kind, PendingAttest};
 use super::{EhrbaseService, ServiceError, version_id};
 
 /// The storage branch an incoming VERSION maps to. This is deliberately
@@ -30,6 +30,9 @@ enum Action {
     Create,
     Modify,
     Delete,
+    /// Attach an `ATTESTATION` to an existing `ORIGINAL_VERSION`
+    /// (`666|attestation|`) — no new version (RM `change_control` §Contributions).
+    Attest,
 }
 
 /// Classify one VERSION of a contribution: resolve (and validate) its
@@ -48,10 +51,11 @@ enum Action {
 ///   `251|modification|` (content change); `252|synthesis|`, `253|unknown|`,
 ///   `816|restoration|`, `817|format conversion|` are likewise
 ///   content-carrying commits against an existing object;
-/// - *attestation* → an `ATTESTATION` attached to an **existing**
-///   `ORIGINAL_VERSION`, not a version commit. PORT NOTE: attestations are
-///   out of Stage-1 scope (no `ATTESTATION` storage — F-06-10), so `666` is
-///   rejected on this surface rather than silently coerced to a modify.
+/// - *attestation* → a new `ATTESTATION` is added to the attestations list of
+///   an existing `ORIGINAL_VERSION`, change type `666|attestation|` — **not** a
+///   new version (RM `change_control` §Contributions). It therefore requires a
+///   `preceding_version_uid` (the target version) and must carry no `data`
+///   ("attestation of an existing item adds no content").
 fn classify(
     token: Option<&str>,
     has_preceding: bool,
@@ -101,12 +105,30 @@ fn classify(
             }
             Ok((Action::Delete, code))
         }
-        change_type::ATTESTATION => Err(ServiceError::Unprocessable(
-            "change_type 666|attestation| is not a version commit — an ATTESTATION \
-             attaches to an existing ORIGINAL_VERSION (attestations are not \
-             supported in Stage 1)"
-                .to_owned(),
-        )),
+        change_type::ATTESTATION => {
+            // An attestation attaches to an existing ORIGINAL_VERSION identified
+            // by preceding_version_uid (RM change_control §Contributions;
+            // VERSIONED_OBJECT.commit_attestation pre `has_version_id`). Absent
+            // → the request cannot name its target: a 400 (BadRequest), not a
+            // 422, since it is a structural/addressing error.
+            if !has_preceding {
+                return Err(ServiceError::BadRequest(
+                    "change_type 666|attestation| requires preceding_version_uid to \
+                     identify the ORIGINAL_VERSION being attested (RM change_control \
+                     §Contributions; VERSIONED_OBJECT.commit_attestation pre \
+                     has_version_id)"
+                        .to_owned(),
+                ));
+            }
+            if has_data {
+                return Err(ServiceError::Unprocessable(
+                    "attestation of an existing item adds no content — a 666 version \
+                     item must not carry data (RM change_control §Contributions)"
+                        .to_owned(),
+                ));
+            }
+            Ok((Action::Attest, code))
+        }
         // amendment 250 / modification 251 / synthesis 252 / unknown 253 /
         // restoration 816 / format conversion 817: a content-carrying new
         // version of an existing object; the code is preserved verbatim.
@@ -177,6 +199,9 @@ impl EhrbaseService {
             })?;
 
         let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(versions.len());
+        // 666 attestations of existing versions (added to the same CONTRIBUTION,
+        // but committing no new version — RM change_control §Contributions).
+        let mut attests: Vec<PendingAttest> = Vec::new();
         let mut version_codes: Vec<String> = Vec::with_capacity(versions.len());
         for version in versions {
             let token = version
@@ -190,14 +215,44 @@ impl EhrbaseService {
                 version.get("preceding_version_uid").is_some(),
                 data.is_some(),
             )?;
-            let version_audit = self.parse_audit(version.get("commit_audit"), code.clone());
-            version_codes.push(code);
+            // Every member's change type feeds the CONTRIBUTION aggregate — incl.
+            // `666`, so a 666-only contribution aggregates to `666` (below).
+            version_codes.push(code.clone());
+
+            // A 666 attestation adds no version (and no version audit row): its
+            // content is the item's commit audit (an UPDATE_ATTESTATION),
+            // completed into a full ATTESTATION at commit time.
+            if action == Action::Attest {
+                let (vo_id, expected) = parse_preceding(version)?;
+                let kind = self.require_kind(vo_id).await?;
+                check_kind_scope(kind, party_only)?;
+                let partial = version.get("commit_audit").cloned().ok_or_else(|| {
+                    ServiceError::Unprocessable(
+                        "666 attestation version requires a commit_audit \
+                         (the UPDATE_ATTESTATION)"
+                            .to_owned(),
+                    )
+                })?;
+                attests.push(PendingAttest {
+                    vo_id,
+                    kind,
+                    expected,
+                    partial,
+                });
+                continue;
+            }
+
+            let version_audit = self.parse_audit(version.get("commit_audit"), code);
             // A client-supplied UPDATE_VERSION.signature (RM common §"Digital
             // Signature") is stored verbatim; absent, the server signs (§3.3).
             let signature = version
                 .get("signature")
                 .and_then(Value::as_str)
                 .map(str::to_owned);
+            // UPDATE_VERSION.attestations: ATTESTATIONs committed together with a
+            // NEW version (RM change_control §Attestation "Signing content at
+            // committal"). Carried as raw partials; completed at commit time.
+            let accompanying = attestations_of(version);
             let change = match action {
                 Action::Create => {
                     let data = data.ok_or_else(|| {
@@ -222,6 +277,7 @@ impl EhrbaseService {
                         canonical: data,
                         template_id: None,
                         signature,
+                        attestations: accompanying,
                     }
                 }
                 Action::Modify => {
@@ -239,6 +295,7 @@ impl EhrbaseService {
                         expected: Some(expected),
                         template_id: None,
                         signature,
+                        attestations: accompanying,
                     }
                 }
                 Action::Delete => {
@@ -252,6 +309,8 @@ impl EhrbaseService {
                         signature,
                     }
                 }
+                // Handled above (attestations commit no version).
+                Action::Attest => unreachable!("Action::Attest handled before this match"),
             };
             changes.push((version_audit, change));
         }
@@ -283,6 +342,7 @@ impl EhrbaseService {
             ehr_id,
             &contribution_audit,
             changes,
+            attests,
             &self.signing_ctx(),
         )
         .await?;
@@ -376,8 +436,18 @@ impl EhrbaseService {
             .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
             .to_jiff();
 
+        // CONTRIBUTION.versions lists the affected VERSION objects (RM
+        // change_control §Contributions). A 666 attestation commits no new
+        // version but still affects an existing one, so union the versions
+        // referenced by this contribution's `vo_attestation` rows (dedup, no
+        // duplicate OBJECT_REF for a version that was both written and attested
+        // in the same contribution).
         let version_rows = sqlx::query(
             "SELECT vo_id, sys_version, kind FROM vo_version WHERE contribution_id = $1 \
+             UNION \
+             SELECT v.vo_id, v.sys_version, v.kind FROM vo_version v \
+             JOIN vo_attestation att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
+             WHERE att.contribution_id = $1 \
              ORDER BY vo_id",
         )
         .bind(contribution_id)
@@ -518,6 +588,110 @@ fn parse_preceding(version: &Value) -> Result<(Uuid, i32), ServiceError> {
     Ok(version_id::parse_version_uid(raw)?)
 }
 
+/// The raw wire `UPDATE_VERSION.attestations` array of a version item (partial
+/// `UPDATE_ATTESTATION`s), empty when absent.
+fn attestations_of(version: &Value) -> Vec<Value> {
+    version
+        .get("attestations")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+}
+
+/// Complete a wire `UPDATE_ATTESTATION` partial into a full canonical RM
+/// `ATTESTATION` (RM common `attestation.adoc`; ITS-REST `UpdateAttestation.yaml`).
+/// The server supplies the inherited `AUDIT_DETAILS` fields it owns —
+/// `system_id`, `time_committed`, and the `666|attestation|` `change_type`
+/// `DV_CODED_TEXT` — exactly as `UPDATE_AUDIT` → `AUDIT_DETAILS`
+/// (master03 §Version Update Semantics), then adds the `ATTESTATION`-specific
+/// attributes.
+///
+/// Validates the RM invariants: `reason` is mandatory (1..1) and, when coded
+/// (`DV_CODED_TEXT`), its `defining_code` must be in the openEHR
+/// `attestation reason` group (`ATTESTATION.Reason_valid`); `is_pending` is a
+/// mandatory `Boolean` (1..1); `items`, if present, must be non-empty
+/// (`ATTESTATION.Items_valid`). `committer` comes from the partial when present,
+/// else the CONTRIBUTION's committer (master06 §Committal).
+pub(super) fn complete_attestation(
+    partial: &Value,
+    system_id: &str,
+    committer_fallback: &Value,
+    now: jiff::Timestamp,
+) -> Result<Value, ServiceError> {
+    // reason (1..1)
+    let reason = partial.get("reason").cloned().ok_or_else(|| {
+        ServiceError::Unprocessable("ATTESTATION.reason is required (1..1)".to_owned())
+    })?;
+    // Reason_valid: if the reason is a DV_CODED_TEXT, its defining_code must be
+    // a member of the openEHR `attestation reason` group.
+    if reason.get("_type").and_then(Value::as_str) == Some("DV_CODED_TEXT") {
+        let code = reason
+            .pointer("/defining_code/code_string")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if !openehr_term::bundle::openehr().is_valid_attestation_reason(code) {
+            return Err(ServiceError::Unprocessable(format!(
+                "ATTESTATION.reason.defining_code {code:?} is not in the openEHR \
+                 `attestation reason` group (ATTESTATION.Reason_valid)"
+            )));
+        }
+    }
+    // is_pending (1..1, Boolean)
+    let is_pending = partial
+        .get("is_pending")
+        .and_then(Value::as_bool)
+        .ok_or_else(|| {
+            ServiceError::Unprocessable(
+                "ATTESTATION.is_pending is required (1..1 Boolean)".to_owned(),
+            )
+        })?;
+    // items (0..1); Items_valid: non-empty when present.
+    let items = partial.get("items");
+    if let Some(items) = items
+        && items.as_array().is_none_or(Vec::is_empty)
+    {
+        return Err(ServiceError::Unprocessable(
+            "ATTESTATION.items must be a non-empty list when present \
+             (ATTESTATION.Items_valid)"
+                .to_owned(),
+        ));
+    }
+    // committer: from the partial if present, else the CONTRIBUTION committer.
+    let committer = partial
+        .get("committer")
+        .cloned()
+        .unwrap_or_else(|| committer_fallback.clone());
+    // description: UpdateAudit.description is UDvText (plain string or DV_TEXT).
+    let description = partial.get("description").and_then(|d| {
+        d.as_str()
+            .or_else(|| d.get("value").and_then(Value::as_str))
+    });
+    // The inherited AUDIT_DETAILS fields, built exactly like any audit, then
+    // retyped to ATTESTATION with its own attributes appended.
+    let mut att = EhrbaseService::audit_details(
+        system_id,
+        change_type::ATTESTATION,
+        description,
+        &committer,
+        &now,
+    );
+    if let Value::Object(map) = &mut att {
+        map.insert("_type".to_owned(), Value::String("ATTESTATION".to_owned()));
+        map.insert("reason".to_owned(), reason);
+        map.insert("is_pending".to_owned(), Value::Bool(is_pending));
+        if let Some(v) = partial.get("attested_view") {
+            map.insert("attested_view".to_owned(), v.clone());
+        }
+        if let Some(v) = partial.get("proof") {
+            map.insert("proof".to_owned(), v.clone());
+        }
+        if let Some(v) = items {
+            map.insert("items".to_owned(), v.clone());
+        }
+    }
+    Ok(att)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -526,6 +700,13 @@ mod tests {
         match classify(token, has_preceding, has_data) {
             Err(ServiceError::Unprocessable(msg)) => msg,
             other => panic!("expected Unprocessable, got {other:?}"),
+        }
+    }
+
+    fn classify_bad_request(token: Option<&str>, has_preceding: bool, has_data: bool) -> String {
+        match classify(token, has_preceding, has_data) {
+            Err(ServiceError::BadRequest(msg)) => msg,
+            other => panic!("expected BadRequest, got {other:?}"),
         }
     }
 
@@ -558,12 +739,25 @@ mod tests {
         assert!(classify_err(Some("523"), true, true).contains("must not carry data"));
         // deleted without a preceding version.
         assert!(classify_err(Some("523"), false, false).contains("preceding_version_uid"));
-        // attestation is not a version commit (Stage-1 scope, F-06-10).
-        assert!(classify_err(Some("666"), true, true).contains("attestation"));
         // out-of-group token (AUDIT_DETAILS.Change_type_valid).
         assert!(classify_err(Some("999"), true, true).contains("audit_change_type"));
         // content change types need data.
         assert!(classify_err(Some("251"), true, false).contains("needs data"));
+    }
+
+    #[test]
+    fn classify_attestation_of_existing_version() {
+        // RM change_control §Contributions: 666 attaches an ATTESTATION to an
+        // existing ORIGINAL_VERSION — a preceding_version_uid, no data.
+        let (action, kept) = classify(Some("666"), true, false).unwrap();
+        assert_eq!((action, kept.as_str()), (Action::Attest, "666"));
+        let (action, kept) = classify(Some("attestation"), true, false).unwrap();
+        assert_eq!((action, kept.as_str()), (Action::Attest, "666"));
+
+        // No preceding_version_uid → cannot name the target → 400 (BadRequest).
+        assert!(classify_bad_request(Some("666"), false, false).contains("preceding_version_uid"));
+        // Carries data → 422 (attestation adds no content).
+        assert!(classify_err(Some("666"), true, true).contains("adds no content"));
     }
 
     #[test]
