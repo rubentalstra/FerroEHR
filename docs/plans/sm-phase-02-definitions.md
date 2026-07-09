@@ -1,6 +1,6 @@
 # Phase SM-2 — Definitions service completion
 
-- Status: in-progress
+- Status: done (2026-07-09)
 - Started: 2026-07-09
 - Consumes: ADR-010; design `docs/design/sm-platform/` (01 §5 Definitions
   digest, 07 §1.1 gaps, 09 §SM-2)
@@ -58,15 +58,14 @@
 - [x] e2e tests — done 2026-07-09 (service_definition suite, 6 DB tests + persistence assertions updated; workspace 834/834); regex-matching +
       count + delete + replace-if-exists cases; SM pre/post-conditions as
       assertions
-- [ ] ECC zero-drift run (`bash scripts/conformance.sh`, expect 211/318 or
-      better) + workspace gates
+- [x] ECC zero-drift run — MET 2026-07-09: 211/318, byte-identical pass set to the develop baseline, zero regressions (full catalogue, both formats, fresh image)
 
 ## Exit criteria
 
-- [ ] Workspace green (build, nextest, clippy-neutral, fmt)
-- [ ] ECC run ≥ baseline 211/318, zero regressions
-- [ ] Every new trait/method doc-comment cites its SM call
-- [ ] Phase checkboxes ticked; PROGRESS updated at close
+- [x] Workspace green — 842/842 nextest, build clean, clippy-neutral, fmt clean (2026-07-09)
+- [x] ECC run ≥ baseline 211/318, zero regressions (211/318 identical)
+- [x] Every new trait/method doc-comment cites its SM call
+- [x] Phase checkboxes ticked; PROGRESS updated at close
 
 ## Handoff
 
