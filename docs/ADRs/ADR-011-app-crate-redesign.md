@@ -6,6 +6,15 @@
 
 ## Context
 
+The SM spec itself mandates the target shape
+(`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`
+§General Assumptions): "a formal, abstract definition of the platform
+interfaces … so as to be able to state the formal interface call semantics
+**independent of any particular implementation technology**", with REST as
+one *protocol adapter* among many (SOAP, protobuf, Kafka, …) reaching "the
+nominal 'native API'". A native API whose signatures carry ITS-REST types
+violates that sentence.
+
 After SM-1…SM-4 the service seam works but the owner rejected three
 structural smells, all real:
 
