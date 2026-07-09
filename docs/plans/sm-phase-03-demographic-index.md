@@ -1,6 +1,6 @@
 # Phase SM-3 — Demographic completion (PARTY_RELATIONSHIP) + EHR Index
 
-- Status: in-progress
+- Status: done (2026-07-09; incl. the storage-semantics audit wave — all 7 findings fixed)
 - Started: 2026-07-09
 - Consumes: ADR-010; design `docs/design/sm-platform/` (03 digest §1–2, 07
   §1.3–1.4, 08 §4.1/§4.6, 09 §SM-3)
@@ -56,14 +56,14 @@
 - [x] (done 2026-07-09; service_sm3 7 tests + 3 wire tests, all green) e2e tests (testcontainers): relationship CRUD/versioning/at-time +
       error cases; index add/update/remove/N:M/duplicate listing; SM
       pre/post-conditions as assertions
-- [ ] ECC zero-drift run (baseline 211/318) + workspace gates
+- [x] ECC zero-drift run — MET 2026-07-09: 211/318 byte-identical, zero regressions (full catalogue, both formats, fresh image); workspace 856/856
 
 ## Exit criteria
 
-- [ ] Workspace green (build, nextest, clippy-neutral, fmt)
-- [ ] ECC ≥ 211/318, zero regressions
-- [ ] New trait methods doc-cite their SM calls
-- [ ] Checkboxes ticked; PROGRESS updated at close
+- [x] Workspace green — 856/856, build clean, clippy-neutral, fmt clean
+- [x] ECC ≥ 211/318, zero regressions (211/318 identical)
+- [x] New trait methods doc-cite their SM calls (verified by grep)
+- [x] Checkboxes ticked; PROGRESS updated at close
 
 ## Handoff
 

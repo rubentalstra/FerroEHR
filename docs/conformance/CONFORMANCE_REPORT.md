@@ -8,7 +8,7 @@
 - SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
 - Spec versions: RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1.0 · TERM 3.1.0
 - Auth mode: basic
-- Started: 2026-07-09T07:09:00.824546Z
+- Started: 2026-07-09T08:18:04.013133Z
 
 **318 case×format executions · 211 passed · 106 failed.**
 
