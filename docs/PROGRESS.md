@@ -61,10 +61,20 @@ partially superseded. Phase files 10/16/19 re-scoped.
 | SM-1 | `app/*`+`tools/*` layout, `ehrbase-sm` native API (trait per SM interface, call-status table, UPDATE_VERSION envelope), ATTESTATION support, `is_queryable` population gate (conformance gap fixed), contribution list/count, EHR_SUMMARY | **done (2026-07-09, PR #31)** — ECC exit gate 211/318 zero-drift |
 | SM-2 | Definitions completion: ADL 1.4 archetype store + OPT completion, `DefinitionAdl2Service` + `adl2_artefact` store + wire adl2 upload/list/get (retires the P13 `adl2 = 501`), stored-query calls (valid/delete/count, QUERY_DESCRIPTOR) | **done (2026-07-09)** — 842/842 tests; ECC 211/318 zero-drift |
 | SM-3 | PARTY_RELATIONSHIP (full versioning + wire) + EHR Index service + **storage-semantics audit wave** (persistence verified 1:1 vs RM master06 — no blockers; all 7 findings fixed: five-state lifecycle honored, creating_system_id persisted, audit copy rule, full-corpus jsonb round-trip, invariant CHECKs, scope PORT NOTEs) | **done (2026-07-09)** — 856/856 tests; ECC 211/318 zero-drift |
-| SM-4…SM-6 | Terminology surface + Admin completion; Message (EXTRACT + TDD); Subject Proxy | not-started (`docs/design/sm-platform/09-roadmap.md`) |
+| SM-4 | Terminology surface + Admin completion; **carries the ADR-011 app-crate redesign** (compile-time-complete services, no stub backend, protocol-free `ehrbase-sm` literal SM catalog, `Platform`-generic adapter, `ehrbase-audit`/`ehrbase-signing`/`ehrbase-authz` dissolved into modules) in its closing waves | **in flight** (`docs/plans/sm-phase-04-terminology-admin.md`) — mid-rewrite, workspace red by design; gate = green + ECC zero-drift (211/318) |
+| SM-5 / SM-6 | Message (EXTRACT + TDD) / Subject Proxy | designed, not started (`docs/design/sm-platform/09-roadmap.md` + `10-message-integration.md`) |
 
-**Stage 2** (after P19 conformance holds): RBAC/attribute authz, plugin system,
-multi-tenancy — see `PORT_MASTER_PLAN §11`.
+## Checkpoints (ADR-011 rebuild era)
+
+| Ref | What |
+|---|---|
+| PR #33 (2026-07-09) | Storage change-control audit wave: persistence verified 1:1 vs RM common master06; all 7 findings fixed (five-state lifecycle, `creating_system_id`, audit copy rule, full-corpus jsonb round-trip, invariant CHECKs, scope PORT NOTEs) |
+| ADR-011 (2026-07-09) | App-crate redesign accepted: three app crates, protocol-free SM native API, `Platform` generics, no `dyn Backend`/stub |
+| PR #34 (2026-07-09) | ADR-011 rebuild in progress — SM-4 closing waves executing the structural + purity refactor; ECC suspended, re-converges at P19. Consolidated gap surface now in `docs/GAP_REGISTER.md`; roadmap in `docs/blueprint/` |
+
+**Stage 2** (after P19 conformance holds): RBAC/attribute authz (the
+`ehrbase-rest::access` module, already implemented ahead of schedule), plugin
+system, multi-tenancy — see `PORT_MASTER_PLAN §11`.
 
 ## Spec audit (2026-07-06)
 
