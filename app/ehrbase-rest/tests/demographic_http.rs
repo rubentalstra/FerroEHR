@@ -7,7 +7,6 @@
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
@@ -15,18 +14,16 @@ use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 
+use ehrbase_rest::RestConfig;
 use ehrbase_rest::auth::config::AuthConfig;
-use ehrbase_rest::backend::{DemographicService, PartyKind};
-use ehrbase_rest::{EhrService, ResourceMeta, RestConfig, ServiceResponse, WebTemplateService};
-use openehr_its::rest::generated::definition::DefinitionApi;
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::SmError;
+use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
+
+mod common;
+use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const PARTY_OVID: &str = "5f3a1c2e-1111-4222-8333-444455556666::ehrbase-rs.local::1";
-
-/// A canned backend exercising the demographic dispatch wiring without a DB.
-#[derive(Debug, Default)]
-struct MockBackend;
 
 fn person_body() -> Value {
     json!({
@@ -40,89 +37,64 @@ fn person_body() -> Value {
     })
 }
 
-#[async_trait]
-impl DemographicService for MockBackend {
-    async fn party_create(
-        &self,
-        _kind: PartyKind,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::new(
-            person_body(),
-            ResourceMeta::new(String::new(), PARTY_OVID.to_owned()),
-        ))
-    }
-
-    async fn party_get(
-        &self,
-        _kind: PartyKind,
-        uid_based_id: String,
-        _version_at_time: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
-        if uid_based_id == "deleted" {
-            // A deleted current version → Null body → 204.
-            return Ok(ServiceResponse::plain(Value::Null));
-        }
-        Ok(ServiceResponse::new(
-            person_body(),
-            ResourceMeta::new(String::new(), PARTY_OVID.to_owned()),
-        ))
-    }
-
-    async fn party_update(
-        &self,
-        _kind: PartyKind,
-        _uid_based_id: String,
-        if_match: String,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        if if_match.contains("stale") {
-            return Err(ApiError::PreconditionFailed("stale If-Match".to_owned()));
-        }
-        Ok(ServiceResponse::new(
-            person_body(),
-            ResourceMeta::new(String::new(), PARTY_OVID.to_owned()),
-        ))
-    }
-
-    async fn party_delete(
-        &self,
-        _kind: PartyKind,
-        _uid_based_id: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::deleted(ResourceMeta::new(
-            String::new(),
-            PARTY_OVID.to_owned(),
-        )))
-    }
-
-    async fn demographic_latest_meta(
-        &self,
-        _kind: PartyKind,
-        _uid_based_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
-        Ok(Some(ResourceMeta::new(
-            String::new(),
-            PARTY_OVID.to_owned(),
-        )))
+/// The demographic hooks: party create/get/update/delete + latest-meta, plus
+/// the `PARTY_RELATIONSHIP` create/get, all on the SM-native `SmError`. The
+/// dispatch wiring (`ETag`/`Location`/`Prefer`, deleted→`204`, stale→`412`)
+/// is what is under test.
+fn hooks() -> Hooks {
+    Hooks {
+        party_create: Some(Arc::new(|_kind, _body| {
+            Ok(ServiceResponse::new(
+                person_body(),
+                ResourceMeta::new(String::new(), PARTY_OVID.to_owned()),
+            ))
+        })),
+        party_get: Some(Arc::new(|_kind, uid_based_id: String, _at| {
+            if uid_based_id == "deleted" {
+                // A deleted current version → Null body → 204.
+                return Ok(ServiceResponse::plain(Value::Null));
+            }
+            Ok(ServiceResponse::new(
+                person_body(),
+                ResourceMeta::new(String::new(), PARTY_OVID.to_owned()),
+            ))
+        })),
+        party_update: Some(Arc::new(|_kind, _uid, if_match: String, _body| {
+            if if_match.contains("stale") {
+                return Err(SmError::version_mismatch("stale If-Match"));
+            }
+            Ok(ServiceResponse::new(
+                person_body(),
+                ResourceMeta::new(String::new(), PARTY_OVID.to_owned()),
+            ))
+        })),
+        party_delete: Some(Arc::new(|_kind, _uid| {
+            Ok(ServiceResponse::deleted(ResourceMeta::new(
+                String::new(),
+                PARTY_OVID.to_owned(),
+            )))
+        })),
+        demographic_latest_meta: Some(Arc::new(|_kind, _uid| {
+            Ok(Some(ResourceMeta::new(
+                String::new(),
+                PARTY_OVID.to_owned(),
+            )))
+        })),
+        party_relationship_create: Some(Arc::new(|_body| {
+            Ok(ServiceResponse::new(
+                relationship_body(),
+                ResourceMeta::new(String::new(), REL_OVID.to_owned()),
+            ))
+        })),
+        party_relationship_get: Some(Arc::new(|_uid, _at| {
+            Ok(ServiceResponse::new(
+                relationship_body(),
+                ResourceMeta::new(String::new(), REL_OVID.to_owned()),
+            ))
+        })),
+        ..Default::default()
     }
 }
-
-impl EhrService for MockBackend {}
-impl ehrbase_rest::EhrStatusService for MockBackend {}
-impl ehrbase_rest::EhrCompositionService for MockBackend {}
-impl ehrbase_rest::EhrDirectoryService for MockBackend {}
-impl ehrbase_rest::EhrContributionService for MockBackend {}
-impl DefinitionApi for MockBackend {}
-impl WebTemplateService for MockBackend {}
-impl ehrbase_rest::QueryService for MockBackend {}
-impl ehrbase_rest::AdminService for MockBackend {}
-impl ehrbase_rest::AdminArchive for MockBackend {}
-impl ehrbase_rest::TerminologyService for MockBackend {}
-impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
-impl ehrbase_rest::DefinitionAdl2Service for MockBackend {}
-impl ehrbase_rest::DefinitionQueryService for MockBackend {}
-impl ehrbase_rest::EhrIndexService for MockBackend {}
 
 const REL_OVID: &str = "7a7a7a7a-1111-4222-8333-999999990000::ehrbase-rs.local::1";
 
@@ -137,27 +109,6 @@ fn relationship_body() -> Value {
         "target": { "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
                     "id": { "_type": "HIER_OBJECT_ID", "value": "tgt" } }
     })
-}
-
-#[async_trait]
-impl ehrbase_rest::PartyRelationshipService for MockBackend {
-    async fn party_relationship_create(&self, _body: Value) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::new(
-            relationship_body(),
-            ResourceMeta::new(String::new(), REL_OVID.to_owned()),
-        ))
-    }
-
-    async fn party_relationship_get(
-        &self,
-        _uid_based_id: String,
-        _version_at_time: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::new(
-            relationship_body(),
-            ResourceMeta::new(String::new(), REL_OVID.to_owned()),
-        ))
-    }
 }
 
 fn config() -> RestConfig {
@@ -177,7 +128,7 @@ fn config() -> RestConfig {
 }
 
 fn app() -> Router {
-    ehrbase_rest::build_with(config(), Arc::new(MockBackend)).expect("router builds")
+    ehrbase_rest::build_with(config(), Arc::new(Mock::with(hooks()))).expect("router builds")
 }
 
 async fn send(req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {

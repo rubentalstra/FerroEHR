@@ -19,89 +19,58 @@ use axum::body::Body;
 use ehrbase_audit::{AuditConfig, AuditSender, FailMode, Transport};
 use ehrbase_rest::auth::AuthConfig;
 use ehrbase_rest::auth::config::{BasicConfig, BasicUser, Redacted};
-use ehrbase_rest::{EhrService, ResourceMeta, RestConfig, ServiceResponse, build_with_audit};
+use ehrbase_rest::{RestConfig, build_with_audit};
 use http::{Request, StatusCode};
-use openehr_its::rest::generated::ehr::{
-    CompositionDeleteParams, CompositionGetParams, CompositionUpdateParams, EhrCreateParams,
-};
-use openehr_its::rest::runtime::ApiError;
-use serde_json::{Value, json};
+use serde_json::json;
 use tokio::net::UdpSocket;
 use tower::ServiceExt;
+use uuid::Uuid;
+
+mod common;
+use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 // base64("alice:pw")
 const BASIC_ALICE: &str = "Basic YWxpY2U6cHc=";
 const CLIENT_IP: &str = "203.0.113.9";
+// The EHR dispatcher decodes path ids before consulting the backend, so the
+// audited routes use syntactically valid ids: a UUID `ehr_id`, a bare UUID
+// COMPOSITION uid for the read/update, and a full OBJECT_VERSION_ID for delete.
+const EHR: &str = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+const COMP_VO: &str = "8849182c-82ad-4088-a07f-48ead4180515";
+const COMP_OVID: &str = "8849182c-82ad-4088-a07f-48ead4180515::ehrbase-rs.local::1";
 
-// ── mock backend ─────────────────────────────────────────────────────────────
+// ── mock platform ─────────────────────────────────────────────────────────────
 
-#[derive(Debug, Default, Clone)]
-struct MockBackend;
-
-#[async_trait::async_trait]
-impl EhrService for MockBackend {
-    async fn ehr_create(
-        &self,
-        _params: EhrCreateParams,
-        _body: Option<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::new(
-            json!({"_type": "EHR"}),
-            ResourceMeta::new("ehr-1", "ehr-1"),
-        ))
-    }
+/// A valid canonical COMPOSITION (the vendored Demo Vitals instance), needed
+/// because the EHR dispatcher now parses the PUT body before the update call.
+fn composition_body() -> serde_json::Value {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+        "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/demo_vitals_352.json",
+    );
+    let text = std::fs::read_to_string(path).expect("demo_vitals_352.json vendored");
+    serde_json::from_str(&text).expect("valid canonical composition")
 }
 
-#[async_trait::async_trait]
-impl ehrbase_rest::EhrCompositionService for MockBackend {
-    async fn composition_get(
-        &self,
-        _params: CompositionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::new(
-            json!({"_type": "COMPOSITION"}),
-            ResourceMeta::new("ehr-1", "comp::ehrbase::1"),
-        ))
-    }
-
-    async fn composition_update(
-        &self,
-        _params: CompositionUpdateParams,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::new(
-            json!({"_type": "COMPOSITION"}),
-            ResourceMeta::new("ehr-1", "comp::ehrbase::2"),
-        ))
-    }
-
-    async fn composition_delete(
-        &self,
-        _params: CompositionDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::deleted(ResourceMeta::new(
-            "ehr-1",
-            "comp::ehrbase::3",
-        )))
+/// The audited-operation hooks. The composition read returns the canned version
+/// uid the ATNA participant-object assertion checks; create returns the fixed
+/// EHR id; update/delete return their new version uid.
+fn hooks() -> Hooks {
+    let ehr_uuid: Uuid = EHR.parse().expect("valid ehr uuid");
+    Hooks {
+        create_ehr: Some(Arc::new(move |_status| Ok(ehr_uuid))),
+        ehr_object: Some(Arc::new(|_id| Ok(json!({ "_type": "EHR" })))),
+        get_composition_latest: Some(Arc::new(|_e, _vo| {
+            Ok(json!({
+                "_type": "COMPOSITION",
+                "uid": { "_type": "OBJECT_VERSION_ID", "value": "comp::ehrbase::1" }
+            }))
+        })),
+        update_composition: Some(Arc::new(|_e, _vo, _uv| Ok("comp::ehrbase::2".to_owned()))),
+        delete_composition: Some(Arc::new(|_e, _ovid| Ok("comp::ehrbase::3".to_owned()))),
+        ..Default::default()
     }
 }
-
-impl ehrbase_rest::EhrStatusService for MockBackend {}
-impl ehrbase_rest::EhrDirectoryService for MockBackend {}
-impl ehrbase_rest::EhrContributionService for MockBackend {}
-impl openehr_its::rest::generated::definition::DefinitionApi for MockBackend {}
-impl ehrbase_rest::WebTemplateService for MockBackend {}
-impl ehrbase_rest::QueryService for MockBackend {}
-impl ehrbase_rest::DemographicService for MockBackend {}
-impl ehrbase_rest::AdminService for MockBackend {}
-impl ehrbase_rest::AdminArchive for MockBackend {}
-impl ehrbase_rest::TerminologyService for MockBackend {}
-impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
-impl ehrbase_rest::DefinitionAdl2Service for MockBackend {}
-impl ehrbase_rest::DefinitionQueryService for MockBackend {}
-impl ehrbase_rest::PartyRelationshipService for MockBackend {}
-impl ehrbase_rest::EhrIndexService for MockBackend {}
 
 // ── harness ──────────────────────────────────────────────────────────────────
 
@@ -161,7 +130,7 @@ async fn sender(port: u16, suppress_login: bool, fail_mode: FailMode) -> AuditSe
 
 async fn app(port: u16, suppress_login: bool) -> Router {
     let audit = sender(port, suppress_login, FailMode::Open).await;
-    build_with_audit(rest_config(), Arc::new(MockBackend), Some(audit)).expect("build app")
+    build_with_audit(rest_config(), Arc::new(Mock::with(hooks())), Some(audit)).expect("build app")
 }
 
 fn req(method: &str, path: &str, auth: bool) -> Request<Body> {
@@ -175,7 +144,7 @@ fn req(method: &str, path: &str, auth: bool) -> Request<Body> {
     }
     // A minimal JSON body: required by the write paths (PUT/POST parse it),
     // ignored by reads/deletes.
-    b.body(Body::from("{}")).expect("request")
+    b.body(Body::empty()).expect("request")
 }
 
 /// Send a request through the app and return the one framed audit record.
@@ -223,7 +192,7 @@ async fn composition_get_emits_read_record() {
     let rec = drive_expect_record(
         &app,
         &sock,
-        req("GET", "/ehr/ehr-1/composition/comp::x", true),
+        req("GET", &format!("/ehr/{EHR}/composition/{COMP_VO}"), true),
     )
     .await;
     assert_eq!(attr(&rec, "EventActionCode"), Some("R"));
@@ -243,12 +212,12 @@ async fn composition_update_emits_update_record() {
     // composition_update requires an If-Match header (optimistic concurrency).
     let request = Request::builder()
         .method("PUT")
-        .uri(format!("{BASE}/ehr/ehr-1/composition/comp::x"))
+        .uri(format!("{BASE}/ehr/{EHR}/composition/{COMP_VO}"))
         .header("x-forwarded-for", CLIENT_IP)
         .header("content-type", "application/json")
         .header("authorization", BASIC_ALICE)
-        .header("if-match", "comp::ehrbase::1")
-        .body(Body::from("{}"))
+        .header("if-match", COMP_OVID)
+        .body(Body::from(composition_body().to_string()))
         .expect("request");
     let rec = drive_expect_record(&app, &sock, request).await;
     assert_eq!(attr(&rec, "EventActionCode"), Some("U"));
@@ -262,7 +231,11 @@ async fn composition_delete_emits_delete_record() {
     let rec = drive_expect_record(
         &app,
         &sock,
-        req("DELETE", "/ehr/ehr-1/composition/comp::x", true),
+        req(
+            "DELETE",
+            &format!("/ehr/{EHR}/composition/{COMP_OVID}"),
+            true,
+        ),
     )
     .await;
     assert_eq!(attr(&rec, "EventActionCode"), Some("D"));
@@ -421,7 +394,8 @@ async fn fail_open_serves_request_when_channel_full() {
     // Fail-open: the app's audit record is dropped (queue full) but the request
     // still succeeds (201), and the drop is metered by the sender.
     let sender = full_queue_sender(FailMode::Open).await;
-    let app = build_with_audit(rest_config(), Arc::new(MockBackend), Some(sender)).expect("app");
+    let app =
+        build_with_audit(rest_config(), Arc::new(Mock::with(hooks())), Some(sender)).expect("app");
     let resp = app
         .oneshot(req("POST", "/ehr", true))
         .await
@@ -433,7 +407,8 @@ async fn fail_open_serves_request_when_channel_full() {
 async fn fail_closed_returns_503_when_channel_full() {
     // Fail-closed: with the queue full, the next auditable request is rejected.
     let sender = full_queue_sender(FailMode::Closed).await;
-    let app = build_with_audit(rest_config(), Arc::new(MockBackend), Some(sender)).expect("app");
+    let app =
+        build_with_audit(rest_config(), Arc::new(Mock::with(hooks())), Some(sender)).expect("app");
     let resp = app
         .oneshot(req("POST", "/ehr", true))
         .await
