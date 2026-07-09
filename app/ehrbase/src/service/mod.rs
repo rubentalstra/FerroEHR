@@ -36,6 +36,7 @@ mod item_tag;
 mod relationship;
 mod stored_query;
 mod template;
+mod terminology;
 mod version_id;
 mod versioned;
 mod vobject;

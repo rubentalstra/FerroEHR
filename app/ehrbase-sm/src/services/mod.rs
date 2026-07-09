@@ -20,10 +20,11 @@ pub mod ehr_status;
 pub mod query;
 pub mod relationship;
 pub mod system_log;
+pub mod terminology;
 pub mod validity;
 pub mod web_template;
 
-pub use admin::AdminService;
+pub use admin::{AdminArchive, AdminService, StatTimeRange};
 pub use composition::EhrCompositionService;
 pub use contribution::EhrContributionService;
 pub use definition::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService};
@@ -35,5 +36,9 @@ pub use ehr_status::EhrStatusService;
 pub use query::QueryService;
 pub use relationship::PartyRelationshipService;
 pub use system_log::SystemLog;
+pub use terminology::{
+    DefinedTerm, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
+    TerminologyRelation, TerminologyRelationError, TerminologyService,
+};
 pub use validity::ValidityChecker;
 pub use web_template::WebTemplateService;
