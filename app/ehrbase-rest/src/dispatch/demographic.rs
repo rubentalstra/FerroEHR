@@ -28,10 +28,10 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Agent, Group, Organisation, PartyRelationship, Person, Role};
 
 use super::{BoxResponse, RequestParts};
-use crate::error::RestError;
-use ehrbase_sm::Platform;
+use crate::error::{RestError, sm_api_error};
 use ehrbase_sm::types::PartyKind;
 use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
+use ehrbase_sm::{CallStatusType, Platform, SmError};
 
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -86,8 +86,8 @@ async fn run<S: Platform>(
 
 /// Whether an error is the optimistic-concurrency precondition failure
 /// (`If-Match` mismatch → `412`).
-fn is_precondition(e: &ApiError) -> bool {
-    matches!(e, ApiError::PreconditionFailed(_))
+fn is_precondition(e: &SmError) -> bool {
+    e.status == CallStatusType::VersionMismatch
 }
 
 /// The per-kind CRUD + tag operations (`{kind}_{action}`).
@@ -154,9 +154,14 @@ async fn run_party<S: Platform>(
                         .await
                         .ok()
                         .flatten();
-                    Ok(error_with_headers(e, &base, seg, meta.as_ref()))
+                    Ok(error_with_headers(
+                        sm_api_error(e),
+                        &base,
+                        seg,
+                        meta.as_ref(),
+                    ))
                 }
-                Err(e) => Err(RestError(e)),
+                Err(e) => Err(RestError::from(e)),
             }
         }
         "delete" => {
@@ -395,9 +400,14 @@ async fn run_relationship<S: Platform>(
                         .await
                         .ok()
                         .flatten();
-                    Ok(error_with_headers(e, &base, SEG, meta.as_ref()))
+                    Ok(error_with_headers(
+                        sm_api_error(e),
+                        &base,
+                        SEG,
+                        meta.as_ref(),
+                    ))
                 }
-                Err(e) => Err(RestError(e)),
+                Err(e) => Err(RestError::from(e)),
             }
         }
         "party_relationship_delete" => {

@@ -13,6 +13,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
+use ehrbase_sm::SmError;
 use ehrbase_sm::{
     DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, Page, QueryDescriptor,
 };
@@ -165,23 +166,23 @@ impl DefinitionApi for EhrbaseService {
 
 #[async_trait]
 impl DefinitionAdl14Service for EhrbaseService {
-    async fn has_archetype(&self, an_id: String) -> Result<bool, ApiError> {
+    async fn has_archetype(&self, an_id: String) -> Result<bool, SmError> {
         Ok(self.archetype_exists(&an_id).await?)
     }
 
-    async fn valid_archetype(&self, adl: String) -> Result<bool, ApiError> {
+    async fn valid_archetype(&self, adl: String) -> Result<bool, SmError> {
         Ok(Self::valid_archetype_source(&adl))
     }
 
-    async fn upload_archetype(&self, adl: String) -> Result<(), ApiError> {
+    async fn upload_archetype(&self, adl: String) -> Result<(), SmError> {
         Ok(self.archetype_upload(&adl).await?)
     }
 
-    async fn get_archetype(&self, an_id: String) -> Result<String, ApiError> {
+    async fn get_archetype(&self, an_id: String) -> Result<String, SmError> {
         Ok(self.archetype_get(&an_id).await?)
     }
 
-    async fn list_archetypes(&self, page: Page) -> Result<Vec<String>, ApiError> {
+    async fn list_archetypes(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.archetype_list(page).await?)
     }
 
@@ -189,38 +190,38 @@ impl DefinitionAdl14Service for EhrbaseService {
         &self,
         id_pattern: String,
         page: Page,
-    ) -> Result<Vec<String>, ApiError> {
+    ) -> Result<Vec<String>, SmError> {
         Ok(self.archetype_list_matching(&id_pattern, page).await?)
     }
 
-    async fn delete_archetype(&self, an_id: String) -> Result<(), ApiError> {
+    async fn delete_archetype(&self, an_id: String) -> Result<(), SmError> {
         Ok(self.archetype_delete(&an_id).await?)
     }
 
-    async fn archetypes_count(&self) -> Result<i64, ApiError> {
+    async fn archetypes_count(&self) -> Result<i64, SmError> {
         Ok(self.archetype_count().await?)
     }
 
-    async fn has_opt(&self, an_opt_id: String) -> Result<bool, ApiError> {
+    async fn has_opt(&self, an_opt_id: String) -> Result<bool, SmError> {
         Ok(self.opt_exists(&an_opt_id).await?)
     }
 
-    async fn valid_opt(&self, opt_xml: String) -> Result<bool, ApiError> {
+    async fn valid_opt(&self, opt_xml: String) -> Result<bool, SmError> {
         Ok(Self::valid_opt_xml(&opt_xml))
     }
 
-    async fn upload_opt(&self, opt_xml: String) -> Result<(), ApiError> {
+    async fn upload_opt(&self, opt_xml: String) -> Result<(), SmError> {
         // Delegate to the existing OPT ingestion: parse + structural validation
         // (→ 422 `invalid_template` on failure) and the 409-on-duplicate rule.
         self.store_template(&opt_xml).await?;
         Ok(())
     }
 
-    async fn get_opt(&self, an_opt_id: String) -> Result<String, ApiError> {
+    async fn get_opt(&self, an_opt_id: String) -> Result<String, SmError> {
         Ok(self.opt_get(&an_opt_id).await?)
     }
 
-    async fn list_opts(&self, page: Page) -> Result<Vec<String>, ApiError> {
+    async fn list_opts(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.opt_list(page).await?)
     }
 
@@ -228,52 +229,52 @@ impl DefinitionAdl14Service for EhrbaseService {
         &self,
         id_pattern: String,
         page: Page,
-    ) -> Result<Vec<String>, ApiError> {
+    ) -> Result<Vec<String>, SmError> {
         Ok(self.opt_list_matching(&id_pattern, page).await?)
     }
 
-    async fn delete_opt(&self, an_opt_id: String) -> Result<(), ApiError> {
+    async fn delete_opt(&self, an_opt_id: String) -> Result<(), SmError> {
         Ok(self.opt_delete(&an_opt_id).await?)
     }
 
-    async fn opts_count(&self) -> Result<i64, ApiError> {
+    async fn opts_count(&self) -> Result<i64, SmError> {
         Ok(self.opt_count().await?)
     }
 }
 
 #[async_trait]
 impl DefinitionAdl2Service for EhrbaseService {
-    async fn has_artefact(&self, an_id: String) -> Result<bool, ApiError> {
+    async fn has_artefact(&self, an_id: String) -> Result<bool, SmError> {
         Ok(self.adl2_exists(&an_id).await?)
     }
 
-    async fn valid_artefact(&self, adl2: String) -> Result<bool, ApiError> {
+    async fn valid_artefact(&self, adl2: String) -> Result<bool, SmError> {
         Ok(Self::valid_adl2_source(&adl2))
     }
 
-    async fn upload_artefact(&self, adl2: String) -> Result<(), ApiError> {
+    async fn upload_artefact(&self, adl2: String) -> Result<(), SmError> {
         // Replace-if-exists (same HRID); invalid source → 422 invalid_artefact.
         self.adl2_upload(&adl2).await?;
         Ok(())
     }
 
-    async fn get_artefact(&self, an_id: String) -> Result<String, ApiError> {
+    async fn get_artefact(&self, an_id: String) -> Result<String, SmError> {
         Ok(self.adl2_get(&an_id).await?)
     }
 
-    async fn list_artefacts(&self, page: Page) -> Result<Vec<String>, ApiError> {
+    async fn list_artefacts(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list(page).await?)
     }
 
-    async fn list_archetypes(&self, page: Page) -> Result<Vec<String>, ApiError> {
+    async fn list_archetypes(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("archetype", page).await?)
     }
 
-    async fn list_templates(&self, page: Page) -> Result<Vec<String>, ApiError> {
+    async fn list_templates(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("template", page).await?)
     }
 
-    async fn list_opts(&self, page: Page) -> Result<Vec<String>, ApiError> {
+    async fn list_opts(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("operational_template", page).await?)
     }
 
@@ -281,38 +282,38 @@ impl DefinitionAdl2Service for EhrbaseService {
         &self,
         id_pattern: String,
         page: Page,
-    ) -> Result<Vec<String>, ApiError> {
+    ) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_matching(&id_pattern, page).await?)
     }
 
-    async fn delete_artefact(&self, an_id: String) -> Result<(), ApiError> {
+    async fn delete_artefact(&self, an_id: String) -> Result<(), SmError> {
         Ok(self.adl2_delete(&an_id).await?)
     }
 
-    async fn artefacts_count(&self) -> Result<i64, ApiError> {
+    async fn artefacts_count(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count().await?)
     }
 
-    async fn archetypes_count(&self) -> Result<i64, ApiError> {
+    async fn archetypes_count(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("archetype").await?)
     }
 
-    async fn templates_count(&self) -> Result<i64, ApiError> {
+    async fn templates_count(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("template").await?)
     }
 
-    async fn opts_count(&self) -> Result<i64, ApiError> {
+    async fn opts_count(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("operational_template").await?)
     }
 }
 
 #[async_trait]
 impl DefinitionQueryService for EhrbaseService {
-    async fn has_query(&self, a_query_name: String) -> Result<bool, ApiError> {
+    async fn has_query(&self, a_query_name: String) -> Result<bool, SmError> {
         Ok(self.query_exists(&a_query_name).await?)
     }
 
-    async fn valid_query(&self, a_query_text: String, a_type: String) -> Result<bool, ApiError> {
+    async fn valid_query(&self, a_query_text: String, a_type: String) -> Result<bool, SmError> {
         Ok(Self::valid_query_source(&a_query_text, &a_type))
     }
 
@@ -321,7 +322,7 @@ impl DefinitionQueryService for EhrbaseService {
         a_query_text: String,
         a_type: String,
         a_query_name: Option<String>,
-    ) -> Result<QueryDescriptor, ApiError> {
+    ) -> Result<QueryDescriptor, SmError> {
         Ok(self
             .query_store_sm(a_query_text, &a_type, a_query_name)
             .await?)
@@ -330,7 +331,7 @@ impl DefinitionQueryService for EhrbaseService {
     // `store_query_set` keeps the trait default (`NotImplemented`) — the SM
     // entry is an explicit TODO with no defined semantics.
 
-    async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, ApiError> {
+    async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
         Ok(self.query_list(page).await?)
     }
 
@@ -339,17 +340,17 @@ impl DefinitionQueryService for EhrbaseService {
         id_pattern: String,
         artefact_id_pattern: Option<String>,
         page: Page,
-    ) -> Result<Vec<QueryDescriptor>, ApiError> {
+    ) -> Result<Vec<QueryDescriptor>, SmError> {
         Ok(self
             .query_list_matching(&id_pattern, artefact_id_pattern.as_deref(), page)
             .await?)
     }
 
-    async fn delete_query(&self, a_query_name: String) -> Result<(), ApiError> {
+    async fn delete_query(&self, a_query_name: String) -> Result<(), SmError> {
         Ok(self.query_delete(&a_query_name).await?)
     }
 
-    async fn queries_count(&self) -> Result<i64, ApiError> {
+    async fn queries_count(&self) -> Result<i64, SmError> {
         Ok(self.query_count().await?)
     }
 }

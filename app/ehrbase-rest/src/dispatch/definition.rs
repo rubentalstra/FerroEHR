@@ -380,7 +380,7 @@ async fn web_template_response<S: Platform>(
         .backend()
         .web_template(template_id)
         .await
-        .map_err(RestError)?;
+        .map_err(RestError::from)?;
     let json = serde_json::to_string(&*built).map_err(|e| {
         RestError(openehr_its::rest::runtime::ApiError::Internal(format!(
             "WebTemplate JSON serialization failed: {e}"

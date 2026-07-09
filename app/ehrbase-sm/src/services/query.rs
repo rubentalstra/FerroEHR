@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 
-use openehr_its::rest::runtime::ApiError;
+use crate::error::{CallStatusType, SmError};
 
 use crate::types::{AqlQueryRequest, QueryOutcome};
 
@@ -27,8 +27,8 @@ pub trait QueryService: Send + Sync {
         &self,
         _aql: String,
         _request: AqlQueryRequest,
-    ) -> Result<QueryOutcome, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<QueryOutcome, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `POST/GET /query/{qualified_query_name}[/{version}]` — execute a stored
@@ -39,7 +39,7 @@ pub trait QueryService: Send + Sync {
         _qualified_query_name: String,
         _version: Option<String>,
         _request: AqlQueryRequest,
-    ) -> Result<QueryOutcome, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<QueryOutcome, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 }

@@ -43,8 +43,8 @@
 use openehr_term::bundle::openehr;
 use openehr_term::terminology::code_set::CodeSet;
 
+use ehrbase_sm::{CallStatusType, SmError};
 use ehrbase_sm::{DefinedTerm, TermCode, TermEntry, TerminologyDescription, TerminologyExtract};
-use openehr_its::rest::runtime::ApiError;
 
 use super::codes::OPENEHR;
 
@@ -56,8 +56,11 @@ const CANONICAL_LANG: &str = "en";
 /// A `Pre_has_terminology` failure → `NotFound` (the abstract error has no
 /// ITS-REST wire binding — the terminology surface is native-API-only, SM-4
 /// §Wire; `NotFound` is the natural HTTP reading of an unknown terminology).
-fn unknown_terminology(id: &str) -> ApiError {
-    ApiError::NotFound(format!("terminology `{id}`"))
+fn unknown_terminology(id: &str) -> SmError {
+    SmError::new(
+        CallStatusType::VersionedObjectDoesNotExist,
+        format!("terminology `{id}`"),
+    )
 }
 
 /// The external code set addressed by `terminology_id` (its `external_id` or
@@ -168,7 +171,7 @@ pub(crate) fn has_terminology(terminology_id: &str) -> bool {
 /// `get_terminology_description`. `Pre_has_terminology`.
 pub(crate) fn terminology_description(
     terminology_id: &str,
-) -> Result<TerminologyDescription, ApiError> {
+) -> Result<TerminologyDescription, SmError> {
     if terminology_id == OPENEHR {
         return Ok(TerminologyDescription {
             publisher: "openEHR Foundation".to_owned(),
@@ -192,7 +195,7 @@ pub(crate) fn terminology_description(
 }
 
 /// `has_term`. `Pre_has_terminology` → `NotFound` on an unknown terminology.
-pub(crate) fn has_term(terminology_id: &str, code: &str) -> Result<bool, ApiError> {
+pub(crate) fn has_term(terminology_id: &str, code: &str) -> Result<bool, SmError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
     }
@@ -211,14 +214,15 @@ pub(crate) fn has_term(terminology_id: &str, code: &str) -> Result<bool, ApiErro
 }
 
 /// `get_term`. `Pre_has_terminology` + `Pre_has_term` (both → `NotFound`).
-pub(crate) fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyExtract, ApiError> {
+pub(crate) fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyExtract, SmError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
     }
     if !has_term(terminology_id, code)? {
-        return Err(ApiError::NotFound(format!(
-            "term `{code}` in terminology `{terminology_id}`"
-        )));
+        return Err(SmError::new(
+            CallStatusType::VersionedObjectDoesNotExist,
+            format!("term `{code}` in terminology `{terminology_id}`"),
+        ));
     }
     let member = if terminology_id == OPENEHR {
         // First group containing the concept supplies the rubric.
@@ -243,7 +247,7 @@ pub(crate) fn subsumes(
     terminology_id: &str,
     ref_code: &str,
     candidate_child_code: &str,
-) -> Result<bool, ApiError> {
+) -> Result<bool, SmError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
     }
@@ -260,7 +264,7 @@ pub(crate) fn value_set_validate(
     terminology_id: &str,
     value_set_id: &str,
     candidate_code: &str,
-) -> Result<bool, ApiError> {
+) -> Result<bool, SmError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
     }
@@ -272,15 +276,16 @@ pub(crate) fn value_set_validate(
 pub(crate) fn get_value_set(
     terminology_id: &str,
     value_set_code: &str,
-) -> Result<TerminologyExtract, ApiError> {
+) -> Result<TerminologyExtract, SmError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
     }
     match resolve_value_set(terminology_id, value_set_code) {
         Some(members) => Ok(extract_from_members(terminology_id, members)),
-        None => Err(ApiError::NotFound(format!(
-            "value set `{value_set_code}` in terminology `{terminology_id}`"
-        ))),
+        None => Err(SmError::new(
+            CallStatusType::VersionedObjectDoesNotExist,
+            format!("value set `{value_set_code}` in terminology `{terminology_id}`"),
+        )),
     }
 }
 
@@ -315,7 +320,7 @@ mod tests {
 
         assert!(matches!(
             terminology_description("bogus"),
-            Err(ApiError::NotFound(_))
+            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
         ));
     }
 
@@ -342,12 +347,12 @@ mod tests {
     fn get_term_unknown_code_is_not_found() {
         assert!(matches!(
             get_term("openehr", "not-a-code"),
-            Err(ApiError::NotFound(_))
+            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
         ));
         // Unknown terminology → NotFound (Pre_has_terminology) on has_term too.
         assert!(matches!(
             has_term("bogus", "249"),
-            Err(ApiError::NotFound(_))
+            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
         ));
     }
 
@@ -367,7 +372,7 @@ mod tests {
         assert!(!subsumes("openehr", "249", "250").unwrap());
         assert!(matches!(
             subsumes("bogus", "a", "a"),
-            Err(ApiError::NotFound(_))
+            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
         ));
     }
 
@@ -387,7 +392,7 @@ mod tests {
         assert!(!has_value_set("openehr", "no_such_group"));
         assert!(matches!(
             get_value_set("openehr", "no_such_group"),
-            Err(ApiError::NotFound(_))
+            Err(SmError::new(CallStatusType::VersionedObjectDoesNotExist, _))
         ));
         // value_set_validate against an unknown value set → false (no precondition).
         assert!(!value_set_validate("openehr", "no_such_group", "249").unwrap());

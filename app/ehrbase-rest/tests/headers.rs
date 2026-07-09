@@ -7,127 +7,69 @@
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
+use uuid::Uuid;
 
+use ehrbase_rest::RestConfig;
 use ehrbase_rest::auth::config::AuthConfig;
-use ehrbase_rest::{EhrService, ResourceMeta, RestConfig, ServiceResponse, WebTemplateService};
-use openehr_its::rest::generated::definition::DefinitionApi;
-use openehr_its::rest::generated::ehr::{
-    CompositionDeleteParams, CompositionGetParams, EhrCreateParams, EhrStatusUpdateParams,
-    VersionedEhrStatusVersionGetAtTimeParams,
-};
-use openehr_its::rest::runtime::ApiError;
+
+mod common;
+use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const EHR_ID: &str = "7d44b88c-4199-4bad-97dc-d78268e01398";
 const STATUS_OVID: &str = "6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys::2";
 const COMP_OVID: &str = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys::3";
+/// A valid `HIER_OBJECT_ID` for the bare `composition_get` route: the EHR
+/// dispatcher decodes `uid_based_id` before the read, so it must be a real UUID.
+const COMP_VO: &str = "8849182c-82ad-4088-a07f-48ead4180515";
 
-/// A canned backend that echoes fixed resources + metadata so the header/`Prefer`
-/// wiring in `dispatch::ehr` is exercised without a database.
-#[derive(Debug, Default)]
-struct MockBackend;
-
-#[async_trait]
-impl EhrService for MockBackend {
-    async fn ehr_create(
-        &self,
-        _params: EhrCreateParams,
-        _body: Option<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        let body =
-            json!({ "_type": "EHR", "ehr_id": { "_type": "HIER_OBJECT_ID", "value": EHR_ID } });
-        // 201_EHR: ETag/Location keyed by the ehr_id.
-        Ok(ServiceResponse::new(
-            body,
-            ResourceMeta::new(EHR_ID.to_owned(), EHR_ID.to_owned()),
-        ))
+/// A canned platform that echoes fixed resources + metadata so the header/
+/// `Prefer` wiring in `dispatch::ehr` is exercised without a database. The SM
+/// `create`/`update` calls return only the `version_uid`; the resource body a
+/// `return=representation` response re-reads comes from the paired `get_*` hook.
+fn hooks() -> Hooks {
+    let ehr_uuid: Uuid = EHR_ID.parse().expect("valid ehr uuid");
+    Hooks {
+        // create_ehr returns the fixed id; ehr_object supplies the representation.
+        create_ehr: Some(Arc::new(move |_status| Ok(ehr_uuid))),
+        ehr_object: Some(Arc::new(|_id| {
+            Ok(json!({ "_type": "EHR", "ehr_id": { "_type": "HIER_OBJECT_ID", "value": EHR_ID } }))
+        })),
+        // EHR_STATUS update returns the new version_uid; get_ehr_status the body.
+        replace_ehr_status: Some(Arc::new(|_id, _uv| Ok(STATUS_OVID.to_owned()))),
+        get_ehr_status: Some(Arc::new(|_id| {
+            Ok(json!({
+                "_type": "EHR_STATUS",
+                "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID },
+                "subject": { "_type": "PARTY_SELF" }
+            }))
+        })),
+        // 200_VERSION_at_time: an ORIGINAL_VERSION carrying the version_uid.
+        ehr_status_version_at_time: Some(Arc::new(|_id, _t| {
+            Ok(json!({
+                "_type": "ORIGINAL_VERSION",
+                "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID }
+            }))
+        })),
+        // The bare COMPOSITION read: the ETag/Location come from the body's uid.
+        get_composition_latest: Some(Arc::new(|_e, _vo| {
+            Ok(json!({
+                "_type": "COMPOSITION",
+                "uid": { "_type": "OBJECT_VERSION_ID", "value": COMP_OVID },
+                "name": { "_type": "DV_TEXT", "value": "Encounter" }
+            }))
+        })),
+        // 204_COMPOSITION_deleted: the deleted version_uid.
+        delete_composition: Some(Arc::new(|_e, _ovid| Ok(COMP_OVID.to_owned()))),
+        ..Default::default()
     }
 }
-
-#[async_trait]
-impl ehrbase_rest::EhrStatusService for MockBackend {
-    async fn ehr_status_update(
-        &self,
-        _params: EhrStatusUpdateParams,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        let body = json!({
-            "_type": "EHR_STATUS",
-            "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID },
-            "subject": { "_type": "PARTY_SELF" }
-        });
-        Ok(ServiceResponse::new(
-            body,
-            ResourceMeta::new(EHR_ID.to_owned(), STATUS_OVID.to_owned()),
-        ))
-    }
-
-    async fn versioned_ehr_status_version_get_at_time(
-        &self,
-        _params: VersionedEhrStatusVersionGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        // 200_VERSION_at_time: an ORIGINAL_VERSION with the version_uid meta.
-        let body = json!({
-            "_type": "ORIGINAL_VERSION",
-            "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID }
-        });
-        Ok(ServiceResponse::new(
-            body,
-            ResourceMeta::new(EHR_ID.to_owned(), STATUS_OVID.to_owned()),
-        ))
-    }
-}
-
-#[async_trait]
-impl ehrbase_rest::EhrCompositionService for MockBackend {
-    async fn composition_get(
-        &self,
-        _params: CompositionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let body = json!({
-            "_type": "COMPOSITION",
-            "uid": { "_type": "OBJECT_VERSION_ID", "value": COMP_OVID },
-            "name": { "_type": "DV_TEXT", "value": "Encounter" }
-        });
-        Ok(ServiceResponse::new(
-            body,
-            ResourceMeta::new(EHR_ID.to_owned(), COMP_OVID.to_owned()),
-        ))
-    }
-
-    async fn composition_delete(
-        &self,
-        _params: CompositionDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::deleted(ResourceMeta::new(
-            EHR_ID.to_owned(),
-            COMP_OVID.to_owned(),
-        )))
-    }
-}
-
-impl ehrbase_rest::EhrDirectoryService for MockBackend {}
-impl ehrbase_rest::EhrContributionService for MockBackend {}
-
-impl DefinitionApi for MockBackend {}
-impl WebTemplateService for MockBackend {}
-impl ehrbase_rest::QueryService for MockBackend {}
-impl ehrbase_rest::DemographicService for MockBackend {}
-impl ehrbase_rest::AdminService for MockBackend {}
-impl ehrbase_rest::AdminArchive for MockBackend {}
-impl ehrbase_rest::TerminologyService for MockBackend {}
-impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
-impl ehrbase_rest::DefinitionAdl2Service for MockBackend {}
-impl ehrbase_rest::DefinitionQueryService for MockBackend {}
-impl ehrbase_rest::PartyRelationshipService for MockBackend {}
-impl ehrbase_rest::EhrIndexService for MockBackend {}
 
 fn config() -> RestConfig {
     RestConfig {
@@ -146,7 +88,7 @@ fn config() -> RestConfig {
 }
 
 fn app() -> Router {
-    ehrbase_rest::build_with(config(), Arc::new(MockBackend)).expect("router builds")
+    ehrbase_rest::build_with(config(), Arc::new(Mock::with(hooks()))).expect("router builds")
 }
 
 async fn send(req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
@@ -249,7 +191,7 @@ async fn ehr_status_update_representation_is_200_with_body() {
 async fn composition_get_sets_etag_and_location() {
     let req = Request::builder()
         .method("GET")
-        .uri(format!("{BASE}/ehr/{EHR_ID}/composition/some-uid"))
+        .uri(format!("{BASE}/ehr/{EHR_ID}/composition/{COMP_VO}"))
         .body(Body::empty())
         .unwrap();
     let (status, h, body) = send(req).await;
