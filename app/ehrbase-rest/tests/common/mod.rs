@@ -33,12 +33,11 @@ use openehr_base::prelude::ObjectVersionId;
 use openehr_flat::WebTemplate;
 
 use ehrbase_sm::services::{
-    AdminArchive, AdminService, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
-    ContributionAdapter, DefinitionQueryService, DemographicService, EhrCompositionService,
-    EhrContributionService,
-    EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, ItemTagAdapter,
-    PartyRelationshipService, QueryService, SystemLog, TerminologyService, VersionMetaAdapter,
-    WebTemplateService,
+    AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
+    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
+    EhrContributionService, EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService,
+    ItemTagAdapter, PartyRelationshipService, QueryService, SystemLog, TerminologyService,
+    VersionMetaAdapter, WebTemplateService,
 };
 use ehrbase_sm::types::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,

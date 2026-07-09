@@ -20,10 +20,18 @@ green (minus any B5-adjudicated corpus defects), zero drift elsewhere.
 
 ## Tasks (blueprint §3 B2, dependency order)
 
-- [ ] 1. Constraint-evaluation primitives: `multiplicity_interval_impl.rs` +
+- [x] 1. Constraint-evaluation primitives: `multiplicity_interval_impl.rs` +
       `cardinality_impl.rs` + BASE `Interval` functions
       (`has`/`intersects`/`contains`, occurrence/cardinality math) — blueprint
-      ch 2 items 2/7 (§2.3 row 8).
+      ch 2 items 2/7 (§2.3 row 8). *Done 2026-07-09: `interval_impl.rs` (shared
+      boundary algebra: `has`/`intersects`/`contains`/`is_equal` + accessors on
+      `Interval<T>`/`Point_interval`/`Proper_interval`),
+      `multiplicity_interval_impl.rs` (`is_open`/`is_optional`/`is_mandatory`/
+      `is_prohibited` + inherited algebra + `Validate`), `cardinality_impl.rs`
+      (`is_bag`/`is_list`/`is_set`); 33 new spec-cited tests (64 total in
+      `openehr-base`), 4 PORT NOTEs (informal `intersects` prose, reflexive
+      `contains`, type-erased `Multiplicity_interval` enum variant,
+      `PartialOrd` bound); emit + drift clean.*
 - [ ] 2. Closed-world semantics ADR + implementation (F-07-05), after checking
       CNF fixtures for tolerated RM metadata.
 - [ ] 3. Slot enforcement (F-07-10): WebTemplate nodes for open
