@@ -43,11 +43,7 @@ pub use config::{
 };
 pub use engine::{AuthzError, PolicyEngine};
 pub use request::{AccessMode, Attr, AuthzRequest, Combination, Decision, ResourceKind};
-// NOTE: `roles::default_role_claims` is intentionally NOT re-exported here — the
-// gate below owns a public `default_role_claims` wrapper (the name consumers use
-// as `crate::access::authz::default_role_claims`); re-exporting the module fn too would
-// clash. The module fn stays reachable as `crate::access::authz::roles::default_role_claims`.
-pub use roles::{RbacDecision, authorize, claim_string, extract_roles};
+pub use roles::{RbacDecision, authorize, claim_string, default_role_claims, extract_roles};
 
 use std::collections::HashMap;
 use std::future::Future;
@@ -285,14 +281,6 @@ impl RbacGate {
     pub(crate) fn decide(&self, class: OperationClass, principal_roles: &[String]) -> RbacDecision {
         authorize(class, principal_roles, &self.rules)
     }
-}
-
-/// The default JWT role-claim paths, re-exported for the binary when no handle
-/// is built (so the [`Authenticator`](crate::Authenticator) still extracts
-/// roles under the default paths).
-#[must_use]
-pub fn default_role_claims() -> Vec<String> {
-    roles::default_role_claims()
 }
 
 #[cfg(test)]

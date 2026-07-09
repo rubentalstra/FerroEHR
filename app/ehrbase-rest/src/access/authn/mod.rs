@@ -396,7 +396,7 @@ mod tests {
 
     // The old placeholder `authorize_admin`/`is_admin_path` path-string gate was
     // deleted (§5.2); the RBAC gate replaces it and is covered by the
-    // `ehrbase-authz` unit tests + the `rbac_e2e` integration suite.
+    // `access::authz` unit tests + the `rbac_e2e` integration suite.
 
     #[tokio::test]
     async fn bearer_without_oidc_is_rejected() {

@@ -31,7 +31,7 @@ pub(super) struct JwtValidator {
 }
 
 // The role model (default claim paths + extraction algorithm) lives in the leaf
-// `ehrbase-authz` crate so the REST layer and the RBAC gate share one
+// `access::authz` module so the REST layer and the RBAC gate share one
 // implementation (§5.1).
 use crate::access::authz::roles::extract_roles;
 
