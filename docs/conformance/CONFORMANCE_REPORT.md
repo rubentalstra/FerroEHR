@@ -5,10 +5,10 @@
 
 ## 1. SUT identity
 
-- SUT: `http://127.0.0.1:63929/ehrbase/rest/openehr/v1`
+- SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
 - Spec versions: RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1.0 · TERM 3.1.0
-- Auth mode: basic (self-host, RBAC off)
-- Started: 2026-07-08T20:04:11.11565Z
+- Auth mode: basic
+- Started: 2026-07-09T05:59:31.703565Z
 
 **318 case×format executions · 211 passed · 106 failed.**
 

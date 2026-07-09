@@ -89,9 +89,10 @@ fn fmt_layer(format: super::config::LogFormat) -> BoxedLayer {
             .with_span_list(true)
             .boxed()
     } else {
-        fmt::layer()
-            .with_target(true)
-            .with_ansi(std::io::stdout().is_terminal())
-            .boxed()
+        // An explicit `pretty` is a human asking for the colored dev output
+        // (e.g. `docker compose` logs, where stdout is a pipe, not a TTY) —
+        // force ANSI on. Only `auto`-selected pretty keeps TTY detection.
+        let ansi = matches!(format, LogFormat::Pretty) || std::io::stdout().is_terminal();
+        fmt::layer().with_target(true).with_ansi(ansi).boxed()
     }
 }
