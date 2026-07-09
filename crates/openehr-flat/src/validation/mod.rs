@@ -52,7 +52,7 @@ use openehr_rm::validate::validate_rm_value;
 use serde_json::Value;
 
 use crate::path;
-use crate::webtemplate::{WebTemplate, WebTemplateNode};
+use crate::webtemplate::{WebTemplate, WebTemplateArchetypeSlot, WebTemplateNode};
 
 /// A single validation violation, keyed by the RM path of the offending node.
 ///
@@ -90,6 +90,9 @@ pub enum ValidationKind {
     Terminology,
     /// An RM class invariant failed.
     Invariant,
+    /// An instance node is not admitted by any sibling constraint or open slot
+    /// under a closed (constrained) attribute (ADR-012 closed-archetype).
+    Unexpected,
     /// Any other violation.
     Other,
 }
@@ -139,6 +142,28 @@ pub fn validate_archetype_conformance(
     v.out
 }
 
+/// Archetype-conformance pass for a `553|incomplete|` commit: identical to
+/// [`validate_archetype_conformance`] but with existence/occurrences/cardinality
+/// **lower** limits treated as zero (RM common master06 §"Incomplete Content":
+/// "in an `incomplete` commit, data may be missing, but it may not be wrong …
+/// all existence and cardinality lower limits set to zero"). Type conformance,
+/// upper limits, and every leaf/value constraint are still enforced — the
+/// relaxation tolerates *missing* data, not *wrong* data. The caller must run
+/// the RM-invariant + terminology passes at full strictness regardless
+/// (they are properties of the instance, not archetype lower bounds).
+#[must_use]
+pub fn validate_archetype_conformance_incomplete(
+    composition: &Value,
+    wt: &WebTemplate,
+) -> Vec<ValidationMessage> {
+    let mut v = Validator {
+        relax_lower_bounds: true,
+        ..Validator::default()
+    };
+    v.walk(composition, &wt.tree);
+    v.out
+}
+
 /// The set of identity `(attribute, archetype_node_id)` pairs that appear in
 /// more than one distinct sibling path (relative to `parent_aql`) — i.e. the
 /// template distinguishes same-id siblings by name, so the name fallback in
@@ -172,6 +197,15 @@ fn identity_ambiguity<'a>(
 #[derive(Default)]
 struct Validator {
     out: Vec<ValidationMessage>,
+    /// When set, existence/occurrences/cardinality **lower** limits are treated
+    /// as zero (missing/empty is tolerated), realizing the RM common master06
+    /// §"Incomplete Content" relaxation for a `553|incomplete|` commit: "in an
+    /// `incomplete` commit, data may be missing, but it may not be wrong … all
+    /// existence and cardinality lower limits set to zero". Upper limits, type
+    /// conformance, and every leaf/value constraint (`RangeError`,
+    /// `PatternError`, `CodedValue`, `WrongType`) are still enforced — only the
+    /// "not enough / absent" violations are suppressed.
+    relax_lower_bounds: bool,
 }
 
 impl Validator {
@@ -264,6 +298,90 @@ impl Validator {
         self.check_cardinalities(instance, wt);
         self.check_existence(instance, wt);
         self.check_slots(instance, wt);
+        self.check_closure(instance, wt);
+    }
+
+    /// Closed-archetype walk (ADR-012, F-07-05 + F-07-10). Under each constrained
+    /// attribute this node records (an attribute with fixed archetype-node
+    /// alternatives and/or open `ARCHETYPE_SLOT`s), an instance child bearing an
+    /// `archetype_node_id` (i.e. a LOCATABLE — the archetyped-content
+    /// discriminator; no RM metadata value carries one) must match a fixed
+    /// sibling identity **or** an open slot; any other archetyped child is an
+    /// "unexpected node". RM-permitted unconstrained metadata attributes and
+    /// wholly-unconstrained attributes are never recorded, so stay open (ADR-012
+    /// rule 2). A rejected node is not descended into (the walk already skips it).
+    ///
+    /// PORT NOTE (ADR-012): AOM 1.4 `valid_value`
+    /// (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Valid_value
+    /// L60-62) is a positive-only cascade, silent on unmatched instance nodes;
+    /// closed-world rejection follows the AOM2 direction + de-facto CDR behaviour
+    /// and lands only behind the ECC zero-drift gate.
+    fn check_closure(&mut self, instance: &Value, wt: &WebTemplateNode) {
+        for ca in &wt.closed_attributes {
+            let Some(rel) = ca.path.strip_prefix(&wt.aql_path) else {
+                continue;
+            };
+            let segments = path::parse(rel);
+            let Some((last, intermediate)) = segments.split_last() else {
+                continue;
+            };
+            for container in &path::navigate(&[instance], intermediate) {
+                let mut slot_counts = vec![0usize; ca.slots.len()];
+                for child in children_under_attr(container, &last.attribute) {
+                    let Some(nid) = child
+                        .get("archetype_node_id")
+                        .and_then(Value::as_str)
+                        .filter(|s| !s.is_empty())
+                    else {
+                        // Not a LOCATABLE (RM metadata / PATHABLE value): not
+                        // subject to sibling closure.
+                        continue;
+                    };
+                    if ca.allowed_ids.iter().any(|a| a == nid) {
+                        continue; // Matches a fixed sibling alternative.
+                    }
+                    let ct = child.get("_type").and_then(Value::as_str).unwrap_or("");
+                    match ca.slots.iter().position(|s| slot_admits(s, ct, nid)) {
+                        Some(i) => slot_counts[i] += 1,
+                        None => self.push(
+                            &ca.path,
+                            format!(
+                                "unexpected node '{nid}' under '{}': no matching archetype \
+                                 constraint or slot",
+                                last.attribute
+                            ),
+                            ValidationKind::Unexpected,
+                        ),
+                    }
+                }
+                // Slot occurrences on the matched fillers.
+                for (i, slot) in ca.slots.iter().enumerate() {
+                    let count = i32::try_from(slot_counts[i]).unwrap_or(i32::MAX);
+                    if slot_counts[i] == 0 {
+                        if slot.min >= 1 {
+                            self.push(
+                                &ca.path,
+                                format!(
+                                    "mandatory archetype slot (occurrences {}..) under '{}' \
+                                     has no filler",
+                                    slot.min, last.attribute
+                                ),
+                                ValidationKind::Required,
+                            );
+                        }
+                    } else if slot.max != -1 && count > slot.max {
+                        self.push(
+                            &ca.path,
+                            format!(
+                                "too many slot fillers under '{}': found {}, expected at most {}",
+                                last.attribute, slot_counts[i], slot.max
+                            ),
+                            ValidationKind::Occurrences,
+                        );
+                    }
+                }
+            }
+        }
     }
 
     /// Type-conformance check for wrapper constraints the compactor hoisted
@@ -325,6 +443,11 @@ impl Validator {
     /// deliberately skips. Only the lower bound (mandatory presence) is enforced;
     /// the upper bound is governed by RM single-valuedness / cardinality.
     fn check_existence(&mut self, instance: &Value, wt: &WebTemplateNode) {
+        // Existence is a lower-bound (mandatory-presence) constraint — relaxed
+        // away for a `553|incomplete|` commit (master06 §"Incomplete Content").
+        if self.relax_lower_bounds {
+            return;
+        }
         for ex in &wt.existence {
             if ex.min < 1 {
                 continue;
@@ -458,20 +581,25 @@ impl Validator {
     /// (`max == -1` is unbounded).
     fn emit_occurrences(&mut self, aql_path: &str, min: i32, max: i32, count: usize) {
         let count_i = i32::try_from(count).unwrap_or(i32::MAX);
-        if count == 0 {
-            if min >= 1 {
+        // The lower-bound occurrences checks (absent / too-few) are relaxed away
+        // for a `553|incomplete|` commit; the upper bound still applies
+        // (master06 §"Incomplete Content": lower limits set to zero).
+        if !self.relax_lower_bounds {
+            if count == 0 {
+                if min >= 1 {
+                    self.push(
+                        aql_path,
+                        format!("mandatory node is missing (occurrences {min}..)"),
+                        ValidationKind::Required,
+                    );
+                }
+            } else if count_i < min {
                 self.push(
                     aql_path,
-                    format!("mandatory node is missing (occurrences {min}..)"),
-                    ValidationKind::Required,
+                    format!("too few occurrences: found {count}, expected at least {min}"),
+                    ValidationKind::Occurrences,
                 );
             }
-        } else if count_i < min {
-            self.push(
-                aql_path,
-                format!("too few occurrences: found {count}, expected at least {min}"),
-                ValidationKind::Occurrences,
-            );
         }
         if max != -1 && count_i > max {
             self.push(
@@ -514,7 +642,11 @@ impl Validator {
                     i32::try_from(openehr_rm::paths::select_children(container, last).len())
                         .unwrap_or(i32::MAX);
                 let min = card.min.unwrap_or(0).max(0);
-                if count < min {
+                // The cardinality lower bound is relaxed away for a
+                // `553|incomplete|` commit (master06 §"Incomplete Content": "all
+                // existence and cardinality lower limits set to zero"); the upper
+                // bound still applies.
+                if count < min && !self.relax_lower_bounds {
                     self.push(
                         card.path.clone(),
                         format!("cardinality violated: {count} children, expected at least {min}"),
@@ -544,6 +676,46 @@ impl Validator {
 // (`parse` / `navigate` / `select_children`). Only the checks below —
 // attribute-presence for the existence rule and RM instance-path
 // normalisation — are validation-specific.
+
+/// The instance child objects directly under `attr` (array elements or a single
+/// object), skipping non-object values — the sibling set for closed-world.
+fn children_under_attr<'a>(node: &'a Value, attr: &str) -> Vec<&'a Value> {
+    match node.get(attr) {
+        Some(Value::Array(a)) => a.iter().filter(|v| v.is_object()).collect(),
+        Some(v @ Value::Object(_)) => vec![v],
+        _ => Vec::new(),
+    }
+}
+
+/// Whether an open `ARCHETYPE_SLOT` admits a filler of RM type `child_type` and
+/// archetype id `archetype_id` (AOM 1.4 `ARCHETYPE_SLOT`): the type must conform
+/// to the slot's `rm_type`, the id must match at least one `includes` regex (an
+/// empty `includes` = open to the type), and match no `excludes` regex. A blanket
+/// match-all (`.*`) exclude is ignored when `includes` is non-empty — the ADL 1.4
+/// closed-slot idiom (AOM 1.4 has no `is_closed`; PORT NOTE: includes then win,
+/// matching de-facto CDR behaviour).
+fn slot_admits(slot: &WebTemplateArchetypeSlot, child_type: &str, archetype_id: &str) -> bool {
+    if !slot.rm_type.is_empty() && !subtype::conforms(child_type, &slot.rm_type) {
+        return false;
+    }
+    let include_ok = slot.includes.is_empty()
+        || slot
+            .includes
+            .iter()
+            .any(|p| leaf::matches_pattern(p, archetype_id));
+    if !include_ok {
+        return false;
+    }
+    for ex in &slot.excludes {
+        if !slot.includes.is_empty() && matches!(ex.trim(), ".*" | ".+") {
+            continue; // closed-slot idiom: a specific includes list wins.
+        }
+        if leaf::matches_pattern(ex, archetype_id) {
+            return false;
+        }
+    }
+    true
+}
 
 /// Whether an RM attribute field is absent (missing, JSON `null`, or an empty
 /// array) on a node — the negation of "the attribute is present" for the
