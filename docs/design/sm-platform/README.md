@@ -33,7 +33,17 @@ Owner rulings baked in (2026-07-08):
 | [09-roadmap.md](09-roadmap.md) | Build order SM-1…SM-6 interleaved with P17–P20, verification gates |
 | [10-message-integration.md](10-message-integration.md) | Message & EHR Extract integration: full spec extraction (SM + RM EHR Extract IM + generated types + ITS-REST/CNF coverage) mapped onto the three crates |
 
-Decision record: `docs/ADRs/ADR-010-sm-aligned-service-architecture.md`.
+> **Packaging superseded by ADR-011 (2026-07-09).** These digests describe the
+> SM decomposition as *designed*; the current app packaging is ADR-011's:
+> **three** app crates (`app/{ehrbase, ehrbase-rest, ehrbase-sm}`), with the
+> former separate `ehrbase-audit`/`ehrbase-signing`/`ehrbase-authz` crates
+> dissolved into modules (`ehrbase::system_log`, `ehrbase::signing`,
+> `ehrbase-rest::access`), `ehrbase-sm` a protocol-free literal SM catalog, and
+> a `Platform`-generic adapter (no `dyn Backend`/stub). Where a digest names one
+> of those old crates, read the module path; ADR-011 is the packaging authority.
+
+Decision record: `docs/ADRs/ADR-010-sm-aligned-service-architecture.md`
+(packaging updated by `docs/ADRs/ADR-011-app-crate-redesign.md`).
 Execution tracking: `docs/plans/sm-phase-*.md` (created per phase, SM-1
 first).
 
