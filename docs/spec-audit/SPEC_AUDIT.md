@@ -1,5 +1,12 @@
 # Full openEHR Spec Audit — 2026-07-06
 
+> **2026-07-09:** the consolidated, prioritized view now lives in the blueprint
+> `docs/blueprint/00-THE-BLUEPRINT.md` §2 (+ the per-component chapters). This
+> audit remains the **per-finding detail record** — the 82 open / 109 fixed
+> findings with spec citations and checkboxes in `findings/*.md`. Use the
+> blueprint §2 for "what's the state and what's next"; use this for "what
+> exactly does finding N require".
+
 Whole-codebase audit against the vendored openEHR specifications
 (`docs/specs/openehr/` — RM 1.2.0, BASE 1.3.0, AM 1.4/2.4, QUERY 1.1, TERM 3.1.0,
 ITS-REST 1.0.3, ITS-JSON, ITS-XML, SM, CNF test schedule). **The openEHR spec is

@@ -1,5 +1,10 @@
 # Phase 99 — Cutover
 
+> **App-crate reality (ADR-011, 2026-07-09):** three app crates —
+> `app/{ehrbase, ehrbase-rest, ehrbase-sm}` + `tools/{conformance, benchmark}`
+> + `crates/openehr-*`. EHRbase Java is already out of the tree (ADR-008); this
+> phase is the release cutover, not a Java-deletion pass.
+
 - Status: not-started (Stage-1 app build, step 13 of 13)
 - Consumes: everything
 - Decisions: `PORT_MASTER_PLAN §16`, ADR-006

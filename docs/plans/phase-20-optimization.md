@@ -1,5 +1,9 @@
 # Phase 20 — Optimization
 
+> **App-crate reality (ADR-011, 2026-07-09):** three app crates —
+> `app/{ehrbase, ehrbase-rest, ehrbase-sm}` + `tools/{conformance, benchmark}`
+> + `crates/openehr-*`.
+
 - Status: not-started (Stage-1 app build, step 12 of 13)
 - Consumes: the parity-passing server (P19)
 - Compile required: perf

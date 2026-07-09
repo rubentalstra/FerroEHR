@@ -42,7 +42,8 @@ are **pulled by Prometheus** from `/management/prometheus`
 default. Health is a small indicator registry. Everything initializes in the
 binary (`ehrbase::telemetry`), and the HTTP surface lives in `ehrbase-rest`
 (`management/` module). No new crate — this is application wiring, not a
-reusable library (contrast `ehrbase-audit`).
+reusable library (contrast `ehrbase::system_log`, the ATNA emitter — formerly
+the `ehrbase-audit` crate, dissolved into a module of `ehrbase` per ADR-011).
 
 ```mermaid
 flowchart LR
@@ -129,7 +130,7 @@ exporter renders exposition format.
 | `compositions_committed_total` | counter | `change_type` | service |
 | `validation_failures_total` | counter | `pass` (rm_invariant/terminology/template) | validation edge |
 | `webtemplate_cache_events_total` | counter | `event` (hit/miss/eviction) | moka stats via the WebTemplateService seam |
-| `atna_audit_sent_total` / `atna_audit_dropped_total` / `atna_audit_queue_depth` | counter/gauge | `transport` | already emitted (ehrbase-audit) |
+| `atna_audit_sent_total` / `atna_audit_dropped_total` / `atna_audit_queue_depth` | counter/gauge | `transport` | already emitted (`ehrbase::system_log`) |
 | `process_start_time_seconds`, `ehrbase_build_info{version,git_sha,rm_version}` | gauge | — | telemetry init |
 | `tokio_workers`, `tokio_global_queue_depth`, `tokio_alive_tasks` | gauge | — | runtime sampler (`tokio::runtime::Handle::metrics()` — use the stable subset the pinned tokio exposes; anything unstable-gated is simply omitted, not deferred) |
 
