@@ -98,8 +98,13 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // 0005_archetype_store (SM-2 ADL 1.4 source archetypes, I_DEFINITION_ADL14;
     // adds the `archetype_store` table below) +
     // 0006_adl2_artefact (SM-2 ADL2 artefacts, I_DEFINITION_ADL2; adds the
-    // `adl2_artefact` table below).
-    assert_eq!((applied_ext, applied_ehr), (1, 6));
+    // `adl2_artefact` table below) +
+    // 0007_party_relationship_and_ehr_index (SM-3: the PARTY_RELATIONSHIP kind
+    // on the shared vo machinery + the `ehr_index` table below) +
+    // 0008_creating_system_id_and_audit_invariant (storage-semantics audit
+    // wave: the per-version `creating_system_id` column on `vo_version` [M2]
+    // and the `audit_system_id_nonempty` CHECK on `audit` [m6]; adds no table).
+    assert_eq!((applied_ext, applied_ehr), (1, 8));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -116,6 +121,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "audit",
             "contribution",
             "ehr",
+            "ehr_index",
             "item_tag",
             "node",
             "stored_query",
@@ -242,39 +248,67 @@ async fn temporal_versioning_model_behaves() {
 async fn node_codec_round_trips_through_the_database() {
     let pg = Pg::start().await;
     let pool = pg.migrated_pool("codec_db").await;
+
+    // m5: round-trip EVERY corpus COMPOSITION through the real jsonb `node`
+    // store (decompose → INSERT → SELECT → reassemble), not just one sample.
+    // One container / one DB for speed; each composition gets its own vo.
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json");
+    let mut checked = 0usize;
+    for entry in std::fs::read_dir(&dir).expect("corpus dir") {
+        let path = entry.expect("entry").path();
+        if path.extension().is_none_or(|e| e != "json") {
+            continue;
+        }
+        let text = std::fs::read_to_string(&path).expect("read corpus file");
+        let Ok(composition) = serde_json::from_str::<Value>(&text) else {
+            continue; // deliberately-invalid corpus files
+        };
+        if composition.get("_type").and_then(Value::as_str) != Some("COMPOSITION") {
+            continue;
+        }
+        let (vo, ehr_id) = seed_version(&pool).await;
+        let rows =
+            decompose(composition.clone()).unwrap_or_else(|e| panic!("decompose {path:?}: {e}"));
+        insert_nodes(&pool, vo, 1, ehr_id, &rows).await;
+
+        let read: Vec<NodeRow> = sqlx::query(
+            "SELECT num, num_cap, parent_num, citem_num, rm_type, archetype, name, path, data
+             FROM node WHERE vo_id = $1 AND sys_version = 1 ORDER BY num",
+        )
+        .bind(vo)
+        .fetch_all(&pool)
+        .await
+        .expect("read nodes")
+        .into_iter()
+        .map(|r| NodeRow {
+            num: r.get("num"),
+            num_cap: r.get("num_cap"),
+            parent_num: r.get("parent_num"),
+            citem_num: r.get("citem_num"),
+            rm_type: r.get("rm_type"),
+            archetype: r.get("archetype"),
+            name: r.get("name"),
+            path: r.get("path"),
+            data: r.get("data"),
+        })
+        .collect();
+
+        assert_eq!(read.len(), rows.len(), "node count for {path:?}");
+        let reassembled = reassemble(&read).expect("reassemble");
+        assert_eq!(
+            reassembled, composition,
+            "DB round-trip must be lossless for {path:?}"
+        );
+        checked += 1;
+    }
+    assert!(checked >= 50, "expected the full corpus, got {checked}");
+
+    // The CONTAINS shape works against real rows (IPS sample).
     let (vo, ehr_id) = seed_version(&pool).await;
-
     let composition = corpus_sample();
-    let rows = decompose(composition.clone()).expect("decompose");
+    let rows = decompose(composition).expect("decompose");
     insert_nodes(&pool, vo, 1, ehr_id, &rows).await;
-
-    let read: Vec<NodeRow> = sqlx::query(
-        "SELECT num, num_cap, parent_num, citem_num, rm_type, archetype, name, path, data
-         FROM node WHERE vo_id = $1 AND sys_version = 1 ORDER BY num",
-    )
-    .bind(vo)
-    .fetch_all(&pool)
-    .await
-    .expect("read nodes")
-    .into_iter()
-    .map(|r| NodeRow {
-        num: r.get("num"),
-        num_cap: r.get("num_cap"),
-        parent_num: r.get("parent_num"),
-        citem_num: r.get("citem_num"),
-        rm_type: r.get("rm_type"),
-        archetype: r.get("archetype"),
-        name: r.get("name"),
-        path: r.get("path"),
-        data: r.get("data"),
-    })
-    .collect();
-
-    assert_eq!(read.len(), rows.len());
-    let reassembled = reassemble(&read).expect("reassemble");
-    assert_eq!(reassembled, composition, "DB round-trip must be lossless");
-
-    // the CONTAINS shape works against real rows
     let contains: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM node c
          JOIN node o ON o.vo_id = c.vo_id AND o.sys_version = c.sys_version

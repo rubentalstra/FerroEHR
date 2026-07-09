@@ -63,6 +63,18 @@ pub fn is_structure_type(rm_type: &str) -> bool {
     STRUCTURE_TYPES.contains(&rm_type)
 }
 
+/// Whether an RM `_type` may be the **root** of a versioned object handed to
+/// [`decompose`]. This is [`is_structure_type`] plus `PARTY_RELATIONSHIP`
+/// (SM-3): a relationship is a standalone versioned object with its own
+/// `node`/`vo_version` rows, yet it is deliberately **not** a structure type
+/// for child-pruning purposes — a `PARTY_RELATIONSHIP` nested inside a party's
+/// `relationships` attribute must stay inline (see the [`STRUCTURE_TYPES`]
+/// note). Splitting the two predicates gives both behaviours from one codec.
+#[must_use]
+pub fn is_versioned_root_type(rm_type: &str) -> bool {
+    is_structure_type(rm_type) || rm_type == "PARTY_RELATIONSHIP"
+}
+
 /// One decomposed `node` row (content columns only — storage context like
 /// `vo_id`/`sys_version`/`ehr_id` is added by the repository).
 #[derive(Debug, Clone, PartialEq)]
@@ -97,7 +109,7 @@ pub struct NodeRow {
 /// structure and non-structure elements (canonical RM JSON never does).
 pub fn decompose(root: Value) -> Result<Vec<NodeRow>, StorageError> {
     let root_type = root.get("_type").and_then(Value::as_str);
-    if !root_type.is_some_and(is_structure_type) {
+    if !root_type.is_some_and(is_versioned_root_type) {
         return Err(StorageError::NotAStructureRoot(
             root_type.map(str::to_owned),
         ));

@@ -427,3 +427,58 @@ async fn canonical_xml_carries_the_signature() {
     );
     assert!(xml.contains("signature"), "expected a <signature> element");
 }
+
+#[tokio::test]
+async fn creating_system_id_and_signature_survive_a_system_id_change() {
+    // M2 (RM common master06 §"Distributed Versioning"): the OBJECT_VERSION_ID's
+    // creating_system_id is per-version immutable and reconstructed from
+    // storage, never from the live service config. A later `with_system_id`
+    // change must not mutate a historical version's uid nor invalidate the
+    // signature that was computed over it.
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("signing_csid").await;
+
+    // Commit a composition under system id "sys-origin".
+    let svc_a = EhrbaseService::new(pool.clone()).with_system_id("sys-origin");
+    let ehr_id = create_ehr(&svc_a).await;
+    let v1 = svc_a
+        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("v1"))
+        .await
+        .expect("composition_create");
+    let ovid = uid(&v1.body).to_owned();
+    let vo_id = ovid.split("::").next().unwrap().to_owned();
+    // The uid's middle part is the creating system id.
+    assert_eq!(
+        ovid.split("::").nth(1),
+        Some("sys-origin"),
+        "uid carries the committing system id"
+    );
+
+    // A second service over the SAME pool with a DIFFERENT system id.
+    let svc_b = EhrbaseService::new(pool.clone()).with_system_id("sys-changed");
+
+    // Reading the composition back: the injected uid still carries "sys-origin"
+    // (the stored creating_system_id), not the new config value.
+    let read = svc_b
+        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .await
+        .expect("composition_get")
+        .body;
+    assert_eq!(
+        uid(&read),
+        ovid,
+        "uid must be stable across a system-id change"
+    );
+
+    // The served ORIGINAL_VERSION still verifies — the signature was computed
+    // over the stored creating_system_id, which the read path reconstructs.
+    let ov = svc_b
+        .versioned_composition_version_get_by_id(params(json!({
+            "ehr_id": ehr_id, "versioned_object_uid": vo_id, "version_uid": ovid
+        })))
+        .await
+        .expect("versioned composition version")
+        .body;
+    assert_eq!(ov["uid"]["value"], ovid);
+    assert_digest_recomputes(&ov);
+}

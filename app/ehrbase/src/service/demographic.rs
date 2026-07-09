@@ -229,7 +229,8 @@ impl EhrbaseService {
 
         Ok(ServiceResponse::deleted(ResourceMeta::new(
             String::new(),
-            self.object_version_id(vo_id, committed.sys_version),
+            // Just-created locally → creating_system_id is the service system id.
+            self.object_version_id(vo_id, "", committed.sys_version),
         )))
     }
 
@@ -243,7 +244,7 @@ impl EhrbaseService {
         match self.load_party_version(kind, vo_id, None, None).await {
             Ok(read) => Ok(Some(ResourceMeta::new(
                 String::new(),
-                self.object_version_id(vo_id, read.sys_version),
+                self.object_version_id(vo_id, &read.creating_system_id, read.sys_version),
             ))),
             Err(ServiceError::NotFound(_)) => Ok(None),
             Err(e) => Err(e),
@@ -288,8 +289,9 @@ impl EhrbaseService {
     pub(super) async fn party_revision_history(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
         let rows = sqlx::query(
-            "SELECT v.sys_version, a.system_id, a.change_type, a.description, a.committer, \
-             a.time_committed FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+            "SELECT v.sys_version, v.creating_system_id, a.system_id, a.change_type, \
+             a.description, a.committer, a.time_committed \
+             FROM vo_version v JOIN audit a ON a.id = v.audit_id \
              WHERE v.vo_id = $1 ORDER BY v.sys_version",
         )
         .bind(vo_id)
@@ -299,6 +301,7 @@ impl EhrbaseService {
         let mut items = Vec::with_capacity(rows.len());
         for row in &rows {
             let sys_version: i32 = row.try_get("sys_version")?;
+            let creating_system_id: String = row.try_get("creating_system_id")?;
             let system_id: String = row.try_get("system_id")?;
             let change_type: String = row.try_get("change_type")?;
             let description: Option<String> = row.try_get("description")?;
@@ -310,7 +313,7 @@ impl EhrbaseService {
                 "_type": "REVISION_HISTORY_ITEM",
                 "version_id": {
                     "_type": "OBJECT_VERSION_ID",
-                    "value": self.object_version_id(vo_id, sys_version)
+                    "value": self.object_version_id(vo_id, &creating_system_id, sys_version)
                 },
                 "audits": [Self::audit_details(
                     &system_id, &change_type, description.as_deref(), &committer, &time_committed,
@@ -351,7 +354,7 @@ impl EhrbaseService {
         .ok_or_else(|| ServiceError::NotFound(format!("party {vo_id} version at time")))?;
         let meta = ResourceMeta::new(
             String::new(),
-            self.object_version_id(vo_id, read.sys_version),
+            self.object_version_id(vo_id, &read.creating_system_id, read.sys_version),
         )
         .with_last_modified(read.time_committed);
         let ov = self.original_version(&read)?;
@@ -402,8 +405,8 @@ impl EhrbaseService {
             .to_jiff();
 
         let version_rows = sqlx::query(
-            "SELECT vo_id, sys_version, kind FROM vo_version WHERE contribution_id = $1 \
-             ORDER BY vo_id",
+            "SELECT vo_id, sys_version, creating_system_id, kind FROM vo_version \
+             WHERE contribution_id = $1 ORDER BY vo_id",
         )
         .bind(contribution_id)
         .fetch_all(&self.pool)
@@ -413,6 +416,7 @@ impl EhrbaseService {
             .map(|row| -> Result<Value, ServiceError> {
                 let vo_id: Uuid = row.try_get("vo_id")?;
                 let sys_version: i32 = row.try_get("sys_version")?;
+                let creating_system_id: String = row.try_get("creating_system_id")?;
                 let kind: String = row.try_get("kind")?;
                 Ok(json!({
                     "_type": "OBJECT_REF",
@@ -420,7 +424,7 @@ impl EhrbaseService {
                     "type": kind,
                     "id": {
                         "_type": "OBJECT_VERSION_ID",
-                        "value": self.object_version_id(vo_id, sys_version)
+                        "value": self.object_version_id(vo_id, &creating_system_id, sys_version)
                     }
                 }))
             })
@@ -610,10 +614,18 @@ impl EhrbaseService {
     fn party_version_response(&self, vo_id: Uuid, read: VersionRead) -> ServiceResponse {
         let meta = ResourceMeta::new(
             String::new(),
-            self.object_version_id(vo_id, read.sys_version),
+            self.object_version_id(vo_id, &read.creating_system_id, read.sys_version),
         )
         .with_last_modified(read.time_committed);
-        ServiceResponse::new(self.with_uid(read.canonical, vo_id, read.sys_version), meta)
+        ServiceResponse::new(
+            self.with_uid(
+                read.canonical,
+                vo_id,
+                &read.creating_system_id,
+                read.sys_version,
+            ),
+            meta,
+        )
     }
 
     /// One demographic `ITEM_TAG` in its wire shape. PORT NOTE: `owner_id`
