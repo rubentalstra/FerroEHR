@@ -147,6 +147,12 @@ pub(super) struct VersionRead {
     /// The version's lifecycle-state numeric code (`version_lifecycle_state`
     /// group: `532` complete, `523` deleted, …).
     pub(super) lifecycle_state: String,
+    /// The stored `creating_system_id` — the immutable identity of the system
+    /// that created this version (RM common master06 §"Distributed
+    /// Versioning"), forming the middle part of its `OBJECT_VERSION_ID`. Empty
+    /// for versions written before this column existed (the legacy sentinel);
+    /// callers fall back to the service system id only then.
+    pub(super) creating_system_id: String,
     pub(super) contribution_id: Uuid,
     /// The version's commit `AUDIT_DETAILS` provenance (mandatory
     /// `VERSION.commit_audit`, 1..1).
@@ -201,6 +207,7 @@ async fn version_read(
         ehr_id: row.try_get("ehr_id")?,
         sys_version,
         lifecycle_state,
+        creating_system_id: row.try_get("creating_system_id")?,
         contribution_id: row.try_get("contribution_id")?,
         audit: AuditInput {
             system_id: row.try_get("system_id")?,
@@ -334,6 +341,25 @@ async fn insert_nodes(
 /// and the server does not re-sign; when absent the server signs the assembled
 /// `ORIGINAL_VERSION` if signing is enabled. The direct (non-CONTRIBUTION)
 /// endpoints always pass `None` (server-side signing).
+///
+/// `lifecycle_state` on `Create`/`Modify` carries the client-supplied
+/// `version_lifecycle_state` code from `UPDATE_VERSION.lifecycle_state` (RM
+/// common master06 §"Version Lifecycle": `532|complete|`, `553|incomplete|`,
+/// `800|inactive|`, `801|abandoned|` — `523|deleted|` is reserved to the
+/// [`Change::Delete`] path). `None` defaults to `532|complete|`, so the direct
+/// (non-CONTRIBUTION) endpoints — which carry no wire lifecycle — keep
+/// committing `532` exactly as before. The value is validated against the
+/// terminology group in [`apply_change`] (invalid → 422).
+///
+// PORT NOTE (m3, RM common master06 §"Version Merging"/§"Disjoint Merging"):
+// `ORIGINAL_VERSION.other_input_version_uids` / `is_merged` and
+// `VERSIONED_OBJECT.commit_original_merged_version` are out of scope. This is a
+// non-distributed CDR: no ORIGINAL_VERSION is ever the result of merging
+// versions from another system, so `other_input_version_uids` is always empty
+// and `VERSION.Is_merged_validity` (`is_merged = not other_input_version_uids.
+// is_empty`) holds vacuously (is_merged = false). Distributed copy/merge
+// (`IMPORTED_VERSION`, disjoint merging) would be added with an EHR-Extract
+// import surface, which we do not expose.
 pub(super) enum Change {
     /// Create a new versioned object.
     Create {
@@ -341,6 +367,9 @@ pub(super) enum Change {
         canonical: serde_json::Value,
         template_id: Option<String>,
         signature: Option<String>,
+        /// Client-supplied `version_lifecycle_state` code (see the enum doc);
+        /// `None` → `532|complete|`.
+        lifecycle_state: Option<String>,
         /// Wire `UPDATE_VERSION.attestations` committed with this version
         /// (partial `UPDATE_ATTESTATION`s; completed + stored after the
         /// version write, RM common master06 §Attestation "Signing content
@@ -355,6 +384,9 @@ pub(super) enum Change {
         expected: Option<i32>,
         template_id: Option<String>,
         signature: Option<String>,
+        /// Client-supplied `version_lifecycle_state` code (see the enum doc);
+        /// `None` → `532|complete|`.
+        lifecycle_state: Option<String>,
         /// See [`Change::Create::attestations`].
         attestations: Vec<serde_json::Value>,
     },
@@ -365,6 +397,22 @@ pub(super) enum Change {
         expected: Option<i32>,
         signature: Option<String>,
     },
+}
+
+/// Resolve a client-supplied `version_lifecycle_state` token into its canonical
+/// numeric code, defaulting to `532|complete|` when absent (RM common master06
+/// §"Version Lifecycle"). An out-of-group token is a `422`
+/// (`ORIGINAL_VERSION.Lifecycle_state_valid`), naming the terminology group.
+fn resolve_lifecycle(state: Option<String>) -> Result<String, ServiceError> {
+    match state {
+        Some(token) => super::codes::lifecycle_state_code(&token).ok_or_else(|| {
+            ServiceError::Unprocessable(format!(
+                "lifecycle_state {token:?} is not a code in the openEHR \
+                 version_lifecycle_state group (ORIGINAL_VERSION.Lifecycle_state_valid)"
+            ))
+        }),
+        None => Ok(lifecycle::COMPLETE.to_owned()),
+    }
 }
 
 /// A `666|attestation|` of an **existing** `ORIGINAL_VERSION` committed within
@@ -451,6 +499,7 @@ async fn apply_change(
             canonical,
             template_id,
             signature,
+            lifecycle_state,
             attestations,
         } => {
             if kind == Kind::EhrStatus
@@ -458,6 +507,7 @@ async fn apply_change(
             {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
             }
+            let lifecycle = resolve_lifecycle(lifecycle_state)?;
             let rows = decompose(canonical)?;
             let vo_id = Uuid::now_v7();
             // Sign the exact data that will be served on read (reassembled from
@@ -470,7 +520,7 @@ async fn apply_change(
                 vo_id,
                 1,
                 contribution_id,
-                lifecycle::COMPLETE,
+                &lifecycle,
                 &served,
                 signature,
             )?;
@@ -480,7 +530,8 @@ async fn apply_change(
                 kind,
                 ehr_id,
                 1,
-                lifecycle::COMPLETE,
+                &lifecycle,
+                ctx.system_id,
                 contribution_id,
                 audit_id,
                 template_id.as_deref(),
@@ -513,6 +564,7 @@ async fn apply_change(
             expected,
             template_id,
             signature,
+            lifecycle_state,
             attestations,
         } => {
             if kind == Kind::EhrStatus
@@ -520,6 +572,7 @@ async fn apply_change(
             {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
             }
+            let lifecycle = resolve_lifecycle(lifecycle_state)?;
             let rows = decompose(canonical)?;
             let next = next_version(&mut *tx, ehr_id, vo_id, kind, expected).await?;
             close_current(&mut *tx, vo_id).await?;
@@ -531,7 +584,7 @@ async fn apply_change(
                 vo_id,
                 next,
                 contribution_id,
-                lifecycle::COMPLETE,
+                &lifecycle,
                 &served,
                 signature,
             )?;
@@ -541,7 +594,8 @@ async fn apply_change(
                 kind,
                 ehr_id,
                 next,
-                lifecycle::COMPLETE,
+                &lifecycle,
+                ctx.system_id,
                 contribution_id,
                 audit_id,
                 template_id.as_deref(),
@@ -596,6 +650,7 @@ async fn apply_change(
                 ehr_id,
                 next,
                 lifecycle::DELETED,
+                ctx.system_id,
                 contribution_id,
                 audit_id,
                 None,
@@ -808,6 +863,7 @@ async fn insert_vo_version(
     ehr_id: Option<Uuid>,
     sys_version: i32,
     lifecycle_state: &str,
+    creating_system_id: &str,
     contribution_id: Uuid,
     audit_id: Uuid,
     template_id: Option<&str>,
@@ -815,14 +871,15 @@ async fn insert_vo_version(
 ) -> Result<(), ServiceError> {
     sqlx::query(
         "INSERT INTO vo_version \
-         (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, contribution_id, audit_id, template_id, signature) \
-         VALUES ($1, $2, $3, $4, tstzrange(now(), NULL, '[)'), $5, $6, $7, $8, $9)",
+         (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, creating_system_id, contribution_id, audit_id, template_id, signature) \
+         VALUES ($1, $2, $3, $4, tstzrange(now(), NULL, '[)'), $5, $6, $7, $8, $9, $10)",
     )
     .bind(vo_id)
     .bind(kind.as_str())
     .bind(ehr_id)
     .bind(sys_version)
     .bind(lifecycle_state)
+    .bind(creating_system_id)
     .bind(contribution_id)
     .bind(audit_id)
     .bind(template_id)
@@ -858,6 +915,9 @@ pub(super) async fn create(
             canonical,
             template_id: template_id.map(str::to_owned),
             signature: None,
+            // The direct (non-CONTRIBUTION) create carries no wire lifecycle;
+            // defaults to `532|complete|` (unchanged wire behaviour).
+            lifecycle_state: None,
             attestations: Vec::new(),
         },
     )
@@ -894,6 +954,9 @@ pub(super) async fn update(
             expected,
             template_id: template_id.map(str::to_owned),
             signature: None,
+            // The direct (non-CONTRIBUTION) update carries no wire lifecycle;
+            // defaults to `532|complete|` (unchanged wire behaviour).
+            lifecycle_state: None,
             attestations: Vec::new(),
         },
     )
@@ -1034,7 +1097,7 @@ pub(super) async fn read_current(
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.template_id, v.signature, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.creating_system_id, v.contribution_id, v.template_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND upper_inf(v.sys_period)",
@@ -1055,7 +1118,7 @@ pub(super) async fn read_version(
     sys_version: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.template_id, v.signature, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.creating_system_id, v.contribution_id, v.template_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND v.sys_version = $2",
@@ -1079,7 +1142,7 @@ pub(super) async fn version_at(
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.contribution_id, v.template_id, v.signature, \
+        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.creating_system_id, v.contribution_id, v.template_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz",

@@ -134,7 +134,13 @@ impl EhrbaseService {
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} version at time")))?;
-        let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
+        let meta = self.version_meta(
+            ehr_id,
+            vo_id,
+            &read.creating_system_id,
+            read.sys_version,
+            read.time_committed,
+        );
         let ov = self.original_version(&read)?;
         Ok(ServiceResponse::new(ov, meta))
     }
@@ -213,6 +219,7 @@ impl EhrbaseService {
         Ok(Some(self.version_meta(
             ehr_id,
             vo_id,
+            &read.creating_system_id,
             read.sys_version,
             read.time_committed,
         )))
@@ -291,9 +298,11 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
         // 204_COMPOSITION_deleted: the (now deleted) version_uid in ETag/Location.
+        // The version was just created locally, so its creating_system_id is the
+        // service system id (passed empty → resolved to it).
         Ok(ServiceResponse::deleted(ResourceMeta::new(
             ehr_id.to_string(),
-            self.object_version_id(vo_id, committed.sys_version),
+            self.object_version_id(vo_id, "", committed.sys_version),
         )))
     }
 

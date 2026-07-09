@@ -509,3 +509,222 @@ async fn contribution_listing_count_and_ehr_summary() {
         "one versioned COMPOSITION (versioned objects, not versions)"
     );
 }
+
+/// A `TerminologyCode`-shaped `UPDATE_VERSION.lifecycle_state` (the wire shape
+/// per ITS-REST `UpdateVersion.yaml`): `{terminology_id, code_string}`.
+fn lifecycle(code: &str) -> Value {
+    json!({ "terminology_id": "openehr", "code_string": code })
+}
+
+/// Read the `lifecycle_state.defining_code.code_string` of a served
+/// `ORIGINAL_VERSION`.
+async fn lifecycle_code_of(svc: &EhrbaseService, ehr_id: &str, vo: &str, ovid: &str) -> String {
+    let ov = read_version(svc, ehr_id, vo, ovid).await;
+    ov["lifecycle_state"]["defining_code"]["code_string"]
+        .as_str()
+        .expect("lifecycle_state code_string")
+        .to_owned()
+}
+
+#[tokio::test]
+async fn contribution_honors_the_five_lifecycle_states() {
+    // M1 (RM common master06 §"Version Lifecycle"): the client-supplied
+    // lifecycle_state on create/modify is stored + served faithfully for every
+    // normative code; only the delete path is forced to 523. 553/800/801 are
+    // NOT deletions — the version is readable with its data.
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("lifecycle_states").await);
+    let ehr_id = create_ehr(&svc).await;
+
+    // (1) Create v1 as incomplete (553).
+    let created = svc
+        .contribution_create(
+            params(json!({ "ehr_id": ehr_id })),
+            json!({
+                "versions": [{
+                    "commit_audit": {
+                        "change_type": change_type("249", "creation"),
+                        "committer": committer("author")
+                    },
+                    "lifecycle_state": lifecycle("553"),
+                    "data": composition("incomplete v1")
+                }],
+                "audit": { "committer": committer("author") }
+            }),
+        )
+        .await
+        .expect("create incomplete (553) → 201");
+    let ovid_v1 = first_version_uid(&created.body);
+    let vo_id = vo_of(&ovid_v1);
+
+    let ov1 = read_version(&svc, &ehr_id, &vo_id, &ovid_v1).await;
+    assert_eq!(
+        ov1["lifecycle_state"]["defining_code"]["code_string"],
+        "553"
+    );
+    assert_eq!(ov1["lifecycle_state"]["value"], "incomplete");
+    // A 553 version is not a deletion: its data is served.
+    assert_eq!(ov1["data"]["_type"], "COMPOSITION");
+    // The latest read returns 200 with data (not the deleted 204 path).
+    let latest = svc
+        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .await
+        .expect("composition_get incomplete")
+        .body;
+    assert_eq!(latest["name"]["value"], "incomplete v1");
+
+    // (2) Walk 553 → 800 (inactive) → 801 (abandoned) → 532 (complete), each a
+    // new version carrying the client lifecycle_state.
+    let mut current = ovid_v1;
+    for (n, code) in [(2, "800"), (3, "801"), (4, "532")] {
+        let modified = svc
+            .contribution_create(
+                params(json!({ "ehr_id": ehr_id })),
+                json!({
+                    "versions": [{
+                        "commit_audit": {
+                            "change_type": change_type("251", "modification"),
+                            "committer": committer("author")
+                        },
+                        "preceding_version_uid": { "value": current },
+                        "lifecycle_state": lifecycle(code),
+                        "data": composition("edited")
+                    }],
+                    "audit": { "committer": committer("author") }
+                }),
+            )
+            .await
+            .unwrap_or_else(|e| panic!("modify to {code} → 201, got {e:?}"));
+        current = first_version_uid(&modified.body);
+        assert!(current.ends_with(&format!("::{n}")), "version {n}");
+        assert_eq!(
+            lifecycle_code_of(&svc, &ehr_id, &vo_id, &current).await,
+            code,
+            "served lifecycle_state must be {code}"
+        );
+    }
+
+    // (3) An out-of-group lifecycle code is a 422 naming the group.
+    let err = svc
+        .contribution_create(
+            params(json!({ "ehr_id": ehr_id })),
+            json!({
+                "versions": [{
+                    "commit_audit": {
+                        "change_type": change_type("251", "modification"),
+                        "committer": committer("author")
+                    },
+                    "preceding_version_uid": { "value": current },
+                    "lifecycle_state": lifecycle("999"),
+                    "data": composition("bad state")
+                }],
+                "audit": { "committer": committer("author") }
+            }),
+        )
+        .await
+        .expect_err("invalid lifecycle_state → error");
+    match err {
+        ApiError::Unprocessable(msg) => {
+            assert!(msg.contains("version_lifecycle_state"), "got {msg}");
+        }
+        other => panic!("expected 422 Unprocessable, got {other:?}"),
+    }
+
+    // (4) The delete path is still forced to 523, regardless of any lifecycle
+    // hint, and the latest read is then the deleted (204/null) path.
+    svc.contribution_create(
+        params(json!({ "ehr_id": ehr_id })),
+        json!({
+            "versions": [{
+                "commit_audit": {
+                    "change_type": change_type("523", "deleted"),
+                    "committer": committer("author")
+                },
+                "preceding_version_uid": { "value": current }
+            }],
+            "audit": { "committer": committer("author") }
+        }),
+    )
+    .await
+    .expect("delete (523) → 201");
+    // The now-current version is a deletion: lifecycle 523.
+    let del = svc
+        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .await
+        .expect("composition_get deleted");
+    assert!(
+        del.body.is_null(),
+        "a deleted composition reads as an empty body (204), got {:?}",
+        del.body
+    );
+}
+
+#[tokio::test]
+async fn version_commit_audit_defaults_from_the_contribution_audit() {
+    // m4 (RM common master06 §"Committal"): the CONTRIBUTION audit's
+    // system_id/committer "should be copied into the corresponding attributes
+    // of the commit_audit of each VERSION" when the version item omits them; a
+    // version item that supplies its own values keeps them verbatim.
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("audit_copy").await);
+    let ehr_id = create_ehr(&svc).await;
+
+    let created = svc
+        .contribution_create(
+            params(json!({ "ehr_id": ehr_id })),
+            json!({
+                "versions": [
+                    // (A) commit_audit omits committer + system_id → inherit them.
+                    {
+                        "commit_audit": { "change_type": change_type("249", "creation") },
+                        "data": composition("inherits contribution audit")
+                    },
+                    // (B) commit_audit supplies distinct committer + system_id → keep.
+                    {
+                        "commit_audit": {
+                            "change_type": change_type("249", "creation"),
+                            "committer": committer("version-B author"),
+                            "system_id": "version-b.system"
+                        },
+                        "data": composition("keeps its own audit")
+                    }
+                ],
+                "audit": {
+                    "committer": committer("contribution committer"),
+                    "system_id": "contribution.system"
+                }
+            }),
+        )
+        .await
+        .expect("two-creation contribution → 201");
+
+    // Collect each created version's commit_audit (system_id + committer name).
+    let mut seen: Vec<(String, String)> = Vec::new();
+    for v in created.body["versions"].as_array().expect("versions") {
+        let ovid = v["id"]["value"].as_str().expect("ovid").to_owned();
+        let vo = vo_of(&ovid);
+        let ov = read_version(&svc, &ehr_id, &vo, &ovid).await;
+        let sys = ov["commit_audit"]["system_id"]
+            .as_str()
+            .expect("system_id")
+            .to_owned();
+        let who = ov["commit_audit"]["committer"]["name"]
+            .as_str()
+            .expect("committer name")
+            .to_owned();
+        seen.push((sys, who));
+    }
+    seen.sort();
+
+    assert!(
+        seen.contains(&(
+            "contribution.system".to_owned(),
+            "contribution committer".to_owned()
+        )),
+        "version A must inherit the contribution audit, got {seen:?}"
+    );
+    assert!(
+        seen.contains(&("version-b.system".to_owned(), "version-B author".to_owned())),
+        "version B must keep its own committer/system_id, got {seen:?}"
+    );
+}

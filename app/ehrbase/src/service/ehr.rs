@@ -58,6 +58,7 @@ impl EhrbaseService {
                         canonical: status,
                         template_id: None,
                         signature: None,
+                        lifecycle_state: None,
                         attestations: Vec::new(),
                     },
                 ),
@@ -68,6 +69,7 @@ impl EhrbaseService {
                         canonical: default_ehr_access(),
                         template_id: None,
                         signature: None,
+                        lifecycle_state: None,
                         attestations: Vec::new(),
                     },
                 ),
@@ -120,7 +122,16 @@ impl EhrbaseService {
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        let status_ovid = self.object_version_id(status_vo, status_version);
+        // The uid uses the stored per-version creating_system_id (M2), not the
+        // live config, so it is stable across a `with_system_id` change.
+        let status_csid: String = sqlx::query_scalar(
+            "SELECT creating_system_id FROM vo_version WHERE vo_id = $1 AND sys_version = $2",
+        )
+        .bind(status_vo)
+        .bind(status_version)
+        .fetch_one(&self.pool)
+        .await?;
+        let status_ovid = self.object_version_id(status_vo, &status_csid, status_version);
 
         let mut body = json!({
             "_type": "EHR",
@@ -335,7 +346,13 @@ impl EhrbaseService {
         .ok_or_else(|| {
             ServiceError::NotFound(format!("EHR_STATUS version at time for EHR {ehr_id}"))
         })?;
-        let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
+        let meta = self.version_meta(
+            ehr_id,
+            vo_id,
+            &read.creating_system_id,
+            read.sys_version,
+            read.time_committed,
+        );
         let ov = self.original_version(&read)?;
         Ok(ServiceResponse::new(ov, meta))
     }
@@ -378,8 +395,33 @@ impl EhrbaseService {
         }
     }
 
-    pub(super) fn object_version_id(&self, vo_id: Uuid, sys_version: i32) -> String {
-        format!("{vo_id}::{}::{sys_version}", self.system_id)
+    /// The stored `creating_system_id` to use in an `OBJECT_VERSION_ID`, or the
+    /// service system id when the stored value is the empty legacy sentinel (RM
+    /// common master06 §"Distributed Versioning"; migration 0008). Reconstructing
+    /// from the stored value — never the live config — keeps a version's uid and
+    /// digital signature stable across a later `with_system_id` change.
+    pub(super) fn creating_system_id<'a>(&'a self, stored: &'a str) -> &'a str {
+        if stored.is_empty() {
+            self.system_id.as_str()
+        } else {
+            stored
+        }
+    }
+
+    /// The `OBJECT_VERSION_ID` string `{object_id}::{creating_system_id}::
+    /// {version_tree_id}` (RM common master06 §"Version Identification").
+    /// `creating_system_id` is the stored per-version value (empty → service
+    /// system id, via [`creating_system_id`](Self::creating_system_id)).
+    pub(super) fn object_version_id(
+        &self,
+        vo_id: Uuid,
+        creating_system_id: &str,
+        sys_version: i32,
+    ) -> String {
+        format!(
+            "{vo_id}::{}::{sys_version}",
+            self.creating_system_id(creating_system_id)
+        )
     }
 
     /// The [`ResourceMeta`] for a versioned resource: the owning EHR plus the
@@ -389,12 +431,13 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
+        creating_system_id: &str,
         sys_version: i32,
         at: jiff::Timestamp,
     ) -> ResourceMeta {
         ResourceMeta::new(
             ehr_id.to_string(),
-            self.object_version_id(vo_id, sys_version),
+            self.object_version_id(vo_id, creating_system_id, sys_version),
         )
         .with_last_modified(at)
     }
@@ -407,8 +450,22 @@ impl EhrbaseService {
         vo_id: Uuid,
         read: vobject::VersionRead,
     ) -> ServiceResponse {
-        let meta = self.version_meta(ehr_id, vo_id, read.sys_version, read.time_committed);
-        ServiceResponse::new(self.with_uid(read.canonical, vo_id, read.sys_version), meta)
+        let meta = self.version_meta(
+            ehr_id,
+            vo_id,
+            &read.creating_system_id,
+            read.sys_version,
+            read.time_committed,
+        );
+        ServiceResponse::new(
+            self.with_uid(
+                read.canonical,
+                vo_id,
+                &read.creating_system_id,
+                read.sys_version,
+            ),
+            meta,
+        )
     }
 
     /// The current version metadata of an EHR-owned versioned object of `kind`
@@ -427,19 +484,26 @@ impl EhrbaseService {
         Ok(Some(self.version_meta(
             ehr_id,
             vo_id,
+            &read.creating_system_id,
             read.sys_version,
             read.time_committed,
         )))
     }
 
     /// Inject the `uid` (`OBJECT_VERSION_ID`) into a versioned object's JSON.
-    pub(super) fn with_uid(&self, mut canonical: Value, vo_id: Uuid, sys_version: i32) -> Value {
+    pub(super) fn with_uid(
+        &self,
+        mut canonical: Value,
+        vo_id: Uuid,
+        creating_system_id: &str,
+        sys_version: i32,
+    ) -> Value {
         if let Value::Object(map) = &mut canonical {
             map.insert(
                 "uid".to_owned(),
                 json!({
                     "_type": "OBJECT_VERSION_ID",
-                    "value": self.object_version_id(vo_id, sys_version)
+                    "value": self.object_version_id(vo_id, creating_system_id, sys_version)
                 }),
             );
         }
