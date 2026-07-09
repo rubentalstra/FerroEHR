@@ -48,7 +48,6 @@ mod subtype;
 mod terminology;
 
 use indexmap::IndexMap;
-use openehr_rm::paths::select_children;
 use openehr_rm::validate::validate_rm_value;
 use serde_json::Value;
 
@@ -140,6 +139,36 @@ pub fn validate_archetype_conformance(
     v.out
 }
 
+/// The set of identity `(attribute, archetype_node_id)` pairs that appear in
+/// more than one distinct sibling path (relative to `parent_aql`) — i.e. the
+/// template distinguishes same-id siblings by name, so the name fallback in
+/// [`path::select_children_matched`] must stay off for them.
+fn identity_ambiguity<'a>(
+    paths: impl Iterator<Item = &'a str>,
+    parent_aql: &str,
+) -> std::collections::HashSet<(String, String)> {
+    let mut seen: std::collections::HashMap<(String, String), u32> =
+        std::collections::HashMap::new();
+    for p in paths {
+        let Some(rel) = p.strip_prefix(parent_aql) else {
+            continue;
+        };
+        let segments = path::parse(rel);
+        let Some(id_seg) = segments.iter().rfind(|s| !s.predicate.is_empty()) else {
+            continue;
+        };
+        if let Some(id) = &id_seg.predicate.archetype_node_id {
+            *seen
+                .entry((id_seg.attribute.clone(), id.clone()))
+                .or_default() += 1;
+        }
+    }
+    seen.into_iter()
+        .filter(|(_, n)| *n > 1)
+        .map(|(k, _)| k)
+        .collect()
+}
+
 #[derive(Default)]
 struct Validator {
     out: Vec<ValidationMessage>,
@@ -223,8 +252,13 @@ impl Validator {
                 .or_default()
                 .push(child);
         }
+        // An identity (attribute, archetype_node_id) claimed by more than one
+        // distinct child path means the template disambiguates same-id siblings
+        // by name — the name fallback must stay off for those (see
+        // `path::select_children_matched`).
+        let ambiguous = identity_ambiguity(groups.keys().copied(), &wt.aql_path);
         for group in groups.values() {
-            self.check_group(instance, wt, group);
+            self.check_group(instance, wt, group, &ambiguous);
         }
 
         self.check_cardinalities(instance, wt);
@@ -247,6 +281,7 @@ impl Validator {
                 .or_default()
                 .push(slot.rm_type.as_str());
         }
+        let ambiguous = identity_ambiguity(groups.keys().copied(), &wt.aql_path);
         for (path, allowed) in groups {
             let Some(rel) = path.strip_prefix(&wt.aql_path) else {
                 continue;
@@ -257,7 +292,12 @@ impl Validator {
             };
             let containers = path::navigate(&[instance], intermediate);
             for container in &containers {
-                for node in select_children(container, last) {
+                for node in {
+                    let fallback_ok = last.predicate.archetype_node_id.as_ref().is_none_or(|id| {
+                        !ambiguous.contains(&(last.attribute.clone(), id.clone()))
+                    });
+                    path::select_children_matched(container, last, fallback_ok)
+                } {
                     let Some(it) = node.get("_type").and_then(Value::as_str) else {
                         continue;
                     };
@@ -322,6 +362,7 @@ impl Validator {
         parent: &Value,
         wt_parent: &WebTemplateNode,
         group: &[&WebTemplateNode],
+        ambiguous: &std::collections::HashSet<(String, String)>,
     ) {
         let first = group[0];
         let Some(rel) = first.aql_path.strip_prefix(&wt_parent.aql_path) else {
@@ -366,8 +407,13 @@ impl Validator {
             group.iter().map(|c| c.max).max().unwrap_or(-1)
         };
 
+        let fallback_ok = id_seg
+            .predicate
+            .archetype_node_id
+            .as_ref()
+            .is_none_or(|id| !ambiguous.contains(&(id_seg.attribute.clone(), id.clone())));
         for container in &containers {
-            let matched = select_children(container, id_seg);
+            let matched = path::select_children_matched(container, id_seg, fallback_ok);
             if occ_applies {
                 self.emit_occurrences(&first.aql_path, group_min, group_max, matched.len());
             }
@@ -465,7 +511,8 @@ impl Validator {
                     continue;
                 }
                 let count =
-                    i32::try_from(select_children(container, last).len()).unwrap_or(i32::MAX);
+                    i32::try_from(openehr_rm::paths::select_children(container, last).len())
+                        .unwrap_or(i32::MAX);
                 let min = card.min.unwrap_or(0).max(0);
                 if count < min {
                     self.push(

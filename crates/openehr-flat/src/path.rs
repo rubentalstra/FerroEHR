@@ -41,6 +41,7 @@ pub(crate) fn relative(parent_aql: &str, child_aql: &str) -> Vec<PathSegment> {
 /// order. Each step is [`openehr_rm::paths::select_children`], so array
 /// attributes branch (filtered by the segment predicate) and single-valued
 /// attributes descend (predicate re-checked, per BASE `master11-paths`).
+///
 pub(crate) fn navigate<'a>(roots: &[&'a Value], segs: &[PathSegment]) -> Vec<&'a Value> {
     let mut current: Vec<&Value> = roots.to_vec();
     for seg in segs {
@@ -50,6 +51,35 @@ pub(crate) fn navigate<'a>(roots: &[&'a Value], segs: &[PathSegment]) -> Vec<&'a
             .collect();
     }
     current
+}
+
+/// One template-path step with a conditional name fallback.
+///
+/// PORT NOTE (template-name predicates): the paths fed here are
+/// **template-derived** (`WebTemplateNode.aqlPath`), so a `[atNNNN,'name']`
+/// name conjunct carries the *template's* term text. RM `LOCATABLE.name` is a
+/// runtime attribute an instance may legitimately redefine when the archetype
+/// does not constrain it (RM common, `LOCATABLE.name`), so a strict
+/// name-conjunct match (BASE `master11-paths` semantics — correct for
+/// instance-authored AQL/RM paths) can silently locate nothing and skip the
+/// downstream check. The fallback (retry by `archetype_node_id` alone when the
+/// strict match finds nothing) is only sound when the name is **redundant** —
+/// i.e. the archetype id is unique among the template siblings being matched
+/// (`allow_name_fallback`, computed by the caller from its sibling set). Where
+/// a template distinguishes same-id siblings *by name* (the corona-corpus
+/// shape), the fallback must stay off or it would claim the wrong siblings.
+pub(crate) fn select_children_matched<'a>(
+    container: &'a Value,
+    seg: &PathSegment,
+    allow_name_fallback: bool,
+) -> Vec<&'a Value> {
+    let strict = select_children(container, seg);
+    if strict.is_empty() && allow_name_fallback && seg.predicate.name_value.is_some() {
+        let mut id_only = seg.clone();
+        id_only.predicate.name_value = None;
+        return select_children(container, &id_only);
+    }
+    strict
 }
 
 /// Resolve the RM value(s) a full relative path reaches from `rm` (an empty
@@ -92,6 +122,46 @@ mod tests {
         assert_eq!(rel.len(), 2);
         assert_eq!(rel[0].attribute, "data");
         assert_eq!(rel[1].attribute, "events");
+    }
+
+    #[test]
+    fn matched_step_falls_back_to_id_only_for_renamed_instances() {
+        // Template step names the node 'Template Name'; the instance renamed it
+        // (LOCATABLE.name is runtime-redefinable when unconstrained) — with the
+        // fallback allowed (id unambiguous among siblings) the step still
+        // locates the node by its archetype_node_id.
+        let rm = serde_json::json!({
+            "content": [
+                {"archetype_node_id": "openEHR-EHR-EVALUATION.a.v1",
+                 "name": {"value": "Runtime Name"},
+                 "data": {"archetype_node_id": "at0001", "_type": "ITEM_LIST"}}
+            ]
+        });
+        let segs = parse("/content[openEHR-EHR-EVALUATION.a.v1,'Template Name']/data[at0001]");
+        let step = select_children_matched(&rm, &segs[0], true);
+        assert_eq!(step.len(), 1);
+        assert_eq!(step[0]["name"]["value"], "Runtime Name");
+        // Fallback disallowed (same-id siblings distinguished by name): strict
+        // only, nothing matches.
+        assert!(select_children_matched(&rm, &segs[0], false).is_empty());
+    }
+
+    #[test]
+    fn matched_step_still_disambiguates_matching_siblings() {
+        // Two same-id siblings with distinct (template-constrained) names: the
+        // strict match succeeds and must NOT widen to both, fallback or not.
+        let rm = serde_json::json!({
+            "content": [
+                {"archetype_node_id": "openEHR-EHR-OBSERVATION.x.v1",
+                 "name": {"value": "First"}, "tag": 1},
+                {"archetype_node_id": "openEHR-EHR-OBSERVATION.x.v1",
+                 "name": {"value": "Second"}, "tag": 2}
+            ]
+        });
+        let segs = parse("/content[openEHR-EHR-OBSERVATION.x.v1,'Second']");
+        let found = select_children_matched(&rm, &segs[0], true);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0]["tag"], 2);
     }
 
     #[test]
