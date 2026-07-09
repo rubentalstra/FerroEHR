@@ -12,7 +12,9 @@
 //! (create) or the stored object (modify / delete); everything commits in one
 //! transaction.
 
-use ehrbase_rest::{Page, ResourceMeta, ServiceResponse};
+use ehrbase_rest::Page;
+use ehrbase_sm::SmError;
+use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
@@ -166,22 +168,37 @@ fn classify(
 }
 
 impl EhrbaseService {
-    /// Commit a CONTRIBUTION: apply its set of VERSIONs atomically (one
-    /// contribution + audit, each version its own commit audit), then return the
-    /// created CONTRIBUTION. Each version's storage action and preserved audit
-    /// change-type code come from [`classify`]; the object kind from the payload
-    /// `_type` (create) or the stored object (modify/delete).
-    pub(super) async fn create_contribution(
+    /// Commit a raw-wire EHR CONTRIBUTION body atomically, returning the stored
+    /// `CONTRIBUTION` with its resource metadata (the `contribution_uid` for the
+    /// `201` `ETag`/`Location`). The EHR-scoped analogue of
+    /// [`create_demographic_contribution`](Self::create_demographic_contribution)
+    /// (`ehr_id = Some`, `party_only = false`), over the shared
+    /// [`commit_version_set`](Self::commit_version_set).
+    ///
+    /// PORT NOTE (ADR-011): the SM native `commit_contribution(Vec<UpdateVersion>,
+    /// UpdateAudit)` ([`EhrContributionService`](ehrbase_sm::EhrContributionService))
+    /// is a *typed subset* of the wire CONTRIBUTION — `UpdateVersion` mandates
+    /// `data` + `lifecycle_state` (SM `update_version.adoc`, both `1..1`) and a
+    /// committer, so it cannot represent an attestation-only (`666`) member (no
+    /// `data`/`lifecycle_state`), a delete (`523`) member (no data), or a member
+    /// that inherits its committer from the CONTRIBUTION audit (RM common
+    /// `master06-change_control_package.adoc` §Committal m4). This raw-body seam
+    /// restores the full-fidelity EHR CONTRIBUTION commit the pre-SM
+    /// `contribution_create` provided; all RM `change_control` semantics stay in
+    /// `commit_version_set`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`SmError`] if the CONTRIBUTION fails validation or its commit
+    /// (the `commit_version_set` error surface: bad version classification,
+    /// content/terminology validation, optimistic-lock mismatch, storage faults).
+    pub async fn create_ehr_contribution(
         &self,
         ehr_id: Uuid,
         body: Value,
-    ) -> Result<ServiceResponse, ServiceError> {
-        self.ensure_ehr_exists(ehr_id).await?;
-        // party_only = false: an EHR CONTRIBUTION carries clinical versioned
-        // objects, never demographic parties.
+    ) -> Result<ServiceResponse, SmError> {
         let contribution_id = self.commit_version_set(Some(ehr_id), &body, false).await?;
         let body = self.get_contribution(ehr_id, contribution_id).await?;
-        // 201_CONTRIBUTION: ETag(contribution_uid) + Location.
         let meta = ResourceMeta::new(ehr_id.to_string(), contribution_id.to_string());
         Ok(ServiceResponse::new(body, meta))
     }
@@ -244,9 +261,19 @@ impl EhrbaseService {
                 .and_then(coded_value);
             // A JSON `"data": null` is "no data" (the deleted-version shape).
             let data = version.get("data").cloned().filter(|d| !d.is_null());
+            // PORT NOTE: a first version legitimately carries no
+            // `preceding_version_uid` (SM `update_version.adoc:15` types it
+            // `0..1`; `master03-common_package.adoc:25`: "must be specified,
+            // except in the case where the version update is a first version").
+            // The SM `commit_contribution` glue serializes the typed
+            // `UpdateVersion.preceding_version_uid = None` to a JSON `null`, so a
+            // bare `.is_some()` would misread that as "present" and classify a
+            // spec-legal creation as a modify — treat a `null` as absent.
             let (action, code) = classify(
                 token.as_deref(),
-                version.get("preceding_version_uid").is_some(),
+                version
+                    .get("preceding_version_uid")
+                    .is_some_and(|v| !v.is_null()),
                 data.is_some(),
             )?;
             // Every member's change type feeds the CONTRIBUTION aggregate — incl.
@@ -705,6 +732,14 @@ fn coded_value(dv: &Value) -> Option<String> {
     dv.get("defining_code")
         .and_then(|c| c.get("code_string"))
         .and_then(Value::as_str)
+        // PORT NOTE: `UPDATE_AUDIT.change_type` is a `Terminology_code`
+        // (`{terminology_id, code_string}`), not a `DV_CODED_TEXT`
+        // (SM `update_audit.adoc:16`). The SM `commit_contribution` glue
+        // serializes the typed `UpdateAudit.change_type` to exactly that shape,
+        // so read a top-level `code_string` in addition to the `DV_CODED_TEXT`
+        // `defining_code.code_string`/`value` forms; otherwise the client's
+        // change type is lost and defaults to creation/modification.
+        .or_else(|| dv.get("code_string").and_then(Value::as_str))
         .or_else(|| dv.get("value").and_then(Value::as_str))
         .map(str::to_owned)
 }
@@ -749,6 +784,11 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
 fn parse_preceding(version: &Value) -> Result<(Uuid, i32), ServiceError> {
     let raw = version
         .get("preceding_version_uid")
+        // PORT NOTE: treat a JSON `null` as absent (the SM glue serializes a
+        // `None` preceding uid to `null`) — consistent with the create-vs-modify
+        // classification above; a genuine modify/delete with no preceding still
+        // errors here.
+        .filter(|p| !p.is_null())
         .and_then(|p| {
             p.as_str()
                 .or_else(|| p.get("value").and_then(Value::as_str))

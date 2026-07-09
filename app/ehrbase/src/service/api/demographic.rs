@@ -9,9 +9,10 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_rest::backend::{DemographicService, PartyKind};
 use ehrbase_rest::{ResourceMeta, ServiceResponse};
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::SmError;
+use ehrbase_sm::services::DemographicService;
+use ehrbase_sm::types::PartyKind;
 
 use crate::service::EhrbaseService;
 use crate::service::version_id;
@@ -22,19 +23,15 @@ fn tags_response(tags: Vec<Value>) -> ServiceResponse {
 }
 
 /// Parse an ISO-8601 `version_at_time` (with offset) for time-travel reads.
-fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, ApiError> {
+fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, SmError> {
     raw.parse::<jiff::Timestamp>()
-        .map_err(|_| ApiError::BadRequest(format!("invalid version_at_time: {raw}")))
+        .map_err(|_| SmError::precondition(format!("invalid version_at_time: {raw}")))
 }
 
 #[async_trait]
 impl DemographicService for EhrbaseService {
     // ── PARTY CRUD ───────────────────────────────────────────────────────────
-    async fn party_create(
-        &self,
-        kind: PartyKind,
-        body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
+    async fn party_create(&self, kind: PartyKind, body: Value) -> Result<ServiceResponse, SmError> {
         Ok(self.create_party(kind, body).await?)
     }
 
@@ -43,7 +40,7 @@ impl DemographicService for EhrbaseService {
         kind: PartyKind,
         uid_based_id: String,
         version_at_time: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, version) = version_id::parse_uid_based_id(&uid_based_id)?;
         let at = version_at_time.as_deref().map(parse_at_time).transpose()?;
         Ok(self.read_party(kind, vo_id, version, at).await?)
@@ -55,7 +52,7 @@ impl DemographicService for EhrbaseService {
         uid_based_id: String,
         if_match: String,
         body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
         let expected = version_id::expected_from_if_match(&if_match);
         Ok(self.update_party(kind, vo_id, body, expected).await?)
@@ -65,7 +62,7 @@ impl DemographicService for EhrbaseService {
         &self,
         kind: PartyKind,
         uid_based_id: String,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         // The uid_based_id MUST be an OBJECT_VERSION_ID (the preceding version);
         // a bare HIER_OBJECT_ID → 400 (mirroring composition_delete).
         let (vo_id, expected) = version_id::parse_version_uid(&uid_based_id)?;
@@ -76,7 +73,7 @@ impl DemographicService for EhrbaseService {
     async fn versioned_party_get(
         &self,
         versioned_object_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&versioned_object_uid)?;
         Ok(ServiceResponse::plain(self.versioned_party(vo_id).await?))
     }
@@ -84,7 +81,7 @@ impl DemographicService for EhrbaseService {
     async fn versioned_party_revision_history(
         &self,
         versioned_object_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&versioned_object_uid)?;
         Ok(ServiceResponse::plain(
             self.party_revision_history(vo_id).await?,
@@ -95,7 +92,7 @@ impl DemographicService for EhrbaseService {
         &self,
         versioned_object_uid: String,
         version_at_time: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&versioned_object_uid)?;
         let at = version_at_time.as_deref().map(parse_at_time).transpose()?;
         Ok(self.party_version_at_time(vo_id, at).await?)
@@ -105,7 +102,7 @@ impl DemographicService for EhrbaseService {
         &self,
         versioned_object_uid: String,
         version_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&versioned_object_uid)?;
         let (_, version) = version_id::parse_version_uid(&version_uid)?;
         Ok(ServiceResponse::plain(
@@ -117,16 +114,16 @@ impl DemographicService for EhrbaseService {
     async fn demographic_contribution_create(
         &self,
         body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         Ok(self.create_demographic_contribution(body).await?)
     }
 
     async fn demographic_contribution_get(
         &self,
         contribution_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let id = Uuid::parse_str(&contribution_uid).map_err(|_| {
-            ApiError::BadRequest(format!("invalid contribution id: {contribution_uid}"))
+            SmError::precondition(format!("invalid contribution id: {contribution_uid}"))
         })?;
         Ok(ServiceResponse::plain(
             self.demographic_contribution(id).await?,
@@ -139,7 +136,7 @@ impl DemographicService for EhrbaseService {
         tag_key: Option<String>,
         tag_value: Option<String>,
         tag_target_path: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let tags = self
             .demographic_tags(
                 tag_key.as_deref(),
@@ -154,7 +151,7 @@ impl DemographicService for EhrbaseService {
         &self,
         _kind: PartyKind,
         uid_based_id: String,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
         Ok(tags_response(self.party_tags(vo_id).await?))
     }
@@ -164,7 +161,7 @@ impl DemographicService for EhrbaseService {
         kind: PartyKind,
         uid_based_id: String,
         body: Vec<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
         Ok(tags_response(
             self.replace_party_tags(kind, vo_id, body).await?,
@@ -176,7 +173,7 @@ impl DemographicService for EhrbaseService {
         _kind: PartyKind,
         uid_based_id: String,
         key: String,
-    ) -> Result<ServiceResponse, ApiError> {
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
         self.delete_party_tag(vo_id, &key).await?;
         Ok(ServiceResponse::plain(Value::Null))
@@ -186,7 +183,7 @@ impl DemographicService for EhrbaseService {
         &self,
         kind: PartyKind,
         uid_based_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
+    ) -> Result<Option<ResourceMeta>, SmError> {
         let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
         Ok(self.party_current_meta(kind, vo_id).await?)
     }

@@ -12,7 +12,6 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode};
@@ -20,58 +19,41 @@ use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::ServiceExt;
 
-use ehrbase_rest::auth::config::AuthConfig;
-use ehrbase_rest::{
-    AdminConfig, AdminService, DemographicService, EhrService, QueryService, RestConfig,
-    WebTemplateService,
-};
-use openehr_its::rest::generated::definition::DefinitionApi;
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_rest::access::authn::config::AuthConfig;
+use ehrbase_rest::{AdminConfig, RestConfig};
+use ehrbase_sm::SmError;
+
+mod common;
+use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 /// A known EHR the mock "deletes" successfully; anything else is `NotFound`.
 const KNOWN: &str = "7d44b88c-4199-4bad-97dc-d78268e01398";
 const OTHER: &str = "11111111-2222-3333-4444-555555555555";
 
-/// A canned backend: `admin_ehr_delete` succeeds for [`KNOWN`] and 404s
-/// otherwise; `admin_ehr_delete_all` reports the count of ids it was handed.
-/// The `calls` counter proves the backend is (not) consulted.
-#[derive(Debug, Default)]
-struct MockBackend {
-    calls: Arc<AtomicUsize>,
-}
-
-#[async_trait]
-impl AdminService for MockBackend {
-    async fn admin_ehr_delete(&self, ehr_id: String) -> Result<(), ApiError> {
-        self.calls.fetch_add(1, Ordering::SeqCst);
-        if ehr_id == KNOWN {
-            Ok(())
-        } else {
-            Err(ApiError::NotFound(format!("EHR {ehr_id}")))
-        }
+/// The admin hooks: `admin_ehr_delete` succeeds for [`KNOWN`] and
+/// `ehr_id_does_not_exist` (→ `404`) otherwise; `admin_ehr_delete_all` reports
+/// the count of ids it was handed. The `calls` counter proves the backend is
+/// (not) consulted.
+fn hooks(calls: Arc<AtomicUsize>) -> Hooks {
+    let c1 = calls.clone();
+    let c2 = calls;
+    Hooks {
+        admin_ehr_delete: Some(Arc::new(move |ehr_id: String| {
+            c1.fetch_add(1, Ordering::SeqCst);
+            if ehr_id == KNOWN {
+                Ok(())
+            } else {
+                Err(SmError::ehr_not_found(format!("EHR {ehr_id}")))
+            }
+        })),
+        admin_ehr_delete_all: Some(Arc::new(move |ehr_ids: Vec<String>| {
+            c2.fetch_add(1, Ordering::SeqCst);
+            Ok(ehr_ids.len() as u64)
+        })),
+        ..Default::default()
     }
-
-    async fn admin_ehr_delete_all(&self, ehr_ids: Vec<String>) -> Result<u64, ApiError> {
-        self.calls.fetch_add(1, Ordering::SeqCst);
-        Ok(ehr_ids.len() as u64)
-    }
 }
-
-impl EhrService for MockBackend {}
-impl ehrbase_rest::EhrStatusService for MockBackend {}
-impl ehrbase_rest::EhrCompositionService for MockBackend {}
-impl ehrbase_rest::EhrDirectoryService for MockBackend {}
-impl ehrbase_rest::EhrContributionService for MockBackend {}
-impl DefinitionApi for MockBackend {}
-impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
-impl ehrbase_rest::DefinitionAdl2Service for MockBackend {}
-impl ehrbase_rest::DefinitionQueryService for MockBackend {}
-impl ehrbase_rest::PartyRelationshipService for MockBackend {}
-impl ehrbase_rest::EhrIndexService for MockBackend {}
-impl WebTemplateService for MockBackend {}
-impl QueryService for MockBackend {}
-impl DemographicService for MockBackend {}
 
 fn config(admin_enabled: bool) -> RestConfig {
     RestConfig {
@@ -93,9 +75,7 @@ fn config(admin_enabled: bool) -> RestConfig {
 
 fn app(admin_enabled: bool) -> (Router, Arc<AtomicUsize>) {
     let calls = Arc::new(AtomicUsize::new(0));
-    let backend = Arc::new(MockBackend {
-        calls: calls.clone(),
-    });
+    let backend = Arc::new(Mock::with(hooks(calls.clone())));
     let router = ehrbase_rest::build_with(config(admin_enabled), backend).expect("router builds");
     (router, calls)
 }

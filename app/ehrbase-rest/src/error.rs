@@ -25,6 +25,7 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, header};
 use serde::Serialize;
 
+use ehrbase_sm::{CallStatusType, SmError};
 use openehr_its::rest::generated::ehr::Error as ValidationErrorBody;
 use openehr_its::rest::runtime::ApiError;
 
@@ -35,6 +36,55 @@ pub struct RestError(pub ApiError);
 impl From<ApiError> for RestError {
     fn from(e: ApiError) -> Self {
         Self(e)
+    }
+}
+
+/// The single SM → HTTP mapping, owned by the protocol adapter (ADR-011,
+/// `docs/design/sm-platform/08-target-architecture.md` §5): a native [`SmError`]
+/// carries only a `CALL_STATUS_TYPE`, and this adapter turns its status into the
+/// ITS-REST 1.0.3 status code. The wire oracle (ITS-REST) decides each row;
+/// where the SM name and the wire disagree, the wire's status wins here. Living
+/// in `ehrbase-rest` keeps `ehrbase-sm` protocol-free (no `openehr_its::rest`
+/// dependency). (A free function, not `impl From<SmError> for ApiError`, because
+/// both types are foreign to this crate — the orphan rule forbids that impl.)
+#[must_use]
+pub(crate) fn sm_api_error(e: SmError) -> ApiError {
+    use CallStatusType as S;
+    let message = e.message;
+    match e.status {
+        S::AuthFailure => ApiError::Forbidden(message),
+        S::PreconditionViolation | S::InvalidIdPattern => ApiError::BadRequest(message),
+        S::ObjectVersionDoesNotExist
+        | S::VersionedObjectDoesNotExist
+        | S::EhrIdDoesNotExist
+        | S::PartyIdDoesNotExist
+        | S::CompositionDoesNotExist
+        | S::ContributionDoesNotExist
+        | S::ArtefactDoesNotExist
+        | S::TemplateDoesNotExist
+        | S::VersionDoesNotExist
+        | S::SubjectIdDoesNotExist
+        | S::VersionedCompositionDoesNotExist => ApiError::NotFound(message),
+        S::VersionMismatch => ApiError::PreconditionFailed(message),
+        S::EhrCreateFailDuplicateId
+        | S::CompositionAlreadyExists
+        | S::EhrForSubjectAlreadyExists => ApiError::Conflict(message),
+        S::CompositionArchetypeInvalid
+        | S::InvalidArchetype
+        | S::InvalidTemplate
+        | S::InvalidArtefact
+        | S::InvalidQuery
+        | S::DefinitionUnknown
+        | S::ContentInvalid => ApiError::Unprocessable(message),
+        S::NotImplemented => ApiError::NotImplemented,
+        // `success` is not an error; mapping it is defensively a 500.
+        S::Success | S::FileNotWritable | S::Exception => ApiError::Internal(message),
+    }
+}
+
+impl From<SmError> for RestError {
+    fn from(e: SmError) -> Self {
+        Self(sm_api_error(e))
     }
 }
 

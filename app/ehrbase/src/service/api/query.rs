@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use serde_json::Value;
 
 use ehrbase_rest::{AqlQueryRequest, QueryOutcome, QueryService};
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::SmError;
 
 use crate::service::EhrbaseService;
 
@@ -16,7 +16,7 @@ impl QueryService for EhrbaseService {
         &self,
         aql: String,
         request: AqlQueryRequest,
-    ) -> Result<QueryOutcome, ApiError> {
+    ) -> Result<QueryOutcome, SmError> {
         self.execute_aql(&aql, None, &request).await
     }
 
@@ -25,7 +25,7 @@ impl QueryService for EhrbaseService {
         qualified_query_name: String,
         version: Option<String>,
         request: AqlQueryRequest,
-    ) -> Result<QueryOutcome, ApiError> {
+    ) -> Result<QueryOutcome, SmError> {
         // Resolve the stored AQL text (exact/partial SEMVER, or the latest) via
         // the DEFINITION store, then execute it.
         let stored = self
@@ -35,7 +35,7 @@ impl QueryService for EhrbaseService {
             .get("q")
             .and_then(Value::as_str)
             .ok_or_else(|| {
-                ApiError::Internal(format!(
+                SmError::exception(format!(
                     "stored query `{qualified_query_name}` has no query text"
                 ))
             })?

@@ -2,8 +2,10 @@
 //!
 //! [`ehr`] implements the [`ehrbase_rest::EhrService`] envelope seam (the whole
 //! EHR / `EHR_STATUS` / COMPOSITION / DIRECTORY / CONTRIBUTION surface);
-//! [`definition`] implements the generated `DefinitionApi` (templates + stored
-//! queries). [`ehrbase_rest::WebTemplateService`] exposes the service-owned
+//! [`definition`] implements the SM `I_DEFINITION_*` traits plus the wire-shaped
+//! [`ehrbase_sm::DefinitionAdapter`] extension (templates + stored queries) —
+//! the generated ITS-REST `DefinitionApi` is no longer a `Platform` supertrait
+//! (ADR-011). [`ehrbase_rest::WebTemplateService`] exposes the service-owned
 //! `WebTemplate` cache to the REST layer (one resolution for validation, FLAT
 //! / STRUCTURED, and `wt+json` — W2-K/F-13-02).
 //!
@@ -20,15 +22,15 @@ mod ehr;
 mod ehr_index;
 mod query;
 mod relationship;
+mod terminology;
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use ehrbase_rest::WebTemplateService;
-use ehrbase_sm::ValidityChecker;
+use ehrbase_sm::services::WebTemplateService;
+use ehrbase_sm::{SmError, ValidityChecker};
 use openehr_flat::WebTemplate;
-use openehr_its::rest::runtime::ApiError;
 use serde_json::Value;
 
 use super::vobject::Kind;
@@ -36,7 +38,7 @@ use super::{EhrbaseService, ServiceError};
 
 #[async_trait]
 impl WebTemplateService for EhrbaseService {
-    async fn web_template(&self, template_id: &str) -> Result<Arc<WebTemplate>, ApiError> {
+    async fn web_template(&self, template_id: &str) -> Result<Arc<WebTemplate>, SmError> {
         Ok(self.web_template_for(template_id).await?)
     }
 }
@@ -52,7 +54,7 @@ impl WebTemplateService for EhrbaseService {
 /// (`validate_for_commit`); an unrecognized root `_type` is `false`.
 #[async_trait]
 impl ValidityChecker for EhrbaseService {
-    async fn definitions_valid(&self, a_content: &Value) -> Result<bool, ApiError> {
+    async fn definitions_valid(&self, a_content: &Value) -> Result<bool, SmError> {
         let template_id = a_content
             .pointer("/archetype_details/template_id/value")
             .and_then(Value::as_str);
@@ -62,7 +64,7 @@ impl ValidityChecker for EhrbaseService {
         }
     }
 
-    async fn content_valid(&self, a_content: &Value) -> Result<bool, ApiError> {
+    async fn content_valid(&self, a_content: &Value) -> Result<bool, SmError> {
         let rm_type = a_content.get("_type").and_then(Value::as_str).unwrap_or("");
         let Some(kind) = Kind::from_type(rm_type) else {
             return Ok(false);

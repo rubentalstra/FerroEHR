@@ -1684,11 +1684,9 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum",
+ "base64 0.22.1",
  "clap",
- "ehrbase-audit",
- "ehrbase-authz",
  "ehrbase-rest",
- "ehrbase-signing",
  "ehrbase-sm",
  "figment",
  "http",
@@ -1709,18 +1707,24 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "pgp",
  "quick-xml",
+ "rand 0.8.6",
  "regex",
  "reqwest 0.13.4",
+ "rustls",
  "sea-query",
  "sea-query-sqlx",
+ "secrecy",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
  "sqlx",
  "testcontainers",
  "testcontainers-modules",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-rustls",
  "tower",
  "tracing",
  "tracing-opentelemetry",
@@ -1729,52 +1733,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "ehrbase-audit"
-version = "0.1.0"
-dependencies = [
- "figment",
- "insta",
- "jiff",
- "metrics",
- "openehr-its",
- "quick-xml",
- "rustls",
- "serde",
- "thiserror 2.0.18",
- "tokio",
- "tokio-rustls",
- "tracing",
-]
-
-[[package]]
-name = "ehrbase-authz"
-version = "0.1.0"
-dependencies = [
- "arc-swap",
- "async-trait",
- "cedar-policy",
- "figment",
- "metrics",
- "openehr-its",
- "reqwest 0.13.4",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "wiremock",
-]
-
-[[package]]
 name = "ehrbase-rest"
 version = "0.1.0"
 dependencies = [
+ "arc-swap",
  "argon2",
  "async-trait",
  "axum",
  "bytes",
- "ehrbase-audit",
- "ehrbase-authz",
+ "cedar-policy",
  "ehrbase-sm",
  "figment",
  "http",
@@ -1785,11 +1752,13 @@ dependencies = [
  "metrics",
  "metrics-exporter-prometheus",
  "moka",
+ "openehr-base",
  "openehr-flat",
  "openehr-its",
  "openehr-rm",
  "openidconnect",
  "opentelemetry",
+ "reqwest 0.13.4",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -1801,20 +1770,8 @@ dependencies = [
  "tracing-subscriber",
  "utoipa",
  "utoipa-swagger-ui",
-]
-
-[[package]]
-name = "ehrbase-signing"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "figment",
- "pgp",
- "rand 0.8.6",
- "secrecy",
- "serde",
- "sha2 0.11.0",
- "thiserror 2.0.18",
+ "uuid",
+ "wiremock",
 ]
 
 [[package]]
@@ -1825,10 +1782,11 @@ dependencies = [
  "jiff",
  "openehr-base",
  "openehr-flat",
- "openehr-its",
  "openehr-rm",
  "serde",
  "serde_json",
+ "thiserror 2.0.18",
+ "uuid",
 ]
 
 [[package]]

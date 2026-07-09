@@ -171,7 +171,7 @@ impl EhrbaseService {
     /// Read-time signature verification (design §3.5). No-op when
     /// `verify_on_read = off` or the version carries no signature.
     fn verify_on_read(&self, ov: &Value, signature: Option<&str>) -> Result<(), ServiceError> {
-        if self.signer().verify_on_read() == ehrbase_signing::VerifyOnRead::Off {
+        if self.signer().verify_on_read() == crate::signing::VerifyOnRead::Off {
             return Ok(());
         }
         let Some(signature) = signature else {
@@ -191,7 +191,7 @@ impl EhrbaseService {
                 verdict = verdict.label(),
                 "version signature failed verification (verify_on_read)"
             );
-            if self.signer().verify_on_read() == ehrbase_signing::VerifyOnRead::Strict {
+            if self.signer().verify_on_read() == crate::signing::VerifyOnRead::Strict {
                 return Err(ServiceError::Signing(format!(
                     "stored version signature does not verify ({})",
                     verdict.label()

@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 
-use openehr_its::rest::runtime::ApiError;
+use crate::error::{CallStatusType, SmError};
 
 use crate::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 
@@ -33,8 +33,11 @@ pub trait EhrIndexService: Send + Sync {
         _subject: SubjectRef,
         _status: Option<ResourceStatus>,
         _loc: Option<LocationDesc>,
-    ) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<(), SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `update_ehr_subject_status` — update the `RESOURCE_STATUS` of the
@@ -45,8 +48,11 @@ pub trait EhrIndexService: Send + Sync {
         _ehr_id: String,
         _subject: SubjectRef,
         _status: ResourceStatus,
-    ) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<(), SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `update_ehr_subject_loc_desc` — update the `LOCATION_DESC` of the
@@ -57,8 +63,11 @@ pub trait EhrIndexService: Send + Sync {
         _ehr_id: String,
         _subject: SubjectRef,
         _loc: Option<LocationDesc>,
-    ) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<(), SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `remove_ehr_subject` — remove the `subject` association with `ehr_id`
@@ -68,25 +77,31 @@ pub trait EhrIndexService: Send + Sync {
         &self,
         _ehr_id: String,
         _subject: SubjectRef,
-    ) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<(), SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `remove_subject` — remove all entries for `subject`. Errors:
     /// `subject_id_does_not_exist` → `404`.
-    async fn remove_subject(&self, _subject: SubjectRef) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    async fn remove_subject(&self, _subject: SubjectRef) -> Result<(), SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// The subjects associated with `ehr_id` (design-filled read; PORT NOTE on
     /// the trait). Empty for an unknown EHR.
-    async fn ehr_subjects(&self, _ehr_id: String) -> Result<Vec<EhrIndexEntry>, ApiError> {
+    async fn ehr_subjects(&self, _ehr_id: String) -> Result<Vec<EhrIndexEntry>, SmError> {
         Ok(Vec::new())
     }
 
     /// The EHRs associated with `subject` (design-filled read; PORT NOTE on the
     /// trait). Empty for an unknown subject.
-    async fn subject_ehrs(&self, _subject: SubjectRef) -> Result<Vec<EhrIndexEntry>, ApiError> {
+    async fn subject_ehrs(&self, _subject: SubjectRef) -> Result<Vec<EhrIndexEntry>, SmError> {
         Ok(Vec::new())
     }
 }

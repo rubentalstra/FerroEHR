@@ -16,7 +16,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use ehrbase_rest::{AqlQueryRequest, QueryOutcome};
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::SmError;
 use openehr_query::parser::parse_str;
 
 use crate::aql::{self, AqlError, ExecError, ParamValue, Params, QueryResult, SqlCtx};
@@ -40,13 +40,13 @@ impl EhrbaseService {
         aql: &str,
         name: Option<&str>,
         request: &AqlQueryRequest,
-    ) -> Result<QueryOutcome, ApiError> {
+    ) -> Result<QueryOutcome, SmError> {
         let plan_start = Instant::now();
         let ast = match parse_str(aql) {
             Ok(ast) => ast,
             Err(e) => {
                 count_query("analysis_error");
-                return Err(ApiError::BadRequest(format!("invalid AQL: {e}")));
+                return Err(SmError::precondition(format!("invalid AQL: {e}")));
             }
         };
         let params = build_params(request);
@@ -170,16 +170,16 @@ fn compose_paging(
     aql_limit: Option<i64>,
     aql_offset: Option<i64>,
     request: &AqlQueryRequest,
-) -> Result<(Option<i64>, Option<i64>), ApiError> {
+) -> Result<(Option<i64>, Option<i64>), SmError> {
     if request.fetch.is_some() && aql_limit.is_some() {
-        return Err(ApiError::BadRequest(
+        return Err(SmError::precondition(
             "the `fetch` query parameter cannot be combined with an AQL LIMIT/TOP clause \
              (ITS-REST query Request; QUERY §Query structure/LIMIT)"
                 .to_owned(),
         ));
     }
     if request.offset.is_some() && aql_offset.is_some() {
-        return Err(ApiError::BadRequest(
+        return Err(SmError::precondition(
             "the `offset` query parameter cannot be combined with an AQL OFFSET clause \
              (ITS-REST query Request; QUERY §Query structure)"
                 .to_owned(),
@@ -189,12 +189,12 @@ fn compose_paging(
 }
 
 /// Parse the `ehr_id` scope into a UUID (`400` on a malformed id).
-fn parse_ehr_id(ehr_id: Option<&str>) -> Result<Option<Uuid>, ApiError> {
+fn parse_ehr_id(ehr_id: Option<&str>) -> Result<Option<Uuid>, SmError> {
     match ehr_id {
         None => Ok(None),
         Some(id) => Uuid::parse_str(id)
             .map(Some)
-            .map_err(|_| ApiError::BadRequest(format!("invalid ehr_id `{id}`"))),
+            .map_err(|_| SmError::precondition(format!("invalid ehr_id `{id}`"))),
     }
 }
 
@@ -229,10 +229,10 @@ fn result_set_json(aql: &str, name: Option<&str>, result: &QueryResult) -> Value
 /// Map a planning error to an ITS-REST status: an unsupported feature, a path/
 /// typing error, or an unrenderable construct all mean the query as written
 /// cannot be served → `400 Bad Request` (ITS-REST `400_QUERY.yaml`).
-fn map_plan_error(e: AqlError) -> ApiError {
+fn map_plan_error(e: AqlError) -> SmError {
     match e {
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
-            ApiError::BadRequest(e.to_string())
+            SmError::precondition(e.to_string())
         }
         AqlError::Exec(inner) => map_exec_error(inner.into()),
     }
@@ -240,12 +240,12 @@ fn map_plan_error(e: AqlError) -> ApiError {
 
 /// Map an execution error: a database/assembly failure is the server's fault
 /// (`500`); a SQL-lowering failure that surfaces here is still a bad query.
-fn map_exec_error(e: AqlError) -> ApiError {
+fn map_exec_error(e: AqlError) -> SmError {
     match e {
-        AqlError::Exec(ExecError::Database(db)) => ApiError::Internal(db.to_string()),
-        AqlError::Exec(ExecError::Assembly(a)) => ApiError::Internal(a.to_string()),
+        AqlError::Exec(ExecError::Database(db)) => SmError::exception(db.to_string()),
+        AqlError::Exec(ExecError::Assembly(a)) => SmError::exception(a.to_string()),
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
-            ApiError::BadRequest(e.to_string())
+            SmError::precondition(e.to_string())
         }
     }
 }

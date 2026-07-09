@@ -1,83 +1,61 @@
-//! The SM `I_EHR_CONTRIBUTION` interface — CONTRIBUTION operations.
+//! The SM `I_EHR_CONTRIBUTION` interface — the literal openEHR Platform Service
+//! Model call set
+//! (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_contribution.adoc`; digest
+//! `docs/design/sm-platform/02-ehr-service.md` §6). "Interface for explicit
+//! Contribution level operations."
 
 use async_trait::async_trait;
 use serde_json::Value;
+use uuid::Uuid;
 
-use openehr_its::rest::generated::ehr::{ContributionCreateParams, ContributionGetParams};
-use openehr_its::rest::runtime::ApiError;
+use crate::error::SmError;
+use crate::types::{Page, UpdateAudit, UpdateVersion};
 
-use crate::types::{Page, ServiceResponse};
+/// The optional inclusive `(lower, upper)` ISO-8601 bounds of an SM
+/// `Interval<Iso8601_date_time>` — either side open (`None`) means unbounded.
+pub type TimeRange = Option<(Option<String>, Option<String>)>;
 
-/// The SM `I_EHR_CONTRIBUTION` interface
-/// (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_contribution.adoc`):
-/// "Interface for explicit Contribution level operations."
-///
-/// Every method defaults to `NotImplemented`, so the [`StubBackend`] (and any
-/// partial backend) inherits a `501` until the real service overrides it.
-///
-/// [`StubBackend`]: crate::backend::StubBackend
+/// `I_EHR_CONTRIBUTION` — explicit CONTRIBUTION-level operations, one Rust
+/// method per SM call.
 #[async_trait]
 pub trait EhrContributionService: Send + Sync {
-    /// `POST /ehr/{ehr_id}/contribution` — commit a CONTRIBUTION. `201` +
-    /// `ETag`(`contribution_uid`)/`Location`; body per `Prefer`
-    /// (`201_CONTRIBUTION.yaml`).
-    async fn contribution_create(
-        &self,
-        _params: ContributionCreateParams,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+    /// `has_contribution (an_ehr_id: UUID, a_contrib_id: UUID): Boolean` — pre
+    /// `has_ehr`. Error `ehr_id_does_not_exist`.
+    async fn has_contribution(&self, an_ehr_id: Uuid, a_contrib_id: Uuid) -> Result<bool, SmError>;
 
-    /// `GET /ehr/{ehr_id}/contribution/{contribution_uid}`. `200_CONTRIBUTION`
-    /// (no `ETag`/`Location`).
-    async fn contribution_get(
-        &self,
-        _params: ContributionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+    /// `get_contribution (an_ehr_id: UUID, a_contrib_id: UUID): CONTRIBUTION` —
+    /// pre `has_ehr` + `has_contribution`. Error `contribution_does_not_exist`.
+    async fn get_contribution(&self, an_ehr_id: Uuid, a_contrib_id: Uuid)
+    -> Result<Value, SmError>;
 
-    /// SM `I_EHR_CONTRIBUTION.list_contributions (an_ehr_id, time_range [0..1],
-    /// item_offset [0..1], items_to_fetch [0..1]): List<UUID>` — "Obtain a list
-    /// of identifiers of Contributions in EHR"
-    /// (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_contribution.adoc`; error
-    /// `ehr_does_not_exist`).
-    ///
-    /// `time_range` realizes the SM `Interval<Iso8601_date_time>` simply as an
-    /// optional `(lower, upper)` pair of ISO 8601 bounds, either side open
-    /// (`None`) — a `Some((None, None))` and a plain `None` both mean
-    /// "unbounded". The `item_offset`/`items_to_fetch` cursor is carried by
-    /// [`Page`].
-    ///
-    /// PORT NOTE: native-API call — no ITS-REST route (the wire spec defines
-    /// none); exposed later via extension routes
-    /// (`docs/design/sm-platform/08-target-architecture.md` §7). Defaults to
-    /// `NotImplemented`.
-    async fn contribution_list(
+    /// `commit_contribution (an_ehr_id: UUID, versions: List<UPDATE_VERSION>,
+    /// an_audit: UPDATE_AUDIT): UUID` — "Commit a `CONTRIBUTION` containing any
+    /// number of `UPDATE_VERSION` objects" (the explicit multi-version atomic
+    /// commit). Pre `has_ehr`; post `has_contribution(Result)`. Returns the new
+    /// `contribution_uid`.
+    async fn commit_contribution(
         &self,
-        _ehr_id: String,
-        _time_range: Option<(Option<String>, Option<String>)>,
-        _page: Page,
-    ) -> Result<Vec<String>, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        versions: Vec<UpdateVersion>,
+        an_audit: UpdateAudit,
+    ) -> Result<String, SmError>;
 
-    /// SM `I_EHR_CONTRIBUTION.contribution_count (ehr_id, time_range [0..1]):
-    /// Integer` — "Obtain a count of Contributions in EHR"
-    /// (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_contribution.adoc`; error
-    /// `ehr_does_not_exist`). `time_range` is the same optional `(lower, upper)`
-    /// pair of ISO 8601 bounds as [`Self::contribution_list`].
-    ///
-    /// PORT NOTE: native-API call — no ITS-REST route (the wire spec defines
-    /// none); exposed later via extension routes
-    /// (`docs/design/sm-platform/08-target-architecture.md` §7). Defaults to
-    /// `NotImplemented`.
+    /// `list_contributions (an_ehr_id: UUID, time_range:
+    /// Interval<Iso8601_date_time> [0..1], item_offset [0..1], items_to_fetch
+    /// [0..1]): List<UUID>` — Contribution ids in the EHR. Error
+    /// `ehr_does_not_exist`.
+    async fn list_contributions(
+        &self,
+        an_ehr_id: Uuid,
+        time_range: TimeRange,
+        page: Page,
+    ) -> Result<Vec<String>, SmError>;
+
+    /// `contribution_count (ehr_id: UUID, time_range [0..1]): Integer` — the
+    /// count of Contributions in the EHR. Error `ehr_does_not_exist`.
     async fn contribution_count(
         &self,
-        _ehr_id: String,
-        _time_range: Option<(Option<String>, Option<String>)>,
-    ) -> Result<i64, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        time_range: TimeRange,
+    ) -> Result<i64, SmError>;
 }

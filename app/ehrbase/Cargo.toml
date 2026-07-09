@@ -44,6 +44,22 @@ sqlx.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 
+# `signing` module (RM common §Digital Signature; ADR-011, moved from the former
+# ehrbase-signing crate): OpenPGP (rPGP) detached signatures + SHA-256 digest mode.
+pgp.workspace = true
+sha2.workspace = true
+base64.workspace = true
+secrecy = { workspace = true, features = ["serde"] }
+# PORT NOTE: rPGP 0.20's `DetachedSignature::sign_binary_data` takes an
+# `rng: Rng + CryptoRng` from rand 0.8's rand_core 0.6; the workspace `rand`
+# pin (0.10) is a trait-incompatible major, so the `signing` module pins the
+# rand version pgp itself requires purely to name `OsRng` for that one call.
+rand = "0.8"
+# `system_log` module (IHE ATNA audit trail, SM `I_SYSTEM_LOG`; ADR-011, moved
+# from the former ehrbase-audit crate): TLS syslog transport.
+tokio-rustls.workspace = true
+rustls.workspace = true
+
 openehr-base = { path = "../../crates/openehr-base" }
 openehr-term = { path = "../../crates/openehr-term" }
 openehr-rm = { path = "../../crates/openehr-rm" }
@@ -54,9 +70,6 @@ openehr-flat = { path = "../../crates/openehr-flat" }
 openehr-query = { path = "../../crates/openehr-query" }
 ehrbase-rest = { path = "../ehrbase-rest" }
 ehrbase-sm = { path = "../ehrbase-sm" }
-ehrbase-audit = { path = "../ehrbase-audit" }
-ehrbase-authz = { path = "../ehrbase-authz" }
-ehrbase-signing = { path = "../ehrbase-signing" }
 
 [dev-dependencies]
 figment = { workspace = true, features = ["test"] }

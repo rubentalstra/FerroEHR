@@ -3,7 +3,7 @@
 //! `sqlx` transaction so a version + its nodes + the contribution + the audit
 //! commit atomically.
 
-use ehrbase_signing::Signer;
+use crate::signing::Signer;
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
 use uuid::Uuid;
