@@ -134,6 +134,8 @@ pub struct Hooks {
     pub template_adl14_list: Option<ValueListHook>,
     pub template_adl14_upload: Option<TemplateUploadHook>,
     pub template_adl14_example: Option<TemplateExample>,
+    // adl2 upload: `Fn(source) -> stored HRID` (same shape as `GetOpt`).
+    pub template_adl2_upload: Option<GetOpt>,
     pub template_adl2_list: Option<ValueListHook>,
     pub query_list: Option<QueryListHook>,
     // SM System Log: an in-memory audit recorder. When set, the mock's
@@ -669,8 +671,11 @@ impl DefinitionAdapter for Mock {
             None => Err(not_impl()),
         }
     }
-    async fn template_adl2_upload(&self, _source: String) -> Result<String, SmError> {
-        Err(not_impl())
+    async fn template_adl2_upload(&self, source: String) -> Result<String, SmError> {
+        match &self.h.template_adl2_upload {
+            Some(f) => f(source),
+            None => Err(not_impl()),
+        }
     }
     async fn template_adl2_list(&self) -> Result<Vec<Value>, SmError> {
         match &self.h.template_adl2_list {
