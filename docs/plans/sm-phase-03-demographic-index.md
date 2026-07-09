@@ -29,31 +29,31 @@
 
 ## Tasks
 
-- [ ] `Kind::PartyRelationship` in `vobject` (+ migration extending the
+- [x] (done 2026-07-09; verified: migration 0007 extends the kind CHECK, codec `is_versioned_root_type` keeps nested relationships inline, source/target checked in validation) `Kind::PartyRelationship` in `vobject` (+ migration extending the
       `vo_version.kind` CHECK — mirror how 0003 added party kinds);
       structural validation = deserialize `openehr_rm` `PartyRelationship`
       (+ source/target refs present)
-- [ ] `PartyRelationshipService` trait (`ehrbase-sm`): create (on
+- [x] (done 2026-07-09; verified: SM citations on every call, spec asymmetries normalized + PORT NOTEd) `PartyRelationshipService` trait (`ehrbase-sm`): create (on
       `DemographicService` per `i_demographic_service.adoc`) + the 6
       `I_PARTY_RELATIONSHIP` calls; SM citations per method; Backend/
       StubBackend updated
-- [ ] Impl on `EhrbaseService` over the shared `vobject` machinery
+- [x] (done 2026-07-09; service_sm3 e2e: lifecycle/versioning/at-time/at-version/revision history/If-Match) Impl on `EhrbaseService` over the shared `vobject` machinery
       (versioning, contributions, revision history, at-time/at-version) —
       same paths as PARTY
-- [ ] Wire: `/demographic/party_relationship/*` extension routes in the
+- [x] (done 2026-07-09; 3 wire tests in demographic_http; PORT NOTE: our own design) Wire: `/demographic/party_relationship/*` extension routes in the
       demographic dispatcher (same envelope/header rules as the party
       routes; our own design, PORT NOTE)
-- [ ] `EhrIndexService` trait + `ResourceStatus`/`ResourceInstanceType`/
+- [x] (done 2026-07-09; @@-placeholder + LOCATION_DESC-stub + read-silence decisions all PORT NOTEd) `EhrIndexService` trait + `ResourceStatus`/`ResourceInstanceType`/
       `LocationDesc` types in `ehrbase-sm::types` (spec-cited; the two
       placeholder/stub decisions PORT-NOTEd); the 5 SM calls + design-filled
       read calls `ehr_subjects(ehr_id)` / `subject_ehrs(subject)` (the spec
       defines no getters — silence filled by design, PORT NOTE)
-- [ ] `ehr_index` table (N:M; PK (ehr_id, subject_id, subject_namespace);
+- [x] (done 2026-07-09; migration 0007; subject promotion untouched; N:M + duplicate cases e2e-tested) `ehr_index` table (N:M; PK (ehr_id, subject_id, subject_namespace);
       instance_type CHECK; valid period; notes; location jsonb) + impl;
       reconcile with the `ehr.subject_id` unique promotion (that fast path
       stays the Primary-instance lookup; index rows model the N:M +
       duplicate states — design 08 §4.1)
-- [ ] e2e tests (testcontainers): relationship CRUD/versioning/at-time +
+- [x] (done 2026-07-09; service_sm3 7 tests + 3 wire tests, all green) e2e tests (testcontainers): relationship CRUD/versioning/at-time +
       error cases; index add/update/remove/N:M/duplicate listing; SM
       pre/post-conditions as assertions
 - [ ] ECC zero-drift run (baseline 211/318) + workspace gates
@@ -79,19 +79,19 @@ ran 2026-07-09: **no blockers; core change-control engine verified faithful**
 change_type preservation, attestations, signatures, revision history — all
 confirmed with citations). Fixes for the findings, in this phase:
 
-- [ ] **M1** Honor the client-supplied `lifecycle_state` on create/modify
+- [x] (done 2026-07-09; resolve_lifecycle validates the group -> 422; 553/800/801 stored+served, five-state e2e test; direct paths keep 532/523 so the wire is unchanged; CNF findings PORT NOTEd — 800/801 un-tested by CNF, lifecycle header + relaxed incomplete-validation are recorded follow-ups) **M1** Honor the client-supplied `lifecycle_state` on create/modify
       (all five normative codes: 532/553/523/800/801; force only the
       delete path to 523) — `master06` §Version Lifecycle; check CNF for
       incomplete/inactive cases; e2e tests per state
-- [ ] **M2** Persist `creating_system_id` per version (migration on
+- [x] (done 2026-07-09; migration 0008; uid + signature stability across a config change proven by test) **M2** Persist `creating_system_id` per version (migration on
       `vo_version`) and reconstruct `OBJECT_VERSION_ID`s + signatures from
       the stored value, never live config — `master06` §Distributed
       Versioning
-- [ ] **m4** Contribution→version audit copy rule ("should be copied"):
+- [x] (done 2026-07-09; defaults copied from the contribution audit, explicit values preserved + PORT NOTE; test) **m4** Contribution→version audit copy rule ("should be copied"):
       default per-version committer/system_id from the contribution audit;
       PORT NOTE the divergence when a client supplies distinct values
-- [ ] **m5** Extend the through-`jsonb` round-trip test to the full corpus
-- [ ] **m6** `CHECK (system_id <> '')` on `audit` (AUDIT_DETAILS
+- [x] (done 2026-07-09; full corpus through jsonb, one container) **m5** Extend the through-`jsonb` round-trip test to the full corpus
+- [x] (done 2026-07-09; migration 0008) **m6** `CHECK (system_id <> '')` on `audit` (AUDIT_DETAILS
       System_id_valid)
-- [ ] **m3/m7** PORT NOTEs: version merging out of scope (`master06`
+- [x] (done 2026-07-09; vobject.rs merge PORT NOTE; indelibility note in migration header + admin doc) **m3/m7** PORT NOTEs: version merging out of scope (`master06`
       §Version Merging); admin-cascade vs indelibility design note
