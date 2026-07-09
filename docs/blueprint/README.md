@@ -29,7 +29,8 @@ state (DONE/PARTIAL/MISSING with file:line evidence) → ordered remaining work
 
 ## Related documents
 
-- `docs/GAP_REGISTER.md` — the consolidated gap ledger (proven vs known-missing)
+- `00-THE-BLUEPRINT.md` §2 — the consolidated gap ledger (proven foundations,
+  ECC failure breakdown, spec-area map); no separate register
 - `docs/plans/current-phase.md` — the live phase pointer under this blueprint
 - `docs/ADRs/ADR-008` (greenfield storage), `ADR-010`/`ADR-011` (SM native API)
 - `docs/design/sm-platform/` — the SM design set (SM-5/6 designs live here)
@@ -37,7 +38,7 @@ state (DONE/PARTIAL/MISSING with file:line evidence) → ordered remaining work
 
 ## Maintenance
 
-Update at every phase close: the affected chapter's state table, the
-compliance map + build-order status in `00-THE-BLUEPRINT.md`, and the gap
-register. State columns record *verified* reality (file:line or ECC evidence),
-never intent.
+Update at every phase close: the affected chapter's state table and
+`00-THE-BLUEPRINT.md` §2 (proven foundations + ECC breakdown + spec-area map)
+and build-order status. State columns record *verified* reality (file:line or
+ECC evidence), never intent.

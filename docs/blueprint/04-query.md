@@ -244,7 +244,7 @@ run 2026-07-09), `app/ehrbase/src/aql/` (`analyze`/`ir`/`lower`/`sql`/`exec`,
 `docs/design/aql-engine.md` (the documented feature envelope),
 `docs/spec-audit/SPEC_AUDIT.md` + `findings/08-aql-parser.md` (area 08: 0
 critical, 3 major, 8 minor, 3 info — majors and minors fixed except F-08-14),
-`docs/GAP_REGISTER.md` (§2.1: AqlBasic 5 ECC failing; §2.3: ADR-011 rebuild in
+the blueprint §2 gap surface (§2.2: AqlBasic 5 ECC failing; ADR-011 rebuild in
 flight), and `tools/conformance/src/suites/{query,query_golden}.rs`.
 
 **Layer split:** the *parser* (Q-01…Q-11 syntax, Q-25…Q-36 grammar shapes) is
@@ -276,7 +276,7 @@ answer), but several normative constructs are currently in the rejected set.
 | Q-20 string functions | **MISSING (typed reject at SQL)** | LENGTH/SUBSTRING/POSITION/CONCAT/CONCAT_WS parse and lower to `ScalarFn` (`ir.rs:597-629`, `lower.rs:430-446`) but `sql.rs:694` ("scalar function in SELECT") and `:812` ("scalar function operand") reject them — **no built-in single-row function is executable**. String-`CONTAINS()` is additionally absent from the whitelist (also un-lexable as a call — grammar tokenizes `CONTAINS` as keyword; see Spec defects D-2) |
 | Q-21 numeric functions | **MISSING (typed reject at SQL)** | Same as Q-20: ABS/MOD/CEIL/FLOOR/ROUND whitelisted in IR, rejected at SQL rendering |
 | Q-22 date/time functions | **MISSING** | CurrentDate/Time/DateTime/Now in the IR whitelist but rejected at SQL; **`CURRENT_TIMEZONE` is not in the whitelist at all** (`lower.rs:430-446` has no `current_timezone` arm → `UnsupportedFunction`) |
-| Q-23 TERMINOLOGY function | **MISSING (typed reject)** | `lower.rs:395` `AqlFeatureError::TerminologyFunction`; deliberate defer to a terminology-service phase (design §Feature envelope) |
+| Q-23 TERMINOLOGY function | **MISSING (typed reject)** | `lower.rs:395` `AqlFeatureError::TerminologyFunction`; built at B4 with the terminology-server integration (design §Feature envelope) |
 | Q-24 function composition | **PARTIAL** | Parser: `functionCall` args are `terminal`s incl. nested functions — done; engine: blocked on Q-20/21/22 execution |
 | Q-25 class expressions | **DONE** | `classExpression` parsed; `Source::VersionedObject`/`Ehr` with rm_type/archetype/name constraints via `openehr_rm::model` (BMM-generated) |
 | Q-26 CONTAINS chains | **DONE** | Nested-set interval self-joins on the node store; 2–3-deep chains e2e-tested on PG18 (`service_aql.rs`) |
@@ -296,8 +296,8 @@ answer), but several normative constructs are currently in the rejected set.
 **Conformance signal:** ECC run 2026-07-08 — `AqlBasic` 5/… failing
 ("AQL feature envelope edges") + `QueryProvisioning` 4 failing (stored-query
 wire edges), out of 106 total failures dominated by non-AQL
-ArchetypeValidation (`docs/GAP_REGISTER.md` §2.1). ECC is suspended during the
-ADR-011 rebuild and re-converges at P19.
+ArchetypeValidation (blueprint §2.2). ECC is suspended during the
+ADR-011 rebuild and re-converges at B1/P19.
 
 ---
 

@@ -2,9 +2,10 @@
 
 Created 2026-07-09 from the seven verified blueprint chapters (01–07, each
 spec-cited against the vendored oracle at `docs/specs/openehr/` and verified
-against the working tree). This is the document the project is driven from:
-`docs/plans/current-phase.md` is the live pointer under it, `docs/GAP_REGISTER.md`
-is the consolidated gap ledger, and the chapters (`01-rm.md` … `07-cnf.md`) are
+against the working tree). This is the single document the project is driven
+from — it is both the roadmap and the consolidated gap ledger:
+`docs/plans/current-phase.md` is the live pointer under it, §2 holds the proven
+foundations + full gap surface, and the chapters (`01-rm.md` … `07-cnf.md`) are
 the per-component detail. Update this file and the affected chapter at every
 phase close.
 
@@ -19,27 +20,64 @@ execution. "Fully compliant" means all of:
 | Capability | Governing spec | Where it stands (chapter) |
 |---|---|---|
 | **REST API** — ITS-REST 1.0.3 wire, canonical JSON + XML, all resource APIs | ITS-REST / ITS-JSON / ITS-XML | Ch 5 — routes/headers/formats DONE; protocol tail open (MUST-level `openEHR-VERSION.*` header merge, `Last-Modified`, `OPTIONS /`) |
-| **Security / authn** — Basic + OAuth2/OIDC, 401/403 discipline; auth out of band per SM | ITS-REST §Auth; SM master02 | DONE (P11 + ADR-011 `access/` unification); SEC ECC cases pending; RBAC = Stage 2 |
+| **Security / authn** — Basic + OAuth2/OIDC, 401/403 discipline; auth out of band per SM | ITS-REST §Auth; SM master02 | DONE (P11 + ADR-011 `access/` unification); SEC ECC cases pending. Fine-grained RBAC is not a spec-compliance item (the spec places authorization out of band) — it is a distinct enterprise track that follows this compliance mission, not blueprint work |
 | **ATNA auditing / System Log** — IHE ATNA-compliant system log | SM master02 (the only normative line); IHE ATNA | DONE (`SystemLog` trait + DICOM-over-syslog impl, `app/ehrbase/src/system_log/`); ECC evidencing pending |
-| **Version update semantics** — CONTRIBUTION-wrapped commits, `UPDATE_VERSION` envelope, server-side audit completion, lifecycle states, logical delete, time-travel | RM common master06; SM master03 | DONE and formally audited 1:1 (PR #33, GAP_REGISTER §1); open: committal-header merge (ch 5 R4), `is_modifiable` write guard, incomplete-lifecycle relaxation |
+| **Version update semantics** — CONTRIBUTION-wrapped commits, `UPDATE_VERSION` envelope, server-side audit completion, lifecycle states, logical delete, time-travel | RM common master06; SM master03 | DONE and formally audited 1:1 (PR #33, §2.1); open: committal-header merge (ch 5 R4), `is_modifiable` write guard, incomplete-lifecycle relaxation |
 | **EHR Extract** — export/import, IMPORTED_VERSION, clone EHRs, TDD import | RM ehr_extract; SM master09 | MISSING but fully designed (SM-5, `docs/design/sm-platform/10-message-integration.md`); all RM types generated |
 | **Terminology-server integration** — external tx server (FHIR TS), AQL `TERMINOLOGY()`/matches-URI, `I_TERMINOLOGY_SERVICE` | QUERY master03; SM master12 | openEHR-bundle provider DONE behind the `TerminologyService` trait; external-server provider + AQL family MISSING (typed rejects) |
 
 Foundation already banked (not re-litigated here): the generated spec layer
 (ADR-004/005, all fidelity gates green), greenfield PG18 storage with audited
-change-control semantics (ADR-008, GAP_REGISTER §1), the SM-literal native API
-(ADR-010/011), the AQL engine core (P16), and our own ECC conformance framework
-(`tools/conformance`, 310 catalogued cases).
+change-control semantics (ADR-008, §2.1), the SM-literal native API
+(ADR-010/011, §2.1), the AQL engine core (P16), and our own ECC conformance
+framework (`tools/conformance`, 310 catalogued cases).
 
 ---
 
-## 2. The compliance map
+## 2. Compliance state
+
+Baseline conformance signal: ECC 2026-07-09 run = **318 executions, 211 pass,
+106 fail** — of which **81 (~76%) are ArchetypeValidation depth (the one big
+rock)** and ~17 are mis-booked runner/spec-gap issues (ch 7 §audit). §2.1 is
+what is proven, §2.2 the failure surface, §2.3 the full spec-area map. Every
+remaining item is ordered work in §3 — nothing here is deferred.
+
+### 2.1 Proven foundations (evidence, not intent)
+
+Measured, not felt — every claim traces to an audit, a test, or a run:
+
+| Claim | Evidence |
+|---|---|
+| Storage change-control semantics realize RM common master06 1:1 | Formal audit 2026-07-09 (no blockers; indelibility, logical delete, contribution atomicity, EHR creation, change_type preservation, attestations, signatures, revision history all cited) + **all 7 findings fixed same day** (five-state lifecycle, per-version `creating_system_id`, audit copy rule, full-corpus jsonb round-trip, `System_id_valid` CHECK, merge/indelibility PORT NOTEs) — PR #33 |
+| Stored data is canonical openEHR JSON, lossless | Node codec: full corpus round-trip **in memory and through jsonb** |
+| The wire passes 211/318 ECC executions, zero-drift-gated per phase | `docs/conformance/CONFORMANCE_REPORT.md` (pre-rewrite baseline; ECC suspended during the ADR-011 rebuild, re-converges at B1/P19) |
+| Deliberate spec deviations are recorded, never silent | 49 source files carry `PORT NOTE`s with citations |
+
+**On "our SQL tables aren't proper":** openEHR defines **no SQL schema** —
+nothing exists to follow 1:1 at the table level. What it *does* define —
+versioning/change-control semantics, canonical data fidelity — is exactly what
+the audit verified and fixed. The remaining schema-adjacent items are ordered
+work in §3: the constraint-evaluation primitives at B2, IMPORTED_VERSION
+storage at B3, and the archive storage-movement PERF item in the tail.
+
+### 2.2 ECC failure breakdown (2026-07-09 baseline: 106 failing)
+
+The sharpest signal, by capability — this is precisely what B2–B6 burn down:
+
+| Capability | Failing | What it means | Build step |
+|---|---|---|---|
+| **ArchetypeValidation** | **81** | The one big rock: template/archetype-constraint validation depth (cardinality/occurrence/value-constraint cases the P15 validator does not yet enforce) — ~76 % of all failures, the highest-leverage work toward "first fully compliant" | B2 |
+| DemographicApi | 6 | OPTIONS-profile wire details of our own demographic design | B6 |
+| ChangeSets | 5 | contribution edge cases | B6 |
+| AqlBasic | 5 | AQL feature-envelope edges | B6 |
+| QueryProvisioning | 4 | stored-query wire edges | B6 |
+| Adl14OptProvisioning | 2 | OPT provisioning edges | B6 |
+| CompositionOps / DirectoryOps / Signing | 1 each | isolated cases | B6 |
+
+### 2.3 The spec-area map
 
 One row per spec area, distilled from chapters 01–07. **State** is the verified
-position (2026-07-09); **Build step** references §3. Baseline conformance
-signal: ECC 2026-07-09 run = **318 executions, 211 pass, 106 fail** — of which
-**81 (~76%) are ArchetypeValidation depth (the one big rock)** and ~17 are
-mis-booked runner/spec-gap issues (ch 7 §audit).
+position (2026-07-09); **Build step** references §3.
 
 | # | Spec area (chapter) | Current state | Remaining work | Priority | Build step |
 |---|---|---|---|---|---|
@@ -55,10 +93,10 @@ mis-booked runner/spec-gap issues (ch 7 §audit).
 | 10 | TERM — bundle + binding (ch 2 §F) | DONE (byte-identical assets, SPECPR-51 handled, codes-not-rubrics fixed) | Spec identifier constants (F-11-07); code-set index (F-11-06); terminology **wire** exposure (extension OAS, designed) | LOW/MED | B4 |
 | 11 | AQL — language core (ch 4) | DONE — parser complete; engine executes the core envelope, every reject typed | **OR-CONTAINS** (normative, currently rejected); the whole single-row function set (Q-20/21/22 + `CURRENT_TIMEZONE` whitelist); semantic pass (duplicate vars, LIMIT/OFFSET bounds — F-08-14); `e/ehr_status` on EHR (RM-model special case); 5 AqlBasic + 4 QueryProvisioning ECC edges | HIGH | B2-adjacent / B6 |
 | 12 | **AQL — terminology family** (ch 4 Q-15/16/23) | MISSING (typed rejects) | `TERMINOLOGY()` (expand/validate/…) + `matches {uri}` + mixed lists, expansion merged at semantic analysis; staged: expand → validate-as-boolean → URI operand | HIGH (mission item) | B4 |
-| 13 | ITS-REST — general protocol (ch 5 §A) | PARTIAL | **`openEHR-VERSION.*`/`openEHR-AUDIT_DETAILS.*` request-header parse + merge (spec MUST, currently a deferral)**; `Last-Modified` emission (plumbed in `-sm`, never emitted); If-Match hardening (full OVID compare, reject unparseable — F-01-09/F-02-08); `OPTIONS /` conformance endpoint (R32); `Prefer: resolve_refs` (SHOULD) | HIGH | B6 (headers early if cheap) |
+| 13 | ITS-REST — general protocol (ch 5 §A) | PARTIAL | **`openEHR-VERSION.*`/`openEHR-AUDIT_DETAILS.*` request-header parse + merge (spec MUST — currently unimplemented; B6, headers early if cheap)**; `Last-Modified` emission (plumbed in `-sm`, never emitted); If-Match hardening (full OVID compare, reject unparseable — F-01-09/F-02-08); `OPTIONS /` conformance endpoint (R32); `Prefer: resolve_refs` (SHOULD) | HIGH | B6 (headers early if cheap) |
 | 14 | ITS-REST — resource APIs (ch 5 §B–D) | DONE as routes + headers (W2-A) | Status-code mapping fixes (F-02-10, F-03-09, F-03-13, F-03-14, F-01-11); query wire tail (RESULT_SET `ETag`, query-level 408, `query_type`); DIRECTORY `path` semantics (F-02-12); composition body-uid cross-check (F-02-11) | MED | B6 |
 | 15 | Canonical JSON/XML payloads (ch 5 §F) | DONE at the COMPOSITION wire (C14N gate green) | Version-family/CONTRIBUTION XML shape (F-05-06, currently 406 — needed for "XML on every endpoint" + ECC-COM-022); JSON minors (DV_COUNT i32, RM-1.1.0 schema ceiling doc) | MED | B6 |
-| 16 | SM — platform services (ch 6) | 26 DONE / 4 PARTIAL / 4 MISSING; ADR-011 rebuild **in flight** | Finish rebuild (test porting, forwarding-layer deletion, workspace green); SM-4 wave 3 Admin dump/load; SM-5 Message (row 6); SM-6 Subject Proxy; ADL 1.4/2 source parsers (deferral); SM-only wire exposure (EHR Index/Terminology/Admin) | HIGH | B1/B3 |
+| 16 | SM — platform services (ch 6) | 26 DONE / 4 PARTIAL / 4 MISSING; ADR-011 rebuild **in flight** | Finish rebuild (test porting, forwarding-layer deletion, workspace green); SM-4 wave 3 Admin dump/load; SM-5 Message (row 6); SM-6 Subject Proxy; ADL 1.4/2 source parsers (B3, ahead of AOM2 semantic validation); SM-only wire exposure (EHR Index/Terminology/Admin) | HIGH | B1/B3 |
 | 17 | SM — SIM-B / SDF formats (ch 6 §M) | PARTIAL — Better semantics implemented (P14) | P17 audit vs the transformation-rule tables + `ctx/` vocabulary; accept SDF-normative leaf encodings; document the quantity-encoding divergence. Not CNF-gated — interop quality | LOW | P17 (interleaved) |
 | 18 | Security / authn | DONE | SEC ECC cases (401/403 surface, mirroring the Robot `I_OAuth2_Keycloak` suite) — cheap, precede SM-5 | LOW | B5 |
 | 19 | ATNA / System Log | DONE | Capability evidencing in ECC (Logging is a STANDARD-profile capability) | LOW | B5 |
@@ -79,8 +117,8 @@ stale SM-4 checkboxes, `cargo nextest run --workspace` green, clippy clean.
 **Exit: workspace green + ECC re-converged at the 211/318 zero-drift baseline.**
 
 ### B2 — Validation depth (the big rock: 81 ECC ArchetypeValidation cases)
-A dedicated phase with the ECC data sets as the oracle (GAP_REGISTER §3
-priority 2). Contents, in dependency order:
+A dedicated phase with the ECC data sets as the oracle (the big rock, §2.2).
+Contents, in dependency order:
 1. `multiplicity_interval_impl.rs` + `cardinality_impl.rs` + BASE `Interval`
    functions (ch 2 items 2/7) — the constraint-evaluation primitives.
 2. Closed-world semantics ADR + implementation (F-07-05), after checking CNF
@@ -198,11 +236,12 @@ the ADRs; deviations are defects):
    the spec file + section in code and commits for conformance-relevant
    decisions. The blueprint chapters carry the extracted requirements — trust
    but re-verify citations when a chapter is >1 phase old.
-2. **PORT NOTE discipline.** Every deliberate deviation, deferral, or
-   spec-defect workaround carries a `// PORT NOTE:` with the citation (49
-   files already do). Spec defects are recorded verbatim in the chapter's
-   "Spec defects/TBDs" section — we implement the evident *meaning* and note
-   the defect, never silently guess.
+2. **PORT NOTE discipline.** Every deliberate deviation or spec-defect
+   workaround carries a `// PORT NOTE:` with the citation (49 files already
+   do). Spec defects are recorded verbatim in the chapter's "Spec
+   defects/TBDs" section — we implement the evident *meaning* and note the
+   defect, never silently guess. (We do not defer our own work items: every
+   gap is ordered work in §3, never an open-ended deferral.)
 3. **Never weaken, skip, or delete a test** to make a build pass; never edit a
    test to route around a bug it exposes. Corpus/golden defects are handled
    only through the B5 adjudication process (skip-with-reason, recorded in the
@@ -222,10 +261,10 @@ the ADRs; deviations are defects):
    DB is involved). Branches are `claude/*`; tick the phase checkbox and
    commit before ending a session; no AI attribution anywhere, ever.
 7. **Blueprint maintenance.** At each phase close: update the affected
-   chapter's state table, this file's compliance map + build-order status,
-   `docs/GAP_REGISTER.md`, and `docs/plans/current-phase.md`. The map's
-   "State" column must always reflect *verified* reality (file:line or ECC
-   evidence), never intent.
+   chapter's state table, this file's §2 (proven foundations + ECC breakdown
+   + spec-area map) and build-order status, and `docs/plans/current-phase.md`.
+   The map's "State" column must always reflect *verified* reality (file:line
+   or ECC evidence), never intent.
 
 ---
 
