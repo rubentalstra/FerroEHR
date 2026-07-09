@@ -1,17 +1,26 @@
 //! `DefinitionApi` — stored-query CRUD (on the `stored_query` table) and OPT 1.4
 //! operational-template CRUD (on the `template_store` table, ingested into the
-//! `openehr-its::opt14` model). The `adl2` template methods inherit the generated
-//! `NotImplemented` (501) default: ADL2 is OPTIONAL for openEHR CNF platform
-//! conformance and untested by the current kit; it awaits the ADL2 text parser.
+//! `openehr-its::opt14` model), plus ADL2 template upload + list (on the
+//! `adl2_artefact` store; SM-2, `I_DEFINITION_ADL2`). The ADL2 `get` is served
+//! via the SM `DefinitionAdl2Service::get_artefact` seam in the dispatcher (ADL2
+//! is text); the ADL2 `example`/`version` template methods keep the generated
+//! `NotImplemented` (501) default — they need an example generator / a cADL
+//! source parser (none in the tree yet; ADL2 is OPTIONAL for CNF and untested).
+//!
+//! The SM Definitions native API also carries `I_DEFINITION_ADL2` in full
+//! ([`DefinitionAdl2Service`] below), keyed by `ARCHETYPE_HRID`.
 
 use async_trait::async_trait;
 use serde_json::Value;
 
-use ehrbase_sm::{DefinitionAdl14Service, DefinitionQueryService, Page, QueryDescriptor};
+use ehrbase_sm::{
+    DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, Page, QueryDescriptor,
+};
 use openehr_flat::{DetailLevel, ExampleType};
 use openehr_its::rest::generated::definition::{
     DefinitionApi, DefinitionQueryListParams, DefinitionQueryStoreYamlParams,
     DefinitionQueryVersionGetParams, DefinitionQueryVersionStoreYamlParams,
+    DefinitionTemplateAdl2ListParams, DefinitionTemplateAdl2UploadParams,
     DefinitionTemplateAdl14ExampleGetParams, DefinitionTemplateAdl14GetParams,
     DefinitionTemplateAdl14ListParams, DefinitionTemplateAdl14UploadParams,
 };
@@ -68,6 +77,40 @@ impl DefinitionApi for EhrbaseService {
         Ok(self
             .template_example(&params.template_id, level, kind)
             .await?)
+    }
+
+    // ── ADL2 templates (I_DEFINITION_ADL2 wire; native-API backed) ───────────
+    //
+    // Upload + list are backed by the `adl2_artefact` store. `get` is served by
+    // the dispatcher through the SM `DefinitionAdl2Service::get_artefact` seam
+    // (ADL2 artefacts are text; the generated map-returning `..._get` op models
+    // the JSON `OperationalTemplateV2` form, which needs a cADL parser — a later
+    // phase), so `definition_template_adl2_get` keeps the generated `501`
+    // default. `example_get`/`version_get` likewise stay `501` (they need an
+    // example generator / a parser — see the dispatcher PORT NOTEs).
+    async fn definition_template_adl2_upload(
+        &self,
+        _params: DefinitionTemplateAdl2UploadParams,
+        body: Value,
+    ) -> Result<Value, ApiError> {
+        // The upload body is the ADL2 operational-template source (text/plain,
+        // decoded upstream to a JSON string by the dispatcher). Store it and
+        // return the stored ARCHETYPE_HRID; the dispatcher builds the `Location`
+        // header + the `Prefer` body from it (201_Template_adl2_upload).
+        let source = body.as_str().ok_or_else(|| {
+            ApiError::BadRequest("expected an ADL2 operational-template source body".to_owned())
+        })?;
+        Ok(Value::String(self.adl2_upload(source).await?))
+    }
+
+    async fn definition_template_adl2_list(
+        &self,
+        _params: DefinitionTemplateAdl2ListParams,
+    ) -> Result<Vec<Value>, ApiError> {
+        // The OAS `filter_template_id`/`concept`/`filter_version`/`offset`/`fetch`
+        // filters are not yet applied (no cADL metadata extraction); the full
+        // template+OPT list is returned. PORT NOTE on `adl2_template_list`.
+        Ok(self.adl2_template_list(Page::all()).await?)
     }
 
     async fn definition_query_list(
@@ -195,6 +238,71 @@ impl DefinitionAdl14Service for EhrbaseService {
 
     async fn opts_count(&self) -> Result<i64, ApiError> {
         Ok(self.opt_count().await?)
+    }
+}
+
+#[async_trait]
+impl DefinitionAdl2Service for EhrbaseService {
+    async fn has_artefact(&self, an_id: String) -> Result<bool, ApiError> {
+        Ok(self.adl2_exists(&an_id).await?)
+    }
+
+    async fn valid_artefact(&self, adl2: String) -> Result<bool, ApiError> {
+        Ok(Self::valid_adl2_source(&adl2))
+    }
+
+    async fn upload_artefact(&self, adl2: String) -> Result<(), ApiError> {
+        // Replace-if-exists (same HRID); invalid source → 422 invalid_artefact.
+        self.adl2_upload(&adl2).await?;
+        Ok(())
+    }
+
+    async fn get_artefact(&self, an_id: String) -> Result<String, ApiError> {
+        Ok(self.adl2_get(&an_id).await?)
+    }
+
+    async fn list_artefacts(&self, page: Page) -> Result<Vec<String>, ApiError> {
+        Ok(self.adl2_list(page).await?)
+    }
+
+    async fn list_archetypes(&self, page: Page) -> Result<Vec<String>, ApiError> {
+        Ok(self.adl2_list_by_kind("archetype", page).await?)
+    }
+
+    async fn list_templates(&self, page: Page) -> Result<Vec<String>, ApiError> {
+        Ok(self.adl2_list_by_kind("template", page).await?)
+    }
+
+    async fn list_opts(&self, page: Page) -> Result<Vec<String>, ApiError> {
+        Ok(self.adl2_list_by_kind("operational_template", page).await?)
+    }
+
+    async fn list_matching_artefacts(
+        &self,
+        id_pattern: String,
+        page: Page,
+    ) -> Result<Vec<String>, ApiError> {
+        Ok(self.adl2_list_matching(&id_pattern, page).await?)
+    }
+
+    async fn delete_artefact(&self, an_id: String) -> Result<(), ApiError> {
+        Ok(self.adl2_delete(&an_id).await?)
+    }
+
+    async fn artefacts_count(&self) -> Result<i64, ApiError> {
+        Ok(self.adl2_count().await?)
+    }
+
+    async fn archetypes_count(&self) -> Result<i64, ApiError> {
+        Ok(self.adl2_count_by_kind("archetype").await?)
+    }
+
+    async fn templates_count(&self) -> Result<i64, ApiError> {
+        Ok(self.adl2_count_by_kind("template").await?)
+    }
+
+    async fn opts_count(&self) -> Result<i64, ApiError> {
+        Ok(self.adl2_count_by_kind("operational_template").await?)
     }
 }
 

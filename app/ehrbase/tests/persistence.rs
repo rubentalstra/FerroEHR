@@ -96,8 +96,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // no new tables) + 0004_vo_attestation (ATTESTATION storage — RM common
     // master06 §Change Control; adds the `vo_attestation` table below) +
     // 0005_archetype_store (SM-2 ADL 1.4 source archetypes, I_DEFINITION_ADL14;
-    // adds the `archetype_store` table below).
-    assert_eq!((applied_ext, applied_ehr), (1, 5));
+    // adds the `archetype_store` table below) +
+    // 0006_adl2_artefact (SM-2 ADL2 artefacts, I_DEFINITION_ADL2; adds the
+    // `adl2_artefact` table below).
+    assert_eq!((applied_ext, applied_ehr), (1, 6));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -109,6 +111,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
     assert_eq!(
         tables,
         [
+            "adl2_artefact",
             "archetype_store",
             "audit",
             "contribution",

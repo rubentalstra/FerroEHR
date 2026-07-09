@@ -1,10 +1,12 @@
 //! HTTP dispatch for the `definition` API group (templates + stored queries).
 //!
 //! Each arm rebuilds the operation's `*Params`, decodes any body, calls the
-//! trait method on [`AppState`], and renders a negotiated response. The only
-//! operations a full backend leaves unimplemented are the ADL2 template ones
-//! (deliberately 501 — ADL2 is an optional platform capability; see
-//! `service::api::definition`).
+//! trait method on [`AppState`], and renders a negotiated response. ADL2
+//! template `upload`/`list`/`get` are backed by the SM-2 `adl2_artefact` store
+//! (ADL2 artefacts are served as text/plain source — the `get` routes through
+//! the SM `DefinitionAdl2Service::get_artefact` seam). The ADL2 `example` and
+//! `version` operations stay `501` (they need an example generator / a cADL
+//! source parser — see `service::api::definition`).
 //!
 //! Note: the generated `ROUTES` operation ids carry dots (e.g.
 //! `definition_template_adl1.4_list`, `definition_query_store.yaml`); the match
@@ -12,7 +14,7 @@
 //! underscored names (`definition_template_adl1_4_list`, `definition_query_store_yaml`).
 
 use axum::response::{IntoResponse, Response};
-use http::{HeaderMap, StatusCode, header};
+use http::{HeaderMap, HeaderValue, StatusCode, header};
 
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
@@ -135,26 +137,40 @@ async fn run(
         }
         "definition_template_adl2_upload" => {
             let p = params::build::<DefinitionTemplateAdl2UploadParams>(&parts.path, q, h)?;
-            // PORT NOTE: ADL2/OPT2 ingestion is deferred (optional for CNF, untested;
-            // its upload wire is ADL2 *text* needing a cADL parser — a later phase).
-            // The backend 501s adl2_upload, so the body is passed through untyped.
-            let body = negotiate::lenient_value(&parts.body)?;
-            Ok(negotiate::respond(
-                h,
-                StatusCode::CREATED,
-                &state
-                    .backend()
-                    .definition_template_adl2_upload(p, body)
-                    .await?,
+            let prefer = p.prefer.clone();
+            // ADL2 arrives as text/plain source (definition-codegen.openapi.yaml:
+            // Content-Type text/plain, body `OperationalTemplateV2` | string).
+            let source = negotiate::text_body(&parts.body)?;
+            // Store; the backend returns the stored ARCHETYPE_HRID (an invalid
+            // artefact is a 422, a duplicate is handled by replace — SM upload).
+            let hrid = state
+                .backend()
+                .definition_template_adl2_upload(p, serde_json::Value::String(source.clone()))
+                .await?;
+            let hrid = hrid.as_str().unwrap_or_default();
+            let location = format!(
+                "{}/definition/template/adl2/{hrid}",
+                state.config().base_path
+            );
+            // 201_Template_adl2_upload: body per `Prefer` — representation → the
+            // OPT source (text/plain); identifier → `{template_id}` (JSON);
+            // missing/minimal → empty. `Location` on every case.
+            Ok(adl2_upload_response(
+                prefer.as_deref(),
+                &location,
+                hrid,
+                source,
             ))
         }
         "definition_template_adl2_get" => {
             let p = params::build::<DefinitionTemplateAdl2GetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
-                h,
-                StatusCode::OK,
-                &state.backend().definition_template_adl2_get(p).await?,
-            ))
+            // ADL2 artefacts are text; serve the stored source as text/plain via
+            // the SM `get_artefact` seam (an unknown `template_id` → 404). The
+            // generated map-returning op models the JSON `OperationalTemplateV2`
+            // form, which needs a cADL parser (deferred) — see
+            // `service::api::definition`.
+            let source = state.backend().get_artefact(p.template_id).await?;
+            Ok(adl2_text_response(StatusCode::OK, None, source))
         }
         "definition_template_adl2_example_get" => {
             let p = params::build::<DefinitionTemplateAdl2ExampleGetParams>(&parts.path, q, h)?;
@@ -239,6 +255,53 @@ async fn run(
         other => Err(RestError(openehr_its::rest::runtime::ApiError::Internal(
             format!("unrouted definition operation: {other}"),
         ))),
+    }
+}
+
+/// A `text/plain` response for ADL2 source (the artefact interchange form),
+/// with an optional `Location` header. ADL2 artefacts are text, so both the
+/// `adl2` GET body and the `Prefer: return=representation` upload body are served
+/// this way (`definition-codegen.openapi.yaml`: `text/plain` for the ADL2 OPT).
+fn adl2_text_response(status: StatusCode, location: Option<&str>, source: String) -> Response {
+    // axum's `String` responder already sets `Content-Type: text/plain; charset=utf-8`.
+    let mut resp = (status, source).into_response();
+    if let Some(loc) = location
+        && let Ok(value) = HeaderValue::from_str(loc)
+    {
+        resp.headers_mut().insert(header::LOCATION, value);
+    }
+    resp
+}
+
+/// Render the `201 Created` for an ADL2 template upload per `Prefer`
+/// (`201_Template_adl2_upload`): `return=representation` → the OPT source
+/// (text/plain); `return=identifier` → a `{template_id}` JSON body;
+/// missing/`return=minimal` → an empty body. `Location` is set on every case.
+fn adl2_upload_response(
+    prefer: Option<&str>,
+    location: &str,
+    hrid: &str,
+    source: String,
+) -> Response {
+    let representation = prefer.is_some_and(|p| {
+        p.split(',')
+            .any(|t| t.trim().eq_ignore_ascii_case("return=representation"))
+    });
+    let identifier = prefer.is_some_and(|p| {
+        p.split(',')
+            .any(|t| t.trim().eq_ignore_ascii_case("return=identifier"))
+    });
+    if representation {
+        adl2_text_response(StatusCode::CREATED, Some(location), source)
+    } else if identifier {
+        let body = serde_json::json!({ "template_id": hrid });
+        let mut resp = (StatusCode::CREATED, axum::Json(body)).into_response();
+        if let Ok(value) = HeaderValue::from_str(location) {
+            resp.headers_mut().insert(header::LOCATION, value);
+        }
+        resp
+    } else {
+        negotiate::empty_with_location(StatusCode::CREATED, location)
     }
 }
 

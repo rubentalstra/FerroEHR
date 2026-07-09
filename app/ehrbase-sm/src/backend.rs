@@ -11,7 +11,7 @@
 //! `Backend` is the union of the seams the server actually dispatches to: the
 //! generated `DefinitionApi` (templates + stored queries) plus the SM
 //! Definitions native seams ([`DefinitionAdl14Service`] /
-//! [`DefinitionQueryService`], SM-2), the five SM EHR-core
+//! [`DefinitionAdl2Service`] / [`DefinitionQueryService`], SM-2), the five SM EHR-core
 //! interfaces ([`EhrService`] / [`EhrStatusService`] / [`EhrCompositionService`]
 //! / [`EhrDirectoryService`] / [`EhrContributionService`]), the
 //! [`DemographicService`] and [`AdminService`] seams, the [`QueryService`]
@@ -25,9 +25,9 @@
 use openehr_its::rest::generated::definition::DefinitionApi;
 
 use crate::services::{
-    AdminService, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService, QueryService, WebTemplateService,
+    AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
+    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
+    EhrService, EhrStatusService, QueryService, WebTemplateService,
 };
 
 /// The full server backend: everything the ITS-REST surface dispatches to.
@@ -44,6 +44,7 @@ pub trait Backend:
     + DemographicService
     + DefinitionApi
     + DefinitionAdl14Service
+    + DefinitionAdl2Service
     + DefinitionQueryService
     + WebTemplateService
     + QueryService
@@ -64,6 +65,7 @@ impl<T> Backend for T where
         + DemographicService
         + DefinitionApi
         + DefinitionAdl14Service
+        + DefinitionAdl2Service
         + DefinitionQueryService
         + WebTemplateService
         + QueryService
@@ -91,6 +93,7 @@ impl EhrDirectoryService for StubBackend {}
 impl EhrContributionService for StubBackend {}
 impl DefinitionApi for StubBackend {}
 impl DefinitionAdl14Service for StubBackend {}
+impl DefinitionAdl2Service for StubBackend {}
 impl DefinitionQueryService for StubBackend {}
 impl WebTemplateService for StubBackend {}
 impl QueryService for StubBackend {}

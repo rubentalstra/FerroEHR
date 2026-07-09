@@ -21,9 +21,9 @@ pub mod types;
 pub use backend::{Backend, StubBackend};
 pub use error::{CallStatus, CallStatusType};
 pub use services::{
-    AdminService, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService, QueryService, SystemLog, ValidityChecker, WebTemplateService,
+    AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
+    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
+    EhrService, EhrStatusService, QueryService, SystemLog, ValidityChecker, WebTemplateService,
 };
 pub use types::{
     AqlQueryRequest, EhrSummary, Page, PartyKind, QueryDescriptor, QueryOutcome, ResourceMeta,

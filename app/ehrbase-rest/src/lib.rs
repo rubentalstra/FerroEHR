@@ -34,10 +34,11 @@ mod status;
 pub use auth::{AuthMethod, Authenticator, Principal};
 pub use authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
 pub use backend::{
-    AdminService, AqlQueryRequest, Backend, DefinitionAdl14Service, DefinitionQueryService,
-    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrService, EhrStatusService, EhrSummary, Page, PartyKind, QueryDescriptor, QueryOutcome,
-    QueryService, StubBackend, SystemLog, ValidityChecker, WebTemplateService,
+    AdminService, AqlQueryRequest, Backend, DefinitionAdl2Service, DefinitionAdl14Service,
+    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
+    EhrDirectoryService, EhrService, EhrStatusService, EhrSummary, Page, PartyKind,
+    QueryDescriptor, QueryOutcome, QueryService, StubBackend, SystemLog, ValidityChecker,
+    WebTemplateService,
 };
 pub use config::{AdminConfig, RestConfig};
 pub use error::RestError;

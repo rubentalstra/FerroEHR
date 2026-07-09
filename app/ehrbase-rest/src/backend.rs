@@ -3,9 +3,9 @@
 
 pub use ehrbase_sm::backend::{Backend, StubBackend};
 pub use ehrbase_sm::services::{
-    AdminService, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService, QueryService, SystemLog, ValidityChecker, WebTemplateService,
+    AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
+    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
+    EhrService, EhrStatusService, QueryService, SystemLog, ValidityChecker, WebTemplateService,
 };
 pub use ehrbase_sm::types::{
     AqlQueryRequest, EhrSummary, Page, PartyKind, QueryDescriptor, QueryOutcome,

@@ -228,6 +228,181 @@ impl EhrbaseService {
         )
     }
 
+    // ── ADL2 artefacts (keyed by ARCHETYPE_HRID; on `adl2_artefact`) ──────────
+
+    /// True if an ADL2 artefact with `ARCHETYPE_HRID` `an_id` is stored
+    /// (`I_DEFINITION_ADL2.has_artefact`).
+    pub(super) async fn adl2_exists(&self, an_id: &str) -> Result<bool, ServiceError> {
+        Ok(sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM adl2_artefact WHERE hrid = $1)",
+        )
+        .bind(an_id)
+        .fetch_one(&self.pool)
+        .await?)
+    }
+
+    /// Upload a valid ADL2 artefact, replacing any existing one with the same
+    /// `ARCHETYPE_HRID` (`I_DEFINITION_ADL2.upload_artefact`: "If an artefact
+    /// with the same physical identifier and namespace exists, replace it").
+    /// Invalid source → `invalid artefact` (`422`). Returns the stored HRID (the
+    /// wire needs it for the `Location` header + identifier body).
+    pub(super) async fn adl2_upload(&self, adl2: &str) -> Result<String, ServiceError> {
+        let (kind, hrid) = extract_adl2_header(adl2).ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::InvalidArtefact,
+                "ADL2 source is not a valid artefact (missing an \
+                 archetype/template/operational_template header or a well-formed \
+                 ARCHETYPE_HRID)",
+            )
+        })?;
+        sqlx::query(
+            "INSERT INTO adl2_artefact (hrid, kind, adl) VALUES ($1, $2, $3) \
+             ON CONFLICT (hrid) DO UPDATE \
+             SET kind = EXCLUDED.kind, adl = EXCLUDED.adl, created_at = now()",
+        )
+        .bind(&hrid)
+        .bind(kind)
+        .bind(adl2)
+        .execute(&self.pool)
+        .await?;
+        Ok(hrid)
+    }
+
+    /// The ADL2 source of the artefact with `ARCHETYPE_HRID` `an_id`
+    /// (`I_DEFINITION_ADL2.get_artefact`); absent → `artefact_does_not_exist`
+    /// (`404`).
+    pub(super) async fn adl2_get(&self, an_id: &str) -> Result<String, ServiceError> {
+        sqlx::query_scalar::<_, String>("SELECT adl FROM adl2_artefact WHERE hrid = $1")
+            .bind(an_id)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::ArtefactDoesNotExist,
+                    format!("ADL2 artefact {an_id}"),
+                )
+            })
+    }
+
+    /// The `ARCHETYPE_HRID`s of all stored ADL2 artefacts (`list_artefacts`).
+    pub(super) async fn adl2_list(&self, page: Page) -> Result<Vec<String>, ServiceError> {
+        let (offset, limit) = page_bounds(page);
+        Ok(sqlx::query_scalar::<_, String>(
+            "SELECT hrid FROM adl2_artefact ORDER BY hrid OFFSET $1 LIMIT $2",
+        )
+        .bind(offset)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?)
+    }
+
+    /// The `ARCHETYPE_HRID`s of stored ADL2 artefacts of one concrete `kind`
+    /// (`list_archetypes` / `list_templates` / `list_opts`).
+    pub(super) async fn adl2_list_by_kind(
+        &self,
+        kind: &str,
+        page: Page,
+    ) -> Result<Vec<String>, ServiceError> {
+        let (offset, limit) = page_bounds(page);
+        Ok(sqlx::query_scalar::<_, String>(
+            "SELECT hrid FROM adl2_artefact WHERE kind = $1 ORDER BY hrid OFFSET $2 LIMIT $3",
+        )
+        .bind(kind)
+        .bind(offset)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?)
+    }
+
+    /// ADL2 artefact HRIDs matching `id_pattern` (a regex;
+    /// `list_matching_artefacts`). An uncompilable pattern →
+    /// `invalid_id_pattern` (`400`).
+    pub(super) async fn adl2_list_matching(
+        &self,
+        id_pattern: &str,
+        page: Page,
+    ) -> Result<Vec<String>, ServiceError> {
+        let re = compile_pattern(id_pattern)?;
+        let all: Vec<String> = sqlx::query_scalar("SELECT hrid FROM adl2_artefact ORDER BY hrid")
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(paginate(all.into_iter().filter(|id| re.is_match(id)), page))
+    }
+
+    /// Delete the ADL2 artefact with `ARCHETYPE_HRID` `an_id`
+    /// (`delete_artefact`); absent → `artefact_does_not_exist` (`404`).
+    pub(super) async fn adl2_delete(&self, an_id: &str) -> Result<(), ServiceError> {
+        let deleted = sqlx::query("DELETE FROM adl2_artefact WHERE hrid = $1")
+            .bind(an_id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+        if deleted == 0 {
+            return Err(ServiceError::sm(
+                CallStatusType::ArtefactDoesNotExist,
+                format!("ADL2 artefact {an_id}"),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Total ADL2 artefacts count (`artefacts_count`).
+    pub(super) async fn adl2_count(&self) -> Result<i64, ServiceError> {
+        Ok(
+            sqlx::query_scalar::<_, i64>("SELECT count(*) FROM adl2_artefact")
+                .fetch_one(&self.pool)
+                .await?,
+        )
+    }
+
+    /// Total ADL2 artefacts of one concrete `kind` (`archetypes_count` /
+    /// `templates_count` / `opts_count`).
+    pub(super) async fn adl2_count_by_kind(&self, kind: &str) -> Result<i64, ServiceError> {
+        Ok(
+            sqlx::query_scalar::<_, i64>("SELECT count(*) FROM adl2_artefact WHERE kind = $1")
+                .bind(kind)
+                .fetch_one(&self.pool)
+                .await?,
+        )
+    }
+
+    /// The wire list for `GET /definition/template/adl2` (the OAS `TemplateList`,
+    /// `definition-codegen.openapi.yaml` `200_TemplateList_adl2`): the ADL2
+    /// templates and OPTs, as `{template_id, created_timestamp}` metadata objects.
+    ///
+    /// PORT NOTE: the OAS `TemplateMetadata` also carries `concept` and
+    /// `archetype_id`, which are derived from the cADL body (the archetype's
+    /// concept description + `specialize` target). With no ADL2/cADL source
+    /// parser yet those fields are omitted; `template_id` is the `ARCHETYPE_HRID`.
+    /// The endpoint lists both `template` and `operational_template` kinds (the
+    /// "templates" under `/definition/template/adl2`), not source archetypes.
+    pub(super) async fn adl2_template_list(
+        &self,
+        page: Page,
+    ) -> Result<Vec<serde_json::Value>, ServiceError> {
+        let (offset, limit) = page_bounds(page);
+        let rows = sqlx::query(
+            "SELECT hrid, created_at FROM adl2_artefact \
+             WHERE kind IN ('template', 'operational_template') \
+             ORDER BY hrid OFFSET $1 LIMIT $2",
+        )
+        .bind(offset)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(rows
+            .iter()
+            .map(|row| {
+                let hrid: String = row.try_get("hrid").unwrap_or_default();
+                let created = row
+                    .try_get::<jiff_sqlx::Timestamp, _>("created_at")
+                    .map(|t| t.to_jiff().to_string())
+                    .unwrap_or_default();
+                serde_json::json!({ "template_id": hrid, "created_timestamp": created })
+            })
+            .collect())
+    }
+
     // ── registered queries (on `stored_query`) ───────────────────────────────
 
     /// True if a query with the qualified name `a_query_name` is registered
@@ -407,6 +582,14 @@ impl EhrbaseService {
     pub(super) fn valid_query_source(a_query_text: &str, a_type: &str) -> bool {
         valid_query_text(a_query_text, a_type)
     }
+
+    /// `valid_artefact` (ADL2) — structural validity of ADL2 source (see the
+    /// [`DefinitionAdl2Service`](ehrbase_sm::DefinitionAdl2Service) trait PORT
+    /// NOTE). Stateless; no DB is consulted.
+    #[must_use]
+    pub(super) fn valid_adl2_source(adl2: &str) -> bool {
+        extract_adl2_header(adl2).is_some()
+    }
 }
 
 // ─── free helpers ────────────────────────────────────────────────────────────
@@ -552,6 +735,51 @@ fn extract_archetype_id(adl: &str) -> Option<ArchetypeId> {
     ArchetypeId::from_str(id_line).ok()
 }
 
+/// Extract `(kind, ARCHETYPE_HRID)` from ADL2 source. The source must begin
+/// (after any BOM, blank lines and `--` line comments) with an artefact-kind
+/// keyword line — `archetype`, `template`, or `operational_template`,
+/// optionally followed by `(adl_version=2…; …)` attributes — and carry a
+/// well-formed `ARCHETYPE_HRID` on the next non-blank line
+/// (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl2.adoc`;
+/// `master04-definition_package.adoc`). The keyword becomes the stored `kind`.
+///
+/// PORT NOTE: this is a lightweight structural probe, not a cADL parse (no ADL2
+/// source parser exists in the tree yet); it accepts the source shape the ADL2
+/// spec's `operational_template (…)` / `archetype (…)` / `template (…)` headers
+/// use.
+fn extract_adl2_header(adl2: &str) -> Option<(&'static str, String)> {
+    let text = adl2.trim_start_matches('\u{feff}');
+    let mut lines = text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with("--"));
+    let header = lines.next()?;
+    // The kind keyword is the first token, before any whitespace or `(` attrs.
+    let keyword = header.split(['(', ' ', '\t']).next()?;
+    let kind = match keyword {
+        "archetype" => "archetype",
+        "template" => "template",
+        "operational_template" => "operational_template",
+        _ => return None,
+    };
+    let hrid_line = lines.next()?;
+    valid_adl2_hrid(hrid_line).then(|| (kind, hrid_line.to_owned()))
+}
+
+/// Structural check for an `ARCHETYPE_HRID`: an optional `namespace::` prefix
+/// followed by an openEHR HRID
+/// (`rm_publisher '-' rm_package '-' rm_class '.' concept_id {'-' spec}* '.v' version`,
+/// e.g. `openEHR-EHR-OBSERVATION.bp.v1.0.0`).
+///
+/// PORT NOTE: reuses [`ArchetypeId::from_str`], whose lexical form accepts the
+/// HRID shape (it is a superset of the ADL 1.4 `ARCHETYPE_ID`, tolerating the
+/// full multi-part `.vN.N.N` version). A stricter AOM2 `ARCHETYPE_HRID` grammar
+/// (`version_status` / `build_count` suffixes) awaits the ADL2 parser.
+fn valid_adl2_hrid(hrid: &str) -> bool {
+    let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
+    ArchetypeId::from_str(core).is_ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -599,5 +827,38 @@ mod tests {
         assert!(extract_archetype_id("concept\n[at0000]").is_none());
         // Header but the id line is not a well-formed ARCHETYPE_ID.
         assert!(extract_archetype_id("archetype\n  not-an-archetype-id").is_none());
+    }
+
+    #[test]
+    fn adl2_header_extraction() {
+        // operational_template header with attrs → kind + HRID (master04 example).
+        let opt = "operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)\n\
+                   \topenEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0\n\n\
+                   specialize\n\topenEHR-EHR-COMPOSITION.discharge.v1";
+        assert_eq!(
+            extract_adl2_header(opt),
+            Some((
+                "operational_template",
+                "openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0".to_owned()
+            ))
+        );
+        // Bare `archetype` header + a namespace-qualified HRID.
+        let arch = "-- a comment\narchetype\ncom.example::openEHR-EHR-OBSERVATION.bp.v1.0.0\n";
+        assert_eq!(
+            extract_adl2_header(arch),
+            Some((
+                "archetype",
+                "com.example::openEHR-EHR-OBSERVATION.bp.v1.0.0".to_owned()
+            ))
+        );
+        // `template` kind.
+        assert_eq!(
+            extract_adl2_header("template\nopenEHR-EHR-COMPOSITION.t_x.v2.0.0").map(|(k, _)| k),
+            Some("template")
+        );
+        // Unrecognised header keyword → not an artefact.
+        assert!(extract_adl2_header("concept\nopenEHR-EHR-OBSERVATION.bp.v1.0.0").is_none());
+        // Recognised header but a malformed HRID → invalid.
+        assert!(extract_adl2_header("archetype\nnot-an-hrid").is_none());
     }
 }
