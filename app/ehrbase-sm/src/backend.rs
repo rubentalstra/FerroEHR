@@ -9,7 +9,9 @@
 //! [`StubBackend`] answers every operation with `NotImplemented`.
 //!
 //! `Backend` is the union of the seams the server actually dispatches to: the
-//! generated `DefinitionApi` (templates + stored queries), the five SM EHR-core
+//! generated `DefinitionApi` (templates + stored queries) plus the SM
+//! Definitions native seams ([`DefinitionAdl14Service`] /
+//! [`DefinitionAdl2Service`] / [`DefinitionQueryService`], SM-2), the five SM EHR-core
 //! interfaces ([`EhrService`] / [`EhrStatusService`] / [`EhrCompositionService`]
 //! / [`EhrDirectoryService`] / [`EhrContributionService`]), the
 //! [`DemographicService`] and [`AdminService`] seams, the [`QueryService`]
@@ -23,8 +25,9 @@
 use openehr_its::rest::generated::definition::DefinitionApi;
 
 use crate::services::{
-    AdminService, DemographicService, EhrCompositionService, EhrContributionService,
-    EhrDirectoryService, EhrService, EhrStatusService, QueryService, WebTemplateService,
+    AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
+    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
+    EhrService, EhrStatusService, QueryService, WebTemplateService,
 };
 
 /// The full server backend: everything the ITS-REST surface dispatches to.
@@ -40,6 +43,9 @@ pub trait Backend:
     + EhrContributionService
     + DemographicService
     + DefinitionApi
+    + DefinitionAdl14Service
+    + DefinitionAdl2Service
+    + DefinitionQueryService
     + WebTemplateService
     + QueryService
     + AdminService
@@ -58,6 +64,9 @@ impl<T> Backend for T where
         + EhrContributionService
         + DemographicService
         + DefinitionApi
+        + DefinitionAdl14Service
+        + DefinitionAdl2Service
+        + DefinitionQueryService
         + WebTemplateService
         + QueryService
         + AdminService
@@ -83,6 +92,9 @@ impl EhrCompositionService for StubBackend {}
 impl EhrDirectoryService for StubBackend {}
 impl EhrContributionService for StubBackend {}
 impl DefinitionApi for StubBackend {}
+impl DefinitionAdl14Service for StubBackend {}
+impl DefinitionAdl2Service for StubBackend {}
+impl DefinitionQueryService for StubBackend {}
 impl WebTemplateService for StubBackend {}
 impl QueryService for StubBackend {}
 impl DemographicService for StubBackend {}

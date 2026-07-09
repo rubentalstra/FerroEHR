@@ -27,6 +27,7 @@ mod aql_query;
 mod codes;
 mod composition;
 mod contribution;
+mod definition;
 mod demographic;
 mod directory;
 mod ehr;
