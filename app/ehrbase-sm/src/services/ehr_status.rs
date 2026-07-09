@@ -1,125 +1,96 @@
-//! The SM `I_EHR_STATUS` interface — `EHR_STATUS` operations.
+//! The SM `I_EHR_STATUS` interface — the literal openEHR Platform Service Model
+//! call set (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_status.adoc`; digest
+//! `docs/design/sm-platform/02-ehr-service.md` §3). "Interface to `EHR_STATUS`
+//! of an EHR, with implicit Contribution creation" — every mutating call
+//! creates a new `EHR_STATUS` version + `CONTRIBUTION` server-side.
 
 use async_trait::async_trait;
 use serde_json::Value;
+use uuid::Uuid;
 
-use openehr_its::rest::generated::ehr::{
-    EhrStatusGetAtTimeParams, EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams,
-    EhrStatusTagsGetParams, EhrStatusTagsUpdateParams, EhrStatusUpdateParams,
-    VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
-    VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
-};
-use openehr_its::rest::runtime::ApiError;
+use crate::error::SmError;
+use crate::types::UpdateVersion;
 
-use crate::types::{ResourceMeta, ServiceResponse};
-
-/// The SM `I_EHR_STATUS` interface
-/// (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_status.adoc`): "Interface to
-/// `EHR_STATUS` of an EHR, with implicit Contribution creation."
-///
-/// Every method defaults to `NotImplemented`, so the [`StubBackend`] (and any
-/// partial backend) inherits a `501` until the real service overrides it.
-///
-/// [`StubBackend`]: crate::backend::StubBackend
+/// `I_EHR_STATUS` — `EHR_STATUS` operations, one Rust method per SM call.
+/// Reads return the canonical `EHR_STATUS`/`VERSION`/`VERSIONED_EHR_STATUS` as
+/// [`Value`]; the implicit-Contribution write returns the new `version_uid`.
 #[async_trait]
 pub trait EhrStatusService: Send + Sync {
-    /// `GET /ehr/{ehr_id}/ehr_status/{version_uid}` — the **bare** `EHR_STATUS` at
-    /// a specific version (not the `ORIGINAL_VERSION` wrapper — F-01-03). `200`
-    /// with `ETag`(`version_uid`)/`Location` (`200_EHR_STATUS_retrieved.yaml`).
-    async fn ehr_status_get_by_version_id(
+    /// `has_ehr_status_version (an_ehr_id: UUID, a_version_uid: UUID): Boolean`
+    /// — pre `has_ehr(an_ehr_id)`.
+    async fn has_ehr_status_version(
         &self,
-        _params: EhrStatusGetByVersionIdParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_version_uid: Uuid,
+    ) -> Result<bool, SmError>;
 
-    /// `GET /ehr/{ehr_id}/ehr_status` — the `EHR_STATUS` (current or at time).
-    /// `200` with `ETag`/`Location` (`200_EHR_STATUS_retrieved.yaml`).
-    async fn ehr_status_get_at_time(
-        &self,
-        _params: EhrStatusGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+    /// `get_ehr_status (an_ehr_id: UUID): EHR_STATUS` — the current version.
+    /// Pre `has_ehr(an_ehr_id)`.
+    async fn get_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError>;
 
-    /// `PUT /ehr/{ehr_id}/ehr_status` — update `EHR_STATUS`. Default `204` (no
-    /// body); `200` + body on `return=representation`; `ETag`/`Location` on both
-    /// (`204_EHR_STATUS.yaml` / `200_EHR_STATUS_updated.yaml`).
-    async fn ehr_status_update(
+    /// `get_ehr_status_at_time (an_ehr_id, a_time: Iso8601_date_time [0..1]):
+    /// EHR_STATUS` — no time ⇒ latest. Pre `has_ehr(an_ehr_id)`.
+    ///
+    /// PORT NOTE: the SM signature omits `an_ehr_id` (spec defect, digest 2
+    /// §9); it is restored here. `a_time` is carried as an ISO-8601 string to
+    /// preserve partial-precision semantics (consistent with the codebase's
+    /// `version_at_time` handling).
+    async fn get_ehr_status_at_time(
         &self,
-        _params: EhrStatusUpdateParams,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_time: Option<String>,
+    ) -> Result<Value, SmError>;
 
-    /// `GET /ehr/{ehr_id}/versioned_ehr_status` — the `VERSIONED_EHR_STATUS`.
-    /// `200_VERSIONED_EHR_STATUS` (no `ETag`/`Location`).
-    async fn versioned_ehr_status_get(
+    /// `get_ehr_status_at_version (an_ehr_id: UUID, a_version_uid: UUID):
+    /// EHR_STATUS` — the **bare** `EHR_STATUS` at a version (not the
+    /// `ORIGINAL_VERSION` wrapper; F-01-03). Pre `has_ehr`.
+    async fn get_ehr_status_at_version(
         &self,
-        _params: VersionedEhrStatusGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_version_uid: Uuid,
+        a_version: i32,
+    ) -> Result<Value, SmError>;
 
-    /// `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`. `200` (plain).
-    async fn versioned_ehr_status_revision_history(
-        &self,
-        _params: VersionedEhrStatusRevisionHistoryParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+    /// `get_versioned_ehr_status (an_ehr_id: UUID): VERSIONED_EHR_STATUS` —
+    /// pre `has_ehr`.
+    async fn get_versioned_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError>;
 
-    /// `GET /ehr/{ehr_id}/versioned_ehr_status/version` — the VERSION extant at a
-    /// time. `200_VERSION_at_time`: `ETag`(`version_uid`)/`Location`.
-    async fn versioned_ehr_status_version_get_at_time(
+    // ── ITS-REST wire assembly (adapter-support, not single SM calls) ───────
+
+    /// The ITS-REST `PUT /ehr/{ehr_id}/ehr_status` write: replace the whole
+    /// `EHR_STATUS`, returning the new `version_uid`.
+    ///
+    /// PORT NOTE: the SM decomposes `EHR_STATUS` mutation into
+    /// `set_/clear_ehr_queryable`, `set_/clear_ehr_modifiable`, and
+    /// `update_other_details`; the ITS-REST wire replaces the whole object in
+    /// one call, so this composite adapter method realizes those SM calls
+    /// jointly (formal equivalence, `master02-overview.adoc` §Interface Calls).
+    /// The optimistic-concurrency `preceding_version_uid` rides in
+    /// [`UpdateVersion`]; a mismatch → `version_mismatch`.
+    async fn replace_ehr_status(
         &self,
-        _params: VersionedEhrStatusVersionGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_status: UpdateVersion,
+    ) -> Result<String, SmError>;
+
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`.
+    async fn ehr_status_revision_history(&self, an_ehr_id: Uuid) -> Result<Value, SmError>;
+
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status/version` — the `ORIGINAL_VERSION`
+    /// extant at `a_time` (or latest), returned with its `version_uid` for the
+    /// `200_VERSION_at_time` `ETag`/`Location`.
+    async fn ehr_status_version_at_time(
+        &self,
+        an_ehr_id: Uuid,
+        a_time: Option<String>,
+    ) -> Result<Value, SmError>;
 
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}` — the
-    /// `ORIGINAL_VERSION`. `200_VERSION` (no `ETag`/`Location`).
-    async fn versioned_ehr_status_version_get_by_id(
+    /// `ORIGINAL_VERSION` at a specific version.
+    async fn ehr_status_original_version(
         &self,
-        _params: VersionedEhrStatusVersionGetByIdParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
-
-    /// `GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`.
-    async fn ehr_status_tags_get(
-        &self,
-        _params: EhrStatusTagsGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
-
-    /// `PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`.
-    async fn ehr_status_tags_update(
-        &self,
-        _params: EhrStatusTagsUpdateParams,
-        _body: Vec<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
-
-    /// `DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}`.
-    async fn ehr_status_tags_delete(
-        &self,
-        _params: EhrStatusTagsDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
-
-    /// The current `EHR_STATUS` version metadata, for the latest `version_uid` the
-    /// spec requires in the `ETag`/`Location` of a `412` precondition failure
-    /// (`412_EHR_STATUS.yaml`). `None` if the EHR/status is unknown.
-    async fn ehr_status_latest_meta(
-        &self,
-        _ehr_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
-        Ok(None)
-    }
+        an_ehr_id: Uuid,
+        a_version_uid: Uuid,
+        a_version: i32,
+    ) -> Result<Value, SmError>;
 }

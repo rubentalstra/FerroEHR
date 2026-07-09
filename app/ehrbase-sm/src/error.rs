@@ -180,6 +180,61 @@ impl CallStatusType {
     }
 }
 
+/// The native-API error type — a `CALL_STATUS_TYPE` code plus a message.
+///
+/// Realizes the SM `I_STATUS` protocol (`master03-common_package.adoc`
+/// §Representing Call Status: `last_call_failed()`/`last_call_status()`) in the
+/// stateless typed-`Result` style the spec sanctions
+/// (`master02-overview.adoc` §Functional Style). Every catalog trait returns
+/// `Result<T, SmError>`; the protocol adapter (`ehrbase-rest`) owns the single
+/// SM → HTTP mapping ([`CallStatusType::api_error`]) — so this type carries
+/// **no** `openehr_its::rest` dependency.
+#[derive(Debug, Clone, thiserror::Error)]
+#[error("{message}")]
+pub struct SmError {
+    /// The `CALL_STATUS_TYPE` code the failed call reports.
+    pub status: CallStatusType,
+    /// Human-readable error message.
+    pub message: String,
+}
+
+impl SmError {
+    /// Build a status-coded error with a message.
+    #[must_use]
+    pub fn new(status: CallStatusType, message: impl Into<String>) -> Self {
+        Self {
+            status,
+            message: message.into(),
+        }
+    }
+
+    /// `precondition_violation` — an argument-validity precondition failed
+    /// (maps to `400` at the wire).
+    #[must_use]
+    pub fn precondition(message: impl Into<String>) -> Self {
+        Self::new(CallStatusType::PreconditionViolation, message)
+    }
+
+    /// `ehr_id_does_not_exist`.
+    #[must_use]
+    pub fn ehr_not_found(message: impl Into<String>) -> Self {
+        Self::new(CallStatusType::EhrIdDoesNotExist, message)
+    }
+
+    /// `version_mismatch` — the optimistic-concurrency (`If-Match`) failure
+    /// (→ `412`).
+    #[must_use]
+    pub fn version_mismatch(message: impl Into<String>) -> Self {
+        Self::new(CallStatusType::VersionMismatch, message)
+    }
+
+    /// `exception` — a server-side fault (→ `500`).
+    #[must_use]
+    pub fn exception(message: impl Into<String>) -> Self {
+        Self::new(CallStatusType::Exception, message)
+    }
+}
+
 /// `CALL_STATUS` — "Object representing a call status" (`call_status.adoc`).
 ///
 /// All five attributes are mandatory in the SM. In our stateless mapping this

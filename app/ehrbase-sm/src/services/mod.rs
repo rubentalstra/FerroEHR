@@ -1,13 +1,18 @@
-//! The SM Platform Service Model interfaces, one Rust trait per interface
-//! (ADR-010).
+//! The openEHR SM Platform Service Model interfaces, one Rust trait per
+//! interface, transcribed literally (ADR-011): each trait carries its
+//! interface's exact SM call names, parameter names and types, spec returns,
+//! and pre/post-conditions (in the per-method doc-comments). Native errors are
+//! [`SmError`](crate::error::SmError) over `CALL_STATUS_TYPE` — **no**
+//! `openehr_its::rest` types in the EHR-core catalog.
 //!
-//! Each trait keeps `#[async_trait]`, `Send + Sync`, and default
-//! `Err(ApiError::NotImplemented)` bodies; the concrete platform component
-//! (`ehrbase`) implements them and every protocol adapter (`ehrbase-rest`)
-//! consumes them. The EHR mega-service is split along the SM's own interface
-//! boundaries (`I_EHR_SERVICE` / `I_EHR_STATUS` / `I_EHR_COMPOSITION` /
-//! `I_EHR_DIRECTORY` / `I_EHR_CONTRIBUTION`).
+//! The EHR mega-service is split along the SM's own interface boundaries
+//! (`I_EHR_SERVICE` / `I_EHR_STATUS` / `I_EHR_COMPOSITION` / `I_EHR_DIRECTORY`
+//! / `I_EHR_CONTRIBUTION`), with the per-EHR `I_EHR` accessor realized as the
+//! generic [`IEhr`](crate::IEhr) handle. ITS-REST-only operations the SM does
+//! not define (item-tag CRUD, `*_latest_meta` decoration) live in the
+//! [`adapter`] extension traits, clearly separated with `PORT NOTE`s.
 
+pub mod adapter;
 pub mod admin;
 pub mod composition;
 pub mod contribution;
@@ -24,9 +29,10 @@ pub mod terminology;
 pub mod validity;
 pub mod web_template;
 
+pub use adapter::{ItemTagAdapter, VersionMetaAdapter};
 pub use admin::{AdminArchive, AdminService, StatTimeRange};
 pub use composition::EhrCompositionService;
-pub use contribution::EhrContributionService;
+pub use contribution::{EhrContributionService, TimeRange};
 pub use definition::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService};
 pub use demographic::DemographicService;
 pub use directory::EhrDirectoryService;

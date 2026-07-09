@@ -14,19 +14,23 @@
 //! declaration with `PORT NOTE`s. Design set: `docs/design/sm-platform/`.
 
 pub mod backend;
+pub mod ehr_handle;
 pub mod error;
 pub mod services;
 pub mod types;
 
-pub use backend::{Backend, StubBackend};
-pub use error::{CallStatus, CallStatusType};
+pub use backend::Platform;
+pub use ehr_handle::{
+    EhrCompositionHandle, EhrContributionHandle, EhrDirectoryHandle, EhrStatusHandle, IEhr,
+};
+pub use error::{CallStatus, CallStatusType, SmError};
 pub use services::{
     AdminArchive, AdminService, DefinedTerm, DefinitionAdl2Service, DefinitionAdl14Service,
     DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
-    EhrDirectoryService, EhrService, EhrStatusService, QueryService, StatTimeRange, SystemLog,
-    TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
-    TerminologyRelation, TerminologyRelationError, TerminologyService, ValidityChecker,
-    WebTemplateService,
+    EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter, QueryService, StatTimeRange,
+    SystemLog, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
+    TerminologyRelation, TerminologyRelationError, TerminologyService, TimeRange, ValidityChecker,
+    VersionMetaAdapter, WebTemplateService,
 };
 pub use types::{
     AqlQueryRequest, EhrSummary, Page, PartyKind, PlatformService, QueryDescriptor, QueryOutcome,

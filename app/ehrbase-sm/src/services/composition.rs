@@ -1,137 +1,125 @@
-//! The SM `I_EHR_COMPOSITION` interface — COMPOSITION operations.
+//! The SM `I_EHR_COMPOSITION` interface — the literal openEHR Platform Service
+//! Model call set
+//! (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_composition.adoc`; digest
+//! `docs/design/sm-platform/02-ehr-service.md` §5). "Interface for commit and
+//! retrieve of Compositions, with implicit Contribution creation."
 
 use async_trait::async_trait;
 use serde_json::Value;
+use uuid::Uuid;
 
-use openehr_its::rest::generated::ehr::{
-    CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
-    CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
-    CompositionUpdateParams, VersionedCompositionGetParams,
-    VersionedCompositionRevisionHistoryParams, VersionedCompositionVersionGetAtTimeParams,
-    VersionedCompositionVersionGetByIdParams,
-};
-use openehr_its::rest::runtime::ApiError;
+use openehr_base::prelude::ObjectVersionId;
 
-use crate::types::{ResourceMeta, ServiceResponse};
+use crate::error::SmError;
+use crate::types::UpdateVersion;
 
-/// The SM `I_EHR_COMPOSITION` interface
-/// (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_composition.adoc`): "Interface
-/// for commit and retrieve of Compositions, with implicit Contribution
-/// creation."
-///
-/// Every method defaults to `NotImplemented`, so the [`StubBackend`] (and any
-/// partial backend) inherits a `501` until the real service overrides it.
-///
-/// [`StubBackend`]: crate::backend::StubBackend
+/// `I_EHR_COMPOSITION` — COMPOSITION operations, one Rust method per SM call.
+/// Reads return the canonical `COMPOSITION`/`VERSION`/`VERSIONED_COMPOSITION`
+/// as [`Value`]; the implicit-Contribution writes return the new `version_uid`
+/// (SM `create_composition`/`update_composition` → `UUID`).
 #[async_trait]
 pub trait EhrCompositionService: Send + Sync {
-    /// `POST /ehr/{ehr_id}/composition` — create. `201` + `ETag`/`Location`;
-    /// body per `Prefer` (`201_COMPOSITION.yaml`).
-    async fn composition_create(
+    /// `has_composition (an_ehr_id: UUID, a_version_uid: OBJECT_VERSION_ID):
+    /// Boolean` — pre `has_ehr`. Error `ehr_id_does_not_exist`.
+    async fn has_composition(
         &self,
-        _params: CompositionCreateParams,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<bool, SmError>;
 
-    /// `GET /ehr/{ehr_id}/composition/{uid_based_id}` — retrieve. `200` +
-    /// `ETag`/`Location`, or a deleted read → empty body (→ `204`).
-    async fn composition_get(
+    /// `get_composition_latest (an_ehr_id: UUID, a_versioned_object_uid: UUID):
+    /// COMPOSITION` — pre `has_ehr` + `has_composition`. Error
+    /// `composition_does_not_exist`. A logically deleted composition resolves
+    /// to `Value::Null` (→ wire `204`).
+    async fn get_composition_latest(
         &self,
-        _params: CompositionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+    ) -> Result<Value, SmError>;
 
-    /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}` — update. `200` +
-    /// `ETag`/`Location`; body per `Prefer` (`200_COMPOSITION_updated.yaml`).
-    async fn composition_update(
+    /// `get_composition_at_time (an_ehr_id, a_versioned_object_uid: UUID,
+    /// a_time: Iso8601_date_time [0..1]): COMPOSITION` — no time ⇒ latest.
+    async fn get_composition_at_time(
         &self,
-        _params: CompositionUpdateParams,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+        a_time: Option<String>,
+    ) -> Result<Value, SmError>;
 
-    /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}` — logical delete. `204`
-    /// + `ETag`/`Location` of the deleted version (`204_COMPOSITION_deleted.yaml`).
-    async fn composition_delete(
+    /// `get_composition_at_version (an_ehr_id, a_version_uid:
+    /// OBJECT_VERSION_ID): COMPOSITION` — errors `ehr_does_not_exist`,
+    /// `object_version_does_not_exist`.
+    async fn get_composition_at_version(
         &self,
-        _params: CompositionDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<Value, SmError>;
 
-    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}`.
-    /// `200_VERSIONED_COMPOSITION` (no `ETag`/`Location`).
-    async fn versioned_composition_get(
+    /// `get_versioned_composition (an_ehr_id, a_versioned_object_uid: UUID):
+    /// VERSIONED_COMPOSITION` — pre `has_ehr`. Error
+    /// `versioned_composition_does_not_exist`.
+    async fn get_versioned_composition(
         &self,
-        _params: VersionedCompositionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+    ) -> Result<Value, SmError>;
+
+    /// `create_composition (an_ehr_id: UUID, a_comp: UV_COMPOSITION): UUID` —
+    /// pre `has_ehr` + `definitions_valid` + `valid_content`; post
+    /// `has_composition(an_ehr_id, Result)`. Errors
+    /// `composition_already_exists`, `definition_unknown`, `content_invalid`.
+    /// Creates a VERSIONED_OBJECT + ORIGINAL_VERSION + CONTRIBUTION.
+    async fn create_composition(
+        &self,
+        an_ehr_id: Uuid,
+        a_comp: UpdateVersion,
+    ) -> Result<String, SmError>;
+
+    /// `update_composition (an_ehr_id: UUID, a_comp: UV_COMPOSITION): UUID` —
+    /// pre `has_ehr` + `definitions_valid` + `valid_content`;
+    /// `a_comp.preceding_version_uid` must match the current version
+    /// (optimistic lock → `version_mismatch`). New ORIGINAL_VERSION +
+    /// CONTRIBUTION. Error `composition_does_not_exist`.
+    async fn update_composition(
+        &self,
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+        a_comp: UpdateVersion,
+    ) -> Result<String, SmError>;
+
+    /// `delete_composition (an_ehr_id: UUID, a_version_uid: OBJECT_VERSION_ID)`
+    /// — logical delete: a new version with content removed, lifecycle
+    /// `523|deleted|`. Returns the deleted `version_uid` (for the wire
+    /// `204_COMPOSITION_deleted` `ETag`/`Location`).
+    async fn delete_composition(
+        &self,
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<String, SmError>;
+
+    // ── ITS-REST wire assembly (adapter-support, not single SM calls) ───────
 
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history`.
-    async fn versioned_composition_revision_history(
+    async fn composition_revision_history(
         &self,
-        _params: VersionedCompositionRevisionHistoryParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+    ) -> Result<Value, SmError>;
 
-    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version` —
-    /// the VERSION extant at a time. `200_VERSION_of_COMPOSITION_at_time`:
-    /// `ETag`/`Location`.
-    async fn versioned_composition_version_get_at_time(
+    /// `GET …/versioned_composition/{versioned_object_uid}/version` — the
+    /// `ORIGINAL_VERSION` extant at `a_time` (or latest).
+    async fn composition_version_at_time(
         &self,
-        _params: VersionedCompositionVersionGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+        a_time: Option<String>,
+    ) -> Result<Value, SmError>;
 
-    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}`
-    /// — the `ORIGINAL_VERSION`. `200_VERSION` (no `ETag`/`Location`).
-    async fn versioned_composition_version_get_by_id(
+    /// `GET …/versioned_composition/{versioned_object_uid}/version/{version_uid}`
+    /// — the `ORIGINAL_VERSION` at a specific version.
+    async fn composition_original_version(
         &self,
-        _params: VersionedCompositionVersionGetByIdParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
-
-    /// `GET /ehr/{ehr_id}/composition/{uid_based_id}/tags`.
-    async fn composition_tags_get(
-        &self,
-        _params: CompositionTagsGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
-
-    /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags`.
-    async fn composition_tags_update(
-        &self,
-        _params: CompositionTagsUpdateParams,
-        _body: Vec<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
-
-    /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}`.
-    async fn composition_tags_delete(
-        &self,
-        _params: CompositionTagsDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
-    }
-
-    /// The current COMPOSITION version metadata, for the latest `version_uid` in
-    /// the `ETag`/`Location` of a `409`/`412`
-    /// (`409_COMPOSITION_with_uid_based_id.yaml` / `412_COMPOSITION.yaml`).
-    async fn composition_latest_meta(
-        &self,
-        _ehr_id: String,
-        _uid_based_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
-        Ok(None)
-    }
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<Value, SmError>;
 }
