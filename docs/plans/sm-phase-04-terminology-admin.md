@@ -118,6 +118,5 @@ every interface's verbatim call set with citations; the `.adoc` files under
 - [ ] `ehrbase-rest` = the full wire↔SM mapping (params decoding, Prefer/
       ETag/Location, the SmError→HTTP table); `ehrbase` implements the
       catalog directly (api/* delegation dissolved)
-- [ ] Gates: workspace green; ECC zero-drift 211/318 (wire byte-identical);
-      wave-1 (terminology/admin) verification folded in
+- [ ] Gates: workspace green (build/nextest/clippy/fmt) — **ECC suspended during the rebuild (owner ruling 2026-07-09)**; conformance re-converges at P19; in-repo tests stay green (spec-justified expectation changes allowed, cited + listed, never deleted)
 - [ ] Then wave 3: dump/load (unchanged scope)
