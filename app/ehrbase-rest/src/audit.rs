@@ -13,7 +13,7 @@
 //!   the auth middleware ([`crate::auth`]).
 //!
 //! Coverage is **total**: every generated operation is in the audit table
-//! ([`ehrbase_audit::table`]), so every matched request emits an operation
+//! ([`crate::audit_table`]), so every matched request emits an operation
 //! record. When the envelope carries no `ResourceMeta` (templates, stored
 //! queries, demographic parties), the participant-object id is derived
 //! generically from the request path ([`object_id_from_path`]). Successful
@@ -21,8 +21,10 @@
 //! unless `suppress_login_events` (§4); auth rejections (401/403) emit a
 //! failure record with the principal `UNKNOWN` on 401.
 //!
-//! The request path never blocks on auditing ([`AuditSender::emit`] is a
-//! `try_send`); fail-closed only rejects auditable *operations* (§8.4).
+//! Emission goes through the platform's SM [`SystemLog`](ehrbase_sm::SystemLog)
+//! component ([`AppState::backend`]): the request path never blocks on auditing
+//! (`SystemLog::emit` is a non-blocking `try_send`); fail-closed only rejects
+//! auditable *operations* (§8.4).
 
 use std::net::SocketAddr;
 
@@ -31,11 +33,11 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 
-use ehrbase_audit::{
-    AuditEvent, AuditSender, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, audit_for,
-};
+use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, Platform};
 
+use crate::audit_table::audit_for;
 use crate::auth::Principal;
+use crate::state::AppState;
 
 /// The matched ITS-REST operation id, inserted by the dispatch layer onto the
 /// response (§8.2 step 1). Present iff a request reached the generic dispatcher.
@@ -52,9 +54,14 @@ pub struct AuditObject {
     pub uid: Option<String>,
 }
 
-/// The audit middleware. Installed via `from_fn_with_state(sender, middleware)`.
-pub async fn middleware(State(sender): State<AuditSender>, req: Request, next: Next) -> Response {
-    if !sender.enabled() {
+/// The audit middleware. Installed via `from_fn_with_state(state, middleware)`;
+/// emission is routed through the platform's SM `SystemLog` component.
+pub async fn middleware<S: Platform>(
+    State(state): State<AppState<S>>,
+    req: Request,
+    next: Next,
+) -> Response {
+    if !state.backend().audit_enabled() {
         return next.run(req).await;
     }
 
@@ -77,8 +84,7 @@ pub async fn middleware(State(sender): State<AuditSender>, req: Request, next: N
     if let Some(AuditOpId(op)) = op
         && let Some((action, object_class)) = audit_for(op)
     {
-        let mut event =
-            AuditEvent::new(action, object_class, EventOutcome::from_http_status(status));
+        let mut event = AuditEvent::new(action, object_class, outcome_from_status(status));
         fill_common(&mut event, principal.as_ref(), client_ip.clone(), timestamp);
         event.ehr_id = object
             .as_ref()
@@ -88,7 +94,7 @@ pub async fn middleware(State(sender): State<AuditSender>, req: Request, next: N
             .as_ref()
             .and_then(|o| o.uid.clone())
             .or_else(|| object_id_from_path(op, &path));
-        op_rejected = sender.emit(event) == EmitOutcome::Rejected;
+        op_rejected = state.backend().emit(event) == EmitOutcome::Rejected;
     }
 
     // 2) The authentication record. Failures (401 unauthenticated, 403
@@ -99,19 +105,19 @@ pub async fn middleware(State(sender): State<AuditSender>, req: Request, next: N
         let mut event = AuditEvent::new(
             EventActionCode::Execute,
             ObjectClass::ApplicationActivity,
-            EventOutcome::from_http_status(status),
+            outcome_from_status(status),
         );
         // 401 → principal UNKNOWN; 403 → attributed to the authenticated caller.
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
-        let _ = sender.emit(event);
-    } else if principal.is_some() && !sender.suppress_login_events() {
+        let _ = state.backend().emit(event);
+    } else if principal.is_some() && !state.backend().suppress_login_events() {
         let mut event = AuditEvent::new(
             EventActionCode::Execute,
             ObjectClass::ApplicationActivity,
             EventOutcome::Success,
         );
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
-        let _ = sender.emit(event);
+        let _ = state.backend().emit(event);
     }
 
     if op_rejected {
@@ -124,6 +130,16 @@ pub async fn middleware(State(sender): State<AuditSender>, req: Request, next: N
             .into_response();
     }
     resp
+}
+
+/// Map an HTTP status code to a DICOM `EventOutcomeIndicator` (binding doc §8.2):
+/// 2xx→Success, 5xx→SeriousFailure, everything else (incl. 401/403/4xx)→MinorFailure.
+const fn outcome_from_status(status: u16) -> EventOutcome {
+    match status {
+        200..=299 => EventOutcome::Success,
+        500..=599 => EventOutcome::SeriousFailure,
+        _ => EventOutcome::MinorFailure,
+    }
 }
 
 fn fill_common(

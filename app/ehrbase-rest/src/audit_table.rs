@@ -8,7 +8,7 @@
 //! the total-coverage guard test turns into a build failure until it is
 //! classified — the same discipline as the codegen drift checks (§8.3).
 
-use crate::event::{EventActionCode, ObjectClass};
+use ehrbase_sm::{EventActionCode, ObjectClass};
 
 /// The audit classification of an ITS-REST operation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -212,7 +212,7 @@ mod tests {
         }
         assert!(
             unclassified.is_empty(),
-            "unclassified ITS-REST operations (add to app/ehrbase-audit/src/table.rs): {unclassified:?}"
+            "unclassified ITS-REST operations (add to app/ehrbase-rest/src/audit_table.rs): {unclassified:?}"
         );
     }
 

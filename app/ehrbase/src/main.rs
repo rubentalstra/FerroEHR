@@ -11,11 +11,11 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
-use ehrbase_audit::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
+use ehrbase::signing::{Signer, SigningConfig};
+use ehrbase::system_log::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
 use ehrbase_authz::AuthzConfig;
 use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry, ManagementConfig};
 use ehrbase_rest::{AuthzHandle, Observability};
-use ehrbase_signing::{Signer, SigningConfig};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -147,7 +147,14 @@ async fn serve() -> anyhow::Result<()> {
         "version signing configured"
     );
 
-    let service = EhrbaseService::new(pool).with_signer(signer);
+    // The audit sender (when enabled) is injected into the platform service:
+    // it realizes the SM `SystemLog` component the REST audit layer emits
+    // through (ADR-011, ehrbase-audit dissolved into the platform crate).
+    let audit_enabled = audit_sender.is_some();
+    let mut service = EhrbaseService::new(pool).with_signer(signer);
+    if let Some(sender) = audit_sender {
+        service = service.with_audit(sender);
+    }
 
     // Build the RBAC gate. Only wired when authentication is enabled (the gate
     // runs after authentication); `from_config` yields `None` when RBAC is
@@ -161,20 +168,14 @@ async fn serve() -> anyhow::Result<()> {
     tracing::info!(
         bind = %rest_config.bind,
         base_path = %rest_config.base_path,
-        audit = audit_sender.is_some(),
+        audit = audit_enabled,
         rbac = authz.is_some(),
         management = observability.management.enabled,
         "starting ehrbase"
     );
-    ehrbase_rest::serve_full(
-        rest_config,
-        Arc::new(service),
-        audit_sender,
-        authz,
-        observability,
-    )
-    .await
-    .context("serving ehrbase-rest")?;
+    ehrbase_rest::serve_full(rest_config, Arc::new(service), authz, observability)
+        .await
+        .context("serving ehrbase-rest")?;
 
     // The server has stopped and dropped its audit-sender clone; drain the queue.
     if let Some(handle) = audit_handle {
@@ -216,7 +217,7 @@ async fn start_audit(
     let resolver = config
         .resolve_subject
         .then(|| subject_resolver(pool.clone()));
-    match ehrbase_audit::start(config.clone(), resolver).await {
+    match ehrbase::system_log::start(config.clone(), resolver).await {
         Ok((sender, handle)) => (Some(sender), Some(handle)),
         Err(e) => {
             tracing::error!("ATNA audit failed to start ({e}); continuing without auditing");

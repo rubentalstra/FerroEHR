@@ -1684,11 +1684,10 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum",
+ "base64 0.22.1",
  "clap",
- "ehrbase-audit",
  "ehrbase-authz",
  "ehrbase-rest",
- "ehrbase-signing",
  "ehrbase-sm",
  "figment",
  "http",
@@ -1709,41 +1708,29 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "pgp",
  "quick-xml",
+ "rand 0.8.6",
  "regex",
  "reqwest 0.13.4",
+ "rustls",
  "sea-query",
  "sea-query-sqlx",
+ "secrecy",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
  "sqlx",
  "testcontainers",
  "testcontainers-modules",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-rustls",
  "tower",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
  "uuid",
-]
-
-[[package]]
-name = "ehrbase-audit"
-version = "0.1.0"
-dependencies = [
- "figment",
- "insta",
- "jiff",
- "metrics",
- "openehr-its",
- "quick-xml",
- "rustls",
- "serde",
- "thiserror 2.0.18",
- "tokio",
- "tokio-rustls",
- "tracing",
 ]
 
 [[package]]
@@ -1773,7 +1760,6 @@ dependencies = [
  "async-trait",
  "axum",
  "bytes",
- "ehrbase-audit",
  "ehrbase-authz",
  "ehrbase-sm",
  "figment",
@@ -1806,20 +1792,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ehrbase-signing"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "figment",
- "pgp",
- "rand 0.8.6",
- "secrecy",
- "serde",
- "sha2 0.11.0",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "ehrbase-sm"
 version = "0.1.0"
 dependencies = [
@@ -1827,7 +1799,6 @@ dependencies = [
  "jiff",
  "openehr-base",
  "openehr-flat",
- "openehr-its",
  "openehr-rm",
  "serde",
  "serde_json",

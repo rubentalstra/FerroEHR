@@ -34,7 +34,10 @@ pub trait EhrIndexService: Send + Sync {
         _status: Option<ResourceStatus>,
         _loc: Option<LocationDesc>,
     ) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `update_ehr_subject_status` — update the `RESOURCE_STATUS` of the
@@ -46,7 +49,10 @@ pub trait EhrIndexService: Send + Sync {
         _subject: SubjectRef,
         _status: ResourceStatus,
     ) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `update_ehr_subject_loc_desc` — update the `LOCATION_DESC` of the
@@ -58,7 +64,10 @@ pub trait EhrIndexService: Send + Sync {
         _subject: SubjectRef,
         _loc: Option<LocationDesc>,
     ) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `remove_ehr_subject` — remove the `subject` association with `ehr_id`
@@ -69,13 +78,19 @@ pub trait EhrIndexService: Send + Sync {
         _ehr_id: String,
         _subject: SubjectRef,
     ) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `remove_subject` — remove all entries for `subject`. Errors:
     /// `subject_id_does_not_exist` → `404`.
     async fn remove_subject(&self, _subject: SubjectRef) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// The subjects associated with `ehr_id` (design-filled read; PORT NOTE on

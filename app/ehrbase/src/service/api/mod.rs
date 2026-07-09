@@ -2,8 +2,10 @@
 //!
 //! [`ehr`] implements the [`ehrbase_rest::EhrService`] envelope seam (the whole
 //! EHR / `EHR_STATUS` / COMPOSITION / DIRECTORY / CONTRIBUTION surface);
-//! [`definition`] implements the generated `DefinitionApi` (templates + stored
-//! queries). [`ehrbase_rest::WebTemplateService`] exposes the service-owned
+//! [`definition`] implements the SM `I_DEFINITION_*` traits plus the wire-shaped
+//! [`ehrbase_sm::DefinitionAdapter`] extension (templates + stored queries) —
+//! the generated ITS-REST `DefinitionApi` is no longer a `Platform` supertrait
+//! (ADR-011). [`ehrbase_rest::WebTemplateService`] exposes the service-owned
 //! `WebTemplate` cache to the REST layer (one resolution for validation, FLAT
 //! / STRUCTURED, and `wt+json` — W2-K/F-13-02).
 //!

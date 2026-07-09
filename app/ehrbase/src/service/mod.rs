@@ -43,7 +43,8 @@ mod vobject;
 
 use std::sync::Arc;
 
-use ehrbase_signing::Signer;
+use crate::signing::Signer;
+use crate::system_log::AuditSender;
 use openehr_flat::cache::WebTemplateCache;
 use openehr_its::rest::runtime::ApiError;
 use sqlx::PgPool;
@@ -64,6 +65,12 @@ pub struct EhrbaseService {
     /// `docs/design/version-signing.md`). Defaults to server-side `digest`
     /// signing; `main.rs` wires the configured [`Signer`].
     signer: Arc<Signer>,
+    /// The optional IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
+    /// component (`crate::system_log`). `None` = auditing off; the binary wires
+    /// the configured [`AuditSender`] via [`Self::with_audit`]. Read only
+    /// through the [`SystemLog`](ehrbase_sm::SystemLog) impl in
+    /// `crate::system_log`.
+    pub(crate) audit: Option<AuditSender>,
 }
 
 impl EhrbaseService {
@@ -76,6 +83,7 @@ impl EhrbaseService {
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
             web_templates: WebTemplateCache::default(),
             signer: Arc::new(Signer::digest_default()),
+            audit: None,
         }
     }
 
@@ -91,6 +99,15 @@ impl EhrbaseService {
     #[must_use]
     pub fn with_signer(mut self, signer: Arc<Signer>) -> Self {
         self.signer = signer;
+        self
+    }
+
+    /// Install the IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
+    /// component (`crate::system_log`); the binary boots it and wires it here.
+    /// Without it, [`SystemLog`](ehrbase_sm::SystemLog) auditing is off.
+    #[must_use]
+    pub fn with_audit(mut self, sender: AuditSender) -> Self {
+        self.audit = Some(sender);
         self
     }
 

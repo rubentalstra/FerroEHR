@@ -25,9 +25,10 @@ pub use ehr_handle::{
 pub use error::{CallStatus, CallStatusType, SmError};
 pub use platform::Platform;
 pub use services::{
-    AdminArchive, AdminService, DefinedTerm, DefinitionAdl2Service, DefinitionAdl14Service,
-    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
-    EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter, QueryService, StatTimeRange,
+    AdminArchive, AdminService, AuditEvent, DefinedTerm, DefinitionAdapter, DefinitionAdl2Service,
+    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
+    EhrContributionService, EhrDirectoryService, EhrService, EhrStatusService, EmitOutcome,
+    EventActionCode, EventOutcome, ItemTagAdapter, ObjectClass, QueryService, StatTimeRange,
     SystemLog, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
     TerminologyRelation, TerminologyRelationError, TerminologyService, TimeRange, ValidityChecker,
     VersionMetaAdapter, WebTemplateService,

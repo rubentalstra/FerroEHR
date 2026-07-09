@@ -30,7 +30,10 @@ pub trait PartyRelationshipService: Send + Sync {
     /// version, server-side `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + `CONTRIBUTION`.
     /// `201` + `ETag`(version uid)/`Location`; body per `Prefer`.
     async fn party_relationship_create(&self, _body: Value) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/party_relationship/{uid_based_id}` —
@@ -43,7 +46,10 @@ pub trait PartyRelationshipService: Send + Sync {
         _uid_based_id: String,
         _version_at_time: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `PUT /demographic/party_relationship/{uid_based_id}` —
@@ -59,7 +65,10 @@ pub trait PartyRelationshipService: Send + Sync {
         _if_match: String,
         _body: Value,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `DELETE /demographic/party_relationship/{uid_based_id}` —
@@ -71,7 +80,10 @@ pub trait PartyRelationshipService: Send + Sync {
         &self,
         _uid_based_id: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}`
@@ -80,7 +92,10 @@ pub trait PartyRelationshipService: Send + Sync {
         &self,
         _versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}/revision_history`.
@@ -88,7 +103,10 @@ pub trait PartyRelationshipService: Send + Sync {
         &self,
         _versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}/version`
@@ -99,7 +117,10 @@ pub trait PartyRelationshipService: Send + Sync {
         _versioned_object_uid: String,
         _version_at_time: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}`
@@ -111,7 +132,10 @@ pub trait PartyRelationshipService: Send + Sync {
         _versioned_object_uid: String,
         _version_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// The current relationship version metadata, for the latest `version_uid`

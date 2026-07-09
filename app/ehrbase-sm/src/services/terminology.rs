@@ -238,13 +238,19 @@ pub trait TerminologyService: Send + Sync {
     /// `get_terminology_ids` (0..1) — the identifiers of all terminologies known
     /// to this server; the identifiers usable in subsequent calls.
     async fn get_terminology_ids(&self) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `has_terminology` (1..1) — True if this server has a terminology with the
     /// identifier `terminology_id`.
     async fn has_terminology(&self, _terminology_id: &str) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `get_terminology_description` (1..1) — the description object for the
@@ -253,7 +259,10 @@ pub trait TerminologyService: Send + Sync {
         &self,
         _terminology_id: &str,
     ) -> Result<TerminologyDescription, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `has_term` (1..1) — True if `code` is known in terminology
@@ -265,7 +274,10 @@ pub trait TerminologyService: Send + Sync {
         _code: &str,
         _at_date: Option<String>,
     ) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `get_term` (1..1) — a term definition from a terminology, optionally
@@ -279,7 +291,10 @@ pub trait TerminologyService: Send + Sync {
         _attributes: Option<BTreeMap<String, String>>,
         _at_date: Option<String>,
     ) -> Result<TerminologyExtract, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `subsumes` (1..1) — True if `candidate_child_code` is in the strict
@@ -290,7 +305,10 @@ pub trait TerminologyService: Send + Sync {
         _ref_code: &str,
         _candidate_child_code: &str,
     ) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `value_set_validate` (1..1) — True if `candidate_code` is in the value set
@@ -302,7 +320,10 @@ pub trait TerminologyService: Send + Sync {
         _candidate_code: &str,
         _at_date: Option<String>,
     ) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `has_value_set` (1..1) — True if this service has a value-set identified
@@ -312,7 +333,10 @@ pub trait TerminologyService: Send + Sync {
         _terminology_id: &str,
         _value_set_code: &str,
     ) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `get_value_set` (1..1) — the value-set `value_set_code`.
@@ -322,7 +346,10 @@ pub trait TerminologyService: Send + Sync {
         _terminology_id: &str,
         _value_set_code: &str,
     ) -> Result<TerminologyExtract, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 }
 

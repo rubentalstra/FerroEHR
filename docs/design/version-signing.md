@@ -1,5 +1,13 @@
 # Version Signing (VERSION.signature) — design
 
+> **AMENDMENT (2026-07-09, ADR-011 crate consolidation):** the former leaf
+> crate `ehrbase-signing` has been dissolved into the `ehrbase` platform crate
+> as the module **`ehrbase::signing`** (RM common §Digital Signature is core
+> change-control behaviour). All references below to the `ehrbase-signing`
+> *crate* / `ehrbase_signing::*` now read as the `ehrbase::signing` *module* /
+> `ehrbase::signing::*`; its source (`config`/`key`/`signer`/`verify`) moved to
+> `app/ehrbase/src/signing/`. Behaviour and public items are unchanged.
+
 - **Status:** implemented (2026-07-07; owner-prioritized — closed the sole
   STANDARD-profile gap in the CNF conformance claim, see
   `docs/design/conformance-framework.md` §3.1). Landed on

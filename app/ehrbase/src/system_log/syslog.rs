@@ -19,7 +19,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpStream, UdpSocket};
 use tokio_rustls::TlsConnector;
 
-use crate::config::AuditConfig;
+use crate::system_log::config::AuditConfig;
 
 // PRI = facility*8 + severity (RFC 5424 §6.2.1). IHE ATNA logs security/audit
 // events: facility 10 ("security/authorization messages") and severity 5
@@ -98,10 +98,10 @@ impl Transport {
     /// (missing CA, unreadable identity, bad server name).
     pub async fn connect(config: &AuditConfig) -> io::Result<Self> {
         match config.transport {
-            crate::config::Transport::Udp => Ok(Transport::Udp(
+            crate::system_log::config::Transport::Udp => Ok(Transport::Udp(
                 UdpTransport::connect(&config.repository_host, config.repository_port).await?,
             )),
-            crate::config::Transport::Tls => {
+            crate::system_log::config::Transport::Tls => {
                 Ok(Transport::Tls(Box::new(TlsTransport::from_config(config)?)))
             }
         }

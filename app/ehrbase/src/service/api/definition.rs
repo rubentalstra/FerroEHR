@@ -1,156 +1,103 @@
-//! `DefinitionApi` — stored-query CRUD (on the `stored_query` table) and OPT 1.4
-//! operational-template CRUD (on the `template_store` table, ingested into the
-//! `openehr-its::opt14` model), plus ADL2 template upload + list (on the
-//! `adl2_artefact` store; SM-2, `I_DEFINITION_ADL2`). The ADL2 `get` is served
-//! via the SM `DefinitionAdl2Service::get_artefact` seam in the dispatcher (ADL2
-//! is text); the ADL2 `example`/`version` template methods keep the generated
-//! `NotImplemented` (501) default — they need an example generator / a cADL
-//! source parser (none in the tree yet; ADL2 is OPTIONAL for CNF and untested).
+//! The DEFINITION surface on [`EhrbaseService`]: the SM `I_DEFINITION_*`
+//! interfaces ([`DefinitionAdl14Service`] / [`DefinitionAdl2Service`] /
+//! [`DefinitionQueryService`]) plus the ITS-REST wire-shaped
+//! [`DefinitionAdapter`] extension (ADR-011 — the generated ITS-REST
+//! `DefinitionApi` is no longer a `Platform` supertrait; the definition
+//! dispatcher maps the wire onto these native traits).
 //!
-//! The SM Definitions native API also carries `I_DEFINITION_ADL2` in full
-//! ([`DefinitionAdl2Service`] below), keyed by `ARCHETYPE_HRID`.
+//! Storage: stored queries on the `stored_query` table; OPT 1.4 operational
+//! templates on the `template_store` table (ingested into the
+//! `openehr-its::opt14` model); ADL2 artefacts on the `adl2_artefact` store
+//! (SM-2). The ADL2 `get` is served via the SM `DefinitionAdl2Service::get_artefact`
+//! seam in the dispatcher (ADL2 is text); the ADL2 `example`/`version` wire ops
+//! stay `501` in the dispatcher — they need an example generator / a cADL source
+//! parser (none in the tree yet; ADL2 is OPTIONAL for CNF and untested).
 
 use async_trait::async_trait;
 use serde_json::Value;
 
 use ehrbase_sm::SmError;
 use ehrbase_sm::{
-    DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, Page, QueryDescriptor,
+    DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, Page,
+    QueryDescriptor,
 };
 use openehr_flat::{DetailLevel, ExampleType};
-use openehr_its::rest::generated::definition::{
-    DefinitionApi, DefinitionQueryListParams, DefinitionQueryStoreYamlParams,
-    DefinitionQueryVersionGetParams, DefinitionQueryVersionStoreYamlParams,
-    DefinitionTemplateAdl2ListParams, DefinitionTemplateAdl2UploadParams,
-    DefinitionTemplateAdl14ExampleGetParams, DefinitionTemplateAdl14GetParams,
-    DefinitionTemplateAdl14ListParams, DefinitionTemplateAdl14UploadParams,
-};
-use openehr_its::rest::runtime::ApiError;
 
 use crate::service::EhrbaseService;
 
+// ── ITS-REST Definitions adapter-support (wire-shaped) ───────────────────────
+//
+// The wire-only rich shapes (template summaries, the example COMPOSITION,
+// `StoredQuery` descriptors) the ITS-REST `DEFINITION` group returns, which the
+// SM `I_DEFINITION_*` interfaces do not express. All native (`serde_json::Value`
+// + `SmError`), so `ehrbase-sm` stays protocol-free (ADR-011). The
+// `get_opt`/`get_artefact` retrievals stay on the SM traits below.
 #[async_trait]
-impl DefinitionApi for EhrbaseService {
-    // ── OPT 1.4 operational templates (ADL 1.4 — CNF-required) ───────────────
-    async fn definition_template_adl1_4_upload(
-        &self,
-        _params: DefinitionTemplateAdl14UploadParams,
-        body: Value,
-    ) -> Result<Value, ApiError> {
-        // The upload body is the OPT 1.4 canonical XML (decoded upstream to a
-        // JSON string by the lenient body reader).
-        let xml = body.as_str().ok_or_else(|| {
-            ApiError::BadRequest("expected an OPT 1.4 XML template body".to_owned())
-        })?;
-        Ok(self.store_template(xml).await?)
+impl DefinitionAdapter for EhrbaseService {
+    async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError> {
+        // The OPT 1.4 canonical XML is parsed + stored (opt14); the wire `201`
+        // body is the created template summary.
+        Ok(self.store_template(&opt_xml).await?)
     }
 
-    async fn definition_template_adl1_4_list(
-        &self,
-        _params: DefinitionTemplateAdl14ListParams,
-    ) -> Result<Vec<Value>, ApiError> {
+    async fn template_adl14_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_templates().await?)
     }
 
-    async fn definition_template_adl1_4_get(
+    async fn template_adl14_example(
         &self,
-        params: DefinitionTemplateAdl14GetParams,
-    ) -> Result<Value, ApiError> {
-        // The canonical retrieval artifact is the stored OPT XML; returned as a
-        // JSON string that the dispatcher serves as `application/xml`.
-        Ok(Value::String(
-            self.get_template_xml(&params.template_id).await?,
-        ))
-    }
-
-    async fn definition_template_adl1_4_example_get(
-        &self,
-        params: DefinitionTemplateAdl14ExampleGetParams,
-    ) -> Result<Value, ApiError> {
+        template_id: String,
+        detail_level: Option<String>,
+        kind: Option<String>,
+    ) -> Result<Value, SmError> {
         // `type`/`detail_level` are the dev-OAS `example_type`/`example_detail_level`
         // enums (`definition-validation.openapi.yaml`); an out-of-enum value is a
-        // `400 Bad Request` (the endpoint's `400` response). All three detail
-        // levels are implemented, so no "unsupported level" fallback applies.
-        let level = DetailLevel::from_query(params.detail_level.as_deref())
-            .map_err(ApiError::BadRequest)?;
-        let kind =
-            ExampleType::from_query(params.r#type.as_deref()).map_err(ApiError::BadRequest)?;
-        Ok(self
-            .template_example(&params.template_id, level, kind)
-            .await?)
+        // `precondition_violation` (→ `400`). All three detail levels are
+        // implemented, so no "unsupported level" fallback applies.
+        let level =
+            DetailLevel::from_query(detail_level.as_deref()).map_err(SmError::precondition)?;
+        let kind = ExampleType::from_query(kind.as_deref()).map_err(SmError::precondition)?;
+        Ok(self.template_example(&template_id, level, kind).await?)
     }
 
-    // ── ADL2 templates (I_DEFINITION_ADL2 wire; native-API backed) ───────────
-    //
-    // Upload + list are backed by the `adl2_artefact` store. `get` is served by
-    // the dispatcher through the SM `DefinitionAdl2Service::get_artefact` seam
-    // (ADL2 artefacts are text; the generated map-returning `..._get` op models
-    // the JSON `OperationalTemplateV2` form, which needs a cADL parser — a later
-    // phase), so `definition_template_adl2_get` keeps the generated `501`
-    // default. `example_get`/`version_get` likewise stay `501` (they need an
-    // example generator / a parser — see the dispatcher PORT NOTEs).
-    async fn definition_template_adl2_upload(
-        &self,
-        _params: DefinitionTemplateAdl2UploadParams,
-        body: Value,
-    ) -> Result<Value, ApiError> {
-        // The upload body is the ADL2 operational-template source (text/plain,
-        // decoded upstream to a JSON string by the dispatcher). Store it and
-        // return the stored ARCHETYPE_HRID; the dispatcher builds the `Location`
-        // header + the `Prefer` body from it (201_Template_adl2_upload).
-        let source = body.as_str().ok_or_else(|| {
-            ApiError::BadRequest("expected an ADL2 operational-template source body".to_owned())
-        })?;
-        Ok(Value::String(self.adl2_upload(source).await?))
+    async fn template_adl2_upload(&self, source: String) -> Result<String, SmError> {
+        // ADL2 operational-template source (text/plain). Store it and return the
+        // stored ARCHETYPE_HRID; the dispatcher builds `Location` + the `Prefer`
+        // body from it (201_Template_adl2_upload). Invalid source → 422; a
+        // duplicate HRID is handled by replace (SM upload semantics).
+        Ok(self.adl2_upload(&source).await?)
     }
 
-    async fn definition_template_adl2_list(
-        &self,
-        _params: DefinitionTemplateAdl2ListParams,
-    ) -> Result<Vec<Value>, ApiError> {
+    async fn template_adl2_list(&self) -> Result<Vec<Value>, SmError> {
         // The OAS `filter_template_id`/`concept`/`filter_version`/`offset`/`fetch`
         // filters are not yet applied (no cADL metadata extraction); the full
         // template+OPT list is returned. PORT NOTE on `adl2_template_list`.
         Ok(self.adl2_template_list(Page::all()).await?)
     }
 
-    async fn definition_query_list(
+    async fn query_list(&self, qualified_query_name: String) -> Result<Vec<Value>, SmError> {
+        Ok(self.list_stored_queries(&qualified_query_name).await?)
+    }
+
+    async fn query_version_get(
         &self,
-        params: DefinitionQueryListParams,
-    ) -> Result<Vec<Value>, ApiError> {
+        qualified_query_name: String,
+        version: String,
+    ) -> Result<Value, SmError> {
         Ok(self
-            .list_stored_queries(&params.qualified_query_name)
+            .get_stored_query(&qualified_query_name, Some(&version))
             .await?)
     }
 
-    async fn definition_query_version_get(
+    async fn query_store(
         &self,
-        params: DefinitionQueryVersionGetParams,
-    ) -> Result<Value, ApiError> {
-        Ok(self
-            .get_stored_query(&params.qualified_query_name, Some(&params.version))
-            .await?)
-    }
-
-    async fn definition_query_store_yaml(
-        &self,
-        params: DefinitionQueryStoreYamlParams,
+        qualified_query_name: String,
+        version: Option<String>,
         body: String,
-    ) -> Result<(), ApiError> {
-        // The effective version is returned for the caller's `Location` header,
-        // but the generated trait method is bodyless (`()`); the dispatcher
-        // builds `Location` from the resolved name/version it already holds.
-        self.store_query(&params.qualified_query_name, None, body)
-            .await?;
-        Ok(())
-    }
-
-    async fn definition_query_version_store_yaml(
-        &self,
-        params: DefinitionQueryVersionStoreYamlParams,
-        body: String,
-    ) -> Result<(), ApiError> {
-        self.store_query(&params.qualified_query_name, Some(&params.version), body)
+    ) -> Result<(), SmError> {
+        // The effective version is recovered by the dispatcher through the list
+        // seam for the `Location` header; the store itself is bodyless.
+        self.store_query(&qualified_query_name, version.as_deref(), body)
             .await?;
         Ok(())
     }

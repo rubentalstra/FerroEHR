@@ -5,10 +5,12 @@
 //! (ADR-011: no trait objects, no stub backend — the binary monomorphizes it
 //! over the DB-backed `EhrbaseService`, the tests over a mock). It is cheap to
 //! clone (an `Arc` inside) and carries the configuration, the service `S` the
-//! dispatcher calls into, the optional ATNA audit sender, the optional
-//! authorization handle, and the [`Observability`] bundle (management surface +
-//! telemetry handles + health registry) — which defaults to fully off, so a
-//! server without observability is the clean default.
+//! dispatcher calls into, the optional authorization handle, and the
+//! [`Observability`] bundle (management surface + telemetry handles + health
+//! registry) — which defaults to fully off, so a server without observability
+//! is the clean default. ATNA auditing is no longer state-held: it lives in the
+//! platform service `S` (the SM `SystemLog` component), reached through
+//! [`AppState::backend`].
 //!
 //! The REST layer holds **no caches of its own** — in particular, `WebTemplate`
 //! resolution is a single service-owned concern reached through
@@ -16,7 +18,6 @@
 
 use std::sync::Arc;
 
-use ehrbase_audit::AuditSender;
 use ehrbase_sm::Platform;
 
 use crate::authz::AuthzHandle;
@@ -24,8 +25,8 @@ use crate::config::RestConfig;
 use crate::management::Observability;
 
 /// Cheaply-cloneable application state, generic over the platform service `S`:
-/// the configuration, the service the HTTP dispatcher calls into, the optional
-/// audit sender, and the observability bundle.
+/// the configuration, the service the HTTP dispatcher calls into, and the
+/// observability bundle.
 #[derive(Debug)]
 pub struct AppState<S: Platform> {
     inner: Arc<Inner<S>>,
@@ -45,8 +46,6 @@ impl<S: Platform> Clone for AppState<S> {
 struct Inner<S: Platform> {
     config: RestConfig,
     backend: Arc<S>,
-    /// The ATNA audit sender, when auditing is wired in (the binary supplies it).
-    audit: Option<AuditSender>,
     /// The authorization handle (the RBAC gate), when access control is wired in
     /// (the binary supplies it); `None` restores authentication-only behaviour.
     authz: Option<Arc<AuthzHandle>>,
@@ -59,18 +58,7 @@ impl<S: Platform> AppState<S> {
     /// its DB-backed service here).
     #[must_use]
     pub fn with_backend(config: RestConfig, backend: Arc<S>) -> Self {
-        Self::with_backend_and_audit(config, backend, None)
-    }
-
-    /// Construct state with a concrete backend and an optional ATNA audit sender
-    /// (observability off, no authorization handle).
-    #[must_use]
-    pub fn with_backend_and_audit(
-        config: RestConfig,
-        backend: Arc<S>,
-        audit: Option<AuditSender>,
-    ) -> Self {
-        Self::with_parts(config, backend, audit, None, Observability::default())
+        Self::with_parts(config, backend, None, Observability::default())
     }
 
     /// Construct state from all parts, including the authorization handle and the
@@ -79,7 +67,6 @@ impl<S: Platform> AppState<S> {
     pub fn with_parts(
         config: RestConfig,
         backend: Arc<S>,
-        audit: Option<AuditSender>,
         authz: Option<Arc<AuthzHandle>>,
         observability: Observability,
     ) -> Self {
@@ -87,7 +74,6 @@ impl<S: Platform> AppState<S> {
             inner: Arc::new(Inner {
                 config,
                 backend,
-                audit,
                 authz,
                 observability,
             }),
@@ -103,11 +89,6 @@ impl<S: Platform> AppState<S> {
     /// The service the HTTP dispatcher calls into.
     pub(crate) fn backend(&self) -> &S {
         &self.inner.backend
-    }
-
-    /// The ATNA audit sender, if auditing is enabled/wired.
-    pub(crate) fn audit(&self) -> Option<AuditSender> {
-        self.inner.audit.clone()
     }
 
     /// The authorization handle (RBAC gate), if access control is wired.

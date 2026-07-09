@@ -56,10 +56,13 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
         },
         auth::middleware,
     ));
-    let api = match state.audit() {
-        Some(sender) => api.layer(from_fn_with_state(sender, crate::audit::middleware)),
-        None => api,
-    };
+    // Always install the ATNA audit layer; it early-returns when the platform's
+    // SM `SystemLog` reports auditing off (`backend().audit_enabled()`), so the
+    // no-audit case costs one check per request.
+    let api = api.layer(from_fn_with_state(
+        state.clone(),
+        crate::audit::middleware::<S>,
+    ));
     let api = api
         .layer(axum::middleware::from_fn(management::http_metrics))
         .layer(axum::middleware::from_fn(management::root_span));

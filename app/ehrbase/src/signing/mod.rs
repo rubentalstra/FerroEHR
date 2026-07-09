@@ -3,8 +3,9 @@
 //! Implements the RM common §"Digital Signature" mechanism
 //! (`docs/specs/openehr/RM/docs/common/master06-change_control_package.adoc`;
 //! `VERSION.signature` / `VERSION.canonical_form()` in
-//! `org.openehr.rm.common.version`) as a leaf application crate (no `ehrbase-*`
-//! deps). Design: `docs/design/version-signing.md`.
+//! `org.openehr.rm.common.version`). Core change-control behaviour, so it lives
+//! in the `ehrbase` platform crate as the `signing` module (ADR-011 crate
+//! consolidation, 2026-07-09). Design: `docs/design/version-signing.md`.
 //!
 //! Two spec-blessed modes, both first-class (design §3.2):
 //! - **digest** — `sha256:` + radix-64(SHA-256(canonical_form)): a data-integrity

@@ -19,7 +19,10 @@ use http::{HeaderMap, HeaderValue, StatusCode, header};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
-// DefinitionApi methods resolve through the `dyn Backend` trait object; import only params.
+// The generated `*Params` decode the wire path/query; the operation logic is
+// dispatched onto the SM catalog traits (`DefinitionAdl14Service` /
+// `DefinitionAdl2Service`) + the wire-shaped `DefinitionAdapter` extension —
+// the generated `DefinitionApi` is no longer part of `Platform` (ADR-011).
 use openehr_its::rest::generated::definition::{
     DefinitionQueryListParams, DefinitionQueryStoreYamlParams, DefinitionQueryVersionGetParams,
     DefinitionQueryVersionStoreYamlParams, DefinitionTemplateAdl2ExampleGetParams,
@@ -31,7 +34,7 @@ use openehr_its::rest::generated::definition::{
 
 use super::{BoxResponse, RequestParts};
 use crate::error::RestError;
-use ehrbase_sm::Platform;
+use ehrbase_sm::{DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service, Platform};
 
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -59,41 +62,45 @@ async fn run<S: Platform>(
 
     match op {
         "definition_template_adl1.4_list" => {
-            let p = params::build::<DefinitionTemplateAdl14ListParams>(&parts.path, q, h)?;
+            params::build::<DefinitionTemplateAdl14ListParams>(&parts.path, q, h)?;
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.backend().definition_template_adl1_4_list(p).await?,
+                &state.backend().template_adl14_list().await?,
             ))
         }
         "definition_template_adl1.4_upload" => {
-            let p = params::build::<DefinitionTemplateAdl14UploadParams>(&parts.path, q, h)?;
+            params::build::<DefinitionTemplateAdl14UploadParams>(&parts.path, q, h)?;
             // The OPT 1.4 template arrives as canonical XML; the lenient reader
-            // hands it to the service as a JSON string, which it parses (opt14).
+            // hands it back as a JSON string, which the service parses (opt14).
             let body = negotiate::lenient_value(&parts.body)?;
+            let xml = body.as_str().ok_or_else(|| {
+                RestError(ApiError::BadRequest(
+                    "expected an OPT 1.4 XML template body".to_owned(),
+                ))
+            })?;
             Ok(negotiate::respond(
                 h,
                 StatusCode::CREATED,
                 &state
                     .backend()
-                    .definition_template_adl1_4_upload(p, body)
+                    .template_adl14_upload(xml.to_owned())
                     .await?,
             ))
         }
         "definition_template_adl1.4_get" => {
             let p = params::build::<DefinitionTemplateAdl14GetParams>(&parts.path, q, h)?;
             let template_id = p.template_id.clone();
-            // The service returns the stored OPT XML as a JSON string. For a Better
-            // `wt+json` Accept, serve the service-owned WebTemplate (the one cache,
-            // shared with validation + FLAT — W2-K/F-13-02); otherwise serve the
-            // OPT XML verbatim (the canonical artifact). The get runs first so an
-            // unknown template stays a 404 on this GET surface.
-            match state.backend().definition_template_adl1_4_get(p).await? {
-                serde_json::Value::String(_) if negotiate::wants_web_template(h) => {
-                    web_template_response(&state, &template_id).await
-                }
-                serde_json::Value::String(xml) => Ok(negotiate::xml_body(StatusCode::OK, xml)),
-                other => Ok(negotiate::respond(h, StatusCode::OK, &other)),
+            // The SM `get_opt` seam returns the stored OPT XML (an unknown
+            // template → 404, so it runs first). For a Better `wt+json` Accept,
+            // serve the service-owned WebTemplate (the one cache, shared with
+            // validation + FLAT — W2-K/F-13-02); otherwise serve the OPT XML
+            // verbatim (the canonical artifact).
+            let xml = state.backend().get_opt(template_id.clone()).await?;
+            if negotiate::wants_web_template(h) {
+                web_template_response(&state, &template_id).await
+            } else {
+                Ok(negotiate::xml_body(StatusCode::OK, xml))
             }
         }
         "definition_template_adl1.4_example_get" => {
@@ -102,7 +109,7 @@ async fn run<S: Platform>(
             // template → 404; an invalid `type`/`detail_level` → 400).
             let comp = state
                 .backend()
-                .definition_template_adl1_4_example_get(p)
+                .template_adl14_example(p.template_id, p.detail_level, p.r#type)
                 .await?;
             // Negotiate the four representations the dev-OAS `Accept_LOCATABLE`
             // enumerates (json / xml / wt.flat+json / wt.structured+json). The
@@ -134,11 +141,11 @@ async fn run<S: Platform>(
             ))
         }
         "definition_template_adl2_list" => {
-            let p = params::build::<DefinitionTemplateAdl2ListParams>(&parts.path, q, h)?;
+            params::build::<DefinitionTemplateAdl2ListParams>(&parts.path, q, h)?;
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.backend().definition_template_adl2_list(p).await?,
+                &state.backend().template_adl2_list().await?,
             ))
         }
         "definition_template_adl2_upload" => {
@@ -147,13 +154,10 @@ async fn run<S: Platform>(
             // ADL2 arrives as text/plain source (definition-codegen.openapi.yaml:
             // Content-Type text/plain, body `OperationalTemplateV2` | string).
             let source = negotiate::text_body(&parts.body)?;
-            // Store; the backend returns the stored ARCHETYPE_HRID (an invalid
+            // Store; the adapter returns the stored ARCHETYPE_HRID (an invalid
             // artefact is a 422, a duplicate is handled by replace — SM upload).
-            let hrid = state
-                .backend()
-                .definition_template_adl2_upload(p, serde_json::Value::String(source.clone()))
-                .await?;
-            let hrid = hrid.as_str().unwrap_or_default();
+            let hrid = state.backend().template_adl2_upload(source.clone()).await?;
+            let hrid = hrid.as_str();
             let location = format!(
                 "{}/definition/template/adl2/{hrid}",
                 state.config().base_path
@@ -179,40 +183,33 @@ async fn run<S: Platform>(
             Ok(adl2_text_response(StatusCode::OK, None, source))
         }
         "definition_template_adl2_example_get" => {
-            let p = params::build::<DefinitionTemplateAdl2ExampleGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
-                h,
-                StatusCode::OK,
-                &state
-                    .backend()
-                    .definition_template_adl2_example_get(p)
-                    .await?,
-            ))
+            params::build::<DefinitionTemplateAdl2ExampleGetParams>(&parts.path, q, h)?;
+            // Needs an example generator over a cADL/AOM2 source model (none in
+            // the tree) — stays `501` (ADL2 is OPTIONAL for CNF, untested).
+            Err(RestError(ApiError::NotImplemented))
         }
         "definition_template_adl2_version_get" => {
-            let p = params::build::<DefinitionTemplateAdl2VersionGetParams>(&parts.path, q, h)?;
-            Ok(negotiate::respond(
-                h,
-                StatusCode::OK,
-                &state
-                    .backend()
-                    .definition_template_adl2_version_get(p)
-                    .await?,
-            ))
+            params::build::<DefinitionTemplateAdl2VersionGetParams>(&parts.path, q, h)?;
+            // Needs a cADL source parser for the JSON `OperationalTemplateV2`
+            // form — stays `501` (ADL2 is OPTIONAL for CNF, untested).
+            Err(RestError(ApiError::NotImplemented))
         }
         "definition_query_list" => {
             let p = params::build::<DefinitionQueryListParams>(&parts.path, q, h)?;
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.backend().definition_query_list(p).await?,
+                &state.backend().query_list(p.qualified_query_name).await?,
             ))
         }
         "definition_query_store.yaml" => {
             let p = params::build::<DefinitionQueryStoreYamlParams>(&parts.path, q, h)?;
             let name = p.qualified_query_name.clone();
             let body = negotiate::text_body(&parts.body)?;
-            state.backend().definition_query_store_yaml(p, body).await?;
+            state
+                .backend()
+                .query_store(name.clone(), None, body)
+                .await?;
             // Spec: the store success is `200 OK` (not `204`), with a `Location`
             // for the stored resource (`responses/200_StoredQuery_stored.yaml` +
             // `headers/Location_Query.yaml`). The no-version store auto-assigns
@@ -236,7 +233,10 @@ async fn run<S: Platform>(
             Ok(negotiate::respond(
                 h,
                 StatusCode::OK,
-                &state.backend().definition_query_version_get(p).await?,
+                &state
+                    .backend()
+                    .query_version_get(p.qualified_query_name, p.version)
+                    .await?,
             ))
         }
         "definition_query_version_store.yaml" => {
@@ -248,7 +248,7 @@ async fn run<S: Platform>(
             let body = negotiate::text_body(&parts.body)?;
             state
                 .backend()
-                .definition_query_version_store_yaml(p, body)
+                .query_store(name.clone(), Some(version.clone()), body)
                 .await?;
             // Spec: `200 OK` with a `Location` header for the stored resource
             // (`responses/200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`).
@@ -346,19 +346,9 @@ fn example_accept_supported(headers: &HeaderMap) -> bool {
 async fn stored_version_of<S: Platform>(
     state: &AppState<S>,
     name: &str,
-    headers: &HeaderMap,
+    _headers: &HeaderMap,
 ) -> Option<String> {
-    let list = state
-        .backend()
-        .definition_query_list(DefinitionQueryListParams {
-            qualified_query_name: name.to_owned(),
-            accept: headers
-                .get(header::ACCEPT)
-                .and_then(|v| v.to_str().ok())
-                .map(str::to_owned),
-        })
-        .await
-        .ok()?;
+    let list = state.backend().query_list(name.to_owned()).await.ok()?;
     list.iter()
         .filter(|entry| entry.get("name").and_then(|n| n.as_str()) == Some(name))
         .filter_map(|entry| entry.get("version").and_then(|v| v.as_str()))

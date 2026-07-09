@@ -1,9 +1,147 @@
-//! The SM System Log component (`I_SYSTEM_LOG`).
+//! The SM **System Log** component (`I_SYSTEM_LOG`) — the pure event model and
+//! the emit contract.
+//!
+//! This module carries only the transport-agnostic audit *event* model and the
+//! [`SystemLog`] trait. The IHE **ATNA** rendering (the DICOM `AuditMessage`,
+//! syslog framing, transports) is the platform crate's concern
+//! (`ehrbase::system_log`, `docs/enterprise/atna-audit.md`); the ITS-REST
+//! operation → classification mapping is the protocol adapter's
+//! (`ehrbase-rest::audit_table`). Nothing here depends on `openehr-its`, HTTP,
+//! or DICOM.
 
-/// The SM System Log component (`I_SYSTEM_LOG`, `i_system_log.adoc`) — an empty
-/// stub in the vendored spec whose only normative statement is the platform
-/// overview's "IHE ATNA-compliant system log" (`master02-overview.adoc`).
-/// Realized by the `ehrbase-audit` crate (DICOM `AuditMessage` over syslog,
-/// `docs/enterprise/atna-audit.md`); this marker names the component in the SM
-/// map.
-pub trait SystemLog: Send + Sync {}
+use jiff::Timestamp;
+
+/// DICOM `EventActionCode` (PS3.15 §A.5.1): the CRUD/execute class of the op.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventActionCode {
+    /// `C` — create.
+    Create,
+    /// `R` — read.
+    Read,
+    /// `U` — update.
+    Update,
+    /// `D` — delete.
+    Delete,
+    /// `E` — execute (query).
+    Execute,
+}
+
+/// DICOM `EventOutcomeIndicator` (PS3.15 §A.5.1), derived from the HTTP status.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventOutcome {
+    /// `0` — success.
+    Success,
+    /// `4` — minor failure (the action failed; e.g. 4xx incl. 401/403).
+    MinorFailure,
+    /// `8` — serious failure (the action was not performed; e.g. 5xx).
+    SeriousFailure,
+    /// `12` — major failure (the node/service is compromised/unavailable).
+    MajorFailure,
+}
+
+/// The class of resource an operation touches — determines the DICOM `EventID`
+/// and the participant-object rendering (binding doc §3 field mapping).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ObjectClass {
+    /// EHR / `EHR_STATUS` → "Patient Record"; a Patient-Number participant.
+    Ehr,
+    /// Composition → "composition"; Patient-Number + object-URI participants.
+    Composition,
+    /// Contribution → "contribution"; Patient-Number + object-URI participants.
+    Contribution,
+    /// Directory (FOLDER) → "directory"; Patient-Number + object-URI participants.
+    Directory,
+    /// Ad-hoc / stored query execution → "query"; a Search-Criteria participant.
+    Query,
+    /// Operational template provisioning (DEFINITION `adl1.4`/`adl2` templates)
+    /// → "template"; an object-URI participant (the template id).
+    Template,
+    /// Demographic party (PERSON / AGENT / ORGANISATION / GROUP / ROLE /
+    /// versioned party) → "demographic"; an object-URI participant (the party
+    /// uid). Demographic data is person-identifiable, so it is audited under
+    /// the Patient-Record `EventID` family.
+    Demographic,
+    /// Login / application activity → "Application Activity"; no clinical object.
+    ApplicationActivity,
+}
+
+/// A fully-resolved audit event, ready to be rendered into a DICOM `AuditMessage`.
+#[derive(Debug, Clone)]
+pub struct AuditEvent {
+    /// The CRUD/execute class.
+    pub action: EventActionCode,
+    /// The resource class (drives `EventID` + participant objects).
+    pub object: ObjectClass,
+    /// The response outcome.
+    pub outcome: EventOutcome,
+    /// The requesting user (Basic username / OAuth `sub`; `UNKNOWN` when absent).
+    pub user_id: String,
+    /// Whether the source participant is the requestor (always true here).
+    pub user_is_requestor: bool,
+    /// The client network address (`X-Forwarded-First-hop`/peer), if known.
+    pub client_ip: Option<String>,
+    /// The owning EHR id, for optional background subject enrichment.
+    pub ehr_id: Option<String>,
+    /// The resolved object identifier (resource URI / version uid / query name).
+    pub object_id: Option<String>,
+    /// The event time.
+    pub timestamp: Timestamp,
+}
+
+impl AuditEvent {
+    /// Construct an event with the given class + outcome, defaulting the runtime
+    /// fields (the caller fills user/ip/ids). `timestamp` is set to now.
+    #[must_use]
+    pub fn new(action: EventActionCode, object: ObjectClass, outcome: EventOutcome) -> Self {
+        Self {
+            action,
+            object,
+            outcome,
+            user_id: String::new(),
+            user_is_requestor: true,
+            client_ip: None,
+            ehr_id: None,
+            object_id: None,
+            timestamp: Timestamp::now(),
+        }
+    }
+}
+
+/// The result of enqueuing an event onto the system log.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EmitOutcome {
+    /// Successfully enqueued for the drain task.
+    Enqueued,
+    /// Dropped (queue full / drain gone) under `fail_mode=open`.
+    Dropped,
+    /// Rejected (queue full / drain gone) under `fail_mode=closed` — the REST
+    /// layer must return `503`.
+    Rejected,
+}
+
+/// The SM **System Log** component (`I_SYSTEM_LOG`, `i_system_log.adoc`).
+///
+// PORT NOTE: the vendored SM `I_SYSTEM_LOG` interface is an empty stub —
+// `docs/specs/openehr/SM/docs/UML/classes/i_system_log.adoc` names the
+// interface with no methods and no description; the only normative statement
+// is the platform overview's one line "System Log | IHE ATNA-compliant system
+// log" (`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`
+// §Overview). The trait contract below (`emit` + the audit-policy accessors) is
+// therefore entirely our design: the minimal seam the ITS-REST audit middleware
+// needs to hand a resolved [`AuditEvent`] to the platform's ATNA emitter without
+// knowing how (or whether) it ships. The ATNA wire rendering lives in the
+// platform crate (`ehrbase::system_log`, `docs/enterprise/atna-audit.md`).
+pub trait SystemLog: Send + Sync {
+    /// Enqueue a resolved audit event for emission (non-blocking). Returns how
+    /// the event was handled ([`EmitOutcome`]); when auditing is disabled or no
+    /// emitter is wired, the event is [`EmitOutcome::Dropped`].
+    fn emit(&self, event: AuditEvent) -> EmitOutcome;
+
+    /// Whether auditing is on (the master switch): the middleware short-circuits
+    /// when this is false, doing no per-request audit work.
+    fn audit_enabled(&self) -> bool;
+
+    /// Whether successful-login ("Application Activity") events are suppressed
+    /// (§4): auth *failures* are always audited regardless.
+    fn suppress_login_events(&self) -> bool;
+}

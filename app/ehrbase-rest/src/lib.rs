@@ -15,6 +15,7 @@
 //! Fine-grained ABAC is the follow-up (`docs/enterprise/access-control.md`).
 
 mod audit;
+mod audit_table;
 pub mod auth;
 pub mod authz;
 pub mod config;
@@ -72,25 +73,18 @@ pub fn build_with<S: Platform>(
     config: RestConfig,
     backend: std::sync::Arc<S>,
 ) -> Result<axum::Router, ServeError> {
-    build_with_audit(config, backend, None)
-}
-
-/// Build the application router backed by a concrete service and, optionally, an
-/// ATNA audit sender (the `ehrbase` binary boots the sender and injects it here).
-///
-/// # Errors
-/// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
-pub fn build_with_audit<S: Platform>(
-    config: RestConfig,
-    backend: std::sync::Arc<S>,
-    audit: Option<ehrbase_audit::AuditSender>,
-) -> Result<axum::Router, ServeError> {
     let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
-    let state = AppState::with_backend_and_audit(config, backend, audit);
+    let state = AppState::with_backend(config, backend);
     Ok(router(state, authenticator))
 }
 
-/// Build and serve the application backed by a concrete service.
+/// Build and serve the application backed by a concrete service, with graceful
+/// shutdown on `SIGINT`/`SIGTERM`. Client peer addresses are captured via
+/// `ConnectInfo`.
+///
+/// ATNA auditing (when enabled) is emitted through the platform service's SM
+/// `SystemLog` component; the binary boots the sender, injects it into the
+/// service, and drains its `AuditHandle` on shutdown.
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
@@ -98,45 +92,27 @@ pub async fn serve_with<S: Platform>(
     config: RestConfig,
     backend: std::sync::Arc<S>,
 ) -> Result<(), ServeError> {
-    serve_with_audit(config, backend, None).await
-}
-
-/// Build and serve the application backed by a concrete service and an optional
-/// ATNA audit sender, with graceful shutdown on `SIGINT`/`SIGTERM`.
-///
-/// The audit sender lives in the router state; when the graceful shutdown
-/// completes and this future returns, the router (and its sender clone) is
-/// dropped — the caller then drains the [`ehrbase_audit::AuditHandle`] to flush
-/// buffered records. Client peer addresses are captured via `ConnectInfo`.
-///
-/// # Errors
-/// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
-pub async fn serve_with_audit<S: Platform>(
-    config: RestConfig,
-    backend: std::sync::Arc<S>,
-    audit: Option<ehrbase_audit::AuditSender>,
-) -> Result<(), ServeError> {
     let bind = config.bind.clone();
-    let app = build_with_audit(config, backend, audit)?;
+    let app = build_with(config, backend)?;
     run_server(app, &bind).await
 }
 
-/// Build the application router with a concrete backend, an optional ATNA audit
-/// sender, and a full [`Observability`] bundle (management surface + telemetry
-/// handles). The management surface is merged into the returned router when it
-/// is enabled and not bound to a separate port.
+/// Build the application router with a concrete backend and a full
+/// [`Observability`] bundle (management surface + telemetry handles). The
+/// management surface is merged into the returned router when it is enabled and
+/// not bound to a separate port. ATNA auditing lives in the backend's SM
+/// `SystemLog` component.
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
 pub fn build_full<S: Platform>(
     config: RestConfig,
     backend: std::sync::Arc<S>,
-    audit: Option<ehrbase_audit::AuditSender>,
     authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<axum::Router, ServeError> {
     let authenticator = build_authenticator(&config, authz.as_deref())?;
-    let state = AppState::with_parts(config, backend, audit, authz, observability);
+    let state = AppState::with_parts(config, backend, authz, observability);
     Ok(router(state, authenticator))
 }
 
@@ -154,14 +130,14 @@ fn build_authenticator(
 /// Build and serve the application with full observability: the API + audit +
 /// telemetry surface, and — when `management.port` is set — the management
 /// surface on its own internal listener (otherwise merged into the main app).
-/// Graceful shutdown on `SIGINT`/`SIGTERM` covers both listeners.
+/// Graceful shutdown on `SIGINT`/`SIGTERM` covers both listeners. ATNA auditing
+/// lives in the backend's SM `SystemLog` component.
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
 pub async fn serve_full<S: Platform>(
     config: RestConfig,
     backend: std::sync::Arc<S>,
-    audit: Option<ehrbase_audit::AuditSender>,
     authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<(), ServeError> {
@@ -169,7 +145,7 @@ pub async fn serve_full<S: Platform>(
     let bind = config.bind.clone();
     let management_enabled = observability.management.enabled;
     let management_port = observability.management.port;
-    let state = AppState::with_parts(config, backend, audit, authz, observability);
+    let state = AppState::with_parts(config, backend, authz, observability);
     let main_app = router(state.clone(), authenticator.clone());
 
     // Separate-port management listener (§2): its own axum server task.

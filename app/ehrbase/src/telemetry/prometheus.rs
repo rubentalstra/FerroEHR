@@ -9,7 +9,7 @@
 //! The `metrics` facade emits at the call sites; the recorder renders the
 //! exposition text served at `/management/prometheus`.
 
-use ehrbase_audit::sender::{METRIC_DROPPED, METRIC_EMITTED, METRIC_SEND_FAILED, METRIC_SENT};
+use crate::system_log::sender::{METRIC_DROPPED, METRIC_EMITTED, METRIC_SEND_FAILED, METRIC_SENT};
 use ehrbase_rest::management::{
     AUTH_FAILURES, BuildInfo, HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION,
     HTTP_RESPONSE_BODY_SIZE,

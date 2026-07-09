@@ -16,11 +16,12 @@ use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 
-use crate::AuditError;
-use crate::config::{AuditConfig, FailMode};
-use crate::event::AuditEvent;
-use crate::message::{AuditContext, AuditMessage};
-use crate::syslog::{Transport, assemble_syslog};
+use ehrbase_sm::{AuditEvent, EmitOutcome};
+
+use crate::system_log::AuditError;
+use crate::system_log::config::{AuditConfig, FailMode};
+use crate::system_log::message::{AuditContext, AuditMessage};
+use crate::system_log::syslog::{Transport, assemble_syslog};
 
 /// A background-only, indexed lookup of the EHR's patient subject id
 /// (`ehr.subject_id`). Supplied by the binary (keeps this crate DB-free); given
@@ -36,18 +37,6 @@ pub const METRIC_DROPPED: &str = "atna_audit_dropped_total";
 pub const METRIC_SENT: &str = "atna_audit_sent_total";
 /// Transport send failures (post-enqueue).
 pub const METRIC_SEND_FAILED: &str = "atna_audit_send_failed_total";
-
-/// The result of enqueuing an event.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EmitOutcome {
-    /// Successfully enqueued for the drain task.
-    Enqueued,
-    /// Dropped (queue full / drain gone) under `fail_mode=open`.
-    Dropped,
-    /// Rejected (queue full / drain gone) under `fail_mode=closed` — the REST
-    /// layer must return `503`.
-    Rejected,
-}
 
 /// The cheaply-cloneable handle the REST layer emits through.
 #[derive(Debug, Clone)]
@@ -193,8 +182,8 @@ async fn drain(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::Transport as ConfigTransport;
-    use crate::event::{EventActionCode, EventOutcome, ObjectClass};
+    use crate::system_log::config::Transport as ConfigTransport;
+    use ehrbase_sm::{EventActionCode, EventOutcome, ObjectClass};
 
     fn udp_config() -> AuditConfig {
         AuditConfig {

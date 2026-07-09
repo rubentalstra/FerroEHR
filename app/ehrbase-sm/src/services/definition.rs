@@ -44,30 +44,45 @@ use crate::types::{Page, QueryDescriptor};
 pub trait DefinitionAdl14Service: Send + Sync {
     /// `has_archetype` — True if an ADL 1.4 archetype with id `an_id` exists.
     async fn has_archetype(&self, _an_id: String) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `valid_archetype` — test validity of the supplied ADL 1.4 source.
     async fn valid_archetype(&self, _adl: String) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `upload_archetype` — upload a valid ADL 1.4 archetype, replacing any
     /// existing one with the same id (`Post_has_archetype`). The archetype must
     /// be valid to succeed; an invalid one is `invalid_archetype` (→ `422`).
     async fn upload_archetype(&self, _adl: String) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `get_archetype` — the ADL 1.4 source of the archetype with id `an_id`;
     /// `artefact_does_not_exist` (→ `404`) if absent.
     async fn get_archetype(&self, _an_id: String) -> Result<String, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_archetypes` — the ids of all known ADL 1.4 archetypes.
     async fn list_archetypes(&self, _page: Page) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_matching_archetypes` — archetype ids matching `id_pattern` (a
@@ -77,29 +92,44 @@ pub trait DefinitionAdl14Service: Send + Sync {
         _id_pattern: String,
         _page: Page,
     ) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `delete_archetype` — delete a previously uploaded archetype
     /// (`Pre_artefact_exists`, `Post_archetype_removed`); absent → `404`.
     async fn delete_archetype(&self, _an_id: String) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `archetypes_count` — total archetypes count.
     async fn archetypes_count(&self) -> Result<i64, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `has_opt` — True if an ADL 1.4 OPT with id `an_opt_id` (a `UUID` string)
     /// exists.
     async fn has_opt(&self, _an_opt_id: String) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `valid_opt` — test validity of the supplied OPT 1.4 canonical XML.
     async fn valid_opt(&self, _opt_xml: String) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `upload_opt` — upload an ADL 1.4 OPT (`Pre_valid`: it must be valid, else
@@ -110,18 +140,27 @@ pub trait DefinitionAdl14Service: Send + Sync {
     /// a `409` (`409_template_already_exists.yaml`;
     /// `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict`).
     async fn upload_opt(&self, _opt_xml: String) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `get_opt` — the OPT 1.4 canonical XML of the OPT with id `an_opt_id`;
     /// `artefact_does_not_exist` (→ `404`) if absent.
     async fn get_opt(&self, _an_opt_id: String) -> Result<String, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_opts` — the ids (`UUID`s) of all known ADL 1.4 OPTs.
     async fn list_opts(&self, _page: Page) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_matching_opts` — OPTs whose identifiers match `id_pattern` (a
@@ -136,18 +175,27 @@ pub trait DefinitionAdl14Service: Send + Sync {
         _id_pattern: String,
         _page: Page,
     ) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `delete_opt` — delete a previously uploaded OPT (`Pre_has_opt`,
     /// `Post_opt_removed`); absent → `404`.
     async fn delete_opt(&self, _an_opt_id: String) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `opts_count` — total OPTs count.
     async fn opts_count(&self) -> Result<i64, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 }
 
@@ -176,13 +224,19 @@ pub trait DefinitionAdl2Service: Send + Sync {
     /// `has_artefact` — True if an AOM2 artefact with `ARCHETYPE_HRID` `an_id`
     /// exists in the service.
     async fn has_artefact(&self, _an_id: String) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `valid_artefact` — test validity of the supplied ADL2 source (structural,
     /// per the trait PORT NOTE).
     async fn valid_artefact(&self, _adl2: String) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `upload_artefact` — upload a valid ADL2 artefact (archetype, template or
@@ -190,37 +244,55 @@ pub trait DefinitionAdl2Service: Send + Sync {
     /// identifier and namespace exists, replace it." `Pre_valid`: the artefact must
     /// validate, else `invalid artefact` (→ `422`).
     async fn upload_artefact(&self, _adl2: String) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `get_artefact` — the ADL2 source of the artefact with `ARCHETYPE_HRID`
     /// `an_id` (`Pre_artefact_exists`); absent → `artefact_does_not_exist`
     /// (→ `404`).
     async fn get_artefact(&self, _an_id: String) -> Result<String, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_artefacts` — the `ARCHETYPE_HRID`s of all known ADL2 artefacts.
     async fn list_artefacts(&self, _page: Page) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_archetypes` — HRIDs of artefacts whose concrete type is
     /// `AUTHORED_ARCHETYPE` (`kind = archetype`).
     async fn list_archetypes(&self, _page: Page) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_templates` — HRIDs of artefacts whose concrete type is `TEMPLATE`
     /// (`kind = template`).
     async fn list_templates(&self, _page: Page) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_opts` — HRIDs of artefacts whose concrete type is
     /// `OPERATIONAL_TEMPLATE` (`kind = operational_template`).
     async fn list_opts(&self, _page: Page) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_matching_artefacts` — HRIDs matching `id_pattern` (a regex);
@@ -230,33 +302,51 @@ pub trait DefinitionAdl2Service: Send + Sync {
         _id_pattern: String,
         _page: Page,
     ) -> Result<Vec<String>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `delete_artefact` — delete the AOM2 artefact with `ARCHETYPE_HRID`
     /// `an_id`; absent → `artefact_does_not_exist` (→ `404`).
     async fn delete_artefact(&self, _an_id: String) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `artefacts_count` — total artefacts count.
     async fn artefacts_count(&self) -> Result<i64, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `archetypes_count` — total archetypes count.
     async fn archetypes_count(&self) -> Result<i64, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `templates_count` — total templates count.
     async fn templates_count(&self) -> Result<i64, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `opts_count` — total OPTs count.
     async fn opts_count(&self) -> Result<i64, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 }
 
@@ -274,7 +364,10 @@ pub trait DefinitionQueryService: Send + Sync {
     /// `has_query` — True if the query with qualified name `a_query_name` is
     /// registered (the `"misc"` namespace is assumed when none is supplied).
     async fn has_query(&self, _a_query_name: String) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `valid_query` — True if `a_query_text` is a valid instance of the
@@ -282,7 +375,10 @@ pub trait DefinitionQueryService: Send + Sync {
     /// formalism here (any other → `false`, which the SM sanctions:
     /// "matching one of: aql; any other string value").
     async fn valid_query(&self, _a_query_text: String, _a_type: String) -> Result<bool, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `store_query` — register a query under a qualified name, returning its
@@ -298,7 +394,10 @@ pub trait DefinitionQueryService: Send + Sync {
         _a_type: String,
         _a_query_name: Option<String>,
     ) -> Result<QueryDescriptor, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `store_query_set` — register a query set.
@@ -307,12 +406,18 @@ pub trait DefinitionQueryService: Send + Sync {
     /// `i_definition_query.adoc`); with no defined semantics this stays
     /// `NotImplemented` (→ `501`) until the spec defines it.
     async fn store_query_set(&self, _a_query_set_name: Option<String>) -> Result<String, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_queries` — all registered queries.
     async fn list_queries(&self, _page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `list_matching_queries` — registered queries whose qualified name matches
@@ -325,17 +430,26 @@ pub trait DefinitionQueryService: Send + Sync {
         _artefact_id_pattern: Option<String>,
         _page: Page,
     ) -> Result<Vec<QueryDescriptor>, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `delete_query` — delete the query with qualified name `a_query_name`
     /// (`Pre_has_query`, `Post_query_deleted`); absent → `404`.
     async fn delete_query(&self, _a_query_name: String) -> Result<(), SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `queries_count` — total count of queries.
     async fn queries_count(&self) -> Result<i64, SmError> {
-        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 }
