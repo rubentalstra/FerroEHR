@@ -60,7 +60,8 @@ partially superseded. Phase files 10/16/19 re-scoped.
 |---|---|---|
 | SM-1 | `app/*`+`tools/*` layout, `ehrbase-sm` native API (trait per SM interface, call-status table, UPDATE_VERSION envelope), ATTESTATION support, `is_queryable` population gate (conformance gap fixed), contribution list/count, EHR_SUMMARY | **done (2026-07-09, PR #31)** — ECC exit gate 211/318 zero-drift |
 | SM-2 | Definitions completion: ADL 1.4 archetype store + OPT completion, `DefinitionAdl2Service` + `adl2_artefact` store + wire adl2 upload/list/get (retires the P13 `adl2 = 501`), stored-query calls (valid/delete/count, QUERY_DESCRIPTOR) | **done (2026-07-09)** — 842/842 tests; ECC 211/318 zero-drift |
-| SM-3…SM-6 | PARTY_RELATIONSHIP + EHR Index; Terminology surface + Admin completion; Message (EXTRACT + TDD); Subject Proxy | not-started (`docs/design/sm-platform/09-roadmap.md`) |
+| SM-3 | PARTY_RELATIONSHIP (full versioning + wire) + EHR Index service + **storage-semantics audit wave** (persistence verified 1:1 vs RM master06 — no blockers; all 7 findings fixed: five-state lifecycle honored, creating_system_id persisted, audit copy rule, full-corpus jsonb round-trip, invariant CHECKs, scope PORT NOTEs) | **done (2026-07-09)** — 856/856 tests; ECC 211/318 zero-drift |
+| SM-4…SM-6 | Terminology surface + Admin completion; Message (EXTRACT + TDD); Subject Proxy | not-started (`docs/design/sm-platform/09-roadmap.md`) |
 
 **Stage 2** (after P19 conformance holds): RBAC/attribute authz, plugin system,
 multi-tenancy — see `PORT_MASTER_PLAN §11`.
