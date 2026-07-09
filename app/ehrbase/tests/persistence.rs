@@ -98,8 +98,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // 0005_archetype_store (SM-2 ADL 1.4 source archetypes, I_DEFINITION_ADL14;
     // adds the `archetype_store` table below) +
     // 0006_adl2_artefact (SM-2 ADL2 artefacts, I_DEFINITION_ADL2; adds the
-    // `adl2_artefact` table below).
-    assert_eq!((applied_ext, applied_ehr), (1, 6));
+    // `adl2_artefact` table below) +
+    // 0007_party_relationship_and_ehr_index (SM-3: the PARTY_RELATIONSHIP kind
+    // on the shared vo machinery + the `ehr_index` table below).
+    assert_eq!((applied_ext, applied_ehr), (1, 7));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -116,6 +118,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "audit",
             "contribution",
             "ehr",
+            "ehr_index",
             "item_tag",
             "node",
             "stored_query",

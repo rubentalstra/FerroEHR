@@ -17,7 +17,9 @@ mod admin;
 mod definition;
 mod demographic;
 mod ehr;
+mod ehr_index;
 mod query;
+mod relationship;
 
 use std::sync::Arc;
 

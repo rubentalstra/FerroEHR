@@ -408,6 +408,134 @@ impl PartyKind {
     }
 }
 
+// ─── EHR Index (SM-3) ────────────────────────────────────────────────────────
+
+/// A subject identifier reference (`i_ehr_index.adoc` `a_subject_id:
+/// OBJECT_REF`). The realization of the `OBJECT_REF` the EHR Index keys its
+/// associations by: `id` = `OBJECT_ID.value`, `namespace`, `type`.
+///
+/// PORT NOTE: the SM types the subject as a full `OBJECT_REF`; we carry the
+/// three fields the index actually keys on (`(id, namespace)` is the
+/// association key, `type` defaults to `PERSON` — the common MPI case).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SubjectRef {
+    /// The subject identifier value (`OBJECT_REF.id.value`).
+    pub id: String,
+    /// The identifier namespace (`OBJECT_REF.namespace`).
+    pub namespace: String,
+    /// The referenced object type (`OBJECT_REF.type`); `PERSON` by default.
+    pub r#type: String,
+}
+
+impl SubjectRef {
+    /// A subject reference of the default `PERSON` type.
+    #[must_use]
+    pub fn person(id: impl Into<String>, namespace: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            namespace: namespace.into(),
+            r#type: "PERSON".to_owned(),
+        }
+    }
+}
+
+/// `RESOURCE_INSTANCE_TYPE` (`resource_instance_type.adoc`): the kind of a
+/// subject↔EHR association, used to surface the N:M duplicate-management states
+/// master07 describes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ResourceInstanceType {
+    /// The authoritative association (`Primary`).
+    #[default]
+    Primary,
+    /// A duplicate association (`Duplicate`) — the N:M error state.
+    Duplicate,
+    /// A supplementary association (`Supplementary`).
+    Supplementary,
+}
+
+impl ResourceInstanceType {
+    /// The stored token (`Primary`/`Duplicate`/`Supplementary`).
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ResourceInstanceType::Primary => "Primary",
+            ResourceInstanceType::Duplicate => "Duplicate",
+            ResourceInstanceType::Supplementary => "Supplementary",
+        }
+    }
+
+    /// Parse a stored token, defaulting unknown values to `Primary`.
+    #[must_use]
+    pub fn from_str_or_primary(s: &str) -> Self {
+        match s {
+            "Duplicate" => ResourceInstanceType::Duplicate,
+            "Supplementary" => ResourceInstanceType::Supplementary,
+            _ => ResourceInstanceType::Primary,
+        }
+    }
+}
+
+/// `RESOURCE_STATUS` (`resource_status.adoc`): the status of a subject↔EHR
+/// association.
+///
+/// PORT NOTE: `start_valid_time`/`end_valid_time` are typed `@@` (an unresolved
+/// placeholder) in the SM; per design 03 §5.9 they are implemented as ISO
+/// date-time strings (stored `timestamptz`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceStatus {
+    /// Type of resource instance (`instance_type`, mandatory in the SM).
+    pub instance_type: ResourceInstanceType,
+    /// First time point at which the resource is available (ISO date-time).
+    pub start_valid_time: Option<String>,
+    /// Last time point at which the resource is available (ISO date-time).
+    pub end_valid_time: Option<String>,
+    /// Human-readable notes on the resource.
+    pub notes: Option<String>,
+}
+
+impl Default for ResourceStatus {
+    fn default() -> Self {
+        Self {
+            instance_type: ResourceInstanceType::Primary,
+            start_valid_time: None,
+            end_valid_time: None,
+            notes: None,
+        }
+    }
+}
+
+/// `LOCATION_DESC` (`location_desc.adoc`): dynamic location information for an
+/// EHR.
+///
+/// PORT NOTE: the SM class is an **empty stub** (no attributes defined); per
+/// design 08 §3 we adopt the designed contract `{system_id, uri?, description?}`
+/// so the optional location descriptor carries usable data.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LocationDesc {
+    /// Identifier of the system hosting the EHR.
+    pub system_id: String,
+    /// A resolvable location for the EHR, if any.
+    pub uri: Option<String>,
+    /// Human-readable description of the location.
+    pub description: Option<String>,
+}
+
+/// One EHR Index record: a subject↔EHR association with its status and optional
+/// location descriptor. Returned by the design-filled read calls
+/// ([`EhrIndexService::ehr_subjects`](crate::services::EhrIndexService::ehr_subjects)
+/// / `subject_ehrs`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EhrIndexEntry {
+    /// The associated EHR id.
+    pub ehr_id: String,
+    /// The subject identifier.
+    pub subject: SubjectRef,
+    /// The association status (instance type + validity + notes).
+    pub status: ResourceStatus,
+    /// The optional location descriptor.
+    pub location: Option<LocationDesc>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

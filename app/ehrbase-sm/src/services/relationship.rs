@@ -27,7 +27,7 @@ use crate::types::{ResourceMeta, ServiceResponse};
 pub trait PartyRelationshipService: Send + Sync {
     /// `POST /demographic/party_relationship` — `I_DEMOGRAPHIC_SERVICE`
     /// `create_party_relationship` (pre `valid_content`): create the first
-    /// version, server-side VERSIONED_OBJECT + ORIGINAL_VERSION + CONTRIBUTION.
+    /// version, server-side `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + `CONTRIBUTION`.
     /// `201` + `ETag`(version uid)/`Location`; body per `Prefer`.
     async fn party_relationship_create(&self, _body: Value) -> Result<ServiceResponse, ApiError> {
         Err(ApiError::NotImplemented)
@@ -49,7 +49,7 @@ pub trait PartyRelationshipService: Send + Sync {
     /// `PUT /demographic/party_relationship/{uid_based_id}` —
     /// `I_PARTY_RELATIONSHIP` `update_party_relationship` (pre
     /// `definitions_valid` + `has_party_relationship`): a new
-    /// ORIGINAL_VERSION + CONTRIBUTION. `If-Match` carries the preceding
+    /// `ORIGINAL_VERSION` + `CONTRIBUTION`. `If-Match` carries the preceding
     /// `OBJECT_VERSION_ID`. `200`/`204` per `Prefer`; `ETag`/`Location`.
     /// Errors: `versioned_object_does_not_exist`/`object_version_does_not_exist`
     /// → `404`, `content_invalid` → `422`.

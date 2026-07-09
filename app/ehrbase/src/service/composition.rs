@@ -459,6 +459,9 @@ impl EhrbaseService {
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
                 self.validate_party_kind_for_commit(kind, data)
             }
+            // PARTY_RELATIONSHIP validates structurally (typed deserialize +
+            // source/target present) via the relationship module.
+            Kind::PartyRelationship => super::relationship::validate_relationship_for_commit(data),
         }
     }
 }

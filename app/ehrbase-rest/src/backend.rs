@@ -5,8 +5,10 @@ pub use ehrbase_sm::backend::{Backend, StubBackend};
 pub use ehrbase_sm::services::{
     AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
     DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrService, EhrStatusService, QueryService, SystemLog, ValidityChecker, WebTemplateService,
+    EhrIndexService, EhrService, EhrStatusService, PartyRelationshipService, QueryService,
+    SystemLog, ValidityChecker, WebTemplateService,
 };
 pub use ehrbase_sm::types::{
-    AqlQueryRequest, EhrSummary, Page, PartyKind, QueryDescriptor, QueryOutcome,
+    AqlQueryRequest, EhrIndexEntry, EhrSummary, LocationDesc, Page, PartyKind, QueryDescriptor,
+    QueryOutcome, ResourceInstanceType, ResourceStatus, SubjectRef,
 };

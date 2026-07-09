@@ -120,6 +120,43 @@ impl ehrbase_rest::AdminService for MockBackend {}
 impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
 impl ehrbase_rest::DefinitionAdl2Service for MockBackend {}
 impl ehrbase_rest::DefinitionQueryService for MockBackend {}
+impl ehrbase_rest::EhrIndexService for MockBackend {}
+
+const REL_OVID: &str = "7a7a7a7a-1111-4222-8333-999999990000::ehrbase-rs.local::1";
+
+fn relationship_body() -> Value {
+    json!({
+        "_type": "PARTY_RELATIONSHIP",
+        "uid": { "_type": "OBJECT_VERSION_ID", "value": REL_OVID },
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
+        "name": { "_type": "DV_TEXT", "value": "parent-of" },
+        "source": { "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
+                    "id": { "_type": "HIER_OBJECT_ID", "value": "src" } },
+        "target": { "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
+                    "id": { "_type": "HIER_OBJECT_ID", "value": "tgt" } }
+    })
+}
+
+#[async_trait]
+impl ehrbase_rest::PartyRelationshipService for MockBackend {
+    async fn party_relationship_create(&self, _body: Value) -> Result<ServiceResponse, ApiError> {
+        Ok(ServiceResponse::new(
+            relationship_body(),
+            ResourceMeta::new(String::new(), REL_OVID.to_owned()),
+        ))
+    }
+
+    async fn party_relationship_get(
+        &self,
+        _uid_based_id: String,
+        _version_at_time: Option<String>,
+    ) -> Result<ServiceResponse, ApiError> {
+        Ok(ServiceResponse::new(
+            relationship_body(),
+            ResourceMeta::new(String::new(), REL_OVID.to_owned()),
+        ))
+    }
+}
 
 fn config() -> RestConfig {
     RestConfig {
@@ -291,4 +328,58 @@ async fn role_create_uses_role_segment() {
         location(&h),
         Some(format!("{BASE}/demographic/role/{PARTY_OVID}").as_str())
     );
+}
+
+#[tokio::test]
+async fn party_relationship_create_is_mounted_with_headers() {
+    // The our-own-design PARTY_RELATIONSHIP extension route is mounted and
+    // reaches the seam (a create returns 201 + ETag/Location on the
+    // /demographic/party_relationship segment; an unmounted route would 404).
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/party_relationship"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("Prefer", "return=representation")
+        .body(Body::from(relationship_body().to_string()))
+        .unwrap();
+    let (status, h, body) = send(req).await;
+
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(etag(&h), Some(format!("\"{REL_OVID}\"").as_str()));
+    assert_eq!(
+        location(&h),
+        Some(format!("{BASE}/demographic/party_relationship/{REL_OVID}").as_str())
+    );
+    let v: Value = serde_json::from_str(&body).expect("json body");
+    assert_eq!(v["_type"], "PARTY_RELATIONSHIP");
+}
+
+#[tokio::test]
+async fn party_relationship_get_is_mounted() {
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/demographic/party_relationship/some-uid"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(req).await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(etag(&h), Some(format!("\"{REL_OVID}\"").as_str()));
+    let v: Value = serde_json::from_str(&body).expect("json body");
+    assert_eq!(v["_type"], "PARTY_RELATIONSHIP");
+}
+
+#[tokio::test]
+async fn versioned_party_relationship_is_mounted() {
+    // Default seam (NotImplemented → 501) still proves the route is mounted
+    // (an unmounted path would 404).
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "{BASE}/demographic/versioned_party_relationship/some-uid"
+        ))
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, _body) = send(req).await;
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
 }
