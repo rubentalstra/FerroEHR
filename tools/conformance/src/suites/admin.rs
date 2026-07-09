@@ -14,8 +14,8 @@
 //! Contract: `204` physical delete of an existing EHR; `404` for an unknown EHR
 //! (and for a re-delete — idempotent); `200 {"deleted": n}` for the bulk delete
 //! (partial success: missing ids skipped); `400` for an empty bulk request. The
-//! admin group is config-gated (`RestConfig::admin.enabled`); the self-hosted SUT
-//! enables it (`sut::self_host`), so these exercise the *active* surface.
+//! admin group is config-gated (`RestConfig::admin.enabled`); the compose dev
+//! config enables it, so these exercise the *active* surface.
 
 use serde_json::Value;
 use uuid::Uuid;

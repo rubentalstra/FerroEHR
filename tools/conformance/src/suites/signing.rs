@@ -5,9 +5,8 @@
 //! `docs/design/version-signing.md`, are what proves the capability.
 //!
 //! The four digest cases are the must-haves. `sig/pgp-verifies` needs a
-//! `pgp`-keyed SUT the runner would have to configure at boot; the self-hosted
-//! SUT ships in `digest` mode (design §3.4) and an external SUT's key config is
-//! unknown, so it reports `SKIPPED(SutConfig)` (§4.6) — the digest cases still
+//! `pgp`-keyed SUT; the compose dev config ships in `digest` mode (design §3.4)
+//! and an external SUT's key config is unknown, so it reports `SKIPPED(SutConfig)` (§4.6) — the digest cases still
 //! prove the capability.
 //!
 //! Digest recomputation (`SIGN-digest-recomputes`, the strongest case) uses the
@@ -445,13 +444,13 @@ fn run_client_verbatim<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 fn run_pgp_verifies<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         // Needs a `pgp`-mode SUT with a configured key (design §4.6): the
-        // self-hosted SUT boots in `digest` mode (version-signing.md §3.4) and an
-        // external SUT's key config is unknown. Wiring a pgp-keyed self-host SUT
-        // (a boot-path change) is a follow-up; the four digest cases prove the
+        // compose dev config boots in `digest` mode (version-signing.md §3.4) and
+        // an external SUT's key config is unknown. A pgp-keyed compose profile
+        // is a follow-up; the four digest cases prove the
         // capability. Reported SKIPPED(SutConfig), never fabricated.
         Err::<DataSetReport, _>(CaseError::Skipped(
             "SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); \
-             pgp-keyed self-host SUT wiring is a follow-up — digest cases prove the capability"
+             a pgp-keyed compose profile is a follow-up — digest cases prove the capability"
                 .to_owned(),
         ))
     })

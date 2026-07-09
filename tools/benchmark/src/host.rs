@@ -6,7 +6,7 @@
 //! comparison is therefore visibly invalid: two reports with different `HostInfo`
 //! are not comparable, and the report says so.
 //!
-//! What is captured is the *load-generator / self-host* machine. For the
+//! What is captured is the *load-generator* machine. For the
 //! containerized dual-stack comparison, the per-container CPU/RAM pinning
 //! (design §3.1) is recorded separately alongside this.
 

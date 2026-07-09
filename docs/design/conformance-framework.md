@@ -161,19 +161,23 @@ Planned additions in this layout (build-out steps, §7): `engine/flow.rs`
 `model/profile.rs` (the capability matrix + machine verdict), JUnit/CTRF
 output in `reporting`.
 
-### 5.1 SUT modes
+### 5.1 SUT mode
 
-- **External** (`--base-url`, `--auth basic:u:p|bearer:t`, `--admin-auth`):
-  a deployed real system; pure API client, no DB access, self-contained
-  cases (fresh EHR per case).
-- **Self-hosted** (`--self-host`, feature `self-host`): testcontainers PG18 +
-  the real app in-process on an ephemeral port — the fast inner loop and the
-  PR CI tier.
+- **External only** (`--base-url`, `--auth basic:u:p|bearer:t`,
+  `--admin-auth`): a deployed real system; pure API client, no DB access,
+  self-contained cases (fresh EHR per case). The standard SUT is the
+  Docker-composed server built from the current sources
+  (`scripts/conformance.sh` — compose `up --build`, run, tear down), so the
+  wire under test is always the production binary/stack.
+- The former in-process `self-host` mode (testcontainers PG18 + a re-wired
+  axum app) was **removed 2026-07-09** (owner ruling): it duplicated the
+  binary's wiring and drifted from the production `serve_full` stack during
+  the ADR-011 rebuild. One mode, real artefact.
 
 ### 5.2 CLI (contract for `scripts/conformance.sh` and `/run-conformance`)
 
 ```
-conformance run    [--base-url URL | --self-host] [--filter S]
+conformance run    --base-url URL [--filter S]
                    [--profile core|standard|options] [--format json|xml|both]
                    [--out docs/conformance/] [--auth …] [--admin-auth …]
 conformance list   [--filter S]          # catalogue with per-area totals
@@ -231,7 +235,7 @@ with distinct jobs, four badges (owner directive: no report sprawl):
 7. **`QRY` build-out**: AQL 1.1 construct checklist + corpus goldens with a
    rule-named normalizer.
 8. **`SEC` sweeps** (401/403 under RBAC), JUnit/CTRF report output, CI tiers
-   (PR: self-host CORE smoke · full: compose stack, both formats), first
+   (PR: compose-stack CORE smoke · full: compose stack, both formats), first
    generated STANDARD-profile statement.
 
 ## 8. Appendix — capability → profile matrix (ours)
