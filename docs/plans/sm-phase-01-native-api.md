@@ -78,12 +78,20 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
       (`i_ehr_service.adoc` EHR_SUMMARY); wire into `ehr_summary`
 - [ ] `list_contributions(ehr_id, time_range, page)` +
       `contribution_count(ehr_id, time_range)` (`i_ehr_contribution.adoc`)
-- [ ] Attestations: accept `666|attestation|` contributions; persist
-      `UPDATE_VERSION.attestations` on the version; revision-history
-      exposure (`update_version.adoc`, `master03` §Version Update Semantics)
-- [ ] Query gate: e2e test that population queries exclude
-      `is_queryable = false` EHRs (`i_query_service.adoc` `ehr_ids` doc);
-      RESULT_SET meta audit vs ITS-REST shape
+- [x] Attestations — done 2026-07-09: `vo_attestation` table (canonical
+      ATTESTATION verbatim, contribution-linked); 666 = attestation of an
+      existing ORIGINAL_VERSION (no new version; 400/422/404 error rules);
+      accompanying attestations server-completed + stored with the new
+      version in one tx; ORIGINAL_VERSION.attestations + revision-history
+      audits + CONTRIBUTION.versions union; signature interaction handled
+      (attestations appended post-verification per master06 post-committal
+      signing); 2 e2e + classify unit tests
+- [x] Query gate — done 2026-07-09: **gap found and fixed** — the engine
+      never consulted `is_queryable`; `apply_population_gate` now restricts
+      unscoped queries to EHRs whose current EHR_STATUS root has
+      `is_queryable = true` (`i_query_service.adoc`); e2e test + RESULT_SET
+      shape audit vs the ITS-REST schemas; persistence fixture made
+      spec-realistic (every EHR seeds a queryable EHR_STATUS)
 - [ ] `docs/architecture.md`: add the SM component map, the `app/*` vs
       `crates/*` layout, and the `ehrbase-sm` crate row
 
