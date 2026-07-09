@@ -24,7 +24,7 @@ use crate::assert;
 use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
 use crate::catalog::Area;
 use crate::harness::{
-    CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
+    AuthSlot, CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
 };
 use crate::registry::CaseEntry;
 use crate::suites::support;
@@ -99,10 +99,10 @@ fn run_delete<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let ehr_id = support::create_ehr(ctx).await?;
         let resp = ctx
-            .send(HttpRequest::new(
-                Method::Delete,
-                format!("/admin/ehr/{ehr_id}"),
-            ))
+            .send(
+                HttpRequest::new(Method::Delete, format!("/admin/ehr/{ehr_id}"))
+                    .with_auth(AuthSlot::Admin),
+            )
             .await?;
         assert::status(&resp, 204)?;
         Ok(DataSetReport::SINGLE)
@@ -113,10 +113,10 @@ fn run_delete<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 fn run_delete_absent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let resp = ctx
-            .send(HttpRequest::new(
-                Method::Delete,
-                format!("/admin/ehr/{}", Uuid::new_v4()),
-            ))
+            .send(
+                HttpRequest::new(Method::Delete, format!("/admin/ehr/{}", Uuid::new_v4()))
+                    .with_auth(AuthSlot::Admin),
+            )
             .await?;
         assert::status(&resp, 404)?;
         Ok(DataSetReport::SINGLE)
@@ -129,17 +129,17 @@ fn run_delete_idempotent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let ehr_id = support::create_ehr(ctx).await?;
         let first = ctx
-            .send(HttpRequest::new(
-                Method::Delete,
-                format!("/admin/ehr/{ehr_id}"),
-            ))
+            .send(
+                HttpRequest::new(Method::Delete, format!("/admin/ehr/{ehr_id}"))
+                    .with_auth(AuthSlot::Admin),
+            )
             .await?;
         assert::status(&first, 204)?;
         let second = ctx
-            .send(HttpRequest::new(
-                Method::Delete,
-                format!("/admin/ehr/{ehr_id}"),
-            ))
+            .send(
+                HttpRequest::new(Method::Delete, format!("/admin/ehr/{ehr_id}"))
+                    .with_auth(AuthSlot::Admin),
+            )
             .await?;
         assert::status(&second, 404)?;
         Ok(DataSetReport::SINGLE)
@@ -152,10 +152,13 @@ fn run_delete_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         let a = support::create_ehr(ctx).await?;
         let b = support::create_ehr(ctx).await?;
         let resp = ctx
-            .send(HttpRequest::new(
-                Method::Delete,
-                format!("/admin/ehr/all?ehr_id={a}&ehr_id={b}"),
-            ))
+            .send(
+                HttpRequest::new(
+                    Method::Delete,
+                    format!("/admin/ehr/all?ehr_id={a}&ehr_id={b}"),
+                )
+                .with_auth(AuthSlot::Admin),
+            )
             .await?;
         assert::status(&resp, 200)?;
         let body: Value = resp.json()?;
@@ -175,10 +178,13 @@ fn run_delete_all_partial<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         let a = support::create_ehr(ctx).await?;
         let missing = Uuid::new_v4();
         let resp = ctx
-            .send(HttpRequest::new(
-                Method::Delete,
-                format!("/admin/ehr/all?ehr_id={a}&ehr_id={missing}"),
-            ))
+            .send(
+                HttpRequest::new(
+                    Method::Delete,
+                    format!("/admin/ehr/all?ehr_id={a}&ehr_id={missing}"),
+                )
+                .with_auth(AuthSlot::Admin),
+            )
             .await?;
         assert::status(&resp, 200)?;
         let body: Value = resp.json()?;
@@ -197,7 +203,7 @@ fn run_delete_all_partial<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 fn run_delete_all_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let resp = ctx
-            .send(HttpRequest::new(Method::Delete, "/admin/ehr/all"))
+            .send(HttpRequest::new(Method::Delete, "/admin/ehr/all").with_auth(AuthSlot::Admin))
             .await?;
         assert::status(&resp, 400)?;
         Ok(DataSetReport::SINGLE)
