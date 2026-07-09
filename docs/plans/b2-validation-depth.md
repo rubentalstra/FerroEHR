@@ -33,7 +33,9 @@ green (minus any B5-adjudicated corpus defects), zero drift elsewhere.
       `contains`, type-erased `Multiplicity_interval` enum variant,
       `PartialOrd` bound); emit + drift clean.*
 - [ ] 2. Closed-world semantics ADR + implementation (F-07-05), after checking
-      CNF fixtures for tolerated RM metadata.
+      CNF fixtures for tolerated RM metadata. *ADR-012 written (closed-archetype
+      semantics, RM-metadata tolerance, zero-drift gate); implementation
+      delegated — pending.*
 - [ ] 3. Slot enforcement (F-07-10): WebTemplate nodes for open
       `ARCHETYPE_SLOT`s (rm_type + occurrences + include/exclude regexes).
 - [ ] 4. Leaf completion: temporal interval constraints + timezone patterns,
@@ -66,7 +68,13 @@ green (minus any B5-adjudicated corpus defects), zero drift elsewhere.
 
 ## Decisions made this phase
 
--
+- ADR-012 — closed-archetype validation semantics for OPT 1.4 commits
+  (F-07-05): closed for archetyped content, open for RM-permitted metadata,
+  landed only behind an ECC zero-drift run.
+- Owned fixture register policy (`tools/conformance/testdata/fixtures/` +
+  REGISTER.md + companion negative cases; conformance-framework.md §5.3).
+- The in-process self-host SUT mode stays removed (B1); all conformance runs
+  go through the Docker compose stack.
 
 ## Handoff for next session
 
