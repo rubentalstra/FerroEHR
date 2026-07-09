@@ -41,6 +41,11 @@ pub(super) enum Kind {
     Organisation,
     Person,
     Role,
+    /// A demographic `PARTY_RELATIONSHIP` (RM demographic): a versioned object
+    /// with no EHR scope, like the party roots, but *not* a PARTY — it has its
+    /// own `versioned_party_relationship` read surface (SM-3,
+    /// `i_party_relationship.adoc`).
+    PartyRelationship,
 }
 
 impl Kind {
@@ -55,15 +60,25 @@ impl Kind {
             Kind::Organisation => "ORGANISATION",
             Kind::Person => "PERSON",
             Kind::Role => "ROLE",
+            Kind::PartyRelationship => "PARTY_RELATIONSHIP",
         }
     }
 
-    /// Whether this kind is a demographic party root (no EHR scope).
+    /// Whether this kind is a demographic party root (no EHR scope). This is the
+    /// `/versioned_party` read scope — a `PARTY_RELATIONSHIP` is *not* a party.
     pub(super) fn is_party(self) -> bool {
         matches!(
             self,
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role
         )
+    }
+
+    /// Whether this kind is a demographic versioned object (no EHR scope): the
+    /// five party roots plus `PARTY_RELATIONSHIP`. Gates the ehr-less
+    /// contribution scope (`check_kind_scope`) — a demographic CONTRIBUTION may
+    /// carry parties and relationships, an EHR one may carry neither.
+    pub(super) fn is_demographic(self) -> bool {
+        self.is_party() || self == Kind::PartyRelationship
     }
 
     /// The versioned-object kind for an RM `_type`, if it is a versioned root.
@@ -78,6 +93,7 @@ impl Kind {
             "ORGANISATION" => Some(Kind::Organisation),
             "PERSON" => Some(Kind::Person),
             "ROLE" => Some(Kind::Role),
+            "PARTY_RELATIONSHIP" => Some(Kind::PartyRelationship),
             _ => None,
         }
     }

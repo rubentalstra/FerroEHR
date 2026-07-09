@@ -18,7 +18,7 @@ use uuid::Uuid;
 use super::{EhrbaseService, ServiceError};
 
 /// Parse an ISO-8601 date-time string into a Postgres timestamptz binding, or
-/// `None`. An unparseable value is a `400`. (RESOURCE_STATUS validity times are
+/// `None`. An unparseable value is a `400`. (`RESOURCE_STATUS` validity times are
 /// typed `@@` in the SM — implemented as ISO date-time, PORT NOTE.)
 fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, ServiceError> {
     match raw {

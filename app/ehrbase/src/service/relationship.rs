@@ -8,8 +8,8 @@
 //! Spec oracle: `SM/docs/UML/classes/i_party_relationship.adoc` (the 6
 //! `I_PARTY_RELATIONSHIP` calls) + `i_demographic_service.adoc`
 //! (`create_party_relationship(UV_PARTY_RELATIONSHIP): UUID`, pre
-//! `valid_content`, server-side VERSIONED_OBJECT + ORIGINAL_VERSION +
-//! CONTRIBUTION). ITS-REST 1.0.3 defines no demographic wire contract, so — as
+//! `valid_content`, server-side `VERSIONED_OBJECT` + `ORIGINAL_VERSION` +
+//! `CONTRIBUTION`). ITS-REST 1.0.3 defines no demographic wire contract, so — as
 //! for the parties — this behaviour is our own design by analogy with the EHR
 //! group (`docs/design/sm-platform/03-demographic-ehr-index-query.md` §5.9).
 //!
@@ -51,7 +51,7 @@ fn typed_check(data: &Value) -> Result<(), ServiceError> {
         ServiceError::Unprocessable(format!("body does not validate as PARTY_RELATIONSHIP: {e}"))
     })?;
     for field in ["source", "target"] {
-        if data.get(field).filter(|v| !v.is_null()).is_none() {
+        if data.get(field).is_none_or(Value::is_null) {
             return Err(ServiceError::Unprocessable(format!(
                 "PARTY_RELATIONSHIP requires a {field} PARTY_REF"
             )));
@@ -60,42 +60,39 @@ fn typed_check(data: &Value) -> Result<(), ServiceError> {
     Ok(())
 }
 
+/// Validate a relationship body for a direct create/update: its root `_type`
+/// must be `PARTY_RELATIONSHIP` (mismatch → `422`), then [`typed_check`].
+fn validate_relationship_body(body: &Value) -> Result<(), ServiceError> {
+    let declared = body.get("_type").and_then(Value::as_str);
+    if declared != Some(RM_TYPE) {
+        return Err(ServiceError::Unprocessable(format!(
+            "party_relationship _type mismatch: requires {RM_TYPE:?}, got {:?}",
+            declared.unwrap_or("<none>"),
+        )));
+    }
+    typed_check(body)
+}
+
+/// Validate a relationship version reached through the CONTRIBUTION path (the
+/// [`Kind`] was already derived from the payload `_type`, so only the
+/// structural check remains). Called from
+/// [`validate_for_commit`](EhrbaseService::validate_for_commit).
+pub(super) fn validate_relationship_for_commit(data: &Value) -> Result<(), ServiceError> {
+    typed_check(data)
+}
+
 impl EhrbaseService {
-    /// Validate a relationship body for a direct create/update: its root `_type`
-    /// must be `PARTY_RELATIONSHIP` (mismatch → `422`), then [`typed_check`].
-    fn validate_relationship_body(&self, body: &Value) -> Result<(), ServiceError> {
-        let declared = body.get("_type").and_then(Value::as_str);
-        if declared != Some(RM_TYPE) {
-            return Err(ServiceError::Unprocessable(format!(
-                "party_relationship _type mismatch: requires {RM_TYPE:?}, got {:?}",
-                declared.unwrap_or("<none>"),
-            )));
-        }
-        typed_check(body)
-    }
-
-    /// Validate a relationship version reached through the CONTRIBUTION path
-    /// (the [`Kind`] was already derived from the payload `_type`, so only the
-    /// structural check remains). Called from
-    /// [`validate_for_commit`](Self::validate_for_commit).
-    pub(super) fn validate_relationship_for_commit(
-        &self,
-        data: &Value,
-    ) -> Result<(), ServiceError> {
-        typed_check(data)
-    }
-
     // ── PARTY_RELATIONSHIP CRUD ──────────────────────────────────────────────
 
     /// `create_party_relationship` (`i_demographic_service.adoc`): create the
-    /// first version of a new `PARTY_RELATIONSHIP` (server-side VERSIONED_OBJECT
-    /// + ORIGINAL_VERSION + CONTRIBUTION). Returns it with its `uid` set and the
-    /// create-response `ETag`/`Location` metadata.
+    /// first version of a new `PARTY_RELATIONSHIP` (server-side
+    /// `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + `CONTRIBUTION`). Returns it with
+    /// its `uid` set and the create-response `ETag`/`Location` metadata.
     pub(super) async fn create_relationship(
         &self,
         body: Value,
     ) -> Result<ServiceResponse, ServiceError> {
-        self.validate_relationship_body(&body)?;
+        validate_relationship_body(&body)?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::CREATION, "PARTY_RELATIONSHIP creation");
@@ -146,7 +143,7 @@ impl EhrbaseService {
         expected: Option<i32>,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_relationship(vo_id).await?;
-        self.validate_relationship_body(&body)?;
+        validate_relationship_body(&body)?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "PARTY_RELATIONSHIP update");

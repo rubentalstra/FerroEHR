@@ -610,15 +610,17 @@ fn aggregate_change_type(version_codes: &[String]) -> String {
 /// EHR contribution may carry only clinical versioned objects. A mismatch is
 /// `422` — the analogue of the EHR-group contribution rejecting bad content.
 fn check_kind_scope(kind: Kind, party_only: bool) -> Result<(), ServiceError> {
-    if party_only && !kind.is_party() {
+    // A demographic CONTRIBUTION carries the ehr-less demographic kinds (the five
+    // party roots + PARTY_RELATIONSHIP); an EHR CONTRIBUTION carries neither.
+    if party_only && !kind.is_demographic() {
         return Err(ServiceError::Unprocessable(format!(
-            "a demographic CONTRIBUTION may only contain party versions, got {}",
+            "a demographic CONTRIBUTION may only contain demographic versions, got {}",
             kind.as_str()
         )));
     }
-    if !party_only && kind.is_party() {
+    if !party_only && kind.is_demographic() {
         return Err(ServiceError::Unprocessable(format!(
-            "an EHR CONTRIBUTION may not contain demographic party versions, got {}",
+            "an EHR CONTRIBUTION may not contain demographic versions, got {}",
             kind.as_str()
         )));
     }

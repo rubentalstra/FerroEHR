@@ -1,0 +1,471 @@
+//! End-to-end SM-3 tests against a real PostgreSQL 18 (testcontainers): the
+//! `PARTY_RELATIONSHIP` CRUD + versioning + `VERSIONED_OBJECT` + revision
+//! history + error cases (driven through the `PartyRelationshipService` seam),
+//! and the EHR Index N:M / duplicate-management lifecycle (through the
+//! `EhrIndexService` seam). Verifies the 0007 migration applies cleanly (the
+//! harness runs migrations).
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::too_many_lines,
+    clippy::doc_markdown
+)]
+
+use serde_json::{Value, json};
+use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
+use testcontainers::runners::AsyncRunner;
+use testcontainers::{ContainerAsync, ImageExt};
+use testcontainers_modules::postgres::Postgres;
+use uuid::Uuid;
+
+use ehrbase::db::{self, DbSettings};
+use ehrbase::service::EhrbaseService;
+use ehrbase_rest::backend::{
+    DemographicService, EhrIndexService, LocationDesc, PartyRelationshipService,
+    ResourceInstanceType, ResourceStatus, SubjectRef,
+};
+use openehr_its::rest::runtime::ApiError;
+
+struct Pg {
+    #[allow(dead_code)]
+    container: ContainerAsync<Postgres>,
+    host: String,
+    port: u16,
+}
+
+impl Pg {
+    async fn start() -> Self {
+        let container = Postgres::default()
+            .with_tag("18")
+            .start()
+            .await
+            .expect("start postgres:18 (is Docker running?)");
+        let host = container.get_host().await.expect("host").to_string();
+        let port = container.get_host_port_ipv4(5432).await.expect("port");
+        Self {
+            container,
+            host,
+            port,
+        }
+    }
+
+    async fn migrated_pool(&self, name: &str) -> PgPool {
+        let admin = format!(
+            "postgres://postgres:postgres@{}:{}/postgres",
+            self.host, self.port
+        );
+        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
+        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
+            .execute(&mut conn)
+            .await
+            .expect("create db");
+        let settings = DbSettings::new(format!(
+            "postgres://postgres:postgres@{}:{}/{name}",
+            self.host, self.port
+        ));
+        let pool = db::connect(&settings).await.expect("pool");
+        // Runs every migration including 0007 (party relationship + ehr_index).
+        db::run_migrations(&pool).await.expect("migrate");
+        pool
+    }
+}
+
+/// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
+fn ovid(v: &Value) -> &str {
+    v["uid"]["value"].as_str().expect("uid.value")
+}
+
+/// The bare versioned-object UUID from an `OBJECT_VERSION_ID`.
+fn vo_uuid(v: &Value) -> String {
+    ovid(v).split("::").next().expect("vo uuid").to_owned()
+}
+
+fn party_ref(id: &str) -> Value {
+    json!({
+        "_type": "PARTY_REF",
+        "namespace": "demographic",
+        "type": "PERSON",
+        "id": { "_type": "HIER_OBJECT_ID", "value": id }
+    })
+}
+
+fn relationship(name: &str, source: &str, target: &str) -> Value {
+    json!({
+        "_type": "PARTY_RELATIONSHIP",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
+        "name": { "_type": "DV_TEXT", "value": name },
+        "source": party_ref(source),
+        "target": party_ref(target)
+    })
+}
+
+/// Insert a bare EHR row so the EHR Index existence check + FK are satisfied.
+async fn seed_ehr(pool: &PgPool) -> Uuid {
+    let id = Uuid::now_v7();
+    sqlx::query("INSERT INTO ehr (id) VALUES ($1)")
+        .bind(id)
+        .execute(pool)
+        .await
+        .expect("seed ehr");
+    id
+}
+
+// ─── PARTY_RELATIONSHIP ───────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn relationship_lifecycle_end_to_end() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("sm3_rel_life").await);
+
+    let src = "11111111-1111-4111-8111-111111111111";
+    let tgt = "22222222-2222-4222-8222-222222222222";
+
+    // create → v1
+    let created = svc
+        .party_relationship_create(relationship("parent-of", src, tgt))
+        .await
+        .expect("create relationship");
+    assert_eq!(created.body["_type"], "PARTY_RELATIONSHIP");
+    assert_eq!(created.body["source"]["id"]["value"], src);
+    assert_eq!(created.body["target"]["id"]["value"], tgt);
+    let ovid_v1 = ovid(&created.body).to_owned();
+    let vo = vo_uuid(&created.body);
+    assert!(ovid_v1.ends_with("::1"), "first version, got {ovid_v1}");
+    assert_eq!(
+        created.meta.as_ref().expect("meta").ehr_id,
+        "",
+        "a relationship has no EHR scope"
+    );
+
+    // get current (bare HIER_OBJECT_ID)
+    let got = svc
+        .party_relationship_get(vo.clone(), None)
+        .await
+        .expect("get relationship");
+    assert_eq!(got.body["name"]["value"], "parent-of");
+
+    // get by OBJECT_VERSION_ID
+    let by_ovid = svc
+        .party_relationship_get(ovid_v1.clone(), None)
+        .await
+        .expect("get by ovid");
+    assert_eq!(ovid(&by_ovid.body), ovid_v1);
+
+    // time-travel: capture a time inside v1, then update
+    let t_v1 = jiff::Timestamp::now();
+    tokio::time::sleep(std::time::Duration::from_millis(15)).await;
+
+    // update (If-Match = current OVID) → v2
+    let updated = svc
+        .party_relationship_update(
+            vo.clone(),
+            ovid_v1.clone(),
+            relationship("guardian-of", src, tgt),
+        )
+        .await
+        .expect("update relationship");
+    let ovid_v2 = ovid(&updated.body).to_owned();
+    assert!(ovid_v2.ends_with("::2"), "second version, got {ovid_v2}");
+    assert_eq!(updated.body["name"]["value"], "guardian-of");
+
+    // at-time read returns v1
+    let at_v1 = svc
+        .party_relationship_get(vo.clone(), Some(t_v1.to_string()))
+        .await
+        .expect("at-time");
+    assert_eq!(at_v1.body["name"]["value"], "parent-of");
+
+    // stale If-Match → 412
+    let stale = svc
+        .party_relationship_update(vo.clone(), ovid_v1.clone(), relationship("stale", src, tgt))
+        .await;
+    assert!(
+        matches!(stale, Err(ApiError::PreconditionFailed(_))),
+        "stale update, got {stale:?}"
+    );
+
+    // VERSIONED_OBJECT + revision history + version-by-id
+    let vp = svc
+        .versioned_party_relationship_get(vo.clone())
+        .await
+        .expect("versioned relationship");
+    assert_eq!(vp.body["_type"], "VERSIONED_OBJECT");
+    let rh = svc
+        .party_relationship_revision_history(vo.clone())
+        .await
+        .expect("revision_history");
+    assert_eq!(rh.body["items"].as_array().expect("items").len(), 2);
+    let ov = svc
+        .party_relationship_version_get_by_id(vo.clone(), ovid_v1.clone())
+        .await
+        .expect("version by id");
+    assert_eq!(ov.body["_type"], "ORIGINAL_VERSION");
+
+    // version at-time (VERSION resource + ETag/Location meta)
+    let vat = svc
+        .party_relationship_version_get_at_time(vo.clone(), None)
+        .await
+        .expect("version at time");
+    assert_eq!(vat.body["_type"], "ORIGINAL_VERSION");
+    assert!(vat.meta.is_some());
+
+    // delete (mandatory OBJECT_VERSION_ID) → 204; subsequent get → 204 (Null)
+    let deleted = svc
+        .party_relationship_delete(ovid_v2.clone())
+        .await
+        .expect("delete");
+    assert!(deleted.is_empty());
+    let after = svc
+        .party_relationship_get(vo.clone(), None)
+        .await
+        .expect("get after delete");
+    assert!(after.is_empty(), "deleted current read is 204 (Null body)");
+}
+
+#[tokio::test]
+async fn relationship_error_cases() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("sm3_rel_err").await);
+
+    // unknown id → 404
+    let unknown = svc
+        .party_relationship_get(Uuid::now_v7().to_string(), None)
+        .await;
+    assert!(
+        matches!(unknown, Err(ApiError::NotFound(_))),
+        "unknown relationship is 404, got {unknown:?}"
+    );
+
+    // invalid content (missing target) → 422
+    let mut bad = relationship("no-target", "src", "tgt");
+    bad.as_object_mut().unwrap().remove("target");
+    let invalid = svc.party_relationship_create(bad).await;
+    assert!(
+        matches!(invalid, Err(ApiError::Unprocessable(_))),
+        "missing target is 422, got {invalid:?}"
+    );
+
+    // a PERSON is not a relationship → wrong-kind get is 404
+    let created = svc
+        .party_relationship_create(relationship("r", "a", "b"))
+        .await
+        .expect("create");
+    let vo = vo_uuid(&created.body);
+    // reading the same id as a relationship works; reading a fresh (unknown) id
+    // as versioned_party_relationship is 404
+    let vp_unknown = svc
+        .versioned_party_relationship_get(Uuid::now_v7().to_string())
+        .await;
+    assert!(matches!(vp_unknown, Err(ApiError::NotFound(_))));
+    assert!(svc.party_relationship_get(vo, None).await.is_ok());
+}
+
+#[tokio::test]
+async fn relationship_via_demographic_contribution() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("sm3_rel_contrib").await);
+
+    // A demographic CONTRIBUTION accepts a PARTY_RELATIONSHIP version (the
+    // ehr-less scope now covers relationships as well as party roots).
+    let body = json!({
+        "_type": "CONTRIBUTION",
+        "versions": [{
+            "_type": "ORIGINAL_VERSION",
+            "commit_audit": {
+                "change_type": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "creation",
+                    "defining_code": {
+                        "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "249"
+                    }
+                }
+            },
+            "data": relationship("colleague-of", "p1", "p2")
+        }],
+        "audit": { "committer": { "_type": "PARTY_IDENTIFIED", "name": "tester" } }
+    });
+
+    let created = svc
+        .demographic_contribution_create(body)
+        .await
+        .expect("create demographic contribution with a relationship");
+    assert_eq!(created.body["_type"], "CONTRIBUTION");
+    let versions = created.body["versions"].as_array().expect("versions");
+    assert_eq!(versions.len(), 1);
+    assert_eq!(versions[0]["type"], "PARTY_RELATIONSHIP");
+}
+
+// ─── EHR Index ────────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn ehr_index_add_defaults_primary_and_reads() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("sm3_index_add").await;
+    let svc = EhrbaseService::new(pool.clone());
+    let ehr = seed_ehr(&pool).await;
+    let subject = SubjectRef::person("PID-1", "mpi");
+
+    // add with no status → Primary default
+    svc.add_ehr_subject(ehr.to_string(), subject.clone(), None, None)
+        .await
+        .expect("add subject");
+
+    let subjects = svc
+        .ehr_subjects(ehr.to_string())
+        .await
+        .expect("ehr subjects");
+    assert_eq!(subjects.len(), 1);
+    assert_eq!(subjects[0].subject, subject);
+    assert_eq!(
+        subjects[0].status.instance_type,
+        ResourceInstanceType::Primary
+    );
+    assert_eq!(subjects[0].ehr_id, ehr.to_string());
+
+    let ehrs = svc.subject_ehrs(subject).await.expect("subject ehrs");
+    assert_eq!(ehrs.len(), 1);
+    assert_eq!(ehrs[0].ehr_id, ehr.to_string());
+}
+
+#[tokio::test]
+async fn ehr_index_n_to_m() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("sm3_index_nm").await;
+    let svc = EhrbaseService::new(pool.clone());
+
+    let ehr_a = seed_ehr(&pool).await;
+    let ehr_b = seed_ehr(&pool).await;
+    let subj_x = SubjectRef::person("X", "mpi");
+    let subj_y = SubjectRef::person("Y", "mpi");
+
+    // two subjects on one EHR (the dangerous error state master07 describes)
+    svc.add_ehr_subject(ehr_a.to_string(), subj_x.clone(), None, None)
+        .await
+        .expect("a-x");
+    svc.add_ehr_subject(
+        ehr_a.to_string(),
+        subj_y.clone(),
+        Some(ResourceStatus {
+            instance_type: ResourceInstanceType::Duplicate,
+            ..Default::default()
+        }),
+        None,
+    )
+    .await
+    .expect("a-y duplicate");
+    // one subject on two EHRs (the multiple-EHR error state)
+    svc.add_ehr_subject(ehr_b.to_string(), subj_x.clone(), None, None)
+        .await
+        .expect("b-x");
+
+    assert_eq!(svc.ehr_subjects(ehr_a.to_string()).await.unwrap().len(), 2);
+    assert_eq!(svc.subject_ehrs(subj_x.clone()).await.unwrap().len(), 2);
+
+    // the duplicate instance_type is surfaced
+    let a_subjects = svc.ehr_subjects(ehr_a.to_string()).await.unwrap();
+    let y = a_subjects
+        .iter()
+        .find(|e| e.subject == subj_y)
+        .expect("subj_y present");
+    assert_eq!(y.status.instance_type, ResourceInstanceType::Duplicate);
+}
+
+#[tokio::test]
+async fn ehr_index_update_status_loc_and_remove() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("sm3_index_upd").await;
+    let svc = EhrbaseService::new(pool.clone());
+    let ehr = seed_ehr(&pool).await;
+    let subject = SubjectRef::person("PID-9", "mpi");
+
+    svc.add_ehr_subject(ehr.to_string(), subject.clone(), None, None)
+        .await
+        .expect("add");
+
+    // update status (validity + notes)
+    svc.update_ehr_subject_status(
+        ehr.to_string(),
+        subject.clone(),
+        ResourceStatus {
+            instance_type: ResourceInstanceType::Supplementary,
+            start_valid_time: Some("2020-01-01T00:00:00Z".to_owned()),
+            end_valid_time: None,
+            notes: Some("under review".to_owned()),
+        },
+    )
+    .await
+    .expect("update status");
+
+    // update location descriptor
+    svc.update_ehr_subject_loc_desc(
+        ehr.to_string(),
+        subject.clone(),
+        Some(LocationDesc {
+            system_id: "sys-1".to_owned(),
+            uri: Some("https://ehr.example/1".to_owned()),
+            description: Some("primary node".to_owned()),
+        }),
+    )
+    .await
+    .expect("update loc");
+
+    let entry = svc.ehr_subjects(ehr.to_string()).await.unwrap();
+    assert_eq!(entry.len(), 1);
+    assert_eq!(
+        entry[0].status.instance_type,
+        ResourceInstanceType::Supplementary
+    );
+    assert_eq!(entry[0].status.notes.as_deref(), Some("under review"));
+    assert!(entry[0].status.start_valid_time.is_some());
+    let loc = entry[0].location.as_ref().expect("location");
+    assert_eq!(loc.system_id, "sys-1");
+    assert_eq!(loc.uri.as_deref(), Some("https://ehr.example/1"));
+
+    // remove this one association
+    svc.remove_ehr_subject(ehr.to_string(), subject.clone())
+        .await
+        .expect("remove");
+    assert!(svc.ehr_subjects(ehr.to_string()).await.unwrap().is_empty());
+
+    // removing again → subject_id_does_not_exist (404)
+    let again = svc.remove_ehr_subject(ehr.to_string(), subject).await;
+    assert!(matches!(again, Err(ApiError::NotFound(_))));
+}
+
+#[tokio::test]
+async fn ehr_index_remove_subject_wide_and_unknown_ehr() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("sm3_index_wide").await;
+    let svc = EhrbaseService::new(pool.clone());
+    let ehr_a = seed_ehr(&pool).await;
+    let ehr_b = seed_ehr(&pool).await;
+    let subject = SubjectRef::person("W", "mpi");
+
+    svc.add_ehr_subject(ehr_a.to_string(), subject.clone(), None, None)
+        .await
+        .expect("a");
+    svc.add_ehr_subject(ehr_b.to_string(), subject.clone(), None, None)
+        .await
+        .expect("b");
+
+    // remove_subject drops all associations for the subject
+    svc.remove_subject(subject.clone())
+        .await
+        .expect("remove subject-wide");
+    assert!(svc.subject_ehrs(subject.clone()).await.unwrap().is_empty());
+
+    // unknown EHR → ehr_id_does_not_exist (404)
+    let unknown = svc
+        .add_ehr_subject(Uuid::now_v7().to_string(), subject.clone(), None, None)
+        .await;
+    assert!(
+        matches!(unknown, Err(ApiError::NotFound(_))),
+        "unknown ehr is 404, got {unknown:?}"
+    );
+
+    // unknown subject on remove_subject → 404
+    let no_subject = svc.remove_subject(SubjectRef::person("nope", "mpi")).await;
+    assert!(matches!(no_subject, Err(ApiError::NotFound(_))));
+}
