@@ -682,6 +682,47 @@ pub fn retype_leaf(opt: &mut OperationalTemplate, current_type: &str, new_obj: C
     })
 }
 
+/// Re-type the child of `host`'s `attr` whose current `rm_type` is
+/// `current_type` — the first such host/attr/child triple in document order.
+/// Unlike [`retype_leaf`] (first `current_type` anywhere), this pins the
+/// replacement to the intended slot when the same RM type occurs at several
+/// unrelated leaves of the template.
+pub fn retype_attr_child(
+    opt: &mut OperationalTemplate,
+    host: &str,
+    attr: &str,
+    current_type: &str,
+    new_obj: CObject,
+) -> bool {
+    let mut new_obj = Some(new_obj);
+    visit_objects(&mut opt.definition, &mut |obj| {
+        if object_rm_type(obj) != Some(host) {
+            return false;
+        }
+        let Some(attrs) = object_attributes_mut(obj) else {
+            return false;
+        };
+        for a in attrs {
+            let (name, children) = match a {
+                CAttribute::CSingleAttribute(s) => (&s.rm_attribute_name, &mut s.children),
+                CAttribute::CMultipleAttribute(m) => (&m.rm_attribute_name, &mut m.children),
+            };
+            if name != attr {
+                continue;
+            }
+            for ch in children.iter_mut() {
+                if object_rm_type(ch) == Some(current_type)
+                    && let Some(replacement) = new_obj.take()
+                {
+                    *ch = replacement;
+                    return true;
+                }
+            }
+        }
+        false
+    })
+}
+
 /// A minimal `C_COMPLEX_OBJECT` for a leaf of `rm_type` with no inner attribute
 /// constraints (any RM-valid instance accepted) — the base for a slot-retype to a
 /// type absent from the base composition.
@@ -730,4 +771,135 @@ pub fn constrain_codephrase(
             }
         }
     })
+}
+
+fn object_node_id(obj: &CObject) -> Option<&str> {
+    match obj {
+        CObject::CComplexObject(c) => Some(&c.node_id),
+        CObject::CArchetypeRoot(r) => Some(&r.node_id),
+        _ => None,
+    }
+}
+
+/// Like [`constrain_codephrase`], but pinned to the `host` object found under
+/// the `ELEMENT` with `element_node_id` — the blanket first-match variant hits
+/// the first `DV_CODED_TEXT` in document order (the COMPOSITION `category`, in
+/// the `all_types` OPT), never the intended leaf.
+pub fn constrain_codephrase_under(
+    opt: &mut OperationalTemplate,
+    archetype: &str,
+    element_node_id: &str,
+    attr: &str,
+    terminology: &str,
+    codes: Vec<String>,
+) -> bool {
+    let cp = openehr_its::opt14::CCodePhrase {
+        rm_type_name: "CODE_PHRASE".to_owned(),
+        occurrences: closed_interval(1, 1),
+        node_id: String::new(),
+        assumed_value: None,
+        terminology_id: Some(openehr_base::prelude::TerminologyId {
+            value: terminology.to_owned(),
+        }),
+        code_list: codes,
+    };
+    let mut cp = Some(cp);
+    // Node ids are archetype-local (`at0005` recurs in every archetype of the
+    // template, and the EVENT_CONTEXT precedes the content in document order),
+    // so the ELEMENT search is scoped to the named archetype root.
+    let mut in_scope = opt.definition.archetype_id.value.starts_with(archetype);
+    visit_objects(&mut opt.definition, &mut |obj| {
+        if let CObject::CArchetypeRoot(r) = obj {
+            in_scope = r.archetype_id.value.starts_with(archetype);
+        }
+        if !in_scope || object_node_id(obj) != Some(element_node_id) {
+            return false;
+        }
+        let Some(attrs) = object_attributes_mut(obj) else {
+            return false;
+        };
+        // Descend: ELEMENT.value → the coded host object → `attr` (created
+        // when the host is open — an unconstrained coded text carries no
+        // `defining_code` C_ATTRIBUTE at all).
+        for a in attrs {
+            let children = match a {
+                CAttribute::CSingleAttribute(s) => &mut s.children,
+                CAttribute::CMultipleAttribute(m) => &mut m.children,
+            };
+            for host in children.iter_mut() {
+                let Some(host_attrs) = object_attributes_mut(host) else {
+                    continue;
+                };
+                let slot = host_attrs.iter_mut().find_map(|ha| {
+                    let (name, hc) = match ha {
+                        CAttribute::CSingleAttribute(s) => (&s.rm_attribute_name, &mut s.children),
+                        CAttribute::CMultipleAttribute(m) => {
+                            (&m.rm_attribute_name, &mut m.children)
+                        }
+                    };
+                    (name == attr).then_some(hc)
+                });
+                if let Some(cp_obj) = cp.take() {
+                    match slot {
+                        Some(hc) => {
+                            if let Some(first) = hc.first_mut() {
+                                *first = CObject::CCodePhrase(cp_obj);
+                            } else {
+                                hc.push(CObject::CCodePhrase(cp_obj));
+                            }
+                        }
+                        None => host_attrs.push(CAttribute::CSingleAttribute(CSingleAttribute {
+                            rm_attribute_name: attr.to_owned(),
+                            existence: closed_interval(1, 1),
+                            children: vec![CObject::CCodePhrase(cp_obj)],
+                        })),
+                    }
+                    return true;
+                }
+            }
+        }
+        false
+    })
+}
+
+#[cfg(test)]
+mod validation_repro_tests {
+    use super::*;
+    use serde_json::json;
+
+    /// Regression repro for ECC-VAL-048: an authored external `C_CODE_PHRASE`
+    /// code list (AOM 1.4 §`C_CODE_PHRASE`; master17.2
+    /// CONT-DV_CODED_TEXT-validate_ext_term) must reject an off-list code.
+    #[test]
+    fn authored_external_code_list_rejects_off_list_code() {
+        let mut opt = parse_base("all_types/Test_all_types.opt").expect("parse opt");
+        assert!(constrain_codephrase_under(
+            &mut opt,
+            "openEHR-EHR-OBSERVATION.test_all_types",
+            "at0005",
+            "defining_code",
+            "SNOMED-CT",
+            vec!["73211009".to_owned()],
+        ));
+        let xml = to_xml(&opt).expect("serialize");
+        let reparsed = openehr_its::opt14::from_xml(&xml).expect("reparse");
+        let wt = openehr_flat::build_web_template(&reparsed).expect("build wt");
+        let mut comp = crate::testdata::fixtures::owned_fixture(
+            "valid/compositions/all_types.composition.json",
+        )
+        .expect("owned fixture");
+        // The case's leaf: OBSERVATION data/events[0]/data/items[1] DV_CODED_TEXT.
+        let leaf = comp
+            .pointer_mut("/content/0/data/events/0/data/items/1/value")
+            .expect("leaf");
+        leaf["defining_code"]["terminology_id"]["value"] = json!("SNOMED-CT");
+        leaf["defining_code"]["code_string"] = json!("99999999");
+        let msgs = openehr_flat::validation::validate_composition(&comp, &wt);
+        assert!(
+            msgs.iter().any(|m| format!("{m:?}").contains("99999999")
+                || format!("{m:?}").contains("value set")
+                || format!("{m:?}").contains("code list")),
+            "expected an off-list coded-value violation, got: {msgs:?}"
+        );
+    }
 }

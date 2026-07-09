@@ -8,9 +8,9 @@
 - SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
 - Spec versions: RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1.0 · TERM 3.1.0
 - Auth mode: basic
-- Started: 2026-07-09T17:37:25.705084Z
+- Started: 2026-07-09T19:00:27.168087Z
 
-**318 case×format executions · 211 passed · 106 failed.**
+**319 case×format executions · 290 passed · 28 failed.**
 
 ### Per-area matrix
 
@@ -24,7 +24,7 @@
 | TPL — Template / OPT provisioning | 16 | 14 | 2 | 0 | 0 |
 | SQR — Stored-query provisioning | 7 | 3 | 4 | 0 | 0 |
 | QRY — AQL execution | 13 | 8 | 5 | 0 | 0 |
-| VAL — Content / archetype validation | 118 | 37 | 81 | 0 | 0 |
+| VAL — Content / archetype validation | 119 | 116 | 3 | 0 | 0 |
 | DEM — Demographic service | 24 | 18 | 6 | 0 | 0 |
 | ADM — Admin service | 6 | 6 | 0 | 0 | 0 |
 | SIG — Version signing | 5 | 4 | 1 | 0 | 1 |
@@ -57,87 +57,9 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 - **ECC-DEM-014** Demographic group delete (`dem/group-delete`, json): expected status in [200, 204], got 400
 - **ECC-DEM-017** Demographic organisation delete (`dem/organisation-delete`, json): expected status in [200, 204], got 400
 - **ECC-DEM-020** Demographic role delete (`dem/role-delete`, json): expected status in [200, 204], got 400
-- **ECC-VAL-036** Validate ITEM_STRUCTURE — type item list (`val/item-str-type-item-list`, json): ITEM_STRUCTURE ITEM_LIST slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-037** Validate ITEM_STRUCTURE — type item table (`val/item-str-type-item-table`, json): ITEM_STRUCTURE ITEM_TABLE slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-038** Validate ITEM_STRUCTURE — type item single (`val/item-str-type-item-single`, json): ITEM_STRUCTURE ITEM_SINGLE slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-039** Validate DV_BOOLEAN — anything allowed (`val/dv-boolean-anything-allowed`, json): DV_BOOLEAN with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-040** Validate DV_BOOLEAN — only true allowed (`val/dv-boolean-only-true-allowed`, json): value true allowed (C_BOOLEAN true-only): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-041** Validate DV_BOOLEAN — only false allowed (`val/dv-boolean-only-false-allowed`, json): value false allowed (C_BOOLEAN false-only): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-042** Validate DV_IDENTIFIER — all pattern (`val/dv-identifier-all-pattern`, json): id 54480987 matches [0-9]+ (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-043** Validate DV_IDENTIFIER — all list (`val/dv-identifier-all-list`, json): id 54480987 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-044** Validate DV_TEXT — open (`val/dv-text-open`, json): DV_TEXT with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-045** Validate DV_TEXT — list (`val/dv-text-list`, json): DV_TEXT value in the C_STRING list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-046** Validate DV_CODED_TEXT — open (`val/dv-coded-text-open`, json): DV_CODED_TEXT with defining_code (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-047** Validate DV_CODED_TEXT — local codes (`val/dv-coded-text-local-codes`, json): DV_CODED_TEXT local::at0023 in code_list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-048** Validate DV_CODED_TEXT — ext term (`val/dv-coded-text-ext-term`, json): SNOMED-CT 73211009 in the external code_list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-049** Validate DV_ORDINAL — open (`val/dv-ordinal-open`, json): DV_ORDINAL with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-050** Validate DV_ORDINAL — constraint (`val/dv-ordinal-constraint`, json): DV_ORDINAL symbol local::at0014 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-051** Validate DV_SCALE — open (`val/dv-scale-open`, json): DV_SCALE with value+symbol (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-052** Validate DV_SCALE — constraint (`val/dv-scale-constraint`, json): DV_SCALE value 1.0 in list {1.0} (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-053** Validate DV_COUNT — open (`val/dv-count-open`, json): DV_COUNT with magnitude (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-054** Validate DV_COUNT — range (`val/dv-count-range`, json): DV_COUNT magnitude 3 in range [0,10] (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-055** Validate DV_COUNT — list (`val/dv-count-list`, json): DV_COUNT magnitude 3 in the C_INTEGER list {3} (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-056** Validate DV_QUANTITY — open (`val/dv-quantity-open`, json): DV_QUANTITY with magnitude (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-057** Validate DV_QUANTITY — property (`val/dv-quantity-property`, json): units mg matches property mass openehr::124 (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-058** Validate DV_QUANTITY — property units (`val/dv-quantity-property-units`, json): DV_QUANTITY units 'mg' in [mg,kg] (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-060** Validate DV_PROPORTION — open (`val/dv-proportion-open`, json): DV_PROPORTION with numerator (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-061** Validate DV_PROPORTION — ratio (`val/dv-proportion-ratio`, json): type 0 in list {0} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-062** Validate DV_PROPORTION — unitary (`val/dv-proportion-unitary`, json): type 1 in list {1} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-063** Validate DV_PROPORTION — percent (`val/dv-proportion-percent`, json): type 2 in list {2} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-064** Validate DV_PROPORTION — fraction (`val/dv-proportion-fraction`, json): type 3 in list {3} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-065** Validate DV_PROPORTION — integer fraction (`val/dv-proportion-integer-fraction`, json): type 4 in list {4} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-067** Validate DV_PROPORTION — ratio range (`val/dv-proportion-ratio-range`, json): numerator 398.5 in range [0,1000] (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-068** Validate DV_INTERVAL<DV_COUNT> — open (`val/dv-interval-dv-count-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-069** Validate DV_INTERVAL<DV_COUNT> — lower upper (`val/dv-interval-dv-count-lower-upper`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-070** Validate DV_INTERVAL<DV_COUNT> — lower upper list (`val/dv-interval-dv-count-lower-upper-list`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-071** Validate DV_INTERVAL<DV_QUANTITY> — open (`val/dv-interval-dv-quantity-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-072** Validate DV_INTERVAL<DV_QUANTITY> — upper lower (`val/dv-interval-dv-quantity-upper-lower`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-073** Validate DV_INTERVAL<DV_DATE_TIME> — open (`val/dv-interval-dv-date-time-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-074** Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint (`val/dv-interval-dv-date-time-lower-upper-constraint`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-075** Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range (`val/dv-interval-dv-date-time-lower-upper-range`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-076** Validate DV_INTERVAL<DV_DATE> — open (`val/dv-interval-dv-date-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-077** Validate DV_INTERVAL<DV_DATE> — lower upper constraint (`val/dv-interval-dv-date-lower-upper-constraint`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-078** Validate DV_INTERVAL<DV_DATE> — lower upper range (`val/dv-interval-dv-date-lower-upper-range`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-079** Validate DV_INTERVAL<DV_TIME> — open (`val/dv-interval-dv-time-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-080** Validate DV_INTERVAL<DV_TIME> — lower upper constraint (`val/dv-interval-dv-time-lower-upper-constraint`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-081** Validate DV_INTERVAL<DV_TIME> — lower upper range (`val/dv-interval-dv-time-lower-upper-range`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-082** Validate DV_INTERVAL<DV_DURATION> — open (`val/dv-interval-dv-duration-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-083** Validate DV_INTERVAL<DV_DURATION> — constraint (`val/dv-interval-dv-duration-constraint`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-084** Validate DV_INTERVAL<DV_DURATION> — range (`val/dv-interval-dv-duration-range`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-085** Validate DV_INTERVAL<DV_ORDINAL> — open (`val/dv-interval-dv-ordinal-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-086** Validate DV_INTERVAL<DV_ORDINAL> — constraint (`val/dv-interval-dv-ordinal-constraint`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-087** Validate DV_INTERVAL<DV_SCALE> — open (`val/dv-interval-dv-scale-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-088** Validate DV_INTERVAL<DV_SCALE> — constraint (`val/dv-interval-dv-scale-constraint`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-089** Validate DV_INTERVAL<DV_PROPORTION> — open (`val/dv-interval-dv-proportion-open`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-090** Validate DV_INTERVAL<DV_PROPORTION> — ratio (`val/dv-interval-dv-proportion-ratio`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-091** Validate DV_INTERVAL<DV_PROPORTION> — unitary (`val/dv-interval-dv-proportion-unitary`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-092** Validate DV_INTERVAL<DV_PROPORTION> — percentage (`val/dv-interval-dv-proportion-percentage`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-093** Validate DV_INTERVAL<DV_PROPORTION> — fraction (`val/dv-interval-dv-proportion-fraction`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-094** Validate DV_INTERVAL<DV_PROPORTION> — integer fraction (`val/dv-interval-dv-proportion-integer-fraction`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-095** Validate DV_INTERVAL<DV_PROPORTION> — ratio range (`val/dv-interval-dv-proportion-ratio-range`, json): valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-096** Validate DV_DURATION — open (`val/dv-duration-open`, json): DV_DURATION with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-097** Validate DV_DURATION — fields (`val/dv-duration-fields`, json): DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-098** Validate DV_DURATION — range (`val/dv-duration-range`, json): DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-099** Validate DV_DURATION — fields range (`val/dv-duration-fields-range`, json): DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-100** Validate DV_TIME — open (`val/dv-time-open`, json): DV_TIME with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-101** Validate DV_TIME — constraint (`val/dv-time-constraint`, json): DV_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-102** Validate DV_TIME — range (`val/dv-time-range`, json): DV_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-103** Validate DV_DATE — open (`val/dv-date-open`, json): DV_DATE with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-104** Validate DV_DATE — constraint (`val/dv-date-constraint`, json): DV_DATE base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-105** Validate DV_DATE — range (`val/dv-date-range`, json): DV_DATE base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-106** Validate DV_DATE_TIME — open (`val/dv-date-time-open`, json): DV_DATE_TIME with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-107** Validate DV_DATE_TIME — constraint (`val/dv-date-time-constraint`, json): DV_DATE_TIME full timestamp matches yyyy-mm-ddTHH:MM:SS (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-108** Validate DV_DATE_TIME — range (`val/dv-date-time-range`, json): DV_DATE_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-109** Validate DV_PARSABLE — open (`val/dv-parsable-open`, json): DV_PARSABLE with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-110** Validate DV_PARSABLE — value formalism (`val/dv-parsable-value-formalism`, json): formalism ISO8601 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-111** Validate DV_MULTIMEDIA — open (`val/dv-multimedia-open`, json): DV_MULTIMEDIA with media_type (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-112** Validate DV_MULTIMEDIA — media type (`val/dv-multimedia-media-type`, json): media_type image/png in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-113** Validate DV_URI — open (`val/dv-uri-open`, json): DV_URI with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-114** Validate DV_URI — pattern (`val/dv-uri-pattern`, json): URI http://ok matches pattern (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-115** Validate DV_URI — list (`val/dv-uri-list`, json): URI http://ok in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-116** Validate DV_EHR_URI — open (`val/dv-ehr-uri-open`, json): DV_EHR_URI with value (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-117** Validate DV_EHR_URI — pattern (`val/dv-ehr-uri-pattern`, json): ehr://x matches pattern (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
-- **ECC-VAL-118** Validate DV_EHR_URI — list (`val/dv-ehr-uri-list`, json): ehr://ok in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)
+- **ECC-VAL-034** Validate ITEM_STRUCTURE — type any (`val/item-str-type-any`, json): ITEM_LIST accepted in an open ITEM_STRUCTURE slot (any subtype): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-EVALUATION.validation_evaliation_test.v2,'Validation evaluation test with tree']/data[at0001]: class ITEM_LIST not)
+- **ECC-VAL-048** Validate DV_CODED_TEXT — ext term (`val/dv-coded-text-ext-term`, json): SNOMED-CT 99999999 not in the external code_list (C_CODE_PHRASE): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+- **ECC-VAL-061** Validate DV_PROPORTION — ratio (`val/dv-proportion-ratio`, json): type 0 (ratio) not in list {0} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
 - **ECC-SIG-001** Version signing — digest present (`sig/digest-present`, xml): expected status 200, got 406 (body: {"error":"Not Acceptable","message":"not acceptable: canonical XML for this response is available once typed payloads land (P12); request application/json"})
 
 ## 2. Scope of test
@@ -146,10 +68,10 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 |---|---|
 | Profiles requested | all |
 | Data formats | json, xml |
-| Catalogue (active cases) | 310 |
-| Executed | 318 |
-| Passed | 211 |
-| Failed | 106 |
+| Catalogue (active cases) | 311 |
+| Executed | 319 |
+| Passed | 290 |
+| Failed | 28 |
 
 ## 3. Detailed test report
 
@@ -382,91 +304,92 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-VAL-031 | ArchetypeValidation | json | 1/1 | PASS |
 | ECC-VAL-032 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-033 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-034 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-034 | ArchetypeValidation | json | 0/0 | **FAIL** |
 | ECC-VAL-035 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-036 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-037 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-038 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-039 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-040 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-041 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-042 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-043 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-044 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-045 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-046 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-047 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-036 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-037 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-038 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-039 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-040 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-041 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-042 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-043 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-044 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-045 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-046 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-047 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-048 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-049 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-050 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-051 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-052 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-053 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-054 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-055 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-056 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-057 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-058 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-049 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-050 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-051 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-052 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-053 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-054 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-055 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-056 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-057 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-058 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-059 | ArchetypeValidation | json | 3/3 | PASS |
-| ECC-VAL-060 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-060 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-061 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-062 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-063 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-064 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-065 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-062 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-063 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-064 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-065 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-066 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-067 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-068 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-069 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-070 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-071 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-072 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-073 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-074 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-075 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-076 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-077 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-078 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-079 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-080 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-081 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-082 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-083 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-084 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-085 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-086 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-087 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-088 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-089 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-090 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-091 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-092 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-093 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-094 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-095 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-096 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-097 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-098 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-099 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-100 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-101 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-102 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-103 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-104 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-105 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-106 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-107 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-108 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-109 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-110 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-111 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-112 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-113 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-114 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-115 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-116 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-117 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-118 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-067 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-068 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-069 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-070 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-071 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-072 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-073 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-074 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-075 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-076 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-077 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-078 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-079 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-080 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-081 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-082 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-083 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-084 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-085 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-086 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-087 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-088 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-089 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-090 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-091 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-092 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-093 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-094 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-095 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-096 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-097 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-098 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-099 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-100 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-101 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-102 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-103 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-104 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-105 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-119 | ArchetypeValidation | json | 1/1 | PASS |
+| ECC-VAL-106 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-107 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-108 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-109 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-110 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-111 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-112 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-113 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-114 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-115 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-116 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-117 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-118 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-SIG-001 | Signing | json | 1/1 | PASS |
 | ECC-SIG-001 | Signing | xml | 0/0 | **FAIL** |
 | ECC-SIG-002 | Signing | json | 1/1 | PASS |
@@ -487,7 +410,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | CompositionOps | 37 | 1 | 0 | 0 | fail |
 | ChangeSets | 26 | 5 | 0 | 0 | fail |
 | Versioning | 0 | 0 | 0 | 0 | fail |
-| ArchetypeValidation | 37 | 81 | 0 | 0 | fail |
+| ArchetypeValidation | 116 | 3 | 0 | 0 | fail |
 | AnonymousEhrs | 0 | 0 | 0 | 0 | fail |
 
 ### Standard — not claimable
@@ -501,7 +424,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | CompositionOps | 37 | 1 | 0 | 0 | fail |
 | ChangeSets | 26 | 5 | 0 | 0 | fail |
 | Versioning | 0 | 0 | 0 | 0 | fail |
-| ArchetypeValidation | 37 | 81 | 0 | 0 | fail |
+| ArchetypeValidation | 116 | 3 | 0 | 0 | fail |
 | AnonymousEhrs | 0 | 0 | 0 | 0 | fail |
 | DirectoryOps | 36 | 1 | 0 | 0 | fail |
 | QueryProvisioning | 3 | 4 | 0 | 0 | fail |

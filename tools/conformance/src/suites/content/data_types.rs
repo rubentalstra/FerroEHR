@@ -1099,8 +1099,16 @@ fn drive_proportion_kind<'a>(
                     Expected::Accepted,
                 ),
                 (
-                    format!("type 0 (ratio) not in list {{{kind}}} (C_INTEGER.list)"),
-                    vec![(ty, json!(0))],
+                    // An off-list kind: 0 (ratio) for the non-ratio cases; for
+                    // the ratio case itself 0 IS the permitted kind, so use 2
+                    // (percent) — the previous unconditional 0 made the ratio
+                    // case's reject row a no-op mutation that could never
+                    // reject (master17.3 CONT-DV_PROPORTION truth table).
+                    format!(
+                        "type {bad} not in list {{{kind}}} (C_INTEGER.list)",
+                        bad = if kind == 0 { 2 } else { 0 }
+                    ),
+                    vec![(ty, json!(if kind == 0 { 2 } else { 0 }))],
                     Expected::Rejected,
                 ),
             ],
@@ -1827,9 +1835,14 @@ fn run_dv_coded_ext_term<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             ctx,
             "cnf_dv_coded_ext_term",
             |opt| {
-                author::constrain_codephrase(
+                // Pinned to ELEMENT at0005 (the OBSERVATION's DV_CODED_TEXT
+                // leaf this case mutates): the first-match variant constrained
+                // the COMPOSITION `category` coded text instead, so neither
+                // row ever exercised the external code list.
+                author::constrain_codephrase_under(
                     opt,
-                    "DV_CODED_TEXT",
+                    "openEHR-EHR-OBSERVATION.test_all_types",
+                    "at0005",
                     "defining_code",
                     "SNOMED-CT",
                     vec!["73211009".to_owned()],
