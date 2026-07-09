@@ -147,20 +147,50 @@ pub struct Hooks {
 }
 
 /// An in-memory audit sink for the mock's [`SystemLog`] — records emitted
-/// [`AuditEvent`]s so router tests can assert what the audit middleware sent.
-#[derive(Clone, Default)]
+/// [`AuditEvent`]s so router tests can assert what the audit middleware sent,
+/// and drives the [`EmitOutcome`] the middleware sees (for the fail-open /
+/// fail-closed paths that the real `AuditSender`'s queue used to exercise).
+#[derive(Clone)]
 pub struct AuditSink {
     /// The events the middleware emitted, in order.
     pub events: Arc<std::sync::Mutex<Vec<AuditEvent>>>,
     /// Whether successful-login "Application Activity" records are suppressed.
     pub suppress_login: bool,
+    /// The outcome `emit` reports (default `Enqueued`; `Dropped` = fail-open,
+    /// `Rejected` = fail-closed → the middleware returns `503`).
+    pub emit_outcome: EmitOutcome,
+}
+
+impl Default for AuditSink {
+    fn default() -> Self {
+        Self {
+            events: Arc::default(),
+            suppress_login: false,
+            emit_outcome: EmitOutcome::Enqueued,
+        }
+    }
 }
 
 impl AuditSink {
-    /// A fresh recording sink (login events not suppressed).
+    /// A fresh recording sink (login events not suppressed, `emit` enqueues).
     #[must_use]
     pub fn recording() -> Self {
         Self::default()
+    }
+
+    /// Suppress successful-login records.
+    #[must_use]
+    pub fn with_suppress_login(mut self, suppress: bool) -> Self {
+        self.suppress_login = suppress;
+        self
+    }
+
+    /// Set the [`EmitOutcome`] `emit` reports (`Dropped` fail-open / `Rejected`
+    /// fail-closed).
+    #[must_use]
+    pub fn with_emit_outcome(mut self, outcome: EmitOutcome) -> Self {
+        self.emit_outcome = outcome;
+        self
     }
 
     /// The events recorded so far (cloned out).
@@ -714,7 +744,7 @@ impl SystemLog for Mock {
         match &self.h.audit {
             Some(sink) => {
                 sink.events.lock().expect("audit sink poisoned").push(event);
-                EmitOutcome::Enqueued
+                sink.emit_outcome
             }
             None => EmitOutcome::Dropped,
         }

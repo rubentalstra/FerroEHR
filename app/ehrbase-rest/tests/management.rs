@@ -67,14 +67,8 @@ fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
         },
         ..Observability::default()
     };
-    ehrbase_rest::build_full(
-        config,
-        Arc::new(common::Mock::new()),
-        None,
-        None,
-        observability,
-    )
-    .expect("build")
+    ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
+        .expect("build")
 }
 
 async fn status_of(app: Router, req: Request<Body>) -> StatusCode {
@@ -184,14 +178,8 @@ fn app_with_metrics() -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    ehrbase_rest::build_full(
-        config,
-        Arc::new(common::Mock::new()),
-        None,
-        None,
-        observability,
-    )
-    .expect("build")
+    ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
+        .expect("build")
 }
 
 #[tokio::test]
@@ -285,14 +273,9 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         },
         ..Observability::default()
     };
-    let main_app = ehrbase_rest::build_full(
-        config,
-        Arc::new(common::Mock::new()),
-        None,
-        None,
-        observability,
-    )
-    .expect("build");
+    let main_app =
+        ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
+            .expect("build");
 
     // …the main app 404s the management route.
     assert_eq!(

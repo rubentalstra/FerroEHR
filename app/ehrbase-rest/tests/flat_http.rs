@@ -100,7 +100,9 @@ fn app(store: &Store) -> Router {
                 )
             })
         })),
-        definition_template_adl1_4_get: Some(Arc::new(|_p| Ok(Value::String(opt_xml())))),
+        // The adl1.4 GET routes through the SM `get_opt` seam now (returns the
+        // stored OPT XML as a String; ADR-011).
+        get_opt: Some(Arc::new(|_id| Ok(opt_xml()))),
         web_template: Some(Arc::new(|_id| Ok(Arc::new(web_template())))),
         ..Default::default()
     };
