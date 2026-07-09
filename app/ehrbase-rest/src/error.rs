@@ -25,6 +25,7 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, header};
 use serde::Serialize;
 
+use ehrbase_sm::SmError;
 use openehr_its::rest::generated::ehr::Error as ValidationErrorBody;
 use openehr_its::rest::runtime::ApiError;
 
@@ -35,6 +36,23 @@ pub struct RestError(pub ApiError);
 impl From<ApiError> for RestError {
     fn from(e: ApiError) -> Self {
         Self(e)
+    }
+}
+
+/// The single SM → HTTP mapping, owned by the protocol adapter (ADR-011): a
+/// native [`SmError`] carries only a `CALL_STATUS_TYPE`, and this adapter turns
+/// its status into the ITS-REST 1.0.3 status code + body. The wire oracle
+/// (ITS-REST) decides each row via [`ehrbase_sm::CallStatusType::api_error`].
+/// (A free function, not `impl From<SmError> for ApiError`, because both types
+/// are foreign to this crate — the orphan rule forbids that impl.)
+#[must_use]
+pub(crate) fn sm_api_error(e: SmError) -> ApiError {
+    e.status.api_error(e.message)
+}
+
+impl From<SmError> for RestError {
+    fn from(e: SmError) -> Self {
+        Self(sm_api_error(e))
     }
 }
 
