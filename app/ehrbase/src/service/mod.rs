@@ -36,13 +36,15 @@ mod item_tag;
 mod relationship;
 mod stored_query;
 mod template;
+mod terminology;
 mod version_id;
 mod versioned;
 mod vobject;
 
 use std::sync::Arc;
 
-use ehrbase_signing::Signer;
+use crate::signing::Signer;
+use crate::system_log::AuditSender;
 use openehr_flat::cache::WebTemplateCache;
 use openehr_its::rest::runtime::ApiError;
 use sqlx::PgPool;
@@ -63,6 +65,12 @@ pub struct EhrbaseService {
     /// `docs/design/version-signing.md`). Defaults to server-side `digest`
     /// signing; `main.rs` wires the configured [`Signer`].
     signer: Arc<Signer>,
+    /// The optional IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
+    /// component (`crate::system_log`). `None` = auditing off; the binary wires
+    /// the configured [`AuditSender`] via [`Self::with_audit`]. Read only
+    /// through the [`SystemLog`](ehrbase_sm::SystemLog) impl in
+    /// `crate::system_log`.
+    pub(crate) audit: Option<AuditSender>,
 }
 
 impl EhrbaseService {
@@ -75,6 +83,7 @@ impl EhrbaseService {
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
             web_templates: WebTemplateCache::default(),
             signer: Arc::new(Signer::digest_default()),
+            audit: None,
         }
     }
 
@@ -90,6 +99,15 @@ impl EhrbaseService {
     #[must_use]
     pub fn with_signer(mut self, signer: Arc<Signer>) -> Self {
         self.signer = signer;
+        self
+    }
+
+    /// Install the IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
+    /// component (`crate::system_log`); the binary boots it and wires it here.
+    /// Without it, [`SystemLog`](ehrbase_sm::SystemLog) auditing is off.
+    #[must_use]
+    pub fn with_audit(mut self, sender: AuditSender) -> Self {
+        self.audit = Some(sender);
         self
     }
 
@@ -196,9 +214,65 @@ impl ServiceError {
             | S::InvalidQuery
             | S::DefinitionUnknown
             | S::ContentInvalid => ServiceError::Unprocessable(m),
-            // `CallStatusType` is `#[non_exhaustive]`; future statuses map
-            // to a server fault until given an explicit row.
-            _ => ServiceError::Internal(m),
+            // No service-side `ServiceError::NotImplemented`; a not-implemented
+            // status surfaces as a server fault (the service implements every
+            // catalog call, so this row is unreachable in practice).
+            S::NotImplemented => ServiceError::Internal(m),
+        }
+    }
+}
+
+impl From<ServiceError> for ehrbase_sm::SmError {
+    /// Map a service failure onto the SM native `CALL_STATUS_TYPE` error the
+    /// catalog traits return (ADR-011). This is the mirror of the
+    /// [`From<ServiceError> for ApiError`] table above, expressed in SM status
+    /// terms — the protocol adapter (`ehrbase-rest`) then maps the status back
+    /// to the ITS-REST status code via [`ehrbase_sm::CallStatusType::api_error`],
+    /// so the wire outcome is identical row-for-row:
+    ///
+    /// | `ServiceError`            | `CallStatusType`             | HTTP |
+    /// |---------------------------|------------------------------|------|
+    /// | `NotFound`                | `VersionedObjectDoesNotExist`| 404  |
+    /// | `VersionConflict`         | `VersionMismatch`            | 412  |
+    /// | `Conflict`                | `CompositionAlreadyExists`   | 409  |
+    /// | `Unprocessable`           | `ContentInvalid`             | 422  |
+    /// | `ValidationFailed`        | `ContentInvalid`             | 422  |
+    /// | `BadRequest`              | `PreconditionViolation`      | 400  |
+    /// | `Storage`/`Database`/`Json`/`Signing`/`Internal` | `Exception` | 500 |
+    ///
+    /// `NotFound` cannot recover the concrete resource kind, so it maps to the
+    /// generic `versioned_object_does_not_exist` (all 404s); `Conflict` maps to
+    /// a representative already-exists status (all 409s).
+    ///
+    /// PORT NOTE (wire): the structured per-path violations of `ValidationFailed`
+    /// (the ITS-REST `Error.validationErrors[]` array) do **not** survive the SM
+    /// boundary — `SmError` carries only a status + message (the SM `I_STATUS`
+    /// shape). The violations are joined into the message so the detail is not
+    /// wholly lost; the `422` body renders as `{ error, message }` rather than
+    /// `{ message, validationErrors[] }`. This is spec-permitted:
+    /// `422_COMPOSITION.yaml` declares no `content`/`schema` (the `422` body is
+    /// spec-silent; the `Error` object is formally bound only to `400`).
+    fn from(e: ServiceError) -> Self {
+        use ehrbase_sm::CallStatusType as S;
+        use ehrbase_sm::SmError;
+        match e {
+            ServiceError::NotFound(m) => SmError::new(S::VersionedObjectDoesNotExist, m),
+            ServiceError::VersionConflict(m) => SmError::new(S::VersionMismatch, m),
+            ServiceError::Conflict(m) => SmError::new(S::CompositionAlreadyExists, m),
+            ServiceError::Unprocessable(m) => SmError::new(S::ContentInvalid, m),
+            ServiceError::ValidationFailed(v) => {
+                let joined = v
+                    .into_iter()
+                    .map(|e| format!("{}: {}", e.path, e.message))
+                    .collect::<Vec<_>>()
+                    .join("; ");
+                SmError::new(S::ContentInvalid, joined)
+            }
+            ServiceError::BadRequest(m) => SmError::new(S::PreconditionViolation, m),
+            ServiceError::Storage(e) => SmError::new(S::Exception, e.to_string()),
+            ServiceError::Database(e) => SmError::new(S::Exception, e.to_string()),
+            ServiceError::Json(e) => SmError::new(S::Exception, e.to_string()),
+            ServiceError::Signing(m) | ServiceError::Internal(m) => SmError::new(S::Exception, m),
         }
     }
 }
@@ -230,50 +304,50 @@ mod sm_error_table_tests {
 
     use super::ServiceError;
 
-    /// The SM ↔ `ServiceError` ↔ HTTP table is one table: routing a status
-    /// through `ServiceError::sm` must land on the same HTTP status as the
-    /// direct `CallStatusType::api_error` mapping (design 08 §5).
+    /// `ServiceError::sm(status)` routed to the ITS-REST [`ApiError`] must land
+    /// on the HTTP status the SM row prescribes (design 08 §5). The SM →
+    /// `ApiError` half of the table now lives in the protocol adapter
+    /// (`ehrbase-rest::error::sm_api_error`, ADR-011) and is tested there
+    /// end-to-end; here we verify the service-side `ServiceError::sm` +
+    /// `From<ServiceError> for ApiError` composition against the expected code
+    /// per status.
     #[test]
-    fn service_error_route_matches_the_sm_http_table() {
-        let statuses = [
-            S::AuthFailure,
-            S::PreconditionViolation,
-            S::ObjectVersionDoesNotExist,
-            S::VersionedObjectDoesNotExist,
-            S::Exception,
-            S::EhrIdDoesNotExist,
-            S::PartyIdDoesNotExist,
-            S::FileNotWritable,
-            S::VersionMismatch,
-            S::CompositionDoesNotExist,
-            S::ContributionDoesNotExist,
-            S::CompositionArchetypeInvalid,
-            S::EhrCreateFailDuplicateId,
-            S::CompositionAlreadyExists,
-            S::EhrForSubjectAlreadyExists,
-            S::InvalidArchetype,
-            S::InvalidTemplate,
-            S::InvalidArtefact,
-            S::InvalidQuery,
-            S::InvalidIdPattern,
-            S::ArtefactDoesNotExist,
-            S::TemplateDoesNotExist,
-            S::DefinitionUnknown,
-            S::ContentInvalid,
-            S::VersionDoesNotExist,
-            S::SubjectIdDoesNotExist,
-            S::VersionedCompositionDoesNotExist,
+    fn service_error_routes_to_the_expected_http_status() {
+        use http::StatusCode as C;
+        let rows = [
+            (S::PreconditionViolation, C::BAD_REQUEST),
+            (S::InvalidIdPattern, C::BAD_REQUEST),
+            (S::ObjectVersionDoesNotExist, C::NOT_FOUND),
+            (S::VersionedObjectDoesNotExist, C::NOT_FOUND),
+            (S::EhrIdDoesNotExist, C::NOT_FOUND),
+            (S::PartyIdDoesNotExist, C::NOT_FOUND),
+            (S::CompositionDoesNotExist, C::NOT_FOUND),
+            (S::ContributionDoesNotExist, C::NOT_FOUND),
+            (S::ArtefactDoesNotExist, C::NOT_FOUND),
+            (S::TemplateDoesNotExist, C::NOT_FOUND),
+            (S::VersionDoesNotExist, C::NOT_FOUND),
+            (S::SubjectIdDoesNotExist, C::NOT_FOUND),
+            (S::VersionedCompositionDoesNotExist, C::NOT_FOUND),
+            (S::VersionMismatch, C::PRECONDITION_FAILED),
+            (S::EhrCreateFailDuplicateId, C::CONFLICT),
+            (S::CompositionAlreadyExists, C::CONFLICT),
+            (S::EhrForSubjectAlreadyExists, C::CONFLICT),
+            (S::CompositionArchetypeInvalid, C::UNPROCESSABLE_ENTITY),
+            (S::InvalidArchetype, C::UNPROCESSABLE_ENTITY),
+            (S::InvalidTemplate, C::UNPROCESSABLE_ENTITY),
+            (S::InvalidArtefact, C::UNPROCESSABLE_ENTITY),
+            (S::InvalidQuery, C::UNPROCESSABLE_ENTITY),
+            (S::DefinitionUnknown, C::UNPROCESSABLE_ENTITY),
+            (S::ContentInvalid, C::UNPROCESSABLE_ENTITY),
+            // Service-side auth/exception faults surface as 500 (auth is the
+            // adapter's job before dispatch — see `ServiceError::sm`).
+            (S::Exception, C::INTERNAL_SERVER_ERROR),
+            (S::FileNotWritable, C::INTERNAL_SERVER_ERROR),
+            (S::AuthFailure, C::INTERNAL_SERVER_ERROR),
         ];
-        for status in statuses {
-            let via_service = ApiError::from(ServiceError::sm(status, "m")).status();
-            let direct = status.api_error("m").status();
-            // The two auth/exception rows deliberately differ from the direct
-            // table: service-side auth/exception faults surface as 500 (auth
-            // is the adapter's job — see `ServiceError::sm`).
-            if matches!(status, S::AuthFailure) {
-                continue;
-            }
-            assert_eq!(via_service, direct, "row {} diverged", status.sm_name());
+        for (status, expected) in rows {
+            let got = ApiError::from(ServiceError::sm(status, "m")).status();
+            assert_eq!(got, expected, "row {} diverged", status.sm_name());
         }
     }
 }

@@ -111,8 +111,7 @@ columns for hot extractions. See `docs/postgres-features.md`.
 
 Three physical directories (ADR-010; move executed 2026-07-08):
 **`app/*`** holds the application crates (`ehrbase`, `ehrbase-sm` [SM-1],
-`ehrbase-rest`, `ehrbase-audit`, `ehrbase-authz`,
-`ehrbase-signing`); **`tools/*`** holds the dev/verification tooling that is
+`ehrbase-rest`, `ehrbase-authz`); **`tools/*`** holds the dev/verification tooling that is
 *not* part of the shipped application (`conformance` — the ECC runner,
 `benchmark`); **`crates/*`** holds the generated openEHR spec layer + its
 tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root workspace
@@ -131,11 +130,11 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | SM component | SM interface(s) | Native trait(s) (`ehrbase-sm`) | Status |
 |---|---|---|---|
 | EHR | `I_EHR_SERVICE`, `I_EHR_STATUS`, `I_EHR_COMPOSITION`, `I_EHR_DIRECTORY`, `I_EHR_CONTRIBUTION` | `EhrService`, `EhrStatusService`, `EhrCompositionService`, `EhrDirectoryService`, `EhrContributionService` | implemented (SM-1) |
-| Definitions | `I_DEFINITION_ADL14`/`ADL2`/`QUERY` | generated `DefinitionApi` (split at SM-2) | partial |
+| Definitions | `I_DEFINITION_ADL14`/`ADL2`/`QUERY` | `DefinitionAdl14Service`, `DefinitionAdl2Service`, `DefinitionQueryService` + wire-shaped `DefinitionAdapter` (ITS-REST `DefinitionApi` excised from `Platform`, ADR-011) | implemented (SM-2) |
 | Demographic | `I_DEMOGRAPHIC_SERVICE`, `I_PARTY` (+`I_PARTY_RELATIONSHIP` at SM-3) | `DemographicService` | partial |
 | Query | `I_QUERY_SERVICE` | `QueryService` | implemented |
 | Validity checking | `I_VALIDITY_CHECKER` | `ValidityChecker` | implemented (SM-1) |
-| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `SystemLog` marker → `ehrbase-audit` | implemented |
+| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `SystemLog` trait (event model + emit; designed contract) → impl `ehrbase::system_log` | implemented |
 | Admin | `I_ADMIN_SERVICE` (+archive/dump-load at SM-4) | `AdminService` | partial |
 | EHR Index | `I_EHR_INDEX` | SM-3 | planned |
 | Terminology | `I_TERMINOLOGY_SERVICE` | SM-4 | planned |
@@ -154,12 +153,10 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`, P16) | tooling |
 | `openehr-derive` | `#[derive(OpenEhrType)]` proc-macro | tooling |
-| `ehrbase-rest` | ITS-REST server (axum) + auth + EhrScape adapter (P17) | application |
-| `ehrbase-sm` | SM native-API traits + shared service types (SM-1) | application |
-| `ehrbase-audit` | IHE ATNA audit (the SM System Log component) | application |
+| `ehrbase-rest` | ITS-REST server (axum) + auth + EhrScape adapter (P17); ATNA audit middleware + op-id classification | application |
+| `ehrbase-sm` | SM native-API traits + shared service types + `SystemLog` event model (SM-1/2/4) | application |
 | `ehrbase-authz` | RBAC/ABAC authorization engine | application |
-| `ehrbase-signing` | Version signing | application |
-| `ehrbase` | Binary: storage, service layer, AQL engine, versioning, CLI | application |
+| `ehrbase` | Binary + platform: storage, service layer, AQL engine, versioning, CLI, `signing` (VERSION.signature) + `system_log` (ATNA) modules | application |
 | `conformance` | ECC conformance runner (`tools/*`) | tooling |
 | `benchmark` | Benchmark harness (`tools/*`) | tooling |
 

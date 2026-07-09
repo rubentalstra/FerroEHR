@@ -4,7 +4,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use openehr_its::rest::runtime::ApiError;
+use crate::error::{CallStatusType, SmError};
 
 use crate::types::{PartyKind, ResourceMeta, ServiceResponse};
 
@@ -33,8 +33,11 @@ pub trait DemographicService: Send + Sync {
         &self,
         _kind: PartyKind,
         _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/{kind}/{uid_based_id}` — retrieve a party (current,
@@ -45,8 +48,11 @@ pub trait DemographicService: Send + Sync {
         _kind: PartyKind,
         _uid_based_id: String,
         _version_at_time: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `PUT /demographic/{kind}/{uid_based_id}` — commit a new party version.
@@ -58,8 +64,11 @@ pub trait DemographicService: Send + Sync {
         _uid_based_id: String,
         _if_match: String,
         _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete. The
@@ -69,8 +78,11 @@ pub trait DemographicService: Send + Sync {
         &self,
         _kind: PartyKind,
         _uid_based_id: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party/{versioned_object_uid}` — the
@@ -78,16 +90,22 @@ pub trait DemographicService: Send + Sync {
     async fn versioned_party_get(
         &self,
         _versioned_object_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party/{versioned_object_uid}/revision_history`.
     async fn versioned_party_revision_history(
         &self,
         _versioned_object_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version` — the
@@ -96,8 +114,11 @@ pub trait DemographicService: Send + Sync {
         &self,
         _versioned_object_uid: String,
         _version_at_time: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`
@@ -106,8 +127,11 @@ pub trait DemographicService: Send + Sync {
         &self,
         _versioned_object_uid: String,
         _version_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `POST /demographic/contribution` — commit a demographic CONTRIBUTION
@@ -116,8 +140,11 @@ pub trait DemographicService: Send + Sync {
     async fn demographic_contribution_create(
         &self,
         _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/contribution/{contribution_uid}` — a demographic
@@ -125,8 +152,11 @@ pub trait DemographicService: Send + Sync {
     async fn demographic_contribution_get(
         &self,
         _contribution_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/tags` — all demographic item tags (ehr-less).
@@ -135,8 +165,11 @@ pub trait DemographicService: Send + Sync {
         _tag_key: Option<String>,
         _tag_value: Option<String>,
         _tag_target_path: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `GET /demographic/{kind}/{uid_based_id}/tags`.
@@ -144,8 +177,11 @@ pub trait DemographicService: Send + Sync {
         &self,
         _kind: PartyKind,
         _uid_based_id: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `PUT /demographic/{kind}/{uid_based_id}/tags`.
@@ -154,8 +190,11 @@ pub trait DemographicService: Send + Sync {
         _kind: PartyKind,
         _uid_based_id: String,
         _body: Vec<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// `DELETE /demographic/{kind}/{uid_based_id}/tags/{key}`.
@@ -164,8 +203,11 @@ pub trait DemographicService: Send + Sync {
         _kind: PartyKind,
         _uid_based_id: String,
         _key: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "not implemented",
+        ))
     }
 
     /// The current party version metadata, for the latest `version_uid` the
@@ -175,7 +217,7 @@ pub trait DemographicService: Send + Sync {
         &self,
         _kind: PartyKind,
         _uid_based_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
+    ) -> Result<Option<ResourceMeta>, SmError> {
         Ok(None)
     }
 }

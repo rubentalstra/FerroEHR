@@ -19,8 +19,7 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::backend::{DemographicService, PartyKind};
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::{CallStatusType, DemographicService, PartyKind, SmError};
 
 struct Pg {
     #[allow(dead_code)]
@@ -195,14 +194,26 @@ async fn person_lifecycle_end_to_end() {
         )
         .await;
     assert!(
-        matches!(stale, Err(ApiError::PreconditionFailed(_))),
+        matches!(
+            stale,
+            Err(SmError {
+                status: CallStatusType::VersionMismatch,
+                ..
+            })
+        ),
         "stale update, got {stale:?}"
     );
 
     // wrong-kind route → NotFound
     let wrong = svc.party_get(PartyKind::Role, vo.clone(), None).await;
     assert!(
-        matches!(wrong, Err(ApiError::NotFound(_))),
+        matches!(
+            wrong,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
         "person under role route is 404, got {wrong:?}"
     );
 

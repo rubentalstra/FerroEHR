@@ -13,19 +13,27 @@
 //! the CNF/ECC schedule govern the wire** — divergences are recorded at the
 //! declaration with `PORT NOTE`s. Design set: `docs/design/sm-platform/`.
 
-pub mod backend;
+pub mod ehr_handle;
 pub mod error;
+pub mod platform;
 pub mod services;
 pub mod types;
 
-pub use backend::{Backend, StubBackend};
-pub use error::{CallStatus, CallStatusType};
+pub use ehr_handle::{
+    EhrCompositionHandle, EhrContributionHandle, EhrDirectoryHandle, EhrStatusHandle, IEhr,
+};
+pub use error::{CallStatus, CallStatusType, SmError};
+pub use platform::Platform;
 pub use services::{
-    AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
-    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrService, EhrStatusService, QueryService, SystemLog, ValidityChecker, WebTemplateService,
+    AdminArchive, AdminService, AuditEvent, DefinedTerm, DefinitionAdapter, DefinitionAdl2Service,
+    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
+    EhrContributionService, EhrDirectoryService, EhrService, EhrStatusService, EmitOutcome,
+    EventActionCode, EventOutcome, ItemTagAdapter, ObjectClass, QueryService, StatTimeRange,
+    SystemLog, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
+    TerminologyRelation, TerminologyRelationError, TerminologyService, TimeRange, ValidityChecker,
+    VersionMetaAdapter, WebTemplateService,
 };
 pub use types::{
-    AqlQueryRequest, EhrSummary, Page, PartyKind, QueryDescriptor, QueryOutcome, ResourceMeta,
-    ServiceResponse, UpdateAttestation, UpdateAudit, UpdateVersion,
+    AqlQueryRequest, EhrSummary, Page, PartyKind, PlatformService, QueryDescriptor, QueryOutcome,
+    ResourceMeta, ServiceResponse, UpdateAttestation, UpdateAudit, UpdateVersion,
 };

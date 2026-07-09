@@ -5,7 +5,7 @@ use figment::providers::{Env, Format, Toml};
 use figment::{Figment, providers::Serialized};
 use serde::{Deserialize, Serialize};
 
-use crate::auth::AuthConfig;
+use crate::access::authn::AuthConfig;
 
 /// Top-level REST server configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]

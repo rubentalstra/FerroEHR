@@ -4,7 +4,7 @@
 //! generated `DefinitionApi` trait exactly as the REST layer calls it.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
-use serde_json::{Value, json};
+use serde_json::Value;
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
@@ -12,7 +12,7 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use openehr_its::rest::generated::definition::DefinitionApi;
+use ehrbase_sm::{CallStatusType, DefinitionAdapter, DefinitionAdl14Service, Page, SmError};
 
 struct Pg {
     #[allow(dead_code)]
@@ -57,10 +57,6 @@ impl Pg {
     }
 }
 
-fn params<P: serde::de::DeserializeOwned>(v: Value) -> P {
-    serde_json::from_value(v).expect("params")
-}
-
 /// A representative corpus template (Ocean Template Designer OPT 1.4 XML).
 const TEMPLATE_REL: &str = "tests/resources/service/knowledge/IDCR Allergies List.v0.opt";
 const TEMPLATE_ID: &str = "IDCR Allergies List.v0";
@@ -78,7 +74,7 @@ async fn template_upload_list_get_roundtrip() {
 
     // Upload the OPT XML (arrives as a JSON string, as the lenient body reader hands it over).
     let desc = svc
-        .definition_template_adl1_4_upload(params(json!({})), Value::String(xml.clone()))
+        .template_adl14_upload(xml.clone())
         .await
         .expect("upload");
     assert_eq!(desc["template_id"], TEMPLATE_ID, "descriptor template_id");
@@ -90,23 +86,28 @@ async fn template_upload_list_get_roundtrip() {
     );
 
     // List includes the uploaded template.
-    let list = svc
-        .definition_template_adl1_4_list(params(json!({})))
-        .await
-        .expect("list");
+    let list = svc.template_adl14_list().await.expect("list");
     assert!(
         list.iter().any(|t| t["template_id"] == TEMPLATE_ID),
         "list contains the template: {list:?}"
     );
 
     // Retrieve returns the stored OPT XML verbatim.
-    let got = svc
-        .definition_template_adl1_4_get(params(json!({ "template_id": TEMPLATE_ID })))
+    // PORT NOTE (ADR-011): the SM `I_DEFINITION_ADL14::get_opt` is UUID-keyed
+    // (OPTs are stored UUID-keyed; `list_matching_opts` still matches on
+    // `template_id`), and returns the OPT XML as a `String` (the old generated
+    // `DefinitionApi::..get` was template_id-keyed and returned a JSON-string
+    // `Value`). Resolve the stored OPT's uuid via `list_opts` (one template
+    // uploaded), then retrieve by uuid.
+    let opt_uuid = DefinitionAdl14Service::list_opts(&svc, Page::all())
         .await
-        .expect("get");
-    let got_xml = got.as_str().expect("get returns the OPT XML string");
+        .expect("list opts")
+        .into_iter()
+        .next()
+        .expect("one stored OPT uuid");
+    let got = svc.get_opt(opt_uuid.clone()).await.expect("get");
     assert_eq!(
-        got_xml, xml,
+        got, xml,
         "retrieved OPT XML is byte-identical to the upload"
     );
 
@@ -114,17 +115,23 @@ async fn template_upload_list_get_roundtrip() {
     // overwrite: OPTs are immutable on the adl1.4 endpoint (ITS-REST
     // `409_template_already_exists.yaml`; CNF `upload_opt-valid_opt_twice_conflict`).
     let conflict = svc
-        .definition_template_adl1_4_upload(params(json!({})), Value::String(xml.clone()))
+        .template_adl14_upload(xml.clone())
         .await
         .expect_err("re-upload of an existing template_id must conflict");
     assert!(
-        matches!(conflict, openehr_its::rest::runtime::ApiError::Conflict(_)),
+        matches!(
+            conflict,
+            SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            }
+        ),
         "got {conflict:?}"
     );
 
     // The original template is untouched and there is still exactly one row.
     let list2 = svc
-        .definition_template_adl1_4_list(params(json!({})))
+        .template_adl14_list()
         .await
         .expect("list after conflicting re-upload");
     assert_eq!(
@@ -136,12 +143,11 @@ async fn template_upload_list_get_roundtrip() {
         "conflicting re-upload did not duplicate"
     );
     let still = svc
-        .definition_template_adl1_4_get(params(json!({ "template_id": TEMPLATE_ID })))
+        .get_opt(opt_uuid.clone())
         .await
         .expect("get after conflict");
     assert_eq!(
-        still.as_str().expect("xml"),
-        xml,
+        still, xml,
         "conflicting re-upload did not overwrite the stored OPT"
     );
 }
@@ -150,13 +156,22 @@ async fn template_upload_list_get_roundtrip() {
 async fn get_unknown_template_is_not_found() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("tpl_missing").await);
+    // PORT NOTE (ADR-011): `get_opt` is UUID-keyed at the SM seam, so an unknown
+    // OPT is expressed as an absent (well-formed) uuid → 404
+    // (`versioned_object_does_not_exist`); the template_id → uuid resolution the
+    // old template_id-keyed GET did is now an adapter concern.
     let err = svc
-        .definition_template_adl1_4_get(params(json!({ "template_id": "does.not.exist.v0" })))
+        .get_opt(uuid::Uuid::now_v7().to_string())
         .await
         .expect_err("expected not-found");
-    // Maps to the ITS-REST 404 (ApiError::NotFound).
     assert!(
-        matches!(err, openehr_its::rest::runtime::ApiError::NotFound(_)),
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
         "got {err:?}"
     );
 }
@@ -166,14 +181,17 @@ async fn invalid_opt_xml_is_rejected() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("tpl_bad").await);
     let err = svc
-        .definition_template_adl1_4_upload(
-            params(json!({})),
-            Value::String("<not-a-template/>".to_owned()),
-        )
+        .template_adl14_upload("<not-a-template/>".to_owned())
         .await
         .expect_err("expected rejection of a non-OPT body");
     assert!(
-        matches!(err, openehr_its::rest::runtime::ApiError::Unprocessable(_)),
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
         "got {err:?}"
     );
 }
@@ -207,7 +225,7 @@ async fn required_example_validates_and_converts() {
     for (i, rel) in EXAMPLE_TEMPLATES.iter().enumerate() {
         let xml = corpus_opt(rel);
         let desc = svc
-            .definition_template_adl1_4_upload(params(json!({})), Value::String(xml))
+            .template_adl14_upload(xml)
             .await
             .unwrap_or_else(|e| panic!("upload {rel}: {e:?}"));
         let template_id = desc["template_id"]
@@ -218,10 +236,7 @@ async fn required_example_validates_and_converts() {
 
         // `required` example, via the generated trait (as the REST layer calls it).
         let comp = svc
-            .definition_template_adl1_4_example_get(params(json!({
-                "template_id": template_id,
-                "detail_level": "required",
-            })))
+            .template_adl14_example(template_id.clone(), Some("required".to_owned()), None)
             .await
             .unwrap_or_else(|e| panic!("example for {rel}: {e:?}"));
         assert_eq!(
@@ -263,10 +278,7 @@ async fn required_example_validates_and_converts() {
 
         // The `output` form carries a deterministic uid; `input` does not.
         let output = svc
-            .definition_template_adl1_4_example_get(params(json!({
-                "template_id": template_id,
-                "type": "output",
-            })))
+            .template_adl14_example(template_id.clone(), None, Some("output".to_owned()))
             .await
             .unwrap_or_else(|e| panic!("output example for {rel}: {e:?}"));
         assert!(
@@ -285,13 +297,17 @@ async fn example_for_unknown_template_is_not_found() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("tpl_example_missing").await);
     let err = svc
-        .definition_template_adl1_4_example_get(params(json!({
-            "template_id": "does.not.exist.v0",
-        })))
+        .template_adl14_example("does.not.exist.v0".to_owned(), None, None)
         .await
         .expect_err("expected not-found for an unknown template");
     assert!(
-        matches!(err, openehr_its::rest::runtime::ApiError::NotFound(_)),
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
         "got {err:?}"
     );
 }
@@ -302,18 +318,19 @@ async fn example_with_invalid_detail_level_is_bad_request() {
     let svc = EhrbaseService::new(pg.migrated_pool("tpl_example_bad_level").await);
     // Upload a template so the failure is the detail_level, not a missing id.
     let xml = corpus_opt(TEMPLATE_REL);
-    svc.definition_template_adl1_4_upload(params(json!({})), Value::String(xml))
-        .await
-        .expect("upload");
+    svc.template_adl14_upload(xml).await.expect("upload");
     let err = svc
-        .definition_template_adl1_4_example_get(params(json!({
-            "template_id": TEMPLATE_ID,
-            "detail_level": "exhaustive",
-        })))
+        .template_adl14_example(TEMPLATE_ID.to_owned(), Some("exhaustive".to_owned()), None)
         .await
         .expect_err("expected bad-request for an invalid detail_level");
     assert!(
-        matches!(err, openehr_its::rest::runtime::ApiError::BadRequest(_)),
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
         "got {err:?}"
     );
 }

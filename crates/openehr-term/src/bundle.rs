@@ -386,6 +386,15 @@ impl OpenehrTerminology {
 
     // ── External code sets (openehr_external_terminologies.xml) ──────────────
 
+    /// Every external code set (`"countries"`, `"languages"`, `"character_sets"`,
+    /// `"media_types"`), in vendored order. Used by callers that expose the
+    /// external terminologies as first-class terminology ids (the SM
+    /// terminology service).
+    #[must_use]
+    pub fn external_code_sets(&self) -> &[CodeSet] {
+        &self.external
+    }
+
     /// An external code set by its openEHR id (`"countries"`, `"languages"`,
     /// `"character_sets"`, `"media_types"`).
     #[must_use]

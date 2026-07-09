@@ -31,6 +31,7 @@ Owner rulings baked in (2026-07-08):
 | [07-gap-analysis.md](07-gap-analysis.md) | Every SM component vs the current service layer, per-call |
 | [08-target-architecture.md](08-target-architecture.md) | The design: app-crate map (`ehrbase-compat` deleted; EhrScape = `ehrbase-rest` feature module), `ehrbase-sm` native-API crate, trait-per-SM-interface, shared types, new component designs (EHR Index, Terminology, Message/Extract/TDD, Subject Proxy, Admin), unified error table, wire exposure |
 | [09-roadmap.md](09-roadmap.md) | Build order SM-1…SM-6 interleaved with P17–P20, verification gates |
+| [10-message-integration.md](10-message-integration.md) | Message & EHR Extract integration: full spec extraction (SM + RM EHR Extract IM + generated types + ITS-REST/CNF coverage) mapped onto the three crates |
 
 Decision record: `docs/ADRs/ADR-010-sm-aligned-service-architecture.md`.
 Execution tracking: `docs/plans/sm-phase-*.md` (created per phase, SM-1

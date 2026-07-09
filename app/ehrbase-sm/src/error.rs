@@ -12,12 +12,12 @@
 //! as return values with status in the response envelope, "Either style can
 //! be used, and can be trivially mapped from one to the other").
 //!
-//! [`CallStatusType::api_error`] is the single SM → HTTP table
-//! (`docs/design/sm-platform/08-target-architecture.md` §5). ITS-REST 1.0.3 +
-//! the CNF/ECC schedule remain the wire oracle (ADR-010): where the SM name
-//! and the wire disagree, the wire's status code wins here.
-
-use openehr_its::rest::runtime::ApiError;
+//! The single SM → HTTP table lives with the protocol adapter
+//! (`ehrbase-rest::error::sm_api_error`, `docs/design/sm-platform/
+//! 08-target-architecture.md` §5) — ADR-011: this crate is protocol-free and
+//! carries **no** ITS-REST dependency. ITS-REST 1.0.3 + the CNF/ECC
+//! schedule remain the wire oracle (ADR-010): where the SM name and the wire
+//! disagree, the wire's status code wins in that adapter table.
 
 /// `CALL_STATUS_TYPE` and its service-specific descendants, as one Rust enum.
 ///
@@ -31,8 +31,15 @@ use openehr_its::rest::runtime::ApiError;
 /// in no vendored enumeration — a catalogued spec gap
 /// (`docs/design/sm-platform/02-ehr-service.md` §9); this enum is their one
 /// concrete home.
+///
+/// Deliberately **not** `#[non_exhaustive]`: `ehrbase-sm` is an internal,
+/// unpublished workspace crate, so the attribute would buy no
+/// forward-compatibility — it would only force wildcard match arms in the
+/// protocol adapter's SM → HTTP table (`ehrbase-rest::error::sm_api_error`)
+/// that silently swallow any future unmapped status. Leaving it exhaustive lets
+/// the compiler flag a missing SM → HTTP row when a variant is added (ADR-011
+/// compile-time completeness).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
 pub enum CallStatusType {
     // ── CALL_STATUS_TYPE (base; `call_status_type.adoc`) ────────────────────
     /// Call succeeded.
@@ -57,6 +64,11 @@ pub enum CallStatusType {
     /// does not match the current version — the optimistic-concurrency
     /// failure (ITS-REST `If-Match` → `412`).
     VersionMismatch,
+    /// The requested operation is not implemented by this platform
+    /// (ITS-REST `501`). Not an SM `CALL_STATUS_TYPE` member — an adapter
+    /// affordance for optional/dev-branch routes (e.g. `template/adl2`) and
+    /// unimplemented mock seams; the wire maps it to `501 Not Implemented`.
+    NotImplemented,
 
     // ── EHR_CALL_STATUS_TYPE (`ehr_call_status_type.adoc`) ──────────────────
     /// COMPOSITION not found (per-variant meanings are blank in the source).
@@ -123,6 +135,7 @@ impl CallStatusType {
             Self::PartyIdDoesNotExist => "party_id_does_not_exist",
             Self::FileNotWritable => "file_not_writable",
             Self::VersionMismatch => "version_mismatch",
+            Self::NotImplemented => "not_implemented",
             Self::CompositionDoesNotExist => "composition_does_not_exist",
             Self::ContributionDoesNotExist => "contribution_does_not_exist",
             Self::CompositionArchetypeInvalid => "composition_archetype_invalid",
@@ -143,40 +156,60 @@ impl CallStatusType {
             Self::VersionedCompositionDoesNotExist => "versioned_composition_does_not_exist",
         }
     }
+}
 
-    /// The one SM → HTTP mapping (design 08 §5); the wire oracle (ITS-REST
-    /// 1.0.3 status codes carried by [`ApiError`]) decides each row.
+/// The native-API error type — a `CALL_STATUS_TYPE` code plus a message.
+///
+/// Realizes the SM `I_STATUS` protocol (`master03-common_package.adoc`
+/// §Representing Call Status: `last_call_failed()`/`last_call_status()`) in the
+/// stateless typed-`Result` style the spec sanctions
+/// (`master02-overview.adoc` §Functional Style). Every catalog trait returns
+/// `Result<T, SmError>`; the protocol adapter (`ehrbase-rest`) owns the single
+/// SM → HTTP mapping ([`CallStatusType::api_error`]) — so this type carries
+/// **no** ITS-REST dependency.
+#[derive(Debug, Clone, thiserror::Error)]
+#[error("{message}")]
+pub struct SmError {
+    /// The `CALL_STATUS_TYPE` code the failed call reports.
+    pub status: CallStatusType,
+    /// Human-readable error message.
+    pub message: String,
+}
+
+impl SmError {
+    /// Build a status-coded error with a message.
     #[must_use]
-    pub fn api_error(self, message: impl Into<String>) -> ApiError {
-        let message = message.into();
-        match self {
-            Self::AuthFailure => ApiError::Forbidden(message),
-            Self::PreconditionViolation | Self::InvalidIdPattern => ApiError::BadRequest(message),
-            Self::ObjectVersionDoesNotExist
-            | Self::VersionedObjectDoesNotExist
-            | Self::EhrIdDoesNotExist
-            | Self::PartyIdDoesNotExist
-            | Self::CompositionDoesNotExist
-            | Self::ContributionDoesNotExist
-            | Self::ArtefactDoesNotExist
-            | Self::TemplateDoesNotExist
-            | Self::VersionDoesNotExist
-            | Self::SubjectIdDoesNotExist
-            | Self::VersionedCompositionDoesNotExist => ApiError::NotFound(message),
-            Self::VersionMismatch => ApiError::PreconditionFailed(message),
-            Self::EhrCreateFailDuplicateId
-            | Self::CompositionAlreadyExists
-            | Self::EhrForSubjectAlreadyExists => ApiError::Conflict(message),
-            Self::CompositionArchetypeInvalid
-            | Self::InvalidArchetype
-            | Self::InvalidTemplate
-            | Self::InvalidArtefact
-            | Self::InvalidQuery
-            | Self::DefinitionUnknown
-            | Self::ContentInvalid => ApiError::Unprocessable(message),
-            // `success` is not an error; mapping it is defensively a 500.
-            Self::Success | Self::FileNotWritable | Self::Exception => ApiError::Internal(message),
+    pub fn new(status: CallStatusType, message: impl Into<String>) -> Self {
+        Self {
+            status,
+            message: message.into(),
         }
+    }
+
+    /// `precondition_violation` — an argument-validity precondition failed
+    /// (maps to `400` at the wire).
+    #[must_use]
+    pub fn precondition(message: impl Into<String>) -> Self {
+        Self::new(CallStatusType::PreconditionViolation, message)
+    }
+
+    /// `ehr_id_does_not_exist`.
+    #[must_use]
+    pub fn ehr_not_found(message: impl Into<String>) -> Self {
+        Self::new(CallStatusType::EhrIdDoesNotExist, message)
+    }
+
+    /// `version_mismatch` — the optimistic-concurrency (`If-Match`) failure
+    /// (→ `412`).
+    #[must_use]
+    pub fn version_mismatch(message: impl Into<String>) -> Self {
+        Self::new(CallStatusType::VersionMismatch, message)
+    }
+
+    /// `exception` — a server-side fault (→ `500`).
+    #[must_use]
+    pub fn exception(message: impl Into<String>) -> Self {
+        Self::new(CallStatusType::Exception, message)
     }
 }
 
@@ -224,15 +257,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn version_mismatch_maps_to_precondition_failed() {
-        // ITS-REST `If-Match` failure → 412 (design 08 §5 row).
-        assert!(matches!(
-            CallStatusType::VersionMismatch.api_error("stale"),
-            ApiError::PreconditionFailed(_)
-        ));
-    }
-
-    #[test]
     fn every_status_has_a_distinct_sm_name() {
         let all = [
             CallStatusType::Success,
@@ -245,6 +269,7 @@ mod tests {
             CallStatusType::PartyIdDoesNotExist,
             CallStatusType::FileNotWritable,
             CallStatusType::VersionMismatch,
+            CallStatusType::NotImplemented,
             CallStatusType::CompositionDoesNotExist,
             CallStatusType::ContributionDoesNotExist,
             CallStatusType::CompositionArchetypeInvalid,

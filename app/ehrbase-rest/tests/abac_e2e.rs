@@ -13,28 +13,26 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
-use ehrbase_audit::{AuditConfig, AuditSender, Transport};
-use ehrbase_authz::AuthzConfig;
-use ehrbase_authz::engine::{AuthzError, PolicyEngine};
-use ehrbase_authz::request::{AuthzRequest, Decision};
-use ehrbase_rest::auth::AuthConfig;
-use ehrbase_rest::auth::config::{OidcConfig, Redacted};
+use ehrbase_rest::access::authn::AuthConfig;
+use ehrbase_rest::access::authn::config::{OidcConfig, Redacted};
+use ehrbase_rest::access::authz::AuthzConfig;
+use ehrbase_rest::access::authz::engine::{AuthzError, PolicyEngine};
+use ehrbase_rest::access::authz::request::{AuthzRequest, Decision};
 use ehrbase_rest::{
-    AuthzHandle, AuthzResolvers, EhrService, Observability, ResolveError, ResourceMeta, RestConfig,
-    ServiceResponse, build_full,
+    AuthzHandle, AuthzResolvers, Observability, ResolveError, RestConfig, build_full,
 };
+use ehrbase_sm::EventOutcome;
 use http::{Request, StatusCode};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
-use openehr_its::rest::generated::ehr::{CompositionCreateParams, CompositionGetParams};
-use openehr_its::rest::runtime::ApiError;
-use serde_json::{Value, json};
-use tokio::net::UdpSocket;
+use serde_json::json;
 use tower::ServiceExt;
+
+mod common;
+use common::{AuditSink, Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const HMAC_SECRET: &str = "abac-test-secret";
@@ -45,51 +43,33 @@ const EHR_OTHER: &str = "11111111-2222-3333-4444-555555555555";
 const PATIENT_OWN: &str = "PATIENT-1";
 const PATIENT_OTHER: &str = "PATIENT-2";
 
-// ── mock backend: composition create/read succeed with resource metadata ──────
+// ── mock platform: composition create/read succeed so the ABAC gate is what
+// decides (the pre-check runs before dispatch; the post-check after the read).
 
-#[derive(Debug)]
-struct MockBackend;
-
-impl EhrService for MockBackend {}
-
-#[async_trait]
-impl ehrbase_rest::EhrCompositionService for MockBackend {
-    async fn composition_create(
-        &self,
-        params: CompositionCreateParams,
-        _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        // Meta echoes the request EHR so the audit/scope path is exercised.
-        Ok(ServiceResponse::new(
-            json!({"_type": "COMPOSITION"}),
-            ResourceMeta::new(params.ehr_id.clone(), format!("{EHR_OWN}::sys::1")),
-        ))
-    }
-
-    async fn composition_get(
-        &self,
-        params: CompositionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::new(
-            json!({"_type": "COMPOSITION"}),
-            ResourceMeta::new(params.ehr_id.clone(), format!("{EHR_OWN}::sys::1")),
-        ))
-    }
+/// A valid canonical COMPOSITION (the vendored Demo Vitals instance) — the EHR
+/// dispatcher parses the create body before the call, so the allowed-create
+/// tests need a real one.
+fn composition_body() -> serde_json::Value {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+        "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/demo_vitals_352.json",
+    );
+    let text = std::fs::read_to_string(path).expect("demo_vitals_352.json vendored");
+    serde_json::from_str(&text).expect("valid canonical composition")
 }
 
-impl ehrbase_rest::EhrStatusService for MockBackend {}
-impl ehrbase_rest::EhrDirectoryService for MockBackend {}
-impl ehrbase_rest::EhrContributionService for MockBackend {}
-impl openehr_its::rest::generated::definition::DefinitionApi for MockBackend {}
-impl ehrbase_rest::WebTemplateService for MockBackend {}
-impl ehrbase_rest::QueryService for MockBackend {}
-impl ehrbase_rest::DemographicService for MockBackend {}
-impl ehrbase_rest::AdminService for MockBackend {}
-impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
-impl ehrbase_rest::DefinitionAdl2Service for MockBackend {}
-impl ehrbase_rest::DefinitionQueryService for MockBackend {}
-impl ehrbase_rest::PartyRelationshipService for MockBackend {}
-impl ehrbase_rest::EhrIndexService for MockBackend {}
+fn hooks() -> Hooks {
+    Hooks {
+        create_composition: Some(Arc::new(|_e, _uv| Ok(format!("{EHR_OWN}::sys::1")))),
+        // The read uses a versioned uid ({ehr}::sys::1) → get_composition_at_version.
+        get_composition_at_version: Some(Arc::new(|_e, _ovid| {
+            Ok(json!({
+                "_type": "COMPOSITION",
+                "uid": { "_type": "OBJECT_VERSION_ID", "value": format!("{EHR_OWN}::sys::1") }
+            }))
+        })),
+        ..Default::default()
+    }
+}
 
 // ── a permit-all PDP engine: the patient gate is what denies here ─────────────
 
@@ -150,11 +130,14 @@ fn authz(abac_enabled: bool) -> Option<Arc<AuthzHandle>> {
     AuthzHandle::build(&cfg, &rest_config().base_path, engine, resolvers()).map(Arc::new)
 }
 
-fn app(abac_enabled: bool, audit: Option<AuditSender>) -> Router {
+fn app(abac_enabled: bool, audit: Option<AuditSink>) -> Router {
+    // ATNA audit now emits through the backend's SM `SystemLog` (ADR-011); the
+    // in-memory sink on the mock records events for assertions.
+    let mut h = hooks();
+    h.audit = audit;
     build_full(
         rest_config(),
-        Arc::new(MockBackend),
-        audit,
+        Arc::new(Mock::with(h)),
         authz(abac_enabled),
         Observability::default(),
     )
@@ -187,7 +170,7 @@ fn request(method: &str, path: &str, token: &str) -> Request<Body> {
         .header("authorization", token)
         .header("content-type", "application/json")
         .header("x-forwarded-for", "203.0.113.9")
-        .body(Body::from("{}"))
+        .body(Body::from(composition_body().to_string()))
         .expect("request")
 }
 
@@ -309,10 +292,12 @@ async fn abac_disabled_restores_behaviour() {
 #[tokio::test]
 async fn abac_deny_is_audited() {
     // A 403 from the ABAC gate carries the Principal, so the ATNA layer records
-    // a failure audit for the denied caller (§7).
-    let (sock, port) = udp_listener().await;
-    let sender = audit_sender(port).await;
-    let app = app(true, Some(sender));
+    // a failure audit for the denied caller (§7). The emitter now lives in the
+    // backend's SM `SystemLog` (ADR-011), so we assert the recorded `AuditEvent`
+    // (a minor-failure attributed to `svc`); the DICOM rendering is covered by
+    // the `ehrbase::system_log` message tests.
+    let sink = AuditSink::recording();
+    let app = app(true, Some(sink.clone()));
 
     let s = status(
         &app,
@@ -325,52 +310,14 @@ async fn abac_deny_is_audited() {
     .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
 
-    let record = recv_record(&sock).await.expect("expected an audit record");
-    assert_eq!(
-        attr(&record, "EventOutcomeIndicator"),
-        Some("4"),
-        "{record}"
+    // The ABAC deny fires in the dispatcher, so both the operation record and
+    // the auth-failure Application-Activity record are minor-failures for `svc`;
+    // assert (faithful to the original) that a failure is audited for the caller.
+    let events = sink.events();
+    assert!(
+        events
+            .iter()
+            .any(|e| e.outcome == EventOutcome::MinorFailure && e.user_id == "svc"),
+        "expected a minor-failure audit for `svc`, got {events:?}"
     );
-    assert_eq!(attr(&record, "UserID"), Some("svc"), "{record}");
-}
-
-// ── audit helpers (mirrors rbac_e2e) ──────────────────────────────────────────
-
-async fn udp_listener() -> (UdpSocket, u16) {
-    let sock = UdpSocket::bind(("127.0.0.1", 0)).await.expect("bind udp");
-    let port = sock.local_addr().expect("addr").port();
-    (sock, port)
-}
-
-async fn audit_sender(port: u16) -> AuditSender {
-    let config = AuditConfig {
-        enabled: true,
-        transport: Transport::Udp,
-        repository_host: "127.0.0.1".to_owned(),
-        repository_port: port,
-        suppress_login_events: true,
-        queue_capacity: 64,
-        ..AuditConfig::default()
-    };
-    let (sender, handle) = ehrbase_audit::start(config, None)
-        .await
-        .expect("start audit");
-    std::mem::forget(handle);
-    sender
-}
-
-async fn recv_record(sock: &UdpSocket) -> Option<String> {
-    let mut buf = vec![0u8; 65536];
-    match tokio::time::timeout(Duration::from_secs(2), sock.recv(&mut buf)).await {
-        Ok(Ok(n)) => Some(String::from_utf8_lossy(&buf[..n]).into_owned()),
-        _ => None,
-    }
-}
-
-fn attr<'a>(record: &'a str, name: &str) -> Option<&'a str> {
-    let needle = format!("{name}=\"");
-    let start = record.find(&needle)? + needle.len();
-    let rest = &record[start..];
-    let end = rest.find('"')?;
-    Some(&rest[..end])
 }

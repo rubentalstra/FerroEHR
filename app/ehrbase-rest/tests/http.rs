@@ -14,12 +14,22 @@ use http_body_util::BodyExt;
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use tower::ServiceExt;
 
-use ehrbase_rest::auth::config::{AuthConfig, BasicConfig, BasicUser, OidcConfig, Redacted};
+use std::sync::Arc;
+
+use ehrbase_rest::access::authn::config::{
+    AuthConfig, BasicConfig, BasicUser, OidcConfig, Redacted,
+};
 use ehrbase_rest::{AdminConfig, RestConfig};
+
+mod common;
 
 const ISSUER: &str = "https://issuer.test";
 const SECRET: &str = "integration-secret";
 const BASE: &str = "/ehrbase/rest/openehr/v1";
+/// A syntactically valid EHR id: the EHR dispatcher decodes `ehr_id` into a
+/// `Uuid` before consulting the backend, so a "reaches the handler → 501"
+/// probe needs a real UUID (an invalid one is a 400 at the adapter).
+const EHR: &str = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 
 fn argon2_hash(pw: &str) -> String {
     let salt = SaltString::from_b64("MTIzNDU2Nzg5MDEyMzQ1Ng").unwrap();
@@ -60,7 +70,7 @@ fn config(enabled: bool) -> RestConfig {
 }
 
 fn app(enabled: bool) -> Router {
-    ehrbase_rest::build(config(enabled)).expect("router builds")
+    ehrbase_rest::build_with(config(enabled), Arc::new(common::Mock::new())).expect("router builds")
 }
 
 fn now() -> u64 {
@@ -172,7 +182,7 @@ async fn health_endpoint_is_public() {
 async fn valid_basic_reaches_handler_and_gets_not_implemented() {
     let req = Request::builder()
         .method("GET")
-        .uri(format!("{BASE}/ehr/abc"))
+        .uri(format!("{BASE}/ehr/{EHR}"))
         .header(header::AUTHORIZATION, basic("alice", "pw"))
         .body(Body::empty())
         .unwrap();
@@ -196,7 +206,7 @@ async fn wrong_basic_password_is_401() {
 async fn valid_bearer_reaches_handler() {
     let req = Request::builder()
         .method("GET")
-        .uri(format!("{BASE}/ehr/abc"))
+        .uri(format!("{BASE}/ehr/{EHR}"))
         .header(header::AUTHORIZATION, bearer("openid"))
         .body(Body::empty())
         .unwrap();
@@ -224,7 +234,7 @@ async fn admin_route_reachable_without_rbac() {
 async fn json_composition_body_is_accepted_and_reaches_handler() {
     let req = Request::builder()
         .method("POST")
-        .uri(format!("{BASE}/ehr/abc/composition"))
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
         .header(header::AUTHORIZATION, basic("alice", "pw"))
         .header(header::CONTENT_TYPE, "application/json")
         .body(Body::from(r#"{"_type":"COMPOSITION"}"#))
@@ -238,7 +248,7 @@ async fn json_composition_body_is_accepted_and_reaches_handler() {
 async fn malformed_xml_composition_body_is_400() {
     let req = Request::builder()
         .method("POST")
-        .uri(format!("{BASE}/ehr/abc/composition"))
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
         .header(header::AUTHORIZATION, basic("alice", "pw"))
         .header(header::CONTENT_TYPE, "application/xml")
         .body(Body::from("<not-a-composition>"))
@@ -262,7 +272,7 @@ async fn unknown_route_is_404() {
 
 #[tokio::test]
 async fn auth_disabled_lets_requests_through() {
-    let (status, _h, _b) = send(app(false), get(&format!("{BASE}/ehr/abc"))).await;
+    let (status, _h, _b) = send(app(false), get(&format!("{BASE}/ehr/{EHR}"))).await;
     assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
 }
 

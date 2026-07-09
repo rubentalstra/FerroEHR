@@ -10,11 +10,13 @@ use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
-use ehrbase_rest::auth::config::{AuthConfig, BasicConfig, BasicUser, Redacted};
+use ehrbase_rest::RestConfig;
+use ehrbase_rest::access::authn::config::{AuthConfig, BasicConfig, BasicUser, Redacted};
 use ehrbase_rest::management::{
     AccessLevel, BuildInfo, EndpointLevels, HealthRegistry, ManagementConfig, Observability,
 };
-use ehrbase_rest::{RestConfig, StubBackend};
+
+mod common;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
@@ -65,7 +67,7 @@ fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
         },
         ..Observability::default()
     };
-    ehrbase_rest::build_full(config, Arc::new(StubBackend), None, None, observability)
+    ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
         .expect("build")
 }
 
@@ -176,7 +178,7 @@ fn app_with_metrics() -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    ehrbase_rest::build_full(config, Arc::new(StubBackend), None, None, observability)
+    ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
         .expect("build")
 }
 
@@ -272,7 +274,7 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         ..Observability::default()
     };
     let main_app =
-        ehrbase_rest::build_full(config, Arc::new(StubBackend), None, None, observability)
+        ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
             .expect("build");
 
     // …the main app 404s the management route.

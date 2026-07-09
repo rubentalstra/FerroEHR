@@ -103,8 +103,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // on the shared vo machinery + the `ehr_index` table below) +
     // 0008_creating_system_id_and_audit_invariant (storage-semantics audit
     // wave: the per-version `creating_system_id` column on `vo_version` [M2]
-    // and the `audit_system_id_nonempty` CHECK on `audit` [m6]; adds no table).
-    assert_eq!((applied_ext, applied_ehr), (1, 8));
+    // and the `audit_system_id_nonempty` CHECK on `audit` [m6]; adds no table) +
+    // 0009_vo_archive (SM-4 I_ADMIN_ARCHIVE archive markers; adds the
+    // `vo_archive` table below).
+    assert_eq!((applied_ext, applied_ehr), (1, 9));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -126,6 +128,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "node",
             "stored_query",
             "template_store",
+            "vo_archive",
             "vo_attestation",
             "vo_version",
         ]
