@@ -34,7 +34,8 @@ use openehr_flat::WebTemplate;
 
 use ehrbase_sm::services::{
     AdminArchive, AdminService, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
-    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
+    ContributionAdapter, DefinitionQueryService, DemographicService, EhrCompositionService,
+    EhrContributionService,
     EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, ItemTagAdapter,
     PartyRelationshipService, QueryService, SystemLog, TerminologyService, VersionMetaAdapter,
     WebTemplateService,
@@ -88,6 +89,8 @@ type RelGet = Arc<dyn Fn(String, Option<String>) -> Result<ServiceResponse, SmEr
 // dispatch: OPT retrieval via the SM `get_opt` seam; list/upload/example/query
 // via the wire-shaped `DefinitionAdapter`.
 type GetOpt = Arc<dyn Fn(String) -> Result<String, SmError> + Send + Sync>;
+type ContributionCommitRaw =
+    Arc<dyn Fn(Uuid, Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
 type TemplateExample =
     Arc<dyn Fn(String, Option<String>, Option<String>) -> Result<Value, SmError> + Send + Sync>;
 type ValueListHook = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
@@ -129,8 +132,13 @@ pub struct Hooks {
     pub demographic_latest_meta: Option<PartyMeta>,
     pub party_relationship_create: Option<RelCreate>,
     pub party_relationship_get: Option<RelGet>,
+    // raw wire CONTRIBUTION commit (`ContributionAdapter::ehr_contribution_commit`)
+    pub ehr_contribution_commit: Option<ContributionCommitRaw>,
     // DEFINITION wire ops (SM I_DEFINITION_* + DefinitionAdapter)
     pub get_opt: Option<GetOpt>,
+    // adl1.4 wire GET: template_id-keyed (`DefinitionAdapter::template_adl14_get`;
+    // the SM `get_opt` stays UUID-keyed — i_definition_adl14.adoc).
+    pub template_adl14_get: Option<GetOpt>,
     pub template_adl14_list: Option<ValueListHook>,
     pub template_adl14_upload: Option<TemplateUploadHook>,
     pub template_adl14_example: Option<TemplateExample>,
@@ -529,6 +537,20 @@ impl EhrContributionService for Mock {
 // ── adapters (mandatory, no defaults) ─────────────────────────────────────────
 
 #[async_trait]
+impl ContributionAdapter for Mock {
+    async fn ehr_contribution_commit(
+        &self,
+        an_ehr_id: Uuid,
+        a_contribution: Value,
+    ) -> Result<ServiceResponse, SmError> {
+        match &self.h.ehr_contribution_commit {
+            Some(f) => f(an_ehr_id, a_contribution),
+            None => Err(not_impl()),
+        }
+    }
+}
+
+#[async_trait]
 impl VersionMetaAdapter for Mock {
     async fn composition_latest_meta(
         &self,
@@ -681,6 +703,12 @@ impl DefinitionAdapter for Mock {
     async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError> {
         match &self.h.template_adl14_upload {
             Some(f) => f(opt_xml),
+            None => Err(not_impl()),
+        }
+    }
+    async fn template_adl14_get(&self, template_id: String) -> Result<String, SmError> {
+        match &self.h.template_adl14_get {
+            Some(f) => f(template_id),
             None => Err(not_impl()),
         }
     }

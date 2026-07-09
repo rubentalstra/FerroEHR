@@ -13,7 +13,7 @@
     "repo": "openEHR/specifications-CNF",
     "commit": "33251d2a"
   },
-  "started": "2026-07-09T08:18:04.013133Z",
+  "started": "2026-07-09T17:37:25.705084Z",
   "selection": {
     "filter": null,
     "profile": null,
@@ -38,7 +38,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 48
+      "duration_ms": 110
     },
     {
       "ecc_id": "ECC-EHR-002",
@@ -55,7 +55,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 19
+      "duration_ms": 28
     },
     {
       "ecc_id": "ECC-EHR-003",
@@ -72,7 +72,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 5
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-EHR-004",
@@ -89,7 +89,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 4
+      "duration_ms": 15
     },
     {
       "ecc_id": "ECC-EHR-005",
@@ -106,7 +106,7 @@
       "total_data_sets": 16,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 189
+      "duration_ms": 240
     },
     {
       "ecc_id": "ECC-EHR-006",
@@ -123,7 +123,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 8
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-EHR-007",
@@ -140,7 +140,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 10
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-EHR-008",
@@ -157,7 +157,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 10
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-EHR-009",
@@ -174,7 +174,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 12
+      "duration_ms": 14
     },
     {
       "ecc_id": "ECC-EHR-010",
@@ -191,7 +191,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 3
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-EHR-011",
@@ -208,7 +208,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 3
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-STA-001",
@@ -225,7 +225,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 12
+      "duration_ms": 14
     },
     {
       "ecc_id": "ECC-STA-002",
@@ -259,7 +259,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 23
+      "duration_ms": 26
     },
     {
       "ecc_id": "ECC-STA-004",
@@ -276,7 +276,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 4
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-STA-005",
@@ -293,7 +293,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 20
+      "duration_ms": 25
     },
     {
       "ecc_id": "ECC-STA-006",
@@ -344,7 +344,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 5
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-STA-009",
@@ -361,7 +361,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 23
+      "duration_ms": 21
     },
     {
       "ecc_id": "ECC-STA-010",
@@ -378,7 +378,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 4
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-EHR-012",
@@ -395,7 +395,7 @@
       "total_data_sets": 11,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr (422); RM 1.2.0 ehr §EHR_STATUS validation",
-      "duration_ms": 53
+      "duration_ms": 59
     },
     {
       "ecc_id": "ECC-COM-001",
@@ -412,46 +412,12 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 27
+      "duration_ms": 29
     },
     {
       "ecc_id": "ECC-COM-001",
       "id": "com/create-composition-event",
       "title": "Create composition — event",
-      "capability": "CompositionOps",
-      "profiles": [
-        "Core",
-        "Standard"
-      ],
-      "format": "xml",
-      "status": "passed",
-      "passed_data_sets": 1,
-      "total_data_sets": 1,
-      "message": null,
-      "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 21
-    },
-    {
-      "ecc_id": "ECC-COM-002",
-      "id": "com/create-composition-persistent",
-      "title": "Create composition — persistent",
-      "capability": "CompositionOps",
-      "profiles": [
-        "Core",
-        "Standard"
-      ],
-      "format": "json",
-      "status": "passed",
-      "passed_data_sets": 1,
-      "total_data_sets": 1,
-      "message": null,
-      "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 19
-    },
-    {
-      "ecc_id": "ECC-COM-002",
-      "id": "com/create-composition-persistent",
-      "title": "Create composition — persistent",
       "capability": "CompositionOps",
       "profiles": [
         "Core",
@@ -464,6 +430,40 @@
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
       "duration_ms": 20
+    },
+    {
+      "ecc_id": "ECC-COM-002",
+      "id": "com/create-composition-persistent",
+      "title": "Create composition — persistent",
+      "capability": "CompositionOps",
+      "profiles": [
+        "Core",
+        "Standard"
+      ],
+      "format": "json",
+      "status": "passed",
+      "passed_data_sets": 1,
+      "total_data_sets": 1,
+      "message": null,
+      "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+      "duration_ms": 22
+    },
+    {
+      "ecc_id": "ECC-COM-002",
+      "id": "com/create-composition-persistent",
+      "title": "Create composition — persistent",
+      "capability": "CompositionOps",
+      "profiles": [
+        "Core",
+        "Standard"
+      ],
+      "format": "xml",
+      "status": "passed",
+      "passed_data_sets": 1,
+      "total_data_sets": 1,
+      "message": null,
+      "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-COM-003",
@@ -480,7 +480,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 27
+      "duration_ms": 32
     },
     {
       "ecc_id": "ECC-COM-004",
@@ -497,7 +497,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 15
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-COM-005",
@@ -514,7 +514,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 17
+      "duration_ms": 15
     },
     {
       "ecc_id": "ECC-COM-006",
@@ -531,7 +531,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 12
+      "duration_ms": 14
     },
     {
       "ecc_id": "ECC-COM-007",
@@ -565,7 +565,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 31
+      "duration_ms": 28
     },
     {
       "ecc_id": "ECC-COM-008",
@@ -582,7 +582,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 25
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-COM-009",
@@ -599,7 +599,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 9
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-COM-010",
@@ -616,7 +616,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 3
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-COM-011",
@@ -650,7 +650,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 3
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-COM-013",
@@ -667,7 +667,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 27
+      "duration_ms": 32
     },
     {
       "ecc_id": "ECC-COM-013",
@@ -684,7 +684,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 22
+      "duration_ms": 26
     },
     {
       "ecc_id": "ECC-COM-014",
@@ -701,7 +701,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 28
+      "duration_ms": 31
     },
     {
       "ecc_id": "ECC-COM-014",
@@ -718,7 +718,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 24
+      "duration_ms": 47
     },
     {
       "ecc_id": "ECC-COM-015",
@@ -735,7 +735,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 10
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-COM-016",
@@ -752,7 +752,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 4
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-COM-017",
@@ -769,7 +769,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 175
+      "duration_ms": 177
     },
     {
       "ecc_id": "ECC-COM-018",
@@ -786,7 +786,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 36
+      "duration_ms": 34
     },
     {
       "ecc_id": "ECC-COM-018",
@@ -803,7 +803,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 27
+      "duration_ms": 31
     },
     {
       "ecc_id": "ECC-COM-019",
@@ -854,7 +854,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 48
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-COM-022",
@@ -871,7 +871,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 27
+      "duration_ms": 25
     },
     {
       "ecc_id": "ECC-COM-022",
@@ -888,7 +888,7 @@
       "total_data_sets": 0,
       "message": "expected status 200, got 406 (body: {\"error\":\"Not Acceptable\",\"message\":\"not acceptable: canonical XML for this response is available once typed payloads land (P12); request application/json\"})",
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 26
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-COM-023",
@@ -939,7 +939,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 28
+      "duration_ms": 36
     },
     {
       "ecc_id": "ECC-COM-026",
@@ -956,7 +956,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 24
+      "duration_ms": 31
     },
     {
       "ecc_id": "ECC-COM-027",
@@ -973,7 +973,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 19
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-COM-028",
@@ -990,7 +990,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 28
+      "duration_ms": 32
     },
     {
       "ecc_id": "ECC-COM-029",
@@ -1007,7 +1007,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 25
+      "duration_ms": 30
     },
     {
       "ecc_id": "ECC-COM-030",
@@ -1024,7 +1024,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 22
+      "duration_ms": 23
     },
     {
       "ecc_id": "ECC-COM-031",
@@ -1058,7 +1058,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 22
+      "duration_ms": 29
     },
     {
       "ecc_id": "ECC-CTB-002",
@@ -1092,7 +1092,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 10
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-CTB-004",
@@ -1109,7 +1109,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 24
+      "duration_ms": 28
     },
     {
       "ecc_id": "ECC-CTB-005",
@@ -1126,7 +1126,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 11
+      "duration_ms": 23
     },
     {
       "ecc_id": "ECC-CTB-006",
@@ -1143,7 +1143,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 24
+      "duration_ms": 32
     },
     {
       "ecc_id": "ECC-CTB-007",
@@ -1160,7 +1160,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 24
+      "duration_ms": 32
     },
     {
       "ecc_id": "ECC-CTB-008",
@@ -1177,7 +1177,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 22
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-CTB-009",
@@ -1194,7 +1194,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 22
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-CTB-010",
@@ -1211,7 +1211,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 23
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-CTB-011",
@@ -1228,7 +1228,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 16
+      "duration_ms": 21
     },
     {
       "ecc_id": "ECC-CTB-012",
@@ -1245,7 +1245,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 16
+      "duration_ms": 34
     },
     {
       "ecc_id": "ECC-CTB-013",
@@ -1262,7 +1262,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 14
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-CTB-014",
@@ -1279,7 +1279,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 15
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-CTB-015",
@@ -1296,7 +1296,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 12
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-CTB-016",
@@ -1330,7 +1330,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 10
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-CTB-018",
@@ -1347,7 +1347,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 19
+      "duration_ms": 14
     },
     {
       "ecc_id": "ECC-CTB-019",
@@ -1364,7 +1364,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 21
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-CTB-020",
@@ -1415,7 +1415,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 22
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-CTB-023",
@@ -1449,7 +1449,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 21
+      "duration_ms": 23
     },
     {
       "ecc_id": "ECC-CTB-025",
@@ -1466,7 +1466,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 4
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-CTB-026",
@@ -1483,7 +1483,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 9
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-CTB-027",
@@ -1534,7 +1534,7 @@
       "total_data_sets": 0,
       "message": "expected status 200, got 405 (body: )",
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 22
+      "duration_ms": 25
     },
     {
       "ecc_id": "ECC-CTB-030",
@@ -1551,7 +1551,7 @@
       "total_data_sets": 0,
       "message": "expected status 200, got 405 (body: )",
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 16
+      "duration_ms": 15
     },
     {
       "ecc_id": "ECC-CTB-031",
@@ -1568,7 +1568,7 @@
       "total_data_sets": 0,
       "message": "expected status 200, got 405 (body: )",
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 13
+      "duration_ms": 8
     },
     {
       "ecc_id": "ECC-DIR-001",
@@ -1584,7 +1584,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 12
+      "duration_ms": 15
     },
     {
       "ecc_id": "ECC-DIR-002",
@@ -1600,7 +1600,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 17
+      "duration_ms": 20
     },
     {
       "ecc_id": "ECC-DIR-003",
@@ -1632,7 +1632,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 17
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-DIR-005",
@@ -1648,7 +1648,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 3
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-DIR-006",
@@ -1664,7 +1664,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 16
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-DIR-007",
@@ -1728,7 +1728,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 15
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-DIR-011",
@@ -1760,7 +1760,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 8
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DIR-013",
@@ -1776,7 +1776,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 16
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-DIR-014",
@@ -1808,7 +1808,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 17
+      "duration_ms": 21
     },
     {
       "ecc_id": "ECC-DIR-016",
@@ -1824,7 +1824,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 17
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-DIR-017",
@@ -1840,7 +1840,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 8
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DIR-018",
@@ -1856,7 +1856,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 4
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-DIR-019",
@@ -1872,7 +1872,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 8
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DIR-020",
@@ -1888,7 +1888,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 22
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-DIR-021",
@@ -1920,7 +1920,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 11
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DIR-023",
@@ -1968,7 +1968,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 25
+      "duration_ms": 40
     },
     {
       "ecc_id": "ECC-DIR-026",
@@ -1984,7 +1984,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 22
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-DIR-027",
@@ -2000,7 +2000,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 9
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-DIR-028",
@@ -2016,7 +2016,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 9
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DIR-029",
@@ -2032,7 +2032,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 20
+      "duration_ms": 26
     },
     {
       "ecc_id": "ECC-DIR-030",
@@ -2048,7 +2048,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 3
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-DIR-031",
@@ -2064,7 +2064,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 22
+      "duration_ms": 31
     },
     {
       "ecc_id": "ECC-DIR-032",
@@ -2080,7 +2080,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 8
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-DIR-033",
@@ -2112,7 +2112,7 @@
       "total_data_sets": 0,
       "message": "expected status 200, got 404 (body: )",
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 18
+      "duration_ms": 21
     },
     {
       "ecc_id": "ECC-DIR-035",
@@ -2128,7 +2128,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 1
+      "duration_ms": 0
     },
     {
       "ecc_id": "ECC-DIR-036",
@@ -2144,7 +2144,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 9
+      "duration_ms": 61
     },
     {
       "ecc_id": "ECC-DIR-037",
@@ -2160,7 +2160,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 8
+      "duration_ms": 20
     },
     {
       "ecc_id": "ECC-TPL-001",
@@ -2194,7 +2194,7 @@
       "total_data_sets": 18,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 90
+      "duration_ms": 121
     },
     {
       "ecc_id": "ECC-TPL-003",
@@ -2211,7 +2211,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 3
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-TPL-004",
@@ -2228,7 +2228,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 7
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-TPL-005",
@@ -2245,7 +2245,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 7
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-TPL-006",
@@ -2262,7 +2262,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 7
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-TPL-007",
@@ -2279,7 +2279,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 8
+      "duration_ms": 13
     },
     {
       "ecc_id": "ECC-TPL-008",
@@ -2296,7 +2296,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 3
+      "duration_ms": 8
     },
     {
       "ecc_id": "ECC-TPL-009",
@@ -2313,7 +2313,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 3
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-TPL-010",
@@ -2330,7 +2330,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 6
+      "duration_ms": 13
     },
     {
       "ecc_id": "ECC-TPL-011",
@@ -2347,7 +2347,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 3
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-TPL-012",
@@ -2398,7 +2398,7 @@
       "total_data_sets": 0,
       "message": "expected one of [200, 204], got 405",
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 7
+      "duration_ms": 8
     },
     {
       "ecc_id": "ECC-TPL-015",
@@ -2415,7 +2415,7 @@
       "total_data_sets": 0,
       "message": "expected one of [200, 204], got 405",
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 6
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-TPL-016",
@@ -2432,7 +2432,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 4
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-SQR-001",
@@ -2448,7 +2448,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 4
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-SQR-002",
@@ -2464,7 +2464,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 7
+      "duration_ms": 14
     },
     {
       "ecc_id": "ECC-SQR-003",
@@ -2480,7 +2480,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 9
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-SQR-004",
@@ -2512,7 +2512,7 @@
       "total_data_sets": 0,
       "message": "expected status 200, got 404 (body: )",
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 4
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-SQR-006",
@@ -2528,7 +2528,7 @@
       "total_data_sets": 0,
       "message": "expected 400/422 for a non-AQL query, got 200",
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 3
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-SQR-007",
@@ -2544,7 +2544,7 @@
       "total_data_sets": 0,
       "message": "expected 400/422 for malformed AQL, got 200",
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 3
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-QRY-001",
@@ -2560,7 +2560,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1",
-      "duration_ms": 5
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-QRY-002",
@@ -2576,7 +2576,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1",
-      "duration_ms": 5
+      "duration_ms": 13
     },
     {
       "ecc_id": "ECC-QRY-003",
@@ -2592,7 +2592,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1",
-      "duration_ms": 8
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-QRY-004",
@@ -2608,7 +2608,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1",
-      "duration_ms": 22
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-QRY-005",
@@ -2624,7 +2624,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 9
+      "duration_ms": 21
     },
     {
       "ecc_id": "ECC-QRY-006",
@@ -2640,7 +2640,7 @@
       "total_data_sets": 0,
       "message": "24/27 A/empty_db goldens matched (0 skipped); first divergence: A/106_get_ehrs.json: valid query rejected with status 400 (body: {\"error\":\"Bad Request\",\"message\":\"bad request: attribute `ehr_status` is not defined on EHR (RM model)\"})",
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 158
+      "duration_ms": 250
     },
     {
       "ecc_id": "ECC-QRY-007",
@@ -2656,7 +2656,7 @@
       "total_data_sets": 18,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 171
+      "duration_ms": 197
     },
     {
       "ecc_id": "ECC-QRY-008",
@@ -2672,7 +2672,7 @@
       "total_data_sets": 11,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 80
+      "duration_ms": 72
     },
     {
       "ecc_id": "ECC-QRY-009",
@@ -2688,7 +2688,7 @@
       "total_data_sets": 0,
       "message": "16/18 D/empty_db goldens matched (8 skipped); first divergence: D/312_select_data_values_from_all_ehrs_contains_composition_with_archetype_top_5.json: valid query rejected with status 400 (body: {\"error\":\"Bad Request\",\"message\":\"bad request: invalid AQL: found 'Order' at 29..30\"})",
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 118
+      "duration_ms": 116
     },
     {
       "ecc_id": "ECC-QRY-010",
@@ -2704,7 +2704,7 @@
       "total_data_sets": 0,
       "message": "20/23 A/loaded_db goldens matched (4 skipped); first divergence: A/106_get_ehrs.json: valid query rejected with status 400 (body: {\"error\":\"Bad Request\",\"message\":\"bad request: attribute `ehr_status` is not defined on EHR (RM model)\"})",
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 137
+      "duration_ms": 150
     },
     {
       "ecc_id": "ECC-QRY-011",
@@ -2720,7 +2720,7 @@
       "total_data_sets": 0,
       "message": "15/18 B/loaded_db goldens matched (6 skipped); first divergence: B/104_get_compositions_top_5_ordered_by_starttime_asc.json: valid query rejected with status 400 (body: {\"error\":\"Bad Request\",\"message\":\"bad request: invalid AQL: found 'Order' at 7..8\"})",
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 166
+      "duration_ms": 160
     },
     {
       "ecc_id": "ECC-QRY-012",
@@ -2736,7 +2736,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 8
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-QRY-013",
@@ -2752,7 +2752,7 @@
       "total_data_sets": 0,
       "message": "7/9 D/loaded_db goldens matched (17 skipped); first divergence: D/312_select_data_values_from_all_ehrs_contains_composition_with_archetype_top_5.json: valid query rejected with status 400 (body: {\"error\":\"Bad Request\",\"message\":\"bad request: invalid AQL: found 'Order' at 29..30\"})",
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 62
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-ADM-001",
@@ -2768,7 +2768,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
-      "duration_ms": 10
+      "duration_ms": 20
     },
     {
       "ecc_id": "ECC-ADM-002",
@@ -2800,7 +2800,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
-      "duration_ms": 13
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-ADM-004",
@@ -2816,7 +2816,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
-      "duration_ms": 15
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-ADM-005",
@@ -2832,7 +2832,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
-      "duration_ms": 8
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-ADM-006",
@@ -2880,7 +2880,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 9
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DEM-003",
@@ -2896,7 +2896,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 9
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DEM-004",
@@ -2992,7 +2992,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 5
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-DEM-010",
@@ -3024,7 +3024,7 @@
       "total_data_sets": 0,
       "message": "expected status in [200, 204], got 400",
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 8
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DEM-012",
@@ -3040,7 +3040,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 5
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-DEM-013",
@@ -3056,7 +3056,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 8
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DEM-014",
@@ -3072,7 +3072,7 @@
       "total_data_sets": 0,
       "message": "expected status in [200, 204], got 400",
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 9
+      "duration_ms": 8
     },
     {
       "ecc_id": "ECC-DEM-015",
@@ -3104,7 +3104,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 9
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DEM-017",
@@ -3136,7 +3136,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 4
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-DEM-019",
@@ -3152,7 +3152,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 9
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-DEM-020",
@@ -3168,7 +3168,7 @@
       "total_data_sets": 0,
       "message": "expected status in [200, 204], got 400",
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 8
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-DEM-021",
@@ -3216,7 +3216,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 8
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DEM-024",
@@ -3249,7 +3249,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 103
+      "duration_ms": 134
     },
     {
       "ecc_id": "ECC-VAL-002",
@@ -3266,7 +3266,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 90
+      "duration_ms": 96
     },
     {
       "ecc_id": "ECC-VAL-003",
@@ -3283,7 +3283,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 88
+      "duration_ms": 97
     },
     {
       "ecc_id": "ECC-VAL-004",
@@ -3300,7 +3300,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 89
+      "duration_ms": 106
     },
     {
       "ecc_id": "ECC-VAL-005",
@@ -3317,7 +3317,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 87
+      "duration_ms": 96
     },
     {
       "ecc_id": "ECC-VAL-006",
@@ -3334,7 +3334,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 89
+      "duration_ms": 93
     },
     {
       "ecc_id": "ECC-VAL-007",
@@ -3351,7 +3351,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 88
+      "duration_ms": 94
     },
     {
       "ecc_id": "ECC-VAL-008",
@@ -3368,7 +3368,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 87
+      "duration_ms": 97
     },
     {
       "ecc_id": "ECC-VAL-009",
@@ -3385,7 +3385,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 88
+      "duration_ms": 99
     },
     {
       "ecc_id": "ECC-VAL-010",
@@ -3402,7 +3402,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 84
+      "duration_ms": 105
     },
     {
       "ecc_id": "ECC-VAL-011",
@@ -3419,7 +3419,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 80
+      "duration_ms": 106
     },
     {
       "ecc_id": "ECC-VAL-012",
@@ -3436,7 +3436,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 92
+      "duration_ms": 101
     },
     {
       "ecc_id": "ECC-VAL-013",
@@ -3453,7 +3453,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 33
+      "duration_ms": 34
     },
     {
       "ecc_id": "ECC-VAL-014",
@@ -3470,7 +3470,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 29
+      "duration_ms": 37
     },
     {
       "ecc_id": "ECC-VAL-015",
@@ -3487,7 +3487,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 39
+      "duration_ms": 33
     },
     {
       "ecc_id": "ECC-VAL-016",
@@ -3504,7 +3504,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 30
+      "duration_ms": 34
     },
     {
       "ecc_id": "ECC-VAL-017",
@@ -3521,7 +3521,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 49
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-018",
@@ -3538,7 +3538,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 47
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-019",
@@ -3555,7 +3555,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 50
     },
     {
       "ecc_id": "ECC-VAL-020",
@@ -3572,7 +3572,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 47
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-021",
@@ -3589,7 +3589,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 49
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-022",
@@ -3606,7 +3606,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 47
+      "duration_ms": 50
     },
     {
       "ecc_id": "ECC-VAL-023",
@@ -3623,7 +3623,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 47
     },
     {
       "ecc_id": "ECC-VAL-024",
@@ -3640,7 +3640,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 49
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-025",
@@ -3657,7 +3657,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 49
+      "duration_ms": 50
     },
     {
       "ecc_id": "ECC-VAL-026",
@@ -3674,7 +3674,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 50
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-027",
@@ -3691,7 +3691,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-VAL-028",
@@ -3708,7 +3708,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 52
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-029",
@@ -3725,7 +3725,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 34
+      "duration_ms": 31
     },
     {
       "ecc_id": "ECC-VAL-030",
@@ -3742,7 +3742,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 34
+      "duration_ms": 36
     },
     {
       "ecc_id": "ECC-VAL-031",
@@ -3759,7 +3759,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 20
+      "duration_ms": 22
     },
     {
       "ecc_id": "ECC-VAL-032",
@@ -3776,7 +3776,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 39
+      "duration_ms": 37
     },
     {
       "ecc_id": "ECC-VAL-033",
@@ -3793,7 +3793,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 38
+      "duration_ms": 35
     },
     {
       "ecc_id": "ECC-VAL-034",
@@ -3810,7 +3810,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 63
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-035",
@@ -3827,7 +3827,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 60
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-036",
@@ -3844,7 +3844,7 @@
       "total_data_sets": 0,
       "message": "ITEM_STRUCTURE ITEM_LIST slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 56
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-037",
@@ -3861,7 +3861,7 @@
       "total_data_sets": 0,
       "message": "ITEM_STRUCTURE ITEM_TABLE slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 55
+      "duration_ms": 70
     },
     {
       "ecc_id": "ECC-VAL-038",
@@ -3878,7 +3878,7 @@
       "total_data_sets": 0,
       "message": "ITEM_STRUCTURE ITEM_SINGLE slot filled with ITEM_TREE (Class not allowed): expected rejected (ITS-REST validation composition_create.yaml 422), got 201",
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 56
+      "duration_ms": 69
     },
     {
       "ecc_id": "ECC-VAL-039",
@@ -3893,9 +3893,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_BOOLEAN with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_BOOLEAN with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 81
+      "duration_ms": 60
     },
     {
       "ecc_id": "ECC-VAL-040",
@@ -3910,9 +3910,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "value true allowed (C_BOOLEAN true-only): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "value true allowed (C_BOOLEAN true-only): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 65
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-041",
@@ -3927,9 +3927,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "value false allowed (C_BOOLEAN false-only): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "value false allowed (C_BOOLEAN false-only): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 56
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-042",
@@ -3944,9 +3944,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "id 54480987 matches [0-9]+ (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "id 54480987 matches [0-9]+ (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_IDENTIFIER; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 58
+      "duration_ms": 61
     },
     {
       "ecc_id": "ECC-VAL-043",
@@ -3961,9 +3961,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "id 54480987 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "id 54480987 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_IDENTIFIER; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 45
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-044",
@@ -3978,9 +3978,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_TEXT with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_TEXT with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 39
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-045",
@@ -3995,9 +3995,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_TEXT value in the C_STRING list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_TEXT value in the C_STRING list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-046",
@@ -4012,9 +4012,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_CODED_TEXT with defining_code (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_CODED_TEXT with defining_code (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 39
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-047",
@@ -4029,9 +4029,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_CODED_TEXT local::at0023 in code_list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_CODED_TEXT local::at0023 in code_list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 40
+      "duration_ms": 51
     },
     {
       "ecc_id": "ECC-VAL-048",
@@ -4046,9 +4046,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "SNOMED-CT 73211009 in the external code_list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "SNOMED-CT 73211009 in the external code_list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 49
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-049",
@@ -4063,9 +4063,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_ORDINAL with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_ORDINAL with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_ORDINAL; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 36
+      "duration_ms": 40
     },
     {
       "ecc_id": "ECC-VAL-050",
@@ -4080,7 +4080,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_ORDINAL symbol local::at0014 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_ORDINAL symbol local::at0014 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_ORDINAL; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 42
     },
@@ -4097,9 +4097,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_SCALE with value+symbol (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_SCALE with value+symbol (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_SCALE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 63
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-052",
@@ -4114,9 +4114,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_SCALE value 1.0 in list {1.0} (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_SCALE value 1.0 in list {1.0} (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_SCALE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 47
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-053",
@@ -4131,9 +4131,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_COUNT with magnitude (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_COUNT with magnitude (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 38
+      "duration_ms": 37
     },
     {
       "ecc_id": "ECC-VAL-054",
@@ -4148,9 +4148,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_COUNT magnitude 3 in range [0,10] (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_COUNT magnitude 3 in range [0,10] (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-055",
@@ -4165,9 +4165,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_COUNT magnitude 3 in the C_INTEGER list {3} (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_COUNT magnitude 3 in the C_INTEGER list {3} (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 47
     },
     {
       "ecc_id": "ECC-VAL-056",
@@ -4182,7 +4182,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_QUANTITY with magnitude (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_QUANTITY with magnitude (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 38
     },
@@ -4199,7 +4199,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "units mg matches property mass openehr::124 (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "units mg matches property mass openehr::124 (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 48
     },
@@ -4216,9 +4216,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_QUANTITY units 'mg' in [mg,kg] (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_QUANTITY units 'mg' in [mg,kg] (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 40
+      "duration_ms": 39
     },
     {
       "ecc_id": "ECC-VAL-059",
@@ -4235,7 +4235,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 44
+      "duration_ms": 50
     },
     {
       "ecc_id": "ECC-VAL-060",
@@ -4250,9 +4250,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_PROPORTION with numerator (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_PROPORTION with numerator (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 41
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-VAL-061",
@@ -4267,9 +4267,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "type 0 in list {0} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "type 0 in list {0} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 52
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-062",
@@ -4284,9 +4284,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "type 1 in list {1} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "type 1 in list {1} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 53
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-063",
@@ -4301,9 +4301,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "type 2 in list {2} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "type 2 in list {2} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 57
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-064",
@@ -4318,9 +4318,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "type 3 in list {3} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "type 3 in list {3} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-065",
@@ -4335,9 +4335,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "type 4 in list {4} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "type 4 in list {4} with RM-valid num/den (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 49
+      "duration_ms": 43
     },
     {
       "ecc_id": "ECC-VAL-066",
@@ -4354,7 +4354,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 26
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-VAL-067",
@@ -4369,7 +4369,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "numerator 398.5 in range [0,1000] (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "numerator 398.5 in range [0,1000] (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 46
     },
@@ -4386,9 +4386,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 49
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-VAL-069",
@@ -4403,9 +4403,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 44
     },
     {
       "ecc_id": "ECC-VAL-070",
@@ -4420,9 +4420,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-071",
@@ -4437,9 +4437,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-VAL-072",
@@ -4454,9 +4454,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 47
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-073",
@@ -4471,9 +4471,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 44
     },
     {
       "ecc_id": "ECC-VAL-074",
@@ -4488,9 +4488,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 56
+      "duration_ms": 47
     },
     {
       "ecc_id": "ECC-VAL-075",
@@ -4505,9 +4505,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-076",
@@ -4522,9 +4522,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 45
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-077",
@@ -4539,9 +4539,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 44
+      "duration_ms": 43
     },
     {
       "ecc_id": "ECC-VAL-078",
@@ -4556,9 +4556,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 53
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-079",
@@ -4573,9 +4573,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 45
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-VAL-080",
@@ -4590,9 +4590,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-081",
@@ -4607,9 +4607,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-VAL-082",
@@ -4624,7 +4624,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 48
     },
@@ -4641,9 +4641,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-084",
@@ -4658,9 +4658,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-085",
@@ -4675,9 +4675,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 51
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-086",
@@ -4692,7 +4692,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 47
     },
@@ -4709,9 +4709,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 50
+      "duration_ms": 59
     },
     {
       "ecc_id": "ECC-VAL-088",
@@ -4726,9 +4726,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-089",
@@ -4743,7 +4743,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 47
     },
@@ -4760,9 +4760,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-091",
@@ -4777,9 +4777,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-092",
@@ -4794,7 +4794,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 47
     },
@@ -4811,9 +4811,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-094",
@@ -4828,7 +4828,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 47
     },
@@ -4845,9 +4845,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "valid DV_INTERVAL lower<=upper (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 52
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-096",
@@ -4862,7 +4862,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DURATION with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DURATION with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 38
     },
@@ -4879,9 +4879,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 45
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-098",
@@ -4896,9 +4896,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 45
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-VAL-099",
@@ -4913,9 +4913,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DURATION base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 54
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-100",
@@ -4930,9 +4930,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_TIME with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_TIME with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 50
+      "duration_ms": 36
     },
     {
       "ecc_id": "ECC-VAL-101",
@@ -4947,9 +4947,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 54
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-VAL-102",
@@ -4964,9 +4964,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 54
+      "duration_ms": 47
     },
     {
       "ecc_id": "ECC-VAL-103",
@@ -4981,9 +4981,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DATE with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DATE with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 44
+      "duration_ms": 39
     },
     {
       "ecc_id": "ECC-VAL-104",
@@ -4998,9 +4998,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DATE base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DATE base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 51
+      "duration_ms": 48
     },
     {
       "ecc_id": "ECC-VAL-105",
@@ -5015,9 +5015,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DATE base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DATE base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 54
+      "duration_ms": 47
     },
     {
       "ecc_id": "ECC-VAL-106",
@@ -5032,9 +5032,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DATE_TIME with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DATE_TIME with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 42
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-107",
@@ -5049,7 +5049,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DATE_TIME full timestamp matches yyyy-mm-ddTHH:MM:SS (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DATE_TIME full timestamp matches yyyy-mm-ddTHH:MM:SS (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 44
     },
@@ -5066,9 +5066,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_DATE_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_DATE_TIME base value satisfies the constraint (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 50
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-109",
@@ -5083,9 +5083,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_PARSABLE with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_PARSABLE with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PARSABLE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-110",
@@ -5100,7 +5100,7 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "formalism ISO8601 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "formalism ISO8601 in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_PARSABLE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
       "duration_ms": 49
     },
@@ -5117,9 +5117,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_MULTIMEDIA with media_type (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_MULTIMEDIA with media_type (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_MULTIMEDIA; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 37
+      "duration_ms": 39
     },
     {
       "ecc_id": "ECC-VAL-112",
@@ -5134,9 +5134,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "media_type image/png in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "media_type image/png in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_MULTIMEDIA; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-113",
@@ -5151,9 +5151,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_URI with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_URI with value (RM present): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 37
+      "duration_ms": 45
     },
     {
       "ecc_id": "ECC-VAL-114",
@@ -5168,9 +5168,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "URI http://ok matches pattern (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "URI http://ok matches pattern (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 56
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-115",
@@ -5185,9 +5185,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "URI http://ok in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "URI http://ok in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 47
     },
     {
       "ecc_id": "ECC-VAL-116",
@@ -5202,9 +5202,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "DV_EHR_URI with value (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "DV_EHR_URI with value (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 57
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-117",
@@ -5219,9 +5219,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "ehr://x matches pattern (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "ehr://x matches pattern (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 57
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-118",
@@ -5236,9 +5236,9 @@
       "status": "failed",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "ehr://ok in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"message\":\"1 validation error(s)\",\"validationErrors\":[\"/content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities[at0001]/)",
+      "message": "ehr://ok in list (accepted): expected accepted (composition_create.yaml 201), got 422 ({\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: /content[openEHR-EHR-SECTION.test_all_types.v1]/items[at0001]/items[at0002]/items[openEHR-EHR-INSTRUCTION.test_all_types.v1]/activities)",
       "citation": "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 48
+      "duration_ms": 46
     },
     {
       "ecc_id": "ECC-SIG-001",
@@ -5254,7 +5254,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "version-signing.md §3.2 (digest default-on); §4.4 (rides every VERSION read)",
-      "duration_ms": 22
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-SIG-001",
@@ -5270,7 +5270,7 @@
       "total_data_sets": 0,
       "message": "expected status 200, got 406 (body: {\"error\":\"Not Acceptable\",\"message\":\"not acceptable: canonical XML for this response is available once typed payloads land (P12); request application/json\"})",
       "citation": "version-signing.md §3.2 (digest default-on); §4.4 (rides every VERSION read)",
-      "duration_ms": 24
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-SIG-002",
@@ -5286,7 +5286,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "version-signing.md §3.1 (canonical_form RFC 8785) + §6.3",
-      "duration_ms": 23
+      "duration_ms": 21
     },
     {
       "ecc_id": "ECC-SIG-003",
@@ -5302,7 +5302,7 @@
       "total_data_sets": 4,
       "message": null,
       "citation": "version-signing.md §3.3 (all object kinds via the shared vobject commit path)",
-      "duration_ms": 49
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-SIG-004",
@@ -5318,7 +5318,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "version-signing.md §3.3 (client-supplied signatures win, stored verbatim)",
-      "duration_ms": 21
+      "duration_ms": 20
     },
     {
       "ecc_id": "ECC-SIG-005",
@@ -5332,7 +5332,7 @@
       "status": "skipped",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); pgp-keyed self-host SUT wiring is a follow-up — digest cases prove the capability",
+      "message": "SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — digest cases prove the capability",
       "citation": "version-signing.md §3.2 (pgp mode, RFC 4880 detached signature)",
       "duration_ms": 0
     }

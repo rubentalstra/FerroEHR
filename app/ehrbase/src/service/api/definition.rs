@@ -40,6 +40,10 @@ impl DefinitionAdapter for EhrbaseService {
         Ok(self.store_template(&opt_xml).await?)
     }
 
+    async fn template_adl14_get(&self, template_id: String) -> Result<String, SmError> {
+        Ok(self.opt_get_by_template_id(&template_id).await?)
+    }
+
     async fn template_adl14_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_templates().await?)
     }

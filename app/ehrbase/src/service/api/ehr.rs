@@ -26,8 +26,8 @@ use uuid::Uuid;
 
 use ehrbase_sm::SmError;
 use ehrbase_sm::services::{
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService, ItemTagAdapter, TimeRange as SmTimeRange, VersionMetaAdapter,
+    ContributionAdapter, EhrCompositionService, EhrContributionService, EhrDirectoryService,
+    EhrService, EhrStatusService, ItemTagAdapter, TimeRange as SmTimeRange, VersionMetaAdapter,
 };
 use ehrbase_sm::types::{EhrSummary, Page, ResourceMeta, SubjectRef, UpdateAudit, UpdateVersion};
 use openehr_base::prelude::ObjectVersionId;
@@ -573,6 +573,17 @@ impl EhrContributionService for EhrbaseService {
     ) -> Result<i64, SmError> {
         let time_range = parse_time_range(time_range)?;
         Ok(self.count_contributions(an_ehr_id, time_range).await?)
+    }
+}
+
+#[async_trait]
+impl ContributionAdapter for EhrbaseService {
+    async fn ehr_contribution_commit(
+        &self,
+        an_ehr_id: Uuid,
+        a_contribution: Value,
+    ) -> Result<ehrbase_sm::types::ServiceResponse, SmError> {
+        self.create_ehr_contribution(an_ehr_id, a_contribution).await
     }
 }
 

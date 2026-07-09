@@ -14,7 +14,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::error::SmError;
-use crate::types::ResourceMeta;
+use crate::types::{ResourceMeta, ServiceResponse};
 
 /// Current-version metadata for the `409`/`412` `ETag`/`Location` decoration.
 #[async_trait]
@@ -65,6 +65,13 @@ pub trait DefinitionAdapter: Send + Sync {
     /// `GET …/definition/template/adl1.4` — the list of stored OPT 1.4
     /// templates as wire summary objects.
     async fn template_adl14_list(&self) -> Result<Vec<Value>, SmError>;
+
+    /// `GET …/definition/template/adl1.4/{template_id}` — the stored OPT 1.4
+    /// canonical XML addressed by its **`template_id` string** (the wire's
+    /// address; the SM `get_opt` is `UUID`-keyed, `i_definition_adl14.adoc`
+    /// `get_opt(an_opt_id: UUID)` — the two addressings cannot be conflated).
+    /// Unknown template → `artefact_does_not_exist` (`404`).
+    async fn template_adl14_get(&self, template_id: String) -> Result<String, SmError>;
 
     /// `GET …/definition/template/adl1.4/{template_id}/example` — a generated
     /// example `COMPOSITION` for the template. `detail_level`/`kind` are the
@@ -147,4 +154,31 @@ pub trait ItemTagAdapter: Send + Sync {
         uid_based_id: String,
         key: String,
     ) -> Result<(), SmError>;
+}
+
+/// ITS-REST **CONTRIBUTION** adapter-support extension — the raw-wire
+/// EHR-scoped CONTRIBUTION commit.
+///
+/// PORT NOTE (ADR-011): the SM `I_EHR_CONTRIBUTION.commit_contribution`
+/// (`Vec<UpdateVersion>, UpdateAudit`) is a *typed subset* of the ITS-REST
+/// wire CONTRIBUTION: `UPDATE_VERSION` mandates `data` + `lifecycle_state`
+/// (SM `update_version.adoc`, both `1..1`) and a committer, so it cannot
+/// represent an attestation-only (`666`) member, a delete (`523`) member
+/// (`"data": null`), or a member inheriting `committer`/`system_id` from the
+/// CONTRIBUTION audit (RM common `master06-change_control_package.adoc`
+/// §Committal m4). The wire fields are also RM-shaped (`lifecycle_state`/
+/// `change_type` are `DV_CODED_TEXT`, ITS-REST `UpdateVersion.yaml`), not the
+/// SM's `Terminology_code`. `POST …/contribution` therefore commits the raw
+/// wire body through this seam; all RM `change_control` semantics live in the
+/// platform's shared commit path.
+#[async_trait]
+pub trait ContributionAdapter: Send + Sync {
+    /// `POST …/ehr/{ehr_id}/contribution` — commit a wire CONTRIBUTION
+    /// atomically. Returns the stored `CONTRIBUTION` body with its resource
+    /// metadata (the contribution uid for the `201` `ETag`/`Location`).
+    async fn ehr_contribution_commit(
+        &self,
+        an_ehr_id: Uuid,
+        a_contribution: Value,
+    ) -> Result<ServiceResponse, SmError>;
 }

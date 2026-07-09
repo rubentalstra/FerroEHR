@@ -664,30 +664,18 @@ async fn run<S: Platform>(
             // PORT NOTE: a CONTRIBUTION commit is a wrapper DTO (a version set +
             // audit), not a single canonical RM value with a defined canonical-XML
             // shape — so it is accepted as JSON only.
+            //
+            // Committed as the *raw wire body* through the `ContributionAdapter`
+            // seam, not the typed SM `commit_contribution`: the typed
+            // `UpdateVersion` envelope cannot represent attestation-only (666) or
+            // delete (523) members, or committer/system_id inheritance from the
+            // CONTRIBUTION audit (see the trait's PORT NOTE; RM common master06
+            // §Committal m4).
             let body = negotiate::json_value(h, &parts.body)?;
-            let versions: Vec<UpdateVersion> =
-                serde_json::from_value(body.get("versions").cloned().unwrap_or(Value::Null))
-                    .map_err(|e| {
-                        ApiError::BadRequest(format!("invalid CONTRIBUTION versions: {e}"))
-                    })?;
-            let audit: UpdateAudit = serde_json::from_value(
-                body.get("audit").cloned().unwrap_or(Value::Null),
-            )
-            .map_err(|e| ApiError::BadRequest(format!("invalid CONTRIBUTION audit: {e}")))?;
-            let contribution_uid = EhrContributionService::commit_contribution(
-                state.backend(),
-                ehr_id,
-                versions,
-                audit,
-            )
-            .await?;
-            let repr = if negotiate::prefers_representation(h) {
-                let cid = parse_uuid(&contribution_uid, "contribution id")?;
-                EhrContributionService::get_contribution(state.backend(), ehr_id, cid).await?
-            } else {
-                Value::Null
-            };
-            let resp = ServiceResponse::new(repr, ResourceMeta::new(p.ehr_id, contribution_uid));
+            let resp = state
+                .backend()
+                .ehr_contribution_commit(ehr_id, body)
+                .await?;
             // 201_CONTRIBUTION: ETag(contribution_uid) + Location; body per Prefer.
             Ok(negotiate::write_json(
                 h,
