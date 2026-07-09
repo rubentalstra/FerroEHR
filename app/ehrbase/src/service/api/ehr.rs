@@ -583,7 +583,8 @@ impl ContributionAdapter for EhrbaseService {
         an_ehr_id: Uuid,
         a_contribution: Value,
     ) -> Result<ehrbase_sm::types::ServiceResponse, SmError> {
-        self.create_ehr_contribution(an_ehr_id, a_contribution).await
+        self.create_ehr_contribution(an_ehr_id, a_contribution)
+            .await
     }
 }
 
