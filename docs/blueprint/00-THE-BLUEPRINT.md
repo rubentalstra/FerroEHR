@@ -101,7 +101,7 @@ position (2026-07-09); **Build step** references §3.
 | 18 | Security / authn | DONE | SEC ECC cases (401/403 surface, mirroring the Robot `I_OAuth2_Keycloak` suite) — cheap, precede SM-5 | LOW | B5 |
 | 19 | ATNA / System Log | DONE | Capability evidencing in ECC (Logging is a STANDARD-profile capability) | LOW | B5 |
 | 20 | **CNF — the conformance instrument itself** (ch 7) | PARTIAL — ECC runs, but ~17/106 failures are runner/spec-gap mis-bookings and CORE is structurally unclaimable | D1 ITS-REST identity (dev OAS labeled 1.0.3); D2 re-adjudication (12 failures: SM ops with no REST binding); D3 golden adjudication (5: 2019-era `LIMIT` dialect); D5 CORE claimability (tag Versioning/AnonymousEhrs, decide Adl14ArchetypeProvisioning); D4 full OPTIONS surface; Statement + Certificate artefacts; MSG/SEC areas; `schedule_ref` on `CaseMeta` | HIGH | B5 |
-| 21 | Terminology-server **integration testing** | MISSING | wiremock + real-tx-server harness in `tools/conformance` (see B4) | HIGH (mission item) | B4 |
+| 21 | Terminology-server **integration testing** | MISSING | wiremock + real-tx-server harness in `tools/conformance`; the real server is an off-the-shelf Dockerised FHIR R4 TS (HAPI default / Snowstorm) pointed at by URL — `docs/design/terminology-server-integration.md` (see B4) | HIGH (mission item) | B4 |
 
 ---
 
@@ -158,6 +158,10 @@ zero drift elsewhere.**
 **Exit: rows 6 and 16 of the map fully DONE; MSG area evidenced.**
 
 ### B4 — Terminology-server integration (+ its test harness)
+Design set: the terminology **client** is `docs/terminology-validation.md`; the
+self-hostable **server** to run in Docker and point at by URL (HAPI FHIR
+default, Snowstorm opt-in) is `docs/design/terminology-server-integration.md` —
+we run an off-the-shelf FHIR R4 TS, never build one.
 1. External tx-server provider (FHIR TS via `reqwest`) behind the existing
    `TerminologyService` trait (`ehrbase-sm/src/services/terminology.rs`) —
    real `subsumes`, `value_set_validate`, `get_value_set` against a remote
@@ -173,7 +177,9 @@ zero drift elsewhere.**
    runner (canned expand/validate/lookup/subsumes ValueSet/CodeSystem
    responses, fault injection: timeouts, 5xx, malformed), and (b) an optional
    **real-server mode** (`--tx-server-url`) that runs the same cases against a
-   live terminology service and is skip-with-reason when unset. Cases assert
+   live terminology service — the Dockerised HAPI FHIR (or Snowstorm) TS from
+   `docs/design/terminology-server-integration.md` — and is skip-with-reason
+   when unset. Cases assert
    both the AQL surface (`matches {TERMINOLOGY(…)}` result sets) and the
    service surface, with the wiremock exchange recorded in the report.
 **Exit: mission item "terminology-server integration" demonstrable in CI
