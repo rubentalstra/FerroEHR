@@ -20,7 +20,7 @@ use uuid::Uuid;
 
 use ehrbase_rest::{
     EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService, ResourceMeta, ServiceResponse,
+    EhrStatusService, EhrSummary, Page, ResourceMeta, ServiceResponse,
 };
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
@@ -94,6 +94,11 @@ impl EhrService for EhrbaseService {
             )
             .await?;
         Ok(tags_response(tags))
+    }
+
+    // ── SM native call: get_ehr → EHR_SUMMARY (no ITS-REST route) ─────────────
+    async fn get_ehr_summary(&self, ehr_id: String) -> Result<EhrSummary, ApiError> {
+        Ok(self.summarize_ehr(parse_ehr_id(&ehr_id)?).await?)
     }
 }
 
@@ -455,6 +460,30 @@ impl EhrContributionService for EhrbaseService {
             self.get_contribution(ehr_id, contribution_id).await?,
         ))
     }
+
+    // ── SM native calls: list_contributions / contribution_count ──────────────
+    // (no ITS-REST route — the wire spec defines none).
+    async fn contribution_list(
+        &self,
+        ehr_id: String,
+        time_range: Option<(Option<String>, Option<String>)>,
+        page: Page,
+    ) -> Result<Vec<String>, ApiError> {
+        let ehr_id = parse_ehr_id(&ehr_id)?;
+        let time_range = parse_time_range(time_range)?;
+        let ids = self.list_contributions(ehr_id, time_range, page).await?;
+        Ok(ids.iter().map(Uuid::to_string).collect())
+    }
+
+    async fn contribution_count(
+        &self,
+        ehr_id: String,
+        time_range: Option<(Option<String>, Option<String>)>,
+    ) -> Result<i64, ApiError> {
+        let ehr_id = parse_ehr_id(&ehr_id)?;
+        let time_range = parse_time_range(time_range)?;
+        Ok(self.count_contributions(ehr_id, time_range).await?)
+    }
 }
 
 fn parse_ehr_id(raw: &str) -> Result<Uuid, ApiError> {
@@ -465,4 +494,20 @@ fn parse_ehr_id(raw: &str) -> Result<Uuid, ApiError> {
 fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, ApiError> {
     raw.parse::<jiff::Timestamp>()
         .map_err(|_| ApiError::BadRequest(format!("invalid version_at_time: {raw}")))
+}
+
+/// Parse the optional `(lower, upper)` ISO 8601 bounds of an SM contribution
+/// `time_range` into `jiff::Timestamp`s; a malformed bound → `400 BadRequest`.
+#[allow(clippy::type_complexity)]
+fn parse_time_range(
+    raw: Option<(Option<String>, Option<String>)>,
+) -> Result<Option<(Option<jiff::Timestamp>, Option<jiff::Timestamp>)>, ApiError> {
+    let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, ApiError> {
+        b.map(|s| {
+            s.parse::<jiff::Timestamp>()
+                .map_err(|_| ApiError::BadRequest(format!("invalid time_range bound: {s}")))
+        })
+        .transpose()
+    };
+    raw.map(|(lo, hi)| Ok((parse(lo)?, parse(hi)?))).transpose()
 }

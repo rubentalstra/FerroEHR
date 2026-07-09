@@ -9,7 +9,7 @@ use openehr_its::rest::generated::ehr::{
 };
 use openehr_its::rest::runtime::ApiError;
 
-use crate::types::ServiceResponse;
+use crate::types::{EhrSummary, ServiceResponse};
 
 /// The SM `I_EHR_SERVICE` interface
 /// (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_service.adoc`): "Primary
@@ -60,6 +60,26 @@ pub trait EhrService: Send + Sync {
 
     /// `GET /ehr/{ehr_id}/tags` — all item tags in the EHR.
     async fn ehr_tags_get(&self, _params: EhrTagsGetParams) -> Result<ServiceResponse, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// SM `I_EHR_SERVICE.get_ehr (an_ehr_id): EHR_SUMMARY`
+    /// (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_service.adoc`) — the
+    /// summary form of the EHR + its `EHR_STATUS`
+    /// (`docs/specs/openehr/SM/docs/UML/classes/ehr_summary.adoc`: `ehr_id`,
+    /// `system_id`, `ehr_status`, `time_created`, `contribution_count`,
+    /// `composition_count`, all mandatory). Pre `has_ehr (an_ehr_id)` → error
+    /// `ehr_does_not_exist`.
+    ///
+    /// Named `get_ehr_summary` (not `ehr_summary`) to realize SM `get_ehr`
+    /// without colliding with the wire EHR-body builder the service already
+    /// exposes internally (ITS-REST returns the RM `EHR` object for `GET
+    /// /ehr/{ehr_id}`, not `EHR_SUMMARY`).
+    ///
+    /// PORT NOTE: native-API call — no ITS-REST route emits `EHR_SUMMARY`; the
+    /// wire `GET /ehr/{ehr_id}` body stays the RM `EHR` object. Defaults to
+    /// `NotImplemented`.
+    async fn get_ehr_summary(&self, _ehr_id: String) -> Result<EhrSummary, ApiError> {
         Err(ApiError::NotImplemented)
     }
 }
