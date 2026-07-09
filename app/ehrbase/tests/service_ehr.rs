@@ -19,7 +19,10 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{EhrService, ServiceResponse};
+use ehrbase_rest::{
+    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
+    EhrStatusService, ServiceResponse,
+};
 use openehr_its::rest::generated::definition::DefinitionApi;
 use openehr_its::rest::runtime::ApiError;
 

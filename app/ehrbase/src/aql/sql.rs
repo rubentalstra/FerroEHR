@@ -133,6 +133,7 @@ pub fn build(ir: &QueryIr, params: &Params, ctx: &SqlCtx) -> Result<PreparedQuer
     let mut b = Builder::new(ir, params, ctx);
     b.build_from(&ir.contains)?;
     b.apply_ehr_scope();
+    b.apply_population_gate();
     let columns = b.build_select()?;
     b.build_where()?;
     b.build_order_by()?;
@@ -177,6 +178,7 @@ pub fn build_scope(
     let mut b = Builder::new(ir, params, ctx);
     b.build_from(&ir.contains)?;
     b.apply_ehr_scope();
+    b.apply_population_gate();
     b.build_where()?;
     let roots: Vec<(String, String)> = b
         .group_roots
@@ -466,6 +468,54 @@ impl<'a> Builder<'a> {
                 self.q.and_where(col(&root, "ehr_id").in_subquery(sub));
             }
         }
+    }
+
+    /// The query-population gate (SM `I_QUERY_SERVICE.execute_ad_hoc_query` /
+    /// `execute_stored_query`). When no explicit `ehr_ids` are supplied (here:
+    /// no REST `ehr_id` scope), the `ehr_ids` parameter doc mandates a "full
+    /// population query [...] on all EHRs whose status has the `is_queryable`
+    /// flag set to `True`"
+    /// (`docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`). We
+    /// therefore restrict every EHR root — bare `EHR` sources (`ehr.id`) and VO
+    /// roots (`node.ehr_id`) alike — to that set. A scoped query (explicit
+    /// `ehr_id`) targets a specific EHR and is not gated.
+    fn apply_population_gate(&mut self) {
+        if self.ctx.ehr_id.is_some() {
+            return;
+        }
+        for root in self.group_roots.clone() {
+            let sub = self.queryable_ehr_subquery();
+            self.q.and_where(col(&root, "ehr_id").in_subquery(sub));
+        }
+        for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
+            let sub = self.queryable_ehr_subquery();
+            self.q.and_where(col(&alias, "id").in_subquery(sub));
+        }
+    }
+
+    /// `SELECT ehr_id FROM vo_version JOIN node(num = 0) …` — the EHR ids whose
+    /// current (`upper_inf`) `EHR_STATUS` has `is_queryable = true`.
+    /// `is_queryable` is a scalar attribute of `EHR_STATUS`, so it lives inline in
+    /// the `EHR_STATUS` **root** node's verbatim canonical `data` fragment
+    /// (`num = 0`; children are pruned but scalars stay — ADR-008 §2).
+    fn queryable_ehr_subquery(&mut self) -> SelectStatement {
+        let sv = format!("qgv{}", self.next_ctr());
+        let sn = format!("qgn{}", self.next_ctr());
+        let mut sub = Query::select();
+        sub.expr(col(&sv, "ehr_id"));
+        sub.from_as(VoVersion::Table, Alias::new(sv.as_str()));
+        sub.from_as(Node::Table, Alias::new(sn.as_str()));
+        sub.and_where(col(&sn, "vo_id").eq(col(&sv, "vo_id")));
+        sub.and_where(col(&sn, "sys_version").eq(col(&sv, "sys_version")));
+        sub.and_where(col(&sn, "num").eq(Expr::val(0)));
+        sub.and_where(col(&sv, "kind").eq(Expr::val("EHR_STATUS")));
+        sub.and_where(call("upper_inf", vec![col(&sv, "sys_period")]));
+        sub.and_where(
+            col(&sn, "data")
+                .binary(BinOper::Custom("->>"), Expr::val("is_queryable"))
+                .eq(Expr::val("true")),
+        );
+        sub
     }
 
     fn ensure_audit(&mut self, voa: &str) -> String {

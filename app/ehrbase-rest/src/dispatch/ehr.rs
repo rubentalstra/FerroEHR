@@ -1,7 +1,7 @@
 //! HTTP dispatch for the `ehr` API group.
 //!
 //! Each arm rebuilds the operation's `*Params`, decodes any body (RM-typed
-//! bodies accept JSON or canonical XML), calls the [`EhrService`] backend, and
+//! bodies accept JSON or canonical XML), calls the EHR-core backend seams, and
 //! renders a negotiated response from the returned [`ServiceResponse`]
 //! (RM payload + typed [`ResourceMeta`]). The whole group is served through the
 //! envelope seam (W2-A) — the generated `EhrApi` returned a bare `Value` that
@@ -36,7 +36,7 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Composition, Ehr, EhrStatus, Folder};
 
 use super::{BoxResponse, RequestParts};
-use crate::backend::EhrService;
+use crate::backend::EhrContributionService;
 use crate::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -462,9 +462,11 @@ async fn run(
             // audit), not a single canonical RM value with a defined canonical-XML
             // shape — so it is accepted as JSON only.
             let body = negotiate::json_value(h, &parts.body)?;
-            // `contribution_*` is defined on EhrService and DemographicApi (shared
-            // method names); disambiguate on the trait-object backend.
-            let resp = EhrService::contribution_create(state.backend(), p, body).await?;
+            // `contribution_*` is defined on EhrContributionService and
+            // DemographicApi (shared method names); disambiguate on the
+            // trait-object backend.
+            let resp =
+                EhrContributionService::contribution_create(state.backend(), p, body).await?;
             // 201_CONTRIBUTION: ETag(contribution_uid) + Location; body per Prefer.
             Ok(negotiate::write_json(
                 h,
@@ -477,7 +479,7 @@ async fn run(
         }
         "contribution_get" => {
             let p = params::build::<ContributionGetParams>(&parts.path, q, h)?;
-            let resp = EhrService::contribution_get(state.backend(), p).await?;
+            let resp = EhrContributionService::contribution_get(state.backend(), p).await?;
             Ok(negotiate::respond(h, ok, &resp.body))
         }
         // ── item tags ────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 //! versioned-object machinery. This is the first fully-implemented vertical of
 //! the P12 service; COMPOSITION / DIRECTORY reuse the same machinery.
 
-use ehrbase_rest::{ResourceMeta, ServiceResponse};
+use ehrbase_rest::{EhrSummary, ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
@@ -58,6 +58,7 @@ impl EhrbaseService {
                         canonical: status,
                         template_id: None,
                         signature: None,
+                        attestations: Vec::new(),
                     },
                 ),
                 (
@@ -67,9 +68,11 @@ impl EhrbaseService {
                         canonical: default_ehr_access(),
                         template_id: None,
                         signature: None,
+                        attestations: Vec::new(),
                     },
                 ),
             ],
+            Vec::new(),
             &self.signing_ctx(),
         )
         .await?;
@@ -152,6 +155,52 @@ impl EhrbaseService {
         let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
             .with_last_modified(time_created);
         Ok(ServiceResponse::new(body, meta))
+    }
+
+    /// SM `EHR_SUMMARY` for an existing EHR — the summary form of `EHR` +
+    /// `EHR_STATUS` (`docs/specs/openehr/SM/docs/UML/classes/ehr_summary.adoc`):
+    /// all six mandatory attributes. `system_id` is the service system id (the
+    /// same `EHR.system_id` the wire EHR body carries); `ehr_status` is the
+    /// current `EHR_STATUS` canonical JSON (reusing [`Self::status_at`]);
+    /// `contribution_count` counts the EHR's CONTRIBUTIONs; `composition_count`
+    /// is the "Number of (versioned) Compositions" — distinct versioned objects
+    /// (`vo_id`), **not** versions (`ehr_summary.adoc` wording). A missing EHR is
+    /// `NotFound` (SM `ehr_does_not_exist`).
+    pub(super) async fn summarize_ehr(&self, ehr_id: Uuid) -> Result<EhrSummary, ServiceError> {
+        let time_created: jiff::Timestamp =
+            sqlx::query("SELECT time_created FROM ehr WHERE id = $1")
+                .bind(ehr_id)
+                .fetch_optional(&self.pool)
+                .await?
+                .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?
+                .try_get::<jiff_sqlx::Timestamp, _>("time_created")?
+                .to_jiff();
+
+        // Copy of EHR.ehr_status: the current EHR_STATUS (bare, with its uid).
+        let ehr_status = self.status_at(ehr_id, None).await?.body;
+
+        let contribution_count: i64 =
+            sqlx::query_scalar("SELECT count(*) FROM contribution WHERE ehr_id = $1")
+                .bind(ehr_id)
+                .fetch_one(&self.pool)
+                .await?;
+        // "Number of (versioned) Compositions" = versioned objects, not versions
+        // (ehr_summary.adoc): count distinct COMPOSITION vo_id in vo_version.
+        let composition_count: i64 = sqlx::query_scalar(
+            "SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
+        )
+        .bind(ehr_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(EhrSummary {
+            ehr_id: ehr_id.to_string(),
+            system_id: self.system_id.clone(),
+            ehr_status,
+            time_created: time_created.to_string(),
+            contribution_count,
+            composition_count,
+        })
     }
 
     /// The `EHR_STATUS` of an EHR as canonical JSON with its `uid` set — the
@@ -602,7 +651,7 @@ mod tests {
         validate_ehr_status(&identified).expect("identified EHR_STATUS");
     }
 
-    /// Every vendored invalid EHR_STATUS data set (CNF master06 §Test Data Sets,
+    /// Every vendored invalid `EHR_STATUS` data set (CNF master06 §Test Data Sets,
     /// INVALID class 2) must be rejected. Posted verbatim (unadapted), exactly as
     /// the conformance runner drives them.
     #[test]

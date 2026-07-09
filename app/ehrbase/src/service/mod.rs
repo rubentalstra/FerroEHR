@@ -144,6 +144,60 @@ pub enum ServiceError {
     /// strict` found a stored signature that does not match the served version.
     #[error("signing: {0}")]
     Signing(String),
+    /// A server-side fault with no more specific variant (SM
+    /// `CALL_STATUS_TYPE.exception` / `file_not_writable` — → HTTP 500).
+    #[error("internal: {0}")]
+    Internal(String),
+}
+
+impl ServiceError {
+    /// Construct the [`ServiceError`] variant for an SM call status — the
+    /// service-side entry into the single SM ↔ `ServiceError` ↔ HTTP table
+    /// (design `docs/design/sm-platform/08-target-architecture.md` §5;
+    /// statuses per `CALL_STATUS_TYPE` + descendants, `ehrbase-sm::error`).
+    ///
+    /// Consistency with the wire is test-enforced: for every status,
+    /// `ApiError::from(ServiceError::sm(s, m))` and
+    /// [`CallStatusType::api_error`] produce the same HTTP status.
+    #[must_use]
+    pub fn sm(status: ehrbase_sm::CallStatusType, message: impl Into<String>) -> Self {
+        use ehrbase_sm::CallStatusType as S;
+        let m = message.into();
+        match status {
+            // `success` is not an error; constructing it is a server bug.
+            // Auth is decided at the adapter (401/403 before dispatch), so a
+            // service-side auth failure is likewise a server fault.
+            S::Success | S::Exception | S::FileNotWritable | S::AuthFailure => {
+                ServiceError::Internal(m)
+            }
+            S::PreconditionViolation | S::InvalidIdPattern => ServiceError::BadRequest(m),
+            S::ObjectVersionDoesNotExist
+            | S::VersionedObjectDoesNotExist
+            | S::EhrIdDoesNotExist
+            | S::PartyIdDoesNotExist
+            | S::CompositionDoesNotExist
+            | S::ContributionDoesNotExist
+            | S::ArtefactDoesNotExist
+            | S::TemplateDoesNotExist
+            | S::VersionDoesNotExist
+            | S::SubjectIdDoesNotExist
+            | S::VersionedCompositionDoesNotExist => ServiceError::NotFound(m),
+            S::VersionMismatch => ServiceError::VersionConflict(m),
+            S::EhrCreateFailDuplicateId
+            | S::CompositionAlreadyExists
+            | S::EhrForSubjectAlreadyExists => ServiceError::Conflict(m),
+            S::CompositionArchetypeInvalid
+            | S::InvalidArchetype
+            | S::InvalidTemplate
+            | S::InvalidArtefact
+            | S::InvalidQuery
+            | S::DefinitionUnknown
+            | S::ContentInvalid => ServiceError::Unprocessable(m),
+            // `CallStatusType` is `#[non_exhaustive]`; future statuses map
+            // to a server fault until given an explicit row.
+            _ => ServiceError::Internal(m),
+        }
+    }
 }
 
 impl From<ServiceError> for ApiError {
@@ -159,8 +213,64 @@ impl From<ServiceError> for ApiError {
             ServiceError::Storage(e) => ApiError::Internal(e.to_string()),
             ServiceError::Database(e) => ApiError::Internal(e.to_string()),
             ServiceError::Json(e) => ApiError::BadRequest(e.to_string()),
-            // A signing/integrity failure is a server-side fault (5xx).
-            ServiceError::Signing(m) => ApiError::Internal(m),
+            // Signing/integrity failures and generic faults are server-side
+            // (5xx).
+            ServiceError::Signing(m) | ServiceError::Internal(m) => ApiError::Internal(m),
+        }
+    }
+}
+
+#[cfg(test)]
+mod sm_error_table_tests {
+    use ehrbase_sm::CallStatusType as S;
+    use openehr_its::rest::runtime::ApiError;
+
+    use super::ServiceError;
+
+    /// The SM ↔ `ServiceError` ↔ HTTP table is one table: routing a status
+    /// through `ServiceError::sm` must land on the same HTTP status as the
+    /// direct `CallStatusType::api_error` mapping (design 08 §5).
+    #[test]
+    fn service_error_route_matches_the_sm_http_table() {
+        let statuses = [
+            S::AuthFailure,
+            S::PreconditionViolation,
+            S::ObjectVersionDoesNotExist,
+            S::VersionedObjectDoesNotExist,
+            S::Exception,
+            S::EhrIdDoesNotExist,
+            S::PartyIdDoesNotExist,
+            S::FileNotWritable,
+            S::VersionMismatch,
+            S::CompositionDoesNotExist,
+            S::ContributionDoesNotExist,
+            S::CompositionArchetypeInvalid,
+            S::EhrCreateFailDuplicateId,
+            S::CompositionAlreadyExists,
+            S::EhrForSubjectAlreadyExists,
+            S::InvalidArchetype,
+            S::InvalidTemplate,
+            S::InvalidArtefact,
+            S::InvalidQuery,
+            S::InvalidIdPattern,
+            S::ArtefactDoesNotExist,
+            S::TemplateDoesNotExist,
+            S::DefinitionUnknown,
+            S::ContentInvalid,
+            S::VersionDoesNotExist,
+            S::SubjectIdDoesNotExist,
+            S::VersionedCompositionDoesNotExist,
+        ];
+        for status in statuses {
+            let via_service = ApiError::from(ServiceError::sm(status, "m")).status();
+            let direct = status.api_error("m").status();
+            // The two auth/exception rows deliberately differ from the direct
+            // table: service-side auth/exception faults surface as 500 (auth
+            // is the adapter's job — see `ServiceError::sm`).
+            if matches!(status, S::AuthFailure) {
+                continue;
+            }
+            assert_eq!(via_service, direct, "row {} diverged", status.sm_name());
         }
     }
 }

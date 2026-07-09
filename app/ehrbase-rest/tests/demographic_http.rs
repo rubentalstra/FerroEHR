@@ -109,6 +109,10 @@ impl DemographicService for MockBackend {
 }
 
 impl EhrService for MockBackend {}
+impl ehrbase_rest::EhrStatusService for MockBackend {}
+impl ehrbase_rest::EhrCompositionService for MockBackend {}
+impl ehrbase_rest::EhrDirectoryService for MockBackend {}
+impl ehrbase_rest::EhrContributionService for MockBackend {}
 impl DefinitionApi for MockBackend {}
 impl WebTemplateService for MockBackend {}
 impl ehrbase_rest::QueryService for MockBackend {}
