@@ -56,8 +56,16 @@ wait_healthy() {
 }
 
 if [ "$manage_compose" = "1" ]; then
+  # --build: a conformance verdict is only meaningful against the current
+  # sources. Without it, compose reuses whatever image exists — a stale image
+  # once produced a silently-wrong drift verdict (2026-07-09). Opt out only
+  # for a deliberate against-a-published-image run via SKIP_BUILD=1.
   echo "==> Starting core services"
-  docker compose up -d "${CORE_SERVICES[@]}"
+  if [ "${SKIP_BUILD:-0}" = "1" ]; then
+    docker compose up -d "${CORE_SERVICES[@]}"
+  else
+    docker compose up -d --build "${CORE_SERVICES[@]}"
+  fi
   echo "==> Waiting for app to become healthy"
   wait_healthy
 fi
