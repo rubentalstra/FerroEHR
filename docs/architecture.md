@@ -14,13 +14,16 @@ PostgreSQL-18-native internals (ADR-008). Two layers:
    the openEHR specifications as the authority. EHRbase and other CDRs are
    prior art, not an oracle. This is the remaining Stage-1 work.
 
-Authoritative roadmap: `docs/plans/` (phases `00–20, 99` + SM phases) +
-`docs/PROGRESS.md`.
+Authoritative roadmap: **`docs/blueprint/00-THE-BLUEPRINT.md`** (where the
+project is going + why), with `docs/plans/` (active + future phases) +
+`docs/PROGRESS.md` (per-phase record) and `docs/GAP_REGISTER.md` (the
+consolidated spec-gap surface) under it.
 Decisions: `docs/ADRs/ADR-004` (spec codegen), `ADR-005` (ITS codegen),
 `ADR-006` (application philosophy), **`ADR-008` (greenfield storage + AQL +
 conformance target — read first)**, `ADR-010` (SM-aligned service
-architecture + the `app/*`/`crates/*` two-layer workspace layout; design set
-at `docs/design/sm-platform/`).
+architecture; design set at `docs/design/sm-platform/`), **`ADR-011`
+(app-crate redesign — the current three-crate app layout + protocol-free SM
+native API)**.
 
 ## The generated openEHR foundation (done)
 
@@ -109,13 +112,16 @@ columns for hot extractions. See `docs/postgres-features.md`.
 
 ## Workspace layout
 
-Three physical directories (ADR-010; move executed 2026-07-08):
-**`app/*`** holds the application crates (`ehrbase`, `ehrbase-sm` [SM-1],
-`ehrbase-rest`, `ehrbase-authz`); **`tools/*`** holds the dev/verification tooling that is
+Three physical directories (ADR-010; move executed 2026-07-08. App-crate
+packaging redesigned by **ADR-011**, 2026-07-09):
+**`app/*`** holds the **three** application crates (`ehrbase`, `ehrbase-rest`,
+`ehrbase-sm`); **`tools/*`** holds the dev/verification tooling that is
 *not* part of the shipped application (`conformance` — the ECC runner,
 `benchmark`); **`crates/*`** holds the generated openEHR spec layer + its
 tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root workspace
-`members = ["crates/*", "app/*", "tools/*"]`.
+`members = ["crates/*", "app/*", "tools/*"]`. The former leaf crates
+`ehrbase-audit`/`ehrbase-signing`/`ehrbase-authz` were dissolved into modules
+(`ehrbase::system_log`, `ehrbase::signing`, `ehrbase-rest::access`) per ADR-011.
 Dependencies point downward only: `tools/* → app/* → crates/openehr-*`. The service seam is the SM-aligned native API
 (`ehrbase-sm`, ADR-010): one trait per SM Platform Service Model interface,
 with `ehrbase-rest` as the ITS-REST protocol adapter — see
@@ -153,10 +159,9 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`, P16) | tooling |
 | `openehr-derive` | `#[derive(OpenEhrType)]` proc-macro | tooling |
-| `ehrbase-rest` | ITS-REST server (axum) + auth + EhrScape adapter (P17); ATNA audit middleware + op-id classification | application |
-| `ehrbase-sm` | SM native-API traits + shared service types + `SystemLog` event model (SM-1/2/4) | application |
-| `ehrbase-authz` | RBAC/ABAC authorization engine | application |
-| `ehrbase` | Binary + platform: storage, service layer, AQL engine, versioning, CLI, `signing` (VERSION.signature) + `system_log` (ATNA) modules | application |
+| `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + EhrScape adapter (P17); ATNA audit middleware + op-id classification; `access` module = RBAC/ABAC authz (ADR-011, was `ehrbase-authz`) | application |
+| `ehrbase-sm` | SM native-API traits (protocol-free literal catalog, ADR-011) + shared service types + `SystemLog` event model | application |
+| `ehrbase` | Binary + `Platform` implementation: storage, service layer, AQL engine, versioning, CLI; `signing` (VERSION.signature, was `ehrbase-signing`) + `system_log` (ATNA, was `ehrbase-audit`) modules (ADR-011) | application |
 | `conformance` | ECC conformance runner (`tools/*`) | tooling |
 | `benchmark` | Benchmark harness (`tools/*`) | tooling |
 
