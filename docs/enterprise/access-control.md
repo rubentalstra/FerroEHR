@@ -1,5 +1,15 @@
 # RBAC + ABAC Access Control — Rust-native design
 
+> **AMENDMENT (2026-07-09, ADR-011 crate consolidation):** the former leaf crate
+> `ehrbase-authz` has been dissolved into the **`ehrbase-rest::access`** module
+> (authorization is a protocol-adapter concern — it classifies ITS-REST
+> operations and enforces at the request boundary, so it lives with the wire
+> layer, not in the platform crate). All references below to the `ehrbase-authz`
+> *crate* / `ehrbase_authz::*` now read as the `ehrbase-rest::access` *module* /
+> `ehrbase_rest::access::*`; its source moved to `app/ehrbase-rest/src/access/`.
+> The `PolicyEngine`, classification table, request model, and total-coverage
+> guard are unchanged in behaviour.
+
 - **Status:** implemented (RBAC+ABAC) (2026-07-07)
 - **Stage:** Stage 2 capability, owner-prioritized into Stage 1 (same route as the
   ATNA audit trail — see `PORT_MASTER_PLAN.md` §11.2, `docs/enterprise/v1-vs-v2-delta.md` §1)

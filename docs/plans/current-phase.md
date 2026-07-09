@@ -1,18 +1,44 @@
-- **Current phase: P17 — FLAT/EhrScape** (`docs/plans/phase-17-flat-ehrscape.md`). P16 is done (2026-07-07, on `claude/phase-16-aql-engine`): the full AQL engine — `emit-rm-model` (BMM-generated RM attribute model, `openehr_rm::model`), path analysis + typed IR + lowering (`ehrbase::aql::plan`), fully-typed sea-query SQL over the node store (nested-set CONTAINS joins, `openehr_magnitude`, LATEST_VERSION + **ALL_VERSIONS** proven e2e), RESULT_SET 1.0.3, the `QueryService` seam + all six `/query/*` endpoints; corpus e2e on PG18. Feature envelope documented in `docs/design/aql-engine.md` (every reject a typed error).
-- **Also landed on that branch (owner-prioritized):** the IHE **ATNA audit trail** (`ehrbase-audit` crate + tower layer, `docs/enterprise/atna-audit.md` implemented); the two **GHCR container images** + CI + compose quickstart (`docs/design/container-images.md`); the full **observability stack** (`ehrbase::telemetry` + `ehrbase-rest::management`, `docs/design/observability.md` implemented, single-pass); repo-root Java-residue cleanup. Workspace gate at close: 610/610 tests, clippy clean, drift green.
-- **Read first:** `docs/ADRs/ADR-008-greenfield-pg18-storage.md` (own internals — the node table + temporal `vo_version`, no `_history` pairs; `ALL_VERSIONS` supported), then ADR-004/005/006.
+# Current phase
 
-- **Where we are.** Foundation (00–08) done. Application build P09–P15 done and merged to `develop`:
-  - **P09 (persistence):** `ehrbase::db` — settings/pool/migrate/iden; the greenfield ADR-008 schema ships as `migrations/ehr/0001_schema.sql` + `ext/0001_openehr_functions.sql` (ADR-007's EHRbase-Flyway baseline + legacy-schema equality gate were replaced/removed by ADR-008); testcontainers PG18.
-  - **P10 (storage foundation, ADR-008):** greenfield `node` (per-version, nested-set index) + temporal `vo_version` + `ext` magnitude fns; the lossless node codec (`ehrbase::storage`), corpus- + PG18-proven.
-  - **P11 (REST + auth):** `ehrbase-rest` axum app — all five generated `*Api` traits mounted (~96 ops via a generic `ROUTES` dispatcher + type-directed `*Params` deserializer); full `tower-http` stack; JSON/XML negotiation; Basic + OAuth2/OIDC bearer auth (401/403); `figment` config; Swagger UI + status/health/info; binary boots.
-  - **P12 (service layer):** dependency-inversion `Backend` seam; `ehrbase::service` implements EHR / EHR_STATUS / COMPOSITION / DIRECTORY(FOLDER) / CONTRIBUTION on the shared `vobject` machinery (decompose→nodes + temporal `vo_version` + contribution + audit in one tx; read = reassemble); temporal versioning + time-travel (`version_at_time`); `contribution_create` (atomic multi-version); revision history; `ehr_get_by_subject`; stored-query CRUD; item-tag CRUD; committer-from-principal; typed XML responses for single spec-typed RM objects (`negotiate::respond_rm`). e2e on testcontainers PG 18.
-  - **P13 (templates):** OPT 1.4 XML ingestion via the codegen `emit-opt` target → `openehr-its::opt14` (typed `OperationalTemplate` + C_* tree + `ToXml`/`FromXml`); all 91 vendored `.opt` templates parse; `ehrbase::service::template` + DEFINITION `adl1.4` upload/list/get on `template_store`; `adl2` = 501.
-  - **P14 (SDT surface):** WebTemplate builder + `wt+json` endpoint; FLAT + STRUCTURED converters/endpoints (Better parity).
-  - **P15 (validation):** composition validation (RM invariants + terminology + WebTemplate) → ITS-REST 422.
+**The roadmap is `docs/blueprint/00-THE-BLUEPRINT.md`** — read it first. It is
+the single source of truth for the trajectory toward "first fully
+spec-compliant openEHR CDR". This file is the live pointer under it; the
+consolidated gap surface is `docs/GAP_REGISTER.md`.
 
-- **App build order:** P09 ✅ → P10 ✅ → P11 ✅ → P12 ✅ → P13 ✅ → P14 ✅ → P15 ✅ → **P16** AQL engine → P17 FLAT/EhrScape → P18 integration → P19 openEHR conformance → P20 optimization → P99 cleanup/release.
+## Active work — the ADR-011 rebuild convergence
 
-- **SM track (ADR-010, 2026-07-08):** the openEHR **SM Platform Service Model** is adopted as the internal decomposition — full coverage, nothing deferred (**EHR Extract — RM `EXTRACT`/`EXTRACT_SPEC`, already generated — is Stage-1**). Design set: `docs/design/sm-platform/` (spec digests 01–06 + gap analysis 07 + target architecture 08 + roadmap 09, SM-1…SM-6; conformance-reviewed 2026-07-09, findings F1–F3 folded in). First phase: `docs/plans/sm-phase-01-native-api.md` — the **workspace-layout move is done** (app/* + tools/* [conformance, benchmark] + crates/*; `ehrbase-compat` deleted, EhrScape → `ehrbase-rest` feature module), **SM-1 is done (2026-07-09)**: the `ehrbase-sm` native-API crate (trait per SM interface, call-status table, UPDATE_VERSION envelope), ATTESTATION support, the is_queryable population gate (conformance gap fixed), contribution list/count + EHR_SUMMARY, exit gate 211/318 zero-drift. **SM-2 is done (2026-07-09)**: Definitions completion — ADL 1.4 archetype store, OPT completion, ADL2 service + wire upload/list/get (P13's adl2=501 retired), stored-query calls; 842/842 tests, ECC 211/318 zero-drift. **SM-3 is done (2026-07-09)**: PARTY_RELATIONSHIP + EHR Index + the storage-semantics audit wave (persistence verified 1:1 vs RM master06; all 7 findings fixed). Next SM phase: SM-4 (Terminology surface + Admin completion). SM phases interleave with P17–P20. ITS-REST 1.0.3 + CNF stay the wire oracle.
+The current push is the **ADR-011 app-crate redesign** landing as the closing
+waves of **SM-4** (`docs/plans/sm-phase-04-terminology-admin.md`):
+compile-time-complete services, no stub backend, a protocol-free `ehrbase-sm`
+native API (literal SM interface catalog), `Platform`-generic adapter state,
+and the dissolution of the former `ehrbase-audit`/`ehrbase-signing` leaf crates
+into modules of `ehrbase` (`system_log`, `signing`) with the op-id
+classification + audit middleware in `ehrbase-rest`. The workspace is **red by
+design mid-rewrite**; the gate to close on is *workspace green + ECC
+zero-drift* (211/318 baseline — ECC is suspended during the rebuild and
+re-converges at P19).
 
-- **Discipline:** compiling + clippy-clean + tested per phase (`cargo nextest`, testcontainers PG18.4 where DB is involved; containers must not outlive tests); `thiserror` libs / `anyhow` binary; no `unwrap`/`expect` outside tests; consume `openehr-*` types; never hand-edit `// @generated`; official CLIs for tool-managed artifacts; tick checkboxes + commit on `claude/phase-NN-*`. EHRbase Java is out of the tree (ADR-008); the openEHR specs are the authority.
+Current app layout (3 crates + tools): `app/{ehrbase, ehrbase-rest,
+ehrbase-sm}`, `tools/{conformance, benchmark}`, `crates/openehr-*`.
+
+## Priority order (from GAP_REGISTER §3)
+
+1. **Finish the ADR-011 rebuild** — green workspace, ECC re-converged.
+2. **ArchetypeValidation depth** — the single biggest gap (81 failing ECC
+   cases, ~76% of all failures); needs its own validation-depth phase with the
+   ECC data sets as the oracle, before/at P19.
+3. **SM-4 close** (Admin dump/load) → SM-5 (Message / EHR Extract / TDD) →
+   SM-6 (Subject Proxy) — designed in `docs/design/sm-platform/`.
+4. **P19** ECC re-convergence + the remaining small wire-edge tails
+   (`phase-19-conformance-parity.md`); then P20 optimization, P99 cutover.
+
+## Remaining Stage-1 P-phases
+
+`phase-17` (EhrScape + admin compat), `phase-18` (workspace integration),
+`phase-19` (openEHR conformance), `phase-20` (optimization), `phase-99`
+(cutover) — sequenced under the blueprint; SM phases interleave.
+
+**Read first:** `docs/blueprint/00-THE-BLUEPRINT.md`, then
+`docs/ADRs/ADR-011-app-crate-redesign.md` (current app-crate reality) and
+`docs/ADRs/ADR-008-greenfield-pg18-storage.md` (own PG18 internals; the node
+table + temporal `vo_version`, `ALL_VERSIONS` supported).

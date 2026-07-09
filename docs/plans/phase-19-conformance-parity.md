@@ -2,6 +2,12 @@
 
 > Re-scoped 2026-07-05 by ADR-008: the acceptance instrument is the openEHR
 > CNF conformance framework; the EHRbase-diff parity harness is retired.
+>
+> **App-crate reality (ADR-011, 2026-07-09):** three app crates —
+> `app/{ehrbase, ehrbase-rest, ehrbase-sm}`; the ECC runner lives in
+> `tools/conformance`. ECC is suspended during the ADR-011 rebuild and
+> re-converges here (211/318 baseline). The single biggest gap to close is
+> **ArchetypeValidation depth** (81 ECC cases — see `docs/GAP_REGISTER.md`).
 
 - Status: not-started (Stage-1 app build, step 11 of 13)
 - Consumes: the fully integrated server (P18)
