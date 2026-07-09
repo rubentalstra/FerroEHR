@@ -29,17 +29,17 @@
 
 ## Tasks
 
-- [ ] `DefinitionAdl14Service` trait (`ehrbase-sm::services::definition`):
+- [x] `DefinitionAdl14Service` trait — done 2026-07-09 (`ehrbase-sm::services::definition`):
       the full SM call set (archetypes + OPTs + counts), doc-cited per call;
       today's generated `DefinitionApi` remains the wire adapter seam —
       the native trait sits beside it in `Backend`
-- [ ] ADL 1.4 archetype store: `archetype_store` table (migration via
+- [x] ADL 1.4 archetype store — done 2026-07-09 (migration 0005; replace-on-upload; validity = structural ADL header + strict ArchetypeId parse, PORT NOTE for full AOM when the source parser lands): `archetype_store` table (migration via
       `sqlx migrate add --sequential`), upload (replace-if-exists +
       validity precondition), get/list/list_matching (PERL regex via the
       `regex`/`fancy-regex` workspace crates)/delete + `archetypes_count`;
       ADL text parsed for validity via `openehr-am` am14 (scope: parseable +
       identifier well-formed — record with PORT NOTE what "valid" covers)
-- [ ] OPT completion on the existing `template_store`: `delete_opt`,
+- [x] OPT completion — done 2026-07-09 (UUID-keyed has/get/delete, regex listing, counts; 409-duplicate wire rule kept, PORT NOTEs recorded): `delete_opt`,
       `valid_opt` (expose the existing parse+validate), `list_matching_opts`
       (regex), `opts_count`; PORT NOTE the spec's `List<ARCHETYPE_ID>`
       return-type inconsistency on `list_matching_opts` (digest 01 §5.1) —
@@ -50,12 +50,12 @@
       routes stop returning 501 where the generated contract has them
       (CHECK the generated DefinitionApi adl2 ops + CNF before changing any
       wire status — zero drift rule)
-- [ ] Stored queries: `valid_query` (parse via `openehr-query`; formalism
+- [x] Stored queries — done 2026-07-09 (valid_query = master04 formalism rules + AQL parse; delete-all-versions by name; distinct-name count; QueryDescriptor in ehrbase-sm::types; store_query_set = NotImplemented + PORT NOTE): `valid_query` (parse via `openehr-query`; formalism
       handling per master04 — case-insensitive, optional `::version`,
       default major "1"), `delete_query` (pre has_query, post not
       has_query), `queries_count`; namespace default "misc" on qualified
       names; `store_query_set` designed + PORT NOTE (spec TODO)
-- [ ] e2e tests (testcontainers PG18) per store; regex-matching +
+- [x] e2e tests — done 2026-07-09 (service_definition suite, 6 DB tests + persistence assertions updated; workspace 834/834); regex-matching +
       count + delete + replace-if-exists cases; SM pre/post-conditions as
       assertions
 - [ ] ECC zero-drift run (`bash scripts/conformance.sh`, expect 211/318 or

@@ -94,8 +94,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // (version signing — RM common §"Digital Signature") +
     // 0003_demographic_party_storage (party kinds on the shared vo machinery;
     // no new tables) + 0004_vo_attestation (ATTESTATION storage — RM common
-    // master06 §Change Control; adds the `vo_attestation` table below).
-    assert_eq!((applied_ext, applied_ehr), (1, 4));
+    // master06 §Change Control; adds the `vo_attestation` table below) +
+    // 0005_archetype_store (SM-2 ADL 1.4 source archetypes, I_DEFINITION_ADL14;
+    // adds the `archetype_store` table below).
+    assert_eq!((applied_ext, applied_ehr), (1, 5));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -107,6 +109,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
     assert_eq!(
         tables,
         [
+            "archetype_store",
             "audit",
             "contribution",
             "ehr",

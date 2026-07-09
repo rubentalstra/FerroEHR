@@ -164,6 +164,37 @@ pub struct UpdateVersion<T = Value> {
     pub signature: Option<String>,
 }
 
+// ─── query descriptor (SM Definitions) ──────────────────────────────────────
+
+/// `QUERY_DESCRIPTOR` — "Object describing a query in terms of its unique
+/// identifier, name under which it is currently registered and registration
+/// time under the current name"
+/// (`docs/specs/openehr/SM/docs/UML/classes/query_descriptor.adoc`).
+///
+/// Returned by `I_DEFINITION_QUERY.store_query` / `list_queries` /
+/// `list_matching_queries` (`i_definition_query.adoc`).
+///
+/// PORT NOTE (wire): `registration_time` is typed `Iso8601_date_time` in the
+/// SM; we carry it as an ISO-8601 `String` (the stored `created_at` rendered),
+/// consistent with the rest of the native API's date handling.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueryDescriptor {
+    /// Unique qualified name of the query, e.g. `ehr::all_over_50_women`
+    /// (`<namespace>::<query_name>`). Mandatory `[1..1]`.
+    pub qualified_query_name: String,
+    /// Query semver.org version number, if any. Optional `[0..1]`.
+    pub version: Option<String>,
+    /// Time the query was registered under its current name (ISO-8601).
+    /// Mandatory `[1..1]`.
+    pub registration_time: String,
+    /// Formalism of the query — `"aql"` or any other string value. Mandatory
+    /// `[1..1]`.
+    pub formalism: String,
+    /// Source query text to be executed (prior to parameter substitution).
+    /// Optional `[0..1]`.
+    pub source: Option<String>,
+}
+
 // ─── EHR summary ─────────────────────────────────────────────────────────────
 
 /// `EHR_SUMMARY` — "Summary form of `EHR` + `EHR_STATUS` objects convenient
