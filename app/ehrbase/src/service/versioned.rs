@@ -20,8 +20,8 @@ impl EhrbaseService {
         vo_id: Uuid,
     ) -> Result<Value, ServiceError> {
         let rows = sqlx::query(
-            "SELECT v.sys_version, v.ehr_id, a.system_id, a.change_type, a.description, \
-             a.committer, a.time_committed \
+            "SELECT v.sys_version, v.ehr_id, v.creating_system_id, a.system_id, a.change_type, \
+             a.description, a.committer, a.time_committed \
              FROM vo_version v JOIN audit a ON a.id = v.audit_id \
              WHERE v.vo_id = $1 ORDER BY v.sys_version",
         )
@@ -61,6 +61,7 @@ impl EhrbaseService {
         let mut items = Vec::with_capacity(rows.len());
         for row in &rows {
             let sys_version: i32 = row.try_get("sys_version")?;
+            let creating_system_id: String = row.try_get("creating_system_id")?;
             let system_id: String = row.try_get("system_id")?;
             let change_type: String = row.try_get("change_type")?;
             let description: Option<String> = row.try_get("description")?;
@@ -82,7 +83,7 @@ impl EhrbaseService {
                 "_type": "REVISION_HISTORY_ITEM",
                 "version_id": {
                     "_type": "OBJECT_VERSION_ID",
-                    "value": self.object_version_id(vo_id, sys_version)
+                    "value": self.object_version_id(vo_id, &creating_system_id, sys_version)
                 },
                 "audits": audits
             }));
@@ -140,7 +141,7 @@ impl EhrbaseService {
     /// stored signature fails verification.
     pub(super) fn original_version(&self, read: &VersionRead) -> Result<Value, ServiceError> {
         let mut ov = build_original_version(
-            &self.system_id,
+            self.creating_system_id(&read.creating_system_id),
             read.vo_id,
             read.sys_version,
             read.contribution_id,
