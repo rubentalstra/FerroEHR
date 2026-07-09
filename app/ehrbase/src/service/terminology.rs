@@ -165,7 +165,7 @@ pub(crate) fn has_terminology(terminology_id: &str) -> bool {
     terminology_id == OPENEHR || external_terminology(terminology_id).is_some()
 }
 
-/// `get_terminology_description`. Pre_has_terminology.
+/// `get_terminology_description`. `Pre_has_terminology`.
 pub(crate) fn terminology_description(
     terminology_id: &str,
 ) -> Result<TerminologyDescription, ApiError> {
@@ -191,7 +191,7 @@ pub(crate) fn terminology_description(
     }
 }
 
-/// `has_term`. Pre_has_terminology → `NotFound` on an unknown terminology.
+/// `has_term`. `Pre_has_terminology` → `NotFound` on an unknown terminology.
 pub(crate) fn has_term(terminology_id: &str, code: &str) -> Result<bool, ApiError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
@@ -210,7 +210,7 @@ pub(crate) fn has_term(terminology_id: &str, code: &str) -> Result<bool, ApiErro
     }
 }
 
-/// `get_term`. Pre_has_terminology + Pre_has_term (both → `NotFound`).
+/// `get_term`. `Pre_has_terminology` + `Pre_has_term` (both → `NotFound`).
 pub(crate) fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyExtract, ApiError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
@@ -238,7 +238,7 @@ pub(crate) fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyEx
     Ok(extract_from_members(terminology_id, vec![member]))
 }
 
-/// `subsumes` — identity only (flat vocabulary, PORT NOTE). Pre_has_terminology.
+/// `subsumes` — identity only (flat vocabulary, PORT NOTE). `Pre_has_terminology`.
 pub(crate) fn subsumes(
     terminology_id: &str,
     ref_code: &str,
@@ -255,7 +255,7 @@ pub(crate) fn has_value_set(terminology_id: &str, value_set_code: &str) -> bool 
     resolve_value_set(terminology_id, value_set_code).is_some()
 }
 
-/// `value_set_validate` — set membership. Pre_has_terminology.
+/// `value_set_validate` — set membership. `Pre_has_terminology`.
 pub(crate) fn value_set_validate(
     terminology_id: &str,
     value_set_id: &str,
@@ -268,7 +268,7 @@ pub(crate) fn value_set_validate(
         .is_some_and(|members| members.iter().any(|(code, _)| code == candidate_code)))
 }
 
-/// `get_value_set`. Pre_has_terminology + Pre_has_value_set (both → `NotFound`).
+/// `get_value_set`. `Pre_has_terminology` + `Pre_has_value_set` (both → `NotFound`).
 pub(crate) fn get_value_set(
     terminology_id: &str,
     value_set_code: &str,

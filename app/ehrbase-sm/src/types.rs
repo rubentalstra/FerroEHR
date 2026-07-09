@@ -10,7 +10,7 @@
 use std::collections::BTreeMap;
 
 use jiff::Timestamp;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
@@ -74,7 +74,7 @@ impl Page {
 /// `UDvText` (plain string or `DV_TEXT`); the SM types it `String [0..1]`.
 /// The native type keeps the SM shape; the adapter coerces a `DV_TEXT`
 /// description to its `value` string.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateAudit {
     /// Type of change; coded from the openEHR *audit change type* group.
     pub change_type: TerminologyCode,
@@ -97,7 +97,7 @@ pub struct UpdateAudit {
 /// (adding `time_committed`/`system_id`, like `UPDATE_AUDIT` →
 /// `AUDIT_DETAILS`). The wire wins at the boundary (ADR-010 precedence
 /// rule); the native API therefore carries this type.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateAttestation {
     /// Type of change; coded from the openEHR *audit change type* group
     /// (`666|attestation|` for attestations).
@@ -142,7 +142,7 @@ pub struct UpdateAttestation {
 ///   full RM `ATTESTATION` (see that type);
 /// - the wire carries **`signature`**, absent from the SM class — kept here
 ///   and fed to `ehrbase-signing`.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateVersion<T = Value> {
     /// Current version in the service for which this version is an update.
     /// `None` only for a first version.

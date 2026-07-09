@@ -1,14 +1,13 @@
 //! openEHR **ITS-REST 1.0.3** server surface (`axum`) + authentication.
 //!
-//! `ehrbase-rest` implements the generated ITS-REST server traits from
-//! [`openehr_its::rest::generated`] as a modern, idiomatic axum application
-//! (ADR-005/006). The generated `ROUTES` tables drive an HTTP dispatcher
-//! ([`dispatch`]) that rebuilds each operation's `*Params`, negotiates content
-//! (canonical JSON / XML via `openehr-its`), and calls the configured service
-//! [`Backend`] (dependency inversion — the DB-backed service lives in the
-//! `ehrbase` crate and is injected via [`AppState::with_backend`]). Operations a
-//! backend has not implemented return `ApiError::NotImplemented` (the generated
-//! traits' default); the default [`StubBackend`] implements none.
+//! `ehrbase-rest` implements the openEHR SM native API (`ehrbase-sm`) as a
+//! modern, idiomatic axum application (ADR-005/006/011). The generated `ROUTES`
+//! tables drive an HTTP dispatcher ([`dispatch`]) that rebuilds each operation's
+//! `*Params`, negotiates content (canonical JSON / XML via `openehr-its`), and
+//! calls the configured platform service `S: Platform`. The adapter is generic
+//! over `S` (ADR-011: no trait objects, no stub backend) — the `ehrbase` crate
+//! monomorphizes it over its DB-backed `EhrbaseService` via
+//! [`AppState::with_backend`], and the tests over a mock.
 //!
 //! Authentication (Stage 1) is HTTP Basic + OAuth2/OIDC bearer, applied as one
 //! middleware over the API router ([`auth`]); the same middleware runs the
@@ -18,7 +17,6 @@
 mod audit;
 pub mod auth;
 pub mod authz;
-pub mod backend;
 pub mod config;
 mod dispatch;
 mod error;
@@ -26,26 +24,31 @@ pub mod management;
 mod negotiate;
 mod openapi;
 mod params;
-pub mod response;
 mod router;
 mod state;
 mod status;
+mod version_id;
 
 pub use auth::{AuthMethod, Authenticator, Principal};
 pub use authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
-pub use backend::{
-    AdminArchive, AdminService, AqlQueryRequest, Backend, DefinitionAdl2Service,
-    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
-    EhrContributionService, EhrDirectoryService, EhrIndexEntry, EhrIndexService, EhrService,
-    EhrStatusService, EhrSummary, LocationDesc, Page, PartyKind, PartyRelationshipService,
-    PlatformService, QueryDescriptor, QueryOutcome, QueryService, ResourceInstanceType,
-    ResourceStatus, StatTimeRange, StubBackend, SubjectRef, SystemLog, TerminologyService,
-    ValidityChecker, WebTemplateService,
-};
+// The native API lives in `ehrbase-sm` (ADR-011); re-exported here for the
+// server's public surface (test mocks, the binary) — no local shim module.
 pub use config::{AdminConfig, RestConfig};
+pub use ehrbase_sm::Platform;
+pub use ehrbase_sm::services::{
+    AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
+    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
+    EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, ItemTagAdapter,
+    PartyRelationshipService, QueryService, StatTimeRange, SystemLog, TerminologyService,
+    ValidityChecker, VersionMetaAdapter, WebTemplateService,
+};
+pub use ehrbase_sm::types::{
+    AqlQueryRequest, EhrIndexEntry, EhrSummary, LocationDesc, Page, PartyKind, PlatformService,
+    QueryDescriptor, QueryOutcome, ResourceInstanceType, ResourceMeta, ResourceStatus,
+    ServiceResponse, SubjectRef,
+};
 pub use error::RestError;
 pub use management::{ManagementConfig, Observability};
-pub use response::{ResourceMeta, ServiceResponse};
 pub use router::{management_router, router};
 pub use state::AppState;
 
@@ -60,23 +63,14 @@ pub enum ServeError {
     Io(#[from] std::io::Error),
 }
 
-/// Build the application router with the default [`StubBackend`] (every
-/// operation → `NotImplemented`).
-///
-/// # Errors
-/// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
-pub fn build(config: RestConfig) -> Result<axum::Router, ServeError> {
-    build_with(config, std::sync::Arc::new(StubBackend))
-}
-
 /// Build the application router backed by a concrete service (the `ehrbase`
 /// application injects its DB-backed service here).
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
-pub fn build_with(
+pub fn build_with<S: Platform>(
     config: RestConfig,
-    backend: std::sync::Arc<dyn Backend>,
+    backend: std::sync::Arc<S>,
 ) -> Result<axum::Router, ServeError> {
     build_with_audit(config, backend, None)
 }
@@ -86,9 +80,9 @@ pub fn build_with(
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
-pub fn build_with_audit(
+pub fn build_with_audit<S: Platform>(
     config: RestConfig,
-    backend: std::sync::Arc<dyn Backend>,
+    backend: std::sync::Arc<S>,
     audit: Option<ehrbase_audit::AuditSender>,
 ) -> Result<axum::Router, ServeError> {
     let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
@@ -96,22 +90,13 @@ pub fn build_with_audit(
     Ok(router(state, authenticator))
 }
 
-/// Build and serve the application, binding the configured address. Applies the
-/// path-normalization layer (which must wrap the router) at the outer edge.
-///
-/// # Errors
-/// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
-pub async fn serve(config: RestConfig) -> Result<(), ServeError> {
-    serve_with(config, std::sync::Arc::new(StubBackend)).await
-}
-
 /// Build and serve the application backed by a concrete service.
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
-pub async fn serve_with(
+pub async fn serve_with<S: Platform>(
     config: RestConfig,
-    backend: std::sync::Arc<dyn Backend>,
+    backend: std::sync::Arc<S>,
 ) -> Result<(), ServeError> {
     serve_with_audit(config, backend, None).await
 }
@@ -126,9 +111,9 @@ pub async fn serve_with(
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
-pub async fn serve_with_audit(
+pub async fn serve_with_audit<S: Platform>(
     config: RestConfig,
-    backend: std::sync::Arc<dyn Backend>,
+    backend: std::sync::Arc<S>,
     audit: Option<ehrbase_audit::AuditSender>,
 ) -> Result<(), ServeError> {
     let bind = config.bind.clone();
@@ -143,9 +128,9 @@ pub async fn serve_with_audit(
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
-pub fn build_full(
+pub fn build_full<S: Platform>(
     config: RestConfig,
-    backend: std::sync::Arc<dyn Backend>,
+    backend: std::sync::Arc<S>,
     audit: Option<ehrbase_audit::AuditSender>,
     authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
@@ -173,9 +158,9 @@ fn build_authenticator(
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
-pub async fn serve_full(
+pub async fn serve_full<S: Platform>(
     config: RestConfig,
-    backend: std::sync::Arc<dyn Backend>,
+    backend: std::sync::Arc<S>,
     audit: Option<ehrbase_audit::AuditSender>,
     authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,

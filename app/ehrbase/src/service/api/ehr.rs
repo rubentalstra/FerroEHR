@@ -1,513 +1,648 @@
-//! The SM EHR-core service interfaces on [`EhrbaseService`] — the EHR /
-//! `EHR_STATUS` / COMPOSITION / DIRECTORY / CONTRIBUTION surface (W2-A), split
-//! along the SM interface boundaries ([`EhrService`], [`EhrStatusService`],
-//! [`EhrCompositionService`], [`EhrDirectoryService`],
-//! [`EhrContributionService`]).
+//! The SM EHR-core service interfaces on [`EhrbaseService`] (ADR-011) — the
+//! literal openEHR Platform Service Model call set for `I_EHR_SERVICE` /
+//! `I_EHR_STATUS` / `I_EHR_COMPOSITION` / `I_EHR_DIRECTORY` /
+//! `I_EHR_CONTRIBUTION`, plus the ITS-REST adapter-support extension traits
+//! ([`VersionMetaAdapter`], [`ItemTagAdapter`]).
 //!
-//! These seams supersede the generated `EhrApi`: each method returns a
-//! [`ServiceResponse`] (the canonical-JSON RM payload plus the typed
-//! [`ResourceMeta`] the HTTP edge turns into `ETag`/`Location`) rather than a
-//! bare `Value`. The write/read/versioning machinery lives in the sibling
-//! service modules ([`crate::service::ehr`], [`composition`](crate::service),
-//! [`directory`](crate::service), [`contribution`](crate::service)); this file is
-//! the thin trait adapter that parses params and wraps the result. Every
-//! operation is implemented here (the two `*_version_get_at_time` reads landed
-//! with F-01-05 / F-02-04).
+//! Each method is a thin bridge onto the versioning/read machinery in the
+//! sibling service modules ([`crate::service::ehr`], [`composition`](crate::service),
+//! [`directory`](crate::service), [`contribution`](crate::service),
+//! [`item_tag`](crate::service)): it parses the native SM argument types
+//! (`Iso8601_date_time` strings → [`jiff::Timestamp`],
+//! [`ObjectVersionId`] → the storage `(vo_id, version)` pair), calls the
+//! internal method, and adapts the result to the SM return
+//! (`UUID`/version-uid `String`, canonical [`Value`], [`EhrSummary`], …).
+//! Service failures cross into [`SmError`] via `From<ServiceError>`.
+//!
+//! Method-name clashes between an SM trait method and an inherent internal
+//! method of the same name (`create_composition`, `update_composition`,
+//! `delete_composition`, `get_contribution`, …) resolve to the **inherent**
+//! method by Rust's method-resolution priority; `self.<name>(…)` therefore
+//! calls the internal implementation, never recurses into the trait.
 
 use async_trait::async_trait;
-use serde_json::Value;
+use serde_json::{Value, json};
 use uuid::Uuid;
 
-use ehrbase_rest::{
+use ehrbase_sm::SmError;
+use ehrbase_sm::services::{
     EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService, EhrSummary, Page, ResourceMeta, ServiceResponse,
+    EhrStatusService, ItemTagAdapter, TimeRange as SmTimeRange, VersionMetaAdapter,
 };
-use openehr_its::rest::generated::ehr::{
-    CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
-    CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
-    CompositionUpdateParams, ContributionCreateParams, ContributionGetParams,
-    DirectoryCreateParams, DirectoryDeleteParams, DirectoryGetAtTimeParams,
-    DirectoryGetByVersionIdParams, DirectoryUpdateParams, EhrCreateParams, EhrCreateWithIdParams,
-    EhrGetByIdParams, EhrGetBySubjectParams, EhrStatusGetAtTimeParams,
-    EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams, EhrStatusTagsGetParams,
-    EhrStatusTagsUpdateParams, EhrStatusUpdateParams, EhrTagsGetParams,
-    VersionedCompositionGetParams, VersionedCompositionRevisionHistoryParams,
-    VersionedCompositionVersionGetAtTimeParams, VersionedCompositionVersionGetByIdParams,
-    VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
-    VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
-};
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::types::{EhrSummary, Page, ResourceMeta, SubjectRef, UpdateAudit, UpdateVersion};
+use openehr_base::prelude::ObjectVersionId;
 
-use crate::service::EhrbaseService;
 use crate::service::ehr::default_ehr_status;
 use crate::service::version_id;
+use crate::service::vobject::Kind;
+use crate::service::{EhrbaseService, ServiceError};
 
-/// Wrap a JSON array of item-tag objects as a plain (header-free) response.
-fn tags_response(tags: Vec<Value>) -> ServiceResponse {
-    ServiceResponse::plain(Value::Array(tags))
+/// Extract the version-uid `String` a write produced from the internal
+/// [`ServiceResponse`](ehrbase_sm::types::ServiceResponse)'s resource metadata —
+/// the value the SM `create_*`/`update_*`/`delete_*` calls return.
+fn version_uid(resp: ehrbase_sm::types::ServiceResponse) -> Result<String, SmError> {
+    resp.meta
+        .map(|m| m.uid)
+        .ok_or_else(|| SmError::exception("write produced no version metadata"))
+}
+
+/// Parse an ISO-8601 `Iso8601_date_time` argument (with offset) for a
+/// time-travel read; a malformed value is an argument-validity precondition
+/// failure (→ `400`).
+fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, SmError> {
+    raw.parse::<jiff::Timestamp>()
+        .map_err(|_| SmError::precondition(format!("invalid version_at_time: {raw}")))
+}
+
+/// Parse the optional `Interval<Iso8601_date_time>` bounds of an SM contribution
+/// `time_range` into the internal `jiff::Timestamp` pair; a malformed bound is a
+/// `400`-equivalent precondition failure.
+#[allow(clippy::type_complexity)]
+fn parse_time_range(
+    raw: SmTimeRange,
+) -> Result<Option<(Option<jiff::Timestamp>, Option<jiff::Timestamp>)>, SmError> {
+    let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, SmError> {
+        b.map(|s| {
+            s.parse::<jiff::Timestamp>()
+                .map_err(|_| SmError::precondition(format!("invalid time_range bound: {s}")))
+        })
+        .transpose()
+    };
+    raw.map(|(lo, hi)| Ok((parse(lo)?, parse(hi)?))).transpose()
+}
+
+/// Build the `EHR_STATUS` for a subject-scoped EHR creation: the base status
+/// (client-supplied or the default) with its `subject` set to a `PARTY_SELF`
+/// whose `external_ref` names the subject — the promoted `ehr.subject_*` columns
+/// are kept in sync from `subject.external_ref.id.value`/`.namespace` on commit
+/// (see `vobject::sync_subject`).
+fn status_for_subject(base: Value, subject: &SubjectRef) -> Value {
+    let mut status = base;
+    if let Value::Object(map) = &mut status {
+        map.insert(
+            "subject".to_owned(),
+            json!({
+                "_type": "PARTY_SELF",
+                "external_ref": {
+                    "_type": "PARTY_REF",
+                    "namespace": subject.namespace,
+                    "type": subject.r#type,
+                    "id": {
+                        "_type": "GENERIC_ID",
+                        "value": subject.id,
+                        "scheme": subject.namespace
+                    }
+                }
+            }),
+        );
+    }
+    status
 }
 
 #[async_trait]
 impl EhrService for EhrbaseService {
-    // ── EHR ────────────────────────────────────────────────────────────────
-    async fn ehr_create(
-        &self,
-        _params: EhrCreateParams,
-        body: Option<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        let status = body.unwrap_or_else(default_ehr_status);
-        Ok(self.create_ehr(Uuid::now_v7(), status).await?)
+    async fn has_ehr(&self, ehr_id: Uuid) -> Result<bool, SmError> {
+        match self.ensure_ehr_exists(ehr_id).await {
+            Ok(()) => Ok(true),
+            Err(ServiceError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e.into()),
+        }
     }
 
-    async fn ehr_create_with_id(
-        &self,
-        params: EhrCreateWithIdParams,
-        body: Option<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let status = body.unwrap_or_else(default_ehr_status);
-        Ok(self.create_ehr(ehr_id, status).await?)
+    async fn has_ehr_for_subject(&self, a_subject_id: SubjectRef) -> Result<bool, SmError> {
+        match self
+            .ehr_by_subject(&a_subject_id.id, &a_subject_id.namespace)
+            .await
+        {
+            Ok(_) => Ok(true),
+            Err(ServiceError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e.into()),
+        }
     }
 
-    async fn ehr_get_by_id(&self, params: EhrGetByIdParams) -> Result<ServiceResponse, ApiError> {
-        Ok(self.ehr_summary(parse_ehr_id(&params.ehr_id)?).await?)
+    async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<Uuid, SmError> {
+        let ehr_id = Uuid::now_v7();
+        let status = an_ehr_status.unwrap_or_else(default_ehr_status);
+        self.create_ehr(ehr_id, status).await?;
+        Ok(ehr_id)
     }
 
-    async fn ehr_get_by_subject(
+    async fn create_ehr_with_id(
         &self,
-        params: EhrGetBySubjectParams,
-    ) -> Result<ServiceResponse, ApiError> {
+        an_ehr_id: Uuid,
+        an_ehr_status: Option<Value>,
+    ) -> Result<Uuid, SmError> {
+        let status = an_ehr_status.unwrap_or_else(default_ehr_status);
+        self.create_ehr(an_ehr_id, status).await?;
+        Ok(an_ehr_id)
+    }
+
+    async fn create_ehr_for_subject(
+        &self,
+        a_subject_id: SubjectRef,
+        an_ehr_status: Option<Value>,
+    ) -> Result<Uuid, SmError> {
+        let ehr_id = Uuid::now_v7();
+        let status = status_for_subject(
+            an_ehr_status.unwrap_or_else(default_ehr_status),
+            &a_subject_id,
+        );
+        self.create_ehr(ehr_id, status).await?;
+        Ok(ehr_id)
+    }
+
+    async fn create_ehr_for_subject_with_id(
+        &self,
+        an_ehr_id: Uuid,
+        a_subject_id: SubjectRef,
+        an_ehr_status: Option<Value>,
+    ) -> Result<Uuid, SmError> {
+        let status = status_for_subject(
+            an_ehr_status.unwrap_or_else(default_ehr_status),
+            &a_subject_id,
+        );
+        self.create_ehr(an_ehr_id, status).await?;
+        Ok(an_ehr_id)
+    }
+
+    async fn get_ehr(&self, an_ehr_id: Uuid) -> Result<EhrSummary, SmError> {
+        Ok(self.summarize_ehr(an_ehr_id).await?)
+    }
+
+    async fn get_ehrs_for_subject(
+        &self,
+        a_subject_id: SubjectRef,
+    ) -> Result<Vec<EhrSummary>, SmError> {
+        match self
+            .ehr_by_subject(&a_subject_id.id, &a_subject_id.namespace)
+            .await
+        {
+            Ok(resp) => {
+                let ehr_id = resp
+                    .body
+                    .pointer("/ehr_id/value")
+                    .and_then(Value::as_str)
+                    .and_then(|v| Uuid::parse_str(v).ok())
+                    .ok_or_else(|| SmError::exception("EHR body carries no ehr_id"))?;
+                Ok(vec![self.summarize_ehr(ehr_id).await?])
+            }
+            Err(ServiceError::NotFound(_)) => Ok(Vec::new()),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    async fn ehr_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+        Ok(self.ehr_summary(an_ehr_id).await?.body)
+    }
+
+    async fn ehr_object_for_subject(
+        &self,
+        subject_id: &str,
+        subject_namespace: &str,
+    ) -> Result<Value, SmError> {
         Ok(self
-            .ehr_by_subject(&params.subject_id, &params.subject_namespace)
-            .await?)
-    }
-
-    // ── item tags ────────────────────────────────────────────────────────────
-    async fn ehr_tags_get(&self, params: EhrTagsGetParams) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let tags = self
-            .ehr_tags(
-                ehr_id,
-                params.tag_key.as_deref(),
-                params.tag_value.as_deref(),
-                params.tag_target_path.as_deref(),
-            )
-            .await?;
-        Ok(tags_response(tags))
-    }
-
-    // ── SM native call: get_ehr → EHR_SUMMARY (no ITS-REST route) ─────────────
-    async fn get_ehr_summary(&self, ehr_id: String) -> Result<EhrSummary, ApiError> {
-        Ok(self.summarize_ehr(parse_ehr_id(&ehr_id)?).await?)
+            .ehr_by_subject(subject_id, subject_namespace)
+            .await?
+            .body)
     }
 }
 
 #[async_trait]
 impl EhrStatusService for EhrbaseService {
-    // ── EHR_STATUS ───────────────────────────────────────────────────────────
-    async fn ehr_status_get_at_time(
+    async fn has_ehr_status_version(
         &self,
-        params: EhrStatusGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let at = params
-            .version_at_time
-            .as_deref()
-            .map(parse_at_time)
-            .transpose()?;
-        Ok(self.status_at(ehr_id, at).await?)
+        an_ehr_id: Uuid,
+        a_version_uid: Uuid,
+    ) -> Result<bool, SmError> {
+        // An EHR holds exactly one EHR_STATUS versioned object; the version
+        // exists iff that object's `vo_id` matches.
+        Ok(self
+            .current_vo(an_ehr_id, Kind::EhrStatus)
+            .await?
+            .is_some_and(|(vo, _)| vo == a_version_uid))
     }
 
-    async fn ehr_status_get_by_version_id(
+    async fn get_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+        Ok(self.status_at(an_ehr_id, None).await?.body)
+    }
+
+    async fn get_ehr_status_at_time(
         &self,
-        params: EhrStatusGetByVersionIdParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = version_id::parse_version_uid(&params.version_uid)?;
+        an_ehr_id: Uuid,
+        a_time: Option<String>,
+    ) -> Result<Value, SmError> {
+        let at = a_time.as_deref().map(parse_at_time).transpose()?;
+        Ok(self.status_at(an_ehr_id, at).await?.body)
+    }
+
+    async fn get_ehr_status_at_version(
+        &self,
+        an_ehr_id: Uuid,
+        a_version_uid: Uuid,
+        a_version: i32,
+    ) -> Result<Value, SmError> {
         // F-01-03: the bare EHR_STATUS at that version, not an ORIGINAL_VERSION.
-        Ok(self.status_by_version(ehr_id, vo_id, version).await?)
+        Ok(self
+            .status_by_version(an_ehr_id, a_version_uid, a_version)
+            .await?
+            .body)
     }
 
-    async fn ehr_status_update(
-        &self,
-        params: EhrStatusUpdateParams,
-        body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        Ok(self.status_update(ehr_id, body, &params.if_match).await?)
+    async fn get_versioned_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+        Ok(self.versioned_status(an_ehr_id).await?)
     }
 
-    async fn versioned_ehr_status_get(
+    async fn replace_ehr_status(
         &self,
-        params: VersionedEhrStatusGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::plain(
-            self.versioned_status(parse_ehr_id(&params.ehr_id)?).await?,
-        ))
-    }
-
-    async fn versioned_ehr_status_version_get_at_time(
-        &self,
-        params: VersionedEhrStatusVersionGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        // F-01-05: the VERSION extant at `version_at_time` (or the latest) —
-        // an ORIGINAL_VERSION with `200_VERSION_at_time` ETag/Location meta.
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let at = params
-            .version_at_time
-            .as_deref()
-            .map(parse_at_time)
-            .transpose()?;
-        Ok(self.status_version_at_time(ehr_id, at).await?)
-    }
-
-    async fn versioned_ehr_status_version_get_by_id(
-        &self,
-        params: VersionedEhrStatusVersionGetByIdParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = version_id::parse_version_uid(&params.version_uid)?;
-        Ok(ServiceResponse::plain(
-            self.status_version(ehr_id, vo_id, version).await?,
-        ))
-    }
-
-    async fn versioned_ehr_status_revision_history(
-        &self,
-        params: VersionedEhrStatusRevisionHistoryParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        Ok(ServiceResponse::plain(
-            self.status_revision_history(parse_ehr_id(&params.ehr_id)?)
+        an_ehr_id: Uuid,
+        a_status: UpdateVersion,
+    ) -> Result<String, SmError> {
+        let if_match = a_status
+            .preceding_version_uid
+            .map(|o| o.value)
+            .unwrap_or_default();
+        version_uid(
+            self.status_update(an_ehr_id, a_status.data, &if_match)
                 .await?,
-        ))
+        )
     }
 
-    // ── item tags ────────────────────────────────────────────────────────────
-    async fn ehr_status_tags_get(
-        &self,
-        params: EhrStatusTagsGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        Ok(tags_response(self.target_tags(ehr_id, vo_id).await?))
+    async fn ehr_status_revision_history(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+        Ok(self.status_revision_history(an_ehr_id).await?)
     }
 
-    async fn ehr_status_tags_update(
+    async fn ehr_status_version_at_time(
         &self,
-        params: EhrStatusTagsUpdateParams,
-        body: Vec<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        Ok(tags_response(
-            self.replace_tags(ehr_id, vo_id, "EHR_STATUS", body).await?,
-        ))
+        an_ehr_id: Uuid,
+        a_time: Option<String>,
+    ) -> Result<Value, SmError> {
+        // F-01-05: the ORIGINAL_VERSION extant at `a_time` (or the latest).
+        let at = a_time.as_deref().map(parse_at_time).transpose()?;
+        Ok(self.status_version_at_time(an_ehr_id, at).await?.body)
     }
 
-    async fn ehr_status_tags_delete(
+    async fn ehr_status_original_version(
         &self,
-        params: EhrStatusTagsDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        self.delete_tag(ehr_id, vo_id, &params.key).await?;
-        Ok(ServiceResponse::plain(Value::Null))
-    }
-
-    // ── conflict-decoration helpers (latest version for 409/412 headers) ──────
-    async fn ehr_status_latest_meta(
-        &self,
-        ehr_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
-        Ok(self.ehr_status_meta(parse_ehr_id(&ehr_id)?).await?)
+        an_ehr_id: Uuid,
+        a_version_uid: Uuid,
+        a_version: i32,
+    ) -> Result<Value, SmError> {
+        Ok(self
+            .status_version(an_ehr_id, a_version_uid, a_version)
+            .await?)
     }
 }
 
 #[async_trait]
 impl EhrCompositionService for EhrbaseService {
-    // ── COMPOSITION ──────────────────────────────────────────────────────────
-    async fn composition_create(
+    async fn has_composition(
         &self,
-        params: CompositionCreateParams,
-        body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        Ok(self.create_composition(ehr_id, body).await?)
-    }
-
-    async fn composition_get(
-        &self,
-        params: CompositionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        match (version, params.version_at_time.as_deref()) {
-            (Some(v), _) => Ok(self.read_composition(ehr_id, vo_id, Some(v)).await?),
-            (None, Some(at)) => Ok(self
-                .composition_at_time(ehr_id, vo_id, parse_at_time(at)?)
-                .await?),
-            (None, None) => Ok(self.read_composition(ehr_id, vo_id, None).await?),
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<bool, SmError> {
+        let (vo_id, version) = version_id::components(&a_version_uid)?;
+        match self.read_composition(an_ehr_id, vo_id, Some(version)).await {
+            Ok(_) => Ok(true),
+            Err(ServiceError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e.into()),
         }
     }
 
-    async fn composition_update(
+    async fn get_composition_latest(
         &self,
-        params: CompositionUpdateParams,
-        body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        let expected = version_id::expected_from_if_match(&params.if_match);
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+    ) -> Result<Value, SmError> {
         Ok(self
-            .update_composition(ehr_id, vo_id, body, expected)
+            .read_composition(an_ehr_id, a_versioned_object_uid, None)
+            .await?
+            .body)
+    }
+
+    async fn get_composition_at_time(
+        &self,
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+        a_time: Option<String>,
+    ) -> Result<Value, SmError> {
+        match a_time.as_deref() {
+            None => Ok(self
+                .read_composition(an_ehr_id, a_versioned_object_uid, None)
+                .await?
+                .body),
+            Some(raw) => Ok(self
+                .composition_at_time(an_ehr_id, a_versioned_object_uid, parse_at_time(raw)?)
+                .await?
+                .body),
+        }
+    }
+
+    async fn get_composition_at_version(
+        &self,
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<Value, SmError> {
+        let (vo_id, version) = version_id::components(&a_version_uid)?;
+        Ok(self
+            .read_composition(an_ehr_id, vo_id, Some(version))
+            .await?
+            .body)
+    }
+
+    async fn get_versioned_composition(
+        &self,
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+    ) -> Result<Value, SmError> {
+        Ok(self
+            .versioned_composition(an_ehr_id, a_versioned_object_uid)
             .await?)
     }
 
-    async fn composition_delete(
+    async fn create_composition(
         &self,
-        params: CompositionDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        // composition_delete.yaml: the uid_based_id MUST be an OBJECT_VERSION_ID
-        // (the preceding_version_uid to delete); a bare HIER_OBJECT_ID → 400.
-        let (vo_id, expected) = version_id::parse_version_uid(&params.uid_based_id)?;
-        Ok(self.delete_composition(ehr_id, vo_id, expected).await?)
+        an_ehr_id: Uuid,
+        a_comp: UpdateVersion,
+    ) -> Result<String, SmError> {
+        // Inherent `create_composition` (Value) — see the module note.
+        version_uid(self.create_composition(an_ehr_id, a_comp.data).await?)
     }
 
-    async fn versioned_composition_get(
+    async fn update_composition(
         &self,
-        params: VersionedCompositionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.versioned_object_uid)?;
-        Ok(ServiceResponse::plain(
-            self.versioned_composition(ehr_id, vo_id).await?,
-        ))
-    }
-
-    async fn versioned_composition_version_get_at_time(
-        &self,
-        params: VersionedCompositionVersionGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        // F-02-04: the VERSION extant at `version_at_time` (or the latest) —
-        // an ORIGINAL_VERSION with `200_VERSION_of_COMPOSITION_at_time`
-        // ETag/Location meta.
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.versioned_object_uid)?;
-        let at = params
-            .version_at_time
-            .as_deref()
-            .map(parse_at_time)
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+        a_comp: UpdateVersion,
+    ) -> Result<String, SmError> {
+        let expected = a_comp
+            .preceding_version_uid
+            .as_ref()
+            .map(|o| version_id::components(o).map(|(_, v)| v))
             .transpose()?;
-        Ok(self.composition_version_at_time(ehr_id, vo_id, at).await?)
-    }
-
-    async fn versioned_composition_version_get_by_id(
-        &self,
-        params: VersionedCompositionVersionGetByIdParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = version_id::parse_version_uid(&params.version_uid)?;
-        Ok(ServiceResponse::plain(
-            self.composition_version(ehr_id, vo_id, version).await?,
-        ))
-    }
-
-    async fn versioned_composition_revision_history(
-        &self,
-        params: VersionedCompositionRevisionHistoryParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.versioned_object_uid)?;
-        Ok(ServiceResponse::plain(
-            self.revision_history(ehr_id, vo_id).await?,
-        ))
-    }
-
-    // ── item tags ────────────────────────────────────────────────────────────
-    async fn composition_tags_get(
-        &self,
-        params: CompositionTagsGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        Ok(tags_response(self.target_tags(ehr_id, vo_id).await?))
-    }
-
-    async fn composition_tags_update(
-        &self,
-        params: CompositionTagsUpdateParams,
-        body: Vec<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        Ok(tags_response(
-            self.replace_tags(ehr_id, vo_id, "COMPOSITION", body)
+        version_uid(
+            self.update_composition(an_ehr_id, a_versioned_object_uid, a_comp.data, expected)
                 .await?,
-        ))
+        )
     }
 
-    async fn composition_tags_delete(
+    async fn delete_composition(
         &self,
-        params: CompositionTagsDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        self.delete_tag(ehr_id, vo_id, &params.key).await?;
-        Ok(ServiceResponse::plain(Value::Null))
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<String, SmError> {
+        let (vo_id, version) = version_id::components(&a_version_uid)?;
+        version_uid(self.delete_composition(an_ehr_id, vo_id, version).await?)
     }
 
-    // ── conflict-decoration helpers (latest version for 409/412 headers) ──────
-    async fn composition_latest_meta(
+    async fn composition_revision_history(
         &self,
-        ehr_id: String,
-        uid_based_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
-        let ehr_id = parse_ehr_id(&ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
-        Ok(self.composition_current_meta(ehr_id, vo_id).await?)
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+    ) -> Result<Value, SmError> {
+        Ok(self
+            .revision_history(an_ehr_id, a_versioned_object_uid)
+            .await?)
+    }
+
+    async fn composition_version_at_time(
+        &self,
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+        a_time: Option<String>,
+    ) -> Result<Value, SmError> {
+        let at = a_time.as_deref().map(parse_at_time).transpose()?;
+        Ok(self
+            .composition_version_at_time(an_ehr_id, a_versioned_object_uid, at)
+            .await?
+            .body)
+    }
+
+    async fn composition_original_version(
+        &self,
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<Value, SmError> {
+        let (vo_id, version) = version_id::components(&a_version_uid)?;
+        Ok(self.composition_version(an_ehr_id, vo_id, version).await?)
     }
 }
 
 #[async_trait]
 impl EhrDirectoryService for EhrbaseService {
-    // ── DIRECTORY (FOLDER) ───────────────────────────────────────────────────
-    async fn directory_create(
-        &self,
-        params: DirectoryCreateParams,
-        body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        Ok(self.create_directory(ehr_id, body).await?)
+    async fn has_directory(&self, an_ehr_id: Uuid) -> Result<bool, SmError> {
+        Ok(self.current_vo(an_ehr_id, Kind::Folder).await?.is_some())
     }
 
-    async fn directory_get_at_time(
+    async fn has_path(&self, an_ehr_id: Uuid, a_path: String) -> Result<bool, SmError> {
+        match self.directory_at_time(an_ehr_id, None, Some(&a_path)).await {
+            Ok(resp) => Ok(!resp.body.is_null()),
+            Err(ServiceError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    async fn create_directory(
         &self,
-        params: DirectoryGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let at = params
-            .version_at_time
-            .as_deref()
-            .map(parse_at_time)
-            .transpose()?;
+        an_ehr_id: Uuid,
+        a_dir_struct: UpdateVersion,
+    ) -> Result<String, SmError> {
+        version_uid(self.create_directory(an_ehr_id, a_dir_struct.data).await?)
+    }
+
+    async fn get_directory_at_time(
+        &self,
+        an_ehr_id: Uuid,
+        a_time: Option<String>,
+        a_path: Option<String>,
+    ) -> Result<Value, SmError> {
+        let at = a_time.as_deref().map(parse_at_time).transpose()?;
         Ok(self
-            .directory_at_time(ehr_id, at, params.path.as_deref())
-            .await?)
+            .directory_at_time(an_ehr_id, at, a_path.as_deref())
+            .await?
+            .body)
     }
 
-    async fn directory_update(
+    async fn update_directory(
         &self,
-        params: DirectoryUpdateParams,
-        body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let expected = version_id::expected_from_if_match(&params.if_match);
-        Ok(self.update_directory(ehr_id, body, expected).await?)
+        an_ehr_id: Uuid,
+        a_dir_struct: UpdateVersion,
+    ) -> Result<String, SmError> {
+        let expected = a_dir_struct
+            .preceding_version_uid
+            .as_ref()
+            .map(|o| version_id::components(o).map(|(_, v)| v))
+            .transpose()?;
+        version_uid(
+            self.update_directory(an_ehr_id, a_dir_struct.data, expected)
+                .await?,
+        )
     }
 
-    async fn directory_delete(
+    async fn delete_directory(
         &self,
-        params: DirectoryDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let expected = version_id::expected_from_if_match(&params.if_match);
-        Ok(self.delete_directory(ehr_id, expected).await?)
+        an_ehr_id: Uuid,
+        preceding_version_uid: Option<ObjectVersionId>,
+    ) -> Result<(), SmError> {
+        let expected = preceding_version_uid
+            .as_ref()
+            .map(|o| version_id::components(o).map(|(_, v)| v))
+            .transpose()?;
+        self.delete_directory(an_ehr_id, expected).await?;
+        Ok(())
     }
 
-    async fn directory_get_by_version_id(
+    async fn get_directory_at_version(
         &self,
-        params: DirectoryGetByVersionIdParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, version) = version_id::parse_version_uid(&params.version_uid)?;
-        Ok(self.directory_version(ehr_id, vo_id, version).await?)
-    }
-
-    // ── conflict-decoration helpers (latest version for 409/412 headers) ──────
-    async fn directory_latest_meta(
-        &self,
-        ehr_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
-        Ok(self.directory_meta(parse_ehr_id(&ehr_id)?).await?)
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<Value, SmError> {
+        let (vo_id, version) = version_id::components(&a_version_uid)?;
+        Ok(self
+            .directory_version(an_ehr_id, vo_id, version)
+            .await?
+            .body)
     }
 }
 
 #[async_trait]
 impl EhrContributionService for EhrbaseService {
-    // ── CONTRIBUTION ─────────────────────────────────────────────────────────
-    async fn contribution_create(
-        &self,
-        params: ContributionCreateParams,
-        body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        Ok(self.create_contribution(ehr_id, body).await?)
+    async fn has_contribution(&self, an_ehr_id: Uuid, a_contrib_id: Uuid) -> Result<bool, SmError> {
+        match self.get_contribution(an_ehr_id, a_contrib_id).await {
+            Ok(_) => Ok(true),
+            Err(ServiceError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e.into()),
+        }
     }
 
-    async fn contribution_get(
+    async fn get_contribution(
         &self,
-        params: ContributionGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let contribution_id = Uuid::parse_str(&params.contribution_uid).map_err(|_| {
-            ApiError::BadRequest(format!(
-                "invalid contribution id: {}",
-                params.contribution_uid
-            ))
-        })?;
-        Ok(ServiceResponse::plain(
-            self.get_contribution(ehr_id, contribution_id).await?,
-        ))
+        an_ehr_id: Uuid,
+        a_contrib_id: Uuid,
+    ) -> Result<Value, SmError> {
+        // Inherent `get_contribution` (returns the CONTRIBUTION Value).
+        Ok(self.get_contribution(an_ehr_id, a_contrib_id).await?)
     }
 
-    // ── SM native calls: list_contributions / contribution_count ──────────────
-    // (no ITS-REST route — the wire spec defines none).
-    async fn contribution_list(
+    async fn commit_contribution(
         &self,
-        ehr_id: String,
-        time_range: Option<(Option<String>, Option<String>)>,
+        an_ehr_id: Uuid,
+        versions: Vec<UpdateVersion>,
+        an_audit: UpdateAudit,
+    ) -> Result<String, SmError> {
+        // Reassemble the wire CONTRIBUTION body `commit_version_set` parses:
+        // `{ versions: [ { commit_audit, data, preceding_version_uid,
+        // lifecycle_state, attestations, signature } … ], audit }`. The typed
+        // `UpdateVersion`/`UpdateAudit` serialize to exactly those field names
+        // (`commit_audit` is the serde-renamed audit field), so the round-trip is
+        // faithful.
+        let versions_json =
+            serde_json::to_value(&versions).map_err(|e| SmError::exception(e.to_string()))?;
+        let audit_json =
+            serde_json::to_value(&an_audit).map_err(|e| SmError::exception(e.to_string()))?;
+        let body = json!({ "versions": versions_json, "audit": audit_json });
+        let id = self
+            .commit_version_set(Some(an_ehr_id), &body, false)
+            .await?;
+        Ok(id.to_string())
+    }
+
+    async fn list_contributions(
+        &self,
+        an_ehr_id: Uuid,
+        time_range: SmTimeRange,
         page: Page,
-    ) -> Result<Vec<String>, ApiError> {
-        let ehr_id = parse_ehr_id(&ehr_id)?;
+    ) -> Result<Vec<String>, SmError> {
         let time_range = parse_time_range(time_range)?;
-        let ids = self.list_contributions(ehr_id, time_range, page).await?;
+        let ids = self.list_contributions(an_ehr_id, time_range, page).await?;
         Ok(ids.iter().map(Uuid::to_string).collect())
     }
 
     async fn contribution_count(
         &self,
-        ehr_id: String,
-        time_range: Option<(Option<String>, Option<String>)>,
-    ) -> Result<i64, ApiError> {
-        let ehr_id = parse_ehr_id(&ehr_id)?;
+        an_ehr_id: Uuid,
+        time_range: SmTimeRange,
+    ) -> Result<i64, SmError> {
         let time_range = parse_time_range(time_range)?;
-        Ok(self.count_contributions(ehr_id, time_range).await?)
+        Ok(self.count_contributions(an_ehr_id, time_range).await?)
     }
 }
 
-fn parse_ehr_id(raw: &str) -> Result<Uuid, ApiError> {
-    Uuid::parse_str(raw).map_err(|_| ApiError::BadRequest(format!("invalid EHR id: {raw}")))
+#[async_trait]
+impl VersionMetaAdapter for EhrbaseService {
+    async fn composition_latest_meta(
+        &self,
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+    ) -> Result<Option<ResourceMeta>, SmError> {
+        Ok(self
+            .composition_current_meta(an_ehr_id, a_versioned_object_uid)
+            .await?)
+    }
+
+    async fn ehr_status_latest_meta(
+        &self,
+        an_ehr_id: Uuid,
+    ) -> Result<Option<ResourceMeta>, SmError> {
+        Ok(self.ehr_status_meta(an_ehr_id).await?)
+    }
+
+    async fn directory_latest_meta(
+        &self,
+        an_ehr_id: Uuid,
+    ) -> Result<Option<ResourceMeta>, SmError> {
+        Ok(self.directory_meta(an_ehr_id).await?)
+    }
 }
 
-/// Parse an ISO-8601 `version_at_time` (with offset) for time-travel reads.
-fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, ApiError> {
-    raw.parse::<jiff::Timestamp>()
-        .map_err(|_| ApiError::BadRequest(format!("invalid version_at_time: {raw}")))
-}
+#[async_trait]
+impl ItemTagAdapter for EhrbaseService {
+    async fn ehr_tags_get(
+        &self,
+        an_ehr_id: Uuid,
+        key: Option<String>,
+        value: Option<String>,
+        target_path: Option<String>,
+    ) -> Result<Vec<Value>, SmError> {
+        Ok(self
+            .ehr_tags(
+                an_ehr_id,
+                key.as_deref(),
+                value.as_deref(),
+                target_path.as_deref(),
+            )
+            .await?)
+    }
 
-/// Parse the optional `(lower, upper)` ISO 8601 bounds of an SM contribution
-/// `time_range` into `jiff::Timestamp`s; a malformed bound → `400 BadRequest`.
-#[allow(clippy::type_complexity)]
-fn parse_time_range(
-    raw: Option<(Option<String>, Option<String>)>,
-) -> Result<Option<(Option<jiff::Timestamp>, Option<jiff::Timestamp>)>, ApiError> {
-    let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, ApiError> {
-        b.map(|s| {
-            s.parse::<jiff::Timestamp>()
-                .map_err(|_| ApiError::BadRequest(format!("invalid time_range bound: {s}")))
-        })
-        .transpose()
-    };
-    raw.map(|(lo, hi)| Ok((parse(lo)?, parse(hi)?))).transpose()
+    async fn target_tags_get(
+        &self,
+        an_ehr_id: Uuid,
+        uid_based_id: String,
+    ) -> Result<Vec<Value>, SmError> {
+        let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
+        Ok(self.target_tags(an_ehr_id, vo_id).await?)
+    }
+
+    async fn target_tags_replace(
+        &self,
+        an_ehr_id: Uuid,
+        uid_based_id: String,
+        target_type: &str,
+        tags: Vec<Value>,
+    ) -> Result<Vec<Value>, SmError> {
+        let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
+        Ok(self
+            .replace_tags(an_ehr_id, vo_id, target_type, tags)
+            .await?)
+    }
+
+    async fn target_tag_delete(
+        &self,
+        an_ehr_id: Uuid,
+        uid_based_id: String,
+        key: String,
+    ) -> Result<(), SmError> {
+        let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
+        self.delete_tag(an_ehr_id, vo_id, &key).await?;
+        Ok(())
+    }
 }

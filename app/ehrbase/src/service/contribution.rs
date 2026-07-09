@@ -12,7 +12,7 @@
 //! (create) or the stored object (modify / delete); everything commits in one
 //! transaction.
 
-use ehrbase_rest::{Page, ResourceMeta, ServiceResponse};
+use ehrbase_rest::Page;
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
@@ -166,26 +166,6 @@ fn classify(
 }
 
 impl EhrbaseService {
-    /// Commit a CONTRIBUTION: apply its set of VERSIONs atomically (one
-    /// contribution + audit, each version its own commit audit), then return the
-    /// created CONTRIBUTION. Each version's storage action and preserved audit
-    /// change-type code come from [`classify`]; the object kind from the payload
-    /// `_type` (create) or the stored object (modify/delete).
-    pub(super) async fn create_contribution(
-        &self,
-        ehr_id: Uuid,
-        body: Value,
-    ) -> Result<ServiceResponse, ServiceError> {
-        self.ensure_ehr_exists(ehr_id).await?;
-        // party_only = false: an EHR CONTRIBUTION carries clinical versioned
-        // objects, never demographic parties.
-        let contribution_id = self.commit_version_set(Some(ehr_id), &body, false).await?;
-        let body = self.get_contribution(ehr_id, contribution_id).await?;
-        // 201_CONTRIBUTION: ETag(contribution_uid) + Location.
-        let meta = ResourceMeta::new(ehr_id.to_string(), contribution_id.to_string());
-        Ok(ServiceResponse::new(body, meta))
-    }
-
     /// Commit a CONTRIBUTION's version set atomically under one contribution +
     /// audit, returning the new contribution id. Shared by the EHR-scoped
     /// [`create_contribution`](Self::create_contribution) (`ehr_id = Some`,

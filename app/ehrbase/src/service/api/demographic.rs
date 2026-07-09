@@ -9,7 +9,8 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_rest::backend::{DemographicService, PartyKind};
+use ehrbase_sm::services::DemographicService;
+use ehrbase_sm::types::PartyKind;
 use ehrbase_rest::{ResourceMeta, ServiceResponse};
 use openehr_its::rest::runtime::ApiError;
 

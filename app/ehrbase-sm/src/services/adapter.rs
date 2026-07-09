@@ -5,7 +5,7 @@
 //! ITS-REST 1.0.3 wire needs them: the `*_latest_meta` seams decorate a
 //! `409`/`412` response with the current `version_uid` in `ETag`/`Location`
 //! (`409_COMPOSITION_with_uid_based_id.yaml` / `412_*.yaml`), and the item-tag
-//! CRUD is EHRbase's experimental tag extension — neither has an SM call. The
+//! CRUD is `EHRbase`'s experimental tag extension — neither has an SM call. The
 //! platform component implements them beside the SM catalog; the adapter
 //! dispatches to them for the wire routes that need them.
 
@@ -40,7 +40,7 @@ pub trait VersionMetaAdapter: Send + Sync {
     -> Result<Option<ResourceMeta>, SmError>;
 }
 
-/// The experimental item-tag CRUD extension (EHRbase; no SM call).
+/// The experimental item-tag CRUD extension (`EHRbase`; no SM call).
 #[async_trait]
 pub trait ItemTagAdapter: Send + Sync {
     /// `GET /ehr/{ehr_id}/tags` — all item tags in the EHR, filtered by the

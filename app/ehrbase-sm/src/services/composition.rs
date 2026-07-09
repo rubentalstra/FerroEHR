@@ -68,7 +68,7 @@ pub trait EhrCompositionService: Send + Sync {
     /// pre `has_ehr` + `definitions_valid` + `valid_content`; post
     /// `has_composition(an_ehr_id, Result)`. Errors
     /// `composition_already_exists`, `definition_unknown`, `content_invalid`.
-    /// Creates a VERSIONED_OBJECT + ORIGINAL_VERSION + CONTRIBUTION.
+    /// Creates a `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + CONTRIBUTION.
     async fn create_composition(
         &self,
         an_ehr_id: Uuid,
@@ -78,7 +78,7 @@ pub trait EhrCompositionService: Send + Sync {
     /// `update_composition (an_ehr_id: UUID, a_comp: UV_COMPOSITION): UUID` —
     /// pre `has_ehr` + `definitions_valid` + `valid_content`;
     /// `a_comp.preceding_version_uid` must match the current version
-    /// (optimistic lock → `version_mismatch`). New ORIGINAL_VERSION +
+    /// (optimistic lock → `version_mismatch`). New `ORIGINAL_VERSION` +
     /// CONTRIBUTION. Error `composition_does_not_exist`.
     async fn update_composition(
         &self,

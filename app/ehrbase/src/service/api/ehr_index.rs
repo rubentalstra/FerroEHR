@@ -8,9 +8,8 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use ehrbase_rest::backend::{
-    EhrIndexEntry, EhrIndexService, LocationDesc, ResourceStatus, SubjectRef,
-};
+use ehrbase_sm::services::EhrIndexService;
+use ehrbase_sm::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 use openehr_its::rest::runtime::ApiError;
 
 use crate::service::EhrbaseService;

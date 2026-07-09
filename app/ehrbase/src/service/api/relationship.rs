@@ -9,7 +9,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use ehrbase_rest::backend::PartyRelationshipService;
+use ehrbase_sm::services::PartyRelationshipService;
 use ehrbase_rest::{ResourceMeta, ServiceResponse};
 use openehr_its::rest::runtime::ApiError;
 

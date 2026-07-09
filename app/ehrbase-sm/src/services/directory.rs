@@ -29,7 +29,7 @@ pub trait EhrDirectoryService: Send + Sync {
 
     /// `create_directory (ehr_id: UUID, a_dir_struct: UV_FOLDER)` — pre
     /// `has_ehr` + `definitions_valid` + `not has_directory` + `valid_content`.
-    /// Creates VERSIONED_OBJECT + ORIGINAL_VERSION + CONTRIBUTION. Returns the
+    /// Creates `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + CONTRIBUTION. Returns the
     /// new `version_uid` (wire `201_directory` `ETag`/`Location`).
     async fn create_directory(
         &self,
@@ -51,7 +51,7 @@ pub trait EhrDirectoryService: Send + Sync {
     /// `has_ehr` + `definitions_valid` + `valid_content` + `has_directory`; the
     /// preceding version (in [`UpdateVersion::preceding_version_uid`]) must be
     /// supplied and correct (optimistic lock → `version_mismatch`). New
-    /// ORIGINAL_VERSION + CONTRIBUTION. Returns the new `version_uid`.
+    /// `ORIGINAL_VERSION` + CONTRIBUTION. Returns the new `version_uid`.
     async fn update_directory(
         &self,
         an_ehr_id: Uuid,

@@ -204,6 +204,61 @@ impl ServiceError {
     }
 }
 
+impl From<ServiceError> for ehrbase_sm::SmError {
+    /// Map a service failure onto the SM native `CALL_STATUS_TYPE` error the
+    /// catalog traits return (ADR-011). This is the mirror of the
+    /// [`From<ServiceError> for ApiError`] table above, expressed in SM status
+    /// terms — the protocol adapter (`ehrbase-rest`) then maps the status back
+    /// to the ITS-REST status code via [`ehrbase_sm::CallStatusType::api_error`],
+    /// so the wire outcome is identical row-for-row:
+    ///
+    /// | `ServiceError`            | `CallStatusType`             | HTTP |
+    /// |---------------------------|------------------------------|------|
+    /// | `NotFound`                | `VersionedObjectDoesNotExist`| 404  |
+    /// | `VersionConflict`         | `VersionMismatch`            | 412  |
+    /// | `Conflict`                | `CompositionAlreadyExists`   | 409  |
+    /// | `Unprocessable`           | `ContentInvalid`             | 422  |
+    /// | `ValidationFailed`        | `ContentInvalid`             | 422  |
+    /// | `BadRequest`              | `PreconditionViolation`      | 400  |
+    /// | `Storage`/`Database`/`Json`/`Signing`/`Internal` | `Exception` | 500 |
+    ///
+    /// `NotFound` cannot recover the concrete resource kind, so it maps to the
+    /// generic `versioned_object_does_not_exist` (all 404s); `Conflict` maps to
+    /// a representative already-exists status (all 409s).
+    ///
+    /// PORT NOTE (wire): the structured per-path violations of `ValidationFailed`
+    /// (the ITS-REST `Error.validationErrors[]` array) do **not** survive the SM
+    /// boundary — `SmError` carries only a status + message (the SM `I_STATUS`
+    /// shape). The violations are joined into the message so the detail is not
+    /// wholly lost; the `422` body renders as `{ error, message }` rather than
+    /// `{ message, validationErrors[] }`. This is spec-permitted:
+    /// `422_COMPOSITION.yaml` declares no `content`/`schema` (the `422` body is
+    /// spec-silent; the `Error` object is formally bound only to `400`).
+    fn from(e: ServiceError) -> Self {
+        use ehrbase_sm::CallStatusType as S;
+        use ehrbase_sm::SmError;
+        match e {
+            ServiceError::NotFound(m) => SmError::new(S::VersionedObjectDoesNotExist, m),
+            ServiceError::VersionConflict(m) => SmError::new(S::VersionMismatch, m),
+            ServiceError::Conflict(m) => SmError::new(S::CompositionAlreadyExists, m),
+            ServiceError::Unprocessable(m) => SmError::new(S::ContentInvalid, m),
+            ServiceError::ValidationFailed(v) => {
+                let joined = v
+                    .into_iter()
+                    .map(|e| format!("{}: {}", e.path, e.message))
+                    .collect::<Vec<_>>()
+                    .join("; ");
+                SmError::new(S::ContentInvalid, joined)
+            }
+            ServiceError::BadRequest(m) => SmError::new(S::PreconditionViolation, m),
+            ServiceError::Storage(e) => SmError::new(S::Exception, e.to_string()),
+            ServiceError::Database(e) => SmError::new(S::Exception, e.to_string()),
+            ServiceError::Json(e) => SmError::new(S::Exception, e.to_string()),
+            ServiceError::Signing(m) | ServiceError::Internal(m) => SmError::new(S::Exception, m),
+        }
+    }
+}
+
 impl From<ServiceError> for ApiError {
     fn from(e: ServiceError) -> Self {
         match e {
