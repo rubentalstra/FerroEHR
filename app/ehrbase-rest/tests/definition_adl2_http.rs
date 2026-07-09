@@ -27,17 +27,17 @@ const HRID: &str = "openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0";
 const SOURCE: &str = "operational_template (adl_version=2.0.6)\n\
     openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0\n";
 
-/// The ADL2 wire hooks: upload echoes the stored HRID (the generated
-/// `DefinitionApi` stays on `ApiError`), list returns one metadata object, and
-/// `get_artefact` (SM-native → `SmError`) serves the source or `404`.
+/// The ADL2 wire hooks (all SM-native → `SmError`, ADR-011): upload echoes the
+/// stored HRID, list returns one metadata object, and `get_artefact` serves the
+/// source or `404`.
 fn hooks() -> Hooks {
     Hooks {
-        definition_template_adl2_upload: Some(Arc::new(|_params, body: Value| {
-            // The dispatcher hands the text/plain source through as a JSON string.
-            assert_eq!(body.as_str(), Some(SOURCE));
-            Ok(Value::String(HRID.to_owned()))
+        template_adl2_upload: Some(Arc::new(|source: String| {
+            // The dispatcher hands the text/plain source through as a String.
+            assert_eq!(source, SOURCE);
+            Ok(HRID.to_owned())
         })),
-        definition_template_adl2_list: Some(Arc::new(|_params| {
+        template_adl2_list: Some(Arc::new(|| {
             Ok(vec![
                 json!({ "template_id": HRID, "created_timestamp": "2017-08-14T19:24:56.639Z" }),
             ])

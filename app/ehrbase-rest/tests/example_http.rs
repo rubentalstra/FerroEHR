@@ -27,8 +27,8 @@ use tower::ServiceExt;
 
 use ehrbase_rest::RestConfig;
 use ehrbase_rest::access::authn::config::AuthConfig;
+use ehrbase_sm::{CallStatusType, SmError};
 use openehr_flat::{DetailLevel, ExampleType};
-use openehr_its::rest::runtime::ApiError;
 
 mod common;
 use common::{Hooks, Mock};
@@ -59,24 +59,27 @@ fn web_template() -> openehr_flat::WebTemplate {
 /// for anything else — mirroring the service's `template_example` seam.
 fn hooks() -> Hooks {
     Hooks {
-        // The example generator (generated DefinitionApi, `ApiError`).
-        definition_template_adl1_4_example_get: Some(Arc::new(|params| {
-            let level = DetailLevel::from_query(params.detail_level.as_deref())
-                .map_err(ApiError::BadRequest)?;
-            let kind =
-                ExampleType::from_query(params.r#type.as_deref()).map_err(ApiError::BadRequest)?;
-            if params.template_id != TEMPLATE_ID {
-                return Err(ApiError::NotFound(format!(
-                    "template {} not found",
-                    params.template_id
-                )));
-            }
-            let mut comp = openehr_flat::example_composition(&web_template(), level);
-            if kind == ExampleType::Output {
-                openehr_flat::apply_output_uid(&mut comp, &params.template_id);
-            }
-            Ok(comp)
-        })),
+        // The example generator (wire-shaped DefinitionAdapter → `SmError`; the
+        // dispatcher passes the raw `detail_level`/`type` query values).
+        template_adl14_example: Some(Arc::new(
+            |template_id: String, detail_level: Option<String>, kind: Option<String>| {
+                let level = DetailLevel::from_query(detail_level.as_deref())
+                    .map_err(SmError::precondition)?;
+                let kind =
+                    ExampleType::from_query(kind.as_deref()).map_err(SmError::precondition)?;
+                if template_id != TEMPLATE_ID {
+                    return Err(SmError::new(
+                        CallStatusType::VersionedObjectDoesNotExist,
+                        format!("template {template_id} not found"),
+                    ));
+                }
+                let mut comp = openehr_flat::example_composition(&web_template(), level);
+                if kind == ExampleType::Output {
+                    openehr_flat::apply_output_uid(&mut comp, &template_id);
+                }
+                Ok(comp)
+            },
+        )),
         // The shared WebTemplate resolution seam (SM-native → `SmError`).
         web_template: Some(Arc::new(|_id| Ok(Arc::new(web_template())))),
         ..Default::default()
