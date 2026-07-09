@@ -14,10 +14,13 @@
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{
-    EhrCompositionService, EhrContributionService, EhrService, EhrStatusService, Page,
+use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{
+    CallStatusType, EhrCompositionService, EhrContributionService, EhrService, EhrStatusService,
+    Page, SmError,
 };
-use openehr_its::rest::runtime::ApiError;
+use openehr_base::prelude::TerminologyCode;
+use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
@@ -67,8 +70,33 @@ impl Pg {
     }
 }
 
-fn params<P: serde::de::DeserializeOwned>(v: Value) -> P {
-    serde_json::from_value(v).expect("params")
+/// An `openehr` terminology code (audit change type / lifecycle state).
+fn term(code: &str) -> TerminologyCode {
+    TerminologyCode {
+        terminology_id: "openehr".to_owned(),
+        terminology_version: None,
+        code_string: code.to_owned(),
+        uri: None,
+    }
+}
+
+/// The SM `UPDATE_VERSION` commit envelope for a bare-RM composition write.
+fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+    UpdateVersion {
+        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
+        lifecycle_state: term("532"),
+        attestations: None,
+        data,
+        audit: UpdateAudit {
+            change_type: term(change_code),
+            description: None,
+            committer: serde_json::from_value::<PartyProxy>(
+                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            )
+            .expect("committer"),
+        },
+        signature: None,
+    }
 }
 
 /// A minimal *valid* RM COMPOSITION (mirrors the signing-test fixture).
@@ -136,21 +164,17 @@ fn attestation(reason: &str, is_pending: bool) -> Value {
 }
 
 async fn create_ehr(svc: &EhrbaseService) -> String {
-    let ehr = svc
-        .ehr_create(params(json!({})), None)
-        .await
-        .expect("ehr_create");
-    ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned()
+    svc.create_ehr(None).await.expect("create_ehr").to_string()
 }
 
 /// Read the served `ORIGINAL_VERSION` of a composition version.
-async fn read_version(svc: &EhrbaseService, ehr_id: &str, vo: &str, ovid: &str) -> Value {
-    svc.versioned_composition_version_get_by_id(params(json!({
-        "ehr_id": ehr_id, "versioned_object_uid": vo, "version_uid": ovid
-    })))
+async fn read_version(svc: &EhrbaseService, ehr_id: &str, _vo: &str, ovid: &str) -> Value {
+    svc.composition_original_version(
+        ehr_id.parse().expect("ehr uuid"),
+        ovid.parse().expect("ovid"),
+    )
     .await
     .expect("versioned composition version")
-    .body
 }
 
 /// The `OBJECT_VERSION_ID` of the first version listed in a `CONTRIBUTION`.
@@ -188,7 +212,7 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
         "audit": { "committer": committer("author") }
     });
     let created = svc
-        .contribution_create(params(json!({ "ehr_id": ehr_id })), contribution)
+        .create_ehr_contribution(ehr_id.parse().expect("ehr uuid"), contribution)
         .await
         .expect("contribution_create with accompanying attestation → 201");
     let ovid_v1 = first_version_uid(&created.body);
@@ -220,7 +244,7 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
         }]
     });
     let attest_created = svc
-        .contribution_create(params(json!({ "ehr_id": ehr_id })), attest_contribution)
+        .create_ehr_contribution(ehr_id.parse().expect("ehr uuid"), attest_contribution)
         .await
         .expect("666-only contribution → 201");
 
@@ -251,12 +275,12 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
     // attestations (revision_history_item.adoc "there may also be further
     // attestations").
     let rh = svc
-        .versioned_composition_revision_history(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": vo_id
-        })))
+        .composition_revision_history(
+            ehr_id.parse().expect("ehr uuid"),
+            vo_id.parse().expect("vo uuid"),
+        )
         .await
-        .expect("revision history")
-        .body;
+        .expect("revision history");
     let items = rh["items"].as_array().expect("items");
     assert_eq!(items.len(), 1, "one version");
     let audits = items[0]["audits"].as_array().expect("audits");
@@ -274,16 +298,19 @@ async fn attestation_error_cases() {
 
     // A real composition to attest.
     let v1 = svc
-        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("v1"))
+        .create_composition(
+            ehr_id.parse().expect("ehr uuid"),
+            uv(composition("v1"), "249", None),
+        )
         .await
         .expect("composition_create");
-    let ovid_v1 = v1.body["uid"]["value"].as_str().unwrap().to_owned();
+    let ovid_v1 = v1;
 
     let attempt = |body: Value| {
         let svc = svc.clone();
         let ehr = ehr_id.clone();
         async move {
-            svc.contribution_create(params(json!({ "ehr_id": ehr })), body)
+            svc.create_ehr_contribution(ehr.parse().expect("ehr uuid"), body)
                 .await
         }
     };
@@ -301,7 +328,16 @@ async fn attestation_error_cases() {
     }))
     .await
     .expect_err("666 without preceding → error");
-    assert!(matches!(err, ApiError::BadRequest(_)), "got {err:?}");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
 
     // 666 carrying data → 422 (attestation adds no content).
     let err = attempt(json!({
@@ -318,7 +354,16 @@ async fn attestation_error_cases() {
     }))
     .await
     .expect_err("666 with data → error");
-    assert!(matches!(err, ApiError::Unprocessable(_)), "got {err:?}");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
 
     // Attestation missing reason → 422 (ATTESTATION.reason 1..1).
     let err = attempt(json!({
@@ -333,7 +378,16 @@ async fn attestation_error_cases() {
     }))
     .await
     .expect_err("missing reason → error");
-    assert!(matches!(err, ApiError::Unprocessable(_)), "got {err:?}");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
 
     // Attestation missing is_pending → 422 (ATTESTATION.is_pending 1..1).
     let err = attempt(json!({
@@ -348,7 +402,16 @@ async fn attestation_error_cases() {
     }))
     .await
     .expect_err("missing is_pending → error");
-    assert!(matches!(err, ApiError::Unprocessable(_)), "got {err:?}");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
 
     // Attestation of a non-existent version → 404.
     let ghost = "00000000-0000-7000-8000-000000000000::ehrbase-rs.local::1";
@@ -365,7 +428,16 @@ async fn attestation_error_cases() {
     }))
     .await
     .expect_err("non-existent version → error");
-    assert!(matches!(err, ApiError::NotFound(_)), "got {err:?}");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
 }
 
 /// A valid `EHR_STATUS` for an update (a fresh version, distinct content).
@@ -392,52 +464,59 @@ async fn contribution_listing_count_and_ehr_summary() {
     // Unknown EHR → NotFound (SM ehr_does_not_exist) for every native call.
     let ghost = "00000000-0000-7000-8000-0000000000ff";
     assert!(matches!(
-        svc.contribution_list(ghost.to_owned(), None, Page::all())
+        svc.list_contributions(ghost.parse().expect("uuid"), None, Page::all())
             .await,
-        Err(ApiError::NotFound(_))
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
     ));
     assert!(matches!(
-        svc.contribution_count(ghost.to_owned(), None).await,
-        Err(ApiError::NotFound(_))
+        svc.contribution_count(ghost.parse().expect("uuid"), None)
+            .await,
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
     ));
     assert!(matches!(
-        svc.get_ehr_summary(ghost.to_owned()).await,
-        Err(ApiError::NotFound(_))
+        svc.get_ehr(ghost.parse().expect("uuid")).await,
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
     ));
 
     // Seed: (1) EHR creation, (2) an EHR_STATUS update, (3) a composition — three
     // CONTRIBUTIONs, one of them a COMPOSITION.
     let ehr_id = create_ehr(&svc).await; // contribution #1
 
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
     let status_uid = svc
-        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+        .get_ehr_status_at_time(ehr_uuid, None)
         .await
-        .expect("get current EHR_STATUS")
-        .body["uid"]["value"]
+        .expect("get current EHR_STATUS")["uid"]["value"]
         .as_str()
         .expect("status uid")
         .to_owned();
-    svc.ehr_status_update(
-        params(json!({ "ehr_id": ehr_id, "If-Match": status_uid })),
-        ehr_status(false),
-    )
-    .await
-    .expect("EHR_STATUS update"); // contribution #2
+    svc.replace_ehr_status(ehr_uuid, uv(ehr_status(false), "251", Some(&status_uid)))
+        .await
+        .expect("EHR_STATUS update"); // contribution #2
 
-    svc.composition_create(params(json!({ "ehr_id": ehr_id })), composition("obs"))
+    svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
         .expect("composition_create"); // contribution #3
 
     // contribution_count matches the seeded three.
     let count = svc
-        .contribution_count(ehr_id.clone(), None)
+        .contribution_count(ehr_uuid, None)
         .await
         .expect("contribution_count");
     assert_eq!(count, 3, "EHR creation + status update + composition");
 
     // contribution_list returns all three, oldest-first, distinct.
     let all = svc
-        .contribution_list(ehr_id.clone(), None, Page::all())
+        .list_contributions(ehr_uuid, None, Page::all())
         .await
         .expect("contribution_list");
     assert_eq!(all.len(), 3, "three contribution ids");
@@ -446,8 +525,8 @@ async fn contribution_listing_count_and_ehr_summary() {
 
     // Paging: offset 1, fetch 1 → exactly the second id of the full list.
     let page = svc
-        .contribution_list(
-            ehr_id.clone(),
+        .list_contributions(
+            ehr_uuid,
             None,
             Page {
                 item_offset: Some(1),
@@ -464,8 +543,8 @@ async fn contribution_listing_count_and_ehr_summary() {
 
     // time_range: an upper bound before every commit excludes all.
     let empty = svc
-        .contribution_list(
-            ehr_id.clone(),
+        .list_contributions(
+            ehr_uuid,
             Some((None, Some("2000-01-01T00:00:00Z".to_owned()))),
             Page::all(),
         )
@@ -477,7 +556,7 @@ async fn contribution_listing_count_and_ehr_summary() {
     );
     assert_eq!(
         svc.contribution_count(
-            ehr_id.clone(),
+            ehr_uuid,
             Some((None, Some("2000-01-01T00:00:00Z".to_owned())))
         )
         .await
@@ -486,16 +565,16 @@ async fn contribution_listing_count_and_ehr_summary() {
     );
     // A malformed bound → 400 BadRequest.
     assert!(matches!(
-        svc.contribution_count(ehr_id.clone(), Some((Some("not-a-time".to_owned()), None)))
+        svc.contribution_count(ehr_uuid, Some((Some("not-a-time".to_owned()), None)))
             .await,
-        Err(ApiError::BadRequest(_))
+        Err(SmError {
+            status: CallStatusType::PreconditionViolation,
+            ..
+        })
     ));
 
     // EHR_SUMMARY: mandatory fields + the counts.
-    let summary = svc
-        .get_ehr_summary(ehr_id.clone())
-        .await
-        .expect("get_ehr_summary");
+    let summary = svc.get_ehr(ehr_uuid).await.expect("get_ehr_summary");
     assert_eq!(summary.ehr_id, ehr_id);
     assert!(!summary.system_id.is_empty(), "system_id (EHR.system_id)");
     assert_eq!(summary.ehr_status["_type"], "EHR_STATUS", "ehr_status copy");
@@ -538,8 +617,8 @@ async fn contribution_honors_the_five_lifecycle_states() {
 
     // (1) Create v1 as incomplete (553).
     let created = svc
-        .contribution_create(
-            params(json!({ "ehr_id": ehr_id })),
+        .create_ehr_contribution(
+            ehr_id.parse().expect("ehr uuid"),
             json!({
                 "versions": [{
                     "commit_audit": {
@@ -567,10 +646,12 @@ async fn contribution_honors_the_five_lifecycle_states() {
     assert_eq!(ov1["data"]["_type"], "COMPOSITION");
     // The latest read returns 200 with data (not the deleted 204 path).
     let latest = svc
-        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .get_composition_latest(
+            ehr_id.parse().expect("ehr uuid"),
+            vo_id.parse().expect("vo uuid"),
+        )
         .await
-        .expect("composition_get incomplete")
-        .body;
+        .expect("composition_get incomplete");
     assert_eq!(latest["name"]["value"], "incomplete v1");
 
     // (2) Walk 553 → 800 (inactive) → 801 (abandoned) → 532 (complete), each a
@@ -578,8 +659,8 @@ async fn contribution_honors_the_five_lifecycle_states() {
     let mut current = ovid_v1;
     for (n, code) in [(2, "800"), (3, "801"), (4, "532")] {
         let modified = svc
-            .contribution_create(
-                params(json!({ "ehr_id": ehr_id })),
+            .create_ehr_contribution(
+                ehr_id.parse().expect("ehr uuid"),
                 json!({
                     "versions": [{
                         "commit_audit": {
@@ -606,8 +687,8 @@ async fn contribution_honors_the_five_lifecycle_states() {
 
     // (3) An out-of-group lifecycle code is a 422 naming the group.
     let err = svc
-        .contribution_create(
-            params(json!({ "ehr_id": ehr_id })),
+        .create_ehr_contribution(
+            ehr_id.parse().expect("ehr uuid"),
             json!({
                 "versions": [{
                     "commit_audit": {
@@ -623,17 +704,21 @@ async fn contribution_honors_the_five_lifecycle_states() {
         )
         .await
         .expect_err("invalid lifecycle_state → error");
-    match err {
-        ApiError::Unprocessable(msg) => {
-            assert!(msg.contains("version_lifecycle_state"), "got {msg}");
-        }
-        other => panic!("expected 422 Unprocessable, got {other:?}"),
-    }
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ) && err.message.contains("version_lifecycle_state"),
+        "expected content_invalid naming version_lifecycle_state, got {err:?}"
+    );
 
     // (4) The delete path is still forced to 523, regardless of any lifecycle
     // hint, and the latest read is then the deleted (204/null) path.
-    svc.contribution_create(
-        params(json!({ "ehr_id": ehr_id })),
+    svc.create_ehr_contribution(
+        ehr_id.parse().expect("ehr uuid"),
         json!({
             "versions": [{
                 "commit_audit": {
@@ -649,13 +734,15 @@ async fn contribution_honors_the_five_lifecycle_states() {
     .expect("delete (523) → 201");
     // The now-current version is a deletion: lifecycle 523.
     let del = svc
-        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .get_composition_latest(
+            ehr_id.parse().expect("ehr uuid"),
+            vo_id.parse().expect("vo uuid"),
+        )
         .await
         .expect("composition_get deleted");
     assert!(
-        del.body.is_null(),
-        "a deleted composition reads as an empty body (204), got {:?}",
-        del.body
+        del.is_null(),
+        "a deleted composition reads as an empty body (204), got {del:?}"
     );
 }
 
@@ -670,8 +757,8 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
     let ehr_id = create_ehr(&svc).await;
 
     let created = svc
-        .contribution_create(
-            params(json!({ "ehr_id": ehr_id })),
+        .create_ehr_contribution(
+            ehr_id.parse().expect("ehr uuid"),
             json!({
                 "versions": [
                     // (A) commit_audit omits committer + system_id → inherit them.

@@ -11,7 +11,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use ehrbase_audit::syslog::{
+use ehrbase::system_log::syslog::{
     TlsTransport, Transport, add_roots, assemble_syslog, frame_octet_counting,
 };
 use tokio::io::AsyncReadExt;

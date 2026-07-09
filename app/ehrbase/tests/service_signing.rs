@@ -14,13 +14,15 @@ use std::sync::Arc;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService,
+use ehrbase::signing::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
+use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{
+    CallStatusType, EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
+    EhrStatusService, SmError,
 };
-use ehrbase_signing::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
-use openehr_its::rest::runtime::ApiError;
+use openehr_base::prelude::TerminologyCode;
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
+use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
 use testcontainers::runners::AsyncRunner;
@@ -70,12 +72,56 @@ impl Pg {
     }
 }
 
-fn params<P: serde::de::DeserializeOwned>(v: Value) -> P {
-    serde_json::from_value(v).expect("params")
-}
-
 fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
+}
+
+/// An `openehr` terminology code (audit change type / lifecycle state).
+fn term(code: &str) -> TerminologyCode {
+    TerminologyCode {
+        terminology_id: "openehr".to_owned(),
+        terminology_version: None,
+        code_string: code.to_owned(),
+        uri: None,
+    }
+}
+
+fn committer(name: &str) -> PartyProxy {
+    serde_json::from_value(json!({ "_type": "PARTY_IDENTIFIED", "name": name })).expect("committer")
+}
+
+/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
+fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+    UpdateVersion {
+        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
+        lifecycle_state: term("532"),
+        attestations: None,
+        data,
+        audit: UpdateAudit {
+            change_type: term(change_code),
+            description: None,
+            committer: committer("conformance tester"),
+        },
+        signature: None,
+    }
+}
+
+/// The contribution-level `UPDATE_AUDIT`.
+fn contribution_audit(change_code: &str, committer_name: &str) -> UpdateAudit {
+    UpdateAudit {
+        change_type: term(change_code),
+        description: None,
+        committer: committer(committer_name),
+    }
+}
+
+/// Split an `OBJECT_VERSION_ID` into `(object_id uuid, trunk version)`.
+fn version_components(ovid: &str) -> (uuid::Uuid, i32) {
+    let parts: Vec<&str> = ovid.split("::").collect();
+    (
+        parts[0].parse().expect("vo uuid"),
+        parts[2].parse().expect("trunk version"),
+    )
 }
 
 /// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
@@ -150,11 +196,7 @@ fn assert_digest_recomputes(ov: &Value) {
 }
 
 async fn create_ehr(svc: &EhrbaseService) -> String {
-    let ehr = svc
-        .ehr_create(params(json!({})), None)
-        .await
-        .expect("ehr_create");
-    ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned()
+    svc.create_ehr(None).await.expect("create_ehr").to_string()
 }
 
 #[tokio::test]
@@ -162,31 +204,29 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("signing_comp").await);
     let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     // Create a composition, then commit a second version.
-    let v1 = svc
-        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("v1"))
+    let ovid_v1 = svc
+        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
-        .expect("composition_create");
-    let ovid_v1 = uid(&v1.body).to_owned();
+        .expect("create_composition");
     let vo_id = ovid_v1.split("::").next().unwrap().to_owned();
-    let v2 = svc
-        .composition_update(
-            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id, "If-Match": ovid_v1 })),
-            composition("v2"),
+    let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
+    let ovid_v2 = svc
+        .update_composition(
+            ehr_uuid,
+            vo_uuid,
+            uv(composition("v2"), "251", Some(&ovid_v1)),
         )
         .await
-        .expect("composition_update");
-    let ovid_v2 = uid(&v2.body).to_owned();
+        .expect("update_composition");
 
     for ovid in [&ovid_v1, &ovid_v2] {
         let ov = svc
-            .versioned_composition_version_get_by_id(params(json!({
-                "ehr_id": ehr_id, "versioned_object_uid": vo_id, "version_uid": ovid
-            })))
+            .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
             .await
-            .expect("versioned composition version")
-            .body;
+            .expect("versioned composition version");
         assert_digest_recomputes(&ov);
     }
 }
@@ -197,30 +237,25 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
     let pool = pg.migrated_pool("signing_status").await;
     let svc = EhrbaseService::new(pool.clone());
     let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     // Update EHR_STATUS → v2, then read the ORIGINAL_VERSION of v1.
-    let status = svc
-        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+    let mut body = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
         .await
         .expect("status get");
-    let status_ovid_v1 = uid(&status.body).to_owned();
-    let mut body = status.body.clone();
+    let status_ovid_v1 = uid(&body).to_owned();
+    body.as_object_mut().expect("status obj").remove("uid");
     body["is_modifiable"] = json!(false);
-    svc.ehr_status_update(
-        params(json!({ "ehr_id": ehr_id, "If-Match": status_ovid_v1 })),
-        body,
-    )
-    .await
-    .expect("status update");
-
-    let status_vo = status_ovid_v1.split("::").next().unwrap().to_owned();
-    let ov = svc
-        .versioned_ehr_status_version_get_by_id(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": status_vo, "version_uid": status_ovid_v1
-        })))
+    svc.replace_ehr_status(ehr_uuid, uv(body, "251", Some(&status_ovid_v1)))
         .await
-        .expect("versioned ehr_status version")
-        .body;
+        .expect("status update");
+
+    let (status_vo, status_ver) = version_components(&status_ovid_v1);
+    let ov = svc
+        .ehr_status_original_version(ehr_uuid, status_vo, status_ver)
+        .await
+        .expect("versioned ehr_status version");
     assert_eq!(ov["data"]["_type"], "EHR_STATUS");
     assert_digest_recomputes(&ov);
 
@@ -231,9 +266,9 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
         "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
         "name": { "_type": "DV_TEXT", "value": "root" }
     });
-    svc.directory_create(params(json!({ "ehr_id": ehr_id })), folder)
+    svc.create_directory(ehr_uuid, uv(folder, "249", None))
         .await
-        .expect("directory_create");
+        .expect("create_directory");
 
     // Sweep: EHR_STATUS (x2), EHR_ACCESS, FOLDER — every stored version is signed
     // with a digest (design §3.4: signing on by default).
@@ -258,34 +293,31 @@ async fn contribution_versions_are_signed() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("signing_contrib").await);
     let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
-    let body = json!({
-        "audit": {
-            "change_type": change_type("249", "creation"),
-            "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr. Contribution" }
-        },
-        "versions": [{
-            "data": composition("Via contribution"),
-            "commit_audit": { "change_type": change_type("249", "creation") }
-        }]
-    });
-    let contribution = svc
-        .contribution_create(params(json!({ "ehr_id": ehr_id })), body)
+    let contribution_uid = svc
+        .commit_contribution(
+            ehr_uuid,
+            vec![uv(composition("Via contribution"), "249", None)],
+            contribution_audit("249", "Dr. Contribution"),
+        )
         .await
-        .expect("contribution_create");
-    let ovid = contribution.body["versions"][0]["id"]["value"]
+        .expect("commit_contribution");
+    // PORT NOTE (ADR-011): `commit_contribution` returns the contribution_uid;
+    // the created version's OBJECT_VERSION_ID is read back from the CONTRIBUTION.
+    let contribution = svc
+        .get_contribution(ehr_uuid, contribution_uid.parse().expect("contrib uuid"))
+        .await
+        .expect("get_contribution");
+    let ovid = contribution["versions"][0]["id"]["value"]
         .as_str()
         .unwrap()
         .to_owned();
-    let vo_id = ovid.split("::").next().unwrap().to_owned();
 
     let ov = svc
-        .versioned_composition_version_get_by_id(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": vo_id, "version_uid": ovid
-        })))
+        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
         .await
-        .expect("versioned composition version")
-        .body;
+        .expect("versioned composition version");
     assert_digest_recomputes(&ov);
 }
 
@@ -298,35 +330,31 @@ async fn client_supplied_signature_is_stored_verbatim() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("signing_client").await);
     let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
-    let body = json!({
-        "audit": {
-            "change_type": change_type("249", "creation"),
-            "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr. Author" }
-        },
-        "versions": [{
-            "data": composition("Client signed"),
-            "commit_audit": { "change_type": change_type("249", "creation") },
-            "signature": CLIENT_SIG
-        }]
-    });
-    let contribution = svc
-        .contribution_create(params(json!({ "ehr_id": ehr_id })), body)
+    let mut version = uv(composition("Client signed"), "249", None);
+    version.signature = Some(CLIENT_SIG.to_owned());
+    let contribution_uid = svc
+        .commit_contribution(
+            ehr_uuid,
+            vec![version],
+            contribution_audit("249", "Dr. Author"),
+        )
         .await
-        .expect("contribution_create");
-    let ovid = contribution.body["versions"][0]["id"]["value"]
+        .expect("commit_contribution");
+    let contribution = svc
+        .get_contribution(ehr_uuid, contribution_uid.parse().expect("contrib uuid"))
+        .await
+        .expect("get_contribution");
+    let ovid = contribution["versions"][0]["id"]["value"]
         .as_str()
         .unwrap()
         .to_owned();
-    let vo_id = ovid.split("::").next().unwrap().to_owned();
 
     let ov = svc
-        .versioned_composition_version_get_by_id(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": vo_id, "version_uid": ovid
-        })))
+        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
         .await
-        .expect("versioned composition version")
-        .body;
+        .expect("versioned composition version");
     assert_eq!(
         ov["signature"].as_str(),
         Some(CLIENT_SIG),
@@ -350,20 +378,17 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     let signer = Signer::from_config(&config).expect("strict signer");
     let svc = EhrbaseService::new(pool.clone()).with_signer(Arc::new(signer));
     let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
-    let v1 = svc
-        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("tamper"))
+    let ovid = svc
+        .create_composition(ehr_uuid, uv(composition("tamper"), "249", None))
         .await
-        .expect("composition_create");
-    let ovid = uid(&v1.body).to_owned();
-    let vo_id = ovid.split("::").next().unwrap().to_owned();
+        .expect("create_composition");
 
     // A clean read verifies fine.
-    svc.versioned_composition_version_get_by_id(params(json!({
-        "ehr_id": ehr_id, "versioned_object_uid": vo_id, "version_uid": ovid
-    })))
-    .await
-    .expect("clean read verifies");
+    svc.composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        .await
+        .expect("clean read verifies");
 
     // Tamper the stored signature via SQL.
     sqlx::query(
@@ -374,12 +399,19 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     .expect("tamper");
 
     let tampered = svc
-        .versioned_composition_version_get_by_id(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": vo_id, "version_uid": ovid
-        })))
+        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
         .await;
+    // PORT NOTE (ADR-011): a signing/integrity failure surfaces at the SM boundary
+    // as `SmError { status: Exception }` (the adapter maps it to the same wire 5xx
+    // the old `ApiError::Internal` produced).
     assert!(
-        matches!(tampered, Err(ApiError::Internal(_))),
+        matches!(
+            tampered,
+            Err(SmError {
+                status: CallStatusType::Exception,
+                ..
+            })
+        ),
         "strict verify_on_read must 5xx a tampered signature, got {tampered:?}"
     );
 }
@@ -441,12 +473,13 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     // Commit a composition under system id "sys-origin".
     let svc_a = EhrbaseService::new(pool.clone()).with_system_id("sys-origin");
     let ehr_id = create_ehr(&svc_a).await;
-    let v1 = svc_a
-        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("v1"))
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ovid = svc_a
+        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
-        .expect("composition_create");
-    let ovid = uid(&v1.body).to_owned();
+        .expect("create_composition");
     let vo_id = ovid.split("::").next().unwrap().to_owned();
+    let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
     // The uid's middle part is the creating system id.
     assert_eq!(
         ovid.split("::").nth(1),
@@ -460,10 +493,9 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     // Reading the composition back: the injected uid still carries "sys-origin"
     // (the stored creating_system_id), not the new config value.
     let read = svc_b
-        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .get_composition_latest(ehr_uuid, vo_uuid)
         .await
-        .expect("composition_get")
-        .body;
+        .expect("composition_get");
     assert_eq!(
         uid(&read),
         ovid,
@@ -473,12 +505,9 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     // The served ORIGINAL_VERSION still verifies — the signature was computed
     // over the stored creating_system_id, which the read path reconstructs.
     let ov = svc_b
-        .versioned_composition_version_get_by_id(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": vo_id, "version_uid": ovid
-        })))
+        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
         .await
-        .expect("versioned composition version")
-        .body;
+        .expect("versioned composition version");
     assert_eq!(ov["uid"]["value"], ovid);
     assert_digest_recomputes(&ov);
 }

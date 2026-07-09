@@ -15,8 +15,10 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, Page};
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::{
+    CallStatusType, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, Page,
+    SmError,
+};
 
 struct Pg {
     #[allow(dead_code)]
@@ -168,24 +170,53 @@ async fn archetype_errors() {
     let svc = EhrbaseService::new(pg.migrated_pool("def_arch_err").await);
 
     // Invalid ADL → 422 invalid_archetype.
+    // PORT NOTE (ADR-011): the SM-specific Definition statuses (invalid_archetype,
+    // artefact_does_not_exist, invalid_id_pattern, …) are flattened through the
+    // service's `ServiceError::sm()` → `From<ServiceError> for SmError` round-trip
+    // to the generic `content_invalid` (422) / `versioned_object_does_not_exist`
+    // (404) / `precondition_violation` (400) — the wire HTTP codes are unchanged.
     let bad = svc
         .upload_archetype("this is not an archetype".to_owned())
         .await
         .expect_err("invalid archetype rejected");
-    assert!(matches!(bad, ApiError::Unprocessable(_)), "got {bad:?}");
+    assert!(
+        matches!(
+            bad,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "got {bad:?}"
+    );
 
     // get / delete of an absent archetype → 404.
     let missing = svc
         .get_archetype("openEHR-EHR-OBSERVATION.absent.v1".to_owned())
         .await
         .expect_err("absent archetype");
-    assert!(matches!(missing, ApiError::NotFound(_)), "got {missing:?}");
+    assert!(
+        matches!(
+            missing,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
+        "got {missing:?}"
+    );
     let del_missing = svc
         .delete_archetype("openEHR-EHR-OBSERVATION.absent.v1".to_owned())
         .await
         .expect_err("delete absent");
     assert!(
-        matches!(del_missing, ApiError::NotFound(_)),
+        matches!(
+            del_missing,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
         "got {del_missing:?}"
     );
 
@@ -194,7 +225,16 @@ async fn archetype_errors() {
         .list_matching_archetypes("(".to_owned(), Page::all())
         .await
         .expect_err("invalid pattern");
-    assert!(matches!(bad_re, ApiError::BadRequest(_)), "got {bad_re:?}");
+    assert!(
+        matches!(
+            bad_re,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
+        "got {bad_re:?}"
+    );
 }
 
 // ── ADL 1.4 OPTs (I_DEFINITION_ADL14; on template_store, UUID-keyed) ──────────
@@ -242,7 +282,13 @@ async fn opt_upload_has_get_list_match_delete() {
         .await
         .expect_err("duplicate opt");
     assert!(
-        matches!(conflict, ApiError::Conflict(_)),
+        matches!(
+            conflict,
+            SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            }
+        ),
         "got {conflict:?}"
     );
 
@@ -262,7 +308,18 @@ async fn opt_errors() {
         .upload_opt("<not-a-template/>".to_owned())
         .await
         .expect_err("invalid opt");
-    assert!(matches!(bad, ApiError::Unprocessable(_)), "got {bad:?}");
+    // PORT NOTE (ADR-011): the OPT ingestion path returns `ServiceError::Unprocessable`,
+    // flattened at the SM boundary to `content_invalid`.
+    assert!(
+        matches!(
+            bad,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "got {bad:?}"
+    );
 
     // Unparseable UUID → 400.
     let bad_uuid = svc
@@ -270,7 +327,13 @@ async fn opt_errors() {
         .await
         .expect_err("bad uuid");
     assert!(
-        matches!(bad_uuid, ApiError::BadRequest(_)),
+        matches!(
+            bad_uuid,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
         "got {bad_uuid:?}"
     );
 
@@ -278,12 +341,24 @@ async fn opt_errors() {
     let absent = uuid::Uuid::now_v7().to_string();
     let get_missing = svc.get_opt(absent.clone()).await.expect_err("absent opt");
     assert!(
-        matches!(get_missing, ApiError::NotFound(_)),
+        matches!(
+            get_missing,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
         "got {get_missing:?}"
     );
     let del_missing = svc.delete_opt(absent).await.expect_err("delete absent opt");
     assert!(
-        matches!(del_missing, ApiError::NotFound(_)),
+        matches!(
+            del_missing,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
         "got {del_missing:?}"
     );
 }
@@ -410,7 +485,16 @@ async fn adl2_errors() {
         .upload_artefact("concept\nopenEHR-EHR-OBSERVATION.bp.v1.0.0".to_owned())
         .await
         .expect_err("invalid artefact rejected");
-    assert!(matches!(bad, ApiError::Unprocessable(_)), "got {bad:?}");
+    assert!(
+        matches!(
+            bad,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "got {bad:?}"
+    );
 
     // Recognised header but a malformed HRID → 422.
     let bad_hrid = svc
@@ -418,7 +502,13 @@ async fn adl2_errors() {
         .await
         .expect_err("malformed hrid rejected");
     assert!(
-        matches!(bad_hrid, ApiError::Unprocessable(_)),
+        matches!(
+            bad_hrid,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
         "got {bad_hrid:?}"
     );
 
@@ -427,13 +517,28 @@ async fn adl2_errors() {
         .get_artefact("openEHR-EHR-OBSERVATION.absent.v1.0.0".to_owned())
         .await
         .expect_err("absent artefact");
-    assert!(matches!(missing, ApiError::NotFound(_)), "got {missing:?}");
+    assert!(
+        matches!(
+            missing,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
+        "got {missing:?}"
+    );
     let del_missing = svc
         .delete_artefact("openEHR-EHR-OBSERVATION.absent.v1.0.0".to_owned())
         .await
         .expect_err("delete absent");
     assert!(
-        matches!(del_missing, ApiError::NotFound(_)),
+        matches!(
+            del_missing,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
         "got {del_missing:?}"
     );
 
@@ -442,7 +547,16 @@ async fn adl2_errors() {
         .list_matching_artefacts("(".to_owned(), Page::all())
         .await
         .expect_err("invalid pattern");
-    assert!(matches!(bad_re, ApiError::BadRequest(_)), "got {bad_re:?}");
+    assert!(
+        matches!(
+            bad_re,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
+        "got {bad_re:?}"
+    );
 }
 
 // ── registered queries (I_DEFINITION_QUERY) ──────────────────────────────────
@@ -558,7 +672,13 @@ async fn query_valid_store_list_match_delete() {
         .await
         .expect_err("delete absent");
     assert!(
-        matches!(del_missing, ApiError::NotFound(_)),
+        matches!(
+            del_missing,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
         "got {del_missing:?}"
     );
 
@@ -567,14 +687,32 @@ async fn query_valid_store_list_match_delete() {
         .store_query("nonsense".to_owned(), "aql".to_owned(), None)
         .await
         .expect_err("invalid query rejected");
-    assert!(matches!(bad, ApiError::Unprocessable(_)), "got {bad:?}");
+    assert!(
+        matches!(
+            bad,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "got {bad:?}"
+    );
 
     // Bad id-pattern regex → 400.
     let bad_re = svc
         .list_matching_queries("(".to_owned(), None, Page::all())
         .await
         .expect_err("bad regex");
-    assert!(matches!(bad_re, ApiError::BadRequest(_)), "got {bad_re:?}");
+    assert!(
+        matches!(
+            bad_re,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
+        "got {bad_re:?}"
+    );
 }
 
 #[tokio::test]
@@ -586,5 +724,14 @@ async fn query_store_set_not_implemented() {
         .store_query_set(None)
         .await
         .expect_err("not implemented");
-    assert!(matches!(err, ApiError::NotImplemented), "got {err:?}");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::NotImplemented,
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
 }

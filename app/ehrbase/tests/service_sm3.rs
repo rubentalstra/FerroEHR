@@ -20,11 +20,9 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::backend::{
-    DemographicService, EhrIndexService, LocationDesc, PartyRelationshipService,
-    ResourceInstanceType, ResourceStatus, SubjectRef,
-};
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::services::{DemographicService, EhrIndexService, PartyRelationshipService};
+use ehrbase_sm::types::{LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
+use ehrbase_sm::{CallStatusType, SmError};
 
 struct Pg {
     #[allow(dead_code)]
@@ -180,7 +178,13 @@ async fn relationship_lifecycle_end_to_end() {
         .party_relationship_update(vo.clone(), ovid_v1.clone(), relationship("stale", src, tgt))
         .await;
     assert!(
-        matches!(stale, Err(ApiError::PreconditionFailed(_))),
+        matches!(
+            stale,
+            Err(SmError {
+                status: CallStatusType::VersionMismatch,
+                ..
+            })
+        ),
         "stale update, got {stale:?}"
     );
 
@@ -232,7 +236,13 @@ async fn relationship_error_cases() {
         .party_relationship_get(Uuid::now_v7().to_string(), None)
         .await;
     assert!(
-        matches!(unknown, Err(ApiError::NotFound(_))),
+        matches!(
+            unknown,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
         "unknown relationship is 404, got {unknown:?}"
     );
 
@@ -241,7 +251,13 @@ async fn relationship_error_cases() {
     bad.as_object_mut().unwrap().remove("target");
     let invalid = svc.party_relationship_create(bad).await;
     assert!(
-        matches!(invalid, Err(ApiError::Unprocessable(_))),
+        matches!(
+            invalid,
+            Err(SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            })
+        ),
         "missing target is 422, got {invalid:?}"
     );
 
@@ -256,7 +272,13 @@ async fn relationship_error_cases() {
     let vp_unknown = svc
         .versioned_party_relationship_get(Uuid::now_v7().to_string())
         .await;
-    assert!(matches!(vp_unknown, Err(ApiError::NotFound(_))));
+    assert!(matches!(
+        vp_unknown,
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
+    ));
     assert!(svc.party_relationship_get(vo, None).await.is_ok());
 }
 
@@ -431,7 +453,13 @@ async fn ehr_index_update_status_loc_and_remove() {
 
     // removing again → subject_id_does_not_exist (404)
     let again = svc.remove_ehr_subject(ehr.to_string(), subject).await;
-    assert!(matches!(again, Err(ApiError::NotFound(_))));
+    assert!(matches!(
+        again,
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
+    ));
 }
 
 #[tokio::test]
@@ -461,11 +489,23 @@ async fn ehr_index_remove_subject_wide_and_unknown_ehr() {
         .add_ehr_subject(Uuid::now_v7().to_string(), subject.clone(), None, None)
         .await;
     assert!(
-        matches!(unknown, Err(ApiError::NotFound(_))),
+        matches!(
+            unknown,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
         "unknown ehr is 404, got {unknown:?}"
     );
 
     // unknown subject on remove_subject → 404
     let no_subject = svc.remove_subject(SubjectRef::person("nope", "mpi")).await;
-    assert!(matches!(no_subject, Err(ApiError::NotFound(_))));
+    assert!(matches!(
+        no_subject,
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
+    ));
 }

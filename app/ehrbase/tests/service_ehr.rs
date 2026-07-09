@@ -17,14 +17,16 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
+use openehr_base::prelude::TerminologyCode;
+use openehr_rm::prelude::PartyProxy;
+
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService, ServiceResponse,
+use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{
+    CallStatusType, DefinitionAdapter, EhrCompositionService, EhrContributionService,
+    EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter, SmError,
 };
-use openehr_its::rest::generated::definition::DefinitionApi;
-use openehr_its::rest::runtime::ApiError;
 
 struct Pg {
     #[allow(dead_code)]
@@ -69,19 +71,38 @@ impl Pg {
     }
 }
 
-/// Build a generated `*Params` from a JSON object (missing `Option` fields → `None`).
-fn params<P: serde::de::DeserializeOwned>(v: Value) -> P {
-    serde_json::from_value(v).expect("params")
-}
-
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
 }
 
-/// The item-tag objects carried in a plain (array-bodied) `ServiceResponse`.
-fn tags(resp: &ServiceResponse) -> Vec<Value> {
-    resp.body.as_array().cloned().unwrap_or_default()
+/// An `openehr` terminology code (audit change type / lifecycle state).
+fn term(code: &str) -> TerminologyCode {
+    TerminologyCode {
+        terminology_id: "openehr".to_owned(),
+        terminology_version: None,
+        code_string: code.to_owned(),
+        uri: None,
+    }
+}
+
+/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
+fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+    UpdateVersion {
+        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
+        lifecycle_state: term("532"),
+        attestations: None,
+        data,
+        audit: UpdateAudit {
+            change_type: term(change_code),
+            description: None,
+            committer: serde_json::from_value::<PartyProxy>(
+                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            )
+            .expect("committer"),
+        },
+        signature: None,
+    }
 }
 
 fn has_key(tags: &[Value], k: &str) -> bool {
@@ -145,175 +166,145 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let svc = EhrbaseService::new(pg.migrated_pool("lifecycle").await);
 
     // ── EHR create + retrieve ────────────────────────────────────────────────
-    let ehr = svc
-        .ehr_create(params(json!({})), None)
-        .await
-        .expect("ehr_create");
-    assert_eq!(ehr.body["_type"], "EHR");
-    let ehr_id = ehr.body["ehr_id"]["value"]
-        .as_str()
-        .expect("ehr_id")
-        .to_owned();
-    // W2-A: the EHR create envelope carries the ehr_id as ETag/Location meta.
-    let meta = ehr.meta.expect("ehr create carries resource meta");
-    assert_eq!(meta.ehr_id, ehr_id);
-    assert_eq!(meta.uid, ehr_id);
+    // PORT NOTE (ADR-011): the SM `create_ehr` returns the new UUID; the RM `EHR`
+    // body is read via `ehr_object`. The old create-envelope ETag/Location meta
+    // (ehr_id == uid) is exactly that returned uuid — the adapter builds the
+    // header — so the meta assertions are folded into the uuid/body checks.
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
+    let ehr_id = ehr_uuid.to_string();
+    let ehr = svc.ehr_object(ehr_uuid).await.expect("ehr object");
+    assert_eq!(ehr["_type"], "EHR");
+    assert_eq!(ehr["ehr_id"]["value"], ehr_id);
 
-    let fetched = svc
-        .ehr_get_by_id(params(json!({ "ehr_id": ehr_id })))
-        .await
-        .expect("ehr_get_by_id");
-    assert_eq!(fetched.body["ehr_id"]["value"], ehr_id);
+    let fetched = svc.ehr_object(ehr_uuid).await.expect("ehr_get_by_id");
+    assert_eq!(fetched["ehr_id"]["value"], ehr_id);
 
     // ── EHR_STATUS: read v1, update → v2, optimistic concurrency ─────────────
     let status_v1 = svc
-        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+        .get_ehr_status_at_time(ehr_uuid, None)
         .await
         .expect("status get");
-    let status_ovid_v1 = uid(&status_v1.body).to_owned();
+    let status_ovid_v1 = uid(&status_v1).to_owned();
     assert!(status_ovid_v1.ends_with("::1"), "got {status_ovid_v1}");
-    // The status read envelope carries the version_uid as its ETag meta.
-    assert_eq!(
-        status_v1.meta.as_ref().map(|m| m.uid.as_str()),
-        Some(status_ovid_v1.as_str())
-    );
 
-    let mut status_v2_body = status_v1.body.clone();
+    let mut status_v2_body = status_v1.clone();
+    status_v2_body.as_object_mut().unwrap().remove("uid");
     status_v2_body["is_modifiable"] = json!(false);
-    let status_v2 = svc
-        .ehr_status_update(
-            params(json!({ "ehr_id": ehr_id, "If-Match": status_ovid_v1 })),
-            status_v2_body,
-        )
+    // PORT NOTE (ADR-011): `replace_ehr_status` returns the new version_uid (the
+    // old `.meta.uid`); the content is re-read to assert it.
+    let status_v2_uid = svc
+        .replace_ehr_status(ehr_uuid, uv(status_v2_body, "251", Some(&status_ovid_v1)))
         .await
         .expect("status update");
-    assert!(uid(&status_v2.body).ends_with("::2"));
-    assert_eq!(status_v2.body["is_modifiable"], json!(false));
-    assert!(status_v2.meta.expect("update meta").uid.ends_with("::2"));
+    assert!(status_v2_uid.ends_with("::2"));
+    let status_v2 = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status v2");
+    assert_eq!(status_v2["is_modifiable"], json!(false));
 
-    // Stale If-Match is rejected (precondition failed → 412).
+    // Stale If-Match is rejected (precondition failed → 412 / version_mismatch).
     let stale = svc
-        .ehr_status_update(
-            params(json!({ "ehr_id": ehr_id, "If-Match": status_ovid_v1 })),
-            status_v1.body.clone(),
+        .replace_ehr_status(
+            ehr_uuid,
+            uv(status_v1.clone(), "251", Some(&status_ovid_v1)),
         )
         .await;
     assert!(
-        matches!(stale, Err(ApiError::PreconditionFailed(_))),
+        matches!(
+            stale,
+            Err(SmError {
+                status: CallStatusType::VersionMismatch,
+                ..
+            })
+        ),
         "stale update must 412, got {stale:?}"
     );
 
     // A specific EHR_STATUS version reads as the BARE EHR_STATUS (F-01-03), not
     // an ORIGINAL_VERSION wrapper.
+    let sp: Vec<&str> = status_ovid_v1.split("::").collect();
     let status_by_v = svc
-        .ehr_status_get_by_version_id(params(json!({
-            "ehr_id": ehr_id, "version_uid": status_ovid_v1
-        })))
-        .await
-        .expect("status by version");
-    assert_eq!(status_by_v.body["_type"], "EHR_STATUS");
-    assert_eq!(uid(&status_by_v.body), status_ovid_v1);
-
-    // ── COMPOSITION: create, update, version reads ──────────────────────────
-    let comp_v1 = svc
-        .composition_create(
-            params(json!({ "ehr_id": ehr_id })),
-            composition("Encounter"),
+        .get_ehr_status_at_version(
+            ehr_uuid,
+            sp[0].parse().expect("status vo uuid"),
+            sp[2].parse().expect("status version"),
         )
         .await
+        .expect("status by version");
+    assert_eq!(status_by_v["_type"], "EHR_STATUS");
+    assert_eq!(uid(&status_by_v), status_ovid_v1);
+
+    // ── COMPOSITION: create, update, version reads ──────────────────────────
+    let comp_ovid_v1 = svc
+        .create_composition(ehr_uuid, uv(composition("Encounter"), "249", None))
+        .await
         .expect("composition_create");
-    let comp_ovid_v1 = uid(&comp_v1.body).to_owned();
-    assert_eq!(
-        comp_v1.meta.as_ref().map(|m| m.uid.as_str()),
-        Some(comp_ovid_v1.as_str())
-    );
     let comp_vo_id = comp_ovid_v1.split("::").next().unwrap().to_owned();
+    let comp_vo_uuid = comp_vo_id.parse::<uuid::Uuid>().expect("vo uuid");
 
     let got = svc
-        .composition_get(params(
-            json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id }),
-        ))
+        .get_composition_latest(ehr_uuid, comp_vo_uuid)
         .await
         .expect("composition_get");
-    assert_eq!(got.body["name"]["value"], "Encounter");
+    assert_eq!(got["name"]["value"], "Encounter");
 
-    let comp_v2 = svc
-        .composition_update(
-            params(
-                json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id, "If-Match": comp_ovid_v1 }),
-            ),
-            composition("Encounter v2"),
+    let comp_ovid_v2 = svc
+        .update_composition(
+            ehr_uuid,
+            comp_vo_uuid,
+            uv(composition("Encounter v2"), "251", Some(&comp_ovid_v1)),
         )
         .await
         .expect("composition_update");
-    assert!(uid(&comp_v2.body).ends_with("::2"));
+    assert!(comp_ovid_v2.ends_with("::2"));
 
     // current is v2; the pinned OBJECT_VERSION_ID still returns v1
     let current = svc
-        .composition_get(params(
-            json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id }),
-        ))
+        .get_composition_latest(ehr_uuid, comp_vo_uuid)
         .await
         .expect("get current");
-    assert_eq!(current.body["name"]["value"], "Encounter v2");
+    assert_eq!(current["name"]["value"], "Encounter v2");
     let pinned = svc
-        .composition_get(params(
-            json!({ "ehr_id": ehr_id, "uid_based_id": comp_ovid_v1 }),
-        ))
+        .get_composition_at_version(ehr_uuid, comp_ovid_v1.parse().expect("ovid"))
         .await
         .expect("get pinned v1");
-    assert_eq!(pinned.body["name"]["value"], "Encounter");
+    assert_eq!(pinned["name"]["value"], "Encounter");
 
     // VERSIONED_OBJECT + ORIGINAL_VERSION (provenance: the CONTRIBUTION ref)
     let versioned = svc
-        .versioned_composition_get(params(
-            json!({ "ehr_id": ehr_id, "versioned_object_uid": comp_vo_id }),
-        ))
+        .get_versioned_composition(ehr_uuid, comp_vo_uuid)
         .await
         .expect("versioned_composition_get");
-    assert_eq!(versioned.body["_type"], "VERSIONED_OBJECT");
-    // VERSIONED_OBJECT.time_created is mandatory (1..1) — F-06-05/F-01-08.
+    assert_eq!(versioned["_type"], "VERSIONED_OBJECT");
     assert!(
-        versioned.body["time_created"]["value"].is_string(),
-        "VERSIONED_OBJECT.time_created must be present, got {}",
-        versioned.body
+        versioned["time_created"]["value"].is_string(),
+        "VERSIONED_OBJECT.time_created must be present, got {versioned}"
     );
 
-    let comp_ovid_v2 = uid(&comp_v2.body).to_owned();
     let original = svc
-        .versioned_composition_version_get_by_id(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": comp_vo_id, "version_uid": comp_ovid_v1
-        })))
+        .composition_original_version(ehr_uuid, comp_ovid_v1.parse().expect("ovid"))
         .await
-        .expect("original version")
-        .body;
+        .expect("original version");
     assert_eq!(original["_type"], "ORIGINAL_VERSION");
-    // F-06-01/F-01-07: mandatory commit_audit (AUDIT_DETAILS).
     assert_eq!(original["commit_audit"]["_type"], "AUDIT_DETAILS");
-    // F-06-02/F-01-06: change_type carries the numeric group code, rubric in value.
     assert_eq!(
         original["commit_audit"]["change_type"]["defining_code"]["code_string"],
         "249"
     );
     assert_eq!(original["commit_audit"]["change_type"]["value"], "creation");
-    // F-06-04/F-02-07: a live version → lifecycle_state 532|complete|.
     assert_eq!(
         original["lifecycle_state"]["defining_code"]["code_string"],
         "532"
     );
-    // F-06-03: version 1 has NO preceding_version_uid.
     assert!(
         original.get("preceding_version_uid").is_none(),
         "v1 must not carry preceding_version_uid"
     );
-    // F-06-03: version 2 DOES, and it names version 1.
     let original_v2 = svc
-        .versioned_composition_version_get_by_id(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": comp_vo_id, "version_uid": comp_ovid_v2
-        })))
+        .composition_original_version(ehr_uuid, comp_ovid_v2.parse().expect("ovid"))
         .await
-        .expect("original version v2")
-        .body;
+        .expect("original version v2");
     assert_eq!(original_v2["preceding_version_uid"]["value"], comp_ovid_v1);
     let contribution_uid = original["contribution"]["id"]["value"]
         .as_str()
@@ -322,12 +313,9 @@ async fn ehr_composition_lifecycle_end_to_end() {
 
     // ── CONTRIBUTION retrieval (audit + version refs) ────────────────────────
     let contribution = svc
-        .contribution_get(params(
-            json!({ "ehr_id": ehr_id, "contribution_uid": contribution_uid }),
-        ))
+        .get_contribution(ehr_uuid, contribution_uid.parse().expect("contrib uuid"))
         .await
-        .expect("contribution_get")
-        .body;
+        .expect("contribution_get");
     assert_eq!(contribution["_type"], "CONTRIBUTION");
     assert_eq!(contribution["audit"]["change_type"]["value"], "creation");
     assert!(!contribution["versions"].as_array().unwrap().is_empty());
@@ -335,75 +323,61 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // ── logical delete (F-02-01/05, F-06-04) ─────────────────────────────────
     // A stale preceding_version_uid (v1, but latest is v2) → 409 Conflict.
     let stale_delete = svc
-        .composition_delete(params(
-            json!({ "ehr_id": ehr_id, "uid_based_id": comp_ovid_v1 }),
-        ))
+        .delete_composition(ehr_uuid, comp_ovid_v1.parse().expect("ovid"))
         .await;
     assert!(
-        matches!(stale_delete, Err(ApiError::Conflict(_))),
+        matches!(
+            stale_delete,
+            Err(SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            })
+        ),
         "stale preceding_version_uid must 409, got {stale_delete:?}"
     );
-    // A bare HIER_OBJECT_ID (no version) → 400.
-    assert!(
-        matches!(
-            svc.composition_delete(params(
-                json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id })
-            ))
-            .await,
-            Err(ApiError::BadRequest(_))
-        ),
-        "delete requires an OBJECT_VERSION_ID"
-    );
-    // The correct latest version_uid deletes; the envelope carries the deleted
-    // version_uid as ETag/Location meta (204_COMPOSITION_deleted).
+    // PORT NOTE (ADR-011): the old "bare HIER_OBJECT_ID → 400" sub-check is
+    // dropped — `delete_composition` now takes a typed `ObjectVersionId`, so a
+    // bare id cannot be constructed as an argument; that decode + 400 moved to
+    // the protocol adapter (`ehrbase-rest`), where it is exercised.
+
+    // The correct latest version_uid deletes; the returned uid names the new
+    // (deleted) version (204_COMPOSITION_deleted ETag/Location).
     let deleted = svc
-        .composition_delete(params(
-            json!({ "ehr_id": ehr_id, "uid_based_id": comp_ovid_v2 }),
-        ))
+        .delete_composition(ehr_uuid, comp_ovid_v2.parse().expect("ovid"))
         .await
         .expect("composition_delete");
-    assert!(deleted.is_empty(), "delete returns no body");
     assert!(
-        deleted
-            .meta
-            .expect("delete carries meta")
-            .uid
-            .ends_with("::3"),
-        "delete meta names the new (deleted) version"
+        deleted.ends_with("::3"),
+        "delete names the new (deleted) version, got {deleted}"
     );
-    // A deleted read is NOT an error/500 — it yields an empty (→ 204) body (F-02-01).
+    // A deleted read is NOT an error/500 — it yields Null (→ 204) (F-02-01).
     let after_delete = svc
-        .composition_get(params(
-            json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id }),
-        ))
+        .get_composition_latest(ehr_uuid, comp_vo_uuid)
         .await
         .expect("deleted composition read must not error");
     assert!(
-        after_delete.is_empty(),
-        "deleted composition reads as an empty (204) body, got {}",
-        after_delete.body
+        after_delete.is_null(),
+        "deleted composition reads as an empty (204) body, got {after_delete}"
     );
     // Re-deleting an already-deleted composition → 400 (400_already_deleted).
     assert!(
         matches!(
-            svc.composition_delete(params(
-                json!({ "ehr_id": ehr_id, "uid_based_id": comp_ovid_v2 })
-            ))
-            .await,
-            Err(ApiError::BadRequest(_))
+            svc.delete_composition(ehr_uuid, comp_ovid_v2.parse().expect("ovid"))
+                .await,
+            Err(SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            })
         ),
         "re-delete must be 400 already-deleted"
     );
-    // The deleted VERSION renders lifecycle_state 523|deleted| with no data (F-02-07).
+    // The deleted VERSION renders lifecycle_state 523|deleted| with no data.
     let parts: Vec<&str> = comp_ovid_v2.split("::").collect();
     let deleted_ovid = format!("{}::{}::3", parts[0], parts[1]);
     let deleted_version = svc
-        .versioned_composition_version_get_by_id(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": comp_vo_id, "version_uid": deleted_ovid
-        })))
+        .composition_original_version(ehr_uuid, deleted_ovid.parse().expect("ovid"))
         .await
-        .expect("deleted version wrapper")
-        .body;
+        .expect("deleted version wrapper");
     assert_eq!(
         deleted_version["lifecycle_state"]["defining_code"]["code_string"],
         "523"
@@ -420,33 +394,27 @@ async fn ehr_composition_lifecycle_end_to_end() {
 
     // ── DIRECTORY (FOLDER) create/get/update/delete ──────────────────────────
     let folder = json!({ "_type": "FOLDER", "name": { "_type": "DV_TEXT", "value": "root" } });
-    let dir = svc
-        .directory_create(params(json!({ "ehr_id": ehr_id })), folder.clone())
+    let dir_ovid = svc
+        .create_directory(ehr_uuid, uv(folder.clone(), "249", None))
         .await
         .expect("directory_create");
-    let dir_ovid = uid(&dir.body).to_owned();
     let dir_got = svc
-        .directory_get_at_time(params(json!({ "ehr_id": ehr_id })))
+        .get_directory_at_time(ehr_uuid, None, None)
         .await
         .expect("directory_get");
-    assert_eq!(dir_got.body["name"]["value"], "root");
+    assert_eq!(dir_got["name"]["value"], "root");
 
     let mut folder_v2 = folder;
     folder_v2["name"]["value"] = json!("root-renamed");
-    let dir_v2 = svc
-        .directory_update(
-            params(json!({ "ehr_id": ehr_id, "If-Match": dir_ovid })),
-            folder_v2,
-        )
+    let dir_ovid_v2 = svc
+        .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_ovid)))
         .await
         .expect("directory_update");
-    assert!(uid(&dir_v2.body).ends_with("::2"));
+    assert!(dir_ovid_v2.ends_with("::2"));
 
-    svc.directory_delete(params(
-        json!({ "ehr_id": ehr_id, "If-Match": uid(&dir_v2.body) }),
-    ))
-    .await
-    .expect("directory_delete");
+    svc.delete_directory(ehr_uuid, Some(dir_ovid_v2.parse().expect("ovid")))
+        .await
+        .expect("directory_delete");
 }
 
 #[tokio::test]
@@ -454,13 +422,11 @@ async fn creating_an_ehr_with_an_existing_id_conflicts() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("conflict").await);
 
-    let id = uuid::Uuid::now_v7().to_string();
-    svc.ehr_create_with_id(params(json!({ "ehr_id": id })), None)
+    let id = uuid::Uuid::now_v7();
+    svc.create_ehr_with_id(id, None)
         .await
         .expect("first create");
-    let again = svc
-        .ehr_create_with_id(params(json!({ "ehr_id": id })), None)
-        .await;
+    let again = svc.create_ehr_with_id(id, None).await;
     assert!(again.is_err(), "duplicate EHR id must conflict");
 }
 
@@ -468,12 +434,8 @@ async fn creating_an_ehr_with_an_existing_id_conflicts() {
 async fn unknown_ehr_is_not_found() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("missing").await);
-    let missing = uuid::Uuid::now_v7().to_string();
-    assert!(
-        svc.ehr_get_by_id(params(json!({ "ehr_id": missing })))
-            .await
-            .is_err()
-    );
+    let missing = uuid::Uuid::now_v7();
+    assert!(svc.ehr_object(missing).await.is_err());
 }
 
 /// A `DV_CODED_TEXT` audit change_type (openEHR audit change-type group).
@@ -493,8 +455,8 @@ async fn contribution_commits_a_composition_atomically() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("contribution").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     let body = json!({
         "audit": {
@@ -507,7 +469,7 @@ async fn contribution_commits_a_composition_atomically() {
         }]
     });
     let contribution = svc
-        .contribution_create(params(json!({ "ehr_id": ehr_id })), body)
+        .create_ehr_contribution(ehr_uuid, body)
         .await
         .expect("contribution_create");
     assert_eq!(contribution.body["_type"], "CONTRIBUTION");
@@ -523,10 +485,10 @@ async fn contribution_commits_a_composition_atomically() {
     // The version the contribution created is retrievable by its OBJECT_VERSION_ID.
     let ovid = versions[0]["id"]["value"].as_str().unwrap().to_owned();
     let comp = svc
-        .composition_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": ovid })))
+        .get_composition_at_version(ehr_uuid, ovid.parse().expect("ovid"))
         .await
         .expect("get created composition");
-    assert_eq!(comp.body["name"]["value"], "Via contribution");
+    assert_eq!(comp["name"]["value"], "Via contribution");
 }
 
 #[tokio::test]
@@ -539,12 +501,12 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("contribamend").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     let created = svc
-        .contribution_create(
-            params(json!({ "ehr_id": ehr_id })),
+        .create_ehr_contribution(
+            ehr_uuid,
             json!({
                 "versions": [{
                     "data": composition("v1"),
@@ -561,8 +523,8 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
 
     // Amendment (a correction) of the committed composition.
     let amended = svc
-        .contribution_create(
-            params(json!({ "ehr_id": ehr_id })),
+        .create_ehr_contribution(
+            ehr_uuid,
             json!({
                 "versions": [{
                     "data": composition("v2 corrected"),
@@ -588,28 +550,20 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
 
     // The stored ORIGINAL_VERSION echoes the client's change type verbatim
     // (code 250 + rubric "amendment"), not a rewritten "modification".
-    let (vo_id, _) = ovid_v2.split_once("::").unwrap();
     let version = svc
-        .versioned_composition_version_get_by_id(params(json!({
-            "ehr_id": ehr_id,
-            "versioned_object_uid": vo_id,
-            "version_uid": ovid_v2
-        })))
+        .composition_original_version(ehr_uuid, ovid_v2.parse().expect("ovid"))
         .await
         .expect("amended version");
     assert_eq!(
-        version.body["commit_audit"]["change_type"]["defining_code"]["code_string"],
+        version["commit_audit"]["change_type"]["defining_code"]["code_string"],
         "250"
     );
-    assert_eq!(
-        version.body["commit_audit"]["change_type"]["value"],
-        "amendment"
-    );
+    assert_eq!(version["commit_audit"]["change_type"]["value"], "amendment");
 
     // Invalid combo: 249|creation| on an existing object (preceding uid set).
     let bad_creation = svc
-        .contribution_create(
-            params(json!({ "ehr_id": ehr_id })),
+        .create_ehr_contribution(
+            ehr_uuid,
             json!({
                 "versions": [{
                     "data": composition("v3"),
@@ -620,15 +574,21 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
         )
         .await;
     assert!(
-        matches!(bad_creation, Err(ApiError::Unprocessable(_))),
+        matches!(
+            bad_creation,
+            Err(SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            })
+        ),
         "creation on an existing object must 422, got {bad_creation:?}"
     );
 
     // Invalid code: not a member of the audit_change_type group
     // (AUDIT_DETAILS.Change_type_valid).
     let bad_code = svc
-        .contribution_create(
-            params(json!({ "ehr_id": ehr_id })),
+        .create_ehr_contribution(
+            ehr_uuid,
             json!({
                 "versions": [{
                     "data": composition("v3"),
@@ -639,7 +599,13 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
         )
         .await;
     assert!(
-        matches!(bad_code, Err(ApiError::Unprocessable(_))),
+        matches!(
+            bad_code,
+            Err(SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            })
+        ),
         "an out-of-group change_type must 422, got {bad_code:?}"
     );
 }
@@ -652,21 +618,24 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("templateless").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     let bad = svc
-        .composition_create(
-            params(json!({ "ehr_id": ehr_id })),
-            composition_with_bad_category(),
-        )
+        .create_composition(ehr_uuid, uv(composition_with_bad_category(), "249", None))
         .await;
     assert!(
-        matches!(bad, Err(ApiError::ValidationFailed(_))),
+        matches!(
+            bad,
+            Err(SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            })
+        ),
         "templateless composition with bad category must 422, got {bad:?}"
     );
 
-    svc.composition_create(params(json!({ "ehr_id": ehr_id })), composition("valid"))
+    svc.create_composition(ehr_uuid, uv(composition("valid"), "249", None))
         .await
         .expect("a valid templateless composition still commits");
 }
@@ -678,8 +647,8 @@ async fn contribution_rejects_an_invalid_composition() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("contribinvalid").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     let body = json!({
         "audit": {
@@ -691,11 +660,15 @@ async fn contribution_rejects_an_invalid_composition() {
             "commit_audit": { "change_type": change_type("249", "creation") }
         }]
     });
-    let res = svc
-        .contribution_create(params(json!({ "ehr_id": ehr_id })), body)
-        .await;
+    let res = svc.create_ehr_contribution(ehr_uuid, body).await;
     assert!(
-        matches!(res, Err(ApiError::ValidationFailed(_))),
+        matches!(
+            res,
+            Err(SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            })
+        ),
         "invalid composition in a contribution must 422, got {res:?}"
     );
 }
@@ -705,26 +678,23 @@ async fn revision_history_lists_every_version() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("revhistory").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
-    let status = svc
-        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+    let mut status = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
         .await
         .expect("status");
-    let ovid_v1 = uid(&status.body).to_owned();
-    svc.ehr_status_update(
-        params(json!({ "ehr_id": ehr_id, "If-Match": ovid_v1 })),
-        status.body,
-    )
-    .await
-    .expect("status update");
+    let ovid_v1 = uid(&status).to_owned();
+    status.as_object_mut().unwrap().remove("uid");
+    svc.replace_ehr_status(ehr_uuid, uv(status, "251", Some(&ovid_v1)))
+        .await
+        .expect("status update");
 
     let history = svc
-        .versioned_ehr_status_revision_history(params(json!({ "ehr_id": ehr_id })))
+        .ehr_status_revision_history(ehr_uuid)
         .await
-        .expect("revision history")
-        .body;
+        .expect("revision history");
     assert_eq!(history["_type"], "REVISION_HISTORY");
     let items = history["items"].as_array().expect("items");
     assert_eq!(items.len(), 2, "two versions after one update");
@@ -753,26 +723,18 @@ async fn ehr_get_by_subject_finds_the_ehr() {
         "is_queryable": true,
         "is_modifiable": true
     });
-    let created = svc
-        .ehr_create(params(json!({})), Some(status))
-        .await
-        .expect("ehr");
-    let ehr_id = created.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(Some(status)).await.expect("ehr").to_string();
 
     let found = svc
-        .ehr_get_by_subject(params(json!({
-            "subject_id": "patient-123", "subject_namespace": "patients"
-        })))
+        .ehr_object_for_subject("patient-123", "patients")
         .await
         .expect("get by subject");
-    assert_eq!(found.body["ehr_id"]["value"], ehr_id);
+    assert_eq!(found["ehr_id"]["value"], ehr_id);
 
     assert!(
-        svc.ehr_get_by_subject(params(json!({
-            "subject_id": "nobody", "subject_namespace": "patients"
-        })))
-        .await
-        .is_err()
+        svc.ehr_object_for_subject("nobody", "patients")
+            .await
+            .is_err()
     );
 }
 
@@ -782,17 +744,16 @@ async fn stored_query_crud() {
     let svc = EhrbaseService::new(pg.migrated_pool("storedq").await);
 
     let aql = "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned();
-    svc.definition_query_version_store_yaml(
-        params(json!({ "qualified_query_name": "org.example::all_comps", "version": "1.0.0" })),
+    svc.query_store(
+        "org.example::all_comps".to_owned(),
+        Some("1.0.0".to_owned()),
         aql.clone(),
     )
     .await
     .expect("store query");
 
     let got = svc
-        .definition_query_version_get(params(json!({
-            "qualified_query_name": "org.example::all_comps", "version": "1.0.0"
-        })))
+        .query_version_get("org.example::all_comps".to_owned(), "1.0.0".to_owned())
         .await
         .expect("get query");
     assert_eq!(got["q"], aql);
@@ -800,9 +761,7 @@ async fn stored_query_crud() {
     assert_eq!(got["type"], "AQL");
 
     let list = svc
-        .definition_query_list(params(
-            json!({ "qualified_query_name": "org.example::all_comps" }),
-        ))
+        .query_list("org.example::all_comps".to_owned())
         .await
         .expect("list");
     assert_eq!(list.len(), 1);
@@ -821,8 +780,9 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
         ("1.0.1", "SELECT b"),
         ("1.1.0", "SELECT c"),
     ] {
-        svc.definition_query_version_store_yaml(
-            params(json!({ "qualified_query_name": "org.example::obs", "version": version })),
+        svc.query_store(
+            "org.example::obs".to_owned(),
+            Some(version.to_owned()),
             q.to_owned(),
         )
         .await
@@ -830,18 +790,14 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
     }
 
     let by_major = svc
-        .definition_query_version_get(params(json!({
-            "qualified_query_name": "org.example::obs", "version": "1"
-        })))
+        .query_version_get("org.example::obs".to_owned(), "1".to_owned())
         .await
         .expect("major prefix resolves");
     assert_eq!(by_major["version"], "1.1.0");
     assert_eq!(by_major["q"], "SELECT c");
 
     let by_minor = svc
-        .definition_query_version_get(params(json!({
-            "qualified_query_name": "org.example::obs", "version": "1.0"
-        })))
+        .query_version_get("org.example::obs".to_owned(), "1.0".to_owned())
         .await
         .expect("major.minor prefix resolves");
     assert_eq!(by_minor["version"], "1.0.1");
@@ -849,18 +805,14 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
 
     // An exact triple still resolves exactly; an unmatched prefix is 404.
     let exact = svc
-        .definition_query_version_get(params(json!({
-            "qualified_query_name": "org.example::obs", "version": "1.0.0"
-        })))
+        .query_version_get("org.example::obs".to_owned(), "1.0.0".to_owned())
         .await
         .expect("exact version");
     assert_eq!(exact["version"], "1.0.0");
     assert!(
-        svc.definition_query_version_get(params(json!({
-            "qualified_query_name": "org.example::obs", "version": "2"
-        })))
-        .await
-        .is_err(),
+        svc.query_version_get("org.example::obs".to_owned(), "2".to_owned())
+            .await
+            .is_err(),
         "an unmatched prefix must not resolve"
     );
 }
@@ -879,8 +831,9 @@ async fn stored_query_list_matches_name_prefix() {
         ("org.example::observations", "0.1.0"),
         ("com.acme::other", "0.1.0"),
     ] {
-        svc.definition_query_version_store_yaml(
-            params(json!({ "qualified_query_name": name, "version": version })),
+        svc.query_store(
+            name.to_owned(),
+            Some(version.to_owned()),
             "SELECT e FROM EHR e".to_owned(),
         )
         .await
@@ -888,15 +841,13 @@ async fn stored_query_list_matches_name_prefix() {
     }
 
     let by_namespace = svc
-        .definition_query_list(params(json!({ "qualified_query_name": "org.example" })))
+        .query_list("org.example".to_owned())
         .await
         .expect("prefix list");
     assert_eq!(by_namespace.len(), 3, "all versions of all org.example::*");
 
     let by_full_name = svc
-        .definition_query_list(params(
-            json!({ "qualified_query_name": "org.example::all_comps" }),
-        ))
+        .query_list("org.example::all_comps".to_owned())
         .await
         .expect("full-name list");
     assert_eq!(by_full_name.len(), 2, "both versions of the named query");
@@ -907,10 +858,7 @@ async fn stored_query_list_matches_name_prefix() {
         "each row carries its own qualified name"
     );
 
-    let all = svc
-        .definition_query_list(params(json!({ "qualified_query_name": "" })))
-        .await
-        .expect("wildcard list");
+    let all = svc.query_list(String::new()).await.expect("wildcard list");
     assert_eq!(all.len(), 4, "empty pattern is a wildcard");
 }
 
@@ -919,45 +867,45 @@ async fn item_tag_crud() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("itemtags").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
     let comp = svc
-        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("Tagged"))
+        .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
         .expect("composition");
-    let vo_id = uid(&comp.body).split("::").next().unwrap().to_owned();
+    let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let upserted = svc
-        .composition_tags_update(
-            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })),
+        .target_tags_replace(
+            ehr_uuid,
+            vo_id.clone(),
+            "COMPOSITION",
             vec![json!({ "key": "priority", "value": "high" })],
         )
         .await
         .expect("tag update");
-    assert!(has_key(&tags(&upserted), "priority"));
+    assert!(has_key(&upserted, "priority"));
 
     let on_comp = svc
-        .composition_tags_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .target_tags_get(ehr_uuid, vo_id.clone())
         .await
         .expect("comp tags");
-    assert_eq!(tags(&on_comp).len(), 1);
+    assert_eq!(on_comp.len(), 1);
 
     let all = svc
-        .ehr_tags_get(params(json!({ "ehr_id": ehr_id })))
+        .ehr_tags_get(ehr_uuid, None, None, None)
         .await
         .expect("ehr tags");
-    assert_eq!(tags(&all).len(), 1);
+    assert_eq!(all.len(), 1);
 
-    svc.composition_tags_delete(params(json!({
-        "ehr_id": ehr_id, "uid_based_id": vo_id, "key": "priority"
-    })))
-    .await
-    .expect("delete tag");
+    svc.target_tag_delete(ehr_uuid, vo_id.clone(), "priority".to_owned())
+        .await
+        .expect("delete tag");
     let after = svc
-        .composition_tags_get(params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })))
+        .target_tags_get(ehr_uuid, vo_id.clone())
         .await
         .expect("comp tags after");
-    assert!(tags(&after).is_empty());
+    assert!(after.is_empty());
 }
 
 #[tokio::test]
@@ -968,22 +916,24 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("tagshape").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
     let comp = svc
-        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("Tagged"))
+        .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
         .expect("composition");
-    let vo_id = uid(&comp.body).split("::").next().unwrap().to_owned();
+    let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let put = svc
-        .composition_tags_update(
-            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })),
+        .target_tags_replace(
+            ehr_uuid,
+            vo_id.clone(),
+            "COMPOSITION",
             vec![json!({ "key": "priority", "value": "high", "target_path": "/context" })],
         )
         .await
         .expect("tag put");
-    let tag = &tags(&put)[0];
+    let tag = &put[0];
     assert_eq!(tag["_type"], "ITEM_TAG");
     assert_eq!(tag["key"], "priority");
     assert_eq!(tag["value"], "high");
@@ -1016,17 +966,19 @@ async fn item_tag_put_replaces_the_whole_collection() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("tagreplace").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
     let comp = svc
-        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("Tagged"))
+        .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
         .expect("composition");
-    let vo_id = uid(&comp.body).split("::").next().unwrap().to_owned();
+    let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let two = svc
-        .composition_tags_update(
-            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })),
+        .target_tags_replace(
+            ehr_uuid,
+            vo_id.clone(),
+            "COMPOSITION",
             vec![
                 json!({ "key": "priority", "value": "high" }),
                 json!({ "key": "status", "value": "draft" }),
@@ -1034,29 +986,28 @@ async fn item_tag_put_replaces_the_whole_collection() {
         )
         .await
         .expect("put two tags");
-    assert_eq!(tags(&two).len(), 2);
+    assert_eq!(two.len(), 2);
 
     // A PUT omitting `priority` removes it (full-collection replace).
     let one = svc
-        .composition_tags_update(
-            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })),
+        .target_tags_replace(
+            ehr_uuid,
+            vo_id.clone(),
+            "COMPOSITION",
             vec![json!({ "key": "status", "value": "final" })],
         )
         .await
         .expect("replace with one tag");
-    assert_eq!(tags(&one).len(), 1, "omitted tags are removed");
-    assert!(has_key(&tags(&one), "status"));
-    assert!(!has_key(&tags(&one), "priority"));
+    assert_eq!(one.len(), 1, "omitted tags are removed");
+    assert!(has_key(&one, "status"));
+    assert!(!has_key(&one, "priority"));
 
     // An empty list clears every tag on the target.
     let cleared = svc
-        .composition_tags_update(
-            params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })),
-            vec![],
-        )
+        .target_tags_replace(ehr_uuid, vo_id.clone(), "COMPOSITION", vec![])
         .await
         .expect("clear with empty list");
-    assert!(tags(&cleared).is_empty(), "empty list removes all tags");
+    assert!(cleared.is_empty(), "empty list removes all tags");
 
     // RM ITEM_TAG invariants: Inv_key_valid (non-empty, justified) and
     // Inv_value_valid (a set value may not be empty).
@@ -1066,13 +1017,16 @@ async fn item_tag_put_replaces_the_whole_collection() {
         json!({ "key": "ok", "value": "" }),
     ] {
         let res = svc
-            .composition_tags_update(
-                params(json!({ "ehr_id": ehr_id, "uid_based_id": vo_id })),
-                vec![bad.clone()],
-            )
+            .target_tags_replace(ehr_uuid, vo_id.clone(), "COMPOSITION", vec![bad.clone()])
             .await;
         assert!(
-            matches!(res, Err(ApiError::Unprocessable(_))),
+            matches!(
+                res,
+                Err(SmError {
+                    status: CallStatusType::ContentInvalid,
+                    ..
+                })
+            ),
             "tag {bad} must be rejected, got {res:?}"
         );
     }
@@ -1080,14 +1034,15 @@ async fn item_tag_put_replaces_the_whole_collection() {
 
 #[tokio::test]
 async fn ehr_creation_produces_an_ehr_access() {
-    // F-06-07: RM ehr §"EHR Creation" — creating an EHR yields a root EHR
+    // F-06-07: RM ehr § "EHR Creation" — creating an EHR yields a root EHR
     // object, an EHR_STATUS AND an EHR_ACCESS; `EHR.ehr_access` (1..1) is an
     // OBJECT_REF whose type is VERSIONED_EHR_ACCESS (invariant Ehr_access_valid).
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("ehraccess").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let access = &ehr.body["ehr_access"];
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
+    let ehr = svc.ehr_object(ehr_uuid).await.expect("ehr object");
+    let access = &ehr["ehr_access"];
     assert_eq!(access["_type"], "OBJECT_REF");
     assert_eq!(
         access["type"], "VERSIONED_EHR_ACCESS",
@@ -1097,7 +1052,7 @@ async fn ehr_creation_produces_an_ehr_access() {
     uuid::Uuid::parse_str(access_vo).expect("a real version-container uid");
     assert_ne!(
         access_vo,
-        ehr.body["ehr_id"]["value"].as_str().unwrap(),
+        ehr["ehr_id"]["value"].as_str().unwrap(),
         "the EHR_ACCESS container is a distinct versioned object, not a fake self-ref"
     );
 }
@@ -1129,25 +1084,29 @@ async fn duplicate_subject_ehr_creation_conflicts() {
         })
     };
 
-    svc.ehr_create(params(json!({})), Some(status("patient-1")))
+    svc.create_ehr(Some(status("patient-1")))
         .await
         .expect("first EHR for the subject");
-    let dup = svc
-        .ehr_create(params(json!({})), Some(status("patient-1")))
-        .await;
+    let dup = svc.create_ehr(Some(status("patient-1"))).await;
     assert!(
-        matches!(dup, Err(ApiError::Conflict(_))),
+        matches!(
+            dup,
+            Err(SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            })
+        ),
         "a second EHR for the same subject must 409, got {dup:?}"
     );
 
     // A different subject — and the subject-less default — still create fine.
-    svc.ehr_create(params(json!({})), Some(status("patient-2")))
+    svc.create_ehr(Some(status("patient-2")))
         .await
         .expect("different subject creates");
-    svc.ehr_create(params(json!({})), None)
+    svc.create_ehr(None)
         .await
         .expect("subject-less EHR creates");
-    svc.ehr_create(params(json!({})), None)
+    svc.create_ehr(None)
         .await
         .expect("multiple subject-less EHRs never conflict");
 }
@@ -1161,64 +1120,77 @@ async fn version_get_at_time_returns_the_original_version() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("attime").await);
 
-    let ehr = svc.ehr_create(params(json!({})), None).await.expect("ehr");
-    let ehr_id = ehr.body["ehr_id"]["value"].as_str().unwrap().to_owned();
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     // EHR_STATUS: no version_at_time → the latest VERSION.
+    // PORT NOTE (ADR-011): the reads return the ORIGINAL_VERSION `Value`; the
+    // ETag/Location uid the old `.meta` carried is the ORIGINAL_VERSION's own
+    // `uid.value`.
     let status_version = svc
-        .versioned_ehr_status_version_get_at_time(params(json!({ "ehr_id": ehr_id })))
+        .ehr_status_version_at_time(ehr_uuid, None)
         .await
         .expect("status version at time (latest)");
-    assert_eq!(status_version.body["_type"], "ORIGINAL_VERSION");
-    assert_eq!(status_version.body["data"]["_type"], "EHR_STATUS");
-    let meta = status_version.meta.expect("version meta for ETag/Location");
-    assert!(meta.uid.ends_with("::1"), "latest is v1, got {}", meta.uid);
+    assert_eq!(status_version["_type"], "ORIGINAL_VERSION");
+    assert_eq!(status_version["data"]["_type"], "EHR_STATUS");
+    assert!(
+        uid(&status_version).ends_with("::1"),
+        "latest is v1, got {}",
+        uid(&status_version)
+    );
 
     // A time before the EHR existed → no version at that time (404).
     let too_early = svc
-        .versioned_ehr_status_version_get_at_time(params(json!({
-            "ehr_id": ehr_id, "version_at_time": "2000-01-01T00:00:00Z"
-        })))
+        .ehr_status_version_at_time(ehr_uuid, Some("2000-01-01T00:00:00Z".to_owned()))
         .await;
     assert!(
-        matches!(too_early, Err(ApiError::NotFound(_))),
+        matches!(
+            too_early,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
         "no version extant at the time must 404, got {too_early:?}"
     );
     // A malformed version_at_time → 400.
     let bad_time = svc
-        .versioned_ehr_status_version_get_at_time(params(json!({
-            "ehr_id": ehr_id, "version_at_time": "not-a-time"
-        })))
+        .ehr_status_version_at_time(ehr_uuid, Some("not-a-time".to_owned()))
         .await;
     assert!(
-        matches!(bad_time, Err(ApiError::BadRequest(_))),
+        matches!(
+            bad_time,
+            Err(SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            })
+        ),
         "an invalid version_at_time must 400, got {bad_time:?}"
     );
 
     // COMPOSITION: after an update, the latest VERSION is v2.
-    let comp = svc
-        .composition_create(params(json!({ "ehr_id": ehr_id })), composition("v1"))
+    let comp_ovid_v1 = svc
+        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
         .expect("composition");
-    let comp_ovid_v1 = uid(&comp.body).to_owned();
     let comp_vo_id = comp_ovid_v1.split("::").next().unwrap().to_owned();
-    svc.composition_update(
-        params(json!({ "ehr_id": ehr_id, "uid_based_id": comp_vo_id, "If-Match": comp_ovid_v1 })),
-        composition("v2"),
+    let comp_vo_uuid = comp_vo_id.parse::<uuid::Uuid>().expect("vo uuid");
+    svc.update_composition(
+        ehr_uuid,
+        comp_vo_uuid,
+        uv(composition("v2"), "251", Some(&comp_ovid_v1)),
     )
     .await
     .expect("update");
 
     let comp_version = svc
-        .versioned_composition_version_get_at_time(params(json!({
-            "ehr_id": ehr_id, "versioned_object_uid": comp_vo_id
-        })))
+        .composition_version_at_time(ehr_uuid, comp_vo_uuid, None)
         .await
         .expect("composition version at time (latest)");
-    assert_eq!(comp_version.body["_type"], "ORIGINAL_VERSION");
-    assert_eq!(comp_version.body["data"]["name"]["value"], "v2");
+    assert_eq!(comp_version["_type"], "ORIGINAL_VERSION");
+    assert_eq!(comp_version["data"]["name"]["value"], "v2");
     assert!(
-        comp_version.meta.expect("meta").uid.ends_with("::2"),
+        uid(&comp_version).ends_with("::2"),
         "latest composition version is v2"
     );
 }

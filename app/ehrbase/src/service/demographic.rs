@@ -78,7 +78,7 @@ impl EhrbaseService {
     /// Validate a party body for a create/update: its root `_type` must equal
     /// the routed [`PartyKind`]'s RM type (mismatch → `422` naming both), then
     /// the structural + invariant checks of [`typed_check`].
-    fn validate_party_body(&self, kind: PartyKind, body: &Value) -> Result<(), ServiceError> {
+    fn validate_party_body(kind: PartyKind, body: &Value) -> Result<(), ServiceError> {
         let declared = body.get("_type").and_then(Value::as_str);
         if declared != Some(kind.rm_type()) {
             return Err(ServiceError::Unprocessable(format!(
@@ -96,7 +96,6 @@ impl EhrbaseService {
     /// structural + invariant checks remain). Called from
     /// [`validate_for_commit`](Self::validate_for_commit).
     pub(super) fn validate_party_kind_for_commit(
-        &self,
         kind: Kind,
         data: &Value,
     ) -> Result<(), ServiceError> {
@@ -112,7 +111,7 @@ impl EhrbaseService {
         kind: PartyKind,
         body: Value,
     ) -> Result<ServiceResponse, ServiceError> {
-        self.validate_party_body(kind, &body)?;
+        Self::validate_party_body(kind, &body)?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::CREATION, "PARTY creation");
@@ -163,7 +162,7 @@ impl EhrbaseService {
         expected: Option<i32>,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_party(kind, vo_id).await?;
-        self.validate_party_body(kind, &body)?;
+        Self::validate_party_body(kind, &body)?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "PARTY update");
