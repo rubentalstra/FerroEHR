@@ -17,8 +17,8 @@
 //! the COMPOSITION service does) and `SM/docs/UML/classes/i_party.adoc` /
 //! `i_demographic_service.adoc` (the abstract demographic operations).
 
-use ehrbase_sm::types::PartyKind;
 use ehrbase_rest::{ResourceMeta, ServiceResponse};
+use ehrbase_sm::types::PartyKind;
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;

@@ -8,26 +8,26 @@ use std::collections::BTreeMap;
 
 use async_trait::async_trait;
 
+use ehrbase_sm::SmError;
 use ehrbase_sm::{TerminologyDescription, TerminologyExtract, TerminologyService};
-use openehr_its::rest::runtime::ApiError;
 
 use crate::service::EhrbaseService;
 use crate::service::terminology as term;
 
 #[async_trait]
 impl TerminologyService for EhrbaseService {
-    async fn get_terminology_ids(&self) -> Result<Vec<String>, ApiError> {
+    async fn get_terminology_ids(&self) -> Result<Vec<String>, SmError> {
         Ok(term::terminology_ids())
     }
 
-    async fn has_terminology(&self, terminology_id: &str) -> Result<bool, ApiError> {
+    async fn has_terminology(&self, terminology_id: &str) -> Result<bool, SmError> {
         Ok(term::has_terminology(terminology_id))
     }
 
     async fn get_terminology_description(
         &self,
         terminology_id: &str,
-    ) -> Result<TerminologyDescription, ApiError> {
+    ) -> Result<TerminologyDescription, SmError> {
         term::terminology_description(terminology_id)
     }
 
@@ -36,7 +36,7 @@ impl TerminologyService for EhrbaseService {
         terminology_id: &str,
         code: &str,
         _at_date: Option<String>,
-    ) -> Result<bool, ApiError> {
+    ) -> Result<bool, SmError> {
         // `at_date` accepted; single pinned bundle version (module PORT NOTE).
         term::has_term(terminology_id, code)
     }
@@ -47,7 +47,7 @@ impl TerminologyService for EhrbaseService {
         code: &str,
         _attributes: Option<BTreeMap<String, String>>,
         _at_date: Option<String>,
-    ) -> Result<TerminologyExtract, ApiError> {
+    ) -> Result<TerminologyExtract, SmError> {
         // No per-term meta-model attributes are exposed, so `attributes` (an
         // allow-list filter) is accepted and has no effect.
         term::get_term(terminology_id, code)
@@ -58,7 +58,7 @@ impl TerminologyService for EhrbaseService {
         terminology_id: &str,
         ref_code: &str,
         candidate_child_code: &str,
-    ) -> Result<bool, ApiError> {
+    ) -> Result<bool, SmError> {
         term::subsumes(terminology_id, ref_code, candidate_child_code)
     }
 
@@ -68,7 +68,7 @@ impl TerminologyService for EhrbaseService {
         value_set_id: &str,
         candidate_code: &str,
         _at_date: Option<String>,
-    ) -> Result<bool, ApiError> {
+    ) -> Result<bool, SmError> {
         term::value_set_validate(terminology_id, value_set_id, candidate_code)
     }
 
@@ -76,7 +76,7 @@ impl TerminologyService for EhrbaseService {
         &self,
         terminology_id: &str,
         value_set_code: &str,
-    ) -> Result<bool, ApiError> {
+    ) -> Result<bool, SmError> {
         Ok(term::has_value_set(terminology_id, value_set_code))
     }
 
@@ -84,7 +84,7 @@ impl TerminologyService for EhrbaseService {
         &self,
         terminology_id: &str,
         value_set_code: &str,
-    ) -> Result<TerminologyExtract, ApiError> {
+    ) -> Result<TerminologyExtract, SmError> {
         term::get_value_set(terminology_id, value_set_code)
     }
 }

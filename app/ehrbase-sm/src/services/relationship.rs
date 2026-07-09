@@ -5,7 +5,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use openehr_its::rest::runtime::ApiError;
+use crate::error::{CallStatusType, SmError};
 
 use crate::types::{ResourceMeta, ServiceResponse};
 
@@ -29,8 +29,8 @@ pub trait PartyRelationshipService: Send + Sync {
     /// `create_party_relationship` (pre `valid_content`): create the first
     /// version, server-side `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + `CONTRIBUTION`.
     /// `201` + `ETag`(version uid)/`Location`; body per `Prefer`.
-    async fn party_relationship_create(&self, _body: Value) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    async fn party_relationship_create(&self, _body: Value) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `GET /demographic/party_relationship/{uid_based_id}` —
@@ -42,8 +42,8 @@ pub trait PartyRelationshipService: Send + Sync {
         &self,
         _uid_based_id: String,
         _version_at_time: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `PUT /demographic/party_relationship/{uid_based_id}` —
@@ -58,8 +58,8 @@ pub trait PartyRelationshipService: Send + Sync {
         _uid_based_id: String,
         _if_match: String,
         _body: Value,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `DELETE /demographic/party_relationship/{uid_based_id}` —
@@ -70,8 +70,8 @@ pub trait PartyRelationshipService: Send + Sync {
     async fn party_relationship_delete(
         &self,
         _uid_based_id: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}`
@@ -79,16 +79,16 @@ pub trait PartyRelationshipService: Send + Sync {
     async fn versioned_party_relationship_get(
         &self,
         _versioned_object_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}/revision_history`.
     async fn party_relationship_revision_history(
         &self,
         _versioned_object_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}/version`
@@ -98,8 +98,8 @@ pub trait PartyRelationshipService: Send + Sync {
         &self,
         _versioned_object_uid: String,
         _version_at_time: Option<String>,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}`
@@ -110,8 +110,8 @@ pub trait PartyRelationshipService: Send + Sync {
         &self,
         _versioned_object_uid: String,
         _version_uid: String,
-    ) -> Result<ServiceResponse, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<ServiceResponse, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// The current relationship version metadata, for the latest `version_uid`
@@ -120,7 +120,7 @@ pub trait PartyRelationshipService: Send + Sync {
     async fn party_relationship_latest_meta(
         &self,
         _uid_based_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
+    ) -> Result<Option<ResourceMeta>, SmError> {
         Ok(None)
     }
 }

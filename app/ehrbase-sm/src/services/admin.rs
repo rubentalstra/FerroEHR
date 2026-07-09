@@ -3,7 +3,7 @@
 
 use async_trait::async_trait;
 
-use openehr_its::rest::runtime::ApiError;
+use crate::error::{CallStatusType, SmError};
 
 use crate::types::PlatformService;
 
@@ -38,8 +38,8 @@ pub type StatTimeRange = Option<(Option<String>, Option<String>)>;
 pub trait AdminService: Send + Sync {
     /// `DELETE /admin/ehr/{ehr_id}` — physically delete one EHR and every trace
     /// of it. `204`; unknown EHR → 404.
-    async fn admin_ehr_delete(&self, _ehr_id: String) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    async fn admin_ehr_delete(&self, _ehr_id: String) -> Result<(), SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `DELETE /admin/ehr/all{?ehr_id*}` — physically delete a **set** of EHRs.
@@ -50,8 +50,8 @@ pub trait AdminService: Send + Sync {
     /// and only those EHRs are deleted; an absent/empty list deletes **nothing**
     /// and is a 400 (refusing an implicit delete-everything). Returns the number
     /// of EHRs actually deleted.
-    async fn admin_ehr_delete_all(&self, _ehr_ids: Vec<String>) -> Result<u64, ApiError> {
-        Err(ApiError::NotImplemented)
+    async fn admin_ehr_delete_all(&self, _ehr_ids: Vec<String>) -> Result<u64, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `list_contributions` (`i_admin_service.adoc`): the ids of all
@@ -67,8 +67,8 @@ pub trait AdminService: Send + Sync {
         &self,
         _a_service: PlatformService,
         _time_range: StatTimeRange,
-    ) -> Result<Vec<String>, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<Vec<String>, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `contribution_count` (`i_admin_service.adoc`): the count of all
@@ -78,8 +78,8 @@ pub trait AdminService: Send + Sync {
         &self,
         _a_service: PlatformService,
         _time_range: StatTimeRange,
-    ) -> Result<i64, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<i64, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `versioned_composition_count` (`i_admin_service.adoc`): the count of all
@@ -93,8 +93,8 @@ pub trait AdminService: Send + Sync {
         &self,
         _a_service: PlatformService,
         _time_range: StatTimeRange,
-    ) -> Result<i64, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<i64, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `composition_version_count` (`i_admin_service.adoc`): the count of all
@@ -104,8 +104,8 @@ pub trait AdminService: Send + Sync {
         &self,
         _a_service: PlatformService,
         _time_range: StatTimeRange,
-    ) -> Result<i64, ApiError> {
-        Err(ApiError::NotImplemented)
+    ) -> Result<i64, SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `physical_party_delete` (`i_admin_service.adoc`): physically delete a
@@ -115,8 +115,8 @@ pub trait AdminService: Send + Sync {
     /// `PARTY_RELATIONSHIP` VO referencing it, with their versions/nodes/
     /// attestations, orphaned CONTRIBUTIONs/audits, and archive markers) in one
     /// transaction.
-    async fn physical_party_delete(&self, _a_party_id: String) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    async fn physical_party_delete(&self, _a_party_id: String) -> Result<(), SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 }
 
@@ -144,8 +144,8 @@ pub trait AdminArchive: Send + Sync {
     /// storage. All-or-nothing: any unknown id → `404` (`ehr_id_does_not_exist`)
     /// and nothing is archived. Idempotent (re-archiving an already-marked VO is
     /// a no-op). An empty/absent list archives nothing.
-    async fn archive_ehrs(&self, _ehr_ids: Vec<String>) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    async fn archive_ehrs(&self, _ehr_ids: Vec<String>) -> Result<(), SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 
     /// `archive_parties(party_ids [0..1])` — move the selected Parties to
@@ -159,7 +159,7 @@ pub trait AdminArchive: Send + Sync {
     /// effect, not marking the relationship VOs has no observable consequence
     /// this phase; a storage-tier implementation (P20) would extend the marker
     /// set to the related relationships.
-    async fn archive_parties(&self, _party_ids: Vec<String>) -> Result<(), ApiError> {
-        Err(ApiError::NotImplemented)
+    async fn archive_parties(&self, _party_ids: Vec<String>) -> Result<(), SmError> {
+        Err(SmError::new(CallStatusType::NotImplemented, "not implemented"))
     }
 }

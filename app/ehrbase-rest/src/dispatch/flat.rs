@@ -77,7 +77,7 @@ pub(super) async fn composition_from_flat<S: Platform>(
         .backend()
         .web_template(&template_id)
         .await
-        .map_err(RestError)?;
+        .map_err(RestError::from)?;
     openehr_flat::from_flat(&flat, &wt).map_err(|e| flat_err(&e))
 }
 
@@ -97,7 +97,7 @@ pub(super) async fn composition_flat_response<S: Platform>(
         .backend()
         .web_template(&template_id)
         .await
-        .map_err(RestError)?;
+        .map_err(RestError::from)?;
     let flat = openehr_flat::to_flat(comp, &wt).map_err(|e| flat_err(&e))?;
     let json =
         serde_json::to_string(&flat).map_err(|e| internal(format!("FLAT serialization: {e}")))?;
@@ -125,7 +125,7 @@ pub(super) async fn composition_from_structured<S: Platform>(
         .backend()
         .web_template(&template_id)
         .await
-        .map_err(RestError)?;
+        .map_err(RestError::from)?;
     openehr_flat::from_structured(&structured, &wt).map_err(|e| flat_err(&e))
 }
 
@@ -145,7 +145,7 @@ pub(super) async fn composition_structured_response<S: Platform>(
         .backend()
         .web_template(&template_id)
         .await
-        .map_err(RestError)?;
+        .map_err(RestError::from)?;
     let structured = openehr_flat::to_structured(comp, &wt).map_err(|e| flat_err(&e))?;
     let json = serde_json::to_string(&structured)
         .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;

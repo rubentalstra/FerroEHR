@@ -21,7 +21,9 @@ use ehrbase_audit::{AuditConfig, AuditSender, Transport};
 use ehrbase_authz::AuthzConfig;
 use ehrbase_rest::auth::AuthConfig;
 use ehrbase_rest::auth::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
-use ehrbase_rest::{AdminConfig, AuthzHandle, RestConfig, StubBackend};
+use ehrbase_rest::{AdminConfig, AuthzHandle, RestConfig};
+
+mod common;
 use http::{Request, StatusCode};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::{Value, json};
@@ -89,7 +91,7 @@ fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
 fn app(rbac_enabled: bool, audit: Option<AuditSender>) -> Router {
     ehrbase_rest::build_full(
         rest_config(),
-        Arc::new(StubBackend),
+        Arc::new(common::Mock::new()),
         audit,
         authz(rbac_enabled),
         ehrbase_rest::Observability::default(),

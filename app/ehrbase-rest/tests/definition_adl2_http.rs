@@ -8,7 +8,6 @@
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
@@ -16,71 +15,46 @@ use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 
+use ehrbase_rest::RestConfig;
 use ehrbase_rest::auth::config::AuthConfig;
-use ehrbase_rest::{DefinitionAdl2Service, RestConfig};
-use openehr_its::rest::generated::definition::{
-    DefinitionApi, DefinitionTemplateAdl2ListParams, DefinitionTemplateAdl2UploadParams,
-};
-use openehr_its::rest::runtime::ApiError;
+use ehrbase_sm::{CallStatusType, SmError};
+
+mod common;
+use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const HRID: &str = "openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0";
 const SOURCE: &str = "operational_template (adl_version=2.0.6)\n\
     openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0\n";
 
-/// A canned backend for the ADL2 wire: upload echoes the stored HRID, list
-/// returns one metadata object, `get_artefact` serves the source (or 404).
-#[derive(Debug, Default)]
-struct MockBackend;
-
-#[async_trait]
-impl DefinitionApi for MockBackend {
-    async fn definition_template_adl2_upload(
-        &self,
-        _params: DefinitionTemplateAdl2UploadParams,
-        body: Value,
-    ) -> Result<Value, ApiError> {
-        // The dispatcher hands the text/plain source through as a JSON string.
-        assert_eq!(body.as_str(), Some(SOURCE));
-        Ok(Value::String(HRID.to_owned()))
-    }
-
-    async fn definition_template_adl2_list(
-        &self,
-        _params: DefinitionTemplateAdl2ListParams,
-    ) -> Result<Vec<Value>, ApiError> {
-        Ok(vec![
-            json!({ "template_id": HRID, "created_timestamp": "2017-08-14T19:24:56.639Z" }),
-        ])
-    }
-}
-
-#[async_trait]
-impl DefinitionAdl2Service for MockBackend {
-    async fn get_artefact(&self, an_id: String) -> Result<String, ApiError> {
-        if an_id == HRID {
-            Ok(SOURCE.to_owned())
-        } else {
-            Err(ApiError::NotFound(format!("ADL2 artefact {an_id}")))
-        }
+/// The ADL2 wire hooks: upload echoes the stored HRID (the generated
+/// `DefinitionApi` stays on `ApiError`), list returns one metadata object, and
+/// `get_artefact` (SM-native → `SmError`) serves the source or `404`.
+fn hooks() -> Hooks {
+    Hooks {
+        definition_template_adl2_upload: Some(Arc::new(|_params, body: Value| {
+            // The dispatcher hands the text/plain source through as a JSON string.
+            assert_eq!(body.as_str(), Some(SOURCE));
+            Ok(Value::String(HRID.to_owned()))
+        })),
+        definition_template_adl2_list: Some(Arc::new(|_params| {
+            Ok(vec![
+                json!({ "template_id": HRID, "created_timestamp": "2017-08-14T19:24:56.639Z" }),
+            ])
+        })),
+        get_artefact: Some(Arc::new(|an_id: String| {
+            if an_id == HRID {
+                Ok(SOURCE.to_owned())
+            } else {
+                Err(SmError::new(
+                    CallStatusType::ArtefactDoesNotExist,
+                    format!("ADL2 artefact {an_id}"),
+                ))
+            }
+        })),
+        ..Default::default()
     }
 }
-
-impl ehrbase_rest::EhrService for MockBackend {}
-impl ehrbase_rest::EhrStatusService for MockBackend {}
-impl ehrbase_rest::EhrCompositionService for MockBackend {}
-impl ehrbase_rest::EhrDirectoryService for MockBackend {}
-impl ehrbase_rest::EhrContributionService for MockBackend {}
-impl ehrbase_rest::WebTemplateService for MockBackend {}
-impl ehrbase_rest::QueryService for MockBackend {}
-impl ehrbase_rest::DemographicService for MockBackend {}
-impl ehrbase_rest::AdminService for MockBackend {}
-impl ehrbase_rest::AdminArchive for MockBackend {}
-impl ehrbase_rest::TerminologyService for MockBackend {}
-impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
-impl ehrbase_rest::DefinitionQueryService for MockBackend {}
-impl ehrbase_rest::PartyRelationshipService for MockBackend {}
-impl ehrbase_rest::EhrIndexService for MockBackend {}
 
 fn config() -> RestConfig {
     RestConfig {
@@ -99,7 +73,7 @@ fn config() -> RestConfig {
 }
 
 fn app() -> Router {
-    ehrbase_rest::build_with(config(), Arc::new(MockBackend)).expect("router builds")
+    ehrbase_rest::build_with(config(), Arc::new(Mock::with(hooks()))).expect("router builds")
 }
 
 async fn send(req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {

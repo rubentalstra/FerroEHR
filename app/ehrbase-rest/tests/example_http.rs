@@ -18,7 +18,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
@@ -26,13 +25,13 @@ use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::ServiceExt;
 
+use ehrbase_rest::RestConfig;
 use ehrbase_rest::auth::config::AuthConfig;
-use ehrbase_rest::{EhrService, RestConfig, WebTemplateService};
 use openehr_flat::{DetailLevel, ExampleType};
-use openehr_its::rest::generated::definition::{
-    DefinitionApi, DefinitionTemplateAdl14ExampleGetParams,
-};
 use openehr_its::rest::runtime::ApiError;
+
+mod common;
+use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const TEMPLATE_ID: &str = "Demo Vitals";
@@ -58,58 +57,31 @@ fn web_template() -> openehr_flat::WebTemplate {
 
 /// A minimal backend that generates the example for the known template and 404s
 /// for anything else — mirroring the service's `template_example` seam.
-#[derive(Debug, Default)]
-struct MockBackend;
-
-#[async_trait]
-impl DefinitionApi for MockBackend {
-    async fn definition_template_adl1_4_example_get(
-        &self,
-        params: DefinitionTemplateAdl14ExampleGetParams,
-    ) -> Result<Value, ApiError> {
-        let level = DetailLevel::from_query(params.detail_level.as_deref())
-            .map_err(ApiError::BadRequest)?;
-        let kind =
-            ExampleType::from_query(params.r#type.as_deref()).map_err(ApiError::BadRequest)?;
-        if params.template_id != TEMPLATE_ID {
-            return Err(ApiError::NotFound(format!(
-                "template {} not found",
-                params.template_id
-            )));
-        }
-        let mut comp = openehr_flat::example_composition(&web_template(), level);
-        if kind == ExampleType::Output {
-            openehr_flat::apply_output_uid(&mut comp, &params.template_id);
-        }
-        Ok(comp)
+fn hooks() -> Hooks {
+    Hooks {
+        // The example generator (generated DefinitionApi, `ApiError`).
+        definition_template_adl1_4_example_get: Some(Arc::new(|params| {
+            let level = DetailLevel::from_query(params.detail_level.as_deref())
+                .map_err(ApiError::BadRequest)?;
+            let kind =
+                ExampleType::from_query(params.r#type.as_deref()).map_err(ApiError::BadRequest)?;
+            if params.template_id != TEMPLATE_ID {
+                return Err(ApiError::NotFound(format!(
+                    "template {} not found",
+                    params.template_id
+                )));
+            }
+            let mut comp = openehr_flat::example_composition(&web_template(), level);
+            if kind == ExampleType::Output {
+                openehr_flat::apply_output_uid(&mut comp, &params.template_id);
+            }
+            Ok(comp)
+        })),
+        // The shared WebTemplate resolution seam (SM-native → `SmError`).
+        web_template: Some(Arc::new(|_id| Ok(Arc::new(web_template())))),
+        ..Default::default()
     }
 }
-
-#[async_trait]
-impl WebTemplateService for MockBackend {
-    async fn web_template(
-        &self,
-        _template_id: &str,
-    ) -> Result<Arc<openehr_flat::WebTemplate>, ApiError> {
-        Ok(Arc::new(web_template()))
-    }
-}
-
-impl EhrService for MockBackend {}
-impl ehrbase_rest::EhrStatusService for MockBackend {}
-impl ehrbase_rest::EhrCompositionService for MockBackend {}
-impl ehrbase_rest::EhrDirectoryService for MockBackend {}
-impl ehrbase_rest::EhrContributionService for MockBackend {}
-impl ehrbase_rest::QueryService for MockBackend {}
-impl ehrbase_rest::DemographicService for MockBackend {}
-impl ehrbase_rest::AdminService for MockBackend {}
-impl ehrbase_rest::AdminArchive for MockBackend {}
-impl ehrbase_rest::TerminologyService for MockBackend {}
-impl ehrbase_rest::DefinitionAdl14Service for MockBackend {}
-impl ehrbase_rest::DefinitionAdl2Service for MockBackend {}
-impl ehrbase_rest::DefinitionQueryService for MockBackend {}
-impl ehrbase_rest::PartyRelationshipService for MockBackend {}
-impl ehrbase_rest::EhrIndexService for MockBackend {}
 
 fn config() -> RestConfig {
     RestConfig {
@@ -128,7 +100,7 @@ fn config() -> RestConfig {
 }
 
 fn app() -> Router {
-    ehrbase_rest::build_with(config(), Arc::new(MockBackend)).expect("router builds")
+    ehrbase_rest::build_with(config(), Arc::new(Mock::with(hooks()))).expect("router builds")
 }
 
 async fn get(uri: &str, accept: Option<&str>) -> (StatusCode, Option<String>, String) {
