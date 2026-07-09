@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{AdminService, EhrService};
+use ehrbase_rest::{AdminService, EhrDirectoryService, EhrService, EhrStatusService};
 use openehr_its::rest::runtime::ApiError;
 
 struct Pg {

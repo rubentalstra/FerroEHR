@@ -49,7 +49,10 @@ impl EhrService for MockBackend {
             ResourceMeta::new(EHR_ID.to_owned(), EHR_ID.to_owned()),
         ))
     }
+}
 
+#[async_trait]
+impl ehrbase_rest::EhrStatusService for MockBackend {
     async fn ehr_status_update(
         &self,
         _params: EhrStatusUpdateParams,
@@ -66,6 +69,24 @@ impl EhrService for MockBackend {
         ))
     }
 
+    async fn versioned_ehr_status_version_get_at_time(
+        &self,
+        _params: VersionedEhrStatusVersionGetAtTimeParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        // 200_VERSION_at_time: an ORIGINAL_VERSION with the version_uid meta.
+        let body = json!({
+            "_type": "ORIGINAL_VERSION",
+            "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID }
+        });
+        Ok(ServiceResponse::new(
+            body,
+            ResourceMeta::new(EHR_ID.to_owned(), STATUS_OVID.to_owned()),
+        ))
+    }
+}
+
+#[async_trait]
+impl ehrbase_rest::EhrCompositionService for MockBackend {
     async fn composition_get(
         &self,
         _params: CompositionGetParams,
@@ -90,22 +111,10 @@ impl EhrService for MockBackend {
             COMP_OVID.to_owned(),
         )))
     }
-
-    async fn versioned_ehr_status_version_get_at_time(
-        &self,
-        _params: VersionedEhrStatusVersionGetAtTimeParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        // 200_VERSION_at_time: an ORIGINAL_VERSION with the version_uid meta.
-        let body = json!({
-            "_type": "ORIGINAL_VERSION",
-            "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID }
-        });
-        Ok(ServiceResponse::new(
-            body,
-            ResourceMeta::new(EHR_ID.to_owned(), STATUS_OVID.to_owned()),
-        ))
-    }
 }
+
+impl ehrbase_rest::EhrDirectoryService for MockBackend {}
+impl ehrbase_rest::EhrContributionService for MockBackend {}
 
 impl DefinitionApi for MockBackend {}
 impl WebTemplateService for MockBackend {}

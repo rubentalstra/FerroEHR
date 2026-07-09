@@ -1,21 +1,27 @@
-//! [`EhrService`] on [`EhrbaseService`] — the EHR / `EHR_STATUS` / COMPOSITION /
-//! DIRECTORY / CONTRIBUTION surface (W2-A).
+//! The SM EHR-core service interfaces on [`EhrbaseService`] — the EHR /
+//! `EHR_STATUS` / COMPOSITION / DIRECTORY / CONTRIBUTION surface (W2-A), split
+//! along the SM interface boundaries ([`EhrService`], [`EhrStatusService`],
+//! [`EhrCompositionService`], [`EhrDirectoryService`],
+//! [`EhrContributionService`]).
 //!
-//! `ehrbase-rest`'s [`EhrService`] seam supersedes the generated `EhrApi`: each
-//! method returns a [`ServiceResponse`] (the canonical-JSON RM payload plus the
-//! typed [`ResourceMeta`] the HTTP edge turns into `ETag`/`Location`) rather than
-//! a bare `Value`. The write/read/versioning machinery lives in the sibling
+//! These seams supersede the generated `EhrApi`: each method returns a
+//! [`ServiceResponse`] (the canonical-JSON RM payload plus the typed
+//! [`ResourceMeta`] the HTTP edge turns into `ETag`/`Location`) rather than a
+//! bare `Value`. The write/read/versioning machinery lives in the sibling
 //! service modules ([`crate::service::ehr`], [`composition`](crate::service),
 //! [`directory`](crate::service), [`contribution`](crate::service)); this file is
 //! the thin trait adapter that parses params and wraps the result. Every
-//! `EhrService` operation is implemented here (the two `*_version_get_at_time`
-//! reads landed with F-01-05 / F-02-04).
+//! operation is implemented here (the two `*_version_get_at_time` reads landed
+//! with F-01-05 / F-02-04).
 
 use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_rest::{EhrService, ResourceMeta, ServiceResponse};
+use ehrbase_rest::{
+    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
+    EhrStatusService, EhrSummary, Page, ResourceMeta, ServiceResponse,
+};
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
     CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
@@ -76,6 +82,28 @@ impl EhrService for EhrbaseService {
             .await?)
     }
 
+    // ── item tags ────────────────────────────────────────────────────────────
+    async fn ehr_tags_get(&self, params: EhrTagsGetParams) -> Result<ServiceResponse, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let tags = self
+            .ehr_tags(
+                ehr_id,
+                params.tag_key.as_deref(),
+                params.tag_value.as_deref(),
+                params.tag_target_path.as_deref(),
+            )
+            .await?;
+        Ok(tags_response(tags))
+    }
+
+    // ── SM native call: get_ehr → EHR_SUMMARY (no ITS-REST route) ─────────────
+    async fn get_ehr_summary(&self, ehr_id: String) -> Result<EhrSummary, ApiError> {
+        Ok(self.summarize_ehr(parse_ehr_id(&ehr_id)?).await?)
+    }
+}
+
+#[async_trait]
+impl EhrStatusService for EhrbaseService {
     // ── EHR_STATUS ───────────────────────────────────────────────────────────
     async fn ehr_status_get_at_time(
         &self,
@@ -154,6 +182,49 @@ impl EhrService for EhrbaseService {
         ))
     }
 
+    // ── item tags ────────────────────────────────────────────────────────────
+    async fn ehr_status_tags_get(
+        &self,
+        params: EhrStatusTagsGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
+        Ok(tags_response(self.target_tags(ehr_id, vo_id).await?))
+    }
+
+    async fn ehr_status_tags_update(
+        &self,
+        params: EhrStatusTagsUpdateParams,
+        body: Vec<Value>,
+    ) -> Result<ServiceResponse, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
+        Ok(tags_response(
+            self.replace_tags(ehr_id, vo_id, "EHR_STATUS", body).await?,
+        ))
+    }
+
+    async fn ehr_status_tags_delete(
+        &self,
+        params: EhrStatusTagsDeleteParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
+        self.delete_tag(ehr_id, vo_id, &params.key).await?;
+        Ok(ServiceResponse::plain(Value::Null))
+    }
+
+    // ── conflict-decoration helpers (latest version for 409/412 headers) ──────
+    async fn ehr_status_latest_meta(
+        &self,
+        ehr_id: String,
+    ) -> Result<Option<ResourceMeta>, ApiError> {
+        Ok(self.ehr_status_meta(parse_ehr_id(&ehr_id)?).await?)
+    }
+}
+
+#[async_trait]
+impl EhrCompositionService for EhrbaseService {
     // ── COMPOSITION ──────────────────────────────────────────────────────────
     async fn composition_create(
         &self,
@@ -253,6 +324,53 @@ impl EhrService for EhrbaseService {
         ))
     }
 
+    // ── item tags ────────────────────────────────────────────────────────────
+    async fn composition_tags_get(
+        &self,
+        params: CompositionTagsGetParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
+        Ok(tags_response(self.target_tags(ehr_id, vo_id).await?))
+    }
+
+    async fn composition_tags_update(
+        &self,
+        params: CompositionTagsUpdateParams,
+        body: Vec<Value>,
+    ) -> Result<ServiceResponse, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
+        Ok(tags_response(
+            self.replace_tags(ehr_id, vo_id, "COMPOSITION", body)
+                .await?,
+        ))
+    }
+
+    async fn composition_tags_delete(
+        &self,
+        params: CompositionTagsDeleteParams,
+    ) -> Result<ServiceResponse, ApiError> {
+        let ehr_id = parse_ehr_id(&params.ehr_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
+        self.delete_tag(ehr_id, vo_id, &params.key).await?;
+        Ok(ServiceResponse::plain(Value::Null))
+    }
+
+    // ── conflict-decoration helpers (latest version for 409/412 headers) ──────
+    async fn composition_latest_meta(
+        &self,
+        ehr_id: String,
+        uid_based_id: String,
+    ) -> Result<Option<ResourceMeta>, ApiError> {
+        let ehr_id = parse_ehr_id(&ehr_id)?;
+        let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
+        Ok(self.composition_current_meta(ehr_id, vo_id).await?)
+    }
+}
+
+#[async_trait]
+impl EhrDirectoryService for EhrbaseService {
     // ── DIRECTORY (FOLDER) ───────────────────────────────────────────────────
     async fn directory_create(
         &self,
@@ -306,6 +424,17 @@ impl EhrService for EhrbaseService {
         Ok(self.directory_version(ehr_id, vo_id, version).await?)
     }
 
+    // ── conflict-decoration helpers (latest version for 409/412 headers) ──────
+    async fn directory_latest_meta(
+        &self,
+        ehr_id: String,
+    ) -> Result<Option<ResourceMeta>, ApiError> {
+        Ok(self.directory_meta(parse_ehr_id(&ehr_id)?).await?)
+    }
+}
+
+#[async_trait]
+impl EhrContributionService for EhrbaseService {
     // ── CONTRIBUTION ─────────────────────────────────────────────────────────
     async fn contribution_create(
         &self,
@@ -332,106 +461,28 @@ impl EhrService for EhrbaseService {
         ))
     }
 
-    // ── item tags ────────────────────────────────────────────────────────────
-    async fn ehr_tags_get(&self, params: EhrTagsGetParams) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let tags = self
-            .ehr_tags(
-                ehr_id,
-                params.tag_key.as_deref(),
-                params.tag_value.as_deref(),
-                params.tag_target_path.as_deref(),
-            )
-            .await?;
-        Ok(tags_response(tags))
-    }
-
-    async fn composition_tags_get(
-        &self,
-        params: CompositionTagsGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        Ok(tags_response(self.target_tags(ehr_id, vo_id).await?))
-    }
-
-    async fn composition_tags_update(
-        &self,
-        params: CompositionTagsUpdateParams,
-        body: Vec<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        Ok(tags_response(
-            self.replace_tags(ehr_id, vo_id, "COMPOSITION", body)
-                .await?,
-        ))
-    }
-
-    async fn composition_tags_delete(
-        &self,
-        params: CompositionTagsDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        self.delete_tag(ehr_id, vo_id, &params.key).await?;
-        Ok(ServiceResponse::plain(Value::Null))
-    }
-
-    async fn ehr_status_tags_get(
-        &self,
-        params: EhrStatusTagsGetParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        Ok(tags_response(self.target_tags(ehr_id, vo_id).await?))
-    }
-
-    async fn ehr_status_tags_update(
-        &self,
-        params: EhrStatusTagsUpdateParams,
-        body: Vec<Value>,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        Ok(tags_response(
-            self.replace_tags(ehr_id, vo_id, "EHR_STATUS", body).await?,
-        ))
-    }
-
-    async fn ehr_status_tags_delete(
-        &self,
-        params: EhrStatusTagsDeleteParams,
-    ) -> Result<ServiceResponse, ApiError> {
-        let ehr_id = parse_ehr_id(&params.ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&params.uid_based_id)?;
-        self.delete_tag(ehr_id, vo_id, &params.key).await?;
-        Ok(ServiceResponse::plain(Value::Null))
-    }
-
-    // ── conflict-decoration helpers (latest version for 409/412 headers) ──────
-    async fn ehr_status_latest_meta(
+    // ── SM native calls: list_contributions / contribution_count ──────────────
+    // (no ITS-REST route — the wire spec defines none).
+    async fn contribution_list(
         &self,
         ehr_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
-        Ok(self.ehr_status_meta(parse_ehr_id(&ehr_id)?).await?)
-    }
-
-    async fn composition_latest_meta(
-        &self,
-        ehr_id: String,
-        uid_based_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
+        time_range: Option<(Option<String>, Option<String>)>,
+        page: Page,
+    ) -> Result<Vec<String>, ApiError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
-        let (vo_id, _) = version_id::parse_uid_based_id(&uid_based_id)?;
-        Ok(self.composition_current_meta(ehr_id, vo_id).await?)
+        let time_range = parse_time_range(time_range)?;
+        let ids = self.list_contributions(ehr_id, time_range, page).await?;
+        Ok(ids.iter().map(Uuid::to_string).collect())
     }
 
-    async fn directory_latest_meta(
+    async fn contribution_count(
         &self,
         ehr_id: String,
-    ) -> Result<Option<ResourceMeta>, ApiError> {
-        Ok(self.directory_meta(parse_ehr_id(&ehr_id)?).await?)
+        time_range: Option<(Option<String>, Option<String>)>,
+    ) -> Result<i64, ApiError> {
+        let ehr_id = parse_ehr_id(&ehr_id)?;
+        let time_range = parse_time_range(time_range)?;
+        Ok(self.count_contributions(ehr_id, time_range).await?)
     }
 }
 
@@ -443,4 +494,20 @@ fn parse_ehr_id(raw: &str) -> Result<Uuid, ApiError> {
 fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, ApiError> {
     raw.parse::<jiff::Timestamp>()
         .map_err(|_| ApiError::BadRequest(format!("invalid version_at_time: {raw}")))
+}
+
+/// Parse the optional `(lower, upper)` ISO 8601 bounds of an SM contribution
+/// `time_range` into `jiff::Timestamp`s; a malformed bound → `400 BadRequest`.
+#[allow(clippy::type_complexity)]
+fn parse_time_range(
+    raw: Option<(Option<String>, Option<String>)>,
+) -> Result<Option<(Option<jiff::Timestamp>, Option<jiff::Timestamp>)>, ApiError> {
+    let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, ApiError> {
+        b.map(|s| {
+            s.parse::<jiff::Timestamp>()
+                .map_err(|_| ApiError::BadRequest(format!("invalid time_range bound: {s}")))
+        })
+        .transpose()
+    };
+    raw.map(|(lo, hi)| Ok((parse(lo)?, parse(hi)?))).transpose()
 }

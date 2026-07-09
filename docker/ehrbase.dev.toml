@@ -12,6 +12,13 @@
 bind = "0.0.0.0:8080"
 cors_permissive = true
 
+# Dev-only: expose the admin API (`DELETE /admin/...`) so the conformance
+# suite's AdminApi cases run against the compose stack (they authenticate as
+# the ADMIN-role user below). Production deployments keep this off unless
+# operationally needed.
+[admin]
+enabled = true
+
 [auth]
 enabled = true
 
@@ -19,3 +26,12 @@ enabled = true
 username = "ehrbase"
 # Argon2id hash of the password "ehrbase".
 password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r2sbj8/y0HbNAcwMb/YseM1fTINO3Dc"
+
+# Dev-only ADMIN account for the admin API (`DELETE /admin/...`) and the
+# conformance suite's AdminApi cases (scripts/conformance.sh CONF_ADMIN_AUTH
+# defaults to it). Same dev password "ehrbase" (same hash); ADMIN + USER
+# roles. Do NOT use in production.
+[[auth.basic.users]]
+username = "ehrbase-admin"
+password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r2sbj8/y0HbNAcwMb/YseM1fTINO3Dc"
+roles = ["ADMIN", "USER"]

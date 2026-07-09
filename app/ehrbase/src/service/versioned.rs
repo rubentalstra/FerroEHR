@@ -38,6 +38,26 @@ impl EhrbaseService {
             )));
         }
 
+        // REVISION_HISTORY_ITEM.audits = the commit audit plus any attestations
+        // for that revision (RM common `revision_history_item.adoc`: "there will
+        // always be at least one commit audit ... there may also be further
+        // attestations"). Fetch all attestations for the object once, keyed by
+        // version, in commit order.
+        let att_rows = sqlx::query(
+            "SELECT sys_version, data FROM vo_attestation WHERE vo_id = $1 \
+             ORDER BY time_committed, id",
+        )
+        .bind(vo_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut attestations: std::collections::HashMap<i32, Vec<Value>> =
+            std::collections::HashMap::new();
+        for row in &att_rows {
+            let sys_version: i32 = row.try_get("sys_version")?;
+            let data: Value = row.try_get("data")?;
+            attestations.entry(sys_version).or_default().push(data);
+        }
+
         let mut items = Vec::with_capacity(rows.len());
         for row in &rows {
             let sys_version: i32 = row.try_get("sys_version")?;
@@ -48,15 +68,23 @@ impl EhrbaseService {
             let time_committed: jiff::Timestamp = row
                 .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
                 .to_jiff();
+            let mut audits = vec![Self::audit_details(
+                &system_id,
+                &change_type,
+                description.as_deref(),
+                &committer,
+                &time_committed,
+            )];
+            if let Some(atts) = attestations.remove(&sys_version) {
+                audits.extend(atts);
+            }
             items.push(json!({
                 "_type": "REVISION_HISTORY_ITEM",
                 "version_id": {
                     "_type": "OBJECT_VERSION_ID",
                     "value": self.object_version_id(vo_id, sys_version)
                 },
-                "audits": [Self::audit_details(
-                    &system_id, &change_type, description.as_deref(), &committer, &time_committed,
-                )]
+                "audits": audits
             }));
         }
         Ok(json!({ "_type": "REVISION_HISTORY", "items": items }))
@@ -111,7 +139,7 @@ impl EhrbaseService {
     /// [`ServiceError::Signing`] only when `verify_on_read = strict` and the
     /// stored signature fails verification.
     pub(super) fn original_version(&self, read: &VersionRead) -> Result<Value, ServiceError> {
-        let ov = build_original_version(
+        let mut ov = build_original_version(
             &self.system_id,
             read.vo_id,
             read.sys_version,
@@ -123,6 +151,19 @@ impl EhrbaseService {
             read.signature.as_deref(),
         );
         self.verify_on_read(&ov, read.signature.as_deref())?;
+        // ORIGINAL_VERSION.attestations (RM common §Attestation). Appended
+        // AFTER verify_on_read: attestations "can be added at any time after
+        // committal" (master06 §Attestation), so they are not part of the
+        // signed/verified canonical form (the signature was computed over the
+        // attestation-free version at commit — design §6.3).
+        if !read.attestations.is_empty()
+            && let Value::Object(map) = &mut ov
+        {
+            map.insert(
+                "attestations".to_owned(),
+                Value::Array(read.attestations.clone()),
+            );
+        }
         Ok(ov)
     }
 

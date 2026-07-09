@@ -7,11 +7,11 @@
 
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
 use benchmark::driver::{DriverConfig, ScenarioResult, run_latency};
 use benchmark::report::{BenchReport, EnvBlock};
 use benchmark::target::{Implementation, Target};
 use benchmark::workload::{Scenario, workload_lock};
+use clap::{Parser, Subcommand};
 use conformance::client::Credential;
 
 #[derive(Parser)]

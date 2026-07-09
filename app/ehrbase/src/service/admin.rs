@@ -14,9 +14,12 @@ use super::{EhrbaseService, ServiceError};
 impl EhrbaseService {
     /// Physically delete one EHR and every trace of it, in a single transaction.
     ///
-    /// The FK graph (`migrations/ehr/0001_schema.sql`) makes `DELETE FROM ehr`
-    /// cascade to `vo_version` (→ `node`), `contribution`, and `item_tag`
-    /// (all `ON DELETE CASCADE` on `ehr_id`). The `audit` rows have **no** FK
+    /// The FK graph (`migrations/ehr/0001_schema.sql` + `0004_vo_attestation.sql`)
+    /// makes `DELETE FROM ehr` cascade to `vo_version` (→ `node`,
+    /// → `vo_attestation`), `contribution`, and `item_tag` (all `ON DELETE
+    /// CASCADE`; `vo_attestation` cascades via its `(vo_id, sys_version)` FK to
+    /// `vo_version`, and it carries no `audit` row of its own). The `audit` rows
+    /// have **no** FK
     /// from `ehr` — `vo_version.audit_id`/`contribution.audit_id` reference
     /// `audit` (NO ACTION) — so the cascade cannot reach them and they would be
     /// orphaned. We therefore capture the referenced audit ids first, let the

@@ -33,8 +33,9 @@ pub(super) mod change_type {
     pub(crate) const MODIFICATION: &str = "251";
     /// `523|deleted|` — a logical deletion.
     pub(crate) const DELETED: &str = "523";
-    /// `666|attestation|` — attaches an `ATTESTATION` to an existing version
-    /// (not a version commit; rejected on the contribution surface — F-06-10).
+    /// `666|attestation|` — attaches an `ATTESTATION` to an existing
+    /// `ORIGINAL_VERSION` (adds no new version — RM `change_control`
+    /// §Contributions; handled by the contribution path's `Action::Attest`).
     pub(crate) const ATTESTATION: &str = "666";
 }
 

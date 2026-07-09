@@ -1,0 +1,24 @@
+[package]
+name = "ehrbase-sm"
+description = "The openEHR SM Platform Service Model native API: one trait per SM interface, the shared service types, and the call-status error model (ADR-010)"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+async-trait.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+jiff.workspace = true
+
+openehr-base = { path = "../../crates/openehr-base" }
+openehr-rm = { path = "../../crates/openehr-rm" }
+openehr-its = { path = "../../crates/openehr-its" }
+openehr-flat = { path = "../../crates/openehr-flat" }
+
+[lints]
+workspace = true

@@ -14,7 +14,10 @@ use std::sync::Arc;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::EhrService;
+use ehrbase_rest::{
+    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
+    EhrStatusService,
+};
 use ehrbase_signing::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
