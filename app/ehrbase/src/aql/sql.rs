@@ -494,9 +494,9 @@ impl<'a> Builder<'a> {
     }
 
     /// `SELECT ehr_id FROM vo_version JOIN node(num = 0) …` — the EHR ids whose
-    /// current (`upper_inf`) EHR_STATUS has `is_queryable = true`.
-    /// `is_queryable` is a scalar attribute of EHR_STATUS, so it lives inline in
-    /// the EHR_STATUS **root** node's verbatim canonical `data` fragment
+    /// current (`upper_inf`) `EHR_STATUS` has `is_queryable = true`.
+    /// `is_queryable` is a scalar attribute of `EHR_STATUS`, so it lives inline in
+    /// the `EHR_STATUS` **root** node's verbatim canonical `data` fragment
     /// (`num = 0`; children are pruned but scalars stay — ADR-008 §2).
     fn queryable_ehr_subquery(&mut self) -> SelectStatement {
         let sv = format!("qgv{}", self.next_ctr());

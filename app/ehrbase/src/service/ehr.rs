@@ -58,6 +58,7 @@ impl EhrbaseService {
                         canonical: status,
                         template_id: None,
                         signature: None,
+                        attestations: Vec::new(),
                     },
                 ),
                 (
@@ -67,9 +68,11 @@ impl EhrbaseService {
                         canonical: default_ehr_access(),
                         template_id: None,
                         signature: None,
+                        attestations: Vec::new(),
                     },
                 ),
             ],
+            Vec::new(),
             &self.signing_ctx(),
         )
         .await?;
@@ -602,7 +605,7 @@ mod tests {
         validate_ehr_status(&identified).expect("identified EHR_STATUS");
     }
 
-    /// Every vendored invalid EHR_STATUS data set (CNF master06 §Test Data Sets,
+    /// Every vendored invalid `EHR_STATUS` data set (CNF master06 §Test Data Sets,
     /// INVALID class 2) must be rejected. Posted verbatim (unadapted), exactly as
     /// the conformance runner drives them.
     #[test]

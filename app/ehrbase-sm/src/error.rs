@@ -102,14 +102,14 @@ pub enum CallStatusType {
     VersionDoesNotExist,
     /// *(prose-only)* Subject identifier not found (`I_EHR_INDEX`).
     SubjectIdDoesNotExist,
-    /// *(prose-only)* VERSIONED_COMPOSITION not found
+    /// *(prose-only)* `VERSIONED_COMPOSITION` not found
     /// (`I_EHR_COMPOSITION.get_versioned_composition`).
     VersionedCompositionDoesNotExist,
 }
 
 impl CallStatusType {
     /// The SM abstract name of this status, exactly as the spec text spells
-    /// it (snake_case enumeration literals).
+    /// it (`snake_case` enumeration literals).
     #[must_use]
     pub fn sm_name(self) -> &'static str {
         match self {
@@ -150,11 +150,8 @@ impl CallStatusType {
     pub fn api_error(self, message: impl Into<String>) -> ApiError {
         let message = message.into();
         match self {
-            // 2xx is not an error; map defensively to a 500 if it ever
-            // reaches this path.
-            Self::Success => ApiError::Internal(message),
             Self::AuthFailure => ApiError::Forbidden(message),
-            Self::PreconditionViolation => ApiError::BadRequest(message),
+            Self::PreconditionViolation | Self::InvalidIdPattern => ApiError::BadRequest(message),
             Self::ObjectVersionDoesNotExist
             | Self::VersionedObjectDoesNotExist
             | Self::EhrIdDoesNotExist
@@ -177,8 +174,8 @@ impl CallStatusType {
             | Self::InvalidQuery
             | Self::DefinitionUnknown
             | Self::ContentInvalid => ApiError::Unprocessable(message),
-            Self::InvalidIdPattern => ApiError::BadRequest(message),
-            Self::FileNotWritable | Self::Exception => ApiError::Internal(message),
+            // `success` is not an error; mapping it is defensively a 500.
+            Self::Success | Self::FileNotWritable | Self::Exception => ApiError::Internal(message),
         }
     }
 }
