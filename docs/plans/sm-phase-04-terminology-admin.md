@@ -96,3 +96,18 @@
 SM-3 merged (PR #33, develop 327dcb7b7). Branch
 `claude/sm-phase-04-terminology-admin`. Both governing interfaces read
 2026-07-09; design decisions fixed above.
+
+## Wave 2 — app-crate redesign (ADR-011, owner priority; BEFORE dump/load + SM-5)
+
+- [ ] Structural: remove all default `NotImplemented` trait bodies; delete
+      `StubBackend`; rename `Backend` → `Platform`; `AppState<S: Platform>`
+      generics through the router/dispatchers (no `Arc<dyn>`); delete the
+      `ehrbase-rest::{backend,response}` shims; consolidate the nine test
+      mocks into one shared test-support mock; dissolve pure-delegation
+      `service/api/*` modules (impls live beside their service logic)
+- [ ] Purity: `SmError` (CallStatusType-based) + SM-native params replace
+      `ApiError`/generated `*Params` in every `ehrbase-sm` signature; the
+      wire↔native mapping lives wholly in `ehrbase-rest`
+- [ ] Gates: workspace green; ECC zero-drift 211/318 (wire byte-identical);
+      wave-1 verification (terminology + admin tests) folded into the run
+- [ ] Then wave 3: dump/load (unchanged scope)
