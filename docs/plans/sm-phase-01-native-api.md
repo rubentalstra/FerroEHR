@@ -1,6 +1,9 @@
 # Phase SM-1 — repo layout (`app/*`) + the `ehrbase-sm` native-API crate + EHR-core completion
 
-- Status: not-started
+- Status: done (2026-07-09; two tasks carry explicit partial-scope notes
+  folded into SM-2: `ServiceError` call-site adoption of `ServiceError::sm`,
+  and the `vobject` internal carrier swap to `UpdateVersion<T>` — both
+  deliberate decisions, not omissions)
 - Owner: —
 - Consumes: ADR-010; design set `docs/design/sm-platform/` (esp. 08 §2–§5,
   09 §SM-1); spec oracle `docs/specs/openehr/SM/docs/openehr_platform/`
@@ -106,14 +109,14 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
 
 - [x] Workspace green: build (0 warnings), `cargo nextest run --workspace`
       **824/824 passed**, clippy-neutral, fmt clean (2026-07-09)
-- [ ] ECC conformance run: identical pass set to the pre-phase baseline
-      (zero wire drift), except new passes from attestation support —
-      **BLOCKED 2026-07-09 on Docker registry timeouts** (`DeadlineExceeded`
-      pulling base-image metadata; no local `rust` base image). NOTE: a
-      first run against a **stale 2-day-old image** produced a garbage
-      verdict (138/310) — artifacts reverted, `scripts/conformance.sh` now
-      builds before `up` (SKIP_BUILD=1 opts out). Rerun when the registry
-      cooperates; baseline to beat: **211 passed / 318 executions**.
+- [x] ECC conformance run — **MET 2026-07-09: 211/318, byte-identical pass
+      set to the pre-phase baseline, zero regressions** (full catalogue,
+      both formats, fresh image). Diagnosing the initial false regression
+      hardened the harness: `scripts/conformance.sh` builds before `up`,
+      defaults to the full catalogue + both formats + an admin credential;
+      the runner's admin suite now uses `AuthSlot::Admin`; the compose dev
+      config gained the ADMIN account + `[admin] enabled` (the baseline had
+      only ever run self-hosted).
 - [x] `ehrbase-rest` contains no service-trait definitions (adapter only —
       `backend.rs`/`response.rs` are re-export shims)
 - [x] Every `ehrbase-sm` trait method doc-comment cites its SM call
