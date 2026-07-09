@@ -24,7 +24,7 @@ use http::{HeaderMap, StatusCode, header};
 use metrics_exporter_prometheus::PrometheusHandle;
 use serde_json::Value;
 
-use crate::auth::Authenticator;
+use crate::access::authn::Authenticator;
 use crate::error::RestError;
 use openehr_its::rest::runtime::ApiError;
 

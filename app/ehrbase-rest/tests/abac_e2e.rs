@@ -19,11 +19,11 @@ use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use ehrbase_audit::{AuditConfig, AuditSender, Transport};
-use ehrbase_rest::auth::AuthConfig;
-use ehrbase_rest::auth::config::{OidcConfig, Redacted};
-use ehrbase_rest::authz::AuthzConfig;
-use ehrbase_rest::authz::engine::{AuthzError, PolicyEngine};
-use ehrbase_rest::authz::request::{AuthzRequest, Decision};
+use ehrbase_rest::access::authn::AuthConfig;
+use ehrbase_rest::access::authn::config::{OidcConfig, Redacted};
+use ehrbase_rest::access::authz::AuthzConfig;
+use ehrbase_rest::access::authz::engine::{AuthzError, PolicyEngine};
+use ehrbase_rest::access::authz::request::{AuthzRequest, Decision};
 use ehrbase_rest::{
     AuthzHandle, AuthzResolvers, Observability, ResolveError, RestConfig, build_full,
 };

@@ -16,7 +16,7 @@ use tower::ServiceExt;
 use uuid::Uuid;
 
 use ehrbase_rest::RestConfig;
-use ehrbase_rest::auth::config::AuthConfig;
+use ehrbase_rest::access::authn::config::AuthConfig;
 
 mod common;
 use common::{Hooks, Mock};

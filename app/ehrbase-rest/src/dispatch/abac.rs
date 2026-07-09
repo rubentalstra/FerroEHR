@@ -13,7 +13,7 @@
 //! parity), each carrying the [`Principal`] on the response extensions so the
 //! ATNA audit layer records it for free. Query execution is **not** handled here
 //! — its scope + post-check live in the query path (§6.4, step 8). All of this
-//! is inert unless an [`AbacGate`](crate::authz::AbacGate) is wired
+//! is inert unless an [`AbacGate`](crate::access::authz::AbacGate) is wired
 //! (`abac.enabled`). End-to-end coverage through the assembled router (pre-check
 //! deny/allow, post-check deny, and the ATNA deny record) lives in
 //! `tests/abac_e2e.rs`.
@@ -25,13 +25,15 @@
 
 use axum::response::{IntoResponse, Response};
 
-use crate::authz::{AccessMode, Attr, AuthzRequest, Decision, ResourceKind, access_of, kind_of};
+use crate::access::authz::{
+    AccessMode, Attr, AuthzRequest, Decision, ResourceKind, access_of, kind_of,
+};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
 use super::RequestParts;
-use crate::auth::{Principal, current_principal};
-use crate::authz::AbacGate;
+use crate::access::authn::{Principal, current_principal};
+use crate::access::authz::AbacGate;
 use crate::error::RestError;
 use ehrbase_sm::Platform;
 
@@ -255,7 +257,7 @@ fn resolve_patient_claim(
     let Some(claim) = &abac.patient_claim else {
         return Ok(None);
     };
-    match crate::authz::claim_string(&principal.claims, claim) {
+    match crate::access::authz::claim_string(&principal.claims, claim) {
         Some(v) => Ok(Some(v)),
         None => Err(forbidden(
             principal,
@@ -268,7 +270,7 @@ fn resolve_patient_claim(
 fn organization(abac: &AbacGate, principal: &Principal) -> Option<String> {
     abac.organization_claim
         .as_ref()
-        .and_then(|c| crate::authz::claim_string(&principal.claims, c))
+        .and_then(|c| crate::access::authz::claim_string(&principal.claims, c))
 }
 
 /// The full pre-check patient gate (§5.7): the subject match for target-EHR ops,
@@ -474,7 +476,7 @@ fn fallback_principal() -> Principal {
         scopes: Vec::new(),
         roles: Vec::new(),
         claims: serde_json::Map::new(),
-        method: crate::auth::AuthMethod::Bearer,
+        method: crate::access::authn::AuthMethod::Bearer,
     }
 }
 
@@ -483,13 +485,13 @@ mod tests {
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    use crate::authz::engine::{AuthzError, PolicyEngine};
+    use crate::access::authz::engine::{AuthzError, PolicyEngine};
     use async_trait::async_trait;
     use http::StatusCode;
 
     use super::*;
-    use crate::auth::AuthMethod;
-    use crate::authz::{AuthzResolvers, ResolveError};
+    use crate::access::authn::AuthMethod;
+    use crate::access::authz::{AuthzResolvers, ResolveError};
 
     /// A counting engine: records how often `decide` is called (the patient gate
     /// must deny *without* reaching it), always permits.

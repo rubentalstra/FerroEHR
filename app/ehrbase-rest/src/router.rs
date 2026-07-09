@@ -19,7 +19,7 @@ use tower_http::trace::TraceLayer;
 
 use ehrbase_sm::Platform;
 
-use crate::auth::{self, Authenticator};
+use crate::access::authn::{self, Authenticator};
 use crate::management::{self, ManagementState};
 use crate::state::AppState;
 use crate::{dispatch, openapi, status};
@@ -50,11 +50,11 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // and metrics cover the whole request incl. auth). The metrics/span layers
     // sit on the API router so `MatchedPath` resolves to the route template.
     let api = dispatch::api_router::<S>().layer(from_fn_with_state(
-        auth::AuthLayer {
+        authn::AuthLayer {
             authenticator: authenticator.clone(),
             authz: state.authz(),
         },
-        auth::middleware,
+        authn::middleware,
     ));
     // Always install the ATNA audit layer; it early-returns when the platform's
     // SM `SystemLog` reports auditing off (`backend().audit_enabled()`), so the

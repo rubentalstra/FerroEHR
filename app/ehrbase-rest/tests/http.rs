@@ -16,7 +16,9 @@ use tower::ServiceExt;
 
 use std::sync::Arc;
 
-use ehrbase_rest::auth::config::{AuthConfig, BasicConfig, BasicUser, OidcConfig, Redacted};
+use ehrbase_rest::access::authn::config::{
+    AuthConfig, BasicConfig, BasicUser, OidcConfig, Redacted,
+};
 use ehrbase_rest::{AdminConfig, RestConfig};
 
 mod common;

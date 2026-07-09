@@ -8,13 +8,13 @@
 //! short-circuits on the first deny. Errors are **fail-closed**: the PEP maps
 //! any [`AuthzError`] to `500` (v1 parity) — never to a permit.
 //!
-//! [`CedarEngine`]: crate::authz::cedar::CedarEngine
-//! [`RemotePdp`]: crate::authz::remote::RemotePdp
-//! [`Combination`]: crate::authz::request::Combination
+//! [`CedarEngine`]: crate::access::authz::cedar::CedarEngine
+//! [`RemotePdp`]: crate::access::authz::remote::RemotePdp
+//! [`Combination`]: crate::access::authz::request::Combination
 
 use async_trait::async_trait;
 
-use crate::authz::request::{AuthzRequest, Decision};
+use crate::access::authz::request::{AuthzRequest, Decision};
 
 /// A policy engine failure. Always fail-closed at the PEP (→ 500), never a
 /// permit.
@@ -36,7 +36,7 @@ pub enum AuthzError {
 #[async_trait]
 pub trait PolicyEngine: Send + Sync + std::fmt::Debug {
     /// Decide a fully-resolved request. Returns [`Decision::Deny`] on the first
-    /// denying [`Combination`](crate::authz::request::Combination); [`Decision::Permit`]
+    /// denying [`Combination`](crate::access::authz::request::Combination); [`Decision::Permit`]
     /// only when every combination permits (a request with no combinations —
     /// an empty result set — permits vacuously). Any failure is an
     /// [`AuthzError`] (fail-closed).

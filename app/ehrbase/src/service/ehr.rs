@@ -549,7 +549,7 @@ pub(super) fn default_ehr_access() -> Value {
 /// with no authenticated principal (auth disabled, or internal/system writes)
 /// are attributed to the system identity.
 pub(super) fn committer() -> Value {
-    match ehrbase_rest::auth::current_principal() {
+    match ehrbase_rest::access::authn::current_principal() {
         Some(principal) => {
             let id_type = match principal.method {
                 ehrbase_rest::AuthMethod::Basic => "basic",

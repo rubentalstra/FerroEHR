@@ -11,7 +11,7 @@ use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
 use ehrbase_rest::RestConfig;
-use ehrbase_rest::auth::config::{AuthConfig, BasicConfig, BasicUser, Redacted};
+use ehrbase_rest::access::authn::config::{AuthConfig, BasicConfig, BasicUser, Redacted};
 use ehrbase_rest::management::{
     AccessLevel, BuildInfo, EndpointLevels, HealthRegistry, ManagementConfig, Observability,
 };

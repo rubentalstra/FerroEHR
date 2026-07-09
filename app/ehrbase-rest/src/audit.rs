@@ -35,8 +35,8 @@ use http::StatusCode;
 
 use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, Platform};
 
+use crate::access::authn::Principal;
 use crate::audit_table::audit_for;
-use crate::auth::Principal;
 use crate::state::AppState;
 
 /// The matched ITS-REST operation id, inserted by the dispatch layer onto the
