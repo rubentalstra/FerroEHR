@@ -86,7 +86,7 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::auth::config::{BasicUser, Redacted};
+    use crate::access::authn::config::{BasicUser, Redacted};
     use argon2::password_hash::{PasswordHasher, SaltString};
 
     fn hash(pw: &str) -> String {

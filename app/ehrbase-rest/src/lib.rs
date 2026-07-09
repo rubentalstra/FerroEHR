@@ -14,10 +14,9 @@
 //! coarse **RBAC** gate ([`authz`]) when an [`AuthzHandle`] is wired.
 //! Fine-grained ABAC is the follow-up (`docs/enterprise/access-control.md`).
 
+pub mod access;
 mod audit;
 mod audit_table;
-pub mod auth;
-pub mod authz;
 pub mod config;
 mod dispatch;
 mod error;
@@ -30,8 +29,8 @@ mod state;
 mod status;
 mod version_id;
 
-pub use auth::{AuthMethod, Authenticator, Principal};
-pub use authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
+pub use access::authn::{AuthMethod, Authenticator, Principal};
+pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
 // The native API lives in `ehrbase-sm` (ADR-011); re-exported here for the
 // server's public surface (test mocks, the binary) — no local shim module.
 pub use config::{AdminConfig, RestConfig};
@@ -123,7 +122,8 @@ fn build_authenticator(
     config: &RestConfig,
     authz: Option<&AuthzHandle>,
 ) -> Result<std::sync::Arc<Authenticator>, ServeError> {
-    let role_claims = authz.map_or_else(authz::default_role_claims, AuthzHandle::role_claims);
+    let role_claims =
+        authz.map_or_else(access::authz::default_role_claims, AuthzHandle::role_claims);
     Authenticator::with_role_claims(config.auth.clone(), role_claims).map_err(ServeError::Auth)
 }
 

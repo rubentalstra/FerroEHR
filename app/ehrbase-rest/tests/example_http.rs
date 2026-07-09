@@ -26,7 +26,7 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use ehrbase_rest::RestConfig;
-use ehrbase_rest::auth::config::AuthConfig;
+use ehrbase_rest::access::authn::config::AuthConfig;
 use openehr_flat::{DetailLevel, ExampleType};
 use openehr_its::rest::runtime::ApiError;
 

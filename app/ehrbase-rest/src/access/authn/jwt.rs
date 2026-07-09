@@ -33,7 +33,7 @@ pub(super) struct JwtValidator {
 // The role model (default claim paths + extraction algorithm) lives in the leaf
 // `ehrbase-authz` crate so the REST layer and the RBAC gate share one
 // implementation (§5.1).
-use crate::authz::roles::extract_roles;
+use crate::access::authz::roles::extract_roles;
 
 enum KeySource {
     /// Symmetric HS256 secret.
@@ -222,7 +222,7 @@ impl RemoteJwks {
 
 #[cfg(test)]
 mod tests {
-    use crate::authz::roles::default_role_claims;
+    use crate::access::authz::roles::default_role_claims;
     use jsonwebtoken::{EncodingKey, Header, encode};
 
     use super::*;

@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use ehrbase_sm::Platform;
 
-use crate::authz::AuthzHandle;
+use crate::access::authz::AuthzHandle;
 use crate::config::RestConfig;
 use crate::management::Observability;
 

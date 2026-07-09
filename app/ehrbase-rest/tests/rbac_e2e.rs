@@ -18,9 +18,9 @@ use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
 use ehrbase_audit::{AuditConfig, AuditSender, Transport};
-use ehrbase_rest::auth::AuthConfig;
-use ehrbase_rest::auth::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
-use ehrbase_rest::authz::AuthzConfig;
+use ehrbase_rest::access::authn::AuthConfig;
+use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
+use ehrbase_rest::access::authz::AuthzConfig;
 use ehrbase_rest::{AdminConfig, AuthzHandle, RestConfig};
 
 mod common;

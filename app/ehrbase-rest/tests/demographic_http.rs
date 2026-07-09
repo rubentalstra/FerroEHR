@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 use tower::ServiceExt;
 
 use ehrbase_rest::RestConfig;
-use ehrbase_rest::auth::config::AuthConfig;
+use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_sm::SmError;
 use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
 

@@ -1,7 +1,7 @@
 //! Authentication configuration (Stage 1: Basic + OAuth2/OIDC bearer).
 //!
 //! Loaded via `figment` alongside the rest of [`crate::config::RestConfig`].
-//! The coarse RBAC gate is configured separately (`crate::authz::AuthzConfig`);
+//! The coarse RBAC gate is configured separately (`crate::access::authz::AuthzConfig`);
 //! [`AuthConfig::admin_scope`] here is a deprecated back-compat alias.
 
 use serde::{Deserialize, Serialize};

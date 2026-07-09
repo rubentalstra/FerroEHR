@@ -4,7 +4,7 @@
 //! Applied as one axum middleware over the API router (not per handler). A
 //! successful authentication puts a [`Principal`] (with roles + retained JWT
 //! claims) into the request extensions for downstream handlers/the service
-//! layer. When an [`crate::authz::AuthzHandle`] is wired, the middleware then
+//! layer. When an [`crate::access::authz::AuthzHandle`] is wired, the middleware then
 //! runs the RBAC gate over the matched operation's class
 //! (`docs/enterprise/access-control.md` §5.2): a deny is a `403` with the
 //! `Principal` attached to the response so the ATNA audit layer records it.
@@ -15,7 +15,7 @@ mod jwt;
 
 use std::sync::Arc;
 
-use crate::authz::RbacDecision;
+use crate::access::authz::RbacDecision;
 use axum::extract::{FromRequestParts, MatchedPath, Request, State};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
@@ -24,7 +24,7 @@ use http::{HeaderValue, StatusCode, header};
 
 use openehr_its::rest::runtime::ApiError;
 
-use crate::authz::AuthzHandle;
+use crate::access::authz::AuthzHandle;
 use crate::error::RestError;
 pub use config::AuthConfig;
 use jwt::JwtValidator;
@@ -113,11 +113,11 @@ impl Authenticator {
     /// # Errors
     /// Returns a message if the OIDC key material/algorithms are invalid.
     pub fn new(config: AuthConfig) -> Result<Arc<Self>, String> {
-        Self::with_role_claims(config, crate::authz::roles::default_role_claims())
+        Self::with_role_claims(config, crate::access::authz::roles::default_role_claims())
     }
 
     /// Build from configuration with explicit RBAC role-claim paths (§5.1 —
-    /// `authz.rbac.role_claims`), used when an [`crate::authz::AuthzHandle`] is
+    /// `authz.rbac.role_claims`), used when an [`crate::access::authz::AuthzHandle`] is
     /// wired; [`Authenticator::new`] defaults them.
     ///
     /// # Errors
@@ -324,7 +324,7 @@ impl<S: Sync> FromRequestParts<S> for AuthenticatedUser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::auth::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
+    use crate::access::authn::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
     use argon2::password_hash::{PasswordHasher, SaltString};
     use argon2::{Argon2, password_hash::PasswordHash};
 

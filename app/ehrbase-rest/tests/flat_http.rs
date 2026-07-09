@@ -24,7 +24,7 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use ehrbase_rest::RestConfig;
-use ehrbase_rest::auth::config::AuthConfig;
+use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_sm::{CallStatusType, SmError};
 
 mod common;

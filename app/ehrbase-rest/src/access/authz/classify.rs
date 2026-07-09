@@ -16,7 +16,7 @@
 //! *non-generated* surface (status/health/swagger/management), which never
 //! reaches [`class_of`].
 
-use crate::authz::request::{AccessMode, ResourceKind};
+use crate::access::authz::request::{AccessMode, ResourceKind};
 
 /// The coarse authorization class of an operation (§5.2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
