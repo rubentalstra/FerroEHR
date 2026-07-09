@@ -281,7 +281,7 @@ Numbers with provenance and both directions. Never "ehrbase-rs is faster."
   committing it. Each report carries its environment block so cross-run
   comparison is honest.
 - A lightweight **regression micro-bench** *can* run in CI against ehrbase-rs
-  alone (self-hosted, not vs. Java) to catch our own perf regressions between
+  alone (the compose stack, not vs. Java) to catch our own perf regressions between
   releases — separate from the comparative benchmark, clearly labelled, never
   conflated with a "vs. EHRbase" claim.
 
@@ -289,7 +289,7 @@ Numbers with provenance and both directions. Never "ehrbase-rs is faster."
 
 1. `tools/benchmark` scaffold: CLI, `Target`, the `SutClient` reuse, the
    deterministic seeder (empty→1M), HdrHistogram measurement with
-   coordinated-omission correction. Prove it against the self-hosted ehrbase-rs.
+   coordinated-omission correction. Prove it against the composed ehrbase-rs stack.
 2. Workload W1–W13 from the CNF fixtures; the pre-flight conformance gate;
    `workload.lock`. Freeze the workload.
 3. `docker/benchmark/` dual-stack compose + the pinned EHRbase Java images; the

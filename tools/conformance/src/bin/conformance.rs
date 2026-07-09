@@ -1,7 +1,7 @@
 //! The ECC conformance CLI (design v4).
 //!
 //! ```text
-//! conformance run   [--base-url URL | --self-host] [--filter S] [--profile core|standard|options]
+//! conformance run   --base-url URL [--filter S] [--profile core|standard|options]
 //!                   [--format json|xml|both] [--out DIR] [--auth SPEC] [--admin-auth SPEC]
 //! conformance list  [--filter S]
 //! conformance report --from results.json [--out DIR]
@@ -50,9 +50,6 @@ struct RunArgs {
     /// `http://localhost:8080/ehrbase/rest/openehr/v1`.
     #[arg(long)]
     base_url: Option<String>,
-    /// Boot an in-process self-hosted SUT (requires the `self-host` feature).
-    #[arg(long)]
-    self_host: bool,
     /// Only run cases whose id contains this substring.
     #[arg(long)]
     filter: Option<String>,
@@ -134,27 +131,13 @@ async fn main() {
     std::process::exit(code);
 }
 
-/// Build the SUT (external or self-hosted). Returns an auth-mode label for the
-/// statement alongside the SUT.
-// `async` is load-bearing under `--features self-host` (awaits container boot);
-// without the feature the body has no await, which is expected.
-#[cfg_attr(not(feature = "self-host"), allow(clippy::unused_async))]
-async fn build_sut(args: &RunArgs) -> Result<(Sut, String), String> {
-    if args.self_host {
-        #[cfg(feature = "self-host")]
-        {
-            let sut = Sut::self_hosted().await.map_err(|e| e.to_string())?;
-            return Ok((sut, "basic (self-host, RBAC off)".to_owned()));
-        }
-        #[cfg(not(feature = "self-host"))]
-        {
-            return Err("--self-host requires building with `--features self-host`".to_owned());
-        }
-    }
+/// Build the SUT client. Returns an auth-mode label for the statement
+/// alongside the SUT.
+fn build_sut(args: &RunArgs) -> Result<(Sut, String), String> {
     let base_url = args
         .base_url
         .clone()
-        .ok_or_else(|| "one of --base-url or --self-host is required".to_owned())?;
+        .ok_or_else(|| "--base-url is required (see scripts/conformance.sh)".to_owned())?;
     let regular = args.auth.as_deref().map(Credential::parse).transpose()?;
     let admin = args
         .admin_auth
@@ -171,7 +154,7 @@ async fn build_sut(args: &RunArgs) -> Result<(Sut, String), String> {
 }
 
 async fn cmd_run(args: RunArgs) -> i32 {
-    let (sut, auth_mode) = match build_sut(&args).await {
+    let (sut, auth_mode) = match build_sut(&args) {
         Ok(pair) => pair,
         Err(e) => {
             eprintln!("error: {e}");
