@@ -312,3 +312,4 @@ ECC-SIG-002	SIG	active	sig/digest-recomputes	Version signing — digest recomput
 ECC-SIG-003	SIG	active	sig/all-kinds	Version signing — all kinds
 ECC-SIG-004	SIG	active	sig/client-verbatim	Version signing — client verbatim
 ECC-SIG-005	SIG	active	sig/pgp-verifies	Version signing — pgp verifies
+ECC-VAL-119	VAL	active	val/dv-date-day-disallowed-pattern	Validate DV_DATE — day disallowed by C_DATE pattern (defective vendored fixture rejected)
