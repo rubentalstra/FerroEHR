@@ -11,6 +11,7 @@
 pub mod admin;
 pub mod composition;
 pub mod contribution;
+pub mod definition;
 pub mod demographic;
 pub mod directory;
 pub mod ehr;
@@ -23,6 +24,7 @@ pub mod web_template;
 pub use admin::AdminService;
 pub use composition::EhrCompositionService;
 pub use contribution::EhrContributionService;
+pub use definition::{DefinitionAdl14Service, DefinitionQueryService};
 pub use demographic::DemographicService;
 pub use directory::EhrDirectoryService;
 pub use ehr::EhrService;
