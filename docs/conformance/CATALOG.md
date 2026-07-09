@@ -237,7 +237,7 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-VAL-031 | Active | Validate EVENT — type any | passed |
 | ECC-VAL-032 | Active | Validate EVENT — type point event | passed |
 | ECC-VAL-033 | Active | Validate EVENT — type interval event | passed |
-| ECC-VAL-034 | Active | Validate ITEM_STRUCTURE — type any | failed |
+| ECC-VAL-034 | Active | Validate ITEM_STRUCTURE — type any | passed |
 | ECC-VAL-035 | Active | Validate ITEM_STRUCTURE — type item tree | passed |
 | ECC-VAL-036 | Active | Validate ITEM_STRUCTURE — type item list | passed |
 | ECC-VAL-037 | Active | Validate ITEM_STRUCTURE — type item table | passed |
@@ -251,7 +251,7 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-VAL-045 | Active | Validate DV_TEXT — list | passed |
 | ECC-VAL-046 | Active | Validate DV_CODED_TEXT — open | passed |
 | ECC-VAL-047 | Active | Validate DV_CODED_TEXT — local codes | passed |
-| ECC-VAL-048 | Active | Validate DV_CODED_TEXT — ext term | failed |
+| ECC-VAL-048 | Active | Validate DV_CODED_TEXT — ext term | passed |
 | ECC-VAL-049 | Active | Validate DV_ORDINAL — open | passed |
 | ECC-VAL-050 | Active | Validate DV_ORDINAL — constraint | passed |
 | ECC-VAL-051 | Active | Validate DV_SCALE — open | passed |
@@ -264,7 +264,7 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-VAL-058 | Active | Validate DV_QUANTITY — property units | passed |
 | ECC-VAL-059 | Active | Validate DV_QUANTITY — property units mag | passed |
 | ECC-VAL-060 | Active | Validate DV_PROPORTION — open | passed |
-| ECC-VAL-061 | Active | Validate DV_PROPORTION — ratio | failed |
+| ECC-VAL-061 | Active | Validate DV_PROPORTION — ratio | passed |
 | ECC-VAL-062 | Active | Validate DV_PROPORTION — unitary | passed |
 | ECC-VAL-063 | Active | Validate DV_PROPORTION — percent | passed |
 | ECC-VAL-064 | Active | Validate DV_PROPORTION — fraction | passed |

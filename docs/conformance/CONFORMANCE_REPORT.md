@@ -8,9 +8,9 @@
 - SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
 - Spec versions: RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1.0 · TERM 3.1.0
 - Auth mode: basic
-- Started: 2026-07-09T19:00:27.168087Z
+- Started: 2026-07-09T19:19:48.304718Z
 
-**319 case×format executions · 290 passed · 28 failed.**
+**319 case×format executions · 293 passed · 25 failed.**
 
 ### Per-area matrix
 
@@ -24,7 +24,7 @@
 | TPL — Template / OPT provisioning | 16 | 14 | 2 | 0 | 0 |
 | SQR — Stored-query provisioning | 7 | 3 | 4 | 0 | 0 |
 | QRY — AQL execution | 13 | 8 | 5 | 0 | 0 |
-| VAL — Content / archetype validation | 119 | 116 | 3 | 0 | 0 |
+| VAL — Content / archetype validation | 119 | 119 | 0 | 0 | 0 |
 | DEM — Demographic service | 24 | 18 | 6 | 0 | 0 |
 | ADM — Admin service | 6 | 6 | 0 | 0 | 0 |
 | SIG — Version signing | 5 | 4 | 1 | 0 | 1 |
@@ -57,9 +57,6 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 - **ECC-DEM-014** Demographic group delete (`dem/group-delete`, json): expected status in [200, 204], got 400
 - **ECC-DEM-017** Demographic organisation delete (`dem/organisation-delete`, json): expected status in [200, 204], got 400
 - **ECC-DEM-020** Demographic role delete (`dem/role-delete`, json): expected status in [200, 204], got 400
-- **ECC-VAL-034** Validate ITEM_STRUCTURE — type any (`val/item-str-type-any`, json): ITEM_LIST accepted in an open ITEM_STRUCTURE slot (any subtype): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content[openEHR-EHR-EVALUATION.validation_evaliation_test.v2,'Validation evaluation test with tree']/data[at0001]: class ITEM_LIST not)
-- **ECC-VAL-048** Validate DV_CODED_TEXT — ext term (`val/dv-coded-text-ext-term`, json): SNOMED-CT 99999999 not in the external code_list (C_CODE_PHRASE): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-061** Validate DV_PROPORTION — ratio (`val/dv-proportion-ratio`, json): type 0 (ratio) not in list {0} (C_INTEGER.list): expected rejected (ITS-REST validation composition_create.yaml 422), got 201
 - **ECC-SIG-001** Version signing — digest present (`sig/digest-present`, xml): expected status 200, got 406 (body: {"error":"Not Acceptable","message":"not acceptable: canonical XML for this response is available once typed payloads land (P12); request application/json"})
 
 ## 2. Scope of test
@@ -70,8 +67,8 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | Data formats | json, xml |
 | Catalogue (active cases) | 311 |
 | Executed | 319 |
-| Passed | 290 |
-| Failed | 28 |
+| Passed | 293 |
+| Failed | 25 |
 
 ## 3. Detailed test report
 
@@ -304,7 +301,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-VAL-031 | ArchetypeValidation | json | 1/1 | PASS |
 | ECC-VAL-032 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-033 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-034 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-034 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-035 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-036 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-037 | ArchetypeValidation | json | 2/2 | PASS |
@@ -318,7 +315,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-VAL-045 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-046 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-047 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-048 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-048 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-049 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-050 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-051 | ArchetypeValidation | json | 2/2 | PASS |
@@ -331,7 +328,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-VAL-058 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-059 | ArchetypeValidation | json | 3/3 | PASS |
 | ECC-VAL-060 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-061 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-061 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-062 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-063 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-064 | ArchetypeValidation | json | 2/2 | PASS |
@@ -410,7 +407,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | CompositionOps | 37 | 1 | 0 | 0 | fail |
 | ChangeSets | 26 | 5 | 0 | 0 | fail |
 | Versioning | 0 | 0 | 0 | 0 | fail |
-| ArchetypeValidation | 116 | 3 | 0 | 0 | fail |
+| ArchetypeValidation | 119 | 0 | 0 | 0 | pass |
 | AnonymousEhrs | 0 | 0 | 0 | 0 | fail |
 
 ### Standard — not claimable
@@ -424,7 +421,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | CompositionOps | 37 | 1 | 0 | 0 | fail |
 | ChangeSets | 26 | 5 | 0 | 0 | fail |
 | Versioning | 0 | 0 | 0 | 0 | fail |
-| ArchetypeValidation | 116 | 3 | 0 | 0 | fail |
+| ArchetypeValidation | 119 | 0 | 0 | 0 | pass |
 | AnonymousEhrs | 0 | 0 | 0 | 0 | fail |
 | DirectoryOps | 36 | 1 | 0 | 0 | fail |
 | QueryProvisioning | 3 | 4 | 0 | 0 | fail |

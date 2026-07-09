@@ -52,10 +52,15 @@ green (minus any B5-adjudicated corpus defects), zero drift elsewhere.
 
 ## Exit criteria
 
-- [ ] The 81 ArchetypeValidation ECC failures → green (minus any
+- [x] The 81 ArchetypeValidation ECC failures → green (minus any
       B5-adjudicated corpus defects), verified by a full
-      `scripts/conformance.sh` run.
-- [ ] Zero ECC drift elsewhere (baseline ratchets upward only).
+      `scripts/conformance.sh` run. *2026-07-09: full run 319 executed ·
+      293 passed · 25 failed — ArchetypeValidation 0 failing (119/119 in the
+      filtered run incl. the new ECC-VAL-119); root causes: the defective
+      all_types fixtures (owned register), the renamed-sibling walker skip,
+      and three defective case authorings.*
+- [x] Zero ECC drift elsewhere (baseline ratchets 211/318 → **293/319**;
+      regressed 0 · newly-green 81).
 - [ ] Workspace green (`cargo nextest run --workspace`), clippy clean.
 - [ ] Blueprint §2 + ch 2/3 state tables updated; `current-phase.md` advanced.
 
