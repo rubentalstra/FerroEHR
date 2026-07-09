@@ -14,7 +14,9 @@
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{EhrCompositionService, EhrContributionService, EhrService};
+use ehrbase_rest::{
+    EhrCompositionService, EhrContributionService, EhrService, EhrStatusService, Page,
+};
 use openehr_its::rest::runtime::ApiError;
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
@@ -364,4 +366,146 @@ async fn attestation_error_cases() {
     .await
     .expect_err("non-existent version → error");
     assert!(matches!(err, ApiError::NotFound(_)), "got {err:?}");
+}
+
+/// A valid `EHR_STATUS` for an update (a fresh version, distinct content).
+fn ehr_status(queryable: bool) -> Value {
+    json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": { "_type": "PARTY_SELF" },
+        "is_queryable": queryable,
+        "is_modifiable": true
+    })
+}
+
+/// SM `I_EHR_CONTRIBUTION.list_contributions` / `contribution_count` +
+/// `I_EHR_SERVICE.get_ehr` → `EHR_SUMMARY`, against a real PG 18. Native-API
+/// calls only (no ITS-REST route); see `i_ehr_contribution.adoc` +
+/// `ehr_summary.adoc`.
+#[tokio::test]
+async fn contribution_listing_count_and_ehr_summary() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("contribution_listing").await);
+
+    // Unknown EHR → NotFound (SM ehr_does_not_exist) for every native call.
+    let ghost = "00000000-0000-7000-8000-0000000000ff";
+    assert!(matches!(
+        svc.contribution_list(ghost.to_owned(), None, Page::all())
+            .await,
+        Err(ApiError::NotFound(_))
+    ));
+    assert!(matches!(
+        svc.contribution_count(ghost.to_owned(), None).await,
+        Err(ApiError::NotFound(_))
+    ));
+    assert!(matches!(
+        svc.get_ehr_summary(ghost.to_owned()).await,
+        Err(ApiError::NotFound(_))
+    ));
+
+    // Seed: (1) EHR creation, (2) an EHR_STATUS update, (3) a composition — three
+    // CONTRIBUTIONs, one of them a COMPOSITION.
+    let ehr_id = create_ehr(&svc).await; // contribution #1
+
+    let status_uid = svc
+        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr_id })))
+        .await
+        .expect("get current EHR_STATUS")
+        .body["uid"]["value"]
+        .as_str()
+        .expect("status uid")
+        .to_owned();
+    svc.ehr_status_update(
+        params(json!({ "ehr_id": ehr_id, "If-Match": status_uid })),
+        ehr_status(false),
+    )
+    .await
+    .expect("EHR_STATUS update"); // contribution #2
+
+    svc.composition_create(params(json!({ "ehr_id": ehr_id })), composition("obs"))
+        .await
+        .expect("composition_create"); // contribution #3
+
+    // contribution_count matches the seeded three.
+    let count = svc
+        .contribution_count(ehr_id.clone(), None)
+        .await
+        .expect("contribution_count");
+    assert_eq!(count, 3, "EHR creation + status update + composition");
+
+    // contribution_list returns all three, oldest-first, distinct.
+    let all = svc
+        .contribution_list(ehr_id.clone(), None, Page::all())
+        .await
+        .expect("contribution_list");
+    assert_eq!(all.len(), 3, "three contribution ids");
+    let distinct: std::collections::BTreeSet<_> = all.iter().collect();
+    assert_eq!(distinct.len(), 3, "ids are distinct");
+
+    // Paging: offset 1, fetch 1 → exactly the second id of the full list.
+    let page = svc
+        .contribution_list(
+            ehr_id.clone(),
+            None,
+            Page {
+                item_offset: Some(1),
+                items_to_fetch: Some(1),
+            },
+        )
+        .await
+        .expect("paged contribution_list");
+    assert_eq!(
+        page,
+        vec![all[1].clone()],
+        "offset 1 / fetch 1 slices the list"
+    );
+
+    // time_range: an upper bound before every commit excludes all.
+    let empty = svc
+        .contribution_list(
+            ehr_id.clone(),
+            Some((None, Some("2000-01-01T00:00:00Z".to_owned()))),
+            Page::all(),
+        )
+        .await
+        .expect("bounded contribution_list");
+    assert!(
+        empty.is_empty(),
+        "upper bound in the past → no contributions"
+    );
+    assert_eq!(
+        svc.contribution_count(
+            ehr_id.clone(),
+            Some((None, Some("2000-01-01T00:00:00Z".to_owned())))
+        )
+        .await
+        .expect("bounded count"),
+        0
+    );
+    // A malformed bound → 400 BadRequest.
+    assert!(matches!(
+        svc.contribution_count(ehr_id.clone(), Some((Some("not-a-time".to_owned()), None)))
+            .await,
+        Err(ApiError::BadRequest(_))
+    ));
+
+    // EHR_SUMMARY: mandatory fields + the counts.
+    let summary = svc
+        .get_ehr_summary(ehr_id.clone())
+        .await
+        .expect("get_ehr_summary");
+    assert_eq!(summary.ehr_id, ehr_id);
+    assert!(!summary.system_id.is_empty(), "system_id (EHR.system_id)");
+    assert_eq!(summary.ehr_status["_type"], "EHR_STATUS", "ehr_status copy");
+    assert!(
+        summary.time_created.parse::<jiff::Timestamp>().is_ok(),
+        "time_created is ISO 8601"
+    );
+    assert_eq!(summary.contribution_count, 3);
+    assert_eq!(
+        summary.composition_count, 1,
+        "one versioned COMPOSITION (versioned objects, not versions)"
+    );
 }

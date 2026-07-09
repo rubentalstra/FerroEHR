@@ -12,7 +12,7 @@
 //! (create) or the stored object (modify / delete); everything commits in one
 //! transaction.
 
-use ehrbase_rest::{ResourceMeta, ServiceResponse};
+use ehrbase_rest::{Page, ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
@@ -20,6 +20,21 @@ use uuid::Uuid;
 use super::codes::{self, change_type};
 use super::vobject::{self, AuditInput, Change, Kind, PendingAttest};
 use super::{EhrbaseService, ServiceError, version_id};
+
+/// An optional `(lower, upper)` inclusive commit-time window — the simple
+/// realization of the SM `Interval<Iso8601_date_time>` (either side open when
+/// its bound is `None`; the whole `Option` `None` = unbounded). Both bounds are
+/// already-parsed ISO 8601 timestamps.
+type TimeRange = Option<(Option<jiff::Timestamp>, Option<jiff::Timestamp>)>;
+
+/// Split a [`TimeRange`] into the two SQL bound params (ISO 8601 strings, bound
+/// through the `::timestamptz` cast like every other timestamp in the service).
+/// A `None` on either side (or a `None` window) becomes a `NULL` param, which
+/// disables that side of the filter.
+fn bounds(time_range: TimeRange) -> (Option<String>, Option<String>) {
+    let (lower, upper) = time_range.unwrap_or((None, None));
+    (lower.map(|t| t.to_string()), upper.map(|t| t.to_string()))
+}
 
 /// The storage branch an incoming VERSION maps to. This is deliberately
 /// narrower than the `audit_change_type` group: many change kinds (amendment,
@@ -478,6 +493,67 @@ impl EhrbaseService {
             "audit": Self::audit_details(&system_id, &change_type, description.as_deref(), &committer, &time_committed),
             "versions": versions
         }))
+    }
+
+    /// SM `I_EHR_CONTRIBUTION.list_contributions` — the ids of the EHR's
+    /// CONTRIBUTIONs, oldest-first (audit `time_committed`, then id), within the
+    /// optional `(lower, upper)` inclusive commit-time window, paged by `page`
+    /// (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_contribution.adoc`;
+    /// "Obtain a list of identifiers of Contributions in EHR"). A missing EHR is
+    /// the SM `ehr_does_not_exist` → `NotFound`.
+    pub(super) async fn list_contributions(
+        &self,
+        ehr_id: Uuid,
+        time_range: TimeRange,
+        page: Page,
+    ) -> Result<Vec<Uuid>, ServiceError> {
+        self.ensure_ehr_exists(ehr_id).await?;
+        let (lower, upper) = bounds(time_range);
+        // A NULL bound param disables that side (`$n IS NULL OR …`); a NULL LIMIT
+        // returns all rows (Postgres `LIMIT NULL`); OFFSET defaults to 0.
+        let rows = sqlx::query(
+            "SELECT c.id FROM contribution c JOIN audit a ON a.id = c.audit_id \
+             WHERE c.ehr_id = $1 \
+               AND ($2::timestamptz IS NULL OR a.time_committed >= $2::timestamptz) \
+               AND ($3::timestamptz IS NULL OR a.time_committed <= $3::timestamptz) \
+             ORDER BY a.time_committed, c.id \
+             OFFSET $4 LIMIT $5",
+        )
+        .bind(ehr_id)
+        .bind(lower)
+        .bind(upper)
+        .bind(i64::try_from(page.offset()).unwrap_or(i64::MAX))
+        .bind(page.limit().map(|l| i64::try_from(l).unwrap_or(i64::MAX)))
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|row| Ok(row.try_get("id")?))
+            .collect::<Result<Vec<Uuid>, ServiceError>>()
+    }
+
+    /// SM `I_EHR_CONTRIBUTION.contribution_count` — the number of CONTRIBUTIONs
+    /// in the EHR within the optional `(lower, upper)` inclusive commit-time
+    /// window (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_contribution.adoc`).
+    /// A missing EHR is the SM `ehr_does_not_exist` → `NotFound`.
+    pub(super) async fn count_contributions(
+        &self,
+        ehr_id: Uuid,
+        time_range: TimeRange,
+    ) -> Result<i64, ServiceError> {
+        self.ensure_ehr_exists(ehr_id).await?;
+        let (lower, upper) = bounds(time_range);
+        let count: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
+             WHERE c.ehr_id = $1 \
+               AND ($2::timestamptz IS NULL OR a.time_committed >= $2::timestamptz) \
+               AND ($3::timestamptz IS NULL OR a.time_committed <= $3::timestamptz)",
+        )
+        .bind(ehr_id)
+        .bind(lower)
+        .bind(upper)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(count)
     }
 
     /// Build an `AUDIT_DETAILS` from stored audit columns. `change_type` is the

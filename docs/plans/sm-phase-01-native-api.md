@@ -74,10 +74,17 @@ SM-6), ADL2/archetype store (SM-2), any wire-shape change.
       validate choke points to it remains*
 - [x] `SystemLog` facade naming `ehrbase-audit` as the SM component
       (`services/system_log.rs`, doc-cites the `I_SYSTEM_LOG` stub + ATNA)
-- [ ] `EhrSummary` gains `contribution_count`/`composition_count`
-      (`i_ehr_service.adoc` EHR_SUMMARY); wire into `ehr_summary`
-- [ ] `list_contributions(ehr_id, time_range, page)` +
-      `contribution_count(ehr_id, time_range)` (`i_ehr_contribution.adoc`)
+- [x] `EhrSummary` counts — done 2026-07-09: `EhrService::get_ehr_summary`
+      (realizes SM `get_ehr: EHR_SUMMARY`; named to avoid colliding with the
+      inherent wire-EHR builder) + `summarize_ehr` producing all six
+      mandatory fields; `composition_count` = versioned objects, not
+      versions (`ehr_summary.adoc`). Wire unchanged (no ITS-REST route
+      emits EHR_SUMMARY — PORT NOTE)
+- [x] `contribution_list`/`contribution_count` — done 2026-07-09
+      (`i_ehr_contribution.adoc`): native-API calls (no ITS-REST route —
+      extension exposure later, design 08 §7); time-range bounds either
+      side open, `Page` cursor, oldest-first; NotFound = SM
+      `ehr_does_not_exist`; e2e-tested incl. paging/filtering/error cases
 - [x] Attestations — done 2026-07-09: `vo_attestation` table (canonical
       ATTESTATION verbatim, contribution-linked); 666 = attestation of an
       existing ORIGINAL_VERSION (no new version; 400/422/404 error rules);

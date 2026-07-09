@@ -7,4 +7,4 @@ pub use ehrbase_sm::services::{
     EhrDirectoryService, EhrService, EhrStatusService, QueryService, SystemLog, ValidityChecker,
     WebTemplateService,
 };
-pub use ehrbase_sm::types::{AqlQueryRequest, PartyKind, QueryOutcome};
+pub use ehrbase_sm::types::{AqlQueryRequest, EhrSummary, Page, PartyKind, QueryOutcome};
