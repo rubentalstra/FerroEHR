@@ -21,7 +21,10 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::{AdminService, EhrDirectoryService, EhrService, EhrStatusService};
+use ehrbase_rest::backend::{DemographicService, PartyKind, PartyRelationshipService};
+use ehrbase_rest::{
+    AdminArchive, AdminService, EhrDirectoryService, EhrService, EhrStatusService, PlatformService,
+};
 use openehr_its::rest::runtime::ApiError;
 
 struct Pg {
@@ -287,4 +290,402 @@ async fn admin_delete_all_deletes_present_and_skips_missing() {
         matches!(res, Err(ApiError::BadRequest(_))),
         "a malformed id must be BadRequest, got {res:?}"
     );
+}
+
+// ─── SM-4: statistics / physical_party_delete / archive ───────────────────────
+
+/// A minimal valid demographic PERSON (PARTY invariant `Identities_valid`).
+fn person(name: &str) -> Value {
+    json!({
+        "_type": "PERSON",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": []
+            }
+        }]
+    })
+}
+
+/// A `PARTY_RELATIONSHIP` from `source` to `target` (bare versioned-object ids).
+fn relationship(name: &str, source: &str, target: &str) -> Value {
+    json!({
+        "_type": "PARTY_RELATIONSHIP",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
+        "name": { "_type": "DV_TEXT", "value": name },
+        "source": {
+            "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
+            "id": { "_type": "HIER_OBJECT_ID", "value": source }
+        },
+        "target": {
+            "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
+            "id": { "_type": "HIER_OBJECT_ID", "value": target }
+        }
+    })
+}
+
+/// Create a PERSON and return its bare versioned-object UUID string.
+async fn make_person(svc: &EhrbaseService, name: &str) -> String {
+    let created = svc
+        .party_create(PartyKind::Person, person(name))
+        .await
+        .expect("create person");
+    created.body["uid"]["value"]
+        .as_str()
+        .expect("uid")
+        .split("::")
+        .next()
+        .expect("vo uuid")
+        .to_owned()
+}
+
+/// The number of `vo_version` rows for one versioned object (0 = physically gone).
+async fn vo_version_rows(pool: &PgPool, vo: &str) -> i64 {
+    sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE vo_id = $1::uuid")
+        .bind(vo)
+        .fetch_one(pool)
+        .await
+        .expect("vo_version count")
+}
+
+#[tokio::test]
+async fn admin_statistics_per_service_and_time_range() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("admin_stats").await;
+    let svc = EhrbaseService::new(pool.clone());
+    let pool = &pool;
+
+    let ehr = seed_full_ehr(&svc).await; // several EHR-scoped contributions
+    make_person(&svc, "P").await; // one demographic (ehr-less) contribution
+
+    // Directly seed COMPOSITIONs (the service fixtures here avoid COMPOSITION):
+    // one vo with two versions + one vo with a single version → 2 versioned
+    // compositions across 3 version rows. Reuse an existing audit/contribution.
+    let (cid, aid): (Uuid, Uuid) =
+        sqlx::query_as("SELECT id, audit_id FROM contribution WHERE ehr_id = $1 LIMIT 1")
+            .bind(ehr)
+            .fetch_one(pool)
+            .await
+            .expect("an EHR contribution");
+    let vo_x = Uuid::now_v7();
+    let vo_y = Uuid::now_v7();
+    for (vo, ver, period) in [
+        (
+            vo_x,
+            1,
+            "tstzrange(now() - interval '2 seconds', now() - interval '1 second', '[)')",
+        ),
+        (
+            vo_x,
+            2,
+            "tstzrange(now() - interval '1 second', NULL, '[)')",
+        ),
+        (
+            vo_y,
+            1,
+            "tstzrange(now() - interval '1 second', NULL, '[)')",
+        ),
+    ] {
+        sqlx::query(AssertSqlSafe(format!(
+            "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id) \
+             VALUES ($1, 'COMPOSITION', $2, $3, {period}, $4, $5)"
+        )))
+        .bind(vo)
+        .bind(ehr)
+        .bind(ver)
+        .bind(cid)
+        .bind(aid)
+        .execute(pool)
+        .await
+        .expect("seed composition version");
+    }
+
+    // Contribution counts: Ehr scope has the seeded EHR's contributions;
+    // Demographic scope has the party create; a non-content service has none.
+    let ehr_count = svc
+        .admin_contribution_count(PlatformService::Ehr, None)
+        .await
+        .expect("ehr count");
+    assert!(
+        ehr_count >= 3,
+        "expected the EHR's contributions, got {ehr_count}"
+    );
+    let demo_count = svc
+        .admin_contribution_count(PlatformService::Demographic, None)
+        .await
+        .expect("demo count");
+    assert_eq!(demo_count, 1, "one demographic contribution (the party)");
+    let query_count = svc
+        .admin_contribution_count(PlatformService::Query, None)
+        .await
+        .expect("query count");
+    assert_eq!(query_count, 0, "Query is not a versioned-content service");
+
+    // list_contributions agrees with the count for the Ehr scope.
+    let listed = svc
+        .admin_list_contributions(PlatformService::Ehr, None)
+        .await
+        .expect("list contributions");
+    assert_eq!(i64::try_from(listed.len()).unwrap(), ehr_count);
+
+    // Composition statistics: 2 versioned compositions, 3 version rows (Ehr);
+    // a non-Ehr service sees neither.
+    assert_eq!(
+        svc.versioned_composition_count(PlatformService::Ehr, None)
+            .await
+            .expect("versioned comp count"),
+        2
+    );
+    assert_eq!(
+        svc.composition_version_count(PlatformService::Ehr, None)
+            .await
+            .expect("comp version count"),
+        3
+    );
+    assert_eq!(
+        svc.versioned_composition_count(PlatformService::Demographic, None)
+            .await
+            .expect("demo versioned comp"),
+        0
+    );
+
+    // Time range: an upper bound before everything → 0; a lower bound in the
+    // future → 0; open bounds → all.
+    let past = Some((None, Some("2000-01-01T00:00:00Z".to_owned())));
+    assert_eq!(
+        svc.admin_contribution_count(PlatformService::Ehr, past)
+            .await
+            .expect("past range"),
+        0
+    );
+    let future = Some((Some("2999-01-01T00:00:00Z".to_owned()), None));
+    assert_eq!(
+        svc.admin_contribution_count(PlatformService::Ehr, future)
+            .await
+            .expect("future range"),
+        0
+    );
+
+    // An invalid ISO bound → 400 (validated at the adapter before the query).
+    let bad = svc
+        .admin_contribution_count(
+            PlatformService::Ehr,
+            Some((Some("not-a-date".to_owned()), None)),
+        )
+        .await;
+    assert!(
+        matches!(bad, Err(ApiError::BadRequest(_))),
+        "invalid ISO bound must be BadRequest, got {bad:?}"
+    );
+}
+
+#[tokio::test]
+async fn physical_party_delete_cascades_relationships_and_spares_partner() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("admin_party_delete").await;
+    let svc = EhrbaseService::new(pool.clone());
+    let pool = &pool;
+
+    let p1 = make_person(&svc, "P1").await;
+    let p2 = make_person(&svc, "P2").await;
+    let p3 = make_person(&svc, "P3").await;
+
+    // R1: p1 → p2 (references p1 as source). R2: p2 → p1 (references p1 as
+    // target). R3: p2 → p3 (does NOT reference p1).
+    let r1 = svc
+        .party_relationship_create(relationship("r1", &p1, &p2))
+        .await
+        .expect("r1");
+    let r1 = r1.body["uid"]["value"]
+        .as_str()
+        .unwrap()
+        .split("::")
+        .next()
+        .unwrap()
+        .to_owned();
+    let r2 = svc
+        .party_relationship_create(relationship("r2", &p2, &p1))
+        .await
+        .expect("r2");
+    let r2 = r2.body["uid"]["value"]
+        .as_str()
+        .unwrap()
+        .split("::")
+        .next()
+        .unwrap()
+        .to_owned();
+    let r3 = svc
+        .party_relationship_create(relationship("r3", &p2, &p3))
+        .await
+        .expect("r3");
+    let r3 = r3.body["uid"]["value"]
+        .as_str()
+        .unwrap()
+        .split("::")
+        .next()
+        .unwrap()
+        .to_owned();
+
+    // No orphaned audits before the delete: every audit row is referenced by a
+    // vo_version or contribution.
+    let orphan_audits_before: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM audit a \
+         WHERE NOT EXISTS (SELECT 1 FROM vo_version v WHERE v.audit_id = a.id) \
+           AND NOT EXISTS (SELECT 1 FROM contribution c WHERE c.audit_id = a.id)",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("orphan audits before");
+    assert_eq!(orphan_audits_before, 0);
+
+    // Delete p1 physically (SM physical_party_delete).
+    svc.physical_party_delete(p1.clone())
+        .await
+        .expect("physical party delete");
+
+    // p1 and both relationships referencing it are physically gone.
+    assert_eq!(vo_version_rows(pool, &p1).await, 0, "p1 gone");
+    assert_eq!(
+        vo_version_rows(pool, &r1).await,
+        0,
+        "r1 (p1 as source) gone"
+    );
+    assert_eq!(
+        vo_version_rows(pool, &r2).await,
+        0,
+        "r2 (p1 as target) gone"
+    );
+
+    // The partner party p2 and the unrelated relationship r3 survive.
+    assert!(vo_version_rows(pool, &p2).await > 0, "partner p2 survives");
+    assert!(
+        vo_version_rows(pool, &r3).await > 0,
+        "unrelated r3 survives"
+    );
+    assert!(
+        svc.party_get(PartyKind::Person, p2.clone(), None)
+            .await
+            .expect("p2 still readable")
+            .body["_type"]
+            == "PERSON"
+    );
+
+    // No orphaned audit rows were left behind (audits swept in the cascade).
+    let orphan_audits_after: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM audit a \
+         WHERE NOT EXISTS (SELECT 1 FROM vo_version v WHERE v.audit_id = a.id) \
+           AND NOT EXISTS (SELECT 1 FROM contribution c WHERE c.audit_id = a.id)",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("orphan audits after");
+    assert_eq!(orphan_audits_after, 0, "no orphaned audits after cascade");
+
+    // An unknown party id → 404 (party_id_does_not_exist).
+    let unknown = svc.physical_party_delete(Uuid::now_v7().to_string()).await;
+    assert!(
+        matches!(unknown, Err(ApiError::NotFound(_))),
+        "unknown party must be NotFound, got {unknown:?}"
+    );
+
+    // A malformed id → 400.
+    let bad = svc.physical_party_delete("not-a-uuid".to_owned()).await;
+    assert!(matches!(bad, Err(ApiError::BadRequest(_))));
+}
+
+#[tokio::test]
+async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("admin_archive").await;
+    let svc = EhrbaseService::new(pool.clone());
+    let pool = &pool;
+
+    let ehr = seed_full_ehr(&svc).await;
+    let person = make_person(&svc, "Archie").await;
+
+    // archive_ehrs marks every VO of the EHR.
+    svc.archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("archive ehr");
+    let ehr_vo_count: i64 =
+        sqlx::query_scalar("SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1")
+            .bind(ehr)
+            .fetch_one(pool)
+            .await
+            .expect("ehr vo count");
+    let archived: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_archive va \
+         WHERE EXISTS (SELECT 1 FROM vo_version v WHERE v.vo_id = va.vo_id AND v.ehr_id = $1)",
+    )
+    .bind(ehr)
+    .fetch_one(pool)
+    .await
+    .expect("archived count");
+    assert_eq!(archived, ehr_vo_count, "every EHR VO is marked archived");
+
+    // Idempotent: a second archive_ehrs adds nothing and does not error.
+    svc.archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("re-archive ehr");
+    let archived_again: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
+        .fetch_one(pool)
+        .await
+        .expect("total archived");
+    assert_eq!(archived_again, ehr_vo_count, "re-archive is idempotent");
+
+    // archive_parties marks the party VO.
+    svc.archive_parties(vec![person.clone()])
+        .await
+        .expect("archive party");
+    let party_marked: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM vo_archive WHERE vo_id = $1::uuid")
+            .bind(&person)
+            .fetch_one(pool)
+            .await
+            .expect("party archived");
+    assert_eq!(party_marked, 1);
+
+    // Reads are UNCHANGED after archival (zero wire drift): the EHR_STATUS and
+    // the party still serve their content.
+    let status = svc
+        .ehr_status_get_at_time(params(json!({ "ehr_id": ehr.to_string() })))
+        .await
+        .expect("status still readable after archive");
+    assert_eq!(status.body["_type"], "EHR_STATUS");
+    let party = svc
+        .party_get(PartyKind::Person, person.clone(), None)
+        .await
+        .expect("party still readable after archive");
+    assert_eq!(party.body["_type"], "PERSON");
+
+    // All-or-nothing: a batch with one unknown EHR → 404 and nothing new is
+    // archived (a fresh EHR paired with a bogus id stays unmarked).
+    let fresh = seed_full_ehr(&svc).await;
+    let before: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
+        .fetch_one(pool)
+        .await
+        .expect("before");
+    let res = svc
+        .archive_ehrs(vec![fresh.to_string(), Uuid::now_v7().to_string()])
+        .await;
+    assert!(
+        matches!(res, Err(ApiError::NotFound(_))),
+        "an unknown EHR aborts the batch, got {res:?}"
+    );
+    let after: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
+        .fetch_one(pool)
+        .await
+        .expect("after");
+    assert_eq!(before, after, "all-or-nothing: nothing archived on failure");
+
+    // Unknown party → 404.
+    let bad_party = svc.archive_parties(vec![Uuid::now_v7().to_string()]).await;
+    assert!(matches!(bad_party, Err(ApiError::NotFound(_))));
 }

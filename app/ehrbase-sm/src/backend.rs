@@ -25,10 +25,10 @@
 use openehr_its::rest::generated::definition::DefinitionApi;
 
 use crate::services::{
-    AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
-    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrIndexService, EhrService, EhrStatusService, PartyRelationshipService, QueryService,
-    WebTemplateService,
+    AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
+    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
+    EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, PartyRelationshipService,
+    QueryService, TerminologyService, WebTemplateService,
 };
 
 /// The full server backend: everything the ITS-REST surface dispatches to.
@@ -52,6 +52,8 @@ pub trait Backend:
     + WebTemplateService
     + QueryService
     + AdminService
+    + AdminArchive
+    + TerminologyService
     + Send
     + Sync
     + std::fmt::Debug
@@ -75,6 +77,8 @@ impl<T> Backend for T where
         + WebTemplateService
         + QueryService
         + AdminService
+        + AdminArchive
+        + TerminologyService
         + Send
         + Sync
         + std::fmt::Debug
@@ -106,3 +110,5 @@ impl DemographicService for StubBackend {}
 impl PartyRelationshipService for StubBackend {}
 impl EhrIndexService for StubBackend {}
 impl AdminService for StubBackend {}
+impl AdminArchive for StubBackend {}
+impl TerminologyService for StubBackend {}

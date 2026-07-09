@@ -20,6 +20,7 @@ mod ehr;
 mod ehr_index;
 mod query;
 mod relationship;
+mod terminology;
 
 use std::sync::Arc;
 

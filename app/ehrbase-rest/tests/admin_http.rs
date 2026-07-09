@@ -71,6 +71,8 @@ impl ehrbase_rest::PartyRelationshipService for MockBackend {}
 impl ehrbase_rest::EhrIndexService for MockBackend {}
 impl WebTemplateService for MockBackend {}
 impl QueryService for MockBackend {}
+impl ehrbase_rest::AdminArchive for MockBackend {}
+impl ehrbase_rest::TerminologyService for MockBackend {}
 impl DemographicService for MockBackend {}
 
 fn config(admin_enabled: bool) -> RestConfig {

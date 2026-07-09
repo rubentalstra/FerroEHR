@@ -21,11 +21,14 @@ pub mod types;
 pub use backend::{Backend, StubBackend};
 pub use error::{CallStatus, CallStatusType};
 pub use services::{
-    AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
-    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrService, EhrStatusService, QueryService, SystemLog, ValidityChecker, WebTemplateService,
+    AdminArchive, AdminService, DefinedTerm, DefinitionAdl2Service, DefinitionAdl14Service,
+    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
+    EhrDirectoryService, EhrService, EhrStatusService, QueryService, StatTimeRange, SystemLog,
+    TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
+    TerminologyRelation, TerminologyRelationError, TerminologyService, ValidityChecker,
+    WebTemplateService,
 };
 pub use types::{
-    AqlQueryRequest, EhrSummary, Page, PartyKind, QueryDescriptor, QueryOutcome, ResourceMeta,
-    ServiceResponse, UpdateAttestation, UpdateAudit, UpdateVersion,
+    AqlQueryRequest, EhrSummary, Page, PartyKind, PlatformService, QueryDescriptor, QueryOutcome,
+    ResourceMeta, ServiceResponse, UpdateAttestation, UpdateAudit, UpdateVersion,
 };

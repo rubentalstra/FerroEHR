@@ -3,12 +3,13 @@
 
 pub use ehrbase_sm::backend::{Backend, StubBackend};
 pub use ehrbase_sm::services::{
-    AdminService, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
-    DemographicService, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrIndexService, EhrService, EhrStatusService, PartyRelationshipService, QueryService,
-    SystemLog, ValidityChecker, WebTemplateService,
+    AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
+    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
+    EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, PartyRelationshipService,
+    QueryService, StatTimeRange, SystemLog, TerminologyService, ValidityChecker,
+    WebTemplateService,
 };
 pub use ehrbase_sm::types::{
-    AqlQueryRequest, EhrIndexEntry, EhrSummary, LocationDesc, Page, PartyKind, QueryDescriptor,
-    QueryOutcome, ResourceInstanceType, ResourceStatus, SubjectRef,
+    AqlQueryRequest, EhrIndexEntry, EhrSummary, LocationDesc, Page, PartyKind, PlatformService,
+    QueryDescriptor, QueryOutcome, ResourceInstanceType, ResourceStatus, SubjectRef,
 };

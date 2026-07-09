@@ -408,6 +408,40 @@ impl PartyKind {
     }
 }
 
+/// `PLATFORM_SERVICE` — "Enumeration of platform service names"
+/// (`docs/specs/openehr/SM/docs/UML/classes/platform_service.adoc`).
+///
+/// The ADMIN statistics calls (`i_admin_service.adoc`
+/// `list_contributions` / `contribution_count` / `versioned_composition_count`
+/// / `composition_version_count`) each take a `PLATFORM_SERVICE` naming the
+/// versioned-content service whose contributions/versions to count.
+///
+/// PORT NOTE: the vendored `platform_service.adoc` enumeration lists exactly
+/// these eight members and **omits `Terminology` and `Subject_proxy`** — a spec
+/// defect (the SM defines `I_TERMINOLOGY`/`I_SUBJECT_PROXY` interfaces but the
+/// enum forgot their members). This type carries the eight vendored members
+/// verbatim; the two missing services are not versioned-content services and
+/// would count zero regardless.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlatformService {
+    /// `Admin` — the administrative service.
+    Admin,
+    /// `Definitions` — the DEFINITION (templates/archetypes/queries) service.
+    Definitions,
+    /// `Ehr` — the EHR (clinical, EHR-scoped) service.
+    Ehr,
+    /// `Ehr_index` — the EHR Index (subject↔EHR) service.
+    EhrIndex,
+    /// `Demographic` — the demographic (ehr-less party) service.
+    Demographic,
+    /// `Message` — the messaging service.
+    Message,
+    /// `Query` — the querying (AQL) service.
+    Query,
+    /// `System_log` — the system-log service.
+    SystemLog,
+}
+
 // ─── EHR Index (SM-3) ────────────────────────────────────────────────────────
 
 /// A subject identifier reference (`i_ehr_index.adoc` `a_subject_id:
