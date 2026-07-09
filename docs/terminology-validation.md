@@ -1,6 +1,13 @@
 # External terminology validation (FHIR R4) — Rust-native design
 
-- **Status:** design (not yet implemented)
+> **Blueprint anchor:** this is the FHIR-R4 terminology-**client** design — how
+> the CDR validates coded values against an external terminology server. It is
+> built at **B4** (blueprint `00-THE-BLUEPRINT.md` §3, map rows 12/21). It pairs
+> with `design/terminology-server-integration.md`, which picks the self-hostable
+> server we point this client at. The blueprint is the live status source; this
+> doc carries the client architecture detail.
+
+- **Status:** design — built at B4 (terminology-server integration)
 - **Stage:** Stage 1, **P15 (composition validation)** — external terminology is
   one validator in the validation walker; requires P13/P14 (templates/
   WebTemplate) as prerequisites.

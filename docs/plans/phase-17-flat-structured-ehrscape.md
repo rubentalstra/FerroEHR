@@ -4,6 +4,11 @@
 > conversion moved into **P14** (built there, full Better parity). P17 now covers
 > only the **EhrScape (`/rest/ecis/v1/*`) + admin** compatibility endpoints in
 > `ehrbase-rest` (feature-gated `ehrscape` module — the `ehrbase-compat` crate was deleted 2026-07-09, ADR-010), reusing the `openehr-flat` converters P14 delivered.
+>
+> **App-crate reality (ADR-011, 2026-07-09):** the application is three crates —
+> `app/{ehrbase, ehrbase-rest, ehrbase-sm}` (`ehrbase-audit`/`ehrbase-signing`
+> dissolved into `ehrbase::{system_log, signing}`; authz → `ehrbase-rest::access`).
+> EhrScape is the `ehrbase-rest::ehrscape` feature module.
 
 - Status: not-started (Stage-1 app build, step 9 of 13)
 - Consumes: `openehr-flat` (WebTemplate/FLAT/STRUCTURED, P14), P15 (validation), P12 (service)
@@ -49,3 +54,22 @@ formats (done, `openehr-its`).
 
 - Better `web-template` semantics are the oracle; EHRbase-specific quirks are
   opt-in via the feature flag, never in the default path.
+
+## Notes — EhrScape wire quirks (folded from docs/design/ehrscape/, 2026-07-09)
+
+`PUT /rest/ecis/v1/ehr/{ehrId}/status` — with the EHR id as a path variable,
+the request body is the EhrScape EHR_STATUS shape, e.g.:
+
+```json
+{
+    "subjectId": "TEST",
+    "subjectNamespace": "TEST",
+    "queryable": true,
+    "modifiable": true,
+    "otherDetails": null,
+    "otherDetailsTemplateId": null
+}
+```
+
+Quirk to preserve: the `Content-Type` header is overridden to express the
+body's type, due to a problematic definition in the EhrScape standard.

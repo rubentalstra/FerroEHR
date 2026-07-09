@@ -1,5 +1,11 @@
 # Phase 18 — Workspace integration
 
+> **App-crate reality (ADR-011, 2026-07-09):** the application is three crates —
+> `app/{ehrbase, ehrbase-rest, ehrbase-sm}` — with `tools/{conformance, benchmark}`
+> and `crates/openehr-*`; the former `ehrbase-audit`/`ehrbase-signing`/`ehrbase-authz`
+> leaf crates are dissolved into modules (`ehrbase::{system_log, signing}`,
+> `ehrbase-rest::access`).
+
 - Status: not-started (Stage-1 app build, step 10 of 13)
 - Consumes: all prior app phases
 - Compile required: yes
