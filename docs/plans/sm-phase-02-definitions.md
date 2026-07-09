@@ -44,7 +44,7 @@
       (regex), `opts_count`; PORT NOTE the spec's `List<ARCHETYPE_ID>`
       return-type inconsistency on `list_matching_opts` (digest 01 §5.1) —
       we return template ids
-- [ ] ADL2 (`DefinitionAdl2Service`): AUTHORED_ARCHETYPE ingest over
+- [x] ADL2 — done 2026-07-09 (`DefinitionAdl2Service`, 14 calls; `adl2_artefact` store keyed by HRID with kind classification; wire `upload`/`list`/`get` implemented per the vendored OAS [text/plain source, Prefer, Location, 404], `example`/`version` stay 501 + PORT NOTEs; no ADL2 parser exists — structural validity, PORT NOTEd; ECC/CNF has zero adl2 cases): AUTHORED_ARCHETYPE ingest over
       `openehr-am::am24` + `adl2_artefact` store; artefact CRUD + typed
       listings (archetype/template/OPT2) + counts; the ITS-REST `adl2`
       routes stop returning 501 where the generated contract has them

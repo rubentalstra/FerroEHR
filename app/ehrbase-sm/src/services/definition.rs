@@ -1,10 +1,15 @@
-//! The SM Definitions service interfaces for ADL 1.4 artefacts and registered
-//! queries.
+//! The SM Definitions service interfaces for ADL 1.4 / ADL2 artefacts and
+//! registered queries.
 //!
-//! Two Rust traits, one per SM interface:
+//! Three Rust traits, one per SM interface:
 //! - [`DefinitionAdl14Service`] realizes `I_DEFINITION_ADL14`
 //!   (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl14.adoc`) — ADL
 //!   1.4 source archetypes (keyed by `ARCHETYPE_ID`) and OPTs (keyed by `UUID`);
+//! - [`DefinitionAdl2Service`] realizes `I_DEFINITION_ADL2`
+//!   (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl2.adoc`) — ADL2
+//!   artefacts (source archetypes, templates and OPTs), all archetype instances
+//!   keyed by `ARCHETYPE_HRID` (`master04-definition_package.adoc`: "identified
+//!   in the same way, via an Archetype human-readable identifier");
 //! - [`DefinitionQueryService`] realizes `I_DEFINITION_QUERY`
 //!   (`docs/specs/openehr/SM/docs/UML/classes/i_definition_query.adoc`) —
 //!   registered queries addressed by qualified name (`master04-definition_package.adoc`).
@@ -137,6 +142,115 @@ pub trait DefinitionAdl14Service: Send + Sync {
     /// `delete_opt` — delete a previously uploaded OPT (`Pre_has_opt`,
     /// `Post_opt_removed`); absent → `404`.
     async fn delete_opt(&self, _an_opt_id: String) -> Result<(), ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `opts_count` — total OPTs count.
+    async fn opts_count(&self) -> Result<i64, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+}
+
+/// The SM `I_DEFINITION_ADL2` interface — ADL2 artefacts (`i_definition_adl2.adoc`).
+///
+/// In ADL2, archetypes and 'templates' are all archetype instances: source
+/// archetypes, templates, and Operational Templates (OPTs) can all be uploaded,
+/// and are "identified in the same way, via an Archetype human-readable
+/// identifier (`ARCHETYPE_HRID`) and a UUID" (`master04-definition_package.adoc`
+/// §Archetypes and Templates). Artefacts are therefore keyed by their
+/// `ARCHETYPE_HRID` (e.g. `openEHR-EHR-OBSERVATION.bp.v1.0.0`, optionally
+/// namespace-qualified), with a `kind` (archetype / template / OPT) so the
+/// per-concrete-type list/count calls can filter.
+///
+/// PORT NOTE (interchange form): the SM signatures exchange AOM2
+/// `AUTHORED_ARCHETYPE` objects (`upload_artefact(an_artefact: AUTHORED_ARCHETYPE)`,
+/// `get_artefact(): AUTHORED_ARCHETYPE`). openEHR has no BMM meta-model for AOM
+/// instances and the tree has no ADL2/cADL *source* parser yet (`am24` is
+/// generated AOM2 types only), so the native API exchanges **ADL2 source text**
+/// — the interchange serialization the platform actually ingests. Validity is
+/// therefore a lightweight structural check (a recognised artefact header +
+/// well-formed `ARCHETYPE_HRID`); full AOM2 validation lands when the ADL2
+/// source parser does.
+#[async_trait]
+pub trait DefinitionAdl2Service: Send + Sync {
+    /// `has_artefact` — True if an AOM2 artefact with `ARCHETYPE_HRID` `an_id`
+    /// exists in the service.
+    async fn has_artefact(&self, _an_id: String) -> Result<bool, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `valid_artefact` — test validity of the supplied ADL2 source (structural,
+    /// per the trait PORT NOTE).
+    async fn valid_artefact(&self, _adl2: String) -> Result<bool, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `upload_artefact` — upload a valid ADL2 artefact (archetype, template or
+    /// `operational_template`). "If an artefact with the same physical
+    /// identifier and namespace exists, replace it." `Pre_valid`: the artefact must
+    /// validate, else `invalid artefact` (→ `422`).
+    async fn upload_artefact(&self, _adl2: String) -> Result<(), ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `get_artefact` — the ADL2 source of the artefact with `ARCHETYPE_HRID`
+    /// `an_id` (`Pre_artefact_exists`); absent → `artefact_does_not_exist`
+    /// (→ `404`).
+    async fn get_artefact(&self, _an_id: String) -> Result<String, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `list_artefacts` — the `ARCHETYPE_HRID`s of all known ADL2 artefacts.
+    async fn list_artefacts(&self, _page: Page) -> Result<Vec<String>, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `list_archetypes` — HRIDs of artefacts whose concrete type is
+    /// `AUTHORED_ARCHETYPE` (`kind = archetype`).
+    async fn list_archetypes(&self, _page: Page) -> Result<Vec<String>, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `list_templates` — HRIDs of artefacts whose concrete type is `TEMPLATE`
+    /// (`kind = template`).
+    async fn list_templates(&self, _page: Page) -> Result<Vec<String>, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `list_opts` — HRIDs of artefacts whose concrete type is
+    /// `OPERATIONAL_TEMPLATE` (`kind = operational_template`).
+    async fn list_opts(&self, _page: Page) -> Result<Vec<String>, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `list_matching_artefacts` — HRIDs matching `id_pattern` (a regex);
+    /// `invalid_id_pattern` (→ `400`) if the pattern will not compile.
+    async fn list_matching_artefacts(
+        &self,
+        _id_pattern: String,
+        _page: Page,
+    ) -> Result<Vec<String>, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `delete_artefact` — delete the AOM2 artefact with `ARCHETYPE_HRID`
+    /// `an_id`; absent → `artefact_does_not_exist` (→ `404`).
+    async fn delete_artefact(&self, _an_id: String) -> Result<(), ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `artefacts_count` — total artefacts count.
+    async fn artefacts_count(&self) -> Result<i64, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `archetypes_count` — total archetypes count.
+    async fn archetypes_count(&self) -> Result<i64, ApiError> {
+        Err(ApiError::NotImplemented)
+    }
+
+    /// `templates_count` — total templates count.
+    async fn templates_count(&self) -> Result<i64, ApiError> {
         Err(ApiError::NotImplemented)
     }
 

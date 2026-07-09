@@ -15,7 +15,7 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{DefinitionAdl14Service, DefinitionQueryService, Page};
+use ehrbase_sm::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, Page};
 use openehr_its::rest::runtime::ApiError;
 
 struct Pg {
@@ -83,7 +83,12 @@ async fn archetype_upload_get_list_match_replace_delete() {
 
     // Precondition: not present yet.
     assert!(!svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
-    assert_eq!(svc.archetypes_count().await.unwrap(), 0);
+    assert_eq!(
+        DefinitionAdl14Service::archetypes_count(&svc)
+            .await
+            .unwrap(),
+        0
+    );
 
     // valid_archetype on good vs bad source.
     assert!(svc.valid_archetype(adl.clone()).await.unwrap());
@@ -96,7 +101,12 @@ async fn archetype_upload_get_list_match_replace_delete() {
     // upload → Post_has_archetype.
     svc.upload_archetype(adl.clone()).await.expect("upload");
     assert!(svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
-    assert_eq!(svc.archetypes_count().await.unwrap(), 1);
+    assert_eq!(
+        DefinitionAdl14Service::archetypes_count(&svc)
+            .await
+            .unwrap(),
+        1
+    );
 
     // get returns the source verbatim.
     let got = svc
@@ -106,7 +116,9 @@ async fn archetype_upload_get_list_match_replace_delete() {
     assert_eq!(got, adl, "stored ADL source is byte-identical");
 
     // list + list_matching (regex).
-    let list = svc.list_archetypes(Page::all()).await.unwrap();
+    let list = DefinitionAdl14Service::list_archetypes(&svc, Page::all())
+        .await
+        .unwrap();
     assert_eq!(list, vec![ARCHETYPE_ID.to_owned()]);
     let matched = svc
         .list_matching_archetypes("COMPOSITION\\.prescription".to_owned(), Page::all())
@@ -125,7 +137,9 @@ async fn archetype_upload_get_list_match_replace_delete() {
         .await
         .expect("replace");
     assert_eq!(
-        svc.archetypes_count().await.unwrap(),
+        DefinitionAdl14Service::archetypes_count(&svc)
+            .await
+            .unwrap(),
         1,
         "replace, not insert"
     );
@@ -140,7 +154,12 @@ async fn archetype_upload_get_list_match_replace_delete() {
         .await
         .expect("delete");
     assert!(!svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
-    assert_eq!(svc.archetypes_count().await.unwrap(), 0);
+    assert_eq!(
+        DefinitionAdl14Service::archetypes_count(&svc)
+            .await
+            .unwrap(),
+        0
+    );
 }
 
 #[tokio::test]
@@ -189,14 +208,16 @@ async fn opt_upload_has_get_list_match_delete() {
     // valid_opt on good vs bad XML.
     assert!(svc.valid_opt(xml.clone()).await.unwrap());
     assert!(!svc.valid_opt("<not-a-template/>".to_owned()).await.unwrap());
-    assert_eq!(svc.opts_count().await.unwrap(), 0);
+    assert_eq!(DefinitionAdl14Service::opts_count(&svc).await.unwrap(), 0);
 
     // upload_opt (Pre_valid).
     svc.upload_opt(xml.clone()).await.expect("upload opt");
-    assert_eq!(svc.opts_count().await.unwrap(), 1);
+    assert_eq!(DefinitionAdl14Service::opts_count(&svc).await.unwrap(), 1);
 
     // list_opts yields the OPT's UUID; use it for has/get/delete (UUID-keyed).
-    let opts = svc.list_opts(Page::all()).await.unwrap();
+    let opts = DefinitionAdl14Service::list_opts(&svc, Page::all())
+        .await
+        .unwrap();
     assert_eq!(opts.len(), 1);
     let uuid = opts[0].clone();
     assert!(
@@ -228,7 +249,7 @@ async fn opt_upload_has_get_list_match_delete() {
     // delete_opt (Pre_has_opt / Post_opt_removed).
     svc.delete_opt(uuid.clone()).await.expect("delete opt");
     assert!(!svc.has_opt(uuid.clone()).await.unwrap());
-    assert_eq!(svc.opts_count().await.unwrap(), 0);
+    assert_eq!(DefinitionAdl14Service::opts_count(&svc).await.unwrap(), 0);
 }
 
 #[tokio::test]
@@ -265,6 +286,163 @@ async fn opt_errors() {
         matches!(del_missing, ApiError::NotFound(_)),
         "got {del_missing:?}"
     );
+}
+
+// ── ADL2 artefacts (I_DEFINITION_ADL2; on adl2_artefact, HRID-keyed) ──────────
+
+const ADL2_OPT: &str = "operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)\n\
+    openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0\n\nspecialize\n\
+    \topenEHR-EHR-COMPOSITION.discharge.v1\n";
+const ADL2_OPT_HRID: &str = "openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0";
+const ADL2_ARCH: &str = "archetype (adl_version=2.0.6)\n\
+    openEHR-EHR-OBSERVATION.bp.v1.0.0\n";
+const ADL2_ARCH_HRID: &str = "openEHR-EHR-OBSERVATION.bp.v1.0.0";
+const ADL2_TMPL: &str = "template (adl_version=2.0.6)\n\
+    openEHR-EHR-COMPOSITION.t_vitals.v2.0.0\n";
+const ADL2_TMPL_HRID: &str = "openEHR-EHR-COMPOSITION.t_vitals.v2.0.0";
+
+#[tokio::test]
+#[allow(clippy::too_many_lines)] // one full I_DEFINITION_ADL2 lifecycle on one container
+async fn adl2_upload_get_list_by_kind_match_replace_delete() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("def_adl2").await);
+
+    // Preconditions: empty, and valid_artefact on good vs bad source.
+    assert_eq!(svc.artefacts_count().await.unwrap(), 0);
+    assert!(svc.valid_artefact(ADL2_OPT.to_owned()).await.unwrap());
+    assert!(
+        !svc.valid_artefact("this is not adl2".to_owned())
+            .await
+            .unwrap()
+    );
+
+    // upload_artefact (OPT) → Post_has_artefact (keyed by ARCHETYPE_HRID).
+    assert!(!svc.has_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap());
+    svc.upload_artefact(ADL2_OPT.to_owned())
+        .await
+        .expect("upload opt");
+    assert!(svc.has_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap());
+
+    // get_artefact returns the source verbatim.
+    assert_eq!(
+        svc.get_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap(),
+        ADL2_OPT,
+        "stored ADL2 source is byte-identical"
+    );
+
+    // Upload one artefact of each other kind.
+    svc.upload_artefact(ADL2_ARCH.to_owned())
+        .await
+        .expect("upload archetype");
+    svc.upload_artefact(ADL2_TMPL.to_owned())
+        .await
+        .expect("upload template");
+
+    // Counts by concrete type. `archetypes_count`/`opts_count` (and
+    // `list_archetypes`/`list_opts`) are declared on both the ADL 1.4 and ADL2
+    // Definitions traits, so calls on the concrete service are qualified.
+    assert_eq!(svc.artefacts_count().await.unwrap(), 3);
+    assert_eq!(
+        DefinitionAdl2Service::archetypes_count(&svc).await.unwrap(),
+        1
+    );
+    assert_eq!(svc.templates_count().await.unwrap(), 1);
+    assert_eq!(DefinitionAdl2Service::opts_count(&svc).await.unwrap(), 1);
+
+    // list_artefacts = all HRIDs; per-kind lists partition them.
+    let all = svc.list_artefacts(Page::all()).await.unwrap();
+    assert_eq!(all.len(), 3);
+    assert!(all.contains(&ADL2_OPT_HRID.to_owned()));
+    assert_eq!(
+        DefinitionAdl2Service::list_archetypes(&svc, Page::all())
+            .await
+            .unwrap(),
+        vec![ADL2_ARCH_HRID.to_owned()]
+    );
+    assert_eq!(
+        svc.list_templates(Page::all()).await.unwrap(),
+        vec![ADL2_TMPL_HRID.to_owned()]
+    );
+    assert_eq!(
+        DefinitionAdl2Service::list_opts(&svc, Page::all())
+            .await
+            .unwrap(),
+        vec![ADL2_OPT_HRID.to_owned()]
+    );
+
+    // list_matching_artefacts (regex on the HRID).
+    let obs = svc
+        .list_matching_artefacts("OBSERVATION".to_owned(), Page::all())
+        .await
+        .unwrap();
+    assert_eq!(obs, vec![ADL2_ARCH_HRID.to_owned()]);
+
+    // upload_artefact replaces if the HRID already exists (spec: "replace it").
+    let replacement = format!("{ADL2_OPT}-- replaced\n");
+    svc.upload_artefact(replacement.clone())
+        .await
+        .expect("replace");
+    assert_eq!(
+        svc.artefacts_count().await.unwrap(),
+        3,
+        "replace, not insert"
+    );
+    assert_eq!(
+        svc.get_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap(),
+        replacement
+    );
+
+    // delete_artefact → Post: gone.
+    svc.delete_artefact(ADL2_OPT_HRID.to_owned())
+        .await
+        .expect("delete");
+    assert!(!svc.has_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap());
+    assert_eq!(svc.artefacts_count().await.unwrap(), 2);
+}
+
+#[tokio::test]
+async fn adl2_errors() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("def_adl2_err").await);
+
+    // Invalid ADL2 (unrecognised header) → 422 invalid_artefact.
+    let bad = svc
+        .upload_artefact("concept\nopenEHR-EHR-OBSERVATION.bp.v1.0.0".to_owned())
+        .await
+        .expect_err("invalid artefact rejected");
+    assert!(matches!(bad, ApiError::Unprocessable(_)), "got {bad:?}");
+
+    // Recognised header but a malformed HRID → 422.
+    let bad_hrid = svc
+        .upload_artefact("archetype\nnot-an-hrid".to_owned())
+        .await
+        .expect_err("malformed hrid rejected");
+    assert!(
+        matches!(bad_hrid, ApiError::Unprocessable(_)),
+        "got {bad_hrid:?}"
+    );
+
+    // get / delete of an absent artefact → 404.
+    let missing = svc
+        .get_artefact("openEHR-EHR-OBSERVATION.absent.v1.0.0".to_owned())
+        .await
+        .expect_err("absent artefact");
+    assert!(matches!(missing, ApiError::NotFound(_)), "got {missing:?}");
+    let del_missing = svc
+        .delete_artefact("openEHR-EHR-OBSERVATION.absent.v1.0.0".to_owned())
+        .await
+        .expect_err("delete absent");
+    assert!(
+        matches!(del_missing, ApiError::NotFound(_)),
+        "got {del_missing:?}"
+    );
+
+    // Uncompilable regex → 400 invalid_id_pattern.
+    let bad_re = svc
+        .list_matching_artefacts("(".to_owned(), Page::all())
+        .await
+        .expect_err("invalid pattern");
+    assert!(matches!(bad_re, ApiError::BadRequest(_)), "got {bad_re:?}");
 }
 
 // ── registered queries (I_DEFINITION_QUERY) ──────────────────────────────────

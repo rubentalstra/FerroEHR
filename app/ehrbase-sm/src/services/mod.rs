@@ -24,7 +24,7 @@ pub mod web_template;
 pub use admin::AdminService;
 pub use composition::EhrCompositionService;
 pub use contribution::EhrContributionService;
-pub use definition::{DefinitionAdl14Service, DefinitionQueryService};
+pub use definition::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService};
 pub use demographic::DemographicService;
 pub use directory::EhrDirectoryService;
 pub use ehr::EhrService;
