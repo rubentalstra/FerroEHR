@@ -8,8 +8,8 @@ This file is the single source of truth. Claude Code reads this first and scaffo
 > **⚠️ CURRENT ROADMAP (2026-07-09): `docs/blueprint/00-THE-BLUEPRINT.md`.**
 > This bootstrap plan is historical (see the amendments below — ADR-004/005/006/008
 > then ADR-010/011). The live trajectory, priorities, and app-crate reality now
-> live in `docs/blueprint/`, with `docs/GAP_REGISTER.md` (consolidated gap
-> surface) and `docs/plans/current-phase.md` (active pointer) under it. Read the
+> live in `docs/blueprint/` (`00-THE-BLUEPRINT.md` §2 is the consolidated gap
+> surface), with `docs/plans/current-phase.md` (active pointer) under it. Read the
 > blueprint first; read this only for the original architecture/difficulty
 > reasoning.
 
