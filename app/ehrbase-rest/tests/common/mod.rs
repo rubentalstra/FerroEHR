@@ -136,6 +136,36 @@ pub struct Hooks {
     pub template_adl14_example: Option<TemplateExample>,
     pub template_adl2_list: Option<ValueListHook>,
     pub query_list: Option<QueryListHook>,
+    // SM System Log: an in-memory audit recorder. When set, the mock's
+    // `SystemLog::emit` records every event (so a test can assert the ATNA
+    // event a request produced); `audit_enabled()` is then true. Replaces the
+    // old router-state `AuditSender` — the real syslog transport is tested in
+    // `ehrbase::system_log` (the emitter now lives in the backend, ADR-011).
+    pub audit: Option<AuditSink>,
+}
+
+/// An in-memory audit sink for the mock's [`SystemLog`] — records emitted
+/// [`AuditEvent`]s so router tests can assert what the audit middleware sent.
+#[derive(Clone, Default)]
+pub struct AuditSink {
+    /// The events the middleware emitted, in order.
+    pub events: Arc<std::sync::Mutex<Vec<AuditEvent>>>,
+    /// Whether successful-login "Application Activity" records are suppressed.
+    pub suppress_login: bool,
+}
+
+impl AuditSink {
+    /// A fresh recording sink (login events not suppressed).
+    #[must_use]
+    pub fn recording() -> Self {
+        Self::default()
+    }
+
+    /// The events recorded so far (cloned out).
+    #[must_use]
+    pub fn events(&self) -> Vec<AuditEvent> {
+        self.events.lock().expect("audit sink poisoned").clone()
+    }
 }
 
 /// The shared mock platform. Cheap to clone (the hooks live behind an `Arc`).
@@ -671,17 +701,24 @@ impl DefinitionAdapter for Mock {
     }
 }
 
-// SM System Log — the mock has no audit sink, so auditing is disabled (the
-// middleware early-returns) and `emit` is a no-op drop.
+// SM System Log — records to the optional in-memory sink. With no sink,
+// auditing is disabled (the middleware early-returns) and `emit` is a no-op
+// drop, reproducing a server booted without an audit trail.
 impl SystemLog for Mock {
-    fn emit(&self, _event: AuditEvent) -> EmitOutcome {
-        EmitOutcome::Dropped
+    fn emit(&self, event: AuditEvent) -> EmitOutcome {
+        match &self.h.audit {
+            Some(sink) => {
+                sink.events.lock().expect("audit sink poisoned").push(event);
+                EmitOutcome::Enqueued
+            }
+            None => EmitOutcome::Dropped,
+        }
     }
     fn audit_enabled(&self) -> bool {
-        false
+        self.h.audit.is_some()
     }
     fn suppress_login_events(&self) -> bool {
-        false
+        self.h.audit.as_ref().is_some_and(|s| s.suppress_login)
     }
 }
 
