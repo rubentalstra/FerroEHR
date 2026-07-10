@@ -19,6 +19,7 @@ mod admin;
 mod definition;
 mod demographic;
 mod ehr;
+mod event_subscription;
 mod flat;
 mod query;
 mod terminology;
@@ -94,6 +95,12 @@ pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
         .merge(mount(
             terminology::TERMINOLOGY_ROUTES,
             terminology::dispatch::<S>,
+        ))
+        // Our-own-design event-subscription admin extension routes (no ITS-REST
+        // contract; ADR-014 §5 "Event Trigger" parity), config-gated.
+        .merge(mount(
+            event_subscription::EVENT_SUBSCRIPTION_ROUTES,
+            event_subscription::dispatch::<S>,
         ))
 }
 

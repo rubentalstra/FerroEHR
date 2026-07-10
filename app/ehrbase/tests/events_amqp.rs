@@ -27,10 +27,10 @@ use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::rabbitmq::RabbitMq;
 
 use ehrbase::db::{self, DbSettings};
-use ehrbase::events::{EventsConfig, start};
+use ehrbase::events::{EventsConfig, start, subscription_queue_name};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
-use ehrbase_sm::{EhrCompositionService, EhrService};
+use ehrbase_sm::{EhrCompositionService, EhrService, EventSubscriptionAdapter};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
@@ -125,6 +125,18 @@ async fn pending_count(pool: &PgPool) -> i64 {
         .expect("pending count")
 }
 
+/// The total number of version entries across all outbox rows — the number of
+/// per-version messages the publisher emits (ADR-014 §5, E1 task 4).
+async fn version_count(pool: &PgPool) -> i64 {
+    sqlx::query_scalar(
+        "SELECT coalesce(sum(jsonb_array_length(envelope -> 'versions')), 0)::bigint \
+         FROM ehr.event_outbox",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("version count")
+}
+
 fn events_config(url: String) -> EventsConfig {
     EventsConfig {
         enabled: true,
@@ -185,6 +197,51 @@ async fn bound_consumer(url: &str, binding_key: &str) -> (Connection, lapin::Con
         .await
         .expect("consume");
     (conn, consumer)
+}
+
+/// Open a consumer on an already-declared durable queue (the publisher declared
+/// and bound it for the subscription; here we only re-declare it idempotently
+/// and consume). No binding — the subscription's binding key is the publisher's.
+async fn queue_consumer(url: &str, queue: &str) -> (Connection, lapin::Consumer) {
+    let conn = Connection::connect(url, ConnectionProperties::default())
+        .await
+        .expect("consumer connect");
+    let channel = conn.create_channel().await.expect("consumer channel");
+    channel
+        .queue_declare(
+            queue.into(),
+            QueueDeclareOptions {
+                durable: true,
+                ..QueueDeclareOptions::default()
+            },
+            FieldTable::default(),
+        )
+        .await
+        .expect("declare queue");
+    let consumer = channel
+        .basic_consume(
+            queue.into(),
+            "sub-consumer".into(),
+            BasicConsumeOptions::default(),
+            FieldTable::default(),
+        )
+        .await
+        .expect("consume");
+    (conn, consumer)
+}
+
+/// The next delivery within a short timeout, or `None` — used to assert a queue
+/// has *no more* messages (selectivity).
+async fn maybe_next(consumer: &mut lapin::Consumer, dur: Duration) -> Option<(String, Value)> {
+    match tokio::time::timeout(dur, consumer.next()).await {
+        Ok(Some(Ok(delivery))) => {
+            let rk = delivery.routing_key.as_str().to_owned();
+            let body: Value = serde_json::from_slice(&delivery.data).expect("json body");
+            delivery.ack(BasicAckOptions::default()).await.expect("ack");
+            Some((rk, body))
+        }
+        _ => None,
+    }
 }
 
 /// Consume the next delivery within a timeout, returning (`routing_key`, body).
@@ -286,6 +343,13 @@ async fn broker_down_then_up_delivers_without_loss() {
         .expect("create_composition");
     let committed = pending_count(&pool).await;
     assert_eq!(committed, 2, "EHR creation + composition ⇒ two rows");
+    // Per-version fan-out (ADR-014 §5, E1 task 4): EHR creation commits
+    // EHR_STATUS + EHR_ACCESS (2 versions) + the composition (1) ⇒ 3 messages.
+    let expected_messages = version_count(&pool).await;
+    assert_eq!(
+        expected_messages, 3,
+        "two rows fan out to three per-version messages"
+    );
 
     // Broker "down": a publisher pointed at a dead port cannot deliver; rows
     // stay pending (the outbox buffers — ADR-014 §3).
@@ -313,12 +377,98 @@ async fn broker_down_then_up_delivers_without_loss() {
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
 
-    // Both events arrive on the queue (no loss).
-    for _ in 0..committed {
+    // Every per-version message arrives on the catch-all queue (no loss).
+    for _ in 0..expected_messages {
         let (routing_key, body) = next_delivery(&mut consumer).await;
         assert!(routing_key.contains('.'), "topic-shaped key: {routing_key}");
         assert_phi_free(&body);
     }
 
     up.shutdown(Duration::from_secs(3)).await;
+}
+
+#[tokio::test]
+async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
+    let pg = Postgres::default()
+        .with_tag("18")
+        .start()
+        .await
+        .expect("start postgres:18 (is Docker running?)");
+    let rmq = RabbitMq::default()
+        .start()
+        .await
+        .expect("start rabbitmq (is Docker running?)");
+    let pool = migrated_pool(&pg, "amqp_subscriptions").await;
+    let url = amqp_url(&rmq).await;
+    let svc = EhrbaseService::new(pool.clone());
+
+    // Two subscriptions (ADR-014 §5): a wildcard (all predicates NULL → binding
+    // key *.*.* → every event) and a kind filter (kind=COMPOSITION → binding key
+    // COMPOSITION.*.* → composition events only). The publisher declares + binds
+    // a durable per-subscription queue `ehrbase.events.<name>` for each.
+    svc.event_subscription_create(json!({ "name": "everything" }))
+        .await
+        .expect("wildcard subscription");
+    svc.event_subscription_create(json!({ "name": "compositions", "kind": "COMPOSITION" }))
+        .await
+        .expect("kind-filtered subscription");
+
+    // Commit an EHR (EHR_STATUS + EHR_ACCESS ⇒ 2 versions) + a composition (1).
+    let ehr = svc.create_ehr(None).await.expect("create_ehr");
+    svc.create_composition(ehr, uv(composition("v1"), "249"))
+        .await
+        .expect("create_composition");
+    let expected_all = version_count(&pool).await; // 3 per-version messages
+
+    // Start the publisher: each cycle re-syncs (declares/binds) the subscription
+    // queues *before* it publishes, so the durable queues capture the messages.
+    let handle = start(events_config(url.clone()), pool.clone());
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+    loop {
+        if pending_count(&pool).await == 0 {
+            break;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "did not drain in time"
+        );
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+
+    // The wildcard queue received every per-version message (per-version fan-out).
+    let (_c_all, mut all) =
+        queue_consumer(&url, &subscription_queue_name(EXCHANGE, "everything")).await;
+    for _ in 0..expected_all {
+        let (rk, body) = next_delivery(&mut all).await;
+        assert!(rk.contains('.'), "topic-shaped key: {rk}");
+        assert_phi_free(&body);
+    }
+    assert!(
+        maybe_next(&mut all, Duration::from_millis(500))
+            .await
+            .is_none(),
+        "wildcard queue must have exactly {expected_all} messages"
+    );
+
+    // The kind-filtered queue received ONLY the composition event — the
+    // EHR_STATUS/EHR_ACCESS events (keys EHR_STATUS.* / EHR_ACCESS.*) did not
+    // match COMPOSITION.*.*.
+    let (_c_comp, mut comps) =
+        queue_consumer(&url, &subscription_queue_name(EXCHANGE, "compositions")).await;
+    let (rk, body) = next_delivery(&mut comps).await;
+    assert_eq!(
+        rk, "COMPOSITION.249.-",
+        "only the composition version routes to the kind=COMPOSITION queue"
+    );
+    let vi = usize::try_from(body["version_index"].as_u64().expect("version_index")).unwrap();
+    assert_eq!(body["versions"][vi]["kind"], "COMPOSITION");
+    assert_phi_free(&body);
+    assert!(
+        maybe_next(&mut comps, Duration::from_millis(500))
+            .await
+            .is_none(),
+        "the kind-filtered queue must receive only the matching event"
+    );
+
+    handle.shutdown(Duration::from_secs(3)).await;
 }

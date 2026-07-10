@@ -85,6 +85,7 @@ fn config() -> RestConfig {
         },
         admin: ehrbase_rest::AdminConfig::default(),
         terminology: ehrbase_rest::TerminologyConfig::default(),
+        event_subscription: ehrbase_rest::EventSubscriptionConfig::default(),
     }
 }
 

@@ -71,6 +71,7 @@ fn config(admin_enabled: bool) -> RestConfig {
             enabled: admin_enabled,
         },
         terminology: ehrbase_rest::TerminologyConfig::default(),
+        event_subscription: ehrbase_rest::EventSubscriptionConfig::default(),
     }
 }
 

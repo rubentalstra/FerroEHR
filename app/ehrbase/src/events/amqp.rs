@@ -8,7 +8,10 @@
 //! stays pending until the broker returns (ADR-014 §3).
 
 use async_trait::async_trait;
-use lapin::options::{BasicPublishOptions, ConfirmSelectOptions, ExchangeDeclareOptions};
+use lapin::options::{
+    BasicPublishOptions, ConfirmSelectOptions, ExchangeDeclareOptions, QueueBindOptions,
+    QueueDeclareOptions,
+};
 use lapin::types::FieldTable;
 use lapin::{BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind};
 use tokio::sync::Mutex;
@@ -95,6 +98,33 @@ impl EventPublisher for AmqpPublisher {
         if confirm.is_nack() {
             return Err(EventError::Nack(routing_key.to_owned()));
         }
+        Ok(())
+    }
+
+    async fn declare_subscription(&self, queue: &str, binding_key: &str) -> Result<(), EventError> {
+        // Idempotent: a durable queue survives a broker restart (matching the
+        // persistent delivery mode), and re-declaring an existing queue/binding
+        // with the same arguments is a no-op (ADR-014 §5).
+        let channel = self.channel().await?;
+        channel
+            .queue_declare(
+                queue.into(),
+                QueueDeclareOptions {
+                    durable: true,
+                    ..QueueDeclareOptions::default()
+                },
+                FieldTable::default(),
+            )
+            .await?;
+        channel
+            .queue_bind(
+                queue.into(),
+                self.exchange.as_str().into(),
+                binding_key.into(),
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await?;
         Ok(())
     }
 }

@@ -67,6 +67,7 @@ fn config(enabled: bool) -> RestConfig {
         // asserts the dispatcher's 501 (StubBackend), not the config gate's 404.
         admin: AdminConfig { enabled: true },
         terminology: ehrbase_rest::TerminologyConfig::default(),
+        event_subscription: ehrbase_rest::EventSubscriptionConfig::default(),
     }
 }
 

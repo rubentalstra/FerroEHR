@@ -96,8 +96,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // append-only from here). ext: 0001_openehr_functions (functions + roles +
     // grants). ehr: 0001_baseline (all 18 tables + named constraints, comments,
     // roles/grants, and the ADR-013 spec-compliance fixes) + 0002_event_outbox
-    // (the ADR-014 contribution-outbox eventing table, appended).
-    assert_eq!((applied_ext, applied_ehr), (1, 2));
+    // (the ADR-014 contribution-outbox eventing table, appended) +
+    // 0003_event_subscription (the ADR-014 §5 event-filter subscription store,
+    // appended for E1 task 4).
+    assert_eq!((applied_ext, applied_ehr), (1, 3));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -116,6 +118,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "ehr",
             "ehr_index",
             "event_outbox",
+            "event_subscription",
             "item_tag",
             "node",
             "sp_binding",

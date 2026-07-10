@@ -32,7 +32,7 @@ use async_trait::async_trait;
 
 pub use amqp::AmqpPublisher;
 pub use config::EventsConfig;
-pub use publisher::{EventsHandle, start, start_with_publisher};
+pub use publisher::{EventsHandle, start, start_with_publisher, subscription_queue_name};
 
 /// Placeholder routing-key segment for an absent value (ADR-014 §5).
 const ABSENT: &str = "-";
@@ -56,9 +56,25 @@ pub trait EventPublisher: Send + Sync {
     /// Publish one event `payload` under `routing_key`, resolving only after the
     /// broker confirms. An `Err` leaves the outbox row pending for retry.
     async fn publish(&self, routing_key: &str, payload: &[u8]) -> Result<(), EventError>;
+
+    /// Declare a durable subscription `queue` bound to the topic exchange with
+    /// `binding_key` (ADR-014 §5). The drainer calls this for every enabled
+    /// subscription so the broker fans events out to per-subscription queues;
+    /// it is idempotent (safe to re-declare a queue/binding). The default is a
+    /// no-op so non-AMQP `EventPublisher`s (test doubles, a future Kafka impl
+    /// with its own topic model) need not implement it.
+    async fn declare_subscription(&self, queue: &str, binding_key: &str) -> Result<(), EventError> {
+        let _ = (queue, binding_key);
+        Ok(())
+    }
 }
 
-/// Build the topic routing key for an event's **primary** version (ADR-014 §5):
+/// The `*` single-word topic wildcard used for a NULL subscription predicate
+/// (ADR-014 §5) — distinct from [`ABSENT`] (`-`), which is a *routing* key's
+/// empty-template rendering, not a wildcard.
+const WILDCARD: &str = "*";
+
+/// Build the topic routing key for one committed version (ADR-014 §5):
 /// `<kind>.<change_type>.<template_id|->` on the topic exchange.
 ///
 /// PORT NOTE (ADR-014 §5): AMQP topic keys use `.` as the word separator, so a
@@ -67,9 +83,11 @@ pub trait EventPublisher: Send + Sync {
 /// key exactly three fields. An absent/empty `template_id` renders as `-`.
 ///
 /// PORT NOTE (ADR-014 §5): a CONTRIBUTION may carry several versions of
-/// differing kinds; the ADR's payload is one per-contribution message, so the
-/// routing key is derived from the **first** version. Multi-version fan-out at
-/// the routing layer is deferred with the subscription store (task 4).
+/// differing kinds (e.g. EHR creation commits `EHR_STATUS` + `EHR_ACCESS`).
+/// Each version is published as **its own message** under its own routing key
+/// (E1 task 4), carrying the shared envelope plus a `version_index` naming which
+/// entry it is — so a template-filtered subscription receives exactly the
+/// matching versions. The routing key is thus per version, not per contribution.
 #[must_use]
 pub fn routing_key(kind: &str, change_type: &str, template_id: Option<&str>) -> String {
     let template = template_id
@@ -78,24 +96,36 @@ pub fn routing_key(kind: &str, change_type: &str, template_id: Option<&str>) -> 
     format!("{kind}.{change_type}.{template}")
 }
 
-/// Derive the routing key from a stored envelope's first version entry.
-fn routing_key_of(envelope: &serde_json::Value) -> String {
-    let first = envelope
-        .get("versions")
-        .and_then(|v| v.as_array())
-        .and_then(|a| a.first());
-    match first {
-        Some(v) => {
-            let kind = v.get("kind").and_then(|k| k.as_str()).unwrap_or("UNKNOWN");
-            let change = v
-                .get("change_type")
-                .and_then(|c| c.as_str())
-                .unwrap_or(ABSENT);
-            let template = v.get("template_id").and_then(|t| t.as_str());
-            routing_key(kind, change, template)
-        }
-        None => routing_key("UNKNOWN", ABSENT, None),
-    }
+/// Build the topic **binding** key for a subscription's predicates (ADR-014 §5),
+/// parallel to [`routing_key`] but substituting the `*` single-word wildcard for
+/// any NULL (absent) predicate. `archetype` is intentionally absent: the routing
+/// key has no archetype segment (see the `event_subscription.archetype` PORT
+/// NOTE), so it cannot participate in topic binding.
+#[must_use]
+pub fn subscription_binding_key(
+    kind: Option<&str>,
+    change_type: Option<&str>,
+    template_id: Option<&str>,
+) -> String {
+    let seg = |v: Option<&str>| {
+        v.filter(|s| !s.is_empty())
+            .map_or_else(|| WILDCARD.to_owned(), sanitize_segment)
+    };
+    format!("{}.{}.{}", seg(kind), seg(change_type), seg(template_id))
+}
+
+/// Derive the routing key from one stored version entry (ADR-014 §5).
+fn routing_key_of_version(version: &serde_json::Value) -> String {
+    let kind = version
+        .get("kind")
+        .and_then(|k| k.as_str())
+        .unwrap_or("UNKNOWN");
+    let change = version
+        .get("change_type")
+        .and_then(|c| c.as_str())
+        .unwrap_or(ABSENT);
+    let template = version.get("template_id").and_then(|t| t.as_str());
+    routing_key(kind, change, template)
 }
 
 /// Collapse any AMQP-topic-hostile character (dots, spaces, …) to `_` so a
@@ -145,22 +175,40 @@ mod tests {
     }
 
     #[test]
-    fn routing_key_of_reads_first_version() {
-        let envelope = json!({
-            "contribution_id": "c",
-            "versions": [
-                { "kind": "COMPOSITION", "change_type": "251", "template_id": "vitals.v2" },
-                { "kind": "EHR_STATUS", "change_type": "251", "template_id": null }
-            ]
-        });
-        assert_eq!(routing_key_of(&envelope), "COMPOSITION.251.vitals_v2");
+    fn routing_key_of_version_reads_the_entry() {
+        let version =
+            json!({ "kind": "COMPOSITION", "change_type": "251", "template_id": "vitals.v2" });
+        assert_eq!(
+            routing_key_of_version(&version),
+            "COMPOSITION.251.vitals_v2"
+        );
     }
 
     #[test]
-    fn routing_key_of_handles_null_template() {
-        let envelope = json!({
-            "versions": [ { "kind": "EHR_STATUS", "change_type": "249", "template_id": null } ]
-        });
-        assert_eq!(routing_key_of(&envelope), "EHR_STATUS.249.-");
+    fn routing_key_of_version_handles_null_template() {
+        let version = json!({ "kind": "EHR_STATUS", "change_type": "249", "template_id": null });
+        assert_eq!(routing_key_of_version(&version), "EHR_STATUS.249.-");
+    }
+
+    #[test]
+    fn binding_key_wildcards_null_predicates() {
+        // All-wildcard subscription: matches every three-field routing key.
+        assert_eq!(subscription_binding_key(None, None, None), "*.*.*");
+        // A template-only filter: any kind + change, a specific (sanitised)
+        // template — the routing key `COMPOSITION.249.vitals_v2` matches it.
+        assert_eq!(
+            subscription_binding_key(None, None, Some("vitals.v2")),
+            "*.*.vitals_v2"
+        );
+        // A kind + change filter, any template.
+        assert_eq!(
+            subscription_binding_key(Some("COMPOSITION"), Some("249"), None),
+            "COMPOSITION.249.*"
+        );
+        // Empty string is treated as absent (→ wildcard), never `-`.
+        assert_eq!(
+            subscription_binding_key(Some(""), Some(""), Some("")),
+            "*.*.*"
+        );
     }
 }
