@@ -280,3 +280,107 @@ async fn composition_update_is_validated() {
         "the rejected update did not advance the version"
     );
 }
+
+/// A version-item `commit_audit.change_type` as a coded openEHR audit change type.
+fn change_type_coded(code: &str, value: &str) -> Value {
+    json!({
+        "_type": "DV_CODED_TEXT", "value": value,
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+            "code_string": code
+        }
+    })
+}
+
+/// A `553|incomplete|` CONTRIBUTION carrying a single `creation` version.
+fn incomplete_creation_contribution(data: Value) -> Value {
+    json!({
+        "versions": [{
+            "data": data,
+            "commit_audit": { "change_type": change_type_coded("249", "creation") },
+            "lifecycle_state": {
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "553"
+            }
+        }]
+    })
+}
+
+#[tokio::test]
+async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
+    // RM common master06 §"Incomplete Content": a `553|incomplete|` commit
+    // treats existence/cardinality lower limits as zero ("data may be missing"),
+    // while every wrongness check still applies ("but it may not be wrong").
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("incomplete_lifecycle").await;
+    let svc = EhrbaseService::new(pool.clone());
+
+    svc.template_adl14_upload(fixture(IPS_OPT))
+        .await
+        .expect("upload IPS OPT");
+    let ehr_uuid = svc.create_ehr(None).await.expect("create_ehr");
+
+    // A composition missing its mandatory sections (content emptied): under the
+    // IPS template each SECTION has occurrences min >= 1, so this is a pure
+    // lower-bound (Required/Occurrences) violation with no wrongness.
+    let mut missing = composition("ips_canonical.json");
+    missing["content"] = json!([]);
+
+    // Committed as `532|complete|` (the direct create path is always complete),
+    // the missing-section lower bound is enforced → 422.
+    let strict = svc
+        .create_composition(ehr_uuid, uv(missing.clone(), "249", None))
+        .await;
+    assert!(
+        matches!(
+            strict,
+            Err(SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            })
+        ),
+        "a complete commit must reject the missing mandatory sections, got {strict:?}"
+    );
+    assert_eq!(
+        composition_versions(&pool).await,
+        0,
+        "the rejected complete commit persisted nothing"
+    );
+
+    // The identical body committed as `553|incomplete|` is accepted: the lower
+    // limits are treated as zero.
+    svc.create_ehr_contribution(ehr_uuid, incomplete_creation_contribution(missing))
+        .await
+        .expect("an incomplete commit tolerates the missing mandatory sections");
+    assert_eq!(
+        composition_versions(&pool).await,
+        1,
+        "the incomplete commit persisted the composition"
+    );
+
+    // But an incomplete commit does NOT tolerate *wrong* data: ips_invalid has
+    // out-of-range magnitudes / coded values outside the value set, which are
+    // still rejected under 553 ("may be missing, but may not be wrong").
+    let wrong = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            incomplete_creation_contribution(composition("ips_invalid.json")),
+        )
+        .await;
+    assert!(
+        matches!(
+            wrong,
+            Err(SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            })
+        ),
+        "an incomplete commit must still reject wrong (out-of-range/coded) data, got {wrong:?}"
+    );
+    assert_eq!(
+        composition_versions(&pool).await,
+        1,
+        "the wrong incomplete commit persisted nothing"
+    );
+}

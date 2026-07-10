@@ -395,6 +395,58 @@ impl EhrbaseService {
         }
     }
 
+    /// Whether the EHR's current `EHR_STATUS` has `is_modifiable = true`
+    /// (RM ehr `EHR_STATUS.is_modifiable`, 1..1 Boolean). `is_modifiable` is a
+    /// scalar attribute of `EHR_STATUS`, so it lives inline in the `EHR_STATUS`
+    /// **root** node's verbatim canonical `data` fragment (`num = 0`; children
+    /// are pruned but scalars stay — ADR-008 §2), the same access the AQL
+    /// `is_queryable` population filter uses (`aql/sql.rs`). An EHR with no
+    /// current `EHR_STATUS` (should not occur — every EHR is created with one)
+    /// is treated as modifiable, so the guard never spuriously blocks.
+    async fn ehr_is_modifiable(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
+        let flag: Option<bool> = sqlx::query_scalar(
+            "SELECT (n.data->>'is_modifiable') = 'true' \
+             FROM vo_version v \
+             JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+             WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period)",
+        )
+        .bind(ehr_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(flag.unwrap_or(true))
+    }
+
+    /// Refuse a write to *EHR contents* when the EHR is deactivated
+    /// (`EHR_STATUS.is_modifiable = False`). Per `ehr/master04-ehr_package.adoc`
+    /// §"EHR Active Status", `is_modifiable` "is used to indicate whether the
+    /// contents of an EHR are modifiable"; "an EHR's 'contents' consist of
+    /// everything other than the `EHR_STATUS` object, i.e. its Compositions …
+    /// its hierarchical Folders … and any other content". The `EHR_STATUS`
+    /// object itself "is always modifiable" (`master04` §"EHR Creation" +
+    /// §"EHR Active Status"), which is how a deactivated EHR is flipped back —
+    /// so this guard is applied to COMPOSITION / DIRECTORY / content-CONTRIBUTION
+    /// writes only, never to `status_update`.
+    ///
+    /// PORT NOTE (wire): openEHR ITS-REST 1.0.3 does not enumerate a status code
+    /// for a write to a non-modifiable EHR (`composition_create.yaml` etc. list
+    /// only 201/400/404/422; the CNF schedule
+    /// `master06-func_tc_ehr.adoc` §set/clear-modifiable tests the flag flip, not
+    /// the write-block outcome), so the wire code is underdetermined. We return
+    /// `409 Conflict` — the write conflicts with the current state of the target
+    /// resource (RFC 9110 §15.5.10), the closest HTTP semantics and EHRbase's
+    /// prior-art behaviour — via [`ServiceError::Conflict`].
+    pub(super) async fn ensure_content_writable(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+        if self.ehr_is_modifiable(ehr_id).await? {
+            Ok(())
+        } else {
+            Err(ServiceError::Conflict(format!(
+                "EHR {ehr_id} is not modifiable (EHR_STATUS.is_modifiable = false); its \
+                 contents cannot be created, updated or deleted (ehr/master04 §\"EHR Active \
+                 Status\"). Set EHR_STATUS.is_modifiable = true to reactivate it."
+            )))
+        }
+    }
+
     /// The stored `creating_system_id` to use in an `OBJECT_VERSION_ID`, or the
     /// service system id when the stored value is the empty legacy sentinel (RM
     /// common master06 §"Distributed Versioning"; migration 0008). Reconstructing

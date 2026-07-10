@@ -792,6 +792,12 @@ fn as_f64(v: &Value) -> Option<f64> {
 
 /// Whether `value` satisfies a `WebTemplate` numeric range (honoring the
 /// inclusive/exclusive `minOp`/`maxOp`; missing bounds are unbounded).
+// PORT NOTE (BASE primitives): `WebTemplateRange` preserves the OPT interval's
+// boundary openness as `minOp`/`maxOp` (`>`/`<` = excluded bound), so this
+// check realizes BASE `Interval.has(v)` semantics
+// (org.openehr.base.foundation_types.interval.adoc) over the Better wire
+// representation; the reference implementation + tests are
+// `openehr-base` `interval_impl.rs`.
 fn in_range(value: f64, range: &WebTemplateRange) -> bool {
     if let Some(min) = range.min.as_ref().and_then(as_f64) {
         let ok = match range.min_op.as_deref() {
