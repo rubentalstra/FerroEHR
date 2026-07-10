@@ -6,27 +6,28 @@
 ## 1. SUT identity
 
 - SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
-- Spec versions: RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1.0 · TERM 3.1.0
+- Spec versions: RM 1.2.0 · ITS-REST development@e8a093e · AQL 1.1.0 · TERM 3.1.0
 - Auth mode: basic
-- Started: 2026-07-10T08:44:26.39774Z
+- Started: 2026-07-10T09:58:30.796574Z
 
-**338 case×format executions · 298 passed · 25 failed.**
+**341 case×format executions · 303 passed · 12 failed.**
 
 ### Per-area matrix
 
 | Area | Catalogue (active) | Passed | Failed | Errored | Skipped |
 |---|--:|--:|--:|--:|--:|
-| EHR — EHR service | 12 | 12 | 0 | 0 | 0 |
+| EHR — EHR service | 13 | 13 | 0 | 0 | 0 |
 | STA — EHR_STATUS | 10 | 10 | 0 | 0 | 0 |
 | COM — COMPOSITION | 31 | 37 | 1 | 0 | 0 |
-| CTB — CONTRIBUTION (change sets) | 31 | 26 | 5 | 0 | 0 |
-| DIR — DIRECTORY (FOLDER) | 37 | 36 | 1 | 0 | 0 |
-| TPL — Template / OPT provisioning | 16 | 14 | 2 | 0 | 0 |
-| SQR — Stored-query provisioning | 7 | 3 | 4 | 0 | 0 |
-| QRY — AQL execution | 13 | 8 | 5 | 0 | 0 |
+| CTB — CONTRIBUTION (change sets) | 31 | 26 | 0 | 0 | 5 |
+| DIR — DIRECTORY (FOLDER) | 37 | 37 | 0 | 0 | 0 |
+| TPL — Template / OPT provisioning | 16 | 12 | 0 | 0 | 4 |
+| SQR — Stored-query provisioning | 7 | 3 | 2 | 0 | 2 |
+| QRY — AQL execution | 13 | 11 | 2 | 0 | 0 |
 | VAL — Content / archetype validation | 119 | 119 | 0 | 0 | 0 |
 | DEM — Demographic service | 24 | 18 | 6 | 0 | 0 |
 | ADM — Admin service | 6 | 6 | 0 | 0 | 0 |
+| SEC — Security / authorization | 2 | 2 | 0 | 0 | 0 |
 | SIG — Version signing | 5 | 4 | 1 | 0 | 1 |
 | MSG — Messaging | 10 | 0 | 0 | 0 | 10 |
 | TS — Terminology-server integration | 9 | 5 | 0 | 0 | 4 |
@@ -36,23 +37,10 @@
 Each failure must become a finding (`F-AA-NN`) before/with the fix — never an exclusion.
 
 - **ECC-COM-022** Get versioned composition (`com/get-versioned-composition`, xml): expected status 200, got 406 (body: {"error":"Not Acceptable","message":"not acceptable: canonical XML for this response is available once typed payloads land (P12); request application/json"})
-- **ECC-CTB-027** List contributions — empty (`ctb/list-contributions-empty`, json): expected status 200, got 405 (body: )
-- **ECC-CTB-028** List contributions — non existing EHR (`ctb/list-contributions-non-existing-ehr`, json): expected status 404, got 405 (body: )
-- **ECC-CTB-029** List contributions — post commit (`ctb/list-contributions-post-commit`, json): expected status 200, got 405 (body: )
-- **ECC-CTB-030** List contributions — EHR containing directory (`ctb/list-contributions-ehr-containing-directory`, json): expected status 200, got 405 (body: )
-- **ECC-CTB-031** List contributions — EHR containing EHR status (`ctb/list-contributions-ehr-containing-ehr-status`, json): expected status 200, got 405 (body: )
-- **ECC-DIR-034** Get versioned directory — directory with two versions (`dir/get-versioned-directory-directory-with-two-versions`, json): expected status 200, got 404 (body: )
-- **ECC-TPL-014** Delete OPT — delete existing (`tpl/delete-opt-delete-existing`, json): expected one of [200, 204], got 405
-- **ECC-TPL-015** Delete OPT — delete latest version (`tpl/delete-opt-delete-latest-version`, json): expected one of [200, 204], got 405
-- **ECC-SQR-004** List stored queries — empty (`sqr/list-queries-empty`, json): expected status 200, got 404 (body: )
-- **ECC-SQR-005** List stored queries — select items (`sqr/list-queries-select-items`, json): expected status 200, got 404 (body: )
 - **ECC-SQR-006** Store stored query — bad formalism (`sqr/valid-query-bad-formalism`, json): expected 400/422 for a non-AQL query, got 200
 - **ECC-SQR-007** Store stored query — invalid (`sqr/valid-query-invalid`, json): expected 400/422 for malformed AQL, got 200
-- **ECC-QRY-006** AQL corpus — A empty db (`qry/corpus-a-empty-db`, json): 24/27 A/empty_db goldens matched (0 skipped); first divergence: A/106_get_ehrs.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: attribute `ehr_status` is not defined on EHR (RM model)"})
-- **ECC-QRY-009** AQL corpus — D empty db (`qry/corpus-d-empty-db`, json): 16/18 D/empty_db goldens matched (8 skipped); first divergence: D/312_select_data_values_from_all_ehrs_contains_composition_with_archetype_top_5.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: invalid AQL: found 'Order' at 29..30"})
-- **ECC-QRY-010** AQL corpus — A loaded db (`qry/corpus-a-loaded-db`, json): 20/23 A/loaded_db goldens matched (4 skipped); first divergence: A/106_get_ehrs.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: attribute `ehr_status` is not defined on EHR (RM model)"})
-- **ECC-QRY-011** AQL corpus — B loaded db (`qry/corpus-b-loaded-db`, json): 15/18 B/loaded_db goldens matched (6 skipped); first divergence: B/104_get_compositions_top_5_ordered_by_starttime_asc.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: invalid AQL: found 'Order' at 7..8"})
-- **ECC-QRY-013** AQL corpus — D loaded db (`qry/corpus-d-loaded-db`, json): 7/9 D/loaded_db goldens matched (17 skipped); first divergence: D/312_select_data_values_from_all_ehrs_contains_composition_with_archetype_top_5.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: invalid AQL: found 'Order' at 29..30"})
+- **ECC-QRY-006** AQL corpus — A empty db (`qry/corpus-a-empty-db`, json): 24/25 A/empty_db goldens matched (2 skipped); first divergence: A/106_get_ehrs.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: attribute `ehr_status` is not defined on EHR (RM model)"})
+- **ECC-QRY-010** AQL corpus — A loaded db (`qry/corpus-a-loaded-db`, json): 20/21 A/loaded_db goldens matched (6 skipped); first divergence: A/106_get_ehrs.json: valid query rejected with status 400 (body: {"error":"Bad Request","message":"bad request: attribute `ehr_status` is not defined on EHR (RM model)"})
 - **ECC-DEM-005** Demographic person delete (`dem/person-delete`, json): expected status in [200, 204], got 400
 - **ECC-DEM-006** Demographic person get deleted (`dem/person-get-deleted`, json): expected status in [204, 404], got 200
 - **ECC-DEM-011** Demographic agent delete (`dem/agent-delete`, json): expected status in [200, 204], got 400
@@ -67,10 +55,10 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 |---|---|
 | Profiles requested | all |
 | Data formats | json, xml |
-| Catalogue (active cases) | 330 |
-| Executed | 338 |
-| Passed | 298 |
-| Failed | 25 |
+| Catalogue (active cases) | 333 |
+| Executed | 341 |
+| Passed | 303 |
+| Failed | 12 |
 
 ## 3. Detailed test report
 
@@ -98,6 +86,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-STA-009 | EhrStatus | json | 1/1 | PASS |
 | ECC-STA-010 | EhrStatus | json | 1/1 | PASS |
 | ECC-EHR-012 | EhrOperations | json | 11/11 | PASS |
+| ECC-EHR-013 | AnonymousEhrs | json | 1/1 | PASS |
 | ECC-COM-001 | CompositionOps | json | 1/1 | PASS |
 | ECC-COM-001 | CompositionOps | xml | 1/1 | PASS |
 | ECC-COM-002 | CompositionOps | json | 1/1 | PASS |
@@ -125,10 +114,10 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-COM-019 | CompositionOps | json | 1/1 | PASS |
 | ECC-COM-020 | CompositionOps | json | 1/1 | PASS |
 | ECC-COM-021 | CompositionOps | json | 2/2 | PASS |
-| ECC-COM-022 | CompositionOps | json | 1/1 | PASS |
-| ECC-COM-022 | CompositionOps | xml | 0/0 | **FAIL** |
-| ECC-COM-023 | CompositionOps | json | 1/1 | PASS |
-| ECC-COM-024 | CompositionOps | json | 1/1 | PASS |
+| ECC-COM-022 | Versioning | json | 1/1 | PASS |
+| ECC-COM-022 | Versioning | xml | 0/0 | **FAIL** |
+| ECC-COM-023 | Versioning | json | 1/1 | PASS |
+| ECC-COM-024 | Versioning | json | 1/1 | PASS |
 | ECC-COM-025 | CompositionOps | json | 1/1 | PASS |
 | ECC-COM-026 | CompositionOps | json | 1/1 | PASS |
 | ECC-COM-027 | CompositionOps | json | 1/1 | PASS |
@@ -162,11 +151,11 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-CTB-024 | ChangeSets | json | 1/1 | PASS |
 | ECC-CTB-025 | ChangeSets | json | 1/1 | PASS |
 | ECC-CTB-026 | ChangeSets | json | 1/1 | PASS |
-| ECC-CTB-027 | ChangeSets | json | 0/0 | **FAIL** |
-| ECC-CTB-028 | ChangeSets | json | 0/0 | **FAIL** |
-| ECC-CTB-029 | ChangeSets | json | 0/0 | **FAIL** |
-| ECC-CTB-030 | ChangeSets | json | 0/0 | **FAIL** |
-| ECC-CTB-031 | ChangeSets | json | 0/0 | **FAIL** |
+| ECC-CTB-027 | ChangeSets | json | 0/0 | skipped |
+| ECC-CTB-028 | ChangeSets | json | 0/0 | skipped |
+| ECC-CTB-029 | ChangeSets | json | 0/0 | skipped |
+| ECC-CTB-030 | ChangeSets | json | 0/0 | skipped |
+| ECC-CTB-031 | ChangeSets | json | 0/0 | skipped |
 | ECC-DIR-001 | DirectoryOps | json | 1/1 | PASS |
 | ECC-DIR-002 | DirectoryOps | json | 1/1 | PASS |
 | ECC-DIR-003 | DirectoryOps | json | 1/1 | PASS |
@@ -199,12 +188,12 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-DIR-030 | DirectoryOps | json | 1/1 | PASS |
 | ECC-DIR-031 | DirectoryOps | json | 1/1 | PASS |
 | ECC-DIR-032 | DirectoryOps | json | 1/1 | PASS |
-| ECC-DIR-033 | DirectoryOps | json | 1/1 | PASS |
-| ECC-DIR-034 | DirectoryOps | json | 0/0 | **FAIL** |
-| ECC-DIR-035 | DirectoryOps | json | 1/1 | PASS |
+| ECC-DIR-033 | Versioning | json | 1/1 | PASS |
+| ECC-DIR-034 | Versioning | json | 1/1 | PASS |
+| ECC-DIR-035 | Versioning | json | 1/1 | PASS |
 | ECC-DIR-036 | DirectoryOps | json | 1/1 | PASS |
 | ECC-DIR-037 | DirectoryOps | json | 1/1 | PASS |
-| ECC-TPL-001 | Adl14OptProvisioning | json | 1/1 | PASS |
+| ECC-TPL-001 | Adl14ArchetypeProvisioning | json | 1/1 | PASS |
 | ECC-TPL-002 | Adl14OptProvisioning | json | 18/18 | PASS |
 | ECC-TPL-003 | Adl14OptProvisioning | json | 1/1 | PASS |
 | ECC-TPL-004 | Adl14OptProvisioning | json | 1/1 | PASS |
@@ -216,15 +205,15 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-TPL-010 | Adl14OptProvisioning | json | 1/1 | PASS |
 | ECC-TPL-011 | Adl14OptProvisioning | json | 1/1 | PASS |
 | ECC-TPL-012 | Adl14OptProvisioning | json | 1/1 | PASS |
-| ECC-TPL-013 | Adl14OptProvisioning | json | 1/1 | PASS |
-| ECC-TPL-014 | Adl14OptProvisioning | json | 0/0 | **FAIL** |
-| ECC-TPL-015 | Adl14OptProvisioning | json | 0/0 | **FAIL** |
-| ECC-TPL-016 | Adl14OptProvisioning | json | 1/1 | PASS |
+| ECC-TPL-013 | Adl14OptProvisioning | json | 0/0 | skipped |
+| ECC-TPL-014 | Adl14OptProvisioning | json | 0/0 | skipped |
+| ECC-TPL-015 | Adl14OptProvisioning | json | 0/0 | skipped |
+| ECC-TPL-016 | Adl14OptProvisioning | json | 0/0 | skipped |
 | ECC-SQR-001 | QueryProvisioning | json | 1/1 | PASS |
 | ECC-SQR-002 | QueryProvisioning | json | 1/1 | PASS |
 | ECC-SQR-003 | QueryProvisioning | json | 1/1 | PASS |
-| ECC-SQR-004 | QueryProvisioning | json | 0/0 | **FAIL** |
-| ECC-SQR-005 | QueryProvisioning | json | 0/0 | **FAIL** |
+| ECC-SQR-004 | QueryProvisioning | json | 0/0 | skipped |
+| ECC-SQR-005 | QueryProvisioning | json | 0/0 | skipped |
 | ECC-SQR-006 | QueryProvisioning | json | 0/0 | **FAIL** |
 | ECC-SQR-007 | QueryProvisioning | json | 0/0 | **FAIL** |
 | ECC-QRY-001 | AqlBasic | json | 1/1 | PASS |
@@ -235,11 +224,11 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-QRY-006 | AqlBasic | json | 0/0 | **FAIL** |
 | ECC-QRY-007 | AqlBasic | json | 18/18 | PASS |
 | ECC-QRY-008 | AqlBasic | json | 11/11 | PASS |
-| ECC-QRY-009 | AqlBasic | json | 0/0 | **FAIL** |
+| ECC-QRY-009 | AqlBasic | json | 16/16 | PASS |
 | ECC-QRY-010 | AqlBasic | json | 0/0 | **FAIL** |
-| ECC-QRY-011 | AqlBasic | json | 0/0 | **FAIL** |
+| ECC-QRY-011 | AqlBasic | json | 15/15 | PASS |
 | ECC-QRY-012 | AqlBasic | json | 1/1 | PASS |
-| ECC-QRY-013 | AqlBasic | json | 0/0 | **FAIL** |
+| ECC-QRY-013 | AqlBasic | json | 7/7 | PASS |
 | ECC-ADM-001 | AdminApi | json | 1/1 | PASS |
 | ECC-ADM-002 | AdminApi | json | 1/1 | PASS |
 | ECC-ADM-003 | AdminApi | json | 1/1 | PASS |
@@ -414,47 +403,61 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-TS-007 | Terminology | json | 0/0 | skipped |
 | ECC-TS-008 | Terminology | json | 0/0 | skipped |
 | ECC-TS-009 | Terminology | json | 0/0 | skipped |
+| ECC-SEC-001 | Authentication | json | 1/1 | PASS |
+| ECC-SEC-002 | Authentication | json | 1/1 | PASS |
 
-## 4. Profile verdict (machine-computed, all-or-nothing)
+## 4. Profile verdict (machine-computed)
+
+CORE/STANDARD are all-or-nothing (every capability must pass); OPTIONS is any-passes (obtained if ≥1 optional capability passes) — `master03-profiles.adoc`.
 
 ### Core — not claimable
 
 | Capability | Passed | Failed | Errored | Skipped | Verdict |
 |---|--:|--:|--:|--:|---|
-| Adl14ArchetypeProvisioning | 0 | 0 | 0 | 0 | fail |
-| Adl14OptProvisioning | 14 | 2 | 0 | 0 | fail |
+| Adl14ArchetypeProvisioning | 1 | 0 | 0 | 0 | pass |
+| Adl14OptProvisioning | 11 | 0 | 0 | 4 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | pass |
-| CompositionOps | 37 | 1 | 0 | 0 | fail |
-| ChangeSets | 26 | 5 | 0 | 0 | fail |
-| Versioning | 0 | 0 | 0 | 0 | fail |
+| CompositionOps | 34 | 0 | 0 | 0 | pass |
+| ChangeSets | 26 | 0 | 0 | 5 | pass |
+| Versioning | 6 | 1 | 0 | 0 | fail |
 | ArchetypeValidation | 119 | 0 | 0 | 0 | pass |
-| AnonymousEhrs | 0 | 0 | 0 | 0 | fail |
+| AnonymousEhrs | 1 | 0 | 0 | 0 | pass |
 
 ### Standard — not claimable
 
 | Capability | Passed | Failed | Errored | Skipped | Verdict |
 |---|--:|--:|--:|--:|---|
-| Adl14ArchetypeProvisioning | 0 | 0 | 0 | 0 | fail |
-| Adl14OptProvisioning | 14 | 2 | 0 | 0 | fail |
+| Adl14ArchetypeProvisioning | 1 | 0 | 0 | 0 | pass |
+| Adl14OptProvisioning | 11 | 0 | 0 | 4 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | pass |
-| CompositionOps | 37 | 1 | 0 | 0 | fail |
-| ChangeSets | 26 | 5 | 0 | 0 | fail |
-| Versioning | 0 | 0 | 0 | 0 | fail |
+| CompositionOps | 34 | 0 | 0 | 0 | pass |
+| ChangeSets | 26 | 0 | 0 | 5 | pass |
+| Versioning | 6 | 1 | 0 | 0 | fail |
 | ArchetypeValidation | 119 | 0 | 0 | 0 | pass |
-| AnonymousEhrs | 0 | 0 | 0 | 0 | fail |
-| DirectoryOps | 36 | 1 | 0 | 0 | fail |
-| QueryProvisioning | 3 | 4 | 0 | 0 | fail |
-| AqlBasic | 8 | 5 | 0 | 0 | fail |
+| AnonymousEhrs | 1 | 0 | 0 | 0 | pass |
+| DirectoryOps | 34 | 0 | 0 | 0 | pass |
+| QueryProvisioning | 3 | 2 | 0 | 2 | fail |
+| AqlBasic | 11 | 2 | 0 | 0 | fail |
 | Signing | 4 | 1 | 0 | 1 | fail |
 
-### Options — not claimable
+### Options — **OBTAINED** (any-passes)
 
 | Capability | Passed | Failed | Errored | Skipped | Verdict |
 |---|--:|--:|--:|--:|---|
-| AdminApi | 6 | 0 | 0 | 0 | pass |
+| Adl2Provisioning | 0 | 0 | 0 | 0 | not evidenced |
 | DemographicApi | 18 | 6 | 0 | 0 | fail |
+| AqlAdvanced | 0 | 0 | 0 | 0 | not evidenced |
+| Terminology | 5 | 0 | 0 | 4 | pass |
+| AdminApi | 6 | 0 | 0 | 0 | pass |
+| AdminActivityReport | 0 | 0 | 0 | 0 | not evidenced |
+| AdminPhysicalDeletion | 0 | 0 | 0 | 0 | not evidenced |
+| AdminEhrDumpLoad | 0 | 0 | 0 | 0 | not evidenced |
+| AdminBulkEhrLoad | 0 | 0 | 0 | 0 | not evidenced |
+| AdminEhrArchive | 0 | 0 | 0 | 0 | not evidenced |
+| AdminDemographicArchive | 0 | 0 | 0 | 0 | not evidenced |
+| Messaging | 0 | 0 | 0 | 10 | not evidenced |
 
 ## 5. Deviations (skips), by reason
 
@@ -470,15 +473,18 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | NativeApiOnly: I_TDD_SERVICE.import_tdd (typed rejections) is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_rejects_malformed_payload, tdd_import_rejects_non_tdd_xml, tdd_import_rejects_unknown_ehr, tdd_import_rejects_unknown_template} — Messaging has no ITS-REST binding | 1 |
 | NativeApiOnly: I_TDD_SERVICE.import_tdd is exercised by app/ehrbase/tests/service_tdd.rs::tdd_import_commits_composition — Messaging has no ITS-REST binding | 1 |
 | NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding | 1 |
-| SutConfig: no FHIR terminology provider configured on the SUT (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_* unset) — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:57453 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (host.docker.internal for a runner-host fixture, docs/design/terminology-server-integration.md §5). | 1 |
+| SM I_DEFINITION_ADL14.delete_opt() (CNF master04:319) has no ITS-REST ADL 1.4 binding — ITS-REST development@e8a093e (and Release-1.0.3) define no DELETE verb on /definition/template/adl1.4/{id}; OPT deletion lives in the ADMIN API only | 4 |
+| SM I_DEFINITION_QUERY.list_queries() (CNF master05:93) has no ITS-REST binding — ITS-REST development@e8a093e (and Release-1.0.3) expose GET /definition/query/{qualified_query_name}, not a bare GET /definition/query collection | 2 |
+| SM I_EHR_CONTRIBUTION.list_contributions() (CNF master08:595) has no ITS-REST binding — ITS-REST development@e8a093e (and Release-1.0.3) define POST only on /ehr/{ehr_id}/contribution, with no GET collection resource; the list is a native-API concern, not wire-exercisable | 5 |
+| SutConfig: no FHIR terminology provider configured on the SUT (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_* unset) — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:57944 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (host.docker.internal for a runner-host fixture, docs/design/terminology-server-integration.md §5). | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — digest cases prove the capability | 1 |
-| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57453 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
-| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57453 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
-| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57453 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
+| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57944 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
+| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57944 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
+| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57944 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
 
 ## 6. Terminology server (TS area)
 
-- Server: `http://127.0.0.1:57453`
+- Server: `http://127.0.0.1:57944`
 - Mode: fixture
 
 Recorded FHIR-tx exchange (4 request(s)):

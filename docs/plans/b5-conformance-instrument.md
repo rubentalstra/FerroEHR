@@ -1,6 +1,6 @@
 # B5 — tools/conformance spec-version update (chapter 7's findings)
 
-- Status: in-progress
+- Status: done (2026-07-10)
 - Started: 2026-07-10   Owner: Ruben
 - Governing plan: blueprint §3 B5; detail `docs/blueprint/07-cnf.md` (D1–D5)
 - Oracle: CNF certificate/profiles docs; ECC baseline 298 passed / 338
@@ -57,9 +57,12 @@ cases; OPTIONS/certificate are report-shape changes).*
 
 ## Exit criteria
 
-- [ ] The instrument is honest: every failure a real server defect, the
-      report claims the version it actually tests, CORE/STANDARD claimable;
-      full ECC zero drift (only adjudication-sanctioned deltas).
+- [x] The instrument is honest: phase-close ECC 2026-07-10 — 341 executed ·
+      303 passed · **12 failed, every one a real server defect** (the B6
+      burn-down list); report claims development@e8a093e (provenance-derived);
+      CORE structurally claimable; zero regressions (9 fail→skip cited
+      adjudications, 4 fail→pass, 3 new live passes);
+      CONFORMANCE_STATEMENT.md + CONFORMANCE_CERTIFICATE.md emitted.
 
 ## Handoff
 

@@ -3,7 +3,7 @@
 Generated per run — do not edit. Numbers are allocated once in
 `tools/conformance/inventory/ecc-catalog.tsv` and never reused.
 
-## EHR — EHR service (12 cases, 12 active)
+## EHR — EHR service (13 cases, 13 active)
 
 | ECC id | Status | Title | Last run |
 |---|---|---|---|
@@ -19,6 +19,7 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-EHR-010 | Active | Get EHR — get EHR by invalid EHR id | passed |
 | ECC-EHR-011 | Active | Get EHR — get EHR by invalid subject id | passed |
 | ECC-EHR-012 | Active | Create EHR — reject invalid EHR_STATUS data sets | passed |
+| ECC-EHR-013 | Active | Create anonymous (subject-less) EHR | passed |
 
 ## STA — EHR_STATUS (10 cases, 10 active)
 
@@ -101,11 +102,11 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-CTB-024 | Active | Contribution existence check — bad contribution | passed |
 | ECC-CTB-025 | Active | Contribution existence check — bad EHR | passed |
 | ECC-CTB-026 | Active | Contribution existence check — empty EHR | passed |
-| ECC-CTB-027 | Active | List contributions — empty | failed |
-| ECC-CTB-028 | Active | List contributions — non existing EHR | failed |
-| ECC-CTB-029 | Active | List contributions — post commit | failed |
-| ECC-CTB-030 | Active | List contributions — EHR containing directory | failed |
-| ECC-CTB-031 | Active | List contributions — EHR containing EHR status | failed |
+| ECC-CTB-027 | Active | List contributions — empty | skipped |
+| ECC-CTB-028 | Active | List contributions — non existing EHR | skipped |
+| ECC-CTB-029 | Active | List contributions — post commit | skipped |
+| ECC-CTB-030 | Active | List contributions — EHR containing directory | skipped |
+| ECC-CTB-031 | Active | List contributions — EHR containing EHR status | skipped |
 
 ## DIR — DIRECTORY (FOLDER) (37 cases, 37 active)
 
@@ -144,7 +145,7 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-DIR-031 | Active | Get directory at version — directory with two versions | passed |
 | ECC-DIR-032 | Active | Get directory at version — empty EHR | passed |
 | ECC-DIR-033 | Active | Get versioned directory — empty EHR | passed |
-| ECC-DIR-034 | Active | Get versioned directory — directory with two versions | failed |
+| ECC-DIR-034 | Active | Get versioned directory — directory with two versions | passed |
 | ECC-DIR-035 | Active | Get versioned directory — bad EHR | passed |
 | ECC-DIR-036 | Active | Update directory — empty EHR | passed |
 | ECC-DIR-037 | Active | Delete directory — empty EHR | passed |
@@ -165,10 +166,10 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-TPL-010 | Active | List OPTs — retrieve all | passed |
 | ECC-TPL-011 | Active | Validate OPT — valid OPT | passed |
 | ECC-TPL-012 | Active | Validate OPT — invalid OPT | passed |
-| ECC-TPL-013 | Active | Delete OPT — delete non existing | passed |
-| ECC-TPL-014 | Active | Delete OPT — delete existing | failed |
-| ECC-TPL-015 | Active | Delete OPT — delete latest version | failed |
-| ECC-TPL-016 | Active | Delete OPT — delete specific version | passed |
+| ECC-TPL-013 | Active | Delete OPT — delete non existing | skipped |
+| ECC-TPL-014 | Active | Delete OPT — delete existing | skipped |
+| ECC-TPL-015 | Active | Delete OPT — delete latest version | skipped |
+| ECC-TPL-016 | Active | Delete OPT — delete specific version | skipped |
 
 ## SQR — Stored-query provisioning (7 cases, 7 active)
 
@@ -177,8 +178,8 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-SQR-001 | Active | Store stored query — valid | passed |
 | ECC-SQR-002 | Active | List stored queries — non empty | passed |
 | ECC-SQR-003 | Active | Stored query existence check — xxx | passed |
-| ECC-SQR-004 | Active | List stored queries — empty | failed |
-| ECC-SQR-005 | Active | List stored queries — select items | failed |
+| ECC-SQR-004 | Active | List stored queries — empty | skipped |
+| ECC-SQR-005 | Active | List stored queries — select items | skipped |
 | ECC-SQR-006 | Active | Store stored query — bad formalism | failed |
 | ECC-SQR-007 | Active | Store stored query — invalid | failed |
 
@@ -194,11 +195,11 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-QRY-006 | Active | AQL corpus — A empty db | failed |
 | ECC-QRY-007 | Active | AQL corpus — B empty db | passed |
 | ECC-QRY-008 | Active | AQL corpus — C empty db | passed |
-| ECC-QRY-009 | Active | AQL corpus — D empty db | failed |
+| ECC-QRY-009 | Active | AQL corpus — D empty db | passed |
 | ECC-QRY-010 | Active | AQL corpus — A loaded db | failed |
-| ECC-QRY-011 | Active | AQL corpus — B loaded db | failed |
+| ECC-QRY-011 | Active | AQL corpus — B loaded db | passed |
 | ECC-QRY-012 | Active | AQL corpus — C loaded db | passed |
-| ECC-QRY-013 | Active | AQL corpus — D loaded db | failed |
+| ECC-QRY-013 | Active | AQL corpus — D loaded db | passed |
 
 ## VAL — Content / archetype validation (119 cases, 119 active)
 
@@ -363,6 +364,13 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-ADM-004 | Active | Admin EHR delete all | passed |
 | ECC-ADM-005 | Active | Admin EHR delete all partial | passed |
 | ECC-ADM-006 | Active | Admin EHR delete all empty | passed |
+
+## SEC — Security / authorization (2 cases, 2 active)
+
+| ECC id | Status | Title | Last run |
+|---|---|---|---|
+| ECC-SEC-001 | Active | Unauthenticated request to a protected route is refused (401) | passed |
+| ECC-SEC-002 | Active | Regular credential on an ADMIN-only route is forbidden (403) | passed |
 
 ## SIG — Version signing (5 cases, 5 active)
 
