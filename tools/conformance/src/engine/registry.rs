@@ -21,6 +21,19 @@ pub struct CaseEntry {
     pub run: CaseRun,
 }
 
+impl CaseEntry {
+    /// Set this case's [`CaseMeta::schedule_ref`] (the CNF-schedule trace) and
+    /// return the entry — the builder-style combinator suites chain onto a case
+    /// that maps directly to one `<SERVICE>.<operation>` schedule id (task 7,
+    /// `docs/blueprint/07-cnf.md` R2), e.g.
+    /// `entry(…).with_schedule_ref("I_DEFINITION_QUERY.list_queries (CNF master05:93)")`.
+    #[must_use]
+    pub const fn with_schedule_ref(mut self, schedule_ref: &'static str) -> Self {
+        self.meta.schedule_ref = Some(schedule_ref);
+        self
+    }
+}
+
 /// The static registry of registered conformance cases.
 #[derive(Debug)]
 pub struct Registry {

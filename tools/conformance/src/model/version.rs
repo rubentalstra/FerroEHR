@@ -15,7 +15,9 @@ use serde::{Deserialize, Serialize};
 pub struct SpecVersions {
     /// The openEHR Reference Model version (e.g. `"1.2.0"`).
     pub rm: String,
-    /// The ITS-REST API release (e.g. `"1.0.3"`).
+    /// The tested ITS-REST contract identity (e.g. `"development@e8a093e"`),
+    /// derived from the vendored `-codegen` OAS provenance (D1), not the
+    /// released spec-text version.
     pub its_rest: String,
     /// The AQL (QUERY) specification version (e.g. `"1.1.0"`).
     pub aql: String,
@@ -26,11 +28,19 @@ pub struct SpecVersions {
 impl SpecVersions {
     /// The latest published set — the only set supported today (pins in
     /// `docs/VERSIONS.md`).
+    ///
+    /// `its_rest` is **not** a hand-asserted literal (D1): it is derived from
+    /// the vendored `-codegen` OAS provenance
+    /// ([`crate::provenance::tested_its_rest`]) so the report claims exactly the
+    /// ITS-REST contract the SUT implements — `development@<commit>`, not
+    /// `"1.0.3"` (the OAS is pinned to openEHR's unreleased development line;
+    /// the released 1.0.3 spec *text* is a separate vendored tree, used only for
+    /// the per-case `§`-section citations).
     #[must_use]
     pub fn latest() -> Self {
         SpecVersions {
             rm: "1.2.0".to_owned(),
-            its_rest: "1.0.3".to_owned(),
+            its_rest: crate::provenance::tested_its_rest().to_owned(),
             aql: "1.1.0".to_owned(),
             term: "3.1.0".to_owned(),
         }

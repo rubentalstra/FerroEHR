@@ -102,6 +102,7 @@ fn entry(
             formats,
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

@@ -145,6 +145,7 @@ fn entry(
             formats: &[Format::Json],
             citation,
             compare: Compare::IgnoreSet,
+            schedule_ref: None,
         },
         run,
     }

@@ -1,11 +1,26 @@
 //! The capability → profile matrix and the machine-computed profile verdict
 //! (design v4 §2.6, §8).
 //!
-//! A profile claim is **all-or-nothing per capability**: a capability passes
-//! when at least one of its cases executed and none failed or errored; a
-//! profile passes when every capability it requires passes. The generated
-//! Conformance Statement's claim line comes from [`verdict`] — never from a
-//! hand-written sentence.
+//! A capability passes when at least one of its cases executed and none failed
+//! or errored. How a profile aggregates its capabilities depends on the profile
+//! (`master03-profiles.adoc` preamble):
+//!
+//! - **CORE / STANDARD are all-or-nothing:** *"all mentioned capabilities must
+//!   be met in testing"* — the profile passes iff every required capability
+//!   passes.
+//! - **OPTIONS is any-passes:** *"OPTIONS is obtained if any optional capability
+//!   is passed in testing"* — a catch-all pseudo-profile that enumerates every
+//!   testable capability outside CORE/STANDARD and is obtained when **≥1** of
+//!   them passes. Each OPTIONS capability is therefore reported individually:
+//!   `pass` when it has a passing case, honest **not-evidenced** (0 cases run)
+//!   or **fail** (a case failed/errored) otherwise (D4, `docs/blueprint/07-cnf.md`).
+//!   Wire-unreachable capabilities (`Messaging` has no ITS-REST binding;
+//!   `Terminology`/`Authentication` are config-gated) simply do not contribute a
+//!   pass — they never block anything (the B3 decision preserved: an any-passes
+//!   profile has nothing to block anyway).
+//!
+//! The generated Conformance Statement's claim line comes from [`verdict`] —
+//! never from a hand-written sentence.
 
 use serde::Serialize;
 
@@ -13,6 +28,20 @@ use crate::case::{Capability, Profile};
 use crate::results::{CaseStatus, RunResults};
 
 /// The capabilities a profile requires (design §8, our curated matrix).
+///
+/// **CORE capability evidencing (D5, `docs/blueprint/07-cnf.md`).** Three CORE
+/// capabilities had zero tagged cases before B5, making CORE structurally
+/// unclaimable even against a perfect server. They are now evidenced by real,
+/// tagged cases:
+/// - `Versioning` — the version-read cases `com/get-versioned-composition*` and
+///   `dir/get-versioned-directory-*` (`suites::composition`/`suites::directory`).
+/// - `AnonymousEhrs` — `ehr/create-anonymous-ehr` (`suites::ehr`), the no-body
+///   `POST /ehr` (`master03-profiles.adoc` §Non-Functional).
+/// - `Adl14ArchetypeProvisioning` — ITS-REST has no standalone ADL 1.4 archetype
+///   resource; archetypes are provisioned to the platform **inside** OPTs, so it
+///   is evidenced by the OPT upload case `tpl/upload-opt-valid-opt`
+///   (`suites::definition_adl14` module docs). This mirrors the schedule's
+///   EHRbase-derived reality (OPTs, not raw archetypes).
 #[must_use]
 pub const fn required_capabilities(profile: Profile) -> &'static [Capability] {
     match profile {
@@ -43,7 +72,29 @@ pub const fn required_capabilities(profile: Profile) -> &'static [Capability] {
             Capability::AqlBasic,
             Capability::Signing,
         ],
-        Profile::Options => &[Capability::AdminApi, Capability::DemographicApi],
+        // OPTIONS — the full optional surface of `master03-profiles.adoc`
+        // (Functional §Definitions/Demographic/Querying/Admin/Messaging + the
+        // OPTIONS REST APIs), modeled in matrix order (D4). This is the
+        // *reported* set, not an all-of gate: OPTIONS is any-passes (see
+        // [`verdict`]), so an unimplemented capability here reads as an honest
+        // "not evidenced" line rather than a blocker. Evidence today:
+        // `DemographicApi` (DEM cases), `AdminApi` (the ADMIN-API physical-delete
+        // cases), `Terminology` (TS cases); `Messaging` is native-API-only
+        // (`SKIPPED`); the rest are modeled-but-unimplemented (not evidenced).
+        Profile::Options => &[
+            Capability::Adl2Provisioning,
+            Capability::DemographicApi,
+            Capability::AqlAdvanced,
+            Capability::Terminology,
+            Capability::AdminApi,
+            Capability::AdminActivityReport,
+            Capability::AdminPhysicalDeletion,
+            Capability::AdminEhrDumpLoad,
+            Capability::AdminBulkEhrLoad,
+            Capability::AdminEhrArchive,
+            Capability::AdminDemographicArchive,
+            Capability::Messaging,
+        ],
     }
 }
 
@@ -64,6 +115,23 @@ pub struct CapabilityVerdict {
     pub pass: bool,
 }
 
+impl CapabilityVerdict {
+    /// The display verdict for this capability: `"pass"` when it passes, `"fail"`
+    /// when it has a failed/errored case, and `"not evidenced"` when no case ran
+    /// (0 passed / 0 failed / 0 errored) — the honest OPTIONS distinction (D4)
+    /// between an unimplemented optional capability and a broken one.
+    #[must_use]
+    pub const fn label(&self) -> &'static str {
+        if self.pass {
+            "pass"
+        } else if self.failed > 0 || self.errored > 0 {
+            "fail"
+        } else {
+            "not evidenced"
+        }
+    }
+}
+
 /// The machine-computed verdict for one profile.
 #[derive(Debug, Clone, Serialize)]
 pub struct ProfileVerdict {
@@ -71,11 +139,14 @@ pub struct ProfileVerdict {
     pub profile: Profile,
     /// Per-required-capability verdicts, in matrix order.
     pub capabilities: Vec<CapabilityVerdict>,
-    /// All-or-nothing: every required capability passes.
+    /// Whether the profile is met. CORE/STANDARD are all-or-nothing (every
+    /// capability passes); OPTIONS is any-passes (≥1 capability passes) —
+    /// `master03-profiles.adoc` preamble (D4).
     pub pass: bool,
 }
 
-/// Compute the all-or-nothing verdict for `profile` over a run's outcomes.
+/// Compute the profile verdict over a run's outcomes: all-or-nothing for
+/// CORE/STANDARD, any-passes for OPTIONS (`master03-profiles.adoc` preamble, D4).
 #[must_use]
 pub fn verdict(profile: Profile, results: &RunResults) -> ProfileVerdict {
     let capabilities: Vec<CapabilityVerdict> = required_capabilities(profile)
@@ -102,7 +173,12 @@ pub fn verdict(profile: Profile, results: &RunResults) -> ProfileVerdict {
             v
         })
         .collect();
-    let pass = capabilities.iter().all(|c| c.pass);
+    // CORE/STANDARD: all mentioned capabilities must be met. OPTIONS: obtained
+    // if any optional capability is passed (`master03-profiles.adoc` preamble).
+    let pass = match profile {
+        Profile::Options => capabilities.iter().any(|c| c.pass),
+        Profile::Core | Profile::Standard => capabilities.iter().all(|c| c.pass),
+    };
     ProfileVerdict {
         profile,
         capabilities,
@@ -129,6 +205,7 @@ mod tests {
             total_data_sets: 0,
             message: None,
             citation: String::new(),
+            schedule_ref: None,
             duration_ms: 0,
         }
     }
@@ -171,6 +248,42 @@ mod tests {
         assert!(
             !v.pass,
             "capabilities with zero executed cases are unevidenced"
+        );
+    }
+
+    #[test]
+    fn options_is_any_passes_and_reports_unevidenced_honestly() {
+        // OPTIONS is obtained if ANY optional capability passes, even while the
+        // rest are unimplemented (not evidenced) — master03-profiles.adoc.
+        let r = results(vec![outcome("DemographicApi", CaseStatus::Passed)]);
+        let v = verdict(Profile::Options, &r);
+        assert!(v.pass, "one passing optional capability obtains OPTIONS");
+        let dem = v
+            .capabilities
+            .iter()
+            .find(|c| c.capability == "DemographicApi")
+            .expect("DemographicApi in OPTIONS");
+        assert_eq!(dem.label(), "pass");
+        // A modeled-but-unimplemented capability reads "not evidenced", not "fail".
+        let adl2 = v
+            .capabilities
+            .iter()
+            .find(|c| c.capability == "Adl2Provisioning")
+            .expect("Adl2Provisioning modeled in OPTIONS (D4)");
+        assert!(!adl2.pass);
+        assert_eq!(adl2.label(), "not evidenced");
+    }
+
+    #[test]
+    fn options_not_obtained_when_no_optional_capability_passes() {
+        // A failing optional capability does not, by itself, obtain OPTIONS; nor
+        // does it block (any-passes) — but with nothing passing, OPTIONS is not
+        // obtained.
+        let r = results(vec![outcome("DemographicApi", CaseStatus::Failed)]);
+        let v = verdict(Profile::Options, &r);
+        assert!(
+            !v.pass,
+            "no optional capability passed → OPTIONS not obtained"
         );
     }
 

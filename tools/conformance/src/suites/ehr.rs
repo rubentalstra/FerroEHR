@@ -183,8 +183,28 @@ pub fn entries() -> Vec<CaseEntry> {
                 formats: &[Format::Json],
                 citation: "ITS-REST 1.0.3 EHR API §create_ehr (422); RM 1.2.0 ehr §EHR_STATUS validation",
                 compare: Compare::Superset,
+                schedule_ref: None,
             },
             run: run_create_ehr_invalid_status,
+        },
+        // D5: the CORE + STANDARD non-functional "Anonymous EHRs" capability
+        // (`master03-profiles.adoc` §Non-Functional). Creating an EHR with no
+        // body yields a subject-less (anonymous) EHR — the capability had zero
+        // tagged cases before, making CORE unclaimable by construction.
+        CaseEntry {
+            meta: CaseMeta {
+                id: "ehr/create-anonymous-ehr",
+                title: "Create anonymous (subject-less) EHR",
+                area: Area::Ehr,
+                capability: Capability::AnonymousEhrs,
+                profiles: &[Profile::Core, Profile::Standard],
+                formats: &[Format::Json],
+                citation: "CNF master03-profiles §Non-Functional (Anonymous EHRs — CORE+STANDARD); \
+                           ITS-REST EHR API §create_ehr (no body); RM 1.2.0 ehr §EHR_STATUS",
+                compare: Compare::Superset,
+                schedule_ref: None,
+            },
+            run: run_create_anonymous_ehr,
         },
     ]
 }
@@ -211,6 +231,7 @@ fn entry(
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }
@@ -477,6 +498,25 @@ fn run_create_ehr_main<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             passed += 1;
         }
         Ok(DataSetReport { passed, total })
+    })
+}
+
+/// D5: an anonymous EHR — `POST /ehr` with no body creates a subject-less EHR
+/// (its default `EHR_STATUS` carries no `subject.external_ref`). Evidences the
+/// CORE+STANDARD "Anonymous EHRs" non-functional capability
+/// (`master03-profiles.adoc` §Non-Functional).
+fn run_create_anonymous_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = create_ehr(ctx, None).await?;
+        let status = get_status(ctx, &ehr_id).await?;
+        // Anonymous = no identified subject: the default PARTY_SELF/PARTY_PROXY
+        // carries no external_ref (RM 1.2.0 common §PARTY_SELF).
+        if status["subject"].get("external_ref").is_some() {
+            return Err(CaseError::Assertion(
+                "anonymous EHR_STATUS subject unexpectedly carries an external_ref".to_owned(),
+            ));
+        }
+        Ok(DataSetReport::SINGLE)
     })
 }
 

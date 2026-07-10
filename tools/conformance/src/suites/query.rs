@@ -186,6 +186,7 @@ fn query_case(
             formats: &[Format::Json],
             citation,
             compare: Compare::IgnoreSet,
+            schedule_ref: None,
         },
         run,
     }
@@ -235,6 +236,25 @@ fn uses_removed_timewindow(aql: &str) -> bool {
     aql.to_ascii_uppercase().contains(" TIMEWINDOW ")
 }
 
+/// **Corpus-dialect defect (D3):** whether a query places `LIMIT` **before**
+/// `ORDER BY`. The vendored "valid" corpus is 2019-era `EHRbase` dialect (e.g.
+/// `A/107`, `A/110`, `B/104-106`, `D/312-313`: `… LIMIT 5 ORDER BY …`), but the
+/// pinned AQL 1.1 grammar orders the clauses `orderByClause? limitClause?`
+/// (`crates/openehr-query/vendor/grammar/AqlParser.g4:22-24`; QUERY
+/// `master03-syntax`), so a `LIMIT`-before-`ORDER BY` query is invalid AQL and
+/// the SUT's rejection is **spec-correct** — the golden is defective. Such a
+/// golden is skipped-with-reason, never booked as a server failure
+/// (`docs/blueprint/07-cnf.md` D3). This is a golden defect, distinct from a
+/// spec-valid query the engine wrongly rejects (e.g. `e/ehr_status` on `EHR`,
+/// A/106), which stays a real finding.
+fn limit_before_order_by(aql: &str) -> bool {
+    let up = aql.to_ascii_uppercase();
+    match (up.find(" LIMIT "), up.find(" ORDER BY ")) {
+        (Some(limit), Some(order)) => limit < order,
+        _ => false,
+    }
+}
+
 /// The query text for a golden of `name` in `group` (paired by identical base
 /// name under `aql_queries_valid/<group>/<name>`), or `None` when the paired
 /// query fixture is absent.
@@ -281,6 +301,14 @@ async fn run_golden_group(
                     group, gold.name, resp.status
                 ));
             }
+            continue;
+        }
+        if limit_before_order_by(&aql) {
+            // Corpus-dialect defect: 2019-era EHRbase placed LIMIT before ORDER
+            // BY; AQL 1.1 requires `orderByClause? limitClause?` (AqlParser.g4:
+            // 22-24), so the SUT's rejection is spec-correct and the golden is
+            // defective — skip, never a finding. See [`limit_before_order_by`].
+            skipped += 1;
             continue;
         }
         if unrunnable(&aql) {

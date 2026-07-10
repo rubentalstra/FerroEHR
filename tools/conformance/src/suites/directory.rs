@@ -229,25 +229,34 @@ pub fn entries() -> Vec<CaseEntry> {
             "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
             run_at_version_empty,
         ),
-        // get_versioned_directory — GET /ehr/{id}/versioned_directory.
-        entry(
+        // get_versioned_directory — D2: rebound to GET /directory/{version_uid}
+        // (the CNF Robot realization); D5: these version reads evidence the CORE
+        // `Versioning` capability.
+        entry_ver(
             "dir/get-versioned-directory-empty-ehr",
             "Get versioned directory — empty EHR",
-            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            "CNF Robot I_EHR_DIRECTORY.get_versioned_directory-empty_ehr realized as \
+             GET /ehr/{ehr_id}/directory/{version_uid} (no versioned_directory resource in \
+             ITS-REST development@e8a093e/Release-1.0.3); RM 1.2.0 ehr §FOLDER, common §VERSIONED_OBJECT",
             run_versioned_empty,
-        ),
-        entry(
+        )
+        .with_schedule_ref("I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)"),
+        entry_ver(
             "dir/get-versioned-directory-directory-with-two-versions",
             "Get versioned directory — directory with two versions",
-            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            "CNF Robot I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions realized as \
+             GET /ehr/{ehr_id}/directory/{version_uid}; RM 1.2.0 ehr §FOLDER, common §VERSIONED_OBJECT",
             run_versioned_two,
-        ),
-        entry(
+        )
+        .with_schedule_ref("I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)"),
+        entry_ver(
             "dir/get-versioned-directory-bad-ehr",
             "Get versioned directory — bad EHR",
-            "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
+            "CNF Robot I_EHR_DIRECTORY.get_versioned_directory-bad_ehr realized as \
+             GET /ehr/{ehr_id}/directory/{version_uid}; RM 1.2.0 ehr §FOLDER, common §VERSIONED_OBJECT",
             run_versioned_bad,
-        ),
+        )
+        .with_schedule_ref("I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)"),
         // update / delete on an EHR with no directory yet.
         entry(
             "dir/update-directory-empty-ehr",
@@ -265,16 +274,38 @@ pub fn entries() -> Vec<CaseEntry> {
 }
 
 fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
+    entry_cap(id, title, citation, Capability::DirectoryOps, run)
+}
+
+/// A version-read DIRECTORY case (D5): tagged [`Capability::Versioning`] — a CORE
+/// capability — so the versioned-directory reads evidence CORE claimability.
+fn entry_ver(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    run: CaseRun,
+) -> CaseEntry {
+    entry_cap(id, title, citation, Capability::Versioning, run)
+}
+
+fn entry_cap(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    capability: Capability,
+    run: CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
             title,
             area: Area::Dir,
-            capability: Capability::DirectoryOps,
+            capability,
             profiles: &[Profile::Standard],
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }
@@ -805,13 +836,20 @@ fn run_at_version_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-// get_versioned_directory — GET /ehr/{id}/versioned_directory.
+// get_versioned_directory — D2: rebound to `GET /ehr/{id}/directory/{version_uid}`.
+// ITS-REST 1.0.3 (and development) define no `versioned_directory` resource; the
+// vendored CNF Robot suite realizes `I_EHR_DIRECTORY.get_versioned_directory` as
+// "get DIRECTORY at version" (`get_versioned_directory-*.robot`: `get DIRECTORY at
+// version`), i.e. the at-version GET. The route exists in ehrbase-rest
+// (`GET /ehr/{ehr_id}/directory/{version_uid}`), so these are real wire cases.
 fn run_versioned_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
+        // Robot `get_versioned_directory-empty_ehr`: empty EHR, GET at a fake
+        // version_uid → 404 unknown version_uid.
         let ehr_id = support::create_ehr(ctx).await?;
         let resp = ctx
             .send(
-                HttpRequest::get(format!("/ehr/{ehr_id}/versioned_directory"))
+                HttpRequest::get(format!("/ehr/{ehr_id}/directory/{ehr_id}::conformance::1"))
                     .header("accept", "application/json"),
             )
             .await?;
@@ -821,10 +859,12 @@ fn run_versioned_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 fn run_versioned_two<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
-        let (ehr_id, _, _) = ehr_with_two_versions(ctx).await?;
+        // Robot `get_versioned_directory-directory_with_two_versions`: retrieve
+        // the directory at its latest version → 200.
+        let (ehr_id, _, v2) = ehr_with_two_versions(ctx).await?;
         let resp = ctx
             .send(
-                HttpRequest::get(format!("/ehr/{ehr_id}/versioned_directory"))
+                HttpRequest::get(format!("/ehr/{ehr_id}/directory/{v2}"))
                     .header("accept", "application/json"),
             )
             .await?;
@@ -834,9 +874,12 @@ fn run_versioned_two<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 fn run_versioned_bad<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
+        // Robot `get_versioned_directory-bad_ehr`: non-existent EHR, GET at
+        // version → 404 unknown ehr_id.
+        let ehr_id = Uuid::new_v4();
         let resp = ctx
             .send(
-                HttpRequest::get(format!("/ehr/{}/versioned_directory", Uuid::new_v4()))
+                HttpRequest::get(format!("/ehr/{ehr_id}/directory/{ehr_id}::conformance::1"))
                     .header("accept", "application/json"),
             )
             .await?;
