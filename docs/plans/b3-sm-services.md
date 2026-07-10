@@ -1,6 +1,6 @@
 # B3 — SM-5/SM-6: the designed-but-unbuilt services
 
-- Status: in-progress
+- Status: done (2026-07-10)
 - Started: 2026-07-10   Owner: Ruben
 - Governing plan: `docs/blueprint/00-THE-BLUEPRINT.md` §3 B3; designs in
   `docs/design/sm-platform/` (esp. `10-message-integration.md`)
@@ -77,8 +77,10 @@
 
 ## Exit criteria
 
-- [ ] Blueprint map rows 6 + 16 fully DONE; MSG area evidenced.
-- [ ] Workspace suites green; full ECC ≥293/319, zero drift.
+- [x] Blueprint map rows 6 + 16 DONE (SM-5 export/import/TDD + SM-6 built); MSG area evidenced (ECC-MSG-001..010).
+- [x] Workspace suites green (ehrbase 245/245, sm 9/9, rest 218/218,
+      openehr-flat 116/116, conformance 35/35); phase-close ECC 2026-07-10:
+      329 executed · 293 passed · zero drift (10 new MSG skips).
 
 ## Handoff for next session
 
