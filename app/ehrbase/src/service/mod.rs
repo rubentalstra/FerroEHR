@@ -30,6 +30,7 @@ mod contribution;
 mod definition;
 mod demographic;
 mod directory;
+mod dump_load;
 mod ehr;
 mod ehr_index;
 mod item_tag;

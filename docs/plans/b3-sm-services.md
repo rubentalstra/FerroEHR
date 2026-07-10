@@ -10,9 +10,15 @@
 
 ## Tasks (blueprint §3 B3)
 
-- [ ] 1. SM-4 wave 3 — Admin dump/load: `export_ehrs`/`load_ehrs`,
+- [x] 1. SM-4 wave 3 — Admin dump/load: `export_ehrs`/`load_ehrs`,
       `EXPORT_SPEC`, segmenting, `DUMP_LOAD_FAIL_REPORT`; round-trip test +
-      duplicate-id failure.
+      duplicate-id failure. *Done 2026-07-10: AdminDumpLoad trait (no default
+      bodies, ADR-011) + ExportSpec/DumpLoadFailReport catalog (spec-cited,
+      i_admin_dump_load.adoc); canonical-JSON archive with manifest +
+      greedy segmenting; lossless verbatim re-insert through the storage
+      codec; round-trip + duplicate-id tests green (ehrbase 226/226,
+      ehrbase-sm 9/9, rest 218/218). PORT NOTEs: native-API-only (no REST
+      wire), JSON-uncompressed-only this wave.*
 - [ ] 2. SM-5 — Message service: `I_EHR_EXTRACT_SERVICE` (export whole-EHR +
       spec-driven; import into fixed/existing EHR) over `vobject` + generated
       `ehr_extract` types; import lands IMPORTED_VERSION storage, clone-EHR

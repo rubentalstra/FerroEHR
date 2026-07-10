@@ -30,7 +30,10 @@ pub mod validity;
 pub mod web_template;
 
 pub use adapter::{ContributionAdapter, DefinitionAdapter, ItemTagAdapter, VersionMetaAdapter};
-pub use admin::{AdminArchive, AdminService, StatTimeRange};
+pub use admin::{
+    AdminArchive, AdminDumpLoad, AdminService, CompressionFormat, DumpLoadFailReport, ExportFormat,
+    ExportSpec, StatTimeRange,
+};
 pub use composition::EhrCompositionService;
 pub use contribution::{EhrContributionService, TimeRange};
 pub use definition::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService};
