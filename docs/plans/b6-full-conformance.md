@@ -22,11 +22,20 @@
       DELETE 400s and get-after-delete 200s — fix the delete wire/service
       path (likely version-id handling) so delete → 204 and subsequent
       get → 404.
-- [ ] 4. XML-format failures (list from results.json non-json rows) + the
-      ITS-REST protocol tail from map row 13 that is MUST-level:
-      openEHR-VERSION.*/openEHR-AUDIT_DETAILS.* committal-header parse+merge,
-      Last-Modified emission, If-Match hardening (F-01-09/F-02-08),
-      OPTIONS / conformance endpoint (R32).
+- [x] 4. XML-format failures + the MUST-level ITS-REST protocol tail (map
+      row 13). (A) VERSION-family canonical XML (F-05-06): the reads route
+      through `negotiate::respond_rm`/`read_rm` with the concrete
+      `OriginalVersion<Composition>`/`<EhrStatus>`/`VersionedObjectData`/
+      `RevisionHistory` (the generated `ToXml` already existed — the 406 was a
+      REST-edge policy, so a runtime fix, no emitter change), closing
+      ECC-COM-022 + ECC-SIG-001 on `Accept: application/xml`. (B) committal
+      headers `openEHR-VERSION.*`/`openEHR-AUDIT_DETAILS.*` parse+merge
+      (`ehrbase-rest::committal`, R4 MUST); `Last-Modified` emission
+      (`negotiate::set_resource_headers`, R9); If-Match hardening — malformed →
+      400 (`require_if_match`) + full-OVID compare (`ensure_if_match`,
+      F-01-09/F-02-08); `OPTIONS /` (`status::system_options` above the CORS
+      layer, R32). Wire tests: `tests/protocol_tail.rs` + `negotiate`/`committal`
+      unit tests (ehrbase-rest 249/249 green).
 - [ ] 5. Remaining honest AqlBasic/QueryProvisioning/protocol edges surfaced
       by re-runs; status-code fixes (F-02-10, F-03-09/13/14, F-01-11); query
       wire tail (RESULT_SET ETag, query-level 408, query_type).

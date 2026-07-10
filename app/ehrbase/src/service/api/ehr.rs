@@ -46,6 +46,34 @@ fn version_uid(resp: ehrbase_sm::types::ServiceResponse) -> Result<String, SmErr
         .ok_or_else(|| SmError::exception("write produced no version metadata"))
 }
 
+/// Enforce the full-`OBJECT_VERSION_ID` `If-Match` precondition (F-01-09 /
+/// F-02-08). The client's `preceding_version_uid` (the `If-Match` value) MUST
+/// equal the resource's current latest `version_uid` **in full** — `object_id`,
+/// creating-system id, and trunk version — not merely the trunk version number
+/// (`parameters/If-Match`: "the existing latest `version_uid` … matches this
+/// header's value"; the internal versioning path compares only the version
+/// number). A mismatch is a `412` ([`SmError::version_mismatch`]).
+///
+/// A `None` `latest` (the resource has no current version yet) is not a mismatch
+/// here — first-version / not-found semantics are handled by the versioning
+/// path the caller then invokes.
+fn ensure_if_match(
+    preceding: Option<&ObjectVersionId>,
+    latest: Option<&ResourceMeta>,
+) -> Result<(), SmError> {
+    let Some(pre) = preceding else {
+        return Ok(());
+    };
+    match latest {
+        Some(meta) if meta.uid == pre.value => Ok(()),
+        Some(meta) => Err(SmError::version_mismatch(format!(
+            "If-Match {:?} does not match the current latest version {:?}",
+            pre.value, meta.uid
+        ))),
+        None => Ok(()),
+    }
+}
+
 /// Parse an ISO-8601 `Iso8601_date_time` argument (with offset) for a
 /// time-travel read; a malformed value is an argument-validity precondition
 /// failure (→ `400`).
@@ -257,6 +285,8 @@ impl EhrStatusService for EhrbaseService {
         an_ehr_id: Uuid,
         a_status: UpdateVersion,
     ) -> Result<String, SmError> {
+        let latest = self.ehr_status_meta(an_ehr_id).await?;
+        ensure_if_match(a_status.preceding_version_uid.as_ref(), latest.as_ref())?;
         let if_match = a_status
             .preceding_version_uid
             .map(|o| o.value)
@@ -374,6 +404,10 @@ impl EhrCompositionService for EhrbaseService {
         a_versioned_object_uid: Uuid,
         a_comp: UpdateVersion,
     ) -> Result<String, SmError> {
+        let latest = self
+            .composition_current_meta(an_ehr_id, a_versioned_object_uid)
+            .await?;
+        ensure_if_match(a_comp.preceding_version_uid.as_ref(), latest.as_ref())?;
         let expected = a_comp
             .preceding_version_uid
             .as_ref()
@@ -467,6 +501,8 @@ impl EhrDirectoryService for EhrbaseService {
         an_ehr_id: Uuid,
         a_dir_struct: UpdateVersion,
     ) -> Result<String, SmError> {
+        let latest = self.directory_meta(an_ehr_id).await?;
+        ensure_if_match(a_dir_struct.preceding_version_uid.as_ref(), latest.as_ref())?;
         let expected = a_dir_struct
             .preceding_version_uid
             .as_ref()
@@ -483,6 +519,8 @@ impl EhrDirectoryService for EhrbaseService {
         an_ehr_id: Uuid,
         preceding_version_uid: Option<ObjectVersionId>,
     ) -> Result<(), SmError> {
+        let latest = self.directory_meta(an_ehr_id).await?;
+        ensure_if_match(preceding_version_uid.as_ref(), latest.as_ref())?;
         let expected = preceding_version_uid
             .as_ref()
             .map(|o| version_id::components(o).map(|(_, v)| v))

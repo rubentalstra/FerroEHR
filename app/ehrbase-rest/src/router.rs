@@ -102,6 +102,10 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
                 ))
                 .layer(CompressionLayer::new()),
         )
+        // `OPTIONS /` (System Options and Conformance, R32) is added *after* the
+        // middleware stack so it bypasses the `CorsLayer` — that layer treats
+        // every `OPTIONS` as a CORS preflight and would short-circuit it.
+        .route("/", axum::routing::options(status::system_options))
         .with_state(state);
 
     // Merge the management surface only when enabled AND not bound to a separate

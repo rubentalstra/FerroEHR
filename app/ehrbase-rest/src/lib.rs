@@ -17,6 +17,7 @@
 pub mod access;
 mod audit;
 mod audit_table;
+mod committal;
 pub mod config;
 mod dispatch;
 mod error;

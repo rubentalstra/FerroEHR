@@ -231,9 +231,10 @@ pub struct ResourceMeta {
     /// resource, the `ehr_id` for an EHR, or the contribution uid for a
     /// CONTRIBUTION.
     pub uid: String,
-    /// The commit time of this version (its audit `time_committed`).
-    /// ITS-REST 1.0.3 declares no `Last-Modified` response header, so this is
-    /// carried for completeness/observability, not emitted at the wire.
+    /// The commit time of this version (its audit `time_committed`). Emitted as
+    /// the `Last-Modified` response header — the ITS-REST overview defines its
+    /// value as `VERSION.commit_audit.time_committed.value`, SHOULD-present on
+    /// `VERSION`/`VERSIONED_OBJECT` responses.
     pub last_modified: Option<Timestamp>,
 }
 

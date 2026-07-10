@@ -103,7 +103,15 @@ type codes), and `docs/specs/openehr/CNF/docs/platform_test_schedule/master06-fu
 - **Code:** `app/ehrbase/src/service/ehr.rs:279-286` (`parse_expected_version`) and `app/ehrbase/src/service/api/ehr.rs:379-385` (`expected_from_if_match`) extract only the trailing integer; `vobject.rs` `next_version` skips the check entirely when `expected == None`.
 - **Problem:** Two issues: (1) a malformed/unparseable `If-Match` yields `None`, and the update then proceeds with **no** precondition check (should be 412/400, never a silent success); (2) only the `version_tree_id` integer is compared — the UUID and system-id of the `OBJECT_VERSION_ID` are ignored, so `"wrong-uuid::wrong-sys::2"` passes as long as the current version is 2. This weakens the "mid-air collision" guarantee.
 - **Fix:** Compare the full `OBJECT_VERSION_ID` against the current version's computed `object_version_id(vo_id, current)`. Treat an absent/unparseable `If-Match` on an update as a client error (the param is `required`; malformed → 400) rather than skipping the check. Deduplicate the two If-Match parsers into one shared function.
-- [ ] fixed
+- [x] fixed (B6 cluster 4) — dispatch now parses the required `If-Match` via
+  `version_id::require_if_match` (empty/unparseable → **400**, never a silent
+  skip; PORT NOTE records the choice, spec being silent on malformed). The SM
+  adapter (`service/api/ehr.rs::ensure_if_match`) compares the client's
+  `preceding_version_uid` against the current latest `version_uid` **in full**
+  (object_id + creating-system id + trunk version, via `*_current_meta`/`*_meta`)
+  → 412 on any mismatch. Applied to `ehr_status_update`, `composition_update`,
+  `directory_update`, `directory_delete`. Wire tests in
+  `ehrbase-rest/tests/protocol_tail.rs` (malformed → 400).
 
 ### F-01-10: EHR resource omits the mandatory `ehr_access`
 - **Severity:** minor
