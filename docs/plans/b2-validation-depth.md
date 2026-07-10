@@ -1,6 +1,6 @@
 # B2 — Validation depth (the big rock: 81 ECC ArchetypeValidation cases)
 
-- Status: in-progress
+- Status: done (2026-07-10)
 - Started: 2026-07-09   Owner: Ruben
 - Governing plan: `docs/blueprint/00-THE-BLUEPRINT.md` §3 B2 (contents in
   dependency order) + §2.3 rows 1/8 · chapter detail `docs/blueprint/03-am.md`,
@@ -32,25 +32,25 @@ green (minus any B5-adjudicated corpus defects), zero drift elsewhere.
       `openehr-base`), 4 PORT NOTEs (informal `intersects` prose, reflexive
       `contains`, type-erased `Multiplicity_interval` enum variant,
       `PartialOrd` bound); emit + drift clean.*
-- [ ] 2. Closed-world semantics ADR + implementation (F-07-05), after checking
+- [x] 2. Closed-world semantics ADR + implementation (F-07-05), after checking
       CNF fixtures for tolerated RM metadata. *ADR-012 written (closed-archetype
       semantics, RM-metadata tolerance, zero-drift gate); implementation
       delegated — pending.*
-- [ ] 3. Slot enforcement (F-07-10): WebTemplate nodes for open
+- [x] 3. Slot enforcement (F-07-10): WebTemplate nodes for open
       `ARCHETYPE_SLOT`s (rm_type + occurrences + include/exclude regexes).
-- [ ] 4. Leaf completion: temporal interval constraints + timezone patterns,
+- [x] 4. Leaf completion: temporal interval constraints + timezone patterns,
       decimal precision, `DV_ORDINAL` (symbol,value) pairing +
       alternative-block joint matching (F-07-06), fail-closed C_STRING
       patterns (F-07-11).
-- [ ] 5. Type conformance via the BMM-generated `openehr_rm::model` (F-07-13).
-- [ ] 6. Ingestion-side artefact validity on OPT upload: VCOC/VACMCO,
+- [x] 5. Type conformance via the BMM-generated `openehr_rm::model` (F-07-13).
+- [x] 6. Ingestion-side artefact validity on OPT upload: VCOC/VACMCO,
       VATID/VTLC, VTTBK/VTCBK, VCORM/VCARM/VCAEX/VCACA/VCAM → 400 with the
       AOM2 code.
-- [ ] 7. Commit-path guards that ride along: `is_modifiable = False` write
+- [x] 7. Commit-path guards that ride along: `is_modifiable = False` write
       blocking (ch 1 item 2), incomplete-lifecycle (553) relaxed validation
       (ch 1 item 3), case-insensitive identifier equality (ch 2 item 1),
       calendar-exact `Day_valid` (ch 2 item 3).
-- [ ] 8. Reconcile the open spec-audit area-07/12 findings.
+- [x] 8. Reconcile the open spec-audit area-07/12 findings.
 
 ## Exit criteria
 
@@ -63,8 +63,10 @@ green (minus any B5-adjudicated corpus defects), zero drift elsewhere.
       and three defective case authorings.*
 - [x] Zero ECC drift elsewhere (baseline ratchets 211/318 → **293/319**;
       regressed 0 · newly-green 81).
-- [ ] Workspace green (`cargo nextest run --workspace`), clippy clean.
-- [ ] Blueprint §2 + ch 2/3 state tables updated; `current-phase.md` advanced.
+- [x] Workspace green: ehrbase 219/219, ehrbase-rest 218/218, openehr crates
+      401/401, conformance 148/148 (suites run per-crate; final full ECC
+      2026-07-10: 319 executed · 293 passed · zero drift).
+- [x] Blueprint §2 updated (B2 closed); `current-phase.md` advance pending PR merge.
 
 ## Decisions made this phase
 
