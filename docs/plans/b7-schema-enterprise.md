@@ -27,6 +27,13 @@
       migrations — owner decides), node codec/storage layer updates, tests.
 - [ ] 4. Blueprint §2 State-column refresh (done/partial/missing) + chapter
       state tables.
+- [ ] 5. ADR reconciliation (owner directive): the ADR set carries layered
+      amendments and contradictions (ADR-006 §3/§4 vs ADR-008; ADR-007's
+      schema replaced; historical parity framing inside ADR-004/005; ADR-010
+      packaging amended by ADR-011). Audit every ADR, fix status headers /
+      supersession banners so each file states its current truth, and add a
+      docs/ADRs/README.md index with a what-is-current table. ADR-013 (this
+      phase's schema decision) lands consistent with the cleaned set.
 
 ## Exit criteria
 
