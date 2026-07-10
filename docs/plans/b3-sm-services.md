@@ -41,9 +41,33 @@
       party_ref.adoc abstract-supertype allowance + CNF __full fixtures,
       PORT NOTEd). Version branching stays the PORT-NOTEd trunk-only typed
       rejection (decided).*
-- [ ] 3. SM-6 — Subject Proxy: subject/variable/data-set/binding stores,
+- [x] 3. SM-6 — Subject Proxy: subject/variable/data-set/binding stores,
       `I_DATA_BINDING` with the openEHR frame = AQL over our Query service;
-      FHIR/HL7v2 frame seams stubbed.
+      FHIR/HL7v2 frame seams stubbed. *Done 2026-07-10: SubjectProxyService
+      (15 SM calls) + DataBinding catalog traits (no default bodies), sp_*
+      config stores (migration 0010), openEHR frame = AQL through the
+      QueryService seam ($subject_id binding, RESULT_SET → OPENEHR_SAMPLE,
+      frame_path column selector PORT-NOTEd), FHIR/HL7v2 typed
+      NotImplemented; 4 testcontainer tests; sample history/currency
+      ordering + extension REST routes deferred to a later SM-6 wave
+      (PORT-NOTEd).* *Done 2026-07-10: `SubjectProxyService`
+      (15 SM calls) + `DataBinding.get_frame` catalog traits (no default
+      bodies, ADR-011) + the full information-structure hierarchy
+      (SUBJECT_VARIABLE/DATA_SET, SAMPLE/DATA_FRAME_SAMPLE/VARIABLE_SAMPLE,
+      VARIABLE_VALUE single/list/time-series, ENV_BINDING/DATA_FRAME,
+      spec-cited to master10 + UML classes). Migration
+      0010_subject_proxy_stores (sp_subject/sp_binding/sp_data_frame/
+      sp_variable/sp_data_set config tables, master10 §Persistence). EhrbaseService
+      impl: openEHR frame executes AQL through the existing QueryService seam
+      (execute_aql), $subject_id binding + UUID→EHR scoping; frame_path =
+      RESULT_SET column selector; FHIR/HL7v2 → typed NotImplemented. Native-API
+      only (no wire). 4 integration tests green (openEHR frame pull, app
+      data-set round-trip, FHIR stub rejection, preconditions+reset).
+      Gates: ehrbase-sm 9/9, ehrbase 245/245, ehrbase-rest 218/218. PORT NOTEs:
+      frame_path RESULT_SET-column semantics, currency/freshness + sp_sample
+      history deferred, register_application_data_set currency-tightening
+      deferred (nominal-duration ordering), subject-id resolution = $subject_id
+      + UUID scope (no MPI), extension routes/YAML ingestion a later wave.*
 - [ ] 4. MSG ECC cases (`Area::Msg`, zero cases today) land with SM-5.
 
 ## Exit criteria

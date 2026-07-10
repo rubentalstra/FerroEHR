@@ -25,6 +25,7 @@ pub mod ehr_status;
 pub mod message;
 pub mod query;
 pub mod relationship;
+pub mod subject_proxy;
 pub mod system_log;
 pub mod tdd;
 pub mod terminology;
@@ -47,6 +48,10 @@ pub use ehr_status::EhrStatusService;
 pub use message::EhrExtractService;
 pub use query::QueryService;
 pub use relationship::PartyRelationshipService;
+pub use subject_proxy::{
+    DataBinding, DataFrame, DataFrameSample, DataSetResult, EnvBinding, FrameMethod, FramePayload,
+    Sample, SubjectDataSet, SubjectProxyService, SubjectVariable, VariableSample, VariableValue,
+};
 pub use system_log::{
     AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, SystemLog,
 };
