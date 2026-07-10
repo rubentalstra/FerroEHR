@@ -17,9 +17,16 @@
 //! response" is a `4xx`; `contribution_get.yaml` 200/404).
 //!
 //! `has_contribution-*` is realized via `GET /contribution/{uid}` (200 has / 404
-//! not), reusing the get-by-uid runners; `list_contributions-*` via
-//! `GET /ehr/{id}/contribution` (the collection) — a missing list endpoint
-//! surfaces as a finding, never a skip (CNF guide: abstract op → REST realization).
+//! not), reusing the get-by-uid runners.
+//!
+//! **`list_contributions-*` — D2 skip-with-reason.** The CNF schedule normatively
+//! defines `I_EHR_CONTRIBUTION.list_contributions()` (master08:595), but ITS-REST
+//! (Release-1.0.3 and the tested development@e8a093e OAS) binds **POST only** on
+//! `/ehr/{ehr_id}/contribution` — there is no `GET` collection resource, so the
+//! SM operation has no ITS-REST binding. Driving a `GET` against it merely
+//! measures the framework's 405 (a schedule-vs-ITS-REST gap, not a server
+//! defect), so each `list_contributions` case reports `SKIPPED` with that reason
+//! rather than a fabricated failure (`docs/blueprint/07-cnf.md` D2).
 
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -200,35 +207,40 @@ pub fn entries() -> Vec<CaseEntry> {
             "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
             run_get_empty_ehr,
         ),
-        // list_contributions — GET /ehr/{id}/contribution (the contribution list).
+        // list_contributions — D2: SM op with no ITS-REST binding → skip-with-reason.
         entry(
             "ctb/list-contributions-empty",
             "List contributions — empty",
-            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
+            "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
+             (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_empty,
         ),
         entry(
             "ctb/list-contributions-non-existing-ehr",
             "List contributions — non existing EHR",
-            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
+            "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
+             (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_bad_ehr,
         ),
         entry(
             "ctb/list-contributions-post-commit",
             "List contributions — post commit",
-            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
+            "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
+             (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_post_commit,
         ),
         entry(
             "ctb/list-contributions-ehr-containing-directory",
             "List contributions — EHR containing directory",
-            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
+            "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
+             (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_with_directory,
         ),
         entry(
             "ctb/list-contributions-ehr-containing-ehr-status",
             "List contributions — EHR containing EHR status",
-            "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
+            "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
+             (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_with_status,
         ),
     ]
@@ -793,90 +805,38 @@ fn run_get_bad_contribution<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-// list_contributions — GET /ehr/{id}/contribution (the contribution list). The
-// abstract I_EHR_CONTRIBUTION.list_contributions realized as a collection GET;
-// a fresh EHR already has its EHR_STATUS contribution, so the list is non-empty.
-fn run_list_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let ehr_id = support::create_ehr(ctx).await?;
-        let resp = ctx
-            .send(
-                HttpRequest::get(format!("/ehr/{ehr_id}/contribution"))
-                    .header("accept", "application/json"),
-            )
-            .await?;
-        assert::status(&resp, 200)?;
-        Ok(DataSetReport::SINGLE)
+// list_contributions — D2 skip-with-reason (module docs): the SM operation
+// `I_EHR_CONTRIBUTION.list_contributions()` (CNF master08:595) has no ITS-REST
+// binding (POST-only on `/ehr/{ehr_id}/contribution` in Release-1.0.3 and the
+// tested development@e8a093e OAS). A `GET` would only measure the framework's
+// 405, not a server defect, so every case is skipped, not failed.
+const LIST_CONTRIBUTIONS_SKIP: &str = "SM I_EHR_CONTRIBUTION.list_contributions() (CNF master08:595) has no ITS-REST binding — \
+     ITS-REST development@e8a093e (and Release-1.0.3) define POST only on \
+     /ehr/{ehr_id}/contribution, with no GET collection resource; the list is a native-API \
+     concern, not wire-exercisable";
+
+fn skip_list<'a>() -> CaseFuture<'a> {
+    Box::pin(async move {
+        Err::<DataSetReport, _>(CaseError::Skipped(LIST_CONTRIBUTIONS_SKIP.to_owned()))
     })
 }
 
-fn run_list_bad_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let resp = ctx
-            .send(
-                HttpRequest::get(format!("/ehr/{}/contribution", uuid::Uuid::new_v4()))
-                    .header("accept", "application/json"),
-            )
-            .await?;
-        assert::status(&resp, 404)?;
-        Ok(DataSetReport::SINGLE)
-    })
+fn run_list_empty<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_list()
 }
 
-fn run_list_post_commit<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        support::ensure_opt(ctx, "minimal/minimal_evaluation.opt").await?;
-        let ehr_id = support::create_ehr(ctx).await?;
-        let body =
-            contribution("contributions/valid/minimal/minimal_evaluation.contribution.json")?;
-        let committed = commit(ctx, &ehr_id, &body).await?;
-        assert::status(&committed, 201)?;
-        let resp = ctx
-            .send(
-                HttpRequest::get(format!("/ehr/{ehr_id}/contribution"))
-                    .header("accept", "application/json"),
-            )
-            .await?;
-        assert::status(&resp, 200)?;
-        Ok(DataSetReport::SINGLE)
-    })
+fn run_list_bad_ehr<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_list()
 }
 
-fn run_list_with_directory<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let ehr_id = support::create_ehr(ctx).await?;
-        let folder = crate::fixtures::read_json("directory/subfolders_in_directory.json")
-            .map_err(|e| CaseError::Codec(e.to_string()))?;
-        let dir = ctx
-            .send(
-                HttpRequest::post(format!("/ehr/{ehr_id}/directory"))
-                    .json_body(&folder)?
-                    .header("accept", "application/json"),
-            )
-            .await?;
-        assert::status(&dir, 201)?;
-        let resp = ctx
-            .send(
-                HttpRequest::get(format!("/ehr/{ehr_id}/contribution"))
-                    .header("accept", "application/json"),
-            )
-            .await?;
-        assert::status(&resp, 200)?;
-        Ok(DataSetReport::SINGLE)
-    })
+fn run_list_post_commit<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_list()
 }
 
-fn run_list_with_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        // A fresh EHR carries its initial EHR_STATUS contribution.
-        let ehr_id = support::create_ehr(ctx).await?;
-        let resp = ctx
-            .send(
-                HttpRequest::get(format!("/ehr/{ehr_id}/contribution"))
-                    .header("accept", "application/json"),
-            )
-            .await?;
-        assert::status(&resp, 200)?;
-        Ok(DataSetReport::SINGLE)
-    })
+fn run_list_with_directory<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_list()
+}
+
+fn run_list_with_status<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_list()
 }

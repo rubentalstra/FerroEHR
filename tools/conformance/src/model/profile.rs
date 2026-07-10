@@ -13,6 +13,20 @@ use crate::case::{Capability, Profile};
 use crate::results::{CaseStatus, RunResults};
 
 /// The capabilities a profile requires (design §8, our curated matrix).
+///
+/// **CORE capability evidencing (D5, `docs/blueprint/07-cnf.md`).** Three CORE
+/// capabilities had zero tagged cases before B5, making CORE structurally
+/// unclaimable even against a perfect server. They are now evidenced by real,
+/// tagged cases:
+/// - `Versioning` — the version-read cases `com/get-versioned-composition*` and
+///   `dir/get-versioned-directory-*` (`suites::composition`/`suites::directory`).
+/// - `AnonymousEhrs` — `ehr/create-anonymous-ehr` (`suites::ehr`), the no-body
+///   `POST /ehr` (`master03-profiles.adoc` §Non-Functional).
+/// - `Adl14ArchetypeProvisioning` — ITS-REST has no standalone ADL 1.4 archetype
+///   resource; archetypes are provisioned to the platform **inside** OPTs, so it
+///   is evidenced by the OPT upload case `tpl/upload-opt-valid-opt`
+///   (`suites::definition_adl14` module docs). This mirrors the schedule's
+///   EHRbase-derived reality (OPTs, not raw archetypes).
 #[must_use]
 pub const fn required_capabilities(profile: Profile) -> &'static [Capability] {
     match profile {

@@ -183,23 +183,28 @@ pub fn entries() -> Vec<CaseEntry> {
             run_get_versions,
         ),
         // ── versioned composition ────────────────────────────────────────────
-        entry_fmt(
+        // D5: version reads evidence the CORE `Versioning` capability (design §8);
+        // tagged `Versioning` (not `CompositionOps`) so CORE is claimable.
+        entry_fmt_cap(
             "com/get-versioned-composition",
             "Get versioned composition",
-            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+            "ITS-REST COMPOSITION API §get_versioned_composition; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT",
             BOTH,
+            Capability::Versioning,
             run_get_versioned,
         ),
-        entry(
+        entry_cap(
             "com/get-versioned-composition-non-existent",
             "Get versioned composition — non existent",
-            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+            "ITS-REST COMPOSITION API §get_versioned_composition (404); RM 1.2.0 common §VERSIONED_OBJECT",
+            Capability::Versioning,
             run_get_versioned_non_existent,
         ),
-        entry(
+        entry_cap(
             "com/get-versioned-composition-bad-ehr",
             "Get versioned composition — bad EHR",
-            "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+            "ITS-REST COMPOSITION API §get_versioned_composition (404); RM 1.2.0 common §VERSIONED_OBJECT",
+            Capability::Versioning,
             run_get_versioned_bad_ehr,
         ),
         // ── update ───────────────────────────────────────────────────────────
@@ -259,7 +264,7 @@ fn entry(id: &'static str, title: &'static str, citation: &'static str, run: Cas
     entry_fmt(id, title, citation, JSON, run)
 }
 
-/// A COMPOSITION-area case with the given formats.
+/// A COMPOSITION-area case with the given formats (capability `CompositionOps`).
 fn entry_fmt(
     id: &'static str,
     title: &'static str,
@@ -267,12 +272,43 @@ fn entry_fmt(
     formats: &'static [Format],
     run: CaseRun,
 ) -> CaseEntry {
+    entry_fmt_cap(
+        id,
+        title,
+        citation,
+        formats,
+        Capability::CompositionOps,
+        run,
+    )
+}
+
+/// A JSON-only COMPOSITION-area case with an explicit capability (D5: the
+/// version-read cases are tagged [`Capability::Versioning`]).
+fn entry_cap(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    capability: Capability,
+    run: CaseRun,
+) -> CaseEntry {
+    entry_fmt_cap(id, title, citation, JSON, capability, run)
+}
+
+/// A COMPOSITION-area case with the given formats and capability.
+fn entry_fmt_cap(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    formats: &'static [Format],
+    capability: Capability,
+    run: CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
             title,
             area: Area::Com,
-            capability: Capability::CompositionOps,
+            capability,
             profiles: &[Profile::Core, Profile::Standard],
             formats,
             citation,
