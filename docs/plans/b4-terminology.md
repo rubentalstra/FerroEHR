@@ -1,6 +1,6 @@
 # B4 — Terminology-server integration (+ its test harness)
 
-- Status: in-progress
+- Status: done (2026-07-10)
 - Started: 2026-07-10   Owner: Ruben
 - Governing plan: blueprint §3 B4; designs `docs/terminology-validation.md`
   (client) + `docs/design/terminology-server-integration.md` (Docker TS)
@@ -64,8 +64,11 @@
 
 ## Exit criteria
 
-- [ ] Mission item demonstrable in CI without network + against a real Docker
-      TS on demand; workspace suites green; full ECC zero drift.
+- [x] Mission item demonstrable in CI without network (wiremock fixture +
+      bundle-provider wire passes) + against a real Docker TS on demand
+      (--tx-server-url); workspace suites green (rest 231/231, ehrbase
+      273/273, sm 9/9, conformance 41/41); phase-close ECC 2026-07-10:
+      338 executed · 298 passed · zero drift (5 new live TS passes).
 
 ## Handoff
 
