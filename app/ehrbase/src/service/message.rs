@@ -491,11 +491,14 @@ impl EhrExtractService for EhrbaseService {
 
         let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
         // Into an *empty* target: a duplicate EHR id is `ehr_create_fail_duplicate_id`.
-        let inserted = sqlx::query("INSERT INTO ehr (id) VALUES ($1) ON CONFLICT DO NOTHING")
-            .bind(ehr_id)
-            .execute(&mut *tx)
-            .await
-            .map_err(ServiceError::from)?;
+        // The EHR is created locally, so its immutable system_id is ours (req 2.1).
+        let inserted =
+            sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+                .bind(ehr_id)
+                .bind(&self.system_id)
+                .execute(&mut *tx)
+                .await
+                .map_err(ServiceError::from)?;
         if inserted.rows_affected() == 0 {
             return Err(SmError::new(
                 CallStatusType::EhrCreateFailDuplicateId,

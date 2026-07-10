@@ -824,7 +824,7 @@ async fn sync_ehr_subject(
         .await
         .map_err(|e| {
             if let sqlx::Error::Database(db) = &e
-                && db.constraint() == Some("ehr_subject_uq")
+                && db.constraint() == Some("uq_ehr_subject")
             {
                 return ServiceError::Conflict(format!(
                     "an EHR already exists for subject {}@{}",

@@ -10,7 +10,7 @@
 |---|---|
 | SUT | `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Auth mode | basic |
-| Run started | 2026-07-10T11:53:58.183187Z |
+| Run started | 2026-07-10T13:09:16.049215Z |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
 
 ## Supported specification versions

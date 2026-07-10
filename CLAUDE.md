@@ -108,9 +108,8 @@ cargo nextest run --workspace
 cargo clippy --workspace --all-targets
 cargo fmt --all
 cargo audit && cargo deny check
-# conformance runner (Stage 1 acceptance, ADR-008): the openEHR CNF schedule vs our server
-# NOTE: scripts/conformance.sh does not exist yet — it is P19 work (phase-19).
-# Present scripts: check-codegen-drift.sh, install-hooks.sh, vendor-spec-docs.sh.
+# conformance runner (the ADR-008 acceptance instrument) — present and green:
+bash scripts/conformance.sh   # compose up --build → full ECC → docs/conformance/ (341 executed · 315 passed · 0 failed at B6 close)
 ```
 
 Note (ADR-006 superseded the old "phases need not compile" gate): the spec + ITS
