@@ -9,10 +9,14 @@
 
 ## Tasks (blueprint §3 B4)
 
-- [ ] 1. External tx-server provider (FHIR R4 TS via reqwest) behind the
+- [x] 1. External tx-server provider (FHIR R4 TS via reqwest) behind the
       existing `TerminologyService` trait — real subsumes /
       value_set_validate / get_value_set against a remote server; the
-      openEHR-bundle provider stays the local default.
+      openEHR-bundle provider stays the local default. *Done 2026-07-10:
+      FhirTerminologyProvider (validate-code/expand/subsumes-strict/lookup,
+      figment config, bundle-default/fhir-opt-in, typed 404/exception
+      mapping); 12 wiremock tests incl. fault injection; OAuth2/mTLS +
+      walker hookup PORT-NOTEd for later tasks.*
 - [ ] 2. AQL terminology family (Q-15/16/23): `TERMINOLOGY('expand'|'validate'
       |…, service_api, params_uri)` + `matches {uri}` + mixed lists, expansion
       merged into matches at semantic analysis (master03 lines 756–759);

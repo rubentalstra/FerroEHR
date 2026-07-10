@@ -13,3 +13,4 @@ pub mod signing;
 pub mod storage;
 pub mod system_log;
 pub mod telemetry;
+pub mod terminology;
