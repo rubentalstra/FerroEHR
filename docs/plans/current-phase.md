@@ -6,9 +6,9 @@ spec-compliant openEHR CDR". This file is the live pointer under it; the
 consolidated gap surface is the blueprint §2 (proven foundations + ECC
 breakdown + spec-area map).
 
-## Active work — E1: eventing (contribution outbox → AMQP)
+## Active work — E2: fully-integrated multi-tenancy
 
-**Phase file: `docs/plans/e1-eventing.md`** (branch `claude/e1-eventing`).
+**Phase file: `docs/plans/e2-multitenancy.md`** (branch `claude/e2-multitenancy`).
 B2 closed 2026-07-10 (PR #37): ECC 293/319 zero-drift, ArchetypeValidation
 81→0. The single biggest gap: **81 failing ECC
 ArchetypeValidation cases (~76 % of all failures)** — template/archetype
