@@ -149,6 +149,37 @@ pub fn read_json(rel: &str) -> Result<Value, FixtureError> {
     })
 }
 
+// ── Owned (corrected) fixtures ────────────────────────────────────────────────
+
+/// The owned-fixture directory, resolved relative to this crate.
+///
+/// These are reviewed corrections of vendored CNF fixtures that are internally
+/// inconsistent with their own OPT when read against the vendored spec text. The
+/// vendored corpus under `docs/specs/openehr/` is read-only and never edited; a
+/// correction lives here as a file, its defect and one-leaf change documented in
+/// [`REGISTER.md`](../../testdata/fixtures/REGISTER.md), and each corrected
+/// fixture has a companion negative ECC case asserting the SUT rejects the
+/// uncorrected original.
+pub const OWNED_FIXTURES_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/fixtures");
+
+/// Read an owned (corrected) fixture by file name (from [`OWNED_FIXTURES_ROOT`])
+/// as JSON. Mirrors [`read_json`], but resolves against the owned-fixture dir
+/// rather than the vendored corpus.
+///
+/// # Errors
+/// [`FixtureError`] on I/O or parse failure.
+pub fn owned_fixture(name: &str) -> Result<Value, FixtureError> {
+    let p = PathBuf::from(OWNED_FIXTURES_ROOT).join(name);
+    let text = std::fs::read_to_string(&p).map_err(|source| FixtureError::Io {
+        path: p.display().to_string(),
+        source,
+    })?;
+    serde_json::from_str(&text).map_err(|source| FixtureError::Json {
+        path: p.display().to_string(),
+        source,
+    })
+}
+
 /// List fixtures in a directory (relative to the corpus root) with `ext`
 /// (without the dot; empty matches any file), sorted by name.
 ///
@@ -553,5 +584,67 @@ mod tests {
         let invalid = read_json("ehr/invalid/001_ehr_status_subject_missing.json").unwrap();
         let adapted_invalid = adapt_ehr_status(invalid, "conformance", "x");
         assert!(adapted_invalid.get("subject").is_none());
+    }
+
+    /// The JSON path of the `at0003` INSTRUCTION-activity `DV_DATE` leaf that the
+    /// `all_types` OPT constrains with the `yyyy-??-XX` `C_DATE` pattern (day
+    /// disallowed) — the single leaf the owned corrections change
+    /// (`testdata/fixtures/REGISTER.md`).
+    const AT0003_DATE_PTR: &str =
+        "/content/2/items/0/items/0/items/0/activities/0/description/items/0/value/value";
+
+    #[test]
+    fn owned_invalid_composition_is_byte_identical_to_vendored() {
+        // The negative case `val/dv-date-day-disallowed-pattern` commits the
+        // owned invalid/ copy; it must stay a byte-faithful copy of the vendored
+        // defective original so the defect it proves rejected is the real corpus
+        // fixture, not a divergent copy that could drift out from under the case.
+        let vendored = std::fs::read(path(
+            "query/data_load/compositions/all_types.composition.json",
+        ))
+        .expect("read vendored all_types");
+        let owned = std::fs::read(
+            PathBuf::from(OWNED_FIXTURES_ROOT)
+                .join("invalid/compositions/all_types.composition.json"),
+        )
+        .expect("read owned invalid all_types");
+        assert_eq!(
+            owned, vendored,
+            "owned invalid/ copy diverged from the vendored original — re-copy it verbatim"
+        );
+    }
+
+    #[test]
+    fn owned_valid_composition_differs_from_vendored_at_exactly_one_leaf() {
+        // Each corrected fixture must differ from its vendored source at exactly
+        // the at0003 DV_DATE leaf: truncating only that leaf on the vendored copy
+        // must reproduce the owned corrected file, proving nothing else changed.
+        for (vendored_rel, owned_rel) in [
+            (
+                "query/data_load/compositions/all_types.composition.json",
+                "valid/compositions/all_types.composition.json",
+            ),
+            (
+                "query/data_load/compositions/all_types_v2.composition.json",
+                "valid/compositions/all_types_v2.composition.json",
+            ),
+        ] {
+            let mut vendored = read_json(vendored_rel).unwrap();
+            let owned = owned_fixture(owned_rel).unwrap();
+            let full = vendored
+                .pointer(AT0003_DATE_PTR)
+                .and_then(Value::as_str)
+                .unwrap_or_else(|| panic!("{vendored_rel}: no at0003 DV_DATE leaf"))
+                .to_owned();
+            assert!(
+                full.len() > 7,
+                "{vendored_rel}: at0003 date should be a full yyyy-mm-dd"
+            );
+            *vendored.pointer_mut(AT0003_DATE_PTR).unwrap() = Value::String(full[..7].to_owned());
+            assert_eq!(
+                vendored, owned,
+                "{owned_rel}: differs from its vendored source beyond the at0003 DV_DATE leaf"
+            );
+        }
     }
 }

@@ -399,6 +399,17 @@ pub(super) enum Change {
     },
 }
 
+impl Change {
+    /// The versioned-object [`Kind`] this change writes.
+    pub(super) fn kind(&self) -> Kind {
+        match *self {
+            Change::Create { kind, .. }
+            | Change::Modify { kind, .. }
+            | Change::Delete { kind, .. } => kind,
+        }
+    }
+}
+
 /// Resolve a client-supplied `version_lifecycle_state` token into its canonical
 /// numeric code, defaulting to `532|complete|` when absent (RM common master06
 /// §"Version Lifecycle"). An out-of-group token is a `422`

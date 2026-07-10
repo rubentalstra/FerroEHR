@@ -34,7 +34,7 @@ series). Those are recorded below as findings.
 Nothing here is a hand-edit of a `// @generated` file — all fixes land in
 `*_impl.rs` siblings (new behaviour) or the emitter (structural).
 
-Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
+Severity counts: **critical 0 · major 5 · minor 7 · info 3**.
 
 ## Findings
 
@@ -369,6 +369,38 @@ Severity counts: **critical 0 · major 5 · minor 6 · info 3**.
   `Days_in_week`) now exist as spec-cited constants in
   `openehr-rm/src/data_types/quantity/dv_ordered_impl.rs`; the remaining
   foundation utilities stay unimplemented until a consumer appears.)*
+
+### F-12-12: composite-identifier equality was case-sensitive (BASE R10)
+- **Severity:** minor
+- **Spec:** BASE 1.3.0
+  `docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`
+  §"Composite Identifiers and Case" (lines 164–177): all composite identifiers
+  MUST be **case-preserving** *and* **case-insensitive** — "two identifiers
+  identical apart from case are considered to be identical, and therefore to
+  identify the same thing"; §"Composite Identifiers and Language" (lines
+  179–183) restricts the human-readable sections to the basic latin character
+  set, and the Case section carves out languages where case does not exist (the
+  Turkish `I/i` caveat).
+- **Code:** `crates/openehr-base/src/base_types/identification/uid_based_id_impl.rs`.
+- **Problem:** the `UID_BASED_ID` family (`HIER_OBJECT_ID`, `OBJECT_VERSION_ID`,
+  the `UidBasedId` enum) exposed only the derived byte-exact `PartialEq`; two
+  `OBJECT_VERSION_ID`s differing only in UUID hex case (`…4E3D…` vs `…4e3d…`, or
+  a case-flipped `creating_system_id`) compared unequal, violating R10. This was
+  the only *unregistered* conformance gap surfaced by the BASE/TERM blueprint
+  chapter (`docs/blueprint/02-base-term.md` item 1 / R10).
+- **Fix:** added case-**insensitive** `is_equal(&self, other)` to
+  `HierObjectId` / `ObjectVersionId` (via the `uid_based_id_accessors!` macro)
+  and to the `UidBasedId` enum, using `str::eq_ignore_ascii_case` — the
+  locale-safe fold the spec's basic-latin restriction + Turkish caveat call for.
+  The stored `value` is untouched (case-*preserving* rule holds). The CDR's
+  version/EHR lookups were already case-insensitive on the UUID `object_id`
+  because the service/REST decoders parse it through `uuid::Uuid`
+  (`app/ehrbase/src/service/version_id.rs`, `app/ehrbase-rest/src/version_id.rs`),
+  which normalises hex case; a regression test in `version_id.rs` pins that a
+  case-flipped-hex `OBJECT_VERSION_ID` resolves to the same `vo_id`.
+- [x] fixed *(2026-07-09 B2 task 7 — `is_equal` added + spec-cited tests;
+  storage-boundary lookups verified case-insensitive via the `uuid::Uuid`
+  decode. Closes `docs/blueprint/02-base-term.md` §Remaining-work item 1.)*
 
 ## Hygiene notes
 

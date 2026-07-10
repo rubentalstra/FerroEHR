@@ -319,6 +319,14 @@ impl EhrbaseService {
             // absent → 532|complete| (default). Validated + resolved in the
             // shared commit path (`vobject::apply_change`).
             let lifecycle_state = lifecycle_of(version);
+            // A `553|incomplete|` version gets relaxed content validation
+            // (existence/cardinality lower limits treated as zero — RM common
+            // master06 §"Incomplete Content"). Resolve the raw token (code or
+            // rubric) to its canonical group code before comparing.
+            let incomplete = lifecycle_state
+                .as_deref()
+                .and_then(codes::lifecycle_state_code)
+                .is_some_and(|c| c == codes::lifecycle::INCOMPLETE);
             // A client-supplied UPDATE_VERSION.signature (RM common §"Digital
             // Signature") is stored verbatim; absent, the server signs (§3.3).
             let signature = version
@@ -337,8 +345,10 @@ impl EhrbaseService {
                     let kind = data_kind(&data)?;
                     check_kind_scope(kind, party_only)?;
                     // A CONTRIBUTION commit is a full commit route: its versions
-                    // are validated exactly as a direct create/update (F-07-01).
-                    self.validate_for_commit(kind, &data).await?;
+                    // are validated exactly as a direct create/update (F-07-01),
+                    // relaxed for a `553|incomplete|` lifecycle (master06
+                    // §"Incomplete Content").
+                    self.validate_for_commit(kind, &data, incomplete).await?;
                     // An EHR holds exactly one EHR_STATUS / EHR_ACCESS and at most
                     // one directory (root FOLDER) — RM ehr, EHR class:
                     // `ehr_status 1..1`, `directory 0..1`. A CONTRIBUTION that
@@ -364,7 +374,7 @@ impl EhrbaseService {
                     let (vo_id, expected) = parse_preceding(version)?;
                     let kind = self.require_kind(vo_id).await?;
                     check_kind_scope(kind, party_only)?;
-                    self.validate_for_commit(kind, &data).await?;
+                    self.validate_for_commit(kind, &data, incomplete).await?;
                     Change::Modify {
                         vo_id,
                         kind,
@@ -391,6 +401,20 @@ impl EhrbaseService {
                 Action::Attest => unreachable!("Action::Attest handled before this match"),
             };
             changes.push((version_audit, change));
+        }
+
+        // EHR_STATUS.is_modifiable = False forbids content writes (ehr/master04
+        // §"EHR Active Status"): a CONTRIBUTION that creates/modifies/deletes any
+        // EHR content (COMPOSITION / FOLDER / EHR_ACCESS — everything other than
+        // the EHR_STATUS object) is refused when the EHR is deactivated. An
+        // EHR_STATUS-only CONTRIBUTION (incl. the one that flips is_modifiable
+        // back to true) stays allowed, since the EHR_STATUS object "is always
+        // modifiable". 666 attestations add no version and modify no content, so
+        // they do not trip the guard.
+        if let Some(ehr_id) = ehr_id
+            && changes.iter().any(|(_, c)| c.kind() != Kind::EhrStatus)
+        {
+            self.ensure_content_writable(ehr_id).await?;
         }
 
         // The CONTRIBUTION's own audit: a client-supplied change_type is

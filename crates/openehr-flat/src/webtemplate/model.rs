@@ -162,11 +162,32 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub duration_range: Option<WebTemplateRange>,
 
+    /// `C_TIME.timezone_validity` / `C_DATE_TIME.timezone_validity`
+    /// (`VALIDITY_KIND`; OPT 1.4 XSD encodes `1001` = mandatory, `1002` =
+    /// optional, `1003` = disallowed) on a temporal leaf's `value` — governs
+    /// whether the instance's timezone designator must be present, may be
+    /// present, or must be absent (AOM 1.4
+    /// `AM/docs/UML/classes/org.openehr.am.aom14.c_time.adoc`/`…c_date_time.adoc`).
+    /// Validation-only; `C_DATE` has no timezone. `#[serde(skip)]`.
+    #[serde(skip)]
+    pub tz_validity: Option<i32>,
+
     /// `C_CODE_PHRASE` code lists on coded RM attributes the `inputs` mapping
     /// does not model (e.g. `DV_MULTIMEDIA.media_type`). `defining_code` is
     /// excluded (already covered by the coded-text `inputs`).
     #[serde(skip)]
     pub code_lists: Vec<WebTemplateCodeList>,
+
+    /// Closed-archetype constraints (ADR-012 / F-07-05 + F-07-10): per
+    /// constrained attribute that carries archetype-node-identified alternatives
+    /// and/or open `ARCHETYPE_SLOT`s, the admissible child identities. The walk
+    /// rejects an instance child under such an attribute whose `archetype_node_id`
+    /// matches neither a fixed sibling alternative nor an open slot. Captured at
+    /// **build time** from the OPT (before compaction, so no alternative is lost)
+    /// and re-homed on the parent by absolute path when a wrapper is hoisted.
+    /// Validation-only; `#[serde(skip)]`.
+    #[serde(skip)]
+    pub closed_attributes: Vec<WebTemplateClosedAttribute>,
 
     // ── build-time scratch (never serialized) ────────────────────────────────
     /// Full `parent/segment` id chain, used to scope dedup and cardinality ids.
@@ -207,7 +228,9 @@ impl WebTemplateNode {
             slots: Vec::new(),
             numeric_lists: Vec::new(),
             duration_range: None,
+            tz_validity: None,
             code_lists: Vec::new(),
+            closed_attributes: Vec::new(),
             full_id: String::new(),
             alt_json_id: None,
             name_code: None,
@@ -399,6 +422,38 @@ pub struct WebTemplateCodeList {
     pub attr: String,
     pub terminology: Option<String>,
     pub codes: Vec<String>,
+}
+
+/// A closed-archetype constraint on one attribute (ADR-012 / F-07-05 + F-07-10;
+/// validation-only, never serialized). Under the constrained attribute at
+/// absolute archetype `path`, an instance child bearing an `archetype_node_id`
+/// is admissible iff it matches one of `allowed_ids` (a fixed at-code /
+/// archetype-id sibling alternative) **or** an open `ARCHETYPE_SLOT` in `slots`.
+/// Any other archetyped child is an "unexpected node" (closed-world rejection).
+#[derive(Debug, Clone)]
+pub struct WebTemplateClosedAttribute {
+    /// Absolute archetype path of the constrained attribute (`{node aqlPath}/{attr}`).
+    pub path: String,
+    /// Fixed sibling identities (constraint `node_id`s at at-code level, or the
+    /// `archetype_id` of a `C_ARCHETYPE_ROOT` / `ARCHETYPE_INTERNAL_REF`).
+    pub allowed_ids: Vec<String>,
+    /// Open `ARCHETYPE_SLOT`s under this attribute.
+    pub slots: Vec<WebTemplateArchetypeSlot>,
+}
+
+/// An open `ARCHETYPE_SLOT` constraint (AOM 1.4 `ARCHETYPE_SLOT`; validation-only,
+/// never serialized). A slot-filling instance object must conform to `rm_type`,
+/// match at least one `includes` archetype-id regex, and match no `excludes`
+/// regex (a blanket `.*` exclude is ignored when `includes` is non-empty — the
+/// ADL 1.4 closed-slot idiom; AOM 1.4 has no `is_closed`). `min`/`max` bound the
+/// permitted number of fillers (`max == -1` unbounded).
+#[derive(Debug, Clone)]
+pub struct WebTemplateArchetypeSlot {
+    pub rm_type: String,
+    pub min: i32,
+    pub max: i32,
+    pub includes: Vec<String>,
+    pub excludes: Vec<String>,
 }
 
 /// A container cardinality: `{min, max, ids}`. `path` is build-time scratch used

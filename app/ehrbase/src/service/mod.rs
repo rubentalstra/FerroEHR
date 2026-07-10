@@ -33,6 +33,7 @@ mod directory;
 mod ehr;
 mod ehr_index;
 mod item_tag;
+mod opt_validation;
 mod relationship;
 mod stored_query;
 mod template;

@@ -18,7 +18,15 @@ impl EhrbaseService {
         composition: Value,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
-        self.validate_composition_for_commit(&composition).await?;
+        // EHR_STATUS.is_modifiable = False forbids content writes (ehr/master04
+        // §"EHR Active Status"); a COMPOSITION is EHR content.
+        self.ensure_content_writable(ehr_id).await?;
+        // The direct COMPOSITION create/update endpoints carry no
+        // `lifecycle_state` (it is an `ORIGINAL_VERSION` attribute, set only via
+        // a CONTRIBUTION `UPDATE_VERSION`), so a direct commit is always
+        // `532|complete|` → full-strictness validation (`incomplete = false`).
+        self.validate_composition_for_commit(&composition, false)
+            .await?;
         self.reject_duplicate_persistent(ehr_id, &composition)
             .await?;
 
@@ -163,6 +171,9 @@ impl EhrbaseService {
                 "COMPOSITION {vo_id} is deleted"
             )));
         }
+        // EHR_STATUS.is_modifiable = False forbids content writes (ehr/master04
+        // §"EHR Active Status").
+        self.ensure_content_writable(ehr_id).await?;
         // Reject an update whose body declares a *different* template than the
         // stored composition it supersedes (CNF master07
         // `update_composition-wrong_template`). ITS-REST `422_COMPOSITION`
@@ -179,7 +190,9 @@ impl EhrbaseService {
                  composition was committed against template {stored} (template_id mismatch)"
             )));
         }
-        self.validate_composition_for_commit(&composition).await?;
+        // Direct update carries no lifecycle_state (see `create_composition`).
+        self.validate_composition_for_commit(&composition, false)
+            .await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "COMPOSITION update");
@@ -273,6 +286,10 @@ impl EhrbaseService {
                 "COMPOSITION {vo_id} is already deleted"
             )));
         }
+        // EHR_STATUS.is_modifiable = False forbids content writes, incl. logical
+        // delete (a delete is a new `523|deleted|` version — ehr/master04
+        // §"EHR Active Status").
+        self.ensure_content_writable(ehr_id).await?;
         if read.sys_version != expected {
             return Err(ServiceError::Conflict(format!(
                 "preceding_version_uid names version {expected}, latest is {}",
@@ -400,20 +417,29 @@ impl EhrbaseService {
     async fn validate_composition_for_commit(
         &self,
         composition: &Value,
+        incomplete: bool,
     ) -> Result<(), ServiceError> {
-        // Always: RM class invariants + RM-mandated openEHR terminology.
+        // Always: RM class invariants + RM-mandated openEHR terminology. These
+        // are properties of the RM instance ("wrongness" checks) and hold even
+        // for a `553|incomplete|` commit — the master06 relaxation only zeroes
+        // archetype/template existence & cardinality lower bounds, it does not
+        // permit *wrong* data.
         let mut messages = openehr_flat::validate_rm_and_terminology(composition);
         let rm_terminology_failures = messages.len();
         // Additionally: archetype conformance, when a template is declared.
+        // A `553|incomplete|` commit uses the relaxed pass (existence/occurrences/
+        // cardinality lower limits treated as zero — RM common master06
+        // §"Incomplete Content").
         if let Some(template_id) = composition
             .pointer("/archetype_details/template_id/value")
             .and_then(Value::as_str)
         {
             let wt = self.web_template_for(template_id).await?;
-            messages.extend(openehr_flat::validate_archetype_conformance(
-                composition,
-                &wt,
-            ));
+            messages.extend(if incomplete {
+                openehr_flat::validate_archetype_conformance_incomplete(composition, &wt)
+            } else {
+                openehr_flat::validate_archetype_conformance(composition, &wt)
+            });
         }
         // §1.2 validation_failures_total{pass}. openEHR-flat groups RM-invariant
         // + terminology into one pass; template (archetype conformance) is the
@@ -451,13 +477,21 @@ impl EhrbaseService {
     /// validation; other kinds (`EHR_STATUS` / FOLDER) have no template validator
     /// yet and pass through. Shared by the direct create/update path and the
     /// CONTRIBUTION path so neither can bypass validation (finding F-07-01).
+    ///
+    /// `incomplete` (a `553|incomplete|` CONTRIBUTION version, RM common master06
+    /// §"Incomplete Content") relaxes the archetype/template existence &
+    /// cardinality **lower** limits to zero for COMPOSITIONs; RM invariants and
+    /// terminology stay at full strictness ("data may be missing, but it may not
+    /// be wrong"). The direct endpoints have no lifecycle_state and always pass
+    /// `false`.
     pub(super) async fn validate_for_commit(
         &self,
         kind: Kind,
         data: &Value,
+        incomplete: bool,
     ) -> Result<(), ServiceError> {
         match kind {
-            Kind::Composition => self.validate_composition_for_commit(data).await,
+            Kind::Composition => self.validate_composition_for_commit(data, incomplete).await,
             // An EHR_STATUS committed via a CONTRIBUTION is validated exactly as
             // one supplied on EHR create (CNF master08
             // `commit_contribution-invalid_ehr_status`).

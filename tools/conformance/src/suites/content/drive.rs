@@ -33,7 +33,7 @@ use super::mutate;
 /// A known-committable base composition from the vendored corpus (the ones the
 /// master07 suite already commits green). Content cases mutate a clone of the
 /// base and re-commit.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Base {
     /// `persistent_minimal.en.v1` — a **persistent** COMPOSITION (category `431`),
     /// no context; contains an OBSERVATION → HISTORY → `POINT_EVENT`.
@@ -56,7 +56,7 @@ impl Base {
     }
 
     /// The canonical-JSON `__full` fixture path.
-    fn json_fixture(self) -> &'static str {
+    pub fn json_fixture(self) -> &'static str {
         match self {
             Base::PersistentMinimal => {
                 "compositions/CANONICAL_JSON/persistent_minimal.en.v1__full.json"
@@ -65,9 +65,41 @@ impl Base {
         }
     }
 
-    /// A fresh clone of the base composition body.
-    fn load(self) -> Result<Value, CaseError> {
-        fixtures::read_json(self.json_fixture()).map_err(codec)
+    /// A fresh clone of the base composition body. For [`Base::AllTypes`] this
+    /// is the **owned** (corrected) `all_types.composition.json`, not the
+    /// vendored original — the vendored fixture's `at0003` `DV_DATE` leaf
+    /// violates its own OPT's `yyyy-??-XX` `C_DATE` pattern (day disallowed);
+    /// see `testdata/fixtures/REGISTER.md` and the companion negative case
+    /// `val/dv-date-day-disallowed-pattern`.
+    pub fn load(self) -> Result<Value, CaseError> {
+        match self {
+            Base::AllTypes => fixtures::owned_fixture(ALL_TYPES_COMP_FILE).map_err(codec),
+            Base::PersistentMinimal => fixtures::read_json(self.json_fixture()).map_err(codec),
+        }
+    }
+}
+
+/// Path (owned-root-relative) of the corrected `all_types` v1 composition in
+/// `testdata/fixtures/valid/compositions/`.
+const ALL_TYPES_COMP_FILE: &str = "valid/compositions/all_types.composition.json";
+/// Path of the corrected `all_types` v2 composition (load-bearing: the accepted
+/// base of `val/dv-coded-text-local-codes`).
+const ALL_TYPES_V2_COMP_FILE: &str = "valid/compositions/all_types_v2.composition.json";
+/// Vendored (corpus-relative) path of the `all_types` v1 composition.
+const ALL_TYPES_COMP_VENDORED: &str = "query/data_load/compositions/all_types.composition.json";
+/// Vendored (corpus-relative) path of the `all_types` v2 composition.
+const ALL_TYPES_V2_COMP_VENDORED: &str =
+    "query/data_load/compositions/all_types_v2.composition.json";
+
+/// Map a vendored `all_types` composition path to its owned (corrected)
+/// fixture file name, or `None` for any other composition. The owned copies fix
+/// the `at0003` `DV_DATE` leaf that violates the `yyyy-??-XX` `C_DATE` pattern
+/// (`testdata/fixtures/REGISTER.md`).
+fn owned_all_types(comp: &str) -> Option<&'static str> {
+    match comp {
+        ALL_TYPES_COMP_VENDORED => Some(ALL_TYPES_COMP_FILE),
+        ALL_TYPES_V2_COMP_VENDORED => Some(ALL_TYPES_V2_COMP_FILE),
+        _ => None,
     }
 }
 
@@ -123,7 +155,15 @@ pub async fn drive_constraint(
     accepted_label: &str,
     violations: Vec<Violation>,
 ) -> Result<DataSetReport, CaseError> {
-    let base = fixtures::read_json(constraint.comp).map_err(codec)?;
+    // For the two `all_types` compositions, load the owned (corrected) copy
+    // instead of the vendored original: the vendored `at0003` `DV_DATE` leaf
+    // violates its own OPT's `yyyy-??-XX` `C_DATE` pattern
+    // (`testdata/fixtures/REGISTER.md`; companion negative case
+    // `val/dv-date-day-disallowed-pattern`).
+    let base = match owned_all_types(constraint.comp) {
+        Some(owned) => fixtures::owned_fixture(owned).map_err(codec)?,
+        None => fixtures::read_json(constraint.comp).map_err(codec)?,
+    };
     drive_constraint_base(ctx, constraint.opt, base, accepted_label, violations).await
 }
 

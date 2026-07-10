@@ -83,7 +83,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/openehr-flat/src/validation/mod.rs:165-200` (`walk`/`check_group`) navigates *from* WebTemplate nodes *into* the instance — it only visits instance nodes that match a template node's path+predicate. Instance nodes with no matching template constraint are never visited and never flagged. So the walk reports *too few* / *out of range*, never *unexpected*.
 - **Problem:** A composition can carry archetyped content (an extra ENTRY / unknown `archetype_node_id`) and pass. This diverges from de-facto openEHR CDR behaviour, but is **not** a clear AOM 1.4 violation — it is a decision point.
 - **Fix:** Record an ADR / `// PORT NOTE:` decision. Recommended: adopt closed-archetype semantics (match prior art + the AOM2 direction), detecting instance children under a constrained (non-`any_allowed`) attribute whose `archetype_node_id` matches no sibling constraint and emitting a violation — but **only after** cross-checking the CNF composition fixtures (`docs/specs/openehr/CNF/tests/platform/robot/`) to confirm the expected tolerance and avoid over-rejecting RM-permitted-but-unconstrained metadata (`name`, `uid`, `links`).
-- [ ] fixed
+- [x] fixed (B2, 2026-07-10)
 
 ### F-07-06: DV_QUANTITY unit↔magnitude and DV_ORDINAL symbol↔value covariance only partly enforced
 - **Severity:** minor
@@ -91,7 +91,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/openehr-flat/src/validation/leaf.rs:150-160` (`unit_scoped_range`) **does** select the magnitude range for the instance's chosen unit — so the DV_QUANTITY units↔magnitude pairing *is* approximated (good). But: (a) the DV_ORDINAL `check_ordinal` (`leaf.rs:66-83`) validates only the coded symbol's membership, not the `symbol`↔`value` pairing; (b) alternative whole-block joint matching (the mph-vs-km/h pattern) is not modeled.
 - **Problem:** A DV_ORDINAL whose `value` does not match its `symbol`'s ordinal entry is accepted; a value matching one alternative block's unit but another's magnitude could slip through.
 - **Fix:** In `check_ordinal`, validate the `(symbol.defining_code, value)` pair against the `C_ORDINAL` list (carry the value alongside the code in the WebTemplate input). Lower priority — the common quantity case is already covered by `unit_scoped_range`.
-- [ ] fixed
+- [x] fixed (B2, 2026-07-10)
 
 ### F-07-07: DV_TEXT class invariants are entirely unenforced
 - **Severity:** minor
@@ -129,7 +129,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/openehr-flat/src/webtemplate/builder.rs:313-315` — `CObject::ArchetypeSlot(_) | CObject::ConstraintRef(_)` produce no WebTemplate node ("Unfilled slot / constraint ref: no node"). So an OPT that leaves a slot open (or content filled at commit time) carries no constraint into the walk.
 - **Problem:** Content placed into an open slot is unconstrained by this validator (and, via F-07-05, also not rejected). For a fully-flattened OPT this is usually moot, but externally-referenced/openly-slotted templates lose slot validation.
 - **Fix:** When a slot is unfilled, either resolve the referenced archetype (out of scope Stage-1) or at minimum record the slot's rm_type + occurrences so the walk can still occurrence/type-check the slot position. Document as a scope boundary if deferred.
-- [ ] fixed
+- [x] fixed (B2, 2026-07-10)
 
 ### F-07-11: C_STRING pattern matching silently passes patterns the `regex` crate cannot compile
 - **Severity:** minor
@@ -137,7 +137,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/openehr-flat/src/validation/leaf.rs:277-287` (`matches_pattern`): a pattern that fails `Regex::new` returns `true` (treated as matching).
 - **Problem:** A value violating a pattern that happens to use an unsupported regex feature is accepted. Rare, but a silent false-negative. `CLAUDE.md` lists `fancy-regex` for exactly cADL backreferences.
 - **Fix:** Fall back to `fancy-regex` for patterns `regex` rejects; only skip if both fail, and log at debug. Low priority.
-- [ ] fixed
+- [x] fixed (B2, 2026-07-10)
 
 ### F-07-12: `422` body flattens structured `{path, message}` violations into `"<path>: <message>"` strings
 - **Severity:** info
@@ -153,7 +153,7 @@ The RM authority citations below are from `docs/specs/openehr/RM/docs/UML/classe
 - **Code:** `crates/openehr-flat/src/validation/subtype.rs:14-161` — a hand-maintained `descendants` map; unknown pairings are treated as conformant (`conforms` returns `true`). The module header notes the BMM-generated model arrives with the AQL engine (P16).
 - **Problem:** Some wrong-typed content conforms silently until the generated RM model lands (e.g. a novel/renamed abstract slot not in the map). Documented and deliberately permissive to avoid over-rejection.
 - **Fix:** Replace with the P16 `emit-rm-model` BMM-derived subtype relation when available; until then, keep the map in sync with the RM slots that appear as WebTemplate `rmType`s.
-- [ ] fixed
+- [x] fixed (B2, 2026-07-10)
 
 ### F-07-14: DV_INTERVAL / DV_ORDERED cross-value ordering invariants deferred
 - **Severity:** info

@@ -50,9 +50,11 @@
 use openehr_its::opt14::{CPrimitive, OperationalTemplate};
 use serde_json::{Value, json};
 
+use crate::assert;
 use crate::fixtures;
-use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, RunContext};
+use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, RunContext};
 use crate::registry::CaseEntry;
+use crate::suites::support;
 
 use super::author;
 use super::drive::{self, Base, Constraint, Expected, meta};
@@ -61,7 +63,6 @@ use super::mutate;
 /// The `all_types` base OPT + composition (a leaf of nearly every `DV_*` type at
 /// fixed `items` indices) — the authored-constraint base for master17 leaf cases.
 const ALL_TYPES_OPT: &str = "all_types/Test_all_types.opt";
-const ALL_TYPES_COMP: &str = "query/data_load/compositions/all_types.composition.json";
 
 /// Drive a master17 leaf value-constraint case by **authoring** the constraint into
 /// the `all_types` OPT (the vendored corpus ships no OPT constraining these leaves),
@@ -87,7 +88,7 @@ async fn drive_leaf(
     }
     let xml = author::to_xml(&opt)?;
 
-    let base = fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+    let base = drive::Base::AllTypes.load()?; // owned corrected copy (see testdata/fixtures/REGISTER.md)
     let mut accepted = base.clone();
     mutate::retarget_template(&mut accepted, tid);
     let mut rejected = base;
@@ -438,6 +439,12 @@ pub fn entries() -> Vec<CaseEntry> {
     ));
     all.push(open("val/dv-date-range", "Validate DV_DATE — range", "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)", run_dv_date_range));
     all.push(open(
+        "val/dv-date-day-disallowed-pattern",
+        "Validate DV_DATE — day disallowed by C_DATE pattern (defective vendored fixture rejected)",
+        "AM 1.4 C_DATE (yyyy-??-XX: month optional, day disallowed; org.openehr.am.aom14.c_date.adoc); valid_templates/all_types/Test_all_types.opt; ITS-REST 1.0.3 composition_create (422 rejected)",
+        run_dv_date_day_disallowed,
+    ));
+    all.push(open(
         "val/dv-date-time-open", "Validate DV_DATE_TIME — open", "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
         open_dv_date_time,
     ));
@@ -758,6 +765,43 @@ fn run_dv_date_time_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
+/// `val/dv-date-day-disallowed-pattern` — the negative companion to the owned
+/// (corrected) `all_types` fixture (`testdata/fixtures/REGISTER.md`, owner ruling
+/// 2026-07-09 B2). The **vendored** `all_types.composition.json` carries a full
+/// `DV_DATE` (`2021-10-18`) at the INSTRUCTION activity `at0003` leaf, but
+/// `Test_all_types.opt` constrains that leaf with the `C_DATE` pattern
+/// `yyyy-??-XX` — month optional, **day disallowed** (`VALIDITY_KIND.disallowed`;
+/// AOM 1.4 `org.openehr.am.aom14.c_date.adoc`: `XX` = disallowed). A spec-correct
+/// validator must reject the fixture (EHRbase/archie is lenient on `day_validity`
+/// and accepts it, which is how the defect survived upstream). The case uploads
+/// the OPT, creates a fresh EHR, commits the **uncorrected defective** composition
+/// (the owned `invalid/` copy, pinned byte-identical to the vendored original by
+/// the [`fixtures`] guard test), and asserts the SUT rejects it (ITS-REST
+/// `composition_create` `422`) — keeping the defect under test while the positive
+/// cases commit the corrected copy via [`drive::Base::AllTypes`].
+fn run_dv_date_day_disallowed<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(async move {
+        support::ensure_opt(ctx, "all_types/Test_all_types.opt").await?;
+        let ehr_id = support::create_ehr(ctx).await?;
+        // The uncorrected defective fixture (day-bearing DV_DATE at at0003),
+        // pinned byte-identical to the vendored original by the fixtures guard.
+        let comp = fixtures::owned_fixture("invalid/compositions/all_types.composition.json")
+            .map_err(|e| CaseError::Codec(e.to_string()))?;
+        let resp = ctx
+            .send(
+                HttpRequest::post(format!("/ehr/{ehr_id}/composition"))
+                    .json_body(&comp)?
+                    .header("accept", "application/json"),
+            )
+            .await?;
+        assert::status(&resp, 422)?;
+        Ok(DataSetReport {
+            passed: 1,
+            total: 1,
+        })
+    })
+}
+
 // ── authored leaf value-constraint cases (master17, via `all_types`) ──────────
 //
 // The vendored corpus ships no OPT constraining these leaves, so the case authors
@@ -772,8 +816,8 @@ fn run_dv_date_time_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// the list (rejected).
 fn run_dv_text_list<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move {
-        let base =
-            fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+        // owned corrected copy (see testdata/fixtures/REGISTER.md)
+        let base = drive::Base::AllTypes.load()?;
         let ptr = leaf_ptr(0, "value");
         let Some(base_val) = base
             .pointer(&ptr)
@@ -858,7 +902,7 @@ async fn drive_leaf_rows(
         )));
     }
     let xml = author::to_xml(&opt)?;
-    let base = fixtures::read_json(ALL_TYPES_COMP).map_err(|e| CaseError::Codec(e.to_string()))?;
+    let base = drive::Base::AllTypes.load()?; // owned corrected copy (see testdata/fixtures/REGISTER.md)
     let mut drows: Vec<(String, Value, Expected)> = Vec::new();
     for (label, muts, expected) in rows {
         let mut c = base.clone();
@@ -1055,8 +1099,16 @@ fn drive_proportion_kind<'a>(
                     Expected::Accepted,
                 ),
                 (
-                    format!("type 0 (ratio) not in list {{{kind}}} (C_INTEGER.list)"),
-                    vec![(ty, json!(0))],
+                    // An off-list kind: 0 (ratio) for the non-ratio cases; for
+                    // the ratio case itself 0 IS the permitted kind, so use 2
+                    // (percent) — the previous unconditional 0 made the ratio
+                    // case's reject row a no-op mutation that could never
+                    // reject (master17.3 CONT-DV_PROPORTION truth table).
+                    format!(
+                        "type {bad} not in list {{{kind}}} (C_INTEGER.list)",
+                        bad = if kind == 0 { 2 } else { 0 }
+                    ),
+                    vec![(ty, json!(if kind == 0 { 2 } else { 0 }))],
                     Expected::Rejected,
                 ),
             ],
@@ -1783,9 +1835,14 @@ fn run_dv_coded_ext_term<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             ctx,
             "cnf_dv_coded_ext_term",
             |opt| {
-                author::constrain_codephrase(
+                // Pinned to ELEMENT at0005 (the OBSERVATION's DV_CODED_TEXT
+                // leaf this case mutates): the first-match variant constrained
+                // the COMPOSITION `category` coded text instead, so neither
+                // row ever exercised the external code list.
+                author::constrain_codephrase_under(
                     opt,
-                    "DV_CODED_TEXT",
+                    "openEHR-EHR-OBSERVATION.test_all_types",
+                    "at0005",
                     "defining_code",
                     "SNOMED-CT",
                     vec!["73211009".to_owned()],

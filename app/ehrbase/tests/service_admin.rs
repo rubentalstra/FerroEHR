@@ -195,11 +195,6 @@ async fn seed_full_ehr(svc: &EhrbaseService) -> Uuid {
     let status_ovid = uid(&updated).to_owned();
     let status_vo = status_ovid.split("::").next().unwrap().to_owned();
     updated.as_object_mut().expect("status obj").remove("uid");
-    updated["is_modifiable"] = json!(false);
-    svc.replace_ehr_status(ehr_uuid, uv(updated, "251", Some(&status_ovid)))
-        .await
-        .expect("status update");
-
     // An item tag on the EHR_STATUS.
     svc.target_tags_replace(
         ehr_uuid,
@@ -221,6 +216,16 @@ async fn seed_full_ehr(svc: &EhrbaseService) -> Uuid {
     )
     .await
     .expect("directory");
+
+    // Deactivate LAST: with the B2 write guard, content writes on an EHR whose
+    // EHR_STATUS.is_modifiable = false are refused (RM ehr master04 §"EHR
+    // Active Status"), so the non-modifiable status must be the final change —
+    // the cascade still deletes an EHR carrying a deactivated status, which is
+    // this fixture's point.
+    updated["is_modifiable"] = json!(false);
+    svc.replace_ehr_status(ehr_uuid, uv(updated, "251", Some(&status_ovid)))
+        .await
+        .expect("status update");
 
     ehr_uuid
 }
