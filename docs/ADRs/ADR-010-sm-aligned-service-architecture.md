@@ -1,6 +1,20 @@
 # ADR-010: SM-aligned service architecture — the openEHR Platform Service Model as the internal decomposition
 
-- **Status:** accepted
+- **Status:** accepted; **packaging superseded-in-part by ADR-011** (2026-07-09)
+
+> ## ⚠️ AMENDMENT (2026-07-09, ADR-011): packaging redesigned
+>
+> The six-crate `app/*` list in §2 (`ehrbase-audit`/`ehrbase-authz`/
+> `ehrbase-signing` as crates), the "`ehrbase-audit` is the realized System
+> Log component" line in §4, and the `ehrbase-rest::backend` seam in §1 are
+> **superseded by ADR-011**: the app layer is **three crates** (`ehrbase`,
+> `ehrbase-rest`, `ehrbase-sm`); audit/authz/signing live on as the modules
+> `ehrbase::system_log`, `ehrbase-rest::access`, `ehrbase::signing`; the
+> `Backend` trait family became the generic **`Platform`** supertrait (no
+> `Arc<dyn>`, no default bodies). The SM decomposition, the
+> SM-governs-inside / ITS-REST-governs-wire precedence rule (§3), the
+> full-coverage roadmap (§4), and the `crates/*`–`app/*`–`tools/*` split all
+> **stand**.
 - **Date:** 2026-07-08
 - **Builds on:** ADR-008 (greenfield PG18 storage + CNF conformance target),
   ADR-006 (idiomatic application on the generated crates), ADR-004/005
