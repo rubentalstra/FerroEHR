@@ -267,7 +267,7 @@ impl EhrbaseService {
                 "_type": "DV_DATE_TIME",
                 "value": jiff::Timestamp::now().to_string(),
             },
-            "system_id": { "_type": "HIER_OBJECT_ID", "value": self.system_id },
+            "system_id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() },
             "sequence_nr": sequence_nr,
         });
         // Move the owned content items + specification in (avoids a needless clone).
@@ -495,7 +495,7 @@ impl EhrExtractService for EhrbaseService {
         let inserted =
             sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
                 .bind(ehr_id)
-                .bind(&self.system_id)
+                .bind(self.effective_system_id())
                 .execute(&mut *tx)
                 .await
                 .map_err(ServiceError::from)?;

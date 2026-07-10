@@ -22,6 +22,7 @@ mod ehr;
 mod event_subscription;
 mod flat;
 mod query;
+mod tenant;
 mod terminology;
 
 use std::future::Future;
@@ -102,6 +103,9 @@ pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
             event_subscription::EVENT_SUBSCRIPTION_ROUTES,
             event_subscription::dispatch::<S>,
         ))
+        // Our-own-design tenant admin extension routes (no ITS-REST contract;
+        // ADR-015 §5 multi-tenancy), config-gated.
+        .merge(mount(tenant::TENANT_ROUTES, tenant::dispatch::<S>))
 }
 
 /// Mount one API group's routes onto a router, grouping methods that share a

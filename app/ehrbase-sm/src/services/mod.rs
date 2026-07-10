@@ -34,7 +34,7 @@ pub mod web_template;
 
 pub use adapter::{
     ContributionAdapter, DefinitionAdapter, EventSubscriptionAdapter, ItemTagAdapter,
-    VersionMetaAdapter,
+    TenantAdapter, VersionMetaAdapter,
 };
 pub use admin::{
     AdminArchive, AdminDumpLoad, AdminService, CompressionFormat, DumpLoadFailReport, ExportFormat,

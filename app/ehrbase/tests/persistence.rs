@@ -94,12 +94,14 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // 0001..0010 `ehr` chain and the `ext` functions were re-authored into one
     // `0001` each; nothing was deployed, so the squash is sanctioned, and it is
     // append-only from here). ext: 0001_openehr_functions (functions + roles +
-    // grants). ehr: 0001_baseline (all 18 tables + named constraints, comments,
-    // roles/grants, and the ADR-013 spec-compliance fixes) + 0002_event_outbox
-    // (the ADR-014 contribution-outbox eventing table, appended) +
-    // 0003_event_subscription (the ADR-014 §5 event-filter subscription store,
-    // appended for E1 task 4).
-    assert_eq!((applied_ext, applied_ehr), (1, 3));
+    // grants) + 0002_tenant_context (the ADR-015 ext.current_tenant_id() session
+    // context, appended for E2). ehr: 0001_baseline (18 tables + named
+    // constraints, comments, roles/grants, and the ADR-013 spec-compliance
+    // fixes) + 0002_event_outbox (the ADR-014 contribution-outbox eventing
+    // table) + 0003_event_subscription (the ADR-014 §5 event-filter
+    // subscription store, E1 task 4) + 0004_multitenancy (the ADR-015 `tenant`
+    // registry + tenant_id scoping + RLS FORCE, appended for E2 task 2).
+    assert_eq!((applied_ext, applied_ehr), (2, 4));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -128,6 +130,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "sp_variable",
             "stored_query",
             "template_store",
+            "tenant",
             "vo_archive",
             "vo_attestation",
             "vo_version",
