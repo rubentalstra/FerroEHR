@@ -11,7 +11,7 @@
 
 ## Tasks
 
-- [ ] 1. ADR-014 — eventing design record (outbox shape, at-least-once +
+- [x] 1. ADR-014 — eventing design record (outbox shape, at-least-once +
       per-EHR ordering, PHI-free envelope payload, filter model, broker
       abstraction AMQP-first/Kafka-ready).
 - [ ] 2. Outbox: migration 0002 (append-only on the ADR-013 baseline) —
