@@ -30,7 +30,7 @@ pub use services::{
     DemographicService, DumpLoadFailReport, EhrCompositionService, EhrContributionService,
     EhrDirectoryService, EhrExtractService, EhrService, EhrStatusService, EmitOutcome,
     EventActionCode, EventOutcome, ExportFormat, ExportSpec, ItemTagAdapter, ObjectClass,
-    QueryService, StatTimeRange, SystemLog, TermCode, TermEntry, TermRelationship,
+    QueryService, StatTimeRange, SystemLog, TddService, TermCode, TermEntry, TermRelationship,
     TerminologyDescription, TerminologyExtract, TerminologyRelation, TerminologyRelationError,
     TerminologyService, TimeRange, ValidityChecker, VersionMetaAdapter, WebTemplateService,
 };
