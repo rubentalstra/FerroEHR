@@ -36,11 +36,13 @@ framework (`tools/conformance`, 310 catalogued cases).
 
 ## 2. Compliance state
 
-Baseline conformance signal: ECC 2026-07-09 run = **318 executions, 211 pass,
-106 fail** — of which **81 (~76%) are ArchetypeValidation depth (the one big
-rock)** and ~17 are mis-booked runner/spec-gap issues (ch 7 §audit). §2.1 is
-what is proven, §2.2 the failure surface, §2.3 the full spec-area map. Every
-remaining item is ordered work in §3 — nothing here is deferred.
+Baseline conformance signal (refreshed 2026-07-10, B7): ECC = **341
+executions · 315 pass · 0 fail** (26 documented adjudication skips); machine
+profile verdicts **CORE PASS · STANDARD PASS · OPTIONS OBTAINED**. The B1–B6
+build order is executed; §2.2's failure surface is empty; §2.3's State
+column was refreshed at B7 close (per-row deltas live in each build step's
+close note in §3 and the phase files). Remaining trajectory: P20
+optimization, P99 cutover, P17 interop audit.
 
 ### 2.1 Proven foundations (evidence, not intent)
 
@@ -62,22 +64,29 @@ storage at B3, and the archive storage-movement PERF item in the tail.
 
 ### 2.2 ECC failure breakdown (2026-07-09 baseline: 106 failing)
 
-The sharpest signal, by capability — this is precisely what B2–B6 burn down:
+**Refreshed 2026-07-10: zero failing.** The 2026-07-09 breakdown below was
+burned down as planned (B2 took ArchetypeValidation 81→0; B6 took every
+tail); kept for the record:
 
-| Capability | Failing | What it means | Build step |
-|---|---|---|---|
-| **ArchetypeValidation** | **81** | The one big rock: template/archetype-constraint validation depth (cardinality/occurrence/value-constraint cases the P15 validator does not yet enforce) — ~76 % of all failures, the highest-leverage work toward "first fully compliant" | B2 |
-| DemographicApi | 6 | OPTIONS-profile wire details of our own demographic design | B6 |
-| ChangeSets | 5 | contribution edge cases | B6 |
-| AqlBasic | 5 | AQL feature-envelope edges | B6 |
-| QueryProvisioning | 4 | stored-query wire edges | B6 |
-| Adl14OptProvisioning | 2 | OPT provisioning edges | B6 |
-| CompositionOps / DirectoryOps / Signing | 1 each | isolated cases | B6 |
+| Capability | Was failing (2026-07-09) | Burned down at |
+|---|---|---|
+| ArchetypeValidation | 81 | B2 (0 failing since) |
+| DemographicApi | 6 | B6 |
+| ChangeSets | 5 | B6 |
+| AqlBasic | 5 | B6 |
+| QueryProvisioning | 4 | B6/B5 adjudications |
+| Adl14OptProvisioning | 2 | B2/B6 |
+| CompositionOps / DirectoryOps / Signing | 1 each | B6 |
 
 ### 2.3 The spec-area map
 
-One row per spec area, distilled from chapters 01–07. **State** is the verified
-position (2026-07-09); **Build step** references §3.
+One row per spec area, distilled from chapters 01–07. **State** was verified
+2026-07-09 and **refreshed 2026-07-10 (B7): every "Remaining work" cell whose
+build step is B1–B6 is now DONE** (see the per-step close notes in §3); the
+still-open residue is exactly: SIM-B/SDF interop audit (row 17, P17), PERF
+items (P20 — incl. the ADR-013 speculative magnitude-index repricing), and
+the Stage-2 enterprise track. Schema foundation re-authored enterprise-grade
+at B7 (ADR-013).
 
 | # | Spec area (chapter) | Current state | Remaining work | Priority | Build step |
 |---|---|---|---|---|---|
