@@ -19,7 +19,7 @@
       codec; round-trip + duplicate-id tests green (ehrbase 226/226,
       ehrbase-sm 9/9, rest 218/218). PORT NOTEs: native-API-only (no REST
       wire), JSON-uncompressed-only this wave.*
-- [ ] 2. SM-5 — Message service: `I_EHR_EXTRACT_SERVICE` (export whole-EHR +
+- [x] 2. SM-5 — Message service: `I_EHR_EXTRACT_SERVICE` (export whole-EHR +
       spec-driven; import into fixed/existing EHR) over `vobject` + generated
       `ehr_extract` types; import lands IMPORTED_VERSION storage, clone-EHR
       with reused ehr_id, versioning Cases 2/3 (ch 1 reqs 13/31/35/50–53);
@@ -34,6 +34,13 @@
       resolution, 6 corpus-fixture tests, typed rejections). Remaining
       sub-item (explicit, not an open deferral): the OPT-guided TDD body →
       COMPOSITION converter (archie TemplateDataDocument equivalent).*
+      *Task 2 COMPLETE 2026-07-10: openehr_flat::from_tdd (WebTemplate-driven
+      walk, wrapper re-materialisation, FromXml-typed leaves; corpus pairs
+      persistent_minimal + nested convert, validate clean, and commit through
+      import_tdd/import_tdds); PARTY_REF type "ANY" accepted (BASE
+      party_ref.adoc abstract-supertype allowance + CNF __full fixtures,
+      PORT NOTEd). Version branching stays the PORT-NOTEd trunk-only typed
+      rejection (decided).*
 - [ ] 3. SM-6 — Subject Proxy: subject/variable/data-set/binding stores,
       `I_DATA_BINDING` with the openEHR frame = AQL over our Query service;
       FHIR/HL7v2 frame seams stubbed.

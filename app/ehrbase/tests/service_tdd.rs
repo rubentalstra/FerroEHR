@@ -10,12 +10,11 @@
 //! and their matching OPT
 //! (`.../valid_templates/minimal_persistent/persistent_minimal.opt`).
 //!
-//! Scope this wave (see `service::tdd` PORT NOTE): the TDD **envelope** —
-//! namespace, `template_id`, target-EHR existence, and operational-template
-//! resolution — is validated; the OPT-guided body → COMPOSITION conversion is
-//! deferred, so a well-formed TDD for a provisioned template is rejected with a
-//! typed `precondition_violation` (never a silent partial COMPOSITION). These
-//! tests assert the typed rejections at each boundary.
+//! These tests assert the typed envelope rejections (malformed payload, wrong
+//! namespace, unknown EHR, unknown template) and the full happy path: a
+//! well-formed TDD for a provisioned template is converted (`openehr_flat::from_tdd`)
+//! and committed through the validated `create_composition` path, then read back
+//! via the composition surface.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
@@ -26,7 +25,9 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{CallStatusType, DefinitionAdapter, EhrService, TddService};
+use ehrbase_sm::{
+    CallStatusType, DefinitionAdapter, EhrCompositionService, EhrService, TddService,
+};
 
 struct Pg {
     #[allow(dead_code)]
@@ -166,14 +167,18 @@ async fn tdd_import_rejects_unknown_template() {
     );
 }
 
-/// A well-formed TDD for a **provisioned** template passes every envelope
-/// precondition (namespace, `template_id`, EHR, template resolution +
-/// `WebTemplate` build) and is then rejected with a typed `precondition_violation` for the
-/// deferred OPT-guided body walk — never a silent partial COMPOSITION.
+/// A well-formed TDD for a **provisioned** template is converted (OPT-guided
+/// body walk, `openehr_flat::from_tdd`) and committed through the validated
+/// `create_composition` path, then read back via the composition surface.
+///
+/// This upgrades the former `..._body_deferred` expectation: the OPT-guided
+/// TDD-body → COMPOSITION converter (B3 task 2's remaining sub-item) has landed,
+/// so a provisioned-template TDD now commits a COMPOSITION rather than being
+/// rejected with a `precondition_violation`.
 #[tokio::test]
-async fn tdd_import_provisioned_template_body_deferred() {
+async fn tdd_import_commits_composition() {
     let pg = Pg::start().await;
-    let pool = pg.migrated_pool("tdd_deferred").await;
+    let pool = pg.migrated_pool("tdd_commit").await;
     let svc = EhrbaseService::new(pool.clone());
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
@@ -184,21 +189,16 @@ async fn tdd_import_provisioned_template_body_deferred() {
         .expect("opt upload");
     assert_eq!(desc["template_id"], TEMPLATE_ID, "opt template_id");
 
-    let err = svc
+    let ovid = svc
         .import_tdd(ehr, tdd("persistent_minimal.en.v1__full.xml"))
         .await
-        .expect_err("body conversion is deferred this wave");
-    assert_eq!(
-        err.status,
-        CallStatusType::PreconditionViolation,
-        "deferred body → precondition_violation: {err:?}"
-    );
+        .expect("provisioned-template TDD imports and commits");
     assert!(
-        err.to_string().contains("body conversion"),
-        "message names the deferred capability: {err}"
+        ovid.contains("::"),
+        "import returns an OBJECT_VERSION_ID: {ovid}"
     );
 
-    // Nothing was committed: the EHR holds no COMPOSITION.
+    // Exactly one COMPOSITION committed.
     let comps: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
     )
@@ -206,10 +206,62 @@ async fn tdd_import_provisioned_template_body_deferred() {
     .fetch_one(&pool)
     .await
     .expect("count");
+    assert_eq!(comps, 1, "one COMPOSITION committed on TDD import");
+
+    // Readable via the composition surface, with the instance data carried from
+    // the TDD and the template-supplied archetype identity.
+    let vo_uuid = ovid
+        .split("::")
+        .next()
+        .unwrap()
+        .parse::<Uuid>()
+        .expect("vo uuid");
+    let comp = svc
+        .get_composition_latest(ehr, vo_uuid)
+        .await
+        .expect("read committed COMPOSITION");
+    assert_eq!(comp["_type"], "COMPOSITION");
+    assert_eq!(comp["name"]["value"], "Persistent minimal");
     assert_eq!(
-        comps, 0,
-        "no COMPOSITION committed on a deferred TDD import"
+        comp["archetype_details"]["template_id"]["value"],
+        TEMPLATE_ID
     );
+    assert_eq!(comp["territory"]["code_string"], "US");
+    // The compacted HISTORY/EVENT/ITEM_TREE/ELEMENT chain, with the TDD leaf.
+    assert_eq!(
+        comp["content"][0]["data"]["events"][0]["data"]["items"][0]["value"]["value"],
+        "value 1"
+    );
+}
+
+/// A batch import commits every TDD (all-or-nothing prepare-then-commit).
+#[tokio::test]
+async fn tdd_import_tdds_batch_commits_all() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("tdd_batch_ok").await;
+    let svc = EhrbaseService::new(pool.clone());
+    let ehr = svc.create_ehr(None).await.expect("ehr");
+    svc.template_adl14_upload(persistent_minimal_opt())
+        .await
+        .expect("opt upload");
+
+    // Two event (non-persistent) TDDs would collide on the persistent-uniqueness
+    // rule; this template is persistent, so import the single persistent TDD in a
+    // one-element batch to exercise the prepare-then-commit path end to end.
+    let ids = svc
+        .import_tdds(ehr, vec![tdd("persistent_minimal.en.v1__full.xml")])
+        .await
+        .expect("batch import commits");
+    assert_eq!(ids.len(), 1);
+
+    let comps: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
+    )
+    .bind(ehr)
+    .fetch_one(&pool)
+    .await
+    .expect("count");
+    assert_eq!(comps, 1, "batch committed the COMPOSITION");
 }
 
 /// `import_tdds` is fail-fast: a batch containing an invalid TDD rejects with a
