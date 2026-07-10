@@ -21,6 +21,7 @@ moka = { workspace = true }
 thiserror = { workspace = true }
 regex = { workspace = true }
 fancy-regex = { workspace = true }
+quick-xml = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true }

@@ -3718,6 +3718,7 @@ dependencies = [
  "openehr-its",
  "openehr-rm",
  "openehr-term",
+ "quick-xml",
  "regex",
  "serde",
  "serde_json",

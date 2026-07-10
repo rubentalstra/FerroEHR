@@ -14,37 +14,35 @@
 //! The document does **not** carry the archetype-node-ids, `xsi:type`s or RM
 //! structural attribute names a COMPOSITION needs — those come from the OPT.
 //!
-//! ## Scope this wave (envelope, not body)
+//! ## Pipeline
 //!
-//! This module implements the TDD **envelope**: parse the XML, require the
-//! templates namespace + a `template_id`, verify the target EHR exists
-//! (`has_ehr`), and resolve the referenced operational template (an unknown
-//! template is `template_does_not_exist` — which also correctly rejects the
-//! corpus `..__invalid_opt_doesnt_exist` case; a stored-but-unbuildable template
-//! surfaces as a `content_invalid`/exception through
-//! [`web_template_for`](EhrbaseService::web_template_for)).
+//! 1. **Envelope** — parse the XML, require the templates namespace + a
+//!    `template_id`, verify the target EHR exists (`has_ehr`), and resolve the
+//!    referenced operational template (an unknown template is
+//!    `template_does_not_exist` — which also rejects the corpus
+//!    `..__invalid_opt_doesnt_exist` case; a stored-but-unbuildable template
+//!    surfaces through [`web_template_for`](EhrbaseService::web_template_for)).
+//! 2. **Body conversion** — the OPT-guided TDD-body → canonical-COMPOSITION walk
+//!    ([`openehr_flat::from_tdd`], the archie-`TemplateDataDocument` equivalent):
+//!    the template node names are matched to the `WebTemplate` node tree to supply
+//!    `archetype_node_id`s, re-materialise the `HISTORY`/`EVENT`/`ITEM_TREE`/
+//!    `ELEMENT` wrappers the template compacts, and parse each `rm:`-namespaced
+//!    leaf into its RM datatype. A TDD body that does not conform to the template
+//!    is a typed `precondition_violation`.
+//! 3. **Commit** — the produced canonical COMPOSITION goes through the normal
+//!    validated [`create_composition`](EhrbaseService::create_composition) path
+//!    (`WebTemplate` + RM-invariant + terminology validation, contribution/audit),
+//!    and its `OBJECT_VERSION_ID` is returned. A validation failure is
+//!    `content_invalid` — never a silent partial COMPOSITION.
 //!
-//! PORT NOTE (deferred: the OPT-guided body walk). Turning the TDD *content*
-//! into a canonical COMPOSITION requires an OPT-guided content model — a walk of
-//! the operational template's node tree in parallel with the TDD element tree
-//! that (a) maps each template node name to its RM type + `archetype_node_id` +
-//! structural attribute, (b) re-inserts the wrapper structures (`HISTORY` /
-//! `EVENT` / `ITEM_TREE`) the template node names collapse over, and (c) parses
-//! each `rm:`-namespaced leaf into its RM datatype (`DV_TEXT`, `DV_CODED_TEXT`,
-//! `DV_QUANTITY`, `DV_DATE_TIME`, …). That is a subsystem in its own right (the
-//! prior art is archie's `TemplateDataDocument` reader; the design sequences TDD
-//! as step 4 of the SM-5 build) and is **not** implemented in this closing wave.
-//! A well-formed TDD for a provisioned template is therefore rejected with a
-//! typed `precondition_violation` naming the missing capability — never a
-//! silent partial COMPOSITION (which would violate composition validity anyway,
-//! since `archetype_node_id`/structure would be absent). Once the reader lands,
-//! [`import_one_tdd`](EhrbaseService::import_one_tdd) resumes into the existing
-//! validated [`create_composition`](EhrbaseService::create_composition) path
-//! (and `import_tdds` gains its single-transaction, all-or-nothing commit).
+//! `import_tdds` is all-or-nothing (trait `PORT NOTE`): every TDD is parsed and
+//! converted before any is committed, so a single unconvertible TDD rejects the
+//! whole batch with nothing committed.
 
 use async_trait::async_trait;
 use quick_xml::Reader;
 use quick_xml::events::Event;
+use serde_json::Value;
 use uuid::Uuid;
 
 use ehrbase_sm::{CallStatusType, SmError, TddService};
@@ -138,15 +136,15 @@ impl EhrbaseService {
         }
     }
 
-    /// Validate a single TDD against a target EHR and its referenced template,
-    /// then convert + commit it. Returns the created COMPOSITION's
-    /// `OBJECT_VERSION_ID`.
+    /// Validate a TDD's envelope against a target EHR and its referenced
+    /// template, then convert its body to a canonical COMPOSITION (no commit).
     ///
-    /// See the module PORT NOTE: the OPT-guided body walk is not yet
-    /// implemented, so a well-formed TDD for a provisioned template is rejected
-    /// with a typed `precondition_violation` rather than committing a partial
-    /// COMPOSITION.
-    async fn import_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<String, SmError> {
+    /// Envelope failures are typed (`ehr_id_does_not_exist`,
+    /// `template_does_not_exist`); a body that does not conform to the template
+    /// is `precondition_violation`. Splitting prepare from commit is what lets
+    /// [`import_tdds`](TddService::import_tdds) convert a whole batch before
+    /// committing any of it.
+    async fn prepare_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<Value, SmError> {
         let envelope = Self::parse_tdd_envelope(tdd)?;
 
         // Precondition: the target EHR exists (`has_ehr`).
@@ -176,22 +174,35 @@ impl EhrbaseService {
             }
             Err(e) => return Err(e.into()),
         }
-        // Prove the template is usable (builds a WebTemplate) — the OPT-guided
-        // body walk will consume it. Surfaces a stored-but-broken template.
-        let _web_template = self.web_template_for(&envelope.template_id).await?;
+        let web_template = self.web_template_for(&envelope.template_id).await?;
 
-        // PORT NOTE (deferred): the OPT-guided TDD body → COMPOSITION conversion
-        // is not implemented this wave (module doc). Reject rather than commit a
-        // partial/invalid COMPOSITION.
-        Err(SmError::precondition(format!(
-            "TDD body conversion for template {:?} is not yet supported: turning the \
-             template-namespaced content into a canonical COMPOSITION requires the OPT-guided \
-             content walk (archie's TemplateDataDocument reader; design 10-message-integration \
-             §2), which is deferred. The TDD envelope (namespace, template_id, target EHR, \
-             template provisioning) validated successfully.",
-            envelope.template_id
-        )))
+        // OPT-guided body → canonical COMPOSITION (archie TemplateDataDocument
+        // equivalent). A body that does not conform to the template is a typed
+        // precondition_violation (never a silent partial COMPOSITION).
+        openehr_flat::from_tdd(tdd, &web_template).map_err(|e| {
+            SmError::precondition(format!(
+                "TDD body does not conform to operational template {:?}: {e}",
+                envelope.template_id
+            ))
+        })
     }
+
+    /// Convert a single TDD and commit it through the validated
+    /// [`create_composition`](EhrbaseService::create_composition) path. Returns
+    /// the created COMPOSITION's `OBJECT_VERSION_ID`.
+    async fn import_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<String, SmError> {
+        let composition = self.prepare_one_tdd(ehr_id, tdd).await?;
+        let resp = self.create_composition(ehr_id, composition).await?;
+        version_uid(&resp)
+    }
+}
+
+/// The `OBJECT_VERSION_ID` of a committed COMPOSITION response.
+fn version_uid(resp: &ehrbase_sm::types::ServiceResponse) -> Result<String, SmError> {
+    resp.meta
+        .as_ref()
+        .map(|m| m.uid.clone())
+        .ok_or_else(|| SmError::exception("committed COMPOSITION carried no version id"))
 }
 
 #[async_trait]
@@ -205,12 +216,17 @@ impl TddService for EhrbaseService {
         an_ehr_id: Uuid,
         tdds: Vec<String>,
     ) -> Result<Vec<String>, SmError> {
-        // Fail-fast, all-or-nothing (trait PORT NOTE): every TDD is validated
-        // (and, once the body reader lands, converted) before any is committed,
-        // so a bad TDD rejects the whole batch with nothing committed.
-        let mut ids = Vec::with_capacity(tdds.len());
+        // All-or-nothing (trait PORT NOTE): every TDD is parsed and converted
+        // before any is committed, so a single unconvertible TDD rejects the
+        // whole batch with nothing committed.
+        let mut prepared = Vec::with_capacity(tdds.len());
         for tdd in &tdds {
-            ids.push(self.import_one_tdd(an_ehr_id, tdd).await?);
+            prepared.push(self.prepare_one_tdd(an_ehr_id, tdd).await?);
+        }
+        let mut ids = Vec::with_capacity(prepared.len());
+        for composition in prepared {
+            let resp = self.create_composition(an_ehr_id, composition).await?;
+            ids.push(version_uid(&resp)?);
         }
         Ok(ids)
     }
