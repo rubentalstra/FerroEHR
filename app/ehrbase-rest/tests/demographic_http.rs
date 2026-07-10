@@ -119,6 +119,7 @@ fn config() -> RestConfig {
         cors_permissive: false,
         admin: ehrbase_rest::AdminConfig::default(),
         terminology: ehrbase_rest::TerminologyConfig::default(),
+        event_subscription: ehrbase_rest::EventSubscriptionConfig::default(),
         auth: AuthConfig {
             enabled: false,
             basic: None,
