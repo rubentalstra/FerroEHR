@@ -11,7 +11,7 @@
 
 ## Tasks
 
-- [ ] 1. ADR-015 — tenancy design record: tenant ↔ logical openEHR system
+- [x] 1. ADR-015 — tenancy design record: tenant ↔ logical openEHR system
       (per-tenant system_id), session tenant context (JWT claim →
       SET LOCAL), RLS with FORCE on tenant-scoped tables, single-tenant
       default (tenancy off = today's behaviour, zero overhead).
