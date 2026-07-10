@@ -61,7 +61,7 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-COM-019 | Active | Get composition version — bad version | passed |
 | ECC-COM-020 | Active | Get composition version — bad EHR | passed |
 | ECC-COM-021 | Active | Get composition versions | passed |
-| ECC-COM-022 | Active | Get versioned composition | passed/failed |
+| ECC-COM-022 | Active | Get versioned composition | passed/passed |
 | ECC-COM-023 | Active | Get versioned composition — non existent | passed |
 | ECC-COM-024 | Active | Get versioned composition — bad EHR | passed |
 | ECC-COM-025 | Active | Update composition — event | passed |
@@ -180,8 +180,8 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-SQR-003 | Active | Stored query existence check — xxx | passed |
 | ECC-SQR-004 | Active | List stored queries — empty | skipped |
 | ECC-SQR-005 | Active | List stored queries — select items | skipped |
-| ECC-SQR-006 | Active | Store stored query — bad formalism | failed |
-| ECC-SQR-007 | Active | Store stored query — invalid | failed |
+| ECC-SQR-006 | Active | Store stored query — bad formalism | passed |
+| ECC-SQR-007 | Active | Store stored query — invalid | passed |
 
 ## QRY — AQL execution (13 cases, 13 active)
 
@@ -192,11 +192,11 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-QRY-003 | Active | Execute stored AQL query — empty db | passed |
 | ECC-QRY-004 | Active | Execute ad-hoc AQL query — loaded db | passed |
 | ECC-QRY-005 | Active | AQL corpus — invalid queries rejected | passed |
-| ECC-QRY-006 | Active | AQL corpus — A empty db | failed |
+| ECC-QRY-006 | Active | AQL corpus — A empty db | passed |
 | ECC-QRY-007 | Active | AQL corpus — B empty db | passed |
 | ECC-QRY-008 | Active | AQL corpus — C empty db | passed |
 | ECC-QRY-009 | Active | AQL corpus — D empty db | passed |
-| ECC-QRY-010 | Active | AQL corpus — A loaded db | failed |
+| ECC-QRY-010 | Active | AQL corpus — A loaded db | passed |
 | ECC-QRY-011 | Active | AQL corpus — B loaded db | passed |
 | ECC-QRY-012 | Active | AQL corpus — C loaded db | passed |
 | ECC-QRY-013 | Active | AQL corpus — D loaded db | passed |
@@ -333,22 +333,22 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-DEM-002 | Active | Demographic person get | passed |
 | ECC-DEM-003 | Active | Demographic person get by version | passed |
 | ECC-DEM-004 | Active | Demographic person update | passed |
-| ECC-DEM-005 | Active | Demographic person delete | failed |
-| ECC-DEM-006 | Active | Demographic person get deleted | failed |
+| ECC-DEM-005 | Active | Demographic person delete | passed |
+| ECC-DEM-006 | Active | Demographic person get deleted | passed |
 | ECC-DEM-007 | Active | Demographic person get absent | passed |
 | ECC-DEM-008 | Active | Demographic person update bad if match | passed |
 | ECC-DEM-009 | Active | Demographic agent create | passed |
 | ECC-DEM-010 | Active | Demographic agent get | passed |
-| ECC-DEM-011 | Active | Demographic agent delete | failed |
+| ECC-DEM-011 | Active | Demographic agent delete | passed |
 | ECC-DEM-012 | Active | Demographic group create | passed |
 | ECC-DEM-013 | Active | Demographic group get | passed |
-| ECC-DEM-014 | Active | Demographic group delete | failed |
+| ECC-DEM-014 | Active | Demographic group delete | passed |
 | ECC-DEM-015 | Active | Demographic organisation create | passed |
 | ECC-DEM-016 | Active | Demographic organisation get | passed |
-| ECC-DEM-017 | Active | Demographic organisation delete | failed |
+| ECC-DEM-017 | Active | Demographic organisation delete | passed |
 | ECC-DEM-018 | Active | Demographic role create | passed |
 | ECC-DEM-019 | Active | Demographic role get | passed |
-| ECC-DEM-020 | Active | Demographic role delete | failed |
+| ECC-DEM-020 | Active | Demographic role delete | passed |
 | ECC-DEM-021 | Active | Demographic create bad body | passed |
 | ECC-DEM-022 | Active | Demographic versioned party get | passed |
 | ECC-DEM-023 | Active | Demographic versioned party revision history | passed |
@@ -376,7 +376,7 @@ Generated per run — do not edit. Numbers are allocated once in
 
 | ECC id | Status | Title | Last run |
 |---|---|---|---|
-| ECC-SIG-001 | Active | Version signing — digest present | passed/failed |
+| ECC-SIG-001 | Active | Version signing — digest present | passed/passed |
 | ECC-SIG-002 | Active | Version signing — digest recomputes | passed |
 | ECC-SIG-003 | Active | Version signing — all kinds | passed |
 | ECC-SIG-004 | Active | Version signing — client verbatim | passed |

@@ -10,7 +10,7 @@
 |---|---|
 | SUT | `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Auth mode | basic |
-| Run started | 2026-07-10T09:58:30.796574Z |
+| Run started | 2026-07-10T11:53:58.183187Z |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
 
 ## Supported specification versions
@@ -34,16 +34,17 @@ Declared: XML, JSON (`master03-profiles.adoc` §Other Non-Functional). This run 
 
 | Profile | Aggregation | Result |
 |---|---|---|
-| Core | all capabilities | not claimable |
-| Standard | all capabilities | not claimable |
+| Core | all capabilities | PASS |
+| Standard | all capabilities | PASS |
 | Options | any optional capability | OBTAINED |
 
 ### Non-functional attributes
 
-- Signing (STANDARD): fail
+- Signing (STANDARD): pass
 - Anonymous EHRs (CORE + STANDARD): pass
 
 ### OPTIONS — obtained optional capabilities
 
+- DemographicApi
 - Terminology
 - AdminApi

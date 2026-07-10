@@ -234,14 +234,46 @@ async fn person_lifecycle_end_to_end() {
         .expect("version by id");
     assert_eq!(ov.body["_type"], "ORIGINAL_VERSION");
 
-    // delete (mandatory OBJECT_VERSION_ID) → deleted; subsequent get → 204 (Null)
+    // delete (OBJECT_VERSION_ID on the path, no If-Match) → deleted;
+    // subsequent get → 204 (Null)
     let deleted = svc
-        .party_delete(PartyKind::Person, ovid_v2.clone())
+        .party_delete(PartyKind::Person, ovid_v2.clone(), None)
         .await
         .expect("delete");
     assert!(deleted.is_empty());
     let after = svc
         .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("get after delete");
+    assert!(after.is_empty(), "deleted current read is 204 (Null body)");
+}
+
+/// The versioned-party delete shape the DEM ECC cases drive (ECC-DEM-005/006 …):
+/// the path is the **bare** versioned-object uid and the preceding version is
+/// carried by `If-Match` (the `OBJECT_VERSION_ID`). Delete succeeds (`204`) and
+/// the current read afterwards is a deleted/`204` (Null body).
+#[tokio::test]
+async fn person_delete_by_versioned_uid_with_if_match() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("demographic_delete_ifmatch").await);
+
+    let created = svc
+        .party_create(PartyKind::Person, person("Jane"))
+        .await
+        .expect("create person");
+    let ovid = ovid(&created.body).to_owned();
+    let vo = vo_uuid(&created.body);
+
+    // Bare versioned-object uid on the path, `If-Match` = the current OVID.
+    let deleted = svc
+        .party_delete(PartyKind::Person, vo.clone(), Some(ovid))
+        .await
+        .expect("delete by versioned uid + If-Match");
+    assert!(deleted.is_empty());
+
+    // The deleted current version reads back as 204 (Null body).
+    let after = svc
+        .party_get(PartyKind::Person, vo, None)
         .await
         .expect("get after delete");
     assert!(after.is_empty(), "deleted current read is 204 (Null body)");

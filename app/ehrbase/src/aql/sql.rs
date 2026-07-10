@@ -226,6 +226,9 @@ struct Builder<'a> {
     node_alias: HashMap<usize, String>,
     audit_alias: HashMap<String, String>,
     ehr_alias: HashMap<usize, String>,
+    /// The `EHR_STATUS` root-node alias joined for an EHR source's `ehr_status`
+    /// path (keyed by EHR source id; joined once, lazily, on first use).
+    ehr_status_node: HashMap<usize, String>,
     version_vo: HashMap<usize, String>,
     /// Node aliases that root a VO group (targets of the REST `ehr_id` filter).
     group_roots: Vec<String>,
@@ -246,6 +249,7 @@ impl<'a> Builder<'a> {
             node_alias: HashMap::new(),
             audit_alias: HashMap::new(),
             ehr_alias: HashMap::new(),
+            ehr_status_node: HashMap::new(),
             version_vo: HashMap::new(),
             group_roots: Vec::new(),
             group_vos: Vec::new(),
@@ -518,6 +522,45 @@ impl<'a> Builder<'a> {
         sub
     }
 
+    /// Join the EHR's current `EHR_STATUS` versioned-object root node for an EHR
+    /// source, once, and register it as that source's node so the whole-object /
+    /// anchor-walk / fragment machinery resolves paths under `ehr_status`.
+    ///
+    /// `EHR` is not a `node` and `EHR_STATUS` is a *separate* VO (RM 1.2.0
+    /// `EHR.ehr_status`), so this is an engine-level join on the store, not a
+    /// node-tree walk: `vo_version.ehr_id = ehr.id`, `kind = 'EHR_STATUS'`,
+    /// latest version (`upper_inf(sys_period)`), root node (`num = 0`). Every
+    /// EHR has exactly one current `EHR_STATUS`, so the inner join is 1:1. The
+    /// population/`ehr_id` gates already constrain the `ehr` row, so the joined
+    /// status inherits that scope transitively (no separate gating).
+    fn ensure_ehr_status_root(&mut self, ehr_sid: usize) -> Result<String, AqlError> {
+        if let Some(a) = self.ehr_status_node.get(&ehr_sid) {
+            return Ok(a.clone());
+        }
+        let ehr = self.ehr_alias.get(&ehr_sid).cloned().ok_or_else(|| {
+            SqlError::Unsupported("ehr_status path on a non-EHR source".to_owned())
+        })?;
+        let vo = format!("esv{}", self.next_ctr());
+        let node = format!("esn{}", self.next_ctr());
+        self.q.from_as(VoVersion::Table, Alias::new(vo.as_str()));
+        self.q.from_as(Node::Table, Alias::new(node.as_str()));
+        self.q.and_where(col(&vo, "ehr_id").eq(col(&ehr, "id")));
+        self.q
+            .and_where(col(&vo, "kind").eq(Expr::val("EHR_STATUS")));
+        self.q
+            .and_where(call("upper_inf", vec![col(&vo, "sys_period")]));
+        self.q.and_where(col(&node, "vo_id").eq(col(&vo, "vo_id")));
+        self.q
+            .and_where(col(&node, "sys_version").eq(col(&vo, "sys_version")));
+        self.q.and_where(col(&node, "num").eq(Expr::val(0)));
+        self.ehr_status_node.insert(ehr_sid, node.clone());
+        // Register as the source node so `source_node`/`whole_object_alias`/
+        // `data_leaf_expr` (which start from the leaf's source node) resolve the
+        // EHR_STATUS root; the EHR source has no other node entry.
+        self.node_alias.insert(ehr_sid, node.clone());
+        Ok(node)
+    }
+
     fn ensure_audit(&mut self, voa: &str) -> String {
         if let Some(a) = self.audit_alias.get(voa) {
             return a.clone();
@@ -635,6 +678,17 @@ impl<'a> Builder<'a> {
                 let mut spec = self.emit_whole_object(i, name, leaf)?;
                 // Prefer the query's own path text (the CNF goldens compare it
                 // verbatim; `"/"` for a bare variable).
+                if col.path.is_some() {
+                    spec.path.clone_from(&col.path);
+                }
+                Ok(spec)
+            }
+            // `e/ehr_status` (whole) / `e/ehr_status/<structure child>` (whole):
+            // join the EHR_STATUS root, then reassemble the addressed subtree —
+            // the A/106 golden's `EHR_STATUS` column (ECC-QRY-006/010).
+            SelectValue::Path(PathTarget::EhrStatus(leaf)) if leaf.is_whole_object() => {
+                self.ensure_ehr_status_root(leaf.source.0)?;
+                let mut spec = self.emit_whole_object(i, name, leaf)?;
                 if col.path.is_some() {
                     spec.path.clone_from(&col.path);
                 }
@@ -857,6 +911,13 @@ impl<'a> Builder<'a> {
                     SqlError::Unsupported("EHR path without a bound EHR".to_owned())
                 })?;
                 Ok(ehr_field_expr(&alias, *field, &self.ctx.system_id))
+            }
+            // A scalar leaf under `e/ehr_status` (e.g. `.../subject/...`,
+            // `.../is_queryable`): join the EHR_STATUS root, then extract from
+            // its node subtree via the same path split as any data leaf.
+            PathTarget::EhrStatus(leaf) => {
+                self.ensure_ehr_status_root(leaf.source.0)?;
+                self.data_leaf_expr(leaf, mode)
             }
         }
     }
@@ -1161,7 +1222,7 @@ fn aql_like_to_sql(pattern: &str) -> String {
 /// The coercion an ORDER BY key should use (mirrors the analyzer's leaf typing).
 fn order_coercion(target: &PathTarget) -> Coercion {
     match target {
-        PathTarget::Data(leaf) => leaf.coercion,
+        PathTarget::Data(leaf) | PathTarget::EhrStatus(leaf) => leaf.coercion,
         PathTarget::Version { field, .. } => {
             if *field == VersionField::TimeCommitted {
                 Coercion::Temporal
@@ -1183,7 +1244,11 @@ fn order_coercion(target: &PathTarget) -> Coercion {
 fn target_path_string(target: &PathTarget) -> Option<String> {
     match target {
         PathTarget::Data(leaf) => Some(leaf_path_string(leaf)),
-        PathTarget::Version { .. } | PathTarget::Ehr { .. } => None,
+        // EHR / VERSION / EHR_STATUS columns carry their `path` from the query
+        // text (`SelectColumn.path`), which the caller prefers; this fallback is
+        // unused for them (a leaf under EHR_STATUS is rooted below `ehr_status`,
+        // so its bare leaf path would omit that prefix).
+        PathTarget::Version { .. } | PathTarget::Ehr { .. } | PathTarget::EhrStatus(_) => None,
     }
 }
 

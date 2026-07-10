@@ -65,6 +65,9 @@ type ReplaceStatus = Arc<dyn Fn(Uuid, UpdateVersion) -> Result<String, SmError> 
 type CompLatest = Arc<dyn Fn(Uuid, Uuid) -> Result<Value, SmError> + Send + Sync>;
 type CompAtTime = Arc<dyn Fn(Uuid, Uuid, Option<String>) -> Result<Value, SmError> + Send + Sync>;
 type CompAtVersion = Arc<dyn Fn(Uuid, ObjectVersionId) -> Result<Value, SmError> + Send + Sync>;
+type VersionedComp = Arc<dyn Fn(Uuid, Uuid) -> Result<Value, SmError> + Send + Sync>;
+type CompOriginalVersion =
+    Arc<dyn Fn(Uuid, ObjectVersionId) -> Result<Value, SmError> + Send + Sync>;
 type CreateComp = Arc<dyn Fn(Uuid, UpdateVersion) -> Result<String, SmError> + Send + Sync>;
 type UpdateComp = Arc<dyn Fn(Uuid, Uuid, UpdateVersion) -> Result<String, SmError> + Send + Sync>;
 type DeleteComp = Arc<dyn Fn(Uuid, ObjectVersionId) -> Result<String, SmError> + Send + Sync>;
@@ -81,7 +84,9 @@ type PartyGet = Arc<
 >;
 type PartyUpdate =
     Arc<dyn Fn(PartyKind, String, String, Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
-type PartyDelete = Arc<dyn Fn(PartyKind, String) -> Result<ServiceResponse, SmError> + Send + Sync>;
+type PartyDelete = Arc<
+    dyn Fn(PartyKind, String, Option<String>) -> Result<ServiceResponse, SmError> + Send + Sync,
+>;
 type PartyMeta =
     Arc<dyn Fn(PartyKind, String) -> Result<Option<ResourceMeta>, SmError> + Send + Sync>;
 type RelCreate = Arc<dyn Fn(Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
@@ -136,6 +141,8 @@ pub struct Hooks {
     pub update_composition: Option<UpdateComp>,
     pub delete_composition: Option<DeleteComp>,
     pub composition_latest_meta: Option<CompMeta>,
+    pub get_versioned_composition: Option<VersionedComp>,
+    pub composition_original_version: Option<CompOriginalVersion>,
     // non-EHR SM-native
     pub web_template: Option<WebTemplateHook>,
     pub admin_ehr_delete: Option<AdminDelete>,
@@ -432,8 +439,11 @@ impl EhrCompositionService for Mock {
             None => Err(not_impl()),
         }
     }
-    async fn get_versioned_composition(&self, _e: Uuid, _vo: Uuid) -> Result<Value, SmError> {
-        Err(not_impl())
+    async fn get_versioned_composition(&self, e: Uuid, vo: Uuid) -> Result<Value, SmError> {
+        match &self.h.get_versioned_composition {
+            Some(f) => f(e, vo),
+            None => Err(not_impl()),
+        }
     }
     async fn create_composition(&self, ehr_id: Uuid, v: UpdateVersion) -> Result<String, SmError> {
         match &self.h.create_composition {
@@ -475,10 +485,13 @@ impl EhrCompositionService for Mock {
     }
     async fn composition_original_version(
         &self,
-        _e: Uuid,
-        _ovid: ObjectVersionId,
+        e: Uuid,
+        ovid: ObjectVersionId,
     ) -> Result<Value, SmError> {
-        Err(not_impl())
+        match &self.h.composition_original_version {
+            Some(f) => f(e, ovid),
+            None => Err(not_impl()),
+        }
     }
 }
 
@@ -654,9 +667,14 @@ impl DemographicService for Mock {
             None => Err(not_impl()),
         }
     }
-    async fn party_delete(&self, kind: PartyKind, uid: String) -> Result<ServiceResponse, SmError> {
+    async fn party_delete(
+        &self,
+        kind: PartyKind,
+        uid: String,
+        if_match: Option<String>,
+    ) -> Result<ServiceResponse, SmError> {
         match &self.h.party_delete {
-            Some(f) => f(kind, uid),
+            Some(f) => f(kind, uid, if_match),
             None => Err(not_impl()),
         }
     }
