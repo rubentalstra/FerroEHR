@@ -1,6 +1,6 @@
 # E1 — Eventing: contribution outbox → AMQP
 
-- Status: in-progress
+- Status: done (2026-07-11)
 - Started: 2026-07-10   Owner: Ruben
 - Governing design: docs/enterprise/product-roadmap.md §2.2 (owner-confirmed)
   → ADR-014; spec basis SM master02 §General Assumptions/§Interface Calls
@@ -40,5 +40,5 @@
 
 ## Exit criteria
 
-- [ ] Suites green incl. the new broker tests; full ECC zero drift; ADR-014
-      accepted; roadmap §1 scorecard row flipped to ✅.
+- [x] Suites green (ehrbase 293/293, rest+sm 266/266, RabbitMQ e2e); full
+      ECC 341/315/0 zero drift; ADR-014 accepted; scorecard flipped.

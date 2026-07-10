@@ -32,7 +32,7 @@ Legend: ✅ have (evidence) · 🔷 planned (spec-grounded design below) ·
 | `ALL_VERSIONS` AQL | — (EHRbase rejects) | ✅ | temporal `vo_version` (ADR-008) |
 | Server Admin API | ✓ | ✅ + dump/load + archive | SM I_ADMIN + I_ADMIN_DUMP_LOAD implemented |
 | FHIR Server R4 + Search | ✓ | 🔷 **connectors + read façade** (not a second server) | §2.1 |
-| Event Trigger | ✓ | 🔷 **contribution outbox + filters** | §2.2 |
+| Event Trigger | ✓ | ✅ **contribution outbox + filter subscriptions** (E1, ADR-014) | migration 0002/0003, per-version topic routing, admin CRUD |
 | Binary Storage (S3) | ✓ | 🔷 **DV_MULTIMEDIA externalization** | §2.4 |
 
 ### Integration
@@ -53,7 +53,7 @@ Legend: ✅ have (evidence) · 🔷 planned (spec-grounded design below) ·
 | Horizontal scaling (YugabyteDB) | optional | ◽→🔷 *verification item only* | PG-wire-compatible engines are a compatibility test pass (temporal PK/GiST support must be verified), not a port. Not roadmapped until a customer needs it. |
 | Multi-tenancy (API + integrated) | ✓✓ | 🔷 **Stage-2 flagship, fully integrated** | §2.3 — schema already RLS-ready (ADR-013) |
 | Transaction compensation | ✓✓ | ✅ *semantics covered, different shape* | openEHR-native: CONTRIBUTION atomicity (all-or-nothing commits), indelible versioning + logical delete, admin physical delete; a dedicated "compensation API" is redundant in a version-controlled store — PORT NOTE stance |
-| AMQP integration bus | ✓ | 🔷 broker publisher on the outbox | §2.2 |
+| AMQP integration bus | ✓ | ✅ lapin 4 publisher, confirms, at-least-once per-EHR order, off by default (E1) | RabbitMQ e2e incl. broker-down/no-loss |
 | Kubernetes configuration | ✓ | 🔷 Helm chart / manifests (deployment artifact) | cheap, high checkbox value; includes the roles/pgaudit/TLS posture from ADR-013 + review doc 02 |
 
 ### Security
