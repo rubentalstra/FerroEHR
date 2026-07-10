@@ -58,11 +58,13 @@ pub enum Area {
     Sig,
     /// Messaging (EHR Extract / TDS), when implemented.
     Msg,
+    /// Terminology-server integration (AQL TERMINOLOGY family + FHIR-tx).
+    Ts,
 }
 
 impl Area {
     /// Every area, in catalogue order.
-    pub const ALL: [Area; 15] = [
+    pub const ALL: [Area; 16] = [
         Area::Ehr,
         Area::Sta,
         Area::Com,
@@ -78,6 +80,7 @@ impl Area {
         Area::Sec,
         Area::Sig,
         Area::Msg,
+        Area::Ts,
     ];
 
     /// The id segment (`EHR`, `STA`, …).
@@ -99,6 +102,7 @@ impl Area {
             Area::Sec => "SEC",
             Area::Sig => "SIG",
             Area::Msg => "MSG",
+            Area::Ts => "TS",
         }
     }
 
@@ -121,6 +125,7 @@ impl Area {
             Area::Sec => "Security / authorization",
             Area::Sig => "Version signing",
             Area::Msg => "Messaging",
+            Area::Ts => "Terminology-server integration",
         }
     }
 

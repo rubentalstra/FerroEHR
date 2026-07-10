@@ -100,6 +100,16 @@ pub enum Capability {
     /// (a wire-tested SUT must not be denied OPTIONS for a capability the wire
     /// cannot reach) — it is reported individually.
     Messaging,
+    /// Terminology-server integration (OPTIONS) — the AQL `TERMINOLOGY('expand',
+    /// …)` family (B4). The in-process `openehr-term` bundle
+    /// (`service_api = "openehr"`) is wire-exercisable and its cases pass against
+    /// any SUT; the external FHIR-tx cases depend on the SUT carrying a
+    /// configured FHIR terminology provider and report `SKIPPED(SutConfig)`
+    /// otherwise. Like [`Capability::Messaging`] it is *not* in
+    /// [`crate::profile::required_capabilities`] (an optional, partly
+    /// config-gated capability is reported individually, never blocking a
+    /// profile).
+    Terminology,
 }
 
 /// A wire format a case runs under.
