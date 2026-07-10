@@ -260,7 +260,12 @@ one **critical** defect and several **major** conformance gaps at the HTTP edge:
   unparseable required `If-Match` as **400**, and always enforce the parsed
   version as `expected` (never fall through to `None`). Applies to
   composition_update, directory_update, directory_delete.
-- [ ] fixed
+- [x] fixed (B6 cluster 4, with F-01-09) — `require_if_match` at the dispatch
+  edge rejects an empty/malformed required `If-Match` with **400** before any
+  commit; the SM adapter enforces a full-`OBJECT_VERSION_ID` compare against the
+  current latest version → 412 on mismatch. Covers composition_update,
+  directory_update, directory_delete (composition_delete carries the preceding
+  version in the path, not `If-Match`).
 
 ### F-02-09: CONTRIBUTION-supplied `uid` ignored; `audit.system_id` not validated
 - **Severity:** minor
