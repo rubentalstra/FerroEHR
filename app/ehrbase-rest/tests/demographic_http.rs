@@ -118,6 +118,7 @@ fn config() -> RestConfig {
         swagger_ui: false,
         cors_permissive: false,
         admin: ehrbase_rest::AdminConfig::default(),
+        terminology: ehrbase_rest::TerminologyConfig::default(),
         auth: AuthConfig {
             enabled: false,
             basic: None,

@@ -22,8 +22,33 @@
       merged into matches at semantic analysis (master03 lines 756–759);
       staged expand → validate-as-boolean → URI operand; typed rejects until
       each lands.
-- [ ] 3. Terminology wire exposure (extension OAS, design doc 08 §7) for
+- [x] 3. Terminology wire exposure (extension OAS, design doc 08 §7) for
       I_TERMINOLOGY_SERVICE (+ EHR Index/Admin wire while in the area).
+      *Done 2026-07-10: config-gated (`RestConfig::terminology`, OFF by
+      default) `/terminology` extension routes in `ehrbase-rest`
+      (`dispatch/terminology.rs`), dispatching to the `TerminologyService`
+      seam — GET `/terminology` (ids), `/terminology/{tid}` (description),
+      `/terminology/{tid}/term/{code}` (get_term/lookup),
+      `/terminology/{tid}/subsumes` (subsumes),
+      `/terminology/{tid}/value_set/{vs}` (get_value_set/expand),
+      `/terminology/{tid}/value_set/{vs}/validate` (value_set_validate).
+      Typed error mapping via the existing `sm_api_error` (bundle's
+      `versioned_object_does_not_exist` → 404). 12 HTTP tests via the shared
+      Mock (new terminology hooks in tests/common). Gates:
+      nextest -p ehrbase-rest 231/231, -p ehrbase-sm 9/9, -p ehrbase 273
+      (1 skip), clippy no new warnings, fmt clean.
+      PORT NOTE (deferrals): (a) the boolean `has_terminology`/`has_term`/
+      `has_value_set` calls are folded into the 200-vs-404 of their get_
+      counterparts (idiomatic REST; not separate endpoints); (b) get_term's
+      `attributes` allow-list is not surfaced on the wire (ambiguous
+      map-vs-list shape, bundle ignores it) — passed as None; (c) EHR
+      Index/Admin wire NOT added: §7 lists their namespaces but not their
+      call/route shapes (unlike terminology's `TerminologyService` seam,
+      EhrIndex/Admin dump-load are still SM-3/SM-4 service work — not
+      equally mechanical), deferred to their own SM phases; §7's
+      `/rest/terminology` namespace is realized as `{base_path}/terminology`
+      (extension groups nest inside the API router, mirroring ADMIN — PORT
+      NOTE in the dispatcher).*
 - [x] 4. Test harness in tools/conformance: `TS` case area — wiremock-backed
       FHIR-tx fixture server spun up by the runner (expand/validate/lookup/
       subsumes + fault injection) and optional real-server mode
