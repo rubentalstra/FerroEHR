@@ -39,27 +39,71 @@ pub enum AqlError {
 /// envelope. Each variant names the construct and its QUERY 1.1 spec section.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum AqlFeatureError {
-    /// `TERMINOLOGY(...)` server-side expansion needs a terminology service.
-    /// QUERY §Functions/Other functions/TERMINOLOGY.
+    /// `TERMINOLOGY(...) = true` — the Boolean value-expression form (an
+    /// assertion tested server-side). QUERY §Functions/Other functions/
+    /// TERMINOLOGY (master03 lines 762–767).
+    ///
+    /// PORT NOTE (B4 stage (b)): only the `expand`-into-`matches` form landed
+    /// (stage (a)); the Boolean `validate`-as-assertion form is a typed reject.
+    /// The blocker is not semantics but the seam: master03's `validate`
+    /// `params_uri` is a free-form, service-api-specific query string
+    /// (`'system=…&code=…&url=…&display=…'`), while our `TerminologyService`
+    /// seam exposes structured `value_set_validate(terminology_id,
+    /// value_set_id, candidate_code)` — no raw pass-through — so parsing the
+    /// URI back into those parts is service-api-specific and deferred.
     #[error(
-        "TERMINOLOGY() server-side expansion is not supported \
-         (QUERY §Functions/Other functions/TERMINOLOGY)"
+        "TERMINOLOGY() as a Boolean value expression is not supported \
+         (only the `expand`-into-`matches` form is; \
+         QUERY §Functions/Other functions/TERMINOLOGY)"
     )]
     TerminologyFunction,
 
-    /// `matches TERMINOLOGY(...)` on the right-hand side of `matches`.
-    /// QUERY §Operators/Comparison operators/matches + §Other functions.
+    /// A non-`expand` `TERMINOLOGY(...)` used as (or inside) a `matches`
+    /// operand. Only `expand` is merged into the value list at semantic
+    /// analysis; other operations are rejected. QUERY §Operators/Comparison
+    /// operators/matches + §Other functions (master03 lines 748–767).
     #[error(
-        "matches against a TERMINOLOGY() operand is not supported \
+        "matches against a non-`expand` TERMINOLOGY() operand is not supported \
+         (only `expand` merges codes into the value list) \
          (QUERY §Operators/matches, §Other functions/TERMINOLOGY)"
     )]
     MatchesTerminology,
 
-    /// `matches { <uri> }` — a terminology URI operand. QUERY §matches/URI.
-    #[error(
-        "matches against a terminology URI operand is not supported (QUERY §Operators/matches)"
-    )]
+    /// `matches { <uri> }` — a terminology/EHR URI operand. QUERY §matches/URI
+    /// (master03 lines 367–402).
+    ///
+    /// PORT NOTE (B4 stage (c)): a typed reject. The URI-operand form
+    /// (`matches { terminology://… }`) is a distinct addressing scheme from the
+    /// `TERMINOLOGY()` function and is deferred behind stage (a)/(b); it needs
+    /// a `terminology://scheme/authority/path?query` parser mapped onto the
+    /// service seam, which the `TERMINOLOGY('expand', …)` form does not.
+    #[error("matches against a URI operand is not supported (QUERY §Operators/matches)")]
     MatchesUri,
+
+    /// A `TERMINOLOGY()` `service_api` that names no configured terminology
+    /// service: an unrecognised flavour, or a FHIR flavour with no provider
+    /// configured. A query-side/config problem (→ 400), distinct from an
+    /// upstream server fault ([`super::ExecError::Terminology`], → 500). QUERY
+    /// §Functions/Other functions/TERMINOLOGY.
+    #[error(
+        "TERMINOLOGY() service_api `{0}` is not a configured terminology service \
+         (QUERY §Functions/Other functions/TERMINOLOGY)"
+    )]
+    UnknownTerminologyService(String),
+
+    /// A `TERMINOLOGY('expand', service_api, params_uri)` whose `params_uri`
+    /// names a value set the terminology service does not know. A bad-query
+    /// problem (→ 400). QUERY §Functions/Other functions/TERMINOLOGY.
+    #[error(
+        "TERMINOLOGY() value set `{value_set}` was not found via service_api \
+         `{service_api}` (QUERY §Functions/Other functions/TERMINOLOGY)"
+    )]
+    TerminologyValueSetNotFound {
+        /// The `service_api` argument.
+        service_api: String,
+        /// The `params_uri` argument (the value-set identifier).
+        value_set: String,
+    },
 
     /// A `matches` node predicate carrying a `{/regex/}` — cADL, not AQL value
     /// matching. QUERY §Predicates/Node predicate.
@@ -178,4 +222,12 @@ pub enum ExecError {
     /// subtree (a storage/codec failure).
     #[error("result assembly failed: {0}")]
     Assembly(#[from] crate::storage::StorageError),
+
+    /// A terminology-server call failed while resolving a
+    /// `TERMINOLOGY('expand', …)` operand (transport/HTTP/malformed response).
+    /// The construct is accepted and the value set is routable; the upstream
+    /// service failed → a server-side fault (→ 500), distinct from a bad
+    /// query (400). QUERY §Functions/Other functions/TERMINOLOGY.
+    #[error("terminology expansion failed: {0}")]
+    Terminology(String),
 }

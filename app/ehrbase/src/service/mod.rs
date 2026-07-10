@@ -76,6 +76,13 @@ pub struct EhrbaseService {
     /// through the [`SystemLog`](ehrbase_sm::SystemLog) impl in
     /// `crate::system_log`.
     pub(crate) audit: Option<AuditSender>,
+    /// The optional external terminology provider (FHIR R4), selected when a
+    /// deployment opts in ([`crate::terminology::ExternalTerminologyConfig`]).
+    /// Used by AQL `TERMINOLOGY('expand', 'hl7.org/fhir/…', …)` resolution (B4);
+    /// `None` keeps AQL terminology expansion on the in-process `openehr-term`
+    /// bundle only. Read through the [`TerminologyExpander`](crate::aql::TerminologyExpander)
+    /// impl in `service::api::terminology`.
+    pub(crate) external_terminology: Option<Arc<crate::terminology::FhirTerminologyProvider>>,
 }
 
 impl EhrbaseService {
@@ -89,6 +96,7 @@ impl EhrbaseService {
             web_templates: WebTemplateCache::default(),
             signer: Arc::new(Signer::digest_default()),
             audit: None,
+            external_terminology: None,
         }
     }
 
@@ -113,6 +121,19 @@ impl EhrbaseService {
     #[must_use]
     pub fn with_audit(mut self, sender: AuditSender) -> Self {
         self.audit = Some(sender);
+        self
+    }
+
+    /// Install an external FHIR R4 terminology provider (opt-in), used by AQL
+    /// `TERMINOLOGY('expand', 'hl7.org/fhir/…', …)` resolution (B4). Without it,
+    /// AQL terminology expansion routes only to the in-process `openehr-term`
+    /// bundle (`service_api = "openehr"`).
+    #[must_use]
+    pub fn with_external_terminology(
+        mut self,
+        provider: Arc<crate::terminology::FhirTerminologyProvider>,
+    ) -> Self {
+        self.external_terminology = Some(provider);
         self
     }
 

@@ -156,6 +156,22 @@ async fn serve() -> anyhow::Result<()> {
         service = service.with_audit(sender);
     }
 
+    // Opt-in external FHIR terminology provider (B4): when a deployment
+    // configures one, wire it so AQL `TERMINOLOGY('expand', 'hl7.org/fhir/…',
+    // …)` resolves against it; otherwise AQL terminology expansion routes only
+    // to the in-process `openehr-term` bundle.
+    match ehrbase::terminology::ExternalTerminologyConfig::load()
+        .context("loading external-terminology configuration")?
+        .default_provider()
+    {
+        Some(Ok(provider)) => {
+            tracing::info!("external FHIR terminology provider configured");
+            service = service.with_external_terminology(Arc::new(provider));
+        }
+        Some(Err(e)) => return Err(e).context("initialising the external terminology provider"),
+        None => {}
+    }
+
     // Build the RBAC gate. Only wired when authentication is enabled (the gate
     // runs after authentication); `from_config` yields `None` when RBAC is
     // disabled, restoring authentication-only behaviour.
