@@ -81,7 +81,9 @@ type PartyGet = Arc<
 >;
 type PartyUpdate =
     Arc<dyn Fn(PartyKind, String, String, Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
-type PartyDelete = Arc<dyn Fn(PartyKind, String) -> Result<ServiceResponse, SmError> + Send + Sync>;
+type PartyDelete = Arc<
+    dyn Fn(PartyKind, String, Option<String>) -> Result<ServiceResponse, SmError> + Send + Sync,
+>;
 type PartyMeta =
     Arc<dyn Fn(PartyKind, String) -> Result<Option<ResourceMeta>, SmError> + Send + Sync>;
 type RelCreate = Arc<dyn Fn(Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
@@ -654,9 +656,14 @@ impl DemographicService for Mock {
             None => Err(not_impl()),
         }
     }
-    async fn party_delete(&self, kind: PartyKind, uid: String) -> Result<ServiceResponse, SmError> {
+    async fn party_delete(
+        &self,
+        kind: PartyKind,
+        uid: String,
+        if_match: Option<String>,
+    ) -> Result<ServiceResponse, SmError> {
         match &self.h.party_delete {
-            Some(f) => f(kind, uid),
+            Some(f) => f(kind, uid, if_match),
             None => Err(not_impl()),
         }
     }

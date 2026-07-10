@@ -36,6 +36,19 @@ impl EhrbaseService {
         version: Option<&str>,
         query_text: String,
     ) -> Result<String, ServiceError> {
+        // Store-time AQL validation (`definition_query_store` /
+        // `definition_query_version_store` list only `200`/`400`[/`409`], so a
+        // non-AQL or syntactically-invalid body is a `400 Bad Request`
+        // "syntactically invalid … content" —
+        // `docs/specs/openehr/ITS-REST/.../responses/400.yaml`). The stored-query
+        // table only holds AQL (`query_type = 'AQL'`), so the body must parse as
+        // AQL with the engine's own parser.
+        if let Err(err) = openehr_query::parser::parse_str(&query_text) {
+            return Err(ServiceError::BadRequest(format!(
+                "stored query text is not valid AQL: {err}"
+            )));
+        }
+
         let (rdn, semantic) = split_qualified(qualified_name);
         let Some(v) = version else {
             // No-version store: upsert at the default version (spec-permitted
@@ -214,5 +227,21 @@ mod tests {
         assert!(!is_partial_semver("1..0"));
         assert!(!is_partial_semver("1.a"));
         assert!(!is_partial_semver(""));
+    }
+
+    /// The store path rejects a body that is not valid AQL (ECC-SQR-006/007):
+    /// `store_query` guards on `openehr_query::parser::parse_str`, so a non-AQL
+    /// or malformed body must fail that parse (→ `BadRequest` → `400`), while a
+    /// well-formed AQL body must parse.
+    #[test]
+    fn store_time_aql_validation() {
+        // ECC sqr/valid-query-bad-formalism (SQL, not AQL).
+        assert!(
+            openehr_query::parser::parse_str("SELECT * FROM patients; -- SQL, not AQL").is_err()
+        );
+        // ECC sqr/valid-query-invalid (malformed AQL).
+        assert!(openehr_query::parser::parse_str("SELECT FROM WHERE {{{ not valid aql").is_err());
+        // A valid AQL body still parses (the positive store path is unaffected).
+        assert!(openehr_query::parser::parse_str("SELECT c FROM COMPOSITION c").is_ok());
     }
 }
