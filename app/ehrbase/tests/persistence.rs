@@ -105,8 +105,11 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // wave: the per-version `creating_system_id` column on `vo_version` [M2]
     // and the `audit_system_id_nonempty` CHECK on `audit` [m6]; adds no table) +
     // 0009_vo_archive (SM-4 I_ADMIN_ARCHIVE archive markers; adds the
-    // `vo_archive` table below).
-    assert_eq!((applied_ext, applied_ehr), (1, 9));
+    // `vo_archive` table below) +
+    // 0010_subject_proxy_stores (SM-6 I_SUBJECT_PROXY_SERVICE config stores;
+    // adds the `sp_subject`/`sp_binding`/`sp_data_frame`/`sp_variable`/
+    // `sp_data_set` tables below).
+    assert_eq!((applied_ext, applied_ehr), (1, 10));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -126,6 +129,11 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "ehr_index",
             "item_tag",
             "node",
+            "sp_binding",
+            "sp_data_frame",
+            "sp_data_set",
+            "sp_subject",
+            "sp_variable",
             "stored_query",
             "template_store",
             "vo_archive",
