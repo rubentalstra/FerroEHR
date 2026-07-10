@@ -17,7 +17,7 @@
       figment config, bundle-default/fhir-opt-in, typed 404/exception
       mapping); 12 wiremock tests incl. fault injection; OAuth2/mTLS +
       walker hookup PORT-NOTEd for later tasks.*
-- [ ] 2. AQL terminology family (Q-15/16/23): `TERMINOLOGY('expand'|'validate'
+- [x] 2. AQL terminology family (Q-15/16/23): `TERMINOLOGY('expand'|'validate'
       |…, service_api, params_uri)` + `matches {uri}` + mixed lists, expansion
       merged into matches at semantic analysis (master03 lines 756–759);
       staged expand → validate-as-boolean → URI operand; typed rejects until
