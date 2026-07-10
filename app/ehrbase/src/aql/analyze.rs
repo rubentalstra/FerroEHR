@@ -86,10 +86,7 @@ pub(crate) fn analyze_path(
         .ok_or_else(|| AnalysisError::UnknownVariable(path.root.clone()))?;
     let source = binding.source;
     match &binding.kind {
-        BindingKind::Ehr => Ok(PathTarget::Ehr {
-            source,
-            field: resolve_ehr_field(path.path.as_ref())?,
-        }),
+        BindingKind::Ehr => analyze_ehr_path(source, path),
         BindingKind::Version => Ok(PathTarget::Version {
             source,
             field: resolve_version_field(path.path.as_ref())?,
@@ -289,6 +286,55 @@ fn classify(types: &TypeSet) -> Coercion {
 }
 
 // ── EHR / VERSION field resolution ───────────────────────────────────────────
+
+/// Resolve an identified path rooted at an `EHR` variable. `e/ehr_status[/...]`
+/// addresses the EHR's current `EHR_STATUS` versioned object (a *separate* VO —
+/// RM 1.2.0 `EHR.ehr_status`), which is not a node on the EHR; the residual path
+/// below `ehr_status` is analysed against `EHR_STATUS` and carried as a
+/// [`PathTarget::EhrStatus`] the SQL package resolves via an engine-level join.
+/// Every other EHR attribute (`ehr_id`, `time_created`, `system_id`) is a scalar
+/// field resolved directly.
+fn analyze_ehr_path(source: SourceId, path: &IdentifiedPath) -> Result<PathTarget, AqlError> {
+    let heads_ehr_status = path
+        .path
+        .as_ref()
+        .and_then(|op| op.parts.first())
+        .is_some_and(|p| p.name == "ehr_status");
+    if !heads_ehr_status {
+        return Ok(PathTarget::Ehr {
+            source,
+            field: resolve_ehr_field(path.path.as_ref())?,
+        });
+    }
+    // `EHR_STATUS` is a singleton VO per EHR, not a filterable node set, so a
+    // predicate on the EHR variable (`e[...]/ehr_status`) or on `ehr_status`
+    // itself (`e/ehr_status[...]`) is a typed reject (never a wrong result).
+    if path.predicate.is_some() {
+        return Err(AqlFeatureError::UnsupportedEhrStatusPath(
+            "predicate on the EHR variable".to_owned(),
+        )
+        .into());
+    }
+    let op = path.path.as_ref().expect("ehr_status head implies a path");
+    if op.parts[0].predicate.is_some() {
+        return Err(AqlFeatureError::UnsupportedEhrStatusPath(
+            "predicate on ehr_status".to_owned(),
+        )
+        .into());
+    }
+    // The residual path below `ehr_status`, analysed against EHR_STATUS. Empty ⇒
+    // the whole EHR_STATUS object.
+    let mut rest = op.clone();
+    rest.parts.remove(0);
+    let rest_ref = if rest.parts.is_empty() {
+        None
+    } else {
+        Some(&rest)
+    };
+    let ehr_status = TypeSet::new(vec!["EHR_STATUS".to_owned()]);
+    let leaf = analyze_rm_path(source, &ehr_status, None, rest_ref)?;
+    Ok(PathTarget::EhrStatus(Box::new(leaf)))
+}
 
 fn resolve_ehr_field(object_path: Option<&ObjectPath>) -> Result<EhrField, AqlError> {
     let Some(op) = object_path else {

@@ -10,9 +10,14 @@
 
 - [ ] 1. Stored-query validation (ECC-SQR-006/007): PUT stored query must
       parse/validate the AQL at store time → 400/422 for non-AQL/malformed.
-- [ ] 2. AQL `e/ehr_status` on EHR (ECC-QRY-006/010, A/106 golden; blueprint
+- [x] 2. AQL `e/ehr_status` on EHR (ECC-QRY-006/010, A/106 golden; blueprint
       row 11 RM-model special case): the engine resolves e/ehr_status
       (+ e/time_created family per master03) instead of rejecting.
+      Done: `PathTarget::EhrStatus` joins the EHR's current EHR_STATUS VO
+      (`vo_version.ehr_id=ehr.id`, kind EHR_STATUS, latest) and reassembles the
+      whole object / extracts inline leaves under it; the ehr_id/time_created/
+      system_id fields already resolved. `service_aql.rs` tests cover the A/106
+      SELECT list, whole ehr_status, leaf extraction, and the empty-DB shape.
 - [ ] 3. Demographic delete family (ECC-DEM-005/006/011/014/017/020): party
       DELETE 400s and get-after-delete 200s — fix the delete wire/service
       path (likely version-id handling) so delete → 204 and subsequent

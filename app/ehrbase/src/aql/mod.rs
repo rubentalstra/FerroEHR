@@ -167,19 +167,21 @@ fn collect_select(value: &SelectValue, out: &mut BTreeSet<String>) {
 }
 
 fn collect_path_target(target: &PathTarget, out: &mut BTreeSet<String>) {
-    if let PathTarget::Data(leaf) = target {
-        if let Some(c) = &leaf.root_predicate {
+    let leaf = match target {
+        PathTarget::Data(leaf) | PathTarget::EhrStatus(leaf) => leaf,
+        PathTarget::Version { .. } | PathTarget::Ehr { .. } => return,
+    };
+    if let Some(c) = &leaf.root_predicate {
+        collect_node_constraint(c, out);
+    }
+    for step in &leaf.anchor {
+        if let Some(c) = &step.predicate {
             collect_node_constraint(c, out);
         }
-        for step in &leaf.anchor {
-            if let Some(c) = &step.predicate {
-                collect_node_constraint(c, out);
-            }
-        }
-        for step in &leaf.fragment {
-            if let Some(c) = &step.predicate {
-                collect_node_constraint(c, out);
-            }
+    }
+    for step in &leaf.fragment {
+        if let Some(c) = &step.predicate {
+            collect_node_constraint(c, out);
         }
     }
 }
