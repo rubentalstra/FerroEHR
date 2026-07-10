@@ -33,15 +33,24 @@
 -- migrator (or the ehr baseline's mirror block) is a no-op.
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_migrator') THEN
-        CREATE ROLE ehrbase_migrator NOLOGIN;
-    END IF;
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
-        CREATE ROLE ehrbase_app NOLOGIN;
-    END IF;
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_reader') THEN
-        CREATE ROLE ehrbase_reader NOLOGIN;
-    END IF;
+    -- Graceful degradation (deployment reality): when the migration runs as a
+    -- user without CREATEROLE (dev/compose/testcontainers or a managed PG
+    -- without role rights), the role architecture is skipped with a NOTICE —
+    -- it is then a deployment-layer setup step (review doc 02 §3.1). When the
+    -- migrator has the privilege (production), roles are created idempotently.
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_migrator') THEN
+            CREATE ROLE ehrbase_migrator NOLOGIN;
+        END IF;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
+            CREATE ROLE ehrbase_app NOLOGIN;
+        END IF;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_reader') THEN
+            CREATE ROLE ehrbase_reader NOLOGIN;
+        END IF;
+    EXCEPTION WHEN insufficient_privilege THEN
+        RAISE NOTICE 'skipping role creation (no CREATEROLE privilege): create ehrbase_migrator/ehrbase_app/ehrbase_reader at deployment';
+    END;
 END $$;
 
 -- days since 0001-01-01 for an ISO-8601 (possibly partial) date string
@@ -200,9 +209,15 @@ COMMENT ON FUNCTION ext.openehr_magnitude(jsonb) IS
 -- nothing more (functions are plain, not SECURITY DEFINER — review doc 02 §3.6).
 -- The migrator owns them. Idempotent by construction (GRANT is a no-op if
 -- already held).
-GRANT USAGE ON SCHEMA ext TO ehrbase_app, ehrbase_reader;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA ext TO ehrbase_app, ehrbase_reader;
--- Future `ext` functions (added by later append-only migrations run as the
--- migrator) are reachable without a manual grant (review doc 02 §3.2).
-ALTER DEFAULT PRIVILEGES IN SCHEMA ext
-    GRANT EXECUTE ON FUNCTIONS TO ehrbase_app, ehrbase_reader;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
+        GRANT USAGE ON SCHEMA ext TO ehrbase_app, ehrbase_reader;
+        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA ext TO ehrbase_app, ehrbase_reader;
+        -- Future ext functions reachable without a manual grant (doc 02 §3.2).
+        ALTER DEFAULT PRIVILEGES IN SCHEMA ext
+            GRANT EXECUTE ON FUNCTIONS TO ehrbase_app, ehrbase_reader;
+    ELSE
+        RAISE NOTICE 'skipping ext grants (roles absent — see the role block NOTICE)';
+    END IF;
+END $$;
