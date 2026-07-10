@@ -18,9 +18,11 @@
 
 ## Tasks
 
-- [ ] 1. Research fan-out: (a) precise current-schema inventory + code-usage
+- [x] 1. Research fan-out: (a) precise current-schema inventory + code-usage
       map; (b) openEHR persistence-requirement extraction with citations;
       (c) PostgreSQL 18 enterprise best-practice + security research (web).
+      *Done 2026-07-10 → docs/design/schema-review/01..03 (+ the ADR audit,
+      executed as task 5).*
 - [ ] 2. Synthesis: gap analysis current-vs-required-vs-best-practice; design
       questions to the owner; ADR-013 schema redesign decision.
 - [ ] 3. Implementation per the confirmed ADR (re-authored baseline or ordered
