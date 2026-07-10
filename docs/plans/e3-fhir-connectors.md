@@ -11,7 +11,7 @@
 
 ## Tasks
 
-- [ ] 1. ADR-016 — connector design record: mapping-as-data model (versioned
+- [x] 1. ADR-016 — connector design record: mapping-as-data model (versioned
       mapping artefacts template↔FHIR-profile), inbound pipeline (FHIR
       resource → mapped COMPOSITION → validated commit), outbound (outbox
       event → FHIR resource emission), read façade (config-gated
