@@ -77,6 +77,7 @@ async fn healthcheck(url: &str) -> anyhow::Result<()> {
 }
 
 /// Boot the server: telemetry, config, pool, migrations, audit, health, then serve.
+#[allow(clippy::too_many_lines)] // linear boot sequence; splitting it would obscure order
 async fn serve() -> anyhow::Result<()> {
     // Load configuration first (telemetry init needs the log/otel config).
     let telemetry_config = TelemetryConfig::load().context("loading telemetry configuration")?;
@@ -107,13 +108,29 @@ async fn serve() -> anyhow::Result<()> {
     // auditing if the transport cannot be established, so the CDR still serves).
     let (audit_sender, audit_handle) = start_audit(&audit_config, &pool).await;
 
-    // Health indicators (DB ping + migrations-applied + audit-sender).
+    // Contribution-outbox eventing (ADR-014): off by default. When enabled, the
+    // publisher drains the transactional outbox to the broker at-least-once; a
+    // broker that is down is tolerated (the outbox buffers), so we spawn it
+    // unconditionally-on-enabled and never fail boot on the broker.
+    let events_config =
+        ehrbase::events::EventsConfig::load().context("loading eventing configuration")?;
+    let events_handle = if events_config.enabled {
+        tracing::info!(exchange = %events_config.exchange, "contribution-outbox eventing enabled");
+        Some(ehrbase::events::start(events_config, pool.clone()))
+    } else {
+        None
+    };
+
+    // Health indicators (DB ping + migrations-applied + audit-sender + events).
     let mut indicators: Vec<Arc<dyn HealthIndicator>> = vec![
         Arc::new(indicators::DbHealth::new(pool.clone())),
         Arc::new(indicators::MigrationsHealth::new(pool.clone())),
     ];
     if let Some(sender) = &audit_sender {
         indicators.push(Arc::new(indicators::AuditHealth::new(sender.clone())));
+    }
+    if let Some(handle) = &events_handle {
+        indicators.push(Arc::new(indicators::EventsHealth::new(handle.healthy())));
     }
     let health = HealthRegistry::new(indicators);
 
@@ -195,6 +212,11 @@ async fn serve() -> anyhow::Result<()> {
 
     // The server has stopped and dropped its audit-sender clone; drain the queue.
     if let Some(handle) = audit_handle {
+        handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
+    }
+    // Stop the eventing publisher (a final best-effort drain; unpublished rows
+    // stay pending in the outbox and drain on next start — at-least-once).
+    if let Some(handle) = events_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
     // Flush OTel exporters + stop samplers on the same shutdown path.

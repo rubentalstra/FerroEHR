@@ -156,6 +156,49 @@ pub trait ItemTagAdapter: Send + Sync {
     ) -> Result<(), SmError>;
 }
 
+/// **Event-subscription** admin extension — CRUD over the event-filter
+/// subscription store (ADR-014 §5, "Event Trigger" parity).
+///
+/// PORT NOTE: not an SM interface call. Event/subscription semantics are
+/// spec-silent (ADR-014 §5 is the design record filling that seam), so there is
+/// no `I_*` interface to transcribe. The subscriptions are a server-side filter
+/// model the broker fans out on (a durable per-subscription queue bound with a
+/// topic key built from the predicates); their CRUD is exposed through a
+/// config-gated admin extension surface in `ehrbase-rest` (like the terminology
+/// group), dispatching to this adapter. Bodies are `serde_json::Value` (the
+/// subscription is a small predicate record, not an RM type). No default bodies
+/// — the platform component implements every method (ADR-011).
+#[async_trait]
+pub trait EventSubscriptionAdapter: Send + Sync {
+    /// `GET …/admin/event_subscription` — every stored subscription as a JSON
+    /// record (`{id, name, kind, change_type, template_id, archetype, enabled,
+    /// created_at}`; NULL predicate = wildcard).
+    async fn event_subscription_list(&self) -> Result<Vec<Value>, SmError>;
+
+    /// `POST …/admin/event_subscription` — create a subscription from the JSON
+    /// body (`name` required; the four predicates optional/NULL = wildcard).
+    /// Returns the stored record (with its generated `id`) for the `201` body.
+    /// A malformed body / duplicate name is a `precondition_violation` (`400`).
+    async fn event_subscription_create(&self, a_subscription: Value) -> Result<Value, SmError>;
+
+    /// `GET …/admin/event_subscription/{id}` — the stored subscription;
+    /// `versioned_object_does_not_exist` (`404`) if unknown.
+    async fn event_subscription_get(&self, a_subscription_id: Uuid) -> Result<Value, SmError>;
+
+    /// `PUT …/admin/event_subscription/{id}` — replace the subscription's
+    /// predicates/enabled from the JSON body, returning the updated record;
+    /// `versioned_object_does_not_exist` (`404`) if unknown.
+    async fn event_subscription_update(
+        &self,
+        a_subscription_id: Uuid,
+        a_subscription: Value,
+    ) -> Result<Value, SmError>;
+
+    /// `DELETE …/admin/event_subscription/{id}` — remove the subscription;
+    /// `versioned_object_does_not_exist` (`404`) if unknown.
+    async fn event_subscription_delete(&self, a_subscription_id: Uuid) -> Result<(), SmError>;
+}
+
 /// ITS-REST **CONTRIBUTION** adapter-support extension — the raw-wire
 /// EHR-scoped CONTRIBUTION commit.
 ///

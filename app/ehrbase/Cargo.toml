@@ -29,6 +29,11 @@ opentelemetry-otlp.workspace = true
 metrics.workspace = true
 metrics-exporter-prometheus.workspace = true
 jiff-sqlx.workspace = true
+# `events` module (contribution-outbox eventing, ADR-014): AMQP 0.9.1 publisher
+# (RabbitMQ) draining the transactional outbox at-least-once, with `backon`
+# retry/backoff.
+lapin.workspace = true
+backon.workspace = true
 sea-query.workspace = true
 sea-query-sqlx.workspace = true
 serde.workspace = true
@@ -78,7 +83,11 @@ figment = { workspace = true, features = ["test"] }
 # + fault injection (timeout, 5xx, malformed) — no network in CI.
 wiremock.workspace = true
 testcontainers.workspace = true
+# testcontainers-modules `rabbitmq` feature (workspace) drives the end-to-end
+# eventing tests against a real broker (ADR-014). `futures` gives the lapin
+# Consumer its `StreamExt::next` in those tests.
 testcontainers-modules.workspace = true
+futures.workspace = true
 tokio.workspace = true
 axum.workspace = true
 tower.workspace = true

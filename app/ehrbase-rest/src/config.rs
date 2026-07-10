@@ -34,6 +34,10 @@ pub struct RestConfig {
     /// default — the terminology routes answer `404` unless enabled.
     #[serde(default)]
     pub terminology: TerminologyConfig,
+    /// Event-subscription admin extension API (ADR-014 §5). Disabled by
+    /// default — the routes answer `404` unless enabled.
+    #[serde(default)]
+    pub event_subscription: EventSubscriptionConfig,
 }
 
 /// Configuration of the ADMIN API group (SM `I_ADMIN_SERVICE`; ITS-REST admin
@@ -67,6 +71,21 @@ pub struct TerminologyConfig {
     pub enabled: bool,
 }
 
+/// Configuration of the event-subscription admin extension API group (ADR-014
+/// §5, "Event Trigger" parity — CRUD over the event-filter subscription store).
+///
+/// PORT NOTE: like the ADMIN + terminology groups, the surface is opt-in — when
+/// inactive every `/admin/event_subscription` route answers `404` (as if
+/// unmounted), never a `403`. Off by default so a stock server exposes only the
+/// standardised ITS-REST surface.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct EventSubscriptionConfig {
+    /// Whether the event-subscription extension group is active. When `false`,
+    /// every route answers `404` without touching the backend.
+    #[serde(default)]
+    pub enabled: bool,
+}
+
 impl Default for RestConfig {
     fn default() -> Self {
         Self {
@@ -77,6 +96,7 @@ impl Default for RestConfig {
             auth: AuthConfig::default(),
             admin: AdminConfig::default(),
             terminology: TerminologyConfig::default(),
+            event_subscription: EventSubscriptionConfig::default(),
         }
     }
 }
@@ -145,6 +165,8 @@ mod tests {
         assert!(!c.admin.enabled);
         // The terminology extension API is opt-in too.
         assert!(!c.terminology.enabled);
+        // The event-subscription extension API is opt-in too.
+        assert!(!c.event_subscription.enabled);
         assert_eq!(c.swagger_ui_path(), "/ehrbase/rest/swagger-ui");
         assert_eq!(c.openapi_json_path(), "/ehrbase/rest/api-docs/openapi.json");
     }
@@ -167,6 +189,17 @@ mod tests {
             jail.set_env("EHRBASE_REST_TERMINOLOGY__ENABLED", "true");
             let c = RestConfig::load().expect("load");
             assert!(c.terminology.enabled);
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[allow(clippy::result_large_err)] // figment::Jail closure signature
+    fn event_subscription_enabled_via_env() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED", "true");
+            let c = RestConfig::load().expect("load");
+            assert!(c.event_subscription.enabled);
             Ok(())
         });
     }

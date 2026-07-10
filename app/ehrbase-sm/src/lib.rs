@@ -30,12 +30,12 @@ pub use services::{
     DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
     DumpLoadFailReport, EhrCompositionService, EhrContributionService, EhrDirectoryService,
     EhrExtractService, EhrService, EhrStatusService, EmitOutcome, EnvBinding, EventActionCode,
-    EventOutcome, ExportFormat, ExportSpec, FrameMethod, FramePayload, ItemTagAdapter, ObjectClass,
-    QueryService, Sample, StatTimeRange, SubjectDataSet, SubjectProxyService, SubjectVariable,
-    SystemLog, TddService, TermCode, TermEntry, TermRelationship, TerminologyDescription,
-    TerminologyExtract, TerminologyRelation, TerminologyRelationError, TerminologyService,
-    TimeRange, ValidityChecker, VariableSample, VariableValue, VersionMetaAdapter,
-    WebTemplateService,
+    EventOutcome, EventSubscriptionAdapter, ExportFormat, ExportSpec, FrameMethod, FramePayload,
+    ItemTagAdapter, ObjectClass, QueryService, Sample, StatTimeRange, SubjectDataSet,
+    SubjectProxyService, SubjectVariable, SystemLog, TddService, TermCode, TermEntry,
+    TermRelationship, TerminologyDescription, TerminologyExtract, TerminologyRelation,
+    TerminologyRelationError, TerminologyService, TimeRange, ValidityChecker, VariableSample,
+    VariableValue, VersionMetaAdapter, WebTemplateService,
 };
 pub use types::{
     AqlQueryRequest, EhrSummary, Page, PartyKind, PlatformService, QueryDescriptor, QueryOutcome,

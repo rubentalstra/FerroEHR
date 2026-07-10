@@ -32,7 +32,10 @@ pub mod terminology;
 pub mod validity;
 pub mod web_template;
 
-pub use adapter::{ContributionAdapter, DefinitionAdapter, ItemTagAdapter, VersionMetaAdapter};
+pub use adapter::{
+    ContributionAdapter, DefinitionAdapter, EventSubscriptionAdapter, ItemTagAdapter,
+    VersionMetaAdapter,
+};
 pub use admin::{
     AdminArchive, AdminDumpLoad, AdminService, CompressionFormat, DumpLoadFailReport, ExportFormat,
     ExportSpec, StatTimeRange,
