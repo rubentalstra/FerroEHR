@@ -71,13 +71,19 @@ pub trait DemographicService: Send + Sync {
         ))
     }
 
-    /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete. The
-    /// `uid_based_id` MUST be an `OBJECT_VERSION_ID` (the preceding version).
-    /// `204` + `ETag`/`Location` of the deleted version.
+    /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete, realizing
+    /// the SM `I_DEMOGRAPHIC_SERVICE.delete_party(a_versioned_party_id: UUID)`
+    /// operation (`docs/design/sm-platform/03-demographic-ehr-index-query.md`:
+    /// pre `has_party`, post `not has_party`). The `uid_based_id` is the
+    /// versioned-party id — either a bare `HIER_OBJECT_ID` or an
+    /// `OBJECT_VERSION_ID`; the preceding trunk version is taken from `If-Match`
+    /// when present (else the path OVID, else the current version). `204` +
+    /// `ETag`/`Location` of the deleted version.
     async fn party_delete(
         &self,
         _kind: PartyKind,
         _uid_based_id: String,
+        _if_match: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
         Err(SmError::new(
             CallStatusType::NotImplemented,

@@ -187,14 +187,16 @@ impl EhrbaseService {
     }
 
     /// Logically delete a party (a new `523|deleted|` version). `expected` is
-    /// the trunk version carried by the mandatory `OBJECT_VERSION_ID`
-    /// `uid_based_id`; a stale value → `409` and an already-deleted target →
+    /// the caller-supplied trunk version (from `If-Match` or the path
+    /// `OBJECT_VERSION_ID`); when `Some`, a mismatch with the current version →
+    /// `409`, when `None` the current version is deleted unconditionally
+    /// (SM `delete_party` has no version argument). An already-deleted target →
     /// `400` (mirroring COMPOSITION delete).
     pub(super) async fn delete_party(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
-        expected: i32,
+        expected: Option<i32>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = self.load_party_version(kind, vo_id, None, None).await?;
         if read.deleted() {
@@ -203,7 +205,9 @@ impl EhrbaseService {
                 kind.rm_type()
             )));
         }
-        if read.sys_version != expected {
+        if let Some(expected) = expected
+            && read.sys_version != expected
+        {
             return Err(ServiceError::Conflict(format!(
                 "preceding_version_uid names version {expected}, latest is {}",
                 read.sys_version
@@ -217,7 +221,7 @@ impl EhrbaseService {
             None,
             vo_id,
             kind_of(kind),
-            Some(expected),
+            Some(read.sys_version),
             &audit,
             &self.signing_ctx(),
         )
