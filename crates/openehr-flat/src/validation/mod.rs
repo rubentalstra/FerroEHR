@@ -340,6 +340,17 @@ impl Validator {
                     if ca.allowed_ids.iter().any(|a| a == nid) {
                         continue; // Matches a fixed sibling alternative.
                     }
+                    // PORT NOTE (ADR-012 rule 4): an unmatched *archetype-rooted*
+                    // child (`openEHR-…` id) is tolerated when the attribute
+                    // carries no ARCHETYPE_SLOT constraint — OPT 1.4 flattening
+                    // does not enumerate the full slot-fill universe, and the
+                    // CNF corpus itself commits ENTRY archetypes the template
+                    // does not list (archie accepts). Where slots ARE declared,
+                    // archetype-rooted fillers stay subject to slot admission
+                    // (include/exclude, F-07-10) below.
+                    if ca.slots.is_empty() && nid.starts_with("openEHR-") {
+                        continue;
+                    }
                     let ct = child.get("_type").and_then(Value::as_str).unwrap_or("");
                     match ca.slots.iter().position(|s| slot_admits(s, ct, nid)) {
                         Some(i) => slot_counts[i] += 1,

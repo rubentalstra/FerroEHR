@@ -8,9 +8,9 @@
 - SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
 - Spec versions: RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1.0 · TERM 3.1.0
 - Auth mode: basic
-- Started: 2026-07-09T19:19:48.304718Z
+- Started: 2026-07-10T02:16:18.969577Z
 
-**319 case×format executions · 293 passed · 25 failed.**
+**319 case×format executions · 287 passed · 31 failed.**
 
 ### Per-area matrix
 
@@ -24,10 +24,10 @@
 | TPL — Template / OPT provisioning | 16 | 14 | 2 | 0 | 0 |
 | SQR — Stored-query provisioning | 7 | 3 | 4 | 0 | 0 |
 | QRY — AQL execution | 13 | 8 | 5 | 0 | 0 |
-| VAL — Content / archetype validation | 119 | 119 | 0 | 0 | 0 |
+| VAL — Content / archetype validation | 119 | 114 | 5 | 0 | 0 |
 | DEM — Demographic service | 24 | 18 | 6 | 0 | 0 |
 | ADM — Admin service | 6 | 6 | 0 | 0 | 0 |
-| SIG — Version signing | 5 | 4 | 1 | 0 | 1 |
+| SIG — Version signing | 5 | 3 | 2 | 0 | 1 |
 
 ### Failures
 
@@ -57,7 +57,13 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 - **ECC-DEM-014** Demographic group delete (`dem/group-delete`, json): expected status in [200, 204], got 400
 - **ECC-DEM-017** Demographic organisation delete (`dem/organisation-delete`, json): expected status in [200, 204], got 400
 - **ECC-DEM-020** Demographic role delete (`dem/role-delete`, json): expected status in [200, 204], got 400
+- **ECC-VAL-034** Validate ITEM_STRUCTURE — type any (`val/item-str-type-any`, json): ITEM_TREE accepted in an open ITEM_STRUCTURE slot: expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content: unexpected node 'openEHR-EHR-INSTRUCTION.instruction_test.v0' under 'content': no matching archetype constraint or slot; /con)
+- **ECC-VAL-035** Validate ITEM_STRUCTURE — type item tree (`val/item-str-type-item-tree`, json): ITEM_STRUCTURE slot filled with the narrowed subtype (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content: unexpected node 'openEHR-EHR-INSTRUCTION.instruction_test.v0' under 'content': no matching archetype constraint or slot; /con)
+- **ECC-VAL-036** Validate ITEM_STRUCTURE — type item list (`val/item-str-type-item-list`, json): ITEM_STRUCTURE slot filled with the narrowed subtype (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content: unexpected node 'openEHR-EHR-INSTRUCTION.instruction_test.v0' under 'content': no matching archetype constraint or slot; /con)
+- **ECC-VAL-037** Validate ITEM_STRUCTURE — type item table (`val/item-str-type-item-table`, json): ITEM_STRUCTURE slot filled with the narrowed subtype (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content: unexpected node 'openEHR-EHR-INSTRUCTION.instruction_test.v0' under 'content': no matching archetype constraint or slot; /con)
+- **ECC-VAL-038** Validate ITEM_STRUCTURE — type item single (`val/item-str-type-item-single`, json): ITEM_STRUCTURE slot filled with the narrowed subtype (accepted): expected accepted (composition_create.yaml 201), got 422 ({"error":"Unprocessable Entity","message":"unprocessable entity: /content: unexpected node 'openEHR-EHR-INSTRUCTION.instruction_test.v0' under 'content': no matching archetype constraint or slot; /con)
 - **ECC-SIG-001** Version signing — digest present (`sig/digest-present`, xml): expected status 200, got 406 (body: {"error":"Not Acceptable","message":"not acceptable: canonical XML for this response is available once typed payloads land (P12); request application/json"})
+- **ECC-SIG-003** Version signing — all kinds (`sig/all-kinds`, json): expected status 201, got 409 (body: {"error":"Conflict","message":"conflict: EHR 019f49cf-bce3-7643-a141-4a8716d49075 is not modifiable (EHR_STATUS.is_modifiable = false); its contents cannot be created, updated or deleted (ehr/master04 §\"EHR Active Status\"). Set EHR_STATUS.is_modifiable = true to reactivate it."})
 
 ## 2. Scope of test
 
@@ -67,8 +73,8 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | Data formats | json, xml |
 | Catalogue (active cases) | 311 |
 | Executed | 319 |
-| Passed | 293 |
-| Failed | 25 |
+| Passed | 287 |
+| Failed | 31 |
 
 ## 3. Detailed test report
 
@@ -301,11 +307,11 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-VAL-031 | ArchetypeValidation | json | 1/1 | PASS |
 | ECC-VAL-032 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-033 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-034 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-035 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-036 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-037 | ArchetypeValidation | json | 2/2 | PASS |
-| ECC-VAL-038 | ArchetypeValidation | json | 2/2 | PASS |
+| ECC-VAL-034 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-035 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-036 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-037 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-038 | ArchetypeValidation | json | 0/0 | **FAIL** |
 | ECC-VAL-039 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-040 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-041 | ArchetypeValidation | json | 2/2 | PASS |
@@ -390,7 +396,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-SIG-001 | Signing | json | 1/1 | PASS |
 | ECC-SIG-001 | Signing | xml | 0/0 | **FAIL** |
 | ECC-SIG-002 | Signing | json | 1/1 | PASS |
-| ECC-SIG-003 | Signing | json | 4/4 | PASS |
+| ECC-SIG-003 | Signing | json | 0/0 | **FAIL** |
 | ECC-SIG-004 | Signing | json | 1/1 | PASS |
 | ECC-SIG-005 | Signing | json | 0/0 | skipped |
 
@@ -407,7 +413,7 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | CompositionOps | 37 | 1 | 0 | 0 | fail |
 | ChangeSets | 26 | 5 | 0 | 0 | fail |
 | Versioning | 0 | 0 | 0 | 0 | fail |
-| ArchetypeValidation | 119 | 0 | 0 | 0 | pass |
+| ArchetypeValidation | 114 | 5 | 0 | 0 | fail |
 | AnonymousEhrs | 0 | 0 | 0 | 0 | fail |
 
 ### Standard — not claimable
@@ -421,12 +427,12 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | CompositionOps | 37 | 1 | 0 | 0 | fail |
 | ChangeSets | 26 | 5 | 0 | 0 | fail |
 | Versioning | 0 | 0 | 0 | 0 | fail |
-| ArchetypeValidation | 119 | 0 | 0 | 0 | pass |
+| ArchetypeValidation | 114 | 5 | 0 | 0 | fail |
 | AnonymousEhrs | 0 | 0 | 0 | 0 | fail |
 | DirectoryOps | 36 | 1 | 0 | 0 | fail |
 | QueryProvisioning | 3 | 4 | 0 | 0 | fail |
 | AqlBasic | 8 | 5 | 0 | 0 | fail |
-| Signing | 4 | 1 | 0 | 1 | fail |
+| Signing | 3 | 2 | 0 | 1 | fail |
 
 ### Options — not claimable
 

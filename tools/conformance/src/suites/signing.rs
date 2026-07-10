@@ -309,7 +309,11 @@ fn run_all_kinds<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         assert::status(&status, 200)?;
         let mut status_body = status.json()?;
         let status_v1 = support::uid_of(&status_body)?;
-        status_body["is_modifiable"] = Value::Bool(false);
+        // Flip is_queryable (not is_modifiable): the case only needs a second
+        // signed status version, and a deactivated EHR
+        // (EHR_STATUS.is_modifiable = false — RM ehr master04 §"EHR Active
+        // Status") correctly refuses the later content commits of this case.
+        status_body["is_queryable"] = Value::Bool(false);
         let updated = ctx
             .send(
                 HttpRequest::put(format!("/ehr/{ehr_id}/ehr_status"))

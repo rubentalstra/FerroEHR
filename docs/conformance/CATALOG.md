@@ -237,11 +237,11 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-VAL-031 | Active | Validate EVENT — type any | passed |
 | ECC-VAL-032 | Active | Validate EVENT — type point event | passed |
 | ECC-VAL-033 | Active | Validate EVENT — type interval event | passed |
-| ECC-VAL-034 | Active | Validate ITEM_STRUCTURE — type any | passed |
-| ECC-VAL-035 | Active | Validate ITEM_STRUCTURE — type item tree | passed |
-| ECC-VAL-036 | Active | Validate ITEM_STRUCTURE — type item list | passed |
-| ECC-VAL-037 | Active | Validate ITEM_STRUCTURE — type item table | passed |
-| ECC-VAL-038 | Active | Validate ITEM_STRUCTURE — type item single | passed |
+| ECC-VAL-034 | Active | Validate ITEM_STRUCTURE — type any | failed |
+| ECC-VAL-035 | Active | Validate ITEM_STRUCTURE — type item tree | failed |
+| ECC-VAL-036 | Active | Validate ITEM_STRUCTURE — type item list | failed |
+| ECC-VAL-037 | Active | Validate ITEM_STRUCTURE — type item table | failed |
+| ECC-VAL-038 | Active | Validate ITEM_STRUCTURE — type item single | failed |
 | ECC-VAL-039 | Active | Validate DV_BOOLEAN — anything allowed | passed |
 | ECC-VAL-040 | Active | Validate DV_BOOLEAN — only true allowed | passed |
 | ECC-VAL-041 | Active | Validate DV_BOOLEAN — only false allowed | passed |
@@ -370,7 +370,7 @@ Generated per run — do not edit. Numbers are allocated once in
 |---|---|---|---|
 | ECC-SIG-001 | Active | Version signing — digest present | passed/failed |
 | ECC-SIG-002 | Active | Version signing — digest recomputes | passed |
-| ECC-SIG-003 | Active | Version signing — all kinds | passed |
+| ECC-SIG-003 | Active | Version signing — all kinds | failed |
 | ECC-SIG-004 | Active | Version signing — client verbatim | passed |
 | ECC-SIG-005 | Active | Version signing — pgp verifies | skipped |
 

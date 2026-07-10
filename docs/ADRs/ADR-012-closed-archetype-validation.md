@@ -32,6 +32,14 @@ non-`any_allowed` attribute of a matched node:
    competition*, not to plain RM attributes.
 3. The walk still never double-flags: a node rejected as unexpected is not
    descended into.
+4. *(Scope amendment, B2 close)* Where an attribute carries **no**
+   `ARCHETYPE_SLOT` constraint, an unmatched archetype-rooted child
+   (`openEHR-…`) is tolerated — the flat OPT does not enumerate the full
+   slot-fill universe, and the CNF corpus itself commits ENTRY archetypes the
+   template does not list (archie accepts). Where slots are declared,
+   archetype-rooted fillers remain subject to slot admission (include/exclude,
+   F-07-10); at-coded children are closed everywhere. Verified by the
+   zero-drift gate.
 
 Rationale: matches de-facto openEHR CDR behaviour (EHRbase/archie treat
 compositions as closed against the OPT), matches the AOM2 direction the spec
