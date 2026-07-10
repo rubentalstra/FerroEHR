@@ -91,6 +91,15 @@ pub enum Capability {
     AdminApi,
     /// DEMOGRAPHIC API (OPTIONS).
     DemographicApi,
+    /// Messaging — EHR Extract export/import + TDD import (OPTIONS). SM-5
+    /// realizes it as a **native-API-only** capability: openEHR Messaging is an
+    /// OPTIONS-profile feature with no ITS-REST 1.0.3 binding, so the
+    /// HTTP-driven ECC cannot exercise it over the wire and its cases report
+    /// `SKIPPED(NativeApiOnly)`, citing the `ehrbase` integration tests that do
+    /// exercise it. It is therefore *not* in [`crate::profile::required_capabilities`]
+    /// (a wire-tested SUT must not be denied OPTIONS for a capability the wire
+    /// cannot reach) — it is reported individually.
+    Messaging,
 }
 
 /// A wire format a case runs under.

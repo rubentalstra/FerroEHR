@@ -68,7 +68,12 @@
       history deferred, register_application_data_set currency-tightening
       deferred (nominal-duration ordering), subject-id resolution = $subject_id
       + UUID scope (no MPI), extension routes/YAML ingestion a later wave.*
-- [ ] 4. MSG ECC cases (`Area::Msg`, zero cases today) land with SM-5.
+- [x] 4. MSG ECC cases (`Area::Msg`, zero cases today) land with SM-5.
+      *Done 2026-07-10: ECC-MSG-001..010 (export/import/clone/TDD intents from
+      the CNF master13 TBD chapter mapped to SM operations), all honest
+      skip-with-reason NativeApiOnly citing the real testcontainer tests
+      (Messaging has no ITS-REST binding); Capability::Messaging reported
+      individually, deliberately outside the OPTIONS required set.*
 
 ## Exit criteria
 

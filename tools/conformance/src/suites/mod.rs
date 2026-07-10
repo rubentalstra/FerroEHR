@@ -23,6 +23,7 @@ mod definition_query;
 mod demographic;
 mod directory;
 mod ehr;
+mod message;
 mod query;
 
 /// All implemented case entries, in registration order.
@@ -40,5 +41,6 @@ pub fn entries() -> Vec<CaseEntry> {
     all.extend(demographic::entries()); // master10 (OPTIONS)
     all.extend(content::entries()); // master15/16/17.x
     all.extend(signing::entries()); // runner-defined SIGN-* (§4.6)
+    all.extend(message::entries()); // master13 (SM-5 Messaging; native-API-only, skipped)
     all
 }
