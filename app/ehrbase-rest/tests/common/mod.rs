@@ -37,8 +37,8 @@ use ehrbase_sm::services::{
     AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
     DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
     EhrContributionService, EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService,
-    ItemTagAdapter, PartyRelationshipService, QueryService, SystemLog, TerminologyService,
-    VersionMetaAdapter, WebTemplateService,
+    EventSubscriptionAdapter, ItemTagAdapter, PartyRelationshipService, QueryService, SystemLog,
+    TerminologyService, VersionMetaAdapter, WebTemplateService,
 };
 use ehrbase_sm::types::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
@@ -118,6 +118,13 @@ type ValueSetValidate =
     Arc<dyn Fn(String, String, String, Option<String>) -> Result<bool, SmError> + Send + Sync>;
 type GetValueSet = Arc<dyn Fn(String, String) -> Result<TerminologyExtract, SmError> + Send + Sync>;
 
+// Event-subscription admin extension (ADR-014 §5; EventSubscriptionAdapter).
+type EventSubList = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
+type EventSubCreate = Arc<dyn Fn(Value) -> Result<Value, SmError> + Send + Sync>;
+type EventSubGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
+type EventSubUpdate = Arc<dyn Fn(Uuid, Value) -> Result<Value, SmError> + Send + Sync>;
+type EventSubDelete = Arc<dyn Fn(Uuid) -> Result<(), SmError> + Send + Sync>;
+
 /// The per-test override closures. Every field defaults to `None` (→ the
 /// `501`/trait-default behaviour); a test populates only what it exercises.
 #[derive(Default, Clone)]
@@ -176,6 +183,12 @@ pub struct Hooks {
     pub subsumes: Option<Subsumes>,
     pub value_set_validate: Option<ValueSetValidate>,
     pub get_value_set: Option<GetValueSet>,
+    // Event-subscription admin extension (ADR-014 §5).
+    pub event_subscription_list: Option<EventSubList>,
+    pub event_subscription_create: Option<EventSubCreate>,
+    pub event_subscription_get: Option<EventSubGet>,
+    pub event_subscription_update: Option<EventSubUpdate>,
+    pub event_subscription_delete: Option<EventSubDelete>,
     // SM System Log: an in-memory audit recorder. When set, the mock's
     // `SystemLog::emit` records every event (so a test can assert the ATNA
     // event a request produced); `audit_enabled()` is then true. Replaces the
@@ -581,6 +594,44 @@ impl ContributionAdapter for Mock {
     ) -> Result<ServiceResponse, SmError> {
         match &self.h.ehr_contribution_commit {
             Some(f) => f(an_ehr_id, a_contribution),
+            None => Err(not_impl()),
+        }
+    }
+}
+
+#[async_trait]
+impl EventSubscriptionAdapter for Mock {
+    async fn event_subscription_list(&self) -> Result<Vec<Value>, SmError> {
+        match &self.h.event_subscription_list {
+            Some(f) => f(),
+            None => Err(not_impl()),
+        }
+    }
+    async fn event_subscription_create(&self, a_subscription: Value) -> Result<Value, SmError> {
+        match &self.h.event_subscription_create {
+            Some(f) => f(a_subscription),
+            None => Err(not_impl()),
+        }
+    }
+    async fn event_subscription_get(&self, a_subscription_id: Uuid) -> Result<Value, SmError> {
+        match &self.h.event_subscription_get {
+            Some(f) => f(a_subscription_id),
+            None => Err(not_impl()),
+        }
+    }
+    async fn event_subscription_update(
+        &self,
+        a_subscription_id: Uuid,
+        a_subscription: Value,
+    ) -> Result<Value, SmError> {
+        match &self.h.event_subscription_update {
+            Some(f) => f(a_subscription_id, a_subscription),
+            None => Err(not_impl()),
+        }
+    }
+    async fn event_subscription_delete(&self, a_subscription_id: Uuid) -> Result<(), SmError> {
+        match &self.h.event_subscription_delete {
+            Some(f) => f(a_subscription_id),
             None => Err(not_impl()),
         }
     }

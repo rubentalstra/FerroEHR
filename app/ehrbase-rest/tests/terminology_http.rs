@@ -25,7 +25,7 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{AdminConfig, RestConfig, TerminologyConfig};
+use ehrbase_rest::{AdminConfig, EventSubscriptionConfig, RestConfig, TerminologyConfig};
 use ehrbase_sm::{
     CallStatusType, DefinedTerm, SmError, TermEntry, TerminologyDescription, TerminologyExtract,
 };
@@ -155,6 +155,7 @@ fn config(terminology_enabled: bool) -> RestConfig {
         terminology: TerminologyConfig {
             enabled: terminology_enabled,
         },
+        event_subscription: EventSubscriptionConfig::default(),
     }
 }
 

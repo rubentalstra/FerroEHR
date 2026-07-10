@@ -113,6 +113,18 @@ async fn run(
         if *shutdown.borrow() {
             break;
         }
+        // (Re)declare + bind the queues for the enabled subscriptions (ADR-014
+        // §5) at the top of each cycle. This covers drainer startup AND picks up
+        // subscription CRUD (a config-gated admin surface that has no broker
+        // access of its own — ADR-011 keeps the service protocol-free); queue
+        // declaration is idempotent, and doing it before this cycle's publishes
+        // guarantees a just-created subscription's queue is bound before any
+        // matching event is routed (a topic exchange drops unroutable messages).
+        // Best-effort: a failure (broker down) is logged; rows stay pending and
+        // the queues are declared on the next cycle the broker is reachable.
+        if let Err(e) = sync_subscriptions(&pool, publisher.as_ref(), &config.exchange).await {
+            tracing::debug!("event subscription sync deferred: {e}");
+        }
         // Drain until the outbox is empty or the broker/DB stalls.
         loop {
             if *shutdown.borrow() {
@@ -188,27 +200,30 @@ async fn drain_batch(
 
     let mut sent = 0usize;
     let mut publish_err = None;
-    for row in &rows {
+    'rows: for row in &rows {
         let seq: i64 = row.try_get("seq").map_err(DrainError::Db)?;
         let envelope: serde_json::Value = row.try_get("envelope").map_err(DrainError::Db)?;
-        let routing_key = super::routing_key_of(&envelope);
-        let payload = build_payload(seq, &envelope);
-        match publish_with_retry(publisher, &routing_key, &payload, config).await {
-            Ok(()) => {
-                sqlx::query("UPDATE event_outbox SET published_at = now() WHERE seq = $1")
-                    .bind(seq)
-                    .execute(&mut *tx)
-                    .await
-                    .map_err(DrainError::Db)?;
-                sent += 1;
-            }
-            // Stop at the first failure: never publish a later event for an EHR
-            // before an earlier one (per-EHR ordering, ADR-014 §3).
-            Err(e) => {
+        // Per-version fan-out (ADR-014 §5): one message per version entry, each
+        // under its own routing key, carrying the shared envelope + seq +
+        // version_index. All of a row's messages must confirm before the row is
+        // marked published; a failure part-way leaves the whole row pending, so
+        // the retry re-publishes every message (at-least-once — consumers
+        // deduplicate on (contribution_id, version_index)).
+        for (version_index, routing_key) in version_routing_keys(&envelope) {
+            let payload = build_payload(seq, version_index, &envelope);
+            if let Err(e) = publish_with_retry(publisher, &routing_key, &payload, config).await {
+                // Stop at the first failure: never publish a later event for an
+                // EHR before an earlier one (per-EHR ordering, ADR-014 §3).
                 publish_err = Some(e);
-                break;
+                break 'rows;
             }
         }
+        sqlx::query("UPDATE event_outbox SET published_at = now() WHERE seq = $1")
+            .bind(seq)
+            .execute(&mut *tx)
+            .await
+            .map_err(DrainError::Db)?;
+        sent += 1;
     }
     tx.commit().await.map_err(DrainError::Db)?;
     if sent > 0 {
@@ -220,14 +235,92 @@ async fn drain_batch(
     }
 }
 
-/// The published payload: the stored PHI-free envelope with the delivery `seq`
-/// injected (consumers order by `seq`, deduplicate on `contribution_id`).
-fn build_payload(seq: i64, envelope: &serde_json::Value) -> Vec<u8> {
+/// The per-version routing keys for one envelope (ADR-014 §5): `(version_index,
+/// routing_key)` for each entry in `versions`. A well-formed outbox row always
+/// carries ≥1 version; a defensively-empty envelope yields a single message at
+/// `version_index` 0 with the fallback key so nothing is silently dropped.
+fn version_routing_keys(envelope: &serde_json::Value) -> Vec<(usize, String)> {
+    match envelope.get("versions").and_then(|v| v.as_array()) {
+        Some(versions) if !versions.is_empty() => versions
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (i, super::routing_key_of_version(v)))
+            .collect(),
+        _ => vec![(0, super::routing_key("UNKNOWN", super::ABSENT, None))],
+    }
+}
+
+/// The published payload for one version: the stored PHI-free envelope with the
+/// delivery `seq` and the `version_index` injected. Consumers order by `seq`,
+/// and deduplicate on `(contribution_id, version_index)` (at-least-once).
+fn build_payload(seq: i64, version_index: usize, envelope: &serde_json::Value) -> Vec<u8> {
     let mut payload = envelope.clone();
     if let Some(obj) = payload.as_object_mut() {
         obj.insert("seq".to_owned(), serde_json::json!(seq));
+        obj.insert("version_index".to_owned(), serde_json::json!(version_index));
     }
     serde_json::to_vec(&payload).unwrap_or_default()
+}
+
+/// Declare + bind the queue for every **enabled** subscription (ADR-014 §5). One
+/// idempotent `queue_declare` + `queue_bind` per row, keyed by
+/// [`super::subscription_binding_key`]. Best-effort at the call site: an error
+/// (broker unreachable) is propagated for the caller to log and retry next
+/// cycle.
+async fn sync_subscriptions(
+    pool: &PgPool,
+    publisher: &dyn EventPublisher,
+    exchange: &str,
+) -> Result<(), SyncError> {
+    let rows = sqlx::query(
+        "SELECT name, kind, change_type, template_id FROM event_subscription WHERE enabled",
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(SyncError::Db)?;
+    for row in &rows {
+        let name: String = row.try_get("name").map_err(SyncError::Db)?;
+        let kind: Option<String> = row.try_get("kind").map_err(SyncError::Db)?;
+        let change_type: Option<String> = row.try_get("change_type").map_err(SyncError::Db)?;
+        let template_id: Option<String> = row.try_get("template_id").map_err(SyncError::Db)?;
+        let binding_key = super::subscription_binding_key(
+            kind.as_deref(),
+            change_type.as_deref(),
+            template_id.as_deref(),
+        );
+        let queue = subscription_queue_name(exchange, &name);
+        publisher
+            .declare_subscription(&queue, &binding_key)
+            .await
+            .map_err(SyncError::Broker)?;
+    }
+    Ok(())
+}
+
+/// The broker queue name for a subscription (ADR-014 §5): `<exchange>.<name>`
+/// (`ehrbase.events.<name>` for the default exchange) — the configured exchange
+/// prefix + the subscription name. Exposed so a consumer knows the queue to
+/// consume from.
+#[must_use]
+pub fn subscription_queue_name(exchange: &str, name: &str) -> String {
+    format!("{exchange}.{name}")
+}
+
+/// A failure while syncing subscription queues.
+enum SyncError {
+    /// Reading the subscription rows failed.
+    Db(sqlx::Error),
+    /// Declaring/binding a queue on the broker failed.
+    Broker(EventError),
+}
+
+impl std::fmt::Display for SyncError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SyncError::Db(e) => write!(f, "subscription store: {e}"),
+            SyncError::Broker(e) => write!(f, "broker declare: {e}"),
+        }
+    }
 }
 
 /// Publish with exponential backoff (ADR-014 §3), up to `publish_max_retries`

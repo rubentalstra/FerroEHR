@@ -24,10 +24,15 @@
       per-EHR ordering, confirm-based ack + retry/backoff (backon), config
       (figment, off by default), graceful shutdown; management/health
       indicator + metrics.
-- [ ] 4. Event filters ("Event Trigger" parity): subscription store
+- [x] 4. Event filters ("Event Trigger" parity): subscription store
       (kind/template/archetype/change_type predicates) → routing keys /
       per-subscription queues; admin CRUD surface (config-gated extension
-      routes).
+      routes). — migration 0003 `event_subscription`; per-version fan-out
+      (one message per version entry, `version_index` in the envelope);
+      publisher declares/binds `ehrbase.events.<name>` per enabled sub each
+      drain cycle; `EventSubscriptionAdapter` (ehrbase-sm) impl on
+      `EhrbaseService` + config-gated `/admin/event_subscription` CRUD in
+      ehrbase-rest.
 - [x] 5. Tests: outbox written atomically with commits (testcontainers PG);
       end-to-end publish against testcontainers RabbitMQ (consume + assert
       envelope, PHI-free); failure injection (broker down → retry, no loss);

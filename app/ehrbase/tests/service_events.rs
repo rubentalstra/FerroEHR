@@ -176,12 +176,14 @@ async fn latest_envelope(pool: &PgPool) -> Value {
 /// exact top-level and per-version key sets, and no clinical-content markers.
 fn assert_phi_free(envelope: &Value) {
     let obj = envelope.as_object().expect("envelope is an object");
-    // The published payload additionally carries the delivery `seq` (injected at
-    // publish time); the stored envelope does not. Ignore it for the key check.
+    // The published payload additionally carries the delivery `seq` and the
+    // per-version fan-out `version_index` (both injected at publish time,
+    // ADR-014 §5 / E1 task 4); the stored envelope carries neither. Ignore them
+    // for the key check.
     let mut top: Vec<&str> = obj
         .keys()
         .map(String::as_str)
-        .filter(|k| *k != "seq")
+        .filter(|k| *k != "seq" && *k != "version_index")
         .collect();
     top.sort_unstable();
     assert_eq!(
@@ -432,22 +434,55 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
     wait_until(|| async { pending_count(&pool).await == 0 }).await;
 
     let delivered = publisher.published();
+    // Per-version fan-out (ADR-014 §5, E1 task 4 — completes the interim
+    // single-message-per-row shape, not a weakening): each version entry is its
+    // own message. EHR creation commits EHR_STATUS + EHR_ACCESS under one
+    // CONTRIBUTION (2 versions); each composition, 1 — so the 3 outbox rows fan
+    // out to 4 messages.
+    let expected_messages: usize = delivered_version_count(&pool).await;
+    assert_eq!(
+        expected_messages, 4,
+        "EHR (2 versions) + 2 compositions (1 each)"
+    );
     assert_eq!(
         delivered.len(),
-        usize::try_from(committed).expect("committed count fits usize"),
-        "every committed event was published (no loss)"
+        expected_messages,
+        "every committed version was published exactly once (no loss)"
     );
-    // Every published payload carries seq + is PHI-free; seqs strictly ascending.
-    let mut last_seq = 0i64;
+    // Every published payload carries seq + version_index + is PHI-free; the
+    // (seq, version_index) pairs strictly ascend in publish order (per-EHR
+    // order, with a row's versions in index order — messages within a row share
+    // the row's seq).
+    let mut last = (0i64, -1i64);
     for (rk, env) in &delivered {
         assert!(rk.contains('.'), "routing key looks like a topic key: {rk}");
         assert_phi_free(env);
         let seq = env["seq"].as_i64().expect("seq in payload");
-        assert!(seq > last_seq, "seqs must ascend (per-EHR order)");
-        last_seq = seq;
+        let vi = env["version_index"]
+            .as_i64()
+            .expect("version_index in payload");
+        assert!(
+            (seq, vi) > last,
+            "(seq, version_index) must ascend (per-EHR order): {:?} !> {last:?}",
+            (seq, vi)
+        );
+        last = (seq, vi);
     }
 
     handle.shutdown(Duration::from_secs(2)).await;
+}
+
+/// The total number of version entries across all outbox rows — the number of
+/// per-version messages the drainer publishes (ADR-014 §5).
+async fn delivered_version_count(pool: &PgPool) -> usize {
+    let n: i64 = sqlx::query_scalar(
+        "SELECT coalesce(sum(jsonb_array_length(envelope -> 'versions')), 0)::bigint \
+         FROM ehr.event_outbox",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("version count");
+    usize::try_from(n).expect("fits usize")
 }
 
 #[tokio::test]
