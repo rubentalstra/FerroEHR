@@ -26,6 +26,7 @@ pub mod message;
 pub mod query;
 pub mod relationship;
 pub mod system_log;
+pub mod tdd;
 pub mod terminology;
 pub mod validity;
 pub mod web_template;
@@ -49,6 +50,7 @@ pub use relationship::PartyRelationshipService;
 pub use system_log::{
     AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, SystemLog,
 };
+pub use tdd::TddService;
 pub use terminology::{
     DefinedTerm, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
     TerminologyRelation, TerminologyRelationError, TerminologyService,

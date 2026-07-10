@@ -38,6 +38,7 @@ mod message;
 mod opt_validation;
 mod relationship;
 mod stored_query;
+mod tdd;
 mod template;
 mod terminology;
 mod version_id;
