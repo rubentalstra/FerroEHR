@@ -448,8 +448,8 @@ async fn admin_statistics_per_service_and_time_range() {
         ),
     ] {
         sqlx::query(AssertSqlSafe(format!(
-            "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id) \
-             VALUES ($1, 'COMPOSITION', $2, $3, {period}, $4, $5)"
+            "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id) \
+             VALUES ($1, 'COMPOSITION', $2, $3, {period}, $4, $5, 'ehrbase-rs.test')"
         )))
         .bind(vo)
         .bind(ehr)

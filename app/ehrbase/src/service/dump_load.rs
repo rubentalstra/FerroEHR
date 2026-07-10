@@ -80,6 +80,7 @@ struct EhrRecord {
 #[derive(Debug, Serialize, Deserialize)]
 struct EhrRow {
     id: Uuid,
+    system_id: String,
     time_created: String,
     subject_id: Option<String>,
     subject_namespace: Option<String>,
@@ -305,13 +306,15 @@ impl EhrbaseService {
     /// Read one EHR's `ehr`/audit/contribution/version/tag/archive content.
     async fn collect_one_ehr(&self, ehr_id: Uuid) -> Result<EhrRecord, ServiceError> {
         let row = sqlx::query(
-            "SELECT time_created::text, subject_id, subject_namespace FROM ehr WHERE id = $1",
+            "SELECT system_id, time_created::text, subject_id, subject_namespace \
+             FROM ehr WHERE id = $1",
         )
         .bind(ehr_id)
         .fetch_one(&self.pool)
         .await?;
         let ehr = EhrRow {
             id: ehr_id,
+            system_id: row.try_get("system_id")?,
             time_created: row.try_get("time_created")?,
             subject_id: row.try_get("subject_id")?,
             subject_namespace: row.try_get("subject_namespace")?,
@@ -478,10 +481,11 @@ impl EhrbaseService {
         let ehr_id = record.ehr.id;
 
         sqlx::query(
-            "INSERT INTO ehr (id, time_created, subject_id, subject_namespace) \
-             VALUES ($1, $2::timestamptz, $3, $4)",
+            "INSERT INTO ehr (id, system_id, time_created, subject_id, subject_namespace) \
+             VALUES ($1, $2, $3::timestamptz, $4, $5)",
         )
         .bind(ehr_id)
+        .bind(&record.ehr.system_id)
         .bind(&record.ehr.time_created)
         .bind(&record.ehr.subject_id)
         .bind(&record.ehr.subject_namespace)

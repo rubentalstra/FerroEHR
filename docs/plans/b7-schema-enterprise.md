@@ -28,8 +28,15 @@
       2026-07-10: four structural choices owner-confirmed (squashed baseline;
       temporal PK + btree replica identity; roles in migrations; GIN +
       expression indexes wired now — owner call); ADR-013 written.*
-- [ ] 3. Implementation per the confirmed ADR (re-authored baseline or ordered
+- [x] 3. Implementation per the confirmed ADR (re-authored baseline or ordered
       migrations — owner decides), node codec/storage layer updates, tests.
+      *Done 2026-07-10: squashed ehr+ext baselines (18 tables, every ADR-013
+      item; roles/grants; named constraints; COMMENT ON everything; temporal
+      PK + replica identity; deferrable commit FK; lz4/fillfactor);
+      orchestrator corrections: magnitude index targets data->'value' (real
+      leaf magnitudes; PERF(port) generator fast-path at P20) and the
+      change_type CHECK widened to the full 9-code terminology group (aligned
+      with codes.rs). ehrbase 277/277, rest+sm+conformance 306/306.*
 - [ ] 4. Blueprint §2 State-column refresh (done/partial/missing) + chapter
       state tables.
 - [x] 5. ADR reconciliation (owner directive): the ADR set carries layered

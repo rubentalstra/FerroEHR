@@ -35,10 +35,15 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
 
-        let inserted = sqlx::query("INSERT INTO ehr (id) VALUES ($1) ON CONFLICT DO NOTHING")
-            .bind(ehr_id)
-            .execute(&mut *tx)
-            .await?;
+        // system_id is recorded on the EHR at creation, immutable thereafter
+        // (RM ehr §"EHR object"; review doc 03 req 2.1 — a stored value, not
+        // merely the live service config).
+        let inserted =
+            sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+                .bind(ehr_id)
+                .bind(&self.system_id)
+                .execute(&mut *tx)
+                .await?;
         if inserted.rows_affected() == 0 {
             return Err(ServiceError::Conflict(format!(
                 "EHR {ehr_id} already exists"
@@ -447,33 +452,24 @@ impl EhrbaseService {
         }
     }
 
-    /// The stored `creating_system_id` to use in an `OBJECT_VERSION_ID`, or the
-    /// service system id when the stored value is the empty legacy sentinel (RM
-    /// common master06 §"Distributed Versioning"; migration 0008). Reconstructing
-    /// from the stored value — never the live config — keeps a version's uid and
-    /// digital signature stable across a later `with_system_id` change.
-    pub(super) fn creating_system_id<'a>(&'a self, stored: &'a str) -> &'a str {
-        if stored.is_empty() {
-            self.system_id.as_str()
-        } else {
-            stored
-        }
-    }
-
     /// The `OBJECT_VERSION_ID` string `{object_id}::{creating_system_id}::
     /// {version_tree_id}` (RM common master06 §"Version Identification").
-    /// `creating_system_id` is the stored per-version value (empty → service
-    /// system id, via [`creating_system_id`](Self::creating_system_id)).
+    /// `creating_system_id` is the stored per-version value, reconstructed from
+    /// storage — never re-derived from the live config — so a version's uid and
+    /// digital signature stay stable across a later `with_system_id` change (RM
+    /// common master06 §"Distributed Versioning"). The service writes the real
+    /// creating system id on every version (ADR-013 §8 — no `''` sentinel).
+    // Kept as a method (not a free fn) for call-site ergonomics — every caller
+    // already holds the service; the stored `creating_system_id` is now
+    // authoritative, so no `self` state is consulted (ADR-013 §8).
+    #[allow(clippy::unused_self)]
     pub(super) fn object_version_id(
         &self,
         vo_id: Uuid,
         creating_system_id: &str,
         sys_version: i32,
     ) -> String {
-        format!(
-            "{vo_id}::{}::{sys_version}",
-            self.creating_system_id(creating_system_id)
-        )
+        format!("{vo_id}::{creating_system_id}::{sys_version}")
     }
 
     /// The [`ResourceMeta`] for a versioned resource: the owning EHR plus the

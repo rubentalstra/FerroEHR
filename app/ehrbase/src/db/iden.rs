@@ -1,7 +1,10 @@
-//! `sea-query` identifier definitions for the greenfield schema (ADR-008,
-//! `migrations/ehr/0001_schema.sql`). One enum per table: the `Table`
-//! variant renders the table name, the rest the column names. Reused by the
-//! AQL SQL generator (P16).
+//! `sea-query` identifier definitions for the greenfield schema (ADR-008 +
+//! ADR-013 enterprise baseline, `migrations/ehr/0001_baseline.sql`). One enum
+//! per table (all 19 — ADR-013 §17): the `Table` variant renders the table
+//! name, the rest the column names. This is the single typed name catalog;
+//! the AQL SQL generator (P16, `aql/sql.rs`) consumes the `Table` variants,
+//! and dynamic SQL elsewhere addresses columns through these enums rather than
+//! string-duplicating names.
 
 /// `ehr` — one row per EHR.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
@@ -9,7 +12,10 @@ pub enum Ehr {
     #[iden = "ehr"]
     Table,
     Id,
+    SystemId,
     TimeCreated,
+    SubjectId,
+    SubjectNamespace,
 }
 
 /// `audit` — `AUDIT_DETAILS` of every committed change.
@@ -35,7 +41,8 @@ pub enum Contribution {
     AuditId,
 }
 
-/// `template_store` — operational templates (OPT 1.4 XML).
+/// `template_store` — operational templates (OPT 1.4 XML); dual identity
+/// (`id` = SM UUID handle, `template_id` = wire address).
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
 pub enum TemplateStore {
     #[iden = "template_store"]
@@ -58,7 +65,10 @@ pub enum VoVersion {
     EhrId,
     SysVersion,
     SysPeriod,
-    Deleted,
+    LifecycleState,
+    CreatingSystemId,
+    Signature,
+    OtherInputVersionUids,
     ContributionId,
     AuditId,
     TemplateId,
@@ -81,6 +91,19 @@ pub enum Node {
     Archetype,
     Name,
     Path,
+    Data,
+}
+
+/// `vo_attestation` — `ATTESTATION`s appended to an `ORIGINAL_VERSION`.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum VoAttestation {
+    #[iden = "vo_attestation"]
+    Table,
+    Id,
+    VoId,
+    SysVersion,
+    ContributionId,
+    TimeCommitted,
     Data,
 }
 
@@ -112,6 +135,114 @@ pub enum ItemTag {
     CreatedAt,
 }
 
+/// `archetype_store` — SM-2 ADL 1.4 source archetypes (`I_DEFINITION_ADL14`).
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum ArchetypeStore {
+    #[iden = "archetype_store"]
+    Table,
+    ArchetypeId,
+    Adl,
+    CreatedAt,
+}
+
+/// `adl2_artefact` — SM-2 ADL2 artefacts (`I_DEFINITION_ADL2`).
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum Adl2Artefact {
+    #[iden = "adl2_artefact"]
+    Table,
+    Hrid,
+    Kind,
+    Adl,
+    CreatedAt,
+}
+
+/// `ehr_index` — SM-3 EHR Index (`I_EHR_INDEX`): N:M subject↔EHR associations.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum EhrIndex {
+    #[iden = "ehr_index"]
+    Table,
+    EhrId,
+    SubjectId,
+    SubjectNamespace,
+    SubjectType,
+    InstanceType,
+    StartValidTime,
+    EndValidTime,
+    Notes,
+    Location,
+    CreatedAt,
+}
+
+/// `vo_archive` — SM-4 archive markers (`I_ADMIN_ARCHIVE`).
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum VoArchive {
+    #[iden = "vo_archive"]
+    Table,
+    VoId,
+    ArchivedAt,
+    Reason,
+}
+
+/// `sp_subject` — SM-6 Subject Proxy Service: one proxy per subject.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum SpSubject {
+    #[iden = "sp_subject"]
+    Table,
+    SubjectId,
+    SubjectCategory,
+    CreateTime,
+}
+
+/// `sp_binding` — SM-6 SPS: one `ENV_BINDING` per execution environment.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum SpBinding {
+    #[iden = "sp_binding"]
+    Table,
+    EnvId,
+    Description,
+}
+
+/// `sp_data_frame` — SM-6 SPS: a `DATA_FRAME` within a binding.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum SpDataFrame {
+    #[iden = "sp_data_frame"]
+    Table,
+    EnvId,
+    FrameId,
+    ModelType,
+    PrimaryMethod,
+    FallbackMethod,
+}
+
+/// `sp_variable` — SM-6 SPS: a `SUBJECT_VARIABLE` on a subject's proxy.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum SpVariable {
+    #[iden = "sp_variable"]
+    Table,
+    SubjectId,
+    CanonicalName,
+    Namespace,
+    Name,
+    TypeName,
+    Currency,
+    AskUser,
+    IsManual,
+    FrameId,
+    FramePath,
+}
+
+/// `sp_data_set` — SM-6 SPS: a `SUBJECT_DATA_SET` registered by an application.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum SpDataSet {
+    #[iden = "sp_data_set"]
+    Table,
+    SubjectId,
+    Id,
+    CreatingAppId,
+    UsingAppIds,
+    Variables,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,12 +256,23 @@ mod tests {
         assert_eq!(TemplateStore::Table.to_string(), "template_store");
         assert_eq!(VoVersion::Table.to_string(), "vo_version");
         assert_eq!(Node::Table.to_string(), "node");
+        assert_eq!(VoAttestation::Table.to_string(), "vo_attestation");
         assert_eq!(StoredQuery::Table.to_string(), "stored_query");
         assert_eq!(ItemTag::Table.to_string(), "item_tag");
+        assert_eq!(ArchetypeStore::Table.to_string(), "archetype_store");
+        assert_eq!(Adl2Artefact::Table.to_string(), "adl2_artefact");
+        assert_eq!(EhrIndex::Table.to_string(), "ehr_index");
+        assert_eq!(VoArchive::Table.to_string(), "vo_archive");
+        assert_eq!(SpSubject::Table.to_string(), "sp_subject");
+        assert_eq!(SpBinding::Table.to_string(), "sp_binding");
+        assert_eq!(SpDataFrame::Table.to_string(), "sp_data_frame");
+        assert_eq!(SpVariable::Table.to_string(), "sp_variable");
+        assert_eq!(SpDataSet::Table.to_string(), "sp_data_set");
     }
 
     #[test]
     fn column_names_render_exactly() {
+        assert_eq!(Ehr::SystemId.to_string(), "system_id");
         assert_eq!(Node::VoId.to_string(), "vo_id");
         assert_eq!(Node::SysVersion.to_string(), "sys_version");
         assert_eq!(Node::NumCap.to_string(), "num_cap");
@@ -138,12 +280,21 @@ mod tests {
         assert_eq!(Node::RmType.to_string(), "rm_type");
         assert_eq!(VoVersion::SysPeriod.to_string(), "sys_period");
         assert_eq!(VoVersion::ContributionId.to_string(), "contribution_id");
+        assert_eq!(
+            VoVersion::CreatingSystemId.to_string(),
+            "creating_system_id"
+        );
+        assert_eq!(
+            VoVersion::OtherInputVersionUids.to_string(),
+            "other_input_version_uids"
+        );
         assert_eq!(Audit::TimeCommitted.to_string(), "time_committed");
         assert_eq!(
             StoredQuery::ReverseDomainName.to_string(),
             "reverse_domain_name"
         );
         assert_eq!(ItemTag::TargetVoId.to_string(), "target_vo_id");
+        assert_eq!(SpDataFrame::PrimaryMethod.to_string(), "primary_method");
     }
 
     #[test]
