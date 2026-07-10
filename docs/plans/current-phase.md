@@ -6,9 +6,9 @@ spec-compliant openEHR CDR". This file is the live pointer under it; the
 consolidated gap surface is the blueprint §2 (proven foundations + ECC
 breakdown + spec-area map).
 
-## Active work — B3: SM-5/SM-6 services
+## Active work — B4: Terminology-server integration
 
-**Phase file: `docs/plans/b3-sm-services.md`** (branch `claude/b3-sm-services`).
+**Phase file: `docs/plans/b4-terminology.md`** (branch `claude/b4-terminology`).
 B2 closed 2026-07-10 (PR #37): ECC 293/319 zero-drift, ArchetypeValidation
 81→0. The single biggest gap: **81 failing ECC
 ArchetypeValidation cases (~76 % of all failures)** — template/archetype

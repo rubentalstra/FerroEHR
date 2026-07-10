@@ -42,13 +42,21 @@ impl EhrbaseService {
         request: &AqlQueryRequest,
     ) -> Result<QueryOutcome, SmError> {
         let plan_start = Instant::now();
-        let ast = match parse_str(aql) {
+        let mut ast = match parse_str(aql) {
             Ok(ast) => ast,
             Err(e) => {
                 count_query("analysis_error");
                 return Err(SmError::precondition(format!("invalid AQL: {e}")));
             }
         };
+        // Semantic-analysis pre-pass (B4 stage (a)): resolve every
+        // `TERMINOLOGY('expand', …)` used in a `matches` operand through the
+        // terminology-service seam and merge the codes into the value list,
+        // before planning/SQL generation (master03 lines 756–759).
+        if let Err(e) = aql::expand_matches(&mut ast, self).await {
+            count_query(plan_outcome(&e));
+            return Err(map_plan_error(e));
+        }
         let params = build_params(request);
         let ir = match aql::plan(&ast, &params) {
             Ok(ir) => ir,
@@ -244,6 +252,7 @@ fn map_exec_error(e: AqlError) -> SmError {
     match e {
         AqlError::Exec(ExecError::Database(db)) => SmError::exception(db.to_string()),
         AqlError::Exec(ExecError::Assembly(a)) => SmError::exception(a.to_string()),
+        AqlError::Exec(ExecError::Terminology(msg)) => SmError::exception(msg),
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
             SmError::precondition(e.to_string())
         }

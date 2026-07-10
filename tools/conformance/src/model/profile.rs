@@ -143,6 +143,7 @@ mod tests {
             corpus: CorpusPin::default(),
             started: String::new(),
             selection: SelectionInfo::default(),
+            terminology: None,
             cases,
         }
     }

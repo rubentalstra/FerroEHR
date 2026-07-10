@@ -66,6 +66,7 @@ fn config(enabled: bool) -> RestConfig {
         // The admin group must be reachable here: `admin_route_reachable_without_rbac`
         // asserts the dispatcher's 501 (StubBackend), not the config gate's 404.
         admin: AdminConfig { enabled: true },
+        terminology: ehrbase_rest::TerminologyConfig::default(),
     }
 }
 

@@ -378,7 +378,40 @@ fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
             let _ = writeln!(out, "| {reason} | {count} |");
         }
     }
+
+    render_terminology(&mut out, results);
     out
+}
+
+/// The terminology-server section (B4 `TS` area): the tx server the run had
+/// available and the recorded FHIR-tx exchange.
+fn render_terminology(out: &mut String, results: &RunResults) {
+    out.push_str("\n## 6. Terminology server (TS area)\n\n");
+    let Some(tx) = &results.terminology else {
+        out.push_str("_No terminology server was established for this run._\n");
+        return;
+    };
+    let _ = writeln!(out, "- Server: `{}`\n- Mode: {}\n", tx.base_url, tx.mode);
+    if tx.exchanges.is_empty() {
+        out.push_str("_No FHIR-tx exchange recorded._\n");
+        return;
+    }
+    let _ = writeln!(
+        out,
+        "Recorded FHIR-tx exchange ({} request(s)):\n",
+        tx.exchanges.len()
+    );
+    out.push_str("| # | Method | Path | Query |\n|--:|---|---|---|\n");
+    for (i, e) in tx.exchanges.iter().enumerate() {
+        let _ = writeln!(
+            out,
+            "| {} | {} | `{}` | {} |",
+            i + 1,
+            e.method,
+            e.path,
+            e.query.as_deref().unwrap_or("—")
+        );
+    }
 }
 
 fn render_badge(results: &RunResults, catalog: &Catalog) -> String {
@@ -449,6 +482,7 @@ mod tests {
             corpus: CorpusPin::default(),
             started: "2026-07-07T00:00:00Z".to_owned(),
             selection: SelectionInfo::default(),
+            terminology: None,
             cases: Vec::new(),
         }
     }

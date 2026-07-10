@@ -37,6 +37,7 @@ pub mod model;
 pub mod reporting;
 pub mod suites;
 pub mod testdata;
+pub mod ts;
 
 // Stable public facade: the flat module paths are the crate API (used by the
 // suites, the CLI, and the integration tests); the directories above are the

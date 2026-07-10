@@ -70,6 +70,7 @@ fn config(admin_enabled: bool) -> RestConfig {
         admin: AdminConfig {
             enabled: admin_enabled,
         },
+        terminology: ehrbase_rest::TerminologyConfig::default(),
     }
 }
 

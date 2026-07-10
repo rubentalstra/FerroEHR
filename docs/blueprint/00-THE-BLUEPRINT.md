@@ -173,7 +173,7 @@ ECC-MSG-001..010 (native-API-only, skip-with-reason). ECC 329 executed ·
 293 passed · zero drift. Remaining PORT-NOTEd: version branching
 (trunk-only), FHIR/HL7v2 frames, TDD constructs outside the corpus.*
 
-### B4 — Terminology-server integration (+ its test harness)
+### B4 — Terminology-server integration (+ its test harness) — **DONE** (2026-07-10, `docs/plans/b4-terminology.md`)
 Design set: the terminology **client** is `docs/terminology-validation.md`; the
 self-hostable **server** to run in Docker and point at by URL (HAPI FHIR
 default, Snowstorm opt-in) is `docs/design/terminology-server-integration.md` —
@@ -200,6 +200,11 @@ we run an off-the-shelf FHIR R4 TS, never build one.
    service surface, with the wiremock exchange recorded in the report.
 **Exit: mission item "terminology-server integration" demonstrable in CI
 without a network, and against a real server on demand.**
+*Closed 2026-07-10: FhirTerminologyProvider (validate-code/expand/subsumes/
+lookup, config opt-in); AQL TERMINOLOGY('expand') merged into matches at
+semantic analysis (stages b/c typed rejects, PORT-NOTEd); /terminology
+extension wire (config-gated); TS ECC area (ECC-TS-001..009, wiremock
+fixture + --tx-server-url). ECC 338 executed · 298 passed · zero drift.*
 
 ### B5 — tools/conformance spec-version update (chapter 7's findings)
 1. **D1** — resolve the ITS-REST identity: pick Release-1.0.3 vs

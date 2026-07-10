@@ -30,6 +30,10 @@ pub struct RestConfig {
     /// Disabled by default — the admin routes answer `404` unless enabled.
     #[serde(default)]
     pub admin: AdminConfig,
+    /// Terminology extension API (SM `I_TERMINOLOGY_SERVICE`). Disabled by
+    /// default — the terminology routes answer `404` unless enabled.
+    #[serde(default)]
+    pub terminology: TerminologyConfig,
 }
 
 /// Configuration of the ADMIN API group (SM `I_ADMIN_SERVICE`; ITS-REST admin
@@ -47,6 +51,22 @@ pub struct AdminConfig {
     pub enabled: bool,
 }
 
+/// Configuration of the terminology extension API group (SM
+/// `I_TERMINOLOGY_SERVICE`; `docs/design/sm-platform/08-target-architecture.md`
+/// §7 — an extension namespace with no ITS-REST 1.0.3 contract).
+///
+/// PORT NOTE: like the ADMIN group, the terminology surface is opt-in — when
+/// inactive every terminology route answers `404` (as if unmounted), never a
+/// `403`. Off by default so a stock server exposes only the standardised
+/// ITS-REST surface.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TerminologyConfig {
+    /// Whether the terminology extension group is active. When `false`, every
+    /// terminology route answers `404` without touching the backend.
+    #[serde(default)]
+    pub enabled: bool,
+}
+
 impl Default for RestConfig {
     fn default() -> Self {
         Self {
@@ -56,6 +76,7 @@ impl Default for RestConfig {
             cors_permissive: false,
             auth: AuthConfig::default(),
             admin: AdminConfig::default(),
+            terminology: TerminologyConfig::default(),
         }
     }
 }
@@ -122,6 +143,8 @@ mod tests {
         assert!(c.auth.enabled);
         // The ADMIN API is opt-in: off unless explicitly enabled.
         assert!(!c.admin.enabled);
+        // The terminology extension API is opt-in too.
+        assert!(!c.terminology.enabled);
         assert_eq!(c.swagger_ui_path(), "/ehrbase/rest/swagger-ui");
         assert_eq!(c.openapi_json_path(), "/ehrbase/rest/api-docs/openapi.json");
     }
@@ -133,6 +156,17 @@ mod tests {
             jail.set_env("EHRBASE_REST_ADMIN__ENABLED", "true");
             let c = RestConfig::load().expect("load");
             assert!(c.admin.enabled);
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[allow(clippy::result_large_err)] // figment::Jail closure signature
+    fn terminology_enabled_via_env() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EHRBASE_REST_TERMINOLOGY__ENABLED", "true");
+            let c = RestConfig::load().expect("load");
+            assert!(c.terminology.enabled);
             Ok(())
         });
     }

@@ -19,6 +19,12 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 async-trait = { workspace = true }
 reqwest = { workspace = true }
+# The B4 `TS` area spins up a hermetic FHIR-tx fixture server (canned
+# $expand/$validate-code/$lookup/$subsumes + fault injection) the runner hosts
+# and records the exchange from — a runtime dependency, not just a test tool
+# (docs/design/terminology-server-integration.md §5). tools/conformance is a
+# dev/verification crate (publish = false), not part of the shipped app.
+wiremock = { workspace = true }
 clap = { workspace = true }
 jiff = { workspace = true }
 tokio = { workspace = true }
