@@ -18,6 +18,10 @@ pub struct RunResults {
     pub started: String,
     /// The selection that scoped this run.
     pub selection: SelectionInfo,
+    /// The terminology server the run had available + the recorded FHIR-tx
+    /// exchange (B4 `TS` area). Absent when the run had no terminology server.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub terminology: Option<TerminologyRun>,
     /// The outcome of every executed (registered) case × format.
     pub cases: Vec<CaseOutcome>,
 }
@@ -90,6 +94,35 @@ impl Default for CorpusPin {
             commit: "33251d2a".to_owned(),
         }
     }
+}
+
+/// The terminology server a run had available (B4 `TS` area) plus the recorded
+/// FHIR-tx exchange — "recording the wiremock exchange in the report".
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerminologyRun {
+    /// The FHIR R4 base URL the harness targeted.
+    pub base_url: String,
+    /// The server mode: `"fixture"` (the spun-up `wiremock` FHIR-tx) or
+    /// `"real"` (`--tx-server-url`).
+    pub mode: String,
+    /// The recorded FHIR-tx exchange (received requests). For the fixture this
+    /// is the harness's own liveness self-check plus anything a SUT wired to it
+    /// sent; for a real server it is empty (the runner cannot observe a remote
+    /// server's inbound requests).
+    #[serde(default)]
+    pub exchanges: Vec<TxExchange>,
+}
+
+/// One recorded FHIR-tx request against the terminology server.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TxExchange {
+    /// The HTTP method.
+    pub method: String,
+    /// The request path (e.g. `/ValueSet/$expand`).
+    pub path: String,
+    /// The raw query string, if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
 }
 
 /// The selection that scoped the run.

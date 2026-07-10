@@ -19,6 +19,7 @@ pub mod exec;
 pub mod ir;
 mod lower;
 pub mod sql;
+pub mod terminology;
 
 use std::collections::BTreeSet;
 
@@ -28,6 +29,7 @@ pub use error::{AnalysisError, AqlError, AqlFeatureError, ExecError, SqlError};
 pub use exec::{ColumnMeta, QueryResult, execute};
 pub use ir::{ParamValue, Params, QueryIr};
 pub use sql::{SqlCtx, build as build_sql};
+pub use terminology::{TerminologyExpander, expand_matches};
 
 use ir::{
     ArchetypeConstraint, Bind, Expr, NameConstraint, NodeConstraint, Operand, PathTarget,

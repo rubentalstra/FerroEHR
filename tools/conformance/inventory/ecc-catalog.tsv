@@ -323,3 +323,12 @@ ECC-MSG-007	MSG	active	msg/import-ehr-extract	EHR Extract — import extract int
 ECC-MSG-008	MSG	active	msg/tdd-import-commits	TDD — import a TDD as a committed COMPOSITION (import_tdd)
 ECC-MSG-009	MSG	active	msg/tdd-import-rejects	TDD — import rejects malformed / non-TDD / unknown EHR / unknown template
 ECC-MSG-010	MSG	active	msg/tdd-import-tdds-batch	TDD — batch import commits all, fail-fast on error (import_tdds)
+ECC-TS-001	TS	active	ts/expand-bundle-accepted	TERMINOLOGY expand (bundle) — accepted, well-formed RESULT_SET
+ECC-TS-002	TS	active	ts/expand-bundle-constrains	TERMINOLOGY expand (bundle) — expansion constrains matches to the value set's codes
+ECC-TS-003	TS	active	ts/expand-bundle-mixed-list	TERMINOLOGY expand (bundle) — explicit code merged with the expansion (matches list)
+ECC-TS-004	TS	active	ts/expand-unknown-value-set-rejected	TERMINOLOGY expand — unknown value set rejected (400)
+ECC-TS-005	TS	active	ts/expand-unknown-service-rejected	TERMINOLOGY expand — unknown service_api rejected (400)
+ECC-TS-006	TS	active	ts/expand-fhir-provider	TERMINOLOGY expand (FHIR service_api) — accepted when a provider is configured
+ECC-TS-007	TS	active	ts/fault-timeout	TERMINOLOGY expand (FHIR) — terminology-server timeout is a server fault (500)
+ECC-TS-008	TS	active	ts/fault-server-error	TERMINOLOGY expand (FHIR) — terminology-server 5xx is a server fault (500)
+ECC-TS-009	TS	active	ts/fault-malformed	TERMINOLOGY expand (FHIR) — malformed terminology response is a server fault (500)

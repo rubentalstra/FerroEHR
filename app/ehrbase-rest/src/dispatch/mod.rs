@@ -10,8 +10,9 @@
 //! and renders a negotiated response.
 //!
 //! Every API group has its own dispatcher module ([`ehr`], [`definition`],
-//! [`query`], [`demographic`], [`admin`]); operations whose backend seam method
-//! is not overridden surface as `501` + the standard error body.
+//! [`query`], [`demographic`], [`admin`], [`terminology`]); operations whose
+//! backend seam method is not overridden surface as `501` + the standard error
+//! body.
 
 mod abac;
 mod admin;
@@ -20,6 +21,7 @@ mod demographic;
 mod ehr;
 mod flat;
 mod query;
+mod terminology;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -87,6 +89,12 @@ pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
         .merge(mount(g::definition::ROUTES, definition::dispatch::<S>))
         .merge(mount(g::query::ROUTES, query::dispatch::<S>))
         .merge(mount(g::admin::ROUTES, admin::dispatch::<S>))
+        // Our-own-design terminology extension routes (no ITS-REST contract;
+        // SM `I_TERMINOLOGY_SERVICE`, design doc 08 §7), config-gated.
+        .merge(mount(
+            terminology::TERMINOLOGY_ROUTES,
+            terminology::dispatch::<S>,
+        ))
 }
 
 /// Mount one API group's routes onto a router, grouping methods that share a

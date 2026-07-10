@@ -1060,6 +1060,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "uuid",
+ "wiremock",
 ]
 
 [[package]]
@@ -1719,6 +1720,7 @@ dependencies = [
  "tracing-opentelemetry",
  "tracing-subscriber",
  "uuid",
+ "wiremock",
 ]
 
 [[package]]

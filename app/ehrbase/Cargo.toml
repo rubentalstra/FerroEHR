@@ -73,6 +73,10 @@ ehrbase-sm = { path = "../ehrbase-sm" }
 
 [dev-dependencies]
 figment = { workspace = true, features = ["test"] }
+# Hermetic FHIR terminology-server mock for the external-terminology provider
+# tests (B4): canned `$validate-code`/`$expand`/`$subsumes`/`$lookup` responses
+# + fault injection (timeout, 5xx, malformed) — no network in CI.
+wiremock.workspace = true
 testcontainers.workspace = true
 testcontainers-modules.workspace = true
 tokio.workspace = true

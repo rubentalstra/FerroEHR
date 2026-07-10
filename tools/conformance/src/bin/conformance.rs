@@ -15,11 +15,13 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand, ValueEnum};
 
 use conformance::case::{Format, Profile};
-use conformance::catalog::Catalog;
+use conformance::catalog::{Area, Catalog};
 use conformance::client::Credential;
 use conformance::registry::registry;
+use conformance::results::TerminologyRun;
 use conformance::run::RunConfig;
 use conformance::sut::Sut;
+use conformance::ts::{FhirTxFixture, TxServer};
 use conformance::version::SpecVersions;
 use conformance::{report, run};
 
@@ -68,6 +70,12 @@ struct RunArgs {
     /// ADMIN-role credential (same forms as `--auth`).
     #[arg(long)]
     admin_auth: Option<String>,
+    /// Real FHIR R4 terminology-server base URL for the `TS` cases, e.g.
+    /// `http://localhost:8090/fhir` (a HAPI/Snowstorm/Ontoserver container).
+    /// When unset the runner spins up a hermetic `wiremock` FHIR-tx fixture for
+    /// the run (the CI default) and records its exchange in the report.
+    #[arg(long)]
+    tx_server_url: Option<String>,
 }
 
 #[derive(Debug, Parser)]
@@ -153,6 +161,39 @@ fn build_sut(args: &RunArgs) -> Result<(Sut, String), String> {
     Ok((sut, auth_mode))
 }
 
+/// Whether any registered `TS`-area case is in scope for this run (drives
+/// whether the hermetic FHIR-tx fixture is worth spinning up).
+fn ts_cases_selected(args: &RunArgs) -> bool {
+    let profile = args.profile.map(Profile::from);
+    registry().entries().iter().any(|e| {
+        e.meta.area == Area::Ts
+            && args.filter.as_deref().is_none_or(|f| e.meta.id.contains(f))
+            && profile.is_none_or(|p| e.meta.profiles.contains(&p))
+    })
+}
+
+/// Establish the terminology server for the `TS` cases: a real server when
+/// `--tx-server-url` is given, else — when `TS` cases are in scope — the
+/// hermetic `wiremock` FHIR-tx fixture the runner hosts. Returns the descriptor
+/// threaded to cases plus the live fixture (kept alive for the run, its exchange
+/// recorded afterward).
+async fn establish_tx(args: &RunArgs) -> (Option<TxServer>, Option<FhirTxFixture>) {
+    if let Some(url) = &args.tx_server_url {
+        return (Some(TxServer::real(url.clone())), None);
+    }
+    if !ts_cases_selected(args) {
+        return (None, None);
+    }
+    let fixture = FhirTxFixture::start_canned().await;
+    let base = fixture.base_url();
+    // The self-check proves the fixture answers and seeds the recorded exchange.
+    if let Err(e) = fixture.self_check().await {
+        eprintln!("warning: FHIR-tx fixture self-check failed, running without it: {e}");
+        return (None, None);
+    }
+    (Some(TxServer::fixture(base)), Some(fixture))
+}
+
 async fn cmd_run(args: RunArgs) -> i32 {
     let (sut, auth_mode) = match build_sut(&args) {
         Ok(pair) => pair,
@@ -161,20 +202,35 @@ async fn cmd_run(args: RunArgs) -> i32 {
             return 2;
         }
     };
+    let (tx, fixture) = establish_tx(&args).await;
     let config = RunConfig {
         filter: args.filter.clone(),
         profile: args.profile.map(Profile::from),
         formats: args.format.formats(),
         versions: SpecVersions::latest(),
         auth_mode,
+        tx: tx.clone(),
     };
-    let results = match run::run(sut.transport(), &config).await {
+    let mut results = match run::run(sut.transport(), &config).await {
         Ok(r) => r,
         Err(e) => {
             eprintln!("error: {e}");
             return 2;
         }
     };
+    // Record the terminology run + the FHIR-tx exchange (the fixture's own
+    // self-check plus anything a SUT wired to it sent).
+    if let Some(server) = &tx {
+        let exchanges = match &fixture {
+            Some(fx) => fx.exchanges().await,
+            None => Vec::new(),
+        };
+        results.terminology = Some(TerminologyRun {
+            base_url: server.base_url.clone(),
+            mode: server.mode.label().to_owned(),
+            exchanges,
+        });
+    }
     if let Err(e) = report::write_all(&results, &args.out) {
         eprintln!("error writing report: {e}");
         return 2;
