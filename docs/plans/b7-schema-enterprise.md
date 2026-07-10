@@ -23,8 +23,11 @@
       (c) PostgreSQL 18 enterprise best-practice + security research (web).
       *Done 2026-07-10 → docs/design/schema-review/01..03 (+ the ADR audit,
       executed as task 5).*
-- [ ] 2. Synthesis: gap analysis current-vs-required-vs-best-practice; design
-      questions to the owner; ADR-013 schema redesign decision.
+- [x] 2. Synthesis: gap analysis current-vs-required-vs-best-practice; design
+      questions to the owner; ADR-013 schema redesign decision. *Done
+      2026-07-10: four structural choices owner-confirmed (squashed baseline;
+      temporal PK + btree replica identity; roles in migrations; GIN +
+      expression indexes wired now — owner call); ADR-013 written.*
 - [ ] 3. Implementation per the confirmed ADR (re-authored baseline or ordered
       migrations — owner decides), node codec/storage layer updates, tests.
 - [ ] 4. Blueprint §2 State-column refresh (done/partial/missing) + chapter
