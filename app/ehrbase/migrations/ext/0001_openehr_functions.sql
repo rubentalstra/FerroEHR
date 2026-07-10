@@ -1,10 +1,16 @@
--- ext schema: openEHR support functions (ADR-008).
+-- ext schema: openEHR support functions + the cluster role/grant baseline
+-- (ADR-008 functions; ADR-013 enterprise baseline).
 --
--- Created via `sqlx migrate add --source migrations/ext --sequential`.
+-- Re-authored as the single squashed `ext` baseline (ADR-013 §1, review doc
+-- 02 §5.1 — append-only forever after). This migrator runs BEFORE `ehr`
+-- (db/migrate.rs), so the three application roles are created HERE, ahead of
+-- every GRANT in either schema.
+--
 -- All functions are IMMUTABLE + PARALLEL SAFE so they are legal in btree
 -- expression indexes — the ADR-008 pattern: magnitudes are computed (and
--- indexed on demand for measured hot paths), never stored as synthetic
--- fields inside the canonical data.
+-- indexed on demand for measured hot paths, see the ehr baseline's
+-- `idx_node_magnitude`), never stored as synthetic fields inside the canonical
+-- data. Runs with search_path = ext.
 --
 -- Magnitude semantics follow the openEHR RM spec for DV_ORDERED:
 --   DV_QUANTITY / DV_COUNT   -> magnitude
@@ -16,7 +22,27 @@
 --   DV_DURATION              -> seconds, with openEHR *nominal* lengths
 --                               (year = 365.24 d, month = 30.42 d)
 -- Partial dates assume the first month/day; partial times assume 0.
--- Runs with search_path = ext.
+
+-- ── Roles (ADR-013 §3, review doc 02 §3.1) ───────────────────────────────────
+-- Three NOLOGIN group roles, granted at deploy time to the concrete LOGIN
+-- roles (passwords/LOGIN/pg_hba/TLS are deployment-layer, review doc 02 §3.6):
+--   * ehrbase_migrator — owns the schema objects and runs DDL (this migration);
+--   * ehrbase_app      — the runtime writer (DML on ehr.*);
+--   * ehrbase_reader   — read-only (SELECT), e.g. reporting/analytics.
+-- Never run the application as a superuser. Idempotent so re-running the
+-- migrator (or the ehr baseline's mirror block) is a no-op.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_migrator') THEN
+        CREATE ROLE ehrbase_migrator NOLOGIN;
+    END IF;
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
+        CREATE ROLE ehrbase_app NOLOGIN;
+    END IF;
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_reader') THEN
+        CREATE ROLE ehrbase_reader NOLOGIN;
+    END IF;
+END $$;
 
 -- days since 0001-01-01 for an ISO-8601 (possibly partial) date string
 CREATE FUNCTION openehr_date_days(v text) RETURNS numeric
@@ -153,3 +179,30 @@ BEGIN
 EXCEPTION WHEN others THEN
     RETURN NULL;
 END $$;
+
+-- ── Function documentation (ADR-013 §12) ─────────────────────────────────────
+COMMENT ON FUNCTION ext.openehr_date_days(text) IS
+    'Days since 0001-01-01 for an ISO-8601 (possibly partial) date string; NULL on unparseable input. Partial dates assume the first month/day. IMMUTABLE — index-legal (ADR-008).';
+COMMENT ON FUNCTION ext.openehr_time_seconds(text) IS
+    'Seconds since start of day for an ISO-8601 (possibly partial) time string, ignoring any timezone suffix (callers apply the offset). Partial times assume 0. IMMUTABLE.';
+COMMENT ON FUNCTION ext.openehr_tz_offset_seconds(text) IS
+    'Timezone offset in seconds parsed from an ISO-8601 suffix (Z / ±HH[:MM]); 0 when absent. IMMUTABLE.';
+COMMENT ON FUNCTION ext.openehr_date_time_seconds(text) IS
+    'Seconds since 0001-01-01T00:00:00Z for an ISO-8601 (possibly partial) date-time string; NULL on unparseable date. IMMUTABLE.';
+COMMENT ON FUNCTION ext.openehr_duration_seconds(text) IS
+    'Seconds for an ISO-8601 duration using openEHR *nominal* lengths (year = 365.24 d, month = 30.42 d); NULL on unparseable input. IMMUTABLE.';
+COMMENT ON FUNCTION ext.openehr_magnitude(jsonb) IS
+    'The ordered magnitude (numeric) of a canonical DV_ORDERED value, per the RM DV_ORDERED comparison semantics (ADR-008 §2). NULL for non-ordered or unparseable values. IMMUTABLE + PARALLEL SAFE so it is legal in btree expression indexes (see ehr.idx_node_magnitude).';
+
+-- ── Grants (ADR-013 §3, review doc 02 §3.1/§3.6) ─────────────────────────────
+-- The `ext` functions are on the READ path (AQL magnitude ordering); the app
+-- and reader roles need USAGE on the schema and EXECUTE on the functions, and
+-- nothing more (functions are plain, not SECURITY DEFINER — review doc 02 §3.6).
+-- The migrator owns them. Idempotent by construction (GRANT is a no-op if
+-- already held).
+GRANT USAGE ON SCHEMA ext TO ehrbase_app, ehrbase_reader;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA ext TO ehrbase_app, ehrbase_reader;
+-- Future `ext` functions (added by later append-only migrations run as the
+-- migrator) are reachable without a manual grant (review doc 02 §3.2).
+ALTER DEFAULT PRIVILEGES IN SCHEMA ext
+    GRANT EXECUTE ON FUNCTIONS TO ehrbase_app, ehrbase_reader;
