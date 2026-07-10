@@ -23,6 +23,7 @@
 //! stored composition) by capturing an `Arc<Mutex<_>>`.
 #![allow(clippy::type_complexity, dead_code)]
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -42,7 +43,9 @@ use ehrbase_sm::services::{
 use ehrbase_sm::types::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
 };
-use ehrbase_sm::{AuditEvent, CallStatusType, EmitOutcome, SmError};
+use ehrbase_sm::{
+    AuditEvent, CallStatusType, EmitOutcome, SmError, TerminologyDescription, TerminologyExtract,
+};
 
 /// A `501 Not Implemented` SM error — the un-hooked default (old `StubBackend`).
 fn not_impl() -> SmError {
@@ -96,6 +99,20 @@ type ValueListHook = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
 type TemplateUploadHook = Arc<dyn Fn(String) -> Result<Value, SmError> + Send + Sync>;
 type QueryListHook = Arc<dyn Fn(String) -> Result<Vec<Value>, SmError> + Send + Sync>;
 
+// Terminology (SM I_TERMINOLOGY_SERVICE) wire-exposure hooks.
+type TerminologyIds = Arc<dyn Fn() -> Result<Vec<String>, SmError> + Send + Sync>;
+type TerminologyDescriptionHook =
+    Arc<dyn Fn(String) -> Result<TerminologyDescription, SmError> + Send + Sync>;
+// `Fn(terminology_id, code, at_date)` — the `attributes` allow-list is dropped
+// on the wire (see the terminology dispatcher PORT NOTE), so the hook omits it.
+type GetTerm = Arc<
+    dyn Fn(String, String, Option<String>) -> Result<TerminologyExtract, SmError> + Send + Sync,
+>;
+type Subsumes = Arc<dyn Fn(String, String, String) -> Result<bool, SmError> + Send + Sync>;
+type ValueSetValidate =
+    Arc<dyn Fn(String, String, String, Option<String>) -> Result<bool, SmError> + Send + Sync>;
+type GetValueSet = Arc<dyn Fn(String, String) -> Result<TerminologyExtract, SmError> + Send + Sync>;
+
 /// The per-test override closures. Every field defaults to `None` (→ the
 /// `501`/trait-default behaviour); a test populates only what it exercises.
 #[derive(Default, Clone)]
@@ -145,6 +162,13 @@ pub struct Hooks {
     pub template_adl2_upload: Option<GetOpt>,
     pub template_adl2_list: Option<ValueListHook>,
     pub query_list: Option<QueryListHook>,
+    // Terminology (SM I_TERMINOLOGY_SERVICE) — the wire-exposed calls.
+    pub get_terminology_ids: Option<TerminologyIds>,
+    pub get_terminology_description: Option<TerminologyDescriptionHook>,
+    pub get_term: Option<GetTerm>,
+    pub subsumes: Option<Subsumes>,
+    pub value_set_validate: Option<ValueSetValidate>,
+    pub get_value_set: Option<GetValueSet>,
     // SM System Log: an in-memory audit recorder. When set, the mock's
     // `SystemLog::emit` records every event (so a test can assert the ATNA
     // event a request produced); `audit_enabled()` is then true. Replaces the
@@ -815,4 +839,80 @@ impl AdminService for Mock {
 }
 
 impl AdminArchive for Mock {}
-impl TerminologyService for Mock {}
+
+// ── terminology (SM I_TERMINOLOGY_SERVICE; wire exposure per design 08 §7) ────
+//
+// Defaults kept (→ 501) except the six wire-exposed calls, which route through
+// the optional per-test hooks.
+#[async_trait]
+impl TerminologyService for Mock {
+    async fn get_terminology_ids(&self) -> Result<Vec<String>, SmError> {
+        match &self.h.get_terminology_ids {
+            Some(f) => f(),
+            None => Err(not_impl()),
+        }
+    }
+    async fn get_terminology_description(
+        &self,
+        terminology_id: &str,
+    ) -> Result<TerminologyDescription, SmError> {
+        match &self.h.get_terminology_description {
+            Some(f) => f(terminology_id.to_owned()),
+            None => Err(not_impl()),
+        }
+    }
+    async fn get_term(
+        &self,
+        terminology_id: &str,
+        code: &str,
+        _attributes: Option<BTreeMap<String, String>>,
+        at_date: Option<String>,
+    ) -> Result<TerminologyExtract, SmError> {
+        match &self.h.get_term {
+            Some(f) => f(terminology_id.to_owned(), code.to_owned(), at_date),
+            None => Err(not_impl()),
+        }
+    }
+    async fn subsumes(
+        &self,
+        terminology_id: &str,
+        ref_code: &str,
+        candidate_child_code: &str,
+    ) -> Result<bool, SmError> {
+        match &self.h.subsumes {
+            Some(f) => f(
+                terminology_id.to_owned(),
+                ref_code.to_owned(),
+                candidate_child_code.to_owned(),
+            ),
+            None => Err(not_impl()),
+        }
+    }
+    async fn value_set_validate(
+        &self,
+        terminology_id: &str,
+        value_set_id: &str,
+        candidate_code: &str,
+        at_date: Option<String>,
+    ) -> Result<bool, SmError> {
+        match &self.h.value_set_validate {
+            Some(f) => f(
+                terminology_id.to_owned(),
+                value_set_id.to_owned(),
+                candidate_code.to_owned(),
+                at_date,
+            ),
+            None => Err(not_impl()),
+        }
+    }
+    async fn get_value_set(
+        &self,
+        terminology_id: &str,
+        value_set_code: &str,
+    ) -> Result<TerminologyExtract, SmError> {
+        match &self.h.get_value_set {
+            Some(f) => f(terminology_id.to_owned(), value_set_code.to_owned()),
+            None => Err(not_impl()),
+        }
+    }
+}

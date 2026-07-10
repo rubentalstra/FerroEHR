@@ -84,6 +84,7 @@ fn config() -> RestConfig {
             admin_scope: None,
         },
         admin: ehrbase_rest::AdminConfig::default(),
+        terminology: ehrbase_rest::TerminologyConfig::default(),
     }
 }
 
