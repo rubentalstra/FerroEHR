@@ -134,6 +134,30 @@ pub(super) struct Committed {
     /// the write result.
     #[allow(dead_code)]
     pub(super) contribution_id: Uuid,
+    /// The versioned-object kind of this write — carried for the event-outbox
+    /// envelope (ADR-014 §2).
+    pub(super) kind: Kind,
+    /// The numeric `audit_change_type` group code recorded for this version
+    /// (`249`/`251`/`523`/`666`…) — carried for the outbox envelope (ADR-014 §2).
+    pub(super) change_type: String,
+    /// The OPT `template_id` a COMPOSITION was committed against (`None` for
+    /// `EHR_STATUS`/FOLDER/deletes/attestations) — carried for the outbox
+    /// envelope + routing key (ADR-014 §2/§5).
+    pub(super) template_id: Option<String>,
+}
+
+impl Committed {
+    /// The per-version entry for the PHI-free event-outbox envelope
+    /// (ADR-014 §2): identity + provenance metadata only, never clinical content.
+    fn envelope_entry(&self) -> serde_json::Value {
+        serde_json::json!({
+            "vo_id": self.vo_id,
+            "kind": self.kind.as_str(),
+            "sys_version": self.sys_version,
+            "change_type": self.change_type,
+            "template_id": self.template_id,
+        })
+    }
 }
 
 /// A loaded version: its full provenance metadata and reassembled canonical JSON.
@@ -299,6 +323,41 @@ async fn write_contribution(
     let (audit_id, time_committed) = insert_audit(tx, audit).await?;
     let contribution_id = insert_contribution(tx, ehr_id, audit_id).await?;
     Ok((contribution_id, audit_id, time_committed))
+}
+
+/// Write the contribution-outbox event row **in the same transaction** as the
+/// contribution it announces (ADR-014 §1: "no commit without its event; no
+/// event without its commit"). The envelope is PHI-free (ADR-014 §2):
+/// contribution id, `ehr_id`, `committed_at`, and one per-version entry of
+/// identity + provenance metadata only — never clinical content. Every
+/// CONTRIBUTION commit path (single-object writes, `commit_contribution`,
+/// `commit_import`) funnels through here so the outbox and the commit are
+/// atomic. Publishing is a separate concern (`crate::events`); this only
+/// records the intent to publish.
+async fn write_outbox(
+    tx: &mut PgConnection,
+    contribution_id: Uuid,
+    ehr_id: Option<Uuid>,
+    committed_at: jiff::Timestamp,
+    versions: Vec<serde_json::Value>,
+) -> Result<(), ServiceError> {
+    let envelope = serde_json::json!({
+        "contribution_id": contribution_id,
+        "ehr_id": ehr_id,
+        "committed_at": committed_at.to_string(),
+        "versions": versions,
+    });
+    sqlx::query(
+        "INSERT INTO event_outbox (contribution_id, ehr_id, envelope, committed_at) \
+         VALUES ($1, $2, $3, $4::timestamptz)",
+    )
+    .bind(contribution_id)
+    .bind(ehr_id)
+    .bind(&envelope)
+    .bind(committed_at.to_string())
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
 }
 
 /// Bulk-insert the decomposed node rows for one version.
@@ -566,6 +625,9 @@ async fn apply_change(
                 vo_id,
                 sys_version: 1,
                 contribution_id,
+                kind,
+                change_type: audit.change_type.clone(),
+                template_id,
             })
         }
         Change::Modify {
@@ -630,6 +692,9 @@ async fn apply_change(
                 vo_id,
                 sys_version: next,
                 contribution_id,
+                kind,
+                change_type: audit.change_type.clone(),
+                template_id,
             })
         }
         Change::Delete {
@@ -673,6 +738,9 @@ async fn apply_change(
                 vo_id,
                 sys_version: next,
                 contribution_id,
+                kind,
+                change_type: audit.change_type.clone(),
+                template_id: None,
             })
         }
     }
@@ -774,6 +842,11 @@ async fn attest(
         vo_id,
         sys_version: expected_version,
         contribution_id,
+        kind,
+        // A 666 attestation adds no new version; it is announced in the
+        // contribution's outbox envelope as a change to the existing version.
+        change_type: super::codes::change_type::ATTESTATION.to_owned(),
+        template_id: None,
     })
 }
 
@@ -912,7 +985,7 @@ pub(super) async fn create(
     ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
     let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
-    apply_change(
+    let committed = apply_change(
         tx,
         ehr_id,
         contribution_id,
@@ -932,7 +1005,16 @@ pub(super) async fn create(
             attestations: Vec::new(),
         },
     )
-    .await
+    .await?;
+    write_outbox(
+        tx,
+        contribution_id,
+        ehr_id,
+        time_committed,
+        vec![committed.envelope_entry()],
+    )
+    .await?;
+    Ok(committed)
 }
 
 /// Commit a new version of an existing object under its own contribution.
@@ -949,7 +1031,7 @@ pub(super) async fn update(
     ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
     let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
-    apply_change(
+    let committed = apply_change(
         tx,
         ehr_id,
         contribution_id,
@@ -971,7 +1053,16 @@ pub(super) async fn update(
             attestations: Vec::new(),
         },
     )
-    .await
+    .await?;
+    write_outbox(
+        tx,
+        contribution_id,
+        ehr_id,
+        time_committed,
+        vec![committed.envelope_entry()],
+    )
+    .await?;
+    Ok(committed)
 }
 
 /// Logically delete an object under its own contribution.
@@ -985,7 +1076,7 @@ pub(super) async fn delete(
     ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
     let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
-    apply_change(
+    let committed = apply_change(
         tx,
         ehr_id,
         contribution_id,
@@ -1001,7 +1092,16 @@ pub(super) async fn delete(
             signature: None,
         },
     )
-    .await
+    .await?;
+    write_outbox(
+        tx,
+        contribution_id,
+        ehr_id,
+        time_committed,
+        vec![committed.envelope_entry()],
+    )
+    .await?;
+    Ok(committed)
 }
 
 /// Commit a set of changes atomically under one CONTRIBUTION. `contribution_audit`
@@ -1066,6 +1166,10 @@ pub(super) async fn commit_contribution(
             .await?,
         );
     }
+    // One PHI-free outbox event for the whole CONTRIBUTION, same transaction
+    // (ADR-014 §1/§2), carrying every committed version + attestation.
+    let versions = committed.iter().map(Committed::envelope_entry).collect();
+    write_outbox(tx, contribution_id, ehr_id, contribution_time, versions).await?;
     Ok((contribution_id, committed))
 }
 
@@ -1260,6 +1364,7 @@ async fn imported_container_state(
 /// 1 µs steps) with only the highest version open — time-travel within the
 /// target therefore orders them by trunk version. The true source chronology is
 /// preserved in each version's `commit_audit.time_committed`.
+#[allow(clippy::too_many_lines)] // the import replay + its per-version outbox entry
 pub(super) async fn commit_import(
     tx: &mut PgConnection,
     ehr_id: Uuid,
@@ -1268,8 +1373,10 @@ pub(super) async fn commit_import(
 ) -> Result<Uuid, ServiceError> {
     // One local instant anchors the whole import's temporal chain.
     let base = jiff::Timestamp::now();
-    let (contribution_id, _audit_id, _time) =
+    let (contribution_id, _audit_id, import_time) =
         write_contribution(tx, Some(ehr_id), import_audit).await?;
+    // Per-version entries for the single import-contribution outbox event.
+    let mut outbox_versions: Vec<serde_json::Value> = Vec::new();
 
     for mut container in containers {
         if container.versions.is_empty() {
@@ -1320,6 +1427,15 @@ pub(super) async fn commit_import(
 
         let n = container.versions.len();
         for (i, version) in container.versions.into_iter().enumerate() {
+            // PHI-free outbox entry for this imported version (ADR-014 §2):
+            // identity + provenance only; imports carry no template_id.
+            outbox_versions.push(serde_json::json!({
+                "vo_id": container.vo_id,
+                "kind": container.kind.as_str(),
+                "sys_version": version.sys_version,
+                "change_type": version.commit_audit.change_type,
+                "template_id": serde_json::Value::Null,
+            }));
             // Synthetic strictly-increasing local period; only the last is open.
             let lower = base + jiff::SignedDuration::from_micros(i64::try_from(i).unwrap_or(0));
             let upper = if i + 1 < n {
@@ -1366,6 +1482,18 @@ pub(super) async fn commit_import(
                 .await?;
             }
         }
+    }
+    // One PHI-free outbox event for the whole import CONTRIBUTION, same
+    // transaction (ADR-014 §1/§2). An empty import (no versions) writes none.
+    if !outbox_versions.is_empty() {
+        write_outbox(
+            tx,
+            contribution_id,
+            Some(ehr_id),
+            import_time,
+            outbox_versions,
+        )
+        .await?;
     }
     Ok(contribution_id)
 }

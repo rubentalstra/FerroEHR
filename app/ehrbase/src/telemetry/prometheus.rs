@@ -39,6 +39,9 @@ pub const VALIDATION_FAILURES: &str = "validation_failures_total";
 pub const VERSION_SIGNATURE_INVALID: &str = "version_signature_invalid_total";
 /// `WebTemplate` cache event counter (`event` = hit/miss/eviction).
 pub const WEBTEMPLATE_CACHE_EVENTS: &str = "webtemplate_cache_events_total";
+/// Contribution-outbox events published to the broker (ADR-014). Incremented
+/// per event only after the broker confirm (`crate::events`).
+pub const EVENTS_PUBLISHED: &str = "events_published_total";
 /// Process start time gauge (unix seconds).
 pub const PROCESS_START_TIME: &str = "process_start_time_seconds";
 /// Build-info gauge (always `1`; `version/git_sha/rm_version` labels).
@@ -182,6 +185,11 @@ pub fn catalog() -> Vec<MetricSpec> {
         ),
         counter(VALIDATION_FAILURES, "Validation failures by pass"),
         counter(WEBTEMPLATE_CACHE_EVENTS, "WebTemplate cache events"),
+        // Contribution-outbox eventing (ADR-014).
+        counter(
+            EVENTS_PUBLISHED,
+            "Contribution-outbox events published to the broker",
+        ),
         // ATNA audit (emitted by ehrbase-audit).
         counter(METRIC_EMITTED, "ATNA audit records enqueued"),
         counter(METRIC_DROPPED, "ATNA audit records dropped"),

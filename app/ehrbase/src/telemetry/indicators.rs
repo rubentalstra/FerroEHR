@@ -3,6 +3,9 @@
 //! [`HealthIndicator`] trait `ehrbase-rest` defines, and are registered into
 //! its [`HealthRegistry`] at boot.
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use crate::system_log::AuditSender;
 use async_trait::async_trait;
 use ehrbase_rest::management::{Health, HealthIndicator};
@@ -98,6 +101,44 @@ impl HealthIndicator for AuditHealth {
             Health::up()
         } else {
             Health::degraded("audit sender disabled")
+        }
+    }
+
+    fn required(&self) -> bool {
+        false
+    }
+}
+
+/// `events` — reports the contribution-outbox publisher's broker-delivery
+/// health (ADR-014). Degraded-tolerable (the outbox buffers while the broker is
+/// down, so delivery lag must not block readiness): a broker outage flips only
+/// the aggregate to `DEGRADED`, never readiness. Registered only when eventing
+/// is enabled.
+#[derive(Debug)]
+pub struct EventsHealth {
+    healthy: Arc<AtomicBool>,
+}
+
+impl EventsHealth {
+    /// Construct over the publisher's shared health flag
+    /// ([`EventsHandle::healthy`](crate::events::EventsHandle::healthy)).
+    #[must_use]
+    pub fn new(healthy: Arc<AtomicBool>) -> Self {
+        Self { healthy }
+    }
+}
+
+#[async_trait]
+impl HealthIndicator for EventsHealth {
+    fn name(&self) -> &'static str {
+        "events"
+    }
+
+    async fn check(&self) -> Health {
+        if self.healthy.load(Ordering::Relaxed) {
+            Health::up()
+        } else {
+            Health::degraded("event broker unavailable; outbox buffering")
         }
     }
 
