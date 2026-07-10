@@ -1,6 +1,6 @@
 # B7 — Enterprise-grade schema review & redesign plan
 
-- Status: in-progress
+- Status: done (2026-07-10)
 - Started: 2026-07-10   Owner: Ruben
 - Mission (owner directive): the DB schema (`app/ehrbase/migrations/{ehr,ext}`)
   grew accretively through P10→B6 (10 ehr migrations + 1 ext) and must become
@@ -37,7 +37,7 @@
       leaf magnitudes; PERF(port) generator fast-path at P20) and the
       change_type CHECK widened to the full 9-code terminology group (aligned
       with codes.rs). ehrbase 277/277, rest+sm+conformance 306/306.*
-- [ ] 4. Blueprint §2 State-column refresh (done/partial/missing) + chapter
+- [x] 4. Blueprint §2 State-column refresh (done/partial/missing) + chapter
       state tables.
 - [x] 5. ADR reconciliation (owner directive): the ADR set carries layered
       amendments and contradictions (ADR-006 §3/§4 vs ADR-008; ADR-007's
@@ -53,5 +53,8 @@
 
 ## Exit criteria
 
-- [ ] ADR-013 accepted by the owner; schema implemented per it; workspace
-      green; full ECC zero drift (341/315/0 baseline); blueprint current.
+- [x] ADR-013 accepted (owner-confirmed choices) and implemented; ehrbase
+      277/277 + rest/sm/conformance 306/306 on the new baseline; role DDL
+      degrades gracefully without CREATEROLE (compose verified); full ECC on
+      the re-authored schema: **341 executed · 315 passed · 0 failed, zero
+      drift**; blueprint §2 refreshed.
