@@ -14,12 +14,12 @@
 - [x] 1. ADR-014 — eventing design record (outbox shape, at-least-once +
       per-EHR ordering, PHI-free envelope payload, filter model, broker
       abstraction AMQP-first/Kafka-ready).
-- [ ] 2. Outbox: migration 0002 (append-only on the ADR-013 baseline) —
+- [x] 2. Outbox: migration 0002 (append-only on the ADR-013 baseline) —
       `event_outbox` table written in the SAME transaction as every
       contribution commit (vobject commit path); envelope = contribution id,
       ehr_id, per-version (vo_id, kind, version, change_type, template_id),
       committed_at, seq.
-- [ ] 3. Publisher: background task draining the outbox to a pluggable
+- [x] 3. Publisher: background task draining the outbox to a pluggable
       `EventPublisher` trait (lapin/AMQP impl first), at-least-once,
       per-EHR ordering, confirm-based ack + retry/backoff (backon), config
       (figment, off by default), graceful shutdown; management/health
@@ -28,7 +28,7 @@
       (kind/template/archetype/change_type predicates) → routing keys /
       per-subscription queues; admin CRUD surface (config-gated extension
       routes).
-- [ ] 5. Tests: outbox written atomically with commits (testcontainers PG);
+- [x] 5. Tests: outbox written atomically with commits (testcontainers PG);
       end-to-end publish against testcontainers RabbitMQ (consume + assert
       envelope, PHI-free); failure injection (broker down → retry, no loss);
       filter routing.

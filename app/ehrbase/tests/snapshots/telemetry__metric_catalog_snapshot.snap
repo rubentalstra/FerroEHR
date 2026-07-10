@@ -15,6 +15,7 @@ aql_query_duration_seconds histogram buckets=[0.001, 0.005, 0.01, 0.05, 0.1, 0.2
 compositions_committed_total counter
 validation_failures_total counter
 webtemplate_cache_events_total counter
+events_published_total counter
 atna_audit_emitted_total counter
 atna_audit_dropped_total counter
 atna_audit_sent_total counter

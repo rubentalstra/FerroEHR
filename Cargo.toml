@@ -164,6 +164,7 @@ quick_cache = "0.7.0"
 tower_governor = "0.8.0"             # rate limiting for axum (verify latest)
 governor = "0.10.4"                  # underlying limiter (verify latest)
 backon = "1"                      # retry/backoff (backoff crate is deprecated)
+lapin = "4"                       # AMQP 0.9.1 client (RabbitMQ) — contribution-outbox eventing (ADR-014)
 
 # ── Errors & utilities ───────────────────────────────────────────────────────
 thiserror = "2"                    # v2 current
@@ -195,7 +196,7 @@ fake = "5.1.0"                        # verify latest
 assert_cmd = "2"
 assert_fs = "1"
 testcontainers = "0.27.3"           # real PostgreSQL 18 in tests (verify latest)
-testcontainers-modules = { version = "0.15.0", features = ["postgres"] }   # verify latest
+testcontainers-modules = { version = "0.15.0", features = ["postgres", "rabbitmq"] }   # verify latest
 criterion = { version = "0.8.2", features = ["html_reports"] }
 divan = "0.1"
 hdrhistogram = "7.5.4"               # coordinated-omission-corrected latency (tools/benchmark)
