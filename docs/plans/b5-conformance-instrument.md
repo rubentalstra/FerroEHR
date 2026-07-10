@@ -8,23 +8,33 @@
 
 ## Tasks (blueprint §3 B5)
 
-- [ ] 1. D1 — ITS-REST identity: derive `SpecVersions.its_rest` from the
+- [x] 1. D1 — ITS-REST identity: derive `SpecVersions.its_rest` from the
       vendored provenance (owner ruling: the tested identity is the vendored
       `-codegen` tree, labeled honestly — not a hand-asserted "1.0.3");
       CI-check the two vendored ITS-REST trees are the same ref.
-- [ ] 2. D2 — re-adjudicate the 12 SM-op-without-REST-binding failures:
+- [x] 2. D2 — re-adjudicate the 12 SM-op-without-REST-binding failures:
       rebind `get_versioned_directory` to `GET /directory/{version_uid}`;
       `list_contributions` / bare `list_queries` / `delete_opt` →
       skip-with-reason/extension cases; fix citations.
-- [ ] 3. D3 — golden-corpus adjudication: LIMIT-before-ORDER-BY goldens →
+- [x] 3. D3 — golden-corpus adjudication: LIMIT-before-ORDER-BY goldens →
       corpus-dialect skip; `e/ehr_status` stays failing until the engine fix.
-- [ ] 4. D5 — CORE claimability: tag Versioning/AnonymousEhrs cases; decide +
+- [x] 4. D5 — CORE claimability: tag Versioning/AnonymousEhrs cases; decide +
       document Adl14ArchetypeProvisioning evidencing.
 - [ ] 5. D4 — full OPTIONS surface model (ADL 2, AQL advanced/terminology,
       Admin sub-capabilities, Messaging) with per-capability "any passes".
 - [ ] 6. Conformance Statement + Certificate artefacts from results.json per
       certificate/master03-certificate.adoc.
 - [ ] 7. SEC cases (auth 401/403 surface) + `schedule_ref` on CaseMeta.
+
+*Tasks 1–4 done 2026-07-10 (wave 1): its_rest identity derived from vendored
+provenance (development@e8a093e) + tree-reconciliation guard test; the 12
+mis-booked SM-op cases re-adjudicated (get_versioned_directory rebound to the
+real at-version route + Versioning-tagged; list_contributions/bare
+list_queries/delete_opt → cited skips); 7 LIMIT-before-ORDER-BY goldens →
+corpus-dialect skips (e/ehr_status untouched, stays failing for B6); CORE
+claimability: Versioning/AnonymousEhrs tagged incl. new ECC-EHR-013
+create-anonymous-ehr, Adl14ArchetypeProvisioning evidenced via the OPT
+upload (decision documented).*
 
 ## Exit criteria
 
