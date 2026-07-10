@@ -579,6 +579,14 @@ impl Validator {
 
     /// Emit occurrence violations for a matched-node `count` against `[min, max]`
     /// (`max == -1` is unbounded).
+    // PORT NOTE (BASE primitives): occurrence/cardinality evaluation here uses
+    // the WebTemplate's flattened `(min, max)` integers (`max = -1` =
+    // unbounded). This is behaviorally equivalent to BASE
+    // `Multiplicity_interval.has(count)` for OPT 1.4, whose occurrence
+    // intervals are always closed integer bounds
+    // (org.openehr.base.foundation_types.multiplicity_interval.adoc); the
+    // spec-cited reference semantics + truth-table tests live in
+    // `openehr-base` `multiplicity_interval_impl.rs` / `cardinality_impl.rs`.
     fn emit_occurrences(&mut self, aql_path: &str, min: i32, max: i32, count: usize) {
         let count_i = i32::try_from(count).unwrap_or(i32::MAX);
         // The lower-bound occurrences checks (absent / too-few) are relaxed away

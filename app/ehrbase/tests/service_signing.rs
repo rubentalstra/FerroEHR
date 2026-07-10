@@ -246,7 +246,11 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
         .expect("status get");
     let status_ovid_v1 = uid(&body).to_owned();
     body.as_object_mut().expect("status obj").remove("uid");
-    body["is_modifiable"] = json!(false);
+    // Flip is_queryable (not is_modifiable): the test only needs a second
+    // EHR_STATUS version, and with the B2 write guard a deactivated EHR
+    // (is_modifiable = false, RM ehr master04 §"EHR Active Status") would
+    // refuse the directory commit below.
+    body["is_queryable"] = json!(false);
     svc.replace_ehr_status(ehr_uuid, uv(body, "251", Some(&status_ovid_v1)))
         .await
         .expect("status update");

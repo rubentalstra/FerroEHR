@@ -43,6 +43,9 @@ pub(super) mod change_type {
 pub(super) mod lifecycle {
     /// `532|complete|` — a fully authored version.
     pub(crate) const COMPLETE: &str = "532";
+    /// `553|incomplete|` — a partial/unreviewed version committed with relaxed
+    /// validation (RM common master06 §"Incomplete Content").
+    pub(crate) const INCOMPLETE: &str = "553";
     /// `523|deleted|` — a logically deleted version.
     pub(crate) const DELETED: &str = "523";
 }
