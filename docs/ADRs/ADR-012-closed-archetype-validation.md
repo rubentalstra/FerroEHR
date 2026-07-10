@@ -48,7 +48,8 @@ Since AOM 1.4 text does not compel it, the implementation carries a
 `// PORT NOTE:` citing this ADR at the rejection site.
 
 **Gate:** the change lands only behind a full ECC run with **zero drift** vs
-the standing 293/319 baseline — the CNF fixtures are the empirical check that
+the standing 293/319 baseline *(the baseline at decision time; since ratcheted
+to 341 executed · 315 passed · 0 failed at B6 close)* — the CNF fixtures are the empirical check that
 the metadata-tolerance list (rule 2) is right; any fixture regression means
 rule 2 is too narrow, and the fix is widening the tolerance, never weakening
 a case.

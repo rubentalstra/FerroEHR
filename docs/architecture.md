@@ -183,8 +183,8 @@ The service layer realizes the openEHR **SM Platform Service Model**
 
 - **Fidelity gates** (spec/serialization): canonical JSON read + lossless
   round-trip + ITS-JSON schema validation; XML round-trips.
-- **Conformance suite** (`scripts/conformance.sh` — **planned P19**, not yet in
-  the tree): the openEHR **CNF Platform Conformance Test Schedule** (REST+JSON)
-  plus corpus suites — the acceptance instrument (ADR-008).
+- **Conformance suite** (`scripts/conformance.sh` — present): the ECC catalogue
+  (Docker-composed SUT, both formats) — the acceptance instrument (ADR-008);
+  B6 close: 341 executed · 315 passed · 0 failed, CORE/STANDARD PASS.
 - **Drift check** (`scripts/check-codegen-drift.sh` + CI): the generated layer
   is always in sync with the vendored specs.
