@@ -599,3 +599,112 @@ async fn result_set_carries_the_its_rest_shape() {
         );
     }
 }
+
+/// `e/ehr_status` on an EHR-typed variable (B6 cluster 2; ECC-QRY-006/010, the
+/// A/106 `get_ehrs` golden). EHR is not a `node` in the store and `EHR_STATUS`
+/// is a *separate* versioned object (RM 1.2.0 `EHR.ehr_status`), so the engine
+/// resolves the path by joining the EHR's current `EHR_STATUS` VO and
+/// reassembling it — rather than rejecting the query. Also exercises the exact
+/// A/106 SELECT list (`ehr_id`, `time_created`, `system_id`, `ehr_status`) and
+/// leaf extraction under `ehr_status`.
+///
+/// Golden columns:
+/// `docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/`
+/// `query/expected_results/{empty_db,loaded_db}/A/106_get_ehrs.json`.
+#[tokio::test]
+async fn ehr_status_on_ehr_variable() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_ehr_status").await;
+    let svc = EhrbaseService::new(pool);
+
+    let ehr_id = create_ehr(&svc).await;
+
+    // (1) Whole EHR_STATUS reassembled through the engine-level join.
+    let r = run_aql(&svc, "SELECT e/ehr_status FROM EHR e", ehr_scope(&ehr_id)).await;
+    assert_eq!(rows(&r).len(), 1, "one EHR in the scoped result set");
+    let status = &rows(&r)[0][0];
+    assert_eq!(
+        status["_type"], "EHR_STATUS",
+        "the cell is a reassembled EHR_STATUS object: {status:?}"
+    );
+    assert!(
+        status.get("subject").is_some(),
+        "the reassembled EHR_STATUS carries its mandatory `subject`: {status:?}"
+    );
+    assert_eq!(
+        status["is_queryable"],
+        json!(true),
+        "default EHR_STATUS is queryable: {status:?}"
+    );
+
+    // (2) The exact A/106 SELECT list resolves (previously a 400 reject). The
+    // golden's column metadata (name `#i` + path) is the data-independent
+    // oracle.
+    let r = run_aql(
+        &svc,
+        "SELECT e/ehr_id, e/time_created, e/system_id, e/ehr_status FROM EHR e",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let cols = r["columns"].as_array().expect("columns array");
+    let names: Vec<&str> = cols.iter().map(|c| c["name"].as_str().unwrap()).collect();
+    let paths: Vec<&str> = cols.iter().map(|c| c["path"].as_str().unwrap()).collect();
+    assert_eq!(names, vec!["#0", "#1", "#2", "#3"], "A/106 column names");
+    assert_eq!(
+        paths,
+        vec!["/ehr_id", "/time_created", "/system_id", "/ehr_status"],
+        "A/106 column paths"
+    );
+    assert_eq!(rows(&r).len(), 1, "one row for the scoped EHR");
+    assert_eq!(
+        rows(&r)[0][3]["_type"],
+        "EHR_STATUS",
+        "the fourth column is the EHR_STATUS object"
+    );
+
+    // (3) Leaf extraction under ehr_status: an inline scalar (`is_queryable`)
+    // and an inline object attribute (`subject`, a PARTY_PROXY kept inline in
+    // the root fragment).
+    let r = run_aql(
+        &svc,
+        "SELECT e/ehr_status/is_queryable, e/ehr_status/subject FROM EHR e",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&r).len(), 1, "one row");
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(true),
+        "e/ehr_status/is_queryable extracts the boolean leaf"
+    );
+    assert!(
+        rows(&r)[0][1]["_type"].as_str().is_some(),
+        "e/ehr_status/subject extracts the PARTY_PROXY object: {:?}",
+        rows(&r)[0][1]
+    );
+}
+
+/// The empty-DB shape of the A/106 golden: the query must resolve (200, not a
+/// 400 reject) and return the four columns with **no** rows when no EHR exists.
+/// Matches `expected_results/empty_db/A/106_get_ehrs.json` (columns + `rows: []`).
+#[tokio::test]
+async fn ehr_status_query_empty_db() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_ehr_status_empty").await;
+    let svc = EhrbaseService::new(pool);
+
+    let r = run_aql(
+        &svc,
+        "SELECT e/ehr_id, e/time_created, e/system_id, e/ehr_status FROM EHR e",
+        AqlQueryRequest::default(),
+    )
+    .await;
+    let cols = r["columns"].as_array().expect("columns array");
+    let paths: Vec<&str> = cols.iter().map(|c| c["path"].as_str().unwrap()).collect();
+    assert_eq!(
+        paths,
+        vec!["/ehr_id", "/time_created", "/system_id", "/ehr_status"],
+        "A/106 columns present on the empty DB"
+    );
+    assert!(rows(&r).is_empty(), "no EHRs → empty result set");
+}
