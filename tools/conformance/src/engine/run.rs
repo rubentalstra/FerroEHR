@@ -32,6 +32,11 @@ pub struct RunConfig {
     pub versions: SpecVersions,
     /// The declared auth mode (recorded in the statement).
     pub auth_mode: String,
+    /// The terminology server the run has available (B4 `TS` area): the
+    /// spun-up `wiremock` fixture (CI default) or a real server
+    /// (`--tx-server-url`). `None` when no terminology server was established —
+    /// the FHIR-tx / fault-injection `TS` cases then skip with a stated reason.
+    pub tx: Option<crate::ts::TxServer>,
 }
 
 impl Default for RunConfig {
@@ -42,6 +47,7 @@ impl Default for RunConfig {
             formats: vec![Format::Json],
             versions: SpecVersions::latest(),
             auth_mode: "unknown".to_owned(),
+            tx: None,
         }
     }
 }
@@ -76,7 +82,11 @@ pub async fn run(transport: &dyn Transport, config: &RunConfig) -> Result<RunRes
             if !meta.formats.contains(&format) {
                 continue;
             }
-            let ctx = RunContext { transport, format };
+            let ctx = RunContext {
+                transport,
+                format,
+                tx: config.tx.as_ref(),
+            };
             let start = Instant::now();
             let result = (entry.run)(&ctx).await;
             let duration_ms = start.elapsed().as_millis();
@@ -125,6 +135,9 @@ pub async fn run(transport: &dyn Transport, config: &RunConfig) -> Result<RunRes
                 .map(|f| format!("{f:?}").to_lowercase())
                 .collect(),
         },
+        // The terminology run record (fixture + recorded exchange) is attached
+        // by the runner binary, which owns the fixture lifecycle.
+        terminology: None,
         cases,
     })
 }

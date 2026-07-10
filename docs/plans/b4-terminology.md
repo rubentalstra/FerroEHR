@@ -24,10 +24,18 @@
       each lands.
 - [ ] 3. Terminology wire exposure (extension OAS, design doc 08 §7) for
       I_TERMINOLOGY_SERVICE (+ EHR Index/Admin wire while in the area).
-- [ ] 4. Test harness in tools/conformance: `TS` case area — wiremock-backed
+- [x] 4. Test harness in tools/conformance: `TS` case area — wiremock-backed
       FHIR-tx fixture server spun up by the runner (expand/validate/lookup/
       subsumes + fault injection) and optional real-server mode
-      (`--tx-server-url`, skip-with-reason when unset).
+      (`--tx-server-url`, skip-with-reason when unset). *Done 2026-07-10:
+      new `Area::Ts` + `Capability::Terminology`; `ts::fixture::FhirTxFixture`
+      (canned + fault modes, self-check, exchange recording; 6 nextest tests);
+      `--tx-server-url` CLI + runner spins up the hermetic fixture by default
+      and records the FHIR-tx exchange in the report (`RunResults.terminology`).
+      9 ECC-TS cases: bundle expand real passes (TS-001..005), FHIR-provider
+      PASS/SKIP(SutConfig) (TS-006), fault-injection SKIP(SutConfig) citing the
+      fixture + app wiremock evidence (TS-007..009). `nextest -p conformance`
+      41/41 green; catalog regenerated (guard green).*
 
 ## Exit criteria
 

@@ -246,6 +246,12 @@ pub struct RunContext<'a> {
     pub transport: &'a dyn Transport,
     /// The wire format this run is exercising.
     pub format: Format,
+    /// The terminology server the harness has available for this run (B4 `TS`
+    /// area): the hermetic `wiremock` fixture or a real server
+    /// (`--tx-server-url`). `None` when none was established. A case reads this
+    /// to phrase its skip reason and to record which server it targeted; the
+    /// SUT is still reached only over [`RunContext::transport`].
+    pub tx: Option<&'a crate::ts::TxServer>,
 }
 
 impl std::fmt::Debug for RunContext<'_> {
@@ -253,6 +259,7 @@ impl std::fmt::Debug for RunContext<'_> {
         f.debug_struct("RunContext")
             .field("format", &self.format)
             .field("transport", &self.transport.describe())
+            .field("tx", &self.tx.map(|t| &t.base_url))
             .finish()
     }
 }
