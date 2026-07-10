@@ -10,14 +10,17 @@
 //!   are parsed into the concrete `openehr-rm` type and re-emitted as the
 //!   canonical JSON `Value` the trait expects, so a handler never sees the wire
 //!   format. See [`rm_value`].
-//! - **XML responses** for the single spec-typed RM objects (composition,
-//!   `ehr_status`, ehr, folder) are served by [`respond_rm`]: the handler returns
-//!   canonical JSON as usual, and for an XML `Accept` the value is re-typed into
-//!   its concrete `openehr-rm` type at the response edge so the generated
-//!   `ToXml` runs — the mirror of the [`rm_value`] request path. Responses that
-//!   are not a single spec-typed RM value (VERSION-family wrappers, revision
-//!   histories, collections, item tags, contribution DTOs) have no spec-defined
-//!   canonical-XML shape and stay JSON-only via [`respond`].
+//! - **XML responses** for the spec-typed RM objects are served by
+//!   [`respond_rm`]: the handler returns canonical JSON as usual, and for an XML
+//!   `Accept` the value is re-typed into its concrete `openehr-rm` type at the
+//!   response edge so the generated `ToXml` runs — the mirror of the [`rm_value`]
+//!   request path. This covers the single objects (composition, `ehr_status`,
+//!   ehr, folder) and the VERSION family — `ORIGINAL_VERSION<T>`,
+//!   `VERSIONED_OBJECT`, `REVISION_HISTORY` — whose canonical-XML shape ITS-XML
+//!   (`Version.xsd`/`Common.xsd`) defines and `emit-xml` generates (F-05-06).
+//!   Responses that are genuinely not a spec-typed RM value (collections, item
+//!   tags, terminology/query DTOs, the CONTRIBUTION wire DTO) have no
+//!   spec-defined canonical-XML shape and stay JSON-only via [`respond`].
 
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
@@ -160,6 +163,14 @@ pub(crate) fn response_format(headers: &HeaderMap) -> Format {
     }
 }
 
+/// Format a commit timestamp as an HTTP-date (RFC 7231 IMF-fixdate, always GMT)
+/// for the `Last-Modified` response header, e.g. `Wed, 22 Jul 2009 19:15:56 GMT`.
+fn http_date(at: jiff::Timestamp) -> String {
+    // `Timestamp` formats in UTC; the fixed English weekday/month abbreviations
+    // and `GMT` zone give the IMF-fixdate the spec's example shows.
+    at.strftime("%a, %d %b %Y %H:%M:%S GMT").to_string()
+}
+
 fn header_str(headers: &HeaderMap, name: header::HeaderName) -> Option<String> {
     headers
         .get(name)
@@ -264,11 +275,11 @@ fn parse_json(body: &Bytes) -> Result<serde_json::Value, ApiError> {
 }
 
 /// Render a serializable payload as a JSON response. Used for responses that are
-/// not a single spec-typed RM value (`serde_json::Value` wrappers and
-/// collections: VERSION-family objects, revision histories, item tags,
-/// contribution DTOs); if the client requested XML exclusively, this returns 406
-/// since those payloads have no spec-defined canonical-XML shape. Single
-/// spec-typed RM objects use [`respond_rm`] instead.
+/// not a spec-typed RM value (`serde_json::Value` collections and DTOs: item
+/// tags, terminology/query results, the CONTRIBUTION wire DTO); if the client
+/// requested XML exclusively, this returns 406 since those payloads have no
+/// spec-defined canonical-XML shape. Spec-typed RM objects — including the
+/// VERSION family — use [`respond_rm`] instead.
 pub(crate) fn respond<T: Serialize>(
     headers: &HeaderMap,
     status: StatusCode,
@@ -277,8 +288,7 @@ pub(crate) fn respond<T: Serialize>(
     match response_format(headers) {
         Format::Json => json_response(status, value),
         Format::Xml => ApiError::NotAcceptable(
-            "canonical XML for this response is available once typed payloads land (P12); \
-             request application/json"
+            "this response has no canonical-XML representation; request application/json"
                 .to_owned(),
         )
         .into_response_body(),
@@ -379,8 +389,12 @@ pub(crate) fn location(base_path: &str, ehr_id: &str, segment: Option<&str>, uid
     }
 }
 
-/// Set `ETag` (the `uid`, double-quoted) and `Location` on a response from
-/// resource metadata (ITS-REST `headers/ETag_*.yaml` + `headers/Location_*.yaml`).
+/// Set `ETag` (the `uid`, double-quoted), `Location`, and — when the metadata
+/// carries a commit time — `Last-Modified` on a response from resource metadata
+/// (ITS-REST `headers/ETag_*.yaml` + `headers/Location_*.yaml`; the overview
+/// spec's `ETag`/`Last-Modified` section: `Last-Modified` is the version commit
+/// time `VERSION.commit_audit.time_committed.value`, SHOULD-present on responses
+/// targeting a `VERSION`/`VERSIONED_OBJECT` resource).
 pub(crate) fn set_resource_headers(
     resp: &mut Response,
     base_path: &str,
@@ -392,6 +406,11 @@ pub(crate) fn set_resource_headers(
     }
     if let Ok(loc) = HeaderValue::from_str(&location(base_path, &meta.ehr_id, segment, &meta.uid)) {
         resp.headers_mut().insert(header::LOCATION, loc);
+    }
+    if let Some(at) = meta.last_modified
+        && let Ok(lm) = HeaderValue::from_str(&http_date(at))
+    {
+        resp.headers_mut().insert(header::LAST_MODIFIED, lm);
     }
     // The single, generic ATNA hook for the participant object: surface the
     // resource ids the envelope already carries for the audit layer (§8.2 step 3).
@@ -463,24 +482,6 @@ where
     T: DeserializeOwned + Serialize + ToXml,
 {
     let mut out = respond_rm::<T>(headers, StatusCode::OK, &resp.body, root_tag);
-    if let Some(meta) = &resp.meta {
-        set_resource_headers(&mut out, base_path, segment, meta);
-    }
-    out
-}
-
-/// Render a `200 OK` read of a JSON-only payload (no canonical-XML shape, e.g.
-/// an `ORIGINAL_VERSION` wrapper) whose spec response declares `ETag`/`Location`
-/// — the `*_version_get_at_time` reads (`200_VERSION_at_time.yaml` /
-/// `200_VERSION_of_COMPOSITION_at_time.yaml`: `ETag` = the `version_uid`,
-/// `Location` = the VERSION resource URL).
-pub(crate) fn read_json(
-    headers: &HeaderMap,
-    base_path: &str,
-    segment: Option<&str>,
-    resp: &ServiceResponse,
-) -> Response {
-    let mut out = respond(headers, StatusCode::OK, &resp.body);
     if let Some(meta) = &resp.meta {
         set_resource_headers(&mut out, base_path, segment, meta);
     }
@@ -734,6 +735,94 @@ mod tests {
         assert!(!xml.contains("_type"), "not a serialized JSON blob: {xml}");
     }
 
+    #[tokio::test]
+    async fn respond_rm_renders_original_version_xml_with_signature() {
+        // F-05-06 / ECC-SIG-001: an ORIGINAL_VERSION response is served as
+        // canonical XML (its `ToXml` exists), carrying the `<signature>` element.
+        // `OriginalVersion<T>` is generic — `DvText` stands in for the versioned
+        // root here; the dispatch uses `OriginalVersion<Composition>`.
+        use http_body_util::BodyExt;
+        use openehr_rm::prelude::{DvText, OriginalVersion};
+
+        let value = serde_json::json!({
+            "_type": "ORIGINAL_VERSION",
+            "contribution": {
+                "_type": "OBJECT_REF",
+                "namespace": "local",
+                "type": "CONTRIBUTION",
+                "id": { "_type": "HIER_OBJECT_ID", "value": "c1" }
+            },
+            "commit_audit": {
+                "_type": "AUDIT_DETAILS",
+                "system_id": "ehrbase-rs",
+                "time_committed": { "_type": "DV_DATE_TIME", "value": "2024-01-01T00:00:00Z" },
+                "change_type": {
+                    "_type": "DV_CODED_TEXT", "value": "creation",
+                    "defining_code": { "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "249" }
+                },
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "clinician" }
+            },
+            "signature": "-----BEGIN PGP SIGNATURE-----\nDEADBEEF\n-----END PGP SIGNATURE-----",
+            "uid": { "_type": "OBJECT_VERSION_ID", "value": "v1::openEHRSys::1" },
+            "lifecycle_state": {
+                "_type": "DV_CODED_TEXT", "value": "complete",
+                "defining_code": { "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "532" }
+            },
+            "data": { "_type": "DV_TEXT", "value": "hello" }
+        });
+        let h = headers(&[("accept", "application/xml")]);
+        let resp =
+            respond_rm::<OriginalVersion<DvText>>(&h, StatusCode::OK, &value, "original_version");
+
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(content_type(&resp).as_deref(), Some(APPLICATION_XML));
+        let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+        let xml = String::from_utf8(bytes.to_vec()).expect("utf8");
+        assert!(xml.contains("<original_version"), "root element: {xml}");
+        assert!(
+            xml.contains("<signature"),
+            "signature element present: {xml}"
+        );
+        assert!(xml.contains("DEADBEEF"), "signature value present: {xml}");
+        assert!(!xml.contains("\"_type\""), "not a JSON blob: {xml}");
+    }
+
+    #[tokio::test]
+    async fn respond_rm_renders_versioned_object_xml() {
+        // F-05-06 / ECC-COM-022: the VERSIONED_OBJECT container serves as XML.
+        use http_body_util::BodyExt;
+        use openehr_rm::prelude::VersionedObjectData;
+
+        let value = serde_json::json!({
+            "_type": "VERSIONED_OBJECT",
+            "uid": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+            "owner_id": {
+                "_type": "OBJECT_REF", "namespace": "local", "type": "EHR",
+                "id": { "_type": "HIER_OBJECT_ID", "value": "e1" }
+            },
+            "time_created": { "_type": "DV_DATE_TIME", "value": "2024-01-01T00:00:00Z" }
+        });
+        let h = headers(&[("accept", "application/xml")]);
+        let resp =
+            respond_rm::<VersionedObjectData>(&h, StatusCode::OK, &value, "versioned_composition");
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(content_type(&resp).as_deref(), Some(APPLICATION_XML));
+        let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+        let xml = String::from_utf8(bytes.to_vec()).expect("utf8");
+        assert!(
+            xml.contains("<versioned_composition"),
+            "root element: {xml}"
+        );
+        assert!(
+            xml.contains("8849182c-82ad-4088-a07f-48ead4180515"),
+            "uid present: {xml}"
+        );
+    }
+
     // ── W2-A: header + `Prefer` handling ────────────────────────────────────
 
     const BASE: &str = "/ehrbase/rest/openehr/v1";
@@ -853,5 +942,35 @@ mod tests {
             loc(&out).as_deref(),
             Some(&*format!("{BASE}/ehr/e1/ehr_status/v::s::5"))
         );
+    }
+
+    #[test]
+    fn http_date_is_imf_fixdate() {
+        // The overview spec's example: `Wed, 22 Jul 2009 19:15:56 GMT`.
+        let ts: jiff::Timestamp = "2009-07-22T19:15:56Z".parse().unwrap();
+        assert_eq!(http_date(ts), "Wed, 22 Jul 2009 19:15:56 GMT");
+    }
+
+    #[test]
+    fn set_resource_headers_emits_last_modified() {
+        // §"ETag and Last-Modified": a versioned resource's commit time is
+        // surfaced as `Last-Modified` alongside `ETag`/`Location`.
+        let ts: jiff::Timestamp = "2024-03-04T05:06:07Z".parse().unwrap();
+        let m = ResourceMeta::new("e1".to_owned(), "v::s::1".to_owned()).with_last_modified(ts);
+        let mut resp = empty(StatusCode::OK);
+        set_resource_headers(&mut resp, BASE, Some("composition"), &m);
+        let lm = resp
+            .headers()
+            .get(header::LAST_MODIFIED)
+            .and_then(|v| v.to_str().ok());
+        assert_eq!(lm, Some("Mon, 04 Mar 2024 05:06:07 GMT"));
+    }
+
+    #[test]
+    fn set_resource_headers_omits_last_modified_when_absent() {
+        let m = ResourceMeta::new("e1".to_owned(), "v::s::1".to_owned());
+        let mut resp = empty(StatusCode::OK);
+        set_resource_headers(&mut resp, BASE, Some("composition"), &m);
+        assert!(resp.headers().get(header::LAST_MODIFIED).is_none());
     }
 }

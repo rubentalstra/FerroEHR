@@ -68,7 +68,7 @@ fn hooks() -> Hooks {
                 ResourceMeta::new(String::new(), PARTY_OVID.to_owned()),
             ))
         })),
-        party_delete: Some(Arc::new(|_kind, _uid| {
+        party_delete: Some(Arc::new(|_kind, _uid, _if_match| {
             Ok(ServiceResponse::deleted(ResourceMeta::new(
                 String::new(),
                 PARTY_OVID.to_owned(),
@@ -236,6 +236,24 @@ async fn person_delete_is_204_with_headers() {
         location(&h),
         Some(format!("{BASE}/demographic/person/{PARTY_OVID}").as_str())
     );
+    assert!(body.is_empty());
+}
+
+/// The versioned-object-uid delete shape (ECC-DEM-005 family): the path is the
+/// bare `HIER_OBJECT_ID` and the preceding version is carried by `If-Match`.
+/// The dispatcher must accept it and forward `If-Match` — a `204`, not a `400`.
+#[tokio::test]
+async fn person_delete_by_versioned_uid_with_if_match_is_204() {
+    let vo = PARTY_OVID.split("::").next().unwrap();
+    let req = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/demographic/person/{vo}"))
+        .header(header::IF_MATCH, format!("\"{PARTY_OVID}\""))
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, body) = send(req).await;
+
+    assert_eq!(status, StatusCode::NO_CONTENT);
     assert!(body.is_empty());
 }
 

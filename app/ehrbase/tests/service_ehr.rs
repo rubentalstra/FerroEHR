@@ -925,10 +925,12 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("semverq").await);
 
+    // Store-time AQL validation is now enforced, so the per-version bodies must
+    // be well-formed AQL (the letters `a`/`b`/`c` keep them distinguishable).
     for (version, q) in [
-        ("1.0.0", "SELECT a"),
-        ("1.0.1", "SELECT b"),
-        ("1.1.0", "SELECT c"),
+        ("1.0.0", "SELECT a FROM EHR a"),
+        ("1.0.1", "SELECT b FROM EHR b"),
+        ("1.1.0", "SELECT c FROM EHR c"),
     ] {
         svc.query_store(
             "org.example::obs".to_owned(),
@@ -944,14 +946,14 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
         .await
         .expect("major prefix resolves");
     assert_eq!(by_major["version"], "1.1.0");
-    assert_eq!(by_major["q"], "SELECT c");
+    assert_eq!(by_major["q"], "SELECT c FROM EHR c");
 
     let by_minor = svc
         .query_version_get("org.example::obs".to_owned(), "1.0".to_owned())
         .await
         .expect("major.minor prefix resolves");
     assert_eq!(by_minor["version"], "1.0.1");
-    assert_eq!(by_minor["q"], "SELECT b");
+    assert_eq!(by_minor["q"], "SELECT b FROM EHR b");
 
     // An exact triple still resolves exactly; an unmatched prefix is 404.
     let exact = svc

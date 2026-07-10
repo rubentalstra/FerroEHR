@@ -255,7 +255,20 @@ Counts: 1 critical, 2 major, 4 minor, 4 info.
 - **Fix:** either type the version-family `data` (resolve the ADR-004
   monomorphization for `X_VERSIONED_*`) and serve VERSION XML properly, or keep
   the 406 and document it as an intentional gap; update the stale message text.
-- [ ] fixed
+- [x] fixed (B6 cluster 4) — the premise was wrong: the served version-family
+  types are **not** monomorphization artifacts. `OriginalVersion<T>` /
+  `VersionedObjectData` / `RevisionHistory` carry concrete `data: Option<T>`
+  and already have generated `ToXml`/`FromXml` (`emit-xml` emits every BMM XML
+  type). This was a REST-edge policy (the 406 in `negotiate::respond`), not a
+  serialization gap. The version-family reads
+  (`versioned_composition{,_version_get_by_id,_version_get_at_time,_revision_history}`
+  and the `ehr_status` mirrors) now route through `negotiate::respond_rm`/`read_rm`
+  with the concrete type (`OriginalVersion<Composition>`/`<EhrStatus>`,
+  `VersionedObjectData`, `RevisionHistory`), serving canonical XML — the served
+  ORIGINAL_VERSION carries `<signature>`. Closes ECC-COM-022 + ECC-SIG-001 on
+  `Accept: application/xml`. The stale "(P12)" 406 message was rewritten. No
+  emitter change (no drift). CONTRIBUTION/item-tag/collection DTOs stay JSON-only
+  (no RM canonical-XML shape).
 
 ### F-05-07: `serde_json::Value` slots serialize as JSON-text on write and are discarded (→ Null) on read
 - **Severity:** info

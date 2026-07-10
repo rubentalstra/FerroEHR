@@ -93,13 +93,27 @@ pub(crate) fn object_id_uuid(ovid: &ObjectVersionId) -> Option<Uuid> {
     }
 }
 
-/// The `preceding_version_uid` (`If-Match`) as an [`ObjectVersionId`], if the
-/// header value is a well-formed (quoted or bare) `OBJECT_VERSION_ID`. `None`
-/// when no precondition can be extracted (none is then enforced).
-pub(crate) fn if_match_ovid(if_match: &str) -> Option<ObjectVersionId> {
+/// The `preceding_version_uid` for an operation whose `If-Match` header is
+/// **required** (`ehr_status_update`, `composition_update`, `directory_update`,
+/// `directory_delete` — all `required: true`, `parameters/If-Match`). The value
+/// is the full quoted `OBJECT_VERSION_ID`; a malformed or empty value is a
+/// client error rather than a silently-skipped precondition (F-01-09/F-02-08).
+///
+/// PORT NOTE (wire, spec-silent): ITS-REST defines only the "received and the
+/// condition evaluates to false → `412`" case; it says nothing about a
+/// syntactically invalid `If-Match`. We map an unparseable required `If-Match`
+/// to `400 Bad Request` (the general "malformed request syntax" rule), never to
+/// a silent bypass of the optimistic-concurrency guard.
+pub(crate) fn require_if_match(if_match: &str) -> Result<ObjectVersionId, ApiError> {
     let token = if_match.trim().trim_matches('"');
     if token.is_empty() {
-        return None;
+        return Err(ApiError::BadRequest(
+            "If-Match is required for this operation but was empty".to_owned(),
+        ));
     }
-    ObjectVersionId::from_str(token).ok()
+    ObjectVersionId::from_str(token).map_err(|e| {
+        ApiError::BadRequest(format!(
+            "If-Match must be a quoted OBJECT_VERSION_ID; {token:?} is malformed: {e}"
+        ))
+    })
 }

@@ -20,7 +20,7 @@
 //! `409`/`412` the write arms decorate the error with the current `version_uid`.
 
 use axum::response::{IntoResponse, Response};
-use http::StatusCode;
+use http::{HeaderMap, StatusCode};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -40,7 +40,10 @@ use openehr_its::rest::generated::ehr::{
     VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
 };
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::prelude::{Composition, Ehr, EhrStatus, Folder, PartyProxy, PartySelf};
+use openehr_rm::prelude::{
+    Composition, Ehr, EhrStatus, Folder, OriginalVersion, PartyProxy, PartySelf, RevisionHistory,
+    VersionedObjectData,
+};
 
 // The EHR-core service methods called via method syntax on `&S` are brought
 // into scope by the `S: Platform` bound (their traits are Platform supertraits);
@@ -54,7 +57,8 @@ use super::{BoxResponse, RequestParts};
 use crate::error::{RestError, sm_api_error};
 use crate::state::AppState;
 use crate::version_id::{
-    if_match_ovid, object_id_uuid, parse_ehr_id, parse_uid_based_id, parse_uuid, parse_version_uid,
+    object_id_uuid, parse_ehr_id, parse_uid_based_id, parse_uuid, parse_version_uid,
+    require_if_match,
 };
 use crate::{AuthMethod, negotiate, params};
 
@@ -135,13 +139,20 @@ fn committer_proxy() -> PartyProxy {
 /// route (`POST`/`PUT` of a `COMPOSITION/EHR_STATUS/FOLDER)`: the RM object is the
 /// `data`, the `If-Match` is the `preceding_version_uid`, and the audit carries
 /// the change type + committer.
+///
+/// The server defaults (lifecycle `532|complete|`, the verb-derived change type,
+/// the authenticated committer) are then **merged** with any
+/// `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal request headers the
+/// client supplied — the ITS-REST MUST (overview §"openEHR-VERSION and
+/// openEHR-AUDIT_DETAILS"; `crate::committal`).
 fn mk_update_version(
+    headers: &HeaderMap,
     data: Value,
     change_code: &str,
     description: &str,
     preceding: Option<ObjectVersionId>,
 ) -> UpdateVersion {
-    UpdateVersion {
+    let mut uv = UpdateVersion {
         preceding_version_uid: preceding,
         lifecycle_state: term(LIFECYCLE_COMPLETE),
         attestations: None,
@@ -152,7 +163,9 @@ fn mk_update_version(
             committer: committer_proxy(),
         },
         signature: None,
-    }
+    };
+    crate::committal::merge_committal_headers(&mut uv, headers);
+    uv
 }
 
 /// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid, trunk
@@ -262,10 +275,11 @@ async fn run<S: Platform>(
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let body = negotiate::rm_value::<EhrStatus>(h, &parts.body)?;
             let uv = mk_update_version(
+                h,
                 body,
                 CHANGE_MODIFICATION,
                 "EHR_STATUS update",
-                if_match_ovid(&p.if_match),
+                Some(require_if_match(&p.if_match)?),
             );
             // 204_EHR_STATUS (default minimal) / 200_EHR_STATUS_updated
             // (representation); ETag + Location on both. 412 → latest version_uid.
@@ -308,13 +322,26 @@ async fn run<S: Platform>(
             let p = params::build::<VersionedEhrStatusGetParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let body = state.backend().get_versioned_ehr_status(ehr_id).await?;
-            Ok(negotiate::respond(h, ok, &body))
+            // VERSIONED_OBJECT container — canonical JSON or XML (F-05-06:
+            // ITS-XML `Version.xsd`/`Common.xsd` define the shape; the generated
+            // `ToXml` for `VersionedObjectData` serves it).
+            Ok(negotiate::respond_rm::<VersionedObjectData>(
+                h,
+                ok,
+                &body,
+                "versioned_ehr_status",
+            ))
         }
         "versioned_ehr_status_revision_history" => {
             let p = params::build::<VersionedEhrStatusRevisionHistoryParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let body = state.backend().ehr_status_revision_history(ehr_id).await?;
-            Ok(negotiate::respond(h, ok, &body))
+            Ok(negotiate::respond_rm::<RevisionHistory>(
+                h,
+                ok,
+                &body,
+                "revision_history",
+            ))
         }
         "versioned_ehr_status_version_get_at_time" => {
             let p = params::build::<VersionedEhrStatusVersionGetAtTimeParams>(&parts.path, q, h)?;
@@ -323,13 +350,15 @@ async fn run<S: Platform>(
                 .backend()
                 .ehr_status_version_at_time(ehr_id, p.version_at_time)
                 .await?;
-            // 200_VERSION_at_time: ETag(version_uid) + Location of the VERSION.
+            // 200_VERSION_at_time: ETag(version_uid) + Location of the VERSION;
+            // body is an ORIGINAL_VERSION<EHR_STATUS> (JSON or canonical XML).
             let resp = read_resp(&p.ehr_id, body);
-            Ok(negotiate::read_json(
+            Ok(negotiate::read_rm::<OriginalVersion<EhrStatus>>(
                 h,
                 &base,
                 Some("versioned_ehr_status/version"),
                 &resp,
+                "original_version",
             ))
         }
         "versioned_ehr_status_version_get_by_id" => {
@@ -340,7 +369,12 @@ async fn run<S: Platform>(
                 .backend()
                 .ehr_status_original_version(ehr_id, vo_id, version)
                 .await?;
-            Ok(negotiate::respond(h, ok, &body))
+            Ok(negotiate::respond_rm::<OriginalVersion<EhrStatus>>(
+                h,
+                ok,
+                &body,
+                "original_version",
+            ))
         }
         // ── COMPOSITION ──────────────────────────────────────────────────────
         "composition_create" => {
@@ -355,7 +389,7 @@ async fn run<S: Platform>(
             } else {
                 negotiate::rm_value::<Composition>(h, &parts.body)?
             };
-            let uv = mk_update_version(body, CHANGE_CREATION, "COMPOSITION creation", None);
+            let uv = mk_update_version(h, body, CHANGE_CREATION, "COMPOSITION creation", None);
             let uid = state.backend().create_composition(ehr_id, uv).await?;
             composition_write_response(&state, h, &base, ehr_id, uid, created, created).await
         }
@@ -412,10 +446,11 @@ async fn run<S: Platform>(
                 negotiate::rm_value::<Composition>(h, &parts.body)?
             };
             let uv = mk_update_version(
+                h,
                 body,
                 CHANGE_MODIFICATION,
                 "COMPOSITION update",
-                if_match_ovid(&p.if_match),
+                Some(require_if_match(&p.if_match)?),
             );
             match state
                 .backend()
@@ -490,7 +525,13 @@ async fn run<S: Platform>(
                 .backend()
                 .get_versioned_composition(ehr_id, vo_id)
                 .await?;
-            Ok(negotiate::respond(h, ok, &body))
+            // VERSIONED_OBJECT container — canonical JSON or XML (F-05-06).
+            Ok(negotiate::respond_rm::<VersionedObjectData>(
+                h,
+                ok,
+                &body,
+                "versioned_composition",
+            ))
         }
         "versioned_composition_revision_history" => {
             let p = params::build::<VersionedCompositionRevisionHistoryParams>(&parts.path, q, h)?;
@@ -500,7 +541,12 @@ async fn run<S: Platform>(
                 .backend()
                 .composition_revision_history(ehr_id, vo_id)
                 .await?;
-            Ok(negotiate::respond(h, ok, &body))
+            Ok(negotiate::respond_rm::<RevisionHistory>(
+                h,
+                ok,
+                &body,
+                "revision_history",
+            ))
         }
         "versioned_composition_version_get_at_time" => {
             let p = params::build::<VersionedCompositionVersionGetAtTimeParams>(&parts.path, q, h)?;
@@ -514,7 +560,14 @@ async fn run<S: Platform>(
                 .composition_version_at_time(ehr_id, vo_id, p.version_at_time)
                 .await?;
             let resp = read_resp(&p.ehr_id, body);
-            Ok(negotiate::read_json(h, &base, Some(&segment), &resp))
+            // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML (F-05-06).
+            Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
+                h,
+                &base,
+                Some(&segment),
+                &resp,
+                "original_version",
+            ))
         }
         "versioned_composition_version_get_by_id" => {
             let p = params::build::<VersionedCompositionVersionGetByIdParams>(&parts.path, q, h)?;
@@ -524,7 +577,14 @@ async fn run<S: Platform>(
                 .backend()
                 .composition_original_version(ehr_id, ovid)
                 .await?;
-            Ok(negotiate::respond(h, ok, &body))
+            // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML; carries the
+            // version `<signature>` (ECC-SIG-001, version-signing.md §4.4).
+            Ok(negotiate::respond_rm::<OriginalVersion<Composition>>(
+                h,
+                ok,
+                &body,
+                "original_version",
+            ))
         }
         // ── DIRECTORY (FOLDER) ───────────────────────────────────────────────
         "directory_get_at_time" => {
@@ -546,10 +606,11 @@ async fn run<S: Platform>(
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let body = negotiate::rm_value::<Folder>(h, &parts.body)?;
             let uv = mk_update_version(
+                h,
                 body,
                 CHANGE_MODIFICATION,
                 "DIRECTORY update",
-                if_match_ovid(&p.if_match),
+                Some(require_if_match(&p.if_match)?),
             );
             // 204_directory_updated (default) / 200_directory_updated
             // (representation); ETag + Location on both. 412 → latest version_uid.
@@ -595,7 +656,7 @@ async fn run<S: Platform>(
             let p = params::build::<DirectoryCreateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let body = negotiate::rm_value::<Folder>(h, &parts.body)?;
-            let uv = mk_update_version(body, CHANGE_CREATION, "DIRECTORY creation", None);
+            let uv = mk_update_version(h, body, CHANGE_CREATION, "DIRECTORY creation", None);
             let uid = state.backend().create_directory(ehr_id, uv).await?;
             let repr = if negotiate::prefers_representation(h) {
                 state
@@ -623,7 +684,7 @@ async fn run<S: Platform>(
             // 204_because_deleted declares no headers; 412_directory → latest version_uid.
             match state
                 .backend()
-                .delete_directory(ehr_id, if_match_ovid(&p.if_match))
+                .delete_directory(ehr_id, Some(require_if_match(&p.if_match)?))
                 .await
             {
                 Ok(()) => Ok(negotiate::empty(no_content)),

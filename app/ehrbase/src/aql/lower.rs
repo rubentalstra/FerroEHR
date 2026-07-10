@@ -469,7 +469,7 @@ fn comparison_coercion(lhs: &Operand, rhs: &Operand) -> Coercion {
 
 fn target_coercion(t: &PathTarget) -> Coercion {
     match t {
-        PathTarget::Data(l) => l.coercion,
+        PathTarget::Data(l) | PathTarget::EhrStatus(l) => l.coercion,
         PathTarget::Version { field, .. } => {
             if *field == super::ir::VersionField::TimeCommitted {
                 Coercion::Temporal

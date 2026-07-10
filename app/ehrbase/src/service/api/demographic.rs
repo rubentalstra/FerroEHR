@@ -62,10 +62,19 @@ impl DemographicService for EhrbaseService {
         &self,
         kind: PartyKind,
         uid_based_id: String,
+        if_match: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        // The uid_based_id MUST be an OBJECT_VERSION_ID (the preceding version);
-        // a bare HIER_OBJECT_ID → 400 (mirroring composition_delete).
-        let (vo_id, expected) = version_id::parse_version_uid(&uid_based_id)?;
+        // `delete_party(a_versioned_party_id: UUID)` (our own demographic design,
+        // `docs/design/sm-platform/03-demographic-ehr-index-query.md`): the path
+        // carries the versioned-party id (bare `HIER_OBJECT_ID` or full
+        // `OBJECT_VERSION_ID`). The preceding trunk version for optimistic
+        // concurrency comes from `If-Match` when supplied, else the path OVID,
+        // else `None` (delete the current version unconditionally).
+        let (vo_id, path_version) = version_id::parse_uid_based_id(&uid_based_id)?;
+        let expected = if_match
+            .as_deref()
+            .and_then(version_id::expected_from_if_match)
+            .or(path_version);
         Ok(self.delete_party(kind, vo_id, expected).await?)
     }
 

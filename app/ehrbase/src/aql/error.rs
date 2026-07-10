@@ -149,6 +149,14 @@ pub enum AqlFeatureError {
     /// QUERY §Predicates/Standard predicate (version).
     #[error("version predicate on `{0}` is not supported (QUERY §Predicates/Standard predicate)")]
     UnsupportedVersionPredicate(String),
+
+    /// An `e/ehr_status[/...]` path form the engine does not resolve. The whole
+    /// `EHR_STATUS` object and inline/structure-child leaf extraction under it
+    /// are supported; a predicate on the EHR variable or on `ehr_status` itself
+    /// (`EHR_STATUS` is a singleton VO, not a filterable node set) is not.
+    /// RM 1.2.0 `EHR.ehr_status` (`docs/specs/openehr/RM/docs/ehr/`).
+    #[error("EHR path form `{0}` is not supported (RM EHR.ehr_status)")]
+    UnsupportedEhrStatusPath(String),
 }
 
 /// A path-analysis / typing failure against the generated RM model

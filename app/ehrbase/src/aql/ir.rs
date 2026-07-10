@@ -486,6 +486,16 @@ pub enum PathTarget {
         /// The addressed field.
         field: EhrField,
     },
+    /// A path into the EHR's current `EHR_STATUS` versioned object
+    /// (`e/ehr_status[/...]`). `EHR` is not a `node` in the store and
+    /// `EHR_STATUS` is a *separate* versioned object, so this addresses it via
+    /// an engine-level join (`vo_version.ehr_id = ehr.id`, `kind = EHR_STATUS`,
+    /// latest version) rather than a node-tree walk. The wrapped [`LeafPath`] is
+    /// analysed relative to the `EHR_STATUS` root (`leaf.source` = the EHR
+    /// source), so the SQL package reuses the whole-object / anchor-walk /
+    /// fragment-extraction machinery once the root node is joined in. RM 1.2.0
+    /// `EHR.ehr_status` (`docs/specs/openehr/RM/docs/ehr/`).
+    EhrStatus(Box<LeafPath>),
 }
 
 /// A `LIKE` pattern with its AQL wildcard semantics preserved for the SQL

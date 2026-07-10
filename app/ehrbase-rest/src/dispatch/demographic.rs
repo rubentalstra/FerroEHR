@@ -164,14 +164,7 @@ async fn run_party<S: Platform>(
                 Err(e) => Err(RestError::from(e)),
             }
         }
-        "delete" => {
-            let p = params::build::<AgentGetParams>(&parts.path, q, h)?;
-            let resp = state.backend().party_delete(kind, p.uid_based_id).await?;
-            // 204 + ETag/Location of the deleted version.
-            let mut out = negotiate::empty(StatusCode::NO_CONTENT);
-            set_headers(&mut out, &base, seg, resp.meta.as_ref());
-            Ok(out)
-        }
+        "delete" => run_party_delete(&state, kind, &base, seg, &parts).await,
         "tags_get" => {
             let p = params::build::<AgentTagsGetParams>(&parts.path, q, h)?;
             let resp = state.backend().party_tags_get(kind, p.uid_based_id).await?;
@@ -198,6 +191,28 @@ async fn run_party<S: Platform>(
             "unrouted demographic party operation: {seg}_{other}"
         )))),
     }
+}
+
+/// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete → `204` +
+/// `ETag`/`Location` of the deleted version. The preceding version comes from
+/// `If-Match` (the path may be a bare versioned-object uid — our own
+/// demographic design, `03-demographic-ehr-index-query.md`).
+async fn run_party_delete<S: Platform>(
+    state: &AppState<S>,
+    kind: PartyKind,
+    base: &str,
+    seg: &str,
+    parts: &RequestParts,
+) -> Result<Response, RestError> {
+    let h = &parts.headers;
+    let p = params::build::<AgentGetParams>(&parts.path, parts.query.as_deref(), h)?;
+    let resp = state
+        .backend()
+        .party_delete(kind, p.uid_based_id, if_match_of(h))
+        .await?;
+    let mut out = negotiate::empty(StatusCode::NO_CONTENT);
+    set_headers(&mut out, base, seg, resp.meta.as_ref());
+    Ok(out)
 }
 
 /// The kind-agnostic operations: `versioned_party_*`, `contribution_*`,
@@ -581,6 +596,14 @@ fn write_shared(
     };
     set_headers(&mut out, base, segment, resp.meta.as_ref());
     out
+}
+
+/// The `If-Match` header value (an `OBJECT_VERSION_ID`), if present and
+/// well-formed — the preceding-version precondition for a party delete.
+fn if_match_of(h: &http::HeaderMap) -> Option<String> {
+    h.get("if-match")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned)
 }
 
 /// Set `ETag` (the resource uid, double-quoted) and a `/demographic/{segment}/
