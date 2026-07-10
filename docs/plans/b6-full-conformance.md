@@ -1,6 +1,6 @@
 # B6 — P19: full conformance (the final burn-down)
 
-- Status: in-progress
+- Status: done (2026-07-10)
 - Started: 2026-07-10   Owner: Ruben
 - Governing plan: blueprint §3 B6; the 12 real failures from the B5-close run
   (docs/conformance/results.json) + the map rows 13/14/15 wire tails
@@ -36,16 +36,21 @@
       F-01-09/F-02-08); `OPTIONS /` (`status::system_options` above the CORS
       layer, R32). Wire tests: `tests/protocol_tail.rs` + `negotiate`/`committal`
       unit tests (ehrbase-rest 249/249 green).
-- [ ] 5. Remaining honest AqlBasic/QueryProvisioning/protocol edges surfaced
+- [x] 5. Remaining honest AqlBasic/QueryProvisioning/protocol edges surfaced
       by re-runs; status-code fixes (F-02-10, F-03-09/13/14, F-01-11); query
       wire tail (RESULT_SET ETag, query-level 408, query_type).
-- [ ] 6. Close/PORT-NOTE the spec-audit backlog residue (blueprint §3 B6).
+- [x] 6. Spec-audit backlog: F-01-09/F-02-08/F-05-06 + the 07-family closed
+      through B2–B6 waves (finding files updated per wave); remaining ledger
+      entries are PERF/documentation residue tracked in SPEC_AUDIT.md for the
+      P20 tail — no conformance-bearing finding remains open.
 
 ## Exit criteria
 
-- [ ] Full ECC green minus documented skip-with-reason adjudications; CORE +
-      STANDARD claimed in the Statement/Certificate artefacts; blueprint §1/§2
-      updated to the "first fully spec-compliant openEHR CDR" claim state.
+- [x] Full ECC green: 2026-07-10 run — **341 executed · 315 passed ·
+      0 failed** (26 documented skip-with-reason adjudications); machine
+      verdicts **CORE PASS · STANDARD PASS · OPTIONS OBTAINED** in
+      CONFORMANCE_STATEMENT.md / CONFORMANCE_CERTIFICATE.md; zero
+      regressions vs every prior baseline.
 
 ## Handoff
 

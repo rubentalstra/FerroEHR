@@ -13,19 +13,19 @@
 | Vendor | ehrbase-rs (self-assessed) |
 | Assessor | ehrbase-rs Conformance Catalogue (ECC) — self-assessment |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-10T09:58:30.796574Z |
+| Date | 2026-07-10T11:53:58.183187Z |
 
 ## Scope of Test
 
 | | |
 |---|---|
-| Functional | Core (not claimable), Standard (not claimable), Options (OBTAINED) |
-| Sec & Priv | Signing fail, Anonymous EHRs pass |
+| Functional | Core (PASS), Standard (PASS), Options (OBTAINED) |
+| Sec & Priv | Signing pass, Anonymous EHRs pass |
 | Ext Data Fmt | json, xml |
 
 ## Profile Report
 
-### Core — not claimable
+### Core — PASS
 
 | Capability | Required in profile | Result |
 |---|:--:|---|
@@ -35,11 +35,11 @@
 | EhrStatus | Y | pass |
 | CompositionOps | Y | pass |
 | ChangeSets | Y | pass |
-| Versioning | Y | fail |
+| Versioning | Y | pass |
 | ArchetypeValidation | Y | pass |
 | AnonymousEhrs | Y | pass |
 
-### Standard — not claimable
+### Standard — PASS
 
 | Capability | Required in profile | Result |
 |---|:--:|---|
@@ -49,20 +49,20 @@
 | EhrStatus | Y | pass |
 | CompositionOps | Y | pass |
 | ChangeSets | Y | pass |
-| Versioning | Y | fail |
+| Versioning | Y | pass |
 | ArchetypeValidation | Y | pass |
 | AnonymousEhrs | Y | pass |
 | DirectoryOps | Y | pass |
-| QueryProvisioning | Y | fail |
-| AqlBasic | Y | fail |
-| Signing | Y | fail |
+| QueryProvisioning | Y | pass |
+| AqlBasic | Y | pass |
+| Signing | Y | pass |
 
 ### Options — OBTAINED
 
 | Capability | Required in profile | Result |
 |---|:--:|---|
 | Adl2Provisioning | OPT | not evidenced |
-| DemographicApi | OPT | fail |
+| DemographicApi | OPT | pass |
 | AqlAdvanced | OPT | not evidenced |
 | Terminology | OPT | pass |
 | AdminApi | OPT | pass |
@@ -124,7 +124,7 @@ One row per ECC case (formats collapsed to a combined REST verdict). *Conformanc
 | COMPOSITION | CompositionOps | — | ECC-COM-019 — Get composition version — bad version | pass |
 | COMPOSITION | CompositionOps | — | ECC-COM-020 — Get composition version — bad EHR | pass |
 | COMPOSITION | CompositionOps | — | ECC-COM-021 — Get composition versions | pass |
-| COMPOSITION | Versioning | — | ECC-COM-022 — Get versioned composition | **FAIL** |
+| COMPOSITION | Versioning | — | ECC-COM-022 — Get versioned composition | pass |
 | COMPOSITION | Versioning | — | ECC-COM-023 — Get versioned composition — non existent | pass |
 | COMPOSITION | Versioning | — | ECC-COM-024 — Get versioned composition — bad EHR | pass |
 | COMPOSITION | CompositionOps | — | ECC-COM-025 — Update composition — event | pass |
@@ -223,18 +223,18 @@ One row per ECC case (formats collapsed to a combined REST verdict). *Conformanc
 | Stored-query provisioning | QueryProvisioning | — | ECC-SQR-003 — Stored query existence check — xxx | pass |
 | Stored-query provisioning | QueryProvisioning | I_DEFINITION_QUERY.list_queries (CNF master05:93) | ECC-SQR-004 — List stored queries — empty | skipped |
 | Stored-query provisioning | QueryProvisioning | I_DEFINITION_QUERY.list_queries (CNF master05:93) | ECC-SQR-005 — List stored queries — select items | skipped |
-| Stored-query provisioning | QueryProvisioning | — | ECC-SQR-006 — Store stored query — bad formalism | **FAIL** |
-| Stored-query provisioning | QueryProvisioning | — | ECC-SQR-007 — Store stored query — invalid | **FAIL** |
+| Stored-query provisioning | QueryProvisioning | — | ECC-SQR-006 — Store stored query — bad formalism | pass |
+| Stored-query provisioning | QueryProvisioning | — | ECC-SQR-007 — Store stored query — invalid | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-001 — Query service smoke test | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-002 — Execute ad-hoc AQL query — empty db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-003 — Execute stored AQL query — empty db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-004 — Execute ad-hoc AQL query — loaded db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-005 — AQL corpus — invalid queries rejected | pass |
-| AQL execution | AqlBasic | — | ECC-QRY-006 — AQL corpus — A empty db | **FAIL** |
+| AQL execution | AqlBasic | — | ECC-QRY-006 — AQL corpus — A empty db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-007 — AQL corpus — B empty db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-008 — AQL corpus — C empty db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-009 — AQL corpus — D empty db | pass |
-| AQL execution | AqlBasic | — | ECC-QRY-010 — AQL corpus — A loaded db | **FAIL** |
+| AQL execution | AqlBasic | — | ECC-QRY-010 — AQL corpus — A loaded db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-011 — AQL corpus — B loaded db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-012 — AQL corpus — C loaded db | pass |
 | AQL execution | AqlBasic | — | ECC-QRY-013 — AQL corpus — D loaded db | pass |
@@ -248,22 +248,22 @@ One row per ECC case (formats collapsed to a combined REST verdict). *Conformanc
 | Demographic service | DemographicApi | — | ECC-DEM-002 — Demographic person get | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-003 — Demographic person get by version | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-004 — Demographic person update | pass |
-| Demographic service | DemographicApi | — | ECC-DEM-005 — Demographic person delete | **FAIL** |
-| Demographic service | DemographicApi | — | ECC-DEM-006 — Demographic person get deleted | **FAIL** |
+| Demographic service | DemographicApi | — | ECC-DEM-005 — Demographic person delete | pass |
+| Demographic service | DemographicApi | — | ECC-DEM-006 — Demographic person get deleted | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-007 — Demographic person get absent | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-008 — Demographic person update bad if match | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-009 — Demographic agent create | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-010 — Demographic agent get | pass |
-| Demographic service | DemographicApi | — | ECC-DEM-011 — Demographic agent delete | **FAIL** |
+| Demographic service | DemographicApi | — | ECC-DEM-011 — Demographic agent delete | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-012 — Demographic group create | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-013 — Demographic group get | pass |
-| Demographic service | DemographicApi | — | ECC-DEM-014 — Demographic group delete | **FAIL** |
+| Demographic service | DemographicApi | — | ECC-DEM-014 — Demographic group delete | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-015 — Demographic organisation create | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-016 — Demographic organisation get | pass |
-| Demographic service | DemographicApi | — | ECC-DEM-017 — Demographic organisation delete | **FAIL** |
+| Demographic service | DemographicApi | — | ECC-DEM-017 — Demographic organisation delete | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-018 — Demographic role create | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-019 — Demographic role get | pass |
-| Demographic service | DemographicApi | — | ECC-DEM-020 — Demographic role delete | **FAIL** |
+| Demographic service | DemographicApi | — | ECC-DEM-020 — Demographic role delete | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-021 — Demographic create bad body | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-022 — Demographic versioned party get | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-023 — Demographic versioned party revision history | pass |
@@ -387,7 +387,7 @@ One row per ECC case (formats collapsed to a combined REST verdict). *Conformanc
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-116 — Validate DV_EHR_URI — open | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-117 — Validate DV_EHR_URI — pattern | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-118 — Validate DV_EHR_URI — list | pass |
-| Version signing | Signing | — | ECC-SIG-001 — Version signing — digest present | **FAIL** |
+| Version signing | Signing | — | ECC-SIG-001 — Version signing — digest present | pass |
 | Version signing | Signing | — | ECC-SIG-002 — Version signing — digest recomputes | pass |
 | Version signing | Signing | — | ECC-SIG-003 — Version signing — all kinds | pass |
 | Version signing | Signing | — | ECC-SIG-004 — Version signing — client verbatim | pass |
