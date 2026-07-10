@@ -25,6 +25,11 @@
       with reused ehr_id, versioning Cases 2/3 (ch 1 reqs 13/31/35/50–53);
       `I_TDD_SERVICE.import_tdd` (TDD → COMPOSITION over OPT/WebTemplate).
       Decide version branching or keep the typed rejection PORT-NOTEd.
+      *Progress: export side done (db693b120); import side done 2026-07-10 —
+      IMPORTED_VERSION replay through commit_import (master06 Cases 2/3,
+      preserved 3-part identity + commit_audit, local import CONTRIBUTION
+      249, synthetic local sys_period chain, trunk-only branching rejection
+      F-06-09); 4 import integration tests. Remaining: I_TDD_SERVICE.import_tdd.*
 - [ ] 3. SM-6 — Subject Proxy: subject/variable/data-set/binding stores,
       `I_DATA_BINDING` with the openEHR frame = AQL over our Query service;
       FHIR/HL7v2 frame seams stubbed.

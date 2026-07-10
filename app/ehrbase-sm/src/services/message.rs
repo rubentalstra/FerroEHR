@@ -88,18 +88,21 @@ pub trait EhrExtractService: Send + Sync {
     /// whole EHR, optionally providing a fixed EHR identifier ... to match the
     /// identifier of EHR(s) for the same patient in other EHR services."
     ///
-    /// PORT NOTE (later stage): import is **not built** in this first SM-5 wave
-    /// (`docs/plans/b3-sm-services.md` task 2 — the import/`IMPORTED_VERSION`
-    /// stage). The call is present for catalog fidelity and returns
-    /// `not_implemented` (→ `501`) until the import path lands.
+    /// Clones the EHR into an **empty target** (RM common master06 §Copying
+    /// Case 1): the target id is `an_ehr_id` when given, else the source EHR id
+    /// is reused (`ehr/master04` §"EHR Identifier Allocation"). Each received
+    /// `ORIGINAL_VERSION` is committed wrapped in an `IMPORTED_VERSION` — a local
+    /// import CONTRIBUTION records the local committal (`249|creation|`), the
+    /// wrapped original's identity / `commit_audit` / data are preserved verbatim.
+    /// A target id that already exists is `ehr_create_fail_duplicate_id`.
     async fn import_ehr(&self, an_ehr_id: Option<Uuid>, an_extract: Extract)
     -> Result<(), SmError>;
 
     /// `import_ehr_extract (an_ehr_id: UUID, an_extract: EXTRACT)` — "Import an
-    /// EHR Extract into an existing EHR."
-    ///
-    /// PORT NOTE (later stage): as [`import_ehr`](Self::import_ehr), not built
-    /// this wave; returns `not_implemented` (→ `501`).
+    /// EHR Extract into an existing EHR" (RM common master06 §Copying Cases 2/3:
+    /// first receipt of an item clones its `VERSIONED_OBJECT` with the received
+    /// `uid.object_id()`; a subsequent copy appends newer trunk versions). An
+    /// unknown EHR is `ehr_id_does_not_exist`.
     async fn import_ehr_extract(&self, an_ehr_id: Uuid, an_extract: Extract)
     -> Result<(), SmError>;
 }

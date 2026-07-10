@@ -1069,6 +1069,307 @@ pub(super) async fn commit_contribution(
     Ok((contribution_id, committed))
 }
 
+/// One received `ORIGINAL_VERSION` to import into the local store (SM
+/// `I_EHR_EXTRACT_SERVICE.import_ehr`/`import_ehr_extract`; RM common master06
+/// §Copying). Each is committed locally wrapped in an `IMPORTED_VERSION` whose
+/// **own** contribution records the local act of committal, while the wrapped
+/// original — its identity (`object_id` → `vo_id`, `creating_system_id`, trunk
+/// `version_tree_id` → `sys_version`), its `commit_audit`, `lifecycle_state`,
+/// data, `signature` and `attestations` — is preserved verbatim ("the
+/// `ORIGINAL_VERSION` instance is never modified", master06 §Copying).
+pub(super) struct ImportVersion {
+    /// The trunk `version_tree_id` of the wrapped original (branch ids are
+    /// rejected upstream — trunk-only, PORT NOTE F-06-09).
+    pub(super) sys_version: i32,
+    /// The wrapped original's resolved `version_lifecycle_state` code.
+    pub(super) lifecycle_state: String,
+    /// The wrapped original's `commit_audit`, preserved verbatim.
+    pub(super) commit_audit: AuditInput,
+    /// The wrapped original's `commit_audit.time_committed`, preserved verbatim.
+    pub(super) commit_time: jiff::Timestamp,
+    /// The version data (`Value::Null` for a `523|deleted|` version — no nodes).
+    pub(super) data: serde_json::Value,
+    /// The wrapped original's `VERSION.signature` (preserved, never re-signed).
+    pub(super) signature: Option<String>,
+    /// The wrapped original's `ATTESTATION`s (already full RM objects), preserved.
+    pub(super) attestations: Vec<serde_json::Value>,
+}
+
+/// One versioned object (a source `VERSIONED_OBJECT`) to import: its cloned
+/// `vo_id` (the received `uid.object_id()`), the originating `creating_system_id`,
+/// its kind, and its versions in trunk order.
+pub(super) struct ImportContainer {
+    /// The received `object_id` — the local `VERSIONED_OBJECT` is a clone with
+    /// this uid (master06 §Copying: "a new `VERSIONED_OBJECT` is created, with
+    /// its uid set to the same value as the received `VERSION._uid.object_id()`").
+    pub(super) vo_id: Uuid,
+    /// The originating system of the version tree (same for all its versions —
+    /// trunk-only import; RM common master06 §"Distributed Versioning").
+    pub(super) creating_system_id: String,
+    pub(super) kind: Kind,
+    pub(super) versions: Vec<ImportVersion>,
+}
+
+/// Insert one `audit` row with an **explicit** `time_committed`, returning its
+/// id — used to preserve an imported `ORIGINAL_VERSION`'s original
+/// `commit_audit.time_committed` (the wrapped original is never modified,
+/// master06 §Copying). Unlike [`insert_audit`], which stamps the local commit
+/// time, this carries the source system's committal time verbatim.
+async fn insert_audit_at(
+    tx: &mut PgConnection,
+    audit: &AuditInput,
+    time_committed: jiff::Timestamp,
+) -> Result<Uuid, ServiceError> {
+    Ok(sqlx::query_scalar(
+        "INSERT INTO audit (system_id, change_type, description, committer, time_committed) \
+         VALUES ($1, $2, $3, $4, $5::timestamptz) RETURNING id",
+    )
+    .bind(&audit.system_id)
+    .bind(&audit.change_type)
+    .bind(&audit.description)
+    .bind(&audit.committer)
+    .bind(time_committed.to_string())
+    .fetch_one(&mut *tx)
+    .await?)
+}
+
+/// Insert one `vo_version` row with an **explicit** `sys_period` (`[lower,
+/// upper)`, `upper = None` ⇒ the still-open current version) — the import
+/// analogue of [`insert_vo_version`], which always opens at `now()`. The import
+/// path builds a synthetic strictly-increasing local period chain so a whole
+/// imported version history lands as one contiguous, non-overlapping tree
+/// (temporal `WITHOUT OVERLAPS` PK; ADR-008).
+#[allow(clippy::too_many_arguments)] // one row's columns; a struct would not read clearer
+async fn insert_imported_vo_version(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+    kind: Kind,
+    ehr_id: Uuid,
+    sys_version: i32,
+    lower: jiff::Timestamp,
+    upper: Option<jiff::Timestamp>,
+    lifecycle_state: &str,
+    creating_system_id: &str,
+    contribution_id: Uuid,
+    audit_id: Uuid,
+    signature: Option<&str>,
+) -> Result<(), ServiceError> {
+    sqlx::query(
+        "INSERT INTO vo_version \
+         (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, creating_system_id, \
+          contribution_id, audit_id, template_id, signature) \
+         VALUES ($1, $2, $3, $4, tstzrange($5::timestamptz, $6::timestamptz, '[)'), $7, $8, $9, \
+                 $10, NULL, $11)",
+    )
+    .bind(vo_id)
+    .bind(kind.as_str())
+    .bind(ehr_id)
+    .bind(sys_version)
+    .bind(lower.to_string())
+    .bind(upper.map(|t| t.to_string()))
+    .bind(lifecycle_state)
+    .bind(creating_system_id)
+    .bind(contribution_id)
+    .bind(audit_id)
+    .bind(signature)
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
+}
+
+/// Close the currently-open (`upper_inf`) version of `vo_id` at an explicit
+/// instant (the import base time) — the explicit-time analogue of
+/// [`close_current`]. Used when importing further versions into an existing
+/// container (master06 §Copying "previous copies have been made for the item"),
+/// so the new imported chain opens cleanly after the closed one.
+async fn close_current_at(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+    at: jiff::Timestamp,
+) -> Result<(), ServiceError> {
+    sqlx::query(
+        "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), $2::timestamptz, '[)') \
+         WHERE vo_id = $1 AND upper_inf(sys_period)",
+    )
+    .bind(vo_id)
+    .bind(at.to_string())
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
+}
+
+/// The current state of a to-be-imported container in the target EHR: the
+/// stored kind (if the `vo_id` already exists), the highest trunk version, and
+/// whether a still-open current version exists. `(None, 0, false)` when the
+/// container is not present (first receipt of this item — master06 §Copying
+/// Case 2). A `vo_id` owned by a *different* EHR is an error at the caller.
+async fn imported_container_state(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+) -> Result<(Option<Kind>, Option<Uuid>, i32, bool), ServiceError> {
+    let row = sqlx::query(
+        "SELECT max(sys_version) AS max_v, \
+                bool_or(upper_inf(sys_period)) AS has_open, \
+                (array_agg(kind))[1] AS kind, \
+                (array_agg(ehr_id))[1] AS owner \
+         FROM vo_version WHERE vo_id = $1",
+    )
+    .bind(vo_id)
+    .fetch_one(&mut *tx)
+    .await?;
+    let max_v: Option<i32> = row.try_get("max_v")?;
+    let Some(max_v) = max_v else {
+        return Ok((None, None, 0, false));
+    };
+    let has_open: bool = row.try_get::<Option<bool>, _>("has_open")?.unwrap_or(false);
+    let kind: Option<String> = row.try_get("kind")?;
+    let owner: Option<Uuid> = row.try_get("owner")?;
+    Ok((
+        kind.as_deref().and_then(Kind::from_type),
+        owner,
+        max_v,
+        has_open,
+    ))
+}
+
+/// Replay a set of received `ORIGINAL_VERSION`s into the local store as
+/// `IMPORTED_VERSION`s under **one** local import CONTRIBUTION (SM
+/// `import_ehr`/`import_ehr_extract`; RM common master06 §Copying, §Committal).
+///
+/// The `import_audit` records the local act of committal (`249|creation|`,
+/// master06 §Contributions "import of item"); it becomes the CONTRIBUTION's
+/// audit and every version row's `contribution_id`. Each imported version keeps
+/// the wrapped original's identity and `commit_audit` verbatim (stored as the
+/// row's own `audit_id`), so a re-export serves back a byte-identical
+/// `ORIGINAL_VERSION`.
+///
+/// PORT NOTE (`IMPORTED_VERSION` representation, master06 §Committal): the
+/// greenfield store holds one row per version (identity + `commit_audit` + data),
+/// not a distinct `IMPORTED_VERSION` wrapper object. The "import" is expressed
+/// as (a) the preserved original `commit_audit` + 3-part version identity and
+/// (b) a fresh local import CONTRIBUTION recording the local committal act —
+/// which is exactly what an `IMPORTED_VERSION`'s own contribution/`commit_audit`
+/// denote. master06 §Committal sanctions a non-distributed holder keeping only
+/// the `ORIGINAL_VERSION` content; the one visible deviation is that the served
+/// `ORIGINAL_VERSION.contribution` references the local import contribution
+/// rather than the (foreign, un-imported) source contribution.
+///
+/// PORT NOTE (local temporal periods, master06 §Copying): all versions of an
+/// imported container are committed in the single local import act, so they get
+/// a synthetic strictly-increasing local `sys_period` chain (base = import time,
+/// 1 µs steps) with only the highest version open — time-travel within the
+/// target therefore orders them by trunk version. The true source chronology is
+/// preserved in each version's `commit_audit.time_committed`.
+pub(super) async fn commit_import(
+    tx: &mut PgConnection,
+    ehr_id: Uuid,
+    import_audit: &AuditInput,
+    containers: Vec<ImportContainer>,
+) -> Result<Uuid, ServiceError> {
+    // One local instant anchors the whole import's temporal chain.
+    let base = jiff::Timestamp::now();
+    let (contribution_id, _audit_id, _time) =
+        write_contribution(tx, Some(ehr_id), import_audit).await?;
+
+    for mut container in containers {
+        if container.versions.is_empty() {
+            continue;
+        }
+        // Trunk order; reject a duplicated trunk version within one import.
+        container.versions.sort_by_key(|v| v.sys_version);
+        for pair in container.versions.windows(2) {
+            if pair[0].sys_version == pair[1].sys_version {
+                return Err(ServiceError::Conflict(format!(
+                    "version {}::{} appears more than once in the import",
+                    container.vo_id, pair[0].sys_version
+                )));
+            }
+        }
+
+        let (existing_kind, owner, max_v, has_open) =
+            imported_container_state(tx, container.vo_id).await?;
+        if let Some(existing_kind) = existing_kind {
+            // First receipt of *this item* has already happened (master06 §Copying
+            // Case 3): append to the existing clone — the kind must match, the EHR
+            // must own it, and every imported version must be strictly newer.
+            if owner != Some(ehr_id) {
+                return Err(ServiceError::Conflict(format!(
+                    "versioned object {} already exists in another EHR",
+                    container.vo_id
+                )));
+            }
+            if existing_kind != container.kind {
+                return Err(ServiceError::Conflict(format!(
+                    "versioned object {} is a {}, cannot import a {}",
+                    container.vo_id,
+                    existing_kind.as_str(),
+                    container.kind.as_str()
+                )));
+            }
+            if container.versions[0].sys_version <= max_v {
+                return Err(ServiceError::Conflict(format!(
+                    "versioned object {} already has version {} — cannot re-import \
+                     version {} (trunk-only)",
+                    container.vo_id, max_v, container.versions[0].sys_version
+                )));
+            }
+            if has_open {
+                close_current_at(tx, container.vo_id, base).await?;
+            }
+        }
+
+        let n = container.versions.len();
+        for (i, version) in container.versions.into_iter().enumerate() {
+            // Synthetic strictly-increasing local period; only the last is open.
+            let lower = base + jiff::SignedDuration::from_micros(i64::try_from(i).unwrap_or(0));
+            let upper = if i + 1 < n {
+                Some(base + jiff::SignedDuration::from_micros(i64::try_from(i + 1).unwrap_or(0)))
+            } else {
+                None
+            };
+            let audit_id = insert_audit_at(tx, &version.commit_audit, version.commit_time).await?;
+            insert_imported_vo_version(
+                tx,
+                container.vo_id,
+                container.kind,
+                ehr_id,
+                version.sys_version,
+                lower,
+                upper,
+                &version.lifecycle_state,
+                &container.creating_system_id,
+                contribution_id,
+                audit_id,
+                version.signature.as_deref(),
+            )
+            .await?;
+            // A `523|deleted|` version stores no node rows (data is Void).
+            if !version.data.is_null() {
+                let rows = decompose(version.data)?;
+                insert_nodes(
+                    tx,
+                    container.vo_id,
+                    version.sys_version,
+                    Some(ehr_id),
+                    &rows,
+                )
+                .await?;
+            }
+            for attestation in &version.attestations {
+                insert_attestation(
+                    tx,
+                    container.vo_id,
+                    version.sys_version,
+                    contribution_id,
+                    attestation,
+                )
+                .await?;
+            }
+        }
+    }
+    Ok(contribution_id)
+}
+
 /// The current (`upper_inf`) version number of an object, plus its `ehr_id`.
 /// Locks the row `FOR UPDATE` so concurrent updates serialize.
 async fn current_version(
