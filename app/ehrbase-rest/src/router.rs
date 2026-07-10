@@ -49,7 +49,20 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // rejections) · HTTP metrics (§1.2) · root span (§1.1, outermost so the span
     // and metrics cover the whole request incl. auth). The metrics/span layers
     // sit on the API router so `MatchedPath` resolves to the route template.
-    let api = dispatch::api_router::<S>().layer(from_fn_with_state(
+    // Tenant resolution (ADR-015 §4) sits inside the auth layer so it runs
+    // *after* authentication (the principal + its claims are established) and
+    // scopes the handler in the tenant task-local. Only installed when tenancy
+    // is on — a single-tenant server has no tenant middleware at all.
+    let api = dispatch::api_router::<S>();
+    let api = if cfg.tenancy.enabled {
+        api.layer(from_fn_with_state(
+            state.clone(),
+            crate::access::tenant::middleware::<S>,
+        ))
+    } else {
+        api
+    };
+    let api = api.layer(from_fn_with_state(
         authn::AuthLayer {
             authenticator: authenticator.clone(),
             authz: state.authz(),

@@ -41,7 +41,7 @@ impl EhrbaseService {
         let inserted =
             sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
                 .bind(ehr_id)
-                .bind(&self.system_id)
+                .bind(self.effective_system_id())
                 .execute(&mut *tx)
                 .await?;
         if inserted.rows_affected() == 0 {
@@ -140,7 +140,7 @@ impl EhrbaseService {
 
         let mut body = json!({
             "_type": "EHR",
-            "system_id": { "_type": "HIER_OBJECT_ID", "value": self.system_id },
+            "system_id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() },
             "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
             "ehr_status": {
                 "_type": "OBJECT_REF",
@@ -211,7 +211,7 @@ impl EhrbaseService {
 
         Ok(EhrSummary {
             ehr_id: ehr_id.to_string(),
-            system_id: self.system_id.clone(),
+            system_id: self.effective_system_id(),
             ehr_status,
             time_created: time_created.to_string(),
             contribution_count,
@@ -560,7 +560,7 @@ impl EhrbaseService {
 
     pub(super) fn audit(&self, change_type: &str, description: &str) -> AuditInput {
         AuditInput {
-            system_id: self.system_id.clone(),
+            system_id: self.effective_system_id(),
             change_type: change_type.to_owned(),
             description: Some(description.to_owned()),
             committer: committer(),

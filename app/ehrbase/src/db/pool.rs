@@ -10,17 +10,11 @@ use crate::db::{DbError, DbSettings};
 /// `ext` (matching how `EHRbase` configures its datasource).
 pub(crate) const SET_SEARCH_PATH_SQL: &str = "SET search_path TO ehr, ext, public";
 
-/// Create the application connection pool.
-///
-/// Every connection is initialized with the standard search path
-/// ([`SET_SEARCH_PATH_SQL`]) so queries can use unqualified table names, as
-/// the schema expects.
-///
-/// # Errors
-///
-/// Returns [`DbError`] if the database is unreachable or the URL is invalid.
-pub async fn connect(settings: &DbSettings) -> Result<PgPool, DbError> {
-    let pool = PgPoolOptions::new()
+/// The pool options common to both the plain and the tenant-scoped pool: the
+/// sizing/timeout from settings and the standard search path on every physical
+/// connection (so queries can use unqualified table names).
+fn base_options(settings: &DbSettings) -> PgPoolOptions {
+    PgPoolOptions::new()
         .max_connections(settings.max_connections)
         .min_connections(settings.min_connections)
         .acquire_timeout(Duration::from_secs(settings.acquire_timeout_secs))
@@ -28,6 +22,58 @@ pub async fn connect(settings: &DbSettings) -> Result<PgPool, DbError> {
             Box::pin(async move {
                 sqlx::query(SET_SEARCH_PATH_SQL).execute(&mut *conn).await?;
                 Ok(())
+            })
+        })
+}
+
+/// Create the application connection pool (single-tenant / tenancy-off).
+///
+/// Every connection is initialized with the standard search path
+/// ([`SET_SEARCH_PATH_SQL`]) so queries can use unqualified table names, as
+/// the schema expects. This is today's pool verbatim — no per-acquire hook, so
+/// zero overhead and byte-identical behaviour when tenancy is off (ADR-015 §3).
+///
+/// # Errors
+///
+/// Returns [`DbError`] if the database is unreachable or the URL is invalid.
+pub async fn connect(settings: &DbSettings) -> Result<PgPool, DbError> {
+    let pool = base_options(settings).connect(&settings.url).await?;
+    Ok(pool)
+}
+
+/// Create the **tenant-scoped** application pool (ADR-015 §4): the same pool
+/// plus a `before_acquire` hook that stamps `ehrbase.tenant_id` on every
+/// checked-out connection from the current request's tenant context
+/// ([`ehrbase_sm::tenant::current`]).
+///
+/// This is the [`SET LOCAL`-equivalent] seam that scopes **both** autocommit
+/// reads and transactions: the service checks out a fresh connection per read
+/// and one per write transaction, and each carries the session GUC the RLS
+/// `tenant_isolation` policy (and the `tenant_id` column DEFAULT) read. A
+/// connection returning to the pool keeps its (session-level) GUC, so every
+/// acquire re-stamps it — to the request's tenant, or to `''` (⇒ the reserved
+/// default tenant) when no tenant is in scope (a background worker, or a request
+/// that resolved no tenant) so a reused connection never leaks the previous
+/// request's tenant.
+///
+/// Only wired when tenancy is on (`main.rs`); the extra per-acquire statement is
+/// the multi-tenant cost ADR-015 §Consequences says is "paid only in
+/// multi-tenant mode".
+///
+/// # Errors
+///
+/// Returns [`DbError`] if the database is unreachable or the URL is invalid.
+pub async fn connect_tenant_scoped(settings: &DbSettings) -> Result<PgPool, DbError> {
+    let pool = base_options(settings)
+        .before_acquire(|conn, _meta| {
+            Box::pin(async move {
+                let tenant = ehrbase_sm::tenant::current()
+                    .map_or_else(String::new, |t| t.tenant_id.to_string());
+                sqlx::query("SELECT set_config('ehrbase.tenant_id', $1, false)")
+                    .bind(tenant)
+                    .execute(&mut *conn)
+                    .await?;
+                Ok(true)
             })
         })
         .connect(&settings.url)

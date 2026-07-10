@@ -38,6 +38,46 @@ pub struct RestConfig {
     /// default — the routes answer `404` unless enabled.
     #[serde(default)]
     pub event_subscription: EventSubscriptionConfig,
+    /// Multi-tenancy (ADR-015). Disabled by default — no tenant-resolution
+    /// middleware, no per-request `SET ehrbase.tenant_id`, and the
+    /// `/admin/tenant` routes answer `404`; behaviour is byte-identical to
+    /// single-tenant.
+    #[serde(default)]
+    pub tenancy: TenancyConfig,
+}
+
+/// Multi-tenancy configuration (ADR-015 §3/§4).
+///
+/// Tenancy is OFF by default (ADR-015 §3): with `enabled = false` the tenant
+/// middleware is never installed, the pool takes no per-acquire hook, and the
+/// `/admin/tenant` CRUD answers `404` — a single-tenant deployment is unchanged.
+/// When on, each request's tenant is resolved from `claim` (a JWT-claim path;
+/// dotted paths walk nested objects) with an optional dev-only `header`
+/// override, then applied as `SET ehrbase.tenant_id` for RLS scoping.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TenancyConfig {
+    /// Whether multi-tenancy is active.
+    #[serde(default)]
+    pub enabled: bool,
+    /// The JWT-claim path carrying the tenant key (a tenant name or uuid). A
+    /// dotted path (e.g. `realm_access.tenant`) walks nested claim objects.
+    #[serde(default = "defaults::tenant_claim")]
+    pub claim: String,
+    /// Optional dev-only request-header override for the tenant key. When set
+    /// and present on the request it wins over the JWT claim. Leave unset in
+    /// production (a client-supplied header must not select a tenant).
+    #[serde(default)]
+    pub header: Option<String>,
+}
+
+impl Default for TenancyConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            claim: defaults::tenant_claim(),
+            header: None,
+        }
+    }
 }
 
 /// Configuration of the ADMIN API group (SM `I_ADMIN_SERVICE`; ITS-REST admin
@@ -97,6 +137,7 @@ impl Default for RestConfig {
             admin: AdminConfig::default(),
             terminology: TerminologyConfig::default(),
             event_subscription: EventSubscriptionConfig::default(),
+            tenancy: TenancyConfig::default(),
         }
     }
 }
@@ -150,6 +191,9 @@ mod defaults {
     pub(super) const fn enabled_flag() -> bool {
         true
     }
+    pub(super) fn tenant_claim() -> String {
+        "tenant".to_owned()
+    }
 }
 
 #[cfg(test)]
@@ -167,6 +211,10 @@ mod tests {
         assert!(!c.terminology.enabled);
         // The event-subscription extension API is opt-in too.
         assert!(!c.event_subscription.enabled);
+        // Multi-tenancy is off by default (ADR-015 §3); the claim defaults to `tenant`.
+        assert!(!c.tenancy.enabled);
+        assert_eq!(c.tenancy.claim, "tenant");
+        assert!(c.tenancy.header.is_none());
         assert_eq!(c.swagger_ui_path(), "/ehrbase/rest/swagger-ui");
         assert_eq!(c.openapi_json_path(), "/ehrbase/rest/api-docs/openapi.json");
     }
@@ -200,6 +248,21 @@ mod tests {
             jail.set_env("EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED", "true");
             let c = RestConfig::load().expect("load");
             assert!(c.event_subscription.enabled);
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[allow(clippy::result_large_err)] // figment::Jail closure signature
+    fn tenancy_enabled_via_env() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EHRBASE_REST_TENANCY__ENABLED", "true");
+            jail.set_env("EHRBASE_REST_TENANCY__CLAIM", "realm_access.tenant");
+            jail.set_env("EHRBASE_REST_TENANCY__HEADER", "X-EHRbase-Tenant");
+            let c = RestConfig::load().expect("load");
+            assert!(c.tenancy.enabled);
+            assert_eq!(c.tenancy.claim, "realm_access.tenant");
+            assert_eq!(c.tenancy.header.as_deref(), Some("X-EHRbase-Tenant"));
             Ok(())
         });
     }

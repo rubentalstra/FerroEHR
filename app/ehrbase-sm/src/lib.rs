@@ -17,6 +17,7 @@ pub mod ehr_handle;
 pub mod error;
 pub mod platform;
 pub mod services;
+pub mod tenant;
 pub mod types;
 
 pub use ehr_handle::{
@@ -32,11 +33,12 @@ pub use services::{
     EhrExtractService, EhrService, EhrStatusService, EmitOutcome, EnvBinding, EventActionCode,
     EventOutcome, EventSubscriptionAdapter, ExportFormat, ExportSpec, FrameMethod, FramePayload,
     ItemTagAdapter, ObjectClass, QueryService, Sample, StatTimeRange, SubjectDataSet,
-    SubjectProxyService, SubjectVariable, SystemLog, TddService, TermCode, TermEntry,
-    TermRelationship, TerminologyDescription, TerminologyExtract, TerminologyRelation,
+    SubjectProxyService, SubjectVariable, SystemLog, TddService, TenantAdapter, TermCode,
+    TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract, TerminologyRelation,
     TerminologyRelationError, TerminologyService, TimeRange, ValidityChecker, VariableSample,
     VariableValue, VersionMetaAdapter, WebTemplateService,
 };
+pub use tenant::TenantContext;
 pub use types::{
     AqlQueryRequest, EhrSummary, Page, PartyKind, PlatformService, QueryDescriptor, QueryOutcome,
     ResourceMeta, ServiceResponse, UpdateAttestation, UpdateAudit, UpdateVersion,
