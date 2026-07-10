@@ -116,6 +116,10 @@ impl EhrbaseService {
         // single-valued top-level element (CNF master04
         // `upload_opt-invalid_opt`: `alien_tags` / `multiple_elements`).
         validate_opt_structure(xml)?;
+        // AOM2/08 standalone-artefact validity (VCOC/VACMCO, VATID, VTLC,
+        // VTTBK/VTCBK, VCORM/VCARM/VCAEX/VCACA/VCAM) — reject a structurally
+        // invalid template with 400 carrying the AOM2 rule code (B2 task 6).
+        super::opt_validation::validate_opt_artefact(&opt)?;
 
         let template_id = opt.template_id.value;
         if template_id.trim().is_empty() {

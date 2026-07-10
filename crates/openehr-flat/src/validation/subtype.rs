@@ -1,140 +1,18 @@
-//! RM subtype relation for type-conformance checks.
+//! RM subtype relation for type-conformance checks (F-07-13).
 //!
-//! A static allow-map for the common abstract slots (archie uses the full BMM
-//! type hierarchy via reflection; a BMM-generated model arrives with the AQL
-//! engine at P16 — until then this covers the abstract slots that actually
-//! appear as `WebTemplate` `rmType`s). Conformance is intentionally *permissive*:
-//! a violation is reported only when the constraint type is a recognised RM type
-//! and the instance type is provably not it nor one of its descendants — never
-//! for a type pairing this map does not know about.
-
-/// The concrete descendants of an abstract (or supertype) RM type, keyed by the
-/// supertype name. A type is conformant to `sup` iff it equals `sup` or appears
-/// in `descendants(sup)`.
-fn descendants(sup: &str) -> Option<&'static [&'static str]> {
-    Some(match sup {
-        "DATA_VALUE" => &[
-            "DV_BOOLEAN",
-            "DV_STATE",
-            "DV_IDENTIFIER",
-            "DV_TEXT",
-            "DV_CODED_TEXT",
-            "DV_PARAGRAPH",
-            "DV_ORDINAL",
-            "DV_SCALE",
-            "DV_ORDERED",
-            "DV_QUANTITY",
-            "DV_COUNT",
-            "DV_PROPORTION",
-            "DV_DATE",
-            "DV_TIME",
-            "DV_DATE_TIME",
-            "DV_DURATION",
-            "DV_INTERVAL",
-            "DV_MULTIMEDIA",
-            "DV_PARSABLE",
-            "DV_URI",
-            "DV_EHR_URI",
-        ],
-        // DV_TEXT is a concrete type that DV_CODED_TEXT (and DV_PARAGRAPH) refine.
-        "DV_TEXT" => &["DV_TEXT", "DV_CODED_TEXT", "DV_PARAGRAPH"],
-        "DV_ORDERED" => &[
-            "DV_ORDINAL",
-            "DV_SCALE",
-            "DV_QUANTITY",
-            "DV_COUNT",
-            "DV_PROPORTION",
-            "DV_DATE",
-            "DV_TIME",
-            "DV_DATE_TIME",
-            "DV_DURATION",
-        ],
-        "DV_QUANTIFIED" => &["DV_QUANTITY", "DV_COUNT", "DV_PROPORTION", "DV_AMOUNT"],
-        "DV_AMOUNT" => &["DV_QUANTITY", "DV_COUNT", "DV_PROPORTION"],
-        "DV_TEMPORAL" => &["DV_DATE", "DV_TIME", "DV_DATE_TIME", "DV_DURATION"],
-        "EVENT" => &["EVENT", "POINT_EVENT", "INTERVAL_EVENT"],
-        "ITEM" => &["ITEM", "CLUSTER", "ELEMENT"],
-        "ITEM_STRUCTURE" => &["ITEM_TREE", "ITEM_LIST", "ITEM_TABLE", "ITEM_SINGLE"],
-        "DATA_STRUCTURE" => &[
-            "ITEM_TREE",
-            "ITEM_LIST",
-            "ITEM_TABLE",
-            "ITEM_SINGLE",
-            "HISTORY",
-        ],
-        "CONTENT_ITEM" => &[
-            "SECTION",
-            "OBSERVATION",
-            "EVALUATION",
-            "INSTRUCTION",
-            "ACTION",
-            "ADMIN_ENTRY",
-            "GENERIC_ENTRY",
-        ],
-        "ENTRY" => &[
-            "OBSERVATION",
-            "EVALUATION",
-            "INSTRUCTION",
-            "ACTION",
-            "ADMIN_ENTRY",
-            "GENERIC_ENTRY",
-        ],
-        "CARE_ENTRY" => &["OBSERVATION", "EVALUATION", "INSTRUCTION", "ACTION"],
-        "PARTY_PROXY" => &["PARTY_IDENTIFIED", "PARTY_SELF", "PARTY_RELATED"],
-        "PARTY" => &["PERSON", "ORGANISATION", "GROUP", "AGENT", "ROLE", "ACTOR"],
-        _ => return None,
-    })
-}
-
-/// The set of RM types this validator recognises as concrete leaf types — used
-/// to decide when a concrete↔concrete mismatch is confident enough to report.
-fn is_known_concrete(t: &str) -> bool {
-    matches!(
-        t,
-        "DV_BOOLEAN"
-            | "DV_STATE"
-            | "DV_IDENTIFIER"
-            | "DV_TEXT"
-            | "DV_CODED_TEXT"
-            | "DV_PARAGRAPH"
-            | "DV_ORDINAL"
-            | "DV_SCALE"
-            | "DV_QUANTITY"
-            | "DV_COUNT"
-            | "DV_PROPORTION"
-            | "DV_DATE"
-            | "DV_TIME"
-            | "DV_DATE_TIME"
-            | "DV_DURATION"
-            | "DV_INTERVAL"
-            | "DV_MULTIMEDIA"
-            | "DV_PARSABLE"
-            | "DV_URI"
-            | "DV_EHR_URI"
-            | "ELEMENT"
-            | "CLUSTER"
-            | "ITEM_TREE"
-            | "ITEM_LIST"
-            | "ITEM_TABLE"
-            | "ITEM_SINGLE"
-            | "HISTORY"
-            | "POINT_EVENT"
-            | "INTERVAL_EVENT"
-            | "SECTION"
-            | "OBSERVATION"
-            | "EVALUATION"
-            | "INSTRUCTION"
-            | "ACTION"
-            | "ADMIN_ENTRY"
-            | "ACTIVITY"
-            | "COMPOSITION"
-            | "EVENT_CONTEXT"
-            | "PARTY_IDENTIFIED"
-            | "PARTY_SELF"
-            | "PARTY_RELATED"
-            | "CODE_PHRASE"
-    )
-}
+//! Backed by the BMM-generated static RM model ([`openehr_rm::model`], ADR-008
+//! §3 `emit-rm-model`) — the spec-pinned type hierarchy, generated from the same
+//! BMM meta-model as the RM crate itself, regenerating on any spec bump. This
+//! replaces the former hand-maintained descendant allow-map (which was partial
+//! and had to be kept in sync by hand). [`conforms`] stays the single seam the
+//! validator walk calls; only its data source changed.
+//!
+//! Conformance is spec-correct where both types are known to the model and
+//! stays **permissive** where the *constraint* type is unknown to the model — a
+//! type the RM model does not carry is never used to reject an instance, so a
+//! future/foreign constraint type cannot cause a false positive. A known
+//! constraint type paired with an unknown/bogus instance type *is* rejected
+//! (a known concrete slot must be filled by a known conforming type).
 
 /// Strip a generic argument (`DV_INTERVAL<DV_QUANTITY>` → `DV_INTERVAL`).
 fn base(t: &str) -> &str {
@@ -142,21 +20,32 @@ fn base(t: &str) -> &str {
 }
 
 /// Whether an instance's concrete RM type conforms to a `WebTemplate` constraint
-/// type. Equal (modulo generics) or a known descendant conforms; an unknown
-/// pairing is treated as conformant (permissive) to avoid over-rejecting.
+/// type (the instance type is the constraint type or a spec descendant of it).
+///
+/// - Equal (modulo generics) always conforms.
+/// - When the constraint type is **known** to the RM model, the model decides:
+///   a known instance type conforms iff [`openehr_rm::model::is_a`] holds; an
+///   unknown/bogus instance type is rejected (a known slot needs a known filler).
+/// - When the constraint type is **unknown** to the RM model, stay permissive
+///   (never over-reject on a type the spec model does not carry).
 #[must_use]
 pub(crate) fn conforms(instance_type: &str, wt_type: &str) -> bool {
     let (inst, wt) = (base(instance_type), base(wt_type));
     if inst == wt {
         return true;
     }
-    match descendants(wt) {
-        Some(set) => set.contains(&inst),
-        // `wt` is not a known abstract/supertype. If it is a known *concrete*
-        // type, any non-matching instance (even an unknown/bogus type such as a
-        // `PLACEHOLDER` root) is a violation; otherwise (an RM type this map
-        // does not model) stay permissive to avoid over-rejecting.
-        None => !is_known_concrete(wt),
+    // Only judge when the constraint type is a recognised RM type; otherwise stay
+    // permissive to avoid over-rejecting on a type the model does not model.
+    if openehr_rm::model::class(wt).is_none() {
+        return true;
+    }
+    // The constraint type is known. If the instance type is also known, the RM
+    // model's transitive is-a relation decides; a known concrete/abstract slot
+    // filled by an unknown/bogus instance type is a violation.
+    if openehr_rm::model::class(inst).is_some() {
+        openehr_rm::model::is_a(inst, wt)
+    } else {
+        false
     }
 }
 
@@ -180,9 +69,43 @@ mod tests {
     #[test]
     fn event_and_entry_families() {
         assert!(conforms("POINT_EVENT", "EVENT"));
+        assert!(conforms("INTERVAL_EVENT", "EVENT"));
         assert!(conforms("OBSERVATION", "CARE_ENTRY"));
+        assert!(conforms("ACTION", "CARE_ENTRY"));
+        assert!(conforms("EVALUATION", "ENTRY"));
+        assert!(conforms("ADMIN_ENTRY", "ENTRY"));
         assert!(conforms("SECTION", "CONTENT_ITEM"));
         assert!(conforms("PARTY_SELF", "PARTY_PROXY"));
+        assert!(conforms("PARTY_RELATED", "PARTY_PROXY"));
+    }
+
+    #[test]
+    fn item_and_structure_families() {
+        assert!(conforms("ITEM_TREE", "ITEM_STRUCTURE"));
+        assert!(conforms("ITEM_LIST", "DATA_STRUCTURE"));
+        assert!(conforms("CLUSTER", "ITEM"));
+        assert!(conforms("ELEMENT", "ITEM"));
+    }
+
+    #[test]
+    fn demographic_party_family() {
+        // Types the former hand table listed under PARTY — now model-backed.
+        assert!(conforms("PERSON", "PARTY"));
+        assert!(conforms("ORGANISATION", "PARTY"));
+        assert!(conforms("ROLE", "PARTY"));
+    }
+
+    #[test]
+    fn quantity_ordered_families() {
+        assert!(conforms("DV_QUANTITY", "DV_ORDERED"));
+        assert!(conforms("DV_QUANTITY", "DV_QUANTIFIED"));
+        assert!(conforms("DV_QUANTITY", "DV_AMOUNT"));
+        assert!(conforms("DV_ORDINAL", "DV_ORDERED"));
+        assert!(conforms("DV_COUNT", "DV_ORDERED"));
+        assert!(conforms("DV_DATE", "DV_TEMPORAL"));
+        // any concrete DATA_VALUE conforms to the DATA_VALUE root
+        assert!(conforms("DV_CODED_TEXT", "DATA_VALUE"));
+        assert!(conforms("DV_QUANTITY", "DATA_VALUE"));
     }
 
     #[test]
@@ -192,15 +115,26 @@ mod tests {
     }
 
     #[test]
+    fn paragraph_is_not_a_text() {
+        // Spec-correct (RM 1.2.0): DV_PARAGRAPH inherits DATA_VALUE, not DV_TEXT
+        // (its `items` is a List<DV_TEXT>). The former hand table wrongly listed
+        // DV_PARAGRAPH as a DV_TEXT descendant; the model corrects it.
+        assert!(!conforms("DV_PARAGRAPH", "DV_TEXT"));
+        assert!(conforms("DV_PARAGRAPH", "DATA_VALUE"));
+    }
+
+    #[test]
     fn unknown_pairing_is_permissive() {
-        // A type this map does not know about is not reported as wrong.
+        // A constraint type this model does not carry never rejects.
         assert!(conforms("SOME_FUTURE_TYPE", "ANOTHER_UNKNOWN"));
+        assert!(conforms("DV_QUANTITY", "ANOTHER_UNKNOWN"));
     }
 
     #[test]
     fn bogus_type_where_concrete_expected_is_rejected() {
-        // A known concrete expected type rejects an unknown/bogus instance type.
+        // A known concrete/abstract constraint type rejects an unknown instance.
         assert!(!conforms("PLACEHOLDER", "COMPOSITION"));
         assert!(!conforms("NONSENSE", "DV_QUANTITY"));
+        assert!(!conforms("PLACEHOLDER", "DATA_VALUE"));
     }
 }

@@ -21,14 +21,15 @@ use std::collections::HashMap;
 
 use indexmap::IndexMap;
 use openehr_its::opt14::{
-    ArchetypeTerm, CArchetypeRoot, CObject, CPrimitive, Cardinality, Intervalofinteger,
+    ArchetypeTerm, Assertion, CArchetypeRoot, CObject, CPrimitive, Cardinality, Intervalofinteger,
     OperationalTemplate, TermBindingItem, Termbindingset,
 };
 
 use super::inputs::{self, Labels};
 use super::model::{
-    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateCodeList,
-    WebTemplateExistence, WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateSlot,
+    WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,
+    WebTemplateClosedAttribute, WebTemplateCodeList, WebTemplateExistence, WebTemplateInput,
+    WebTemplateInputType, WebTemplateNode, WebTemplateSlot,
 };
 
 const CURRENT_VERSION: &str = "2.3";
@@ -340,6 +341,7 @@ fn build_children(ctx: &Ctx, co: &CObject, node: &mut WebTemplateNode, arch_id: 
     // handled by `inputs`/leaf checks, not attribute navigation (F-07-04).
     if recurse_attrs {
         node.existence = existence_constraints(co, &node.aql_path);
+        node.closed_attributes = closed_attributes(co, &node.aql_path);
     }
     node.children = children;
     post_process(node);
@@ -435,12 +437,14 @@ fn compact(mut node: WebTemplateNode, depth: usize) -> Option<WebTemplateNode> {
         existence: std::mem::take(&mut node.existence),
         card_all: std::mem::take(&mut node.card_all),
         slots: std::mem::take(&mut node.slots),
+        closed_attributes: std::mem::take(&mut node.closed_attributes),
     };
     node.children = get_compacted(children, &mut hoisted);
     node.cardinalities = hoisted.cardinalities;
     node.existence = hoisted.existence;
     node.card_all = hoisted.card_all;
     node.slots = hoisted.slots;
+    node.closed_attributes = hoisted.closed_attributes;
     // Recurse into the (post-hoist) children.
     let children = std::mem::take(&mut node.children);
     node.children = children
@@ -457,6 +461,7 @@ struct Hoisted {
     existence: Vec<WebTemplateExistence>,
     card_all: Vec<WebTemplateCardinality>,
     slots: Vec<WebTemplateSlot>,
+    closed_attributes: Vec<WebTemplateClosedAttribute>,
 }
 
 fn get_compacted(children: Vec<WebTemplateNode>, parent: &mut Hoisted) -> Vec<WebTemplateNode> {
@@ -481,6 +486,9 @@ fn get_compacted(children: Vec<WebTemplateNode>, parent: &mut Hoisted) -> Vec<We
                 .card_all
                 .append(&mut std::mem::take(&mut child.card_all));
             parent.slots.append(&mut std::mem::take(&mut child.slots));
+            parent
+                .closed_attributes
+                .append(&mut std::mem::take(&mut child.closed_attributes));
             // The hoisted wrapper's own RM type is an archetype constraint the
             // compacted tree would otherwise lose: record it as a slot so the
             // walk still rejects a sibling subtype in a narrowed
@@ -675,6 +683,8 @@ fn copy_values(from: &WebTemplateNode, to: &mut WebTemplateNode) {
     to.existence.extend(from.existence.iter().cloned());
     to.card_all.extend(from.card_all.iter().cloned());
     to.slots.extend(from.slots.iter().cloned());
+    to.closed_attributes
+        .extend(from.closed_attributes.iter().cloned());
 }
 
 // ── cardinalities ────────────────────────────────────────────────────────────
@@ -769,6 +779,15 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
             });
         }
     }
+    // C_TIME/C_DATE_TIME timezone_validity (VALIDITY_KIND: OPT 1.4 XSD 1001 =
+    // mandatory, 1002 = optional, 1003 = disallowed). C_DATE has no timezone.
+    node.tz_validity = match inputs::primitive_under(co, "value") {
+        Some(CPrimitive::CTime(c)) => c.timezone_validity.as_deref().and_then(|s| s.parse().ok()),
+        Some(CPrimitive::CDateTime(c)) => {
+            c.timezone_validity.as_deref().and_then(|s| s.parse().ok())
+        }
+        _ => None,
+    };
     for attr in inputs::attributes(co) {
         let attr_name = inputs::attribute_name(attr);
         if attr_name == "defining_code" {
@@ -844,6 +863,90 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
         }
     }
     out
+}
+
+// ── closed-archetype constraints (ADR-012 F-07-05 + F-07-10) ──────────────────
+
+/// Capture the closed-archetype constraints for the walk (ADR-012): per
+/// attribute of `co` that carries **archetype-node-identified** child
+/// alternatives (a fixed at-code / archetype-id sibling set) and/or open
+/// `ARCHETYPE_SLOT`s, record the admissible child identities keyed by the
+/// attribute's absolute archetype path. Captured from the raw OPT `co` (before
+/// the tree build drops slots and before compaction hoists wrappers), so no
+/// alternative is lost.
+///
+/// An attribute whose constraint children carry **no** `node_id` and has no slot
+/// is left OPEN — AOM 1.4 (`master04-constraint_model_package.adoc` §node_id
+/// L44: a near-leaf with no same-attribute siblings "can safely have no
+/// node_id") — matching the RM-metadata / plain-attribute carve-out (ADR-012
+/// rule 2): `name`/`value`/`category`/`context` etc. hold non-LOCATABLE values
+/// that carry no `archetype_node_id` and so are never subject to sibling closure.
+fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttribute> {
+    let mut out = Vec::new();
+    for attr in inputs::attributes(co) {
+        let attr_name = inputs::attribute_name(attr);
+        if attr_name == "name" {
+            continue; // Better SKIP_PATH; the name is matched by predicate, not closure.
+        }
+        // An unresolved internal-ref / constraint-ref makes the admissible set
+        // uncertain (target resolution is a documented builder scope gap); leave
+        // such an attribute OPEN rather than risk over-rejecting.
+        if inputs::attribute_children(attr).iter().any(|c| {
+            matches!(
+                c,
+                CObject::ArchetypeInternalRef(_) | CObject::ConstraintRef(_)
+            )
+        }) {
+            continue;
+        }
+        let mut allowed_ids: Vec<String> = Vec::new();
+        let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
+        for child in inputs::attribute_children(attr) {
+            if let CObject::ArchetypeSlot(s) = child {
+                slots.push(archetype_slot(s));
+                continue;
+            }
+            let id = object_archetype_node_id(child);
+            if !id.is_empty() {
+                allowed_ids.push(id);
+            }
+        }
+        if allowed_ids.is_empty() && slots.is_empty() {
+            continue; // Open attribute (no node-id alternatives, no slot).
+        }
+        out.push(WebTemplateClosedAttribute {
+            path: format!("{node_path}/{attr_name}"),
+            allowed_ids,
+            slots,
+        });
+    }
+    out
+}
+
+/// Build the validation-only slot record from an OPT `ARCHETYPE_SLOT`: its
+/// constrained RM type, occurrences bounds, and the archetype-id regexes lifted
+/// from the `includes`/`excludes` assertions (AOM 1.4 `ARCHETYPE_SLOT`).
+fn archetype_slot(s: &openehr_its::opt14::ArchetypeSlot) -> WebTemplateArchetypeSlot {
+    let (min, max) = occurrences(&s.occurrences);
+    WebTemplateArchetypeSlot {
+        rm_type: s.rm_type_name.clone(),
+        min: min.unwrap_or(0).max(0),
+        max,
+        includes: s.includes.iter().filter_map(slot_pattern).collect(),
+        excludes: s.excludes.iter().filter_map(slot_pattern).collect(),
+    }
+}
+
+/// The archetype-id regex of a slot `ASSERTION`, lifted from its
+/// `string_expression` (`archetype_id/value matches {/<regex>/}` — ADL 1.4
+/// `master05-cadl.adoc` §Archetype Slots; the OPT always emits this surface
+/// form). Archetype ids contain no `/`, so the last `/}` delimits the regex.
+fn slot_pattern(a: &Assertion) -> Option<String> {
+    let s = a.string_expression.as_deref()?;
+    let start = s.find("matches {/")? + "matches {/".len();
+    let rest = &s[start..];
+    let end = rest.rfind("/}")?;
+    Some(rest[..end].to_owned())
 }
 
 fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {

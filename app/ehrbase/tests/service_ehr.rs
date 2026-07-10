@@ -221,6 +221,20 @@ async fn ehr_composition_lifecycle_end_to_end() {
         "stale update must 412, got {stale:?}"
     );
 
+    // Reactivate before touching contents: with the B2 write guard, content
+    // writes on an EHR whose EHR_STATUS.is_modifiable = false are refused
+    // (RM ehr master04 §"EHR Active Status") — the deactivated-state
+    // assertions above stay; the composition stages below need a modifiable
+    // EHR again (a third status version).
+    let mut status_v3_body = status_v2.clone();
+    status_v3_body.as_object_mut().unwrap().remove("uid");
+    status_v3_body["is_modifiable"] = json!(true);
+    let status_v3_uid = svc
+        .replace_ehr_status(ehr_uuid, uv(status_v3_body, "251", Some(&status_v2_uid)))
+        .await
+        .expect("status reactivate");
+    assert!(status_v3_uid.ends_with("::3"));
+
     // A specific EHR_STATUS version reads as the BARE EHR_STATUS (F-01-03), not
     // an ORIGINAL_VERSION wrapper.
     let sp: Vec<&str> = status_ovid_v1.split("::").collect();
@@ -415,6 +429,142 @@ async fn ehr_composition_lifecycle_end_to_end() {
     svc.delete_directory(ehr_uuid, Some(dir_ovid_v2.parse().expect("ovid")))
         .await
         .expect("directory_delete");
+}
+
+#[tokio::test]
+async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
+    // RM ehr `ehr/master04-ehr_package.adoc` §"EHR Active Status":
+    // `EHR_STATUS.is_modifiable = False` forbids writes to EHR *contents*
+    // (Compositions, Folders); "the EHR_STATUS object itself is always
+    // modifiable" (§"EHR Creation"), which is how the EHR is reactivated.
+    // Wire code for a blocked content write is underdetermined by ITS-REST →
+    // we return 409 Conflict (SM `CompositionAlreadyExists`).
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("modifiable").await);
+
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
+
+    // Seed a COMPOSITION and a directory while the EHR is active (default
+    // is_modifiable = true), so update/delete have a target once deactivated.
+    let comp_ovid = svc
+        .create_composition(ehr_uuid, uv(composition("Active"), "249", None))
+        .await
+        .expect("composition while active");
+    let comp_vo = comp_ovid
+        .split("::")
+        .next()
+        .unwrap()
+        .parse::<uuid::Uuid>()
+        .expect("vo uuid");
+    let folder = json!({ "_type": "FOLDER", "name": { "_type": "DV_TEXT", "value": "root" } });
+    let dir_ovid = svc
+        .create_directory(ehr_uuid, uv(folder.clone(), "249", None))
+        .await
+        .expect("directory while active");
+
+    // Deactivate: set is_modifiable = false. This EHR_STATUS write MUST succeed
+    // (the EHR_STATUS object is always modifiable).
+    let status_v1 = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status v1");
+    let status_ovid_v1 = uid(&status_v1).to_owned();
+    let mut deactivate = status_v1.clone();
+    deactivate.as_object_mut().unwrap().remove("uid");
+    deactivate["is_modifiable"] = json!(false);
+    let status_v2_ovid = svc
+        .replace_ehr_status(ehr_uuid, uv(deactivate, "251", Some(&status_ovid_v1)))
+        .await
+        .expect("deactivating EHR_STATUS is allowed");
+
+    let is_blocked = |r: &Result<String, SmError>| {
+        matches!(
+            r,
+            Err(SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            })
+        )
+    };
+
+    // Every EHR-content write is now refused (409).
+    let create = svc
+        .create_composition(ehr_uuid, uv(composition("Blocked"), "249", None))
+        .await;
+    assert!(
+        is_blocked(&create),
+        "create must 409 when inactive: {create:?}"
+    );
+
+    let update = svc
+        .update_composition(
+            ehr_uuid,
+            comp_vo,
+            uv(composition("Blocked update"), "251", Some(&comp_ovid)),
+        )
+        .await;
+    assert!(
+        is_blocked(&update),
+        "update must 409 when inactive: {update:?}"
+    );
+
+    let delete = svc
+        .delete_composition(ehr_uuid, comp_ovid.parse().expect("ovid"))
+        .await;
+    assert!(
+        is_blocked(&delete),
+        "delete must 409 when inactive: {delete:?}"
+    );
+
+    let dir_update = svc
+        .update_directory(ehr_uuid, uv(folder, "251", Some(&dir_ovid)))
+        .await;
+    assert!(
+        is_blocked(&dir_update),
+        "directory update must 409 when inactive: {dir_update:?}"
+    );
+
+    // A CONTRIBUTION that writes content is refused too.
+    let content_contrib = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [{
+                    "data": composition("Via contribution"),
+                    "commit_audit": { "change_type": change_type("249", "creation") }
+                }]
+            }),
+        )
+        .await;
+    assert!(
+        matches!(
+            content_contrib,
+            Err(SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            })
+        ),
+        "content contribution must 409 when inactive: {content_contrib:?}"
+    );
+
+    // But an EHR_STATUS-only CONTRIBUTION (here, flipping it back to modifiable)
+    // is still allowed — the EHR_STATUS object is always modifiable.
+    let status_v2 = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status v2");
+    assert_eq!(status_v2["is_modifiable"], json!(false));
+    let mut reactivate = status_v2.clone();
+    reactivate.as_object_mut().unwrap().remove("uid");
+    reactivate["is_modifiable"] = json!(true);
+    svc.replace_ehr_status(ehr_uuid, uv(reactivate, "251", Some(&status_v2_ovid)))
+        .await
+        .expect("reactivating EHR_STATUS is allowed while inactive");
+
+    // Reactivated → content writes work again.
+    svc.create_composition(ehr_uuid, uv(composition("Reactivated"), "249", None))
+        .await
+        .expect("content writes resume once reactivated");
 }
 
 #[tokio::test]

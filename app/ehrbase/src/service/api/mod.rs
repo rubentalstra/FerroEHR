@@ -69,7 +69,8 @@ impl ValidityChecker for EhrbaseService {
         let Some(kind) = Kind::from_type(rm_type) else {
             return Ok(false);
         };
-        match self.validate_for_commit(kind, a_content).await {
+        // A bare validity check has no lifecycle context → full strictness.
+        match self.validate_for_commit(kind, a_content, false).await {
             Ok(()) => Ok(true),
             Err(ServiceError::ValidationFailed(_) | ServiceError::Unprocessable(_)) => Ok(false),
             Err(other) => Err(other.into()),

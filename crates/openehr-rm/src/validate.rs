@@ -133,22 +133,69 @@ fn in_range(s: &str, lo: u32, hi: u32) -> bool {
     s.len() == 2 && all_digits(s) && s.parse::<u32>().is_ok_and(|v| (lo..=hi).contains(&v))
 }
 
+/// `true` for a Gregorian leap year: divisible by 4, except centuries not
+/// divisible by 400 (BASE `Time_definitions`; the calendar `days_in_month`
+/// depends on it).
+fn is_leap_year(year: u32) -> bool {
+    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+}
+
+/// Calendar days in a given month of a given year — the `days_in_month (m, y)`
+/// the BASE `Time_definitions.valid_day` postcondition dispatches through
+/// (`docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.time_definitions.adoc`
+/// lines 95–103). Returns `0` for a month outside `1..=12` (caller has already
+/// range-checked the month, so that branch is defensive).
+fn days_in_month(year: u32, month: u32) -> u32 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(year) => 29,
+        2 => 28,
+        _ => 0,
+    }
+}
+
+/// A calendar-valid two-digit day for the 4-digit `y` / 2-digit `m` strings:
+/// `d` is `01`..`days_in_month(m, y)` — the BASE `Iso8601_date` invariant
+/// `Day_valid: not day_unknown implies valid_day (year, month, day)` with
+/// `valid_day (y, m, d) = (d >= 1 and d <= days_in_month (m, y))`
+/// (`org.openehr.base.foundation_types.iso8601_date.adoc` line 107;
+/// `time_definitions.adoc` line 102). This is calendar-exact — it rejects
+/// `2021-02-31`, `2021-04-31`, and `2021-02-29` (non-leap) while accepting
+/// `2020-02-29` (leap).
+fn valid_day(y: &str, m: &str, d: &str) -> bool {
+    if d.len() != 2 || !all_digits(d) {
+        return false;
+    }
+    let (Ok(year), Ok(month), Ok(day)) = (y.parse::<u32>(), m.parse::<u32>(), d.parse::<u32>())
+    else {
+        return false;
+    };
+    (1..=days_in_month(year, month)).contains(&day)
+}
+
 /// A valid openEHR ISO-8601 date: `YYYY`, `YYYY-MM`, `YYYY-MM-DD`, or the
-/// compact `YYYYMM` / `YYYYMMDD` forms.
+/// compact `YYYYMM` / `YYYYMMDD` forms. Day validity is **calendar-exact**
+/// (month lengths + leap years) per BASE `Iso8601_date.Day_valid`, not a bare
+/// `1..=31` range.
 #[must_use]
 pub(crate) fn is_valid_iso_date(s: &str) -> bool {
     if s.contains('-') {
         match s.split('-').collect::<Vec<_>>().as_slice() {
             [y] => digits_n(y, 4),
             [y, m] => digits_n(y, 4) && in_range(m, 1, 12),
-            [y, m, d] => digits_n(y, 4) && in_range(m, 1, 12) && in_range(d, 1, 31),
+            [y, m, d] => digits_n(y, 4) && in_range(m, 1, 12) && valid_day(y, m, d),
             _ => false,
         }
     } else {
         match s.len() {
             4 => all_digits(s),
             6 => all_digits(s) && in_range(&s[4..6], 1, 12),
-            8 => all_digits(s) && in_range(&s[4..6], 1, 12) && in_range(&s[6..8], 1, 31),
+            8 => {
+                all_digits(s)
+                    && in_range(&s[4..6], 1, 12)
+                    && valid_day(&s[0..4], &s[4..6], &s[6..8])
+            }
             _ => false,
         }
     }
@@ -461,6 +508,39 @@ mod tests {
         assert!(!is_valid_iso_date("2021-05-32"));
         assert!(!is_valid_iso_date("not-a-date"));
         assert!(!is_valid_iso_date(""));
+    }
+
+    /// BASE `Iso8601_date.Day_valid` (`valid_day = d <= days_in_month(m, y)`,
+    /// `iso8601_date.adoc` line 107). Calendar-exact month lengths, both the
+    /// extended (`YYYY-MM-DD`) and compact (`YYYYMMDD`) forms.
+    #[test]
+    fn iso_date_day_is_calendar_exact() {
+        // 31-day months accept 31; 30-day months reject it.
+        assert!(is_valid_iso_date("2021-01-31"));
+        assert!(is_valid_iso_date("2021-12-31"));
+        assert!(!is_valid_iso_date("2021-04-31")); // April has 30 days
+        assert!(!is_valid_iso_date("2021-06-31"));
+        assert!(!is_valid_iso_date("2021-09-31"));
+        assert!(!is_valid_iso_date("2021-11-31"));
+        assert!(is_valid_iso_date("2021-04-30"));
+
+        // February: 28 in a common year, 29 in a leap year, never 30/31.
+        assert!(!is_valid_iso_date("2021-02-31"));
+        assert!(!is_valid_iso_date("2021-02-30"));
+        assert!(!is_valid_iso_date("2021-02-29")); // 2021 is not a leap year
+        assert!(is_valid_iso_date("2021-02-28"));
+        assert!(is_valid_iso_date("2020-02-29")); // 2020 divisible by 4
+        assert!(is_valid_iso_date("2000-02-29")); // 2000 divisible by 400
+        assert!(!is_valid_iso_date("1900-02-29")); // 1900 century, not /400
+
+        // Day 00 is never valid.
+        assert!(!is_valid_iso_date("2021-05-00"));
+
+        // Compact form is held to the same calendar rule.
+        assert!(!is_valid_iso_date("20210431"));
+        assert!(!is_valid_iso_date("20210229"));
+        assert!(is_valid_iso_date("20200229"));
+        assert!(is_valid_iso_date("20210131"));
     }
 
     #[test]

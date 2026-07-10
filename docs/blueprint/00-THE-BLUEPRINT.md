@@ -110,13 +110,18 @@ position (2026-07-09); **Build step** references §3.
 Numbered sequence to "first fully spec-compliant". Each step closes behind the
 standing gates (§4); ECC re-baselines at B1 and must never regress thereafter.
 
-### B1 — Finish the ADR-011 rebuild (in flight)
+### B1 — Finish the ADR-011 rebuild — **DONE** (PR #36, 2026-07-09)
 Close SM-4 wave 2: port the remaining `ehrbase`-crate tests to the new seams
 (rest suite already 218/218), delete residual forwarding layers, re-tick the
 stale SM-4 checkboxes, `cargo nextest run --workspace` green, clippy clean.
 **Exit: workspace green + ECC re-converged at the 211/318 zero-drift baseline.**
+*Closed 2026-07-09: ECC re-converged at exactly 211/318 (zero drift; two rebuild
+regressions root-caused and fixed — the raw-wire CONTRIBUTION seam and the
+template_id-keyed OPT GET); `ehrbase-rest` 218/218; the in-process `self-host`
+SUT mode was removed (owner ruling) — conformance always runs against the
+Docker-composed server (`scripts/conformance.sh`).*
 
-### B2 — Validation depth (the big rock: 81 ECC ArchetypeValidation cases)
+### B2 — Validation depth (the big rock: 81 ECC ArchetypeValidation cases) — **DONE** (2026-07-10, `docs/plans/b2-validation-depth.md`)
 A dedicated phase with the ECC data sets as the oracle (the big rock, §2.2).
 Contents, in dependency order:
 1. `multiplicity_interval_impl.rs` + `cardinality_impl.rs` + BASE `Interval`
@@ -138,6 +143,10 @@ Contents, in dependency order:
 8. Reconcile the open spec-audit area-07/12 findings.
 **Exit: the 81 VAL failures → green (minus any B5-adjudicated corpus defects);
 zero drift elsewhere.**
+*Closed 2026-07-10: ECC 319 executed · 293 passed (baseline ratcheted from
+211/318); ArchetypeValidation 0 failing incl. the new ECC-VAL-119 negative
+case; owned fixture register instituted; ADR-012 closed-archetype semantics;
+all 8 phase tasks done — remaining ECC failures are the B6 tails.*
 
 ### B3 — SM-5 / SM-6 (the designed-but-unbuilt services)
 1. SM-4 wave 3 — Admin dump/load (`export_ehrs`/`load_ehrs`, `EXPORT_SPEC`,

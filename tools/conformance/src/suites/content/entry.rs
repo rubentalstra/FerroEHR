@@ -586,10 +586,16 @@ fn run_item_str_any<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         let tid = "cnf_cont_item_str_any";
         let mut opt = author::parse_base("validation/clinical_content_validation.opt")?;
         author::set_template_id(&mut opt, tid);
-        // Re-open the ITEM_TREE-narrowed slot to the abstract ITEM_STRUCTURE so any
-        // subtype is accepted.
-        author::retype_leaf(
+        // Re-open the ITEM_TREE-narrowed EVALUATION data slot to the abstract
+        // ITEM_STRUCTURE so any subtype is accepted. Pinned to EVALUATION/data
+        // (retype_attr_child): the template carries other ITEM_TREE leaves
+        // (INSTRUCTION description first in document order) and a blanket
+        // first-match retype re-opened the wrong one — leaving this slot
+        // ITEM_TREE-narrowed, which a spec-correct validator must then reject.
+        author::retype_attr_child(
             &mut opt,
+            "EVALUATION",
+            "data",
             "ITEM_TREE",
             author::open_complex("ITEM_STRUCTURE"),
         );

@@ -187,6 +187,37 @@ conformance report --from results.json   # regenerate artifacts without a run
 Exit codes: `0` pass · `1` failures (report still written) · `2` runner/SUT
 error.
 
+### 5.3 Owned fixture register (`tools/conformance/testdata/fixtures/`)
+
+The vendored CNF corpus at `docs/specs/openehr/` is **read-only and is never
+edited** (hard rule) — it is the oracle. But some vendored fixtures are
+**internally inconsistent** with their own operational template when read
+against the vendored spec text (e.g. `all_types.composition.json` carries a full
+`DV_DATE` at the `at0003` leaf that its OPT constrains with the `yyyy-??-XX`
+`C_DATE` pattern — day *disallowed* per AOM 1.4 `c_date.adoc`; a spec-correct
+validator must reject it, though EHRbase/archie leniently accepts it).
+
+When a vendored fixture is **proven defective against the vendored spec text**, a
+corrected copy lives under `tools/conformance/testdata/fixtures/` as a reviewed
+file, organised by validity then kind (`valid/<kind>/`, `invalid/<kind>/`).
+Every correction is documented in that directory's
+[`REGISTER.md`](../../tools/conformance/testdata/fixtures/REGISTER.md): the
+vendored source path, the exact leaf changed (old → new value), and the spec
+citation for why it is a defect. The discipline:
+
+1. **Vendored corpus is never mutated** — neither on disk nor in code.
+2. **Corrected copies** (`valid/<kind>/`) are what the positive cases commit,
+   loaded through the owned-fixture loader (`crate::fixtures::owned_fixture`) —
+   never by mutating vendored data in code (this replaced the former in-code
+   `adapt_all_types_date` mutation).
+3. **Each corrected fixture has a companion negative ECC case** that commits the
+   defective **original** (a byte-faithful `invalid/<kind>/` copy, pinned
+   byte-identical to the vendored source by a `fixtures` guard test) and asserts
+   the SUT rejects it (`val/dv-date-day-disallowed-pattern`, `ECC-VAL-119`), so
+   the defect itself stays under test.
+
+Policy origin: owner ruling 2026-07-09 (B2 — validation-depth).
+
 ## 6. Reports (`docs/conformance/`, regenerated per run)
 
 Deliberately few artifacts — one machine record, two markdown documents

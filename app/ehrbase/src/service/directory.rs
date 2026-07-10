@@ -17,6 +17,9 @@ impl EhrbaseService {
         folder: Value,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
+        // EHR_STATUS.is_modifiable = False forbids content writes; the directory
+        // (hierarchical Folders) is EHR content (ehr/master04 §"EHR Active Status").
+        self.ensure_content_writable(ehr_id).await?;
         if self.current_vo(ehr_id, Kind::Folder).await?.is_some() {
             return Err(ServiceError::Conflict(format!(
                 "EHR {ehr_id} already has a directory"
@@ -106,6 +109,9 @@ impl EhrbaseService {
         expected: Option<i32>,
     ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self.directory_vo(ehr_id).await?;
+        // EHR_STATUS.is_modifiable = False forbids content writes (ehr/master04
+        // §"EHR Active Status").
+        self.ensure_content_writable(ehr_id).await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "DIRECTORY update");
@@ -134,6 +140,9 @@ impl EhrbaseService {
         expected: Option<i32>,
     ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self.directory_vo(ehr_id).await?;
+        // EHR_STATUS.is_modifiable = False forbids content writes, incl. logical
+        // delete (ehr/master04 §"EHR Active Status").
+        self.ensure_content_writable(ehr_id).await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::DELETED, "DIRECTORY delete");
