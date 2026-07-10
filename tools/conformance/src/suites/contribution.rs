@@ -214,37 +214,47 @@ pub fn entries() -> Vec<CaseEntry> {
             "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
              (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_empty,
-        ),
+        )
+        .with_schedule_ref(LIST_CONTRIBUTIONS_SCHEDULE_REF),
         entry(
             "ctb/list-contributions-non-existing-ehr",
             "List contributions — non existing EHR",
             "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
              (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_bad_ehr,
-        ),
+        )
+        .with_schedule_ref(LIST_CONTRIBUTIONS_SCHEDULE_REF),
         entry(
             "ctb/list-contributions-post-commit",
             "List contributions — post commit",
             "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
              (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_post_commit,
-        ),
+        )
+        .with_schedule_ref(LIST_CONTRIBUTIONS_SCHEDULE_REF),
         entry(
             "ctb/list-contributions-ehr-containing-directory",
             "List contributions — EHR containing directory",
             "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
              (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_with_directory,
-        ),
+        )
+        .with_schedule_ref(LIST_CONTRIBUTIONS_SCHEDULE_REF),
         entry(
             "ctb/list-contributions-ehr-containing-ehr-status",
             "List contributions — EHR containing EHR status",
             "SM I_EHR_CONTRIBUTION.list_contributions (CNF master08:595) — no ITS-REST binding \
              (POST-only on /ehr/{ehr_id}/contribution); skipped, see module docs",
             run_list_with_status,
-        ),
+        )
+        .with_schedule_ref(LIST_CONTRIBUTIONS_SCHEDULE_REF),
     ]
 }
+
+/// The CNF-schedule trace for the `list_contributions` cases (task 7): the SM
+/// operation + its schedule locus.
+const LIST_CONTRIBUTIONS_SCHEDULE_REF: &str =
+    "I_EHR_CONTRIBUTION.list_contributions (CNF master08:595)";
 
 fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
     CaseEntry {
@@ -257,6 +267,7 @@ fn entry(id: &'static str, title: &'static str, citation: &'static str, run: Cas
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

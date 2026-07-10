@@ -83,6 +83,7 @@ fn entry(id: &'static str, title: &'static str, citation: &'static str, run: Cas
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

@@ -313,6 +313,7 @@ fn entry_fmt_cap(
             formats,
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

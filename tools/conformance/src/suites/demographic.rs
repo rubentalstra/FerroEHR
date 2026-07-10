@@ -157,6 +157,7 @@ fn entry(id: &'static str, title: &'static str, run: CaseRun) -> CaseEntry {
             formats: &[Format::Json],
             citation: CITATION,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

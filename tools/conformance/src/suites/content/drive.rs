@@ -439,5 +439,6 @@ pub fn meta(id: &'static str, title: &'static str, citation: &'static str) -> Ca
         formats: &[Format::Json],
         citation,
         compare: Compare::Superset,
+        schedule_ref: None,
     }
 }

@@ -57,14 +57,16 @@ pub fn entries() -> Vec<CaseEntry> {
             "SM I_DEFINITION_QUERY.list_queries (CNF master05:93) — no ITS-REST binding \
              (list resource is GET /definition/query/{qualified_query_name}); skipped, see module docs",
             run_list_all,
-        ),
+        )
+        .with_schedule_ref("I_DEFINITION_QUERY.list_queries (CNF master05:93)"),
         entry(
             "sqr/list-queries-select-items",
             "List stored queries — select items",
             "SM I_DEFINITION_QUERY.list_queries (CNF master05:93) — no ITS-REST binding \
              (list resource is GET /definition/query/{qualified_query_name}); skipped, see module docs",
             run_list_after_store,
-        ),
+        )
+        .with_schedule_ref("I_DEFINITION_QUERY.list_queries (CNF master05:93)"),
         // valid_query negatives — store-time AQL validation → 400/422.
         entry(
             "sqr/valid-query-bad-formalism",
@@ -92,6 +94,7 @@ fn entry(id: &'static str, title: &'static str, citation: &'static str, run: Cas
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

@@ -183,6 +183,7 @@ pub fn entries() -> Vec<CaseEntry> {
                 formats: &[Format::Json],
                 citation: "ITS-REST 1.0.3 EHR API §create_ehr (422); RM 1.2.0 ehr §EHR_STATUS validation",
                 compare: Compare::Superset,
+                schedule_ref: None,
             },
             run: run_create_ehr_invalid_status,
         },
@@ -201,6 +202,7 @@ pub fn entries() -> Vec<CaseEntry> {
                 citation: "CNF master03-profiles §Non-Functional (Anonymous EHRs — CORE+STANDARD); \
                            ITS-REST EHR API §create_ehr (no body); RM 1.2.0 ehr §EHR_STATUS",
                 compare: Compare::Superset,
+                schedule_ref: None,
             },
             run: run_create_anonymous_ehr,
         },
@@ -229,6 +231,7 @@ fn entry(
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

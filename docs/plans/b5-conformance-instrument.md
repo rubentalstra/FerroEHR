@@ -20,11 +20,11 @@
       corpus-dialect skip; `e/ehr_status` stays failing until the engine fix.
 - [x] 4. D5 — CORE claimability: tag Versioning/AnonymousEhrs cases; decide +
       document Adl14ArchetypeProvisioning evidencing.
-- [ ] 5. D4 — full OPTIONS surface model (ADL 2, AQL advanced/terminology,
+- [x] 5. D4 — full OPTIONS surface model (ADL 2, AQL advanced/terminology,
       Admin sub-capabilities, Messaging) with per-capability "any passes".
-- [ ] 6. Conformance Statement + Certificate artefacts from results.json per
+- [x] 6. Conformance Statement + Certificate artefacts from results.json per
       certificate/master03-certificate.adoc.
-- [ ] 7. SEC cases (auth 401/403 surface) + `schedule_ref` on CaseMeta.
+- [x] 7. SEC cases (auth 401/403 surface) + `schedule_ref` on CaseMeta.
 
 *Tasks 1–4 done 2026-07-10 (wave 1): its_rest identity derived from vendored
 provenance (development@e8a093e) + tree-reconciliation guard test; the 12
@@ -35,6 +35,25 @@ corpus-dialect skips (e/ehr_status untouched, stays failing for B6); CORE
 claimability: Versioning/AnonymousEhrs tagged incl. new ECC-EHR-013
 create-anonymous-ehr, Adl14ArchetypeProvisioning evidenced via the OPT
 upload (decision documented).*
+
+*Tasks 5–7 done 2026-07-10 (wave 2): (5) D4 — the full OPTIONS surface is
+modeled (`Capability` gained Adl2Provisioning, AqlAdvanced, and the six Admin
+sub-caps; Authentication for SEC), and `profile::verdict` is now any-passes for
+OPTIONS (all-or-nothing kept for CORE/STANDARD) with per-capability
+pass/fail/not-evidenced labels — wire-unreachable caps never block (B3 kept).
+(6) New report artefacts `CONFORMANCE_STATEMENT.md` + `CONFORMANCE_CERTIFICATE.md`
+(`reporting/statement.rs`), emitted by `report::write_all` (so `report --from`
+regenerates them) per certificate/master03-certificate.adoc: SUT + scope tables,
+a Profile Report (the §4 verdict tables), and a per-conformance-point Detailed
+Test Report keyed on `schedule_ref`. (7) `suites/security.rs` — ECC-SEC-001
+(unauthenticated → 401) + ECC-SEC-002 (regular credential on ADMIN route → 403),
+mirroring SECURITY_TESTS/I_OAuth2 intent, skip-with-reason when the SUT auth
+mode can't be read off the wire; `schedule_ref` added to CaseMeta + CaseOutcome
+and threaded (via `CaseEntry::with_schedule_ref`) onto the D2 SM-op cases
+(delete_opt, list_queries, get_versioned_directory, list_contributions) + all 10
+Messaging cases. Gates: nextest -p conformance 48/48 green, conformance
+clippy-clean, fmt clean. ECC baseline unchanged pending a fresh run (SEC adds 2
+cases; OPTIONS/certificate are report-shape changes).*
 
 ## Exit criteria
 
